@@ -7,7 +7,6 @@
 
 #include <ps.h>
 #include <opflow.h>
-#include "IpStdCInterface.h" 
 
  /** 
   * @brief private struct for optimal power flow application 
@@ -51,8 +50,8 @@ struct _p_OPFLOW{
   Vec lambda_xu;
 
   /* Ipopt specific terms */
-  IpoptProblem nlp; /**< Ipopt solver */
-  enum ApplicationReturnStatus solve_status;
+  //  IpoptProblem nlp; /**< Ipopt solver */
+  Tao nlp;
 };
 /**
  * @brief Sets the bounds on variables and constraints
