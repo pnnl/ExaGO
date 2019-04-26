@@ -1,0 +1,63 @@
+# To use forward sensitivity, add option -DFWDSA to CFLAGS
+# override CFLAGS += -DFWDSA -O2 -Iinclude
+# For debugging
+# override CFLAGS += -Iinclude -DPFLOW_DISPLAY_RESULTS -DDEBUGPS
+
+CFLAGS += -Iinclude -DPFLOW_DISPLAY_RESULTS
+FFLAGS           =
+CPPFLAGS         =
+FPPFLAGS         =
+
+OS := $(shell uname)
+ifeq ($(OS),Darwin)
+  OTHER_LIB =
+  LIB_EXT = dylib
+  LDFLAGS = -dynamiclib
+else
+  OTHER_LIB = -lrt
+  LIB_EXT = so
+  LDFLAGS = -shared
+endif
+
+ALL:
+
+include $(PETSC_DIR)/lib/petsc/conf/variables
+include $(PETSC_DIR)/lib/petsc/conf/rules
+
+DYNGENMODEL_OBJECTS = src/dyn/dyngenmodels/dyngenmodels.o src/dyn/dyngenmodels/dyngenrou.o src/dyn/dyngenmodels/dynpvd1.o src/dyn/dyngenmodels/dyncv.o
+DYNEXCMODEL_OBJECTS = src/dyn/dynexcmodels/dynexcmodels.o src/dyn/dynexcmodels/dynieeet1.o src/dyn/dynexcmodels/dynexst1.o src/dyn/dynexcmodels/dynsexs.o
+DYNTURBGOVMODEL_OBJECTS = src/dyn/dynturbgovmodels/dynturbgovmodels.o src/dyn/dynturbgovmodels/dyntgov1.o
+DYNSTABMODEL_OBJECTS = src/dyn/dynstabmodels/dynstabmodels.o src/dyn/dynstabmodels/dynstab1.o
+DYNLOADMODEL_OBJECTS = src/dyn/dynloadmodels/dynloadmodels.o src/dyn/dynloadmodels/dynzip.o src/dyn/dynloadmodels/dyncompload.o
+DYNEVENT_OBJECTS = src/dyn/dynevents.o src/dyn/dynfaultevents.o src/dyn/dynlineswevents.o src/dyn/dyngentripevents.o 
+
+DYN_SRC_OBJECTS = src/ps/ps.o src/utils/comm.o src/utils/utils.o src/pflow/pflow.o src/dyn/dyn.o ${DYNGENMODEL_OBJECTS} ${DYNEXCMODEL_OBJECTS} ${DYNTURBGOVMODEL_OBJECTS} ${DYNSTABMODEL_OBJECTS} ${DYNLOADMODEL_OBJECTS} ${DYNEVENT_OBJECTS}
+
+DYN_APP_OBJECTS = applications/dyn-main.o
+OBJECTS_DYN = $(DYN_APP_OBJECTS)
+DYN: $(OBJECTS_DYN) libdyn chkopts
+	 -$(CLINKER) -o DYN $(OBJECTS_DYN) ${PETSC_TS_LIB} -L${PSAPPS_DIR} -ldyn
+	$(RM) $(OBJECTS_DYN)
+
+PFLOW_SRC_OBJECTS = src/ps/ps.o src/utils/comm.o src/utils/utils.o src/pflow/pflow.o ${DYNGENMODEL_OBJECTS} ${DYNEXCMODEL_OBJECTS} ${DYNTURBGOVMODEL_OBJECTS} ${DYNSTABMODEL_OBJECTS} ${DYNLOADMODEL_OBJECTS}
+
+PFLOW_APP_OBJECTS = applications/pflow-main.o
+OBJECTS_PFLOW = $(PFLOW_APP_OBJECTS)
+PFLOW: $(OBJECTS_PFLOW) libpflow chkopts
+	 -$(CLINKER) -o PFLOW $(OBJECTS_PFLOW) -L${PSAPPS_DIR} -lpflow
+	$(RM) $(OBJECTS_PFLOW)
+
+PFLOW_APP2_OBJECTS = applications/pflow-main2.o
+OBJECTS_PFLOW2 = $(PFLOW_APP2_OBJECTS)
+PFLOW2: $(OBJECTS_PFLOW2) libpflow chkopts
+	 -$(CLINKER) -o PFLOW2 $(OBJECTS_PFLOW2) -L${PSAPPS_DIR} -lpflow
+	$(RM) $(OBJECTS_PFLOW2)
+
+libdyn:$(DYN_SRC_OBJECTS) chkopts
+	 -$(CLINKER) $(LDFLAGS) -o libdyn.$(LIB_EXT) $(DYN_SRC_OBJECTS) $(PETSC_TS_LIB)
+
+libpflow:$(PFLOW_SRC_OBJECTS) chkopts
+	 -$(CLINKER) $(LDFLAGS) -o libpflow.$(LIB_EXT) $(PFLOW_SRC_OBJECTS) $(PETSC_TS_LIB)
+
+cleanobj:
+	rm -rf $(OBJECTS_PFLOW) $(OBJECTS_PFLOW2) $(PFLOW_SRC_OBJECTS) $(OBJECTS_DYN) $(DYN_SRC_OBJECTS) $(OBJECTS_DYNSENS) *.dylib *.dSYM PFLOW PFLOW2 DYN

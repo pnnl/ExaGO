@@ -1,0 +1,6 @@
+# run_test_script in batch
+#./run_test_script_ts case118
+#./run_test_script case2737sop
+./run_test_script_ts case9241pegase
+#./run_test_script case21k
+#./run_test_script case22996

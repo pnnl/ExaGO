@@ -1,0 +1,59 @@
+CASEFILE=$1
+RAWFILE=datafiles/scalability/${CASEFILE}_dyn.raw
+DYRFILE=datafiles/scalability/${CASEFILE}_dyn.dyr
+EVENTFILE=datafiles/scalability/scalcase.event
+HOST=`hostname`
+OUTFILE=scal${CASEFILE}_${HOST}.m
+
+MPIOPT="-binding cpu:sockets"
+TIMEOPT="-dyn_ts_final_time 5.0 -dyn_ts_dt 0.0083333333"
+
+echo -e function [out] = scal${CASEFILE}'\n' > $OUTFILE
+
+LAG=-2
+
+echo %mpiexec -n 1 ./DYN2 ${MPIOPT} -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE -dyn_pc_type PETSCLU,KLU -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} '\n' >> $OUTFILE
+NPROC=1
+# PETSC LU
+arr=`mpiexec -n 1 ${MPIOPT} ./DYN2 -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE -dyn_pc_type lu -dyn_pc_factor_mat_ordering_type amd -log_summary -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} | grep TSStep`
+splitarr=($arr)
+time=${splitarr[3]}
+echo -e "out.petsc1 = $time;" >> $OUTFILE
+
+# KLU
+arr=`mpiexec -n 1 ${MPIOPT} ./DYN2 $mpiopt -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE -dyn_pc_type lu -dyn_pc_factor_mat_solver_package klu -dyn_pc_factor_mat_ordering_type amd -log_summary -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} | grep TSStep`
+splitarr=($arr)
+time=${splitarr[3]}
+echo -e "out.klu1 = $time" >> $OUTFILE
+
+SUBPCOPTIONS="-dyn_sub_pc_type lu -dyn_sub_pc_factor_mat_ordering_type amd"
+
+echo -e %mpiexec -n NPROC ${MPIOPT} ./DYN2 -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE -dyn_pc_type asm -dyn_pc_asm_overlap $OVERLAP $SUBPCOPTIONS -pflow_pc_type asm -pflow_pc_asm_overlap $OVERLAP -pflow_sub_pc_type lu -pflow_sub_pc_factor_mat_ordering_type amd -log_summary -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} '\n' >> $OUTFILE
+for OVERLAP in 3 2 1 0
+do
+  echo -e out.overlap${OVERLAP} = [ >> $OUTFILE
+  for NPROC in 12 8 4 2
+  do
+    arr=`mpiexec -n $NPROC ${MPIOPT} ./DYN2 -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE -dyn_pc_type asm -dyn_pc_asm_overlap $OVERLAP $SUBPCOPTIONS -pflow_pc_type asm -pflow_pc_asm_overlap $OVERLAP -pflow_sub_pc_type lu -pflow_sub_pc_factor_mat_ordering_type amd -log_summary -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} | grep TSStep`
+    splitarr=($arr)
+    time=${splitarr[3]}
+    echo -e $OVERLAP '\t' $NPROC '\t' $time >> $OUTFILE
+  done
+  echo -e "];\n" >> $OUTFILE
+done
+
+echo -e %mpiexec -n NPROC ${MPIOPT} ./DYN2 -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE -dyn_pc_type MUMPS,SUPERLU_DIST -pflow_pc_type MUMPS,SUPERLU_DIST -log_summary -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} '\n' >> $OUTFILE
+for SOLVER in mumps
+do
+  echo -e out.${SOLVER} = [ >> $OUTFILE
+  for NPROC in 12 8 4 2
+  do
+    arr=`mpiexec -n $NPROC ${MPIOPT} ./DYN2 -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE -dyn_pc_type lu -dyn_pc_factor_mat_solver_package ${SOLVER} -pflow_pc_type lu -pflow_pc_factor_mat_solver_package ${SOLVER} -log_summary -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} | grep TSStep`
+    splitarr=($arr)
+    time=${splitarr[3]}
+    echo -e ${SOLVER} '\t' $NPROC '\t' $time >> $OUTFILE
+  done
+  echo -e "];\n" >> $OUTFILE
+done
+
+
