@@ -19,6 +19,16 @@ struct _p_OPFLOW{
   PetscScalar *x; /**< Solution array - same as the array for X */
 
   Vec  G; /**< Inequality and equality constraint function */
+  Vec Gl; /**< Lower bound on G */
+  Vec Gu; /**< Upper bound on G */
+
+  Vec  Ge; /** < Equality constraint function vector */
+  Vec  Gi; /** < Inequality constraint function vector */
+
+  Vec Gel; /**< Lower bound on Ge */
+  Vec Geu; /**< Upper bound on Ge */
+  Vec Gil; /**< Lower bound on Gi */
+  Vec Giu; /**< Upper bound on Gi */
 
   PetscScalar obj; /**< Objective function */
 
@@ -27,15 +37,17 @@ struct _p_OPFLOW{
   Vec Xl; /**< Lower bound on solution */
   Vec Xu; /**< Upper bound on solution */
 
-  Vec Gl; /**< Lower bound on G */
-  Vec Gu; /**< Upper bound on G */
-
   Mat  Jac;  /* Jacobian of constraints */
+
+  Mat Jac_Ge; /* Equality constraint Jacobian */
+  Mat Jac_Gi; /* Inequality constraint Jacobian */
+
   Mat  Hes;  /* Lagrangian Hessian */  
 
   PetscInt Nconeq; /**< Number of equality constraints */
   PetscInt Nconineq; /**< Number of inequality constraints */
   PetscInt Ncon;     /* Total number of constraints (equality + inequality) */
+  PetscInt Nvar;     /* Total number of variables */
 
   PetscInt n; /**< Number of variables */
   PetscInt m; /**< Number of constraints */

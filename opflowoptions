@@ -1,12 +1,18 @@
--netfile datafiles/case9mod.m
+-netfile datafiles/case9mod_solved.m
 
-# Optimal Power Flow Solver Options
+# Gradient calculation via finite differencing
+-opflow_tao_fd_gradient 1
+
+# Hessian calculation via finite differencing
+-opflow_tao_fd_hessian 1
+
+# Optimal Power Flow Linear Solver Options
 -opflow_pc_type lu
 -opflow_pc_factor_mat_solver_type superlu
 
 # performance
 #-------------
--log_summary
+#-log_summary
 
 #Partitioner (requires parmetis package)
 #-petscpartitioner_type parmetis
