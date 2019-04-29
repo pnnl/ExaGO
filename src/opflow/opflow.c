@@ -1210,7 +1210,7 @@ PetscErrorCode OPFLOWCreateGlobalVector(OPFLOW opflow,Vec *vec)
 }
 
 /*
-  OPFLOWCreateInequalityConstraintJacobian - Returns a distributed matrix of appropriate size that can be used as the Jacobian for the inequality constraints
+  OPFLOWCreateInequalityConstraintsJacobian - Returns a distributed matrix of appropriate size that can be used as the Jacobian for the inequality constraints
 
 
   Input Paramereters:
@@ -1222,7 +1222,7 @@ PetscErrorCode OPFLOWCreateGlobalVector(OPFLOW opflow,Vec *vec)
   Notes:
   OPFLOWSetUp() must be called before calling this routine.
 */
-PetscErrorCode OPFLOWCreateInequalityConstraintJacobian(OPFLOW opflow,Mat *mat)
+PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
 {
   PetscErrorCode ierr;
   Mat            jac;
@@ -1296,7 +1296,177 @@ PetscErrorCode OPFLOWCreateInequalityConstraintJacobian(OPFLOW opflow,Mat *mat)
 }
 
 /*
-  OPFLOWCreateEqualityConstraintJacobian - Returns a distributed matrix of appropriate size that can be used as the Jacobian for the equality constraints
+  OPFLOWInequalityConstraintsJacobianFunction - Jacobian evaluation routine for the inequality constraints
+
+  Input Parameters:
++ nlp - the TAO nlp solver object
+. X   - the current iterate
+- ctx - the application data set with TaoInequalityConstraintsJacobianRoutine
+
+  Output Parameters:
++ Ji - Jacobian for inequality constraints
+- Ji_pre - Preconditioner (same as Jacobian, no change needed) for
+           inequality constraints
+
+*/
+PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat Ji, Mat Ji_pre, void* ctx)
+{
+  PetscErrorCode ierr;
+  OPFLOW         opflow=(OPFLOW)ctx;
+  PS             ps=opflow->ps;
+  PetscInt       ctr=0;
+  PetscInt       i;
+  PSLINE         line;
+  const PSBUS    *connbuses;
+  PetscInt       gloc=0,xlocf,xloct;
+  PSBUS          busf,bust;
+  PetscInt       row[2],col[4];
+  PetscScalar    val[4];
+  const PetscScalar *x;
+
+  PetscFunctionBegin;
+
+  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+
+  for(i=0; i < ps->Nbranch; i++) {
+    line = &ps->line[i];
+
+    PetscScalar Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
+    Gff = line->yff[0];
+    Bff = line->yff[1];
+    Gft = line->yft[0];
+    Bft = line->yft[1];
+    Gtf = line->ytf[0];
+    Btf = line->ytf[1];
+    Gtt = line->ytt[0];
+    Btt = line->ytt[1];
+
+    ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
+    busf = connbuses[0];
+    bust = connbuses[1];
+
+    ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
+    ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
+
+    PetscScalar Vmf,Vmt,thetaf,thetat,thetaft,thetatf;
+      
+    thetaf  = x[xlocf];
+    Vmf     = x[xlocf+1];
+    thetat  = x[xloct];
+    Vmt     = x[xloct+1];
+    thetaft = thetaf - thetat;
+    thetatf = thetat - thetaf;
+    
+    PetscScalar Pf,Qf,Pt,Qt;
+
+    Pf = Gff*Vmf*Vmf  + Vmf*Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
+    Qf = -Bff*Vmf*Vmf + Vmf*Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
+	
+    Pt = Gtt*Vmt*Vmt  + Vmt*Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
+    Qt = -Btt*Vmt*Vmt + Vmt*Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
+
+    PetscScalar dSf2_dPf, dSf2_dQf, dSt2_dPt, dSt2_dQt;
+
+    dSf2_dPf = 2*Pf;
+    dSf2_dQf = 2*Qf;
+    dSt2_dPt = 2*Pt;
+    dSt2_dQt = 2*Qt;
+
+    PetscScalar dPf_dthetaf,dPf_dVmf,dPf_dthetat,dPf_dVmt;
+    PetscScalar dQf_dthetaf,dQf_dVmf,dQf_dthetat,dQf_dVmt;
+    PetscScalar dPt_dthetaf,dPt_dVmf,dPt_dthetat,dPt_dVmt;
+    PetscScalar dQt_dthetaf,dQt_dVmf,dQt_dthetat,dQt_dVmt;
+
+    dPf_dthetaf = Vmf*Vmt*(-Gft*sin(thetaft) + Bft*cos(thetaft));
+    dPf_dVmf    = 2*Gff*Vmf + Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
+    dPf_dthetat = Vmf*Vmt*(Gft*sin(thetaft) - Bft*cos(thetaft));
+    dPf_dVmt    = Vmf*(Gft*cos(thetaft) + Bft*sin(thetaft));
+
+    dQf_dthetaf = Vmf*Vmt*(Bft*sin(thetaft) + Gft*cos(thetaft));
+    dQf_dVmf    = -2*Bff*Vmf + Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
+    dQf_dthetat = Vmf*Vmt*(-Bft*sin(thetaft) - Gft*cos(thetaft));
+    dQf_dVmt    = Vmf*(-Bft*cos(thetaft) + Gft*sin(thetaft));
+
+    dPt_dthetat = Vmt*Vmf*(-Gtf*sin(thetatf) + Btf*cos(thetatf));
+    dPt_dVmt    = 2*Gtt*Vmt + Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
+    dPt_dthetaf = Vmt*Vmf*(Gtf*sin(thetatf) - Btf*cos(thetatf));
+    dPt_dVmf    = Vmt*(Gtf*cos(thetatf) + Btf*sin(thetatf));
+
+    dQt_dthetat = Vmt*Vmf*(Btf*sin(thetatf) + Gtf*cos(thetatf));
+    dQt_dVmt    = -2*Btt*Vmt + Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
+    dQt_dthetaf = Vmt*Vmf*(-Btf*sin(thetatf) - Gtf*cos(thetatf));
+    dQt_dVmf    = Vmt*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
+
+    PetscScalar dSf2_dthetaf,dSf2_dVmf,dSf2_dthetat,dSf2_dVmt;
+
+    dSf2_dthetaf = dSf2_dPf*dPf_dthetaf + dSf2_dQf*dQf_dthetaf;
+    dSf2_dthetat = dSf2_dPf*dPf_dthetat + dSf2_dQf*dQf_dthetat;
+    dSf2_dVmf    = dSf2_dPf*dPf_dVmf    + dSf2_dQf*dQf_dVmf;
+    dSf2_dVmt    = dSf2_dPf*dPf_dVmt    + dSf2_dQf*dQf_dVmt;
+
+    /* g[gloc] */
+    row[0] = gloc;
+    col[0] = xlocf; col[1] = xlocf+1; col[2] = xloct; col[3] = xloct+1;
+    val[0] = dSf2_dthetaf;
+    val[1] = dSf2_dVmf;
+    val[2] = dSf2_dthetat;
+    val[3] = dSf2_dVmt;
+
+    ierr = MatSetValues(Ji,1,row,4,col,val,INSERT_VALUES);CHKERRQ(ierr);
+
+    /* g[gloc+1] */
+    row[0] = gloc+1;
+    col[0] = xlocf; col[1] = xlocf+1; col[2] = xloct; col[3] = xloct+1;
+    val[0] = -dSf2_dthetaf;
+    val[1] = -dSf2_dVmf;
+    val[2] = -dSf2_dthetat;
+    val[3] = -dSf2_dVmt;
+
+    ierr = MatSetValues(Ji,1,row,4,col,val,INSERT_VALUES);CHKERRQ(ierr);
+
+    PetscScalar dSt2_dthetaf,dSt2_dVmf,dSt2_dthetat,dSt2_dVmt;
+
+    dSt2_dthetaf = dSt2_dPt*dPt_dthetaf + dSt2_dQt*dQt_dthetaf;
+    dSt2_dthetat = dSt2_dPt*dPt_dthetat + dSt2_dQt*dQt_dthetat;
+    dSt2_dVmf    = dSt2_dPt*dPt_dVmf    + dSt2_dQt*dQt_dVmf;
+    dSt2_dVmt    = dSt2_dPt*dPt_dVmt    + dSt2_dQt*dQt_dVmt;
+
+    /* g[gloc+2] */
+    row[0] = gloc+2;
+    col[0] = xloct; col[1] = xloct+1; col[2] = xlocf; col[3] = xlocf+1;
+
+    val[ctr]   = dSt2_dthetat;
+    val[ctr+1] = dSt2_dVmt;
+    val[ctr+2] = dSt2_dthetaf;
+    val[ctr+3] = dSt2_dVmf;
+
+    ierr = MatSetValues(Ji,1,row,4,col,val,INSERT_VALUES);CHKERRQ(ierr);
+
+    /* g[gloc+3] */
+    row[0] = gloc+3;
+    col[0] = xloct; col[1] = xloct+1; col[2] = xlocf; col[3] = xlocf+1;
+
+    val[ctr]   = -dSt2_dthetat;
+    val[ctr+1] = -dSt2_dVmt;
+    val[ctr+2] = -dSt2_dthetaf;
+    val[ctr+3] = -dSt2_dVmf;
+
+    ierr = MatSetValues(Ji,1,row,4,col,val,INSERT_VALUES);CHKERRQ(ierr);
+
+    gloc += 4;
+  }
+
+  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+
+  ierr = MatAssemblyBegin(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+
+/*
+  OPFLOWCreateEqualityConstraintsJacobian - Returns a distributed matrix of appropriate size that can be used as the Jacobian for the equality constraints
 
 
   Input Paramereters:
@@ -1308,7 +1478,7 @@ PetscErrorCode OPFLOWCreateInequalityConstraintJacobian(OPFLOW opflow,Mat *mat)
   Notes:
   OPFLOWSetUp() must be called before calling this routine.
 */
-PetscErrorCode OPFLOWCreateEqualityConstraintJacobian(OPFLOW opflow,Mat *mat)
+PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
 {
   PetscErrorCode ierr;
   Mat            jac;
@@ -1422,7 +1592,7 @@ PetscErrorCode OPFLOWCreateEqualityConstraintJacobian(OPFLOW opflow,Mat *mat)
 . Gl     - vector of lower bound on constraints
 . Gu     - vector of lower bound on constraints
 */
-PetscErrorCode OPFLOWSetVariableandConstraintBounds(OPFLOW opflow, Vec Xl, Vec Xu, Vec Gl, Vec Gu)
+PetscErrorCode OPFLOWSetVariableandConstraintsBounds(OPFLOW opflow, Vec Xl, Vec Xu, Vec Gl, Vec Gu)
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
@@ -1898,6 +2068,7 @@ PetscErrorCode OPFLOWInequalityConstraintsFunction(Tao nlp,Vec X,Vec Gi,void* ct
 PetscErrorCode OPFLOWSolve(OPFLOW opflow)
 {
   PetscErrorCode ierr;
+  TaoConvergedReason reason;
 
   PetscFunctionBegin;
   if(!opflow->setupcalled) {
@@ -1912,6 +2083,8 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
   ierr = OPFLOWSetInitialGuess(opflow,opflow->X);CHKERRQ(ierr);
 
   ierr = TaoSolve(opflow->nlp);CHKERRQ(ierr);
+  ierr = TaoGetConvergedReason(opflow->nlp,&reason);CHKERRQ(ierr);
+  opflow->converged = reason< 0 ? PETSC_FALSE:PETSC_TRUE;
 
   ierr = VecView(opflow->X,0);CHKERRQ(ierr);
   PetscFunctionReturn(0);
@@ -1963,10 +2136,10 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = VecSetFromOptions(opflow->Gi);CHKERRQ(ierr);
 
   /* Create the equality constraint Jacobian */
-  ierr = OPFLOWCreateEqualityConstraintJacobian(opflow,&opflow->Jac_Ge);CHKERRQ(ierr);
+  ierr = OPFLOWCreateEqualityConstraintsJacobian(opflow,&opflow->Jac_Ge);CHKERRQ(ierr);
 
   /* Create the inequality constraint Jacobian */
-  ierr = OPFLOWCreateInequalityConstraintJacobian(opflow,&opflow->Jac_Gi);CHKERRQ(ierr);
+  ierr = OPFLOWCreateInequalityConstraintsJacobian(opflow,&opflow->Jac_Gi);CHKERRQ(ierr);
 
   /* Set the different callbacks Tao requires */
   /* Objective and Gradient */
@@ -1981,126 +2154,14 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   /* Equality Jacobian */
   ierr = TaoSetJacobianEqualityRoutine(opflow->nlp,opflow->Jac_Ge,opflow->Jac_Ge,OPFLOWEqualityConstraintsJacobianFunction,(void*)opflow);CHKERRQ(ierr);
 
+  /* Inequality Jacobian */
+  ierr = TaoSetJacobianInequalityRoutine(opflow->nlp,opflow->Jac_Gi,opflow->Jac_Gi,OPFLOWInequalityConstraintsJacobianFunction,(void*)opflow);CHKERRQ(ierr);
   ierr = TaoSetFromOptions(opflow->nlp);CHKERRQ(ierr);
+
   opflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);
 }
 
 
-/*
-  OPFLOWSetConstraintJacobianLocations - Sets the row and column nonzero locations for the
-              constraint Jacobian
-
-  Input Parameters:
-+ opflow - the OPFLOW object
-
-  Output Parameters:
-+ row - the row locations
-- col - the col locations
-
-  Notes:
-   The row and column locations should be such that J(row[i],col[i]) = val
-*/
-PetscErrorCode OPFLOWSetConstraintJacobianLocations(OPFLOW opflow, PetscInt *row, PetscInt *col)
-{
-  PetscErrorCode ierr;
-  PS             ps=opflow->ps;
-  PetscInt       ctr=0;
-  PetscInt       i,k;
-  PSLINE         line;
-  PSBUS          bus;
-  PetscInt       nconnlines;
-  const PSLINE   *connlines;
-  const PSBUS    *connbuses;
-  PetscInt       gloc=0,xloc,xlocf,xloct;
-  PSBUS          busf,bust;
-
-  PetscFunctionBegin;
-
-  for(i=0; i < ps->Nbranch; i++) {
-    line = &ps->line[i];
-
-    ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
-    busf = connbuses[0];
-    bust = connbuses[1];
-
-    ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
-    ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
-
-    /* From bus Sf */
-    row[ctr] = row[ctr+1] = row[ctr+2] = row[ctr+3] = gloc;
-    col[ctr] = xlocf; col[ctr+1] = xlocf+1; col[ctr+2] = xloct; col[ctr+3] = xloct+1;
-    ctr += 4;
-    /* To bus St */
-    row[ctr] = row[ctr+1] = row[ctr+2] = row[ctr+3] = gloc+1;
-    col[ctr] = xloct; col[ctr+1] = xloct+1; col[ctr+2] = xlocf; col[ctr+3] = xlocf+1;
-    ctr += 4;
-
-    gloc += 2;
-  }
-
-  for(i=0; i < ps->nbus; i++) {
-    bus = &ps->bus[i];
-
-    ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
-
-    if(bus->ide == ISOLATED_BUS) {
-      row[ctr] = gloc; col[ctr] = xloc;
-      row[ctr+1] = gloc+1; col[ctr+1] = xloc+1;
-      ctr += 2;
-    }
-
-    row[ctr] = gloc;     col[ctr]   = xloc+1;
-    row[ctr+1] = gloc+1; col[ctr+1] = xloc+1;
-    ctr += 2;
-
-    for(k=0; k < bus->ngen; k++) {
-      xloc += 2;
-
-      row[ctr] = gloc;     col[ctr] = xloc;
-      row[ctr+1] = gloc+1; col[ctr+1] = xloc+1;
-      ctr += 2;
-    }
-
-   ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
-
-   for(k=0; k < nconnlines; k++) {
-     line = connlines[k];
-     
-     if(!line->status) continue;
-
-     ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
-     busf = connbuses[0];
-     bust = connbuses[1];
-      
-     ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
-     ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
-
-     if(bus == busf) {
-       /* Pf */
-       row[ctr] = row[ctr+1] = row[ctr+2] = row[ctr+3] = gloc;
-       col[ctr] = xlocf; col[ctr+1] = xlocf+1; col[ctr+2] = xloct; col[ctr+3] = xloct+1;
-       ctr += 4;
-
-       /* Qf */
-       row[ctr] = row[ctr+1] = row[ctr+2] = row[ctr+3] = gloc+1;
-       col[ctr] = xlocf; col[ctr+1] = xlocf+1; col[ctr+2] = xloct; col[ctr+3] = xloct+1;
-       ctr += 4;
-     } else {
-       /* Pt */
-       row[ctr] = row[ctr+1] = row[ctr+2] = row[ctr+3] = gloc;
-       col[ctr] = xloct; col[ctr+1] = xloct+1; col[ctr+2] = xlocf; col[ctr+3] = xlocf+1;
-       ctr += 4;
-
-       /* Qt */
-       row[ctr] = row[ctr+1] = row[ctr+2] = row[ctr+3] = gloc+1;
-       col[ctr] = xloct; col[ctr+1] = xloct+1; col[ctr+2] = xlocf; col[ctr+3] = xlocf+1;
-       ctr += 4;
-     }
-   }
-   gloc += 2;
-  }
-  PetscFunctionReturn(0);
-}
 
 

@@ -64,6 +64,8 @@ struct _p_OPFLOW{
   /* Ipopt specific terms */
   //  IpoptProblem nlp; /**< Ipopt solver */
   Tao nlp;
+
+  PetscBool converged; // Convergence status
 };
 /**
  * @brief Sets the bounds on variables and constraints

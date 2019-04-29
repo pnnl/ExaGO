@@ -557,7 +557,7 @@ PetscErrorCode PFLOWSolve(PFLOW pflow)
   /* Set up initial guess */
   ierr = PFLOWSetInitialGuess(pflow,pflow->X);CHKERRQ(ierr);
 
-  /* Call the time-stepping solver */
+  /* Call the nonlinear solver */
   ierr = SNESSolve(pflow->snes,NULL,pflow->X);CHKERRQ(ierr);
   ierr = SNESGetConvergedReason(pflow->snes,&reason);CHKERRQ(ierr);
   pflow->converged = reason< 0 ? PETSC_FALSE: PETSC_TRUE;
