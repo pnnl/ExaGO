@@ -10,7 +10,7 @@ int main(int argc,char **argv)
   PetscBool      flg;
   char           netfile[PETSC_MAX_PATH_LEN],dyrfile[PETSC_MAX_PATH_LEN],eventfile[PETSC_MAX_PATH_LEN];
 
-  ierr = PetscInitialize(&argc,&argv,"petscopt",help);CHKERRQ(ierr);
+  ierr = PetscInitialize(&argc,&argv,"dynoptions",help);CHKERRQ(ierr);
 
   /* Create DYN object */
   ierr = DYNCreate(PETSC_COMM_WORLD,&dyn);CHKERRQ(ierr);

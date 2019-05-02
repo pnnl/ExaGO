@@ -10,7 +10,7 @@ int main(int argc,char **argv)
   char              file[PETSC_MAX_PATH_LEN];
   PetscBool         flg;
 
-  PetscInitialize(&argc,&argv,"petscopt",help);
+  PetscInitialize(&argc,&argv,"pflowoptions",help);
   
   /* Create PFLOW object */
   ierr = PFLOWCreate(PETSC_COMM_WORLD,&pflow);CHKERRQ(ierr);
