@@ -22,6 +22,9 @@
 # Convergence monitor
 -opflow_tao_monitor
 
+# Convergence status
+-opflow_tao_converged_reason
+
 # performance
 #-------------
 #-log_summary
