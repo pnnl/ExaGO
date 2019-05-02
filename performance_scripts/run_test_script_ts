@@ -30,14 +30,14 @@ echo -e "SERIAL PERFORMANCE" >> $OUTFILE
 #NPROC=1
 
 echo -e "PETSC LU 1 processor" >> $OUTFILE
-echo %mpiexec -n 1 ./DYN2 ${MPIOPT} -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE -dyn_pc_type lu -dyn_pc_factor_mat_solver_package petsc -dyn_pc_factor_mat_ordering_type amd -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} '\n' >> $OUTFILE
+echo %mpiexec -n 1 ./DYN ${MPIOPT} -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE -dyn_pc_type lu -dyn_pc_factor_mat_solver_package petsc -dyn_pc_factor_mat_ordering_type amd -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} '\n' >> $OUTFILE
 ctr=0
 for item in ${TSSOLVER[@]}
 do
   eval TSOPT=\${$item[@]}
 #  echo -e $ctr $TSOPT ${TSSOLVERNAME[$ctr]}
   # PETSC LU
-  arr=`mpiexec -n 1 ${MPIOPT} ./DYN2 -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE ${TSOPT} -dyn_pc_type lu -dyn_pc_factor_mat_ordering_type amd -log_summary -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} | grep DYNSolve`
+  arr=`mpiexec -n 1 ${MPIOPT} ./DYN -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE ${TSOPT} -dyn_pc_type lu -dyn_pc_factor_mat_ordering_type amd -log_summary -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} | grep DYNSolve`
   splitarr=($arr)
 #  nsteps=${splitarr[1]}
   time=`printf '%.4f' ${splitarr[3]}`
@@ -51,7 +51,7 @@ do
 done
 
 #echo -e "KLU 1 processor" >> $OUTFILE
-#echo %mpiexec -n 1 ./DYN2 ${MPIOPT} -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE -dyn_pc_type lu -dyn_pc_factor_mat#_solver_package klu -dyn_pc_factor_mat_ordering_type amd -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} '\n' >> $OUTFILE
+#echo %mpiexec -n 1 ./DYN ${MPIOPT} -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE -dyn_pc_type lu -dyn_pc_factor_mat#_solver_package klu -dyn_pc_factor_mat_ordering_type amd -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} '\n' >> $OUTFILE
 
 ## KLU
 #ctr=0
@@ -59,7 +59,7 @@ done
 #do
 #  eval TSOPT=\${$item[@]}
 #  echo -e $ctr $TSOPT ${TSSOLVERNAME[$ctr]}
-#  arr=`mpiexec -n 1 ${MPIOPT} ./DYN2 -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE ${TSOPT} -dyn_pc_type lu -dyn_pc_factor_mat_solver_package klu -dyn_pc_factor_mat_ordering_type amd -log_summary -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} | grep DYNSolve`
+#  arr=`mpiexec -n 1 ${MPIOPT} ./DYN -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE ${TSOPT} -dyn_pc_type lu -dyn_pc_factor_mat_solver_package klu -dyn_pc_factor_mat_ordering_type amd -log_summary -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} | grep DYNSolve`
 #  splitarr=($arr)
 #  nsteps=${splitarr[1]}
 #  time=`printf '%.4f' ${splitarr[3]}`
@@ -79,13 +79,13 @@ for OVERLAP in 3 2
 do
   for NPROC in 16 12 8 4 2
   do
-    echo -e %mpiexec -n ${NPROC} ${MPIOPT} ./DYN2 -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE -dyn_pc_type asm -dyn_pc_asm_overlap $OVERLAP $SUBPCOPTIONS -pflow_pc_type asm -pflow_pc_asm_overlap $OVERLAP -pflow_sub_pc_type lu -pflow_sub_pc_factor_mat_ordering_type amd -log_summary -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} '\n' >> $OUTFILE
+    echo -e %mpiexec -n ${NPROC} ${MPIOPT} ./DYN -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE -dyn_pc_type asm -dyn_pc_asm_overlap $OVERLAP $SUBPCOPTIONS -pflow_pc_type asm -pflow_pc_asm_overlap $OVERLAP -pflow_sub_pc_type lu -pflow_sub_pc_factor_mat_ordering_type amd -log_summary -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} '\n' >> $OUTFILE
     ctr=0
     for item in ${TSSOLVER[@]}
     do
       eval TSOPT=\${$item[@]}
       #  echo -e $ctr $TSOPT ${TSSOLVERNAME[$ctr]}
-      arr=`mpiexec -n ${NPROC} ${MPIOPT} ./DYN2 -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE ${TSOPT} -dyn_pc_type asm -dyn_pc_asm_overlap ${OVERLAP} ${SUBPCOPTIONS}  -pflow_pc_type asm -pflow_pc_asm_overlap $OVERLAP -pflow_sub_pc_type lu -pflow_sub_pc_factor_mat_ordering_type amd -log_summary -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} | grep -i DYNSolve`
+      arr=`mpiexec -n ${NPROC} ${MPIOPT} ./DYN -netfile $RAWFILE -dyrfile $DYRFILE -eventfile $EVENTFILE ${TSOPT} -dyn_pc_type asm -dyn_pc_asm_overlap ${OVERLAP} ${SUBPCOPTIONS}  -pflow_pc_type asm -pflow_pc_asm_overlap $OVERLAP -pflow_sub_pc_type lu -pflow_sub_pc_factor_mat_ordering_type amd -log_summary -dyn_snes_lag_preconditioner ${LAG} ${TIMEOPT} | grep -i DYNSolve`
       splitarr=($arr)
 #      nsteps=${splitarr[2]}
       time=`printf '%.4f' ${splitarr[3]}`
