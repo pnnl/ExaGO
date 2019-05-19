@@ -1854,7 +1854,7 @@ PetscErrorCode PSSetUp(PS ps)
   ierr = PSGetLineConnectivity(ps,Nlines,lineconn);CHKERRQ(ierr);
 
   /* Set sizes for the network */
-  ierr = DMNetworkSetSizes(networkdm,1,0,&Nbuses,&Nlines,&Ngbuses,&Nglines);CHKERRQ(ierr);
+  ierr = DMNetworkSetSizes(networkdm,1,&Nbuses,&Nlines,0,&Nglines);CHKERRQ(ierr);
   /* Set edge connectivity */
   ierr = DMNetworkSetEdgeList(networkdm,&lineconn,NULL);CHKERRQ(ierr);
   /* Set up network layout */
