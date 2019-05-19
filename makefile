@@ -44,13 +44,13 @@ PFLOW_SRC_OBJECTS = src/ps/ps.o src/utils/comm.o src/utils/utils.o src/pflow/pfl
 PFLOW_APP_OBJECTS = applications/pflow-main.o
 OBJECTS_PFLOW = $(PFLOW_APP_OBJECTS)
 PFLOW: $(OBJECTS_PFLOW) libpflow chkopts
-	 -$(CLINKER) -o PFLOW $(OBJECTS_PFLOW) -L${PSAPPS_DIR} -lpflow
+	 -$(CLINKER) -o PFLOW $(OBJECTS_PFLOW) ${PETSC_SNES_LIB} -L${PSAPPS_DIR} -lpflow
 	$(RM) $(OBJECTS_PFLOW)
 
 PFLOW_APP2_OBJECTS = applications/pflow-main2.o
 OBJECTS_PFLOW2 = $(PFLOW_APP2_OBJECTS)
 PFLOW2: $(OBJECTS_PFLOW2) libpflow chkopts
-	 -$(CLINKER) -o PFLOW2 $(OBJECTS_PFLOW2) -L${PSAPPS_DIR} -lpflow
+	 -$(CLINKER) -o PFLOW2 $(OBJECTS_PFLOW2) ${PETSC_SNES_LIB} -L${PSAPPS_DIR} -lpflow
 	$(RM) $(OBJECTS_PFLOW2)
 
 OPFLOW_SRC_OBJECTS = src/ps/ps.o src/utils/comm.o src/utils/utils.o src/opflow/opflow.o ${DYNGENMODEL_OBJECTS} ${DYNEXCMODEL_OBJECTS} ${DYNTURBGOVMODEL_OBJECTS} ${DYNSTABMODEL_OBJECTS} ${DYNLOADMODEL_OBJECTS}
