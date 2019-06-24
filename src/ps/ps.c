@@ -1047,8 +1047,10 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
         if(Gen[geni].status == 1) {
       	  Gen[geni].pg /= ps->MVAbase;
       	  Gen[geni].qg /= ps->MVAbase;
-	  Gen[geni].qt = Gen[geni].qt/ps->MVAbase;
-	  Gen[geni].qb = Gen[geni].qb/ps->MVAbase;
+	  Gen[geni].pb /= ps->MVAbase;
+	  Gen[geni].pt /= ps->MVAbase;
+	  Gen[geni].qt /= ps->MVAbase;
+	  Gen[geni].qb /= ps->MVAbase;
 	  Gen[geni].dyngensetup = 0;
 	  Bus[internalindex].qrange += (Gen[geni].qt - Gen[geni].qb);
 	  Bus[internalindex].qmintot += Gen[geni].qb;
@@ -1337,6 +1339,8 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
       if(Gen[geni].status) {
 	Gen[geni].pg = Gen[geni].pg/ps->MVAbase;
 	Gen[geni].qg = Gen[geni].qg/ps->MVAbase;
+	Gen[geni].pb = Gen[geni].pb/ps->MVAbase;
+	Gen[geni].pt = Gen[geni].pt/ps->MVAbase;
 	Gen[geni].qt = Gen[geni].qt/ps->MVAbase;
 	Gen[geni].qb = Gen[geni].qb/ps->MVAbase;
 	Bus[intbusnum].qrange += (Gen[geni].qt - Gen[geni].qb);
@@ -1385,6 +1389,7 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
       if(!Branch[bri].tapratio) Branch[bri].tapratio = 1.0;
       Branch[bri].phaseshift *= PETSC_PI/180.0;
 
+      Branch[bri].rateA = (Branch[bri].rateA == 0 ? 1E4:Branch[bri].rateA);
       intbusnum = busext2intmap[Branch[bri].fbus];
       Branch[bri].internal_i = intbusnum;
 
@@ -1854,7 +1859,7 @@ PetscErrorCode PSSetUp(PS ps)
   ierr = PSGetLineConnectivity(ps,Nlines,lineconn);CHKERRQ(ierr);
 
   /* Set sizes for the network */
-  ierr = DMNetworkSetSizes(networkdm,1,0,&Nbuses,&Nlines,&Ngbuses,&Nglines);CHKERRQ(ierr);
+  ierr = DMNetworkSetSizes(networkdm,1,&Nbuses,&Nlines,0,NULL);CHKERRQ(ierr);
   /* Set edge connectivity */
   ierr = DMNetworkSetEdgeList(networkdm,&lineconn,NULL);CHKERRQ(ierr);
   /* Set up network layout */

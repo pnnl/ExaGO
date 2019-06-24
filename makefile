@@ -3,10 +3,11 @@
 # For debugging
 # override CFLAGS += -Iinclude -DPFLOW_DISPLAY_RESULTS -DDEBUGPS
 
-CFLAGS += -Iinclude -DPFLOW_DISPLAY_RESULTS
+CFLAGS += -Iinclude -DPFLOW_DISPLAY_RESULTS -I${IPOPT_BUILD_DIR}/include/coin
 FFLAGS           =
 CPPFLAGS         =
 FPPFLAGS         =
+CFLAGS_IPOPT     = -DPSAPPS_HAVE_IPOPT
 
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
@@ -61,14 +62,27 @@ OPFLOW: $(OBJECTS_OPFLOW) libopflow chkopts
 	 -$(CLINKER) -o OPFLOW $(OBJECTS_OPFLOW) -L${PSAPPS_DIR} -lopflow
 	$(RM) $(OBJECTS_OPFLOW)
 
+OPFLOW_IPOPT_SRC_OBJECTS = src/ps/ps.o src/utils/comm.o src/utils/utils.o src/opflow/opflow-ipopt.o ${DYNGENMODEL_OBJECTS} ${DYNEXCMODEL_OBJECTS} ${DYNTURBGOVMODEL_OBJECTS} ${DYNSTABMODEL_OBJECTS} ${DYNLOADMODEL_OBJECTS}
+
+
+OBJECTS_OPFLOW2 = $(OPFLOW_APP_OBJECTS)
+OPFLOW_IPOPT: $(OBJECTS_OPFLOW2) libopflowipopt chkopts
+	 -$(CLINKER) -o OPFLOW_IPOPT $(OBJECTS_OPFLOW2) -L${PSAPPS_DIR} -lopflowipopt
+	$(RM) $(OBJECTS_OPFLOW2)
+
+
 libdyn:$(DYN_SRC_OBJECTS) chkopts
 	 -$(CLINKER) $(LDFLAGS) -o libdyn.$(LIB_EXT) $(DYN_SRC_OBJECTS) $(PETSC_TS_LIB)
 
+CFLAGS += ${CFLAGS_IPOPT}
 libpflow:$(PFLOW_SRC_OBJECTS) chkopts
 	 -$(CLINKER) $(LDFLAGS) -o libpflow.$(LIB_EXT) $(PFLOW_SRC_OBJECTS) $(PETSC_TS_LIB)
 
 libopflow:$(OPFLOW_SRC_OBJECTS) chkopts
 	 -$(CLINKER) $(LDFLAGS) -o libopflow.$(LIB_EXT) $(OPFLOW_SRC_OBJECTS) $(PETSC_TAO_LIB)
+
+libopflowipopt:$(OPFLOW_IPOPT_SRC_OBJECTS) chkopts
+	 -$(CLINKER) $(LDFLAGS) -o libopflowipopt.$(LIB_EXT) $(OPFLOW_IPOPT_SRC_OBJECTS) -L${IPOPT_BUILD_DIR}/lib -lipopt $(PETSC_TAO_LIB)
 
 cleanobj:
 	rm -rf $(OBJECTS_PFLOW) $(OBJECTS_PFLOW2) $(PFLOW_SRC_OBJECTS) $(OBJECTS_OPFLOW) $(OPFLOW_SRC_OBJECTS) $(OBJECTS_DYN) $(DYN_SRC_OBJECTS) *.dylib *.dSYM PFLOW PFLOW2 DYN OPFLOW

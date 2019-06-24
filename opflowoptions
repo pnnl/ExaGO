@@ -1,23 +1,24 @@
--netfile datafiles/case9mod_solved.m
+#-netfile datafiles/case9mod_solved.m
+-netfile datafiles/case118.m
 
 # Gradient calculation via finite differencing
-#-opflow_tao_fd_gradient 1
+-opflow_tao_fd_gradient 1
 
 # Hessian calculation via finite differencing
 -opflow_tao_fd_hessian 1
 
 # Max funcs (why is this needed?)
--opflow_tao_max_funcs 500000
+-opflow_tao_max_funcs 100000
 
 # Optimal Power Flow Linear Solver Options
 -opflow_pc_type lu
 -opflow_pc_factor_mat_solver_type superlu
 
 # Tao tolerances
--opflow_tao_catol 1e-8 
--opflow_tao_crtol 1e-8 
--opflow_tao_grtol 1e-8
--opflow_tao_gatol 1e-8
+-opflow_tao_catol 1e-2 
+-opflow_tao_crtol 1e-4 
+-opflow_tao_grtol 1e-4
+-opflow_tao_gatol 1e-2
 
 # Convergence monitor
 -opflow_tao_monitor

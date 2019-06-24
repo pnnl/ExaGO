@@ -257,15 +257,13 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow)
   ierr = VecDestroy(&(*opflow)->Ge);CHKERRQ(ierr);
   ierr = VecDestroy(&(*opflow)->Gi);CHKERRQ(ierr);
 
-  /* Lower and upper bounds on constraints */
-  ierr = VecDestroy(&(*opflow)->Gil);CHKERRQ(ierr);
-  ierr = VecDestroy(&(*opflow)->Giu);CHKERRQ(ierr);
-  
   /* Jacobian of constraints */
   ierr = MatDestroy(&(*opflow)->Jac_Ge);CHKERRQ(ierr);
   ierr = MatDestroy(&(*opflow)->Jac_Gi);CHKERRQ(ierr);
 
   ierr = PSDestroy(&(*opflow)->ps);CHKERRQ(ierr);
+
+  ierr = TaoDestroy(&(*opflow)->nlp);CHKERRQ(ierr);
 
   ierr = PetscFree(*opflow);CHKERRQ(ierr);
   *opflow = 0;
@@ -351,7 +349,7 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatCreate(opflow->comm->type,&jac);CHKERRQ(ierr);
   ierr = MatSetSizes(jac,Nconineq,Nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
   ierr = MatSetType(jac,MATAIJ);CHKERRQ(ierr);
-
+  //  ierr = MatSetOption(jac, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
   /* Set up preallocation */
   ierr = PetscCalloc1(Nconineq,&nnz);CHKERRQ(ierr);
 
@@ -610,6 +608,7 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatCreate(opflow->comm->type,&jac);CHKERRQ(ierr);
   ierr = MatSetSizes(jac,Nconeq,Nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
   ierr = MatSetType(jac,MATAIJ);CHKERRQ(ierr);
+  //  ierr = MatSetOption(jac, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
 
   /* Set up preallocation */
   ierr = PetscCalloc1(Nconeq,&nnz);CHKERRQ(ierr);
@@ -720,7 +719,7 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
 
     /* Bounds on voltage angles */
-    xl[loc] = -1e10; xu[loc] = 1e10;
+    xl[loc] = -PETSC_PI; xu[loc] = PETSC_PI;
 
     /* Bounds on voltage magnitudes and bounds on reactive power mismatch equality constraints */
     xl[loc+1] = bus->Vmin; xu[loc+1] = bus->Vmax;
@@ -734,10 +733,10 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
       loc = loc+2;
       if(!gen->status) xl[loc] = xu[loc] = xl[loc+1] = xu[loc+1] = 0.0;
       else {
-	xl[loc] = gen->pb/ps->MVAbase; /* PGmin */
-	xu[loc] = gen->pt/ps->MVAbase; /* PGmax */
-	xl[loc+1] = gen->qb/ps->MVAbase; /* QGmin */
-	xu[loc+1] = gen->qt/ps->MVAbase; /* QGmax */
+	xl[loc] = gen->pb;
+	xu[loc] = gen->pt;
+	xl[loc+1] = gen->qb;
+	xu[loc+1] = gen->qt;
       }
     }
   }
@@ -784,7 +783,7 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
 
-    /* Bounds on voltage angles and bounds on voltage magnitudes */
+    /* Guess for voltage angles and bounds on voltage magnitudes */
     x[loc]   = (xl[loc] + xu[loc])/2.0;
     x[loc+1] = (xl[loc+1] + xu[loc+1])/2.0;
 
@@ -1064,18 +1063,28 @@ PetscErrorCode OPFLOWInequalityConstraintsFunction(Tao nlp,Vec X,Vec Gi,void* ct
     St2 = Pt*Pt + Qt*Qt;
 
     PetscScalar Slim2;
-    Slim2 = (line->rateA == 0) ? 1E10:(line->rateA/ps->MVAbase)*(line->rateA/ps->MVAbase);
+    Slim2 = (line->rateA/ps->MVAbase)*(line->rateA/ps->MVAbase);
 
-    g[gloc]   = Sf2; /* lower bound on Sf2 */
-    g[gloc+1] = -Sf2 + Slim2; /* upper bound on Sf2 */
+    /* TAO requires inequalities of the form
+               h(x) >= 0
+       The line flow inequality constraint is
+           0 <= S <= Slim
+       Converting it to TAO form, we get two constraints
+          S >= 0 and Slim - S >= 0
+    */
+    g[gloc]   = Sf2;
+    g[gloc+1] = -Sf2 + Slim2;
     g[gloc+2] = St2;
-    g[gloc+3] = -St2 + Slim2; /* upper bound on St2 */
+    g[gloc+3] = -St2 + Slim2;
 
     gloc = gloc + 4;
   }
 
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArray(Gi,&g);CHKERRQ(ierr);
+  //  ierr = VecView(Gi,0);CHKERRQ(ierr);
+  //  exit(1);
+
   PetscFunctionReturn(0);
 }
 

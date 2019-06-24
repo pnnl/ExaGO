@@ -7,42 +7,27 @@
 
 #include <ps.h>
 #include <opflow.h>
-
+#if defined(PSAPPS_HAVE_IPOPT)
+#include <IpStdCInterface.h>
+#endif
  /** 
   * @brief private struct for optimal power flow application 
   */
 struct _p_OPFLOW{
+  /* Common fields */
   COMM comm; /**< Communicator context */
   PS   ps;   /**< Power system context */
 
   Vec  X;    /**< Solution vector */
-  PetscScalar *x; /**< Solution array - same as the array for X */
-
   Vec  G; /**< Inequality and equality constraint function */
-  Vec Gl; /**< Lower bound on G */
-  Vec Gu; /**< Upper bound on G */
-
-  Vec  Ge; /** < Equality constraint function vector */
-  Vec  Gi; /** < Inequality constraint function vector */
-
-  Vec Gel; /**< Lower bound on Ge */
-  Vec Geu; /**< Upper bound on Ge */
-  Vec Gil; /**< Lower bound on Gi */
-  Vec Giu; /**< Upper bound on Gi */
-
-  PetscScalar obj; /**< Objective function */
-
-  Vec gradobj; /**< Gradient of the objective function */
 
   Vec Xl; /**< Lower bound on solution */
   Vec Xu; /**< Upper bound on solution */
 
-  Mat  Jac;  /* Jacobian of constraints */
+  PetscScalar obj; /**< Objective function */
+  Vec gradobj; /**< Gradient of the objective function */
 
-  Mat Jac_Ge; /* Equality constraint Jacobian */
-  Mat Jac_Gi; /* Inequality constraint Jacobian */
-
-  Mat  Hes;  /* Lagrangian Hessian */  
+  PetscBool setupcalled; /**< OPFLOWSetUp called? */
 
   PetscInt Nconeq; /**< Number of equality constraints */
   PetscInt Nconineq; /**< Number of inequality constraints */
@@ -51,21 +36,42 @@ struct _p_OPFLOW{
 
   PetscInt n; /**< Number of variables */
   PetscInt m; /**< Number of constraints */
+
+  /* For TAO */
+  Vec  Ge; /** < Equality constraint function vector */
+  Vec  Gi; /** < Inequality constraint function vector */
+  
+  Mat Jac_Ge; /* Equality constraint Jacobian */
+  Mat Jac_Gi; /* Inequality constraint Jacobian */
+
+  Tao nlp;    /* Optimization problem */
+
+  PetscBool converged; // Convergence status
+
+  /* For IPOPT */
+  Vec Gl; /**< Lower bound on G */
+  Vec Gu; /**< Upper bound on G */
+
+  Mat  Jac;  /* Jacobian of constraints */
+  Mat  Hes;  /* Lagrangian Hessian */  
+  
+  PetscScalar *x; /**< Solution array - same as the array for X */
+  
   PetscInt nnz_jac_g; /**< Number of nonzeros in the jacobian of the constraints */
   PetscInt nnz_hes; /**< Number of nonzeros in the Lagrangian Hessian */
-
-  PetscBool setupcalled; /**< OPFLOWSetUp called? */
 
   /* Lagrange multipliers */
   Vec lambda_g;
   Vec lambda_xl;
   Vec lambda_xu;
 
+#if defined(PSAPPS_HAVE_IPOPT)
   /* Ipopt specific terms */
-  //  IpoptProblem nlp; /**< Ipopt solver */
-  Tao nlp;
+  IpoptProblem nlp_ipopt; /**< Ipopt solver */
+  enum ApplicationReturnStatus solve_status;
+#endif
 
-  PetscBool converged; // Convergence status
+
 };
 /**
  * @brief Sets the bounds on variables and constraints
