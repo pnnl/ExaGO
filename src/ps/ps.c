@@ -1793,7 +1793,7 @@ PetscErrorCode PSSetUp(PS ps)
   PetscErrorCode ierr;
   DM             networkdm;
   MPI_Comm       mpicomm=ps->comm->type;
-  PetscInt       Nlines,Nbuses,Ngbuses=PETSC_DETERMINE,Nglines=PETSC_DETERMINE;
+  PetscInt       Nlines,Nbuses;
   PetscInt       numbusvariables; /* Number of variables at each bus..set by the application */
   PetscInt       i;
   PetscBool      match;
