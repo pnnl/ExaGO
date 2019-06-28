@@ -1209,7 +1209,7 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
       }
     }
   }
-  AddIpoptStrOption(opflow->nlp_ipopt, (char*)"derivative_test", (char*)"first-order");
+  //  AddIpoptStrOption(opflow->nlp_ipopt, (char*)"derivative_test", (char*)"first-order");
   AddIpoptStrOption(opflow->nlp_ipopt,(char*)"linear_solver",(char*)"mumps");
   // AddIpoptNumOption(opflow->nlp_ipopt,(char*)"bound_relax_factor",1e-4);
   

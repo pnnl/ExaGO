@@ -3,11 +3,11 @@
 # For debugging
 # override CFLAGS += -Iinclude -DPFLOW_DISPLAY_RESULTS -DDEBUGPS
 
-CFLAGS += -Iinclude -DPFLOW_DISPLAY_RESULTS -I${IPOPT_BUILD_DIR}/include/coin
+CFLAGS += -Iinclude -I${IPOPT_BUILD_DIR}/include/coin
 FFLAGS           =
 CPPFLAGS         =
 FPPFLAGS         =
-CFLAGS_IPOPT     = -DPSAPPS_HAVE_IPOPT
+CFLAGS_IPOPT     = #-DPSAPPS_HAVE_IPOPT
 
 OS := $(shell uname)
 ifeq ($(OS),Darwin)

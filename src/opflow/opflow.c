@@ -81,15 +81,13 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
 	continue;
       }
       
-      /* Shunt injections and PV_BUS voltage magnitude constraint */
+      /* Shunt injections */
       val[0] = 0.0; val[1] = 2*Vm*bus->gl;
       val[2] = 0.0; val[3]= -2*Vm*bus->bl; /* Partial derivative for shunt contribution */
       ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);      
 
       genctr = 0;
       for(k=0; k < bus->ngen; k++) {
-	// How do we handle gen->status = 0 ?
-
 	col[0] = locglob + 2 + genctr;
 	val[0] = -1;
 	ierr = MatSetValues(Je,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
@@ -349,7 +347,7 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatCreate(opflow->comm->type,&jac);CHKERRQ(ierr);
   ierr = MatSetSizes(jac,Nconineq,Nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
   ierr = MatSetType(jac,MATAIJ);CHKERRQ(ierr);
-  //  ierr = MatSetOption(jac, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
+
   /* Set up preallocation */
   ierr = PetscCalloc1(Nconineq,&nnz);CHKERRQ(ierr);
 
@@ -608,7 +606,6 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatCreate(opflow->comm->type,&jac);CHKERRQ(ierr);
   ierr = MatSetSizes(jac,Nconeq,Nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
   ierr = MatSetType(jac,MATAIJ);CHKERRQ(ierr);
-  //  ierr = MatSetOption(jac, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRQ(ierr);
 
   /* Set up preallocation */
   ierr = PetscCalloc1(Nconeq,&nnz);CHKERRQ(ierr);
