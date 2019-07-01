@@ -59,7 +59,7 @@ OPFLOW_SRC_OBJECTS = src/ps/ps.o src/utils/comm.o src/utils/utils.o src/opflow/o
 OPFLOW_APP_OBJECTS = applications/opflow-main.o
 OBJECTS_OPFLOW = $(OPFLOW_APP_OBJECTS)
 OPFLOW: $(OBJECTS_OPFLOW) libopflow chkopts
-	 -$(CLINKER) -o OPFLOW $(OBJECTS_OPFLOW) -L${PSAPPS_DIR} -lopflow
+	 -$(CLINKER) -o OPFLOW $(OBJECTS_OPFLOW) ${PETSC_TAO_LIB} -L${PSAPPS_DIR} -lopflow
 	$(RM) $(OBJECTS_OPFLOW)
 
 OPFLOW_IPOPT_SRC_OBJECTS = src/ps/ps.o src/utils/comm.o src/utils/utils.o src/opflow/opflow-ipopt.o ${DYNGENMODEL_OBJECTS} ${DYNEXCMODEL_OBJECTS} ${DYNTURBGOVMODEL_OBJECTS} ${DYNSTABMODEL_OBJECTS} ${DYNLOADMODEL_OBJECTS}
