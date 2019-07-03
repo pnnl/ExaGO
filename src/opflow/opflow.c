@@ -80,11 +80,11 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
 	rowctr += 2;
 	continue;
       }
-      
+
       /* Shunt injections */
       val[0] = 0.0; val[1] = 2*Vm*bus->gl;
       val[2] = 0.0; val[3]= -2*Vm*bus->bl; /* Partial derivative for shunt contribution */
-      ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);      
+      ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
 
       genctr = 0;
       for(k=0; k < bus->ngen; k++) {
@@ -95,9 +95,9 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
 	col[0] = locglob + 2 + genctr+1;
 	val[0] = -1;
 	ierr = MatSetValues(Je,1,row+1,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-	
+
 	genctr += 2;
-      }     
+      }
     }
 
     /* Partial derivatives of network equations */
@@ -107,7 +107,7 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
 
     /* Get the lines supporting the bus */
     ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
-    
+
     for(k=0; k < nconnlines; k++) {
       line = connlines[k];
       if(!line->status) continue;
@@ -150,7 +150,7 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
 	val[2] = Vmf*Vmt*(Gft*sin(thetaft) - Bft*cos(thetaft));
 	val[3] = Vmf*(Gft*cos(thetaft) + Bft*sin(thetaft));
 	ierr = MatSetValues(Je,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
-	
+
 	row[0] = rstart + rowctr + 1;
 	val[0] = Vmf*Vmt*(Bft*sin(thetaft) + Gft*cos(thetaft));
 	val[1] = -2*Bff*Vmf + Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
@@ -165,7 +165,7 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
 	val[2] = Vmt*Vmf*(Gtf*sin(thetatf) - Btf*cos(thetatf));
 	val[3] = Vmt*(Gtf*cos(thetatf) + Btf*sin(thetatf));
 	ierr = MatSetValues(Je,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
-	
+
 	row[0] = rstart + rowctr + 1;
 	val[0] = Vmt*Vmf*(Btf*sin(thetatf) + Gtf*cos(thetatf));
 	val[1] = -2*Btt*Vmt + Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
@@ -176,13 +176,13 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
     }
     rowctr += 2;
   }
-  
+
   ierr = VecRestoreArrayRead(localX,&xarr);CHKERRQ(ierr);
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
-  
+
   ierr = MatAssemblyBegin(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  
+
   //  ierr = MatView(Je,0);
   //  exit(1);
   PetscFunctionReturn(0);
@@ -226,7 +226,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   ierr = TaoSetOptionsPrefix(opflow->nlp,"opflow_");CHKERRQ(ierr);
 
   opflow->setupcalled = PETSC_FALSE;
-  
+
   *opflowout = opflow;
   PetscFunctionReturn(0);
 }
@@ -250,7 +250,7 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow)
   /* Lower and upper bounds on X */
   ierr = VecDestroy(&(*opflow)->Xl);CHKERRQ(ierr);
   ierr = VecDestroy(&(*opflow)->Xu);CHKERRQ(ierr);
-  
+
   /* Constraints vector */
   ierr = VecDestroy(&(*opflow)->Ge);CHKERRQ(ierr);
   ierr = VecDestroy(&(*opflow)->Gi);CHKERRQ(ierr);
@@ -270,7 +270,7 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow)
 }
 
 /*
-  OPFLOWReadMatPowerData - Reads the network data given in MATPOWER data format 
+  OPFLOWReadMatPowerData - Reads the network data given in MATPOWER data format
 
   Input Parameter
 +  opflow - The OPFLOW object
@@ -359,7 +359,7 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   for(i=0; i < ps->Nbranch; i++) {
     line = &ps->line[i];
 
-    nnz[mloc] += 4; 
+    nnz[mloc] += 4;
     nnz[mloc+1] += 4;
     nnz[mloc+2] += 4;
     nnz[mloc+3] += 4;
@@ -398,7 +398,7 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
     row[0] = mloc+2, row[1] = mloc+3;
     col[0] = loct; col[1] = loct+1; col[2] = locf; col[3] = locf+1;
     ierr = MatSetValues(jac,2,row,4,col,val,INSERT_VALUES);CHKERRQ(ierr);
-    
+
     mloc += 4;
   }
 
@@ -465,19 +465,19 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
     ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
 
     PetscScalar Vmf,Vmt,thetaf,thetat,thetaft,thetatf;
-      
+
     thetaf  = x[xlocf];
     Vmf     = x[xlocf+1];
     thetat  = x[xloct];
     Vmt     = x[xloct+1];
     thetaft = thetaf - thetat;
     thetatf = thetat - thetaf;
-    
+
     PetscScalar Pf,Qf,Pt,Qt;
 
     Pf = Gff*Vmf*Vmf  + Vmf*Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
     Qf = -Bff*Vmf*Vmf + Vmf*Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
-	
+
     Pt = Gtt*Vmt*Vmt  + Vmt*Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
     Qt = -Btt*Vmt*Vmt + Vmt*Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
 
@@ -660,7 +660,7 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
     for(k=0; k < bus->ngen; k++) {
       /* Skip over OFF generators OR use status*x[i] ? */
       loc += 2;
-      col[0] = loc; 
+      col[0] = loc;
       ierr = MatSetValues(jac,1,row,1,col,val,INSERT_VALUES);CHKERRQ(ierr);
       col[1] = loc+1;
       ierr = MatSetValues(jac,1,row+1,1,col+1,val,INSERT_VALUES);CHKERRQ(ierr);
@@ -672,10 +672,10 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
       ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
       busf = connbuses[0];
       bust = connbuses[1];
-      
+
       ierr = PSBUSGetVariableGlobalLocation(busf,&locf);CHKERRQ(ierr);
       ierr = PSBUSGetVariableGlobalLocation(bust,&loct);CHKERRQ(ierr);
-      
+
       if(bus == busf) {
 	row[0] = mloc;
 	col[0] = locf; col[1] = locf+1; col[2] = loct; col[3] = loct+1;
@@ -729,7 +729,7 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
   /* Get array pointers */
   ierr = VecGetArray(Xl,&xl);CHKERRQ(ierr);
   ierr = VecGetArray(Xu,&xu);CHKERRQ(ierr);
-  
+
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
     if (bus->isghost) continue;
@@ -744,7 +744,7 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
 
     if(bus->ide == REF_BUS || bus->ide == ISOLATED_BUS) xl[loc] = xu[loc] = bus->va*PETSC_PI/180.0;
     if(bus->ide == ISOLATED_BUS) xl[loc+1] = xu[loc+1] = bus->vm;
-    
+
     for(k=0; k < bus->ngen; k++) {
       PSGEN gen;
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
@@ -798,7 +798,7 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
   ierr = VecGetArray(X,&x);CHKERRQ(ierr);
   ierr = VecGetArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
   ierr = VecGetArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
-  
+
   for(i=0; i < ps->nbus; i++) {
     PetscInt k;
 
@@ -849,18 +849,27 @@ PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X, PetscScalar* ob
   PetscInt       i;
   PSBUS          bus;
   PetscInt       loc;
+  Vec            localX, localgrad;
 
   PetscFunctionBegin;
   *obj = 0.0;
-  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecSet(grad,0.0);CHKERRQ(ierr);
-  ierr = VecGetArray(grad,&df);CHKERRQ(ierr);
+
+  ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(ps->networkdm,&localgrad);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,grad,INSERT_VALUES,localgrad);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,grad,INSERT_VALUES,localgrad);CHKERRQ(ierr);
+
+  ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
+  ierr = VecGetArray(localgrad,&df);CHKERRQ(ierr);
 
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
-    
+
     PetscInt k;
     PSGEN    gen;
     PetscScalar Pg;
@@ -873,8 +882,16 @@ PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X, PetscScalar* ob
       df[loc] = ps->MVAbase*(2*gen->cost_alpha*Pg + gen->cost_beta);
     }
   }
-  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
-  ierr = VecRestoreArray(grad,&df);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArray(localgrad,&df);CHKERRQ(ierr);
+
+  ierr = DMLocalToGlobalBegin(ps->networkdm,localgrad,ADD_VALUES,grad);CHKERRQ(ierr);
+  ierr = DMLocalToGlobalEnd(ps->networkdm,localgrad,ADD_VALUES,grad);CHKERRQ(ierr);
+
+  ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(ps->networkdm,&localgrad);CHKERRQ(ierr);
+
+  ierr = VecView(grad,PETSC_VIEWER_STDOUT_WORLD);
   PetscFunctionReturn(0);
 }
 
@@ -884,7 +901,7 @@ PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X, PetscScalar* ob
   Input Parameters:
 + Tao - the Tao nlp solver object
 . X   - the current iterate
-- ctx - application data set with TaoSetEqualityConstraintsRoutine  
+- ctx - application data set with TaoSetEqualityConstraintsRoutine
 
   Output Parameters:
 . Ge  - vector of equality constraints
@@ -918,12 +935,12 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
 
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
-    
+
     ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
     theta = x[xloc];
     Vm    = x[xloc+1];
 
-    if(bus->ide == ISOLATED_BUS) { 
+    if(bus->ide == ISOLATED_BUS) {
       g[gloc] =  theta - bus->va*PETSC_PI/180.0;
       g[gloc+1] = Vm - bus->vm;
       continue;
@@ -938,7 +955,7 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
       PetscScalar Pg,Qg;
       Pg = x[xloc];
       Qg = x[xloc+1];
-      
+
       g[gloc]   -= Pg;
       g[gloc+1] -= Qg;
     }
@@ -954,9 +971,9 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
 
     for(k=0; k < nconnlines; k++) {
       line = connlines[k];
-      
+
       if(!line->status) continue;
-      
+
       PetscScalar Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
       Gff = line->yff[0];
       Bff = line->yff[1];
@@ -966,30 +983,30 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
       Btf = line->ytf[1];
       Gtt = line->ytt[0];
       Btt = line->ytt[1];
-      
+
       ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
       busf = connbuses[0];
       bust = connbuses[1];
-      
+
       ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
       ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
-      
+
       PetscScalar Vmf,Vmt,thetaf,thetat,thetaft,thetatf;
-      
+
       thetaf  = x[xlocf];
       Vmf     = x[xlocf+1];
       thetat  = x[xloct];
       Vmt     = x[xloct+1];
       thetaft = thetaf - thetat;
       thetatf = thetat - thetaf;
-      
+
       PetscScalar Pf,Qf,Pt,Qt;
-      
+
       if(bus == busf) {
 	Pf = Gff*Vmf*Vmf  + Vmf*Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
 	Qf = -Bff*Vmf*Vmf + Vmf*Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
 
-	g[gloc]   += Pf; 
+	g[gloc]   += Pf;
 	g[gloc+1] += Qf;
       } else {
 	Pt = Gtt*Vmt*Vmt  + Vmt*Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
@@ -1014,7 +1031,7 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
   Input Parameters:
 + nlp - the TAO nlp solver object
 . X   - the current iterate
-- ctx - Application data set with TaoSetInequalityConstraintsRoutine 
+- ctx - Application data set with TaoSetInequalityConstraintsRoutine
 
   Output Parameters:
 . Gi  - vector of inequality constraints
@@ -1066,19 +1083,19 @@ PetscErrorCode OPFLOWInequalityConstraintsFunction(Tao nlp,Vec X,Vec Gi,void* ct
     ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
 
     PetscScalar Vmf,Vmt,thetaf,thetat,thetaft,thetatf;
-      
+
     thetaf  = x[xlocf];
     Vmf     = x[xlocf+1];
     thetat  = x[xloct];
     Vmt     = x[xloct+1];
     thetaft = thetaf - thetat;
     thetatf = thetat - thetaf;
-    
+
     PetscScalar Pf,Qf,Pt,Qt,Sf2,St2;
 
     Pf = Gff*Vmf*Vmf  + Vmf*Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
     Qf = -Bff*Vmf*Vmf + Vmf*Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
-	
+
     Pt = Gtt*Vmt*Vmt  + Vmt*Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
     Qt = -Btt*Vmt*Vmt + Vmt*Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
 
@@ -1173,7 +1190,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   }
   printf("[%d] nbus/Nbus %d (%d), %d; nbranch/Nbranch %d %d\n",rank,ps->nbus,nbus,ps->Nbus,ps->nbranch,ps->Nbranch);
   ierr = MPI_Barrier(ps->comm->type);CHKERRQ(ierr);
-  
+
   opflow->nconeq   = 2*nbus;
   opflow->Nconeq   = 2*ps->Nbus;
   opflow->nconineq = 2*2*ps->nbranch;
@@ -1220,7 +1237,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   /* Set the different callbacks Tao requires */
   /* Objective and Gradient */
   ierr = TaoSetObjectiveAndGradientRoutine(opflow->nlp,OPFLOWObjectiveandGradientFunction,(void*)opflow);CHKERRQ(ierr);
-  
+
   /* Equality Constraints */
   ierr = TaoSetEqualityConstraintsRoutine(opflow->nlp,opflow->Ge,OPFLOWEqualityConstraintsFunction,(void*)opflow);CHKERRQ(ierr);
 
@@ -1237,7 +1254,3 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   opflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);
 }
-
-
-
-
