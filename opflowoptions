@@ -1,5 +1,6 @@
--netfile datafiles/case9mod_solved.m
+-netfile datafiles/case9mod.m
 #-netfile datafiles/case118.m
+#-netfile datafiles/case5.m
 
 # Gradient calculation via finite differencing
 #-opflow_tao_fd_gradient 1
@@ -13,6 +14,7 @@
 # Optimal Power Flow Linear Solver Options
 -opflow_pc_type lu
 -opflow_pc_factor_mat_solver_type superlu
+-opflow_ksp_error_if_not_converged
 
 # Tao tolerances
 -opflow_tao_catol 1e-2 
