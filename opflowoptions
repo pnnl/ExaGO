@@ -33,6 +33,7 @@
 #-log_summary
 
 #Partitioner (requires parmetis package)
+-petscpartitioner_type simple
 #-petscpartitioner_type parmetis
 
 #options

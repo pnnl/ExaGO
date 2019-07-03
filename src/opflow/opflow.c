@@ -207,7 +207,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
 
   ierr = COMMCreate(mpicomm,&opflow->comm);CHKERRQ(ierr);
 
-  if(opflow->comm->size > 1) SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Optimal Power Flow not supported in parallel");
+  //if(opflow->comm->size > 1) SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Optimal Power Flow not supported in parallel");
 
   ierr = PSCreate(mpicomm,&opflow->ps);CHKERRQ(ierr);
 
@@ -330,7 +330,7 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   PetscErrorCode ierr;
   Mat            jac;
   PetscInt       Nconineq=opflow->Nconineq; /* Number of constraints */
-  PetscInt       Nvar=opflow->Nvar; /* Number of variables */
+  PetscInt       nvar=opflow->nvar,Nvar=opflow->Nvar; /* Number of variables */
   PS             ps=opflow->ps;
   PetscInt       i;
   PSLINE         line;
@@ -343,7 +343,7 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   PetscScalar    val[4];
 
   PetscFunctionBegin;
-
+  printf("Ji: Nconineq %d, Nvar %d\n",Nconineq,Nvar);
   ierr = MatCreate(opflow->comm->type,&jac);CHKERRQ(ierr);
   ierr = MatSetSizes(jac,Nconineq,Nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
   ierr = MatSetType(jac,MATAIJ);CHKERRQ(ierr);
@@ -585,8 +585,8 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
 {
   PetscErrorCode ierr;
   Mat            jac;
-  PetscInt       Nconeq=opflow->Nconeq; /* Number of equality constraints */
-  PetscInt       Nvar=opflow->Nvar; /* Number of variables */
+  PetscInt       nconeq=opflow->nconeq,Nconeq=opflow->Nconeq; /* Local and global number of equality constraints */
+  PetscInt       nvar=opflow->nvar,Nvar=opflow->Nvar; /* Number of variables */
   PS             ps=opflow->ps;
   PetscInt       i,k;
   PSLINE         line;
@@ -600,11 +600,14 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   PetscInt       *nnz;
   PetscInt       row[2],col[4];
   PetscScalar    val[4];
+  MPI_Comm       comm=opflow->comm->type;
+  PetscMPIInt    rank;
 
   PetscFunctionBegin;
-
+  ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
+  printf("[%d] Je: nconeq %d, Nconeq %d,Nvar %d\n",rank,nconeq,Nconeq,Nvar);
   ierr = MatCreate(opflow->comm->type,&jac);CHKERRQ(ierr);
-  ierr = MatSetSizes(jac,Nconeq,Nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
+  ierr = MatSetSizes(jac,nconeq,nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
   ierr = MatSetType(jac,MATAIJ);CHKERRQ(ierr);
 
   /* Set up preallocation */
@@ -623,6 +626,10 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
 
   ierr = MatSeqAIJSetPreallocation(jac,0,nnz);CHKERRQ(ierr);
   ierr = PetscFree(nnz);CHKERRQ(ierr);
+
+  PetscInt rstart,rend;
+  ierr = MatGetOwnershipRange(jac,&rstart,&rend);CHKERRQ(ierr);
+  printf("[%d] Je rstart/end: %d %d\n",rank,rstart,rend);
 
   mloc = 0; /* Should use MatGetOwnershipRange here for parallel */
   val[0] = val[1] = val[2] = val[3] = 0.0;
@@ -1131,14 +1138,28 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
+  PetscMPIInt    rank;
+  PetscInt       i,nbus=0;
+  PSBUS          bus;
 
   PetscFunctionBegin;
-
   /* Set up PS object */
   ierr = PSSetUp(ps);CHKERRQ(ierr);
 
-  opflow->Nconeq = 2*ps->Nbus;
+  /* Get local nconeq */
+  ierr = MPI_Comm_rank(ps->comm->type,&rank);CHKERRQ(ierr);
+  for (i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    if (!bus->isghost) nbus++;
+  }
+  printf("[%d] nbus/Nbus %d (%d), %d; nbranch/Nbranch %d %d\n",rank,ps->nbus,nbus,ps->Nbus,ps->nbranch,ps->Nbranch);
+  ierr = MPI_Barrier(ps->comm->type);CHKERRQ(ierr);
+  
+  opflow->nconeq   = 2*nbus;
+  opflow->Nconeq   = 2*ps->Nbus;
+  opflow->nconineq = 2*2*ps->nbranch;
   opflow->Nconineq = 2*2*ps->Nbranch; /* 0 <= Sf2 <= Smax2, 0 <= St2 <= Smax2 */
+  printf("[%d] nconeq/Nconeq %d, %d; nconineq/Nconineq %d, %d\n",rank,opflow->nconeq,opflow->Nconeq,opflow->nconineq,opflow->Nconineq);
 
   /* Create the solution vector */
   ierr = PSCreateGlobalVector(opflow->ps,&opflow->X);CHKERRQ(ierr);
@@ -1146,6 +1167,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = TaoSetInitialVector(opflow->nlp,opflow->X);CHKERRQ(ierr);
 
   /* Get the size of the solution vector */
+  ierr = VecGetLocalSize(opflow->X,&opflow->nvar);CHKERRQ(ierr);
   ierr = VecGetSize(opflow->X,&opflow->Nvar);CHKERRQ(ierr);
 
   /* Create the vector for upper and lower bounds on X */
@@ -1154,12 +1176,14 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 
   /* Create the equality constraint vector */
   ierr = VecCreate(opflow->comm->type,&opflow->Ge);CHKERRQ(ierr);
-  ierr = VecSetSizes(opflow->Ge,PETSC_DETERMINE,opflow->Nconeq);CHKERRQ(ierr);
+  //ierr = VecSetSizes(opflow->Ge,PETSC_DETERMINE,opflow->Nconeq);CHKERRQ(ierr);
+  ierr = VecSetSizes(opflow->Ge,opflow->nconeq,PETSC_DETERMINE);CHKERRQ(ierr);
   ierr = VecSetFromOptions(opflow->Ge);CHKERRQ(ierr);
 
   /* Create the inequality constraint vector */
   ierr = VecCreate(opflow->comm->type,&opflow->Gi);CHKERRQ(ierr);
-  ierr = VecSetSizes(opflow->Gi,opflow->Nconineq,PETSC_DETERMINE);CHKERRQ(ierr);
+  //ierr = VecSetSizes(opflow->Gi,opflow->Nconineq,PETSC_DETERMINE);CHKERRQ(ierr);
+  ierr = VecSetSizes(opflow->Gi,opflow->nconineq,PETSC_DETERMINE);CHKERRQ(ierr);
   ierr = VecSetFromOptions(opflow->Gi);CHKERRQ(ierr);
 
   /* Create the equality constraint Jacobian */
