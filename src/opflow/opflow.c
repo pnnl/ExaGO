@@ -843,36 +843,32 @@ PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X, PetscScalar* ob
 {
   PetscErrorCode ierr;
   OPFLOW         opflow=(OPFLOW)ctx;
-  const PetscScalar *x;
-  PetscScalar        *df;
+  PetscScalar    *df,Pg;
   PS             ps=opflow->ps;
-  PetscInt       i;
+  PetscInt       i,k;
   PSBUS          bus;
   PetscInt       loc;
-  Vec            localX, localgrad;
+  Vec            localX,localgrad;
+  PSGEN          gen;
+  const PetscScalar *x;
 
   PetscFunctionBegin;
   *obj = 0.0;
-  ierr = VecSet(grad,0.0);CHKERRQ(ierr);
 
   ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
   ierr = DMGetLocalVector(ps->networkdm,&localgrad);CHKERRQ(ierr);
+
   ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
-  ierr = DMGlobalToLocalBegin(ps->networkdm,grad,INSERT_VALUES,localgrad);CHKERRQ(ierr);
   ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
-  ierr = DMGlobalToLocalEnd(ps->networkdm,grad,INSERT_VALUES,localgrad);CHKERRQ(ierr);
+  ierr = VecSet(localgrad,0.0);CHKERRQ(ierr);
 
   ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
   ierr = VecGetArray(localgrad,&df);CHKERRQ(ierr);
 
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
-
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
 
-    PetscInt k;
-    PSGEN    gen;
-    PetscScalar Pg;
     for(k=0; k < bus->ngen; k++) {
       loc = loc+2;
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
@@ -885,8 +881,8 @@ PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X, PetscScalar* ob
   ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
   ierr = VecRestoreArray(localgrad,&df);CHKERRQ(ierr);
 
-  ierr = DMLocalToGlobalBegin(ps->networkdm,localgrad,ADD_VALUES,grad);CHKERRQ(ierr);
-  ierr = DMLocalToGlobalEnd(ps->networkdm,localgrad,ADD_VALUES,grad);CHKERRQ(ierr);
+  ierr = DMLocalToGlobalBegin(ps->networkdm,localgrad,INSERT_VALUES,grad);CHKERRQ(ierr);
+  ierr = DMLocalToGlobalEnd(ps->networkdm,localgrad,INSERT_VALUES,grad);CHKERRQ(ierr);
 
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
   ierr = DMRestoreLocalVector(ps->networkdm,&localgrad);CHKERRQ(ierr);
