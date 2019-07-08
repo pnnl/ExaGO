@@ -751,7 +751,7 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
 
   ierr = VecRestoreArray(Xl,&xl);CHKERRQ(ierr);
   ierr = VecRestoreArray(Xu,&xu);CHKERRQ(ierr);
-#if 1
+#if 0
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Xl:\n");
   ierr = VecView(Xl,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Xu:\n");
@@ -816,7 +816,7 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
   ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
-
+  VecView(X,0);
   PetscFunctionReturn(0);
 }
 
@@ -912,11 +912,13 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
   PSLOAD         load;
   PetscScalar    theta,Vm;
   const PetscScalar *x;
+  MPI_Comm       comm=opflow->comm->type;
+  PetscMPIInt    rank,size;
 
   PetscFunctionBegin;
+  ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
+  ierr = MPI_Comm_size(comm,&size);CHKERRQ(ierr);
   ierr = VecSet(Ge,0.0);CHKERRQ(ierr);
-  printf("EqualityConstraintsFunction, Ge:\n");
-  ierr = VecView(Ge,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
 
   ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
   ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
@@ -928,8 +930,8 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
 
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
-    if (bus->isghost) continue;
 
+    if (!bus->isghost) {
     ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
     theta = x[xloc];
     Vm    = x[xloc+1];
@@ -960,6 +962,7 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
       g[gloc]   += load->pl;
       g[gloc+1] += load->ql;
     }
+    } //if (!bus->isghost) 
 
     ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
 
@@ -1020,6 +1023,7 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
   printf("Ge:\n");
   ierr = VecView(Ge,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  exit(1);
   PetscFunctionReturn(0);
 }
 
