@@ -342,10 +342,11 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   PetscInt       row[2],col[4];
   PetscScalar    val[8];
   MPI_Comm       comm=opflow->comm->type;
-  PetscMPIInt    rank;
+  PetscMPIInt    rank,size;
 
   PetscFunctionBegin;
   ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
+  ierr = MPI_Comm_size(comm,&size);CHKERRQ(ierr);
   printf("[%d] Ji: Nconineq %d %d, Nvar %d %d\n",rank,nconineq,Nconineq,nvar,Nvar);
 
   ierr = MatCreate(opflow->comm->type,&jac);CHKERRQ(ierr);
@@ -406,8 +407,9 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatAssemblyEnd(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
   *mat = jac;
-  //ierr = PetscPrintf(comm,"Ji structure:\n");CHKERRQ(ierr);
-  //ierr = MatView(jac,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  ierr = PetscPrintf(comm,"Ji structure:\n");CHKERRQ(ierr);
+  ierr = MatView(jac,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  if (size > 1) exit(1);
   PetscFunctionReturn(0);
 }
 
@@ -597,13 +599,12 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
 {
   PetscErrorCode ierr;
   Mat            jac;
-  PetscInt       nconeq=opflow->nconeq,Nconeq=opflow->Nconeq; /* Local and global number of equality constraints */
-  PetscInt       nvar=opflow->nvar,Nvar=opflow->Nvar; /* Number of variables */
+  PetscInt       nconeq=opflow->nconeq; /* Local number of equality constraints */
+  PetscInt       nvar=opflow->nvar;     /* Local number of variables */
   PS             ps=opflow->ps;
   PetscInt       i,k;
   PSLINE         line;
   PSBUS          bus;
-  PetscInt       mloc;
   const PSBUS    *connbuses;
   PetscInt       nconnlines;
   const PSLINE   *connlines;
@@ -643,8 +644,6 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatMPIAIJSetPreallocation(jac,0,nnz,0,nnz);CHKERRQ(ierr);
   ierr = PetscFree(nnz);CHKERRQ(ierr);
 #endif
-
-  //ierr = DMNetworkSetVertexLocalToGlobalOrdering(networkdm);CHKERRQ(ierr);
   
   for (i=0; i< 4; i++) val[i] = 0.0;
   for (i=0; i < ps->nbus; i++) {
@@ -692,7 +691,7 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   *mat = jac;
   ierr = PetscPrintf(comm,"Je structure:\n");CHKERRQ(ierr);
   ierr = MatView(jac,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  if (size > 1) exit(1);
+  //if (size > 1) exit(1);
   PetscFunctionReturn(0);
 }
 
@@ -714,10 +713,8 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
   PetscInt       i,k;
   PSBUS          bus;
   PetscInt       loc;
-  DM             networkdm=ps->networkdm;
 
   PetscFunctionBegin;
-
   /* Get array pointers */
   ierr = VecGetArray(Xl,&xl);CHKERRQ(ierr);
   ierr = VecGetArray(Xu,&xu);CHKERRQ(ierr);
@@ -909,7 +906,7 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
   const PSLINE   *connlines;
   PSBUS          busf,bust;
   PetscInt       xloc,xlocf,xloct;
-  Vec            localX;//,localGe;
+  Vec            localX;
   PSLOAD         load;
   PetscScalar    theta,Vm;
   const PetscScalar *x;
@@ -918,11 +915,8 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
   ierr = VecSet(Ge,0.0);CHKERRQ(ierr);
 
   ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
-  //ierr = DMGetLocalVector(ps->networkdm,&localGe);CHKERRQ(ierr);
-
   ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
   ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
-  //ierr = VecSet(Ge,0.0);CHKERRQ(ierr);
 
   ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
   ierr = VecGetArray(Ge,&g);CHKERRQ(ierr);
@@ -1017,17 +1011,10 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
 
   ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
   ierr = VecRestoreArray(Ge,&g);CHKERRQ(ierr);
-  printf("localGe:\n");
-  //VecView(localGe,0);
-
-  //ierr = DMLocalToGlobalBegin(ps->networkdm,localGe,INSERT_VALUES,Ge);CHKERRQ(ierr);
-  //ierr = DMLocalToGlobalEnd(ps->networkdm,localGe,INSERT_VALUES,Ge);CHKERRQ(ierr);
-
+ 
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
-  //ierr = DMRestoreLocalVector(ps->networkdm,&localGe);CHKERRQ(ierr);
-  
-  ierr = VecView(Ge,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  
+  //printf("Ge:\n");
+  //ierr = VecView(Ge,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
