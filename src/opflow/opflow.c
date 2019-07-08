@@ -645,7 +645,7 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatMPIAIJSetPreallocation(jac,0,nnz,0,nnz);CHKERRQ(ierr);
   ierr = PetscFree(nnz);CHKERRQ(ierr);
 #endif
-  
+
   for (i=0; i< 4; i++) val[i] = 0.0;
   for (i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
@@ -897,12 +897,12 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
 {
   PetscErrorCode ierr;
   OPFLOW         opflow=(OPFLOW)ctx;
-  PetscScalar    *g;
+  PetscScalar    *g,vals[1];
   PS             ps=opflow->ps;
   PetscInt       i,k;
   PSLINE         line;
   PSBUS          bus;
-  PetscInt       gloc=0;
+  PetscInt       gloc=0,row[1];
   const PSBUS    *connbuses;
   PetscInt       nconnlines;
   const PSLINE   *connlines;
@@ -925,11 +925,13 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
   ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
 
   ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
-  ierr = VecGetArray(Ge,&g);CHKERRQ(ierr);
+  //ierr = VecGetArray(Ge,&g);CHKERRQ(ierr);
   /* Need to use DMLocaltoGlobal stuff in parallel */
 
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
+    ierr = DMNetworkGetVertexLocalToGlobalOrdering(ps->networkdm,i,&gloc);CHKERRQ(ierr);
+    gloc = 2*gloc;
 
     if (!bus->isghost) {
     ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
@@ -937,14 +939,24 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
     Vm    = x[xloc+1];
 
     if(bus->ide == ISOLATED_BUS) {
-      g[gloc] =  theta - bus->va*PETSC_PI/180.0;
-      g[gloc+1] = Vm - bus->vm;
+      row[0]  = gloc;
+      vals[0] =  theta - bus->va*PETSC_PI/180.0;
+      VecSetValues(Ge,1,row,vals,ADD_VALUES);
+
+      row[0]  = gloc + 1;
+      vals[0] = Vm - bus->vm;
+      VecSetValues(Ge,1,row,vals,ADD_VALUES);
       continue;
     }
 
     /* Shunt injections */
-    g[gloc]   += Vm*Vm*bus->gl;
-    g[gloc+1] += -Vm*Vm*bus->bl;
+    row[0]  = gloc;
+    vals[0] = Vm*Vm*bus->gl;
+    VecSetValues(Ge,1,row,vals,ADD_VALUES);
+
+    row[0]  = gloc + 1;
+    vals[0] = -Vm*Vm*bus->bl;
+    VecSetValues(Ge,1,row,vals,ADD_VALUES);
 
     for(k=0; k < bus->ngen; k++) {
       xloc += 2;
@@ -952,17 +964,27 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
       Pg = x[xloc];
       Qg = x[xloc+1];
 
-      g[gloc]   -= Pg;
-      g[gloc+1] -= Qg;
+      row[0]  = gloc;
+      vals[0] = -Pg;
+      VecSetValues(Ge,1,row,vals,ADD_VALUES);
+
+      row[0]  = gloc + 1;
+      vals[0] = -Qg;
+      VecSetValues(Ge,1,row,vals,ADD_VALUES);
     }
 
     for(k=0; k < bus->nload; k++) {
       ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
 
-      g[gloc]   += load->pl;
-      g[gloc+1] += load->ql;
+      row[0]  = gloc;
+      vals[0] = load->pl;
+      VecSetValues(Ge,1,row,vals,ADD_VALUES);
+
+      row[0]  = gloc + 1;
+      vals[0] = load->ql;
+      VecSetValues(Ge,1,row,vals,ADD_VALUES);
     }
-    } //if (!bus->isghost) 
+    } //if (!bus->isghost)
 
     ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
 
@@ -1003,14 +1025,25 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
 	Pf = Gff*Vmf*Vmf  + Vmf*Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
 	Qf = -Bff*Vmf*Vmf + Vmf*Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
 
-	g[gloc]   += Pf;
-	g[gloc+1] += Qf;
+
+  row[0]  = gloc;
+  vals[0] = Pf;
+  VecSetValues(Ge,1,row,vals,ADD_VALUES);
+
+  row[0]  = gloc + 1;
+  vals[0] = Qf;
+  VecSetValues(Ge,1,row,vals,ADD_VALUES);
       } else {
 	Pt = Gtt*Vmt*Vmt  + Vmt*Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
 	Qt = -Btt*Vmt*Vmt + Vmt*Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
 
-	g[gloc]   += Pt;
-	g[gloc+1] += Qt;
+  row[0]  = gloc;
+  vals[0] = Pf;
+  VecSetValues(Ge,1,row,vals,ADD_VALUES);
+
+  row[0]  = gloc + 1;
+  vals[0] = Qt;
+  VecSetValues(Ge,1,row,vals,ADD_VALUES);
       }
     }
     gloc += 2;
@@ -1018,9 +1051,11 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
   }
 
   ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
-  ierr = VecRestoreArray(Ge,&g);CHKERRQ(ierr);
- 
+  //ierr = VecRestoreArray(Ge,&g);CHKERRQ(ierr);
+
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(Ge);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(Ge);CHKERRQ(ierr);
   printf("Ge:\n");
   ierr = VecView(Ge,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   exit(1);
@@ -1048,6 +1083,7 @@ PetscErrorCode OPFLOWInequalityConstraintsFunction(Tao nlp,Vec X,Vec Gi,void* ct
   PetscInt       i;
   PSLINE         line;
   PetscInt       gloc=0;
+  Vec            localX;
   const PSBUS    *connbuses;
   PSBUS          busf,bust;
   PetscInt       xlocf,xloct;
@@ -1057,10 +1093,14 @@ PetscErrorCode OPFLOWInequalityConstraintsFunction(Tao nlp,Vec X,Vec Gi,void* ct
   printf("InequalityConstraintsFunction, Gi:\n");
   ierr = VecSet(Gi,0.0);CHKERRQ(ierr);
 
-  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+
+  ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
   ierr = VecGetArray(Gi,&g);CHKERRQ(ierr);
 
-  for(i=0; i < ps->Nbranch; i++) {
+  for(i=0; i < ps->nbranch; i++) {
     line = &ps->line[i];
 
     if(!line->status) {
@@ -1123,9 +1163,10 @@ PetscErrorCode OPFLOWInequalityConstraintsFunction(Tao nlp,Vec X,Vec Gi,void* ct
     gloc = gloc + 4;
   }
 
-  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
   ierr = VecRestoreArray(Gi,&g);CHKERRQ(ierr);
-  //  ierr = VecView(Gi,0);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = VecView(Gi,0);CHKERRQ(ierr);
   //  exit(1);
 
   PetscFunctionReturn(0);
