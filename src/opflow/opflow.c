@@ -1,5 +1,6 @@
 #include <private/psimpl.h>
 #include <private/opflowimpl.h>
+#include <petscdmnetwork.h>
 
 /*********************************************
   The optimization problem for Tao should be in
@@ -409,7 +410,7 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   *mat = jac;
   ierr = PetscPrintf(comm,"Ji structure:\n");CHKERRQ(ierr);
   ierr = MatView(jac,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  if (size > 1) exit(1);
+  //if (size > 1) exit(1);
   PetscFunctionReturn(0);
 }
 
@@ -924,6 +925,7 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
 
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
+    if (bus->isghost) continue;
 
     ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
     theta = x[xloc];
