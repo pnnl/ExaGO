@@ -751,7 +751,7 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
 
   ierr = VecRestoreArray(Xl,&xl);CHKERRQ(ierr);
   ierr = VecRestoreArray(Xu,&xu);CHKERRQ(ierr);
-#if 0
+#if 1
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Xl:\n");
   ierr = VecView(Xl,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Xu:\n");
@@ -794,6 +794,7 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
     PetscInt k;
 
     bus = &ps->bus[i];
+    if (bus->isghost) continue;
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
 
@@ -914,6 +915,8 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
 
   PetscFunctionBegin;
   ierr = VecSet(Ge,0.0);CHKERRQ(ierr);
+  printf("EqualityConstraintsFunction, Ge:\n");
+  ierr = VecView(Ge,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
 
   ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
   ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
@@ -1015,8 +1018,8 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
   ierr = VecRestoreArray(Ge,&g);CHKERRQ(ierr);
  
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
-  //printf("Ge:\n");
-  //ierr = VecView(Ge,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  printf("Ge:\n");
+  ierr = VecView(Ge,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -1047,6 +1050,7 @@ PetscErrorCode OPFLOWInequalityConstraintsFunction(Tao nlp,Vec X,Vec Gi,void* ct
 
 
   PetscFunctionBegin;
+  printf("InequalityConstraintsFunction, Gi:\n");
   ierr = VecSet(Gi,0.0);CHKERRQ(ierr);
 
   ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
