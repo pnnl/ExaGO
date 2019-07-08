@@ -1046,8 +1046,6 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
   VecSetValues(Ge,1,row,vals,ADD_VALUES);
       }
     }
-    gloc += 2;
-
   }
 
   ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
@@ -1058,7 +1056,6 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
   ierr = VecAssemblyEnd(Ge);CHKERRQ(ierr);
   printf("Ge:\n");
   ierr = VecView(Ge,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  exit(1);
   PetscFunctionReturn(0);
 }
 
