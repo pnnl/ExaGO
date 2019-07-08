@@ -608,16 +608,18 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   PetscInt       nconnlines;
   const PSLINE   *connlines;
   PSBUS          busf,bust;
-  PetscInt       loc,locf,loct;
+  PetscInt       loc,locf,loct,gidx;
   PetscInt       *nnz;
-  PetscInt       row[2],col[4];
+  PetscInt       row[2],col[2];
   PetscScalar    val[4];
   MPI_Comm       comm=opflow->comm->type;
-  PetscMPIInt    rank;
+  PetscMPIInt    rank,size;
+  DM             networkdm=ps->networkdm;
 
   PetscFunctionBegin;
   ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
-  printf("[%d] Je: nconeq %d, Nconeq %d,Nvar %d\n",rank,nconeq,Nconeq,Nvar);
+  ierr = MPI_Comm_size(comm,&size);CHKERRQ(ierr);
+
   ierr = MatCreate(opflow->comm->type,&jac);CHKERRQ(ierr);
   ierr = MatSetSizes(jac,nconeq,nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
   ierr = MatSetType(jac,MATAIJ);CHKERRQ(ierr);
@@ -627,7 +629,7 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = PetscCalloc1(nconeq,&nnz);CHKERRQ(ierr);
 
   mloc = 0;
-  for(i=0; i < ps->nbus; i++) {
+  for (i=0; i < ps->nbus; i++) {
     if (bus->isghost) continue;
     bus = &ps->bus[i];
     ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
@@ -641,33 +643,34 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatMPIAIJSetPreallocation(jac,0,nnz,0,nnz);CHKERRQ(ierr);
   ierr = PetscFree(nnz);CHKERRQ(ierr);
 #endif
-  PetscInt rstart,rend;
-  ierr = MatGetOwnershipRange(jac,&rstart,&rend);CHKERRQ(ierr);
-  printf("[%d] Je rstart/end: %d %d;\n",rank,rstart,rend);
 
-  mloc = rstart; /* Should use MatGetOwnershipRange here for parallel */
-  val[0] = val[1] = val[2] = val[3] = 0.0;
-  for(i=0; i < ps->nbus; i++) {
-    //if (bus->isghost) continue; /* skip ghost buses */
+  //ierr = DMNetworkSetVertexLocalToGlobalOrdering(networkdm);CHKERRQ(ierr);
+  
+  for (i=0; i< 4; i++) val[i] = 0.0;
+  for (i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
 
-    ierr = PSBUSGetVariableGlobalLocation(bus,&loc);CHKERRQ(ierr);
-    row[0] = mloc;
-    row[1] = mloc+1;
-    col[0] = loc; col[1] = loc+1;
-    ierr = MatSetValues(jac,2,row,2,col,val,INSERT_VALUES);CHKERRQ(ierr);
+    ierr = DMNetworkGetVertexLocalToGlobalOrdering(networkdm,i,&gidx);CHKERRQ(ierr);
+    gidx = 2*gidx;
+    row[0] = gidx; row[1] = row[0] + 1;
 
-    for(k=0; k < bus->ngen; k++) {
-      /* Skip over OFF generators OR use status*x[i] ? */
-      loc += 2;
-      col[0] = loc;
-      ierr = MatSetValues(jac,1,row,1,col,val,INSERT_VALUES);CHKERRQ(ierr);
-      col[1] = loc+1;
-      ierr = MatSetValues(jac,1,row+1,1,col+1,val,INSERT_VALUES);CHKERRQ(ierr);
+    if (!bus->isghost) {
+      ierr = PSBUSGetVariableGlobalLocation(bus,&loc);CHKERRQ(ierr);
+      col[0] = loc;  col[1] = loc + 1;
+      ierr = MatSetValues(jac,2,row,2,col,val,INSERT_VALUES);CHKERRQ(ierr);
+
+      for (k=0; k < bus->ngen; k++) { /* one entry per row! */
+        /* Skip over OFF generators OR use status*x[i] ? */
+        loc += 2;
+        col[0] = loc;
+        ierr = MatSetValues(jac,1,row,1,col,val,INSERT_VALUES);CHKERRQ(ierr);
+        col[1] = loc+1;
+        ierr = MatSetValues(jac,1,row+1,1,col+1,val,INSERT_VALUES);CHKERRQ(ierr);
+      }
     }
 
     ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
-    for(k=0; k < nconnlines; k++) {
+    for (k=0; k < nconnlines; k++) {
       line = connlines[k];
       ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
       busf = connbuses[0];
@@ -675,24 +678,12 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
 
       ierr = PSBUSGetVariableGlobalLocation(busf,&locf);CHKERRQ(ierr);
       ierr = PSBUSGetVariableGlobalLocation(bust,&loct);CHKERRQ(ierr);
-
-      if(bus == busf) {
-	row[0] = mloc;
-	col[0] = locf; col[1] = locf+1; col[2] = loct; col[3] = loct+1;
-	ierr = MatSetValues(jac,1,row,4,col,val,INSERT_VALUES);CHKERRQ(ierr);
-	row[0] = mloc+1;
-	col[0] = locf; col[1] = locf+1; col[2] = loct; col[3] = loct+1;
-	ierr = MatSetValues(jac,1,row,4,col,val,INSERT_VALUES);CHKERRQ(ierr);
-      } else {
-	row[0] = mloc;
-	col[0] = loct; col[1] = loct+1; col[2] = locf; col[3] = locf+1;
-	ierr = MatSetValues(jac,1,row,4,col,val,INSERT_VALUES);CHKERRQ(ierr);
-	row[0] = mloc+1;
-	col[0] = loct; col[1] = loct+1; col[2] = locf; col[3] = locf+1;
-	ierr = MatSetValues(jac,1,row,4,col,val,INSERT_VALUES);CHKERRQ(ierr);
-      }
+      if (bus == busf) {
+        col[0] = loct;
+      } else col[0] = locf;
+      col[1] = col[0] + 1;
+      ierr = MatSetValues(jac,2,row,2,col,val,INSERT_VALUES);CHKERRQ(ierr);
     }
-    mloc += 2;
   }
 
   ierr = MatAssemblyBegin(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -701,6 +692,7 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   *mat = jac;
   ierr = PetscPrintf(comm,"Je structure:\n");CHKERRQ(ierr);
   ierr = MatView(jac,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  if (size > 1) exit(1);
   PetscFunctionReturn(0);
 }
 
@@ -761,11 +753,12 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
 
   ierr = VecRestoreArray(Xl,&xl);CHKERRQ(ierr);
   ierr = VecRestoreArray(Xu,&xu);CHKERRQ(ierr);
-
+#if 0
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Xl:\n");
   ierr = VecView(Xl,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Xu:\n");
   ierr = VecView(Xu,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+#endif
   PetscFunctionReturn(0);
 }
 
@@ -1169,7 +1162,7 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
   ierr = TaoGetConvergedReason(opflow->nlp,&reason);CHKERRQ(ierr);
   opflow->converged = reason< 0 ? PETSC_FALSE:PETSC_TRUE;
 
-  ierr = VecView(opflow->X,0);CHKERRQ(ierr);
+  ierr = VecView(opflow->X,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -1212,12 +1205,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 
   /* Create the solution vector */
   ierr = PSCreateGlobalVector(opflow->ps,&opflow->X);CHKERRQ(ierr);
-  ierr = VecView(opflow->X,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-
-  Vec vtmp;
-  ierr = VecDuplicate(opflow->X,&vtmp);CHKERRQ(ierr);
-  ierr = VecView(vtmp,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  ierr = VecDestroy(&vtmp);CHKERRQ(ierr);
+  //ierr = VecView(opflow->X,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
 
   ierr = TaoSetInitialVector(opflow->nlp,opflow->X);CHKERRQ(ierr);
 
@@ -1234,6 +1222,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   //ierr = VecSetSizes(opflow->Ge,PETSC_DETERMINE,opflow->Nconeq);CHKERRQ(ierr);
   ierr = VecSetSizes(opflow->Ge,opflow->nconeq,PETSC_DETERMINE);CHKERRQ(ierr);
   ierr = VecSetFromOptions(opflow->Ge);CHKERRQ(ierr);
+  ierr = DMNetworkSetVertexLocalToGlobalOrdering(ps->networkdm);CHKERRQ(ierr);
 
   /* Create the inequality constraint vector */
   ierr = VecCreate(opflow->comm->type,&opflow->Gi);CHKERRQ(ierr);
