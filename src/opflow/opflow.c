@@ -25,7 +25,6 @@
 
   Output Parameters:
 . Je - Jacobian of equality constraints
-
 */
 PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, Mat Je_pre, void* ctx)
 {
@@ -37,29 +36,31 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
   PetscBool      ghostbus;
   PetscInt       i,k;
   PetscInt       rowctr=0;
-  PetscInt       rstart;
+  MPI_Comm       comm=opflow->comm->type;
+  DM             networkdm=ps->networkdm;
 
   PetscFunctionBegin;
   ierr = MatZeroEntries(Je);CHKERRQ(ierr);
-  ierr = MatGetOwnershipRange(Je,&rstart,NULL);CHKERRQ(ierr);
 
   ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
-
   ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
   ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
 
   ierr = VecGetArrayRead(localX,&xarr);CHKERRQ(ierr);
 
-  for(i=0; i < ps->nbus; i++) {
+  for (i=0; i < ps->nbus; i++) {
     PetscScalar Vm;
     PetscInt    loc;
     PetscInt    locglob;
     PSBUS       bus;
     PetscInt    row[2],col[4];
     PetscScalar val[4];
-    PetscInt    genctr;
+    PetscInt    genctr,gidx;
 
     bus = &ps->bus[i];
+    ierr = DMNetworkGetVertexLocalToGlobalOrdering(networkdm,i,&gidx);CHKERRQ(ierr);
+    gidx = 2*gidx;
+    row[0] = gidx; row[1] = row[0] + 1;
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
     ierr = PSBUSGetVariableGlobalLocation(bus,&locglob);CHKERRQ(ierr);
@@ -67,10 +68,7 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
 
     Vm = xarr[loc+1];
 
-    if(!ghostbus) {
-      row[0] = rstart + rowctr;
-      row[1] = rstart + rowctr + 1;
-
+    if (!ghostbus) {
       col[0] = locglob; col[1] = locglob+1;
       /* Isolated and reference bus */
       if(bus->ide == ISOLATED_BUS) {
@@ -95,20 +93,18 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
 	col[0] = locglob + 2 + genctr+1;
 	val[0] = -1;
 	ierr = MatSetValues(Je,1,row+1,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-
-	genctr += 2;
       }
     }
 
     /* Partial derivatives of network equations */
-    PetscInt nconnlines;
+    PetscInt     nconnlines;
     const PSLINE *connlines;
-    PSLINE line;
+    PSLINE       line;
 
     /* Get the lines supporting the bus */
     ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
 
-    for(k=0; k < nconnlines; k++) {
+    for (k=0; k < nconnlines; k++) {
       line = connlines[k];
       if(!line->status) continue;
       PetscScalar Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
@@ -122,8 +118,8 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
       Btt = line->ytt[1];
 
       const PSBUS *connbuses;
-      PSBUS busf,bust;
-      PetscInt locglobf,locglobt,locf,loct;
+      PSBUS       busf,bust;
+      PetscInt    locglobf,locglobt,locf,loct;
       PetscScalar thetaf,thetat,Vmf,Vmt,thetaft,thetatf;
 
       /* Get the connected buses to this line */
@@ -142,8 +138,7 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
       thetaft = thetaf - thetat;
       thetatf = thetat - thetaf;
 
-      if(bus == busf) {
-	row[0] = rstart + rowctr;
+      if (bus == busf) {
 	col[0] = locglobf; col[1] = locglobf+1; col[2] = locglobt; col[3] = locglobt+1;
 	val[0] = Vmf*Vmt*(-Gft*sin(thetaft) + Bft*cos(thetaft));
 	val[1] = 2*Gff*Vmf + Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
@@ -151,14 +146,12 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
 	val[3] = Vmf*(Gft*cos(thetaft) + Bft*sin(thetaft));
 	ierr = MatSetValues(Je,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
 
-	row[0] = rstart + rowctr + 1;
 	val[0] = Vmf*Vmt*(Bft*sin(thetaft) + Gft*cos(thetaft));
 	val[1] = -2*Bff*Vmf + Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
 	val[2] = Vmf*Vmt*(-Bft*sin(thetaft) - Gft*cos(thetaft));
 	val[3] = Vmf*(-Bft*cos(thetaft) + Gft*sin(thetaft));
-	ierr = MatSetValues(Je,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+	ierr = MatSetValues(Je,1,row+1,4,col,val,ADD_VALUES);CHKERRQ(ierr);
       } else {
-	row[0] = rstart + rowctr;
 	col[0] = locglobt; col[1] = locglobt+1; col[2] = locglobf; col[3] = locglobf+1;
 	val[0] = Vmt*Vmf*(-Gtf*sin(thetatf) + Btf*cos(thetatf));
 	val[1] = 2*Gtt*Vmt + Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
@@ -166,25 +159,22 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
 	val[3] = Vmt*(Gtf*cos(thetatf) + Btf*sin(thetatf));
 	ierr = MatSetValues(Je,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
 
-	row[0] = rstart + rowctr + 1;
 	val[0] = Vmt*Vmf*(Btf*sin(thetatf) + Gtf*cos(thetatf));
 	val[1] = -2*Btt*Vmt + Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
 	val[2] = Vmt*Vmf*(-Btf*sin(thetatf) - Gtf*cos(thetatf));
 	val[3] = Vmt*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
-	ierr = MatSetValues(Je,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+	ierr = MatSetValues(Je,1,row+1,4,col,val,ADD_VALUES);CHKERRQ(ierr);
       }
     }
-    rowctr += 2;
   }
-
   ierr = VecRestoreArrayRead(localX,&xarr);CHKERRQ(ierr);
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
-  //  ierr = MatView(Je,0);
-  //  exit(1);
+  ierr = PetscPrintf(comm,"Je:\n");CHKERRQ(ierr);
+  ierr = MatView(Je,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -691,7 +681,6 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   *mat = jac;
   ierr = PetscPrintf(comm,"Je structure:\n");CHKERRQ(ierr);
   ierr = MatView(jac,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //if (size > 1) exit(1);
   PetscFunctionReturn(0);
 }
 
@@ -750,7 +739,7 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
 
   ierr = VecRestoreArray(Xl,&xl);CHKERRQ(ierr);
   ierr = VecRestoreArray(Xu,&xu);CHKERRQ(ierr);
-#if 0
+#if 1
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Xl:\n");
   ierr = VecView(Xl,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Xu:\n");
@@ -807,7 +796,7 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       loc = loc+2;
 
-      x[loc]   = (xl[loc] + xu[loc])/2.0;   /* Initial guess for Pg */
+      x[loc]   = (xl[loc] + xu[loc])/2.0;     /* Initial guess for Pg */
       x[loc+1] = (xl[loc+1] + xu[loc+1])/2.0; /* Initial guess for Qg */
     }
   }
@@ -815,7 +804,8 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
   ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
-  VecView(X,0);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"\nInitialGuess:\n");CHKERRQ(ierr);
+  ierr = VecView(X,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -1084,9 +1074,7 @@ PetscErrorCode OPFLOWInequalityConstraintsFunction(Tao nlp,Vec X,Vec Gi,void* ct
   PSBUS          busf,bust;
   PetscInt       xlocf,xloct;
 
-
   PetscFunctionBegin;
-  printf("InequalityConstraintsFunction, Gi:\n");
   ierr = VecSet(Gi,0.0);CHKERRQ(ierr);
 
   ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
@@ -1163,8 +1151,6 @@ PetscErrorCode OPFLOWInequalityConstraintsFunction(Tao nlp,Vec X,Vec Gi,void* ct
   ierr = VecRestoreArray(Gi,&g);CHKERRQ(ierr);
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
   ierr = VecView(Gi,0);CHKERRQ(ierr);
-  //  exit(1);
-
   PetscFunctionReturn(0);
 }
 
@@ -1253,14 +1239,12 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 
   /* Create the equality constraint vector */
   ierr = VecCreate(opflow->comm->type,&opflow->Ge);CHKERRQ(ierr);
-  //ierr = VecSetSizes(opflow->Ge,PETSC_DETERMINE,opflow->Nconeq);CHKERRQ(ierr);
   ierr = VecSetSizes(opflow->Ge,opflow->nconeq,PETSC_DETERMINE);CHKERRQ(ierr);
   ierr = VecSetFromOptions(opflow->Ge);CHKERRQ(ierr);
   ierr = DMNetworkSetVertexLocalToGlobalOrdering(ps->networkdm);CHKERRQ(ierr);
 
   /* Create the inequality constraint vector */
   ierr = VecCreate(opflow->comm->type,&opflow->Gi);CHKERRQ(ierr);
-  //ierr = VecSetSizes(opflow->Gi,opflow->Nconineq,PETSC_DETERMINE);CHKERRQ(ierr);
   ierr = VecSetSizes(opflow->Gi,opflow->nconineq,PETSC_DETERMINE);CHKERRQ(ierr);
   ierr = VecSetFromOptions(opflow->Gi);CHKERRQ(ierr);
 
