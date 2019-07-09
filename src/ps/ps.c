@@ -1,5 +1,4 @@
 #include <private/psimpl.h>
-#include <petscdmnetwork.h>
 
 /*
   PSConnCompDestroy - Destroys the connected components struct
@@ -7,7 +6,7 @@
 PetscErrorCode PSConnCompDestroy(PS ps)
 {
   PetscErrorCode ierr;
-  PetscInt i;
+  PetscInt       i;
   PetscFunctionBegin;
   for(i=0; i < ps->nconncomp; i++) {
     ps->conncomp[i].nv = 0;

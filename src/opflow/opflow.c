@@ -1,6 +1,5 @@
 #include <private/psimpl.h>
 #include <private/opflowimpl.h>
-#include <petscdmnetwork.h>
 
 /*********************************************
   The optimization problem for Tao should be in
