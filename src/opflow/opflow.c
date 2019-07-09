@@ -173,7 +173,7 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
   ierr = MatAssemblyBegin(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
-  ierr = PetscPrintf(comm,"Je:\n");CHKERRQ(ierr);
+  ierr = PetscPrintf(comm,"\nJe:\n");CHKERRQ(ierr);
   ierr = MatView(Je,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -328,7 +328,7 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   const PSBUS    *connbuses;
   PSBUS          busf,bust;
   PetscInt       locf,loct;
-  PetscInt       *nnz;
+  //PetscInt       *nnz;
   PetscInt       row[2],col[4];
   PetscScalar    val[8];
   MPI_Comm       comm=opflow->comm->type;
@@ -344,6 +344,7 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatSetType(jac,MATAIJ);CHKERRQ(ierr);
   ierr = MatSetUp(jac);CHKERRQ(ierr);
 #if 0
+  PetscInt       *nnz;
   /* Set up preallocation */
   ierr = PetscCalloc1(Nconineq,&nnz);CHKERRQ(ierr);
 
@@ -364,7 +365,7 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   PetscInt rstart,rend;
   ierr = MatGetOwnershipRange(jac,&rstart,&rend);CHKERRQ(ierr);
   //printf("[%d] Ji rstart/end: %d %d;\n",rank,rstart,rend);
-  ierr = MPI_Barrier(comm);CHKERRQ(ierr);
+  //ierr = MPI_Barrier(comm);CHKERRQ(ierr);
 
   for (i=0; i<8; i++) val[i] = 0.0;
 
@@ -395,6 +396,7 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
 
   ierr = MatAssemblyBegin(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatSetOption(jac,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
 
   *mat = jac;
   ierr = PetscPrintf(comm,"Ji structure:\n");CHKERRQ(ierr);
@@ -431,12 +433,22 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
   PetscInt       row[2],col[4];
   PetscScalar    val[4];
   const PetscScalar *x;
+  MPI_Comm       comm=opflow->comm->type;
+  PetscMPIInt    rank,size;
+  Vec            localX;
 
   PetscFunctionBegin;
-
+  ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
+  ierr = MPI_Comm_size(comm,&size);CHKERRQ(ierr);
   ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
 
-  for(i=0; i < ps->Nbranch; i++) {
+  PetscInt rstart,rend;
+  ierr = MatGetOwnershipRange(Ji,&rstart,&rend);CHKERRQ(ierr);
+  printf("[%d] nbranch %d, rstart %d %d\n",rank,ps->nbranch,rstart,rend);
+  ierr = MPI_Barrier(comm);CHKERRQ(ierr);
+
+  gloc = rstart;
+  for(i=0; i < ps->nbranch; i++) {
     line = &ps->line[i];
 
     PetscScalar Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
@@ -520,7 +532,7 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
     val[2] = dSf2_dthetat;
     val[3] = dSf2_dVmt;
 
-    ierr = MatSetValues(Ji,1,row,4,col,val,INSERT_VALUES);CHKERRQ(ierr);
+    ierr = MatSetValues(Ji,1,row,4,col,val,INSERT_VALUES);CHKERRQ(ierr); //error!
 
     /* g[gloc+1] */
     row[0] = gloc+1;
@@ -568,7 +580,8 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
 
   ierr = MatAssemblyBegin(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"\nJi:\n");CHKERRQ(ierr);
+  ierr = MatView(Ji,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -600,7 +613,7 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   const PSLINE   *connlines;
   PSBUS          busf,bust;
   PetscInt       loc,locf,loct,gidx;
-  PetscInt       *nnz;
+  //PetscInt       *nnz;
   PetscInt       row[2],col[2];
   PetscScalar    val[4];
   MPI_Comm       comm=opflow->comm->type;
@@ -616,6 +629,7 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatSetType(jac,MATAIJ);CHKERRQ(ierr);
   ierr = MatSetUp(jac);CHKERRQ(ierr);
 #if 0
+  PetscInt       *nnz;
   /* Set up preallocation */
   ierr = PetscCalloc1(nconeq,&nnz);CHKERRQ(ierr);
 
@@ -677,6 +691,7 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
 
   ierr = MatAssemblyBegin(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatSetOption(jac,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
 
   *mat = jac;
   ierr = PetscPrintf(comm,"Je structure:\n");CHKERRQ(ierr);
@@ -1184,6 +1199,7 @@ PetscErrorCode OPFLOWInequalityConstraintsFunction(Tao nlp,Vec X,Vec Gi,void* ct
   ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
   ierr = VecRestoreArray(Gi,&g);CHKERRQ(ierr);
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"\nGi:\n");
   ierr = VecView(Gi,0);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
