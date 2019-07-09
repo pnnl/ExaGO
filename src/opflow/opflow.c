@@ -698,47 +698,67 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
-  PetscScalar    *xl,*xu;
-  PetscInt       i,k;
+  PetscScalar    vals[2];
+  PetscInt       i,k,row[2];
   PSBUS          bus;
   PetscInt       loc;
 
   PetscFunctionBegin;
   /* Get array pointers */
-  ierr = VecGetArray(Xl,&xl);CHKERRQ(ierr);
-  ierr = VecGetArray(Xu,&xu);CHKERRQ(ierr);
-
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
     if (bus->isghost) continue;
-
-    ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
+    ierr = PSBUSGetVariableGlobalLocation(bus,&loc);CHKERRQ(ierr);
 
     /* Bounds on voltage angles */
-    xl[loc] = -PETSC_PI; xu[loc] = PETSC_PI;
+    //xl[loc] = -PETSC_PI; xu[loc] = PETSC_PI;
+    row[0] = loc; row[1] = loc+1;
+    vals[0] = -PETSC_PI; vals[1] = PETSC_PI;
+    VecSetValues(Xl,1,row,vals,INSERT_VALUES);
+    VecSetValues(Xu,1,row,vals+1,INSERT_VALUES);
 
     /* Bounds on voltage magnitudes and bounds on reactive power mismatch equality constraints */
-    xl[loc+1] = bus->Vmin; xu[loc+1] = bus->Vmax;
+    //xl[loc+1] = bus->Vmin; xu[loc+1] = bus->Vmax;
+    vals[0] = bus->Vmin; vals[1] = bus->Vmax;
+    VecSetValues(Xl,1,row+1,vals,INSERT_VALUES);
+    VecSetValues(Xu,1,row+1,vals+1,INSERT_VALUES);
 
-    if(bus->ide == REF_BUS || bus->ide == ISOLATED_BUS) xl[loc] = xu[loc] = bus->va*PETSC_PI/180.0;
-    if(bus->ide == ISOLATED_BUS) xl[loc+1] = xu[loc+1] = bus->vm;
+    if(bus->ide == REF_BUS || bus->ide == ISOLATED_BUS){
+      //xl[loc] = xu[loc] = bus->va*PETSC_PI/180.0;
+      vals[0] = bus->va*PETSC_PI/180.0;
+      VecSetValues(Xl,1,row,vals,INSERT_VALUES);
+      VecSetValues(Xu,1,row,vals,INSERT_VALUES);
+    }
+    if(bus->ide == ISOLATED_BUS){
+      //xl[loc+1] = xu[loc+1] = bus->vm;
+      vals[0] = bus->vm;
+      VecSetValues(Xl,1,row+1,vals,INSERT_VALUES);
+      VecSetValues(Xu,1,row+1,vals,INSERT_VALUES);
+    }
 
     for(k=0; k < bus->ngen; k++) {
       PSGEN gen;
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      loc = loc+2;
-      if(!gen->status) xl[loc] = xu[loc] = xl[loc+1] = xu[loc+1] = 0.0;
+      //loc = loc+2;
+      row[0] = row[0]+2; row[1] = row[1]+2;
+      if(!gen->status){
+        //xl[loc] = xu[loc] = xl[loc+1] = xu[loc+1] = 0.0;
+        vals[0] =0.0; vals[1] = 0.0;
+        VecSetValues(Xl,2,row,vals,INSERT_VALUES);
+        VecSetValues(Xu,2,row,vals,INSERT_VALUES);
+      }
       else {
-	xl[loc] = gen->pb;
-	xu[loc] = gen->pt;
-	xl[loc+1] = gen->qb;
-	xu[loc+1] = gen->qt;
+	//xl[loc] = gen->pb;  xu[loc] = gen->pt;
+   vals[0] = gen->pb; vals[1] = gen->pt;
+   VecSetValues(Xl,1,row,vals,INSERT_VALUES);
+   VecSetValues(Xu,1,row,vals+1,INSERT_VALUES);
+	//xl[loc+1] = gen->qb; xu[loc+1] = gen->qt;
+   vals[0] = gen->qb; vals[1] = gen->qt;
+   VecSetValues(Xl,1,row+1,vals,INSERT_VALUES);
+   VecSetValues(Xu,1,row+1,vals+1,INSERT_VALUES);
       }
     }
   }
-
-  ierr = VecRestoreArray(Xl,&xl);CHKERRQ(ierr);
-  ierr = VecRestoreArray(Xu,&xu);CHKERRQ(ierr);
 #if 1
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Xl:\n");
   ierr = VecView(Xl,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
@@ -766,44 +786,58 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
   const PetscScalar    *xl,*xu;
-  PetscScalar    *x;
-  PetscInt       i;
+  PetscScalar    vals[2];
+  PetscInt       i,row[2];
   PSBUS          bus;
-  PetscInt       loc;
+  PetscInt       loc,gloc;
+  MPI_Comm       comm=opflow->comm->type;
+  PetscMPIInt    rank;
 
   PetscFunctionBegin;
 
   /* Get array pointers */
-  ierr = VecGetArray(X,&x);CHKERRQ(ierr);
+  //ierr = VecGetArray(X,&x);CHKERRQ(ierr);
   ierr = VecGetArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
   ierr = VecGetArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
+
+  ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
 
   for(i=0; i < ps->nbus; i++) {
     PetscInt k;
 
     bus = &ps->bus[i];
-    if (bus->isghost) continue;
+    if (bus->isghost)continue;
 
+    ierr = PSBUSGetVariableGlobalLocation(bus,&gloc);CHKERRQ(ierr);
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
-
+      //printf("i = %d gloc = %d\n",i,gloc );
+      //printf("i = %d loc = %d\n",i,loc );
     /* Guess for voltage angles and bounds on voltage magnitudes */
-    x[loc]   = (xl[loc] + xu[loc])/2.0;
-    x[loc+1] = (xl[loc+1] + xu[loc+1])/2.0;
+    //x[loc]   = (xl[loc] + xu[loc])/2.0;
+    //x[loc+1] = (xl[loc+1] + xu[loc+1])/2.0;
+    row[0] = gloc; row[1] = gloc+1;
+    vals[0] = (xl[loc] + xu[loc])/2.0;
+    vals[1] = (xl[loc+1] + xu[loc+1])/2.0;
+    ierr = VecSetValues(X,2,row,vals,INSERT_VALUES);
 
     for(k=0; k < bus->ngen; k++) {
       PSGEN gen;
 
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      loc = loc+2;
-
-      x[loc]   = (xl[loc] + xu[loc])/2.0;     /* Initial guess for Pg */
-      x[loc+1] = (xl[loc+1] + xu[loc+1])/2.0; /* Initial guess for Qg */
+      //x[loc]   = (xl[loc] + xu[loc])/2.0;     /* Initial guess for Pg */
+      //x[loc+1] = (xl[loc+1] + xu[loc+1])/2.0; /* Initial guess for Qg */
+      loc = loc+2; row[0] = row[0]+2; row[1] = row[1]+2;
+      vals[0] = (xl[loc] + xu[loc])/2.0;
+      vals[1] = (xl[loc+1] + xu[loc+1])/2.0;
+      ierr = VecSetValues(X,2,row,vals,INSERT_VALUES);
     }
   }
 
-  ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
+  //ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
+  VecAssemblyBegin(X);
+  VecAssemblyEnd(X);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"\nInitialGuess:\n");CHKERRQ(ierr);
   ierr = VecView(X,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   PetscFunctionReturn(0);
@@ -886,7 +920,7 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
 {
   PetscErrorCode ierr;
   OPFLOW         opflow=(OPFLOW)ctx;
-  PetscScalar    *g,vals[1];
+  PetscScalar    vals[1];
   PS             ps=opflow->ps;
   PetscInt       i,k;
   PSLINE         line;
