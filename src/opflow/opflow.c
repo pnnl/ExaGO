@@ -441,7 +441,7 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
   ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
   ierr = MPI_Comm_size(comm,&size);CHKERRQ(ierr);
   //ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
-  ierr = DMGetLocalVector(ps->networkdm,&localX);
+  ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
   ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
   ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
   ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
@@ -739,26 +739,26 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
     //xl[loc] = -PETSC_PI; xu[loc] = PETSC_PI;
     row[0] = loc; row[1] = loc+1;
     vals[0] = -PETSC_PI; vals[1] = PETSC_PI;
-    VecSetValues(Xl,1,row,vals,INSERT_VALUES);
-    VecSetValues(Xu,1,row,vals+1,INSERT_VALUES);
+    ierr = VecSetValues(Xl,1,row,vals,INSERT_VALUES);CHKERRQ(ierr);
+    ierr = VecSetValues(Xu,1,row,vals+1,INSERT_VALUES);CHKERRQ(ierr);
 
     /* Bounds on voltage magnitudes and bounds on reactive power mismatch equality constraints */
     //xl[loc+1] = bus->Vmin; xu[loc+1] = bus->Vmax;
     vals[0] = bus->Vmin; vals[1] = bus->Vmax;
-    VecSetValues(Xl,1,row+1,vals,INSERT_VALUES);
-    VecSetValues(Xu,1,row+1,vals+1,INSERT_VALUES);
+    ierr = VecSetValues(Xl,1,row+1,vals,INSERT_VALUES);CHKERRQ(ierr);
+    ierr = VecSetValues(Xu,1,row+1,vals+1,INSERT_VALUES);CHKERRQ(ierr);
 
     if(bus->ide == REF_BUS || bus->ide == ISOLATED_BUS){
       //xl[loc] = xu[loc] = bus->va*PETSC_PI/180.0;
       vals[0] = bus->va*PETSC_PI/180.0;
-      VecSetValues(Xl,1,row,vals,INSERT_VALUES);
-      VecSetValues(Xu,1,row,vals,INSERT_VALUES);
+      ierr = VecSetValues(Xl,1,row,vals,INSERT_VALUES);CHKERRQ(ierr);
+      ierr = VecSetValues(Xu,1,row,vals,INSERT_VALUES);CHKERRQ(ierr);
     }
     if(bus->ide == ISOLATED_BUS){
       //xl[loc+1] = xu[loc+1] = bus->vm;
       vals[0] = bus->vm;
-      VecSetValues(Xl,1,row+1,vals,INSERT_VALUES);
-      VecSetValues(Xu,1,row+1,vals,INSERT_VALUES);
+      ierr = VecSetValues(Xl,1,row+1,vals,INSERT_VALUES);CHKERRQ(ierr);
+      ierr = VecSetValues(Xu,1,row+1,vals,INSERT_VALUES);CHKERRQ(ierr);
     }
 
     for(k=0; k < bus->ngen; k++) {
@@ -769,18 +769,18 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
       if(!gen->status){
         //xl[loc] = xu[loc] = xl[loc+1] = xu[loc+1] = 0.0;
         vals[0] =0.0; vals[1] = 0.0;
-        VecSetValues(Xl,2,row,vals,INSERT_VALUES);
-        VecSetValues(Xu,2,row,vals,INSERT_VALUES);
+        ierr = VecSetValues(Xl,2,row,vals,INSERT_VALUES);CHKERRQ(ierr);
+        ierr = VecSetValues(Xu,2,row,vals,INSERT_VALUES);CHKERRQ(ierr);
       }
       else {
 	//xl[loc] = gen->pb;  xu[loc] = gen->pt;
    vals[0] = gen->pb; vals[1] = gen->pt;
-   VecSetValues(Xl,1,row,vals,INSERT_VALUES);
-   VecSetValues(Xu,1,row,vals+1,INSERT_VALUES);
+   ierr = VecSetValues(Xl,1,row,vals,INSERT_VALUES);CHKERRQ(ierr);
+   ierr = VecSetValues(Xu,1,row,vals+1,INSERT_VALUES);CHKERRQ(ierr);
 	//xl[loc+1] = gen->qb; xu[loc+1] = gen->qt;
    vals[0] = gen->qb; vals[1] = gen->qt;
-   VecSetValues(Xl,1,row+1,vals,INSERT_VALUES);
-   VecSetValues(Xu,1,row+1,vals+1,INSERT_VALUES);
+   ierr = VecSetValues(Xl,1,row+1,vals,INSERT_VALUES);CHKERRQ(ierr);
+   ierr = VecSetValues(Xu,1,row+1,vals+1,INSERT_VALUES);CHKERRQ(ierr);
       }
     }
   }
@@ -813,6 +813,7 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
   const PetscScalar    *xl,*xu;
   PetscScalar    vals[2];
   PetscInt       i,row[2];
+  Vec            localXl,localXu;
   PSBUS          bus;
   PetscInt       loc,gloc;
   MPI_Comm       comm=opflow->comm->type;
@@ -822,8 +823,17 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
 
   /* Get array pointers */
   //ierr = VecGetArray(X,&x);CHKERRQ(ierr);
-  ierr = VecGetArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
-  ierr = VecGetArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
+  //ierr = VecGetArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
+  //ierr = VecGetArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(ps->networkdm,&localXl);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(ps->networkdm,&localXu);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,opflow->Xl,INSERT_VALUES,localXl);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,opflow->Xu,INSERT_VALUES,localXu);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,opflow->Xl,INSERT_VALUES,localXl);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,opflow->Xu,INSERT_VALUES,localXu);CHKERRQ(ierr);
+
+  ierr = VecGetArrayRead(localXl,&xl);CHKERRQ(ierr);
+  ierr = VecGetArrayRead(localXu,&xu);CHKERRQ(ierr);
 
   ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
 
@@ -843,7 +853,7 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
     row[0] = gloc; row[1] = gloc+1;
     vals[0] = (xl[loc] + xu[loc])/2.0;
     vals[1] = (xl[loc+1] + xu[loc+1])/2.0;
-    ierr = VecSetValues(X,2,row,vals,INSERT_VALUES);
+    ierr = VecSetValues(X,2,row,vals,INSERT_VALUES);CHKERRQ(ierr);
 
     for(k=0; k < bus->ngen; k++) {
       PSGEN gen;
@@ -854,15 +864,17 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
       loc = loc+2; row[0] = row[0]+2; row[1] = row[1]+2;
       vals[0] = (xl[loc] + xu[loc])/2.0;
       vals[1] = (xl[loc+1] + xu[loc+1])/2.0;
-      ierr = VecSetValues(X,2,row,vals,INSERT_VALUES);
+      ierr = VecSetValues(X,2,row,vals,INSERT_VALUES);CHKERRQ(ierr);
     }
   }
 
   //ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
-  ierr = VecRestoreArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
-  ierr = VecRestoreArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
-  VecAssemblyBegin(X);
-  VecAssemblyEnd(X);
+  ierr = VecRestoreArrayRead(localXl,&xl);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(localXu,&xu);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(ps->networkdm,&localXl);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(ps->networkdm,&localXu);CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(X);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(X);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"\nInitialGuess:\n");CHKERRQ(ierr);
   ierr = VecView(X,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   PetscFunctionReturn(0);
