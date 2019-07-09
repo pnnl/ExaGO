@@ -428,7 +428,7 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
   PetscInt       i;
   PSLINE         line;
   const PSBUS    *connbuses;
-  PetscInt       gloc=0,xlocf,xloct;
+  PetscInt       gloc=0,xlocf,xloct,glocf,gloct;
   PSBUS          busf,bust;
   PetscInt       row[2],col[4];
   PetscScalar    val[4];
@@ -440,7 +440,11 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
   PetscFunctionBegin;
   ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
   ierr = MPI_Comm_size(comm,&size);CHKERRQ(ierr);
-  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  //ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(ps->networkdm,&localX);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
 
   PetscInt rstart,rend;
   ierr = MatGetOwnershipRange(Ji,&rstart,&rend);CHKERRQ(ierr);
@@ -467,6 +471,8 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
 
     ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
     ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
+    ierr = PSBUSGetVariableGlobalLocation(busf,&glocf);CHKERRQ(ierr);
+    ierr = PSBUSGetVariableGlobalLocation(bust,&gloct);CHKERRQ(ierr);
 
     PetscScalar Vmf,Vmt,thetaf,thetat,thetaft,thetatf;
 
@@ -526,7 +532,7 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
 
     /* g[gloc] */
     row[0] = gloc;
-    col[0] = xlocf; col[1] = xlocf+1; col[2] = xloct; col[3] = xloct+1;
+    col[0] = glocf; col[1] = glocf+1; col[2] = gloct; col[3] = gloct+1;
     val[0] = dSf2_dthetaf;
     val[1] = dSf2_dVmf;
     val[2] = dSf2_dthetat;
@@ -536,7 +542,7 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
 
     /* g[gloc+1] */
     row[0] = gloc+1;
-    col[0] = xlocf; col[1] = xlocf+1; col[2] = xloct; col[3] = xloct+1;
+    col[0] = glocf; col[1] = glocf+1; col[2] = gloct; col[3] = gloct+1;
     val[0] = -dSf2_dthetaf;
     val[1] = -dSf2_dVmf;
     val[2] = -dSf2_dthetat;
@@ -553,7 +559,7 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
 
     /* g[gloc+2] */
     row[0] = gloc+2;
-    col[0] = xloct; col[1] = xloct+1; col[2] = xlocf; col[3] = xlocf+1;
+    col[0] = gloct; col[1] = gloct+1; col[2] = glocf; col[3] = glocf+1;
 
     val[ctr]   = dSt2_dthetat;
     val[ctr+1] = dSt2_dVmt;
@@ -564,7 +570,7 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
 
     /* g[gloc+3] */
     row[0] = gloc+3;
-    col[0] = xloct; col[1] = xloct+1; col[2] = xlocf; col[3] = xlocf+1;
+    col[0] = gloct; col[1] = gloct+1; col[2] = glocf; col[3] = glocf+1;
 
     val[ctr]   = -dSt2_dthetat;
     val[ctr+1] = -dSt2_dVmt;
@@ -576,7 +582,11 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
     gloc += 4;
   }
 
-  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+  //ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+
+
 
   ierr = MatAssemblyBegin(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
