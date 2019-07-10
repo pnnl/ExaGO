@@ -40,7 +40,6 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
   PetscScalar    Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
   PetscScalar    thetaf,thetat,Vmf,Vmt,thetaft,thetatf;
   OPFLOW         opflow=(OPFLOW)ctx;
-  MPI_Comm       comm=opflow->comm->type;
   Vec            localX;
   PS             ps=opflow->ps;
   PSBUS          bus;
@@ -83,7 +82,6 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
       	rowctr += 2;
       	continue;
       }
-
       /* Shunt injections */
       val[0] = 0.0; val[1] = 2*Vm*bus->gl;
       val[2] = 0.0; val[3]= -2*Vm*bus->bl; /* Partial derivative for shunt contribution */
@@ -100,9 +98,7 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
       	ierr = MatSetValues(Je,1,row+1,1,col,val,ADD_VALUES);CHKERRQ(ierr);
       }
     }
-
     /* Partial derivatives of network equations */
-
     /* Get the lines supporting the bus */
     ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
 
@@ -169,8 +165,6 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
   ierr = MatAssemblyBegin(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
-  ierr = PetscPrintf(comm,"\nJe:\n");CHKERRQ(ierr);
-  ierr = MatView(Je,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -192,8 +186,6 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   ierr = PetscCalloc1(1,&opflow);CHKERRQ(ierr);
 
   ierr = COMMCreate(mpicomm,&opflow->comm);CHKERRQ(ierr);
-
-  //if(opflow->comm->size > 1) SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Optimal Power Flow not supported in parallel");
 
   ierr = PSCreate(mpicomm,&opflow->ps);CHKERRQ(ierr);
 
@@ -409,7 +401,6 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
 + Ji - Jacobian for inequality constraints
 - Ji_pre - Preconditioner (same as Jacobian, no change needed) for
            inequality constraints
-
 */
 PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat Ji, Mat Ji_pre, void* ctx)
 {
@@ -449,7 +440,6 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
   ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
 
   ierr = MatGetOwnershipRange(Ji,&rstart,&rend);CHKERRQ(ierr);
-  printf("[%d] nbranch %d, rstart %d %d\n",rank,ps->nbranch,rstart,rend);
   ierr = MPI_Barrier(comm);CHKERRQ(ierr);
 
   gloc = rstart;
@@ -517,7 +507,6 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
     dSf2_dVmf    = dSf2_dPf*dPf_dVmf    + dSf2_dQf*dQf_dVmf;
     dSf2_dVmt    = dSf2_dPf*dPf_dVmt    + dSf2_dQf*dQf_dVmt;
 
-    /* g[gloc] */
     row[0] = gloc;
     col[0] = glocf; col[1] = glocf+1; col[2] = gloct; col[3] = gloct+1;
     val[0] = dSf2_dthetaf;
@@ -527,7 +516,6 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
 
     ierr = MatSetValues(Ji,1,row,4,col,val,INSERT_VALUES);CHKERRQ(ierr); //error!
 
-    /* g[gloc+1] */
     row[0] = gloc+1;
     col[0] = glocf; col[1] = glocf+1; col[2] = gloct; col[3] = gloct+1;
     val[0] = -dSf2_dthetaf;
@@ -542,7 +530,6 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
     dSt2_dVmf    = dSt2_dPt*dPt_dVmf    + dSt2_dQt*dQt_dVmf;
     dSt2_dVmt    = dSt2_dPt*dPt_dVmt    + dSt2_dQt*dQt_dVmt;
 
-    /* g[gloc+2] */
     row[0] = gloc+2;
     col[0] = gloct; col[1] = gloct+1; col[2] = glocf; col[3] = glocf+1;
 
@@ -553,7 +540,6 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
 
     ierr = MatSetValues(Ji,1,row,4,col,val,INSERT_VALUES);CHKERRQ(ierr);
 
-    /* g[gloc+3] */
     row[0] = gloc+3;
     col[0] = gloct; col[1] = gloct+1; col[2] = glocf; col[3] = glocf+1;
 
@@ -567,14 +553,11 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
     gloc += 4;
   }
 
-  //ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"\nJi:\n");CHKERRQ(ierr);
-  ierr = MatView(Ji,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -760,12 +743,6 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
       }
     }
   }
-#if 1
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"Xl:\n");
-  ierr = VecView(Xl,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"Xu:\n");
-  ierr = VecView(Xu,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-#endif
   PetscFunctionReturn(0);
 }
 
@@ -834,15 +811,12 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
     }
   }
 
-  //ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(localXl,&xl);CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(localXu,&xu);CHKERRQ(ierr);
   ierr = DMRestoreLocalVector(ps->networkdm,&localXl);CHKERRQ(ierr);
   ierr = DMRestoreLocalVector(ps->networkdm,&localXu);CHKERRQ(ierr);
   ierr = VecAssemblyBegin(X);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(X);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"\nInitialGuess:\n");CHKERRQ(ierr);
-  ierr = VecView(X,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -860,13 +834,13 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
 PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X, PetscScalar* obj,Vec grad,void* ctx)
 {
   PetscErrorCode ierr;
-  OPFLOW         opflow=(OPFLOW)ctx;
-  PetscScalar    *df,Pg,sobj;
-  PS             ps=opflow->ps;
   PetscInt       i,k;
-  PSBUS          bus;
   PetscInt       loc;
+  PetscScalar    *df,Pg,sobj;
+  OPFLOW         opflow=(OPFLOW)ctx;
+  PS             ps=opflow->ps;
   Vec            localX,localgrad;
+  PSBUS          bus;
   PSGEN          gen;
   const PetscScalar *x;
 
@@ -1050,8 +1024,6 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
   ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
 
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
-  printf("Ge:\n");
-  ierr = VecView(Ge,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -1154,8 +1126,6 @@ PetscErrorCode OPFLOWInequalityConstraintsFunction(Tao nlp,Vec X,Vec Gi,void* ct
   ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
   ierr = VecRestoreArray(Gi,&g);CHKERRQ(ierr);
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"\nGi:\n");
-  ierr = VecView(Gi,0);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -1204,9 +1174,9 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
 PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 {
   PetscErrorCode ierr;
-  PS             ps=opflow->ps;
-  PetscMPIInt    rank;
   PetscInt       i,nbus=0;
+  PetscMPIInt    rank;
+  PS             ps=opflow->ps;
   PSBUS          bus;
 
   PetscFunctionBegin;
@@ -1230,7 +1200,6 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 
   /* Create the solution vector */
   ierr = PSCreateGlobalVector(opflow->ps,&opflow->X);CHKERRQ(ierr);
-  //ierr = VecView(opflow->X,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
 
   ierr = TaoSetInitialVector(opflow->nlp,opflow->X);CHKERRQ(ierr);
 
