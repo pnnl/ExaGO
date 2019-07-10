@@ -953,6 +953,7 @@ PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X, PetscScalar* ob
   Output Parameters:
 . Ge  - vector of equality constraints
 */
+#if 0  //bad!!!
 PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
 {
   PetscErrorCode ierr;
@@ -1114,6 +1115,159 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
   ierr = VecAssemblyBegin(Ge);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(Ge);CHKERRQ(ierr);
+  printf("Ge:\n");
+  ierr = VecView(Ge,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+#endif
+
+PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
+{
+  PetscErrorCode ierr;
+  OPFLOW         opflow=(OPFLOW)ctx;
+  PetscScalar    val[2],*g;
+  PS             ps=opflow->ps;
+  PetscInt       i,k;
+  PSLINE         line;
+  PSBUS          bus;
+  PetscInt       gloc,row[2];
+  const PSBUS    *connbuses;
+  PetscInt       nconnlines;
+  const PSLINE   *connlines;
+  PSBUS          busf,bust;
+  PetscInt       xloc,xlocf,xloct;
+  Vec            localX;
+  PSLOAD         load;
+  PetscScalar    theta,Vm;
+  const PetscScalar *x;
+  MPI_Comm       comm=opflow->comm->type;
+  PetscMPIInt    rank,size;
+
+  PetscFunctionBegin;
+  ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
+  ierr = MPI_Comm_size(comm,&size);CHKERRQ(ierr);
+  ierr = VecSet(Ge,0.0);CHKERRQ(ierr);
+
+  ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+
+  ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
+
+  for (i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    PetscInt gloc1;
+    ierr = DMNetworkGetVertexLocalToGlobalOrdering(ps->networkdm,i,&gloc);CHKERRQ(ierr);
+    gloc *= 2;
+    row[0] = gloc; row[1] = row[0] + 1;
+
+    if (!bus->isghost) {
+      ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
+      theta = x[xloc];
+      Vm    = x[xloc+1];
+
+      if (bus->ide == ISOLATED_BUS) {
+        row[0]  = gloc; row[1] = row[0] + 1;
+        //g[gloc] =  theta - bus->va*PETSC_PI/180.0;
+        //g[gloc+1] = Vm - bus->vm;
+        val[0] = theta - bus->va*PETSC_PI/180.0;
+        val[1] = Vm - bus->vm;
+        ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+        continue;
+      }
+
+      /* Shunt injections */
+      //g[gloc]   += Vm*Vm*bus->gl;
+      //g[gloc+1] += -Vm*Vm*bus->bl;
+      val[0] = Vm*Vm*bus->gl;
+      val[1] = -Vm*Vm*bus->bl;
+      ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+
+      for (k=0; k < bus->ngen; k++) {
+        xloc += 2;
+        PetscScalar Pg,Qg;
+        Pg = x[xloc];
+        Qg = x[xloc+1];
+
+        //g[gloc]   -= Pg;
+        //g[gloc+1] -= Qg;
+        val[0] = -Pg;
+        val[1] = -Qg;
+        ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+      }
+
+      for (k=0; k < bus->nload; k++) {
+        ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
+
+        //g[gloc]   += load->pl;
+        //g[gloc+1] += load->ql;
+        val[0] = load->pl;
+        val[1] = load->ql;
+        ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+      }
+    }
+
+    ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
+    for (k=0; k < nconnlines; k++) {
+      line = connlines[k];
+
+      if (!line->status) continue;
+
+      PetscScalar Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
+      Gff = line->yff[0];
+      Bff = line->yff[1];
+      Gft = line->yft[0];
+      Bft = line->yft[1];
+      Gtf = line->ytf[0];
+      Btf = line->ytf[1];
+      Gtt = line->ytt[0];
+      Btt = line->ytt[1];
+
+      ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
+      busf = connbuses[0];
+      bust = connbuses[1];
+
+      ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
+      ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
+
+      PetscScalar Vmf,Vmt,thetaf,thetat,thetaft,thetatf;
+
+      thetaf  = x[xlocf];
+      Vmf     = x[xlocf+1];
+      thetat  = x[xloct];
+      Vmt     = x[xloct+1];
+      thetaft = thetaf - thetat;
+      thetatf = thetat - thetaf;
+
+      PetscScalar Pf,Qf,Pt,Qt;
+
+      if (bus == busf) {
+	Pf = Gff*Vmf*Vmf  + Vmf*Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
+	Qf = -Bff*Vmf*Vmf + Vmf*Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
+
+	//g[gloc]   += Pf;
+	//g[gloc+1] += Qf;
+        val[0] = Pf;
+        val[1] = Qf;
+        ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+      } else {
+	Pt = Gtt*Vmt*Vmt  + Vmt*Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
+	Qt = -Btt*Vmt*Vmt + Vmt*Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
+
+	//g[gloc]   += Pt;
+	//g[gloc+1] += Qt;
+        val[0] = Pt;
+        val[1] = Qt;
+        ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+      }
+    }
+  }
+  ierr = VecAssemblyBegin(Ge);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(Ge);CHKERRQ(ierr);
+
+  ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
+
+  ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
   printf("Ge:\n");
   ierr = VecView(Ge,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   PetscFunctionReturn(0);
