@@ -927,6 +927,7 @@ PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X, PetscScalar* ob
       if(!gen->status) continue;
       Pg = x[loc]*ps->MVAbase;
       *obj += gen->cost_alpha*Pg*Pg + gen->cost_beta*Pg + gen->cost_gamma;
+      MPI_Allreduce(obj,obj,1,MPI_DOUBLE,MPI_SUM,opflow->comm->type);
       df[loc] = ps->MVAbase*(2*gen->cost_alpha*Pg + gen->cost_beta);
     }
   }
