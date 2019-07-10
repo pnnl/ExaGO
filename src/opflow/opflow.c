@@ -29,15 +29,28 @@
 PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, Mat Je_pre, void* ctx)
 {
   PetscErrorCode ierr;
-  OPFLOW         opflow=(OPFLOW)ctx;
-  PS             ps=opflow->ps;
-  Vec            localX;
-  const PetscScalar *xarr;
+  PetscInt       i,k,rowctr=0;
+  PetscInt       row[2],col[4];
+  PetscInt       genctr,gidx;
+  PetscInt       nconnlines;
+  PetscInt       locglob,loc;
+  PetscInt       locglobf,locglobt,locf,loct;
   PetscBool      ghostbus;
-  PetscInt       i,k;
-  PetscInt       rowctr=0;
+  PetscScalar    Vm,val[4];
+  PetscScalar    Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
+  PetscScalar    thetaf,thetat,Vmf,Vmt,thetaft,thetatf;
+  OPFLOW         opflow=(OPFLOW)ctx;
   MPI_Comm       comm=opflow->comm->type;
+  Vec            localX;
+  PS             ps=opflow->ps;
+  PSBUS          bus;
+  PSLINE         line;
+  PSBUS          busf,bust;
   DM             networkdm=ps->networkdm;
+  const PetscScalar *xarr;
+  const PSLINE *connlines;
+  const PSBUS *connbuses;
+
 
   PetscFunctionBegin;
   ierr = MatZeroEntries(Je);CHKERRQ(ierr);
@@ -49,13 +62,6 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
   ierr = VecGetArrayRead(localX,&xarr);CHKERRQ(ierr);
 
   for (i=0; i < ps->nbus; i++) {
-    PetscScalar Vm;
-    PetscInt    loc;
-    PetscInt    locglob;
-    PSBUS       bus;
-    PetscInt    row[2],col[4];
-    PetscScalar val[4];
-    PetscInt    genctr,gidx;
 
     bus = &ps->bus[i];
     ierr = DMNetworkGetVertexLocalToGlobalOrdering(networkdm,i,&gidx);CHKERRQ(ierr);
@@ -72,11 +78,11 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
       col[0] = locglob; col[1] = locglob+1;
       /* Isolated and reference bus */
       if(bus->ide == ISOLATED_BUS) {
-	val[0] = val[3] = 1.0;
-	val[1] = val[2] = 0.0;
-	ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-	rowctr += 2;
-	continue;
+      	val[0] = val[3] = 1.0;
+      	val[1] = val[2] = 0.0;
+      	ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
+      	rowctr += 2;
+      	continue;
       }
 
       /* Shunt injections */
@@ -86,20 +92,17 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
 
       genctr = 0;
       for(k=0; k < bus->ngen; k++) {
-	col[0] = locglob + 2 + genctr;
-	val[0] = -1;
-	ierr = MatSetValues(Je,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+      	col[0] = locglob + 2 + genctr;
+      	val[0] = -1;
+      	ierr = MatSetValues(Je,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
-	col[0] = locglob + 2 + genctr+1;
-	val[0] = -1;
-	ierr = MatSetValues(Je,1,row+1,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+      	col[0] = locglob + 2 + genctr+1;
+      	val[0] = -1;
+      	ierr = MatSetValues(Je,1,row+1,1,col,val,ADD_VALUES);CHKERRQ(ierr);
       }
     }
 
     /* Partial derivatives of network equations */
-    PetscInt     nconnlines;
-    const PSLINE *connlines;
-    PSLINE       line;
 
     /* Get the lines supporting the bus */
     ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
@@ -107,7 +110,6 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
     for (k=0; k < nconnlines; k++) {
       line = connlines[k];
       if(!line->status) continue;
-      PetscScalar Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
       Gff = line->yff[0];
       Bff = line->yff[1];
       Gft = line->yft[0];
@@ -116,11 +118,6 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
       Btf = line->ytf[1];
       Gtt = line->ytt[0];
       Btt = line->ytt[1];
-
-      const PSBUS *connbuses;
-      PSBUS       busf,bust;
-      PetscInt    locglobf,locglobt,locf,loct;
-      PetscScalar thetaf,thetat,Vmf,Vmt,thetaft,thetatf;
 
       /* Get the connected buses to this line */
       ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
@@ -139,31 +136,31 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
       thetatf = thetat - thetaf;
 
       if (bus == busf) {
-	col[0] = locglobf; col[1] = locglobf+1; col[2] = locglobt; col[3] = locglobt+1;
-	val[0] = Vmf*Vmt*(-Gft*sin(thetaft) + Bft*cos(thetaft));
-	val[1] = 2*Gff*Vmf + Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
-	val[2] = Vmf*Vmt*(Gft*sin(thetaft) - Bft*cos(thetaft));
-	val[3] = Vmf*(Gft*cos(thetaft) + Bft*sin(thetaft));
-	ierr = MatSetValues(Je,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+      	col[0] = locglobf; col[1] = locglobf+1; col[2] = locglobt; col[3] = locglobt+1;
+      	val[0] = Vmf*Vmt*(-Gft*sin(thetaft) + Bft*cos(thetaft));
+      	val[1] = 2*Gff*Vmf + Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
+      	val[2] = Vmf*Vmt*(Gft*sin(thetaft) - Bft*cos(thetaft));
+      	val[3] = Vmf*(Gft*cos(thetaft) + Bft*sin(thetaft));
+      	ierr = MatSetValues(Je,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
 
-	val[0] = Vmf*Vmt*(Bft*sin(thetaft) + Gft*cos(thetaft));
-	val[1] = -2*Bff*Vmf + Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
-	val[2] = Vmf*Vmt*(-Bft*sin(thetaft) - Gft*cos(thetaft));
-	val[3] = Vmf*(-Bft*cos(thetaft) + Gft*sin(thetaft));
-	ierr = MatSetValues(Je,1,row+1,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+      	val[0] = Vmf*Vmt*(Bft*sin(thetaft) + Gft*cos(thetaft));
+      	val[1] = -2*Bff*Vmf + Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
+      	val[2] = Vmf*Vmt*(-Bft*sin(thetaft) - Gft*cos(thetaft));
+      	val[3] = Vmf*(-Bft*cos(thetaft) + Gft*sin(thetaft));
+      	ierr = MatSetValues(Je,1,row+1,4,col,val,ADD_VALUES);CHKERRQ(ierr);
       } else {
-	col[0] = locglobt; col[1] = locglobt+1; col[2] = locglobf; col[3] = locglobf+1;
-	val[0] = Vmt*Vmf*(-Gtf*sin(thetatf) + Btf*cos(thetatf));
-	val[1] = 2*Gtt*Vmt + Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
-	val[2] = Vmt*Vmf*(Gtf*sin(thetatf) - Btf*cos(thetatf));
-	val[3] = Vmt*(Gtf*cos(thetatf) + Btf*sin(thetatf));
-	ierr = MatSetValues(Je,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+      	col[0] = locglobt; col[1] = locglobt+1; col[2] = locglobf; col[3] = locglobf+1;
+      	val[0] = Vmt*Vmf*(-Gtf*sin(thetatf) + Btf*cos(thetatf));
+      	val[1] = 2*Gtt*Vmt + Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
+      	val[2] = Vmt*Vmf*(Gtf*sin(thetatf) - Btf*cos(thetatf));
+      	val[3] = Vmt*(Gtf*cos(thetatf) + Btf*sin(thetatf));
+      	ierr = MatSetValues(Je,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
 
-	val[0] = Vmt*Vmf*(Btf*sin(thetatf) + Gtf*cos(thetatf));
-	val[1] = -2*Btt*Vmt + Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
-	val[2] = Vmt*Vmf*(-Btf*sin(thetatf) - Gtf*cos(thetatf));
-	val[3] = Vmt*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
-	ierr = MatSetValues(Je,1,row+1,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+      	val[0] = Vmt*Vmf*(Btf*sin(thetatf) + Gtf*cos(thetatf));
+      	val[1] = -2*Btt*Vmt + Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
+      	val[2] = Vmt*Vmf*(-Btf*sin(thetatf) - Gtf*cos(thetatf));
+      	val[3] = Vmt*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
+      	ierr = MatSetValues(Je,1,row+1,4,col,val,ADD_VALUES);CHKERRQ(ierr);
       }
     }
   }
@@ -318,21 +315,19 @@ PetscErrorCode OPFLOWCreateGlobalVector(OPFLOW opflow,Vec *vec)
 PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
 {
   PetscErrorCode ierr;
-  Mat            jac;
   PetscInt       nconineq=opflow->nconineq,Nconineq=opflow->Nconineq; /* Number of constraints */
   PetscInt       nvar=opflow->nvar,Nvar=opflow->Nvar; /* Number of variables */
-  PS             ps=opflow->ps;
-  PetscInt       i;
-  PSLINE         line;
-  PetscInt       mloc=0;
-  const PSBUS    *connbuses;
-  PSBUS          busf,bust;
-  PetscInt       locf,loct;
-  //PetscInt       *nnz;
-  PetscInt       row[2],col[4];
+  PetscInt       i,mloc=0,locf,loct;
+  PetscInt       rstart,rend,row[2],col[4];
+  PetscMPIInt    rank,size;
   PetscScalar    val[8];
   MPI_Comm       comm=opflow->comm->type;
-  PetscMPIInt    rank,size;
+  Mat            jac;
+  PS             ps=opflow->ps;
+  PSLINE         line;
+  PSBUS          busf,bust;
+  const PSBUS    *connbuses;
+  //PetscInt       *nnz;
 
   PetscFunctionBegin;
   ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
@@ -362,7 +357,6 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatSeqAIJSetPreallocation(jac,0,nnz);CHKERRQ(ierr);
   ierr = PetscFree(nnz);CHKERRQ(ierr);
 #endif
-  PetscInt rstart,rend;
   ierr = MatGetOwnershipRange(jac,&rstart,&rend);CHKERRQ(ierr);
   //printf("[%d] Ji rstart/end: %d %d;\n",rank,rstart,rend);
   //ierr = MPI_Barrier(comm);CHKERRQ(ierr);
@@ -401,7 +395,6 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   *mat = jac;
   ierr = PetscPrintf(comm,"Ji structure:\n");CHKERRQ(ierr);
   ierr = MatView(jac,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //if (size > 1) exit(1);
   PetscFunctionReturn(0);
 }
 
@@ -422,20 +415,30 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
 PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat Ji, Mat Ji_pre, void* ctx)
 {
   PetscErrorCode ierr;
+  PetscInt       ctr=0,i;
+  PetscInt       row[2],col[4];
+  PetscInt       rstart,rend;
+  PetscInt       gloc=0,xlocf,xloct,glocf,gloct;
+  PetscMPIInt    rank,size;
+  PetscScalar    val[4];
+  PetscScalar    Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
+  PetscScalar    Vmf,Vmt,thetaf,thetat,thetaft,thetatf;
+  PetscScalar    Pf,Qf,Pt,Qt;
+  PetscScalar    dSf2_dPf, dSf2_dQf, dSt2_dPt, dSt2_dQt;
+  PetscScalar    dPf_dthetaf,dPf_dVmf,dPf_dthetat,dPf_dVmt;
+  PetscScalar    dQf_dthetaf,dQf_dVmf,dQf_dthetat,dQf_dVmt;
+  PetscScalar    dPt_dthetaf,dPt_dVmf,dPt_dthetat,dPt_dVmt;
+  PetscScalar    dQt_dthetaf,dQt_dVmf,dQt_dthetat,dQt_dVmt;
+  PetscScalar    dSf2_dthetaf,dSf2_dVmf,dSf2_dthetat,dSf2_dVmt;
+  PetscScalar    dSt2_dthetaf,dSt2_dVmf,dSt2_dthetat,dSt2_dVmt;
   OPFLOW         opflow=(OPFLOW)ctx;
   PS             ps=opflow->ps;
-  PetscInt       ctr=0;
-  PetscInt       i;
-  PSLINE         line;
-  const PSBUS    *connbuses;
-  PetscInt       gloc=0,xlocf,xloct,glocf,gloct;
-  PSBUS          busf,bust;
-  PetscInt       row[2],col[4];
-  PetscScalar    val[4];
-  const PetscScalar *x;
   MPI_Comm       comm=opflow->comm->type;
-  PetscMPIInt    rank,size;
   Vec            localX;
+  PSLINE         line;
+  PSBUS          busf,bust;
+  const PSBUS    *connbuses;
+  const PetscScalar *x;
 
   PetscFunctionBegin;
   ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
@@ -446,7 +449,6 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
   ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
   ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
 
-  PetscInt rstart,rend;
   ierr = MatGetOwnershipRange(Ji,&rstart,&rend);CHKERRQ(ierr);
   printf("[%d] nbranch %d, rstart %d %d\n",rank,ps->nbranch,rstart,rend);
   ierr = MPI_Barrier(comm);CHKERRQ(ierr);
@@ -455,7 +457,6 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
   for(i=0; i < ps->nbranch; i++) {
     line = &ps->line[i];
 
-    PetscScalar Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
     Gff = line->yff[0];
     Bff = line->yff[1];
     Gft = line->yft[0];
@@ -474,8 +475,6 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
     ierr = PSBUSGetVariableGlobalLocation(busf,&glocf);CHKERRQ(ierr);
     ierr = PSBUSGetVariableGlobalLocation(bust,&gloct);CHKERRQ(ierr);
 
-    PetscScalar Vmf,Vmt,thetaf,thetat,thetaft,thetatf;
-
     thetaf  = x[xlocf];
     Vmf     = x[xlocf+1];
     thetat  = x[xloct];
@@ -483,25 +482,16 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
     thetaft = thetaf - thetat;
     thetatf = thetat - thetaf;
 
-    PetscScalar Pf,Qf,Pt,Qt;
-
     Pf = Gff*Vmf*Vmf  + Vmf*Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
     Qf = -Bff*Vmf*Vmf + Vmf*Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
 
     Pt = Gtt*Vmt*Vmt  + Vmt*Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
     Qt = -Btt*Vmt*Vmt + Vmt*Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
 
-    PetscScalar dSf2_dPf, dSf2_dQf, dSt2_dPt, dSt2_dQt;
-
     dSf2_dPf = 2*Pf;
     dSf2_dQf = 2*Qf;
     dSt2_dPt = 2*Pt;
     dSt2_dQt = 2*Qt;
-
-    PetscScalar dPf_dthetaf,dPf_dVmf,dPf_dthetat,dPf_dVmt;
-    PetscScalar dQf_dthetaf,dQf_dVmf,dQf_dthetat,dQf_dVmt;
-    PetscScalar dPt_dthetaf,dPt_dVmf,dPt_dthetat,dPt_dVmt;
-    PetscScalar dQt_dthetaf,dQt_dVmf,dQt_dthetat,dQt_dVmt;
 
     dPf_dthetaf = Vmf*Vmt*(-Gft*sin(thetaft) + Bft*cos(thetaft));
     dPf_dVmf    = 2*Gff*Vmf + Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
@@ -522,8 +512,6 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
     dQt_dVmt    = -2*Btt*Vmt + Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
     dQt_dthetaf = Vmt*Vmf*(-Btf*sin(thetatf) - Gtf*cos(thetatf));
     dQt_dVmf    = Vmt*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
-
-    PetscScalar dSf2_dthetaf,dSf2_dVmf,dSf2_dthetat,dSf2_dVmt;
 
     dSf2_dthetaf = dSf2_dPf*dPf_dthetaf + dSf2_dQf*dQf_dthetaf;
     dSf2_dthetat = dSf2_dPf*dPf_dthetat + dSf2_dQf*dQf_dthetat;
@@ -549,8 +537,6 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
     val[3] = -dSf2_dVmt;
 
     ierr = MatSetValues(Ji,1,row,4,col,val,INSERT_VALUES);CHKERRQ(ierr);
-
-    PetscScalar dSt2_dthetaf,dSt2_dVmf,dSt2_dthetat,dSt2_dVmt;
 
     dSt2_dthetaf = dSt2_dPt*dPt_dthetaf + dSt2_dQt*dQt_dthetaf;
     dSt2_dthetat = dSt2_dPt*dPt_dthetat + dSt2_dQt*dQt_dthetat;
@@ -586,8 +572,6 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
   ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
 
-
-
   ierr = MatAssemblyBegin(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"\nJi:\n");CHKERRQ(ierr);
@@ -611,24 +595,22 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat J
 PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
 {
   PetscErrorCode ierr;
-  Mat            jac;
   PetscInt       nconeq=opflow->nconeq; /* Local number of equality constraints */
   PetscInt       nvar=opflow->nvar;     /* Local number of variables */
-  PS             ps=opflow->ps;
-  PetscInt       i,k;
-  PSLINE         line;
-  PSBUS          bus;
-  const PSBUS    *connbuses;
-  PetscInt       nconnlines;
-  const PSLINE   *connlines;
-  PSBUS          busf,bust;
+  PetscInt       i,k,nconnlines;
   PetscInt       loc,locf,loct,gidx;
-  //PetscInt       *nnz;
   PetscInt       row[2],col[2];
-  PetscScalar    val[4];
-  MPI_Comm       comm=opflow->comm->type;
+  //PetscInt       *nnz;
   PetscMPIInt    rank,size;
+  PetscScalar    val[4];
+  PS             ps=opflow->ps;
+  MPI_Comm       comm=opflow->comm->type;
+  Mat            jac;
+  PSLINE         line;
+  PSBUS          bus,busf,bust;
   DM             networkdm=ps->networkdm;
+  const PSBUS    *connbuses;
+  const PSLINE   *connlines;
 
   PetscFunctionBegin;
   ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
@@ -736,26 +718,22 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
     ierr = PSBUSGetVariableGlobalLocation(bus,&loc);CHKERRQ(ierr);
 
     /* Bounds on voltage angles */
-    //xl[loc] = -PETSC_PI; xu[loc] = PETSC_PI;
     row[0] = loc; row[1] = loc+1;
     vals[0] = -PETSC_PI; vals[1] = PETSC_PI;
     ierr = VecSetValues(Xl,1,row,vals,INSERT_VALUES);CHKERRQ(ierr);
     ierr = VecSetValues(Xu,1,row,vals+1,INSERT_VALUES);CHKERRQ(ierr);
 
     /* Bounds on voltage magnitudes and bounds on reactive power mismatch equality constraints */
-    //xl[loc+1] = bus->Vmin; xu[loc+1] = bus->Vmax;
     vals[0] = bus->Vmin; vals[1] = bus->Vmax;
     ierr = VecSetValues(Xl,1,row+1,vals,INSERT_VALUES);CHKERRQ(ierr);
     ierr = VecSetValues(Xu,1,row+1,vals+1,INSERT_VALUES);CHKERRQ(ierr);
 
     if(bus->ide == REF_BUS || bus->ide == ISOLATED_BUS){
-      //xl[loc] = xu[loc] = bus->va*PETSC_PI/180.0;
       vals[0] = bus->va*PETSC_PI/180.0;
       ierr = VecSetValues(Xl,1,row,vals,INSERT_VALUES);CHKERRQ(ierr);
       ierr = VecSetValues(Xu,1,row,vals,INSERT_VALUES);CHKERRQ(ierr);
     }
     if(bus->ide == ISOLATED_BUS){
-      //xl[loc+1] = xu[loc+1] = bus->vm;
       vals[0] = bus->vm;
       ierr = VecSetValues(Xl,1,row+1,vals,INSERT_VALUES);CHKERRQ(ierr);
       ierr = VecSetValues(Xu,1,row+1,vals,INSERT_VALUES);CHKERRQ(ierr);
@@ -764,7 +742,6 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
     for(k=0; k < bus->ngen; k++) {
       PSGEN gen;
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      //loc = loc+2;
       row[0] = row[0]+2; row[1] = row[1]+2;
       if(!gen->status){
         //xl[loc] = xu[loc] = xl[loc+1] = xu[loc+1] = 0.0;
@@ -809,22 +786,20 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
 PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
 {
   PetscErrorCode ierr;
-  PS             ps=opflow->ps;
-  const PetscScalar    *xl,*xu;
-  PetscScalar    vals[2];
   PetscInt       i,row[2];
+  PetscInt       loc,gloc,k;
+  PetscMPIInt    rank;
+  PetscScalar    vals[2];
+  PS             ps=opflow->ps;
+  MPI_Comm       comm=opflow->comm->type;
   Vec            localXl,localXu;
   PSBUS          bus;
-  PetscInt       loc,gloc;
-  MPI_Comm       comm=opflow->comm->type;
-  PetscMPIInt    rank;
+  PSGEN          gen;
+  const PetscScalar    *xl,*xu;
 
   PetscFunctionBegin;
 
   /* Get array pointers */
-  //ierr = VecGetArray(X,&x);CHKERRQ(ierr);
-  //ierr = VecGetArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
-  //ierr = VecGetArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
   ierr = DMGetLocalVector(ps->networkdm,&localXl);CHKERRQ(ierr);
   ierr = DMGetLocalVector(ps->networkdm,&localXu);CHKERRQ(ierr);
   ierr = DMGlobalToLocalBegin(ps->networkdm,opflow->Xl,INSERT_VALUES,localXl);CHKERRQ(ierr);
@@ -838,29 +813,21 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
   ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
 
   for(i=0; i < ps->nbus; i++) {
-    PetscInt k;
 
     bus = &ps->bus[i];
     if (bus->isghost)continue;
 
     ierr = PSBUSGetVariableGlobalLocation(bus,&gloc);CHKERRQ(ierr);
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
-      //printf("i = %d gloc = %d\n",i,gloc );
-      //printf("i = %d loc = %d\n",i,loc );
     /* Guess for voltage angles and bounds on voltage magnitudes */
-    //x[loc]   = (xl[loc] + xu[loc])/2.0;
-    //x[loc+1] = (xl[loc+1] + xu[loc+1])/2.0;
+
     row[0] = gloc; row[1] = gloc+1;
     vals[0] = (xl[loc] + xu[loc])/2.0;
     vals[1] = (xl[loc+1] + xu[loc+1])/2.0;
     ierr = VecSetValues(X,2,row,vals,INSERT_VALUES);CHKERRQ(ierr);
 
     for(k=0; k < bus->ngen; k++) {
-      PSGEN gen;
-
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      //x[loc]   = (xl[loc] + xu[loc])/2.0;     /* Initial guess for Pg */
-      //x[loc+1] = (xl[loc+1] + xu[loc+1])/2.0; /* Initial guess for Qg */
       loc = loc+2; row[0] = row[0]+2; row[1] = row[1]+2;
       vals[0] = (xl[loc] + xu[loc])/2.0;
       vals[1] = (xl[loc+1] + xu[loc+1])/2.0;
@@ -927,7 +894,7 @@ PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X, PetscScalar* ob
       if(!gen->status) continue;
       Pg = x[loc]*ps->MVAbase;
       *obj += gen->cost_alpha*Pg*Pg + gen->cost_beta*Pg + gen->cost_gamma;
-      MPI_Allreduce(obj,obj,1,MPI_DOUBLE,MPI_SUM,opflow->comm->type);
+      ierr = MPI_Allreduce(obj,obj,1,MPI_DOUBLE,MPI_SUM,opflow->comm->type);
       df[loc] = ps->MVAbase*(2*gen->cost_alpha*Pg + gen->cost_beta);
     }
   }
