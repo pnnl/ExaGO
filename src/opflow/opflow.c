@@ -310,7 +310,7 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   PetscInt       nvar=opflow->nvar,Nvar=opflow->Nvar; /* Number of variables */
   PetscInt       i,mloc=0,locf,loct;
   PetscInt       rstart,rend,row[2],col[4];
-  //PetscInt       *nnz;
+  PetscInt       *dnnz,*onnz;
   PetscMPIInt    rank,size;
   PetscScalar    val[8];
   MPI_Comm       comm=opflow->comm->type;
@@ -328,30 +328,23 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatCreate(opflow->comm->type,&jac);CHKERRQ(ierr);
   ierr = MatSetSizes(jac,nconineq,nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
   ierr = MatSetType(jac,MATAIJ);CHKERRQ(ierr);
-  ierr = MatSetUp(jac);CHKERRQ(ierr);
-#if 0
-  PetscInt       *nnz;
+
   /* Set up preallocation */
-  ierr = PetscCalloc1(Nconineq,&nnz);CHKERRQ(ierr);
-
-  for(i=0; i < ps->Nbranch; i++) {
-    line = &ps->line[i];
-
-    nnz[mloc] += 4;
-    nnz[mloc+1] += 4;
-    nnz[mloc+2] += 4;
-    nnz[mloc+3] += 4;
-
+  ierr = PetscCalloc2(nconineq,&dnnz,nconineq,&onnz);CHKERRQ(ierr);
+  mloc=0;
+  for(i=0; i < ps->nbranch; i++) {
+    dnnz[mloc]   += 4; onnz[mloc]   += 2;
+    dnnz[mloc+1] += 4; onnz[mloc+1] += 2;
+    dnnz[mloc+2] += 4; onnz[mloc+2] += 2;
+    dnnz[mloc+3] += 4; onnz[mloc+3] += 2;
     mloc += 4;
   }
 
-  ierr = MatSeqAIJSetPreallocation(jac,0,nnz);CHKERRQ(ierr);
-  ierr = PetscFree(nnz);CHKERRQ(ierr);
-#endif
-  ierr = MatGetOwnershipRange(jac,&rstart,&rend);CHKERRQ(ierr);
-  //printf("[%d] Ji rstart/end: %d %d;\n",rank,rstart,rend);
-  //ierr = MPI_Barrier(comm);CHKERRQ(ierr);
+  ierr = MatSeqAIJSetPreallocation(jac,0,dnnz);CHKERRQ(ierr);
+  ierr = MatMPIAIJSetPreallocation(jac,0,dnnz,0,onnz);CHKERRQ(ierr);
+  ierr = PetscFree2(dnnz,onnz);CHKERRQ(ierr);
 
+  ierr = MatGetOwnershipRange(jac,&rstart,&rend);CHKERRQ(ierr);
   for (i=0; i<8; i++) val[i] = 0.0;
 
   /* Set up nonzero structure. 0 is inserted in the non-zero location */
