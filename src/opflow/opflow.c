@@ -384,8 +384,8 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatSetOption(jac,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
 
   *mat = jac;
-  ierr = PetscPrintf(comm,"Ji structure:\n");CHKERRQ(ierr);
-  ierr = MatView(jac,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //ierr = PetscPrintf(comm,"Ji structure:\n");CHKERRQ(ierr);
+  //ierr = MatView(jac,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -668,8 +668,8 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatSetOption(jac,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
 
   *mat = jac;
-  ierr = PetscPrintf(comm,"Je structure:\n");CHKERRQ(ierr);
-  ierr = MatView(jac,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //ierr = PetscPrintf(comm,"Je structure:\n");CHKERRQ(ierr);
+  //ierr = MatView(jac,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
