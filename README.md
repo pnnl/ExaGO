@@ -33,6 +33,9 @@ Run the above commands to install PETSc.
 PSapps needs the environment variable PSAPPS_DIR set to the location of the PSapps directory
 ```
 export PSAPPS_DIR=<location of PSapps>
+export LD_LIBRARY_PATH=$PETSC_DIR/$PETSC_ARCH/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$PSAPPS_DIR:$LD_LIBRARY_PATH
+
 ```
 ## Power flow application
 Compile the power flow application code
