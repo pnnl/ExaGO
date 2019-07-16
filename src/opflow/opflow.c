@@ -315,10 +315,31 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = PetscCalloc2(nconineq,&dnnz,nconineq,&onnz);CHKERRQ(ierr);
   mloc = 0;
   for (i=0; i < ps->nbranch; i++) {
-    dnnz[mloc]   += 4; onnz[mloc]   += 2;
-    dnnz[mloc+1] += 4; onnz[mloc+1] += 2;
-    dnnz[mloc+2] += 4; onnz[mloc+2] += 2;
-    dnnz[mloc+3] += 4; onnz[mloc+3] += 2;
+    line = &ps->line[i];
+    ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
+    busf = connbuses[0];
+    bust = connbuses[1];
+
+    if (busf->isghost && bust->isghost) {
+      onnz[mloc]   += 4;
+      onnz[mloc+1] += 4;
+      onnz[mloc+2] += 4;
+      onnz[mloc+3] += 4;
+    } else if (!busf->isghost && !bust->isghost) {
+      dnnz[mloc]   += 4;
+      dnnz[mloc+1] += 4;
+      dnnz[mloc+2] += 4;
+      dnnz[mloc+3] += 4;
+    } else {
+      onnz[mloc]   += 2;
+      onnz[mloc+1] += 2;
+      onnz[mloc+2] += 2;
+      onnz[mloc+3] += 2;
+      dnnz[mloc]   += 2;
+      dnnz[mloc+1] += 2;
+      dnnz[mloc+2] += 2;
+      dnnz[mloc+3] += 2;
+    }
     mloc += 4;
   }
 
@@ -340,7 +361,7 @@ PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat)
     ierr = PSBUSGetVariableGlobalLocation(busf,&locf);CHKERRQ(ierr);
     ierr = PSBUSGetVariableGlobalLocation(bust,&loct);CHKERRQ(ierr);
 
-    /* From bus Sf lower and upper bound*/
+    /* From bus Sf lower and upper bound */
     row[0] = mloc, row[1] = mloc+1;
     col[0] = locf; col[1] = locf+1; col[2] = loct; col[3] = loct+1;
     ierr = MatSetValues(jac,2,row,4,col,val,INSERT_VALUES);CHKERRQ(ierr);
@@ -569,7 +590,8 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatCreate(opflow->comm->type,&jac);CHKERRQ(ierr);
   ierr = MatSetSizes(jac,nconeq,nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
   ierr = MatSetType(jac,MATAIJ);CHKERRQ(ierr);
-
+  //ierr = MatSetUp(jac);CHKERRQ(ierr);
+#if 1
   /* Set up preallocation */
   ierr = PetscCalloc2(nconeq,&dnnz,nconeq,&onnz);CHKERRQ(ierr);
 
@@ -650,6 +672,10 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatMPIAIJSetPreallocation(jac,0,dnnz,0,onnz);CHKERRQ(ierr);
   ierr = PetscFree2(dnnz,onnz);CHKERRQ(ierr);
 
+  /* TODO: 'mpiexec -n 5 ./OPFLOW -petscpartitioner_type simple' throws an error; 
+     Thus enable 'NEW_NONZERO_ALLOCATION' below until the bug is fixed. */
+  //ierr = MatSetOption(jac,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE);CHKERRQ(ierr);
+#endif
   for (i=0; i< 4; i++) val[i] = 0.0;
   for (i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
@@ -692,8 +718,6 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
 
   ierr = MatAssemblyBegin(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = MatSetOption(jac,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
-  //ierr = VecDestroy(&Vdnz);CHKERRQ(ierr);
 
   *mat = jac;
   //ierr = PetscPrintf(comm,"Je structure:\n");CHKERRQ(ierr);
@@ -1217,7 +1241,8 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
     bus = &ps->bus[i];
     if (!bus->isghost) nbus++;
   }
-  printf("[%d] nbus/Nbus %d (%d), %d; nbranch/Nbranch %d %d\n",rank,ps->nbus,nbus,ps->Nbus,ps->nbranch,ps->Nbranch);
+  ierr = PetscSynchronizedPrintf(ps->comm->type,"[%d] nbus/Nbus %d (%d !ghost), %d; nbranch/Nbranch %d %d\n",rank,ps->nbus,nbus,ps->Nbus,ps->nbranch,ps->Nbranch);CHKERRQ(ierr);
+  ierr = PetscSynchronizedFlush(ps->comm->type,PETSC_STDOUT);CHKERRQ(ierr);
   ierr = MPI_Barrier(ps->comm->type);CHKERRQ(ierr);
 
   opflow->nconeq   = 2*nbus;
