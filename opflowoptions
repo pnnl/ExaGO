@@ -34,8 +34,8 @@
 #-log_summary
 
 #Partitioner (requires parmetis package)
--petscpartitioner_type simple
-#-petscpartitioner_type parmetis
+#-petscpartitioner_type simple
+-petscpartitioner_type parmetis
 
 #options
 # Display options left
