@@ -1,6 +1,5 @@
 #include <private/psimpl.h>
 #include <private/opflowimpl.h>
-#include <petsc/private/matimpl.h>
 
 /*********************************************
   The optimization problem for Tao should be in
@@ -615,9 +614,6 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
     if (!bus->isghost) {
       val[0] = val[1] = (PetscScalar)(2 + bus->ngen);
       ierr = VecSetValues(Vdnz,2,row,val,ADD_VALUES);CHKERRQ(ierr);
-    } else {
-      val[0] = val[1] = 2.0;
-      ierr = VecSetValues(Vonz,2,row,val,ADD_VALUES);CHKERRQ(ierr);
     }
 
     ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
@@ -671,11 +667,13 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatSeqAIJSetPreallocation(jac,0,dnnz);CHKERRQ(ierr);
   ierr = MatMPIAIJSetPreallocation(jac,0,dnnz,0,onnz);CHKERRQ(ierr);
   ierr = PetscFree2(dnnz,onnz);CHKERRQ(ierr);
+  //ierr = MPI_Barrier(comm);CHKERRQ(ierr);
 
   /* TODO: 'mpiexec -n 5 ./OPFLOW -petscpartitioner_type simple' throws an error; 
      Thus enable 'NEW_NONZERO_ALLOCATION' below until the bug is fixed. */
-  //ierr = MatSetOption(jac,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE);CHKERRQ(ierr);
+  ierr = MatSetOption(jac,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE);CHKERRQ(ierr);
 #endif
+
   for (i=0; i< 4; i++) val[i] = 0.0;
   for (i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
@@ -742,11 +740,12 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
   PetscScalar    vals[2];
   PetscInt       i,k,row[2];
   PSBUS          bus;
+  PSGEN          gen;
   PetscInt       loc;
 
   PetscFunctionBegin;
   /* Get array pointers */
-  for(i=0; i < ps->nbus; i++) {
+  for (i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
     if (bus->isghost) continue;
     ierr = PSBUSGetVariableGlobalLocation(bus,&loc);CHKERRQ(ierr);
@@ -762,42 +761,37 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
     ierr = VecSetValues(Xl,1,row+1,vals,INSERT_VALUES);CHKERRQ(ierr);
     ierr = VecSetValues(Xu,1,row+1,vals+1,INSERT_VALUES);CHKERRQ(ierr);
 
-    if(bus->ide == REF_BUS || bus->ide == ISOLATED_BUS){
+    if (bus->ide == REF_BUS || bus->ide == ISOLATED_BUS){
       vals[0] = bus->va*PETSC_PI/180.0;
       ierr = VecSetValues(Xl,1,row,vals,INSERT_VALUES);CHKERRQ(ierr);
       ierr = VecSetValues(Xu,1,row,vals,INSERT_VALUES);CHKERRQ(ierr);
     }
-    if(bus->ide == ISOLATED_BUS){
+    if (bus->ide == ISOLATED_BUS){
       vals[0] = bus->vm;
       ierr = VecSetValues(Xl,1,row+1,vals,INSERT_VALUES);CHKERRQ(ierr);
       ierr = VecSetValues(Xu,1,row+1,vals,INSERT_VALUES);CHKERRQ(ierr);
     }
 
-    for(k=0; k < bus->ngen; k++) {
-      PSGEN gen;
+    for (k=0; k < bus->ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       row[0] = row[0]+2; row[1] = row[1]+2;
-      if(!gen->status){
-        //xl[loc] = xu[loc] = xl[loc+1] = xu[loc+1] = 0.0;
+      if (!gen->status){
         vals[0] =0.0; vals[1] = 0.0;
         ierr = VecSetValues(Xl,2,row,vals,INSERT_VALUES);CHKERRQ(ierr);
         ierr = VecSetValues(Xu,2,row,vals,INSERT_VALUES);CHKERRQ(ierr);
-      }
-      else {
-	//xl[loc] = gen->pb;  xu[loc] = gen->pt;
-   vals[0] = gen->pb; vals[1] = gen->pt;
-   ierr = VecSetValues(Xl,1,row,vals,INSERT_VALUES);CHKERRQ(ierr);
-   ierr = VecSetValues(Xu,1,row,vals+1,INSERT_VALUES);CHKERRQ(ierr);
-	//xl[loc+1] = gen->qb; xu[loc+1] = gen->qt;
-   vals[0] = gen->qb; vals[1] = gen->qt;
-   ierr = VecSetValues(Xl,1,row+1,vals,INSERT_VALUES);CHKERRQ(ierr);
-   ierr = VecSetValues(Xu,1,row+1,vals+1,INSERT_VALUES);CHKERRQ(ierr);
+      } else {
+        vals[0] = gen->pb; vals[1] = gen->pt;
+        ierr = VecSetValues(Xl,1,row,vals,INSERT_VALUES);CHKERRQ(ierr);
+        ierr = VecSetValues(Xu,1,row,vals+1,INSERT_VALUES);CHKERRQ(ierr);
+
+        vals[0] = gen->qb; vals[1] = gen->qt;
+        ierr = VecSetValues(Xl,1,row+1,vals,INSERT_VALUES);CHKERRQ(ierr);
+        ierr = VecSetValues(Xu,1,row+1,vals+1,INSERT_VALUES);CHKERRQ(ierr);
       }
     }
   }
   PetscFunctionReturn(0);
 }
-
 
 /*
   OPFLOWSetInitialGuess - Sets the initial guess for the optimization
@@ -816,17 +810,14 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
   PetscErrorCode ierr;
   PetscInt       i,row[2];
   PetscInt       loc,gloc,k;
-  PetscMPIInt    rank;
   PetscScalar    vals[2];
   PS             ps=opflow->ps;
-  MPI_Comm       comm=opflow->comm->type;
   Vec            localXl,localXu;
   PSBUS          bus;
   PSGEN          gen;
   const PetscScalar *xl,*xu;
 
   PetscFunctionBegin;
-
   /* Get array pointers */
   ierr = DMGetLocalVector(ps->networkdm,&localXl);CHKERRQ(ierr);
   ierr = DMGetLocalVector(ps->networkdm,&localXu);CHKERRQ(ierr);
@@ -838,9 +829,7 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
   ierr = VecGetArrayRead(localXl,&xl);CHKERRQ(ierr);
   ierr = VecGetArrayRead(localXu,&xu);CHKERRQ(ierr);
 
-  ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
-
-  for(i=0; i < ps->nbus; i++) {
+  for (i=0; i < ps->nbus; i++) {
 
     bus = &ps->bus[i];
     if (bus->isghost)continue;
@@ -854,7 +843,7 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
     vals[1] = (xl[loc+1] + xu[loc+1])/2.0;
     ierr = VecSetValues(X,2,row,vals,INSERT_VALUES);CHKERRQ(ierr);
 
-    for(k=0; k < bus->ngen; k++) {
+    for (k=0; k < bus->ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       loc = loc+2; row[0] = row[0]+2; row[1] = row[1]+2;
       vals[0] = (xl[loc] + xu[loc])/2.0;
@@ -883,7 +872,7 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
 + obj - the objective function value (scalar)
 - grad - the gradient vector
 */
-PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X, PetscScalar* obj,Vec grad,void* ctx)
+PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X,PetscScalar* obj,Vec grad,void* ctx)
 {
   PetscErrorCode ierr;
   PetscInt       i,k;
@@ -931,7 +920,6 @@ PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X, PetscScalar* ob
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
   ierr = DMRestoreLocalVector(ps->networkdm,&localgrad);CHKERRQ(ierr);
   ierr = MPI_Allreduce(&sobj,obj,1,MPI_DOUBLE,MPI_SUM,opflow->comm->type);CHKERRQ(ierr);
-
   PetscFunctionReturn(0);
 }
 
@@ -1017,7 +1005,6 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
 
       for (k=0; k < bus->nload; k++) {
         ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
-
         val[0] = load->pl;
         val[1] = load->ql;
         ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
@@ -1027,7 +1014,6 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
     ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
     for (k=0; k < nconnlines; k++) {
       line = connlines[k];
-
       if (!line->status) continue;
 
       Gff = line->yff[0];
@@ -1074,7 +1060,6 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx)
   ierr = VecAssemblyEnd(Ge);CHKERRQ(ierr);
 
   ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
-
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -1118,7 +1103,7 @@ PetscErrorCode OPFLOWInequalityConstraintsFunction(Tao nlp,Vec X,Vec Gi,void* ct
   ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
   ierr = VecGetArray(Gi,&g);CHKERRQ(ierr);
 
-  for(i=0; i < ps->nbranch; i++) {
+  for(i=0; i<ps->nbranch; i++) {
     line = &ps->line[i];
 
     if(!line->status) {
@@ -1181,7 +1166,6 @@ PetscErrorCode OPFLOWInequalityConstraintsFunction(Tao nlp,Vec X,Vec Gi,void* ct
   PetscFunctionReturn(0);
 }
 
-
 /*
   OPFLOWSolve - Solves the AC optimal power flow
 
@@ -1241,15 +1225,15 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
     bus = &ps->bus[i];
     if (!bus->isghost) nbus++;
   }
-  ierr = PetscSynchronizedPrintf(ps->comm->type,"[%d] nbus/Nbus %d (%d !ghost), %d; nbranch/Nbranch %d %d\n",rank,ps->nbus,nbus,ps->Nbus,ps->nbranch,ps->Nbranch);CHKERRQ(ierr);
+  ierr = PetscSynchronizedPrintf(ps->comm->type,"[%d] nbus %d (%d !ghost), Nbus %d; nbranch %d, Nbranch %d\n",rank,ps->nbus,nbus,ps->Nbus,ps->nbranch,ps->Nbranch);CHKERRQ(ierr);
   ierr = PetscSynchronizedFlush(ps->comm->type,PETSC_STDOUT);CHKERRQ(ierr);
-  ierr = MPI_Barrier(ps->comm->type);CHKERRQ(ierr);
 
   opflow->nconeq   = 2*nbus;
   opflow->Nconeq   = 2*ps->Nbus;
   opflow->nconineq = 2*2*ps->nbranch;
   opflow->Nconineq = 2*2*ps->Nbranch; /* 0 <= Sf2 <= Smax2, 0 <= St2 <= Smax2 */
-  printf("[%d] nconeq/Nconeq %d, %d; nconineq/Nconineq %d, %d\n",rank,opflow->nconeq,opflow->Nconeq,opflow->nconineq,opflow->Nconineq);
+  ierr = PetscSynchronizedPrintf(ps->comm->type,"[%d] nconeq/Nconeq %d, %d; nconineq/Nconineq %d, %d\n",rank,opflow->nconeq,opflow->Nconeq,opflow->nconineq,opflow->Nconineq);CHKERRQ(ierr);
+  ierr = PetscSynchronizedFlush(ps->comm->type,PETSC_STDOUT);CHKERRQ(ierr);
 
   /* Create the solution vector */
   ierr = PSCreateGlobalVector(opflow->ps,&opflow->X);CHKERRQ(ierr);
