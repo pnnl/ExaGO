@@ -669,7 +669,7 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = PetscFree2(dnnz,onnz);CHKERRQ(ierr);
   //ierr = MPI_Barrier(comm);CHKERRQ(ierr);
 
-  /* TODO: 'mpiexec -n 5 ./OPFLOW -petscpartitioner_type simple' throws an error; 
+  /* TODO: 'mpiexec -n 5 ./OPFLOW -petscpartitioner_type simple' throws an error;
      Thus enable 'NEW_NONZERO_ALLOCATION' below until the bug is fixed. */
   ierr = MatSetOption(jac,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE);CHKERRQ(ierr);
 #endif
@@ -1176,8 +1176,17 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
 {
   PetscErrorCode ierr;
   TaoConvergedReason reason;
+  #if defined(PETSC_USE_LOG)
+  //  PetscLogStage stages[1];
+  #endif
 
   PetscFunctionBegin;
+  //  ierr = PetscLogStageRegister("Allocating Jacobian",&stages[2]);CHKERRQ(ierr);
+  // ierr = PetscLogStageRegister("Setting Vecs & Jacobian",&stages[2]);CHKERRQ(ierr);
+  //  ierr = PetscLogStageRegister("Setting Jacobian",&stages[4]);CHKERRQ(ierr);
+  //  ierr = PetscLogStageRegister("Set Bounds & Initial Guess",&stages[5]);CHKERRQ(ierr);
+  //ierr = PetscLogStageRegister("Tao Solve",&stages[3]);CHKERRQ(ierr);
+
   if(!opflow->setupcalled) {
     ierr = OPFLOWSetUp(opflow);CHKERRQ(ierr);
   }
@@ -1188,6 +1197,10 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
 
   /* Set Initial Guess */
   ierr = OPFLOWSetInitialGuess(opflow,opflow->X);CHKERRQ(ierr);
+
+  /* End of Third Stage Start of 4th */
+  // ierr = PetscLogStagePop();CHKERRQ(ierr);
+  // ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
 
   ierr = TaoSolve(opflow->nlp);CHKERRQ(ierr);
   ierr = TaoGetConvergedReason(opflow->nlp,&reason);CHKERRQ(ierr);
@@ -1264,6 +1277,10 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 
   /* Create the inequality constraint Jacobian */
   ierr = OPFLOWCreateInequalityConstraintsJacobian(opflow,&opflow->Jac_Gi);CHKERRQ(ierr);
+
+  /* End of Second Stage Start of Third */
+  // ierr = PetscLogStagePop();CHKERRQ(ierr);
+  // ierr = PetscLogStagePush(stages[2]);CHKERRQ(ierr);
 
   /* Set the different callbacks Tao requires */
   /* Objective and Gradient */
