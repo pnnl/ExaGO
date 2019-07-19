@@ -662,6 +662,7 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
   ierr = MatSeqAIJSetPreallocation(jac,0,dnnz);CHKERRQ(ierr);
   ierr = MatMPIAIJSetPreallocation(jac,0,dnnz,0,onnz);CHKERRQ(ierr);
   ierr = PetscFree2(dnnz,onnz);CHKERRQ(ierr);
+  CHKMEMQ;
   //ierr = MPI_Barrier(comm);CHKERRQ(ierr);
 
   /* TODO: 'mpiexec -n 5 ./OPFLOW -petscpartitioner_type simple' throws an error;
@@ -711,6 +712,7 @@ PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat)
 
   ierr = MatAssemblyBegin(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  CHKMEMQ;
 
   *mat = jac;
   //ierr = PetscPrintf(comm,"Je structure:\n");CHKERRQ(ierr);
@@ -850,8 +852,8 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
 
   ierr = VecRestoreArrayRead(localXl,&xl);CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(localXu,&xu);CHKERRQ(ierr);
-  ierr = DMRestoreLocalVector(ps->networkdm,&localXl);CHKERRQ(ierr);
-  ierr = DMRestoreLocalVector(ps->networkdm,&localXu);CHKERRQ(ierr);
+  ierr = VecDestroy(&localXl);CHKERRQ(ierr);
+  ierr = VecDestroy(&localXu);CHKERRQ(ierr);
   ierr = VecAssemblyBegin(X);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(X);CHKERRQ(ierr);
   PetscFunctionReturn(0);
@@ -1201,7 +1203,11 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
   ierr = TaoGetConvergedReason(opflow->nlp,&reason);CHKERRQ(ierr);
   opflow->converged = reason< 0 ? PETSC_FALSE:PETSC_TRUE;
 
-  ierr = VecView(opflow->X,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  PetscBool solu_view=PETSC_FALSE;
+  ierr = PetscOptionsGetBool(NULL,NULL, "-solu_view", &solu_view,NULL);CHKERRQ(ierr);
+  if (solu_view) {
+    ierr = VecView(opflow->X,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  }
   PetscFunctionReturn(0);
 }
 
