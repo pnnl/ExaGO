@@ -814,8 +814,9 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
 
   PetscFunctionBegin;
   /* Get array pointers */
-  ierr = DMGetLocalVector(ps->networkdm,&localXl);CHKERRQ(ierr);
-  ierr = DMGetLocalVector(ps->networkdm,&localXu);CHKERRQ(ierr);
+  ierr = VecDuplicate(opflow->localX,&localXl);CHKERRQ(ierr);
+  ierr = VecDuplicate(opflow->localX,&localXu);CHKERRQ(ierr);
+
   ierr = DMGlobalToLocalBegin(ps->networkdm,opflow->Xl,INSERT_VALUES,localXl);CHKERRQ(ierr);
   ierr = DMGlobalToLocalBegin(ps->networkdm,opflow->Xu,INSERT_VALUES,localXu);CHKERRQ(ierr);
   ierr = DMGlobalToLocalEnd(ps->networkdm,opflow->Xl,INSERT_VALUES,localXl);CHKERRQ(ierr);
@@ -884,7 +885,7 @@ PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X,PetscScalar* obj
   PetscFunctionBegin;
   *obj = 0.0;
 
-  ierr = DMGetLocalVector(ps->networkdm,&localgrad);CHKERRQ(ierr);
+  ierr = VecDuplicate(localX,&localgrad);CHKERRQ(ierr);
 
   ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
   ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
