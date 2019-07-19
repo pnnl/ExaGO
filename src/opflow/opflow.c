@@ -886,7 +886,6 @@ PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X,PetscScalar* obj
   const PetscScalar *x;
 
   PetscFunctionBegin;
-  printf("OPFLOWObjectiveandGradientFun..\n");
   *obj = 0.0;
 
   ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
