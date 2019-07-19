@@ -886,6 +886,7 @@ PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X,PetscScalar* obj
   const PetscScalar *x;
 
   PetscFunctionBegin;
+  printf("OPFLOWObjectiveandGradientFun..\n");
   *obj = 0.0;
 
   ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
@@ -1176,18 +1177,24 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
 {
   PetscErrorCode ierr;
   TaoConvergedReason reason;
-  #if defined(PETSC_USE_LOG)
-    PetscLogStage stages[1];
-  #endif
+#if defined(PETSC_USE_LOG)
+  PetscLogStage stages[3];
+#endif
 
   PetscFunctionBegin;
-  ierr = PetscLogStageRegister("Tao Solve",&stages[0]);CHKERRQ(ierr);
+  ierr = PetscLogStagePop();CHKERRQ(ierr);
 
-  if(!opflow->setupcalled) {
+  ierr = PetscLogStageRegister(" OPFLOWSetUp",&stages[0]);CHKERRQ(ierr);
+  ierr = PetscLogStageRegister(" TaoSetUp",&stages[1]);CHKERRQ(ierr);
+  ierr = PetscLogStageRegister(" TaoSolve",&stages[2]);CHKERRQ(ierr);
+
+  if (!opflow->setupcalled) {
+    ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
     ierr = OPFLOWSetUp(opflow);CHKERRQ(ierr);
+    ierr = PetscLogStagePop();CHKERRQ(ierr);
   }
-   ierr = PetscLogStagePop();CHKERRQ(ierr);
-   ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
+ 
+  ierr = PetscLogStagePush(stages[1]);CHKERRQ(ierr);
 
   /* Set variable bounds */
   ierr = OPFLOWSetVariableBounds(opflow,opflow->Xl,opflow->Xu);CHKERRQ(ierr);
@@ -1196,6 +1203,10 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
   /* Set Initial Guess */
   ierr = OPFLOWSetInitialGuess(opflow,opflow->X);CHKERRQ(ierr);
 
+  ierr = TaoSetUp(opflow->nlp);CHKERRQ(ierr);
+  ierr = PetscLogStagePop();CHKERRQ(ierr);
+
+  ierr = PetscLogStagePush(stages[2]);CHKERRQ(ierr);
   ierr = TaoSolve(opflow->nlp);CHKERRQ(ierr);
   ierr = TaoGetConvergedReason(opflow->nlp,&reason);CHKERRQ(ierr);
   opflow->converged = reason< 0 ? PETSC_FALSE:PETSC_TRUE;
