@@ -34,7 +34,7 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
   PetscScalar    Vm,val[8],Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
   PetscScalar    thetaf,thetat,Vmf,Vmt,thetaft,thetatf;
   OPFLOW         opflow=(OPFLOW)ctx;
-  Vec            localX;
+  Vec            localX=opflow->localX;
   PS             ps=opflow->ps;
   PSBUS          bus;
   PSLINE         line;
@@ -47,7 +47,6 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
   PetscFunctionBegin;
   ierr = MatZeroEntries(Je);CHKERRQ(ierr);
 
-  ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
   ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
   ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
 
@@ -148,7 +147,6 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp, Vec X,Mat Je, 
     }
   }
   ierr = VecRestoreArrayRead(localX,&xarr);CHKERRQ(ierr);
-  ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -211,6 +209,7 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow)
 
   /* Solution vector */
   ierr = VecDestroy(&(*opflow)->X);CHKERRQ(ierr);
+  ierr = VecDestroy(&(*opflow)->localX);CHKERRQ(ierr);
 
   /* Lower and upper bounds on X */
   ierr = VecDestroy(&(*opflow)->Xl);CHKERRQ(ierr);
@@ -1255,6 +1254,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 
   /* Create the solution vector */
   ierr = PSCreateGlobalVector(opflow->ps,&opflow->X);CHKERRQ(ierr);
+  ierr = DMCreateLocalVector(ps->networkdm,&opflow->localX);CHKERRQ(ierr);
 
   ierr = TaoSetInitialVector(opflow->nlp,opflow->X);CHKERRQ(ierr);
 
