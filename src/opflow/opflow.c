@@ -1177,19 +1177,17 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
   PetscErrorCode ierr;
   TaoConvergedReason reason;
   #if defined(PETSC_USE_LOG)
-  //  PetscLogStage stages[1];
+    PetscLogStage stages[1];
   #endif
 
   PetscFunctionBegin;
-  //  ierr = PetscLogStageRegister("Allocating Jacobian",&stages[2]);CHKERRQ(ierr);
-  // ierr = PetscLogStageRegister("Setting Vecs & Jacobian",&stages[2]);CHKERRQ(ierr);
-  //  ierr = PetscLogStageRegister("Setting Jacobian",&stages[4]);CHKERRQ(ierr);
-  //  ierr = PetscLogStageRegister("Set Bounds & Initial Guess",&stages[5]);CHKERRQ(ierr);
-  //ierr = PetscLogStageRegister("Tao Solve",&stages[3]);CHKERRQ(ierr);
+  ierr = PetscLogStageRegister("Tao Solve",&stages[0]);CHKERRQ(ierr);
 
   if(!opflow->setupcalled) {
     ierr = OPFLOWSetUp(opflow);CHKERRQ(ierr);
   }
+   ierr = PetscLogStagePop();CHKERRQ(ierr);
+   ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
 
   /* Set variable bounds */
   ierr = OPFLOWSetVariableBounds(opflow,opflow->Xl,opflow->Xu);CHKERRQ(ierr);
@@ -1197,10 +1195,6 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
 
   /* Set Initial Guess */
   ierr = OPFLOWSetInitialGuess(opflow,opflow->X);CHKERRQ(ierr);
-
-  /* End of Third Stage Start of 4th */
-  // ierr = PetscLogStagePop();CHKERRQ(ierr);
-  // ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
 
   ierr = TaoSolve(opflow->nlp);CHKERRQ(ierr);
   ierr = TaoGetConvergedReason(opflow->nlp,&reason);CHKERRQ(ierr);
@@ -1227,6 +1221,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   PetscMPIInt    rank;
   PS             ps=opflow->ps;
   PSBUS          bus;
+
 
   PetscFunctionBegin;
   /* Set up PS object */
