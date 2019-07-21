@@ -1,15 +1,16 @@
--netfile datafiles/case_ACTIVSg200.m
+-netfile datafiles/case_ACTIVSg10k.m
 
 # Power flow options
+-pflow_ksp_type preonly
 -pflow_snes_linesearch_type basic
-#-pflow_pc_type lu
-#-pflow_pc_factor_mat_ordering_type qmd
-#-pflow_snes_atol 1e-8
-#-pflow_pc_factor_shift_type NONZERO
+-pflow_pc_type lu
+-pflow_pc_factor_mat_ordering_type amd
+-pflow_snes_atol 1e-8
+-pflow_pc_factor_shift_type NONZERO
 
 # performance
 #-------------
-#-log_summary
+-log_summary
 
 #Partitioner (requires parmetis package)
 #-petscpartitioner_type parmetis
@@ -17,3 +18,6 @@
 #options
 # Display options left
 -options_left no
+
+#inode
+-mat_no_inode
