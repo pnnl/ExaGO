@@ -20,7 +20,7 @@
 /**
  * @brief Maximum number of connected components in the graph
  */
-#define MAXCONNECTEDCOMPS 16
+#define MAXCONNECTEDCOMPS 64
 
 /**
 * @brief private bus data struct 
