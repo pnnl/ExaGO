@@ -13,7 +13,7 @@
 
 # Optimal Power Flow Linear Solver Options
 -opflow_pc_type lu
--opflow_pc_factor_mat_solver_type superlu
+-opflow_pc_factor_mat_solver_type superlu_dist
 -opflow_ksp_error_if_not_converged
 
 # Tao tolerances
@@ -21,6 +21,7 @@
 -opflow_tao_crtol 1e-4 
 -opflow_tao_grtol 1e-4
 -opflow_tao_gatol 1e-2
+-opflow_tao_max_it 10 
 
 # Convergence monitor
 -opflow_tao_monitor
@@ -33,7 +34,8 @@
 #-log_summary
 
 #Partitioner (requires parmetis package)
-#-petscpartitioner_type parmetis
+#-petscpartitioner_type simple
+-petscpartitioner_type parmetis
 
 #options
 # Display options left

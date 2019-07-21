@@ -1,5 +1,4 @@
 #include <private/psimpl.h>
-#include <petscdmnetwork.h>
 
 /*
   PSConnCompDestroy - Destroys the connected components struct
@@ -7,7 +6,7 @@
 PetscErrorCode PSConnCompDestroy(PS ps)
 {
   PetscErrorCode ierr;
-  PetscInt i;
+  PetscInt       i;
   PetscFunctionBegin;
   for(i=0; i < ps->nconncomp; i++) {
     ps->conncomp[i].nv = 0;
@@ -1990,6 +1989,13 @@ PetscErrorCode PSSetUp(PS ps)
 
   ierr = DMNetworkDistribute(&networkdm,0);CHKERRQ(ierr);
   ps->networkdm = networkdm;
+
+  PetscBool        pdm_view=PETSC_FALSE;
+  ierr = PetscOptionsHasName(NULL,NULL,"-pdm_view",&pdm_view);CHKERRQ(ierr);
+  if (pdm_view) {
+    ierr = DMView(networkdm,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  }
+  
   //  if(ps->comm->size > 1) {
   //    DM distnetworkdm;
     /* Network partitioning and distribution of data */

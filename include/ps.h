@@ -18,6 +18,7 @@
 #include <dynturbgovmodels.h>
 #include <dynstabmodels.h>
 #include <dynloadmodels.h>
+#include <petscdmnetwork.h>
 
 /**
  * @brief public struct for bus

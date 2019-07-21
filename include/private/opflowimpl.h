@@ -27,12 +27,12 @@ struct _p_OPFLOW{
   PetscScalar obj; /**< Objective function */
   Vec gradobj; /**< Gradient of the objective function */
 
-  PetscBool setupcalled; /**< OPFLOWSetUp called? */
+  PetscBool setupcalled; /* OPFLOWSetUp called? */
 
-  PetscInt Nconeq; /**< Number of equality constraints */
-  PetscInt Nconineq; /**< Number of inequality constraints */
-  PetscInt Ncon;     /* Total number of constraints (equality + inequality) */
-  PetscInt Nvar;     /* Total number of variables */
+  PetscInt nconeq, Nconeq;     /* Local and global number of equality constraints, excluding ghosts! */
+  PetscInt nconineq, Nconineq; /* Local and global number of inequality constraints */
+  PetscInt Ncon;               /* Total number of constraints (equality + inequality) */
+  PetscInt nvar,Nvar;          /* Total number of local and global variables, excluding ghosts! */
 
   PetscInt n; /**< Number of variables */
   PetscInt m; /**< Number of constraints */
