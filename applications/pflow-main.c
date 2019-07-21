@@ -9,12 +9,18 @@ int main(int argc,char **argv)
   PFLOW             pflow;
   char              file[PETSC_MAX_PATH_LEN];
   PetscBool         flg;
+  PetscLogStage     read,setup,solve;
 
   PetscInitialize(&argc,&argv,"pflowoptions",help);
   
+  ierr = PetscLogStageRegister("ReadData",&read);CHKERRQ(ierr);
+  ierr = PetscLogStageRegister("SetUp",&setup);CHKERRQ(ierr);
+  ierr = PetscLogStageRegister("Solve",&solve);CHKERRQ(ierr);
+
   /* Create PFLOW object */
   ierr = PFLOWCreate(PETSC_COMM_WORLD,&pflow);CHKERRQ(ierr);
 
+  ierr = PetscLogStagePush(read);CHKERRQ(ierr);
   /* Get network data file from command line */
   ierr = PetscOptionsGetString(NULL,NULL,"-netfile",file,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
   /* Read Network Data file */
@@ -27,12 +33,20 @@ int main(int argc,char **argv)
   } else {
     ierr = PFLOWReadMatPowerData(pflow,"datafiles/case9mod.m");CHKERRQ(ierr);
   }
+  PetscLogStagePop();
 
+  ierr = PetscLogStagePush(setup);CHKERRQ(ierr);
+  /* Set up */
+  ierr = PFLOWSetUp(pflow);CHKERRQ(ierr);
+  PetscLogStagePop();
+
+  ierr = PetscLogStagePush(solve);CHKERRQ(ierr);
   /* Solve */
   ierr = PFLOWSolve(pflow);CHKERRQ(ierr);
+  PetscLogStagePop();
 
   /* Update line flows, Pgen, Qgen, and other parameters */
-  ierr = PFLOWPostSolve(pflow);CHKERRQ(ierr);
+  //  ierr = PFLOWPostSolve(pflow);CHKERRQ(ierr);
 
   /* Destroy PFLOW object */
   ierr = PFLOWDestroy(&pflow);CHKERRQ(ierr);
