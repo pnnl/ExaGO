@@ -915,7 +915,7 @@ PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X,PetscScalar* obj
   ierr = DMLocalToGlobalBegin(ps->networkdm,localgrad,INSERT_VALUES,grad);CHKERRQ(ierr);
   ierr = DMLocalToGlobalEnd(ps->networkdm,localgrad,INSERT_VALUES,grad);CHKERRQ(ierr);
 
-  ierr = DMRestoreLocalVector(ps->networkdm,&localgrad);CHKERRQ(ierr);
+  ierr = VecDestroy(&localgrad);CHKERRQ(ierr);
   ierr = MPI_Allreduce(&sobj,obj,1,MPI_DOUBLE,MPI_SUM,opflow->comm->type);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
