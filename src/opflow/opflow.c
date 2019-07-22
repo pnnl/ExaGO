@@ -14,7 +14,7 @@
 ************************************/
 
 #include <../src/tao/constrained/impls/ipm/ipm.h> /*I "ipm.h" I*/
-PetscErrorCode OPFLOWHesian(Tao tao, Vec X, Mat H, Mat H_pre, void* ctx)
+PetscErrorCode OPFLOWHessian(Tao tao, Vec X, Mat H, Mat H_pre, void* ctx)
 {
   PetscErrorCode ierr;
 
@@ -1272,7 +1272,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   /* Hessian */
   Tao tao=opflow->nlp;
   //ierr = TaoSetHessianRoutine(tao,tao->hessian,tao->hessian,TaoDefaultComputeHessian,NULL);CHKERRQ(ierr);
-  ierr = TaoSetHessianRoutine(tao,tao->hessian,tao->hessian,OPFLOWHesian,NULL);CHKERRQ(ierr);
+  ierr = TaoSetHessianRoutine(tao,tao->hessian,tao->hessian,OPFLOWHessian,NULL);CHKERRQ(ierr);
 
   opflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);
