@@ -13,6 +13,21 @@
 
 ************************************/
 
+#include <../src/tao/constrained/impls/ipm/ipm.h> /*I "ipm.h" I*/
+PetscErrorCode OPFLOWHesian(Tao tao, Vec X, Mat H, Mat H_pre, void* ctx)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = TaoDefaultComputeHessian(tao,X,H,H_pre,ctx);CHKERRQ(ierr);
+
+  //Rylee: implement your analytical Hessian below
+#if 0
+
+#endif
+  PetscFunctionReturn(0);
+}
+
 /*
   OPFLOWEqualityConstraintsJacobianFunction - Sets the nonzero values for the
               equality constraints Jacobian
@@ -1253,6 +1268,11 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   /* Inequality Jacobian */
   ierr = TaoSetJacobianInequalityRoutine(opflow->nlp,opflow->Jac_Gi,opflow->Jac_Gi,OPFLOWInequalityConstraintsJacobianFunction,(void*)opflow);CHKERRQ(ierr);
   ierr = TaoSetFromOptions(opflow->nlp);CHKERRQ(ierr);
+
+  /* Hessian */
+  Tao tao=opflow->nlp;
+  //ierr = TaoSetHessianRoutine(tao,tao->hessian,tao->hessian,TaoDefaultComputeHessian,NULL);CHKERRQ(ierr);
+  ierr = TaoSetHessianRoutine(tao,tao->hessian,tao->hessian,OPFLOWHesian,NULL);CHKERRQ(ierr);
 
   opflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);
