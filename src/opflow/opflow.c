@@ -805,57 +805,9 @@ PetscErrorCode OPFLOWSetVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu)
 PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
 {
   PetscErrorCode ierr;
-  PetscInt       i,row[2];
-  PetscInt       loc,gloc,k;
-  PetscScalar    vals[2];
-  PS             ps=opflow->ps;
-  Vec            localXl,localXu;
-  PSBUS          bus;
-  PSGEN          gen;
-  const PetscScalar *xl,*xu;
 
   PetscFunctionBegin;
-  /* Get array pointers */
-  ierr = VecDuplicate(opflow->localX,&localXl);CHKERRQ(ierr);
-  ierr = VecDuplicate(opflow->localX,&localXu);CHKERRQ(ierr);
-
-  ierr = DMGlobalToLocalBegin(ps->networkdm,opflow->Xl,INSERT_VALUES,localXl);CHKERRQ(ierr);
-  ierr = DMGlobalToLocalBegin(ps->networkdm,opflow->Xu,INSERT_VALUES,localXu);CHKERRQ(ierr);
-  ierr = DMGlobalToLocalEnd(ps->networkdm,opflow->Xl,INSERT_VALUES,localXl);CHKERRQ(ierr);
-  ierr = DMGlobalToLocalEnd(ps->networkdm,opflow->Xu,INSERT_VALUES,localXu);CHKERRQ(ierr);
-
-  ierr = VecGetArrayRead(localXl,&xl);CHKERRQ(ierr);
-  ierr = VecGetArrayRead(localXu,&xu);CHKERRQ(ierr);
-
-  for (i=0; i < ps->nbus; i++) {
-
-    bus = &ps->bus[i];
-    if (bus->isghost)continue;
-
-    ierr = PSBUSGetVariableGlobalLocation(bus,&gloc);CHKERRQ(ierr);
-    ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
-    /* Guess for voltage angles and bounds on voltage magnitudes */
-
-    row[0] = gloc; row[1] = gloc+1;
-    vals[0] = (xl[loc] + xu[loc])/2.0;
-    vals[1] = (xl[loc+1] + xu[loc+1])/2.0;
-    ierr = VecSetValues(X,2,row,vals,INSERT_VALUES);CHKERRQ(ierr);
-
-    for (k=0; k < bus->ngen; k++) {
-      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      loc = loc+2; row[0] = row[0]+2; row[1] = row[1]+2;
-      vals[0] = (xl[loc] + xu[loc])/2.0;
-      vals[1] = (xl[loc+1] + xu[loc+1])/2.0;
-      ierr = VecSetValues(X,2,row,vals,INSERT_VALUES);CHKERRQ(ierr);
-    }
-  }
-
-  ierr = VecRestoreArrayRead(localXl,&xl);CHKERRQ(ierr);
-  ierr = VecRestoreArrayRead(localXu,&xu);CHKERRQ(ierr);
-  ierr = VecDestroy(&localXl);CHKERRQ(ierr);
-  ierr = VecDestroy(&localXu);CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(X);CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(X);CHKERRQ(ierr);
+  ierr = VecAXPBYPCZ(X,0.5,0.5,0.0,opflow->Xl,opflow->Xu);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
