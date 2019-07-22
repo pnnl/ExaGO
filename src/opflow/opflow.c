@@ -19,11 +19,36 @@ PetscErrorCode OPFLOWHessian(Tao tao, Vec X, Mat H, Mat H_pre, void* ctx)
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  ierr = TaoDefaultComputeHessian(tao,X,H,H_pre,ctx);CHKERRQ(ierr);
+  //ierr = TaoDefaultComputeHessian(tao,X,H,H_pre,ctx);CHKERRQ(ierr);
 
   //Rylee: implement your analytical Hessian below
-#if 0
+#if 1
+printf("in Rylee Hessian\n" );
+  PetscInt       i,k;
+  PetscInt       loc;
+  PetscScalar    val;
+  OPFLOW         opflow=(OPFLOW)ctx;
+  PS             ps=opflow->ps;
+  PSBUS          bus;
+  PSGEN          gen;
 
+  ierr = DMCreateMatrix(ps->networkdm,&H);CHKERRQ(ierr);
+
+  ierr = MatZeroEntries(H);CHKERRQ(ierr);
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
+  for(k=0; k < bus->ngen; k++) {
+      loc = loc+2;
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      if(!gen->status) continue;
+      val = 2*ps->MVAbase*ps->MVAbase*gen->cost_alpha;
+      ierr = MatSetValue(H,loc,loc,val,INSERT_VALUES);CHKERRQ(ierr);
+    }
+  }
+  ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatView(H,0);CHKERRQ(ierr);
 #endif
   PetscFunctionReturn(0);
 }
@@ -1272,7 +1297,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   /* Hessian */
   Tao tao=opflow->nlp;
   //ierr = TaoSetHessianRoutine(tao,tao->hessian,tao->hessian,TaoDefaultComputeHessian,NULL);CHKERRQ(ierr);
-  ierr = TaoSetHessianRoutine(tao,tao->hessian,tao->hessian,OPFLOWHessian,NULL);CHKERRQ(ierr);
+  ierr = TaoSetHessianRoutine(opflow->nlp,tao->hessian,tao->hessian,OPFLOWHessian,(void*)opflow);CHKERRQ(ierr);
 
   opflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);
