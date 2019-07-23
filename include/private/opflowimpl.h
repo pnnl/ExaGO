@@ -130,10 +130,34 @@ extern PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Ma
   * @breif  Sets the nonzero values for the equality constraints Jacobian
   * @param [in] nlp - Tao nlp solver object
   * @param [in] X   - the current iterate
-  * @param [in] ctx - application data set with OPFLOWEqualityConstraintsJacobianRoutine
+  * @param [in] ctx - application data set with OPFLOWInequalityConstraintsJacobianRoutine
   * @param [out] Ji - Jacobian of inequality constraints
   * @param [out] Ji_pre - Preconditioner for inequality constraints
 */
 extern PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat Ji, Mat Ji_pre, void* ctx);
+/*
+  * @breif The objective and gradient function for the optimal power flow
+  * @param [in] nlp - Tao nlp solver object
+  * @param [in] X   - the current iterate
+  * @param [out] obj  - the objective function value (scalar)
+  * @param [out] grad - the gradient vector
+*/
+extern PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X,PetscScalar* obj,Vec grad,void* ctx);
+/*
+  * @breif Creates the constant Hessian matrix for the objective function f(x)
+  * @param [in] opflow - the optimal power flow application object
+  * @param [out] N/A - sets hessian directly into tao->hessian
+*/
+extern PetscErrorCode OPFLOWCreateObjectiveHessian(OPFLOW opflow);
+/*
+  * @breif Tao resets hessian each itteration, this function prevents wasted recalculations
+  * @param [in] tao - Tao solver object
+  * @param [in] X   - the current iterate
+  * @param [in] ctx - application data set
+  * @param [out] H - Hessain matrix
+  * @param [out] H_pre - Preconditioner for Hessian
+*/
+extern PetscErrorCode OPFLOWHessian(Tao tao, Vec X, Mat H, Mat H_pre, void* ctx);
+
 
 #endif
