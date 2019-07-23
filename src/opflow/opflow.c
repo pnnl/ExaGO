@@ -21,10 +21,7 @@ PetscErrorCode OPFLOWHessian(Tao tao, Vec X, Mat H, Mat H_pre, void* ctx)
   PetscFunctionBegin;
   //ierr = TaoDefaultComputeHessian(tao,X,H,H_pre,ctx);CHKERRQ(ierr);
 
-  //Rylee: implement your analytical Hessian below
-#if 1
-printf("in Rylee Hessian\n" );
-  PetscInt       i,k;
+  PetscInt       i,k,n;
   PetscInt       loc;
   PetscScalar    val;
   OPFLOW         opflow=(OPFLOW)ctx;
@@ -32,24 +29,26 @@ printf("in Rylee Hessian\n" );
   PSBUS          bus;
   PSGEN          gen;
 
-  ierr = DMCreateMatrix(ps->networkdm,&H);CHKERRQ(ierr);
+  ierr = VecGetLocalSize(opflow->X,&n);CHKERRQ(ierr);
+  ierr = MatSetSizes(H,n,n,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
+  ierr = MatSetType(H,MATAIJ);CHKERRQ(ierr);
+  ierr = MatSeqAIJSetPreallocation(H,1,NULL);CHKERRQ(ierr);
+  ierr = MatMPIAIJSetPreallocation(H,1,NULL,0,NULL);CHKERRQ(ierr);
 
-  ierr = MatZeroEntries(H);CHKERRQ(ierr);
-  for(i=0; i < ps->nbus; i++) {
+  for (i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
-    ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
-  for(k=0; k < bus->ngen; k++) {
-      loc = loc+2;
+    ierr = PSBUSGetVariableGlobalLocation(bus,&loc);CHKERRQ(ierr);
+    for (k=0; k < bus->ngen; k++) {
+      loc = loc + 2;
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      if(!gen->status) continue;
+      if (!gen->status) continue;
       val = 2*ps->MVAbase*ps->MVAbase*gen->cost_alpha;
       ierr = MatSetValue(H,loc,loc,val,INSERT_VALUES);CHKERRQ(ierr);
     }
   }
   ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = MatView(H,0);CHKERRQ(ierr);
-#endif
+  //ierr = MatView(H,0);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
