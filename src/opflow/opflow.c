@@ -7,28 +7,30 @@
 
   min f(x)
   s.t.
-    g(x) = 0
+    g(x)  = 0
     h(x) >= 0
     xl <= x <= xu
 
 ************************************/
 
 #include <../src/tao/constrained/impls/ipm/ipm.h> /*I "ipm.h" I*/
-PetscErrorCode OPFLOWHessian(Tao tao, Vec X, Mat H, Mat H_pre, void* ctx)
+
+/*
+  f(x) = 
+  H(x) = f_xx = constant diagonal matrix
+ */
+PetscErrorCode OPFLOWCreateObjectiveHessian(OPFLOW opflow)
 {
   PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-  //ierr = TaoDefaultComputeHessian(tao,X,H,H_pre,ctx);CHKERRQ(ierr);
-
-  PetscInt       i,k,n;
-  PetscInt       loc;
+  PetscInt       i,k,n,loc;
   PetscScalar    val;
-  OPFLOW         opflow=(OPFLOW)ctx;
   PS             ps=opflow->ps;
   PSBUS          bus;
   PSGEN          gen;
+  Tao            tao=opflow->nlp;
+  Mat            H=tao->hessian;
 
+  PetscFunctionBegin;
   ierr = VecGetLocalSize(opflow->X,&n);CHKERRQ(ierr);
   ierr = MatSetSizes(H,n,n,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
   ierr = MatSetType(H,MATAIJ);CHKERRQ(ierr);
@@ -48,7 +50,15 @@ PetscErrorCode OPFLOWHessian(Tao tao, Vec X, Mat H, Mat H_pre, void* ctx)
   }
   ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  //ierr = MatView(H,0);CHKERRQ(ierr);
+  //ierr = MatView(H,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWHessian(Tao tao, Vec X, Mat H, Mat H_pre, void* ctx)
+{
+  PetscFunctionBegin;
+  H     = tao->hessian;
+  H_pre = tao->hessian;
   PetscFunctionReturn(0);
 }
 
@@ -1293,10 +1303,9 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = TaoSetJacobianInequalityRoutine(opflow->nlp,opflow->Jac_Gi,opflow->Jac_Gi,OPFLOWInequalityConstraintsJacobianFunction,(void*)opflow);CHKERRQ(ierr);
   ierr = TaoSetFromOptions(opflow->nlp);CHKERRQ(ierr);
 
-  /* Hessian */
-  Tao tao=opflow->nlp;
-  //ierr = TaoSetHessianRoutine(tao,tao->hessian,tao->hessian,TaoDefaultComputeHessian,NULL);CHKERRQ(ierr);
-  ierr = TaoSetHessianRoutine(opflow->nlp,tao->hessian,tao->hessian,OPFLOWHessian,(void*)opflow);CHKERRQ(ierr);
+  /* Create Hessian for objective function and set Hessian routine */
+  ierr = OPFLOWCreateObjectiveHessian(opflow);CHKERRQ(ierr);
+  ierr = TaoSetHessianRoutine(opflow->nlp,NULL,NULL,OPFLOWHessian,NULL);CHKERRQ(ierr);
 
   opflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);

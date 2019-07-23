@@ -214,51 +214,43 @@ typedef struct {
 }PSConnCompgroup;
 
 typedef struct {
-    PetscInt nc;
+    PetscInt        nc;
     PSConnCompgroup **cg; /* Pointers to connected groups */
 }PSConngroupi;
 
-typedef struct{
-  PetscInt n; /* Number of connected component groups */
+typedef struct {
+  PetscInt     n;   /* Number of connected component groups */
   PSConngroupi *ci;
 }PSConngroup;
 /**
 * @brief private base power system data structure
 */
-struct _p_PS{
-  PetscScalar MVAbase; /**< System base MVA */
-  PetscInt    Nbus,Ngen,Nbranch,Nload; /**< global # of buses,gens,branches, and loads (includes elements which are
+struct _p_PS {
+  PetscScalar MVAbase;                 /* System base MVA */
+  PetscInt    Nbus,Ngen,Nbranch,Nload; /* global # of buses,gens,branches, and loads (includes elements which are
                                           out of service */
-  PetscInt    nbus,ngen,nbranch,nload; /**< local # of buses,gens,branches,and loads */
-  PSBUS   bus;
-  PSLOAD  load;
-  PSGEN   gen;
-  PSLINE  line;
+  PetscInt    nbus,ngen,nbranch,nload; /* local # of buses,gens,branches,and loads */
+  PSBUS       bus;
+  PSLOAD      load;
+  PSGEN       gen;
+  PSLINE      line;
+ 
+  COMM        comm;           /* communicator context */
+  PetscInt    refct;          /* Reference count to keep track on how many objects are sharing PS */
+  PetscInt    *busext2intmap; /* Maps external bus numbers to internal bus numbers */
+  PetscInt    maxbusnum;      /* Max. bus number -- used for allocating busext2intmap */
 
-  COMM comm; /**< communicator context */
-
-  PetscInt refct; /**< Reference count to keep track on how many objects are sharing PS */
-
-  PetscInt *busext2intmap; /**< Maps external bus numbers to internal bus numbers */
-  PetscInt  maxbusnum; /**< Max. bus number -- used for allocating busext2intmap */
-
-  PSApp    app; /**< the application using this ps */
+  PSApp       app;            /* the application using this ps */
+  PetscInt    ndiff;          /* Number of differential equations.. only used for applications involving differential eqs. */
   
-  PetscInt ndiff; /**< Number of differential equations.. only used for applications involving differential eqs. */
-  
-  
-  PetscInt compkey[10]; /**< keys for components */
+  PetscInt    compkey[10];    /* keys for components */
+  DM          networkdm;      /* DM for managing the network */
 
-  
-  DM networkdm; /**< DM for managing the network */
+  char        net_file_name[1024]; /* Network file name */
+  PetscInt    nconncomp;           /* Number of connected components */
+  PSConnComp  conncomp[MAXCONNECTEDCOMPS]; /* List of connected components */
 
-  
-  char  net_file_name[1024]; /**< Network file name */
-
-  PetscInt   nconncomp; /**< Number of connected components */
-  PSConnComp conncomp[MAXCONNECTEDCOMPS]; /**< List of connected components */
-
-  PetscBool setupcalled; /**< Is setup called on PS? */
+  PetscBool setupcalled; /* Is setup called on PS? */
 };
 
 extern PetscErrorCode PSCheckTopology(PS);
