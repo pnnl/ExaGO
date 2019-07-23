@@ -30,7 +30,7 @@ DYNEXCMODEL_OBJECTS = src/dyn/dynexcmodels/dynexcmodels.o src/dyn/dynexcmodels/d
 DYNTURBGOVMODEL_OBJECTS = src/dyn/dynturbgovmodels/dynturbgovmodels.o src/dyn/dynturbgovmodels/dyntgov1.o
 DYNSTABMODEL_OBJECTS = src/dyn/dynstabmodels/dynstabmodels.o src/dyn/dynstabmodels/dynstab1.o
 DYNLOADMODEL_OBJECTS = src/dyn/dynloadmodels/dynloadmodels.o src/dyn/dynloadmodels/dynzip.o src/dyn/dynloadmodels/dyncompload.o
-DYNEVENT_OBJECTS = src/dyn/dynevents.o src/dyn/dynfaultevents.o src/dyn/dynlineswevents.o src/dyn/dyngentripevents.o 
+DYNEVENT_OBJECTS = src/dyn/dynevents.o src/dyn/dynfaultevents.o src/dyn/dynlineswevents.o src/dyn/dyngentripevents.o
 
 DYN_SRC_OBJECTS = src/ps/ps.o src/utils/comm.o src/utils/utils.o src/pflow/pflow.o src/dyn/dyn.o ${DYNGENMODEL_OBJECTS} ${DYNEXCMODEL_OBJECTS} ${DYNTURBGOVMODEL_OBJECTS} ${DYNSTABMODEL_OBJECTS} ${DYNLOADMODEL_OBJECTS} ${DYNEVENT_OBJECTS}
 
@@ -54,7 +54,7 @@ PFLOW2: $(OBJECTS_PFLOW2) libpflow chkopts
 	 -$(CLINKER) -o PFLOW2 $(OBJECTS_PFLOW2) ${PETSC_SNES_LIB} -L${PSAPPS_DIR} -lpflow
 	$(RM) $(OBJECTS_PFLOW2)
 
-OPFLOW_SRC_OBJECTS = src/ps/ps.o src/utils/comm.o src/utils/utils.o src/opflow/opflow.o ${DYNGENMODEL_OBJECTS} ${DYNEXCMODEL_OBJECTS} ${DYNTURBGOVMODEL_OBJECTS} ${DYNSTABMODEL_OBJECTS} ${DYNLOADMODEL_OBJECTS}
+OPFLOW_SRC_OBJECTS = src/ps/ps.o src/utils/comm.o src/utils/utils.o src/opflow/opflow.o src/opflow/econstraints.o src/opflow/iconstraints.o ${DYNGENMODEL_OBJECTS} ${DYNEXCMODEL_OBJECTS} ${DYNTURBGOVMODEL_OBJECTS} ${DYNSTABMODEL_OBJECTS} ${DYNLOADMODEL_OBJECTS}
 
 OPFLOW_APP_OBJECTS = applications/opflow-main.o
 OBJECTS_OPFLOW = $(OPFLOW_APP_OBJECTS)
