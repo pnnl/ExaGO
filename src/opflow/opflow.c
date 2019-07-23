@@ -16,8 +16,8 @@
 #include <../src/tao/constrained/impls/ipm/ipm.h> /*I "ipm.h" I*/
 
 /*
-  f(x) = 
-  H(x) = f_xx = constant diagonal matrix
+  f(x) = SUM(a*(Pg*MVAbase)^2 + b*(Pg*MVAbase) + c); for each xi
+  H(x) = f_xx = constant diagonal matrix: 2*a*MVAbase*MVAbase;
  */
 PetscErrorCode OPFLOWCreateObjectiveHessian(OPFLOW opflow)
 {
@@ -862,6 +862,8 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
 
 /*
   OPFLOWObjectiveandGradientFunction - The objective and gradient function for the optimal power flow
+    f(x) = SUM(a*(Pg*MVAbase)^2 + b*(Pg*MVAbase) + c); for each xi
+    grad = f_x st. grad[i] = 2*a*(Pg*MVAbase)*MVAbase + b*MVAbase
 
   Input Parameters:
 + nlp - the TAO object
