@@ -31,7 +31,7 @@ PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X,PetscScalar* obj
   PetscErrorCode ierr;
   PetscInt       i,k;
   PetscInt       loc;
-  PetscScalar    *df,Pg,sobj;
+  PetscScalar    *df,Pg,sobj=0.0;
   OPFLOW         opflow=(OPFLOW)ctx;
   PS             ps=opflow->ps;
   Vec            localgrad;
