@@ -18,7 +18,7 @@ struct _p_OPFLOW{
   COMM comm; /**< Communicator context */
   PS   ps;   /**< Power system context */
 
-  Vec  X;    /**< Solution vector */
+  Vec  X,localX;    /* Global and local solution vector */
   Vec  G; /**< Inequality and equality constraint function */
 
   Vec Xl; /**< Lower bound on solution */

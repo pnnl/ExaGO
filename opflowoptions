@@ -21,7 +21,7 @@
 -opflow_tao_crtol 1e-4 
 -opflow_tao_grtol 1e-4
 -opflow_tao_gatol 1e-2
--opflow_tao_max_it 10 
+-opflow_tao_max_it 20
 
 # Convergence monitor
 -opflow_tao_monitor
