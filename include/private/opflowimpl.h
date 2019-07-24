@@ -6,12 +6,13 @@
 #define OPFLOWIMPL_H
 
 #include <ps.h>
+#include <private/psimpl.h>
 #include <opflow.h>
 #if defined(PSAPPS_HAVE_IPOPT)
 #include <IpStdCInterface.h>
 #endif
- /** 
-  * @brief private struct for optimal power flow application 
+ /**
+  * @brief private struct for optimal power flow application
   */
 struct _p_OPFLOW{
   /* Common fields */
@@ -40,7 +41,7 @@ struct _p_OPFLOW{
   /* For TAO */
   Vec  Ge; /** < Equality constraint function vector */
   Vec  Gi; /** < Inequality constraint function vector */
-  
+
   Mat Jac_Ge; /* Equality constraint Jacobian */
   Mat Jac_Gi; /* Inequality constraint Jacobian */
 
@@ -53,10 +54,10 @@ struct _p_OPFLOW{
   Vec Gu; /**< Upper bound on G */
 
   Mat  Jac;  /* Jacobian of constraints */
-  Mat  Hes;  /* Lagrangian Hessian */  
-  
+  Mat  Hes;  /* Lagrangian Hessian */
+
   PetscScalar *x; /**< Solution array - same as the array for X */
-  
+
   PetscInt nnz_jac_g; /**< Number of nonzeros in the jacobian of the constraints */
   PetscInt nnz_hes; /**< Number of nonzeros in the Lagrangian Hessian */
 
@@ -88,4 +89,75 @@ extern PetscErrorCode OPFLOWSetVariableandConstraintBounds(OPFLOW,Vec,Vec,Vec,Ve
  * @param [out] Vec X     - initial guess
  */
 extern PetscErrorCode OPFLOWSetInitialGuess(OPFLOW,Vec);
+/*
+  * @breif Evalulates the equality constraints for the optimal power flow
+  * @param [in] Tao - the Tao nlp solver object
+  * @param [in] X   - the current iterate
+  * @param [in] ctx - application data set with TaoSetEqualityConstraintsRoutine
+  * @param [out] Ge  - vector of equality constraints
+*/
+extern PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx);
+/*
+  * @breif Returns a distributed Jacobian for the equality constraints
+  * @param [in] opflow - the optimal power flow application object
+  * @param [out] mat - the jacobian of the equality constraints
+*/
+extern PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat);
+/*
+  * @breif  Sets the nonzero values for the equality constraints Jacobian
+  * @param [in] nlp - Tao nlp solver object
+  * @param [in] X   - the current iterate
+  * @param [in] ctx - application data set with OPFLOWEqualityConstraintsJacobianRoutine
+  * @param [out] Je - Jacobian of equality constraints
+  * @param [out] Je_pre - Preconditioner for equality constraints
+*/
+extern PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp,Vec X,Mat Je, Mat Je_pre, void* ctx);
+/*
+  * @breif Evalulates the inequality constraints for the optimal power flow
+  * @param [in] Tao - the Tao nlp solver object
+  * @param [in] X   - the current iterate
+  * @param [in] ctx - application data set with TaoSetEqualityConstraintsRoutine
+  * @param [out] Gi  - vector of equality constraints
+*/
+extern PetscErrorCode OPFLOWInequalityConstraintsFunction(Tao nlp,Vec X,Vec Gi,void* ctx);
+/*
+  * @breif Returns a distributed Jacobian for the inequality constraints
+  * @param [in] opflow - the optimal power flow application object
+  * @param [out] mat - the jacobian of the inequality constraints
+*/
+extern PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat);
+/*
+  * @breif  Sets the nonzero values for the equality constraints Jacobian
+  * @param [in] nlp - Tao nlp solver object
+  * @param [in] X   - the current iterate
+  * @param [in] ctx - application data set with OPFLOWInequalityConstraintsJacobianRoutine
+  * @param [out] Ji - Jacobian of inequality constraints
+  * @param [out] Ji_pre - Preconditioner for inequality constraints
+*/
+extern PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat Ji, Mat Ji_pre, void* ctx);
+/*
+  * @breif The objective and gradient function for the optimal power flow
+  * @param [in] nlp - Tao nlp solver object
+  * @param [in] X   - the current iterate
+  * @param [out] obj  - the objective function value (scalar)
+  * @param [out] grad - the gradient vector
+*/
+extern PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X,PetscScalar* obj,Vec grad,void* ctx);
+/*
+  * @breif Creates the constant Hessian matrix for the objective function f(x)
+  * @param [in] opflow - the optimal power flow application object
+  * @param [out] N/A - sets hessian directly into tao->hessian
+*/
+extern PetscErrorCode OPFLOWCreateObjectiveHessian(OPFLOW opflow);
+/*
+  * @breif Tao resets hessian each itteration, this function prevents wasted recalculations
+  * @param [in] tao - Tao solver object
+  * @param [in] X   - the current iterate
+  * @param [in] ctx - application data set
+  * @param [out] H - Hessain matrix
+  * @param [out] H_pre - Preconditioner for Hessian
+*/
+extern PetscErrorCode OPFLOWHessian(Tao tao, Vec X, Mat H, Mat H_pre, void* ctx);
+
+
 #endif
