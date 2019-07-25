@@ -2,11 +2,13 @@
 #-netfile datafiles/case118.m
 #-netfile datafiles/case5.m
 
+-opflow_tao_type pdipm
+
 # Gradient calculation via finite differencing
 #-opflow_tao_fd_gradient 1
 
 # Hessian calculation via finite differencing
--opflow_tao_fd_hessian 1
+#-opflow_tao_fd_hessian 1
 
 # Max funcs (what is this and why is this needed?)
 -opflow_tao_max_funcs 100000
@@ -31,7 +33,7 @@
 
 # performance
 #-------------
-#-log_summary
+#-log_view
 
 #Partitioner (requires parmetis package)
 #-petscpartitioner_type simple

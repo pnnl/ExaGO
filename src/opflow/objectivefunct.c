@@ -99,10 +99,11 @@ PetscErrorCode OPFLOWCreateObjectiveHessian(OPFLOW opflow)
   PSBUS          bus;
   PSGEN          gen;
   Tao            tao=opflow->nlp;
-  Mat            H=tao->hessian;
+  Mat            H;
 
   PetscFunctionBegin;
   ierr = VecGetLocalSize(opflow->X,&n);CHKERRQ(ierr);
+  ierr = MatCreate(opflow->comm->type,&H);CHKERRQ(ierr);
   ierr = MatSetSizes(H,n,n,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
   ierr = MatSetType(H,MATAIJ);CHKERRQ(ierr);
   ierr = MatSeqAIJSetPreallocation(H,1,NULL);CHKERRQ(ierr);
@@ -122,6 +123,7 @@ PetscErrorCode OPFLOWCreateObjectiveHessian(OPFLOW opflow)
   ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   //ierr = MatView(H,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  tao->hessian = H;
   PetscFunctionReturn(0);
 }
 
