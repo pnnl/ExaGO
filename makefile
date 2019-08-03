@@ -3,11 +3,18 @@
 # For debugging
 # override CFLAGS += -Iinclude -DPFLOW_DISPLAY_RESULTS -DDEBUGPS
 
-CFLAGS += -Iinclude -I${IPOPT_BUILD_DIR}/include/coin
+CFLAGS += -Iinclude 
+CFLAGS += -I${IPOPT_BUILD_DIR}/include/coin # For IPOPT
+CFLAGS += -I${PIPS_DIR}/PIPS-NLP # For PIPS-NLP
 FFLAGS           =
 CPPFLAGS         =
 FPPFLAGS         =
-CFLAGS_IPOPT     = -DPSAPPS_HAVE_IPOPT
+## Turn this off for SCOPFLOW_PIPS
+#CFLAGS_IPOPT     = -DPSAPPS_HAVE_IPOPT
+# Turn this off for SCOPFLOW_IPOPT
+CFLAGS_PIPS      = -DPSAPPS_HAVE_PIPS
+
+CFLAGS += ${CFLAGS_IPOPT} ${CFLAGS_PIPS}
 
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
@@ -96,12 +103,17 @@ OPFLOW_IPOPT: $(OBJECTS_OPFLOW2) libopflowipopt chkopts
 #	SCOPFLOW Specific Make
 #******************************
 SCOPFLOW_APP_OBJECTS = applications/scopflow-main.o
-SCOPFLOW_PIPS_SRC_OBJECTS = src/scopflow/scopflow-pips.o ${OPFLOW_IPOPT_SRC_OBJECTS}
 #******** Option 2 **********
 OBJECTS_SCOPFLOW2 = $(SCOPFLOW_APP_OBJECTS) 
-SCOPFLOW_PIPS: $(OBJECTS_SCOPFLOW2) libscopflowipopt chkopts
-	 -$(CLINKER) -o SCOPFLOW_PIPS $(OBJECTS_SCOPFLOW2) -L${PSAPPS_DIR} -lscopflowipopt
+SCOPFLOW_IPOPT: $(OBJECTS_SCOPFLOW2) libscopflowipopt chkopts
+	 -$(CLINKER) -o SCOPFLOW_IPOPT $(OBJECTS_SCOPFLOW2) -L${PSAPPS_DIR} -lscopflowipopt
 	$(RM) $(OBJECTS_SCOPFLOW2)
+
+# SCOPFLOW with PIPS
+OBJECTS_SCOPFLOW3 = $(SCOPFLOW_APP_OBJECTS) 
+SCOPFLOW_PIPS: $(OBJECTS_SCOPFLOW3) libscopflowpips chkopts
+	 -$(CLINKER) -o SCOPFLOW_PIPS $(OBJECTS_SCOPFLOW3) -L${PSAPPS_DIR} -lscopflowpips
+	$(RM) $(OBJECTS_SCOPFLOW3)
 
 #***************************
 #	Make Library Commands
@@ -109,7 +121,7 @@ SCOPFLOW_PIPS: $(OBJECTS_SCOPFLOW2) libscopflowipopt chkopts
 libdyn:$(DYN_SRC_OBJECTS) chkopts
 	 -$(CLINKER) $(LDFLAGS) -o libdyn.$(LIB_EXT) $(DYN_SRC_OBJECTS) $(PETSC_TS_LIB)
 
-CFLAGS += ${CFLAGS_IPOPT}
+
 libpflow:$(PFLOW_SRC_OBJECTS) chkopts
 	 -$(CLINKER) $(LDFLAGS) -o libpflow.$(LIB_EXT) $(PFLOW_SRC_OBJECTS) $(PETSC_TS_LIB)
 
@@ -119,11 +131,16 @@ libopflow:$(OPFLOW_SRC_OBJECTS) chkopts
 libopflowipopt:$(OPFLOW_IPOPT_SRC_OBJECTS) chkopts
 	 -$(CLINKER) $(LDFLAGS) -o libopflowipopt.$(LIB_EXT) $(OPFLOW_IPOPT_SRC_OBJECTS) -L${IPOPT_BUILD_DIR}/lib -lipopt $(PETSC_TAO_LIB)
 
-libscopflowipopt:$(SCOPFLOW_PIPS_SRC_OBJECTS) chkopts
-	 -$(CLINKER) $(LDFLAGS) -o libscopflowipopt.$(LIB_EXT) $(SCOPFLOW_PIPS_SRC_OBJECTS) -L${IPOPT_BUILD_DIR}/lib -lipopt $(PETSC_TAO_LIB)
+SCOPFLOW_IPOPT_SRC_OBJECTS = src/scopflow/scopflow-ipopt.o ${OPFLOW_IPOPT_SRC_OBJECTS}
+libscopflowipopt:$(SCOPFLOW_IPOPT_SRC_OBJECTS) chkopts
+	 -$(CLINKER) $(LDFLAGS) -o libscopflowipopt.$(LIB_EXT) $(SCOPFLOW_IPOPT_SRC_OBJECTS) -L${IPOPT_BUILD_DIR}/lib -lipopt $(PETSC_TAO_LIB)
+
+SCOPFLOW_PIPS_SRC_OBJECTS = src/scopflow/scopflow-pips.o ${OPFLOW_SRC_OBJECTS}
+libscopflowpips:$(SCOPFLOW_PIPS_SRC_OBJECTS) chkopts
+	 -$(CLINKER) $(LDFLAGS) -o libscopflowpips.$(LIB_EXT) $(SCOPFLOW_PIPS_SRC_OBJECTS) -L${PIPS_DIR}/build/PIPS-NLP -lparpipsnlp $(PETSC_TAO_LIB)
 
 #******************************
 #	Remove .o Command
 #******************************
 cleanobj:
-	rm -rf $(OBJECTS_PFLOW) $(OBJECTS_PFLOW2) $(PFLOW_SRC_OBJECTS) $(OBJECTS_OPFLOW) $(OBJECTS_OPFLOW2)$(OPFLOW_SRC_OBJECTS) $(OBJECTS_SCOPFLOW2) $(SCOPFLOW_PIPS_SRC_OBJECTS) $(OBJECTS_DYN) $(DYN_SRC_OBJECTS) *.dylib *.dSYM PFLOW PFLOW2 DYN OPFLOW OPFLOW_IPOPT SCOPFLOW_PIPS
+	rm -rf $(OBJECTS_PFLOW) $(OBJECTS_PFLOW2) $(PFLOW_SRC_OBJECTS) $(OBJECTS_OPFLOW) $(OBJECTS_OPFLOW2)$(OPFLOW_SRC_OBJECTS) $(OBJECTS_SCOPFLOW2) $(SCOPFLOW_IPOPT_SRC_OBJECTS) $(SCOPFLOW_PIPS_SRC_OBJECTS) $(OBJECTS_DYN) $(DYN_SRC_OBJECTS) *.dylib *.dSYM PFLOW PFLOW2 DYN OPFLOW OPFLOW_IPOPT SCOPFLOW_IPOPT SCOPFLOW_PIPS

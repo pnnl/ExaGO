@@ -1,311 +1,27 @@
 #include <private/psimpl.h>
 #include <private/opflowimpl.h>
-#include <private/scopflowpipsimpl.h>
-#include <math.h>
+#include <private/scopflowimpl.h>
+#include <IpStdCInterface.h>
 
-int str_init_x0(double* x0, CallBackDataPtr cbd) {
-	int row = cbd->row_node_id;
-	int col = cbd->col_node_id;
-	if(row == 0)
-	{
-		x0[0] = 1.0;
-		x0[1] = 1.0;
-	}
-	else if(row == 1)
-	{
-		x0[0] = 1.0;
-	}
-	else if(row == 2)
-	{
-		x0[0] = 1.0;
-	}
+/* Function Declarations */
+Bool eval_scopflow_f(PetscInt n, PetscScalar* x, Bool new_x,
+            PetscScalar* obj_value, UserDataPtr user_data);
 
-	return 1;
-}
+Bool eval_scopflow_grad_f(PetscInt n, PetscScalar* x, Bool new_x,
+                 PetscScalar* grad_f, UserDataPtr user_data);
 
-int str_prob_info(int* n, double* col_lb, double* col_ub, int* m,
-		double* row_lb, double* row_ub, CallBackDataPtr cbd) {
-	int row = cbd->row_node_id;
-	int col = cbd->col_node_id;
-        int type = cbd->typeflag;
-        if(type == 1){
-	    if(row_lb == NULL){
-                *m = 0;
-	    }
-            return 1;
-	}
-	if(col_lb == NULL)
-	{
-	  if(row==0)
-	    {
-	      *n = 2;
-	      *m = 1;
-	    }
-	  else if(row ==1 || row == 2)
-	    {
-	      *n = 1;
-	      *m = 1;
-	    }
-	}
-	else
-	{
-		if(row==0)
-		{
-			col_lb[0] = -INFINITY;
-			col_lb[1] = -INFINITY;
-			col_ub[0] = INFINITY;
-			col_ub[1] = INFINITY;
-			row_lb[0] = 100;
-			row_ub[0] = 100;
-		}
-		else if(row ==1 || row == 2)
-		{
-			col_lb[0] = -INFINITY;
-			col_ub[0] = INFINITY;
-			row_lb[0] = 0;
-			row_ub[0] = 600;
-		}
-	}
+Bool eval_scopflow_g(PetscInt n, PetscScalar* x, Bool new_x,
+            PetscInt m, PetscScalar* g, UserDataPtr user_data);
 
-	return 1;
-}
+Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
+                PetscInt m, PetscInt nele_jac,
+                PetscInt *iRow, PetscInt *jCol, PetscScalar *values,
+                UserDataPtr user_data);
 
-int str_eval_f(double* x0, double* x1, double* obj, CallBackDataPtr cbd) {
-	int row = cbd->row_node_id;
-	int col = cbd->col_node_id;
-	if(row == 0 )
-	{   // (x0 + x1) ^ 2 + x0 + x1
-		*obj =  ( x0[0] + x0[1] ) * ( x0[0] + x0[1] ) + x0[0] + x0[1];
-	}
-	else if(row == 1)
-	{   // (x0 + x1)x3 + x3
-		*obj = ( x0[0] + x0[1] ) * x1[0] + x1[0];
-	}
-	else if(row == 2)
-	{  // (x0 + x1)x4 + x4
-		*obj = ( x0[0] + x0[1] ) * x1[0] + x1[0];
-	}
-	return 1;
-}
-
-int str_eval_g(double* x0, double* x1, double* eq_g, double* inq_g,
-		CallBackDataPtr cbd) {
-	int row = cbd->row_node_id;
-	int col = cbd->col_node_id;
-	if(row == 0)
-	{	//x1 + x2 + x1x2 = 100
-		eq_g[0] = x0[0] + x0[1] + x0[0]*x0[1];
-	}
-	else if(row == 1)
-	{   //0< x2^2 + x3x1 + x1 + x2 + x3^2 + x3<600
-		inq_g[0] = x0[1]*x0[1] + x1[0] * x0[0] + x0[0] + x0[1] + x1[0]*x1[0] + x1[0];
-	}
-	else if(row == 2)
-	{  //0< x1^2 + x4x2 + x1 + x2 + x4^2 + x4< 600
-		inq_g[0] = x0[0]*x0[0] + x1[0] * x0[1] + x0[0] + x0[1] + x1[0]*x1[0] + x1[0];
-	}
-
-	return 1;
-}
-
-int str_eval_grad_f(double* x0, double* x1, double* grad, CallBackDataPtr cbd) {
-	int row = cbd->row_node_id;
-	int col = cbd->col_node_id;
-	if(row == 0 && col == 0)
-	{
-		grad[0] = 2.0 * (x0[0] + x0[1]) + 1.0;
-		grad[1] = 2.0 * (x0[0] + x0[1]) + 1.0;
-	}
-	else if(row == 1 && col == 1)
-	{
-		grad[0] = (x0[0] + x0[1]) + 1.0;
-	}
-	else if(row == 2 && col == 2)
-	{
-		grad[0] = (x0[0] + x0[1]) + 1.0;
-	}
-	else if(row == 1 && col == 0)
-	{
-		grad[0] = x1[0];
-		grad[1] = x1[0];
-	}
-	else if(row == 2 && col == 0)
-	{
-		grad[0] = x1[0];
-		grad[1] = x1[0];
-	}
-
-	return 1;
-}
-
-int str_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
-		int* e_rowidx, int* e_colptr, int* i_nz, double* i_elts, int* i_rowidx,
-		int* i_colptr, CallBackDataPtr cbd) {
-	int row = cbd->row_node_id;
-	int col = cbd->col_node_id;
-	if(e_elts==NULL && i_elts == NULL)
-	{
-
-		if (row == 0 && col == 0) {
-			*e_nz = 2;
-			*i_nz = 0;
-		} else if (row == 1 && col == 1) {
-			*e_nz = 0;
-			*i_nz = 1;
-		} else if (row == 2 && col == 2) {
-			*e_nz = 0;
-			*i_nz = 1;
-		} else if (row == 1 && col == 0) {
-			*e_nz = 0;
-			*i_nz = 2;
-		} else if (row == 2 && col == 0) {
-			*e_nz = 0;
-			*i_nz = 2;
-		}
-	}
-	else
-	{
-		if (row == 0 && col == 0) {
-			e_rowidx[0] = 0;
-			e_rowidx[1] = 0;
-			e_colptr[0] = 0;
-			e_colptr[1] = 1;
-			e_colptr[2] = 2;
-			e_elts[0] = x0[1] + 1.0;
-			e_elts[1] = x0[0] + 1.0;
-		} else if (row == 1 && col == 1) {
-			i_rowidx[0] = 0;
-			i_colptr[0] = 0;
-			i_colptr[1] = 1;
-			i_elts[0] = x0[0] + 2.0*x1[0] + 1.0;
-		} else if (row == 2 && col == 2) {
-			i_rowidx[0] = 0;
-			i_colptr[0] = 0;
-			i_colptr[1] = 1;
-			i_elts[0] = x0[1] + 2.0*x1[0] + 1.0;
-		} else if (row == 1 && col == 0) {
-			i_rowidx[0] = 0;
-			i_rowidx[1] = 0;
-			i_colptr[0] = 0;
-			i_colptr[1] = 1;
-			i_colptr[2] = 2;
-			i_elts[0] = x1[0] + 1.0;
-			i_elts[1] = 2.0*x0[1] + 1.0;
-		} else if (row == 2 && col == 0) {
-
-			i_rowidx[0] = 0;
-			i_rowidx[1] = 0;
-			i_colptr[0] = 0;
-			i_colptr[1] = 1;
-			i_colptr[2] = 2;
-			i_elts[0] = 2.0*x0[0] + 1.0;
-			i_elts[1] = x1[0] + 1.0;
-		}
-	}
-
-
-	return 1;
-}
-
-int str_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elts,
-		int* rowidx, int* colptr, CallBackDataPtr cbd) {
-	int row = cbd->row_node_id;
-	int col = cbd->col_node_id;
-	if(elts==NULL)
-	{
-
-		if (row == 0 && col == 0) {
-			*nz = 3;
-		} else if (row == 1 && col == 1) {
-			*nz = 1;
-		} else if (row == 2 && col == 2) {
-			*nz = 1;
-		} else if (row == 1 && col == 0) {
-			*nz = 3;
-		} else if (row == 2 && col == 0) {
-			*nz = 3;
-		} else if (row == 0 && col == 1) {
-			*nz = 2;
-		} else if (row == 0 && col == 2) {
-			*nz = 2;
-		}
-
-	}
-	else{
-		if (row == 0 && col == 0) {
-			rowidx[0] = 0;
-			rowidx[1] = 1;
-			rowidx[2] = 1;
-			colptr[0] = 0;
-			colptr[1] = 2;
-			colptr[2] = 3;
-			elts[0] = 2.0;
-			elts[1] = 2.0 + 1.0 * lambda[0];
-			elts[2] = 2.0;
-		} else if (row == 1 && col == 1) {
-			rowidx[0] = 0;
-			colptr[0] = 0;
-			colptr[1] = 1;
-			elts[0] = 2.0 * lambda[0];
-		} else if (row == 2 && col == 2) {
-			rowidx[0] = 0;
-			colptr[0] = 0;
-			colptr[1] = 1;
-			elts[0] = 2.0 * lambda[0];
-		} else if (row == 1 && col == 0) { //parent contribution
-			rowidx[0] = 0;
-			rowidx[1] = 1;
-			rowidx[2] = 1;
-			colptr[0] = 0;
-			colptr[1] = 2;
-			colptr[2] = 3;
-			elts[0] = 0.0;
-			elts[1] = 0.0;
-			elts[2] = 2.0 * lambda[0];
-		} else if (row == 2 && col == 0) { //parent contribution
-			rowidx[0] = 0;
-			rowidx[1] = 1;
-			rowidx[2] = 1;
-			colptr[0] = 0;
-			colptr[1] = 2;
-			colptr[2] = 3;
-			elts[0] = 2.0 * lambda[0];
-			elts[1] = 0.0;
-			elts[2] = 0.0;
-		} else if (row == 0 && col == 1) {
-			rowidx[0] = 0;
-			rowidx[1] = 0;
-			colptr[0] = 0;
-			colptr[1] = 1;
-			colptr[2] = 2;
-			elts[0] = 1.0 + 1.0*lambda[0];
-			elts[0] = 1.0;
-		} else if (row == 0 && col == 2) {
-			rowidx[0] = 0;
-			rowidx[1] = 0;
-			colptr[0] = 0;
-			colptr[1] = 1;
-			colptr[2] = 2;
-			elts[0] = 1.0;
-			elts[0] = 1.0 + 1.0*lambda[0];
-		}
-	}
-
-	return 1;
-}
-
-int str_write_solution(double* x, double* lam_eq, double* lam_ieq,CallBackDataPtr cbd)
-{
-	int row = cbd->row_node_id;
-	int col = cbd->col_node_id;
-	if(row == 0)
-	{
-	}
-	else if(row == 1 || row == 2)
-	{
-	}
-	return 1;
-}
+Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_factor,
+            PetscInt m, PetscScalar *lambda, Bool new_lambda,
+            PetscInt nele_hess, PetscInt *iRow, PetscInt *jCol,
+            PetscScalar *values, UserDataPtr user_data);
 
 /*
   SCOPFLOWGetConstraintJacobianNonzeros - Gets the number of nonzeros in the lagrangian hessian matrix
@@ -353,6 +69,8 @@ PetscErrorCode SCOPFLOWSetLagrangianHessianLocations(SCOPFLOW scopflow, PetscInt
   PetscFunctionReturn(0);
 }
 
+
+
 /*
   SCOPFLOWSetHessianValues - Sets the nonzero values for the
               Lagrangian Hessian
@@ -396,6 +114,8 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
 
   ierr = COMMCreate(mpicomm,&scopflow->comm);CHKERRQ(ierr);
 
+  //  if(scopflow->comm->size > 1) SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"SCOPF with IPOPT is not supported in parallel");
+
   scopflow->ns              = -1;
   scopflow->Ns              = -1;
   scopflow->nc              =  0;
@@ -403,9 +123,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
   scopflow->nx              =  0;
   scopflow->Nx              =  0;
 
-  scopflow->nlp_pips       = NULL;
-
-  //  gmyid = scopflow->comm->rank;
+  scopflow->nlp_ipopt       = NULL;
 
   scopflow->setupcalled = PETSC_FALSE;
   
@@ -426,7 +144,7 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
   PetscFunctionBegin;
   ierr = COMMDestroy(&(*scopflow)->comm);CHKERRQ(ierr);
 
-  //  FreeIpoptProblem((*scopflow)->nlp_ipopt);CHKERRQ(ierr);
+  FreeIpoptProblem((*scopflow)->nlp_ipopt);CHKERRQ(ierr);
   ierr = PetscFree(*scopflow);CHKERRQ(ierr);
   *scopflow = 0;
 
@@ -600,6 +318,10 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
     ierr = SCOPFLOWSetUp(scopflow);CHKERRQ(ierr);
   }
 
+  if(scopflow->nlp_ipopt) {
+    FreeIpoptProblem(scopflow->nlp_ipopt);
+  }
+
   /* Set bounds on variables and constraints */
   ierr = SCOPFLOWSetVariableandConstraintBounds(scopflow,scopflow->Xl,scopflow->Xu,scopflow->Cl,scopflow->Cu);CHKERRQ(ierr);
 
@@ -608,13 +330,53 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
   ierr = VecGetArray(scopflow->Cl,&cl);CHKERRQ(ierr);
   ierr = VecGetArray(scopflow->Cu,&cu);CHKERRQ(ierr);
 
-  /* Create PIPS problem */
+  /* Create IPOPT problem */
+  scopflow->nlp_ipopt = CreateIpoptProblem(scopflow->Nx,xl,xu,scopflow->Nc,cl,cu,scopflow->nnz_jac_g,scopflow->nnz_hes,0,&eval_scopflow_f,
+				   &eval_scopflow_g,&eval_scopflow_grad_f,
+				   &eval_scopflow_jac_g,&eval_scopflow_h);
 
   ierr = VecRestoreArray(scopflow->Xl,&xl);CHKERRQ(ierr);
   ierr = VecRestoreArray(scopflow->Xu,&xu);CHKERRQ(ierr);
   ierr = VecRestoreArray(scopflow->Cl,&cl);CHKERRQ(ierr);
   ierr = VecRestoreArray(scopflow->Cu,&cu);CHKERRQ(ierr);
 
+  /* Options for IPOPT. This need to go through PetscOptionsBegin later */
+  
+  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"tol", 1e-6);
+  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"acceptable_tol", 1e-6);
+  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"mu_init", 0.1);
+  AddIpoptNumOption(scopflow->nlp_ipopt,(char*)"obj_scaling_factor",100);
+  
+  AddIpoptNumOption(scopflow->nlp_ipopt,(char*) "bound_frac",1);
+  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"bound_push",1);
+  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"dual_inf_tol", 1e-2);
+  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"compl_inf_tol", 1e-2);
+  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"constr_viol_tol", 5e-6);
+
+  //  AddIpoptStrOption(scopflow->nlp_ipopt,(char*)"fixed_variable_treatment",(char*)"relax_bounds");
+  // AddIpoptStrOption(scopflow->nlp_ipopt,(char*)"nlp_scaling_method",(char*)"none");
+  AddIpoptIntOption(scopflow->nlp_ipopt,(char*)"max_iter",500);
+  //  AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"mu_strategy", (char*)"adaptive");
+  AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"print_user_options", (char*)"yes");
+  AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"output_file", (char*)"ipopt.out");
+  
+  //  AddIpoptStrOption(scopflow->nlp_ipopt,"warm_start_init_point","yes");
+  ierr = PetscOptionsGetString(NULL,NULL,"-scopflow_hessian_type",hessiantype,sizeof(hessiantype),&flg);CHKERRQ(ierr);
+  if(flg) {
+    ierr = PetscStrcmp(hessiantype,"L-BFGS",&flg);CHKERRQ(ierr);
+    if(flg) {
+      AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"hessian_approximation", (char*)"limited-memory");
+    } else {
+      ierr = PetscStrcmp(hessiantype,"EXACT",&flg);CHKERRQ(ierr);
+      if(!flg) {
+	SETERRQ(PETSC_COMM_SELF,0,"Incorrect input to SCOPFLOW Hessian type option -scopflow_hessian_type\n\tAvailable types are L-BFGS and EXACT");
+      }
+    }
+  }
+  //  AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"derivative_test", (char*)"first-order");
+  AddIpoptStrOption(scopflow->nlp_ipopt,(char*)"linear_solver",(char*)"mumps");
+  // AddIpoptNumOption(scopflow->nlp_ipopt,(char*)"bound_relax_factor",1e-4);
+  
   /* Set Initial Guess */
   ierr = SCOPFLOWSetInitialGuess(scopflow,scopflow->X);CHKERRQ(ierr);
 
@@ -626,7 +388,7 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
   ierr = VecGetArray(scopflow->X,&x);CHKERRQ(ierr);
 
   /* Solve */
-  //  scopflow->solve_status = IpoptSolve(scopflow->nlp_ipopt,x,NULL,&scopflow->obj,NULL,NULL,NULL,scopflow);
+  scopflow->solve_status = IpoptSolve(scopflow->nlp_ipopt,x,NULL,&scopflow->obj,NULL,NULL,NULL,scopflow);
 
   ierr = VecRestoreArray(scopflow->X,&x);CHKERRQ(ierr);
 
@@ -660,15 +422,6 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   for(i=0; i < scopflow->ns; i++) {
     ierr = OPFLOWSetUp(opflows[i]);CHKERRQ(ierr);
   }
-
-  str_init_x0_cb init_x0 = &str_init_x0;
-  str_prob_info_cb prob_info = &str_prob_info;
-  str_eval_f_cb eval_f = &str_eval_f;
-  str_eval_g_cb eval_g = &str_eval_g;
-  str_eval_grad_f_cb eval_grad_f = &str_eval_grad_f;
-  str_eval_jac_g_cb eval_jac_g = &str_eval_jac_g;
-  str_eval_h_cb eval_h = &str_eval_h;
-  str_write_solution_cb write_solution = &str_write_solution;
 
   if(scopflow->ns) {
     scopflow->nx = opflows[0]->n;
@@ -740,6 +493,18 @@ PetscErrorCode SCOPFLOWObjectiveFunction(SCOPFLOW scopflow,Vec X, PetscScalar* o
   PetscFunctionReturn(0);
 }
 
+Bool eval_scopflow_f(PetscInt n, PetscScalar* x, Bool new_x,
+            PetscScalar* obj_value, UserDataPtr user_data)
+{
+  PetscErrorCode ierr;
+  SCOPFLOW         scopflow=(SCOPFLOW)user_data;
+  
+  ierr = VecPlaceArray(scopflow->X,x);CHKERRQ(ierr);
+  ierr = SCOPFLOWObjectiveFunction(scopflow,scopflow->X,obj_value);CHKERRQ(ierr);
+  ierr = VecResetArray(scopflow->X);CHKERRQ(ierr);
+  return TRUE;
+}
+
 /*
   SCOPFLOWObjGradientFunction - The gradient of the objective function for the security constrained optimal power flow
 
@@ -759,6 +524,20 @@ PetscErrorCode SCOPFLOWObjGradientFunction(SCOPFLOW scopflow,Vec X, Vec grad)
   PetscFunctionReturn(0);
 }
 
+Bool eval_scopflow_grad_f(PetscInt n, PetscScalar* x, Bool new_x,
+                 PetscScalar* grad_f, UserDataPtr user_data)
+{
+  PetscErrorCode ierr;
+  SCOPFLOW         scopflow=(SCOPFLOW)user_data;
+  
+  ierr = VecPlaceArray(scopflow->X,x);CHKERRQ(ierr);
+  ierr = VecPlaceArray(scopflow->gradobj,grad_f);CHKERRQ(ierr);
+  ierr = SCOPFLOWObjGradientFunction(scopflow,scopflow->X,scopflow->gradobj);CHKERRQ(ierr);
+  ierr = VecResetArray(scopflow->gradobj);CHKERRQ(ierr);
+  ierr = VecResetArray(scopflow->X);CHKERRQ(ierr);
+  return TRUE;
+}
+
 /*
   SCOPFLOWConstraintFunction - Evalulates the constraints for the security constrained optimal power flow
 
@@ -776,6 +555,20 @@ PetscErrorCode SCOPFLOWConstraintFunction(SCOPFLOW scopflow,Vec X,Vec C)
   PetscFunctionBegin;
 
   PetscFunctionReturn(0);
+}
+
+Bool eval_scopflow_g(PetscInt n, PetscScalar* x, Bool new_x,
+             PetscInt m, PetscScalar* c, UserDataPtr user_data)
+{
+  PetscErrorCode ierr;
+  SCOPFLOW       scopflow=(SCOPFLOW)user_data;
+
+  ierr = VecPlaceArray(scopflow->X,x);CHKERRQ(ierr);
+  ierr = VecPlaceArray(scopflow->C,c);CHKERRQ(ierr);
+  ierr = SCOPFLOWConstraintFunction(scopflow,scopflow->X,scopflow->C);CHKERRQ(ierr);
+  ierr = VecResetArray(scopflow->X);CHKERRQ(ierr);
+  ierr = VecResetArray(scopflow->C);CHKERRQ(ierr);
+  return TRUE;
 }
 
 /*
@@ -825,6 +618,47 @@ PetscErrorCode SCOPFLOWSetConstraintJacobianValues(SCOPFLOW scopflow, Vec X,Pets
   PetscFunctionReturn(0);
 }
 
+
+Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
+                PetscInt m, PetscInt nele_jac,
+                PetscInt *iRow, PetscInt *jCol, PetscScalar *values,
+                UserDataPtr user_data)
+{
+  PetscErrorCode ierr;
+  SCOPFLOW         scopflow=(SCOPFLOW)user_data;
+
+  ierr = VecPlaceArray(scopflow->X,x);CHKERRQ(ierr);
+  if(values == NULL) {
+    ierr = SCOPFLOWSetConstraintJacobianLocations(scopflow,iRow,jCol);CHKERRQ(ierr);
+  } else {
+    ierr = SCOPFLOWSetConstraintJacobianValues(scopflow,scopflow->X,values);CHKERRQ(ierr);
+  }
+  ierr = VecResetArray(scopflow->X);CHKERRQ(ierr);
+  return TRUE;
+}
+
+Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_factor,
+                PetscInt m, PetscScalar *lambda, Bool new_lambda, 
+                PetscInt nele_hess, PetscInt *iRow, PetscInt *jCol, 
+                PetscScalar *values, UserDataPtr user_data)
+{
+  PetscErrorCode ierr;
+  SCOPFLOW         scopflow=(SCOPFLOW)user_data;
+
+  ierr = VecPlaceArray(scopflow->X,x);CHKERRQ(ierr);
+  ierr = VecPlaceArray(scopflow->lambda_g,lambda);CHKERRQ(ierr);
+  
+  if(values == NULL) {
+    ierr = SCOPFLOWSetLagrangianHessianLocations(scopflow,iRow,jCol);CHKERRQ(ierr);
+  } else {
+    ierr = SCOPFLOWSetLagrangianHessianValues(scopflow,obj_factor, scopflow->X,scopflow->lambda_g,values);CHKERRQ(ierr);
+  }
+  ierr = VecResetArray(scopflow->X);CHKERRQ(ierr);
+  ierr = VecResetArray(scopflow->lambda_g);CHKERRQ(ierr);
+  
+  return TRUE;
+}
+
 /*
   SCOPFLOWSetNumScenarios - Sets the total number of scenarios in the SCOPF problem
 
@@ -843,8 +677,12 @@ PetscErrorCode SCOPFLOWSetNumScenarios(SCOPFLOW scopflow,PetscInt Ns)
   PetscFunctionBegin;
   scopflow->Ns = Ns;
   ierr = PetscOptionsGetInt(NULL,NULL,"-scopflow_Ns",&scopflow->Ns,NULL);CHKERRQ(ierr);
+  scopflow->Ns += 1; /* One addition for the base case */
+  scopflow->ns = scopflow->Ns / comm->size;
+  if(comm->rank < (scopflow->Ns % comm->size)) scopflow->ns++;
   
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"SCOPFLOW running with %d scenarios\n",scopflow->Ns);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"SCOPFLOW running with %d scenarios (base case + %d scenarios)\n",scopflow->Ns,scopflow->Ns-1);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank[%d] has %d scenarios\n",comm->rank,scopflow->ns);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
