@@ -46,8 +46,6 @@ PetscErrorCode SCOPFLOWGetLagrangianHessianNonzeros(SCOPFLOW scopflow,PetscInt *
   PetscFunctionReturn(0);
 }
 
-
-
 /*
   SCOPFLOWSetConstraintJacobianLocations - Sets the row and column nonzero locations for the
               lagrangian hessian
