@@ -15,7 +15,7 @@
 
 # Optimal Power Flow Nonlinear Solver Options
 -opflow_snes_fd
--opflow_snes_max_it 5
+-opflow_snes_max_it 20
 -opflow_snes_monitor
 
 # Optimal Power Flow Linear Solver Options
