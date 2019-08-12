@@ -14,7 +14,7 @@
 
 /**
   We want to solve the 2-stage optimization problem with Ns scenarios
-  min \sum_{i=0}^Ns f(i)
+  min \sum_{i=0}^Ns f(xi)
   s.t.
      g(xi) >= 0           i = 0,Ns
   x^- <= xi <= x+         i = 0,Ns
@@ -70,7 +70,7 @@ struct _p_SCOPFLOW{
   PetscInt nc,Nc; /* Local and global size of equality,inequality + coupling constraints */
   
   COMM comm; /**< Communicator context */
-  OPFLOW *opflow; /* Array of optimal power flow application objects.
+  OPFLOW *opflows; /* Array of optimal power flow application objects.
 		   Each processor creates ns objects, one for each 
 		  scenario */
    /* Solution vector for the entire problem. 
@@ -115,6 +115,8 @@ struct _p_SCOPFLOW{
 
   PetscInt nnz_jac_g; /**< Number of nonzeros in the jacobian of the constraints */
   PetscInt nnz_hes; /**< Number of nonzeros in the Lagrangian Hessian */
+
+  char netfile[100];
 
   /* Lagrange multipliers */
   Vec lambda_g;
