@@ -1229,7 +1229,7 @@ PetscErrorCode PFLOWAddBusShunt(PFLOW pflow, PetscInt busnum, PetscScalar Gs, Pe
   intbusnum = ps->busext2intmap[busnum];
   if(intbusnum != -1) {
     bus = &ps->bus[intbusnum];
-    ierr = PSBUSAddShunt(bus,Gs/ps->MVAbase,Bs/ps->MVAbase);
+    ierr = PSBUSAddShunt(bus,Gs/ps->MVAbase,Bs/ps->MVAbase);CHKERRQ(ierr);
   }
   
   PetscFunctionReturn(0);

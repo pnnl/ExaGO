@@ -1,16 +1,22 @@
--netfile datafiles/case_ACTIVSg10k.m
+#-netfile datafiles/case_ACTIVSg10k.m
+-netfile datafiles/case9mod.m
 
-# Power flow options
--pflow_ksp_type preonly
+# Power flow SNES options
 -pflow_snes_linesearch_type basic
--pflow_pc_type lu
--pflow_pc_factor_mat_ordering_type amd
 -pflow_snes_atol 1e-8
--pflow_pc_factor_shift_type NONZERO
+-pflow_snes_monitor
+
+# Power flow KSP options
+#-pflow_ksp_type preonly
+-pflow_pc_type lu
+#-pflow_pc_factor_mat_ordering_type amd
+-opflow_pc_factor_mat_solver_type mumps
+#-pflow_pc_factor_shift_type NONZERO
+-pflow_ksp_monitor
 
 # performance
 #-------------
--log_summary
+#-log_view
 
 #Partitioner (requires parmetis package)
 #-petscpartitioner_type parmetis
