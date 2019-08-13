@@ -45,6 +45,9 @@ struct _p_OPFLOW{
   Mat Jac_Ge; /* Equality constraint Jacobian */
   Mat Jac_Gi; /* Inequality constraint Jacobian */
 
+  Mat Jac_GeT; /* Transpose of equality constraint Jacobian */
+  Mat Jac_GiT; /* Transpose of inequality constraint Jacobian */
+
   Tao nlp;    /* Optimization problem */
 
   PetscBool converged; // Convergence status

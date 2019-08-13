@@ -3,6 +3,9 @@
 #include <private/scopflowpipsimpl.h>
 #include <math.h>
 
+extern int str_eval_g(double*,double*,double*,double*,CallBackDataPtr);
+extern int str_eval_jac_g(double*,double*,int*,double*,int*,int*,int*,double*,int*,int*,CallBackDataPtr);
+
 /* Bounds on coupling constraints */
 PetscErrorCode SCOPFLOWAddCouplingConstraintBounds(SCOPFLOW scopflow,int row,Vec Gl,Vec Gu)
 {
@@ -183,6 +186,22 @@ PetscErrorCode SCOPFLOWSetUp_OPFLOW(OPFLOW opflow,PetscInt row)
   
   ierr = VecDuplicate(opflow->Gl,&opflow->Gu);CHKERRQ(ierr);
 
+  ierr = DMNetworkSetVertexLocalToGlobalOrdering(opflow->ps->networkdm);CHKERRQ(ierr);
+
+  /* Create Equality Constraint Jacobian */
+  ierr = MatCreate(opflow->comm->type,&opflow->Jac_Ge);CHKERRQ(ierr);
+  ierr = MatSetSizes(opflow->Jac_Ge,opflow->nconeq,opflow->Nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
+  ierr = MatSetType(opflow->Jac_Ge,MATSEQAIJ);CHKERRQ(ierr);
+  ierr = MatSetUp(opflow->Jac_Ge);CHKERRQ(ierr);
+  ierr = MatSetFromOptions(opflow->Jac_Ge);CHKERRQ(ierr);
+
+  /* Create Inequality Constraint Jacobian */
+  ierr = MatCreate(opflow->comm->type,&opflow->Jac_Gi);CHKERRQ(ierr);
+  ierr = MatSetSizes(opflow->Jac_Gi,opflow->nconineq+ncoup,opflow->Nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
+  ierr = MatSetType(opflow->Jac_Gi,MATSEQAIJ);CHKERRQ(ierr);
+  ierr = MatSetUp(opflow->Jac_Gi);CHKERRQ(ierr);
+  ierr = MatSetFromOptions(opflow->Jac_Gi);CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -231,6 +250,36 @@ int str_prob_info(int* n, double* col_lb, double* col_ub, int* m,
     ierr = OPFLOWReadMatPowerData(scopflow->opflows[row],scopflow->netfile);CHKERRQ(ierr);
     /* SCOPFLOWSetUp_OPFLOW handles creating the vectors and the sizes of the constraints */
     ierr = SCOPFLOWSetUp_OPFLOW(scopflow->opflows[row],row);CHKERRQ(ierr);
+    if(row == 1) {
+      /* Create the constraint Jacobian for coupling */
+      ierr = MatDuplicate(scopflow->opflows[row]->Jac_Gi,MAT_DO_NOT_COPY_VALUES,&scopflow->Jcoup);CHKERRQ(ierr);
+    
+      PS    ps=scopflow->opflows[row]->ps;
+      PSBUS bus;
+      PetscInt locglob,genctr,k,i;
+      PetscInt rowid[2],colid[2];
+      PetscScalar val[2];
+      PetscInt    gloc=scopflow->opflows[row]->nconineq;
+      for(i=0; i < ps->nbus; i++) {
+	bus = &ps->bus[i];
+	
+	ierr = PSBUSGetVariableGlobalLocation(bus,&locglob);CHKERRQ(ierr);
+	genctr = 0;
+	for(k=0; k < bus->ngen; k++) {
+	  val[0] = -1;
+	  rowid[0] = gloc;
+	  colid[0] = locglob + 2 + genctr;
+	  ierr = MatSetValues(scopflow->Jcoup,1,rowid,1,colid,val,ADD_VALUES);CHKERRQ(ierr);
+	  genctr += 2;
+	  gloc += 1;
+	}
+      }
+      
+      ierr = MatAssemblyBegin(scopflow->Jcoup,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(scopflow->Jcoup,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+      ierr = MatTranspose(scopflow->Jcoup,MAT_INITIAL_MATRIX,&scopflow->JcoupT);CHKERRQ(ierr);
+    }
+
     ierr = VecGetSize(scopflow->opflows[row]->X,n);CHKERRQ(ierr);
     ierr = VecGetSize(scopflow->opflows[row]->Gl,m);CHKERRQ(ierr);
     scopflow->ns++;
@@ -282,26 +331,6 @@ int str_eval_f(double* x0, double* x1, double* obj, CallBackDataPtr cbd) {
 	return 1;
 }
 
-int str_eval_g(double* x0, double* x1, double* eq_g, double* inq_g,
-		CallBackDataPtr cbd) {
-	int row = cbd->row_node_id;
-	int col = cbd->col_node_id;
-	if(row == 0)
-	{	//x1 + x2 + x1x2 = 100
-		eq_g[0] = x0[0] + x0[1] + x0[0]*x0[1];
-	}
-	else if(row == 1)
-	{   //0< x2^2 + x3x1 + x1 + x2 + x3^2 + x3<600
-		inq_g[0] = x0[1]*x0[1] + x1[0] * x0[0] + x0[0] + x0[1] + x1[0]*x1[0] + x1[0];
-	}
-	else if(row == 2)
-	{  //0< x1^2 + x4x2 + x1 + x2 + x4^2 + x4< 600
-		inq_g[0] = x0[0]*x0[0] + x1[0] * x0[1] + x0[0] + x0[1] + x1[0]*x1[0] + x1[0];
-	}
-
-	return 1;
-}
-
 int str_eval_grad_f(double* x0, double* x1, double* grad, CallBackDataPtr cbd) {
 	int row = cbd->row_node_id;
 	int col = cbd->col_node_id;
@@ -328,75 +357,6 @@ int str_eval_grad_f(double* x0, double* x1, double* grad, CallBackDataPtr cbd) {
 		grad[0] = x1[0];
 		grad[1] = x1[0];
 	}
-
-	return 1;
-}
-
-int str_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
-		int* e_rowidx, int* e_colptr, int* i_nz, double* i_elts, int* i_rowidx,
-		int* i_colptr, CallBackDataPtr cbd) {
-	int row = cbd->row_node_id;
-	int col = cbd->col_node_id;
-	if(e_elts==NULL && i_elts == NULL)
-	{
-
-		if (row == 0 && col == 0) {
-			*e_nz = 2;
-			*i_nz = 0;
-		} else if (row == 1 && col == 1) {
-			*e_nz = 0;
-			*i_nz = 1;
-		} else if (row == 2 && col == 2) {
-			*e_nz = 0;
-			*i_nz = 1;
-		} else if (row == 1 && col == 0) {
-			*e_nz = 0;
-			*i_nz = 2;
-		} else if (row == 2 && col == 0) {
-			*e_nz = 0;
-			*i_nz = 2;
-		}
-	}
-	else
-	{
-		if (row == 0 && col == 0) {
-			e_rowidx[0] = 0;
-			e_rowidx[1] = 0;
-			e_colptr[0] = 0;
-			e_colptr[1] = 1;
-			e_colptr[2] = 2;
-			e_elts[0] = x0[1] + 1.0;
-			e_elts[1] = x0[0] + 1.0;
-		} else if (row == 1 && col == 1) {
-			i_rowidx[0] = 0;
-			i_colptr[0] = 0;
-			i_colptr[1] = 1;
-			i_elts[0] = x0[0] + 2.0*x1[0] + 1.0;
-		} else if (row == 2 && col == 2) {
-			i_rowidx[0] = 0;
-			i_colptr[0] = 0;
-			i_colptr[1] = 1;
-			i_elts[0] = x0[1] + 2.0*x1[0] + 1.0;
-		} else if (row == 1 && col == 0) {
-			i_rowidx[0] = 0;
-			i_rowidx[1] = 0;
-			i_colptr[0] = 0;
-			i_colptr[1] = 1;
-			i_colptr[2] = 2;
-			i_elts[0] = x1[0] + 1.0;
-			i_elts[1] = 2.0*x0[1] + 1.0;
-		} else if (row == 2 && col == 0) {
-
-			i_rowidx[0] = 0;
-			i_rowidx[1] = 0;
-			i_colptr[0] = 0;
-			i_colptr[1] = 1;
-			i_colptr[2] = 2;
-			i_elts[0] = 2.0*x0[0] + 1.0;
-			i_elts[1] = x1[0] + 1.0;
-		}
-	}
-
 
 	return 1;
 }

@@ -118,6 +118,9 @@ struct _p_SCOPFLOW{
 
   char netfile[100];
 
+  Mat Jcoup; /* Jacobian for the coupling constraints */
+  Mat JcoupT; /* Transpose of the coupling Jacobian */
+
   /* Lagrange multipliers */
   Vec lambda_g;
   Vec lambda_xl;
