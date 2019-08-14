@@ -5,6 +5,9 @@
 
 extern int str_eval_g(double*,double*,double*,double*,CallBackDataPtr);
 extern int str_eval_jac_g(double*,double*,int*,double*,int*,int*,int*,double*,int*,int*,CallBackDataPtr);
+extern int str_eval_h(double*, double*, double*, int*, double*,
+		      int*, int*, CallBackDataPtr);
+
 
 /* Bounds on coupling constraints */
 PetscErrorCode SCOPFLOWAddCouplingConstraintBounds(SCOPFLOW scopflow,int row,Vec Gl,Vec Gu)
@@ -186,6 +189,9 @@ PetscErrorCode SCOPFLOWSetUp_OPFLOW(OPFLOW opflow,PetscInt row)
   
   ierr = VecDuplicate(opflow->Gl,&opflow->Gu);CHKERRQ(ierr);
 
+  /* Create Lagrangian multiplier vector */
+  ierr = VecDuplicate(opflow->Gl,&opflow->Lambda);CHKERRQ(ierr);
+
   ierr = DMNetworkSetVertexLocalToGlobalOrdering(opflow->ps->networkdm);CHKERRQ(ierr);
 
   /* Create Equality Constraint Jacobian */
@@ -201,6 +207,13 @@ PetscErrorCode SCOPFLOWSetUp_OPFLOW(OPFLOW opflow,PetscInt row)
   ierr = MatSetType(opflow->Jac_Gi,MATSEQAIJ);CHKERRQ(ierr);
   ierr = MatSetUp(opflow->Jac_Gi);CHKERRQ(ierr);
   ierr = MatSetFromOptions(opflow->Jac_Gi);CHKERRQ(ierr);
+
+  /* Create Hessian */
+  ierr = MatCreate(opflow->comm->type,&opflow->Hes);CHKERRQ(ierr);
+  ierr = MatSetSizes(opflow->Hes,opflow->Nvar,opflow->Nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
+  ierr = MatSetType(opflow->Hes,MATSEQAIJ);CHKERRQ(ierr);
+  ierr = MatSetUp(opflow->Hes);CHKERRQ(ierr);
+  ierr = MatSetFromOptions(opflow->Hes);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -356,93 +369,6 @@ int str_eval_grad_f(double* x0, double* x1, double* grad, CallBackDataPtr cbd) {
 	{
 		grad[0] = x1[0];
 		grad[1] = x1[0];
-	}
-
-	return 1;
-}
-
-int str_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elts,
-		int* rowidx, int* colptr, CallBackDataPtr cbd) {
-	int row = cbd->row_node_id;
-	int col = cbd->col_node_id;
-	if(elts==NULL)
-	{
-
-		if (row == 0 && col == 0) {
-			*nz = 3;
-		} else if (row == 1 && col == 1) {
-			*nz = 1;
-		} else if (row == 2 && col == 2) {
-			*nz = 1;
-		} else if (row == 1 && col == 0) {
-			*nz = 3;
-		} else if (row == 2 && col == 0) {
-			*nz = 3;
-		} else if (row == 0 && col == 1) {
-			*nz = 2;
-		} else if (row == 0 && col == 2) {
-			*nz = 2;
-		}
-
-	}
-	else{
-		if (row == 0 && col == 0) {
-			rowidx[0] = 0;
-			rowidx[1] = 1;
-			rowidx[2] = 1;
-			colptr[0] = 0;
-			colptr[1] = 2;
-			colptr[2] = 3;
-			elts[0] = 2.0;
-			elts[1] = 2.0 + 1.0 * lambda[0];
-			elts[2] = 2.0;
-		} else if (row == 1 && col == 1) {
-			rowidx[0] = 0;
-			colptr[0] = 0;
-			colptr[1] = 1;
-			elts[0] = 2.0 * lambda[0];
-		} else if (row == 2 && col == 2) {
-			rowidx[0] = 0;
-			colptr[0] = 0;
-			colptr[1] = 1;
-			elts[0] = 2.0 * lambda[0];
-		} else if (row == 1 && col == 0) { //parent contribution
-			rowidx[0] = 0;
-			rowidx[1] = 1;
-			rowidx[2] = 1;
-			colptr[0] = 0;
-			colptr[1] = 2;
-			colptr[2] = 3;
-			elts[0] = 0.0;
-			elts[1] = 0.0;
-			elts[2] = 2.0 * lambda[0];
-		} else if (row == 2 && col == 0) { //parent contribution
-			rowidx[0] = 0;
-			rowidx[1] = 1;
-			rowidx[2] = 1;
-			colptr[0] = 0;
-			colptr[1] = 2;
-			colptr[2] = 3;
-			elts[0] = 2.0 * lambda[0];
-			elts[1] = 0.0;
-			elts[2] = 0.0;
-		} else if (row == 0 && col == 1) {
-			rowidx[0] = 0;
-			rowidx[1] = 0;
-			colptr[0] = 0;
-			colptr[1] = 1;
-			colptr[2] = 2;
-			elts[0] = 1.0 + 1.0*lambda[0];
-			elts[0] = 1.0;
-		} else if (row == 0 && col == 2) {
-			rowidx[0] = 0;
-			rowidx[1] = 0;
-			colptr[0] = 0;
-			colptr[1] = 1;
-			colptr[2] = 2;
-			elts[0] = 1.0;
-			elts[0] = 1.0 + 1.0*lambda[0];
-		}
 	}
 
 	return 1;

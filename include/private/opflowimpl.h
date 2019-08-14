@@ -64,6 +64,8 @@ struct _p_OPFLOW{
   PetscInt nnz_jac_g; /**< Number of nonzeros in the jacobian of the constraints */
   PetscInt nnz_hes; /**< Number of nonzeros in the Lagrangian Hessian */
 
+  Vec Lambda;
+
   /* Lagrange multipliers */
   Vec lambda_g;
   Vec lambda_xl;

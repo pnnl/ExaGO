@@ -388,7 +388,7 @@ int str_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
     /* Number of non-zeros in equality and inequality constraint Jacobian */
     opflow = scopflow->opflows[row];
     if(row == col) {
-      ierr = VecPlaceArray(opflow->X,x0);CHKERRQ(ierr);
+      ierr = VecPlaceArray(opflow->X,x1);CHKERRQ(ierr);
       /* Equality constraints Jacobian */
       ierr = OPFLOWEqualityConstraintsJacobian(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
       ierr = MatTranspose(opflow->Jac_Ge,MAT_INITIAL_MATRIX,&opflow->Jac_GeT);CHKERRQ(ierr);
@@ -397,7 +397,7 @@ int str_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
 
       ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
 
-      ierr = VecPlaceArray(opflow->X,x0);CHKERRQ(ierr);
+      ierr = VecPlaceArray(opflow->X,x1);CHKERRQ(ierr);
 
       /* Inequality Constraints Jacobian */
       ierr = OPFLOWInequalityConstraintsJacobian(opflow,opflow->X,opflow->Jac_Gi,row);CHKERRQ(ierr);

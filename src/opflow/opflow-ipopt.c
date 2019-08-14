@@ -53,14 +53,14 @@ PetscErrorCode OPFLOWGetLagrangianHessianNonzeros(OPFLOW opflow,PetscInt *nnz)
   for(i=0; i < ps->nbus; i++){
     bus = &ps->bus[i];
     for(k=0; k < bus->ngen; k++) {
-	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
-	  *nnz += 1;
+      *nnz += 1;
     }
   }
-
+  
   for(i=0; i < ps->Nbranch; i++) *nnz += 10;
-
+  
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
     *nnz += 1;
