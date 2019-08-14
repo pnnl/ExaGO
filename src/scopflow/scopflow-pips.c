@@ -168,6 +168,7 @@ PetscErrorCode SCOPFLOWSetUp_OPFLOW(OPFLOW opflow,PetscInt row)
 
   /* Vector to hold solution */
   ierr = PSCreateGlobalVector(opflow->ps,&opflow->X);CHKERRQ(ierr);
+  ierr = VecDuplicate(opflow->X,&opflow->localX);CHKERRQ(ierr);
   ierr = VecGetSize(opflow->X,&opflow->Nvar);CHKERRQ(ierr);
 
   /* Vector to hold gradient */

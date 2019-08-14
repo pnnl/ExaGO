@@ -9,6 +9,219 @@
    are in this file
 */
 
+/*
+  OPFLOWEqualityConstraints - Evalulates the equality constraints for the optimal power flow
+
+  Input Parameters:
++ opflow - the opflow application object
+- X   - the current iterate
+
+
+  Output Parameters:
+. Ge  - vector of equality constraints
+*/
+PetscErrorCode OPFLOWEqualityConstraints(OPFLOW opflow,Vec X,Vec Ge)
+{
+  PetscErrorCode ierr;
+  PetscInt       i,k,nconnlines;
+  PetscInt       gloc,row[2];
+  PetscInt       xloc,xlocf,xloct;
+  PetscScalar    val[2];
+  PetscScalar    Pg,Qg;
+  PetscScalar    Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
+  PetscScalar    Vmf,Vmt,thetaf,thetat,thetaft,thetatf;
+  PetscScalar    Pf,Qf,Pt,Qt;
+  PetscScalar    theta,Vm;
+  PS             ps=opflow->ps;
+  PSLOAD         load;
+  PSLINE         line;
+  PSBUS          bus,busf,bust;
+  const PSBUS    *connbuses;
+  const PSLINE   *connlines;
+  const PetscScalar *x;
+
+  PetscFunctionBegin;
+  ierr = VecSet(Ge,0.0);CHKERRQ(ierr);
+
+  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+
+  for (i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    ierr = DMNetworkGetVertexLocalToGlobalOrdering(ps->networkdm,i,&gloc);CHKERRQ(ierr);
+    gloc *= 2;
+    row[0] = gloc; row[1] = row[0] + 1;
+
+    if (!bus->isghost) {
+      ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
+      theta = x[xloc];
+      Vm    = x[xloc+1];
+
+      if (bus->ide == ISOLATED_BUS) {
+        row[0]  = gloc; row[1] = row[0] + 1;
+        val[0] = theta - bus->va*PETSC_PI/180.0;
+        val[1] = Vm - bus->vm;
+        ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+        continue;
+      }
+
+      /* Shunt injections */
+      val[0] = Vm*Vm*bus->gl;
+      val[1] = -Vm*Vm*bus->bl;
+      ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+
+      for (k=0; k < bus->ngen; k++) {
+        xloc += 2;
+        Pg = x[xloc];
+        Qg = x[xloc+1];
+
+        val[0] = -Pg;
+        val[1] = -Qg;
+        ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+      }
+
+      for (k=0; k < bus->nload; k++) {
+        ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
+        val[0] = load->pl;
+        val[1] = load->ql;
+        ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+      }
+    }
+
+    ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
+    for (k=0; k < nconnlines; k++) {
+      line = connlines[k];
+      if (!line->status) continue;
+
+      Gff = line->yff[0];
+      Bff = line->yff[1];
+      Gft = line->yft[0];
+      Bft = line->yft[1];
+      Gtf = line->ytf[0];
+      Btf = line->ytf[1];
+      Gtt = line->ytt[0];
+      Btt = line->ytt[1];
+
+      ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
+      busf = connbuses[0];
+      bust = connbuses[1];
+
+      ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
+      ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
+
+      thetaf  = x[xlocf];
+      Vmf     = x[xlocf+1];
+      thetat  = x[xloct];
+      Vmt     = x[xloct+1];
+      thetaft = thetaf - thetat;
+      thetatf = thetat - thetaf;
+
+      if (bus == busf) {
+      	Pf = Gff*Vmf*Vmf  + Vmf*Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
+      	Qf = -Bff*Vmf*Vmf + Vmf*Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
+
+        val[0] = Pf;
+        val[1] = Qf;
+        ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+      } else {
+      	Pt = Gtt*Vmt*Vmt  + Vmt*Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
+      	Qt = -Btt*Vmt*Vmt + Vmt*Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
+
+        val[0] = Pt;
+        val[1] = Qt;
+        ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+      }
+    }
+  }
+  ierr = VecAssemblyBegin(Ge);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(Ge);CHKERRQ(ierr);
+
+  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWInequalityConstraints - Evalulates the inequality constraints for the optimal power flow
+
+  Input Parameters:
++ opflow - the opflow application object
+- X   - the current iterate
+
+  Output Parameters:
+. Gi  - vector of inequality constraints
+*/
+PetscErrorCode OPFLOWInequalityConstraints(OPFLOW opflow,Vec X,Vec Gi)
+{
+  PetscErrorCode ierr;
+  PetscInt       i;
+  PetscInt       gloc=0;
+  PetscInt       xlocf,xloct;
+  PetscScalar    *g;
+  PetscScalar    Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
+  PetscScalar    Vmf,Vmt,thetaf,thetat,thetaft,thetatf;
+  PetscScalar    Pf,Qf,Pt,Qt,Sf2,St2;
+  PS             ps=opflow->ps;
+  PSLINE         line;
+  PSBUS          busf,bust;
+  const PSBUS    *connbuses;
+  const PetscScalar *x;
+
+  PetscFunctionBegin;
+  ierr = VecSet(Gi,0.0);CHKERRQ(ierr);
+
+  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecGetArray(Gi,&g);CHKERRQ(ierr);
+
+  for(i=0; i<ps->nbranch; i++) {
+    line = &ps->line[i];
+
+    if(!line->status) {
+      gloc += 2;
+      continue;
+    }
+
+    Gff = line->yff[0];
+    Bff = line->yff[1];
+    Gft = line->yft[0];
+    Bft = line->yft[1];
+    Gtf = line->ytf[0];
+    Btf = line->ytf[1];
+    Gtt = line->ytt[0];
+    Btt = line->ytt[1];
+
+    ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
+    busf = connbuses[0];
+    bust = connbuses[1];
+
+    ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
+    ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
+
+    thetaf  = x[xlocf];
+    Vmf     = x[xlocf+1];
+    thetat  = x[xloct];
+    Vmt     = x[xloct+1];
+    thetaft = thetaf - thetat;
+    thetatf = thetat - thetaf;
+
+    Pf = Gff*Vmf*Vmf  + Vmf*Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
+    Qf = -Bff*Vmf*Vmf + Vmf*Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
+
+    Pt = Gtt*Vmt*Vmt  + Vmt*Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
+    Qt = -Btt*Vmt*Vmt + Vmt*Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
+
+    Sf2 = Pf*Pf + Qf*Qf;
+    St2 = Pt*Pt + Qt*Qt;
+
+    g[gloc]   = Sf2;
+    g[gloc+1] = St2;
+
+    gloc = gloc + 2;
+  }
+
+  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArray(Gi,&g);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
 
 /* Coupling constraints */
 PetscErrorCode SCOPFLOWAddCouplingConstraints(OPFLOW opflow,Vec X0,Vec X1,Vec Gi)
@@ -394,10 +607,6 @@ PetscErrorCode OPFLOWGetJacobianNonzeros(OPFLOW opflow,PetscInt *e_nnz,PetscInt 
 }
 
 
-extern PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao,Vec,Vec,void*);
-extern PetscErrorCode OPFLOWInequalityConstraintsFunction(Tao,Vec,Vec,void*);
-
-
 int str_eval_g(double* x0, double* x1, double* eq_g, double* inq_g,
 	       CallBackDataPtr cbd) 
 {
@@ -413,14 +622,14 @@ int str_eval_g(double* x0, double* x1, double* eq_g, double* inq_g,
   /* Equality constraints */
   ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
   ierr = VecPlaceArray(opflow->Ge,eq_g);CHKERRQ(ierr);
-  ierr = OPFLOWEqualityConstraintsFunction(NULL,opflow->X,opflow->Ge,(void*)opflow);CHKERRQ(ierr);
+  ierr = OPFLOWEqualityConstraints(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
 
   /* Inequality Constraints */
   ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
   ierr = VecPlaceArray(opflow->Gi,inq_g);CHKERRQ(ierr);
-  ierr = OPFLOWInequalityConstraintsFunction(NULL,opflow->X,opflow->Gi,(void*)opflow);CHKERRQ(ierr);
+  ierr = OPFLOWInequalityConstraints(opflow,opflow->X,opflow->Gi);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->Gi);CHKERRQ(ierr);
 
