@@ -10,6 +10,49 @@
 */
 
 
+/* Coupling constraints */
+PetscErrorCode SCOPFLOWAddCouplingConstraints(OPFLOW opflow,Vec X0,Vec X1,Vec Gi)
+{
+  PetscErrorCode ierr;
+  PetscScalar    *x0,*x1,*gi;
+  PS             ps = opflow->ps; /* PS for the scenario */
+  PetscInt       gloc; /* starting location for coupling constraints in G vector */
+  PetscInt       xloc;
+  PetscInt       i;
+  PSBUS          bus;
+
+  PetscFunctionBegin;
+
+  gloc = opflow->Nconineq;
+
+  ierr = VecGetArray(X0,&x0);CHKERRQ(ierr);
+  ierr = VecGetArray(X1,&x1);CHKERRQ(ierr);
+  ierr = VecGetArray(Gi,&gi);CHKERRQ(ierr);
+
+  for(i=0; i < ps->nbus; i++) {
+    PetscInt k;
+
+    bus = &ps->bus[i];
+
+    ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
+
+    for(k=0; k < bus->ngen; k++) {
+      PSGEN gen;
+      xloc += 2;
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      gi[gloc] = x1[xloc] - x0[xloc];
+
+      gloc += 1;
+    }
+  }
+
+  ierr = VecRestoreArray(X0,&x0);CHKERRQ(ierr);
+  ierr = VecRestoreArray(X1,&x1);CHKERRQ(ierr);
+  ierr = VecRestoreArray(Gi,&gi);CHKERRQ(ierr);
+  
+  PetscFunctionReturn(0);
+}
+
 /*
   OPFLOWInequalityConstraintsJacobian - Jacobian evaluation routine for the inequality constraints
 
@@ -351,23 +394,49 @@ PetscErrorCode OPFLOWGetJacobianNonzeros(OPFLOW opflow,PetscInt *e_nnz,PetscInt 
 }
 
 
+extern PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao,Vec,Vec,void*);
+extern PetscErrorCode OPFLOWInequalityConstraintsFunction(Tao,Vec,Vec,void*);
+
+
 int str_eval_g(double* x0, double* x1, double* eq_g, double* inq_g,
-	       CallBackDataPtr cbd) {
+	       CallBackDataPtr cbd) 
+{
+  PetscErrorCode ierr;
   int row = cbd->row_node_id;
-  int col = cbd->col_node_id;
-  if(row == 0)
-    {	//x1 + x2 + x1x2 = 100
-      eq_g[0] = x0[0] + x0[1] + x0[0]*x0[1];
-    }
-  else if(row == 1)
-    {   //0< x2^2 + x3x1 + x1 + x2 + x3^2 + x3<600
-      inq_g[0] = x0[1]*x0[1] + x1[0] * x0[0] + x0[0] + x0[1] + x1[0]*x1[0] + x1[0];
-    }
-  else if(row == 2)
-    {  //0< x1^2 + x4x2 + x1 + x2 + x4^2 + x4< 600
-      inq_g[0] = x0[0]*x0[0] + x1[0] * x0[1] + x0[0] + x0[1] + x1[0]*x1[0] + x1[0];
-    }
-  
+  SCOPFLOW scopflow=(SCOPFLOW)cbd->prob;
+  OPFLOW   opflow=scopflow->opflows[row];
+  double   *x;
+
+  if(row == 0) x = x0;
+  else x = x1;
+
+  /* Equality constraints */
+  ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
+  ierr = VecPlaceArray(opflow->Ge,eq_g);CHKERRQ(ierr);
+  ierr = OPFLOWEqualityConstraintsFunction(NULL,opflow->X,opflow->Ge,(void*)opflow);CHKERRQ(ierr);
+  ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+  ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
+
+  /* Inequality Constraints */
+  ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
+  ierr = VecPlaceArray(opflow->Gi,inq_g);CHKERRQ(ierr);
+  ierr = OPFLOWInequalityConstraintsFunction(NULL,opflow->X,opflow->Gi,(void*)opflow);CHKERRQ(ierr);
+  ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+  ierr = VecResetArray(opflow->Gi);CHKERRQ(ierr);
+
+  if(row != 0) {
+    Vec  X0=scopflow->opflows[0]->X;
+    Vec  X1=opflow->X;
+    ierr = VecPlaceArray(X1,x1);CHKERRQ(ierr);
+    ierr = VecPlaceArray(X0,x0);CHKERRQ(ierr);
+    ierr = VecPlaceArray(opflow->Gi,inq_g);CHKERRQ(ierr);
+    /* Add coupling constraints */
+    ierr = SCOPFLOWAddCouplingConstraints(opflow,X0,X1,opflow->Gi);CHKERRQ(ierr);
+    
+    ierr = VecResetArray(X1);CHKERRQ(ierr);
+    ierr = VecResetArray(X0);CHKERRQ(ierr);
+    ierr = VecResetArray(opflow->Gi);CHKERRQ(ierr);
+  }
   return 1;
 }
 
@@ -380,7 +449,6 @@ int str_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
   PetscErrorCode ierr;
   SCOPFLOW scopflow=(SCOPFLOW)cbd->prob;
   OPFLOW   opflow;
-  PetscInt ngen;
   Mat_SeqAIJ *aij;
   PetscInt    nrow,ncol;
 

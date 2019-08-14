@@ -184,7 +184,7 @@ PetscErrorCode SCOPFLOWSetUp_OPFLOW(OPFLOW opflow,PetscInt row)
 
   /* Create the inequality constraint vector */
   ierr = VecCreate(opflow->comm->type,&opflow->Gi);CHKERRQ(ierr);
-  ierr = VecSetSizes(opflow->Gi,opflow->nconineq,PETSC_DETERMINE);CHKERRQ(ierr);
+  ierr = VecSetSizes(opflow->Gi,opflow->nconineq+ncoup,PETSC_DETERMINE);CHKERRQ(ierr);
   ierr = VecSetFromOptions(opflow->Gi);CHKERRQ(ierr);
 
   /* Create lower and upper bounds on constraint vector */
@@ -321,7 +321,18 @@ int str_prob_info(int* n, double* col_lb, double* col_ub, int* m,
     ierr = VecResetArray(Xu);CHKERRQ(ierr);
     ierr = VecResetArray(Gl);CHKERRQ(ierr);
     ierr = VecResetArray(Gu);CHKERRQ(ierr);
-    
+  
+    /* Copy over col_lb and col_ub to vectors Xl and Xu so
+       that initialization of X can work correctly as
+       Xinital = (Xl + Xu)/2
+    */
+    PetscScalar *xl,*xu;
+    ierr = VecGetArray(Xl,&xl);CHKERRQ(ierr);
+    ierr = VecGetArray(Xu,&xu);CHKERRQ(ierr);
+    ierr = PetscMemcpy(xl,col_lb,scopflow->opflows[row]->Nvar*sizeof(PetscScalar));CHKERRQ(ierr);
+    ierr = PetscMemcpy(xu,col_ub,scopflow->opflows[row]->Nvar*sizeof(PetscScalar));CHKERRQ(ierr);
+    ierr = VecRestoreArray(Xl,&xl);CHKERRQ(ierr);
+    ierr = VecRestoreArray(Xu,&xu);CHKERRQ(ierr);
   }
   return 1;
 }
