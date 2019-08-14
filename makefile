@@ -10,7 +10,7 @@ FFLAGS           =
 CPPFLAGS         =
 FPPFLAGS         =
 ## Turn this off for SCOPFLOW_PIPS
-#CFLAGS_IPOPT     = -DPSAPPS_HAVE_IPOPT
+CFLAGS_IPOPT     = -DPSAPPS_HAVE_IPOPT
 # Turn this off for SCOPFLOW_IPOPT
 CFLAGS_PIPS      = -DPSAPPS_HAVE_PIPS
 
