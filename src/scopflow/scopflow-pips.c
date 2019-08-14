@@ -7,6 +7,9 @@ extern int str_eval_g(double*,double*,double*,double*,CallBackDataPtr);
 extern int str_eval_jac_g(double*,double*,int*,double*,int*,int*,int*,double*,int*,int*,CallBackDataPtr);
 extern int str_eval_h(double*, double*, double*, int*, double*,
 		      int*, int*, CallBackDataPtr);
+extern int str_eval_f(double*, double*, double*, CallBackDataPtr);
+extern int str_eval_grad_f(double*,double*,double*,CallBackDataPtr);
+
 
 
 /* Bounds on coupling constraints */
@@ -16,7 +19,7 @@ PetscErrorCode SCOPFLOWAddCouplingConstraintBounds(SCOPFLOW scopflow,int row,Vec
   PetscScalar    *gl,*gu;
   PS             ps = scopflow->opflows[row]->ps; /* PS for the scenario */
   PetscInt       gloc; /* starting location for coupling constraints in G vector */
-  PetscInt       i,k;
+  PetscInt       i;
   PSBUS          bus;
 
   PetscFunctionBegin;
@@ -167,6 +170,9 @@ PetscErrorCode SCOPFLOWSetUp_OPFLOW(OPFLOW opflow,PetscInt row)
   ierr = PSCreateGlobalVector(opflow->ps,&opflow->X);CHKERRQ(ierr);
   ierr = VecGetSize(opflow->X,&opflow->Nvar);CHKERRQ(ierr);
 
+  /* Vector to hold gradient */
+  ierr = VecDuplicate(opflow->X,&opflow->gradobj);CHKERRQ(ierr);
+
   /* Create the vector for upper and lower bounds on X */
   ierr = VecDuplicate(opflow->X,&opflow->Xl);CHKERRQ(ierr);
   ierr = VecDuplicate(opflow->X,&opflow->Xu);CHKERRQ(ierr);
@@ -218,24 +224,19 @@ PetscErrorCode SCOPFLOWSetUp_OPFLOW(OPFLOW opflow,PetscInt row)
   PetscFunctionReturn(0);
 }
 
-int str_init_x0(double* x0, CallBackDataPtr cbd) {
-	int row = cbd->row_node_id;
-	int col = cbd->col_node_id;
-	if(row == 0)
-	{
-		x0[0] = 1.0;
-		x0[1] = 1.0;
-	}
-	else if(row == 1)
-	{
-		x0[0] = 1.0;
-	}
-	else if(row == 2)
-	{
-		x0[0] = 1.0;
-	}
+extern PetscErrorCode OPFLOWSetInitialGuess(OPFLOW,Vec);
 
-	return 1;
+int str_init_x0(double* x0, CallBackDataPtr cbd) {
+  int row = cbd->row_node_id;
+  SCOPFLOW scopflow=cbd->prob;
+  OPFLOW   opflow = scopflow->opflows[row];
+  PetscErrorCode ierr;
+  
+  ierr = VecPlaceArray(opflow->X,x0);CHKERRQ(ierr);
+  ierr = OPFLOWSetInitialGuess(opflow,opflow->X);CHKERRQ(ierr);
+  ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+	
+  return 1;
 }
 
 int str_prob_info(int* n, double* col_lb, double* col_ub, int* m,
@@ -246,7 +247,6 @@ int str_prob_info(int* n, double* col_lb, double* col_ub, int* m,
   PetscInt rank=scopflow->comm->rank;
   int type = cbd->typeflag;
   PetscErrorCode ierr;
-  PetscInt       ngen;
   Vec            Xl,Xu,Gl,Gu;
 
   if(type == 1) {
@@ -326,135 +326,13 @@ int str_prob_info(int* n, double* col_lb, double* col_ub, int* m,
   return 1;
 }
 
-int str_eval_f(double* x0, double* x1, double* obj, CallBackDataPtr cbd) {
-	int row = cbd->row_node_id;
-	int col = cbd->col_node_id;
-	if(row == 0 )
-	{   // (x0 + x1) ^ 2 + x0 + x1
-		*obj =  ( x0[0] + x0[1] ) * ( x0[0] + x0[1] ) + x0[0] + x0[1];
-	}
-	else if(row == 1)
-	{   // (x0 + x1)x3 + x3
-		*obj = ( x0[0] + x0[1] ) * x1[0] + x1[0];
-	}
-	else if(row == 2)
-	{  // (x0 + x1)x4 + x4
-		*obj = ( x0[0] + x0[1] ) * x1[0] + x1[0];
-	}
-	return 1;
-}
-
-int str_eval_grad_f(double* x0, double* x1, double* grad, CallBackDataPtr cbd) {
-	int row = cbd->row_node_id;
-	int col = cbd->col_node_id;
-	if(row == 0 && col == 0)
-	{
-		grad[0] = 2.0 * (x0[0] + x0[1]) + 1.0;
-		grad[1] = 2.0 * (x0[0] + x0[1]) + 1.0;
-	}
-	else if(row == 1 && col == 1)
-	{
-		grad[0] = (x0[0] + x0[1]) + 1.0;
-	}
-	else if(row == 2 && col == 2)
-	{
-		grad[0] = (x0[0] + x0[1]) + 1.0;
-	}
-	else if(row == 1 && col == 0)
-	{
-		grad[0] = x1[0];
-		grad[1] = x1[0];
-	}
-	else if(row == 2 && col == 0)
-	{
-		grad[0] = x1[0];
-		grad[1] = x1[0];
-	}
-
-	return 1;
-}
-
 int str_write_solution(double* x, double* lam_eq, double* lam_ieq,CallBackDataPtr cbd)
 {
-	int row = cbd->row_node_id;
-	int col = cbd->col_node_id;
-	if(row == 0)
-	{
-	}
-	else if(row == 1 || row == 2)
-	{
-	}
-	return 1;
-}
-
-/*
-  SCOPFLOWGetConstraintJacobianNonzeros - Gets the number of nonzeros in the lagrangian hessian matrix
-
-  Input Parameters:
-. scopflow - the security constrained optimal power flow application object
-
-  Output Parameters:
-. nnz - number of nonzeros in the lagrangian hessian
-
-  Notes:
-  SCOPFLOWSetUp() must be called before calling this routine.
-*/
-PetscErrorCode SCOPFLOWGetLagrangianHessianNonzeros(SCOPFLOW scopflow,PetscInt *nnz)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
-  *nnz = 0;
-
-  PetscFunctionReturn(0);
-}
-
-/*
-  SCOPFLOWSetConstraintJacobianLocations - Sets the row and column nonzero locations for the
-              lagrangian hessian
-
-  Input Parameters:
-+ scopflow - the SCOPFLOW object
-
-  Output Parameters:
-+ row - the row locations
-- col - the col locations
-
-  Notes:
-   The row and column locations should be such that H(row[i],col[i]) = val
-*/
-PetscErrorCode SCOPFLOWSetLagrangianHessianLocations(SCOPFLOW scopflow, PetscInt *row, PetscInt *col)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
-  PetscFunctionReturn(0);
-}
-
-/*
-  SCOPFLOWSetHessianValues - Sets the nonzero values for the
-              Lagrangian Hessian
-
-  Input Parameters:
-+ scopflow - the SCOPFLOW object
-- X      - the current iterate
-
-
-  Output Parameters:
-. values - the nonzero values in the Lagrangian Hessian
-
-  Notes:
-   The values should be in the same row and col order as set in SCOPFLOWSetLagrangianHessianLocations
-*/
-PetscErrorCode SCOPFLOWSetLagrangianHessianValues(SCOPFLOW scopflow, PetscScalar obj_factor, Vec X, Vec Lambda, PetscScalar *values)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
-  PetscFunctionReturn(0);
+  int row = cbd->row_node_id;
+  if(row == 0) {
+  } else if(row == 1 || row == 2) {
+  }
+  return 1;
 }
 
 /*
@@ -581,96 +459,6 @@ PetscErrorCode SCOPFLOWCreateGlobalVector(SCOPFLOW scopflow,Vec *vec)
 }
 
 /*
-  SCOPFLOWCreateConstraintJacobian - Returns a distributed matrix of appropriate size that can
-                                   be used as the Jacobian
-
-
-  Input Paramereters:
-. scopflow - the security constrained optimal power flow application object
-
-  Output Parameters:
-. mat - the jacobian of the constraints
-
-  Notes:
-  SCOPFLOWSetUp() must be called before calling this routine.
-*/
-PetscErrorCode SCOPFLOWCreateConstraintJacobian(SCOPFLOW scopflow,Mat *mat)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
-  PetscFunctionReturn(0);
-}
-
-/*
-  SCOPFLOWGetConstraintJacobianNonzeros - Gets the number of nonzeros in the constraint jacobian matrix
-
-  Input Paramereters:
-. scopflow - the security constrained optimal power flow application object
-
-  Output Parameters:
-. nnz - number of nonzeros in the constraint Jacobian
-
-  Notes:
-  SCOPFLOWSetUp() must be called before calling this routine.
-*/
-PetscErrorCode SCOPFLOWGetConstraintJacobianNonzeros(SCOPFLOW scopflow,PetscInt *nnz)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
-  *nnz = 0;
-
-  PetscFunctionReturn(0);
-}
-
-/*
-  SCOPFLOWSetVariableandConstraintBounds - Sets the bounds on variables and constraints
-
-  Input Parameters:
-. scopflow - the SCOPFLOW object
-
-  Output Parameters:
-+ Xl     - vector of lower bound on variables
-. Xu     - vector of upper bound on variables
-. Gl     - vector of lower bound on constraints
-. Gu     - vector of lower bound on constraints
-*/
-PetscErrorCode SCOPFLOWSetVariableandConstraintBounds(SCOPFLOW scopflow, Vec Xl, Vec Xu, Vec Gl, Vec Gu)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
-  PetscFunctionReturn(0);
-}
-
-/*
-  SCOPFLOWSetInitialGuess - Sets the initial guess for the optimization
-
-  Input Parameters:
-. scopflow - the SCOPFLOW object
-
-  Output Parameters:
-+ X     - initial guess
-
-  Notes:
-   Sets X[i] = (Xl[i] + Xu[i])/2
-*/
-PetscErrorCode SCOPFLOWSetInitialGuess(SCOPFLOW scopflow, Vec X)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode SCOPFLOWConstraintFunction(SCOPFLOW,Vec,Vec);
-
-/*
   SCOPFLOWSolve - Solves the AC security constrained optimal power flow
 
   Input Parameters:
@@ -688,38 +476,7 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
   /* Solve with PIPS */
   PipsNlpSolveStruct(scopflow->nlp_pips);
 
-  /*
-  ierr = SCOPFLOWSetVariableandConstraintBounds(scopflow,scopflow->Xl,scopflow->Xu,scopflow->Cl,scopflow->Cu);CHKERRQ(ierr);
 
-  ierr = VecGetArray(scopflow->Xl,&xl);CHKERRQ(ierr);
-  ierr = VecGetArray(scopflow->Xu,&xu);CHKERRQ(ierr);
-  ierr = VecGetArray(scopflow->Cl,&cl);CHKERRQ(ierr);
-  ierr = VecGetArray(scopflow->Cu,&cu);CHKERRQ(ierr);
-
-  ierr = VecRestoreArray(scopflow->Xl,&xl);CHKERRQ(ierr);
-  ierr = VecRestoreArray(scopflow->Xu,&xu);CHKERRQ(ierr);
-  ierr = VecRestoreArray(scopflow->Cl,&cl);CHKERRQ(ierr);
-  ierr = VecRestoreArray(scopflow->Cu,&cu);CHKERRQ(ierr);
-
-  ierr = SCOPFLOWSetInitialGuess(scopflow,scopflow->X);CHKERRQ(ierr);
-
-  Vec C;
-  ierr = VecDuplicate(scopflow->C,&C);CHKERRQ(ierr);
-  ierr = SCOPFLOWConstraintFunction(scopflow,scopflow->X,C);CHKERRQ(ierr);
-
-  PetscScalar *x;
-  ierr = VecGetArray(scopflow->X,&x);CHKERRQ(ierr);
-
-  //  scopflow->solve_status = IpoptSolve(scopflow->nlp_ipopt,x,NULL,&scopflow->obj,NULL,NULL,NULL,scopflow);
-
-  ierr = VecRestoreArray(scopflow->X,&x);CHKERRQ(ierr);
-
-  */
-  if(!scopflow->comm->rank) {
-    ierr = PetscPrintf(PETSC_COMM_SELF,"Objective function value = %lf\n",scopflow->obj);CHKERRQ(ierr);
-  }
-
-  //  ierr = VecView(scopflow->X,0);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -737,8 +494,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 {
   PetscErrorCode ierr;
   OPFLOW         *opflows=scopflow->opflows;
-  PetscInt       ngen; /* Number of generators */
-  PetscInt       i,cloc_size;
+  PetscInt       i;
 
   PetscFunctionBegin;
   scopflow->nx = 0;
@@ -759,153 +515,8 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   scopflow->nlp_pips = CreatePipsNlpProblemStruct(MPI_COMM_WORLD, scopflow->Ns,
 							    init_x0, prob_info, eval_f, eval_g, eval_grad_f, eval_jac_g,
 						  eval_h, str_write_solution, (UserDataPtr)scopflow);
-  /*
-  if(scopflow->ns) {
-    scopflow->nx = opflows[0]->n;
-    ierr = PSGetNumGenerators(opflows[0]->ps,&ngen,NULL);CHKERRQ(ierr);
-    scopflow->nd = ngen;
-  }
-  ierr = VecCreate(PETSC_COMM_SELF,&scopflow->Xloc);CHKERRQ(ierr);
-  ierr = VecSetSizes(scopflow->Xloc,scopflow->ns*scopflow->nx,scopflow->ns*scopflow->nx);CHKERRQ(ierr);
-  ierr = VecSetFromOptions(scopflow->Xloc);CHKERRQ(ierr);
-
-  ierr = VecDuplicate(scopflow->opflow[0]->X,&scopflow->X0);CHKERRQ(ierr);
-
-  ierr = VecCreate(scopflow->comm->type,&scopflow->X);CHKERRQ(ierr);
-  ierr = VecSetSizes(scopflow->X,scopflow->ns*scopflow->nx,PETSC_DECIDE);CHKERRQ(ierr);
-  ierr = VecSetFromOptions(scopflow->X);CHKERRQ(ierr);
-
-  ierr = VecDuplicate(scopflow->X,&scopflow->Xl);CHKERRQ(ierr);
-  ierr = VecDuplicate(scopflow->X,&scopflow->Xu);CHKERRQ(ierr);
-
-  ierr = VecCreate(PETSC_COMM_SELF,&scopflow->Di);CHKERRQ(ierr);
-  ierr = VecSetSizes(scopflow->Di,scopflow->nd,PETSC_DECIDE);CHKERRQ(ierr);
-  ierr = VecSetFromOptions(scopflow->Di);CHKERRQ(ierr);
-
-  ierr = VecCreate(PETSC_COMM_SELF,&scopflow->Ci);CHKERRQ(ierr);
-  ierr = VecSetSizes(scopflow->Ci,scopflow->nd+scopflow->opflow[0]->m,PETSC_DECIDE);CHKERRQ(ierr);
-  ierr = VecSetFromOptions(scopflow->Ci);CHKERRQ(ierr);
-
-  if(!scopflow->comm->rank) cloc_size = scopflow->ns*scopflow->opflow[0]->m + (scopflow->ns-1)*scopflow->nd;
-  else cloc_size =  scopflow->ns*(scopflow->opflow[0]->m + scopflow->nd);
-  ierr = VecCreate(PETSC_COMM_SELF,&scopflow->Cloc);CHKERRQ(ierr);
-  ierr = VecSetSizes(scopflow->Cloc,cloc_size,cloc_size);CHKERRQ(ierr);
-  ierr = VecSetFromOptions(scopflow->Cloc);CHKERRQ(ierr);
-
-  ierr = VecCreate(scopflow->comm->type,&scopflow->C);CHKERRQ(ierr);
-  ierr = VecSetSizes(scopflow->C,cloc_size,PETSC_DECIDE);CHKERRQ(ierr);
-  ierr = VecSetFromOptions(scopflow->C);CHKERRQ(ierr);
-
-  
-  ierr = VecDuplicate(scopflow->C,&scopflow->Cl);CHKERRQ(ierr);
-  ierr = VecDuplicate(scopflow->C,&scopflow->Cu);CHKERRQ(ierr);
-  */
 
   scopflow->setupcalled = PETSC_TRUE;
-  PetscFunctionReturn(0);
-}
-
-/*
-  SCOPFLOWObjectiveFunction - The objective function for the security constrained optimal power flow
-
-  Input Parameters:
-+ scopflow - the SCOPFLOW object
-. X      - the current iterate
-
-  Output Parameters:
-. obj - the objective function value (scalar)
-*/
-PetscErrorCode SCOPFLOWObjectiveFunction(SCOPFLOW scopflow,Vec X, PetscScalar* obj)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
-  PetscFunctionReturn(0);
-}
-
-/*
-  SCOPFLOWObjGradientFunction - The gradient of the objective function for the security constrained optimal power flow
-
-  Input Parameters:
-+ scopflow - the SCOPFLOW object
-. X      - the current iterate
-
-  Output Parameters:
-. grad - the objective function gradient
-*/
-PetscErrorCode SCOPFLOWObjGradientFunction(SCOPFLOW scopflow,Vec X, Vec grad)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
-  PetscFunctionReturn(0);
-}
-
-/*
-  SCOPFLOWConstraintFunction - Evalulates the constraints for the security constrained optimal power flow
-
-  Input Parameters:
-+ scopflow - the SCOPFLOW object
-. X      - the current iterate
-
-  Output Parameters:
-. G  - vector of constraints
-*/
-PetscErrorCode SCOPFLOWConstraintFunction(SCOPFLOW scopflow,Vec X,Vec C)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
-  PetscFunctionReturn(0);
-}
-
-/*
-  SCOPFLOWSetConstraintJacobianLocations - Sets the row and column nonzero locations for the
-              constraint Jacobian
-
-  Input Parameters:
-+ scopflow - the SCOPFLOW object
-
-  Output Parameters:
-+ row - the row locations
-- col - the col locations
-
-  Notes:
-   The row and column locations should be such that J(row[i],col[i]) = val
-*/
-PetscErrorCode SCOPFLOWSetConstraintJacobianLocations(SCOPFLOW scopflow, PetscInt *row, PetscInt *col)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
-  PetscFunctionReturn(0);
-}
-
-/*
-  SCOPFLOWSetConstraintJacobianValues - Sets the nonzero values for the
-              constraint Jacobian
-
-  Input Parameters:
-+ scopflow - the SCOPFLOW object
-- X      - the current iterate
-
-
-  Output Parameters:
-. values - the nonzero values in the constraint jacobian
-
-  Notes:
-   The values should be in the same row and col order as set in SCOPFLOWSetConstraintJacobianLocations
-*/
-PetscErrorCode SCOPFLOWSetConstraintJacobianValues(SCOPFLOW scopflow, Vec X,PetscScalar *values)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
   PetscFunctionReturn(0);
 }
 
@@ -922,7 +533,6 @@ PetscErrorCode SCOPFLOWSetConstraintJacobianValues(SCOPFLOW scopflow, Vec X,Pets
 PetscErrorCode SCOPFLOWSetNumScenarios(SCOPFLOW scopflow,PetscInt Ns)
 {
   PetscErrorCode ierr;
-  COMM           comm=scopflow->comm;
 
   PetscFunctionBegin;
   scopflow->Ns = Ns;
@@ -932,6 +542,3 @@ PetscErrorCode SCOPFLOWSetNumScenarios(SCOPFLOW scopflow,PetscInt Ns)
 
   PetscFunctionReturn(0);
 }
-
-
-  
