@@ -218,7 +218,7 @@ PetscErrorCode SCOPFLOWSetUp_OPFLOW(OPFLOW opflow,PetscInt row)
   /* Create Hessian */
   ierr = MatCreate(opflow->comm->type,&opflow->Hes);CHKERRQ(ierr);
   ierr = MatSetSizes(opflow->Hes,opflow->Nvar,opflow->Nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
-  ierr = MatSetType(opflow->Hes,MATSEQAIJ);CHKERRQ(ierr);
+  ierr = MatSetType(opflow->Hes,MATSEQSBAIJ);CHKERRQ(ierr);
   ierr = MatSetUp(opflow->Hes);CHKERRQ(ierr);
   ierr = MatSetFromOptions(opflow->Hes);CHKERRQ(ierr);
 
@@ -417,7 +417,6 @@ PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW scopflow,const char netfile[])
 {
   PetscErrorCode ierr;
   OPFLOW         *opflows;
-  PetscInt       i;
 
   PetscFunctionBegin;
   if(scopflow->Ns == -1) {
@@ -426,17 +425,9 @@ PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW scopflow,const char netfile[])
 
   ierr = PetscMemcpy(scopflow->netfile,netfile,100*sizeof(char));CHKERRQ(ierr);
 
-  if(scopflow->comm->size == 1) { /* Serial */
-    ierr = PetscMalloc1(scopflow->Ns+1,&opflows);CHKERRQ(ierr);
-  } else {
-    ierr = PetscMalloc1(6,&opflows);CHKERRQ(ierr); /* Max. 6 (5 scenarios + 1 first-stage per rank) */
-  }
+  ierr = PetscMalloc1(scopflow->Ns+1,&opflows);CHKERRQ(ierr);
 
   scopflow->opflows = opflows;
-  for(i=0; i < scopflow->ns; i++) {
-    ierr = OPFLOWCreate(PETSC_COMM_SELF,&opflows[i]);CHKERRQ(ierr);
-    ierr = OPFLOWReadMatPowerData(opflows[i],netfile);CHKERRQ(ierr);
-  }
   
   PetscFunctionReturn(0);
 }
@@ -475,15 +466,8 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
 */
 PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 {
-  PetscErrorCode ierr;
-  OPFLOW         *opflows=scopflow->opflows;
-  PetscInt       i;
 
   PetscFunctionBegin;
-  /* Set up OPFLOW objects for scenarios */
-  for(i=0; i < scopflow->ns; i++) {
-    ierr = OPFLOWSetUp(opflows[i]);CHKERRQ(ierr);
-  }
 
   str_init_x0_cb init_x0 = &str_init_x0;
   str_prob_info_cb prob_info = &str_prob_info;
