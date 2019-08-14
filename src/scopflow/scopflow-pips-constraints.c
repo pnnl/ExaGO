@@ -657,6 +657,7 @@ int str_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
   int col = cbd->col_node_id;
   PetscErrorCode ierr;
   SCOPFLOW scopflow=(SCOPFLOW)cbd->prob;
+  /*  PetscInt rank=scopflow->comm->rank; */
   OPFLOW   opflow;
   Mat_SeqAIJ *aij;
   PetscInt    nrow,ncol;

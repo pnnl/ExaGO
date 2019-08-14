@@ -264,7 +264,7 @@ int str_prob_info(int* n, double* col_lb, double* col_ub, int* m,
     ierr = OPFLOWReadMatPowerData(scopflow->opflows[row],scopflow->netfile);CHKERRQ(ierr);
     /* SCOPFLOWSetUp_OPFLOW handles creating the vectors and the sizes of the constraints */
     ierr = SCOPFLOWSetUp_OPFLOW(scopflow->opflows[row],row);CHKERRQ(ierr);
-    if(row == 1) {
+    if(row > 0 && !scopflow->Jcoup) {
       /* Create the constraint Jacobian for coupling */
       ierr = MatDuplicate(scopflow->opflows[row]->Jac_Gi,MAT_DO_NOT_COPY_VALUES,&scopflow->Jcoup);CHKERRQ(ierr);
     
@@ -313,6 +313,7 @@ int str_prob_info(int* n, double* col_lb, double* col_ub, int* m,
     
     ierr = OPFLOWSetVariableandConstraintBounds(scopflow->opflows[row],Xl,Xu,Gl,Gu);CHKERRQ(ierr);
 
+    
     if(row != 0) {
       /* Adding bounds on coupling constraints between first-stage and scenarios */
       ierr = SCOPFLOWAddCouplingConstraintBounds(scopflow,row,Gl,Gu);CHKERRQ(ierr);
@@ -334,6 +335,8 @@ int str_prob_info(int* n, double* col_lb, double* col_ub, int* m,
     ierr = PetscMemcpy(xu,col_ub,scopflow->opflows[row]->Nvar*sizeof(PetscScalar));CHKERRQ(ierr);
     ierr = VecRestoreArray(Xl,&xl);CHKERRQ(ierr);
     ierr = VecRestoreArray(Xu,&xu);CHKERRQ(ierr);
+
+    ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d: row = %d, col = %d set up problem info\n",rank,row,col);CHKERRQ(ierr);
   }
   return 1;
 }
@@ -368,10 +371,8 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
 
   scopflow->ns              =  0;
   scopflow->Ns              = -1;
-  scopflow->nc              =  0;
-  scopflow->Nc              =  0;
-  scopflow->nx              =  0;
-  scopflow->Nx              =  0;
+  scopflow->Jcoup            = NULL;
+  scopflow->JcoupT           = NULL;
 
   scopflow->nlp_pips       = NULL;
 
@@ -437,36 +438,6 @@ PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW scopflow,const char netfile[])
     ierr = OPFLOWReadMatPowerData(opflows[i],netfile);CHKERRQ(ierr);
   }
   
-
-  PetscFunctionReturn(0);
-}
-
-/*
-  SCOPFLOWCreateGlobalVector - Returns a global vector of the appropriate size
-  and distribution conforming to the distribution of the PS object.
-
-  Input Paramereters:
-. scopflow - the security constrained optimal power flow application object
-
-  Output Parameters:
-. vec - the global vector
-
-  Notes:
-  SCOPFLOWSetUp() must be called before calling this routine.
-*/
-PetscErrorCode SCOPFLOWCreateGlobalVector(SCOPFLOW scopflow,Vec *vec)
-{
-  PetscErrorCode ierr;
-  PetscInt       nx;
-  OPFLOW         *opflows=scopflow->opflows;
-
-  PetscFunctionBegin;
-  if(!scopflow->setupcalled) SETERRQ(scopflow->comm->type,0,"SCOPFLOWSetUp() must be called before calling SCOPFLOWCreateGlobalVector");
-  
-  nx = opflows[0]->nvar*scopflow->ns;
-  ierr = VecCreate(scopflow->comm->type,&scopflow->X);CHKERRQ(ierr);
-  ierr = VecSetSizes(scopflow->X,nx,PETSC_DECIDE);CHKERRQ(ierr);
-  ierr = VecSetFromOptions(scopflow->X);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -509,7 +480,6 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   PetscInt       i;
 
   PetscFunctionBegin;
-  scopflow->nx = 0;
   /* Set up OPFLOW objects for scenarios */
   for(i=0; i < scopflow->ns; i++) {
     ierr = OPFLOWSetUp(opflows[i]);CHKERRQ(ierr);
@@ -526,7 +496,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 
   scopflow->nlp_pips = CreatePipsNlpProblemStruct(MPI_COMM_WORLD, scopflow->Ns,
 							    init_x0, prob_info, eval_f, eval_g, eval_grad_f, eval_jac_g,
-						  eval_h, str_write_solution, (UserDataPtr)scopflow);
+						  eval_h, write_solution, (UserDataPtr)scopflow);
 
   scopflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);
