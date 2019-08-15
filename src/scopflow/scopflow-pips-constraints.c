@@ -285,7 +285,7 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobian(OPFLOW opflow, Vec X, Mat Ji,
   PetscInt       ctr=0,i;
   PetscInt       row[2],col[4];
   PetscInt       rstart,rend;
-  PetscInt       gloc=0,xlocf,xloct,glocf,gloct;
+  PetscInt       gloc=0,xlocf,xloct;
   PetscScalar    val[4];
   PetscScalar    Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
   PetscScalar    Vmf,Vmt,thetaf,thetat,thetaft,thetatf;
@@ -315,6 +315,7 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobian(OPFLOW opflow, Vec X, Mat Ji,
   gloc = rstart;
   for (i=0; i < ps->nbranch; i++) {
     line = &ps->line[i];
+    if(!line->status) gloc += 2;
 
     Gff = line->yff[0];
     Bff = line->yff[1];
@@ -331,8 +332,6 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobian(OPFLOW opflow, Vec X, Mat Ji,
 
     ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
     ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
-    ierr = PSBUSGetVariableGlobalLocation(busf,&glocf);CHKERRQ(ierr);
-    ierr = PSBUSGetVariableGlobalLocation(bust,&gloct);CHKERRQ(ierr);
 
     thetaf  = x[xlocf];
     Vmf     = x[xlocf+1];
@@ -378,7 +377,7 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobian(OPFLOW opflow, Vec X, Mat Ji,
     dSf2_dVmt    = dSf2_dPf*dPf_dVmt    + dSf2_dQf*dQf_dVmt;
 
     row[0] = gloc;
-    col[0] = glocf; col[1] = glocf+1; col[2] = gloct; col[3] = gloct+1;
+    col[0] = xlocf; col[1] = xlocf+1; col[2] = xloct; col[3] = xloct+1;
     val[0] = dSf2_dthetaf;
     val[1] = dSf2_dVmf;
     val[2] = dSf2_dthetat;
@@ -391,7 +390,7 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobian(OPFLOW opflow, Vec X, Mat Ji,
     dSt2_dVmt    = dSt2_dPt*dPt_dVmt    + dSt2_dQt*dQt_dVmt;
 
     row[0] = gloc+1;
-    col[0] = gloct; col[1] = gloct+1; col[2] = glocf; col[3] = glocf+1;
+    col[0] = xloct; col[1] = xloct+1; col[2] = xlocf; col[3] = xlocf+1;
     val[ctr]   = dSt2_dthetat;
     val[ctr+1] = dSt2_dVmt;
     val[ctr+2] = dSt2_dthetaf;
@@ -403,18 +402,17 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobian(OPFLOW opflow, Vec X, Mat Ji,
 
   if(scenario != 0) {
     PSBUS bus;
-    PetscInt locglob,genctr,k;
+    PetscInt k,xloc;
     for(i=0; i < ps->nbus; i++) {
       bus = &ps->bus[i];
 
-      ierr = PSBUSGetVariableGlobalLocation(bus,&locglob);CHKERRQ(ierr);
-      genctr = 0;
+      ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
       for(k=0; k < bus->ngen; k++) {
+	xloc += 2;
 	val[0] = 1;
 	row[0] = gloc;
-	col[0] = locglob + 2 + genctr;
+	col[0] = xloc;
 	ierr = MatSetValues(Ji,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-	genctr += 2;
 	gloc += 1;
       }
     }

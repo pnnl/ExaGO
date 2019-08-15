@@ -218,7 +218,7 @@ PetscErrorCode SCOPFLOWSetUp_OPFLOW(OPFLOW opflow,PetscInt row)
   /* Create Hessian */
   ierr = MatCreate(opflow->comm->type,&opflow->Hes);CHKERRQ(ierr);
   ierr = MatSetSizes(opflow->Hes,opflow->Nvar,opflow->Nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
-  ierr = MatSetType(opflow->Hes,MATSEQSBAIJ);CHKERRQ(ierr);
+  ierr = MatSetType(opflow->Hes,MATSEQAIJ);CHKERRQ(ierr);
   ierr = MatSetUp(opflow->Hes);CHKERRQ(ierr);
   ierr = MatSetFromOptions(opflow->Hes);CHKERRQ(ierr);
 

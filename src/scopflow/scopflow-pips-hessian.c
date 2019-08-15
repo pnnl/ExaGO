@@ -19,7 +19,6 @@ PetscErrorCode OPFLOWComputeHessian(OPFLOW opflow, Vec X, Vec Lambda,Mat H)
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
-  PetscInt       ctr=0;
   PetscInt       i,k;
   PSLINE         line;
   PSBUS          bus;
@@ -75,8 +74,6 @@ PetscErrorCode OPFLOWComputeHessian(OPFLOW opflow, Vec X, Vec Lambda,Mat H)
     row[0] = xloc + 1; col[0] = xloc + 1;
     val[0] = lambda[gloc]*2*bus->gl + lambda[gloc+1]*(-2*bus->bl);
     ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-
-    ctr += 1;
     
     ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
     
@@ -118,35 +115,35 @@ PetscErrorCode OPFLOWComputeHessian(OPFLOW opflow, Vec X, Vec Lambda,Mat H)
 	PetscScalar dPf_dthetat_dthetat,dPf_dVmt_dthetat;
 	PetscScalar dPf_dVmt_dVmt;
 	
-	dPf_dthetaf_dthetaf =			Vmf*Vmt*(-Gft*PetscCosScalar(thetaft) - Bft*PetscSinScalar(thetaft));
-	dPf_dVmf_dthetaf	=				Vmt*(-Gft*PetscSinScalar(thetaft) + Bft*PetscCosScalar(thetaft));
-	dPf_dthetat_dthetaf =			Vmf*Vmt*( Gft*PetscCosScalar(thetaft) + Bft*PetscSinScalar(thetaft));
-	dPf_dVmt_dthetaf	=				Vmf*(-Gft*PetscSinScalar(thetaft) + Bft*PetscCosScalar(thetaft));
+	dPf_dthetaf_dthetaf = Vmf*Vmt*(-Gft*PetscCosScalar(thetaft) - Bft*PetscSinScalar(thetaft));
+	dPf_dVmf_dthetaf    = Vmt*(-Gft*PetscSinScalar(thetaft) + Bft*PetscCosScalar(thetaft));
+	dPf_dthetat_dthetaf = Vmf*Vmt*( Gft*PetscCosScalar(thetaft) + Bft*PetscSinScalar(thetaft));
+	dPf_dVmt_dthetaf    = Vmf*(-Gft*PetscSinScalar(thetaft) + Bft*PetscCosScalar(thetaft));
 	
-	dPf_dVmf_dVmf		= 2*Gff;
-	dPf_dthetat_dVmf	=				Vmt*( Gft*PetscSinScalar(thetaft) - Bft*PetscCosScalar(thetaft));
-	dPf_dVmt_dVmf		=					( Gft*PetscCosScalar(thetaft) + Bft*PetscSinScalar(thetaft));
+	dPf_dVmf_dVmf	    = 2*Gff;
+	dPf_dthetat_dVmf    = Vmt*( Gft*PetscSinScalar(thetaft) - Bft*PetscCosScalar(thetaft));
+	dPf_dVmt_dVmf	    =	  ( Gft*PetscCosScalar(thetaft) + Bft*PetscSinScalar(thetaft));
 	
-	dPf_dthetat_dthetat =			Vmf*Vmt*(-Gft*PetscCosScalar(thetaft) - Bft*PetscSinScalar(thetaft));
-	dPf_dVmt_dthetat	=				Vmf*( Gft*PetscSinScalar(thetaft) - Bft*PetscCosScalar(thetaft));
+	dPf_dthetat_dthetat = Vmf*Vmt*(-Gft*PetscCosScalar(thetaft) - Bft*PetscSinScalar(thetaft));
+	dPf_dVmt_dthetat    = Vmf*( Gft*PetscSinScalar(thetaft) - Bft*PetscCosScalar(thetaft));
 	
-	dPf_dVmt_dVmt		=				0.;
+	dPf_dVmt_dVmt	    = 0.;
 	
 	PetscScalar dQf_dthetaf_dthetaf,dQf_dVmf_dthetaf,dQf_dthetat_dthetaf,dQf_dVmt_dthetaf;
 	PetscScalar dQf_dVmf_dVmf,dQf_dthetat_dVmf,dQf_dVmt_dVmf;
 	PetscScalar dQf_dthetat_dthetat,dQf_dVmt_dthetat;
 	PetscScalar dQf_dVmt_dVmt;
 	
-	dQf_dthetaf_dthetaf =			Vmf*Vmt*( Bft*PetscCosScalar(thetaft) - Gft*PetscSinScalar(thetaft));
-	dQf_dVmf_dthetaf	=				Vmt*( Bft*PetscSinScalar(thetaft) + Gft*PetscCosScalar(thetaft));
-	dQf_dthetat_dthetaf =			Vmf*Vmt*(-Bft*PetscCosScalar(thetaft) + Gft*PetscSinScalar(thetaft));
-	dQf_dVmt_dthetaf	=				Vmf*( Bft*PetscSinScalar(thetaft) + Gft*PetscCosScalar(thetaft));
+	dQf_dthetaf_dthetaf     = Vmf*Vmt*( Bft*PetscCosScalar(thetaft) - Gft*PetscSinScalar(thetaft));
+	dQf_dVmf_dthetaf	=     Vmt*( Bft*PetscSinScalar(thetaft) + Gft*PetscCosScalar(thetaft));
+	dQf_dthetat_dthetaf     = Vmf*Vmt*(-Bft*PetscCosScalar(thetaft) + Gft*PetscSinScalar(thetaft));
+	dQf_dVmt_dthetaf	=     Vmf*( Bft*PetscSinScalar(thetaft) + Gft*PetscCosScalar(thetaft));
 	
 	dQf_dVmf_dVmf		= -2*Bff;
-	dQf_dthetat_dVmf	=				Vmt*(-Bft*PetscSinScalar(thetaft) - Gft*PetscCosScalar(thetaft));
-	dQf_dVmt_dVmf		=					(-Bft*PetscCosScalar(thetaft) + Gft*PetscSinScalar(thetaft));
+	dQf_dthetat_dVmf	=     Vmt*(-Bft*PetscSinScalar(thetaft) - Gft*PetscCosScalar(thetaft));
+	dQf_dVmt_dVmf		=	  (-Bft*PetscCosScalar(thetaft) + Gft*PetscSinScalar(thetaft));
 	
-	dQf_dthetat_dthetat =			Vmf*Vmt*( Bft*PetscCosScalar(thetaft) - Gft*PetscSinScalar(thetaft));
+	dQf_dthetat_dthetat     = Vmf*Vmt*( Bft*PetscCosScalar(thetaft) - Gft*PetscSinScalar(thetaft));
 	dQf_dVmt_dthetat	=				Vmf*(-Bft*PetscSinScalar(thetaft) - Gft*PetscCosScalar(thetaft));
 	
 	dQf_dVmt_dVmt		=				0.;
@@ -282,7 +279,7 @@ PetscErrorCode OPFLOWComputeHessian(OPFLOW opflow, Vec X, Vec Lambda,Mat H)
     thetaft = thetaf - thetat;
     thetatf = thetat - thetaf;
 
-	// Sf2 and St2 are the constraints	
+    // Sf2 and St2 are the constraints	
     PetscScalar Pf,Qf,Pt,Qt,Sf2,St2;
 
     Pf =  Gff*Vmf*Vmf + Vmf*Vmt*( Gft*PetscCosScalar(thetaft) + Bft*PetscSinScalar(thetaft));
@@ -578,7 +575,6 @@ int str_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elts,
       ierr = OPFLOWComputeHessian(opflow,opflow->X,opflow->Lambda,opflow->Hes);CHKERRQ(ierr);
       ierr = MatGetSize(opflow->Hes,&nrow,&ncol);CHKERRQ(ierr);
 
-
       ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
       ierr = VecResetArray(opflow->Lambda);CHKERRQ(ierr);
 
@@ -588,6 +584,9 @@ int str_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elts,
       ierr = PetscMemcpy(colptr,sbaij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
       ierr = PetscMemcpy(elts,sbaij->a,sbaij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
 
+      /*      ierr = MatView(opflow->Hes,0);CHKERRQ(ierr);
+      exit(1);
+      */
     }
   }
   

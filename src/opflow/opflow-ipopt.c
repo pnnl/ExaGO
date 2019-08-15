@@ -1209,7 +1209,7 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
       }
     }
   }
-  //  AddIpoptStrOption(opflow->nlp_ipopt, (char*)"derivative_test", (char*)"first-order");
+  AddIpoptStrOption(opflow->nlp_ipopt, (char*)"derivative_test", (char*)"second-order");
   AddIpoptStrOption(opflow->nlp_ipopt,(char*)"linear_solver",(char*)"mumps");
   // AddIpoptNumOption(opflow->nlp_ipopt,(char*)"bound_relax_factor",1e-4);
   
@@ -2023,6 +2023,12 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
   
   if(values == NULL) {
     ierr = OPFLOWSetLagrangianHessianLocations(opflow,iRow,jCol);CHKERRQ(ierr);
+    /*    PetscInt i;
+    for(i=0; i < nele_hess; i++) {
+      ierr = PetscPrintf(PETSC_COMM_SELF,"(%d,%d)\n",iRow[i],jCol[i]);CHKERRQ(ierr);
+    }
+    exit(1);
+    */
   } else {
     ierr = OPFLOWSetLagrangianHessianValues(opflow,obj_factor, opflow->X,opflow->lambda_g,values);CHKERRQ(ierr);
   }
