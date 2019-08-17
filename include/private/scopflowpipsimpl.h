@@ -79,6 +79,8 @@ struct _p_SCOPFLOW{
   Mat Jcoup;  /* Jacobian for the coupling constraints */
   Mat JcoupT; /* Transpose of the coupling Jacobian */
 
+  PetscBool iscoupling; /* Is each scenario coupled with base scenario? */
+
 #if defined(PSAPPS_HAVE_PIPS)
   /* PIPS specific terms */
   PipsNlpProblemStructPtr nlp_pips; /**< PIPS solver */

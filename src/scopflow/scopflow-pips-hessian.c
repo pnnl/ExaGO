@@ -6,18 +6,19 @@
 
 
 /*
-  OPFLOWComputeHessian - Computes the Hessian of the Lagrange equations
+  SCOPFLOWComputeHessian - Computes the Hessian of the Lagrange equations
 
   Input Parameters:
-+ opflow - the OPFLOW object
++ scopflow - the OPFLOW object
 
   Output Parameters:
 + H   - the Hessian matrix
 
 */
-PetscErrorCode OPFLOWComputeHessian(OPFLOW opflow, Vec X, Vec Lambda,Mat H)
+PetscErrorCode SCOPFLOWComputeHessian(SCOPFLOW scopflow, PetscInt scenario,Vec X, Vec Lambda,Mat H)
 {
   PetscErrorCode ierr;
+  OPFLOW         opflow=scopflow->opflows[scenario];
   PS             ps=opflow->ps;
   PetscInt       i,k;
   PSLINE         line;
@@ -55,7 +56,14 @@ PetscErrorCode OPFLOWComputeHessian(OPFLOW opflow, Vec X, Vec Lambda,Mat H)
       row[0] = xloc;
       col[0] = xloc;
       val[0] = 2.0*gen->cost_alpha*ps->MVAbase*ps->MVAbase;
+      ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
+      /* Add a zero on the diagonal for the reactive power. This needs to be modified later
+	 when there is cost associated with reactive power as well 
+      */
+      row[0] = xloc + 1;
+      col[0] = xloc + 1;
+      val[0] = 0.0;
       ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
     }
   }
@@ -555,10 +563,14 @@ int str_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elts,
     *nz = 0;
     opflow = scopflow->opflows[row];
     if(row == col) {
-      ierr = VecPlaceArray(opflow->X,x1);CHKERRQ(ierr);
+      PetscScalar *x;
+      if(row == 0) x = x0;
+      else x = x1;
+
+      ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
       ierr = VecPlaceArray(opflow->Lambda,lambda);CHKERRQ(ierr);
       /* Compute Hessian */
-      ierr = OPFLOWComputeHessian(opflow,opflow->X,opflow->Lambda,opflow->Hes);CHKERRQ(ierr);
+      ierr = SCOPFLOWComputeHessian(scopflow,row,opflow->X,opflow->Lambda,opflow->Hes);CHKERRQ(ierr);
 
       ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
       ierr = VecResetArray(opflow->Lambda);CHKERRQ(ierr);
@@ -569,10 +581,14 @@ int str_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elts,
   } else {
     opflow = scopflow->opflows[row];
     if(row == col) {
-      ierr = VecPlaceArray(opflow->X,x1);CHKERRQ(ierr);
+      PetscScalar *x;
+      if(row == 0) x = x0;
+      else x = x1;
+
+      ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
       ierr = VecPlaceArray(opflow->Lambda,lambda);CHKERRQ(ierr);
       /* Compute Hessian */
-      ierr = OPFLOWComputeHessian(opflow,opflow->X,opflow->Lambda,opflow->Hes);CHKERRQ(ierr);
+      ierr = SCOPFLOWComputeHessian(scopflow,row,opflow->X,opflow->Lambda,opflow->Hes);CHKERRQ(ierr);
       ierr = MatGetSize(opflow->Hes,&nrow,&ncol);CHKERRQ(ierr);
 
       ierr = VecResetArray(opflow->X);CHKERRQ(ierr);

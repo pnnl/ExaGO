@@ -58,7 +58,7 @@ PetscErrorCode SCOPFLOWAddCouplingConstraintBounds(SCOPFLOW scopflow,int row,Vec
 
 
 /*
-  OPFLOWSetVariableandConstraintBounds - Sets the bounds on variables and constraints
+  SCOPFLOWSetVariableandConstraintBounds - Sets the bounds on variables and constraints
 
   Input Parameters:
 . opflow - the OPFLOW object
@@ -69,15 +69,17 @@ PetscErrorCode SCOPFLOWAddCouplingConstraintBounds(SCOPFLOW scopflow,int row,Vec
 . Gl     - vector of lower bound on constraints
 . Gu     - vector of lower bound on constraints
 */
-PetscErrorCode OPFLOWSetVariableandConstraintBounds(OPFLOW opflow, Vec Xl, Vec Xu, Vec Gl, Vec Gu)
+PetscErrorCode SCOPFLOWSetVariableandConstraintBounds(SCOPFLOW scopflow, Vec Xl, Vec Xu, Vec Gl, Vec Gu,PetscInt row)
 {
   PetscErrorCode ierr;
+  OPFLOW         opflow=scopflow->opflows[row];
   PS             ps=opflow->ps;
   PetscScalar    *xl,*xu,*gl,*gu;
   PetscInt       i;
   PSLINE         line;
   PSBUS          bus;
   PetscInt       loc=0,gloc=0;
+
 
   PetscFunctionBegin;
 
@@ -148,18 +150,20 @@ PetscErrorCode OPFLOWSetVariableandConstraintBounds(OPFLOW opflow, Vec Xl, Vec X
 /* Sets the underlying OPFLOW object for each SCOPFLOW scenario
    and first-stage 
 */
-PetscErrorCode SCOPFLOWSetUp_OPFLOW(OPFLOW opflow,PetscInt row)
+PetscErrorCode SCOPFLOWSetUp_OPFLOW(SCOPFLOW scopflow,PetscInt row)
 {
   PetscErrorCode ierr;
   PetscInt       ngen;
   PetscInt       ncoup;
+  OPFLOW         opflow=scopflow->opflows[row];
 
   PetscFunctionBegin;
   /* Set up PS object */
   ierr = PSSetUp(opflow->ps);CHKERRQ(ierr);
   ierr = PSGetNumGenerators(opflow->ps,&ngen,NULL);CHKERRQ(ierr);  
 
-  ncoup = (row == 0) ? 0:ngen;
+  if(scopflow->iscoupling) ncoup = (row == 0) ? 0:ngen;
+  else ncoup = 0;
 
   opflow->nconeq   = 2*opflow->ps->Nbus;
   opflow->Nconeq   = 2*opflow->ps->Nbus;
@@ -263,8 +267,8 @@ int str_prob_info(int* n, double* col_lb, double* col_ub, int* m,
     ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflows[row]);CHKERRQ(ierr);
     ierr = OPFLOWReadMatPowerData(scopflow->opflows[row],scopflow->netfile);CHKERRQ(ierr);
     /* SCOPFLOWSetUp_OPFLOW handles creating the vectors and the sizes of the constraints */
-    ierr = SCOPFLOWSetUp_OPFLOW(scopflow->opflows[row],row);CHKERRQ(ierr);
-    if(row > 0 && !scopflow->Jcoup) {
+    ierr = SCOPFLOWSetUp_OPFLOW(scopflow,row);CHKERRQ(ierr);
+    if(scopflow->iscoupling && row > 0 && !scopflow->Jcoup) {
       /* Create the constraint Jacobian for coupling */
       ierr = MatDuplicate(scopflow->opflows[row]->Jac_Gi,MAT_DO_NOT_COPY_VALUES,&scopflow->Jcoup);CHKERRQ(ierr);
     
@@ -311,10 +315,10 @@ int str_prob_info(int* n, double* col_lb, double* col_ub, int* m,
     ierr = VecPlaceArray(Gl,row_lb);CHKERRQ(ierr);
     ierr = VecPlaceArray(Gu,row_ub);CHKERRQ(ierr);
     
-    ierr = OPFLOWSetVariableandConstraintBounds(scopflow->opflows[row],Xl,Xu,Gl,Gu);CHKERRQ(ierr);
+    ierr = SCOPFLOWSetVariableandConstraintBounds(scopflow,Xl,Xu,Gl,Gu,row);CHKERRQ(ierr);
 
     
-    if(row != 0) {
+    if(scopflow->iscoupling && row != 0) {
       /* Adding bounds on coupling constraints between first-stage and scenarios */
       ierr = SCOPFLOWAddCouplingConstraintBounds(scopflow,row,Gl,Gu);CHKERRQ(ierr);
     }
@@ -371,8 +375,9 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
 
   scopflow->ns              =  0;
   scopflow->Ns              = -1;
-  scopflow->Jcoup            = NULL;
-  scopflow->JcoupT           = NULL;
+  scopflow->Jcoup           = NULL;
+  scopflow->JcoupT          = NULL;
+  scopflow->iscoupling      = PETSC_FALSE;
 
   scopflow->nlp_pips       = NULL;
 
@@ -466,6 +471,7 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
 */
 PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 {
+  PetscErrorCode ierr;
 
   PetscFunctionBegin;
 
@@ -477,6 +483,8 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   str_eval_jac_g_cb eval_jac_g = &str_eval_jac_g;
   str_eval_h_cb eval_h = &str_eval_h;
   str_write_solution_cb write_solution = &str_write_solution;
+
+  ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_iscoupling",&scopflow->iscoupling,NULL);CHKERRQ(ierr);
 
   scopflow->nlp_pips = CreatePipsNlpProblemStruct(MPI_COMM_WORLD, scopflow->Ns,
 							    init_x0, prob_info, eval_f, eval_g, eval_grad_f, eval_jac_g,

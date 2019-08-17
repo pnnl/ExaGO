@@ -10,19 +10,20 @@
 */
 
 /*
-  OPFLOWEqualityConstraints - Evalulates the equality constraints for the optimal power flow
+  SCOPFLOWEqualityConstraints - Evalulates the equality constraints for scenario for the optimal power flow
 
   Input Parameters:
-+ opflow - the opflow application object
++ scopflow - the scopflow application object
 - X   - the current iterate
 
 
   Output Parameters:
 . Ge  - vector of equality constraints
 */
-PetscErrorCode OPFLOWEqualityConstraints(OPFLOW opflow,Vec X,Vec Ge)
+PetscErrorCode SCOPFLOWEqualityConstraints(SCOPFLOW scopflow,PetscInt scenario,Vec X,Vec Ge)
 {
   PetscErrorCode ierr;
+  OPFLOW         opflow=scopflow->opflows[scenario];
   PetscInt       i,k,nconnlines;
   PetscInt       gloc,row[2];
   PetscInt       xloc,xlocf,xloct;
@@ -39,6 +40,7 @@ PetscErrorCode OPFLOWEqualityConstraints(OPFLOW opflow,Vec X,Vec Ge)
   const PSBUS    *connbuses;
   const PSLINE   *connlines;
   const PetscScalar *x;
+  PetscScalar       *ge;
 
   PetscFunctionBegin;
   ierr = VecSet(Ge,0.0);CHKERRQ(ierr);
@@ -51,40 +53,38 @@ PetscErrorCode OPFLOWEqualityConstraints(OPFLOW opflow,Vec X,Vec Ge)
     gloc *= 2;
     row[0] = gloc; row[1] = row[0] + 1;
 
-    if (!bus->isghost) {
-      ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
-      theta = x[xloc];
-      Vm    = x[xloc+1];
-
-      if (bus->ide == ISOLATED_BUS) {
-        row[0]  = gloc; row[1] = row[0] + 1;
-        val[0] = theta - bus->va*PETSC_PI/180.0;
-        val[1] = Vm - bus->vm;
-        ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
-        continue;
-      }
-
-      /* Shunt injections */
-      val[0] = Vm*Vm*bus->gl;
-      val[1] = -Vm*Vm*bus->bl;
+    ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
+    theta = x[xloc];
+    Vm    = x[xloc+1];
+    
+    if (bus->ide == ISOLATED_BUS) {
+      row[0]  = gloc; row[1] = row[0] + 1;
+      val[0] = theta - bus->va*PETSC_PI/180.0;
+      val[1] = Vm - bus->vm;
       ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+      continue;
+    }
 
-      for (k=0; k < bus->ngen; k++) {
-        xloc += 2;
-        Pg = x[xloc];
-        Qg = x[xloc+1];
+    /* Shunt injections */
+    val[0] = Vm*Vm*bus->gl;
+    val[1] = -Vm*Vm*bus->bl;
+    ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
 
-        val[0] = -Pg;
-        val[1] = -Qg;
-        ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
-      }
+    for (k=0; k < bus->ngen; k++) {
+      xloc += 2;
+      Pg = x[xloc];
+      Qg = x[xloc+1];
 
-      for (k=0; k < bus->nload; k++) {
-        ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
-        val[0] = load->pl;
-        val[1] = load->ql;
-        ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
-      }
+      val[0] = -Pg;
+      val[1] = -Qg;
+      ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+    }
+
+    for (k=0; k < bus->nload; k++) {
+      ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
+      val[0] = load->pl;
+      val[1] = load->ql;
+      ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
     }
 
     ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
@@ -140,18 +140,19 @@ PetscErrorCode OPFLOWEqualityConstraints(OPFLOW opflow,Vec X,Vec Ge)
 }
 
 /*
-  OPFLOWInequalityConstraints - Evalulates the inequality constraints for the optimal power flow
+  SCOPFLOWInequalityConstraints - Evalulates the inequality constraints for scenario for the optimal power flow
 
   Input Parameters:
-+ opflow - the opflow application object
++ scopflow - the scopflow application object
 - X   - the current iterate
 
   Output Parameters:
 . Gi  - vector of inequality constraints
 */
-PetscErrorCode OPFLOWInequalityConstraints(OPFLOW opflow,Vec X,Vec Gi)
+PetscErrorCode SCOPFLOWInequalityConstraints(SCOPFLOW scopflow,PetscInt scenario,Vec X,Vec Gi)
 {
   PetscErrorCode ierr;
+  OPFLOW         opflow=scopflow->opflows[scenario];
   PetscInt       i;
   PetscInt       gloc=0;
   PetscInt       xlocf,xloct;
@@ -224,9 +225,10 @@ PetscErrorCode OPFLOWInequalityConstraints(OPFLOW opflow,Vec X,Vec Gi)
 
 
 /* Coupling constraints */
-PetscErrorCode SCOPFLOWAddCouplingConstraints(OPFLOW opflow,Vec X0,Vec X1,Vec Gi)
+PetscErrorCode SCOPFLOWAddCouplingConstraints(SCOPFLOW scopflow,PetscInt scenario,Vec X0,Vec X1,Vec Gi)
 {
   PetscErrorCode ierr;
+  OPFLOW         opflow=scopflow->opflows[scenario];
   PetscScalar    *x0,*x1,*gi;
   PS             ps = opflow->ps; /* PS for the scenario */
   PetscInt       gloc; /* starting location for coupling constraints in G vector */
@@ -267,10 +269,10 @@ PetscErrorCode SCOPFLOWAddCouplingConstraints(OPFLOW opflow,Vec X0,Vec X1,Vec Gi
 }
 
 /*
-  OPFLOWInequalityConstraintsJacobian - Jacobian evaluation routine for the inequality constraints
+  SCOPFLOWInequalityConstraintsJacobian - Jacobian evaluation routine for scenario inequality constraints
 
   Input Parameters:
-+ opflow - the opflow solver object
++ scopflow - the scopflow solver object
 . X   - the current iterate
 - scenario - scenario number
 
@@ -279,9 +281,10 @@ PetscErrorCode SCOPFLOWAddCouplingConstraints(OPFLOW opflow,Vec X0,Vec X1,Vec Gi
 . Ji - Jacobian for inequality constraints
 
 */
-PetscErrorCode OPFLOWInequalityConstraintsJacobian(OPFLOW opflow, Vec X, Mat Ji,PetscInt scenario)
+PetscErrorCode SCOPFLOWInequalityConstraintsJacobian(SCOPFLOW scopflow, PetscInt scenario,Vec X, Mat Ji)
 {
   PetscErrorCode ierr;
+  OPFLOW         opflow=scopflow->opflows[scenario];
   PetscInt       ctr=0,i;
   PetscInt       row[2],col[4];
   PetscInt       rstart,rend;
@@ -400,7 +403,7 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobian(OPFLOW opflow, Vec X, Mat Ji,
     gloc += 2;
   }
 
-  if(scenario != 0) {
+  if(scopflow->iscoupling && scenario != 0) {
     PSBUS bus;
     PetscInt k,xloc;
     for(i=0; i < ps->nbus; i++) {
@@ -425,19 +428,21 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobian(OPFLOW opflow, Vec X, Mat Ji,
 }
 
 /*
-  OPFLOWEqualityConstraintsJacobian - Sets the nonzero values for the
-              equality constraints Jacobian
+  SCOPFLOWEqualityConstraintsJacobian - Sets the nonzero values for the
+              equality constraints Jacobian for a scenario
 
   Input Parameters:
-+ OPFLOW - opflow solver object
++ SCOPFLOW - opflow solver object
+. scenario - scenario number
 - X   - the current iterate
 
   Output Parameters:
 . Je - Jacobian of equality constraints
 */
-PetscErrorCode OPFLOWEqualityConstraintsJacobian(OPFLOW opflow, Vec X,Mat Je)
+PetscErrorCode SCOPFLOWEqualityConstraintsJacobian(SCOPFLOW scopflow, PetscInt scenario,Vec X,Mat Je)
 {
   PetscErrorCode ierr;
+  OPFLOW         opflow=scopflow->opflows[scenario];
   PetscInt       i,k,row[2],col[4],genctr,gidx;
   PetscInt       nconnlines,locglob,loc,locglobf,locglobt,locf,loct;
   PetscScalar    Vm,val[8],Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
@@ -466,31 +471,30 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobian(OPFLOW opflow, Vec X,Mat Je)
 
     Vm = xarr[loc+1];
 
-    if (!bus->isghost) {
-      col[0] = locglob; col[1] = locglob+1;
-      /* Isolated and reference bus */
-      if(bus->ide == ISOLATED_BUS) {
-      	val[0] = val[3] = 1.0;
-      	val[1] = val[2] = 0.0;
-      	ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-      	continue;
-      }
-      /* Shunt injections */
-      val[0] = 0.0; val[1] = 2*Vm*bus->gl;
-      val[2] = 0.0; val[3]= -2*Vm*bus->bl; /* Partial derivative for shunt contribution */
+    col[0] = locglob; col[1] = locglob+1;
+    /* Isolated and reference bus */
+    if(bus->ide == ISOLATED_BUS) {
+      val[0] = val[3] = 1.0;
+      val[1] = val[2] = 0.0;
       ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-
-      genctr = 0;
-      for (k=0; k < bus->ngen; k++) {
-        val[0] = -1;
-      	col[0] = locglob + 2 + genctr;
-      	ierr = MatSetValues(Je,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-
-      	col[0] = locglob + 2 + genctr+1;
-      	ierr = MatSetValues(Je,1,row+1,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-        genctr += 2;
-      }
+      continue;
     }
+    /* Shunt injections */
+    val[0] = 0.0; val[1] = 2*Vm*bus->gl;
+    val[2] = 0.0; val[3]= -2*Vm*bus->bl; /* Partial derivative for shunt contribution */
+    ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
+    
+    genctr = 0;
+    for (k=0; k < bus->ngen; k++) {
+      val[0] = -1;
+      col[0] = locglob + 2 + genctr;
+      ierr = MatSetValues(Je,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+      
+      col[0] = locglob + 2 + genctr+1;
+      ierr = MatSetValues(Je,1,row+1,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+      genctr += 2;
+    }
+
     /* Partial derivatives of network equations */
     /* Get the lines supporting the bus */
     ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
@@ -557,54 +561,6 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobian(OPFLOW opflow, Vec X,Mat Je)
   PetscFunctionReturn(0);
 }
 
-
-
-/*
-  OPFLOWGetJacobianNonzeros - Gets the number of nonzeros in the constraint jacobian matrix
-
-  Input Paramereters:
-. opflow - the optimal power flow application object
-
-  Output Parameters:
-+ e_nnz  - number of nonzeros for the equality constraint
-- i_nnz - number of nonzeros for the inequality constraint
-
-*/
-PetscErrorCode OPFLOWGetJacobianNonzeros(OPFLOW opflow,PetscInt *e_nnz,PetscInt *i_nnz)
-{
-  PetscErrorCode ierr;
-  PS             ps=opflow->ps;
-  PetscInt       i,k;
-  PSBUS          bus;
-  PSLINE         line;
-  PetscInt       nconnlines;
-  const PSLINE   *connlines;
-
-  PetscFunctionBegin;
-
-  *e_nnz = *i_nnz = 0;
-
-  for(i=0; i < ps->Nbranch; i++) *i_nnz += 8;
-
-  for(i=0; i < ps->nbus; i++) {
-    bus = &ps->bus[i];
-    if(bus->ide == ISOLATED_BUS) {
-      *e_nnz += 2;
-      continue;
-    }	
-    *e_nnz += 2 + 2*bus->ngen;
-    ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
-    for(k=0; k < nconnlines;k++) {
-      line = connlines[k];
-      if(!line->status) continue;
-      *e_nnz += 8;
-    }
-  }
-
-  PetscFunctionReturn(0);
-}
-
-
 int str_eval_g(double* x0, double* x1, double* eq_g, double* inq_g,
 	       CallBackDataPtr cbd) 
 {
@@ -620,25 +576,25 @@ int str_eval_g(double* x0, double* x1, double* eq_g, double* inq_g,
   /* Equality constraints */
   ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
   ierr = VecPlaceArray(opflow->Ge,eq_g);CHKERRQ(ierr);
-  ierr = OPFLOWEqualityConstraints(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
+  ierr = SCOPFLOWEqualityConstraints(scopflow,row,opflow->X,opflow->Ge);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
 
   /* Inequality Constraints */
   ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
   ierr = VecPlaceArray(opflow->Gi,inq_g);CHKERRQ(ierr);
-  ierr = OPFLOWInequalityConstraints(opflow,opflow->X,opflow->Gi);CHKERRQ(ierr);
+  ierr = SCOPFLOWInequalityConstraints(scopflow,row,opflow->X,opflow->Gi);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->Gi);CHKERRQ(ierr);
 
-  if(row != 0) {
+  if(scopflow->iscoupling && row != 0) {
     Vec  X0=scopflow->opflows[0]->X;
     Vec  X1=opflow->X;
     ierr = VecPlaceArray(X1,x1);CHKERRQ(ierr);
     ierr = VecPlaceArray(X0,x0);CHKERRQ(ierr);
     ierr = VecPlaceArray(opflow->Gi,inq_g);CHKERRQ(ierr);
     /* Add coupling constraints */
-    ierr = SCOPFLOWAddCouplingConstraints(opflow,X0,X1,opflow->Gi);CHKERRQ(ierr);
+    ierr = SCOPFLOWAddCouplingConstraints(scopflow,row,X0,X1,opflow->Gi);CHKERRQ(ierr);
     
     ierr = VecResetArray(X1);CHKERRQ(ierr);
     ierr = VecResetArray(X0);CHKERRQ(ierr);
@@ -664,19 +620,23 @@ int str_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
     /* Number of non-zeros in equality and inequality constraint Jacobian */
     opflow = scopflow->opflows[row];
     if(row == col) {
-      ierr = VecPlaceArray(opflow->X,x1);CHKERRQ(ierr);
+      PetscScalar *x;
+      if(row == 0) x = x0;
+      else x = x1;
+
+      ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
       /* Equality constraints Jacobian */
-      ierr = OPFLOWEqualityConstraintsJacobian(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
+      ierr = SCOPFLOWEqualityConstraintsJacobian(scopflow,row,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
       ierr = MatTranspose(opflow->Jac_Ge,MAT_INITIAL_MATRIX,&opflow->Jac_GeT);CHKERRQ(ierr);
       aij = (Mat_SeqAIJ*)opflow->Jac_GeT->data;
       *e_nz = aij->nz;
 
       ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
 
-      ierr = VecPlaceArray(opflow->X,x1);CHKERRQ(ierr);
+      ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
 
       /* Inequality Constraints Jacobian */
-      ierr = OPFLOWInequalityConstraintsJacobian(opflow,opflow->X,opflow->Jac_Gi,row);CHKERRQ(ierr);
+      ierr = SCOPFLOWInequalityConstraintsJacobian(scopflow,row,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
       ierr = MatTranspose(opflow->Jac_Gi,MAT_INITIAL_MATRIX,&opflow->Jac_GiT);CHKERRQ(ierr);
       aij = (Mat_SeqAIJ*)opflow->Jac_GiT->data;
       *i_nz = aij->nz;
@@ -685,18 +645,25 @@ int str_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
 
     } else {
       if(col == 0) {
-	*e_nz = 0;
-	aij = (Mat_SeqAIJ*)scopflow->JcoupT->data;
-	*i_nz = aij->nz;
-
+	if(scopflow->iscoupling) {
+	  *e_nz = 0;
+	  aij = (Mat_SeqAIJ*)scopflow->JcoupT->data;
+	  *i_nz = aij->nz;
+	} else {
+	  *e_nz = 0;
+	  *i_nz = 0;
+	}
       }
     }
   } else {
     opflow = scopflow->opflows[row];
     if(row == col) {
-      ierr = VecPlaceArray(opflow->X,x0);CHKERRQ(ierr);
+      PetscScalar *x;
+      if(row == 0) x = x0;
+      else x = x1;
+      ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
       /* Equality constraints Jacobian */
-      ierr = OPFLOWEqualityConstraintsJacobian(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
+      ierr = SCOPFLOWEqualityConstraintsJacobian(scopflow,row,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
       ierr = MatTranspose(opflow->Jac_Ge,MAT_REUSE_MATRIX,&opflow->Jac_GeT);CHKERRQ(ierr);
       ierr = MatGetSize(opflow->Jac_GeT,&nrow,&ncol);CHKERRQ(ierr);
       aij = (Mat_SeqAIJ*)opflow->Jac_GeT->data;
@@ -706,9 +673,9 @@ int str_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
 
       ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
 
-      ierr = VecPlaceArray(opflow->X,x0);CHKERRQ(ierr);
+      ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
       /* Inequality Constraints Jacobian */
-      ierr = OPFLOWInequalityConstraintsJacobian(opflow,opflow->X,opflow->Jac_Gi,row);CHKERRQ(ierr);
+      ierr = SCOPFLOWInequalityConstraintsJacobian(scopflow,row,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
       ierr = MatTranspose(opflow->Jac_Gi,MAT_REUSE_MATRIX,&opflow->Jac_GiT);CHKERRQ(ierr);
       aij = (Mat_SeqAIJ*)opflow->Jac_GiT->data;
       ierr = PetscMemcpy(i_rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
@@ -719,7 +686,7 @@ int str_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
 
 
     } else {
-      if(col == 0) {
+      if(scopflow->iscoupling && col == 0) {
 	ierr = MatGetSize(scopflow->JcoupT,&nrow,&ncol);CHKERRQ(ierr);
 	aij = (Mat_SeqAIJ*)scopflow->JcoupT->data;
 	ierr = PetscMemcpy(i_rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
