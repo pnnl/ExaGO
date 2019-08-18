@@ -17,7 +17,7 @@ int main(int argc,char **argv)
 
   /* PetscLogStageRegister */
   ierr = PetscLogStageRegister("Reading Data",&stages[0]);CHKERRQ(ierr);
-  ierr = PetscLogStageRegister("Allocation & Setting",&stages[1]);CHKERRQ(ierr);
+  ierr = PetscLogStageRegister("Solve",&stages[1]);CHKERRQ(ierr);
 
   /* Petsc Stage Push 1 */
   ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
@@ -37,6 +37,7 @@ int main(int argc,char **argv)
   }
   /* End of First Stage and Start of Second */
   ierr = PetscLogStagePop();CHKERRQ(ierr);
+
   ierr = PetscLogStagePush(stages[1]);CHKERRQ(ierr);
   /* Solve */
   ierr = SCOPFLOWSolve(scopflow);CHKERRQ(ierr);
