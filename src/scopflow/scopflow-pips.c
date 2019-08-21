@@ -378,6 +378,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
   scopflow->Jcoup           = NULL;
   scopflow->JcoupT          = NULL;
   scopflow->iscoupling      = PETSC_FALSE;
+  scopflow->first_stage_gen_cost_only = PETSC_TRUE;
 
   scopflow->nlp_pips       = NULL;
 
@@ -485,6 +486,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   str_write_solution_cb write_solution = &str_write_solution;
 
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_iscoupling",&scopflow->iscoupling,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_first_stage_gen_cost_only",&scopflow->first_stage_gen_cost_only,NULL);CHKERRQ(ierr);
 
   scopflow->nlp_pips = CreatePipsNlpProblemStruct(MPI_COMM_WORLD, scopflow->Ns,
 							    init_x0, prob_info, eval_f, eval_g, eval_grad_f, eval_jac_g,

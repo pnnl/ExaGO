@@ -80,6 +80,7 @@ struct _p_SCOPFLOW{
   Mat JcoupT; /* Transpose of the coupling Jacobian */
 
   PetscBool iscoupling; /* Is each scenario coupled with base scenario? */
+  PetscBool first_stage_gen_cost_only; /* Only include the gen cost for first stage only */
 
 #if defined(PSAPPS_HAVE_PIPS)
   /* PIPS specific terms */

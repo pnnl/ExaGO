@@ -114,9 +114,11 @@ int str_eval_f(double* x0, double* x1, double* obj, CallBackDataPtr cbd)
     ierr = SCOPFLOWObjectiveFunction(scopflow,row,opflow->X,obj);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
   } else {
-    ierr = VecPlaceArray(opflow->X,x1);CHKERRQ(ierr);
-    ierr = SCOPFLOWObjectiveFunction(scopflow,row,opflow->X,obj);CHKERRQ(ierr);
-    ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+    if(!scopflow->first_stage_gen_cost_only) {
+      ierr = VecPlaceArray(opflow->X,x1);CHKERRQ(ierr);
+      ierr = SCOPFLOWObjectiveFunction(scopflow,row,opflow->X,obj);CHKERRQ(ierr);
+      ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+    }
   }
 
   return 1;
@@ -133,8 +135,12 @@ int str_eval_grad_f(double* x0, double* x1, double* grad, CallBackDataPtr cbd)
   
   if(row == col) {
     if(row == 0) x = x0;
-    else x = x1;
-      
+    else {
+      if(!scopflow->first_stage_gen_cost_only) {
+	return 1;
+      } else x = x1;
+    }
+
     ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
     ierr = VecPlaceArray(opflow->gradobj,grad);CHKERRQ(ierr);
     ierr = SCOPFLOWObjGradientFunction(scopflow,row,opflow->X,opflow->gradobj);CHKERRQ(ierr);
