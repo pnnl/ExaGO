@@ -81,6 +81,7 @@ struct _p_SCOPFLOW{
 
   PetscBool iscoupling; /* Is each scenario coupled with base scenario? */
   PetscBool first_stage_gen_cost_only; /* Only include the gen cost for first stage only */
+  PetscBool ignore_line_flow_constraints; /* Ignore line flow constraints */
 
 #if defined(PSAPPS_HAVE_PIPS)
   /* PIPS specific terms */

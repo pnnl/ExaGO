@@ -61,7 +61,8 @@ PetscErrorCode SCOPFLOWAddCouplingConstraintBounds(SCOPFLOW scopflow,int row,Vec
   SCOPFLOWSetVariableandConstraintBounds - Sets the bounds on variables and constraints
 
   Input Parameters:
-. opflow - the OPFLOW object
++ scopflow - the SCOPFLOW object
+- row      - scenario number
 
   Output Parameters:
 + Xl     - vector of lower bound on variables
@@ -69,7 +70,7 @@ PetscErrorCode SCOPFLOWAddCouplingConstraintBounds(SCOPFLOW scopflow,int row,Vec
 . Gl     - vector of lower bound on constraints
 . Gu     - vector of lower bound on constraints
 */
-PetscErrorCode SCOPFLOWSetVariableandConstraintBounds(SCOPFLOW scopflow, Vec Xl, Vec Xu, Vec Gl, Vec Gu,PetscInt row)
+PetscErrorCode SCOPFLOWSetVariableandConstraintBounds(SCOPFLOW scopflow, PetscInt row, Vec Xl, Vec Xu, Vec Gl, Vec Gu)
 {
   PetscErrorCode ierr;
   OPFLOW         opflow=scopflow->opflows[row];
@@ -125,17 +126,19 @@ PetscErrorCode SCOPFLOWSetVariableandConstraintBounds(SCOPFLOW scopflow, Vec Xl,
     gloc += 2;
   }
 
-  for(i=0; i < ps->Nbranch; i++) {
-
-    line = &ps->line[i];
-
-    /* Line flow inequality constraints */
-    if(!line->status) gl[gloc] = gu[gloc] = gl[gloc+1] = gu[gloc+1] = 0.0;
-    else {
-      gl[gloc] = gl[gloc+1] = 0.0; 
-      gu[gloc] = gu[gloc+1] = (line->rateA/ps->MVAbase)*(line->rateA/ps->MVAbase);
-    }    
-    gloc += 2;
+  if(!scopflow->ignore_line_flow_constraints) {
+    for(i=0; i < ps->Nbranch; i++) {
+      
+      line = &ps->line[i];
+      
+      /* Line flow inequality constraints */
+      if(!line->status) gl[gloc] = gu[gloc] = gl[gloc+1] = gu[gloc+1] = 0.0;
+      else {
+	gl[gloc] = gl[gloc+1] = 0.0; 
+	gu[gloc] = gu[gloc+1] = (line->rateA/ps->MVAbase)*(line->rateA/ps->MVAbase);
+      }    
+      gloc += 2;
+    }
   }
 
 
@@ -167,8 +170,13 @@ PetscErrorCode SCOPFLOWSetUp_OPFLOW(SCOPFLOW scopflow,PetscInt row)
 
   opflow->nconeq   = 2*opflow->ps->Nbus;
   opflow->Nconeq   = 2*opflow->ps->Nbus;
-  opflow->nconineq = 2*opflow->ps->nbranch;
-  opflow->Nconineq = 2*opflow->ps->Nbranch; /* 0 <= Sf^2 <= Smax^2, 0 <= St^2 <= Smax^2 */
+  if(scopflow->ignore_line_flow_constraints) {
+    opflow->nconineq = 0;
+    opflow->Nconineq = 0;
+  } else {
+    opflow->nconineq = 2*opflow->ps->nbranch;
+    opflow->Nconineq = 2*opflow->ps->Nbranch; /* 0 <= Sf^2 <= Smax^2, 0 <= St^2 <= Smax^2 */
+  }
 
   /* Vector to hold solution */
   ierr = PSCreateGlobalVector(opflow->ps,&opflow->X);CHKERRQ(ierr);
@@ -187,10 +195,13 @@ PetscErrorCode SCOPFLOWSetUp_OPFLOW(SCOPFLOW scopflow,PetscInt row)
   ierr = VecSetSizes(opflow->Ge,opflow->nconeq,PETSC_DETERMINE);CHKERRQ(ierr);
   ierr = VecSetFromOptions(opflow->Ge);CHKERRQ(ierr);
 
-  /* Create the inequality constraint vector */
-  ierr = VecCreate(opflow->comm->type,&opflow->Gi);CHKERRQ(ierr);
-  ierr = VecSetSizes(opflow->Gi,opflow->nconineq+ncoup,PETSC_DETERMINE);CHKERRQ(ierr);
-  ierr = VecSetFromOptions(opflow->Gi);CHKERRQ(ierr);
+
+  if(opflow->nconineq+ncoup) {
+    /* Create the inequality constraint vector */
+    ierr = VecCreate(opflow->comm->type,&opflow->Gi);CHKERRQ(ierr);
+    ierr = VecSetSizes(opflow->Gi,opflow->nconineq+ncoup,PETSC_DETERMINE);CHKERRQ(ierr);
+    ierr = VecSetFromOptions(opflow->Gi);CHKERRQ(ierr);
+  }
 
   /* Create lower and upper bounds on constraint vector */
   /* Size Nconeq + Nconineq (+Ncoupling for row != 0 only) */
@@ -212,12 +223,14 @@ PetscErrorCode SCOPFLOWSetUp_OPFLOW(SCOPFLOW scopflow,PetscInt row)
   ierr = MatSetUp(opflow->Jac_Ge);CHKERRQ(ierr);
   ierr = MatSetFromOptions(opflow->Jac_Ge);CHKERRQ(ierr);
 
-  /* Create Inequality Constraint Jacobian */
-  ierr = MatCreate(opflow->comm->type,&opflow->Jac_Gi);CHKERRQ(ierr);
-  ierr = MatSetSizes(opflow->Jac_Gi,opflow->nconineq+ncoup,opflow->Nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
-  ierr = MatSetType(opflow->Jac_Gi,MATSEQAIJ);CHKERRQ(ierr);
-  ierr = MatSetUp(opflow->Jac_Gi);CHKERRQ(ierr);
-  ierr = MatSetFromOptions(opflow->Jac_Gi);CHKERRQ(ierr);
+  if(opflow->nconineq+ncoup) {
+    /* Create Inequality Constraint Jacobian */
+    ierr = MatCreate(opflow->comm->type,&opflow->Jac_Gi);CHKERRQ(ierr);
+    ierr = MatSetSizes(opflow->Jac_Gi,opflow->nconineq+ncoup,opflow->Nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
+    ierr = MatSetType(opflow->Jac_Gi,MATSEQAIJ);CHKERRQ(ierr);
+    ierr = MatSetUp(opflow->Jac_Gi);CHKERRQ(ierr);
+    ierr = MatSetFromOptions(opflow->Jac_Gi);CHKERRQ(ierr);
+  }
 
   /* Create Hessian */
   ierr = MatCreate(opflow->comm->type,&opflow->Hes);CHKERRQ(ierr);
@@ -315,7 +328,7 @@ int str_prob_info(int* n, double* col_lb, double* col_ub, int* m,
     ierr = VecPlaceArray(Gl,row_lb);CHKERRQ(ierr);
     ierr = VecPlaceArray(Gu,row_ub);CHKERRQ(ierr);
     
-    ierr = SCOPFLOWSetVariableandConstraintBounds(scopflow,Xl,Xu,Gl,Gu,row);CHKERRQ(ierr);
+    ierr = SCOPFLOWSetVariableandConstraintBounds(scopflow,row,Xl,Xu,Gl,Gu);CHKERRQ(ierr);
 
     
     if(scopflow->iscoupling && row != 0) {
@@ -379,6 +392,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
   scopflow->JcoupT          = NULL;
   scopflow->iscoupling      = PETSC_FALSE;
   scopflow->first_stage_gen_cost_only = PETSC_TRUE;
+  scopflow->ignore_line_flow_constraints = PETSC_TRUE;
 
   scopflow->nlp_pips       = NULL;
 
@@ -487,6 +501,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_iscoupling",&scopflow->iscoupling,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_first_stage_gen_cost_only",&scopflow->first_stage_gen_cost_only,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_ignore_line_flow_constraints",&scopflow->ignore_line_flow_constraints,NULL);CHKERRQ(ierr);
 
   scopflow->nlp_pips = CreatePipsNlpProblemStruct(MPI_COMM_WORLD, scopflow->Ns,
 							    init_x0, prob_info, eval_f, eval_g, eval_grad_f, eval_jac_g,

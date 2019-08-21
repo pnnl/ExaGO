@@ -2,6 +2,15 @@
 #-netfile datafiles/case118.m
 #-netfile datafiles/case5.m
 
+# Coupling between second stage and first stage?
+-scopflow_iscoupling 0
+
+# Use only first stage generation cost?
+-scopflow_first_stage_gen_cost_only 1
+
+# Ignore line flow constraints
+-scopflow_ignore_line_flow_constraints 1
+
 # Gradient calculation via finite differencing
 #-scopflow_tao_fd_gradient 1
 

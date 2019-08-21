@@ -6,42 +6,34 @@
 
 
 /*
-  SCOPFLOWComputeHessian - Computes the Hessian of the Lagrange equations
-
+  SCOPFLOWComputeObjectiveHessian - Computes the Hessian for the objective function part
+  
   Input Parameters:
-+ scopflow - the OPFLOW object
++ scopflow - the SCOPFLOW object
+. scenario - the scenario number
+- X        - solution vecto X
 
   Output Parameters:
-+ H   - the Hessian matrix
+. H - the Hessian part for the objective function
 
 */
-PetscErrorCode SCOPFLOWComputeHessian(SCOPFLOW scopflow, PetscInt scenario,Vec X, Vec Lambda,Mat H)
+PetscErrorCode SCOPFLOWComputeObjectiveHessian(SCOPFLOW scopflow,PetscInt scenario,Vec X,Mat H) 
 {
   PetscErrorCode ierr;
   OPFLOW         opflow=scopflow->opflows[scenario];
   PS             ps=opflow->ps;
   PetscInt       i,k;
-  PSLINE         line;
   PSBUS          bus;
   PSGEN          gen;
-  PetscInt       nconnlines;
-  const PSLINE   *connlines;
-  const PSBUS    *connbuses;
-  PetscInt       xloc,xlocf,xloct;
-  PSBUS          busf,bust;
+  PetscInt       xloc;
   const PetscScalar *x;
-  const PetscScalar *lambda;
-  PetscInt       gloc=0;
-  PetscInt       row[12],col[12];
-  PetscScalar    val[12];
+  PetscInt       row[2],col[2];
+  PetscScalar    val[2];
 
 
   PetscFunctionBegin;
 
   ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
-  ierr = VecGetArrayRead(Lambda,&lambda);CHKERRQ(ierr);
-
-  ierr = MatZeroEntries(H);CHKERRQ(ierr);
 
   // for the part of objective
   for(i=0; i < ps->nbus; i++) {
@@ -67,6 +59,48 @@ PetscErrorCode SCOPFLOWComputeHessian(SCOPFLOW scopflow, PetscInt scenario,Vec X
       ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
     }
   }
+
+  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+/*
+  SCOPFLOWComputeEqualityConstraintsHessian - Computes the Hessian for the equality constraints function part
+  
+  Input Parameters:
++ scopflow - the SCOPFLOW object
+. scenario - the scenario number
+. X        - solution vector X
+- Lambda   - Lagrangian multiplier vector
+
+  Output Parameters:
+. H - the Hessian part for the equality constraints
+
+*/
+PetscErrorCode SCOPFLOWComputeEqualityConstraintsHessian(SCOPFLOW scopflow,PetscInt scenario,Vec X,Vec Lambda,Mat H) 
+{
+  PetscErrorCode ierr;
+  OPFLOW         opflow=scopflow->opflows[scenario];
+  PS             ps=opflow->ps;
+  PetscInt       i,k;
+  PSLINE         line;
+  PSBUS          bus;
+  PetscInt       nconnlines;
+  const PSLINE   *connlines;
+  const PSBUS    *connbuses;
+  PetscInt       xloc,xlocf,xloct;
+  PSBUS          busf,bust;
+  const PetscScalar *x;
+  const PetscScalar *lambda;
+  PetscInt       gloc=0;
+  PetscInt       row[12],col[12];
+  PetscScalar    val[12];
+
+  PetscFunctionBegin;
+
+  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecGetArrayRead(Lambda,&lambda);CHKERRQ(ierr);
 
   // For equality constraints (power flow) */
   for(i=0; i < ps->nbus; i++) {
@@ -255,6 +289,49 @@ PetscErrorCode SCOPFLOWComputeHessian(SCOPFLOW scopflow, PetscInt scenario,Vec X
     }
     gloc += 2;
   }
+
+  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(Lambda,&lambda);CHKERRQ(ierr);
+  
+  PetscFunctionReturn(0);
+}
+
+
+/*
+  SCOPFLOWComputeInequalityConstraintsHessian - Computes the Inequaluty Constraints Hessian
+
+  Input Parameters:
++ scopflow - the OPFLOW object
+. scenario - the scenario number
+. X        - the solution vector
+- Lambda   - Lagrangian multipler vector
+
+  Output Parameters:
++ H   - the Hessian matrix
+
+*/
+PetscErrorCode SCOPFLOWComputeInequalityConstraintsHessian(SCOPFLOW scopflow, PetscInt scenario,Vec X, Vec Lambda,Mat H)
+{
+  PetscErrorCode ierr;
+  OPFLOW         opflow=scopflow->opflows[scenario];
+  PS             ps=opflow->ps;
+  PetscInt       i;
+  PSLINE         line;
+  const PSBUS    *connbuses;
+  PetscInt       xlocf,xloct;
+  PSBUS          busf,bust;
+  const PetscScalar *x;
+  const PetscScalar *lambda;
+  PetscInt       gloc;
+  PetscInt       row[12],col[12];
+  PetscScalar    val[12];
+
+  PetscFunctionBegin;
+
+  gloc = opflow->nconeq; /* offset for the inequality constraints in the Lambda vector */
+      
+  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecGetArrayRead(Lambda,&lambda);CHKERRQ(ierr);
 
   // for the part of line constraints
   for(i=0; i < ps->Nbranch; i++) {
@@ -533,15 +610,55 @@ PetscErrorCode SCOPFLOWComputeHessian(SCOPFLOW scopflow, PetscInt scenario,Vec X
     gloc +=  2;
   }
 
-  ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(Lambda,&lambda);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
+/*
+  SCOPFLOWComputeHessian - Computes the Hessian
+
+  Input Parameters:
++ scopflow - the OPFLOW object
+. scenario - the scenario number
+. X        - the solution vector
+- Lambda   - Lagrangian multipler vector
+
+  Output Parameters:
++ H   - the Hessian matrix
+
+*/
+PetscErrorCode SCOPFLOWComputeHessian(SCOPFLOW scopflow, PetscInt scenario,Vec X, Vec Lambda,Mat H)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  ierr = MatZeroEntries(H);CHKERRQ(ierr);
+
+  /* Objective function Hessian */
+  if(scenario == 0) {
+    ierr = SCOPFLOWComputeObjectiveHessian(scopflow,scenario,X,H);CHKERRQ(ierr);
+  } else {
+    if(!scopflow->first_stage_gen_cost_only) {
+      ierr = SCOPFLOWComputeObjectiveHessian(scopflow,scenario,X,H);CHKERRQ(ierr);
+    }
+  }
+  
+  /* Equality constraints Hessian */
+  ierr = SCOPFLOWComputeEqualityConstraintsHessian(scopflow,scenario,X,Lambda,H);CHKERRQ(ierr);
+
+  /* Inequality (branch flow) constraints Hessian */
+  if(!scopflow->ignore_line_flow_constraints) {
+    ierr = SCOPFLOWComputeInequalityConstraintsHessian(scopflow,scenario,X,Lambda,H);CHKERRQ(ierr);
+  }
+
+  ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
 
 /* 
    All functions related to SCOPFLOW hessian
@@ -571,7 +688,7 @@ int str_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elts,
       ierr = VecPlaceArray(opflow->Lambda,lambda);CHKERRQ(ierr);
       /* Compute Hessian */
       ierr = SCOPFLOWComputeHessian(scopflow,row,opflow->X,opflow->Lambda,opflow->Hes);CHKERRQ(ierr);
-
+      ierr = MatSetOption(opflow->Hes,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
       ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
       ierr = VecResetArray(opflow->Lambda);CHKERRQ(ierr);
 
