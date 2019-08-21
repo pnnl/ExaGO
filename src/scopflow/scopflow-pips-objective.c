@@ -8,19 +8,21 @@
 */
 
 /*
-  OPFLOWObjectiveFunction - The objective function for the optimal power flow
+  SCOPFLOWObjectiveFunction - The objective function for the security constrained optimal power flow
 
   Input Parameters:
 + opflow - the OPFLOW object
-. X      - the current iterate
+. row    - scenario number
+- X      - the current iterate
 
   Output Parameters:
 . obj - the objective function value (scalar)
 */
-PetscErrorCode OPFLOWObjectiveFunction(OPFLOW opflow,Vec X, PetscScalar* obj)
+PetscErrorCode SCOPFLOWObjectiveFunction(SCOPFLOW scopflow,PetscInt row,Vec X, PetscScalar* obj)
 {
   PetscErrorCode ierr;
   const PetscScalar *x;
+  OPFLOW         opflow=scopflow->opflows[row];
   PS             ps=opflow->ps;
   PetscInt       i;
   PSBUS          bus;
@@ -52,20 +54,23 @@ PetscErrorCode OPFLOWObjectiveFunction(OPFLOW opflow,Vec X, PetscScalar* obj)
 
 
 /*
-  OPFLOWObjGradientFunction - The gradient of the objective function for the optimal power flow
+  SCOPFLOWObjGradientFunction - The gradient of the objective function for the 
+                                security constrained optimal power flow
 
   Input Parameters:
 + opflow - the OPFLOW object
-. X      - the current iterate
+. row    - scenario number
+- X      - the current iterate
 
   Output Parameters:
 . grad - the objective function gradient
 */
-PetscErrorCode OPFLOWObjGradientFunction(OPFLOW opflow,Vec X, Vec grad)
+PetscErrorCode SCOPFLOWObjGradientFunction(SCOPFLOW scopflow,PetscInt row,Vec X, Vec grad)
 {
   PetscErrorCode ierr;
   const PetscScalar *x;
   PetscScalar    *df;
+  OPFLOW         opflow=scopflow->opflows[row];
   PS             ps=opflow->ps;
   PetscInt       i;
   PSBUS          bus;
@@ -106,11 +111,11 @@ int str_eval_f(double* x0, double* x1, double* obj, CallBackDataPtr cbd)
   
   if(row == 0 ) {
     ierr = VecPlaceArray(opflow->X,x0);CHKERRQ(ierr);
-    ierr = OPFLOWObjectiveFunction(opflow,opflow->X,obj);CHKERRQ(ierr);
+    ierr = SCOPFLOWObjectiveFunction(scopflow,row,opflow->X,obj);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
   } else {
     ierr = VecPlaceArray(opflow->X,x1);CHKERRQ(ierr);
-    ierr = OPFLOWObjectiveFunction(opflow,opflow->X,obj);CHKERRQ(ierr);
+    ierr = SCOPFLOWObjectiveFunction(scopflow,row,opflow->X,obj);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
   }
 
@@ -132,7 +137,7 @@ int str_eval_grad_f(double* x0, double* x1, double* grad, CallBackDataPtr cbd)
       
     ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
     ierr = VecPlaceArray(opflow->gradobj,grad);CHKERRQ(ierr);
-    ierr = OPFLOWObjGradientFunction(opflow,opflow->X,opflow->gradobj);CHKERRQ(ierr);
+    ierr = SCOPFLOWObjGradientFunction(scopflow,row,opflow->X,opflow->gradobj);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->gradobj);CHKERRQ(ierr);
   }
