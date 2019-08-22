@@ -43,7 +43,7 @@ PetscErrorCode SCOPFLOWObjectiveFunction(SCOPFLOW scopflow,PetscInt row,Vec X, P
       loc = loc+2;
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
-      Pg = x[loc];
+      Pg = x[loc]*ps->MVAbase;
       *obj += gen->cost_alpha*Pg*Pg + gen->cost_beta*Pg + gen->cost_gamma;
     }
   }
@@ -91,8 +91,8 @@ PetscErrorCode SCOPFLOWObjGradientFunction(SCOPFLOW scopflow,PetscInt row,Vec X,
       loc = loc+2;
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
-      Pg = x[loc];
-      df[loc] = (2*gen->cost_alpha*Pg + gen->cost_beta);
+      Pg = x[loc]*ps->MVAbase;
+      df[loc] = ps->MVAbase*(2*gen->cost_alpha*Pg + gen->cost_beta);
     }
   }
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
@@ -142,7 +142,7 @@ PetscErrorCode SCOPFLOWComputeObjectiveHessian(SCOPFLOW scopflow,PetscInt scenar
       if(!gen->status) continue;
       row[0] = xloc;
       col[0] = xloc;
-      val[0] = 2.0*gen->cost_alpha;
+      val[0] = 2.0*gen->cost_alpha*ps->MVAbase*ps->MVAbase;
       ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
       /* Add a zero on the diagonal for the reactive power. This needs to be modified later

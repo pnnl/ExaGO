@@ -486,6 +486,7 @@ PetscErrorCode SCOPFLOWCouplingConstraintsJacobian(SCOPFLOW scopflow, PetscInt s
 PetscErrorCode SCOPFLOWInequalityConstraintsJacobian(SCOPFLOW scopflow, PetscInt scenario,Vec X, Mat Ji)
 {
   PetscErrorCode ierr;
+  OPFLOW         opflow=scopflow->opflows[scenario];
 
   PetscFunctionBegin;
   ierr = MatZeroEntries(Ji);CHKERRQ(ierr);
@@ -713,19 +714,18 @@ int str_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
       ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
 
       *i_nz = 0;
-      if(row == 0 && scopflow->ignore_line_flow_constraints) {
-	return 1;
+      if(opflow->Nconineq || (row > 0 && scopflow->iscoupling)) {
+	/* Inequality constraints Jacobian */
+	ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
+	ierr = SCOPFLOWInequalityConstraintsJacobian(scopflow,row,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
+	ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+	/* Doing a transpose to convert from row aij to column aij */
+	ierr = MatTranspose(opflow->Jac_Gi,MAT_INITIAL_MATRIX,&opflow->Jac_GiT);CHKERRQ(ierr);
+	ierr = MatSetOption(opflow->Jac_GiT,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
+	
+	aij = (Mat_SeqAIJ*)opflow->Jac_GiT->data;
+	*i_nz = aij->nz;
       }
-      /* Inequality constraints Jacobian */
-      ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
-      ierr = SCOPFLOWInequalityConstraintsJacobian(scopflow,row,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
-      ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
-      /* Doing a transpose to convert from row aij to column aij */
-      ierr = MatTranspose(opflow->Jac_Gi,MAT_INITIAL_MATRIX,&opflow->Jac_GiT);CHKERRQ(ierr);
-      ierr = MatSetOption(opflow->Jac_GiT,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
-
-      aij = (Mat_SeqAIJ*)opflow->Jac_GiT->data;
-      *i_nz = aij->nz;
 
     } else {
       if(col == 0) {
@@ -757,19 +757,17 @@ int str_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
       ierr = PetscMemcpy(e_colptr,aij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
       ierr = PetscMemcpy(e_elts,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
 
-      if(row == 0 && scopflow->ignore_line_flow_constraints) {
-	return 1;
+      if(opflow->Nconineq || (row > 0 && scopflow->iscoupling)) {
+	/* Inequality constraints Jacobian */
+	ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
+	ierr = SCOPFLOWInequalityConstraintsJacobian(scopflow,row,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
+	ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+	ierr = MatTranspose(opflow->Jac_Gi,MAT_REUSE_MATRIX,&opflow->Jac_GiT);CHKERRQ(ierr);
+	aij = (Mat_SeqAIJ*)opflow->Jac_GiT->data;
+	ierr = PetscMemcpy(i_rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
+	ierr = PetscMemcpy(i_colptr,aij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
+	ierr = PetscMemcpy(i_elts,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
       }
-
-      /* Inequality constraints Jacobian */
-      ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
-      ierr = SCOPFLOWInequalityConstraintsJacobian(scopflow,row,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
-      ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
-      ierr = MatTranspose(opflow->Jac_Gi,MAT_REUSE_MATRIX,&opflow->Jac_GiT);CHKERRQ(ierr);
-      aij = (Mat_SeqAIJ*)opflow->Jac_GiT->data;
-      ierr = PetscMemcpy(i_rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
-      ierr = PetscMemcpy(i_colptr,aij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
-      ierr = PetscMemcpy(i_elts,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
 
     } else {
       if(scopflow->iscoupling && col == 0) {
