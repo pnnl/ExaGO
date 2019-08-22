@@ -131,7 +131,7 @@ libopflow:$(OPFLOW_SRC_OBJECTS) chkopts
 libopflowipopt:$(OPFLOW_IPOPT_SRC_OBJECTS) chkopts
 	 -$(CLINKER) $(LDFLAGS) -o libopflowipopt.$(LIB_EXT) $(OPFLOW_IPOPT_SRC_OBJECTS) -L${IPOPT_BUILD_DIR}/lib -lipopt $(PETSC_TAO_LIB)
 
-SCOPFLOW_IPOPT_SRC_OBJECTS = src/scopflow/scopflow-ipopt.o ${OPFLOW_IPOPT_SRC_OBJECTS}
+SCOPFLOW_IPOPT_SRC_OBJECTS = src/scopflow/scopflow-ipopt.o src/scopflow/scopflow-ipopt-constraints.o src/scopflow/scopflow-ipopt-objective.o src/scopflow/scopflow-ipopt-hessian.o src/scopflow/scopflow-ipopt-pipsfunctions.o ${OPFLOW_IPOPT_SRC_OBJECTS}
 libscopflowipopt:$(SCOPFLOW_IPOPT_SRC_OBJECTS) chkopts
 	 -$(CLINKER) $(LDFLAGS) -o libscopflowipopt.$(LIB_EXT) $(SCOPFLOW_IPOPT_SRC_OBJECTS) -L${IPOPT_BUILD_DIR}/lib -lipopt $(PETSC_TAO_LIB)
 
