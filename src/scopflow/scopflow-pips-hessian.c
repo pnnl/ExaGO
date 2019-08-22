@@ -5,66 +5,7 @@
 #include <../src/mat/impls/sbaij/seq/sbaij.h>
 
 
-/*
-  SCOPFLOWComputeObjectiveHessian - Computes the Hessian for the objective function part
-  
-  Input Parameters:
-+ scopflow - the SCOPFLOW object
-. scenario - the scenario number
-- X        - solution vecto X
-
-  Output Parameters:
-. H - the Hessian part for the objective function
-
-*/
-PetscErrorCode SCOPFLOWComputeObjectiveHessian(SCOPFLOW scopflow,PetscInt scenario,Vec X,Mat H) 
-{
-  PetscErrorCode ierr;
-  OPFLOW         opflow=scopflow->opflows[scenario];
-  PS             ps=opflow->ps;
-  PetscInt       i,k;
-  PSBUS          bus;
-  PSGEN          gen;
-  PetscInt       xloc;
-  const PetscScalar *x;
-  PetscInt       row[2],col[2];
-  PetscScalar    val[2];
-
-
-  PetscFunctionBegin;
-
-  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
-
-  // for the part of objective
-  for(i=0; i < ps->nbus; i++) {
-    bus = &ps->bus[i];
-
-    ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
-   
-    for(k=0; k < bus->ngen; k++) {
-      xloc = xloc+2;
-      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      if(!gen->status) continue;
-      row[0] = xloc;
-      col[0] = xloc;
-      val[0] = 2.0*gen->cost_alpha*ps->MVAbase*ps->MVAbase;
-      ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-
-      /* Add a zero on the diagonal for the reactive power. This needs to be modified later
-	 when there is cost associated with reactive power as well 
-      */
-      row[0] = xloc + 1;
-      col[0] = xloc + 1;
-      val[0] = 0.0;
-      ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-    }
-  }
-
-  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
-
-  PetscFunctionReturn(0);
-}
-
+extern PetscErrorCode SCOPFLOWComputeObjectiveHessian(SCOPFLOW,PetscInt,Vec,Mat);
 /*
   SCOPFLOWComputeEqualityConstraintsHessian - Computes the Hessian for the equality constraints function part
   

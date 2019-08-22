@@ -268,7 +268,7 @@ PetscErrorCode SCOPFLOWAddCouplingConstraints(SCOPFLOW scopflow,PetscInt scenari
 }
 
 /*
-  SCOPFLOWInequalityConstraintsJacobian - Jacobian evaluation routine for scenario inequality constraints
+  SCOPFLOWLineFlowConstraintsJacobian - Jacobian evaluation routine for line flow constraints
 
   Input Parameters:
 + scopflow - the scopflow solver object
@@ -277,10 +277,10 @@ PetscErrorCode SCOPFLOWAddCouplingConstraints(SCOPFLOW scopflow,PetscInt scenari
 
 
   Output Parameters:
-. Ji - Jacobian for inequality constraints
+. Ji - Jacobian for line flow constraints
 
 */
-PetscErrorCode SCOPFLOWInequalityConstraintsJacobian(SCOPFLOW scopflow, PetscInt scenario,Vec X, Mat Ji)
+PetscErrorCode SCOPFLOWLineFlowConstraintsJacobian(SCOPFLOW scopflow, PetscInt scenario,Vec X, Mat Ji)
 {
   PetscErrorCode ierr;
   OPFLOW         opflow=scopflow->opflows[scenario];
@@ -307,7 +307,6 @@ PetscErrorCode SCOPFLOWInequalityConstraintsJacobian(SCOPFLOW scopflow, PetscInt
   const PetscScalar *x;
 
   PetscFunctionBegin;
-  ierr = MatZeroEntries(Ji);CHKERRQ(ierr);
 
   ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
 
@@ -421,6 +420,84 @@ PetscErrorCode SCOPFLOWInequalityConstraintsJacobian(SCOPFLOW scopflow, PetscInt
   }
 
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+/*
+  SCOPFLOWCouplingConstraintsJacobian - Jacobian evaluation routine for coupling constraints
+
+  Input Parameters:
++ scopflow - the scopflow solver object
+. X   - the current iterate
+- scenario - scenario number
+
+
+  Output Parameters:
+. Ji - Jacobian for coupling constraints
+
+*/
+PetscErrorCode SCOPFLOWCouplingConstraintsJacobian(SCOPFLOW scopflow, PetscInt scenario,Vec X, Mat Ji)
+{
+  PetscErrorCode ierr;
+  OPFLOW         opflow=scopflow->opflows[scenario];
+  PetscInt       i;
+  PetscInt       row[2],col[4];
+  PetscInt       gloc;
+  PetscScalar    val[4];
+  PS             ps=opflow->ps;
+
+  gloc = opflow->Nconineq;
+
+  if(scopflow->iscoupling && scenario != 0) {
+    PSBUS bus;
+    PetscInt k,xloc;
+    for(i=0; i < ps->nbus; i++) {
+      bus = &ps->bus[i];
+
+      ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
+      for(k=0; k < bus->ngen; k++) {
+	xloc += 2;
+	val[0] = 1;
+	row[0] = gloc;
+	col[0] = xloc;
+	ierr = MatSetValues(Ji,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+	gloc += 1;
+      }
+    }
+  }
+
+  PetscFunctionReturn(0);
+}
+
+/*
+  SCOPFLOWInequalityConstraintsJacobian - Jacobian evaluation routine for scenario inequality constraints
+
+  Input Parameters:
++ scopflow - the scopflow solver object
+. X   - the current iterate
+- scenario - scenario number
+
+
+  Output Parameters:
+. Ji - Jacobian for inequality constraints
+
+*/
+PetscErrorCode SCOPFLOWInequalityConstraintsJacobian(SCOPFLOW scopflow, PetscInt scenario,Vec X, Mat Ji)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = MatZeroEntries(Ji);CHKERRQ(ierr);
+
+  if(!scopflow->ignore_line_flow_constraints) {
+    ierr = SCOPFLOWLineFlowConstraintsJacobian(scopflow,scenario,X,Ji);CHKERRQ(ierr);
+  }
+
+  if(scenario > 0 && scopflow->iscoupling) {
+    ierr = SCOPFLOWCouplingConstraintsJacobian(scopflow,scenario,X,Ji);CHKERRQ(ierr);
+  }
+
   ierr = MatAssemblyBegin(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   PetscFunctionReturn(0);
@@ -628,6 +705,7 @@ int str_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
       /* Equality constraints Jacobian */
       ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
       ierr = SCOPFLOWEqualityConstraintsJacobian(scopflow,row,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
+      /* Doing a transpose to convert from row aij to column aij */
       ierr = MatTranspose(opflow->Jac_Ge,MAT_INITIAL_MATRIX,&opflow->Jac_GeT);CHKERRQ(ierr);
       ierr = MatSetOption(opflow->Jac_GeT,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
       aij = (Mat_SeqAIJ*)opflow->Jac_GeT->data;
@@ -635,17 +713,20 @@ int str_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
       ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
 
       *i_nz = 0;
-      if(!scopflow->ignore_line_flow_constraints) {
-	/* Line flow constraints Jacobian */
-	ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
-	ierr = SCOPFLOWInequalityConstraintsJacobian(scopflow,row,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
-	ierr = MatTranspose(opflow->Jac_Gi,MAT_INITIAL_MATRIX,&opflow->Jac_GiT);CHKERRQ(ierr);
-	ierr = MatSetOption(opflow->Jac_GiT,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
-
-	aij = (Mat_SeqAIJ*)opflow->Jac_GiT->data;
-	*i_nz = aij->nz;
-	ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+      if(row == 0 && scopflow->ignore_line_flow_constraints) {
+	return 1;
       }
+      /* Inequality constraints Jacobian */
+      ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
+      ierr = SCOPFLOWInequalityConstraintsJacobian(scopflow,row,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
+      ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+      /* Doing a transpose to convert from row aij to column aij */
+      ierr = MatTranspose(opflow->Jac_Gi,MAT_INITIAL_MATRIX,&opflow->Jac_GiT);CHKERRQ(ierr);
+      ierr = MatSetOption(opflow->Jac_GiT,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
+
+      aij = (Mat_SeqAIJ*)opflow->Jac_GiT->data;
+      *i_nz = aij->nz;
+
     } else {
       if(col == 0) {
 	if(scopflow->iscoupling) {
@@ -668,26 +749,28 @@ int str_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
       /* Equality constraints Jacobian */
       ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
       ierr = SCOPFLOWEqualityConstraintsJacobian(scopflow,row,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
+      ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
       ierr = MatTranspose(opflow->Jac_Ge,MAT_REUSE_MATRIX,&opflow->Jac_GeT);CHKERRQ(ierr);
       ierr = MatGetSize(opflow->Jac_GeT,&nrow,&ncol);CHKERRQ(ierr);
       aij = (Mat_SeqAIJ*)opflow->Jac_GeT->data;
       ierr = PetscMemcpy(e_rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
       ierr = PetscMemcpy(e_colptr,aij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
       ierr = PetscMemcpy(e_elts,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
-      ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
 
-
-      if(!scopflow->ignore_line_flow_constraints) {
-	/* Line flow constraints Jacobian */
-	ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
-	ierr = SCOPFLOWInequalityConstraintsJacobian(scopflow,row,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
-	ierr = MatTranspose(opflow->Jac_Gi,MAT_REUSE_MATRIX,&opflow->Jac_GiT);CHKERRQ(ierr);
-	aij = (Mat_SeqAIJ*)opflow->Jac_GiT->data;
-	ierr = PetscMemcpy(i_rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
-	ierr = PetscMemcpy(i_colptr,aij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
-	ierr = PetscMemcpy(i_elts,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
-	ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+      if(row == 0 && scopflow->ignore_line_flow_constraints) {
+	return 1;
       }
+
+      /* Inequality constraints Jacobian */
+      ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
+      ierr = SCOPFLOWInequalityConstraintsJacobian(scopflow,row,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
+      ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+      ierr = MatTranspose(opflow->Jac_Gi,MAT_REUSE_MATRIX,&opflow->Jac_GiT);CHKERRQ(ierr);
+      aij = (Mat_SeqAIJ*)opflow->Jac_GiT->data;
+      ierr = PetscMemcpy(i_rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
+      ierr = PetscMemcpy(i_colptr,aij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
+      ierr = PetscMemcpy(i_elts,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
+
     } else {
       if(scopflow->iscoupling && col == 0) {
 	ierr = MatGetSize(scopflow->JcoupT,&nrow,&ncol);CHKERRQ(ierr);

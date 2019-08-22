@@ -39,8 +39,8 @@ PetscErrorCode SCOPFLOWAddCouplingConstraintBounds(SCOPFLOW scopflow,int row,Vec
 
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) {
-	gl[gloc] = PETSC_NINFINITY;
-	gu[gloc] = PETSC_INFINITY;
+	gl[gloc] = 0.0;
+	gu[gloc] = 0.0;
       } else {
 	/* Generator can do a full ramp up to its max. capacity */
 	gl[gloc] = -gen->pt;
@@ -122,7 +122,6 @@ PetscErrorCode SCOPFLOWSetVariableandConstraintBounds(SCOPFLOW scopflow, PetscIn
 	/* pb, pt, qb, qt are converted in p.u. in ps.c */
       }
     }
-    loc  += 2;
     gloc += 2;
   }
 
