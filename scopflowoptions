@@ -11,40 +11,9 @@
 # Ignore line flow constraints
 -scopflow_ignore_line_flow_constraints 1
 
-# Gradient calculation via finite differencing
-#-scopflow_tao_fd_gradient 1
-
-# Hessian calculation via finite differencing
--scopflow_tao_fd_hessian 1
-
-# Max funcs (what is this and why is this needed?)
--scopflow_tao_max_funcs 100000
-
-# Optimal Power Flow Linear Solver Options
--scopflow_pc_type lu
--scopflow_pc_factor_mat_solver_type superlu_dist
--scopflow_ksp_error_if_not_converged
-
-# Tao tolerances
--scopflow_tao_catol 1e-2 
--scopflow_tao_crtol 1e-4 
--scopflow_tao_grtol 1e-4
--scopflow_tao_gatol 1e-2
--scopflow_tao_max_it 20
-
-# Convergence monitor
--scopflow_tao_monitor
-
-# Convergence status
--scopflow_tao_converged_reason
-
 # performance
 #-------------
 #-log_summary
-
-#Partitioner (requires parmetis package)
-#-petscpartitioner_type simple
--petscpartitioner_type parmetis
 
 #options
 # Display options left
