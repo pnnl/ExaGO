@@ -763,6 +763,7 @@ int str_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
 	ierr = SCOPFLOWInequalityConstraintsJacobian(scopflow,row,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
 	ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
 	ierr = MatTranspose(opflow->Jac_Gi,MAT_REUSE_MATRIX,&opflow->Jac_GiT);CHKERRQ(ierr);
+	ierr = MatGetSize(opflow->Jac_GiT,&nrow,&ncol);CHKERRQ(ierr);
 	aij = (Mat_SeqAIJ*)opflow->Jac_GiT->data;
 	ierr = PetscMemcpy(i_rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
 	ierr = PetscMemcpy(i_colptr,aij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);

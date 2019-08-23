@@ -23,6 +23,38 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
             PetscInt nele_hess, PetscInt *iRow, PetscInt *jCol,
             PetscScalar *values, UserDataPtr user_data);
 
+
+static int CCMatrixToMatrixMarketValuesOnly(struct CCMatrix *ccmatrix,PetscInt nz,PetscScalar *values)
+{
+  PetscErrorCode ierr;
+
+  ierr = PetscMemcpy(values,ccmatrix->values,nz*sizeof(PetscScalar));
+
+  return 0;
+}
+
+static int CCMatrixToMatrixMarketLocationsOnly(struct CCMatrix *ccmatrix,PetscInt ncol,PetscInt *iRow,PetscInt *jCol,PetscInt roffset,PetscInt coffset,PetscInt nval)
+{
+  PetscInt *rowidx;
+  PetscInt *colptr;
+  PetscInt j,k,ctr=0;
+  
+  rowidx = ccmatrix->rowidx;
+  colptr = ccmatrix->colptr;
+
+  /* Copy from compressed column to (row,col,val) format */
+  for(j=0; j < ncol; j++) {
+    for(k=colptr[j]; k < colptr[j+1]; k++) {
+      iRow[ctr] = rowidx[k] + roffset;
+      jCol[ctr] = j + coffset;
+      ctr++;
+    }
+  }
+  if(ctr != nval) SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Incorrect number of entries ctr = %d given = %d\n",ctr,nval);
+
+  return 0;
+}
+
 /*
   SCOPFLOWCreate - Creates an security constrained optimal power flow application object
 
@@ -100,6 +132,8 @@ PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW scopflow,const char netfile[])
   PetscFunctionReturn(0);
 }
 
+extern int str_init_x0(double*,CallBackDataPtr);
+
 /*
   SCOPFLOWSetInitialGuess - Sets the initial guess for the optimization
 
@@ -115,9 +149,23 @@ PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW scopflow,const char netfile[])
 PetscErrorCode SCOPFLOWSetInitialGuess(SCOPFLOW scopflow, Vec X)
 {
   PetscErrorCode ierr;
+  struct CallBackData cbd;
+  PetscInt i;
+  PetscScalar *x,*xi;
 
   PetscFunctionBegin;
+  ierr = VecGetArray(X,&x);CHKERRQ(ierr);
+  
+  for(i=0; i < scopflow->Ns; i++) {
+    cbd.row_node_id = i;
+    cbd.col_node_id = i;
+    cbd.prob = (void*)scopflow;
+    
+    xi = x + scopflow->xstart[i];
 
+    str_init_x0(xi,&cbd);
+  }
+  ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -271,7 +319,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscCalloc1(scopflow->Ns,&scopflow->e_jac_coupled);CHKERRQ(ierr);
   ierr = PetscCalloc1(scopflow->Ns,&scopflow->i_jac_coupled);CHKERRQ(ierr);
 
-  /* Heesian block for each scenario */
+  /* Hessian block for each scenario */
   ierr = PetscCalloc1(scopflow->Ns,&scopflow->nz_hess_self);CHKERRQ(ierr);
   ierr = PetscCalloc1(scopflow->Ns,&scopflow->hess_self);CHKERRQ(ierr);
 
@@ -370,24 +418,28 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 
     scopflow->nnz_jac_g += scopflow->e_nz_jac_self[i] + scopflow->i_nz_jac_self[i];
 
-    ierr = PetscMalloc1(scopflow->opflows[i]->Nconeq+1,&scopflow->e_jac_self[i].colptr);CHKERRQ(ierr);
+    ierr = PetscMalloc1(scopflow->opflows[i]->Nvar+1,&scopflow->e_jac_self[i].colptr);CHKERRQ(ierr);
     ierr = PetscMalloc1(scopflow->e_nz_jac_self[i],&scopflow->e_jac_self[i].rowidx);CHKERRQ(ierr);
     ierr = PetscMalloc1(scopflow->e_nz_jac_self[i],&scopflow->e_jac_self[i].values);CHKERRQ(ierr);
 
-    if(scopflow->i_nz_jac_self) {
-      PetscInt Nconineq = scopflow->Nci[i] - scopflow->opflows[i]->Nconeq;
-      ierr = PetscMalloc1(Nconineq+1,&scopflow->i_jac_self[i].colptr);CHKERRQ(ierr);
+    if(scopflow->i_nz_jac_self[i]) {
+      ierr = PetscMalloc1(scopflow->opflows[i]->Nvar+1,&scopflow->i_jac_self[i].colptr);CHKERRQ(ierr);
       ierr = PetscMalloc1(scopflow->i_nz_jac_self[i],&scopflow->i_jac_self[i].rowidx);CHKERRQ(ierr);
       ierr = PetscMalloc1(scopflow->i_nz_jac_self[i],&scopflow->i_jac_self[i].values);CHKERRQ(ierr);
     }
 
     /* Self part - Get Locations */
-    str_eval_jac_g(x0, x1, scopflow->e_nz_jac_self+i,scopflow->e_jac_self[i].values,scopflow->e_jac_self[i].rowidx,scopflow->e_jac_self[i].colptr,scopflow->i_nz_jac_self+i,scopflow->i_jac_self[i].values,scopflow->i_jac_self[i].rowidx,scopflow->i_jac_self[i].colptr,&cbd);
-
+    //    str_eval_jac_g(x0, x1, scopflow->e_nz_jac_self+i,scopflow->e_jac_self[i].values,scopflow->e_jac_self[i].rowidx,scopflow->e_jac_self[i].colptr,scopflow->i_nz_jac_self+i,scopflow->i_jac_self[i].values,scopflow->i_jac_self[i].rowidx,scopflow->i_jac_self[i].colptr,&cbd);
 
     lambda1 = lambda + scopflow->gstart[i];
     str_eval_h(x0, x1, lambda1, scopflow->nz_hess_self+i, NULL,
 	       NULL, NULL, &cbd);
+
+    ierr = PetscMalloc1(scopflow->opflows[i]->Nvar+1,&scopflow->hess_self[i].colptr);CHKERRQ(ierr);
+    ierr = PetscMalloc1(scopflow->nz_hess_self[i],&scopflow->hess_self[i].rowidx);CHKERRQ(ierr);
+    ierr = PetscMalloc1(scopflow->nz_hess_self[i],&scopflow->hess_self[i].values);CHKERRQ(ierr);
+
+    //    str_eval_h(x0, x1, lambda1, scopflow->nz_hess_self+i,scopflow->hess_self[i].values,scopflow->hess_self[i].rowidx, scopflow->hess_self[i].colptr, &cbd);
 
     scopflow->nnz_hes += scopflow->nz_hess_self[i];
 
@@ -401,8 +453,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
       scopflow->nnz_jac_g += scopflow->e_nz_jac_coupled[i] + scopflow->i_nz_jac_coupled[i];
 
       /* Coupled part - Get Locations */
-      str_eval_jac_g(x0, x1, scopflow->e_nz_jac_coupled+i,scopflow->e_jac_coupled[i].values,scopflow->e_jac_coupled[i].rowidx,scopflow->e_jac_coupled[i].colptr,scopflow->i_nz_jac_coupled+i,scopflow->i_jac_coupled[i].values,scopflow->i_jac_coupled[i].rowidx,scopflow->i_jac_coupled[i].colptr,&cbd);
-      
+      //      str_eval_jac_g(x0, x1, scopflow->e_nz_jac_coupled+i,scopflow->e_jac_coupled[i].values,scopflow->e_jac_coupled[i].rowidx,scopflow->e_jac_coupled[i].colptr,scopflow->i_nz_jac_coupled+i,scopflow->i_jac_coupled[i].values,scopflow->i_jac_coupled[i].rowidx,scopflow->i_jac_coupled[i].colptr,&cbd);
     }
   }
   ierr = VecRestoreArray(scopflow->X,&x);CHKERRQ(ierr);
@@ -412,15 +463,31 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   PetscFunctionReturn(0);
 }
 
+extern int str_eval_f(double*,double*,double*,CallBackDataPtr);
+
 Bool eval_scopflow_f(PetscInt n, PetscScalar* x, Bool new_x,
             PetscScalar* obj_value, UserDataPtr user_data)
 {
   PetscErrorCode ierr;
-  SCOPFLOW         scopflow=(SCOPFLOW)user_data;
+  SCOPFLOW       scopflow=(SCOPFLOW)user_data;
+  PetscInt       i; 
+  struct CallBackData cbd;
+  PetscScalar    *x0,*x1;
+  PetscScalar    obj_self=0.0;
+
+  x0 = x + scopflow->xstart[0];
   
-  ierr = VecPlaceArray(scopflow->X,x);CHKERRQ(ierr);
-  //  ierr = SCOPFLOWObjectiveFunction(scopflow,scopflow->X,obj_value);CHKERRQ(ierr);
-  ierr = VecResetArray(scopflow->X);CHKERRQ(ierr);
+  for(i=0; i < scopflow->Ns; i++) {
+    cbd.row_node_id = i;
+    cbd.col_node_id = i;
+    cbd.prob = (void*)scopflow;
+    
+    x1 = x + scopflow->xstart[i];
+
+    str_eval_f(x0,x1,&obj_self,&cbd);
+
+    *obj_value += obj_self;
+  }
   return TRUE;
 }
 
@@ -434,81 +501,37 @@ Bool eval_scopflow_grad_f(PetscInt n, PetscScalar* x, Bool new_x,
   return TRUE;
 }
 
-/*
-  SCOPFLOWConstraintFunction - Evalulates the constraints for the security constrained optimal power flow
-
-  Input Parameters:
-+ scopflow - the SCOPFLOW object
-. X      - the current iterate
-
-  Output Parameters:
-. G  - vector of constraints
-*/
-PetscErrorCode SCOPFLOWConstraintFunction(SCOPFLOW scopflow,Vec X,Vec C)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
-  PetscFunctionReturn(0);
-}
+extern int str_eval_g(double* x0, double* x1, double* eq_g, double* inq_g,
+	       CallBackDataPtr cbd);
 
 Bool eval_scopflow_g(PetscInt n, PetscScalar* x, Bool new_x,
              PetscInt m, PetscScalar* c, UserDataPtr user_data)
 {
   PetscErrorCode ierr;
   SCOPFLOW       scopflow=(SCOPFLOW)user_data;
+  PetscInt       i; 
+  struct CallBackData cbd;
+  PetscScalar    *x0,*x1;
+  PetscScalar    obj_self=0.0;
+  PetscScalar    *eq_g_self,*inq_g_self,*g1;
 
+  x0 = x + scopflow->xstart[0];
+  
+  for(i=0; i < scopflow->Ns; i++) {
+    cbd.row_node_id = i;
+    cbd.col_node_id = i;
+    cbd.prob = (void*)scopflow;
+    
+    x1 = x + scopflow->xstart[i];
+    g1 = c + scopflow->gstart[i];
+    eq_g_self = g1;
+    inq_g_self = g1 + scopflow->opflows[i]->Nconeq;
+
+    str_eval_g(x0,x1,eq_g_self,inq_g_self,&cbd);
+
+  }
   return TRUE;
 }
-
-/*
-  SCOPFLOWSetConstraintJacobianLocations - Sets the row and column nonzero locations for the
-              constraint Jacobian
-
-  Input Parameters:
-+ scopflow - the SCOPFLOW object
-
-  Output Parameters:
-+ row - the row locations
-- col - the col locations
-
-  Notes:
-   The row and column locations should be such that J(row[i],col[i]) = val
-*/
-PetscErrorCode SCOPFLOWSetConstraintJacobianLocations(SCOPFLOW scopflow, PetscInt *row, PetscInt *col)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
-  PetscFunctionReturn(0);
-}
-
-/*
-  SCOPFLOWSetConstraintJacobianValues - Sets the nonzero values for the
-              constraint Jacobian
-
-  Input Parameters:
-+ scopflow - the SCOPFLOW object
-- X      - the current iterate
-
-
-  Output Parameters:
-. values - the nonzero values in the constraint jacobian
-
-  Notes:
-   The values should be in the same row and col order as set in SCOPFLOWSetConstraintJacobianLocations
-*/
-PetscErrorCode SCOPFLOWSetConstraintJacobianValues(SCOPFLOW scopflow, Vec X,PetscScalar *values)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
-  PetscFunctionReturn(0);
-}
-
 
 Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
                 PetscInt m, PetscInt nele_jac,
@@ -516,15 +539,129 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
                 UserDataPtr user_data)
 {
   PetscErrorCode ierr;
-  SCOPFLOW         scopflow=(SCOPFLOW)user_data;
+  SCOPFLOW       scopflow=(SCOPFLOW)user_data;
+  PetscInt       i; 
+  struct CallBackData cbd;
+  PetscScalar    *x0,*x1;
+  PetscInt       *rowidx,*colptr;
+  PetscScalar    *ccvalues;
+  PetscInt       *iRowstart=iRow,*jColstart=jCol;
+  PetscInt       roffset,coffset;
+  PetscScalar    *xdup;
+  Vec            Xdup;
 
-  ierr = VecPlaceArray(scopflow->X,x);CHKERRQ(ierr);
   if(values == NULL) {
-    ierr = SCOPFLOWSetConstraintJacobianLocations(scopflow,iRow,jCol);CHKERRQ(ierr);
+    /* x is null when values == NULL, so we create a duplicate vector to pass x0 and x1.
+       This is used only for the getting the locations only 
+    */
+    ierr = VecDuplicate(scopflow->X,&Xdup);CHKERRQ(ierr);
+    ierr = VecSet(Xdup,1.0);CHKERRQ(ierr);
+    ierr = VecGetArray(Xdup,&xdup);CHKERRQ(ierr);
+
+    x0 = xdup + scopflow->xstart[0];
+
+    for(i=0; i < scopflow->Ns; i++) {
+      cbd.row_node_id = i;
+      cbd.col_node_id = i;
+      cbd.prob = (void*)scopflow;
+
+      x1 = xdup + scopflow->xstart[i];
+
+      /* Self part - Get Locations */
+      str_eval_jac_g(x0, x1, scopflow->e_nz_jac_self+i,scopflow->e_jac_self[i].values,scopflow->e_jac_self[i].rowidx,scopflow->e_jac_self[i].colptr,scopflow->i_nz_jac_self+i,scopflow->i_jac_self[i].values,scopflow->i_jac_self[i].rowidx,scopflow->i_jac_self[i].colptr,&cbd);
+      
+      roffset = scopflow->gstart[i];
+      coffset = scopflow->xstart[i];
+
+      /* Insert equality constraints self part */
+      CCMatrixToMatrixMarketLocationsOnly(&scopflow->e_jac_self[i],scopflow->opflows[i]->Nvar,iRowstart,jColstart,roffset,coffset,scopflow->e_nz_jac_self[i]);
+
+      /* Increase iRow,jCol pointers */
+      iRowstart += scopflow->e_nz_jac_self[i];
+      jColstart += scopflow->e_nz_jac_self[i];
+
+      PetscInt Nconineq = scopflow->Nci[i] - scopflow->opflows[i]->Nconeq;
+
+      if(Nconineq) {
+	roffset = scopflow->gstart[i] + scopflow->opflows[i]->Nconeq;
+
+	/* Insert inequality constraints self part */
+	CCMatrixToMatrixMarketLocationsOnly(&scopflow->i_jac_self[i],scopflow->opflows[i]->Nvar,iRowstart,jColstart,roffset,coffset,scopflow->i_nz_jac_self[i]);
+
+	/* Increase iRow, jCol pointers */
+	iRowstart += scopflow->i_nz_jac_self[i];
+	jColstart += scopflow->i_nz_jac_self[i];
+      }
+      /* Coupling part */
+      if(i > 0) {
+	if(scopflow->i_nz_jac_coupled[i]) {
+	  cbd.col_node_id = 0;
+
+	  str_eval_jac_g(x0, x1, scopflow->e_nz_jac_coupled+i,scopflow->e_jac_coupled[i].values,scopflow->e_jac_coupled[i].rowidx,scopflow->e_jac_coupled[i].colptr,scopflow->i_nz_jac_coupled+i,scopflow->i_jac_coupled[i].values,scopflow->i_jac_coupled[i].rowidx,scopflow->i_jac_coupled[i].colptr,&cbd);  
+
+	  roffset = scopflow->gstart[i] + scopflow->opflows[i]->Nconeq;
+	  coffset = scopflow->xstart[0];
+
+	  /* Insert inequality constraints coupled part */
+	  CCMatrixToMatrixMarketLocationsOnly(&scopflow->i_jac_coupled[i],scopflow->opflows[0]->Nvar,iRowstart,jColstart,roffset,coffset,scopflow->i_nz_jac_coupled[i]);
+
+	  iRowstart += scopflow->i_nz_jac_coupled[i];
+	  jColstart += scopflow->i_nz_jac_coupled[i];
+	}
+      }
+    }
+    ierr = VecRestoreArray(Xdup,&xdup);CHKERRQ(ierr);
+    ierr = VecDestroy(&Xdup);CHKERRQ(ierr);
   } else {
-    ierr = SCOPFLOWSetConstraintJacobianValues(scopflow,scopflow->X,values);CHKERRQ(ierr);
+    PetscScalar *valuesstart = values;
+
+    x0 = x + scopflow->xstart[0];
+
+    for(i=0; i < scopflow->Ns; i++) {
+      cbd.row_node_id = i;
+      cbd.col_node_id = i;
+      cbd.prob = (void*)scopflow;
+
+      x1 = x + scopflow->xstart[i];
+
+      /* Self part - Get Locations */
+      str_eval_jac_g(x0, x1, scopflow->e_nz_jac_self+i,scopflow->e_jac_self[i].values,scopflow->e_jac_self[i].rowidx,scopflow->e_jac_self[i].colptr,scopflow->i_nz_jac_self+i,scopflow->i_jac_self[i].values,scopflow->i_jac_self[i].rowidx,scopflow->i_jac_self[i].colptr,&cbd);
+      
+      /* Insert equality constraints self part */
+      CCMatrixToMatrixMarketValuesOnly(&scopflow->e_jac_self[i],scopflow->e_nz_jac_self[i],valuesstart);
+
+      /* Increase valuesstart pointers */
+      valuesstart += scopflow->e_nz_jac_self[i];
+
+      PetscInt Nconineq = scopflow->Nci[i] - scopflow->opflows[i]->Nconeq;
+
+      if(Nconineq) {
+	roffset = scopflow->gstart[i] + scopflow->opflows[i]->Nconeq;
+
+	/* Insert inequality constraints self part */
+	CCMatrixToMatrixMarketValuesOnly(&scopflow->i_jac_self[i],scopflow->i_nz_jac_self[i],valuesstart);
+
+	/* Increase valuesstart pointers */
+	valuesstart += scopflow->i_nz_jac_self[i];
+
+      }
+      /* Coupling part */
+      if(i > 0) {
+	if(scopflow->i_nz_jac_coupled[i]) {
+	  cbd.col_node_id = 0;
+
+	  str_eval_jac_g(x0, x1, scopflow->e_nz_jac_coupled+i,scopflow->e_jac_coupled[i].values,scopflow->e_jac_coupled[i].rowidx,scopflow->e_jac_coupled[i].colptr,scopflow->i_nz_jac_coupled+i,scopflow->i_jac_coupled[i].values,scopflow->i_jac_coupled[i].rowidx,scopflow->i_jac_coupled[i].colptr,&cbd);  
+
+	  /* Insert coupled constraints self part */
+	  CCMatrixToMatrixMarketValuesOnly(&scopflow->i_jac_coupled[i],scopflow->i_nz_jac_coupled[i],valuesstart);
+
+	  /* Increase valuesstart pointers */
+	  valuesstart += scopflow->i_nz_jac_coupled[i];
+
+	}
+      }
+    }    
   }
-  ierr = VecResetArray(scopflow->X);CHKERRQ(ierr);
   return TRUE;
 }
 
@@ -534,12 +671,77 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
                 PetscScalar *values, UserDataPtr user_data)
 {
   PetscErrorCode ierr;
-  SCOPFLOW         scopflow=(SCOPFLOW)user_data;
+  SCOPFLOW       scopflow=(SCOPFLOW)user_data;
+  PetscInt       i; 
+  struct CallBackData cbd;
+  PetscScalar    *x0,*x1;
+  PetscInt       *rowidx,*colptr;
+  PetscScalar    *ccvalues;
+  PetscInt       *iRowstart=iRow,*jColstart=jCol;
+  PetscInt       roffset,coffset;
+  PetscScalar    *xdup,*lambdadup,*lambda1;
+  Vec            Xdup;
 
   if(values == NULL) {
+    /* x is null when values == NULL, so we create a duplicate vector to pass x0 and x1.
+       This is used only for the getting the locations only 
+    */
+    ierr = VecDuplicate(scopflow->X,&Xdup);CHKERRQ(ierr);
+    ierr = VecSet(Xdup,1.0);CHKERRQ(ierr);
+    ierr = VecGetArray(Xdup,&xdup);CHKERRQ(ierr);
+    ierr = VecSet(scopflow->Lambda,1.0);CHKERRQ(ierr);
+    ierr = VecGetArray(scopflow->Lambda,&lambdadup);CHKERRQ(ierr);
+
+    x0 = xdup + scopflow->xstart[0];
+
+    for(i=0; i < scopflow->Ns; i++) {
+      cbd.row_node_id = i;
+      cbd.col_node_id = i;
+      cbd.prob = (void*)scopflow;
+
+      x1 = xdup + scopflow->xstart[i];
+      lambda1 = lambdadup + scopflow->gstart[i];
+
+      /* Self part - Get Locations */
+      str_eval_h(x0, x1, lambda1, scopflow->nz_hess_self+i,scopflow->hess_self[i].values,scopflow->hess_self[i].rowidx, scopflow->hess_self[i].colptr, &cbd);
+      
+      roffset = scopflow->xstart[i];
+      coffset = scopflow->xstart[i];
+
+      /* Hessian self part */
+      CCMatrixToMatrixMarketLocationsOnly(&scopflow->hess_self[i],scopflow->opflows[i]->Nvar,iRowstart,jColstart,roffset,coffset,scopflow->nz_hess_self[i]);
+
+      /* Increase iRow,jCol pointers */
+      iRowstart += scopflow->nz_hess_self[i];
+      jColstart += scopflow->nz_hess_self[i];
+
+    }
+    ierr = VecRestoreArray(Xdup,&xdup);CHKERRQ(ierr);
+    ierr = VecDestroy(&Xdup);CHKERRQ(ierr);
+    ierr = VecRestoreArray(scopflow->Lambda,&lambdadup);CHKERRQ(ierr);
   } else {
+    PetscScalar *valuesstart = values;
+
+    x0 = x + scopflow->xstart[0];
+
+    for(i=0; i < scopflow->Ns; i++) {
+      cbd.row_node_id = i;
+      cbd.col_node_id = i;
+      cbd.prob = (void*)scopflow;
+
+      x1 = x + scopflow->xstart[i];
+      lambda1 = lambda + scopflow->gstart[i];
+
+      /* Self part - Values */
+      str_eval_h(x0, x1, lambda1, scopflow->nz_hess_self+i,scopflow->hess_self[i].values,scopflow->hess_self[i].rowidx, scopflow->hess_self[i].colptr, &cbd);
+
+      /* Hessian self part */
+      CCMatrixToMatrixMarketValuesOnly(&scopflow->hess_self[i],scopflow->nz_hess_self[i],valuesstart);
+
+      /* Increase valuesstart pointers */
+      valuesstart += scopflow->nz_hess_self[i];
+    }    
   }
-  
   return TRUE;
 }
 
