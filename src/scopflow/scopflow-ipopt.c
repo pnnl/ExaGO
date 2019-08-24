@@ -208,16 +208,16 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
 
   /* Options for IPOPT. This need to go through PetscOptionsBegin later */
   
-  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"tol", 1e-6);
-  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"acceptable_tol", 1e-6);
+  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"tol", 1e-4);
+  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"acceptable_tol", 1e-4);
   AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"mu_init", 0.1);
   AddIpoptNumOption(scopflow->nlp_ipopt,(char*)"obj_scaling_factor",100);
   
-  AddIpoptNumOption(scopflow->nlp_ipopt,(char*) "bound_frac",1);
-  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"bound_push",1);
-  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"dual_inf_tol", 1e-2);
+  AddIpoptNumOption(scopflow->nlp_ipopt,(char*) "bound_frac",1e-4);
+  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"bound_push",1e-4);
+  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"dual_inf_tol", 1e-4);
   AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"compl_inf_tol", 1e-2);
-  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"constr_viol_tol", 5e-6);
+  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"constr_viol_tol", 1e-4);
 
   //  AddIpoptStrOption(scopflow->nlp_ipopt,(char*)"fixed_variable_treatment",(char*)"relax_bounds");
   // AddIpoptStrOption(scopflow->nlp_ipopt,(char*)"nlp_scaling_method",(char*)"none");
@@ -239,7 +239,7 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
       }
     }
   }
-  //  AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"derivative_test", (char*)"first-order");
+  //  AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"derivative_test", (char*)"second-order");
   AddIpoptStrOption(scopflow->nlp_ipopt,(char*)"linear_solver",(char*)"mumps");
   // AddIpoptNumOption(scopflow->nlp_ipopt,(char*)"bound_relax_factor",1e-4);
   
@@ -254,7 +254,7 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
 
   ierr = VecRestoreArray(scopflow->X,&x);CHKERRQ(ierr);
 
-  ierr = VecView(scopflow->X,0);CHKERRQ(ierr);
+  //  ierr = VecView(scopflow->X,0);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -468,7 +468,6 @@ extern int str_eval_f(double*,double*,double*,CallBackDataPtr);
 Bool eval_scopflow_f(PetscInt n, PetscScalar* x, Bool new_x,
             PetscScalar* obj_value, UserDataPtr user_data)
 {
-  PetscErrorCode ierr;
   SCOPFLOW       scopflow=(SCOPFLOW)user_data;
   PetscInt       i; 
   struct CallBackData cbd;
@@ -477,6 +476,7 @@ Bool eval_scopflow_f(PetscInt n, PetscScalar* x, Bool new_x,
 
   x0 = x + scopflow->xstart[0];
   
+  *obj_value = 0.0;
   for(i=0; i < scopflow->Ns; i++) {
     cbd.row_node_id = i;
     cbd.col_node_id = i;
@@ -491,13 +491,28 @@ Bool eval_scopflow_f(PetscInt n, PetscScalar* x, Bool new_x,
   return TRUE;
 }
 
+extern int str_eval_grad_f(double*,double*,double*,CallBackDataPtr);
+
 Bool eval_scopflow_grad_f(PetscInt n, PetscScalar* x, Bool new_x,
                  PetscScalar* grad_f, UserDataPtr user_data)
 {
-  PetscErrorCode ierr;
-  SCOPFLOW         scopflow=(SCOPFLOW)user_data;
-  
+  SCOPFLOW       scopflow=(SCOPFLOW)user_data;
+  PetscInt       i; 
+  struct CallBackData cbd;
+  PetscScalar    *x0,*x1,*df1;
 
+  x0 = x + scopflow->xstart[0];
+  
+  for(i=0; i < scopflow->Ns; i++) {
+    cbd.row_node_id = i;
+    cbd.col_node_id = i;
+    cbd.prob = (void*)scopflow;
+    
+    x1 = x + scopflow->xstart[i];
+    df1 = grad_f + scopflow->xstart[i];
+
+    str_eval_grad_f(x0,x1,df1,&cbd);
+  }
   return TRUE;
 }
 
@@ -507,12 +522,10 @@ extern int str_eval_g(double* x0, double* x1, double* eq_g, double* inq_g,
 Bool eval_scopflow_g(PetscInt n, PetscScalar* x, Bool new_x,
              PetscInt m, PetscScalar* c, UserDataPtr user_data)
 {
-  PetscErrorCode ierr;
   SCOPFLOW       scopflow=(SCOPFLOW)user_data;
   PetscInt       i; 
   struct CallBackData cbd;
   PetscScalar    *x0,*x1;
-  PetscScalar    obj_self=0.0;
   PetscScalar    *eq_g_self,*inq_g_self,*g1;
 
   x0 = x + scopflow->xstart[0];
@@ -543,8 +556,6 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
   PetscInt       i; 
   struct CallBackData cbd;
   PetscScalar    *x0,*x1;
-  PetscInt       *rowidx,*colptr;
-  PetscScalar    *ccvalues;
   PetscInt       *iRowstart=iRow,*jColstart=jCol;
   PetscInt       roffset,coffset;
   PetscScalar    *xdup;
@@ -676,11 +687,11 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
   struct CallBackData cbd;
   PetscScalar    *x0,*x1;
   PetscInt       *rowidx,*colptr;
-  PetscScalar    *ccvalues;
   PetscInt       *iRowstart=iRow,*jColstart=jCol;
   PetscInt       roffset,coffset;
   PetscScalar    *xdup,*lambdadup,*lambda1;
   Vec            Xdup;
+  PetscInt       j,k,ctr=0;
 
   if(values == NULL) {
     /* x is null when values == NULL, so we create a duplicate vector to pass x0 and x1.
@@ -707,9 +718,22 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
       
       roffset = scopflow->xstart[i];
       coffset = scopflow->xstart[i];
+  
+      rowidx = scopflow->hess_self[i].rowidx;
+      colptr = scopflow->hess_self[i].colptr;
+
+      ctr = 0;
+      /* Copy from compressed column to (row,col,val) format */
+      for(j=0; j < scopflow->opflows[i]->Nvar; j++) {
+	for(k=colptr[j]; k < colptr[j+1]; k++) {
+	  jColstart[ctr] = rowidx[k] + roffset;
+	  iRowstart[ctr] = j + coffset;
+	  ctr++;
+	}
+      }
 
       /* Hessian self part */
-      CCMatrixToMatrixMarketLocationsOnly(&scopflow->hess_self[i],scopflow->opflows[i]->Nvar,iRowstart,jColstart,roffset,coffset,scopflow->nz_hess_self[i]);
+      //      CCMatrixToMatrixMarketLocationsOnly(&scopflow->hess_self[i],scopflow->opflows[i]->Nvar,iRowstart,jColstart,roffset,coffset,scopflow->nz_hess_self[i]);
 
       /* Increase iRow,jCol pointers */
       iRowstart += scopflow->nz_hess_self[i];

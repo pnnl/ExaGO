@@ -31,6 +31,7 @@ PetscErrorCode SCOPFLOWObjectiveFunction(SCOPFLOW scopflow,PetscInt row,Vec X, P
 
   ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
 
+  *obj = 0.0;
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
 
@@ -204,6 +205,9 @@ int str_eval_grad_f(double* x0, double* x1, double* grad, CallBackDataPtr cbd)
       ierr = VecResetArray(opflow->gradobj);CHKERRQ(ierr);
     } else {
       if(scopflow->first_stage_gen_cost_only) {
+	ierr = VecPlaceArray(opflow->gradobj,grad);CHKERRQ(ierr);
+	ierr = VecSet(opflow->gradobj,0.0);CHKERRQ(ierr);
+	ierr = VecResetArray(opflow->gradobj);CHKERRQ(ierr);
 	return 1;
       }
       x = x1;
