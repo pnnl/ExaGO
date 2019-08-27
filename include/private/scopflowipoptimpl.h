@@ -39,10 +39,10 @@ For each scenario i \in Ns:
 
 */
 struct CallBackData{
+  void*    prob;
   PetscInt row_node_id;
   PetscInt col_node_id;
   PetscInt typeflag;
-  void*    prob;
 };
 
 typedef struct CallBackData *CallBackDataPtr;
@@ -126,6 +126,8 @@ struct _p_SCOPFLOW{
   PetscInt *nz_hess_self; /* Number of nonzeros in the hessian block for the scenario */
 
   struct CCMatrix *hess_self; /* Hessian block for each scenario */
+
+  PetscScalar obj_factor; /* The objective factor IPOPT uses in the Hessian evaluation */
 
 };
 

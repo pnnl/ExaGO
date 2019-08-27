@@ -125,6 +125,7 @@ PetscErrorCode SCOPFLOWComputeObjectiveHessian(SCOPFLOW scopflow,PetscInt scenar
   const PetscScalar *x;
   PetscInt       row[2],col[2];
   PetscScalar    val[2];
+  PetscScalar    obj_factor = scopflow->obj_factor;
 
 
   PetscFunctionBegin;
@@ -143,7 +144,7 @@ PetscErrorCode SCOPFLOWComputeObjectiveHessian(SCOPFLOW scopflow,PetscInt scenar
       if(!gen->status) continue;
       row[0] = xloc;
       col[0] = xloc;
-      val[0] = 2.0*gen->cost_alpha*ps->MVAbase*ps->MVAbase;
+      val[0] = obj_factor*2.0*gen->cost_alpha*ps->MVAbase*ps->MVAbase;
       ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
       /* Add a zero on the diagonal for the reactive power. This needs to be modified later

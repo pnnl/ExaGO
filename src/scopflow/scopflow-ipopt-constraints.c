@@ -401,24 +401,6 @@ PetscErrorCode SCOPFLOWLineFlowConstraintsJacobian(SCOPFLOW scopflow, PetscInt s
     gloc += 2;
   }
 
-  if(scopflow->iscoupling && scenario != 0) {
-    PSBUS bus;
-    PetscInt k,xloc;
-    for(i=0; i < ps->nbus; i++) {
-      bus = &ps->bus[i];
-
-      ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
-      for(k=0; k < bus->ngen; k++) {
-	xloc += 2;
-	val[0] = 1;
-	row[0] = gloc;
-	col[0] = xloc;
-	ierr = MatSetValues(Ji,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-	gloc += 1;
-      }
-    }
-  }
-
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
@@ -486,7 +468,6 @@ PetscErrorCode SCOPFLOWCouplingConstraintsJacobian(SCOPFLOW scopflow, PetscInt s
 PetscErrorCode SCOPFLOWInequalityConstraintsJacobian(SCOPFLOW scopflow, PetscInt scenario,Vec X, Mat Ji)
 {
   PetscErrorCode ierr;
-  OPFLOW         opflow=scopflow->opflows[scenario];
 
   PetscFunctionBegin;
   ierr = MatZeroEntries(Ji);CHKERRQ(ierr);

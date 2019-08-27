@@ -95,7 +95,8 @@ PetscErrorCode SCOPFLOWSetVariableandConstraintBounds(SCOPFLOW scopflow, PetscIn
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
 
     /* Bounds on voltage angles and bounds on real power mismatch equality constraints */
-    xl[loc] = PETSC_NINFINITY; xu[loc] = PETSC_INFINITY;
+    //    xl[loc] = PETSC_NINFINITY; xu[loc] = PETSC_INFINITY;
+    xl[loc] = -1e6; xu[loc] = 1e6;
     gl[gloc] = 0.0;   gu[gloc] = 0.0;
 
     /* Bounds on voltage magnitudes and bounds on reactive power mismatch equality constraints */

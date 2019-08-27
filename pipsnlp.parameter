@@ -16,7 +16,7 @@ AddSlackParallelSetting 0
 ! do IR for the Augmented system. 0: do not perform    (1): perform it
 DoIR_Aug 1
 ! do IR for the full KKT system. (0): do not perform    1: perform it
-DoIR_Full 1
+DoIR_Full 0
 ! Max number if IR iterations (10)
 MaxIR 10
 ! tolerance of IR (1e-12)

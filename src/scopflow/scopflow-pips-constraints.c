@@ -401,24 +401,6 @@ PetscErrorCode SCOPFLOWLineFlowConstraintsJacobian(SCOPFLOW scopflow, PetscInt s
     gloc += 2;
   }
 
-  if(scopflow->iscoupling && scenario != 0) {
-    PSBUS bus;
-    PetscInt k,xloc;
-    for(i=0; i < ps->nbus; i++) {
-      bus = &ps->bus[i];
-
-      ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
-      for(k=0; k < bus->ngen; k++) {
-	xloc += 2;
-	val[0] = 1;
-	row[0] = gloc;
-	col[0] = xloc;
-	ierr = MatSetValues(Ji,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-	gloc += 1;
-      }
-    }
-  }
-
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
@@ -486,7 +468,6 @@ PetscErrorCode SCOPFLOWCouplingConstraintsJacobian(SCOPFLOW scopflow, PetscInt s
 PetscErrorCode SCOPFLOWInequalityConstraintsJacobian(SCOPFLOW scopflow, PetscInt scenario,Vec X, Mat Ji)
 {
   PetscErrorCode ierr;
-  OPFLOW         opflow=scopflow->opflows[scenario];
 
   PetscFunctionBegin;
   ierr = MatZeroEntries(Ji);CHKERRQ(ierr);
@@ -763,6 +744,7 @@ int str_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
 	ierr = SCOPFLOWInequalityConstraintsJacobian(scopflow,row,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
 	ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
 	ierr = MatTranspose(opflow->Jac_Gi,MAT_REUSE_MATRIX,&opflow->Jac_GiT);CHKERRQ(ierr);
+	ierr = MatGetSize(opflow->Jac_GiT,&nrow,&ncol);CHKERRQ(ierr);
 	aij = (Mat_SeqAIJ*)opflow->Jac_GiT->data;
 	ierr = PetscMemcpy(i_rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
 	ierr = PetscMemcpy(i_colptr,aij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);

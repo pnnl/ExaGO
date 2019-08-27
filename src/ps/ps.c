@@ -1388,7 +1388,7 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
       if(!Branch[bri].tapratio) Branch[bri].tapratio = 1.0;
       Branch[bri].phaseshift *= PETSC_PI/180.0;
 
-      Branch[bri].rateA = (Branch[bri].rateA == 0 ? PETSC_INFINITY:Branch[bri].rateA);
+      Branch[bri].rateA = (Branch[bri].rateA == 0 ? 1e6:Branch[bri].rateA);
       intbusnum = busext2intmap[Branch[bri].fbus];
       Branch[bri].internal_i = intbusnum;
 

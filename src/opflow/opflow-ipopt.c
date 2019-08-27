@@ -1042,6 +1042,8 @@ PetscErrorCode OPFLOWSetVariableandConstraintBounds(OPFLOW opflow, Vec Xl, Vec X
 
     /* Bounds on voltage angles and bounds on real power mismatch equality constraints */
     xl[loc] = -PETSC_PI; xu[loc] = PETSC_PI;
+    //    xl[loc] = PETSC_NINFINITY; xu[loc] = PETSC_INFINITY;
+    //    xl[loc] = -1000; xu[loc] = 1000;
     gl[gloc] = 0.0;   gu[gloc] = 0.0;
 
     /* Bounds on voltage magnitudes and bounds on reactive power mismatch equality constraints */
@@ -1209,7 +1211,7 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
       }
     }
   }
-  AddIpoptStrOption(opflow->nlp_ipopt, (char*)"derivative_test", (char*)"second-order");
+  //  AddIpoptStrOption(opflow->nlp_ipopt, (char*)"derivative_test", (char*)"second-order");
   AddIpoptStrOption(opflow->nlp_ipopt,(char*)"linear_solver",(char*)"mumps");
   // AddIpoptNumOption(opflow->nlp_ipopt,(char*)"bound_relax_factor",1e-4);
   

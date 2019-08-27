@@ -11,6 +11,9 @@
 # Ignore line flow constraints
 -scopflow_ignore_line_flow_constraints 1
 
+# Number of scenarios
+-scopflow_Ns 2
+
 # performance
 #-------------
 #-log_summary

@@ -156,7 +156,7 @@ PetscErrorCode SCOPFLOWComputeEqualityConstraintsHessian(SCOPFLOW scopflow,Petsc
 	col[1] 	= xlocf+1;
 	col[2] 	= xloct;
 	val[0] = lambda[gloc]*dPf_dVmt_dthetaf 		+ lambda[gloc+1]*dQf_dVmt_dthetaf;
-	val[1] = lambda[gloc]*dPf_dVmt_dVmf 			+ lambda[gloc+1]*dQf_dVmt_dVmf;
+	val[1] = lambda[gloc]*dPf_dVmt_dVmf 		+ lambda[gloc+1]*dQf_dVmt_dVmf;
 	val[2] = lambda[gloc]*dPf_dVmt_dthetat 		+ lambda[gloc+1]*dQf_dVmt_dthetat;
 	ierr = MatSetValues(H,1,row,3,col,val,ADD_VALUES);CHKERRQ(ierr);
 
@@ -202,8 +202,8 @@ PetscErrorCode SCOPFLOWComputeEqualityConstraintsHessian(SCOPFLOW scopflow,Petsc
 	
 	row[0]	= xlocf;
 	row[1]  = xlocf+1;  col[0]  = xlocf;
-	val[0]   = lambda[gloc]*dPt_dthetaf_dthetaf 	+ lambda[gloc+1]*dQt_dthetaf_dthetaf;
-	val[1] = lambda[gloc]*dPt_dVmf_dthetaf 		+ lambda[gloc+1]*dQt_dVmf_dthetaf;
+	val[0]  = lambda[gloc]*dPt_dthetaf_dthetaf 	+ lambda[gloc+1]*dQt_dthetaf_dthetaf;
+	val[1]  = lambda[gloc]*dPt_dVmf_dthetaf 	+ lambda[gloc+1]*dQt_dVmf_dthetaf;
 	ierr = MatSetValues(H,2,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
 	row[0]  = xloct;

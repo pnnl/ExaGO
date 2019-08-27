@@ -210,19 +210,19 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
   
   AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"tol", 1e-4);
   AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"acceptable_tol", 1e-4);
-  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"mu_init", 0.1);
+  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"mu_init", 0.01);
   AddIpoptNumOption(scopflow->nlp_ipopt,(char*)"obj_scaling_factor",100);
   
-  AddIpoptNumOption(scopflow->nlp_ipopt,(char*) "bound_frac",1e-4);
-  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"bound_push",1e-4);
-  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"dual_inf_tol", 1e-4);
+  AddIpoptNumOption(scopflow->nlp_ipopt,(char*) "bound_frac",0.01);
+  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"bound_push",0.01);
+  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"dual_inf_tol", 1e-2);
   AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"compl_inf_tol", 1e-2);
-  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"constr_viol_tol", 1e-4);
+  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"constr_viol_tol", 5e-6);
 
   //  AddIpoptStrOption(scopflow->nlp_ipopt,(char*)"fixed_variable_treatment",(char*)"relax_bounds");
   // AddIpoptStrOption(scopflow->nlp_ipopt,(char*)"nlp_scaling_method",(char*)"none");
   AddIpoptIntOption(scopflow->nlp_ipopt,(char*)"max_iter",500);
-  //  AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"mu_strategy", (char*)"adaptive");
+  //AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"mu_strategy", (char*)"adaptive");
   AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"print_user_options", (char*)"yes");
   AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"output_file", (char*)"ipopt.out");
   
@@ -239,7 +239,7 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
       }
     }
   }
-  //  AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"derivative_test", (char*)"second-order");
+  //AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"derivative_test", (char*)"second-order");
   AddIpoptStrOption(scopflow->nlp_ipopt,(char*)"linear_solver",(char*)"mumps");
   // AddIpoptNumOption(scopflow->nlp_ipopt,(char*)"bound_relax_factor",1e-4);
   
@@ -428,9 +428,6 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
       ierr = PetscMalloc1(scopflow->i_nz_jac_self[i],&scopflow->i_jac_self[i].values);CHKERRQ(ierr);
     }
 
-    /* Self part - Get Locations */
-    //    str_eval_jac_g(x0, x1, scopflow->e_nz_jac_self+i,scopflow->e_jac_self[i].values,scopflow->e_jac_self[i].rowidx,scopflow->e_jac_self[i].colptr,scopflow->i_nz_jac_self+i,scopflow->i_jac_self[i].values,scopflow->i_jac_self[i].rowidx,scopflow->i_jac_self[i].colptr,&cbd);
-
     lambda1 = lambda + scopflow->gstart[i];
     str_eval_h(x0, x1, lambda1, scopflow->nz_hess_self+i, NULL,
 	       NULL, NULL, &cbd);
@@ -438,8 +435,6 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
     ierr = PetscMalloc1(scopflow->opflows[i]->Nvar+1,&scopflow->hess_self[i].colptr);CHKERRQ(ierr);
     ierr = PetscMalloc1(scopflow->nz_hess_self[i],&scopflow->hess_self[i].rowidx);CHKERRQ(ierr);
     ierr = PetscMalloc1(scopflow->nz_hess_self[i],&scopflow->hess_self[i].values);CHKERRQ(ierr);
-
-    //    str_eval_h(x0, x1, lambda1, scopflow->nz_hess_self+i,scopflow->hess_self[i].values,scopflow->hess_self[i].rowidx, scopflow->hess_self[i].colptr, &cbd);
 
     scopflow->nnz_hes += scopflow->nz_hess_self[i];
 
@@ -450,10 +445,14 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
       str_eval_jac_g(x0, x1, scopflow->e_nz_jac_coupled+i, NULL,NULL,NULL,
 		     scopflow->i_nz_jac_coupled+i,NULL,NULL,NULL,&cbd);
 
+      if(scopflow->i_nz_jac_coupled[i]) {
+	ierr = PetscMalloc1(scopflow->opflows[i]->Nvar+1,&scopflow->i_jac_coupled[i].colptr);CHKERRQ(ierr);
+	ierr = PetscMalloc1(scopflow->i_nz_jac_coupled[i],&scopflow->i_jac_coupled[i].rowidx);CHKERRQ(ierr);
+	ierr = PetscMalloc1(scopflow->i_nz_jac_coupled[i],&scopflow->i_jac_coupled[i].values);CHKERRQ(ierr);
+      }
+
       scopflow->nnz_jac_g += scopflow->e_nz_jac_coupled[i] + scopflow->i_nz_jac_coupled[i];
 
-      /* Coupled part - Get Locations */
-      //      str_eval_jac_g(x0, x1, scopflow->e_nz_jac_coupled+i,scopflow->e_jac_coupled[i].values,scopflow->e_jac_coupled[i].rowidx,scopflow->e_jac_coupled[i].colptr,scopflow->i_nz_jac_coupled+i,scopflow->i_jac_coupled[i].values,scopflow->i_jac_coupled[i].rowidx,scopflow->i_jac_coupled[i].colptr,&cbd);
     }
   }
   ierr = VecRestoreArray(scopflow->X,&x);CHKERRQ(ierr);
@@ -566,7 +565,8 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
        This is used only for the getting the locations only 
     */
     ierr = VecDuplicate(scopflow->X,&Xdup);CHKERRQ(ierr);
-    ierr = VecSet(Xdup,1.0);CHKERRQ(ierr);
+    //    ierr = VecSet(Xdup,1.0);CHKERRQ(ierr);
+    ierr = SCOPFLOWSetInitialGuess(scopflow,Xdup);CHKERRQ(ierr);
     ierr = VecGetArray(Xdup,&xdup);CHKERRQ(ierr);
 
     x0 = xdup + scopflow->xstart[0];
@@ -693,12 +693,14 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
   Vec            Xdup;
   PetscInt       j,k,ctr=0;
 
+  scopflow->obj_factor = obj_factor;
   if(values == NULL) {
     /* x is null when values == NULL, so we create a duplicate vector to pass x0 and x1.
        This is used only for the getting the locations only 
     */
     ierr = VecDuplicate(scopflow->X,&Xdup);CHKERRQ(ierr);
-    ierr = VecSet(Xdup,1.0);CHKERRQ(ierr);
+    //    ierr = VecSet(Xdup,1.0);CHKERRQ(ierr);
+    ierr = SCOPFLOWSetInitialGuess(scopflow,Xdup);CHKERRQ(ierr);
     ierr = VecGetArray(Xdup,&xdup);CHKERRQ(ierr);
     ierr = VecSet(scopflow->Lambda,1.0);CHKERRQ(ierr);
     ierr = VecGetArray(scopflow->Lambda,&lambdadup);CHKERRQ(ierr);
