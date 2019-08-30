@@ -56,6 +56,57 @@ static int CCMatrixToMatrixMarketLocationsOnly(struct CCMatrix *ccmatrix,PetscIn
 }
 
 /*
+  SCOPFLOWReadContingencyData - Reads the contingency list data file
+
+  Input Parameters
++ scopflow - the scopflow object
+- ctgcfile - the contingency file name
+
+*/
+PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW scopflow,const char ctgcfile[])
+{
+  PetscErrorCode ierr;
+  FILE           *fp;
+  ContingencyList ctgclist=scopflow->ctgclist;
+  Contingency    *cont;
+  Outage         *outage;
+  char           line[MAXLINE];
+  char           *out;
+  PetscInt       bus,fbus,tbus,type,num;
+  char           id[10];
+  PetscInt       status;
+  PetscScalar    prob;
+
+  PetscFunctionBegin;
+
+  fp = fopen(ctgcfile,"r");
+  if (fp == NULL) {
+    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_FILE_OPEN,"Cannot open file %s",ctgcfile);CHKERRQ(ierr);
+  }
+
+  while((out = fgets(line,MAXLINE,fp)) != NULL) {
+    if(strcmp(line,"\r\n") == 0 || strcmp(line,"\n") == 0) {
+      continue; /* Skip blank lines */
+    }
+    sscanf(line,"%d,%d,%d,%d,%d,'%[^\t\']',%d,%lf",&num,&type,&bus,&fbus,&tbus,id,&status,&prob);
+
+    cont = ctgclist.cont+num;
+    outage = &cont->outagelist[cont->noutages];
+    outage->num  = num;
+    outage->type = type;
+    outage->bus  = bus;
+    outage->fbus = fbus;
+    outage->tbus = tbus;
+    ierr = PetscMemcpy(outage->id,id,2*sizeof(char));CHKERRQ(ierr);
+    outage->status = status;
+    outage->prob   = prob;
+  }
+  fclose(fp);
+
+  PetscFunctionReturn(0);
+}
+
+/*
   SCOPFLOWCreate - Creates an security constrained optimal power flow application object
 
   Input Parameters
@@ -85,7 +136,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
   scopflow->ignore_line_flow_constraints = PETSC_TRUE;
 
   scopflow->nlp_ipopt       = NULL;
-
+  scopflow->ctgcfileset     = PETSC_FALSE;
   scopflow->setupcalled = PETSC_FALSE;
   
   *scopflowout = scopflow;
@@ -131,6 +182,27 @@ PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW scopflow,const char netfile[])
 
   PetscFunctionReturn(0);
 }
+
+/*
+  SCOPFLOWSetContingencyData - Sets the contingency data
+
+  Input Parameter
++  scopflow - The SCOPFLOW object
+-  ctgcfile - The name of the contingency list file
+
+*/
+PetscErrorCode SCOPFLOWSetContingencyData(SCOPFLOW scopflow,const char ctgcfile[])
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  ierr = PetscMemcpy(scopflow->ctgcfile,ctgcfile,100*sizeof(char));CHKERRQ(ierr);
+
+  scopflow->ctgcfileset = PETSC_TRUE;
+  PetscFunctionReturn(0);
+}
+
 
 extern int str_init_x0(double*,CallBackDataPtr);
 
@@ -296,6 +368,13 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_iscoupling",&scopflow->iscoupling,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_first_stage_gen_cost_only",&scopflow->first_stage_gen_cost_only,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_ignore_line_flow_constraints",&scopflow->ignore_line_flow_constraints,NULL);CHKERRQ(ierr);
+
+  if(scopflow->ctgcfileset) {
+    scopflow->ctgclist.Ncont = scopflow->Ns;
+    ierr = PetscMalloc1(scopflow->Ns,&scopflow->ctgclist.cont);CHKERRQ(ierr);
+    for(i=0; i < scopflow->Ns; i++) scopflow->ctgclist.cont->noutages = 0;
+    ierr = SCOPFLOWReadContingencyData(scopflow,scopflow->ctgcfile);CHKERRQ(ierr);
+  }
 
   ierr = PetscMalloc1(scopflow->Ns,&scopflow->opflows);CHKERRQ(ierr);
   /* Starting locations for x and g for each scenario */

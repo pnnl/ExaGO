@@ -8,7 +8,8 @@ int main(int argc,char **argv)
   PetscErrorCode    ierr;
   SCOPFLOW          scopflow;
   char              file[PETSC_MAX_PATH_LEN];
-  PetscBool         flg;
+  char              ctgcfile[PETSC_MAX_PATH_LEN];
+  PetscBool         flg,flgctgc;
   #if defined(PETSC_USE_LOG)
     PetscLogStage stages[2];
   #endif
@@ -29,12 +30,22 @@ int main(int argc,char **argv)
   /* Get network data file from command line */
   ierr = PetscOptionsGetString(NULL,NULL,"-netfile",file,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
 
-  /* Read Network Data file */
+  /* Get contingency data file from command line */
+  ierr = PetscOptionsGetString(NULL,NULL,"-ctgcfile",ctgcfile,PETSC_MAX_PATH_LEN,&flgctgc);CHKERRQ(ierr);
+
+
+  /* Set Network Data file */
   if(flg) {
     ierr = SCOPFLOWSetNetworkData(scopflow,file);CHKERRQ(ierr);
   } else {
     ierr = SCOPFLOWSetNetworkData(scopflow,"datafiles/case9mod.m");CHKERRQ(ierr);
   }
+
+  /* Set Contingency Data file */
+  if(flg) {
+    ierr = SCOPFLOWSetContingencyData(scopflow,ctgcfile);CHKERRQ(ierr);
+  }
+
   /* End of First Stage and Start of Second */
   ierr = PetscLogStagePop();CHKERRQ(ierr);
 
