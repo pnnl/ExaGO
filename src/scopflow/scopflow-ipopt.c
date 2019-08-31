@@ -208,7 +208,7 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
 
   /* Options for IPOPT. This need to go through PetscOptionsBegin later */
   
-  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"tol", 1e-4);
+  /*  AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"tol", 1e-4);
   AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"acceptable_tol", 1e-4);
   AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"mu_init", 0.01);
   AddIpoptNumOption(scopflow->nlp_ipopt,(char*)"obj_scaling_factor",100);
@@ -218,13 +218,13 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
   AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"dual_inf_tol", 1e-2);
   AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"compl_inf_tol", 1e-2);
   AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"constr_viol_tol", 5e-6);
-
+  */
   //  AddIpoptStrOption(scopflow->nlp_ipopt,(char*)"fixed_variable_treatment",(char*)"relax_bounds");
   // AddIpoptStrOption(scopflow->nlp_ipopt,(char*)"nlp_scaling_method",(char*)"none");
-  AddIpoptIntOption(scopflow->nlp_ipopt,(char*)"max_iter",500);
+  //  AddIpoptIntOption(scopflow->nlp_ipopt,(char*)"max_iter",500);
   //AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"mu_strategy", (char*)"adaptive");
-  AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"print_user_options", (char*)"yes");
-  AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"output_file", (char*)"ipopt.out");
+  //  AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"print_user_options", (char*)"yes");
+  //  AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"output_file", (char*)"ipopt.out");
   
   //  AddIpoptStrOption(scopflow->nlp_ipopt,"warm_start_init_point","yes");
   ierr = PetscOptionsGetString(NULL,NULL,"-scopflow_hessian_type",hessiantype,sizeof(hessiantype),&flg);CHKERRQ(ierr);
@@ -240,7 +240,7 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
     }
   }
   //AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"derivative_test", (char*)"second-order");
-  AddIpoptStrOption(scopflow->nlp_ipopt,(char*)"linear_solver",(char*)"mumps");
+  //  AddIpoptStrOption(scopflow->nlp_ipopt,(char*)"linear_solver",(char*)"mumps");
   // AddIpoptNumOption(scopflow->nlp_ipopt,(char*)"bound_relax_factor",1e-4);
   
   /* Set Initial Guess */
@@ -565,8 +565,8 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
        This is used only for the getting the locations only 
     */
     ierr = VecDuplicate(scopflow->X,&Xdup);CHKERRQ(ierr);
-    //    ierr = VecSet(Xdup,1.0);CHKERRQ(ierr);
-    ierr = SCOPFLOWSetInitialGuess(scopflow,Xdup);CHKERRQ(ierr);
+    ierr = VecSet(Xdup,1.0);CHKERRQ(ierr);
+    //    ierr = SCOPFLOWSetInitialGuess(scopflow,Xdup);CHKERRQ(ierr);
     ierr = VecGetArray(Xdup,&xdup);CHKERRQ(ierr);
 
     x0 = xdup + scopflow->xstart[0];
@@ -700,7 +700,7 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
     */
     ierr = VecDuplicate(scopflow->X,&Xdup);CHKERRQ(ierr);
     //    ierr = VecSet(Xdup,1.0);CHKERRQ(ierr);
-    ierr = SCOPFLOWSetInitialGuess(scopflow,Xdup);CHKERRQ(ierr);
+    //    ierr = SCOPFLOWSetInitialGuess(scopflow,Xdup);CHKERRQ(ierr);
     ierr = VecGetArray(Xdup,&xdup);CHKERRQ(ierr);
     ierr = VecSet(scopflow->Lambda,1.0);CHKERRQ(ierr);
     ierr = VecGetArray(scopflow->Lambda,&lambdadup);CHKERRQ(ierr);

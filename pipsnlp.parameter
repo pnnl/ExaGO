@@ -4,9 +4,9 @@
 ! print out level  (1)
 prtLvl 1
 ! convergence tolerance (1e-6)
-conv_tol 1e-4
+conv_tol 1e-6
 ! max number of iterations (500)
-max_iter 5000
+max_iter 500
 ! How to deal with the parallel setting. (0): do not adding slacks  1: adding slacks
 AddSlackParallelSetting 0
 
