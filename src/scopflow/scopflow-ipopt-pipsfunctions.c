@@ -148,7 +148,7 @@ PetscErrorCode SCOPFLOWSetVariableandConstraintBounds(SCOPFLOW scopflow, PetscIn
 PetscErrorCode SCOPFLOWSetUp_OPFLOW(SCOPFLOW scopflow,PetscInt row)
 {
   PetscErrorCode ierr;
-  PetscInt       ngenON;
+  PetscInt       ngen;
   PetscInt       ncoup;
   OPFLOW         opflow=scopflow->opflows[row];
   PetscInt       i;
@@ -177,9 +177,9 @@ PetscErrorCode SCOPFLOWSetUp_OPFLOW(SCOPFLOW scopflow,PetscInt row)
     }
   }
 
-  ierr = PSGetNumGenerators(opflow->ps,&ngenON,NULL);CHKERRQ(ierr);  
+  ierr = PSGetNumGenerators(opflow->ps,&ngen,NULL);CHKERRQ(ierr);  
 
-  if(scopflow->iscoupling) ncoup = (row == 0) ? 0:ngenON;
+  if(scopflow->iscoupling) ncoup = (row == 0) ? 0:ngen;
   else ncoup = 0;
 
   opflow->nconeq   = 2*opflow->ps->Nbus;
