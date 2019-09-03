@@ -67,13 +67,13 @@ PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW scopflow,const char ctgcfile
 {
   PetscErrorCode ierr;
   FILE           *fp;
-  ContingencyList ctgclist=scopflow->ctgclist;
+  ContingencyList *ctgclist=&scopflow->ctgclist;
   Contingency    *cont;
   Outage         *outage;
   char           line[MAXLINE];
   char           *out;
   PetscInt       bus,fbus,tbus,type,num;
-  char           id[10];
+  char           equipid[3];
   PetscInt       status;
   PetscScalar    prob;
 
@@ -84,22 +84,25 @@ PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW scopflow,const char ctgcfile
     SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_FILE_OPEN,"Cannot open file %s",ctgcfile);CHKERRQ(ierr);
   }
 
+  ctgclist->Ncont = -1;
   while((out = fgets(line,MAXLINE,fp)) != NULL) {
     if(strcmp(line,"\r\n") == 0 || strcmp(line,"\n") == 0) {
       continue; /* Skip blank lines */
     }
-    sscanf(line,"%d,%d,%d,%d,%d,'%[^\t\']',%d,%lf",&num,&type,&bus,&fbus,&tbus,id,&status,&prob);
+    sscanf(line,"%d,%d,%d,%d,%d,'%[^\t\']',%d,%lf",&num,&type,&bus,&fbus,&tbus,equipid,&status,&prob);
 
-    cont = ctgclist.cont+num;
+    cont   = &ctgclist->cont[num];
     outage = &cont->outagelist[cont->noutages];
     outage->num  = num;
     outage->type = type;
     outage->bus  = bus;
     outage->fbus = fbus;
     outage->tbus = tbus;
-    ierr = PetscMemcpy(outage->id,id,2*sizeof(char));CHKERRQ(ierr);
+    ierr = PetscMemcpy(outage->id,equipid,3*sizeof(char));CHKERRQ(ierr);
     outage->status = status;
     outage->prob   = prob;
+    cont->noutages++;
+    if(num > ctgclist->Ncont) ctgclist->Ncont = num;
   }
   fclose(fp);
 
@@ -279,7 +282,7 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
   ierr = VecRestoreArray(scopflow->Gu,&gu);CHKERRQ(ierr);
 
   /* Options for IPOPT. This need to go through PetscOptionsBegin later */
-  
+  /*
   AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"tol", 1e-4);
   AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"acceptable_tol", 1e-4);
   AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"mu_init", 0.01);
@@ -290,13 +293,13 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
   AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"dual_inf_tol", 1e-2);
   AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"compl_inf_tol", 1e-2);
   AddIpoptNumOption(scopflow->nlp_ipopt, (char*)"constr_viol_tol", 5e-6);
-
+  */
   //  AddIpoptStrOption(scopflow->nlp_ipopt,(char*)"fixed_variable_treatment",(char*)"relax_bounds");
   // AddIpoptStrOption(scopflow->nlp_ipopt,(char*)"nlp_scaling_method",(char*)"none");
-  AddIpoptIntOption(scopflow->nlp_ipopt,(char*)"max_iter",500);
+  //  AddIpoptIntOption(scopflow->nlp_ipopt,(char*)"max_iter",500);
   //AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"mu_strategy", (char*)"adaptive");
-  AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"print_user_options", (char*)"yes");
-  AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"output_file", (char*)"ipopt.out");
+  //  AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"print_user_options", (char*)"yes");
+  //  AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"output_file", (char*)"ipopt.out");
   
   //  AddIpoptStrOption(scopflow->nlp_ipopt,"warm_start_init_point","yes");
   ierr = PetscOptionsGetString(NULL,NULL,"-scopflow_hessian_type",hessiantype,sizeof(hessiantype),&flg);CHKERRQ(ierr);
@@ -312,7 +315,7 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
     }
   }
   //AddIpoptStrOption(scopflow->nlp_ipopt, (char*)"derivative_test", (char*)"second-order");
-  AddIpoptStrOption(scopflow->nlp_ipopt,(char*)"linear_solver",(char*)"mumps");
+  //  AddIpoptStrOption(scopflow->nlp_ipopt,(char*)"linear_solver",(char*)"mumps");
   // AddIpoptNumOption(scopflow->nlp_ipopt,(char*)"bound_relax_factor",1e-4);
   
   /* Set Initial Guess */
@@ -326,7 +329,7 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
 
   ierr = VecRestoreArray(scopflow->X,&x);CHKERRQ(ierr);
 
-  //  ierr = VecView(scopflow->X,0);CHKERRQ(ierr);
+  ierr = VecView(scopflow->X,0);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -361,7 +364,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 
   PetscFunctionBegin;
   if(scopflow->Ns == -1) {
-    SETERRQ(scopflow->comm->type,0,"Must call SCOPFLOWSetNumScenarios or SCOPFLOWSetScenariosFile before calling this function\n");
+    SETERRQ(scopflow->comm->type,0,"Must call SCOPFLOWSetNumScenarios or SCOPFLOWSetContingencyData before calling this function\n");
   }
 
   /* Options */
@@ -370,10 +373,11 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_ignore_line_flow_constraints",&scopflow->ignore_line_flow_constraints,NULL);CHKERRQ(ierr);
 
   if(scopflow->ctgcfileset) {
-    scopflow->ctgclist.Ncont = scopflow->Ns;
-    ierr = PetscMalloc1(scopflow->Ns,&scopflow->ctgclist.cont);CHKERRQ(ierr);
-    for(i=0; i < scopflow->Ns; i++) scopflow->ctgclist.cont->noutages = 0;
+    scopflow->ctgclist.Ncont = MAX_CONTINGENCIES;
+    ierr = PetscMalloc1(scopflow->ctgclist.Ncont,&scopflow->ctgclist.cont);CHKERRQ(ierr);
+    for(i=0; i < scopflow->ctgclist.Ncont; i++) scopflow->ctgclist.cont->noutages = 0;
     ierr = SCOPFLOWReadContingencyData(scopflow,scopflow->ctgcfile);CHKERRQ(ierr);
+    scopflow->Ns = scopflow->ctgclist.Ncont+1;
   }
 
   ierr = PetscMalloc1(scopflow->Ns,&scopflow->opflows);CHKERRQ(ierr);

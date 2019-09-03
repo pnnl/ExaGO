@@ -134,6 +134,8 @@ PetscErrorCode SCOPFLOWEqualityConstraints(SCOPFLOW scopflow,PetscInt scenario,V
   ierr = VecAssemblyBegin(Ge);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(Ge);CHKERRQ(ierr);
 
+  //  ierr = VecView(Ge,0);CHKERRQ(ierr);
+
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }

@@ -35,14 +35,9 @@ PetscErrorCode SCOPFLOWAddCouplingConstraintBounds(SCOPFLOW scopflow,int row,Vec
       PSGEN gen;
 
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      if(!gen->status) {
-	gl[gloc] = 0.0;
-	gu[gloc] = 0.0;
-      } else {
-	/* Generator can do a full ramp up to its max. capacity */
-	gl[gloc] = -gen->pt;
-	gu[gloc] =  gen->pt;
-      }
+      /* Generator can do a full ramp up to its max. capacity */
+      gl[gloc] = PETSC_NINFINITY;//-gen->pt;
+      gu[gloc] = PETSC_INFINITY;//gen->pt;
       gloc += 1;
     }
   }
@@ -153,16 +148,38 @@ PetscErrorCode SCOPFLOWSetVariableandConstraintBounds(SCOPFLOW scopflow, PetscIn
 PetscErrorCode SCOPFLOWSetUp_OPFLOW(SCOPFLOW scopflow,PetscInt row)
 {
   PetscErrorCode ierr;
-  PetscInt       ngen;
+  PetscInt       ngenON;
   PetscInt       ncoup;
   OPFLOW         opflow=scopflow->opflows[row];
+  PetscInt       i;
 
   PetscFunctionBegin;
   /* Set up PS object */
   ierr = PSSetUp(opflow->ps);CHKERRQ(ierr);
-  ierr = PSGetNumGenerators(opflow->ps,&ngen,NULL);CHKERRQ(ierr);  
 
-  if(scopflow->iscoupling) ncoup = (row == 0) ? 0:ngen;
+  /* Set contingencies */
+  if(scopflow->ctgcfileset) {
+    Contingency ctgc=scopflow->ctgclist.cont[row];
+    for(i=0; i < ctgc.noutages; i++) {
+      if(ctgc.outagelist[i].type == GEN_OUTAGE) {
+	PetscInt gbus=ctgc.outagelist[i].bus;
+	char     *gid = ctgc.outagelist[i].id;
+	PetscInt status = ctgc.outagelist[i].status;
+	ierr = PSSetGenStatus(scopflow->opflows[row]->ps,gbus,gid,status);CHKERRQ(ierr);
+      }
+      if(ctgc.outagelist[i].type == BR_OUTAGE) {
+	PetscInt fbus=ctgc.outagelist[i].fbus;
+	PetscInt tbus=ctgc.outagelist[i].tbus;
+	char     *brid = ctgc.outagelist[i].id;
+	PetscInt status = ctgc.outagelist[i].status;
+	ierr = PSSetLineStatus(scopflow->opflows[row]->ps,fbus,tbus,brid,status);CHKERRQ(ierr);
+      }
+    }
+  }
+
+  ierr = PSGetNumGenerators(opflow->ps,&ngenON,NULL);CHKERRQ(ierr);  
+
+  if(scopflow->iscoupling) ncoup = (row == 0) ? 0:ngenON;
   else ncoup = 0;
 
   opflow->nconeq   = 2*opflow->ps->Nbus;
@@ -263,6 +280,7 @@ int str_prob_info(int* n, double* col_lb, double* col_ub, int* m,
   int type = cbd->typeflag;
   PetscErrorCode ierr;
   Vec            Xl,Xu,Gl,Gu;
+  PetscInt       i;
 
   if(type == 1) {
     if(row_lb == NULL){
@@ -276,24 +294,29 @@ int str_prob_info(int* n, double* col_lb, double* col_ub, int* m,
     /* Create OPFLOW */
     ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflows[row]);CHKERRQ(ierr);
     ierr = OPFLOWReadMatPowerData(scopflow->opflows[row],scopflow->netfile);CHKERRQ(ierr);
+
     /* SCOPFLOWSetUp_OPFLOW handles creating the vectors and the sizes of the constraints */
     ierr = SCOPFLOWSetUp_OPFLOW(scopflow,row);CHKERRQ(ierr);
+
     if(scopflow->iscoupling && row > 0 && !scopflow->Jcoup) {
       /* Create the constraint Jacobian for coupling */
       ierr = MatDuplicate(scopflow->opflows[row]->Jac_Gi,MAT_DO_NOT_COPY_VALUES,&scopflow->Jcoup);CHKERRQ(ierr);
     
       PS    ps=scopflow->opflows[row]->ps;
       PSBUS bus;
-      PetscInt locglob,genctr,k,i;
+      PetscInt locglob,genctr,k;
       PetscInt rowid[2],colid[2];
       PetscScalar val[2];
       PetscInt    gloc=scopflow->opflows[row]->nconineq;
+      PSGEN       gen;
       for(i=0; i < ps->nbus; i++) {
 	bus = &ps->bus[i];
 	
 	ierr = PSBUSGetVariableGlobalLocation(bus,&locglob);CHKERRQ(ierr);
 	genctr = 0;
 	for(k=0; k < bus->ngen; k++) {
+	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	  //	  if(!gen->status) continue;
 	  val[0] = -1;
 	  rowid[0] = gloc;
 	  colid[0] = locglob + 2 + genctr;

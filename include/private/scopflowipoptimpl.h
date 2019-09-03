@@ -38,6 +38,9 @@ For each scenario i \in Ns:
  -dx <= xi - x0 <= dx       (Coupling constraints between first stage and each scenario)
 
 */
+
+#define MAX_CONTINGENCIES 100
+
 struct CallBackData{
   void*    prob;
   PetscInt row_node_id;

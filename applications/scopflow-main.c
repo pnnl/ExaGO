@@ -9,7 +9,7 @@ int main(int argc,char **argv)
   SCOPFLOW          scopflow;
   char              file[PETSC_MAX_PATH_LEN];
   char              ctgcfile[PETSC_MAX_PATH_LEN];
-  PetscBool         flg,flgctgc;
+  PetscBool         flg=PETSC_FALSE,flgctgc=PETSC_FALSE;
   #if defined(PETSC_USE_LOG)
     PetscLogStage stages[2];
   #endif
@@ -42,7 +42,7 @@ int main(int argc,char **argv)
   }
 
   /* Set Contingency Data file */
-  if(flg) {
+  if(flgctgc) {
     ierr = SCOPFLOWSetContingencyData(scopflow,ctgcfile);CHKERRQ(ierr);
   }
 

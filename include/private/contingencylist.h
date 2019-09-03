@@ -18,7 +18,7 @@ struct _p_Outage {
   OutageType type; /* Outage type */
   PetscInt   bus;  /* Generator bus number */
   PetscInt   fbus,tbus; /* Branch or transformer from and to buses */
-  char       id[10]; /* Generator, branch, or transformer id */
+  char       id[3]; /* Generator, branch, or transformer id */
   PetscInt   status; /* status of the equipment */
   PetscScalar prob; /* Probability of the outage */
 };
