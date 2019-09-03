@@ -91,6 +91,8 @@ PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW scopflow,const char ctgcfile
     }
     sscanf(line,"%d,%d,%d,%d,%d,'%[^\t\']',%d,%lf",&num,&type,&bus,&fbus,&tbus,equipid,&status,&prob);
 
+    if(num > MAX_CONTINGENCIES) SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Contingency number %d exceeds max. allowed = %d\n",num,MAX_CONTINGENCIES);
+
     cont   = &ctgclist->cont[num];
     outage = &cont->outagelist[cont->noutages];
     outage->num  = num;

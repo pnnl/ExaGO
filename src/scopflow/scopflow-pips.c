@@ -38,14 +38,9 @@ PetscErrorCode SCOPFLOWAddCouplingConstraintBounds(SCOPFLOW scopflow,int row,Vec
       PSGEN gen;
 
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      if(!gen->status) {
-	gl[gloc] = 0.0;
-	gu[gloc] = 0.0;
-      } else {
-	/* Generator can do a full ramp up to its max. capacity */
-	gl[gloc] = -gen->pt;
-	gu[gloc] =  gen->pt;
-      }
+      /* Assume Generator can do a full ramp up to its max. capacity */
+      gl[gloc] = PETSC_NINFINITY;//gen->pt;
+      gu[gloc] = PETSC_INFINITY; //gen->pt;
       gloc += 1;
     }
   }
@@ -158,10 +153,32 @@ PetscErrorCode SCOPFLOWSetUp_OPFLOW(SCOPFLOW scopflow,PetscInt row)
   PetscInt       ngen;
   PetscInt       ncoup;
   OPFLOW         opflow=scopflow->opflows[row];
+  PetscInt       i;
 
   PetscFunctionBegin;
   /* Set up PS object */
   ierr = PSSetUp(opflow->ps);CHKERRQ(ierr);
+
+  /* Set contingencies */
+  if(scopflow->ctgcfileset) {
+    Contingency ctgc=scopflow->ctgclist.cont[row];
+    for(i=0; i < ctgc.noutages; i++) {
+      if(ctgc.outagelist[i].type == GEN_OUTAGE) {
+	PetscInt gbus=ctgc.outagelist[i].bus;
+	char     *gid = ctgc.outagelist[i].id;
+	PetscInt status = ctgc.outagelist[i].status;
+	ierr = PSSetGenStatus(scopflow->opflows[row]->ps,gbus,gid,status);CHKERRQ(ierr);
+      }
+      if(ctgc.outagelist[i].type == BR_OUTAGE) {
+	PetscInt fbus=ctgc.outagelist[i].fbus;
+	PetscInt tbus=ctgc.outagelist[i].tbus;
+	char     *brid = ctgc.outagelist[i].id;
+	PetscInt status = ctgc.outagelist[i].status;
+	ierr = PSSetLineStatus(scopflow->opflows[row]->ps,fbus,tbus,brid,status);CHKERRQ(ierr);
+      }
+    }
+  }
+  
   ierr = PSGetNumGenerators(opflow->ps,&ngen,NULL);CHKERRQ(ierr);  
 
   if(scopflow->iscoupling) ncoup = (row == 0) ? 0:ngen;
@@ -367,6 +384,83 @@ int str_write_solution(double* x, double* lam_eq, double* lam_ieq,CallBackDataPt
 }
 
 /*
+  SCOPFLOWReadContingencyData - Reads the contingency list data file
+
+  Input Parameters
++ scopflow - the scopflow object
+- ctgcfile - the contingency file name
+
+*/
+PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW scopflow,const char ctgcfile[])
+{
+  PetscErrorCode ierr;
+  FILE           *fp;
+  ContingencyList *ctgclist=&scopflow->ctgclist;
+  Contingency    *cont;
+  Outage         *outage;
+  char           line[MAXLINE];
+  char           *out;
+  PetscInt       bus,fbus,tbus,type,num;
+  char           equipid[3];
+  PetscInt       status;
+  PetscScalar    prob;
+
+  PetscFunctionBegin;
+
+  fp = fopen(ctgcfile,"r");
+  if (fp == NULL) {
+    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_FILE_OPEN,"Cannot open file %s",ctgcfile);CHKERRQ(ierr);
+  }
+
+  ctgclist->Ncont = -1;
+  while((out = fgets(line,MAXLINE,fp)) != NULL) {
+    if(strcmp(line,"\r\n") == 0 || strcmp(line,"\n") == 0) {
+      continue; /* Skip blank lines */
+    }
+    sscanf(line,"%d,%d,%d,%d,%d,'%[^\t\']',%d,%lf",&num,&type,&bus,&fbus,&tbus,equipid,&status,&prob);
+
+    if(num > MAX_CONTINGENCIES) SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Contingency number %d exceeds max. allowed = %d\n",num,MAX_CONTINGENCIES);
+
+    cont   = &ctgclist->cont[num];
+    outage = &cont->outagelist[cont->noutages];
+    outage->num  = num;
+    outage->type = type;
+    outage->bus  = bus;
+    outage->fbus = fbus;
+    outage->tbus = tbus;
+    ierr = PetscMemcpy(outage->id,equipid,3*sizeof(char));CHKERRQ(ierr);
+    outage->status = status;
+    outage->prob   = prob;
+    cont->noutages++;
+    if(num > ctgclist->Ncont) ctgclist->Ncont = num;
+  }
+  fclose(fp);
+
+  PetscFunctionReturn(0);
+}
+
+/*
+  SCOPFLOWSetContingencyData - Sets the contingency data
+
+  Input Parameter
++  scopflow - The SCOPFLOW object
+-  ctgcfile - The name of the contingency list file
+
+*/
+PetscErrorCode SCOPFLOWSetContingencyData(SCOPFLOW scopflow,const char ctgcfile[])
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  ierr = PetscMemcpy(scopflow->ctgcfile,ctgcfile,100*sizeof(char));CHKERRQ(ierr);
+
+  scopflow->ctgcfileset = PETSC_TRUE;
+  PetscFunctionReturn(0);
+}
+
+
+/*
   SCOPFLOWCreate - Creates an security constrained optimal power flow application object
 
   Input Parameters
@@ -395,7 +489,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
 
   scopflow->nlp_pips       = NULL;
 
-  //  gmyid = scopflow->comm->rank;
+  scopflow->ctgcfileset    = PETSC_FALSE;
 
   scopflow->setupcalled = PETSC_FALSE;
   
@@ -435,18 +529,13 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
 PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW scopflow,const char netfile[])
 {
   PetscErrorCode ierr;
-  OPFLOW         *opflows;
 
   PetscFunctionBegin;
   if(scopflow->Ns == -1) {
-    SETERRQ(scopflow->comm->type,0,"Must call SCOPFLOWSetNumScenarios or SCOPFLOWSetScenariosFile before calling this function\n");
+    SETERRQ(scopflow->comm->type,0,"Must call SCOPFLOWSetNumScenarios or SCOPFLOWSetContingencyData before calling this function\n");
   }
 
   ierr = PetscMemcpy(scopflow->netfile,netfile,100*sizeof(char));CHKERRQ(ierr);
-
-  ierr = PetscMalloc1(scopflow->Ns+1,&opflows);CHKERRQ(ierr);
-
-  scopflow->opflows = opflows;
   
   PetscFunctionReturn(0);
 }
@@ -486,6 +575,7 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
 PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 {
   PetscErrorCode ierr;
+  PetscInt       i;
 
   PetscFunctionBegin;
 
@@ -505,6 +595,17 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   scopflow->nlp_pips = CreatePipsNlpProblemStruct(MPI_COMM_WORLD, scopflow->Ns,
 							    init_x0, prob_info, eval_f, eval_g, eval_grad_f, eval_jac_g,
 						  eval_h, write_solution, (UserDataPtr)scopflow);
+
+  if(scopflow->ctgcfileset) {
+    scopflow->ctgclist.Ncont = MAX_CONTINGENCIES;
+    ierr = PetscMalloc1(scopflow->ctgclist.Ncont,&scopflow->ctgclist.cont);CHKERRQ(ierr);
+    for(i=0; i < scopflow->ctgclist.Ncont; i++) scopflow->ctgclist.cont->noutages = 0;
+    ierr = SCOPFLOWReadContingencyData(scopflow,scopflow->ctgcfile);CHKERRQ(ierr);
+    scopflow->Ns = scopflow->ctgclist.Ncont;
+  }
+
+  ierr = PetscMalloc1(scopflow->Ns+1,&scopflow->opflows);CHKERRQ(ierr);
+
 
   scopflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);

@@ -12,6 +12,8 @@
 #include <Drivers/parallelPipsNlp_C_Callback.h>
 #endif
 
+#include <private/contingencylist.h>
+
 /**
   We want to solve the 2-stage optimization problem with Ns scenarios
   min \sum_{i=0}^Ns f(xi)
@@ -57,6 +59,9 @@ Notes for PIPS-NLP:
  /**
   * @brief private struct for security optimal power flow application
   */
+
+#define MAX_CONTINGENCIES 100
+
 struct _p_SCOPFLOW{
   /* Sizes */
   PetscInt ns,Ns; /* Local and global number of scenarios */
@@ -82,6 +87,10 @@ struct _p_SCOPFLOW{
   PetscBool iscoupling; /* Is each scenario coupled with base scenario? */
   PetscBool first_stage_gen_cost_only; /* Only include the gen cost for first stage only */
   PetscBool ignore_line_flow_constraints; /* Ignore line flow constraints */
+
+  ContingencyList ctgclist;
+  PetscBool       ctgcfileset;
+  char            ctgcfile[100];
 
 #if defined(PSAPPS_HAVE_PIPS)
   /* PIPS specific terms */
