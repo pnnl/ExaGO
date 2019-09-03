@@ -11,7 +11,7 @@
 #if defined(PSAPPS_HAVE_IPOPT)
 #include <IpStdCInterface.h>
 #endif
-
+#include <private/contingencylist.h>
 /**
   We want to solve the 2-stage optimization problem with Ns scenarios
   min \sum_{i=0}^Ns f(xi)
@@ -38,6 +38,9 @@ For each scenario i \in Ns:
  -dx <= xi - x0 <= dx       (Coupling constraints between first stage and each scenario)
 
 */
+
+#define MAX_CONTINGENCIES 100
+
 struct CallBackData{
   void*    prob;
   PetscInt row_node_id;
@@ -128,6 +131,10 @@ struct _p_SCOPFLOW{
   struct CCMatrix *hess_self; /* Hessian block for each scenario */
 
   PetscScalar obj_factor; /* The objective factor IPOPT uses in the Hessian evaluation */
+
+  ContingencyList ctgclist;      /* List of contingencies */
+  PetscBool       ctgcfileset;   /* Is the contingency file set ? */
+  char            ctgcfile[100]; /* Contingency file */
 
 };
 

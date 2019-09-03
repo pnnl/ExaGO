@@ -230,6 +230,7 @@ struct _p_PS {
   PetscInt    Nbus,Ngen,Nbranch,Nload; /* global # of buses,gens,branches, and loads (includes elements which are
                                           out of service */
   PetscInt    nbus,ngen,nbranch,nload; /* local # of buses,gens,branches,and loads */
+  PetscInt    NgenON,ngenON;           /* Number of active generators */
   PSBUS       bus;
   PSLOAD      load;
   PSGEN       gen;

@@ -237,6 +237,16 @@ extern PetscErrorCode PSLINEGetVariableGlobalLocation(PSLINE,PetscInt*);
 extern PetscErrorCode PSGetNumGenerators(PS,PetscInt*,PetscInt*);
 
 /**
+ * @brief Gets the number of local and global active (ON) generators in this system
+ * @param [in] PS ps - The PS object
+ * @param [out] PetscInt* ngen - Number of local active generators
+ * @param [out] PetscInt* Ngen - Number of global active generators
+ * Notes:
+ * PSSetUp() must be called before a call to PSGetNumGenerators
+ */
+extern PetscErrorCode PSGetNumActiveGenerators(PS,PetscInt*,PetscInt*);
+
+/**
  * @brief Returns the dynamic load object associated with the load
  * @param [in] PSLOAD load - the PSLOAD object
  * @param [out] DYNLoadModel* dynload - the dynamic load DYNLoadModel object
