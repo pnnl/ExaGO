@@ -91,6 +91,8 @@ PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW scopflow,const char ctgcfile
     }
     sscanf(line,"%d,%d,%d,%d,%d,'%[^\t\']',%d,%lf",&num,&type,&bus,&fbus,&tbus,equipid,&status,&prob);
 
+    if(num == scopflow->Ns) break;
+
     if(num == MAX_CONTINGENCIES) {
       SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Exceeding max. allowed contingencies = %d\n",num,MAX_CONTINGENCIES);
     }
@@ -105,6 +107,8 @@ PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW scopflow,const char ctgcfile
     outage->status = status;
     outage->prob   = prob;
     cont->noutages++;
+
+
     if(num > ctgclist->Ncont) ctgclist->Ncont = num;
   }
   fclose(fp);
@@ -366,22 +370,28 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   PetscScalar     *x,*x0,*x1,*lambda,*lambda1;
 
   PetscFunctionBegin;
-  if(scopflow->Ns == -1) {
-    SETERRQ(scopflow->comm->type,0,"Must call SCOPFLOWSetNumScenarios or SCOPFLOWSetContingencyData before calling this function\n");
-  }
 
   /* Options */
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_iscoupling",&scopflow->iscoupling,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_first_stage_gen_cost_only",&scopflow->first_stage_gen_cost_only,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_ignore_line_flow_constraints",&scopflow->ignore_line_flow_constraints,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(NULL,NULL,"-scopflow_Ns",&scopflow->Ns,NULL);CHKERRQ(ierr);
+
 
   if(scopflow->ctgcfileset) {
-    scopflow->ctgclist.Ncont = MAX_CONTINGENCIES;
-    ierr = PetscMalloc1(scopflow->ctgclist.Ncont,&scopflow->ctgclist.cont);CHKERRQ(ierr);
-    for(i=0; i < scopflow->ctgclist.Ncont; i++) scopflow->ctgclist.cont->noutages = 0;
+    if(scopflow->Ns < 0) scopflow->Ns = MAX_CONTINGENCIES;
+    else scopflow->Ns += 1; 
+
+    ierr = PetscMalloc1(scopflow->Ns,&scopflow->ctgclist.cont);CHKERRQ(ierr);
+    for(i=0; i < scopflow->Ns; i++) scopflow->ctgclist.cont->noutages = 0;
     ierr = SCOPFLOWReadContingencyData(scopflow,scopflow->ctgcfile);CHKERRQ(ierr);
     scopflow->Ns = scopflow->ctgclist.Ncont+1;
+  } else {
+    scopflow->Ns = 1;
   }
+
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"SCOPFLOW running with %d scenarios (base case + %d scenarios)\n",scopflow->Ns,scopflow->Ns-1);CHKERRQ(ierr);
+
 
   ierr = PetscMalloc1(scopflow->Ns,&scopflow->opflows);CHKERRQ(ierr);
   /* Starting locations for x and g for each scenario */
@@ -858,26 +868,25 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
 }
 
 /*
-  SCOPFLOWSetNumScenarios - Sets the total number of scenarios in the SCOPF problem
+  SCOPFLOWSetNumScenarios - Sets the number of scenarios to be set in the SCOPF problem
 
   Input Parameters:
 + scopflow - the security constrained optimal power flow application object
 - Ns       - the number of scenarios
 
-  Notes: The total number of scenarios set by SCOPFLOW is actually Ns+1,
+  Notes: This routines selects only the top Ns scenarios as given in the contingency file.
+  The total number of scenarios set by SCOPFLOW is actually Ns+1,
   i.e., Ns scenarios + 1 base-case
+
+  Can be set via command line option -scopflow_Ns <Ns>
 */
 PetscErrorCode SCOPFLOWSetNumScenarios(SCOPFLOW scopflow,PetscInt Ns)
 {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  scopflow->Ns = Ns;
-  ierr = PetscOptionsGetInt(NULL,NULL,"-scopflow_Ns",&scopflow->Ns,NULL);CHKERRQ(ierr);
-  scopflow->Ns += 1; /* One addition for the base case */
+  scopflow->Ns = Ns + 1; /* One addition for the base case */
   
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"SCOPFLOW running with %d scenarios (base case + %d scenarios)\n",scopflow->Ns,scopflow->Ns-1);CHKERRQ(ierr);
-
   PetscFunctionReturn(0);
 }
 

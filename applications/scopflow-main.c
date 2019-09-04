@@ -22,17 +22,15 @@ int main(int argc,char **argv)
 
   /* Petsc Stage Push 1 */
   ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
-  /* Create OPFLOW object */
-  ierr = SCOPFLOWCreate(PETSC_COMM_WORLD,&scopflow);CHKERRQ(ierr);
 
-  ierr = SCOPFLOWSetNumScenarios(scopflow,2);CHKERRQ(ierr);
+  /* Create SCOPFLOW object */
+  ierr = SCOPFLOWCreate(PETSC_COMM_WORLD,&scopflow);CHKERRQ(ierr);
 
   /* Get network data file from command line */
   ierr = PetscOptionsGetString(NULL,NULL,"-netfile",file,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
 
   /* Get contingency data file from command line */
   ierr = PetscOptionsGetString(NULL,NULL,"-ctgcfile",ctgcfile,PETSC_MAX_PATH_LEN,&flgctgc);CHKERRQ(ierr);
-
 
   /* Set Network Data file */
   if(flg) {
@@ -45,6 +43,9 @@ int main(int argc,char **argv)
   if(flgctgc) {
     ierr = SCOPFLOWSetContingencyData(scopflow,ctgcfile);CHKERRQ(ierr);
   }
+  
+  /* Set a subset of scenarios to be selected. Can use the option -scopflow_Ns instead */
+  /*   ierr = SCOPFLOWSetNumScenarios(scopflow,2);CHKERRQ(ierr); */
 
   /* End of First Stage and Start of Second */
   ierr = PetscLogStagePop();CHKERRQ(ierr);

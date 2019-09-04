@@ -82,7 +82,11 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWCreateMatrix(SCOPFLOW,Mat*);
  * @param [in] OPFLOW opflow - The OPFLOW object
  */
 PETSC_EXTERN PetscErrorCode SCOPFLOWSolve(SCOPFLOW);
-
+/**
+ * @brief Select the number of scenarios
+ * @param [in] SCOPFLOW scopflow - The SCOPFLOW object
+ * @param [in] Ns                - Number of scenarios to select
+ */
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetNumScenarios(SCOPFLOW,PetscInt);
 
 #endif
