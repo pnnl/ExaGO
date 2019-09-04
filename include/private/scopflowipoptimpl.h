@@ -39,8 +39,6 @@ For each scenario i \in Ns:
 
 */
 
-#define MAX_CONTINGENCIES 100
-
 struct CallBackData{
   void*    prob;
   PetscInt row_node_id;

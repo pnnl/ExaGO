@@ -60,8 +60,6 @@ Notes for PIPS-NLP:
   * @brief private struct for security optimal power flow application
   */
 
-#define MAX_CONTINGENCIES 100
-
 struct _p_SCOPFLOW{
   /* Sizes */
   PetscInt ns,Ns; /* Local and global number of scenarios */

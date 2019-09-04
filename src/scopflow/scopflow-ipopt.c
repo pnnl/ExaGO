@@ -91,8 +91,9 @@ PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW scopflow,const char ctgcfile
     }
     sscanf(line,"%d,%d,%d,%d,%d,'%[^\t\']',%d,%lf",&num,&type,&bus,&fbus,&tbus,equipid,&status,&prob);
 
-    if(num > MAX_CONTINGENCIES) SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Contingency number %d exceeds max. allowed = %d\n",num,MAX_CONTINGENCIES);
-
+    if(num == MAX_CONTINGENCIES) {
+      SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Exceeding max. allowed contingencies = %d\n",num,MAX_CONTINGENCIES);
+    }
     cont   = &ctgclist->cont[num];
     outage = &cont->outagelist[cont->noutages];
     outage->num  = num;
@@ -331,7 +332,7 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
 
   ierr = VecRestoreArray(scopflow->X,&x);CHKERRQ(ierr);
 
-  ierr = VecView(scopflow->X,0);CHKERRQ(ierr);
+  //  ierr = VecView(scopflow->X,0);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

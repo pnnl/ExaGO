@@ -12,6 +12,7 @@
 typedef enum {GEN_OUTAGE=1, BR_OUTAGE=2,TR_OUTAGE=3,LOAD_OUTAGE=4} OutageType;
 
 #define MAX_SIMULTANEOUS_OUTAGES 5
+#define MAX_CONTINGENCIES 1000
 
 struct _p_Outage {
   PetscInt   num;  /* Outage number */

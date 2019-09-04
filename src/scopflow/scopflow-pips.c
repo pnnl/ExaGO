@@ -592,10 +592,6 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_first_stage_gen_cost_only",&scopflow->first_stage_gen_cost_only,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_ignore_line_flow_constraints",&scopflow->ignore_line_flow_constraints,NULL);CHKERRQ(ierr);
 
-  scopflow->nlp_pips = CreatePipsNlpProblemStruct(MPI_COMM_WORLD, scopflow->Ns,
-							    init_x0, prob_info, eval_f, eval_g, eval_grad_f, eval_jac_g,
-						  eval_h, write_solution, (UserDataPtr)scopflow);
-
   if(scopflow->ctgcfileset) {
     scopflow->ctgclist.Ncont = MAX_CONTINGENCIES;
     ierr = PetscMalloc1(scopflow->ctgclist.Ncont,&scopflow->ctgclist.cont);CHKERRQ(ierr);
@@ -606,6 +602,9 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 
   ierr = PetscMalloc1(scopflow->Ns+1,&scopflow->opflows);CHKERRQ(ierr);
 
+  scopflow->nlp_pips = CreatePipsNlpProblemStruct(MPI_COMM_WORLD, scopflow->Ns,
+							    init_x0, prob_info, eval_f, eval_g, eval_grad_f, eval_jac_g,
+						  eval_h, write_solution, (UserDataPtr)scopflow);
 
   scopflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);
