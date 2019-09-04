@@ -318,7 +318,10 @@ PetscErrorCode SCOPFLOWLineFlowConstraintsJacobian(SCOPFLOW scopflow, PetscInt s
   gloc = rstart;
   for (i=0; i < ps->nbranch; i++) {
     line = &ps->line[i];
-    if(!line->status) gloc += 2;
+    if(!line->status) {
+      gloc += 2;
+      continue;
+    }
 
     Gff = line->yff[0];
     Bff = line->yff[1];

@@ -278,6 +278,12 @@ PetscErrorCode SCOPFLOWComputeInequalityConstraintsHessian(SCOPFLOW scopflow, Pe
   for(i=0; i < ps->Nbranch; i++) {
     line = &ps->line[i];
 
+    if(!line->status) {
+      gloc += 2;
+      continue;
+    }
+
+
     PetscScalar Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
     Gff = line->yff[0];
     Bff = line->yff[1];

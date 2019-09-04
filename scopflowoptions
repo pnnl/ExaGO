@@ -1,10 +1,10 @@
-#-netfile datafiles/case9mod.m
--netfile datafiles/case118.m
+-netfile datafiles/case9mod.m
+#-netfile datafiles/case118.m
 #-netfile datafiles/case5.m
 
 # Contingency file
-#-ctgcfile datafiles/case9.cont
--ctgcfile datafiles/case118.cont
+-ctgcfile datafiles/case9.cont
+#-ctgcfile datafiles/case118.cont
 
 # Coupling between second stage and first stage?
 -scopflow_iscoupling 1
