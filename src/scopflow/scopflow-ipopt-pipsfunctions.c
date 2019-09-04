@@ -247,11 +247,8 @@ PetscErrorCode SCOPFLOWSetUp_OPFLOW(SCOPFLOW scopflow,PetscInt row)
   }
 
   /* Create Hessian */
-  ierr = MatCreate(opflow->comm->type,&opflow->Hes);CHKERRQ(ierr);
-  ierr = MatSetSizes(opflow->Hes,opflow->Nvar,opflow->Nvar,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
-  ierr = MatSetType(opflow->Hes,MATSEQAIJ);CHKERRQ(ierr);
-  ierr = MatSetUp(opflow->Hes);CHKERRQ(ierr);
-  ierr = MatSetFromOptions(opflow->Hes);CHKERRQ(ierr);
+  /* User PSCreateMatrix so that we get a symmetric non-zero structure */
+  ierr = PSCreateMatrix(opflow->ps,&opflow->Hes);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
