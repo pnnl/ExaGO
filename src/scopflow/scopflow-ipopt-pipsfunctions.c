@@ -138,7 +138,7 @@ PetscErrorCode SCOPFLOWSetVariableandConstraintBounds(SCOPFLOW scopflow, PetscIn
   ierr = VecRestoreArray(Xu,&xu);CHKERRQ(ierr);
   ierr = VecRestoreArray(Gl,&gl);CHKERRQ(ierr);
   ierr = VecRestoreArray(Gu,&gu);CHKERRQ(ierr);
-
+  
   PetscFunctionReturn(0);
 }
 

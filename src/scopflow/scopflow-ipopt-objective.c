@@ -146,14 +146,6 @@ PetscErrorCode SCOPFLOWComputeObjectiveHessian(SCOPFLOW scopflow,PetscInt scenar
       col[0] = xloc;
       val[0] = obj_factor*2.0*gen->cost_alpha*ps->MVAbase*ps->MVAbase;
       ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-
-      /* Add a zero on the diagonal for the reactive power. This needs to be modified later
-	 when there is cost associated with reactive power as well 
-      */
-      row[0] = xloc + 1;
-      col[0] = xloc + 1;
-      val[0] = 0.0;
-      ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
     }
   }
 
