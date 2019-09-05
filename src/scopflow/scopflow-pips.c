@@ -160,7 +160,7 @@ PetscErrorCode SCOPFLOWSetUp_OPFLOW(SCOPFLOW scopflow,PetscInt row)
   ierr = PSSetUp(opflow->ps);CHKERRQ(ierr);
 
   /* Set contingencies */
-  if(scopflow->ctgcfileset) {
+  if(scopflow->ctgcfileset && !scopflow->replicate_basecase) {
     Contingency ctgc=scopflow->ctgclist.cont[row];
     for(i=0; i < ctgc.noutages; i++) {
       if(ctgc.outagelist[i].type == GEN_OUTAGE) {
@@ -485,6 +485,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
   scopflow->iscoupling      = PETSC_FALSE;
   scopflow->first_stage_gen_cost_only = PETSC_TRUE;
   scopflow->ignore_line_flow_constraints = PETSC_TRUE;
+  scopflow->replicate_basecase = PETSC_FALSE;
 
   scopflow->nlp_pips       = NULL;
 
@@ -589,8 +590,10 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_ignore_line_flow_constraints",&scopflow->ignore_line_flow_constraints,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetInt(NULL,NULL,"-scopflow_Ns",&scopflow->Ns,NULL);CHKERRQ(ierr);
 
+  ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_replicate_basecase",&scopflow->replicate_basecase,NULL);CHKERRQ(ierr);
 
-  if(scopflow->ctgcfileset) {
+
+  if(scopflow->ctgcfileset && !scopflow->replicate_basecase) {
     if(scopflow->Ns < 0) scopflow->Ns = MAX_CONTINGENCIES;
     if(scopflow->Ns) {
       ierr = PetscMalloc1(scopflow->Ns+1,&scopflow->ctgclist.cont);CHKERRQ(ierr);
@@ -599,7 +602,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
       scopflow->Ns = scopflow->ctgclist.Ncont;
     }
   } else {
-    scopflow->Ns = 0;
+    if(scopflow->Ns == -1) scopflow->Ns = 0;
   }
 
   ierr = PetscPrintf(PETSC_COMM_WORLD,"SCOPFLOW running with %d scenarios\n",scopflow->Ns);CHKERRQ(ierr);
