@@ -158,7 +158,7 @@ PetscErrorCode SCOPFLOWSetUp_OPFLOW(SCOPFLOW scopflow,PetscInt row)
   ierr = PSSetUp(opflow->ps);CHKERRQ(ierr);
 
   /* Set contingencies */
-  if(scopflow->ctgcfileset) {
+  if(scopflow->ctgcfileset && !scopflow->replicate_basecase) {
     Contingency ctgc=scopflow->ctgclist.cont[row];
     for(i=0; i < ctgc.noutages; i++) {
       if(ctgc.outagelist[i].type == GEN_OUTAGE) {
