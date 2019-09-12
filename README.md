@@ -1,10 +1,8 @@
-# PSapps
-PSapps is a library of high-performance power grid applications. It provides two applications currently
-- Power Flow (PFLOW)
-- Dynamics Simulation (DYN)
+# SCOPFLOW
+SCOPFLOW is an application code for security-constrained optimal power flow.
 
 ## Installation
-PSAPPS makes heavy use of the PETSc library and its functionality.
+SCOPFLOW makes heavy use of the PETSc library and its functionality.
 
 ### Download PETSc
 ```
@@ -29,25 +27,11 @@ make test
 ```
 Run the above commands to install PETSc.
 
-### Set environment variable for PSapps
-PSapps needs the environment variable PSAPPS_DIR set to the location of the PSapps directory
+### Set environment variable for SCOPFLOW
+SCOPFLOW needs the environment variable SCOPFLOW_DIR set to the location of the SCOPFLOW directory
 ```
-export PSAPPS_DIR=<location of PSapps>
+export SCOPFLOW_DIR=<location of SCOPFLOW>
 export LD_LIBRARY_PATH=$PETSC_DIR/$PETSC_ARCH/lib:$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=$PSAPPS_DIR:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$SCOPFLOW_DIR:$LD_LIBRARY_PATH
 
 ```
-## Power flow application
-Compile the power flow application code
-```
-make PFLOW
-```
-This will create the executable PFLOW in the PSAPPS_DIR. The source code for the PFLOW application is in the `applications` directory pflow-main.c
-
-```
-mpiexec -n <n> ./PFLOW -netfile <networkfile_name>
-```
-Here <networkfile_name> is the name of network file. PFLOW can read power grid networks in MATPOWER and PSSE RAW data formats.
-All PETSc solver options can be passed in with the prefix -pflow_. For example the PETSc option -pc_type would -pflow_pc_type
-
-PFLOW reads the options file pflowoptions located in PSAPPS_DIR. All options can be set in this file.
