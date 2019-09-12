@@ -53,14 +53,14 @@ PetscErrorCode OPFLOWGetLagrangianHessianNonzeros(OPFLOW opflow,PetscInt *nnz)
   for(i=0; i < ps->nbus; i++){
     bus = &ps->bus[i];
     for(k=0; k < bus->ngen; k++) {
-	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
-	  *nnz += 1;
+      *nnz += 1;
     }
   }
-
+  
   for(i=0; i < ps->Nbranch; i++) *nnz += 10;
-
+  
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
     *nnz += 1;
@@ -1042,6 +1042,8 @@ PetscErrorCode OPFLOWSetVariableandConstraintBounds(OPFLOW opflow, Vec Xl, Vec X
 
     /* Bounds on voltage angles and bounds on real power mismatch equality constraints */
     xl[loc] = -PETSC_PI; xu[loc] = PETSC_PI;
+    //    xl[loc] = PETSC_NINFINITY; xu[loc] = PETSC_INFINITY;
+    //    xl[loc] = -1000; xu[loc] = 1000;
     gl[gloc] = 0.0;   gu[gloc] = 0.0;
 
     /* Bounds on voltage magnitudes and bounds on reactive power mismatch equality constraints */
@@ -1209,7 +1211,7 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
       }
     }
   }
-  //  AddIpoptStrOption(opflow->nlp_ipopt, (char*)"derivative_test", (char*)"first-order");
+  //  AddIpoptStrOption(opflow->nlp_ipopt, (char*)"derivative_test", (char*)"second-order");
   AddIpoptStrOption(opflow->nlp_ipopt,(char*)"linear_solver",(char*)"mumps");
   // AddIpoptNumOption(opflow->nlp_ipopt,(char*)"bound_relax_factor",1e-4);
   
@@ -2023,6 +2025,12 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
   
   if(values == NULL) {
     ierr = OPFLOWSetLagrangianHessianLocations(opflow,iRow,jCol);CHKERRQ(ierr);
+    /*    PetscInt i;
+    for(i=0; i < nele_hess; i++) {
+      ierr = PetscPrintf(PETSC_COMM_SELF,"(%d,%d)\n",iRow[i],jCol[i]);CHKERRQ(ierr);
+    }
+    exit(1);
+    */
   } else {
     ierr = OPFLOWSetLagrangianHessianValues(opflow,obj_factor, opflow->X,opflow->lambda_g,values);CHKERRQ(ierr);
   }

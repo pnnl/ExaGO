@@ -45,6 +45,9 @@ struct _p_OPFLOW{
   Mat Jac_Ge; /* Equality constraint Jacobian */
   Mat Jac_Gi; /* Inequality constraint Jacobian */
 
+  Mat Jac_GeT; /* Transpose of equality constraint Jacobian */
+  Mat Jac_GiT; /* Transpose of inequality constraint Jacobian */
+
   Tao nlp;    /* Optimization problem */
 
   PetscBool converged; // Convergence status
@@ -60,6 +63,8 @@ struct _p_OPFLOW{
 
   PetscInt nnz_jac_g; /**< Number of nonzeros in the jacobian of the constraints */
   PetscInt nnz_hes; /**< Number of nonzeros in the Lagrangian Hessian */
+
+  Vec Lambda;
 
   /* Lagrange multipliers */
   Vec lambda_g;

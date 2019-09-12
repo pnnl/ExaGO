@@ -180,9 +180,13 @@ PetscErrorCode PSSetGenDispatchandStatus(PS ps, PetscInt busnum, PetscInt gennum
   if(statusupdate) {
     if(status) {
       bus->ngenON++;
+      ps->ngenON++;
+      ps->NgenON++;
       if(bus->ide == PQ_BUS) bus->ide = PV_BUS;
     } else {
       bus->ngenON--;
+      ps->ngenON--;
+      ps->NgenON--;
       if(!bus->ngenON) bus->ide = PQ_BUS;
       gen->pg = gen->qg = 0.0;
     }
@@ -211,6 +215,28 @@ PetscErrorCode PSGetNumGenerators(PS ps,PetscInt *ngen, PetscInt *Ngen)
   if(Ngen) *Ngen = ps->Ngen;
   PetscFunctionReturn(0);
 }
+
+/*
+  PSGetNumActiveGenerators - Gets the number of local and global active generators (status ON) in this system
+
+  Input Parameters
+. ps - the PS object
+
+  Output Parameters
++ ngenON - number of local generators
+- NgenON - number of global generators
+ 
+  Notes:
+   PSSetUp() must be called before a call to PSGetNumActiveGenerators
+*/
+PetscErrorCode PSGetNumActiveGenerators(PS ps,PetscInt *ngenON, PetscInt *NgenON)
+{
+  PetscFunctionBegin;
+  if(ngenON) *ngenON = ps->ngenON;
+  if(NgenON) *NgenON = ps->NgenON;
+  PetscFunctionReturn(0);
+}
+
 
 /*
   PSLINESetStatus - Sets the status of the line
@@ -766,6 +792,7 @@ PetscErrorCode PSCreate(MPI_Comm mpicomm,PS *psout)
   ps->MVAbase = 0.0;
   ps->Nbus  = -1;
   ps->Ngen  = -1;
+  ps->NgenON = -1;
   ps->Nbranch = -1;
   ps->Nload   = -1;
   ps->refct   = 0;
@@ -940,9 +967,10 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
   fclose(fp);
   
   ps->Nbus    = ps->nbus    = Nbus;
-  ps->Nload   = ps->nload = Nload;
+  ps->Nload   = ps->nload   = Nload;
   ps->Ngen    = ps->ngen    = Ngenerator;
   ps->Nbranch = ps->nbranch = Nbranch + Ntransformer;
+  ps->NgenON  = 0;
  
 #if defined DEBUGPS
   ierr = PetscPrintf(PETSC_COMM_SELF,"System summary : Nbus = %d, Nload = %d, Ngenerator = %d, Nbranch = %d\n",ps->Nbus,ps->Ngen,ps->Nload,ps->Nbranch);CHKERRQ(ierr);
@@ -1056,6 +1084,7 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
 	  Bus[internalindex].Pgtot += PetscAbsScalar(Gen[geni].pg);
           Bus[internalindex].MVAbasetot += Gen[geni].mbase;
       	  Bus[internalindex].ngenON++;
+	  ps->NgenON++;
       	}
         Bus[internalindex].ngen++;
         geni++;
@@ -1261,6 +1290,8 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
   ps->Ngen    = ps->ngen    = gen_end_line - gen_start_line - gen_nblank_lines;
   ps->Nbranch = ps->nbranch = br_end_line  - br_start_line - br_nblank_lines;
   ps->nload = ps->Nload;
+  ps->NgenON = 0;
+
 #if defined DEBUGPS
   ierr = PetscPrintf(PETSC_COMM_SELF,"System summary : Nbuses = %d, Ngen = %d, Nload = %d, Nbranch = %d\n",ps->Nbus,ps->Ngen,ps->Nload,ps->Nbranch);CHKERRQ(ierr);
 #endif
@@ -1347,6 +1378,7 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
 	Bus[intbusnum].Pgtot += PetscAbsScalar(Gen[geni].pg);
 	Bus[intbusnum].MVAbasetot += Gen[geni].mbase;
 	Bus[intbusnum].ngenON++;
+	ps->NgenON++;
       } else {
 	Gen[geni].pg = Gen[geni].qg = 0.0;
       }
@@ -1388,7 +1420,7 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
       if(!Branch[bri].tapratio) Branch[bri].tapratio = 1.0;
       Branch[bri].phaseshift *= PETSC_PI/180.0;
 
-      Branch[bri].rateA = (Branch[bri].rateA == 0 ? 1E4:Branch[bri].rateA);
+      Branch[bri].rateA = (Branch[bri].rateA == 0 ? 1e6:Branch[bri].rateA);
       intbusnum = busext2intmap[Branch[bri].fbus];
       Branch[bri].internal_i = intbusnum;
 
@@ -2023,26 +2055,28 @@ PetscErrorCode PSSetUp(PS ps)
     }
 
     /* Broadcast global Nbus,Ngen,Nbranch, Nload,and maxbusnum to all processors */
-    PetscInt temp[5];
+    PetscInt temp[6];
     /* Pack variables */
     temp[0] = ps->Nbus;
     temp[1] = ps->Ngen;
     temp[2] = ps->Nbranch;
     temp[3] = ps->Nload;
     temp[4] = ps->maxbusnum;
-    ierr = MPI_Bcast(temp,5,MPI_INT,0,ps->comm->type);CHKERRQ(ierr);
+    temp[5] = ps->NgenON;
+    ierr = MPI_Bcast(temp,6,MPI_INT,0,ps->comm->type);CHKERRQ(ierr);
     /* Unpack */
     ps->Nbus = temp[0];
     ps->Ngen = temp[1];
     ps->Nbranch = temp[2];
     ps->Nload   = temp[3];
     ps->maxbusnum = temp[4];
+    ps->NgenON  = temp[5];
 
     /* Recreate busext2intmap..this will map the local bus numbers to external numbers */
     ierr = PetscCalloc1(ps->maxbusnum+1,&ps->busext2intmap);CHKERRQ(ierr);
     for(i=0; i < ps->maxbusnum+1; i++) ps->busext2intmap[i] = -1;
 
-    ps->ngen = ps->nload = 0;
+    ps->ngen = ps->nload = ps->ngenON = 0;
   /* Get the local number of gens and loads */
     for(i= vStart; i < vEnd; i++) {
       ierr = DMNetworkGetNumComponents(ps->networkdm,i,&numComponents);CHKERRQ(ierr);
@@ -2078,6 +2112,7 @@ PetscErrorCode PSSetUp(PS ps)
 	  ps->busext2intmap[ps->bus[i-vStart].bus_i] = ps->bus[i-vStart].internal_i = i-vStart;
 	} else if(key == ps->compkey[2]) {
 	  ierr = PetscMemcpy(&ps->gen[genj],component,sizeof(struct _p_PSGEN));CHKERRQ(ierr);
+	  ps->ngenON += ps->gen[genj].status;
 	  if(ps->app == APP_DYNSIM) {
 	    if(!ps->gen[genj].status) {
 	      ps->bus[i-vStart].gidx[genctr++] = genj++;
@@ -2175,6 +2210,7 @@ PetscErrorCode PSSetUp(PS ps)
   } else {
     ps->ngen = ps->Ngen;
     ps->nload = ps->Nload;
+    ps->ngenON = ps->NgenON;
   }
 
   /* Set up
@@ -2894,14 +2930,21 @@ PetscErrorCode PSSetGenStatus(PS ps,PetscInt gbus,const char* gid,PetscInt statu
       bus = &ps->bus[ps->busext2intmap[gbus]];
       if(status) {
 	bus->ngenON++;
+	ps->ngenON++;
+	ps->NgenON++;
       } else {
 	bus->ngenON--;
+	ps->ngenON--;
+	ps->NgenON--;
 	/* Change the bus type to PQ if no generators are active at this bus */
 	if(!bus->ngenON) bus->ide = PQ_BUS;
 	gen->pg = gen->qg = 0.0;
       }
     }
   }
+
+  /* Update reference bus if needed */
+  ierr = PSCheckandSetRefBus(ps);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

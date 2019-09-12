@@ -1,0 +1,27 @@
+-netfile datafiles/case9mod.m
+#-netfile datafiles/case118.m
+#-netfile datafiles/case5.m
+
+# Contingency file
+-ctgcfile datafiles/case9.cont
+#-ctgcfile datafiles/case118.cont
+
+# Coupling between second stage and first stage?
+-scopflow_iscoupling 1
+
+# Use only first stage generation cost?
+-scopflow_first_stage_gen_cost_only 1
+
+# Ignore line flow constraints
+-scopflow_ignore_line_flow_constraints 1
+
+# Number of scenarios
+-scopflow_Ns 1
+
+# performance
+#-------------
+#-log_summary
+
+#options
+# Display options left
+-options_left no
