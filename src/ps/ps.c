@@ -506,86 +506,6 @@ PetscErrorCode PSLOADSetStatus(PSLOAD psload,PetscInt status)
 }
 
 /*
-  PSLOADGetDynLoad - Returns the dynamic load object associated with the load
-
-  Input Parameters:
-. load - the PSLOAD object
-
-  Output Parameters
-. dynload - the dynamic load DYNLoadModel object
-*/
-PetscErrorCode PSLOADGetDYNLoad(PSLOAD load,DYNLoadModel *dynload)
-{
-  PetscFunctionBegin;
-  *dynload = &load->dynload;
-  PetscFunctionReturn(0);
-}
-
-/*
-  PSGENGetDynGen - Returns the dynamic generator object associated with the generator
-
-  Input Parameters:
-. gen - the PSGEN object
-
-  Output Parameters
-. dyngen - the dynamic generator DYNGenModel object
-*/
-PetscErrorCode PSGENGetDYNGen(PSGEN gen,DYNGenModel *dyngen)
-{
-  PetscFunctionBegin;
-  *dyngen = &gen->dyngen;
-  PetscFunctionReturn(0);
-}
-
-/*
-  PSGENGetDynExc - Returns the exciter model associated with the generator
-
-  Input Parameters:
-. gen - the PSGEN object
-
-  Output Parameters
-. dynexc - the exciter DYNExcModel object
-*/
-PetscErrorCode PSGENGetDYNExc(PSGEN gen,DYNExcModel *dynexc)
-{
-  PetscFunctionBegin;
-  *dynexc = &gen->dynexc;
-  PetscFunctionReturn(0);
-}
-
-/*
-  PSGENGetDynTurbgov - Returns the turbgoviter model associated with the generator
-
-  Input Parameters:
-. gen - the PSGEN object
-
-  Output Parameters
-. dynturbgov - the turbgoviter DYNTurbgovModel object
-*/
-PetscErrorCode PSGENGetDYNTurbgov(PSGEN gen,DYNTurbgovModel *dynturbgov)
-{
-  PetscFunctionBegin;
-  *dynturbgov = &gen->dynturbgov;
-  PetscFunctionReturn(0);
-}
-
-/*
-  PSGENGetDynStab - Returns the stabilizer model associated with the generator
-
-  Input Parameters:
-. gen - the PSGEN object
-
-  Output Parameters
-. dynstab - the DYNSTabModel object
-*/
-PetscErrorCode PSGENGetDYNStab(PSGEN gen,DYNStabModel *dynstab)
-{
-  PetscFunctionBegin;
-  *dynstab = &gen->dynstab;
-  PetscFunctionReturn(0);
-}
-
-/*
   PSBUSSetGenStatus - Sets the status of the generator
 */
 PetscErrorCode PSBUSSetGenStatus(PSBUS bus,char gid[],PetscInt status)
@@ -679,26 +599,6 @@ PetscErrorCode PSGENDestroy(PS ps)
 {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  if(ps-> app == APP_DYNSIM) {
-    PSGEN Gen;
-    PetscInt i;
-
-    for(i=0;i < ps->ngen; i++) {
-      Gen = &ps->gen[i];
-      if(Gen->initial_status) {
-	ierr = DYNGenModelDestroy(&Gen->dyngen);CHKERRQ(ierr);
-	if(Gen->hasexc) {
-	  ierr = DYNExcModelDestroy(&Gen->dynexc);CHKERRQ(ierr);
-	}
-	if(Gen->hasturbgov) {
-	  ierr = DYNTurbgovModelDestroy(&Gen->dynturbgov);CHKERRQ(ierr);
-	}
-	if(Gen->hasstab) {
-	  ierr = DYNStabModelDestroy(&Gen->dynstab);CHKERRQ(ierr);
-	}
-      }
-    }
-  }
   ierr = PetscFree(ps->gen);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -713,17 +613,6 @@ PetscErrorCode PSLOADDestroy(PS ps)
 {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  if(ps-> app == APP_DYNSIM) {
-    PSLOAD Load;
-    PetscInt i;
-
-    for(i=0;i < ps->nload; i++) {
-      Load = &ps->load[i];
-      if(Load->status) {
-	ierr = DYNLoadModelDestroy(&Load->dynload);CHKERRQ(ierr);
-      }
-    }
-  }
   ierr = PetscFree(ps->load);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -733,7 +622,7 @@ PetscErrorCode PSLOADDestroy(PS ps)
 
   Input Parameters:
 + PS - the PS object
-- psapp - the application (DYNSIM,ACPF,DCPF)
+- psapp - the application (PFLOW,OPFLOW)
 */
 PetscErrorCode PSSetApplication(PS ps,PSApp psapp)
 {
@@ -1039,7 +928,6 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
 #endif
         Load[loadi].scale = 1;
         Load[loadi].intrpt = 0;
-	Load[loadi].dynloadsetup = 0;
       	Load[loadi].pl /= ps->MVAbase;
       	Load[loadi].ql /= ps->MVAbase;
       	Load[loadi].ip /= ps->MVAbase;
@@ -1078,7 +966,6 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
 	  Gen[geni].pt /= ps->MVAbase;
 	  Gen[geni].qt /= ps->MVAbase;
 	  Gen[geni].qb /= ps->MVAbase;
-	  Gen[geni].dyngensetup = 0;
 	  Bus[internalindex].qrange += (Gen[geni].qt - Gen[geni].qb);
 	  Bus[internalindex].qmintot += Gen[geni].qb;
 	  Bus[internalindex].Pgtot += PetscAbsScalar(Gen[geni].pg);
@@ -1472,288 +1359,6 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
 }
 
 /*
-  PSReadDyrData - Reads the data file with dynamic models 
-
-  Input Parameter
-+  PS      - The PS object
--  dyrfile - The name of the dyr file
-
-*/
-
-PetscErrorCode PSReadDyrData(PS ps,const char dyrfile[])
-{
-  PetscErrorCode ierr;
-  FILE           *fp;
-  char           line[MAXLINE];
-  PetscInt       extbusnum;
-  PetscInt       *busext2intmap=ps->busext2intmap;
-  PSBUS          Bus;
-  PSGEN          Gen;
-  PSLOAD         Load;
-  PetscInt       i,k;
-  char           gentype[16],exctype[16],turbgovtype[16],stabtype[16],loadtype[16];
-  struct _p_DYNGenModel dyngen;
-  struct _p_DYNExcModel dynexc;
-  struct _p_DYNTurbgovModel dynturbgov;
-  struct _p_DYNStabModel dynstab;
-  struct _p_DYNLoadModel dynload;
-  char           *out;
-
-  PetscFunctionBegin;
-
-  if(ps->comm->type != PETSC_COMM_SELF && ps->comm->rank != 0) { PetscFunctionReturn(0);}
-
-  fp = fopen(dyrfile,"r");
-  /* Check for valid file */
-  if (fp == NULL) {
-    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_FILE_OPEN,"Cannot open file %s",dyrfile);
-  }
-
-  /* Initialize hasxxx flag to PETSC_FALSE for all generators */
-  for(i=0; i < ps->nbus; i++) {
-    Bus = &ps->bus[i];
-    for(k=0; k < Bus->ngen; k++) {
-      Gen = &ps->gen[Bus->gidx[k]];
-      Gen->hasexc = PETSC_FALSE;
-      Gen->hasturbgov = PETSC_FALSE;
-      Gen->hasstab = PETSC_FALSE;
-    }
-  }
-      
-  char *excid,*stabid;
-  char genid[2],turbgovid[2];
-  char loadid[2];
-  char temp[20];
-  PetscBool multiline;
-  while((out = fgets(line,MAXLINE,fp)) != NULL) {
-    PetscBool linehasdyngen=PETSC_FALSE,linehasdynexc=PETSC_FALSE,linehasdynturbgov=PETSC_FALSE,linehasdynstab=PETSC_FALSE,linehasdynload=PETSC_FALSE;
-    
-    if(strcmp(line,"\r\n") == 0 || strcmp(line,"\n") == 0) {
-      continue; /* Skip blank lines */
-    }
-
-    multiline = PETSC_FALSE;
-    /*Handling multiline format (seperated by ' ' and end flag is '/')*/
-    char   totalline[MAXLINE];
-    PetscInt totallinelen = 0;
-    char*  pos;
-    
-    if(strstr(line,"/") == NULL ){
-      multiline = PETSC_TRUE;
-      memset(totalline , 0, MAXLINE);
-      
-      /*Read multiple line and remove newline*/
-      if((pos = strstr(line, "\r\n")) != NULL){
-        *pos = ' ';
-        *(pos+1) = ' ';
-      } 
-      else if((pos = strstr(line, "\n")) != NULL) *pos = ' ';
-
-      ierr = PetscStrcpy (totalline + totallinelen, line); CHKERRQ(ierr);
-      totallinelen += strlen(line);
-
-      while(strstr(line,"/") == NULL){        
-        out = fgets(line,MAXLINE,fp);
-        if((pos = strstr(line, "\r\n")) != NULL){
-          *pos = ' ';
-          *(pos+1) = ' ';
-        } 
-        else if((pos = strstr(line, "\n")) != NULL) *pos = ' ';
-        
-        ierr = PetscStrcpy (totalline + totallinelen, line); CHKERRQ(ierr);
-        totallinelen += strlen(line);
-      }
-    } else {
-      if(strstr(line,",") == NULL) {
-	ierr = PetscStrcpy(totalline,line);CHKERRQ(ierr);
-	totallinelen += strlen(line);
-      }
-    }
-
-    if(multiline || (strstr(line,",") == NULL)) {
-	/*Change ' ' -> ',' */
-	PetscInt linepos = 0;
-	i = 0;
-	
-	if((pos = strtok(totalline, " ")) != NULL){
-	  ierr = PetscStrcpy(line + linepos, pos); CHKERRQ(ierr); 
-	  linepos += strlen(pos);
-	  line[linepos] = ',';
-	  linepos++;
-	  i++;
-	}
-	while((pos = strtok(NULL, " ")) != NULL){
-	  ierr = PetscStrcpy(line + linepos, pos); CHKERRQ(ierr); 
-	  linepos += strlen(pos);
-	  
-	  /*Make Third column has 2 byte*/
-	  if(i == 2){
-	    if(strlen(pos) == 1){
-	      line[linepos] = ' ';
-	      linepos++;
-	    }
-	  }
-	  
-	  /*Teminate loop*/
-	  if(strstr(pos,"/") != NULL ){
-	    line[linepos-2] = ' '; // remove last ',' before '/'
-	    break;
-	  }
-	  
-	  line[linepos] = ',';
-	  linepos++;
-	  i++;
-	}
-	
-	line[linepos] = 0x00;
-#if defined DEBUGPS
-	ierr = PetscPrintf(PETSC_COMM_SELF,"Line = %s\n",line);CHKERRQ(ierr);      
-#endif      
-    }
-
-    ierr = DYNGenModelReadModelType(line,gentype);CHKERRQ(ierr);
-    ierr = PetscStrcmp(gentype,DYNGENNONE,&linehasdyngen);CHKERRQ(ierr);
-
-    if(!linehasdyngen) {
-      ierr = DYNGenModelSetType(&dyngen,gentype);CHKERRQ(ierr);
-
-      /* ierr = DYNGenModelGetBusnumID(&dyngen,&extbusnum,&genid);CHKERRQ(ierr); */
-      sscanf(line,"%d,%[^,],%[^,]",&extbusnum,temp,genid);
-
-      Bus = &ps->bus[busext2intmap[extbusnum]];
-      /* Find the gen with matching gen id */
-      for(i=0; i < Bus->ngen;i++) {
-        ierr = PetscStrcmp(ps->gen[Bus->gidx[i]].id,genid,&linehasdyngen);CHKERRQ(ierr);
-        if(linehasdyngen) {
-          Gen = &ps->gen[Bus->gidx[i]];
-          if(Gen->status) {
-            ierr = DYNGenModelReadData(&dyngen,line,Gen->mbase,ps->MVAbase);CHKERRQ(ierr);
-	    /* Set the numnber of variables for this dynamic generator model */
-	    ierr = DYNGenModelGetNvar(&dyngen,&dyngen.nvar);CHKERRQ(ierr);
-            ierr = DYNGenModelCopy(&Gen->dyngen,&dyngen);CHKERRQ(ierr);
-	    Gen->dyngensetup = PETSC_TRUE;
-            break;
-          } else {
-            ierr = DYNGenModelDestroy(&dyngen);CHKERRQ(ierr);
-          }
-        }
-      }
-      continue;
-    }
-
-    ierr = DYNExcModelReadModelType(line,exctype);CHKERRQ(ierr);
-    ierr = PetscStrcmp(exctype,DYNEXCNONE,&linehasdynexc);CHKERRQ(ierr);
-
-    if(!linehasdynexc) {
-      ierr = DYNExcModelSetType(&dynexc,exctype);CHKERRQ(ierr);
-      ierr = DYNExcModelReadData(&dynexc,line);CHKERRQ(ierr);
-      ierr = DYNExcModelGetBusnumID(&dynexc,&extbusnum,&excid);CHKERRQ(ierr);
-
-      Bus = &ps->bus[busext2intmap[extbusnum]];
-      /* Find the gen with matching exc id */
-      for(i=0; i < Bus->ngen;i++) {
-	ierr = PetscStrcmp(ps->gen[Bus->gidx[i]].id,excid,&linehasdynexc);CHKERRQ(ierr);
-	if(linehasdynexc) {
-	  Gen = &ps->gen[Bus->gidx[i]];
-	  if(Gen->status) {
-	    Gen->hasexc = PETSC_TRUE;
-	    ierr = DYNExcModelCopy(&Gen->dynexc,&dynexc);CHKERRQ(ierr);
-	    break;
-	  } else {
-	    ierr = DYNExcModelDestroy(&dynexc);CHKERRQ(ierr);
-	  }
-	}
-      }
-      continue;
-    }
-
-    ierr = DYNTurbgovModelReadModelType(line,turbgovtype);CHKERRQ(ierr);
-    ierr = PetscStrcmp(turbgovtype,DYNTURBGOVNONE,&linehasdynturbgov);CHKERRQ(ierr);
-    if(!linehasdynturbgov) {
-      sscanf(line,"%d,%[^,],%[^,]",&extbusnum,temp,turbgovid);
-      Bus = &ps->bus[busext2intmap[extbusnum]];
-      ierr = DYNTurbgovModelSetType(&dynturbgov,turbgovtype);CHKERRQ(ierr);
-      /* Find the gen with matching gen id */
-      for(i=0; i < Bus->ngen;i++) {
-	//	ierr = DYNTurbgovModelGetBusnumID(&dynturbgov,&extbusnum,&turbgovid);CHKERRQ(ierr);
-	ierr = PetscStrcmp(ps->gen[Bus->gidx[i]].id,turbgovid,&linehasdynturbgov);CHKERRQ(ierr);
-	if(linehasdynturbgov) {
-	  Gen = &ps->gen[Bus->gidx[i]];
-	  if(Gen->status) {
-	    Gen->hasturbgov = PETSC_TRUE;
-	    ierr = DYNTurbgovModelReadData(&dynturbgov,line,Gen->mbase,ps->MVAbase);CHKERRQ(ierr);
-	    ierr = DYNTurbgovModelCopy(&Gen->dynturbgov,&dynturbgov);CHKERRQ(ierr);
-	    break;
-	  } else {
-	    ierr = DYNTurbgovModelDestroy(&dynturbgov);CHKERRQ(ierr);
-	  }
-	}
-      }
-      continue;
-    }
-
-    ierr = DYNStabModelReadModelType(line,stabtype);CHKERRQ(ierr);
-    ierr = PetscStrcmp(stabtype,DYNSTABNONE,&linehasdynstab);CHKERRQ(ierr);
-
-    if(!linehasdynstab) {
-      ierr = DYNStabModelSetType(&dynstab,stabtype);CHKERRQ(ierr);
-      ierr = DYNStabModelReadData(&dynstab,line);CHKERRQ(ierr);
-      ierr = DYNStabModelGetBusnumID(&dynstab,&extbusnum,&stabid);CHKERRQ(ierr);
-
-      Bus = &ps->bus[busext2intmap[extbusnum]];
-      /* Find the gen with matching stab id */
-      for(i=0; i < Bus->ngen;i++) {
-	ierr = PetscStrcmp(ps->gen[Bus->gidx[i]].id,stabid,&linehasdynstab);CHKERRQ(ierr);
-	if(linehasdynstab) {
-	  Gen = &ps->gen[Bus->gidx[i]];
-	  if(Gen->status) {
-	    Gen->hasstab = PETSC_TRUE;
-	    ierr = DYNStabModelCopy(&Gen->dynstab,&dynstab);CHKERRQ(ierr);
-	    break;
-	  } else {
-	    ierr = DYNStabModelDestroy(&dynstab);CHKERRQ(ierr);
-	  }
-	}
-      }
-      continue;
-    }
-
-    ierr = DYNLoadModelReadModelType(line,loadtype);CHKERRQ(ierr);
-    ierr = PetscStrcmp(loadtype,DYNLOADNONE,&linehasdynload);CHKERRQ(ierr);
-
-    if(!linehasdynload) {
-      ierr = DYNLoadModelSetType(&dynload,loadtype);CHKERRQ(ierr);
-
-      /* ierr = DYNLoadModelGetBusnumID(&dynload,&extbusnum,&loadid);CHKERRQ(ierr); */
-      sscanf(line,"%d,%[^,],%[^,]",&extbusnum,temp,loadid);
-
-      Bus = &ps->bus[busext2intmap[extbusnum]];
-      /* Find the load with matching load id */
-      for(i=0; i < Bus->nload;i++) {
-        ierr = PetscStrcmp(ps->load[Bus->lidx[i]].id,loadid,&linehasdynload);CHKERRQ(ierr);
-        if(linehasdynload) {
-          Load = &ps->load[Bus->lidx[i]];
-          if(Load->status) {
-            ierr = DYNLoadModelReadData(&dynload,line,Load->pl*ps->MVAbase,ps->MVAbase);CHKERRQ(ierr); /* Load does not have a MBase in the power flow data, we use the real power load instead. The machine (induction motor) base will be given in the dyr file */
-	    /* Set the numnber of variables for this dynamic load model */
-	    ierr = DYNLoadModelGetNvar(&dynload,&dynload.nvar);CHKERRQ(ierr);
-            ierr = DYNLoadModelCopy(&Load->dynload,&dynload);CHKERRQ(ierr);
-	    Load->dynloadsetup = PETSC_TRUE;
-            break;
-          } else {
-            ierr = DYNLoadModelDestroy(&dynload);CHKERRQ(ierr);
-          }
-        }
-      }
-      continue;
-    }
-  }
-  fclose(fp);
-
-  PetscFunctionReturn(0);
-}
-
-/*
   PSGetNumGlobalLines - Gets the total number of lines in the PS network
 
   Input Parameters:
@@ -1827,12 +1432,6 @@ PetscErrorCode PSSetUp(PS ps)
   PetscInt       Nlines,Nbuses;
   PetscInt       numbusvariables; /* Number of variables at each bus..set by the application */
   PetscInt       i;
-  PetscBool      match;
-  DYNGenModel    dyngen;
-  DYNExcModel    dynexc;
-  DYNTurbgovModel dynturbgov;
-  DYNStabModel    dynstab;
-  DYNLoadModel    dynload;
   void            *component;
   PetscInt        key;
   PetscInt        numComponents;
@@ -1850,32 +1449,6 @@ PetscErrorCode PSSetUp(PS ps)
   ierr = DMNetworkRegisterComponent(networkdm,"PSGEN",sizeof(struct _p_PSGEN),&ps->compkey[2]);CHKERRQ(ierr);
   ierr = DMNetworkRegisterComponent(networkdm,"PSLOAD",sizeof(struct _p_PSLOAD),&ps->compkey[3]);CHKERRQ(ierr);
   
-  if(ps->app == APP_DYNSIM) {
-    /* Register dynamic generator models with DMNetwork */
-    for(i=0;i < ngenmodelsregistered;i++) { 
-      ierr = DMNetworkRegisterComponent(networkdm,DYNGenModelList[i].name,DYNGenModelList[i].sizeofstruct,&DYNGenModelList[i].key);CHKERRQ(ierr);
-    }
-    /* Register exciter models with DMNetwork */
-    for(i=0;i < nexcmodelsregistered;i++) { 
-      ierr = DMNetworkRegisterComponent(networkdm,DYNExcModelList[i].name,DYNExcModelList[i].sizeofstruct,&DYNExcModelList[i].key);CHKERRQ(ierr);
-    }
-
-    /* Register turbine-governor models with DMNetwork */
-    for(i=0;i < nturbgovmodelsregistered;i++) { 
-      ierr = DMNetworkRegisterComponent(networkdm,DYNTurbgovModelList[i].name,DYNTurbgovModelList[i].sizeofstruct,&DYNTurbgovModelList[i].key);CHKERRQ(ierr);
-    }
-
-    /* Register stabilizer models with DMNetwork */
-    for(i=0;i < nstabmodelsregistered;i++) { 
-      ierr = DMNetworkRegisterComponent(networkdm,DYNStabModelList[i].name,DYNStabModelList[i].sizeofstruct,&DYNStabModelList[i].key);CHKERRQ(ierr);
-    }
-
-    /* Register load models with DMNetwork */
-    for(i=0;i < nloadmodelsregistered;i++) { 
-      ierr = DMNetworkRegisterComponent(networkdm,DYNLoadModelList[i].name,DYNLoadModelList[i].sizeofstruct,&DYNLoadModelList[i].key);CHKERRQ(ierr);
-    }
-
-  }
   /* Get the total number of buses and lines */
   /* Note that when the read is read from XXXReadMatPowerData, only P0 reads the data and has
      NumLines and NumBuses set, all the other processors don't have any bus, branch, gen, load data
@@ -1910,7 +1483,7 @@ PetscErrorCode PSSetUp(PS ps)
   ierr = DMNetworkGetVertexRange(networkdm,&vStart,&vEnd);CHKERRQ(ierr);
   for(i=vStart; i < vEnd; i++) {
     /* Set the number of variables for buses */
-    if(ps->app == APP_DYNSIM || ps->app == APP_ACPF) numbusvariables = 2;
+    if(ps->app == APP_ACPF) numbusvariables = 2;
     else if(ps->app == APP_ACOPF) numbusvariables = 2 + 2*ps->bus[i-vStart].ngen;
     else SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Application not supported");
 
@@ -1921,70 +1494,6 @@ PetscErrorCode PSSetUp(PS ps)
       /* Add generator */
       gen = &ps->gen[ps->bus[i-vStart].gidx[j]];
       ierr = DMNetworkAddComponent(networkdm,i,ps->compkey[2],gen);CHKERRQ(ierr);
-      if(ps->app == APP_DYNSIM) {
-        if(!gen->status) continue;
-        /* Add dynamic generator model */
-        PetscInt Nvar;
-        ierr = DYNGenModelGetNvar(&gen->dyngen,&Nvar);CHKERRQ(ierr);
-        ierr = DMNetworkAddNumVariables(networkdm,i,Nvar);CHKERRQ(ierr);
-        /* Add the implementation type as a component to the networkdm */
-        /* Get the component key by comparing the name (This is ugly and slow!!) */
-        PetscInt k;
-        for(k=0; k < ngenmodelsregistered;k++) {
-          ierr = PetscStrcmp(DYNGenModelList[k].name,gen->dyngen.type,&match);CHKERRQ(ierr);
-          if(match) {
-            ierr = DMNetworkAddComponent(networkdm,i,DYNGenModelList[k].key,gen->dyngen.data);CHKERRQ(ierr);
-            break;
-          }
-	}
-
-	/* Add exciter model  */
-	if(gen->hasexc) {
-	  ierr = DYNExcModelGetNvar(&gen->dynexc,&Nvar);CHKERRQ(ierr);
-	  ierr = DMNetworkAddNumVariables(networkdm,i,Nvar);CHKERRQ(ierr);
-	  /* Add the implementation type as a component to the networkdm */
-	  /* Get the component key by comparing the name (This is ugly and slow!!) */
-	  for(k=0; k < nexcmodelsregistered;k++) {
-	    ierr = PetscStrcmp(DYNExcModelList[k].name,gen->dynexc.type,&match);CHKERRQ(ierr);
-	    if(match) {
-	      ierr = DMNetworkAddComponent(networkdm,i,DYNExcModelList[k].key,gen->dynexc.data);CHKERRQ(ierr);
-	      break;
-	    }
-	  }
-	}
-	
-	/* Add turbine-governor model  */
-	if(gen->hasturbgov) {
-	  ierr = DYNTurbgovModelGetNvar(&gen->dynturbgov,&Nvar);CHKERRQ(ierr);
-	  ierr = DMNetworkAddNumVariables(networkdm,i,Nvar);CHKERRQ(ierr);
-
-	  /* Add the implementation type as a component to the networkdm */
-	  /* Get the component key by comparing the name (This is ugly and slow!!) */
-	  for(k=0; k < nturbgovmodelsregistered;k++) {
-	    ierr = PetscStrcmp(DYNTurbgovModelList[k].name,gen->dynturbgov.type,&match);CHKERRQ(ierr);
-	    if(match) {
-	      ierr = DMNetworkAddComponent(networkdm,i,DYNTurbgovModelList[k].key,gen->dynturbgov.data);CHKERRQ(ierr);
-	      break;
-	    }
-	  }
-	}
-
-	/* Add stabilizer model  */
-	if(gen->hasstab) {
-	  ierr = DYNStabModelGetNvar(&gen->dynstab,&Nvar);CHKERRQ(ierr);
-	  ierr = DMNetworkAddNumVariables(networkdm,i,Nvar);CHKERRQ(ierr);
-
-	  /* Add the implementation type as a component to the networkdm */
-	  /* Get the component key by comparing the name (This is ugly and slow!!) */
-	  for(k=0; k < nstabmodelsregistered;k++) {
-	    ierr = PetscStrcmp(DYNStabModelList[k].name,gen->dynstab.type,&match);CHKERRQ(ierr);
-	    if(match) {
-	      ierr = DMNetworkAddComponent(networkdm,i,DYNStabModelList[k].key,gen->dynstab.data);CHKERRQ(ierr);
-	      break;
-	    }
-	  }
-	}
-      }
     }
 
     /* Loads */
@@ -1993,26 +1502,6 @@ PetscErrorCode PSSetUp(PS ps)
       load = &ps->load[ps->bus[i-vStart].lidx[j]];
       ierr = DMNetworkAddComponent(networkdm,i,ps->compkey[3],load);CHKERRQ(ierr);
 
-      if(ps->app == APP_DYNSIM) {
-	
-	if(!load->status) continue;
-
-	/* Add dynamic load model */
-       	PetscInt Nvar;
-	ierr = DYNLoadModelGetNvar(&load->dynload,&Nvar);CHKERRQ(ierr);
-	ierr = DMNetworkAddNumVariables(networkdm,i,Nvar);CHKERRQ(ierr);
-	
-	/* Add the implementation type as a component to the networkdm */
-	/* Get the component key by comparing the name (This is ugly and slow!!) */
-	PetscInt k;
-	for(k=0; k < nloadmodelsregistered;k++) {
-	  ierr = PetscStrcmp(DYNLoadModelList[k].name,load->dynload.type,&match);CHKERRQ(ierr);
-	  if(match) {
-	    ierr = DMNetworkAddComponent(networkdm,i,DYNLoadModelList[k].key,load->dynload.data);CHKERRQ(ierr);
-	    break;
-	  }
-	}
-      }
     }
   }
 
@@ -2113,96 +1602,9 @@ PetscErrorCode PSSetUp(PS ps)
 	} else if(key == ps->compkey[2]) {
 	  ierr = PetscMemcpy(&ps->gen[genj],component,sizeof(struct _p_PSGEN));CHKERRQ(ierr);
 	  ps->ngenON += ps->gen[genj].status;
-	  if(ps->app == APP_DYNSIM) {
-	    if(!ps->gen[genj].status) {
-	      ps->bus[i-vStart].gidx[genctr++] = genj++;
-	      continue;
-	    }
-
-	    PetscInt k;
-	    /* Generator model */
-	    for(k=0; k < ngenmodelsregistered;k++) {
-	      ierr = PetscStrcmp(ps->gen[genj].dyngen.type,DYNGenModelList[k].name,&match);CHKERRQ(ierr);
-	      if(match) {
-		ierr = DYNGenModelSetType(&ps->gen[genj].dyngen,DYNGenModelList[k].name);CHKERRQ(ierr);
-		j++;
-		ierr = DMNetworkGetComponent(ps->networkdm,i,j,&key,&component);CHKERRQ(ierr);
-		ierr = PetscMemcpy(ps->gen[genj].dyngen.data,component,DYNGenModelList[k].sizeofstruct);CHKERRQ(ierr);
-		ierr = DYNGenModelGetNvar(&ps->gen[genj].dyngen,&ps->gen[genj].dyngen.nvar);CHKERRQ(ierr);
-		break;
-	      }
-	    }
-
-	    /* Exciter model */
-	    if(ps->gen[genj].hasexc) {
-	      /* Get exciter model */
-	      for(k=0; k < nexcmodelsregistered;k++) {
-		ierr = PetscStrcmp(ps->gen[genj].dynexc.type,DYNExcModelList[k].name,&match);CHKERRQ(ierr);
-		if(match) {
-		  ierr = DYNExcModelSetType(&ps->gen[genj].dynexc,DYNExcModelList[k].name);CHKERRQ(ierr);
-		  j++;
-		  ierr = DMNetworkGetComponent(ps->networkdm,i,j,&key,&component);CHKERRQ(ierr);
-		  ierr = PetscMemcpy(ps->gen[genj].dynexc.data,component,DYNExcModelList[k].sizeofstruct);CHKERRQ(ierr);
-		  break;
-		}
-	      }
-	    } 
-
-	    /* Turbine-governor model */
-	    if(ps->gen[genj].hasturbgov) {
-	      /* Get turbine-governor model */
-	      for(k=0; k < nturbgovmodelsregistered;k++) {
-		ierr = PetscStrcmp(ps->gen[genj].dynturbgov.type,DYNTurbgovModelList[k].name,&match);CHKERRQ(ierr);
-		if(match) {
-		  ierr = DYNTurbgovModelSetType(&ps->gen[genj].dynturbgov,DYNTurbgovModelList[k].name);CHKERRQ(ierr);
-		  j++;
-		  ierr = DMNetworkGetComponent(ps->networkdm,i,j,&key,&component);CHKERRQ(ierr);
-		  ierr = PetscMemcpy(ps->gen[genj].dynturbgov.data,component,DYNTurbgovModelList[k].sizeofstruct);CHKERRQ(ierr);
-		  break;
-		}
-	      }
-	    } 
-
-	    /* Stabilizer model */
-	    if(ps->gen[genj].hasstab) {
-	      /* Get stabilizer model */
-	      for(k=0; k < nstabmodelsregistered;k++) {
-		ierr = PetscStrcmp(ps->gen[genj].dynstab.type,DYNStabModelList[k].name,&match);CHKERRQ(ierr);
-		if(match) {
-		  ierr = DYNStabModelSetType(&ps->gen[genj].dynstab,DYNStabModelList[k].name);CHKERRQ(ierr);
-		  j++;
-		  ierr = DMNetworkGetComponent(ps->networkdm,i,j,&key,&component);CHKERRQ(ierr);
-		  ierr = PetscMemcpy(ps->gen[genj].dynstab.data,component,DYNStabModelList[k].sizeofstruct);CHKERRQ(ierr);
-		  break;
-		}
-	      }
-	    } 	    
-	  }
 	  ps->bus[i-vStart].gidx[genctr++] = genj++;
 	} else if(key == ps->compkey[3]) {
 	  ierr = PetscMemcpy(&ps->load[loadj],component,sizeof(struct _p_PSLOAD));CHKERRQ(ierr);
-	  if(ps->app == APP_DYNSIM) {
-	    if(!ps->load[loadj].status) {
-	      ps->bus[i-vStart].lidx[loadctr++] = loadj++;
-	      continue;
-	    }
-	    PetscInt k;
-	    /* Dynamic load model */
-	    for(k=0; k < nloadmodelsregistered;k++) {
-	      ierr = PetscStrcmp(ps->load[loadj].dynload.type,DYNLoadModelList[k].name,&match);CHKERRQ(ierr);
-	      if(match) {
-		ierr = DYNLoadModelSetType(&ps->load[loadj].dynload,DYNLoadModelList[k].name);CHKERRQ(ierr);
-		j++;
-		ierr = DMNetworkGetComponent(ps->networkdm,i,j,&key,&component);CHKERRQ(ierr);
-		ierr = PetscMemcpy(ps->load[loadj].dynload.data,component,DYNLoadModelList[k].sizeofstruct);CHKERRQ(ierr);
-		/* Set the numnber of variables for this dynamic load model */
-		ierr = DYNLoadModelGetNvar(&ps->load[loadj].dynload,&ps->load[loadj].dynload.nvar);CHKERRQ(ierr);
-
-
-		break;
-	      }
-	    }
-	  }
 	  ps->bus[i-vStart].lidx[loadctr++] = loadj++;
 	}
       }
@@ -2220,9 +1622,6 @@ PetscErrorCode PSSetUp(PS ps)
      (d) incident loads at bus
      (e) sets the starting location for the variables for this bus in the given application
          state vector
-     (f) set up the number of differential and algebraic equations for APP_DYNSIM
-     (g) sets up starting location for generator and exciter variables (for APP_DYNSIM) 
-     (h) 
   */
   PetscInt nlines,k;
   const PetscInt *connnodes,*connlines;
@@ -2260,82 +1659,9 @@ PetscErrorCode PSSetUp(PS ps)
     //    if(ps->bus[i-vStart].startlocglob < 0) ps->bus[i-vStart].startlocglob = -ps->bus[i-vStart].startlocglob - 1;
 
     /* Incident generators */
-    PetscInt startloc=2*NPHASE;
 
     for(k=0; k < ps->bus[i-vStart].ngen; k++) {
       ps->bus[i-vStart].gens[k] = &ps->gen[ps->bus[i-vStart].gidx[k]];
-
-      if(ps->app == APP_DYNSIM) {
-	if(!ps->bus[i-vStart].gens[k]->status) continue;
-
-	ierr = PSGENGetDYNGen(ps->bus[i-vStart].gens[k],&dyngen);CHKERRQ(ierr);
-	ierr = PetscCalloc1(dyngen->nvar,&dyngen->eqtypes);CHKERRQ(ierr);
-	ierr = DYNGenModelGetEquationTypes(dyngen,&dyngen->ndiff,&dyngen->nalg,dyngen->eqtypes);CHKERRQ(ierr);
-	
-	/* Update number of differential equations used in creating differential equations IS */
-	if(!ps->bus[i-vStart].isghost) ps->ndiff += dyngen->ndiff;
-
-	/* Starting location for the variables relative to the bus variables */
-	dyngen->startloc = startloc;
-	startloc += dyngen->nvar;
-
-	/* Add a pointer to the bus */
-	dyngen->bus = &ps->bus[i-vStart];
-
-	/* Add a pointer to the gen */
-	dyngen->psgen = dyngen->bus->gens[k];
-
-	/* Exciter Model */
-	if(ps->bus[i-vStart].gens[k]->hasexc) {
-	  dyngen->dynexc = &ps->bus[i-vStart].gens[k]->dynexc;
-	  
-	  ierr = PSGENGetDYNExc(ps->bus[i-vStart].gens[k],&dynexc);CHKERRQ(ierr);
-	  ierr = PetscCalloc1(dynexc->nvar,&dynexc->eqtypes);CHKERRQ(ierr);
-	  ierr = DYNExcModelGetEquationTypes(dynexc,&dynexc->ndiff,&dynexc->nalg,dynexc->eqtypes);CHKERRQ(ierr);
-	  /* Update number of differential equations */
-	  if(!ps->bus[i-vStart].isghost) ps->ndiff += dynexc->ndiff;
-	  
-	  /* Starting location of the exciter variables relative to the bus variables */
-	  dynexc->startloc = startloc;
-	  startloc += dynexc->nvar;
-
-	  dynexc->dyngen = dyngen;
-	}
-	  
-	/* Turbine Governor Model */
-	if(ps->bus[i-vStart].gens[k]->hasturbgov) {
-	  dyngen->dynturbgov = &ps->bus[i-vStart].gens[k]->dynturbgov;
-	  
-	  ierr = PSGENGetDYNTurbgov(ps->bus[i-vStart].gens[k],&dynturbgov);CHKERRQ(ierr);
-	  ierr = PetscCalloc1(dynturbgov->nvar,&dynturbgov->eqtypes);CHKERRQ(ierr);
-	  ierr = DYNTurbgovModelGetEquationTypes(dynturbgov,&dynturbgov->ndiff,&dynturbgov->nalg,dynturbgov->eqtypes);CHKERRQ(ierr);
-	  /* Update number of differential equations */
-	  if(!ps->bus[i-vStart].isghost) ps->ndiff += dynturbgov->ndiff;
-	  
-	  /* Starting location of the turbine governor variables relative to the bus variables */
-	  dynturbgov->startloc = startloc;
-	  startloc += dynturbgov->nvar;
-
-	  dynturbgov->dyngen = dyngen;
-	}
-
-	/* Stabilizer Model */
-	if(ps->bus[i-vStart].gens[k]->hasstab && dyngen->dynexc) {
-	  dyngen->dynexc->dynstab = &ps->bus[i-vStart].gens[k]->dynstab;
-	  
-	  ierr = PSGENGetDYNStab(ps->bus[i-vStart].gens[k],&dynstab);CHKERRQ(ierr);
-	  ierr = PetscCalloc1(dynstab->nvar,&dynstab->eqtypes);CHKERRQ(ierr);
-	  ierr = DYNStabModelGetEquationTypes(dynstab,&dynstab->ndiff,&dynstab->nalg,dynstab->eqtypes);CHKERRQ(ierr);
-	  /* Update number of differential equations */
-	  if(!ps->bus[i-vStart].isghost) ps->ndiff += dynstab->ndiff;
-	  
-	  /* Starting location of the turbine governor variables relative to the bus variables */
-	  dynstab->startloc = startloc;
-	  startloc += dynstab->nvar;
-
-	  dynstab->dyngen = dyngen;
-	}
-      }
     }
     /* Change the bus type to PQ if no generators are incident */
     if(!ps->bus[i-vStart].ngenON && ps->bus[i-vStart].ide != ISOLATED_BUS) ps->bus[i-vStart].ide = PQ_BUS;
@@ -2343,29 +1669,6 @@ PetscErrorCode PSSetUp(PS ps)
     /* Incident loads */
     for(k=0; k < ps->bus[i-vStart].nload; k++) {
       ps->bus[i-vStart].loads[k] = &ps->load[ps->bus[i-vStart].lidx[k]];
-
-      if(ps->app == APP_DYNSIM) {
-	if(!ps->bus[i-vStart].loads[k]->status) continue;
-
-	ierr = PSLOADGetDYNLoad(ps->bus[i-vStart].loads[k],&dynload);CHKERRQ(ierr);
-	ierr = PetscCalloc1(dynload->nvar,&dynload->eqtypes);CHKERRQ(ierr);
-	if(dynload->nvar) {
-	  ierr = DYNLoadModelGetEquationTypes(dynload,&dynload->ndiff,&dynload->nalg,dynload->eqtypes);CHKERRQ(ierr);
-	}
-	
-	/* Update number of differential equations used in creating differential equations IS */
-	if(!ps->bus[i-vStart].isghost) ps->ndiff += dynload->ndiff;
-
-	/* Starting location for the variables relative to the bus variables */
-	dynload->startloc = startloc;
-	startloc += dynload->nvar;
-
-	/* Add a pointer to the bus */
-	dynload->bus = &ps->bus[i-vStart];
-
-	/* Add a pointer to the load */
-	dynload->psload = dynload->bus->loads[k];
-      }
     }
   }
 #if defined DEBUGPS
