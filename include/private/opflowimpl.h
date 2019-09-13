@@ -8,7 +8,7 @@
 #include <ps.h>
 #include <private/psimpl.h>
 #include <opflow.h>
-#if defined(PSAPPS_HAVE_IPOPT)
+#if defined(SCOPFLOW_HAVE_IPOPT)
 #include <IpStdCInterface.h>
 #endif
  /**
@@ -71,7 +71,7 @@ struct _p_OPFLOW{
   Vec lambda_xl;
   Vec lambda_xu;
 
-#if defined(PSAPPS_HAVE_IPOPT)
+#if defined(SCOPFLOW_HAVE_IPOPT)
   /* Ipopt specific terms */
   IpoptProblem nlp_ipopt; /**< Ipopt solver */
   enum ApplicationReturnStatus solve_status;

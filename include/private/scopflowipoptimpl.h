@@ -8,7 +8,7 @@
 #include <ps.h>
 #include <private/psimpl.h>
 #include <scopflow.h>
-#if defined(PSAPPS_HAVE_IPOPT)
+#if defined(SCOPFLOW_HAVE_IPOPT)
 #include <IpStdCInterface.h>
 #endif
 #include <private/contingencylist.h>
@@ -89,7 +89,7 @@ struct _p_SCOPFLOW{
   PetscBool ignore_line_flow_constraints; /* Ignore line flow constraints */
   PetscBool replicate_basecase; /* Replicate base case for all scenarios */
 
-#if defined(PSAPPS_HAVE_IPOPT)
+#if defined(SCOPFLOW_HAVE_IPOPT)
   /* IPOPT specific terms */
   IpoptProblem nlp_ipopt; /**< IPOPT problem object */
   enum ApplicationReturnStatus solve_status;

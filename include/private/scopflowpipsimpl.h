@@ -8,7 +8,7 @@
 #include <ps.h>
 #include <private/psimpl.h>
 #include <scopflow.h>
-#if defined(PSAPPS_HAVE_PIPS)
+#if defined(SCOPFLOW_HAVE_PIPS)
 #include <Drivers/parallelPipsNlp_C_Callback.h>
 #endif
 
@@ -91,7 +91,7 @@ struct _p_SCOPFLOW{
   PetscBool       ctgcfileset;
   char            ctgcfile[100];
 
-#if defined(PSAPPS_HAVE_PIPS)
+#if defined(SCOPFLOW_HAVE_PIPS)
   /* PIPS specific terms */
   PipsNlpProblemStructPtr nlp_pips; /**< PIPS solver */
 #endif
