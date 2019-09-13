@@ -1,12 +1,12 @@
 # SCOPFLOW
 SCOPFLOW is an application code for security-constrained optimal power flow. It, currently, solves a two-stage stochastic optimization problem. The problem formulation is as follows:
 ```math
-min f(x_i) \\
-s.t. \\
-  g(x_i) = 0  ~~i \in \{0,N_s}\\
-  h^- \le h(x_i) \le h^+ ~~i \in \{0,N_s}\\
-  x^- \le x_i \le x^+ ~~i \in \{0,N_s}\\
-  -\delta{x_i} \le x_i - x_0 \le \delta{x_i} ~~i \in \{1,N_s}\\
+\text{min}&~\sum_{i=0}^{Ns} f(x_i)& \\
+&\text{s.t.}& \\
+&~g(x_i) = 0~~~i \in \{0,N_s\}& \\
+&~h(x_i) \le 0~~i \in \{0,N_s\}& \\
+-\delta{x}& \le x_i - x_0 \le \delta{x}~~i \in \{1,N_s\}&\\
+&x^- \le x_i \le x^+~~i\in \{0,N_s\}&
  ```
 where $N_s$ is the number of scenarios. Note that the last equation is the coupling for the 2nd stage scenarios and the first-stage.
 
