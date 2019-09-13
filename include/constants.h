@@ -19,8 +19,4 @@
 #define NLOAD_AT_BUS_MAX 32 /**< Maximum number of loads allowed at a bus */
 #define NPHASE 1 /**< Per-phase analysis */
 
-/* Type of variables */
-#define DIFF_EQ 1 /**< Tag for Differential equation (used in dynamics simulation if an equation is a differential equation in a given dynamic model) */
-#define ALG_EQ  0 /** < Tag for algebraic equation (used in dynamics simulation if an equation is an algebraic equation in a given dynamic model) */
-
 #endif

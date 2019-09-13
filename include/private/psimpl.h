@@ -6,11 +6,6 @@
 #define __PSIMPL_H
 
 #include <ps.h>
-#include <private/dyngenmodelsimpl.h>
-#include <private/dynexcmodelsimpl.h>
-#include <private/dynturbgovmodelsimpl.h>
-#include <private/dynstabmodelsimpl.h>
-#include <private/dynloadmodelsimpl.h>
 
 /**
  * @brief Maximum number of lines allowed to be connected to a bus
@@ -94,10 +89,6 @@ struct _p_PSLOAD{
   PetscInt      internal_i; /**< Internal Bus Number */
   PetscInt      scale;  /* Load scaling flag of one for a scalable load and zero for a fixed load */
   PetscInt      intrpt; /**< Interruptible load flag of one for an interruptible load for zero for a non interruptible load */
-
-  struct _p_DYNLoadModel dynload; /**< Load model for dynamic simulations */
-  PetscInt dynloadsetup; /**< Flag to indicate whether the dynload model has been set up or not */
-  PetscBool dyniszip; /**< Flag to check if this dynamic load is a zip load model */
 };
 
 /**
@@ -147,15 +138,6 @@ struct _p_PSGEN{
   PetscBool     hasexc; /**< Flag for checking if this generator has an exciter */
   PetscBool     hasturbgov; /**< Flag for checking if this generator has a turbine-governor */
   PetscBool     hasstab;    /**< Flag for checking if this generator has a stabilizer */
-
-  struct _p_DYNGenModel   dyngen; /**< Generator model for dynamic simulations */
-  struct _p_DYNExcModel   dynexc; /**< Exciter model for dynamic simulations */
-  struct _p_DYNTurbgovModel dynturbgov; /**< Turbine governor model for dynamic simulations */
-  struct _p_DYNStabModel   dynstab;   /**< Stabilizer model for dynamic simulations */
-
-  PetscInt dyngensetup; /**< Flag to indicate whether the dyngen model has been set up or not */
-  PetscBool dyniscv; /**< Flag to check if this dynamic gen is a constant voltage source model */
-
 };
 
 /**

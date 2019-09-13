@@ -13,11 +13,6 @@
 
 #include <constants.h>
 #include <common.h>
-#include <dyngenmodels.h>
-#include <dynexcmodels.h>
-#include <dynturbgovmodels.h>
-#include <dynstabmodels.h>
-#include <dynloadmodels.h>
 #include <petscdmnetwork.h>
 
 /**
@@ -45,7 +40,6 @@ typedef struct _p_PSLINE *PSLINE;
  */
 typedef enum {
   APP_NONE,     /**< No application (default) */
-  APP_DYNSIM,   /**< Dynamic simulation */
   APP_ACPF,     /**< AC Power flow */
   APP_ACOPF     /**< AC Optimal Power Flow */  
 }PSApp;
@@ -78,12 +72,6 @@ extern PetscErrorCode PSReadMatPowerData(PS,const char[]);
  */
 extern PetscErrorCode PSReadPSSERawData(PS,const char[]);
 /**
- * @brief Reads the data file with dynamic models
- * @param [in] PS ps - The power system object ps
- * @param [in] const char[] dyrfile - The name of the dyr file
- */
-extern PetscErrorCode PSReadDyrData(PS,const char[]);
-/**
  * @brief Creates the PS object
  * @param [in] MPI_Comm mpicomm - the MPI communicator
  * @param [out] PS* psout - The PS object
@@ -112,7 +100,7 @@ extern PetscErrorCode PSDescreaseReferenceCount(PS);
 /**
  * @brief Sets the type of application to be run on the PS object
  * @param [in] PS ps - The PS object
- * @param [in] PSApp psapp - The application (DYNSIM,ACPF,DCPF)
+ * @param [in] PSApp psapp - The application (ACPF,ACOPF)
  */
 extern PetscErrorCode PSSetApplication(PS,PSApp);
 /**
@@ -247,13 +235,6 @@ extern PetscErrorCode PSGetNumGenerators(PS,PetscInt*,PetscInt*);
 extern PetscErrorCode PSGetNumActiveGenerators(PS,PetscInt*,PetscInt*);
 
 /**
- * @brief Returns the dynamic load object associated with the load
- * @param [in] PSLOAD load - the PSLOAD object
- * @param [out] DYNLoadModel* dynload - the dynamic load DYNLoadModel object
- */
-extern PetscErrorCode PSLOADGetDYNLoad(PSLOAD,DYNLoadModel*);
-
-/**
  * @brief Gets the number of global buses in the system
  * @param [in] PS ps - The PS object
  * @param [out] PetscInt *Nbus - Number of global buses
@@ -261,31 +242,6 @@ extern PetscErrorCode PSLOADGetDYNLoad(PSLOAD,DYNLoadModel*);
  * PSSetUp() must be called before a call to PSGetNumGlobalBuses
  */
 extern PetscErrorCode PSGetNumGlobalBuses(PS,PetscInt*);
-
-/**
- * @brief Returns the dynamic generator object associated with the generator
- * @param [in] PSGEN gen - the PSGEN object
- * @param [out] DYNGenModel* dyngen - the dynamic generator DYNGenModel object
- */
-extern PetscErrorCode PSGENGetDYNGen(PSGEN,DYNGenModel*);
-/**
- * @brief Returns the exciter model associated with the generator
- * @param [in] PSGEN gen - the PSGEN object
- * @param [out] DYNExcModel* dynexc - the exciter DYNExcModel object
- */
-extern PetscErrorCode PSGENGetDYNExc(PSGEN,DYNExcModel*);
-/**
- * @brief Returns the turbgoviter model associated with the generator
- * @param [in] PSGEN gen - the PSGEN object
- * @param [out] DYNTurbgovModel* dynturbgov - the turbgoviter DYNTurbgovModel object
- */
-extern PetscErrorCode PSGENGetDYNTurbgov(PSGEN,DYNTurbgovModel*);
-/**
- * @brief Returns the stabilizer model associated with the generator
- * @param [in] PSGEN gen - the PSGEN object
- * @param [out] DYNStabModel* dynstab - the DYNSTabModel object
- */
-extern PetscErrorCode PSGENGetDYNStab(PSGEN,DYNStabModel*);
 
 extern PetscErrorCode PSGENSetStatus(PSGEN,PetscInt);
 
