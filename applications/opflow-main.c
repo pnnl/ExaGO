@@ -13,7 +13,7 @@ int main(int argc,char **argv)
     PetscLogStage stages[2];
   #endif
 
-  PetscInitialize(&argc,&argv,"opflowoptions",help);
+  PetscInitialize(&argc,&argv,"options/opflowoptions",help);
 
   /* PetscLogStageRegister */
   ierr = PetscLogStageRegister("Reading Data",&stages[0]);CHKERRQ(ierr);

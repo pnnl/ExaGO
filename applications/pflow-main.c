@@ -11,7 +11,7 @@ int main(int argc,char **argv)
   PetscBool         flg;
   PetscLogStage     read,setup,solve;
 
-  PetscInitialize(&argc,&argv,"pflowoptions",help);
+  PetscInitialize(&argc,&argv,"options/pflowoptions",help);
   
   ierr = PetscLogStageRegister("ReadData",&read);CHKERRQ(ierr);
   ierr = PetscLogStageRegister("SetUp",&setup);CHKERRQ(ierr);

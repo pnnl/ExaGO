@@ -14,7 +14,7 @@ int main(int argc,char **argv)
     PetscLogStage stages[2];
   #endif
 
-  PetscInitialize(&argc,&argv,"scopflowoptions",help);
+  PetscInitialize(&argc,&argv,"options/scopflowoptions",help);
 
   /* PetscLogStageRegister */
   ierr = PetscLogStageRegister("Reading Data",&stages[0]);CHKERRQ(ierr);

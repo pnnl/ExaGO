@@ -15,7 +15,7 @@ int main(int argc,char **argv)
   PetscErrorCode ierr;
   PFLOW             pflow;
 
-  PetscInitialize(&argc,&argv,"pflowoptions",help);
+  PetscInitialize(&argc,&argv,"options/pflowoptions",help);
   
   /* Create PFLOW object */
   ierr = PFLOWCreate(PETSC_COMM_WORLD,&pflow);CHKERRQ(ierr);
