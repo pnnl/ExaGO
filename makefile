@@ -54,7 +54,7 @@ DYN_SRC_OBJECTS = src/pflow/pflow.o src/dyn/dyn.o ${PS_SRC_OBJECTS} ${DYN_GENRAL
 DYN_APP_OBJECTS = applications/dyn-main.o
 OBJECTS_DYN = $(DYN_APP_OBJECTS)
 DYN: $(OBJECTS_DYN) libdyn chkopts
-	 -$(CLINKER) -o DYN $(OBJECTS_DYN) ${PETSC_TS_LIB} -L${PSAPPS_DIR} -ldyn
+	 -$(CLINKER) -o DYN $(OBJECTS_DYN) ${PETSC_TS_LIB} -L${SCOPFLOW_DIR} -ldyn
 	$(RM) $(OBJECTS_DYN)
 
 
@@ -67,7 +67,7 @@ PFLOW_SRC_OBJECTS = src/pflow/pflow.o ${PS_SRC_OBJECTS} ${DYN_GENRAL_OBJECTS}
 PFLOW_APP_OBJECTS = applications/pflow-main.o
 OBJECTS_PFLOW = $(PFLOW_APP_OBJECTS)
 PFLOW: $(OBJECTS_PFLOW) libpflow chkopts
-	 -$(CLINKER) -o PFLOW $(OBJECTS_PFLOW) ${PETSC_SNES_LIB} -L${PSAPPS_DIR} -lpflow
+	 -$(CLINKER) -o PFLOW $(OBJECTS_PFLOW) ${PETSC_SNES_LIB} -L${SCOPFLOW_DIR} -lpflow
 	$(RM) $(OBJECTS_PFLOW)
 
 
@@ -75,7 +75,7 @@ PFLOW_APP2_OBJECTS = applications/pflow-main2.o
 #******** Option 2 **********
 OBJECTS_PFLOW2 = $(PFLOW_APP2_OBJECTS)
 PFLOW2: $(OBJECTS_PFLOW2) libpflow chkopts
-	 -$(CLINKER) -o PFLOW2 $(OBJECTS_PFLOW2) ${PETSC_SNES_LIB} -L${PSAPPS_DIR} -lpflow
+	 -$(CLINKER) -o PFLOW2 $(OBJECTS_PFLOW2) ${PETSC_SNES_LIB} -L${SCOPFLOW_DIR} -lpflow
 	$(RM) $(OBJECTS_PFLOW2)
 
 
@@ -88,7 +88,7 @@ OPFLOW_SRC_OBJECTS = src/opflow/opflow.o src/opflow/econstraints.o src/opflow/ic
 OPFLOW_APP_OBJECTS = applications/opflow-main.o
 OBJECTS_OPFLOW = $(OPFLOW_APP_OBJECTS)
 OPFLOW: $(OBJECTS_OPFLOW) libopflow chkopts
-	 -$(CLINKER) -o OPFLOW $(OBJECTS_OPFLOW) ${PETSC_TAO_LIB} -L${PSAPPS_DIR} -lopflow
+	 -$(CLINKER) -o OPFLOW $(OBJECTS_OPFLOW) ${PETSC_TAO_LIB} -L${SCOPFLOW_DIR} -lopflow
 	$(RM) $(OBJECTS_OPFLOW)
 
 
@@ -96,7 +96,7 @@ OPFLOW_IPOPT_SRC_OBJECTS = src/opflow/opflow-ipopt.o ${PS_SRC_OBJECTS} ${DYN_GEN
 #******** Option 2 **********
 OBJECTS_OPFLOW2 = $(OPFLOW_APP_OBJECTS)
 OPFLOW_IPOPT: $(OBJECTS_OPFLOW2) libopflowipopt chkopts
-	 -$(CLINKER) -o OPFLOW_IPOPT $(OBJECTS_OPFLOW2) -L${PSAPPS_DIR} -lopflowipopt
+	 -$(CLINKER) -o OPFLOW_IPOPT $(OBJECTS_OPFLOW2) -L${SCOPFLOW_DIR} -lopflowipopt
 	$(RM) $(OBJECTS_OPFLOW2)
 
 #******************************
@@ -106,13 +106,13 @@ SCOPFLOW_APP_OBJECTS = applications/scopflow-main.o
 #******** Option 2 **********
 OBJECTS_SCOPFLOW2 = $(SCOPFLOW_APP_OBJECTS) 
 SCOPFLOW_IPOPT: $(OBJECTS_SCOPFLOW2) libscopflowipopt chkopts
-	 -$(CLINKER) -o SCOPFLOW_IPOPT $(OBJECTS_SCOPFLOW2) -L${PSAPPS_DIR} -lscopflowipopt ${PETSC_LIB}
+	 -$(CLINKER) -o SCOPFLOW_IPOPT $(OBJECTS_SCOPFLOW2) -L${SCOPFLOW_DIR} -lscopflowipopt ${PETSC_LIB}
 	$(RM) $(OBJECTS_SCOPFLOW2)
 
 # SCOPFLOW with PIPS
 OBJECTS_SCOPFLOW3 = $(SCOPFLOW_APP_OBJECTS) 
 SCOPFLOW_PIPS: $(OBJECTS_SCOPFLOW3) libscopflowpips chkopts
-	 -$(CLINKER) -o SCOPFLOW_PIPS $(OBJECTS_SCOPFLOW3) -L${PSAPPS_DIR} -lscopflowpips ${PETSC_LIB}
+	 -$(CLINKER) -o SCOPFLOW_PIPS $(OBJECTS_SCOPFLOW3) -L${SCOPFLOW_DIR} -lscopflowpips ${PETSC_LIB}
 	$(RM) $(OBJECTS_SCOPFLOW3)
 
 #***************************
