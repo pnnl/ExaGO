@@ -64,7 +64,7 @@ PFLOW2: $(OBJECTS_PFLOW2) libpflow chkopts
 #******************************
 OPFLOW_SRC_OBJECTS = src/opflow/opflow.o src/opflow/econstraints.o src/opflow/iconstraints.o src/opflow/objectivefunct.o ${PS_SRC_OBJECTS}
 
-OPFLOW3_SRC_OBJECTS = src/opflow/interface/opflow.o src/opflow/interface/opflowregi.o src/opflow/formulation/power-bal-polar/pbpol.o ${PS_SRC_OBJECTS}
+OPFLOW3_SRC_OBJECTS = src/opflow/interface/opflow.o src/opflow/interface/opflowregi.o src/opflow/formulation/power-bal-polar/pbpol.o src/opflow/solver/ipopt/opflow-ipopt.o ${PS_SRC_OBJECTS}
 
 #******** Option 1 **********
 OPFLOW_APP_OBJECTS = applications/opflow-main.o
@@ -132,4 +132,4 @@ libscopflowpips:$(SCOPFLOW_PIPS_SRC_OBJECTS) chkopts
 #	Remove .o Command
 #******************************
 cleanobj:
-	rm -rf $(OBJECTS_PFLOW) $(OBJECTS_PFLOW2) $(PFLOW_SRC_OBJECTS) $(OBJECTS_OPFLOW) $(OBJECTS_OPFLOW2)$(OPFLOW_SRC_OBJECTS) $(OBJECTS_SCOPFLOW2) $(SCOPFLOW_IPOPT_SRC_OBJECTS) $(SCOPFLOW_PIPS_SRC_OBJECTS) *.dylib *.dSYM PFLOW PFLOW2 OPFLOW OPFLOW_IPOPT SCOPFLOW_IPOPT SCOPFLOW_PIPS
+	rm -rf $(OBJECTS_PFLOW) $(OBJECTS_PFLOW2) $(PFLOW_SRC_OBJECTS) $(OBJECTS_OPFLOW) $(OBJECTS_OPFLOW2)$(OPFLOW_SRC_OBJECTS) $(OPFLOW3_SRC_OBJECTS) $(OBJECTS_SCOPFLOW2) $(SCOPFLOW_IPOPT_SRC_OBJECTS) $(SCOPFLOW_PIPS_SRC_OBJECTS) *.dylib *.dSYM PFLOW PFLOW2 OPFLOW OPFLOW3 OPFLOW_IPOPT SCOPFLOW_IPOPT SCOPFLOW_PIPS

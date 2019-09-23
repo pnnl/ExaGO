@@ -9,10 +9,14 @@
 #include <private/psimpl.h>
 #include <opflow.h>
 
+#define OPFLOWFORMULATIONSMAX 4
+#define OPFLOWSOLVERSMAX      3
+
 struct _p_OPFLOWFormulationOps {
   PetscErrorCode (*destroy)(OPFLOW);
   PetscErrorCode (*setvariablebounds)(OPFLOW,Vec,Vec); /* Upper and lower bounds on the vector */
   PetscErrorCode (*setconstraintbounds)(OPFLOW,Vec,Vec); /* Lower and upper bounds on constraints */
+  PetscErrorCode (*setvariableandconstraintbounds)(OPFLOW,Vec,Vec,Vec,Vec); /* Lower and upper bounds on variables and constraints */
   PetscErrorCode (*setinitialguess)(OPFLOW,Vec); /* Set the initial guess for the optimization */
   PetscErrorCode (*computeequalityconstraints)(OPFLOW,Vec,Vec); /* Set equality constraints */
   PetscErrorCode (*computeinequalityconstraints)(OPFLOW,Vec,Vec); /* Set inequality constraints */
@@ -20,11 +24,28 @@ struct _p_OPFLOWFormulationOps {
   PetscErrorCode (*computeobjandgradient)(OPFLOW,Vec,PetscScalar*,Vec); /* Objective and gradient routine */
   PetscErrorCode (*computeobjective)(OPFLOW,Vec,PetscScalar*); /* Objective */
   PetscErrorCode (*computegradient)(OPFLOW,Vec,Vec); /* Gradient of the objective function */
+  PetscErrorCode (*computejacobian)(OPFLOW,Vec,Mat); /* Jacobian of the constraints */
+  PetscErrorCode (*computeequalityconstraintjacobian)(OPFLOW,Vec,Mat); /* Equality constraints Jacobian */
+  PetscErrorCode (*computeinequalityconstraintjacobian)(OPFLOW,Vec,Mat); /*Inequality constraints Jacobian */
+  PetscErrorCode (*computehessian)(OPFLOW,Vec,Vec,Mat); /* Hessian matrix */
 };
 
 struct _p_OPFLOWSolverOps {
   PetscErrorCode (*destroy)(OPFLOW);
+  PetscErrorCode (*setup)(OPFLOW);
+  PetscErrorCode (*solve)(OPFLOW);
 };
+
+struct _p_OPFLOWFormulationList{
+  char name[32]; /* Name of the formulation */
+  PetscErrorCode (*create)(OPFLOW); /* Formulation creation routine */
+};
+
+struct _p_OPFLOWSolverList{
+  char name[32]; /* Name of the solver */
+  PetscErrorCode (*create)(OPFLOW); /* Solver object creation routine */
+};
+
 
 /**
  * @brief private struct for optimal power flow application
@@ -76,28 +97,19 @@ struct _p_OPFLOW{
   void* formulation; /* Formulation object */
   struct _p_OPFLOWFormulationOps formops;
 
+  /* List of formulations and solvers registered */
+  struct _p_OPFLOWFormulationList OPFLOWFormulationList[OPFLOWFORMULATIONSMAX];
+  struct _p_OPFLOWSolverList OPFLOWSolverList[OPFLOWSOLVERSMAX];
+  PetscInt nformulationsregistered;
+  PetscInt nsolversregistered;
+  PetscBool OPFLOWFormulationRegisterAllCalled;
+  PetscBool OPFLOWSolverRegisterAllCalled;
 };
-
-struct _p_OPFLOWFormulationList{
-  char name[32]; /* Name of the formulation */
-  PetscErrorCode (*create)(OPFLOW); /* Formulation creation routine */
-};
-
-struct _p_OPFLOWSolverList{
-  char name[32]; /* Name of the solver */
-  PetscErrorCode (*create)(OPFLOW); /* Solver object creation routine */
-  PetscErrorCode (*solve)(OPFLOW);  /* Solve OPFLOW */
-  PetscErrorCode (*setup)(OPFLOW);  /* Set up internal objects/data structures */
-};
-
-extern struct _p_OPFLOWFormulationList OPFLOWFormulationList[8];
-
-extern struct _p_OPFLOWSolverList OPFLOWSolverList[8];
 
 /* Registers all the OPFLOW formulations */
-extern PetscErrorCode OPFLOWFormulationRegisterAll(void);
+extern PetscErrorCode OPFLOWFormulationRegisterAll(OPFLOW);
 
 /* Register all OPFLOW solvers */
-extern PetscErrorCode OPFLOWSolverRegisterAll(void);
+extern PetscErrorCode OPFLOWSolverRegisterAll(OPFLOW);
 
 #endif

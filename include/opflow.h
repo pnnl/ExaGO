@@ -9,12 +9,21 @@
 
 #include <ps.h>
 
+/* Formulations */
+#define OPFLOWFORMULATION_PBPOL "POWER_BALANCE_POLAR" 
+#define OPFLOWFORMULATION_PBCAR "POWER_BALANCE_CARTESIAN"
+#define OPFLOWFORMULATION_IBCAR "CURRENT_BALANCE_POLAR"
+
+/* Solvers */
+#define OPFLOWSOLVER_IPOPT "IPOPT"
+#define OPFLOWSOLVER_TAO   "TAO"
+
 typedef struct _p_OPFLOW *OPFLOW;
 
-PETSC_EXTERN PetscErrorCode OPFLOWSetFormulation(OPFLOW,const char*);
-PETSC_EXTERN PetscErrorCode OPFLOWSetSolver(OPFLOW,const char*);
-PETSC_EXTERN PetscErrorCode OPFLOWFormulationRegister(const char[],PetscErrorCode (*create)(OPFLOW));
-PETSC_EXTERN PetscErrorCode OPFLOWSolverRegister(const char[],PetscErrorCode (*create)(OPFLOW));
+PETSC_EXTERN PetscErrorCode OPFLOWSetFormulation(OPFLOW,const char[]);
+PETSC_EXTERN PetscErrorCode OPFLOWSetSolver(OPFLOW,const char[]);
+PETSC_EXTERN PetscErrorCode OPFLOWFormulationRegister(OPFLOW,const char[],PetscErrorCode (*create)(OPFLOW));
+PETSC_EXTERN PetscErrorCode OPFLOWSolverRegister(OPFLOW,const char[],PetscErrorCode (*create)(OPFLOW));
 PETSC_EXTERN PetscErrorCode OPFLOWCreate(MPI_Comm,OPFLOW*);
 PETSC_EXTERN PetscErrorCode OPFLOWDestroy(OPFLOW*);
 PETSC_EXTERN PetscErrorCode OPFLOWReadMatPowerData(OPFLOW,const char[]);

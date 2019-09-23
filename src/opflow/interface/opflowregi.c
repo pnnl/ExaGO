@@ -1,17 +1,5 @@
 #include <private/opflowimpl.h>
 
-struct _p_OPFLOWFormulationList OPFLOWFormulationList[8];
-
-static PetscInt nformulationsregistered=0;
-
-struct _p_OPFLOWSolverList OPFLOWSolverList[8];
-
-static PetscInt nsolversregistered=0;
-
-static PetscBool OPFLOWFormulationRegisterAllCalled = PETSC_FALSE;
-
-static PetscBool OPFLOWSolverRegisterAllCalled = PETSC_FALSE;
-
 /*
   OPFLOWFormulationRegister - Registers an OPFLOW formulation
 
@@ -19,44 +7,44 @@ static PetscBool OPFLOWSolverRegisterAllCalled = PETSC_FALSE;
 + sname     - formuation name (string)
 - createfunction  - the class constructor
 */
-PetscErrorCode OPFLOWFormulationRegister(const char sname[],PetscErrorCode (*createfunction)(OPFLOW))
+PetscErrorCode OPFLOWFormulationRegister(OPFLOW opflow,const char sname[],PetscErrorCode (*createfunction)(OPFLOW))
 {
   PetscErrorCode ierr;
   PetscInt       i;
   PetscFunctionBegin;
-  for(i=0; i < nformulationsregistered;i++) {
+  for(i=0; i < opflow->nformulationsregistered;i++) {
     PetscBool match;
-    ierr = PetscStrcmp(OPFLOWFormulationList[i].name,sname,&match);
+    ierr = PetscStrcmp(opflow->OPFLOWFormulationList[i].name,sname,&match);
     if(match) PetscFunctionReturn(0);
   }
-  i = nformulationsregistered;
-  ierr = PetscStrcpy(OPFLOWFormulationList[i].name,sname);CHKERRQ(ierr);
-  OPFLOWFormulationList[i].create = createfunction;
-  nformulationsregistered++;
+  i = opflow->nformulationsregistered;
+  ierr = PetscStrcpy(opflow->OPFLOWFormulationList[i].name,sname);CHKERRQ(ierr);
+  opflow->OPFLOWFormulationList[i].create = createfunction;
+  opflow->nformulationsregistered++;
   PetscFunctionReturn(0);
 }
 
 /*
-  OpflowsolverRegister - Registers an OPFLOW formulation
+  OPFLOWSolverRegister - Registers an OPFLOW formulation
 
   Input Parameters:
 + sname     - formuation name (string)
 - createfunction  - the class constructor
 */
-PetscErrorCode OPFLOWSolverRegister(const char sname[],PetscErrorCode (*createfunction)(OPFLOW))
+PetscErrorCode OPFLOWSolverRegister(OPFLOW opflow,const char sname[],PetscErrorCode (*createfunction)(OPFLOW))
 {
   PetscErrorCode ierr;
   PetscInt       i;
   PetscFunctionBegin;
-  for(i=0; i < nsolversregistered;i++) {
+  for(i=0; i < opflow->nsolversregistered;i++) {
     PetscBool match;
-    ierr = PetscStrcmp(OPFLOWSolverList[i].name,sname,&match);
+    ierr = PetscStrcmp(opflow->OPFLOWSolverList[i].name,sname,&match);
     if(match) PetscFunctionReturn(0);
   }
-  i = nsolversregistered;
-  ierr = PetscStrcpy(OPFLOWSolverList[i].name,sname);CHKERRQ(ierr);
-  OPFLOWSolverList[i].create = createfunction;
-  nsolversregistered++;
+  i = opflow->nsolversregistered;
+  ierr = PetscStrcpy(opflow->OPFLOWSolverList[i].name,sname);CHKERRQ(ierr);
+  opflow->OPFLOWSolverList[i].create = createfunction;
+  opflow->nsolversregistered++;
   PetscFunctionReturn(0);
 }
 
@@ -65,29 +53,30 @@ extern PetscErrorCode OPFLOWFormulationCreate_PBPOL(OPFLOW);
 /*
   OPFLOWFormulationRegisterAll - Registers all built OPFLOW formulations
 */
-PetscErrorCode OPFLOWFormulationRegisterAll(void)
+PetscErrorCode OPFLOWFormulationRegisterAll(OPFLOW opflow)
 {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  if(OPFLOWFormulationRegisterAllCalled) PetscFunctionReturn(0);
+  if(opflow->OPFLOWFormulationRegisterAllCalled) PetscFunctionReturn(0);
 
-  ierr = OPFLOWFormulationRegister("POWER_BALANCE_POLAR",OPFLOWFormulationCreate_PBPOL);CHKERRQ(ierr);
-  OPFLOWFormulationRegisterAllCalled = PETSC_TRUE;
+  ierr = OPFLOWFormulationRegister(opflow,OPFLOWFORMULATION_PBPOL,OPFLOWFormulationCreate_PBPOL);CHKERRQ(ierr);
+  opflow->OPFLOWFormulationRegisterAllCalled = PETSC_TRUE;
 
   PetscFunctionReturn(0);
 }
 
+extern PetscErrorCode OPFLOWSolverCreate_IPOPT(OPFLOW);
 /*
   OPFLOWSolverRegisterAll - Registers all OPFLOW solvers
 */
-PetscErrorCode OPFLOWSolverRegisterAll(void)
+PetscErrorCode OPFLOWSolverRegisterAll(OPFLOW opflow)
 {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  if(OPFLOWSolverRegisterAllCalled) PetscFunctionReturn(0);
+  if(opflow->OPFLOWSolverRegisterAllCalled) PetscFunctionReturn(0);
 
-  //  ierr = OPFLOWSolverRegister("ipopt",OPFLOWSolverCreate_IPOPT);CHKERRQ(ierr);
-  OPFLOWSolverRegisterAllCalled = PETSC_TRUE;
+  ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_IPOPT,OPFLOWSolverCreate_IPOPT);CHKERRQ(ierr);
+  opflow->OPFLOWSolverRegisterAllCalled = PETSC_TRUE;
 
   PetscFunctionReturn(0);
 }
@@ -105,20 +94,20 @@ PetscErrorCode OPFLOWSetSolver(OPFLOW opflow,const char* solvername)
   PetscInt       i;
   PetscFunctionBegin;
   PetscBool match;
-  for(i=0;i < nsolversregistered;i++) {
-    ierr = PetscStrcmp(OPFLOWSolverList[i].name,solvername,&match);CHKERRQ(ierr);
+  for(i=0;i < opflow->nsolversregistered;i++) {
+    ierr = PetscStrcmp(opflow->OPFLOWSolverList[i].name,solvername,&match);CHKERRQ(ierr);
     if(match) {
-      r = OPFLOWSolverList[i].create;
+      r = opflow->OPFLOWSolverList[i].create;
       break;
     }
   }
 
   if(!r) SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_UNKNOWN_TYPE,"Unknown type for OPFLOW Solver %s",solvername);
 
-  /* Null the function pointers */
+  /* Initialize (Null) the function pointers */
   opflow->solverops.destroy = 0;
-
-  opflow->formops.destroy   = 0;
+  opflow->solverops.solve   = 0;
+  opflow->solverops.setup   = 0;
 
   /* Call the underlying implementation constructor */
   ierr = (*r)(opflow);CHKERRQ(ierr);
@@ -139,10 +128,10 @@ PetscErrorCode OPFLOWSetFormulation(OPFLOW opflow,const char* formulationname)
   PetscInt       i;
   PetscFunctionBegin;
   PetscBool match;
-  for(i=0;i < nformulationsregistered;i++) {
-    ierr = PetscStrcmp(OPFLOWFormulationList[i].name,formulationname,&match);CHKERRQ(ierr);
+  for(i=0;i < opflow->nformulationsregistered;i++) {
+    ierr = PetscStrcmp(opflow->OPFLOWFormulationList[i].name,formulationname,&match);CHKERRQ(ierr);
     if(match) {
-      r = OPFLOWFormulationList[i].create;
+      r = opflow->OPFLOWFormulationList[i].create;
       break;
     }
   }
@@ -150,6 +139,21 @@ PetscErrorCode OPFLOWSetFormulation(OPFLOW opflow,const char* formulationname)
   if(!r) SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_UNKNOWN_TYPE,"Unknown type for OPFLOW Formulation %s",formulationname);
 
   /* Null the function pointers */
+  opflow->formops.destroy                        = 0;
+  opflow->formops.setvariablebounds              = 0;
+  opflow->formops.setconstraintbounds            = 0;
+  opflow->formops.setvariableandconstraintbounds = 0;
+  opflow->formops.setinitialguess                = 0;
+  opflow->formops.computeequalityconstraints     = 0;
+  opflow->formops.computeinequalityconstraints   = 0;
+  opflow->formops.computeconstraints             = 0;
+  opflow->formops.computeobjandgradient          = 0;
+  opflow->formops.computeobjective               = 0;
+  opflow->formops.computegradient                = 0;
+  opflow->formops.computejacobian                = 0;
+  opflow->formops.computeequalityconstraintjacobian = 0;
+  opflow->formops.computeinequalityconstraintjacobian = 0;
+  opflow->formops.computehessian                 = 0;
 
   /* Call the underlying implementation constructor */
   ierr = (*r)(opflow);CHKERRQ(ierr);
