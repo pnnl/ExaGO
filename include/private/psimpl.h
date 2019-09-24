@@ -242,5 +242,6 @@ extern PetscErrorCode PSGetGen(PS,PetscInt,const char*,PSGEN*);
 extern PetscErrorCode PSSetGenStatus(PS,PetscInt,const char*,PetscInt);
 extern PetscErrorCode PSSetLineStatus(PS,PetscInt,PetscInt,const char*,PetscInt);
 extern PetscErrorCode PSIslandCheckandSetRefBus(PS,PetscInt);
+extern PetscErrorCode PSConnCompDestroy(PS);
 #endif
 
