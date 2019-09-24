@@ -78,17 +78,97 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow)
 
   ierr = PSDestroy(&(*opflow)->ps);CHKERRQ(ierr);
 
-  /*  if((*opflow)->solverops.destroy) {
+  if((*opflow)->solverops.destroy) {
     ierr = ((*opflow)->solverops.destroy)(*opflow);
   }
-  */
 
-  //  if((*opflow)->formops.destroy) {
-  //    ierr = (
+  if((*opflow)->formops.destroy) {
+    ierr = ((*opflow)->formops.destroy)(*opflow);
+  }
 
 
   ierr = PetscFree(*opflow);CHKERRQ(ierr);
   *opflow = 0;
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWSetSolver - Sets the solver for OPFLOW
+
+  Input Parameters:
++ opflow - opflow application object
+- solvername - name of the solver
+*/
+PetscErrorCode OPFLOWSetSolver(OPFLOW opflow,const char* solvername)
+{
+  PetscErrorCode ierr,(*r)(OPFLOW)=NULL;
+  PetscInt       i;
+  PetscFunctionBegin;
+  PetscBool match;
+  for(i=0;i < opflow->nsolversregistered;i++) {
+    ierr = PetscStrcmp(opflow->OPFLOWSolverList[i].name,solvername,&match);CHKERRQ(ierr);
+    if(match) {
+      r = opflow->OPFLOWSolverList[i].create;
+      break;
+    }
+  }
+
+  if(!r) SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_UNKNOWN_TYPE,"Unknown type for OPFLOW Solver %s",solvername);
+
+  /* Initialize (Null) the function pointers */
+  opflow->solverops.destroy = 0;
+  opflow->solverops.solve   = 0;
+  opflow->solverops.setup   = 0;
+
+  /* Call the underlying implementation constructor */
+  ierr = (*r)(opflow);CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWSetFormulation - Sets the formulation for OPFLOW
+
+  Input Parameters:
++ opflow - opflow application object
+- solvername - name of the formulation
+*/
+PetscErrorCode OPFLOWSetFormulation(OPFLOW opflow,const char* formulationname)
+{
+  PetscErrorCode ierr,(*r)(OPFLOW)=NULL;
+  PetscInt       i;
+  PetscFunctionBegin;
+  PetscBool match;
+  for(i=0;i < opflow->nformulationsregistered;i++) {
+    ierr = PetscStrcmp(opflow->OPFLOWFormulationList[i].name,formulationname,&match);CHKERRQ(ierr);
+    if(match) {
+      r = opflow->OPFLOWFormulationList[i].create;
+      break;
+    }
+  }
+
+  if(!r) SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_UNKNOWN_TYPE,"Unknown type for OPFLOW Formulation %s",formulationname);
+
+  /* Null the function pointers */
+  opflow->formops.destroy                        = 0;
+  opflow->formops.setvariablebounds              = 0;
+  opflow->formops.setconstraintbounds            = 0;
+  opflow->formops.setvariableandconstraintbounds = 0;
+  opflow->formops.setinitialguess                = 0;
+  opflow->formops.computeequalityconstraints     = 0;
+  opflow->formops.computeinequalityconstraints   = 0;
+  opflow->formops.computeconstraints             = 0;
+  opflow->formops.computeobjandgradient          = 0;
+  opflow->formops.computeobjective               = 0;
+  opflow->formops.computegradient                = 0;
+  opflow->formops.computejacobian                = 0;
+  opflow->formops.computeequalityconstraintjacobian = 0;
+  opflow->formops.computeinequalityconstraintjacobian = 0;
+  opflow->formops.computehessian                 = 0;
+
+  /* Call the underlying implementation constructor */
+  ierr = (*r)(opflow);CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -152,7 +232,6 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
       ierr = OPFLOWSetSolver(opflow,OPFLOWSOLVER_IPOPT);CHKERRQ(ierr); 
     }
   }
-
 
   PetscFunctionReturn(0);
 }

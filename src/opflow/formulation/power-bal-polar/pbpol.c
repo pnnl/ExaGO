@@ -1,10 +1,13 @@
 #include <private/opflowimpl.h>
 #include "pbpol.h"
 
-PetscErrorCode OPFLOWDestroy_PBPOL(OPFLOW opflow)
+PetscErrorCode OPFLOWFormulationDestroy_PBPOL(OPFLOW opflow)
 {
+  PetscErrorCode ierr;
+
   PetscFunctionBegin;
 
+  ierr = PetscFree(opflow->formulation);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -74,10 +77,17 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow,Vec X,Vec Grad)
 
 PetscErrorCode OPFLOWFormulationCreate_PBPOL(OPFLOW opflow)
 {
+  PBPOL pbpol;
+  PetscErrorCode ierr;
+
   PetscFunctionBegin;
   
+  ierr = PetscCalloc1(1,&pbpol);CHKERRQ(ierr);
+
+  opflow->formulation = pbpol;
+
   /* Inherit Ops */
-  opflow->formops.destroy = OPFLOWDestroy_PBPOL;
+  opflow->formops.destroy = OPFLOWFormulationDestroy_PBPOL;
   opflow->formops.setvariablebounds = OPFLOWSetVariableBounds_PBPOL;
   opflow->formops.setconstraintbounds = OPFLOWSetConstraintBounds_PBPOL;
   opflow->formops.setinitialguess = OPFLOWSetInitialGuess_PBPOL;
