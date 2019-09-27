@@ -544,12 +544,17 @@ PetscErrorCode PSLOADDestroy(PS ps)
 
   Input Parameters:
 + PS - the PS object
-- psapp - the application (PFLOW,OPFLOW)
+. psapp - the application object
+- psappname - the application name (PFLOW,OPFLOW)
 */
-PetscErrorCode PSSetApplication(PS ps,PSApp psapp)
+PetscErrorCode PSSetApplication(PS ps,void *psapp, PSApp psappname)
 {
+  PetscBool app_found;
   PetscFunctionBegin;
-  ps->app = psapp;
+  ps->app     = psapp;
+  ps->appname = psappname;
+  app_found = (ps->appname == APP_ACPF || ps->appname == APP_ACOPF);
+  if(!app_found) SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Application not supported");
   PetscFunctionReturn(0);
 }
 
@@ -607,7 +612,8 @@ PetscErrorCode PSCreate(MPI_Comm mpicomm,PS *psout)
   ps->Nbranch = -1;
   ps->Nload   = -1;
   ps->refct   = 0;
-  ps->app     = APP_NONE;
+  ps->app     = NULL;
+  ps->appname     = APP_NONE;
   ps->ndiff   = 0;
   ps->nconncomp = 0;
  
@@ -778,9 +784,8 @@ PetscErrorCode PSSetUp(PS ps)
   ierr = DMNetworkGetVertexRange(networkdm,&vStart,&vEnd);CHKERRQ(ierr);
   for(i=vStart; i < vEnd; i++) {
     /* Set the number of variables for buses */
-    if(ps->app == APP_ACPF) numbusvariables = 2;
-    else if(ps->app == APP_ACOPF) numbusvariables = 2 + 2*ps->bus[i-vStart].ngen;
-    else SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Application not supported");
+    if(ps->appname == APP_ACPF) numbusvariables = 2;
+    //    else if(ps->appname == APP_ACOPF) numbusvariables = 2 + 2*ps->bus[i-vStart].ngen;
 
     ierr = DMNetworkAddNumVariables(networkdm,i,numbusvariables);CHKERRQ(ierr); /* Bus variables */
     ierr = DMNetworkAddComponent(networkdm,i,ps->compkey[1],&ps->bus[i-vStart]);CHKERRQ(ierr);

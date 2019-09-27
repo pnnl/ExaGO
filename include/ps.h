@@ -100,9 +100,10 @@ extern PetscErrorCode PSDescreaseReferenceCount(PS);
 /**
  * @brief Sets the type of application to be run on the PS object
  * @param [in] PS ps - The PS object
- * @param [in] PSApp psapp - The application (ACPF,ACOPF)
+ * @param [n]  PS psapp - the application object
+ * @param [in] PSApp psappname - The application (ACPF,ACOPF)
  */
-extern PetscErrorCode PSSetApplication(PS,PSApp);
+extern PetscErrorCode PSSetApplication(PS,void*,PSApp);
 /**
  * @brief Sets up the PS object to be ready to be used by the application
  * @param [in] PS ps - The PS object

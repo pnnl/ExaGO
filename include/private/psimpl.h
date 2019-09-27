@@ -223,7 +223,9 @@ struct _p_PS {
   PetscInt    *busext2intmap; /* Maps external bus numbers to internal bus numbers */
   PetscInt    maxbusnum;      /* Max. bus number -- used for allocating busext2intmap */
 
-  PSApp       app;            /* the application using this ps */
+  void*       app;            /* the application using this ps */
+  PSApp       appname;        /* the application name using this ps */
+
   PetscInt    ndiff;          /* Number of differential equations.. only used for applications involving differential eqs. */
   
   PetscInt    compkey[10];    /* keys for components */

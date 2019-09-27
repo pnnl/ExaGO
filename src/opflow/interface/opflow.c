@@ -1,4 +1,5 @@
 #include <private/opflowimpl.h>
+#include <petsc/private/dmnetworkimpl.h>
 
 /*
   OPFLOWCreate - Creates an optimal power flow application object
@@ -22,7 +23,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   ierr = PSCreate(mpicomm,&opflow->ps);CHKERRQ(ierr);
 
   /* Set the application with the PS object */
-  ierr = PSSetApplication(opflow->ps,APP_ACOPF);CHKERRQ(ierr);
+  ierr = PSSetApplication(opflow->ps,opflow,APP_ACOPF);CHKERRQ(ierr);
 
   opflow->Nconeq   = opflow->nconeq  = -1;
   opflow->Nconineq = opflow->nconineq = -1;
@@ -151,6 +152,7 @@ PetscErrorCode OPFLOWSetFormulation(OPFLOW opflow,const char* formulationname)
 
   /* Null the function pointers */
   opflow->formops.destroy                        = 0;
+  opflow->formops.setnumvariables                = 0;
   opflow->formops.setvariablebounds              = 0;
   opflow->formops.setconstraintbounds            = 0;
   opflow->formops.setvariableandconstraintbounds = 0;
@@ -187,6 +189,68 @@ PetscErrorCode OPFLOWReadMatPowerData(OPFLOW opflow,const char netfile[])
   PetscFunctionBegin;
   /* Read MatPower data file and populate the PS data structure */
   ierr = PSReadMatPowerData(opflow->ps,netfile);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/* 
+   OPFLOWSetNumVariables - Sets the number of variables for the OPFLOW problem
+
+   Input Parameters:
+. opflow - OPFLOW application object
+*/
+PetscErrorCode OPFLOWSetNumVariables(OPFLOW opflow)
+{
+  PetscErrorCode ierr;
+  PetscSection   varsection,oldvarsection;
+  PetscInt       i,vStart,vEnd,eStart,eEnd;
+  DM             networkdm=opflow->ps->networkdm;
+  PetscInt       *busnvararray,*branchnvararray;
+  PS             ps=opflow->ps;
+  DM             plexdm;
+
+  PetscFunctionBegin;
+
+  ierr = PetscSectionCreate(opflow->comm->type,&varsection);CHKERRQ(ierr);
+
+  ierr = DMNetworkGetVertexRange(networkdm,&vStart,&vEnd);CHKERRQ(ierr);
+  ierr = DMNetworkGetEdgeRange(networkdm,&eStart,&eEnd);CHKERRQ(ierr);
+
+  ierr = PetscSectionSetChart(varsection,eStart,vEnd);CHKERRQ(ierr);
+
+  ierr = PetscCalloc1(ps->nbus,&busnvararray);CHKERRQ(ierr);
+  ierr = PetscCalloc1(ps->nbranch,&branchnvararray);CHKERRQ(ierr);
+  ierr = (*opflow->formops.setnumvariables)(opflow,busnvararray,branchnvararray);
+
+  opflow->nx = 0;
+  for(i=0; i < ps->nbranch; i++) {
+    ierr = PetscSectionSetDof(varsection,eStart+i,branchnvararray[i]);
+    opflow->nx += branchnvararray[i];
+  }
+
+  for(i=0; i < ps->nbus; i++) {
+    ierr = PetscSectionSetDof(varsection,vStart+i,busnvararray[i]);CHKERRQ(ierr);
+    opflow->nx += busnvararray[i];
+  }
+  ierr = PetscSectionSetUp(varsection);CHKERRQ(ierr);
+
+  ierr = DMNetworkGetPlex(networkdm,&plexdm);CHKERRQ(ierr);
+  ierr = DMGetSection(plexdm,&oldvarsection);CHKERRQ(ierr);
+  ierr = PetscSectionDestroy(&oldvarsection);CHKERRQ(ierr);
+  /* This is hack to null the networkdm->DofSection pointer otherwise
+     DMDestroy_Network throws an error. The issue is that though the
+     section is destroyed, there is a dangling pointer for networkdm->DofSection.
+     This hack needs to be fixed correctly via changes to DMNetwork
+  */
+  DM_Network *networkdmdata = (DM_Network*)(networkdm->data);
+  networkdmdata->DofSection = 0;
+  
+
+  /* Set the section with number of variables */
+  ierr = DMSetSection(plexdm,varsection);CHKERRQ(ierr);
+  networkdmdata->DofSection = varsection;
+
+  ierr = PetscFree(busnvararray);CHKERRQ(ierr); 
+  ierr = PetscFree(branchnvararray);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -232,6 +296,12 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
       ierr = OPFLOWSetSolver(opflow,OPFLOWSOLVER_IPOPT);CHKERRQ(ierr); 
     }
   }
+
+  /* Set up underlying PS object */
+  ierr = PSSetUp(ps);CHKERRQ(ierr);
+
+  /* Set up number of variables for branches and buses */
+  ierr = OPFLOWSetNumVariables(opflow);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

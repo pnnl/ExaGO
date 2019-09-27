@@ -14,6 +14,7 @@
 
 struct _p_OPFLOWFormulationOps {
   PetscErrorCode (*destroy)(OPFLOW);
+  PetscErrorCode (*setnumvariables)(OPFLOW,PetscInt*,PetscInt*); /* Get number of variables */
   PetscErrorCode (*setvariablebounds)(OPFLOW,Vec,Vec); /* Upper and lower bounds on the vector */
   PetscErrorCode (*setconstraintbounds)(OPFLOW,Vec,Vec); /* Lower and upper bounds on constraints */
   PetscErrorCode (*setvariableandconstraintbounds)(OPFLOW,Vec,Vec,Vec,Vec); /* Lower and upper bounds on variables and constraints */
