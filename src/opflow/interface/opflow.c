@@ -64,16 +64,22 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow)
   /* Solution vector */
   ierr = VecDestroy(&(*opflow)->X);CHKERRQ(ierr);
   ierr = VecDestroy(&(*opflow)->localX);CHKERRQ(ierr);
+  ierr = VecDestroy(&(*opflow)->gradobj);CHKERRQ(ierr);
 
   /* Lower and upper bounds on X */
   ierr = VecDestroy(&(*opflow)->Xl);CHKERRQ(ierr);
   ierr = VecDestroy(&(*opflow)->Xu);CHKERRQ(ierr);
 
   /* Constraints vector */
+  ierr = VecDestroy(&(*opflow)->G);CHKERRQ(ierr);
   ierr = VecDestroy(&(*opflow)->Ge);CHKERRQ(ierr);
   ierr = VecDestroy(&(*opflow)->Gi);CHKERRQ(ierr);
+  ierr = VecDestroy(&(*opflow)->Gl);CHKERRQ(ierr);
+  ierr = VecDestroy(&(*opflow)->Gu);CHKERRQ(ierr);
+  ierr = VecDestroy(&(*opflow)->Lambda);CHKERRQ(ierr);
 
   /* Jacobian of constraints */
+  ierr = MatDestroy(&(*opflow)->Jac);CHKERRQ(ierr);
   ierr = MatDestroy(&(*opflow)->Jac_Ge);CHKERRQ(ierr);
   ierr = MatDestroy(&(*opflow)->Jac_Gi);CHKERRQ(ierr);
 
@@ -153,6 +159,7 @@ PetscErrorCode OPFLOWSetFormulation(OPFLOW opflow,const char* formulationname)
   /* Null the function pointers */
   opflow->formops.destroy                        = 0;
   opflow->formops.setnumvariables                = 0;
+  opflow->formops.setnumconstraints              = 0;
   opflow->formops.setvariablebounds              = 0;
   opflow->formops.setconstraintbounds            = 0;
   opflow->formops.setvariableandconstraintbounds = 0;
@@ -193,20 +200,44 @@ PetscErrorCode OPFLOWReadMatPowerData(OPFLOW opflow,const char netfile[])
 }
 
 /* 
+   OPFLOWSetNumConstraints - Sets the number of constraints for the OPFLOW problem
+
+   Input Parameters:
+.  OPFLOW - the opflow application object
+
+   Output Parameters:
++  nconeq   - number of equality constraints
+-  nconineq - number of inequality constraints
+
+*/
+PetscErrorCode OPFLOWSetNumConstraints(OPFLOW opflow,PetscInt *nconeq,PetscInt *nconineq)
+{
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = (*opflow->formops.setnumconstraints)(opflow,nconeq,nconineq);
+  PetscFunctionReturn(0);
+}
+	  
+/* 
    OPFLOWSetNumVariables - Sets the number of variables for the OPFLOW problem
 
    Input Parameters:
 . opflow - OPFLOW application object
+
+   Output Parameters:
++ busnvararray    - array of number of variables at each bus
+. branchnvararray - array of number of variables at each branch 
+- nx              - total number of variables
 */
-PetscErrorCode OPFLOWSetNumVariables(OPFLOW opflow)
+PetscErrorCode OPFLOWSetNumVariables(OPFLOW opflow,PetscInt *busnvararray,PetscInt *branchnvararray,PetscInt *nx)
 {
   PetscErrorCode ierr;
   PetscSection   varsection,oldvarsection;
   PetscInt       i,vStart,vEnd,eStart,eEnd;
   DM             networkdm=opflow->ps->networkdm;
-  PetscInt       *busnvararray,*branchnvararray;
   PS             ps=opflow->ps;
   DM             plexdm;
+  PetscSection   globalvarsection;
 
   PetscFunctionBegin;
 
@@ -217,19 +248,14 @@ PetscErrorCode OPFLOWSetNumVariables(OPFLOW opflow)
 
   ierr = PetscSectionSetChart(varsection,eStart,vEnd);CHKERRQ(ierr);
 
-  ierr = PetscCalloc1(ps->nbus,&busnvararray);CHKERRQ(ierr);
-  ierr = PetscCalloc1(ps->nbranch,&branchnvararray);CHKERRQ(ierr);
-  ierr = (*opflow->formops.setnumvariables)(opflow,busnvararray,branchnvararray);
+  ierr = (*opflow->formops.setnumvariables)(opflow,busnvararray,branchnvararray,nx);
 
-  opflow->nx = 0;
   for(i=0; i < ps->nbranch; i++) {
     ierr = PetscSectionSetDof(varsection,eStart+i,branchnvararray[i]);
-    opflow->nx += branchnvararray[i];
   }
 
   for(i=0; i < ps->nbus; i++) {
     ierr = PetscSectionSetDof(varsection,vStart+i,busnvararray[i]);CHKERRQ(ierr);
-    opflow->nx += busnvararray[i];
   }
   ierr = PetscSectionSetUp(varsection);CHKERRQ(ierr);
 
@@ -247,10 +273,15 @@ PetscErrorCode OPFLOWSetNumVariables(OPFLOW opflow)
 
   /* Set the section with number of variables */
   ierr = DMSetSection(plexdm,varsection);CHKERRQ(ierr);
+  ierr = DMGetGlobalSection(plexdm,&globalvarsection);CHKERRQ(ierr);
   networkdmdata->DofSection = varsection;
 
-  ierr = PetscFree(busnvararray);CHKERRQ(ierr); 
-  ierr = PetscFree(branchnvararray);CHKERRQ(ierr);
+  /* Update starting locations for variables at each bus */
+  for(i=0; i < ps->nbus; i++) {
+    ierr = DMNetworkGetVariableOffset(networkdm,vStart+i,&ps->bus[i].startloc);CHKERRQ(ierr);
+    ierr = DMNetworkGetVariableGlobalOffset(networkdm,vStart+i,&ps->bus[i].startlocglob);CHKERRQ(ierr);
+  }
+
   PetscFunctionReturn(0);
 }
 
@@ -271,6 +302,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   PetscBool      formulationset=PETSC_FALSE;
   PetscBool      solverset=PETSC_FALSE;
   char           formulationname[32],solvername[32];
+  PetscInt       *busnvararray,*branchnvararray;
 
   PetscFunctionBegin;
 
@@ -300,8 +332,41 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   /* Set up underlying PS object */
   ierr = PSSetUp(ps);CHKERRQ(ierr);
 
+  ierr = PetscCalloc1(ps->nbus,&busnvararray);CHKERRQ(ierr);
+  ierr = PetscCalloc1(ps->nbranch,&branchnvararray);CHKERRQ(ierr);
+
   /* Set up number of variables for branches and buses */
-  ierr = OPFLOWSetNumVariables(opflow);CHKERRQ(ierr);
+  ierr = OPFLOWSetNumVariables(opflow,busnvararray,branchnvararray,&opflow->nx);CHKERRQ(ierr);
+
+  /* Set number of constraints */
+  ierr = OPFLOWSetNumConstraints(opflow,&opflow->nconeq,&opflow->nconineq);CHKERRQ(ierr);
+  opflow->ncon = opflow->nconeq + opflow->nconineq;
+
+  ierr = PetscFree(busnvararray);CHKERRQ(ierr); 
+  ierr = PetscFree(branchnvararray);CHKERRQ(ierr);
+
+  /* Create solution vector and upper/lower bounds */
+  ierr = PSCreateGlobalVector(opflow->ps,&opflow->X);CHKERRQ(ierr);
+  ierr = VecDuplicate(opflow->X,&opflow->gradobj);CHKERRQ(ierr);
+  ierr = VecDuplicate(opflow->X,&opflow->Xl);CHKERRQ(ierr);
+  ierr = VecDuplicate(opflow->X,&opflow->Xu);CHKERRQ(ierr);
+
+  /* Vectors for constraints */
+  ierr = VecCreate(ps->comm->type,&opflow->G);CHKERRQ(ierr);
+  ierr = VecSetSizes(opflow->G,PETSC_DECIDE,opflow->ncon);CHKERRQ(ierr);
+  ierr = VecSetFromOptions(opflow->G);CHKERRQ(ierr);
+  
+  ierr = VecDuplicate(opflow->G,&opflow->Gl);CHKERRQ(ierr);
+  ierr = VecDuplicate(opflow->G,&opflow->Gu);CHKERRQ(ierr);
+  ierr = VecDuplicate(opflow->G,&opflow->Lambda);CHKERRQ(ierr);
+
+  ierr = VecCreate(ps->comm->type,&opflow->Ge);CHKERRQ(ierr);
+  ierr = VecSetSizes(opflow->Ge,PETSC_DECIDE,opflow->nconeq);CHKERRQ(ierr);
+  ierr = VecSetFromOptions(opflow->Ge);CHKERRQ(ierr);
+
+  ierr = VecCreate(ps->comm->type,&opflow->Gi);CHKERRQ(ierr);
+  ierr = VecSetSizes(opflow->Gi,PETSC_DECIDE,opflow->ncon);CHKERRQ(ierr);
+  ierr = VecSetFromOptions(opflow->Gi);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -321,6 +386,20 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
 
   if(!opflow->setupcalled) {
     ierr = OPFLOWSetUp(opflow);
+  }
+  /* Set bounds on variables */
+  if(opflow->formops.setvariablebounds) {
+    ierr = (*opflow->formops.setvariablebounds)(opflow,opflow->Xl,opflow->Xu);CHKERRQ(ierr);
+  }
+
+  /* Set bounds on constraints */
+  if(opflow->formops.setconstraintbounds) {
+    ierr = (*opflow->formops.setconstraintbounds)(opflow,opflow->Gl,opflow->Gu);CHKERRQ(ierr);
+  }
+
+  /* Set bounds on variables and constraints */
+  if(opflow->formops.setvariableandconstraintbounds) {
+    ierr = (*opflow->formops.setvariableandconstraintbounds)(opflow,opflow->Xl,opflow->Xu,opflow->Gl,opflow->Gu);CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);
