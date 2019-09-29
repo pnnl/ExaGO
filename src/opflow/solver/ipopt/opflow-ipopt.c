@@ -24,6 +24,37 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
             PetscScalar *values, UserDataPtr user_data);
 
 
+static int CCMatrixToMatrixMarketValuesOnly(CCMatrix ccmatrix,PetscInt nz,PetscScalar *values)
+{
+  PetscErrorCode ierr;
+
+  ierr = PetscMemcpy(values,ccmatrix->values,nz*sizeof(PetscScalar));
+
+  return 0;
+}
+
+static int CCMatrixToMatrixMarketLocationsOnly(CCMatrix ccmatrix,PetscInt ncol,PetscInt *iRow,PetscInt *jCol,PetscInt roffset,PetscInt coffset,PetscInt nval)
+{
+  PetscInt *rowidx;
+  PetscInt *colptr;
+  PetscInt j,k,ctr=0;
+  
+  rowidx = ccmatrix->rowidx;
+  colptr = ccmatrix->colptr;
+
+  /* Copy from compressed column to (row,col,val) format */
+  for(j=0; j < ncol; j++) {
+    for(k=colptr[j]; k < colptr[j+1]; k++) {
+      iRow[ctr] = rowidx[k] + roffset;
+      jCol[ctr] = j + coffset;
+      ctr++;
+    }
+  }
+  if(ctr != nval) SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Incorrect number of entries ctr = %d given = %d\n",ctr,nval);
+
+  return 0;
+}
+
 PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
 {
   OPFLOWSolver_IPOPT ipopt=opflow->solver;

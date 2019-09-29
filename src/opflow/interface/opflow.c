@@ -167,13 +167,13 @@ PetscErrorCode OPFLOWSetFormulation(OPFLOW opflow,const char* formulationname)
   opflow->formops.computeequalityconstraints     = 0;
   opflow->formops.computeinequalityconstraints   = 0;
   opflow->formops.computeconstraints             = 0;
+  opflow->formops.computeequalityconstraintjacobian = 0;
+  opflow->formops.computeinequalityconstraintjacobian = 0;
+  opflow->formops.computehessian                 = 0;
   opflow->formops.computeobjandgradient          = 0;
   opflow->formops.computeobjective               = 0;
   opflow->formops.computegradient                = 0;
   opflow->formops.computejacobian                = 0;
-  opflow->formops.computeequalityconstraintjacobian = 0;
-  opflow->formops.computeinequalityconstraintjacobian = 0;
-  opflow->formops.computehessian                 = 0;
 
   /* Call the underlying implementation constructor */
   ierr = (*r)(opflow);CHKERRQ(ierr);
@@ -368,6 +368,22 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = VecSetSizes(opflow->Gi,PETSC_DECIDE,opflow->ncon);CHKERRQ(ierr);
   ierr = VecSetFromOptions(opflow->Gi);CHKERRQ(ierr);
 
+  /* Create equality and inequality constraint Jacobian matrices */
+  ierr = MatCreate(opflow->comm->type,&opflow->Jac_Ge);CHKERRQ(ierr);
+  ierr = MatSetSizes(opflow->Jac_Ge,opflow->nconeq,opflow->nx,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
+  ierr = MatSetUp(opflow->Jac_Ge);CHKERRQ(ierr);
+  ierr = MatSetFromOptions(opflow->Jac_Ge);CHKERRQ(ierr);
+
+  if(opflow->nconineq) {
+    ierr = MatCreate(opflow->comm->type,&opflow->Jac_Gi);CHKERRQ(ierr);
+    ierr = MatSetSizes(opflow->Jac_Gi,opflow->nconineq,opflow->nx,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
+    ierr = MatSetUp(opflow->Jac_Gi);CHKERRQ(ierr);
+    ierr = MatSetFromOptions(opflow->Jac_Gi);CHKERRQ(ierr);
+  }
+
+  /* Create Hessian */
+  ierr = PSCreateMatrix(opflow->ps,&opflow->Hes);CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -402,6 +418,10 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
     ierr = (*opflow->formops.setvariableandconstraintbounds)(opflow,opflow->Xl,opflow->Xu,opflow->Gl,opflow->Gu);CHKERRQ(ierr);
   }
 
+  /* Set initial guess */
+  if(opflow->formops.setinitialguess) {
+    ierr = (*opflow->formops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
+  }
   PetscFunctionReturn(0);
 }
 

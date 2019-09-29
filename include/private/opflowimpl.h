@@ -23,13 +23,13 @@ struct _p_OPFLOWFormulationOps {
   PetscErrorCode (*computeequalityconstraints)(OPFLOW,Vec,Vec); /* Set equality constraints */
   PetscErrorCode (*computeinequalityconstraints)(OPFLOW,Vec,Vec); /* Set inequality constraints */
   PetscErrorCode (*computeconstraints)(OPFLOW,Vec,Vec);
+  PetscErrorCode (*computeequalityconstraintjacobian)(OPFLOW,Vec,Mat);
+  PetscErrorCode (*computeinequalityconstraintjacobian)(OPFLOW,Vec,Mat);
+  PetscErrorCode (*computehessian)(OPFLOW,Vec,Vec,Mat);
   PetscErrorCode (*computeobjandgradient)(OPFLOW,Vec,PetscScalar*,Vec); /* Objective and gradient routine */
   PetscErrorCode (*computeobjective)(OPFLOW,Vec,PetscScalar*); /* Objective */
   PetscErrorCode (*computegradient)(OPFLOW,Vec,Vec); /* Gradient of the objective function */
   PetscErrorCode (*computejacobian)(OPFLOW,Vec,Mat); /* Jacobian of the constraints */
-  PetscErrorCode (*computeequalityconstraintjacobian)(OPFLOW,Vec,Mat); /* Equality constraints Jacobian */
-  PetscErrorCode (*computeinequalityconstraintjacobian)(OPFLOW,Vec,Mat); /*Inequality constraints Jacobian */
-  PetscErrorCode (*computehessian)(OPFLOW,Vec,Vec,Mat); /* Hessian matrix */
 };
 
 struct _p_OPFLOWSolverOps {

@@ -42,18 +42,6 @@ PetscErrorCode OPFLOWSetVariableandConstraintBounds_PBPOL(OPFLOW opflow,Vec Xl,V
   ierr = VecGetArray(Xu,&xu);CHKERRQ(ierr);
   ierr = VecGetArray(Gl,&gl);CHKERRQ(ierr);
   ierr = VecGetArray(Gu,&gu);CHKERRQ(ierr);
-  
-  for(i=0; i < ps->Nbranch; i++) {
-    line = &ps->line[i];
-
-    /* Line flow inequality constraints */
-    if(!line->status) gl[gloc] = gu[gloc] = gl[gloc+1] = gu[gloc+1] = 0.0;
-    else {
-      gl[gloc] = gl[gloc+1] = 0.0; 
-      gu[gloc] = gu[gloc+1] = (line->rateA/ps->MVAbase)*(line->rateA/ps->MVAbase);
-    }    
-    gloc += 2;
-  }
 
   for(i=0; i < ps->nbus; i++) {
     PetscInt k;
@@ -89,6 +77,18 @@ PetscErrorCode OPFLOWSetVariableandConstraintBounds_PBPOL(OPFLOW opflow,Vec Xl,V
     }
     gloc += 2;
   }
+  
+  for(i=0; i < ps->Nbranch; i++) {
+    line = &ps->line[i];
+
+    /* Line flow inequality constraints */
+    if(!line->status) gl[gloc] = gu[gloc] = gl[gloc+1] = gu[gloc+1] = 0.0;
+    else {
+      gl[gloc] = gl[gloc+1] = 0.0; 
+      gu[gloc] = gu[gloc+1] = (line->rateA/ps->MVAbase)*(line->rateA/ps->MVAbase);
+    }    
+    gloc += 2;
+  }
 
   ierr = VecRestoreArray(Xl,&xl);CHKERRQ(ierr);
   ierr = VecRestoreArray(Xu,&xu);CHKERRQ(ierr);
@@ -98,10 +98,48 @@ PetscErrorCode OPFLOWSetVariableandConstraintBounds_PBPOL(OPFLOW opflow,Vec Xl,V
   PetscFunctionReturn(0);
 }
 
-
 PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow,Vec X)
 {
+  PetscErrorCode ierr;
+  PS             ps=opflow->ps;
+  const PetscScalar    *xl,*xu;
+  PetscScalar    *x;
+  PetscInt       i;
+  PSBUS          bus;
+  PetscInt       loc;
+
   PetscFunctionBegin;
+
+  /* Get array pointers */
+  ierr = VecGetArray(X,&x);CHKERRQ(ierr);
+  ierr = VecGetArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
+  ierr = VecGetArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
+  
+  for(i=0; i < ps->nbus; i++) {
+    PetscInt k;
+
+    bus = &ps->bus[i];
+
+    ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
+
+    /* Initial guess for voltage angles and bounds on voltage magnitudes */
+    x[loc]   = (xl[loc] + xu[loc])/2.0;
+    x[loc+1] = (xl[loc+1] + xu[loc+1])/2.0;
+
+    for(k=0; k < bus->ngen; k++) {
+      PSGEN gen;
+
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      loc = loc+2;
+
+      x[loc]   = (xl[loc] + xu[loc])/2.0;   /* Initial guess for Pg */
+      x[loc+1] = (xl[loc+1] + xu[loc+1])/2.0; /* Initial guess for Qg */
+    }
+  }
+
+  ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -187,6 +225,28 @@ PetscErrorCode OPFLOWFormulationSetNumConstraints_PBPOL(OPFLOW opflow,PetscInt *
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode OPFLOWComputeEqualityConstraintJacobian(OPFLOW opflow,Vec X,Mat Jac_Ge)
+{
+  PetscFunctionBegin;
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWComputeInequalityConstraintJacobian(OPFLOW opflow,Vec X,Mat Jac_Gi)
+{
+  PetscFunctionBegin;
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWComputeHessian(OPFLOW opflow,Vec X,Vec Lambda,Mat H)
+{
+  PetscFunctionBegin;
+
+  PetscFunctionReturn(0);
+}
+
+
 PetscErrorCode OPFLOWFormulationCreate_PBPOL(OPFLOW opflow)
 {
   PBPOL pbpol;
@@ -208,6 +268,9 @@ PetscErrorCode OPFLOWFormulationCreate_PBPOL(OPFLOW opflow)
   opflow->formops.setinitialguess = OPFLOWSetInitialGuess_PBPOL;
   opflow->formops.computeequalityconstraints = OPFLOWComputeEqualityConstraints_PBPOL;
   opflow->formops.computeinequalityconstraints = OPFLOWComputeInequalityConstraints_PBPOL;
+  opflow->formops.computeequalityconstraintjacobian = OPFLOWComputeEqualityConstraintJacobian;
+  opflow->formops.computeinequalityconstraintjacobian = OPFLOWComputeInequalityConstraintJacobian;
+  opflow->formops.computehessian = OPFLOWComputeHessian;
   opflow->formops.computeobjandgradient = OPFLOWComputeObjandGradient_PBPOL;
   opflow->formops.computeobjective = OPFLOWComputeObjective_PBPOL;
   opflow->formops.computegradient  = OPFLOWComputeGradient_PBPOL;
