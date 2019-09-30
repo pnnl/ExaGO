@@ -76,6 +76,8 @@ struct _p_OPFLOW{
 
   PetscScalar obj; /**< Objective function */
   Vec gradobj; /**< Gradient of the objective function */
+  
+  PetscScalar obj_factor; /* IPOPT scales the objective hessian part with this factor. For all other solvers, unless it is set, obj_factor = 1.0. */
 
   PetscBool setupcalled; /* OPFLOWSetUp called? */
 

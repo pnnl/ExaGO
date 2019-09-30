@@ -154,7 +154,6 @@ PetscErrorCode SCOPFLOWComputeObjectiveHessian(SCOPFLOW scopflow,PetscInt scenar
   PetscFunctionReturn(0);
 }
 
-
 int str_eval_f(double* x0, double* x1, double* obj, CallBackDataPtr cbd) 
 {
   PetscErrorCode ierr;

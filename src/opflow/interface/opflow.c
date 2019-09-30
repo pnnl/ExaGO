@@ -29,6 +29,9 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   opflow->Nconineq = opflow->nconineq = -1;
   opflow->Ncon     = opflow->ncon     = -1;
   opflow->Nx       = opflow->nx       = -1;
+  
+  opflow->obj_factor = 1.0;
+  opflow->obj = 0.0;
 
   opflow->solver   = NULL;
   opflow->formulation = NULL;
@@ -83,6 +86,7 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow)
   ierr = MatDestroy(&(*opflow)->Jac_Ge);CHKERRQ(ierr);
   ierr = MatDestroy(&(*opflow)->Jac_Gi);CHKERRQ(ierr);
 
+  ierr = MatDestroy(&(*opflow)->Hes);CHKERRQ(ierr);
   ierr = PSDestroy(&(*opflow)->ps);CHKERRQ(ierr);
 
   if((*opflow)->solverops.destroy) {
@@ -345,6 +349,9 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PetscFree(busnvararray);CHKERRQ(ierr); 
   ierr = PetscFree(branchnvararray);CHKERRQ(ierr);
 
+  /* Set vertex local to global ordering */
+  ierr = DMNetworkSetVertexLocalToGlobalOrdering(opflow->ps->networkdm);CHKERRQ(ierr);
+
   /* Create solution vector and upper/lower bounds */
   ierr = PSCreateGlobalVector(opflow->ps,&opflow->X);CHKERRQ(ierr);
   ierr = VecDuplicate(opflow->X,&opflow->gradobj);CHKERRQ(ierr);
@@ -421,7 +428,12 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
   /* Set initial guess */
   if(opflow->formops.setinitialguess) {
     ierr = (*opflow->formops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
+    ierr = VecSet(opflow->Lambda,1.0);CHKERRQ(ierr);
   }
+
+  /* Solve */
+  ierr = (*opflow->solverops.solve)(opflow);CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 

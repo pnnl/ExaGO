@@ -2,6 +2,7 @@
 
 #include <opflow.h>
 #include <IpStdCInterface.h>
+#include <../src/mat/impls/aij/seq/aij.h>
 
 /* Data structure for converting matrix in PETSc format (compressed row aij) to matrix market format (row idx, col idx, value)
 */
@@ -17,7 +18,7 @@ typedef struct _p_OPFLOWSolver_IPOPT *OPFLOWSolver_IPOPT;
 
 struct _p_OPFLOWSolver_IPOPT {
   
-  PetscInt nnz_jac_g; /**< Number of nonzeros in the jacobian of the constraints */
+  PetscInt nnz_jac_ge,nnz_jac_gi,nnz_jac_g; /**< Number of nonzeros in the jacobian of the constraints */
   PetscInt nnz_hes; /**< Number of nonzeros in the Lagrangian Hessian */
 
   Mat      Jac_GeT; /* Transpose of Equality constrained Jacobian matrix */
@@ -25,6 +26,7 @@ struct _p_OPFLOWSolver_IPOPT {
   
   CCMatrix jac_ge;
   CCMatrix jac_gi;
+  CCMatrix hes;
 
   /* Lagrange multipliers */
   Vec lambda_g;

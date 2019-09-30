@@ -5,23 +5,40 @@
 
 /* IPOPT callback functions */
 Bool eval_opflow_f(PetscInt n, PetscScalar* x, Bool new_x,
-            PetscScalar* obj_value, UserDataPtr user_data);
+            PetscScalar* obj_value, UserDataPtr user_data)
+{
+
+  return 1;
+}
 
 Bool eval_opflow_grad_f(PetscInt n, PetscScalar* x, Bool new_x,
-                 PetscScalar* grad_f, UserDataPtr user_data);
+                 PetscScalar* grad_f, UserDataPtr user_data)
+{
+
+  return 1;
+}
 
 Bool eval_opflow_g(PetscInt n, PetscScalar* x, Bool new_x,
-            PetscInt m, PetscScalar* g, UserDataPtr user_data);
+            PetscInt m, PetscScalar* g, UserDataPtr user_data)
+{
+  return 1;
+}
 
 Bool eval_opflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
                 PetscInt m, PetscInt nele_jac,
                 PetscInt *iRow, PetscInt *jCol, PetscScalar *values,
-                UserDataPtr user_data);
+                UserDataPtr user_data)
+{
+  return 1;
+}
 
 Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_factor,
             PetscInt m, PetscScalar *lambda, Bool new_lambda,
             PetscInt nele_hess, PetscInt *iRow, PetscInt *jCol,
-            PetscScalar *values, UserDataPtr user_data);
+            PetscScalar *values, UserDataPtr user_data)
+{
+  return 1;
+}
 
 
 static int CCMatrixToMatrixMarketValuesOnly(CCMatrix ccmatrix,PetscInt nz,PetscScalar *values)
@@ -57,10 +74,74 @@ static int CCMatrixToMatrixMarketLocationsOnly(CCMatrix ccmatrix,PetscInt ncol,P
 
 PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
 {
+  PetscErrorCode     ierr;
   OPFLOWSolver_IPOPT ipopt=opflow->solver;
+  Mat_SeqAIJ         *aij;
+  PetscScalar        *x,*xl,*xu,*gl,*gu;
 
   PetscFunctionBegin;
 
+  /* Compute nonzeros for the Jacobian */
+  /* Equality constraint Jacobian */
+  ierr = (*opflow->formops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
+  /* Transpose the matrix to convert it to column compressed sparse format */
+  ierr = MatTranspose(opflow->Jac_Ge,MAT_INITIAL_MATRIX,&ipopt->Jac_GeT);CHKERRQ(ierr);
+  ierr = MatSetOption(ipopt->Jac_GeT,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
+  aij = (Mat_SeqAIJ*)ipopt->Jac_GeT->data;
+  ipopt->nnz_jac_ge = aij->nz;
+
+  /* Create ccmatrix object for equality constrained Jacobian */
+  ierr = PetscCalloc1(1,&ipopt->jac_ge);CHKERRQ(ierr);
+  ierr = PetscMalloc1(opflow->nx+1,&ipopt->jac_ge->colptr);CHKERRQ(ierr);
+  ierr = PetscMalloc1(ipopt->nnz_jac_ge,&ipopt->jac_ge->rowidx);CHKERRQ(ierr);
+  ierr = PetscMalloc1(ipopt->nnz_jac_ge,&ipopt->jac_ge->values);CHKERRQ(ierr);
+
+  if(opflow->nconineq) {
+    ierr = (*opflow->formops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
+    /* Transpose the matrix to convert it to column compressed sparse format */
+    ierr = MatTranspose(opflow->Jac_Gi,MAT_INITIAL_MATRIX,&ipopt->Jac_GiT);CHKERRQ(ierr);
+    ierr = MatSetOption(ipopt->Jac_GiT,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
+    aij = (Mat_SeqAIJ*)ipopt->Jac_GiT->data;
+    ipopt->nnz_jac_gi = aij->nz;
+
+  /* Create ccmatrix object for inequality constrained Jacobian */
+  ierr = PetscCalloc1(1,&ipopt->jac_gi);CHKERRQ(ierr);
+  ierr = PetscMalloc1(opflow->nx+1,&ipopt->jac_gi->colptr);CHKERRQ(ierr);
+  ierr = PetscMalloc1(ipopt->nnz_jac_ge,&ipopt->jac_gi->rowidx);CHKERRQ(ierr);
+  ierr = PetscMalloc1(ipopt->nnz_jac_gi,&ipopt->jac_gi->values);CHKERRQ(ierr);
+
+  }   
+  ipopt->nnz_jac_g = ipopt->nnz_jac_ge + ipopt->nnz_jac_gi;
+
+  /* Compute non-zeros for Hessian */
+  ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambda,opflow->Hes);CHKERRQ(ierr);
+  /* Since the Hessian is symmetric, we don't need to convert it to column compressed sparse format */
+  aij = (Mat_SeqAIJ*)opflow->Hes;
+  ipopt->nnz_hes = aij->nz;
+
+  /* Create ccmatrix object for hessian */
+  ierr = PetscCalloc1(1,&ipopt->hes);CHKERRQ(ierr);
+  ierr = PetscMalloc1(opflow->nx+1,&ipopt->hes->colptr);CHKERRQ(ierr);
+  ierr = PetscMalloc1(ipopt->nnz_hes,&ipopt->hes->rowidx);CHKERRQ(ierr);
+  ierr = PetscMalloc1(ipopt->nnz_hes,&ipopt->hes->values);CHKERRQ(ierr);
+
+  /* Create IPOPT solver instance */
+  ierr = VecGetArray(opflow->Xl,&xl);CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->Xu,&xu);CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->Gl,&gl);CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->Gu,&gu);CHKERRQ(ierr);
+
+  /* Create IPOPT problem */
+  ipopt->nlp = CreateIpoptProblem(opflow->nx,xl,xu,opflow->ncon,gl,gu,ipopt->nnz_jac_g,ipopt->nnz_hes,0,&eval_opflow_f,
+				   &eval_opflow_g,&eval_opflow_grad_f,
+				   &eval_opflow_jac_g,&eval_opflow_h);
+
+  ierr = VecRestoreArray(opflow->Xl,&xl);CHKERRQ(ierr);
+  ierr = VecRestoreArray(opflow->Xu,&xu);CHKERRQ(ierr);
+  ierr = VecRestoreArray(opflow->Gl,&gl);CHKERRQ(ierr);
+  ierr = VecRestoreArray(opflow->Gu,&gu);CHKERRQ(ierr);
+
+  ierr = VecGetArray(opflow->X,&x);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -74,6 +155,25 @@ PetscErrorCode OPFLOWSolverDestroy_IPOPT(OPFLOW opflow)
   if(ipopt->nlp) {
     FreeIpoptProblem(ipopt->nlp);
   }
+  ierr = MatDestroy(&ipopt->Jac_GeT);CHKERRQ(ierr);
+  ierr = PetscFree(ipopt->jac_ge->colptr);CHKERRQ(ierr);
+  ierr = PetscFree(ipopt->jac_ge->rowidx);CHKERRQ(ierr);
+  ierr = PetscFree(ipopt->jac_ge->values);CHKERRQ(ierr);
+  ierr = PetscFree(ipopt->jac_ge);CHKERRQ(ierr);
+
+  if(opflow->nconineq) {
+    ierr = MatDestroy(&ipopt->Jac_GiT);CHKERRQ(ierr);
+    ierr = PetscFree(ipopt->jac_gi->colptr);CHKERRQ(ierr);
+    ierr = PetscFree(ipopt->jac_gi->rowidx);CHKERRQ(ierr);
+    ierr = PetscFree(ipopt->jac_gi->values);CHKERRQ(ierr);
+    ierr = PetscFree(ipopt->jac_gi);CHKERRQ(ierr);
+  }
+
+  ierr = PetscFree(ipopt->hes->colptr);CHKERRQ(ierr);
+  ierr = PetscFree(ipopt->hes->rowidx);CHKERRQ(ierr);
+  ierr = PetscFree(ipopt->hes->values);CHKERRQ(ierr);
+  ierr = PetscFree(ipopt->hes);CHKERRQ(ierr);
+
   ierr = PetscFree(ipopt);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -101,7 +201,6 @@ PetscErrorCode OPFLOWSolverCreate_IPOPT(OPFLOW opflow)
   opflow->solverops.setup = OPFLOWSolverSetUp_IPOPT;
   opflow->solverops.solve = OPFLOWSolverSolve_IPOPT;
   opflow->solverops.destroy = OPFLOWSolverDestroy_IPOPT;
-
 
   PetscFunctionReturn(0);
 }
