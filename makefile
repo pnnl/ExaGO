@@ -50,6 +50,12 @@ PFLOW: $(OBJECTS_PFLOW) libpflow chkopts
 	 -$(CLINKER) -o PFLOW $(OBJECTS_PFLOW) ${PETSC_SNES_LIB} -L${SCOPFLOW_DIR} -lpflow
 	$(RM) $(OBJECTS_PFLOW)
 
+PFLOW_PROTOAPP_OBJECTS = applications/pflow-proto.o
+OBJECTS_PFLOW = $(PFLOW_PROTOAPP_OBJECTS)
+PFLOWPROTO: $(OBJECTS_PFLOW) libpflow chkopts
+	 -$(CLINKER) -o PFLOWPROTO $(OBJECTS_PFLOW) ${PETSC_SNES_LIB} -L${SCOPFLOW_DIR} -lpflow
+	$(RM) $(OBJECTS_PFLOW)
+
 
 PFLOW_APP2_OBJECTS = applications/pflow-main2.o
 #******** Option 2 **********
