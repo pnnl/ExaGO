@@ -49,15 +49,15 @@ PetscErrorCode CreateParamArray(PFLOW pflow,double **busparamsarr)
     busparams = busparamsarr[i];
 
     /* # of gens, loads, and lines */
-    busparams[i]   = (double)bus->ngen;
-    busparams[i+1] = (double)bus->nload;
-    busparams[i+2] = (double)nconnlines;
+    busparams[0]   = (double)bus->ngen;
+    busparams[1] = (double)bus->nload;
+    busparams[2] = (double)nconnlines;
 
     busparams += 3;
 
     /* shunt */
-    busparams[i] = bus->gl;
-    busparams[i+1] = bus->bl;
+    busparams[0] = bus->gl;
+    busparams[1] = bus->bl;
 
     busparams += 2;
 
@@ -65,9 +65,9 @@ PetscErrorCode CreateParamArray(PFLOW pflow,double **busparamsarr)
     for(j=0; j < bus->ngen; j++) {
       ierr = PSBUSGetGen(bus,j,&gen);CHKERRQ(ierr);
 
-      busparams[i] = (double)gen->status;
-      busparams[i+1] = gen->pg;
-      busparams[i+2] = gen->qg;
+      busparams[0] = (double)gen->status;
+      busparams[1] = gen->pg;
+      busparams[2] = gen->qg;
 
       busparams += 3;
     }
@@ -76,24 +76,24 @@ PetscErrorCode CreateParamArray(PFLOW pflow,double **busparamsarr)
     for(j=0; j < bus->nload; j++) {
       ierr = PSBUSGetLoad(bus,j,&load);CHKERRQ(ierr);
 
-      busparams[i] = (double)load->status;
-      busparams[i+1] = load->pl;
-      busparams[i+2] = load->ql;
+      busparams[0] = (double)load->status;
+      busparams[1] = load->pl;
+      busparams[2] = load->ql;
 
       busparams += 3;
     }
     
     for(j=0; j < nconnlines; j++) {
       line = connlines[j];
-      busparams[i] = (double)line->status;
-      busparams[i+1] = line->yff[0];
-      busparams[i+2] = line->yff[1];
-      busparams[i+3] = line->yft[0];
-      busparams[i+4] = line->yft[1];
-      busparams[i+5] = line->ytf[0];
-      busparams[i+6] = line->ytf[1];
-      busparams[i+7] = line->ytt[0];
-      busparams[i+8] = line->ytt[1];
+      busparams[0] = (double)line->status;
+      busparams[1] = line->yff[0];
+      busparams[2] = line->yff[1];
+      busparams[3] = line->yft[0];
+      busparams[4] = line->yft[1];
+      busparams[5] = line->ytf[0];
+      busparams[6] = line->ytf[1];
+      busparams[7] = line->ytt[0];
+      busparams[8] = line->ytt[1];
 
       busparams += 9;
     }
@@ -164,6 +164,9 @@ int main(int argc,char **argv)
     ierr = PetscFree(busparams[i]);CHKERRQ(ierr);
   }
   ierr = PetscFree(busparams);CHKERRQ(ierr);
+
+  ierr = VecDestroy(&X);CHKERRQ(ierr);
+  ierr = VecDestroy(&F);CHKERRQ(ierr);
   /* Destroy PFLOW object */
   ierr = PFLOWDestroy(&pflow);CHKERRQ(ierr);
 
