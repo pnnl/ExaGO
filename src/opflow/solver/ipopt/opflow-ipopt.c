@@ -3,44 +3,6 @@
 #include <private/opflowimpl.h>
 #include "opflow-ipopt.h"
 
-/* IPOPT callback functions */
-Bool eval_opflow_f(PetscInt n, PetscScalar* x, Bool new_x,
-            PetscScalar* obj_value, UserDataPtr user_data)
-{
-
-  return 1;
-}
-
-Bool eval_opflow_grad_f(PetscInt n, PetscScalar* x, Bool new_x,
-                 PetscScalar* grad_f, UserDataPtr user_data)
-{
-
-  return 1;
-}
-
-Bool eval_opflow_g(PetscInt n, PetscScalar* x, Bool new_x,
-            PetscInt m, PetscScalar* g, UserDataPtr user_data)
-{
-  return 1;
-}
-
-Bool eval_opflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
-                PetscInt m, PetscInt nele_jac,
-                PetscInt *iRow, PetscInt *jCol, PetscScalar *values,
-                UserDataPtr user_data)
-{
-  return 1;
-}
-
-Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_factor,
-            PetscInt m, PetscScalar *lambda, Bool new_lambda,
-            PetscInt nele_hess, PetscInt *iRow, PetscInt *jCol,
-            PetscScalar *values, UserDataPtr user_data)
-{
-  return 1;
-}
-
-
 static int CCMatrixToMatrixMarketValuesOnly(CCMatrix ccmatrix,PetscInt nz,PetscScalar *values)
 {
   PetscErrorCode ierr;
@@ -70,6 +32,94 @@ static int CCMatrixToMatrixMarketLocationsOnly(CCMatrix ccmatrix,PetscInt ncol,P
   if(ctr != nval) SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Incorrect number of entries ctr = %d given = %d\n",ctr,nval);
 
   return 0;
+}
+
+/* IPOPT callback functions */
+Bool eval_opflow_f(PetscInt n, PetscScalar* x, Bool new_x,
+            PetscScalar* obj_value, UserDataPtr user_data)
+{
+  PetscErrorCode ierr;
+  OPFLOW  opflow=(OPFLOW)user_data;
+
+  *obj_value = 0.0;
+  ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
+  ierr = (*opflow->formops.computeobjective)(opflow,opflow->X,obj_value);CHKERRQ(ierr);
+  ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+				
+  return TRUE;
+}
+
+Bool eval_opflow_grad_f(PetscInt n, PetscScalar* x, Bool new_x,
+                 PetscScalar* grad_f, UserDataPtr user_data)
+{
+  PetscErrorCode ierr;
+  OPFLOW  opflow=(OPFLOW)user_data;
+
+  ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
+  ierr = VecPlaceArray(opflow->gradobj,grad_f);CHKERRQ(ierr);
+  ierr = (*opflow->formops.computegradient)(opflow,opflow->X,opflow->gradobj);CHKERRQ(ierr);
+  ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+  ierr = VecResetArray(opflow->gradobj);CHKERRQ(ierr);
+
+  return TRUE;
+}
+
+Bool eval_opflow_g(PetscInt n, PetscScalar* x, Bool new_x,
+            PetscInt m, PetscScalar* g, UserDataPtr user_data)
+{
+  PetscErrorCode ierr;
+  OPFLOW         opflow=(OPFLOW)user_data;
+
+  ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
+  ierr = VecPlaceArray(opflow->G,g);CHKERRQ(ierr);
+  ierr = (*opflow->formops.computeconstraints)(opflow,opflow->X,opflow->G);CHKERRQ(ierr);
+  ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+  ierr = VecResetArray(opflow->G);CHKERRQ(ierr);
+
+  return TRUE;
+}
+
+Bool eval_opflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
+                PetscInt m, PetscInt nele_jac,
+                PetscInt *iRow, PetscInt *jCol, PetscScalar *values,
+                UserDataPtr user_data)
+{
+
+  PetscErrorCode ierr;
+  OPFLOW         opflow=(OPFLOW)user_data;
+  OPFLOWSolver_IPOPT ipopt=(OPFLOWSolver_IPOPT)opflow->solver;
+  PetscInt       *iRowstart = iRow,*jColstart=jCol;
+  PetscInt       roffset,coffset;
+
+  if(values == NULL) {
+    /* Set locations only */
+    roffset = opflow->nconeq;
+    coffset = 0;
+
+    CCMatrixToMatrixMarketLocationsOnly(ipopt->jac_ge,opflow->nx,iRowstart,jColstart,roffset,coffset,ipopt->nnz_jac_ge);
+
+    /* Increment iRow,jCol pointers */
+    iRowstart += ipopt->nnz_jac_ge;
+    jColstart += ipopt->nnz_jac_ge;
+
+    if(opflow->nconineq) {
+      roffset = opflow->nconeq;
+      
+      CCMatrixToMatrixMarketLocationsOnly(ipopt->jac_gi,opflow->nx,iRowstart,jColstart,roffset,coffset,ipopt->nnz_jac_gi);
+    }
+  } else {
+
+  }
+
+  return TRUE;
+}
+
+Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_factor,
+            PetscInt m, PetscScalar *lambda, Bool new_lambda,
+            PetscInt nele_hess, PetscInt *iRow, PetscInt *jCol,
+            PetscScalar *values, UserDataPtr user_data)
+{
+  return 1;
 }
 
 PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
@@ -142,6 +192,10 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
   ierr = VecRestoreArray(opflow->Gu,&gu);CHKERRQ(ierr);
 
   ierr = VecGetArray(opflow->X,&x);CHKERRQ(ierr);
+  /* Solve */
+  ipopt->solve_status = IpoptSolve(ipopt->nlp,x,NULL,&opflow->obj,NULL,NULL,NULL,opflow);
+
+  ierr = VecRestoreArray(opflow->X,&x);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
