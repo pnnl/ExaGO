@@ -4,7 +4,8 @@
 # Power flow SNES options
 -pflow_snes_linesearch_type basic
 -pflow_snes_atol 1e-8
--pflow_snes_monitor
+#-pflow_snes_monitor
+#-pflow_snes_converged_reason
 
 # Power flow KSP options
 #-pflow_ksp_type preonly
@@ -12,7 +13,7 @@
 #-pflow_pc_factor_mat_ordering_type amd
 -opflow_pc_factor_mat_solver_type mumps
 #-pflow_pc_factor_shift_type NONZERO
--pflow_ksp_monitor
+#-pflow_ksp_monitor
 
 # performance
 #-------------

@@ -231,6 +231,8 @@ PetscErrorCode ComputeGlobalResidual(PFLOW pflow,double **busparamsarr,int **xid
   PetscInt       i;
   const double   *x;
   double         *f;
+  PSBUS          bus;
+  PetscInt       idxp,idxq;
 
   PetscFunctionBegin;
   ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
@@ -238,17 +240,23 @@ PetscErrorCode ComputeGlobalResidual(PFLOW pflow,double **busparamsarr,int **xid
 
   for(i=0; i < ps->nbus; i++) {
     ierr = ComputeBusResidual(busparamsarr[i],xidxarr[i],fidxarr[i],x,f);
+    /* Sanity check */
+    /* Display residuals for buses that are erroneous */
+    bus = &ps->bus[i];
+    idxp = fidxarr[i][0]; idxq = fidxarr[i][1];
+    if(fabs(f[idxp]) > 1e-8 || fabs(f[idxq]) > 1e-8 || isnan(fabs(f[idxq]))) {
+      PetscPrintf(PETSC_COMM_SELF,"Bus[bus->bus_i] fp = %g, fq = %g\n",bus->bus_i,f[idxp],f[idxq]);
+    }
+
   }
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArray(F,&f);CHKERRQ(ierr);
 
-  /* Check if residuals are computed correctly */
+  /* Compute global function norm and display */
   double normF;
   ierr = VecNorm(F,NORM_INFINITY,&normF);CHKERRQ(ierr);
-  //  if(normF < 1e-8) {
-    ierr = PetscPrintf(PETSC_COMM_SELF,"||F||_inf = %g\n",normF);CHKERRQ(ierr);
-    //  }
-    // ierr = VecView(F,0);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_SELF,"Global residual:||F||_inf = %g\n",normF);CHKERRQ(ierr);
+  //  ierr = VecView(F,0);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -314,9 +322,10 @@ int main(int argc,char **argv)
   ierr = CreateParamArray(pflow,busparams,xidx,fidx);CHKERRQ(ierr);
 
   /* Set Initial Guess for X */
-  ierr = PFLOWSetInitialGuess(pflow,X);CHKERRQ(ierr);
+  //  ierr = PFLOWSetInitialGuess(pflow,pflow->X);CHKERRQ(ierr);
+  //  ierr = VecCopy(X,pflow->X);CHKERRQ(ierr);
 
-  ierr = ComputeGlobalResidual(pflow,busparams,xidx,fidx,X,F);CHKERRQ(ierr);
+  ierr = ComputeGlobalResidual(pflow,busparams,xidx,fidx,pflow->X,F);CHKERRQ(ierr);
 
   for(PetscInt i=0; i < pflow->ps->nbus; i++) {
     ierr = PetscFree(busparams[i]);CHKERRQ(ierr);
