@@ -43,7 +43,7 @@ PetscErrorCode CreateParamArray(PFLOW pflow,double **busparamsarr,int **xidxarr,
 
     arr_size += 9*nconnlines; /* status,Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt for each line */
 
-    ierr = PetscPrintf(PETSC_COMM_SELF,"Bus [%d]: param size = %d\n",i,arr_size);CHKERRQ(ierr);
+    //    ierr = PetscPrintf(PETSC_COMM_SELF,"Bus [%d]: param size = %d\n",i,arr_size);CHKERRQ(ierr);
 
     /* Create the parameter array for bus,xidx,fidx */
     ierr = PetscCalloc1(arr_size,&busparamsarr[i]);CHKERRQ(ierr);
@@ -136,7 +136,92 @@ PetscErrorCode CreateParamArray(PFLOW pflow,double **busparamsarr,int **xidxarr,
 
 int ComputeBusResidual(double *busparams,int *xidx,int *fidx,const double *x,double *f)
 {
-  
+  int ngen=(int)busparams[0];
+  int nload = (int)busparams[1];
+  int nlines = (int)busparams[2];
+  double gl  = busparams[3];
+  double bl  = busparams[4];
+  int    idxp=fidx[0],idxq=fidx[1];
+  int    idxt=xidx[0],idxV=xidx[1];
+  double thetai     = x[idxt];
+  double Vmi        = x[idxV];
+  int    i;
+  double pg,qg,pl,ql;
+  int    gstatus,lstatus;
+  int    brstatus;
+  double Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
+  double thetaj,Vmj;
+  double Gself,Bself,Gmutual,Bmutual;
+  double pline,qline;
+
+  busparams += 5;
+  xidx      += 2;
+
+  /* shunt contribution */
+  f[idxp] = gl*Vmi*Vmi;
+  f[idxq] = -bl*Vmi*Vmi;
+
+  /* Generator contribution */
+  for(i=0; i < ngen; i++) {
+    gstatus = (int)busparams[0];
+    pg      = busparams[1];
+    qg      = busparams[2];
+
+    f[idxp] -= gstatus*pg;
+    f[idxq] -= gstatus*qg;
+
+    busparams += 3;
+  }
+
+  /* Load contribution */
+  for(i=0; i < nload; i++) {
+    lstatus = (int)busparams[0];
+    pl      = busparams[1];
+    ql      = busparams[2];
+
+    f[idxp] += lstatus*pl;
+    f[idxq] += lstatus*ql;
+
+    busparams += 3;
+  }
+
+  for(i=0; i < nlines; i++) {
+    brstatus = busparams[0];
+    Gff = busparams[1];
+    Bff = busparams[2];
+    Gft = busparams[3];
+    Bft = busparams[4];
+    Gtf = busparams[5];
+    Btf = busparams[6];
+    Gtt = busparams[7];
+    Btt = busparams[8];
+    
+    busparams += 9;
+
+    if(xidx[0] == idxt) { // this bus is from bus
+      thetaj = x[xidx[2]];
+      Vmj    = x[xidx[3]];
+      Gself  = Gff;
+      Bself  = Bff;
+      Gmutual = Gft;
+      Bmutual = Bft;
+    } else { // This bus is to bus
+      thetaj = x[xidx[0]];
+      Vmj    = x[xidx[1]];
+      Gself  = Gtt;
+      Bself  = Btt;
+      Gmutual = Gtf;
+      Bmutual = Btf;
+    }
+    xidx += 4;
+
+    /* Contribution from lines */
+    pline =  Gself*Vmi*Vmi + Vmi*Vmj*(Gmutual*cos(thetai - thetaj)  + Bmutual*sin(thetai - thetaj));
+    qline = -Bself*Vmi*Vmi + Vmi*Vmj*(-Bmutual*cos(thetai - thetaj) + Gmutual*sin(thetai - thetaj));
+
+    f[idxp] += brstatus*pline;
+    f[idxq] += brstatus*qline;
+  }
   return 0;
 }
 PetscErrorCode ComputeGlobalResidual(PFLOW pflow,double **busparamsarr,int **xidxarr,int **fidxarr,Vec X, Vec F)
@@ -156,6 +241,14 @@ PetscErrorCode ComputeGlobalResidual(PFLOW pflow,double **busparamsarr,int **xid
   }
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArray(F,&f);CHKERRQ(ierr);
+
+  /* Check if residuals are computed correctly */
+  double normF;
+  ierr = VecNorm(F,NORM_INFINITY,&normF);CHKERRQ(ierr);
+  //  if(normF < 1e-8) {
+    ierr = PetscPrintf(PETSC_COMM_SELF,"||F||_inf = %g\n",normF);CHKERRQ(ierr);
+    //  }
+    // ierr = VecView(F,0);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
