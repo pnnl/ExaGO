@@ -245,7 +245,7 @@ PetscErrorCode ComputeGlobalResidual(PFLOW pflow,double **busparamsarr,int **xid
     bus = &ps->bus[i];
     idxp = fidxarr[i][0]; idxq = fidxarr[i][1];
     if(fabs(f[idxp]) > 1e-8 || fabs(f[idxq]) > 1e-8 || isnan(fabs(f[idxq]))) {
-      PetscPrintf(PETSC_COMM_SELF,"Bus[bus->bus_i] fp = %g, fq = %g\n",bus->bus_i,f[idxp],f[idxq]);
+      PetscPrintf(PETSC_COMM_SELF,"Bus[%d] fp = %g, fq = %g\n",bus->bus_i,f[idxp],f[idxq]);
     }
 
   }
