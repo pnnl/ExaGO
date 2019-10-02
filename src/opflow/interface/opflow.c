@@ -76,7 +76,9 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow)
   /* Constraints vector */
   ierr = VecDestroy(&(*opflow)->G);CHKERRQ(ierr);
   ierr = VecDestroy(&(*opflow)->Ge);CHKERRQ(ierr);
-  ierr = VecDestroy(&(*opflow)->Gi);CHKERRQ(ierr);
+  if((*opflow)->nconineq) {
+    ierr = VecDestroy(&(*opflow)->Gi);CHKERRQ(ierr);
+  }
   ierr = VecDestroy(&(*opflow)->Gl);CHKERRQ(ierr);
   ierr = VecDestroy(&(*opflow)->Gu);CHKERRQ(ierr);
   ierr = VecDestroy(&(*opflow)->Lambda);CHKERRQ(ierr);
@@ -371,9 +373,11 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = VecSetSizes(opflow->Ge,PETSC_DECIDE,opflow->nconeq);CHKERRQ(ierr);
   ierr = VecSetFromOptions(opflow->Ge);CHKERRQ(ierr);
 
-  ierr = VecCreate(ps->comm->type,&opflow->Gi);CHKERRQ(ierr);
-  ierr = VecSetSizes(opflow->Gi,PETSC_DECIDE,opflow->ncon);CHKERRQ(ierr);
-  ierr = VecSetFromOptions(opflow->Gi);CHKERRQ(ierr);
+  if(opflow->nconineq) {
+    ierr = VecCreate(ps->comm->type,&opflow->Gi);CHKERRQ(ierr);
+    ierr = VecSetSizes(opflow->Gi,PETSC_DECIDE,opflow->nconineq);CHKERRQ(ierr);
+    ierr = VecSetFromOptions(opflow->Gi);CHKERRQ(ierr);
+  }
 
   /* Create equality and inequality constraint Jacobian matrices */
   ierr = MatCreate(opflow->comm->type,&opflow->Jac_Ge);CHKERRQ(ierr);

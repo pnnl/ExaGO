@@ -146,14 +146,317 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow,Vec X)
 
 PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec Ge)
 {
+  PetscErrorCode ierr;
+  PetscInt       i,k,nconnlines;
+  PetscInt       gloc,row[2];
+  PetscInt       xloc,xlocf,xloct;
+  PetscScalar    val[2];
+  PetscScalar    Pg,Qg;
+  PetscScalar    Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
+  PetscScalar    Vmf,Vmt,thetaf,thetat,thetaft,thetatf;
+  PetscScalar    Pf,Qf,Pt,Qt;
+  PetscScalar    theta,Vm;
+  PS             ps=opflow->ps;
+  PSLOAD         load;
+  PSLINE         line;
+  PSBUS          bus,busf,bust;
+  const PSBUS    *connbuses;
+  const PSLINE   *connlines;
+  const PetscScalar *x;
+
   PetscFunctionBegin;
+  ierr = VecSet(Ge,0.0);CHKERRQ(ierr);
+
+  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+
+  for (i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    ierr = DMNetworkGetVertexLocalToGlobalOrdering(ps->networkdm,i,&gloc);CHKERRQ(ierr);
+    gloc *= 2;
+    row[0] = gloc; row[1] = row[0] + 1;
+
+    ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
+    theta = x[xloc];
+    Vm    = x[xloc+1];
+    
+    if (bus->ide == ISOLATED_BUS) {
+      row[0]  = gloc; row[1] = row[0] + 1;
+      val[0] = theta - bus->va*PETSC_PI/180.0;
+      val[1] = Vm - bus->vm;
+      ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+      continue;
+    }
+
+    /* Shunt injections */
+    val[0] = Vm*Vm*bus->gl;
+    val[1] = -Vm*Vm*bus->bl;
+    ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+
+    for (k=0; k < bus->ngen; k++) {
+      xloc += 2;
+      Pg = x[xloc];
+      Qg = x[xloc+1];
+
+      val[0] = -Pg;
+      val[1] = -Qg;
+      ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+    }
+
+    for (k=0; k < bus->nload; k++) {
+      ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
+      val[0] = load->pl;
+      val[1] = load->ql;
+      ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+    }
+
+    ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
+    for (k=0; k < nconnlines; k++) {
+      line = connlines[k];
+      if (!line->status) continue;
+
+      Gff = line->yff[0];
+      Bff = line->yff[1];
+      Gft = line->yft[0];
+      Bft = line->yft[1];
+      Gtf = line->ytf[0];
+      Btf = line->ytf[1];
+      Gtt = line->ytt[0];
+      Btt = line->ytt[1];
+
+      ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
+      busf = connbuses[0];
+      bust = connbuses[1];
+
+      ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
+      ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
+
+      thetaf  = x[xlocf];
+      Vmf     = x[xlocf+1];
+      thetat  = x[xloct];
+      Vmt     = x[xloct+1];
+      thetaft = thetaf - thetat;
+      thetatf = thetat - thetaf;
+
+      if (bus == busf) {
+      	Pf = Gff*Vmf*Vmf  + Vmf*Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
+      	Qf = -Bff*Vmf*Vmf + Vmf*Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
+
+        val[0] = Pf;
+        val[1] = Qf;
+        ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+      } else {
+      	Pt = Gtt*Vmt*Vmt  + Vmt*Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
+      	Qt = -Btt*Vmt*Vmt + Vmt*Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
+
+        val[0] = Pt;
+        val[1] = Qt;
+        ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+      }
+    }
+  }
+  ierr = VecAssemblyBegin(Ge);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(Ge);CHKERRQ(ierr);
+
+  //  ierr = VecView(Ge,0);CHKERRQ(ierr);
+
+  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,Vec X,Mat Je)
+{
+  PetscErrorCode ierr;
+  PetscInt       i,k,row[2],col[4],genctr,gidx;
+  PetscInt       nconnlines,locglob,loc,locglobf,locglobt,locf,loct;
+  PetscScalar    Vm,val[8],Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
+  PetscScalar    thetaf,thetat,Vmf,Vmt,thetaft,thetatf;
+  PS             ps=opflow->ps;
+  PSBUS          bus;
+  PSLINE         line;
+  PSBUS          busf,bust;
+  DM             networkdm=ps->networkdm;
+  const PSLINE   *connlines;
+  const PSBUS    *connbuses;
+  const PetscScalar *xarr;
+
+  PetscFunctionBegin;
+  ierr = MatZeroEntries(Je);CHKERRQ(ierr);
+
+  ierr = VecGetArrayRead(X,&xarr);CHKERRQ(ierr);
+  for (i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    ierr = DMNetworkGetVertexLocalToGlobalOrdering(networkdm,i,&gidx);CHKERRQ(ierr);
+    gidx *= 2;
+    row[0] = gidx; row[1] = row[0] + 1;
+
+    ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
+    ierr = PSBUSGetVariableGlobalLocation(bus,&locglob);CHKERRQ(ierr);
+
+    Vm = xarr[loc+1];
+
+    col[0] = locglob; col[1] = locglob+1;
+    /* Isolated and reference bus */
+    if(bus->ide == ISOLATED_BUS) {
+      val[0] = val[3] = 1.0;
+      val[1] = val[2] = 0.0;
+      ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
+      continue;
+    }
+    /* Shunt injections */
+    val[0] = 0.0; val[1] = 2*Vm*bus->gl;
+    val[2] = 0.0; val[3]= -2*Vm*bus->bl; /* Partial derivative for shunt contribution */
+    ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
+    
+    genctr = 0;
+    for (k=0; k < bus->ngen; k++) {
+      val[0] = -1;
+      col[0] = locglob + 2 + genctr;
+      ierr = MatSetValues(Je,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+      
+      col[0] = locglob + 2 + genctr+1;
+      ierr = MatSetValues(Je,1,row+1,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+      genctr += 2;
+    }
+
+    /* Partial derivatives of network equations */
+    /* Get the lines supporting the bus */
+    ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
+
+    for (k=0; k < nconnlines; k++) {
+      line = connlines[k];
+      if (!line->status) continue;
+      Gff = line->yff[0];
+      Bff = line->yff[1];
+      Gft = line->yft[0];
+      Bft = line->yft[1];
+      Gtf = line->ytf[0];
+      Btf = line->ytf[1];
+      Gtt = line->ytt[0];
+      Btt = line->ytt[1];
+
+      /* Get the connected buses to this line */
+      ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
+      busf = connbuses[0];
+      bust = connbuses[1];
+
+      ierr = PSBUSGetVariableGlobalLocation(busf,&locglobf);CHKERRQ(ierr);
+      ierr = PSBUSGetVariableGlobalLocation(bust,&locglobt);CHKERRQ(ierr);
+
+      ierr = PSBUSGetVariableLocation(busf,&locf);CHKERRQ(ierr);
+      ierr = PSBUSGetVariableLocation(bust,&loct);CHKERRQ(ierr);
+
+      thetaf = xarr[locf];  Vmf = xarr[locf+1];
+      thetat = xarr[loct];  Vmt = xarr[loct+1];
+      thetaft = thetaf - thetat;
+      thetatf = thetat - thetaf;
+
+      if (bus == busf) {
+      	col[0] = locglobf; col[1] = locglobf+1; col[2] = locglobt; col[3] = locglobt+1;
+      	val[0] = Vmf*Vmt*(-Gft*sin(thetaft) + Bft*cos(thetaft));
+      	val[1] = 2*Gff*Vmf + Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
+      	val[2] = Vmf*Vmt*(Gft*sin(thetaft) - Bft*cos(thetaft));
+      	val[3] = Vmf*(Gft*cos(thetaft) + Bft*sin(thetaft));
+
+        val[4] = Vmf*Vmt*(Bft*sin(thetaft) + Gft*cos(thetaft));
+        val[5] = -2*Bff*Vmf + Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
+        val[6] = Vmf*Vmt*(-Bft*sin(thetaft) - Gft*cos(thetaft));
+        val[7] = Vmf*(-Bft*cos(thetaft) + Gft*sin(thetaft));
+        ierr = MatSetValues(Je,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+      } else {
+      	col[0] = locglobt; col[1] = locglobt+1; col[2] = locglobf; col[3] = locglobf+1;
+      	val[0] = Vmt*Vmf*(-Gtf*sin(thetatf) + Btf*cos(thetatf));
+      	val[1] = 2*Gtt*Vmt + Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
+      	val[2] = Vmt*Vmf*(Gtf*sin(thetatf) - Btf*cos(thetatf));
+      	val[3] = Vmt*(Gtf*cos(thetatf) + Btf*sin(thetatf));
+
+        val[4] = Vmt*Vmf*(Btf*sin(thetatf) + Gtf*cos(thetatf));
+        val[5] = -2*Btt*Vmt + Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
+        val[6] = Vmt*Vmf*(-Btf*sin(thetatf) - Gtf*cos(thetatf));
+        val[7] = Vmt*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
+        ierr = MatSetValues(Je,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+      }
+    }
+  }
+  ierr = VecRestoreArrayRead(X,&xarr);CHKERRQ(ierr);
+
+  ierr = MatAssemblyBegin(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec Gi)
 {
+  PetscErrorCode ierr;
+  PetscInt       i;
+  PetscInt       gloc=0;
+  PetscInt       xlocf,xloct;
+  PetscScalar    *g;
+  PetscScalar    Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
+  PetscScalar    Vmf,Vmt,thetaf,thetat,thetaft,thetatf;
+  PetscScalar    Pf,Qf,Pt,Qt,Sf2,St2;
+  PS             ps=opflow->ps;
+  PSLINE         line;
+  PSBUS          busf,bust;
+  const PSBUS    *connbuses;
+  const PetscScalar *x;
+
   PetscFunctionBegin;
+  ierr = VecSet(Gi,0.0);CHKERRQ(ierr);
+
+  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecGetArray(Gi,&g);CHKERRQ(ierr);
+
+  for(i=0; i<ps->nbranch; i++) {
+    line = &ps->line[i];
+
+    if(!line->status) {
+      gloc += 2;
+      continue;
+    }
+
+    Gff = line->yff[0];
+    Bff = line->yff[1];
+    Gft = line->yft[0];
+    Bft = line->yft[1];
+    Gtf = line->ytf[0];
+    Btf = line->ytf[1];
+    Gtt = line->ytt[0];
+    Btt = line->ytt[1];
+
+    ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
+    busf = connbuses[0];
+    bust = connbuses[1];
+
+    ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
+    ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
+
+    thetaf  = x[xlocf];
+    Vmf     = x[xlocf+1];
+    thetat  = x[xloct];
+    Vmt     = x[xloct+1];
+    thetaft = thetaf - thetat;
+    thetatf = thetat - thetaf;
+
+    Pf = Gff*Vmf*Vmf  + Vmf*Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
+    Qf = -Bff*Vmf*Vmf + Vmf*Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
+
+    Pt = Gtt*Vmt*Vmt  + Vmt*Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
+    Qt = -Btt*Vmt*Vmt + Vmt*Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
+
+    Sf2 = Pf*Pf + Qf*Qf;
+    St2 = Pt*Pt + Qt*Qt;
+
+    g[gloc]   = Sf2;
+    g[gloc+1] = St2;
+
+    gloc = gloc + 2;
+  }
+
+  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArray(Gi,&g);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -306,14 +609,71 @@ PetscErrorCode OPFLOWComputeObjandGradient_PBPOL(OPFLOW opflow,Vec X,PetscScalar
 
 PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow,Vec X,PetscScalar *obj)
 {
+  PetscErrorCode ierr;
+  const PetscScalar *x;
+  PS             ps=opflow->ps;
+  PetscInt       i;
+  PSBUS          bus;
+  PetscInt       loc;
+
   PetscFunctionBegin;
+
+  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+
+  *obj = 0.0;
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+
+    ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
+    
+    PetscInt k;
+    PSGEN    gen;
+    PetscScalar Pg;
+    for(k=0; k < bus->ngen; k++) {
+      loc = loc+2;
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      if(!gen->status) continue;
+      Pg = x[loc]*ps->MVAbase;
+      *obj += gen->cost_alpha*Pg*Pg + gen->cost_beta*Pg + gen->cost_gamma;
+    }
+  }
+  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow,Vec X,Vec Grad)
+PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow,Vec X,Vec grad)
 {
+  PetscErrorCode ierr;
+  const PetscScalar *x;
+  PetscScalar    *df;
+  PS             ps=opflow->ps;
+  PetscInt       i;
+  PSBUS          bus;
+  PetscInt       loc;
+
   PetscFunctionBegin;
+  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecGetArray(grad,&df);CHKERRQ(ierr);
+
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+
+    ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
+    
+    PetscInt k;
+    PSGEN    gen;
+    PetscScalar Pg;
+    for(k=0; k < bus->ngen; k++) {
+      loc = loc+2;
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      if(!gen->status) continue;
+      Pg = x[loc]*ps->MVAbase;
+      df[loc] = ps->MVAbase*(2*gen->cost_alpha*Pg + gen->cost_beta);
+    }
+  }
+  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArray(grad,&df);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -353,128 +713,6 @@ PetscErrorCode OPFLOWFormulationSetNumConstraints_PBPOL(OPFLOW opflow,PetscInt *
   PetscFunctionBegin;
   *nconeq = 2*ps->nbus;
   *nconineq = 2*ps->nbranch;
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,Vec X,Mat Je)
-{
-  PetscErrorCode ierr;
-  PetscInt       i,k,row[2],col[4],genctr,gidx;
-  PetscInt       nconnlines,locglob,loc,locglobf,locglobt,locf,loct;
-  PetscScalar    Vm,val[8],Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
-  PetscScalar    thetaf,thetat,Vmf,Vmt,thetaft,thetatf;
-  PS             ps=opflow->ps;
-  PSBUS          bus;
-  PSLINE         line;
-  PSBUS          busf,bust;
-  DM             networkdm=ps->networkdm;
-  const PSLINE   *connlines;
-  const PSBUS    *connbuses;
-  const PetscScalar *xarr;
-
-  PetscFunctionBegin;
-  ierr = MatZeroEntries(Je);CHKERRQ(ierr);
-
-  ierr = VecGetArrayRead(X,&xarr);CHKERRQ(ierr);
-  for (i=0; i < ps->nbus; i++) {
-    bus = &ps->bus[i];
-    ierr = DMNetworkGetVertexLocalToGlobalOrdering(networkdm,i,&gidx);CHKERRQ(ierr);
-    gidx *= 2;
-    row[0] = gidx; row[1] = row[0] + 1;
-
-    ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
-    ierr = PSBUSGetVariableGlobalLocation(bus,&locglob);CHKERRQ(ierr);
-
-    Vm = xarr[loc+1];
-
-    col[0] = locglob; col[1] = locglob+1;
-    /* Isolated and reference bus */
-    if(bus->ide == ISOLATED_BUS) {
-      val[0] = val[3] = 1.0;
-      val[1] = val[2] = 0.0;
-      ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-      continue;
-    }
-    /* Shunt injections */
-    val[0] = 0.0; val[1] = 2*Vm*bus->gl;
-    val[2] = 0.0; val[3]= -2*Vm*bus->bl; /* Partial derivative for shunt contribution */
-    ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-    
-    genctr = 0;
-    for (k=0; k < bus->ngen; k++) {
-      val[0] = -1;
-      col[0] = locglob + 2 + genctr;
-      ierr = MatSetValues(Je,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-      
-      col[0] = locglob + 2 + genctr+1;
-      ierr = MatSetValues(Je,1,row+1,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-      genctr += 2;
-    }
-
-    /* Partial derivatives of network equations */
-    /* Get the lines supporting the bus */
-    ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
-
-    for (k=0; k < nconnlines; k++) {
-      line = connlines[k];
-      if (!line->status) continue;
-      Gff = line->yff[0];
-      Bff = line->yff[1];
-      Gft = line->yft[0];
-      Bft = line->yft[1];
-      Gtf = line->ytf[0];
-      Btf = line->ytf[1];
-      Gtt = line->ytt[0];
-      Btt = line->ytt[1];
-
-      /* Get the connected buses to this line */
-      ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
-      busf = connbuses[0];
-      bust = connbuses[1];
-
-      ierr = PSBUSGetVariableGlobalLocation(busf,&locglobf);CHKERRQ(ierr);
-      ierr = PSBUSGetVariableGlobalLocation(bust,&locglobt);CHKERRQ(ierr);
-
-      ierr = PSBUSGetVariableLocation(busf,&locf);CHKERRQ(ierr);
-      ierr = PSBUSGetVariableLocation(bust,&loct);CHKERRQ(ierr);
-
-      thetaf = xarr[locf];  Vmf = xarr[locf+1];
-      thetat = xarr[loct];  Vmt = xarr[loct+1];
-      thetaft = thetaf - thetat;
-      thetatf = thetat - thetaf;
-
-      if (bus == busf) {
-      	col[0] = locglobf; col[1] = locglobf+1; col[2] = locglobt; col[3] = locglobt+1;
-      	val[0] = Vmf*Vmt*(-Gft*sin(thetaft) + Bft*cos(thetaft));
-      	val[1] = 2*Gff*Vmf + Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
-      	val[2] = Vmf*Vmt*(Gft*sin(thetaft) - Bft*cos(thetaft));
-      	val[3] = Vmf*(Gft*cos(thetaft) + Bft*sin(thetaft));
-
-        val[4] = Vmf*Vmt*(Bft*sin(thetaft) + Gft*cos(thetaft));
-        val[5] = -2*Bff*Vmf + Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
-        val[6] = Vmf*Vmt*(-Bft*sin(thetaft) - Gft*cos(thetaft));
-        val[7] = Vmf*(-Bft*cos(thetaft) + Gft*sin(thetaft));
-        ierr = MatSetValues(Je,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
-      } else {
-      	col[0] = locglobt; col[1] = locglobt+1; col[2] = locglobf; col[3] = locglobf+1;
-      	val[0] = Vmt*Vmf*(-Gtf*sin(thetatf) + Btf*cos(thetatf));
-      	val[1] = 2*Gtt*Vmt + Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
-      	val[2] = Vmt*Vmf*(Gtf*sin(thetatf) - Btf*cos(thetatf));
-      	val[3] = Vmt*(Gtf*cos(thetatf) + Btf*sin(thetatf));
-
-        val[4] = Vmt*Vmf*(Btf*sin(thetatf) + Gtf*cos(thetatf));
-        val[5] = -2*Btt*Vmt + Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
-        val[6] = Vmt*Vmf*(-Btf*sin(thetatf) - Gtf*cos(thetatf));
-        val[7] = Vmt*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
-        ierr = MatSetValues(Je,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
-      }
-    }
-  }
-  ierr = VecRestoreArrayRead(X,&xarr);CHKERRQ(ierr);
-
-  ierr = MatAssemblyBegin(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

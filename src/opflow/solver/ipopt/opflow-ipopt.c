@@ -71,10 +71,17 @@ Bool eval_opflow_g(PetscInt n, PetscScalar* x, Bool new_x,
   OPFLOW         opflow=(OPFLOW)user_data;
 
   ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
-  ierr = VecPlaceArray(opflow->G,g);CHKERRQ(ierr);
-  ierr = (*opflow->formops.computeconstraints)(opflow,opflow->X,opflow->G);CHKERRQ(ierr);
+  ierr = VecPlaceArray(opflow->Ge,g);CHKERRQ(ierr);
+  ierr = (*opflow->formops.computeequalityconstraints)(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
+  ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
+
+  if(opflow->nconineq) {
+    ierr = VecPlaceArray(opflow->Gi,g+opflow->nconeq);CHKERRQ(ierr);
+    ierr = (*opflow->formops.computeinequalityconstraints)(opflow,opflow->X,opflow->Gi);CHKERRQ(ierr);
+    ierr = VecResetArray(opflow->Gi);CHKERRQ(ierr);
+  }
   ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
-  ierr = VecResetArray(opflow->G);CHKERRQ(ierr);
+
 
   return TRUE;
 }
@@ -90,12 +97,19 @@ Bool eval_opflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
   OPFLOWSolver_IPOPT ipopt=(OPFLOWSolver_IPOPT)opflow->solver;
   PetscInt       *iRowstart = iRow,*jColstart=jCol;
   PetscInt       roffset,coffset;
+  Mat_SeqAIJ     *aij;
+  PetscInt       nrow,ncol;
 
   if(values == NULL) {
     /* Set locations only */
-    roffset = opflow->nconeq;
+    roffset = 0;
     coffset = 0;
 
+    ierr = MatGetSize(ipopt->Jac_GeT,&nrow,&ncol);CHKERRQ(ierr);
+    aij = (Mat_SeqAIJ*)ipopt->Jac_GeT->data;
+    ierr = PetscMemcpy(ipopt->jac_ge->rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
+    ierr = PetscMemcpy(ipopt->jac_ge->colptr,aij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
+    ierr = PetscMemcpy(ipopt->jac_ge->values,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
     CCMatrixToMatrixMarketLocationsOnly(ipopt->jac_ge,opflow->nx,iRowstart,jColstart,roffset,coffset,ipopt->nnz_jac_ge);
 
     /* Increment iRow,jCol pointers */
@@ -104,11 +118,44 @@ Bool eval_opflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
 
     if(opflow->nconineq) {
       roffset = opflow->nconeq;
+
+      ierr = MatGetSize(ipopt->Jac_GiT,&nrow,&ncol);CHKERRQ(ierr);
+      aij = (Mat_SeqAIJ*)ipopt->Jac_GiT->data;
+      ierr = PetscMemcpy(ipopt->jac_gi->rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
+      ierr = PetscMemcpy(ipopt->jac_gi->colptr,aij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
+      ierr = PetscMemcpy(ipopt->jac_gi->values,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
       
       CCMatrixToMatrixMarketLocationsOnly(ipopt->jac_gi,opflow->nx,iRowstart,jColstart,roffset,coffset,ipopt->nnz_jac_gi);
     }
   } else {
 
+    ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
+
+    /* Compute equality constraint jacobian */
+    ierr = (*opflow->formops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
+
+    ierr = MatTranspose(opflow->Jac_Ge,MAT_REUSE_MATRIX,&ipopt->Jac_GeT);CHKERRQ(ierr);
+    ierr = MatGetSize(ipopt->Jac_GeT,&nrow,&ncol);CHKERRQ(ierr);
+    aij = (Mat_SeqAIJ*)ipopt->Jac_GeT->data;
+
+    ierr = PetscMemcpy(ipopt->jac_ge->values,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
+
+    CCMatrixToMatrixMarketValuesOnly(ipopt->jac_ge,ipopt->nnz_jac_ge,values);
+
+    if(opflow->nconineq) {
+      /* Compute inequality constraint jacobian */
+      ierr = (*opflow->formops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
+
+      ierr = MatTranspose(opflow->Jac_Gi,MAT_REUSE_MATRIX,&ipopt->Jac_GiT);CHKERRQ(ierr);
+
+      aij = (Mat_SeqAIJ*)ipopt->Jac_GiT->data;
+
+      ierr = PetscMemcpy(ipopt->jac_gi->values,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
+      
+      CCMatrixToMatrixMarketValuesOnly(ipopt->jac_gi,ipopt->nnz_jac_gi,values+ipopt->nnz_jac_ge);
+    }
+
+    ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
   }
 
   return TRUE;
@@ -119,6 +166,35 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
             PetscInt nele_hess, PetscInt *iRow, PetscInt *jCol,
             PetscScalar *values, UserDataPtr user_data)
 {
+  PetscErrorCode ierr;
+  PetscInt       nrow;
+  Mat_SeqAIJ     *aij;
+  OPFLOW         opflow=(OPFLOW)user_data;
+  OPFLOWSolver_IPOPT ipopt=(OPFLOWSolver_IPOPT)opflow->solver;
+
+  if(values == NULL) {
+    ierr = MatGetSize(opflow->Hes,&nrow,&nrow);CHKERRQ(ierr);
+    aij = (Mat_SeqAIJ*)opflow->Hes->data;
+    ierr = PetscMemcpy(ipopt->hes->rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
+    ierr = PetscMemcpy(ipopt->hes->colptr,aij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
+    ierr = PetscMemcpy(ipopt->hes->values,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
+    CCMatrixToMatrixMarketLocationsOnly(ipopt->hes,opflow->nx,iRow,jCol,0,0,ipopt->nnz_hes);
+  } else {
+    ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
+    ierr = VecPlaceArray(opflow->Lambda,lambda);CHKERRQ(ierr);
+
+    /* Compute non-zeros for Hessian */
+    ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambda,opflow->Hes);CHKERRQ(ierr);
+    /* Since the Hessian is symmetric, we don't need to convert it to column compressed sparse format */
+    aij = (Mat_SeqAIJ*)opflow->Hes->data;
+    ipopt->nnz_hes = aij->nz;
+
+    CCMatrixToMatrixMarketValuesOnly(ipopt->hes,ipopt->nnz_hes,values);
+
+    ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+    ierr = VecResetArray(opflow->Lambda);CHKERRQ(ierr);
+
+  }
   return 1;
 }
 
@@ -166,7 +242,7 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
   /* Compute non-zeros for Hessian */
   ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambda,opflow->Hes);CHKERRQ(ierr);
   /* Since the Hessian is symmetric, we don't need to convert it to column compressed sparse format */
-  aij = (Mat_SeqAIJ*)opflow->Hes;
+  aij = (Mat_SeqAIJ*)opflow->Hes->data;
   ipopt->nnz_hes = aij->nz;
 
   /* Create ccmatrix object for hessian */
