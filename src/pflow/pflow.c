@@ -30,6 +30,8 @@ PetscErrorCode PFLOWCreate(MPI_Comm mpicomm, PFLOW *pflowout)
 
   pflow->setupcalled = PETSC_FALSE;
 
+  pflow->split_gen_power_within_limits = PETSC_FALSE;
+
   *pflowout = pflow;
   PetscFunctionReturn(0);
 }
@@ -731,65 +733,79 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow)
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
 
-    if(bus->ide == REF_BUS || bus->ide == PV_BUS) {
-      temptotal=0;
-      pgtotalnonlt = bus->Pgtot; // Net Pg for generators not on VAR limits on this bus. This will be needed later if some of the buses are VAR limited during splitting.
-      qgtotalonlt = 0; // Net Qg for generators on Var limit on the bus
-      MVAbasenonlt = bus->MVAbasetot; // Net MVAbase for generators not on VAR limits on this bus.
-
-      if (bus->ngen==1){     // If there is only one generator, do not split, this avoids that generator being VAR limited at the splitting stage. VAR limits will still be an issue if the net VAR at the bus is beyond its net VAR limit.
-	PSGEN gen;
-	ierr = PSBUSGetGen(bus,0,&gen);CHKERRQ(ierr);
-	if(bus->ide == REF_BUS) {
-	  gen->pg = pqgenarr[loc];
-	}
-	gen->qg = pqgenarr[loc+1];
-	temptotal += gen->qg;
-      } else {
+    if(!pflow->split_gen_power_within_limits) {
+      if(bus->ide == REF_BUS || bus->ide == PV_BUS) {
 	for(k=0; k < bus->ngen; k++) {
 	  PSGEN gen;
-	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-	  if(gen->status) {
-	    if(bus->ide == REF_BUS) {
-	      if(bus->Pgtot!=0) {
-		gen->pg = pqgenarr[loc]*PetscAbsScalar(gen->pg)/bus->Pgtot;
-	      }
-	      else{gen->pg = pqgenarr[loc]*gen->mbase/bus->MVAbasetot;}
-	    }
-	    if(PetscAbsScalar(gen->qt - gen->qb) < PETSC_SMALL) gen->qg = gen->qt; /* Fixed VAR generator */
-	    else {
-	      if(bus->Pgtot!=0){gen->qg = pqgenarr[loc+1]*PetscAbsScalar(gen->pg)/bus->Pgtot; /* Proportional distribution */}
-	      else {
-		gen->qg = pqgenarr[loc+1]*gen->mbase/bus->MVAbasetot;
-	      }	 
-	      if (gen->qg > gen->qt) { // In PSSE while splitting the VARS on the generators, VAR limits are respected.
-		gen->qg = gen->qt;
-		pgtotalnonlt -= PetscAbsScalar(gen->pg); //Substract this PG from net PG not on limit
-		qgtotalonlt += gen->qg;    // Add this Qg to net Qg on limit
-		MVAbasenonlt -= gen->mbase; // Substract this MVAbase from net MVAbase not on limit
-	      }    
-	      else if (gen->qg<gen->qb) {
-		gen->qg = gen->qb;
-		pgtotalnonlt -= PetscAbsScalar(gen->pg);
-		qgtotalonlt += gen->qg;
-		MVAbasenonlt -= gen->mbase;
-	      }   
-	    }
+	  ierr = PSBUSGetGen(bus,k,&gen);
+	  if(bus->ide == REF_BUS) {
+	    gen->pg = pqgenarr[loc]*gen->mbase/bus->MVAbasetot;
 	  }
-	  temptotal += gen->qg; // Calculate the total Qg on the bus, since some of the generators might be VAR limited, need to check if the total Qg is still the same as the total QG before splitting.
+	  gen->qg = pqgenarr[loc+1]*gen->mbase/bus->MVAbasetot;
 	}
       }
-      diffqg=pqgenarr[loc+1]-temptotal;  // Calculate the difference between net QG before and after splitting. 
-      if (PetscAbsScalar(diffqg)>0.0001){ // If there is a difference between the net Qg before and after splitting, distribute the difference on generators  which are not on VAR limits proportional to their PG output (or MVAbase if net PG output of generators not on VAR limits is zero.)
-	for(k=0; k < bus->ngen; k++) {
+    } else {
+      /* Split powers adhering to real and reactive power limits */
+      if(bus->ide == REF_BUS || bus->ide == PV_BUS) {
+	temptotal=0;
+	pgtotalnonlt = bus->Pgtot; // Net Pg for generators not on VAR limits on this bus. This will be needed later if some of the buses are VAR limited during splitting.
+	qgtotalonlt = 0; // Net Qg for generators on Var limit on the bus
+	MVAbasenonlt = bus->MVAbasetot; // Net MVAbase for generators not on VAR limits on this bus.
+	
+	if (bus->ngen==1){     // If there is only one generator, do not split, this avoids that generator being VAR limited at the splitting stage. VAR limits will still be an issue if the net VAR at the bus is beyond its net VAR limit.
 	  PSGEN gen;
-	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-	  if(PetscAbsScalar(gen->qg-gen->qt)>PETSC_SMALL && PetscAbsScalar(gen->qg-gen->qb)>PETSC_SMALL) {
-	    if (PetscAbsScalar(pgtotalnonlt-0)>PETSC_SMALL) {
-	      gen->qg = (pqgenarr[loc+1]-qgtotalonlt)*PetscAbsScalar(gen->pg)/pgtotalnonlt;
+	  ierr = PSBUSGetGen(bus,0,&gen);CHKERRQ(ierr);
+	  if(bus->ide == REF_BUS) {
+	    gen->pg = pqgenarr[loc];
+	  }
+	  gen->qg = pqgenarr[loc+1];
+	  temptotal += gen->qg;
+	} else {
+	  for(k=0; k < bus->ngen; k++) {
+	    PSGEN gen;
+	    ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	    if(gen->status) {
+	      if(bus->ide == REF_BUS) {
+		if(bus->Pgtot!=0) {
+		  gen->pg = pqgenarr[loc]*PetscAbsScalar(gen->pg)/bus->Pgtot;
+		}
+		else{gen->pg = pqgenarr[loc]*gen->mbase/bus->MVAbasetot;}
+	      }
+	      if(PetscAbsScalar(gen->qt - gen->qb) < PETSC_SMALL) gen->qg = gen->qt; /* Fixed VAR generator */
+	      else {
+		if(bus->Pgtot!=0){gen->qg = pqgenarr[loc+1]*PetscAbsScalar(gen->pg)/bus->Pgtot; /* Proportional distribution */}
+		else {
+		  gen->qg = pqgenarr[loc+1]*gen->mbase/bus->MVAbasetot;
+		}	 
+		if (gen->qg > gen->qt) { // In PSSE while splitting the VARS on the generators, VAR limits are respected.
+		  gen->qg = gen->qt;
+		  pgtotalnonlt -= PetscAbsScalar(gen->pg); //Substract this PG from net PG not on limit
+		  qgtotalonlt += gen->qg;    // Add this Qg to net Qg on limit
+		  MVAbasenonlt -= gen->mbase; // Substract this MVAbase from net MVAbase not on limit
+		}    
+		else if (gen->qg<gen->qb) {
+		  gen->qg = gen->qb;
+		  pgtotalnonlt -= PetscAbsScalar(gen->pg);
+		  qgtotalonlt += gen->qg;
+		  MVAbasenonlt -= gen->mbase;
+		}   
+	      }
 	    }
-	    else {
-	      gen->qg = (pqgenarr[loc+1]-qgtotalonlt)*gen->mbase/MVAbasenonlt;
+	    temptotal += gen->qg; // Calculate the total Qg on the bus, since some of the generators might be VAR limited, need to check if the total Qg is still the same as the total QG before splitting.
+	  }
+	}
+	diffqg=pqgenarr[loc+1]-temptotal;  // Calculate the difference between net QG before and after splitting. 
+	if (PetscAbsScalar(diffqg)>0.0001){ // If there is a difference between the net Qg before and after splitting, distribute the difference on generators  which are not on VAR limits proportional to their PG output (or MVAbase if net PG output of generators not on VAR limits is zero.)
+	  for(k=0; k < bus->ngen; k++) {
+	    PSGEN gen;
+	    ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	    if(PetscAbsScalar(gen->qg-gen->qt)>PETSC_SMALL && PetscAbsScalar(gen->qg-gen->qb)>PETSC_SMALL) {
+	      if (PetscAbsScalar(pgtotalnonlt-0)>PETSC_SMALL) {
+		gen->qg = (pqgenarr[loc+1]-qgtotalonlt)*PetscAbsScalar(gen->pg)/pgtotalnonlt;
+	      }
+	      else {
+		gen->qg = (pqgenarr[loc+1]-qgtotalonlt)*gen->mbase/MVAbasenonlt;
+	      }
 	    }
 	  }
 	}
