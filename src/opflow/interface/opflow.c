@@ -45,6 +45,8 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   /* Register all solvers */
   ierr = OPFLOWSolverRegisterAll(opflow);
 
+  /* Run-time options */
+  opflow->ignore_inequality_constraints = PETSC_TRUE;
   opflow->setupcalled = PETSC_FALSE;
 
   *opflowout = opflow;
@@ -221,6 +223,7 @@ PetscErrorCode OPFLOWSetNumConstraints(OPFLOW opflow,PetscInt *nconeq,PetscInt *
   PetscErrorCode ierr;
   PetscFunctionBegin;
   ierr = (*opflow->formops.setnumconstraints)(opflow,nconeq,nconineq);
+  if(opflow->ignore_inequality_constraints) *nconineq = 0;
   PetscFunctionReturn(0);
 }
 	  

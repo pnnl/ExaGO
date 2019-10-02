@@ -108,6 +108,8 @@ struct _p_OPFLOW{
   PetscInt nsolversregistered;
   PetscBool OPFLOWFormulationRegisterAllCalled;
   PetscBool OPFLOWSolverRegisterAllCalled;
+
+  PetscBool ignore_inequality_constraints;
 };
 
 /* Registers all the OPFLOW formulations */

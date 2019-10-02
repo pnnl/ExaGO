@@ -78,16 +78,18 @@ PetscErrorCode OPFLOWSetVariableandConstraintBounds_PBPOL(OPFLOW opflow,Vec Xl,V
     gloc += 2;
   }
   
-  for(i=0; i < ps->Nbranch; i++) {
-    line = &ps->line[i];
-
-    /* Line flow inequality constraints */
-    if(!line->status) gl[gloc] = gu[gloc] = gl[gloc+1] = gu[gloc+1] = 0.0;
-    else {
-      gl[gloc] = gl[gloc+1] = 0.0; 
-      gu[gloc] = gu[gloc+1] = (line->rateA/ps->MVAbase)*(line->rateA/ps->MVAbase);
-    }    
-    gloc += 2;
+  if(opflow->nconineq) {
+    for(i=0; i < ps->Nbranch; i++) {
+      line = &ps->line[i];
+      
+      /* Line flow inequality constraints */
+      if(!line->status) gl[gloc] = gu[gloc] = gl[gloc+1] = gu[gloc+1] = 0.0;
+      else {
+	gl[gloc] = gl[gloc+1] = 0.0; 
+	gu[gloc] = gu[gloc+1] = (line->rateA/ps->MVAbase)*(line->rateA/ps->MVAbase);
+      }    
+      gloc += 2;
+    }
   }
 
   ierr = VecRestoreArray(Xl,&xl);CHKERRQ(ierr);
@@ -1323,12 +1325,11 @@ PetscErrorCode OPFLOWComputeHessian_PBPOL(OPFLOW opflow,Vec X,Vec Lambda,Mat H)
 {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  
   ierr = MatZeroEntries(H);CHKERRQ(ierr);
-  
+
   /* Objective function Hessian */
   ierr = OPFLOWComputeObjectiveHessian_PBPOL(opflow,X,H);CHKERRQ(ierr);
-  
+
   /* Equality constraints Hessian */
   ierr = OPFLOWComputeEqualityConstraintsHessian_PBPOL(opflow,X,Lambda,H);CHKERRQ(ierr);
   
