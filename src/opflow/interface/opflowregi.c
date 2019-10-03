@@ -49,6 +49,7 @@ PetscErrorCode OPFLOWSolverRegister(OPFLOW opflow,const char sname[],PetscErrorC
 }
 
 extern PetscErrorCode OPFLOWFormulationCreate_PBPOL(OPFLOW);
+extern PetscErrorCode OPFLOWFormulationCreate_PBCAR(OPFLOW);
 
 /*
   OPFLOWFormulationRegisterAll - Registers all built OPFLOW formulations
@@ -60,6 +61,7 @@ PetscErrorCode OPFLOWFormulationRegisterAll(OPFLOW opflow)
   if(opflow->OPFLOWFormulationRegisterAllCalled) PetscFunctionReturn(0);
 
   ierr = OPFLOWFormulationRegister(opflow,OPFLOWFORMULATION_PBPOL,OPFLOWFormulationCreate_PBPOL);CHKERRQ(ierr);
+  ierr = OPFLOWFormulationRegister(opflow,OPFLOWFORMULATION_PBCAR,OPFLOWFormulationCreate_PBCAR);CHKERRQ(ierr);
   opflow->OPFLOWFormulationRegisterAllCalled = PETSC_TRUE;
 
   PetscFunctionReturn(0);

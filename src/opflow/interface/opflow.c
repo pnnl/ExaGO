@@ -325,7 +325,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
     ierr = OPFLOWSetFormulation(opflow,formulationname);CHKERRQ(ierr);
   } else {
     if(!opflow->formulation) {
-      ierr = OPFLOWSetFormulation(opflow,OPFLOWFORMULATION_PBPOL);CHKERRQ(ierr);
+      ierr = OPFLOWSetFormulation(opflow,OPFLOWFORMULATION_PBCAR);CHKERRQ(ierr);
     }
   }
 

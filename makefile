@@ -64,7 +64,7 @@ PFLOW2: $(OBJECTS_PFLOW2) libpflow chkopts
 #******************************
 OPFLOW_SRC_OBJECTS = src/opflow/opflow.o src/opflow/econstraints.o src/opflow/iconstraints.o src/opflow/objectivefunct.o ${PS_SRC_OBJECTS}
 
-OPFLOW3_SRC_OBJECTS = src/opflow/interface/opflow.o src/opflow/interface/opflowregi.o src/opflow/formulation/power-bal-polar/pbpol.o src/opflow/solver/ipopt/opflow-ipopt.o ${PS_SRC_OBJECTS}
+OPFLOW3_SRC_OBJECTS = src/opflow/interface/opflow.o src/opflow/interface/opflowregi.o src/opflow/formulation/power-bal-polar/pbpol.o src/opflow/formulation/power-bal-cartesian/pbcar.o src/opflow/solver/ipopt/opflow-ipopt.o ${PS_SRC_OBJECTS}
 
 #******** Option 1 **********
 OPFLOW_APP_OBJECTS = applications/opflow-main.o
