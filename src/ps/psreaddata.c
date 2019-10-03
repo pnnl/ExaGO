@@ -174,6 +174,8 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
 #if defined DEBUGPS
         if(busi < 2) ierr = PetscPrintf(PETSC_COMM_SELF,"BUSData[%d] : %d, '%s', %lf, %d, %d, %d, %d, %lf, %lf\n", busi, Bus[busi].bus_i, Bus[busi].name, Bus[busi].basekV, Bus[busi].ide, Bus[busi].area, Bus[busi].zone, Bus[busi].owner, Bus[busi].vm, Bus[busi].va);CHKERRQ(ierr);
 #endif               
+	if(Bus[busi].ide == REF_BUS) ps->Nref++;
+
         busext2intmap[Bus[busi].bus_i] = busi;
         Bus[busi].internal_i = busi;
         Bus[busi].nload = 0;
