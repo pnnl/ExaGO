@@ -616,6 +616,7 @@ PetscErrorCode PSCreate(MPI_Comm mpicomm,PS *psout)
   ps->appname     = APP_NONE;
   ps->ndiff   = 0;
   ps->nconncomp = 0;
+  ps->nref = ps->Nref = 0;
  
   ierr = PSIncreaseReferenceCount(ps);CHKERRQ(ierr);
 
@@ -844,7 +845,7 @@ PetscErrorCode PSSetUp(PS ps)
     }
 
     /* Broadcast global Nbus,Ngen,Nbranch, Nload,and maxbusnum to all processors */
-    PetscInt temp[6];
+    PetscInt temp[7];
     /* Pack variables */
     temp[0] = ps->Nbus;
     temp[1] = ps->Ngen;
@@ -852,7 +853,8 @@ PetscErrorCode PSSetUp(PS ps)
     temp[3] = ps->Nload;
     temp[4] = ps->maxbusnum;
     temp[5] = ps->NgenON;
-    ierr = MPI_Bcast(temp,6,MPI_INT,0,ps->comm->type);CHKERRQ(ierr);
+    temp[6] = ps->Nref;
+    ierr = MPI_Bcast(temp,7,MPI_INT,0,ps->comm->type);CHKERRQ(ierr);
     /* Unpack */
     ps->Nbus = temp[0];
     ps->Ngen = temp[1];
@@ -860,6 +862,7 @@ PetscErrorCode PSSetUp(PS ps)
     ps->Nload   = temp[3];
     ps->maxbusnum = temp[4];
     ps->NgenON  = temp[5];
+    ps->Nref    = temp[6];
 
     /* Recreate busext2intmap..this will map the local bus numbers to external numbers */
     ierr = PetscCalloc1(ps->maxbusnum+1,&ps->busext2intmap);CHKERRQ(ierr);
@@ -970,6 +973,9 @@ PetscErrorCode PSSetUp(PS ps)
     for(k=0; k < ps->bus[i-vStart].nload; k++) {
       ps->bus[i-vStart].loads[k] = &ps->load[ps->bus[i-vStart].lidx[k]];
     }
+
+    /* Update the number of local reference buses */
+    if(ps->bus[i-vStart].ide == REF_BUS) ps->nref++;
   }
 #if defined DEBUGPS
   ierr = PetscPrintf(PETSC_COMM_SELF,"Rank[%d]:nbuses = %d,nlines = %d,ngen = %d, nload = %d\n",ps->comm->rank,ps->nbus,ps->nbranch,ps->ngen,ps->nload);CHKERRQ(ierr);
@@ -1065,7 +1071,10 @@ PetscErrorCode PSSetGenStatus(PS ps,PetscInt gbus,const char* gid,PetscInt statu
 	ps->ngenON--;
 	ps->NgenON--;
 	/* Change the bus type to PQ if no generators are active at this bus */
-	if(!bus->ngenON) bus->ide = PQ_BUS;
+	if(!bus->ngenON) {
+	  if(bus->ide == REF_BUS) ps->nref--;
+	  bus->ide = PQ_BUS;
+	}
 	gen->pg = gen->qg = 0.0;
       }
     }

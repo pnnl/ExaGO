@@ -482,6 +482,7 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
 	     &Bus[busi].bus_i,&Bus[busi].ide,&Pd,&Qd,&Bus[busi].gl,	\
 	     &Bus[busi].bl,&Bus[busi].area,&Bus[busi].vm,&Bus[busi].va,&Bus[busi].basekV,&Bus[busi].zone,\
 	     &Bus[busi].Vmax,&Bus[busi].Vmin);
+      if(Bus[busi].ide == REF_BUS) ps->Nref++;
       Bus[busi].internal_i = busi;
       busext2intmap[Bus[busi].bus_i] = busi;
       /* Convert bl and gl to per unit */
