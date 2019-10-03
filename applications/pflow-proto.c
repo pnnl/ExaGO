@@ -13,6 +13,9 @@ busparams[i] = {# of gens
 		# status,Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt for each line
 
 */
+
+PetscLogEvent bus_residual_event;
+
 PetscErrorCode CreateParamArray(PFLOW pflow,double **busparamsarr,int **xidxarr,int **fidxarr)
 {
   PS ps=pflow->ps;
@@ -153,7 +156,15 @@ int ComputeBusResidual(double *busparams,int *xidx,int *fidx,const double *x,dou
   double thetaj,Vmj;
   double Gself,Bself,Gmutual,Bmutual;
   double pline,qline;
+  PetscLogDouble fpsct=0;
 
+  PetscLogEventBegin(bus_residual_event,0,0,0,0);
+  /* For flop count, the following is assumed */
+  /* addition - 1 flop
+     subtraction - 1 flop
+     cos,sin     - 15 flops
+     mult        - 1 flop
+  */
   busparams += 5;
   xidx      += 2;
 
@@ -161,6 +172,7 @@ int ComputeBusResidual(double *busparams,int *xidx,int *fidx,const double *x,dou
   f[idxp] = gl*Vmi*Vmi;
   f[idxq] = -bl*Vmi*Vmi;
 
+  fpsct += 5;
   /* Generator contribution */
   for(i=0; i < ngen; i++) {
     gstatus = (int)busparams[0];
@@ -171,6 +183,8 @@ int ComputeBusResidual(double *busparams,int *xidx,int *fidx,const double *x,dou
     f[idxq] -= gstatus*qg;
 
     busparams += 3;
+
+    fpsct += 2*2;
   }
 
   /* Load contribution */
@@ -181,6 +195,8 @@ int ComputeBusResidual(double *busparams,int *xidx,int *fidx,const double *x,dou
 
     f[idxp] += lstatus*pl;
     f[idxq] += lstatus*ql;
+
+    fpsct += 2*2;
 
     busparams += 3;
   }
@@ -221,7 +237,11 @@ int ComputeBusResidual(double *busparams,int *xidx,int *fidx,const double *x,dou
 
     f[idxp] += brstatus*pline;
     f[idxq] += brstatus*qline;
+
+    fpsct += 81;
   }
+  PetscLogFlops(fpsct);
+  PetscLogEventEnd(bus_residual_event,0,0,0,0);
   return 0;
 }
 PetscErrorCode ComputeGlobalResidual(PFLOW pflow,double **busparamsarr,int **xidxarr,int **fidxarr,Vec X, Vec F)
@@ -266,7 +286,7 @@ int main(int argc,char **argv)
   PFLOW             pflow;
   char              file[PETSC_MAX_PATH_LEN];
   PetscBool         flg;
-  PetscLogStage     read,setup,solve;
+  PetscLogStage     read,setup,solve,cuda_proto;
   Vec               X; /* Global solution vector */
   Vec               F; /* Global residual vector */
   /* array of arrays to hold parameters needed by each bus to
@@ -282,6 +302,7 @@ int main(int argc,char **argv)
   ierr = PetscLogStageRegister("ReadData",&read);CHKERRQ(ierr);
   ierr = PetscLogStageRegister("SetUp",&setup);CHKERRQ(ierr);
   ierr = PetscLogStageRegister("Solve",&solve);CHKERRQ(ierr);
+  ierr = PetscLogStageRegister("CudaProto",&cuda_proto);CHKERRQ(ierr);
 
   /* Create PFLOW object */
   ierr = PFLOWCreate(PETSC_COMM_WORLD,&pflow);CHKERRQ(ierr);
@@ -315,6 +336,8 @@ int main(int argc,char **argv)
 
   PS ps = pflow->ps;
 
+  ierr = PetscLogStagePush(cuda_proto);CHKERRQ(ierr);
+
   ierr = PetscCalloc1(ps->nbus,&busparams);CHKERRQ(ierr);
   ierr = PetscCalloc1(ps->nbus,&xidx);CHKERRQ(ierr);
   ierr = PetscCalloc1(ps->nbus,&fidx);CHKERRQ(ierr);
@@ -325,7 +348,9 @@ int main(int argc,char **argv)
   //  ierr = PFLOWSetInitialGuess(pflow,pflow->X);CHKERRQ(ierr);
   //  ierr = VecCopy(X,pflow->X);CHKERRQ(ierr);
 
+  ierr = PetscLogEventRegister("ComputeBusRes",SNES_CLASSID,&bus_residual_event);CHKERRQ(ierr);
   ierr = ComputeGlobalResidual(pflow,busparams,xidx,fidx,pflow->X,F);CHKERRQ(ierr);
+  PetscLogStagePop();
 
   for(PetscInt i=0; i < pflow->ps->nbus; i++) {
     ierr = PetscFree(busparams[i]);CHKERRQ(ierr);

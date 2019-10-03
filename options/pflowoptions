@@ -17,7 +17,7 @@
 
 # performance
 #-------------
-#-log_view
+-log_view
 
 #Partitioner (requires parmetis package)
 #-petscpartitioner_type parmetis
