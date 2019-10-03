@@ -105,8 +105,6 @@ Bool eval_opflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
   PetscInt       nrow,ncol;
 
 
-  ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
-
   if(values == NULL) {
     /* Set locations only */
 
@@ -147,7 +145,7 @@ Bool eval_opflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
 
     }
   } else {
-
+    ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
     /* Compute equality constraint jacobian */
     ierr = (*opflow->formops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
 
@@ -171,8 +169,9 @@ Bool eval_opflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
       
       CCMatrixToMatrixMarketValuesOnly(ipopt->jac_gi,ipopt->nnz_jac_gi,values+ipopt->nnz_jac_ge);
     }
+    ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
   }
-  ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+
   return TRUE;
 }
 
@@ -189,9 +188,6 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
 
   opflow->obj_factor = obj_factor;
 
-  ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
-  ierr = VecPlaceArray(opflow->Lambda,lambda);CHKERRQ(ierr);
-
   if(values == NULL) {
     ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambda,opflow->Hes);CHKERRQ(ierr);
     ierr = MatGetSize(opflow->Hes,&nrow,&nrow);CHKERRQ(ierr);
@@ -201,6 +197,8 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
     ierr = PetscMemcpy(ipopt->hes->values,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
     CCMatrixToMatrixMarketLocationsOnly(ipopt->hes,opflow->nx,iRow,jCol,0,0,ipopt->nnz_hes);
   } else {
+    ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
+    ierr = VecPlaceArray(opflow->Lambda,lambda);CHKERRQ(ierr);
 
     /* Compute non-zeros for Hessian */
     ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambda,opflow->Hes);CHKERRQ(ierr);
@@ -211,9 +209,9 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
     ierr = PetscMemcpy(ipopt->hes->values,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
     CCMatrixToMatrixMarketValuesOnly(ipopt->hes,ipopt->nnz_hes,values);
 
+    ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+    ierr = VecResetArray(opflow->Lambda);CHKERRQ(ierr);
   }
-  ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
-  ierr = VecResetArray(opflow->Lambda);CHKERRQ(ierr);
 
   return 1;
 }

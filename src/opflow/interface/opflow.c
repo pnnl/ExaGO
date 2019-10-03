@@ -46,7 +46,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   ierr = OPFLOWSolverRegisterAll(opflow);
 
   /* Run-time options */
-  opflow->ignore_inequality_constraints = PETSC_TRUE;
+  opflow->ignore_inequality_constraints = PETSC_FALSE;
   opflow->setupcalled = PETSC_FALSE;
 
   *opflowout = opflow;
@@ -317,6 +317,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 
   ierr = PetscOptionsGetString(NULL,NULL,"-opflow_formulation",formulationname,32,&formulationset);CHKERRQ(ierr);
   ierr = PetscOptionsGetString(NULL,NULL,"-opflow_solver",solvername,32,&solverset);CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(NULL,NULL,"-opflow_ignore_inequality_constraints",&opflow->ignore_inequality_constraints,NULL);CHKERRQ(ierr);
 
   /* Set formulation */
   if(formulationset) {
