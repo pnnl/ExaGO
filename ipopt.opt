@@ -35,4 +35,4 @@ residual_ratio_singular 1e4
 
 #obj_scaling_factor 0.9
 
-derivative_test first-order
+derivative_test second-order
