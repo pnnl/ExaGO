@@ -439,6 +439,14 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
     ierr = VecSet(opflow->Lambda,1.0);CHKERRQ(ierr);
   }
 
+  /* Only for debugging */
+  /*
+  ierr = (*opflow->formops.computeequalityconstraints)(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
+  ierr = (*opflow->formops.computeinequalityconstraints)(opflow,opflow->X,opflow->Gi);CHKERRQ(ierr);
+  ierr = VecView(opflow->Gi,0);
+  exit(1);
+  */
+
   /* Solve */
   ierr = (*opflow->solverops.solve)(opflow);CHKERRQ(ierr);
 

@@ -259,8 +259,6 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec Ge
   ierr = VecAssemblyBegin(Ge);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(Ge);CHKERRQ(ierr);
 
-  //  ierr = VecView(Ge,0);CHKERRQ(ierr);
-
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
 
 
