@@ -97,21 +97,21 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBCAR(OPFLOW opflow,Vec Gl,Vec Gu)
     }
   }
 
-    if(opflow->nconineq) {
-  /* Inequality constraints on voltage magnitude */
-  for(i=0; i < ps->nbus; i++) {
-    bus = &ps->bus[i];
-    
-    gl[gloc] = bus->Vmin*bus->Vmin;
-    gu[gloc] = bus->Vmax*bus->Vmax;
-    if(bus->ide == ISOLATED_BUS) {
-      gl[gloc] = PETSC_NINFINITY;
-      gu[gloc] = PETSC_INFINITY;
+  if(opflow->nconineq) {
+    /* Inequality constraints on voltage magnitude */
+    for(i=0; i < ps->nbus; i++) {
+      bus = &ps->bus[i];
+      
+      gl[gloc] = bus->Vmin*bus->Vmin;
+      gu[gloc] = bus->Vmax*bus->Vmax;
+      if(bus->ide == ISOLATED_BUS) {
+	gl[gloc] = PETSC_NINFINITY;
+	gu[gloc] = PETSC_INFINITY;
+      }
+      gloc++;
     }
-    gloc++;
-  }
-  
-
+    
+    
     for(i=0; i < ps->Nbranch; i++) {
       line = &ps->line[i];
       
@@ -409,14 +409,22 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBCAR(OPFLOW opflow,Vec X
 
       if (bus == busf) {
       	col[0] = locglobf; col[1] = locglobf+1; col[2] = locglobt; col[3] = locglobt+1;
+	/* dPf_dVrf */
 	val[0] = 2*Gff*Vrf + (Gft*Vrt - Bft*Vit);
+	/* dPf_dVif */
 	val[1] = 2*Gff*Vif + (Bft*Vrt + Gft*Vit);
+	/* dPf_dVrt */
 	val[2] = Vrf*Gft + Vif*Bft;
+	/* dPf_dVit */
 	val[3] = -Vrf*Bft + Vif*Gft;
-
+	
+	/* dQf_dVrf */
 	val[4] = -2*Bff*Vrf - (Bft*Vrt + Gft*Vit);
+	/* dQf_dVif */
 	val[5] = -2*Bff*Vif + (Gft*Vrt - Bft*Vit);
+	/* dQf_dVrt */
 	val[6] =  Vif*Gft - Vrf*Bft;
+	/* dQf_dVit */
 	val[7] = -Vif*Bft - Vrf*Gft;
         ierr = MatSetValues(Je,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
       } else {
@@ -965,24 +973,26 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBCAR(OPFLOW opflow,Vec X
 
 	col[0] 	= xlocfglob;
 
+	val[0] = val[1] = val[2] = val[3] = 0.0;
 	val[0]  = lambda[gloc]*dPf_dVrf_dVrf + lambda[gloc+1]*dQf_dVrf_dVrf;
 	val[1]  = lambda[gloc]*dPf_dVif_dVrf + lambda[gloc+1]*dQf_dVif_dVrf;
-	val[2]  = lambda[gloc]*dPf_dVrt_dVrf + lambda[gloc+1]*dQf_dVrt_dVrf;
-	val[3]  = lambda[gloc]*dPf_dVit_dVrf + lambda[gloc+1]*dQf_dVit_dVrf;
-
+	//	val[2]  = lambda[gloc]*dPf_dVrt_dVrf + lambda[gloc+1]*dQf_dVrt_dVrf;
+	//	val[3]  = lambda[gloc]*dPf_dVit_dVrf + lambda[gloc+1]*dQf_dVit_dVrf;
 	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
 	col[0] 	= xlocfglob+1;
 
+	val[0] = val[1] = val[2] = val[3] = 0.0;
 	val[0]  = lambda[gloc]*dPf_dVrf_dVif + lambda[gloc+1]*dQf_dVrf_dVif;
 	val[1]  = lambda[gloc]*dPf_dVif_dVif + lambda[gloc+1]*dQf_dVif_dVif;
-	val[2]  = lambda[gloc]*dPf_dVrt_dVif + lambda[gloc+1]*dQf_dVrt_dVif;
-	val[3]  = lambda[gloc]*dPf_dVit_dVif + lambda[gloc+1]*dQf_dVit_dVif;
+	//	val[2]  = lambda[gloc]*dPf_dVrt_dVif + lambda[gloc+1]*dQf_dVrt_dVif;
+	//	val[3]  = lambda[gloc]*dPf_dVit_dVif + lambda[gloc+1]*dQf_dVit_dVif;
 
 	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
 	col[0] 	= xloctglob;
 
+	val[0] = val[1] = val[2] = val[3] = 0.0;
 	val[0]  = lambda[gloc]*dPf_dVrf_dVrt + lambda[gloc+1]*dQf_dVrf_dVrt;
 	val[1]  = lambda[gloc]*dPf_dVif_dVrt + lambda[gloc+1]*dQf_dVif_dVrt;
 	val[2]  = lambda[gloc]*dPf_dVrt_dVrt + lambda[gloc+1]*dQf_dVrt_dVrt;
@@ -991,6 +1001,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBCAR(OPFLOW opflow,Vec X
 
 	col[0] 	= xloctglob+1;
 
+	val[0] = val[1] = val[2] = val[3] = 0.0;
 	val[0]  = lambda[gloc]*dPf_dVrf_dVit + lambda[gloc+1]*dQf_dVrf_dVit;
 	val[1]  = lambda[gloc]*dPf_dVif_dVit + lambda[gloc+1]*dQf_dVif_dVit;
 	val[2]  = lambda[gloc]*dPf_dVrt_dVit + lambda[gloc+1]*dQf_dVrt_dVit;
@@ -1062,22 +1073,25 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBCAR(OPFLOW opflow,Vec X
 
 	col[0] 	= xloctglob;
 
+	val[0] = val[1] = val[2] = val[3] = 0.0;
 	val[0]  = lambda[gloc]*dPt_dVrt_dVrt + lambda[gloc+1]*dQt_dVrt_dVrt;
 	val[1]  = lambda[gloc]*dPt_dVit_dVrt + lambda[gloc+1]*dQt_dVit_dVrt;
-	val[2]  = lambda[gloc]*dPt_dVrf_dVrt + lambda[gloc+1]*dQt_dVrf_dVrt;
-	val[3]  = lambda[gloc]*dPt_dVif_dVrt + lambda[gloc+1]*dQt_dVif_dVrt;
+	//	val[2]  = lambda[gloc]*dPt_dVrf_dVrt + lambda[gloc+1]*dQt_dVrf_dVrt;
+	//	val[3]  = lambda[gloc]*dPt_dVif_dVrt + lambda[gloc+1]*dQt_dVif_dVrt;
 	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
 	col[0] 	= xloctglob+1;
 
+	val[0] = val[1] = val[2] = val[3] = 0.0;
 	val[0]  = lambda[gloc]*dPt_dVrt_dVit + lambda[gloc+1]*dQt_dVrt_dVit;
 	val[1]  = lambda[gloc]*dPt_dVit_dVit + lambda[gloc+1]*dQt_dVit_dVit;
-	val[2]  = lambda[gloc]*dPt_dVrf_dVit + lambda[gloc+1]*dQt_dVrf_dVit;
-	val[3]  = lambda[gloc]*dPt_dVif_dVit + lambda[gloc+1]*dQt_dVif_dVit;
+	//	val[2]  = lambda[gloc]*dPt_dVrf_dVit + lambda[gloc+1]*dQt_dVrf_dVit;
+	//	val[3]  = lambda[gloc]*dPt_dVif_dVit + lambda[gloc+1]*dQt_dVif_dVit;
 	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
 	col[0] 	= xlocfglob;
 
+	val[0] = val[1] = val[2] = val[3] = 0.0;
 	val[0]  = lambda[gloc]*dPt_dVrt_dVrf + lambda[gloc+1]*dQt_dVrt_dVrf;
 	val[1]  = lambda[gloc]*dPt_dVit_dVrf + lambda[gloc+1]*dQt_dVit_dVrf;
 	val[2]  = lambda[gloc]*dPt_dVrf_dVrf + lambda[gloc+1]*dQt_dVrf_dVrf;
@@ -1086,6 +1100,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBCAR(OPFLOW opflow,Vec X
 
 	col[0] 	= xlocfglob+1;
 
+	val[0] = val[1] = val[2] = val[3] = 0.0;
 	val[0]  = lambda[gloc]*dPt_dVrt_dVif + lambda[gloc+1]*dQt_dVrt_dVif;
 	val[1]  = lambda[gloc]*dPt_dVit_dVif + lambda[gloc+1]*dQt_dVit_dVif;
 	val[2]  = lambda[gloc]*dPt_dVrf_dVif + lambda[gloc+1]*dQt_dVrf_dVif;
