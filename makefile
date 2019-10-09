@@ -62,30 +62,13 @@ PFLOW2: $(OBJECTS_PFLOW2) libpflow chkopts
 #******************************
 #	OPFLOW Specific Make
 #******************************
-OPFLOW_SRC_OBJECTS = src/opflow/opflow.o src/opflow/econstraints.o src/opflow/iconstraints.o src/opflow/objectivefunct.o ${PS_SRC_OBJECTS}
+OPFLOW_SRC_OBJECTS = src/opflow/interface/opflow.o src/opflow/interface/opflowregi.o src/opflow/formulation/power-bal-polar/pbpol.o src/opflow/formulation/power-bal-cartesian/pbcar.o src/opflow/solver/ipopt/opflow-ipopt.o ${PS_SRC_OBJECTS}
 
-OPFLOW3_SRC_OBJECTS = src/opflow/interface/opflow.o src/opflow/interface/opflowregi.o src/opflow/formulation/power-bal-polar/pbpol.o src/opflow/formulation/power-bal-cartesian/pbcar.o src/opflow/solver/ipopt/opflow-ipopt.o ${PS_SRC_OBJECTS}
-
-#******** Option 1 **********
 OPFLOW_APP_OBJECTS = applications/opflow-main.o
 OBJECTS_OPFLOW = $(OPFLOW_APP_OBJECTS)
 OPFLOW: $(OBJECTS_OPFLOW) libopflow chkopts
 	 -$(CLINKER) -o OPFLOW $(OBJECTS_OPFLOW) ${PETSC_TAO_LIB} -L${SCOPFLOW_DIR} -lopflow
 	$(RM) $(OBJECTS_OPFLOW)
-
-
-OPFLOW_IPOPT_SRC_OBJECTS = src/opflow/opflow-ipopt.o ${PS_SRC_OBJECTS}
-
-#******** Option 2 **********
-OBJECTS_OPFLOW2 = $(OPFLOW_APP_OBJECTS)
-OPFLOW_IPOPT: $(OBJECTS_OPFLOW2) libopflowipopt chkopts
-	 -$(CLINKER) -o OPFLOW_IPOPT $(OBJECTS_OPFLOW2) -L${SCOPFLOW_DIR} -lopflowipopt
-	$(RM) $(OBJECTS_OPFLOW2)
-
-OBJECTS_OPFLOW3 = $(OPFLOW_APP_OBJECTS)
-OPFLOW3: $(OBJECTS_OPFLOW3) libopflow3 chkopts
-	 -$(CLINKER) -o OPFLOW3 $(OBJECTS_OPFLOW3) ${PETSC_TAO_LIB} -L${SCOPFLOW_DIR} -lopflow3
-	$(RM) $(OBJECTS_OPFLOW3)
 
 
 #******************************
@@ -111,13 +94,7 @@ libpflow:$(PFLOW_SRC_OBJECTS) chkopts
 	 -$(CLINKER) $(LDFLAGS) -o libpflow.$(LIB_EXT) $(PFLOW_SRC_OBJECTS) $(PETSC_TS_LIB)
 
 libopflow:$(OPFLOW_SRC_OBJECTS) chkopts
-	 -$(CLINKER) $(LDFLAGS) -o libopflow.$(LIB_EXT) $(OPFLOW_SRC_OBJECTS) $(PETSC_TAO_LIB)
-
-libopflowipopt:$(OPFLOW_IPOPT_SRC_OBJECTS) chkopts
-	 -$(CLINKER) $(LDFLAGS) -o libopflowipopt.$(LIB_EXT) $(OPFLOW_IPOPT_SRC_OBJECTS) -L${IPOPT_BUILD_DIR}/lib -lipopt $(PETSC_TAO_LIB)
-
-libopflow3:$(OPFLOW3_SRC_OBJECTS) chkopts
-	 -$(CLINKER) $(LDFLAGS) -o libopflow3.$(LIB_EXT) $(OPFLOW3_SRC_OBJECTS)  -L${IPOPT_BUILD_DIR}/lib -lipopt $(PETSC_TAO_LIB)
+	 -$(CLINKER) $(LDFLAGS) -o libopflow.$(LIB_EXT) $(OPFLOW_SRC_OBJECTS)  -L${IPOPT_BUILD_DIR}/lib -lipopt $(PETSC_TAO_LIB)
 
 
 SCOPFLOW_IPOPT_SRC_OBJECTS = src/scopflow/scopflow-ipopt.o src/scopflow/scopflow-ipopt-constraints.o src/scopflow/scopflow-ipopt-objective.o src/scopflow/scopflow-ipopt-hessian.o src/scopflow/scopflow-ipopt-pipsfunctions.o ${OPFLOW_IPOPT_SRC_OBJECTS}
@@ -132,4 +109,4 @@ libscopflowpips:$(SCOPFLOW_PIPS_SRC_OBJECTS) chkopts
 #	Remove .o Command
 #******************************
 cleanobj:
-	rm -rf $(OBJECTS_PFLOW) $(OBJECTS_PFLOW2) $(PFLOW_SRC_OBJECTS) $(OBJECTS_OPFLOW) $(OBJECTS_OPFLOW2)$(OPFLOW_SRC_OBJECTS) $(OPFLOW3_SRC_OBJECTS) $(OBJECTS_SCOPFLOW2) $(SCOPFLOW_IPOPT_SRC_OBJECTS) $(SCOPFLOW_PIPS_SRC_OBJECTS) *.dylib *.dSYM PFLOW PFLOW2 OPFLOW OPFLOW3 OPFLOW_IPOPT SCOPFLOW_IPOPT SCOPFLOW_PIPS
+	rm -rf $(OBJECTS_PFLOW) $(OBJECTS_PFLOW2) $(PFLOW_SRC_OBJECTS) $(OBJECTS_OPFLOW) $(OPFLOW_SRC_OBJECTS) $(OBJECTS_SCOPFLOW2) $(SCOPFLOW_IPOPT_SRC_OBJECTS) $(SCOPFLOW_PIPS_SRC_OBJECTS) *.dylib *.dSYM PFLOW PFLOW2 OPFLOW SCOPFLOW_IPOPT SCOPFLOW_PIPS

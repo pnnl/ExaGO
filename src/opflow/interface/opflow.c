@@ -454,7 +454,7 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
   /* Solve */
   ierr = (*opflow->solverops.solve)(opflow);CHKERRQ(ierr);
 
-  ierr = VecView(opflow->X,0);CHKERRQ(ierr);
+  //  ierr = VecView(opflow->X,0);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
