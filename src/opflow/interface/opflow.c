@@ -47,6 +47,8 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
 
   /* Run-time options */
   opflow->ignore_inequality_constraints = PETSC_FALSE;
+  opflow->include_load_variables = PETSC_FALSE;
+  opflow->load_deviation_penalty = 1e3;
   opflow->setupcalled = PETSC_FALSE;
 
   *opflowout = opflow;
@@ -318,6 +320,8 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PetscOptionsGetString(NULL,NULL,"-opflow_formulation",formulationname,32,&formulationset);CHKERRQ(ierr);
   ierr = PetscOptionsGetString(NULL,NULL,"-opflow_solver",solvername,32,&solverset);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-opflow_ignore_inequality_constraints",&opflow->ignore_inequality_constraints,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(NULL,NULL,"-opflow_include_load_variables",&opflow->include_load_variables,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal(NULL,NULL,"-opflow_load_deviation_penalty",&opflow->load_deviation_penalty,NULL);CHKERRQ(ierr);
 
   /* Set formulation */
   if(formulationset) {
@@ -449,6 +453,8 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
 
   /* Solve */
   ierr = (*opflow->solverops.solve)(opflow);CHKERRQ(ierr);
+
+  ierr = VecView(opflow->X,0);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

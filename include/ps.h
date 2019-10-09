@@ -142,6 +142,13 @@ extern PetscErrorCode PSBUSIsGhosted(PSBUS,PetscBool*);
  */
 extern PetscErrorCode PSBUSGetNGen(PSBUS,PetscInt*);
 /**
+ * @brief Gets the number of loads incident at the bus
+ * @param [in] PSBUS PSBUS - The PSBUS object
+ * @param [out] PetscInt* nload - number of loads incident at the bus
+ */
+extern PetscErrorCode PSBUSGetNLoad(PSBUS,PetscInt*);
+
+/**
  * @brief Gets the generator incident at the bus
  * @param [in] PSBUS PSBUS - The PSBUS object
  * @param [in] PetscInt gen_num - Generator number (0, ..,ngen-1)

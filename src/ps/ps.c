@@ -325,6 +325,22 @@ PetscErrorCode PSBUSGetNGen(PSBUS bus,PetscInt *ngen)
 }
 
 /*
+  PSBUSGetNLoad - Gets the number of loads incident at the bus
+
+  Input Parameters:
+. bus  - the bus
+
+  Output Parameters:
+. nload - number of loads incident at the bus
+*/
+PetscErrorCode PSBUSGetNLoad(PSBUS bus,PetscInt *nload)
+{
+  PetscFunctionBegin;
+  *nload = bus->nload;
+  PetscFunctionReturn(0);
+}
+
+/*
   PSBUSGetGen - Gets the generator incident at the bus
 
   Input Parameters:

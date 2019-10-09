@@ -109,7 +109,10 @@ struct _p_OPFLOW{
   PetscBool OPFLOWFormulationRegisterAllCalled;
   PetscBool OPFLOWSolverRegisterAllCalled;
 
-  PetscBool ignore_inequality_constraints;
+  PetscBool ignore_inequality_constraints; /* Ignore inequality constraints */
+
+  PetscBool include_load_variables; /* Include variables for load */
+  PetscReal load_deviation_penalty;
 };
 
 /* Registers all the OPFLOW formulations */
