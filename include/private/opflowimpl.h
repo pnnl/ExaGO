@@ -111,8 +111,8 @@ struct _p_OPFLOW{
 
   PetscBool ignore_inequality_constraints; /* Ignore inequality constraints */
 
-  PetscBool include_load_variables; /* Include variables for load */
-  PetscReal load_deviation_penalty;
+  PetscBool include_loadloss_variables; /* Include variables for loadloss */
+  PetscReal loadloss_penalty;
 };
 
 /* Registers all the OPFLOW formulations */
