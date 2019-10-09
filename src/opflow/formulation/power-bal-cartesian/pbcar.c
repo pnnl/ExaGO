@@ -673,9 +673,9 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBCAR(OPFLOW opflow,Vec
     ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
 
     Vrf  = x[xlocf];
-    Vif     = x[xlocf+1];
+    Vif  = x[xlocf+1];
     Vrt  = x[xloct];
-    Vit     = x[xloct+1];
+    Vit  = x[xloct+1];
 
     Pf =  Gff*(Vrf*Vrf + Vif*Vif) + Vrf*(Gft*Vrt - Bft*Vit) + Vif*(Bft*Vrt + Gft*Vit);
     Qf = -Bff*(Vrf*Vrf + Vif*Vif) + Vif*(Gft*Vrt - Bft*Vit) - Vrf*(Bft*Vrt + Gft*Vit);
@@ -728,7 +728,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBCAR(OPFLOW opflow,Vec
 
     row[0] = gloc+1;
     col[0] = xloct; col[1] = xloct+1; col[2] = xlocf; col[3] = xlocf+1;
-    val[0]   = dSt2_dVrt;
+    val[0] = dSt2_dVrt;
     val[1] = dSt2_dVit;
     val[2] = dSt2_dVrf;
     val[3] = dSt2_dVif;
@@ -1065,7 +1065,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBCAR(OPFLOW opflow,Vec X
 
 	val[0] = val[1] = val[2] = val[3] = 0.0;
 	val[0]  = lambda[gloc]*dPf_dVrf_dVrf + lambda[gloc+1]*dQf_dVrf_dVrf;
-	val[1]  = lambda[gloc]*dPf_dVif_dVrf + lambda[gloc+1]*dQf_dVif_dVrf;
+	//	val[1]  = lambda[gloc]*dPf_dVif_dVrf + lambda[gloc+1]*dQf_dVif_dVrf;
 	//	val[2]  = lambda[gloc]*dPf_dVrt_dVrf + lambda[gloc+1]*dQf_dVrt_dVrf;
 	//	val[3]  = lambda[gloc]*dPf_dVit_dVrf + lambda[gloc+1]*dQf_dVit_dVrf;
 	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
@@ -1086,7 +1086,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBCAR(OPFLOW opflow,Vec X
 	val[0]  = lambda[gloc]*dPf_dVrf_dVrt + lambda[gloc+1]*dQf_dVrf_dVrt;
 	val[1]  = lambda[gloc]*dPf_dVif_dVrt + lambda[gloc+1]*dQf_dVif_dVrt;
 	val[2]  = lambda[gloc]*dPf_dVrt_dVrt + lambda[gloc+1]*dQf_dVrt_dVrt;
-	val[3]  = lambda[gloc]*dPf_dVit_dVrt + lambda[gloc+1]*dQf_dVit_dVrt;
+	//	val[3]  = lambda[gloc]*dPf_dVit_dVrt + lambda[gloc+1]*dQf_dVit_dVrt;
 	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
 	col[0] 	= xloctglob+1;
@@ -1126,7 +1126,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBCAR(OPFLOW opflow,Vec X
 	dPt_dVif_dVit =  Gtf;
 	dPt_dVif_dVrf = 0.0;
 	dPt_dVif_dVif = 0.0;
-
+	
 	PetscScalar dQt_dVrf_dVrf,dQt_dVrf_dVif,dQt_dVrf_dVrt,dQt_dVrf_dVit;
 	PetscScalar dQt_dVif_dVrf,dQt_dVif_dVif,dQt_dVif_dVrt,dQt_dVif_dVit;
 	PetscScalar dQt_dVrt_dVrf,dQt_dVrt_dVif,dQt_dVrt_dVrt,dQt_dVrt_dVit;
@@ -1165,9 +1165,9 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBCAR(OPFLOW opflow,Vec X
 
 	val[0] = val[1] = val[2] = val[3] = 0.0;
 	val[0]  = lambda[gloc]*dPt_dVrt_dVrt + lambda[gloc+1]*dQt_dVrt_dVrt;
-	val[1]  = lambda[gloc]*dPt_dVit_dVrt + lambda[gloc+1]*dQt_dVit_dVrt;
-	//	val[2]  = lambda[gloc]*dPt_dVrf_dVrt + lambda[gloc+1]*dQt_dVrf_dVrt;
-	//	val[3]  = lambda[gloc]*dPt_dVif_dVrt + lambda[gloc+1]*dQt_dVif_dVrt;
+	//      val[1]  = lambda[gloc]*dPt_dVit_dVrt + lambda[gloc+1]*dQt_dVit_dVrt;
+	val[2]  = lambda[gloc]*dPt_dVrf_dVrt + lambda[gloc+1]*dQt_dVrf_dVrt;
+	val[3]  = lambda[gloc]*dPt_dVif_dVrt + lambda[gloc+1]*dQt_dVif_dVrt;
 	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
 	col[0] 	= xloctglob+1;
@@ -1175,24 +1175,24 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBCAR(OPFLOW opflow,Vec X
 	val[0] = val[1] = val[2] = val[3] = 0.0;
 	val[0]  = lambda[gloc]*dPt_dVrt_dVit + lambda[gloc+1]*dQt_dVrt_dVit;
 	val[1]  = lambda[gloc]*dPt_dVit_dVit + lambda[gloc+1]*dQt_dVit_dVit;
-	//	val[2]  = lambda[gloc]*dPt_dVrf_dVit + lambda[gloc+1]*dQt_dVrf_dVit;
-	//	val[3]  = lambda[gloc]*dPt_dVif_dVit + lambda[gloc+1]*dQt_dVif_dVit;
+	val[2]  = lambda[gloc]*dPt_dVrf_dVit + lambda[gloc+1]*dQt_dVrf_dVit;
+	val[3]  = lambda[gloc]*dPt_dVif_dVit + lambda[gloc+1]*dQt_dVif_dVit;
 	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
 	col[0] 	= xlocfglob;
 
 	val[0] = val[1] = val[2] = val[3] = 0.0;
-	val[0]  = lambda[gloc]*dPt_dVrt_dVrf + lambda[gloc+1]*dQt_dVrt_dVrf;
-	val[1]  = lambda[gloc]*dPt_dVit_dVrf + lambda[gloc+1]*dQt_dVit_dVrf;
+	//	val[0]  = lambda[gloc]*dPt_dVrt_dVrf + lambda[gloc+1]*dQt_dVrt_dVrf;
+	//	val[1]  = lambda[gloc]*dPt_dVit_dVrf + lambda[gloc+1]*dQt_dVit_dVrf;
 	val[2]  = lambda[gloc]*dPt_dVrf_dVrf + lambda[gloc+1]*dQt_dVrf_dVrf;
-	val[3]  = lambda[gloc]*dPt_dVif_dVrf + lambda[gloc+1]*dQt_dVif_dVrf;
+	//	val[3]  = lambda[gloc]*dPt_dVif_dVrf + lambda[gloc+1]*dQt_dVif_dVrf;
 	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
 	col[0] 	= xlocfglob+1;
 
 	val[0] = val[1] = val[2] = val[3] = 0.0;
-	val[0]  = lambda[gloc]*dPt_dVrt_dVif + lambda[gloc+1]*dQt_dVrt_dVif;
-	val[1]  = lambda[gloc]*dPt_dVit_dVif + lambda[gloc+1]*dQt_dVit_dVif;
+	//	val[0]  = lambda[gloc]*dPt_dVrt_dVif + lambda[gloc+1]*dQt_dVrt_dVif;
+	//	val[1]  = lambda[gloc]*dPt_dVit_dVif + lambda[gloc+1]*dQt_dVit_dVif;
 	val[2]  = lambda[gloc]*dPt_dVrf_dVif + lambda[gloc+1]*dQt_dVrf_dVif;
 	val[3]  = lambda[gloc]*dPt_dVif_dVif + lambda[gloc+1]*dQt_dVif_dVif;
 	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
@@ -1487,17 +1487,17 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBCAR(OPFLOW opflow, Ve
     d2St2_dVrf_dVit = 2*dPt_dVit*dPt_dVrf + dSt2_dPt*d2Pt_dVrf_dVit +  2*dQt_dVit*dQt_dVrf + dSt2_dQt*d2Qt_dVrf_dVit;
 
     val[0] = val[1] = val[2] = val[3] = 0.0;
-    row[0] = xlocglobf; 
-    row[1] = xlocglobf+1; 
-    row[2] = xlocglobt;
-    row[3] = xlocglobt+1;
-    col[0] = xlocglobf;
+    col[0] = xlocglobf; 
+    col[1] = xlocglobf+1; 
+    col[2] = xlocglobt;
+    col[3] = xlocglobt+1;
+    row[0] = xlocglobf;
     val[0] = lambda[gloc]*d2Sf2_dVrf_dVrf + lambda[gloc+1]*d2St2_dVrf_dVrf;
     val[1] = lambda[gloc]*d2Sf2_dVrf_dVif + lambda[gloc+1]*d2St2_dVrf_dVif;
     val[2] = lambda[gloc]*d2Sf2_dVrf_dVrt + lambda[gloc+1]*d2St2_dVrf_dVrt;
     val[3] = lambda[gloc]*d2Sf2_dVrf_dVit + lambda[gloc+1]*d2St2_dVrf_dVit;
 
-    ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+    ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
 
     PetscScalar d2Sf2_dVif_dVrf,d2Sf2_dVif_dVif,d2Sf2_dVif_dVrt,d2Sf2_dVif_dVit;
     PetscScalar d2St2_dVif_dVrf,d2St2_dVif_dVif,d2St2_dVif_dVrt,d2St2_dVif_dVit;
@@ -1516,16 +1516,16 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBCAR(OPFLOW opflow, Ve
        expects the matrix to be matrix in the symmetric format and requires only the upper or lower triangle values
     */
     val[0] = val[1] = val[2] = val[3] = 0.0;
-    row[0] = xlocglobf; 
-    row[1] = xlocglobf+1; 
-    row[2] = xlocglobt;
-    row[3] = xlocglobt+1;
-    col[0] = xlocglobf+1;
+    col[0] = xlocglobf; 
+    col[1] = xlocglobf+1; 
+    col[2] = xlocglobt;
+    col[3] = xlocglobt+1;
+    row[0] = xlocglobf+1;
     //    val[0] = lambda[gloc]*d2Sf2_dVif_dVrf + lambda[gloc+1]*d2St2_dVif_dVrf;
     val[1] = lambda[gloc]*d2Sf2_dVif_dVif + lambda[gloc+1]*d2St2_dVif_dVif;
     val[2] = lambda[gloc]*d2Sf2_dVif_dVrt + lambda[gloc+1]*d2St2_dVif_dVrt;
     val[3] = lambda[gloc]*d2Sf2_dVif_dVit + lambda[gloc+1]*d2St2_dVif_dVit;
-    ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+    ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
 
     PetscScalar d2Sf2_dVrt_dVrf,d2Sf2_dVrt_dVif,d2Sf2_dVrt_dVrt,d2Sf2_dVrt_dVit;
     PetscScalar d2St2_dVrt_dVrf,d2St2_dVrt_dVif,d2St2_dVrt_dVrt,d2St2_dVrt_dVit;
@@ -1541,18 +1541,18 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBCAR(OPFLOW opflow, Ve
     d2St2_dVrt_dVit = 2*dPt_dVit*dPt_dVrt + dSt2_dPt*d2Pt_dVrt_dVit +  2*dQt_dVit*dQt_dVrt + dSt2_dQt*d2Qt_dVrt_dVit;
 
     val[0] = val[1] = val[2] = val[3] = 0.0;
-    row[0] = xlocglobf; 
-    row[1] = xlocglobf+1; 
-    row[2] = xlocglobt;
-    row[3] = xlocglobt+1;
-    col[0] = xlocglobt;
+    col[0] = xlocglobf; 
+    col[1] = xlocglobf+1; 
+    col[2] = xlocglobt;
+    col[3] = xlocglobt+1;
+    row[0] = xlocglobt;
 
     //    val[0] = lambda[gloc]*d2Sf2_dVrt_dVrf + lambda[gloc+1]*d2St2_dVrt_dVrf;
     //    val[1] = lambda[gloc]*d2Sf2_dVrt_dVif + lambda[gloc+1]*d2St2_dVrt_dVif;
     val[2] = lambda[gloc]*d2Sf2_dVrt_dVrt + lambda[gloc+1]*d2St2_dVrt_dVrt;
-    //  val[3] = lambda[gloc]*d2Sf2_dVrt_dVit + lambda[gloc+1]*d2St2_dVrt_dVit;
+    val[3] = lambda[gloc]*d2Sf2_dVrt_dVit + lambda[gloc+1]*d2St2_dVrt_dVit;
     
-    ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+    ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
 
     PetscScalar d2Sf2_dVit_dVrf,d2Sf2_dVit_dVif,d2Sf2_dVit_dVrt,d2Sf2_dVit_dVit;
     PetscScalar d2St2_dVit_dVrf,d2St2_dVit_dVif,d2St2_dVit_dVrt,d2St2_dVit_dVit;
@@ -1568,18 +1568,18 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBCAR(OPFLOW opflow, Ve
     d2St2_dVit_dVit = 2*dPt_dVit*dPt_dVit + dSt2_dPt*d2Pt_dVit_dVit +  2*dQt_dVit*dQt_dVit + dSt2_dQt*d2Qt_dVit_dVit;
 
     val[0] = val[1] = val[2] = val[3] = 0.0;
-    row[0] = xlocglobf; 
-    row[1] = xlocglobf+1; 
-    row[2] = xlocglobt;
-    row[3] = xlocglobt+1;
-    col[0] = xlocglobt+1;
+    col[0] = xlocglobf; 
+    col[1] = xlocglobf+1; 
+    col[2] = xlocglobt;
+    col[3] = xlocglobt+1;
+    row[0] = xlocglobt+1;
 
     //    val[0] = lambda[gloc]*d2Sf2_dVit_dVrf + lambda[gloc+1]*d2St2_dVit_dVrf;
     //    val[1] = lambda[gloc]*d2Sf2_dVit_dVif + lambda[gloc+1]*d2St2_dVit_dVif;
-    val[2] = lambda[gloc]*d2Sf2_dVit_dVrt + lambda[gloc+1]*d2St2_dVit_dVrt;
+    //    val[2] = lambda[gloc]*d2Sf2_dVit_dVrt + lambda[gloc+1]*d2St2_dVit_dVrt;
     val[3] = lambda[gloc]*d2Sf2_dVit_dVit + lambda[gloc+1]*d2St2_dVit_dVit;
     
-    ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+    ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
 
     gloc +=  2;
   }
