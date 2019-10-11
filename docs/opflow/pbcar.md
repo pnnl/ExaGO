@@ -33,17 +33,18 @@ only if the power imbalance variable flag, -opflow_include_imbalance_variables, 
 - Power imbalance variables are unbounded.
 
 
-
 ## Objective function
 
 ### Minimize generation cost
 OPFLOW does a minimization of the generation cost and the generation cost function is assumed to be a polynomial function of order 2.
 ```math
 \begin{aligned}
-C = \sum_{k=1}^{ng} \alpha_kP^2_{Gk} + \beta_kP_{Gk} + \gamma_k + \sum_{j=1}^{nl}c_{\Delta{S_Dj}}{\Delta{P^2_{Dj}} + \Delta{Q^2_{Dj}}}
+C = \sum_{k=1}^{ng} \alpha_kP^2_{Gk} + \beta_kP_{Gk} + \gamma_k + \sum_{j=1}^{nl}c_{\Delta{S_Dj}}({\Delta{P^2_{Dj}} + \Delta{Q^2_{Dj}}}) 
++ \sum_{i=1}^{nb}c_{\Delta{S_i}}({\Delta{P^2_{i}} + \Delta{Q^2_{i}}})
 \end{aligned}
 ```
-where, $`\alpha_k`$,$`\beta_k`$,$`\gamma_k`$ are the generator $`k`$ cost-cofficients.
+where, $`\alpha_k`$,$`\beta_k`$,$`\gamma_k`$ are the generator $`k`$ cost-cofficients.$`c_{\Delta{S_Dj}}`$ is the penalty cost for jth load loss, 
+and $`c_{\Delta{S_i}}`$ is the penalty cost for power imbalance at bus i.
 
 ## Equality constraints
 
@@ -91,6 +92,18 @@ The apparent line flow constraints are considered on the square of the from and 
 where the maximum flow,$`S^+_{ft}`$ is either the RATE_A (normal), RATE_B (short-term), or RATE_C (emergency) rating of the line.
 
 ## Gradient
+
+```math
+\begin{aligned}
+\dfrac{\partial{C}}{\partial{P_{Gk}}} &= 2\alpha_kP_{Gk} + \beta_k \\
+\dfrac{\partial{C}}{\partial{\Delta{P_{Dj}}}} &= 2c_{\Delta{S_{Dj}}}\Delta{P_{Dj}} \\
+\dfrac{\partial{C}}{\partial{\Delta{Q_{Dj}}}} &= 2c_{\Delta{S_{Dj}}}\Delta{Q_{Dj}} \\
+\dfrac{\partial{C}}{\partial{\Delta{P_{i}}}} &= 2c_{\Delta{S_i}}\Delta{P_{i}} \\
+\dfrac{\partial{C}}{\partial{\Delta{Q_{i}}}} &= 2c_{\Delta{S_i}}\Delta{Q_{i}}
+
+\end{aligned}
+```
+
 
 ## Equality constraint Jacobian
 ## Inequality constraint Jacobian
