@@ -50,10 +50,10 @@ where, $`\alpha_k`$,$`\beta_k`$,$`\gamma_k`$ are the generator $`k`$ cost-coffic
 ### Real and reactive power balance constraints at each bus f
 ```math
 \begin{aligned}
-\sum_{A_{br}(f,t) \neq 0} (G_{ff}(V^2_{Rf} + V^2_{If}) + V_{Rf}(G_{ft}V_{Rt} - B_{ft}V_{It}) + V_{If}(B_{ft}V_{Rt} + G_{ft}V_{It}))
-    - \sum_{A_G(f,k) \neq 0}P_{Gk} + \sum_{A_L(f,j) \neq 0}(P_{Dj} - \Delta{P_{Dj}}) + \Delta{P_{f}} = 0 \\
-\sum_{A_{br}(f,t) \neq 0} (-B_{ff}(V^2_{Rf} + V^2_{If}) + V_{If}(G_{ft}V_{Rt} - B_{ft}V_{It}) - V_{Rf}(B_{ft}V_{Rt} + G_{ft}V_{It}))
-    - \sum_{A_G(f,k) \neq 0}Q_{Gk} + \sum_{A_L(f,j) \neq 0}(Q_{Dj} - \Delta{Q_{Dj}}) + \Delta{Q_{f}} = 0 \\
+\sum_{A_{br}(f,t) = 1} (G_{ff}(V^2_{Rf} + V^2_{If}) + V_{Rf}(G_{ft}V_{Rt} - B_{ft}V_{It}) + V_{If}(B_{ft}V_{Rt} + G_{ft}V_{It}))
+    - \sum_{A_G(f,k) = 1}P_{Gk} + \sum_{A_L(f,j) \neq 0}(P_{Dj} - \Delta{P_{Dj}}) + \Delta{P_{f}} = 0 \\
+\sum_{A_{br}(f,t) = 1} (-B_{ff}(V^2_{Rf} + V^2_{If}) + V_{If}(G_{ft}V_{Rt} - B_{ft}V_{It}) - V_{Rf}(B_{ft}V_{Rt} + G_{ft}V_{It}))
+    - \sum_{A_G(f,k) \neq 0}Q_{Gk} + \sum_{A_L(f,j) = 1}(Q_{Dj} - \Delta{Q_{Dj}}) + \Delta{Q_{f}} = 0 \\
 \end{aligned}
 ```
 ### Voltage angle constraint at ref. bus
