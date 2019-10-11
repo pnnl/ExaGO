@@ -18,7 +18,7 @@
 
 ## Variables
 
-- Two variables at each bus i for the real and imaginary parts of the complex voltage, $`V_{Ri}`$,$`V_{Ii}`$
+- Two variables at each bus i for the real and imaginary parts of the complex voltage, $`V_{Ri}`$,$`V_{Ii}`$. ($`\bar{V}_i = V_{Ri} + \sqrt{-1}V_{Ii}`$)
 - Two variables at each generator k for the real and reactive power output, $`P_{Gk}`$,$`Q_{Gk}`$
 - Two variables at each load j for the real and reactive power load loss, $`\delta{P_{Dj}}`$,$`\delta{Q_{Dj}}`$. These variables are only included 
 if the load loss variable flag, -opflow_include_loadloss_variables, is ON.
@@ -70,8 +70,9 @@ This constraint attempts to hold the reference bus angle fixed at $`\theta_{ref}
 ## Inequality constraints
 
 ### Voltage magnitude constraints for each bus i
+The voltage magnitude at bus i is $`V_i = \sqrt{V^2_{Ri} + V^2_{Ii}}`$. The inequality constraint considered is on the square of the voltage magnitude
 ```math
-(V^-_i)^2 \le V^2_{Ri} + V^2_{Ii} \le (V^+_i)^2
+(V^-_i)^2 \le V^2_i = V^2_{Ri} + V^2_{Ii} \le (V^+_i)^2
 ```
 
 ### Apparent line flow constraints for each line between 'from' bus f and 'to' bus t
@@ -152,6 +153,63 @@ where the maximum flow,$`S^+_{ft}`$ is either the RATE_A (normal), RATE_B (short
 \end{aligned}
 ```
 ## Inequality constraint Jacobian
+
+### Jacobian elements for voltage magniitude constraint at bus i
+```math
+\begin{aligned}
+\dfrac{\partial{V^2_i}}{\partial{V_{Ri}}} = 2V_{Ri} \\
+\dfrac{\partial{V^2_i}}{\partial{V_{Ii}}} = 2V_{Ii}
+\end{aligned}
+```
+
+### Jacobian elements for line ft flow inequality constraint
+The from and to bus real and reactive power flows on line ft are
+
+```math
+\begin{aligned}
+  P_f &=  G_{ff}(V^2_{Rf} + V^2_{If}) + V_{Rf}(G_{ft}V_{Rt} - B_{ft}V_{It}) + V_{If}(B_{ft}V_{Rt} + G_{ft}V_{It}) \\
+  Q_f &= -B_{ff}(V^2_{Rf} + V^2_{If}) + V_{If}(G_{ft}V_{Rt} - B_{ft}V_{It}) - V_{Rf}(B_{ft}V_{Rt} + G_{ft}V_{It}) \\
+  P_t &=  G_{tt}(V^2_{Rt} + V^2_{It}) + V_{Rt}(G_{tf}V_{Rf} - B_{tf}V_{If}) + V_{It}(B_{tf}V_{Rf} + G_{tf}V_{If}) \\
+  Q_t &= -B_{tt}(V^2_{Rt} + V^2_{It}) + V_{It}(G_{tf}V_{Rf} - B_{tf}V_{If}) - V_{Rt}(B_{tf}V_{Rf} + G_{tf}V_{If})
+\end{aligned}
+```
+
+```math
+\begin{aligned}
+\dfrac{\partial{S^2_f}}{\partial{V_{Rf}}} &= \dfrac{\partial{S^2_f}}{\partial{P_f}}\dfrac{\partial{P_f}}{\partial{V_{Rf}}} 
+                                           + \dfrac{\partial{S^2_f}}{\partial{Q_f}}\dfrac{\partial{Q_f}}{\partial{V_{Rf}}}
+                                          &= 2P_f(2G_{ff}V_{Rf} + G_{ft}V_{Rt} - B_{ft}V_{it}) + 2Q_f(-2B_{ff}V_{Rf} - B_{ft}V_{Rt} - G_{ft}V_{it})
+\end{aligned}
+```
+
+Similarly,
+```math
+\begin{aligned}
+\dfrac{\partial{S^2_f}}{\partial{V_{If}}} &= 2P_f(2G_{ff}V_{If} + B_{ft}V_{Rt} + G_{ft}V_{it}) + 2Q_f(-2B_{ff}V_{If} + G_{ft}V_{Rt} - B_{ft}V_{it}) \\
+\dfrac{\partial{S^2_f}}{\partial{V_{Rt}}} &= 2P_f(G_{ft}V_{Rf} + B_{ft}V_{If}) + 2Q_f(G_{ft}V_{If} - B_{ft}V_{Rf})\\
+\dfrac{\partial{S^2_f}}{\partial{V_{It}}} &= 2P_f(-B_{ft}V_{Rf} + G_{ft}V_{If}) + 2Q_f(-B_{ft}V_{If} - G_{ft}V_{Rf})
+\end{aligned}
+```
+
+```math
+\begin{aligned}
+\dfrac{\partial{S^2_t}}{\partial{V_{Rt}}} &= \dfrac{\partial{S^2_t}}{\partial{P_t}}\dfrac{\partial{P_t}}{\partial{V_{Rt}}} 
+                                           + \dfrac{\partial{S^2_t}}{\partial{Q_t}}\dfrac{\partial{Q_t}}{\partial{V_{Rt}}}
+                                          &= 2P_t(2G_{tt}V_{Rt} + G_{tf}V_{Rf} - B_{tf}V_{if}) + 2Q_t(-2B_{tt}V_{Rt} - B_{tf}V_{Rf} - G_{tf}V_{if})
+\end{aligned}
+```
+
+Similarly,
+```math
+\begin{aligned}
+\dfrac{\partial{S^2_t}}{\partial{V_{It}}} &= 2P_t(2G_{tt}V_{It} + B_{tf}V_{Rf} + G_{tf}V_{if}) + 2Q_t(-2B_{tt}V_{It} + G_{tf}V_{Rf} - B_{tf}V_{if}) \\
+\dfrac{\partial{S^2_t}}{\partial{V_{Rf}}} &= 2P_t(G_{tf}V_{Rt} + B_{tf}V_{It}) + 2Q_t(G_{tf}V_{It} - B_{tf}V_{Rt})\\
+\dfrac{\partial{S^2_t}}{\partial{V_{If}}} &= 2P_t(-B_{tf}V_{Rt} + G_{tf}V_{It}) + 2Q_t(-B_{tf}V_{It} - G_{tf}V_{Rt})
+\end{aligned}
+```
+
+
+
 ## Objective Hessian
 ## Equality constraint Hessian
 ## Inequality constraint Hessian
