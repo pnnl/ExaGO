@@ -60,10 +60,10 @@ and $`c_{\delta{S_i}}`$ is the penalty cost for power imbalance at bus i.
 Here, $`G_{ff}`$,$`G_{ft}`$ are the self and mutual conductances for line ft, while $`B_{ff}`$,$`B_{ft}`$ are the
 self and mutual susceptances, respectively.
 ### Voltage angle constraint at ref. bus
-This constraint attempts to hold the reference bus angle fixed at $`\angle{\bar{V_{ref}}}`$.
+This constraint attempts to hold the reference bus angle fixed at $`\theta_{ref}`$.
 ```math
 \begin{aligned}
-    V_{Iref} - V_{Rref}\text{tan}(\angle{\bar{V_{ref}}}) = 0
+    V_{Iref} - V_{Rref}\text{tan}(\theta_{ref}) = \Delta{\theta_{ref}} = 0
 \end{aligned}
 ```
 
@@ -141,6 +141,16 @@ where the maximum flow,$`S^+_{ft}`$ is either the RATE_A (normal), RATE_B (short
 \end{aligned}
 ```
 
+### Jacobian elements for voltage angle constraint at ref. bus
+
+### Voltage angle constraint at ref. bus
+
+```math
+\begin{aligned}
+    \dfrac{\partial{\Delta{\theta_{ref}}}}{\partial{V_{Rref}}} &= -\text{tan}(\theta_{ref}) \\
+    \dfrac{\partial{\Delta{\theta_{ref}}}}{\partial{V_{Iref}}} &= 1
+\end{aligned}
+```
 ## Inequality constraint Jacobian
 ## Objective Hessian
 ## Equality constraint Hessian
