@@ -113,6 +113,10 @@ struct _p_OPFLOW{
 
   PetscBool include_loadloss_variables; /* Include variables for loadloss */
   PetscReal loadloss_penalty;
+
+  PetscBool include_powerimbalance_variables; /* Include variables for power imbalance */
+  PetscReal powerimbalance_penalty;
+
 };
 
 /* Registers all the OPFLOW formulations */

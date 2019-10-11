@@ -48,7 +48,9 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   /* Run-time options */
   opflow->ignore_inequality_constraints = PETSC_FALSE;
   opflow->include_loadloss_variables = PETSC_FALSE;
-  opflow->loadloss_penalty = 1e5;
+  opflow->include_powerimbalance_variables = PETSC_FALSE;
+  opflow->loadloss_penalty = 1e1;
+  opflow->powerimbalance_penalty = 1e2;
   opflow->setupcalled = PETSC_FALSE;
 
   *opflowout = opflow;
@@ -322,6 +324,8 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PetscOptionsGetBool(NULL,NULL,"-opflow_ignore_inequality_constraints",&opflow->ignore_inequality_constraints,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-opflow_include_loadloss_variables",&opflow->include_loadloss_variables,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetReal(NULL,NULL,"-opflow_loadloss_penalty",&opflow->loadloss_penalty,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(NULL,NULL,"-opflow_include_powerimbalance_variables",&opflow->include_powerimbalance_variables,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal(NULL,NULL,"-opflow_powerimbalance_penalty",&opflow->powerimbalance_penalty,NULL);CHKERRQ(ierr);
 
   /* Set formulation */
   if(formulationset) {
