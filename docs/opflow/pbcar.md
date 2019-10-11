@@ -87,8 +87,8 @@ S_t = \sqrt{P^2_{tf} + Q^2_{tf}}
 The apparent line flow constraints are considered on the square of the from and to bus flows.
 ```math
 \begin{aligned}
-0 \le S_f \le (S^+_{ft})^2 \\
-0 \le S_t \le (S^+_{ft})^2
+0 \le S^2_f \le (S^+_{ft})^2 \\
+0 \le S^2_t \le (S^+_{ft})^2
 \end{aligned}
 ```
 where the maximum flow,$`S^+_{ft}`$ is either the RATE_A (normal), RATE_B (short-term), or RATE_C (emergency) rating of the line.
