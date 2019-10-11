@@ -57,6 +57,8 @@ and $`c_{\delta{S_i}}`$ is the penalty cost for power imbalance at bus i.
     - \sum_{A_G(f,k) \neq 0}Q_{Gk} + \sum_{A_L(f,j) = 1}(Q_{Dj} - \delta{Q_{Dj}}) + \delta{Q_{f}} = \Delta{Q_f} = 0 \\
 \end{aligned}
 ```
+Here, $`G_{ff}`$,$`G_{ft}`$ are the self and mutual conductances for line ft, while $`B_{ff}`$,$`B_{ft}`$ are the
+self and mutual susceptances, respectively.
 ### Voltage angle constraint at ref. bus
 This constraint attempts to hold the reference bus angle fixed at $`\angle{\bar{V_{ref}}}`$.
 ```math
@@ -100,12 +102,45 @@ where the maximum flow,$`S^+_{ft}`$ is either the RATE_A (normal), RATE_B (short
 \dfrac{\partial{C}}{\partial{\delta{Q_{Dj}}}} &= 2c_{\delta{S_{Dj}}}\delta{Q_{Dj}} \\
 \dfrac{\partial{C}}{\partial{\delta{P_{i}}}} &= 2c_{\delta{S_i}}\delta{P_{i}} \\
 \dfrac{\partial{C}}{\partial{\delta{Q_{i}}}} &= 2c_{\delta{S_i}}\delta{Q_{i}}
-
 \end{aligned}
 ```
 
-
 ## Equality constraint Jacobian
+
+### Jacobian terms for power balance constraints at bus f
+
+#### Partials with respect to from and to bus voltage variables
+```math
+\begin{aligned}
+\dfrac{\partial{\Delta{P_f}}}{\partial{V_{Rf}}} &= \sum_{A_{br}(f,t) = 1} 2G_{ff}V_{Rf} + G_{ft}V_{Rt} - B_{ft}V_{it}\\
+\dfrac{\partial{\Delta{P_f}}}{\partial{V_{If}}} &= \sum_{A_{br}(f,t) = 1} 2G_{ff}V_{If} + B_{ft}V_{Rt} + G_{ft}V_{it}\\
+\dfrac{\partial{\Delta{P_f}}}{\partial{V_{Rt}}} &= \sum_{A_{br}(f,t) = 1}                 G_{ft}V_{Rf} + B_{ft}V_{If}\\
+\dfrac{\partial{\Delta{P_f}}}{\partial{V_{It}}} &= \sum_{A_{br}(f,t) = 1}                -B_{ft}V_{Rf} + G_{ft}V_{If}
+\end{aligned}
+```
+
+```math
+\begin{aligned}
+\dfrac{\partial{\Delta{Q_f}}}{\partial{V_{Rf}}} &= \sum_{A_{br}(f,t) = 1} -2B_{ff}V_{Rf} - B_{ft}V_{Rt} - G_{ft}V_{it}\\
+\dfrac{\partial{\Delta{Q_f}}}{\partial{V_{If}}} &= \sum_{A_{br}(f,t) = 1} -2B_{ff}V_{If} + G_{ft}V_{Rt} - B_{ft}V_{it}\\
+\dfrac{\partial{\Delta{Q_f}}}{\partial{V_{Rt}}} &= \sum_{A_{br}(f,t) = 1}                  G_{ft}V_{If} - B_{ft}V_{Rf}\\
+\dfrac{\partial{\Delta{Q_f}}}{\partial{V_{It}}} &= \sum_{A_{br}(f,t) = 1}                 -B_{ft}V_{If} - G_{ft}V_{Rf}
+\end{aligned}
+```
+
+#### Partials w.r.t generator k injections, load loss for load j, and power imbalance at bus f
+
+```math
+\begin{aligned}
+\dfrac{\partial{\Delta{P_f}}}{\partial{P_{Gk}}} &= -1 \\
+\dfrac{\partial{\Delta{Q_f}}}{\partial{Q_{Gk}}} &= -1 \\
+\dfrac{\partial{\Delta{P_f}}}{\partial{\delta{P_{Dj}}}} &= -1 \\
+\dfrac{\partial{\Delta{Q_f}}}{\partial{\delta{Q_{Dj}}}} &= -1 \\
+\dfrac{\partial{\Delta{P_f}}}{\partial{\delta{P_{i}}}} &= 1 \\
+\dfrac{\partial{\Delta{Q_f}}}{\partial{\delta{Q_{i}}}} &= 1
+\end{aligned}
+```
+
 ## Inequality constraint Jacobian
 ## Objective Hessian
 ## Equality constraint Hessian
