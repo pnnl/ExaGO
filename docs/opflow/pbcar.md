@@ -20,15 +20,15 @@
 
 - Two variables at each bus i for the real and imaginary parts of the complex voltage, $`V_{Ri}`$,$`V_{Ii}`$
 - Two variables at each generator k for the real and reactive power output, $`P_{Gk}`$,$`Q_{Gk}`$
-- Two variables at each load j for the real and reactive power load loss, $`\Delta{P_{Dj}}`$,$`\Delta{Q_{Dj}}`$. These variables are only included 
+- Two variables at each load j for the real and reactive power load loss, $`\delta{P_{Dj}}`$,$`\delta{Q_{Dj}}`$. These variables are only included 
 if the load loss variable flag, -opflow_include_loadloss_variables, is ON.
-- Two variables at each bus i for real and imaginary power imbalance (slack) variables, $`\Delta{P_{i}}`$,$`\Delta{Q_{i}}`$. These variables are included
+- Two variables at each bus i for real and imaginary power imbalance (slack) variables, $`\delta{P_{i}}`$,$`\delta{Q_{i}}`$. These variables are included
 only if the power imbalance variable flag, -opflow_include_imbalance_variables, is ON.
 
 ## Bounds
 
 - Bounds on generator k real and reactive power injections:$`P_{Gk}^- \le P_{Gk} \le P_{Gk}^+`$,$`Q_{Gk}^- \le Q_{Gk} \le Q_{Gk}^+`$
-- Bounds on real and reactive power load loss for load j: $`0 \le \Delta{P_{Dj}} \le P_{Dj}`$,$`0 \le \Delta{Q_{Dj}} \le Q_{Dj}`$
+- Bounds on real and reactive power load loss for load j: $`0 \le \delta{P_{Dj}} \le P_{Dj}`$,$`0 \le \delta{Q_{Dj}} \le Q_{Dj}`$
 - Real and reactive part of complex bus voltage i are unbounded.
 - Power imbalance variables are unbounded.
 
@@ -39,12 +39,12 @@ only if the power imbalance variable flag, -opflow_include_imbalance_variables, 
 OPFLOW does a minimization of the generation cost and the generation cost function is assumed to be a polynomial function of order 2.
 ```math
 \begin{aligned}
-C = \sum_{k=1}^{ng} \alpha_kP^2_{Gk} + \beta_kP_{Gk} + \gamma_k + \sum_{j=1}^{nl}c_{\Delta{S_Dj}}({\Delta{P^2_{Dj}} + \Delta{Q^2_{Dj}}}) 
-+ \sum_{i=1}^{nb}c_{\Delta{S_i}}({\Delta{P^2_{i}} + \Delta{Q^2_{i}}})
+C = \sum_{k=1}^{ng} \alpha_kP^2_{Gk} + \beta_kP_{Gk} + \gamma_k + \sum_{j=1}^{nl}c_{\delta{S_Dj}}({\delta{P^2_{Dj}} + \delta{Q^2_{Dj}}}) 
++ \sum_{i=1}^{nb}c_{\delta{S_i}}({\delta{P^2_{i}} + \delta{Q^2_{i}}})
 \end{aligned}
 ```
-where, $`\alpha_k`$,$`\beta_k`$,$`\gamma_k`$ are the generator $`k`$ cost-cofficients.$`c_{\Delta{S_Dj}}`$ is the penalty cost for jth load loss, 
-and $`c_{\Delta{S_i}}`$ is the penalty cost for power imbalance at bus i.
+where, $`\alpha_k`$,$`\beta_k`$,$`\gamma_k`$ are the generator $`k`$ cost-cofficients.$`c_{\delta{S_Dj}}`$ is the penalty cost for jth load loss, 
+and $`c_{\delta{S_i}}`$ is the penalty cost for power imbalance at bus i.
 
 ## Equality constraints
 
@@ -52,9 +52,9 @@ and $`c_{\Delta{S_i}}`$ is the penalty cost for power imbalance at bus i.
 ```math
 \begin{aligned}
 \sum_{A_{br}(f,t) = 1} (G_{ff}(V^2_{Rf} + V^2_{If}) + V_{Rf}(G_{ft}V_{Rt} - B_{ft}V_{It}) + V_{If}(B_{ft}V_{Rt} + G_{ft}V_{It}))
-    - \sum_{A_G(f,k) = 1}P_{Gk} + \sum_{A_L(f,j) \neq 0}(P_{Dj} - \Delta{P_{Dj}}) + \Delta{P_{f}} = 0 \\
+    - \sum_{A_G(f,k) = 1}P_{Gk} + \sum_{A_L(f,j) \neq 0}(P_{Dj} - \delta{P_{Dj}}) + \delta{P_{f}} = \Delta{P_f} = 0 \\
 \sum_{A_{br}(f,t) = 1} (-B_{ff}(V^2_{Rf} + V^2_{If}) + V_{If}(G_{ft}V_{Rt} - B_{ft}V_{It}) - V_{Rf}(B_{ft}V_{Rt} + G_{ft}V_{It}))
-    - \sum_{A_G(f,k) \neq 0}Q_{Gk} + \sum_{A_L(f,j) = 1}(Q_{Dj} - \Delta{Q_{Dj}}) + \Delta{Q_{f}} = 0 \\
+    - \sum_{A_G(f,k) \neq 0}Q_{Gk} + \sum_{A_L(f,j) = 1}(Q_{Dj} - \delta{Q_{Dj}}) + \delta{Q_{f}} = \Delta{Q_f} = 0 \\
 \end{aligned}
 ```
 ### Voltage angle constraint at ref. bus
@@ -96,10 +96,10 @@ where the maximum flow,$`S^+_{ft}`$ is either the RATE_A (normal), RATE_B (short
 ```math
 \begin{aligned}
 \dfrac{\partial{C}}{\partial{P_{Gk}}} &= 2\alpha_kP_{Gk} + \beta_k \\
-\dfrac{\partial{C}}{\partial{\Delta{P_{Dj}}}} &= 2c_{\Delta{S_{Dj}}}\Delta{P_{Dj}} \\
-\dfrac{\partial{C}}{\partial{\Delta{Q_{Dj}}}} &= 2c_{\Delta{S_{Dj}}}\Delta{Q_{Dj}} \\
-\dfrac{\partial{C}}{\partial{\Delta{P_{i}}}} &= 2c_{\Delta{S_i}}\Delta{P_{i}} \\
-\dfrac{\partial{C}}{\partial{\Delta{Q_{i}}}} &= 2c_{\Delta{S_i}}\Delta{Q_{i}}
+\dfrac{\partial{C}}{\partial{\delta{P_{Dj}}}} &= 2c_{\delta{S_{Dj}}}\delta{P_{Dj}} \\
+\dfrac{\partial{C}}{\partial{\delta{Q_{Dj}}}} &= 2c_{\delta{S_{Dj}}}\delta{Q_{Dj}} \\
+\dfrac{\partial{C}}{\partial{\delta{P_{i}}}} &= 2c_{\delta{S_i}}\delta{P_{i}} \\
+\dfrac{\partial{C}}{\partial{\delta{Q_{i}}}} &= 2c_{\delta{S_i}}\delta{Q_{i}}
 
 \end{aligned}
 ```
