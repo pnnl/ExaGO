@@ -34,8 +34,8 @@ PetscErrorCode OPFLOWSetVariableBounds_IBCAR(OPFLOW opflow,Vec Xl,Vec Xu)
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
 
     /* Bounds on real and imaginary part of voltages */
-    xl[loc] = PETSC_NINFINITY; xu[loc] = PETSC_INFINITY;
-    xl[loc+1] = PETSC_NINFINITY; xu[loc+1] = PETSC_INFINITY;
+    xl[loc]   = -bus->Vmax; xu[loc] = bus->Vmax;
+    xl[loc+1] = -bus->Vmax; xu[loc+1] = bus->Vmax;
 
     if(bus->ide == ISOLATED_BUS) {
       xl[loc] = xu[loc] = bus->vm*PetscCosScalar(bus->va*PETSC_PI/180.0);
@@ -1102,14 +1102,6 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,Vec X
     Vm4 = Vm2*Vm2;
     Vm6 = Vm2*Vm2*Vm2;
     
-    /* Shunt */
-    row[0] = xlocglob; row[1] = xlocglob+1;
-    col[0] = xlocglob; col[1] = xlocglob+1;
-    val[0] = lambda[gloc]*bus->gl + lambda[gloc+1]*bus->bl;
-    val[3] = lambda[gloc]*-bus->bl + lambda[gloc+1]*bus->gl;
-    val[1] = val[2] = 0.0;
-    ierr = MatSetValues(H,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-    
     PetscInt genctr = 0;
     for(k=0; k < bus->ngen; k++) {
       PetscScalar Pg,Qg;
@@ -1142,6 +1134,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,Vec X
       d2Iig_dVi_dPg = (Vi*Vi - Vr*Vr)/Vm4;
       d2Iig_dVi_dQg = -2*Vr*Vi/Vm4;
       
+      row[0] = xlocglob; row[1] = xlocglob+1;
       col[0] = xlocglob; col[1] = xlocglob+1; col[2] = xlocglob + 2 + genctr; col[3] = xlocglob + 2 + genctr + 1;
 
       val[0] = val[1] = val[2] = val[3] = val[4] = val[5] = val[6] = val[7] = 0.0;
@@ -1229,10 +1222,12 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,Vec X
       d2Iid_dVi_dPdloss = (Vi*Vi - Vr*Vr)/Vm4;
       d2Iid_dVi_dQdloss = -2*Vr*Vi/Vm4;
       
+      row[0] = xlocglob; row[1] = xlocglob+1;
       col[0] = xlocglob; col[1] = xlocglob+1; 
 
+      val[0] = val[1] = val[2] = val[3] = 0.0;
       val[0] = lambda[gloc]*d2Ird_dVr2    + lambda[gloc+1]*d2Iid_dVr2;
-      val[1] = lambda[gloc]*d2Ird_dVr_dVi + lambda[gloc+1]*d2Iid_dVr_dVi;
+      //      val[1] = lambda[gloc]*d2Ird_dVr_dVi + lambda[gloc+1]*d2Iid_dVr_dVi;
       val[2] = lambda[gloc]*d2Ird_dVi_dVr + lambda[gloc+1]*d2Iid_dVi_dVr;
       val[3] = lambda[gloc]*d2Ird_dVi2    + lambda[gloc+1]*d2Iid_dVi2;
 

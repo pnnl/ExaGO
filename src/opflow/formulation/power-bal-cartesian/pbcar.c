@@ -34,8 +34,8 @@ PetscErrorCode OPFLOWSetVariableBounds_PBCAR(OPFLOW opflow,Vec Xl,Vec Xu)
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
 
     /* Bounds on real and imaginary part of voltages */
-    xl[loc] = PETSC_NINFINITY; xu[loc] = PETSC_INFINITY;
-    xl[loc+1] = PETSC_NINFINITY; xu[loc+1] = PETSC_INFINITY;
+    xl[loc] = -bus->Vmax; xu[loc] = bus->Vmax;
+    xl[loc+1] = -bus->Vmax; xu[loc+1] = bus->Vmax;
 
     if(bus->ide == ISOLATED_BUS) {
       xl[loc] = xu[loc] = bus->vm*PetscCosScalar(bus->va*PETSC_PI/180.0);
