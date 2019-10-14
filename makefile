@@ -62,7 +62,7 @@ PFLOW2: $(OBJECTS_PFLOW2) libpflow chkopts
 #******************************
 #	OPFLOW Specific Make
 #******************************
-OPFLOW_SRC_OBJECTS = src/opflow/interface/opflow.o src/opflow/interface/opflowregi.o src/opflow/formulation/power-bal-polar/pbpol.o src/opflow/formulation/power-bal-cartesian/pbcar.o src/opflow/solver/ipopt/opflow-ipopt.o ${PS_SRC_OBJECTS}
+OPFLOW_SRC_OBJECTS = src/opflow/interface/opflow.o src/opflow/interface/opflowregi.o src/opflow/formulation/power-bal-polar/pbpol.o src/opflow/formulation/power-bal-cartesian/pbcar.o src/opflow/formulation/current-bal-cartesian/ibcar.o src/opflow/solver/ipopt/opflow-ipopt.o ${PS_SRC_OBJECTS}
 
 OPFLOW_APP_OBJECTS = applications/opflow-main.o
 OBJECTS_OPFLOW = $(OPFLOW_APP_OBJECTS)
