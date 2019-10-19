@@ -1240,7 +1240,6 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,Vec X
 
       if(opflow->include_loadloss_variables) {
 
-	
 	col[0] = xlocglob + 2 + 2*bus->ngen + loadctr;
 	col[1] = xlocglob + 2 + 2*bus->ngen + loadctr + 1;
 
@@ -1280,8 +1279,87 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,Vec X
 	
 	ierr = MatSetValues(H,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
 	
-	loadctr += 2;
       }
+      loadctr += 2;
+    }
+
+    if(opflow->include_powerimbalance_variables) {
+      PetscScalar Pimb,Qimb;
+      PetscScalar d2Irimb_dVr2,d2Irimb_dVr_dVi,d2Irimb_dVr_dPimb,d2Irimb_dVr_dQimb;
+      PetscScalar d2Irimb_dVi_dVr,d2Irimb_dVi2,d2Irimb_dVi_dPimb,d2Irimb_dVi_dQimb;
+      PetscScalar d2Iiimb_dVr2,d2Iiimb_dVr_dVi,d2Iiimb_dVr_dPimb,d2Iiimb_dVr_dQimb;
+      PetscScalar d2Iiimb_dVi_dVr,d2Iiimb_dVi2,d2Iiimb_dVi_dPimb,d2Iiimb_dVi_dQimb;
+      
+      xloc += 2;
+      Pimb = x[xloc];
+      Qimb = x[xloc+1];
+      
+      d2Irimb_dVr2    =   2*(Pimb*Vr*Vr*Vr + 3*Qimb*Vr*Vr*Vi - 3*Pimb*Vr*Vi*Vi - Qimb*Vi*Vi*Vi)/Vm6;
+      d2Irimb_dVr_dVi =  -2*(Pimb*Vi*Vi*Vi - 3*Qimb*Vr*Vi*Vi - 3*Pimb*Vr*Vr*Vi + Qimb*Vr*Vr*Vr)/Vm6;
+      d2Irimb_dVr_dPimb = (Vi*Vi - Vr*Vr)/Vm4;
+      d2Irimb_dVr_dQimb = -2*Vr*Vi/Vm4;
+      
+      d2Irimb_dVi_dVr =  -2*(Qimb*Vr*Vr*Vr - 3*Pimb*Vi*Vr*Vr - 3*Qimb*Vi*Vi*Vr + Pimb*Vi*Vi*Vi)/Vm6;
+      d2Irimb_dVi2    =   2*(Qimb*Vi*Vi*Vi + 3*Pimb*Vr*Vi*Vi - 3*Qimb*Vr*Vr*Vi - Pimb*Vr*Vr*Vr)/Vm6;
+      d2Irimb_dVi_dPimb = -2*Vr*Vi/Vm4;
+      d2Irimb_dVi_dQimb = (Vr*Vr- Vi*Vi)/Vm4;
+      
+      d2Iiimb_dVr2    =  -2*(Qimb*Vr*Vr*Vr - 3*Pimb*Vi*Vr*Vr-  3*Qimb*Vi*Vi*Vr + Pimb*Vi*Vi*Vi)/Vm6;
+      d2Iiimb_dVr_dVi =   2*(Qimb*Vi*Vi*Vi + 3*Pimb*Vr*Vi*Vi - 3*Qimb*Vr*Vr*Vi - Pimb*Vr*Vr*Vr)/Vm6; 
+      d2Iiimb_dVr_dPimb = -2*Vr*Vi/Vm4;
+      d2Iiimb_dVr_dQimb = (Vr*Vr - Vi*Vi)/Vm4;
+      
+      d2Iiimb_dVi_dVr =  -2*(Pimb*Vr*Vr*Vr + 3*Qimb*Vr*Vr*Vi - 3*Pimb*Vr*Vi*Vi - Qimb*Vi*Vi*Vi)/Vm6;
+      d2Iiimb_dVi2    =   2*(Pimb*Vi*Vi*Vi - 3*Qimb*Vr*Vi*Vi - 3*Pimb*Vr*Vr*Vi + Qimb*Vr*Vr*Vr)/Vm6;
+      d2Iiimb_dVi_dPimb = (Vr*Vr - Vi*Vi)/Vm4;
+      d2Iiimb_dVi_dQimb =  2*Vr*Vi/Vm4;
+      
+      row[0] = xlocglob; row[1] = xlocglob+1;
+      col[0] = xlocglob; col[1] = xlocglob+1; 
+      col[2] = xlocglob + 2 + 2*bus->ngen + 2*opflow->include_loadloss_variables*bus->nload; 
+      col[3] = xlocglob + 2 + 2*bus->ngen + 2*opflow->include_loadloss_variables*bus->nload + 1; 
+      
+      val[0] = val[1] = val[2] = val[3] = val[4] = val[5] = val[6] = val[7] = 0.0;
+      
+      val[0] = lambda[gloc]*d2Irimb_dVr2    + lambda[gloc+1]*d2Iiimb_dVr2;
+      //      val[1] = lambda[gloc]*d2Irimb_dVr_dVi + lambda[gloc+1]*d2Iiimb_dVr_dVi;
+      //      val[2] = lambda[gloc]*d2Irimb_dVr_dPimb + lambda[gloc+1]*d2Iiimb_dVr_dPimb;
+      //      val[3] = lambda[gloc]*d2Irimb_dVr_dQimb + lambda[gloc+1]*d2Iiimb_dVr_dQimb;
+      
+      val[4] = lambda[gloc]*d2Irimb_dVi_dVr + lambda[gloc+1]*d2Iiimb_dVi_dVr;
+      val[5] = lambda[gloc]*d2Irimb_dVi2    + lambda[gloc+1]*d2Iiimb_dVi2;
+      //      val[6] = lambda[gloc]*d2Irimb_dVi_dPimb + lambda[gloc+1]*d2Iiimb_dVi_dPimb;
+      //      val[7] = lambda[gloc]*d2Irimb_dVi_dQimb + lambda[gloc+1]*d2Iiimb_dVi_dQimb;
+      
+      ierr = MatSetValues(H,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+      
+      PetscScalar d2Irimb_dPimb_dVr,d2Irimb_dPimb_dVi,d2Irimb_dQimb_dVr,d2Irimb_dQimb_dVi;
+      PetscScalar d2Iiimb_dPimb_dVr,d2Iiimb_dPimb_dVi,d2Iiimb_dQimb_dVr,d2Iiimb_dQimb_dVi;
+      
+      row[0] = xlocglob + 2 + 2*bus->ngen + 2*opflow->include_loadloss_variables*bus->nload; 
+      row[1] = xlocglob + 2 + 2*bus->ngen + 2*opflow->include_loadloss_variables*bus->nload + 1; 
+      
+      col[0] = xlocglob; col[1] = xlocglob + 1;
+      
+      d2Irimb_dPimb_dVr = (Vi*Vi - Vr*Vr)/Vm4;
+      d2Irimb_dPimb_dVi = -2*Vr*Vi/Vm4;
+      d2Irimb_dQimb_dVr = -2*Vr*Vi/Vm4;
+      d2Irimb_dQimb_dVi = (Vr*Vr - Vi*Vi)/Vm4;
+      
+      d2Iiimb_dPimb_dVr = -2*Vr*Vi/Vm4;
+      d2Iiimb_dPimb_dVi = (Vr*Vr - Vi*Vi)/Vm4;
+      
+      d2Iiimb_dQimb_dVr = (Vr*Vr - Vi*Vi)/Vm4;
+      d2Iiimb_dQimb_dVi =  2*Vr*Vi/Vm4;
+      
+      val[0] = val[1] = val[2] = val[3] = 0.0;
+      
+      val[0]  = lambda[gloc]*d2Irimb_dPimb_dVr + lambda[gloc+1]*d2Iiimb_dPimb_dVr;
+      val[1]  = lambda[gloc]*d2Irimb_dPimb_dVi + lambda[gloc+1]*d2Iiimb_dPimb_dVi;
+      val[2]  = lambda[gloc]*d2Irimb_dQimb_dVr + lambda[gloc+1]*d2Iiimb_dQimb_dVr;
+      val[3]  = lambda[gloc]*d2Irimb_dQimb_dVi + lambda[gloc+1]*d2Iiimb_dQimb_dVi;
+      
+      ierr = MatSetValues(H,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
     }
 
     gloc += 2;
