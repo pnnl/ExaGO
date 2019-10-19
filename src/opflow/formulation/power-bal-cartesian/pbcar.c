@@ -64,10 +64,10 @@ PetscErrorCode OPFLOWSetVariableBounds_PBCAR(OPFLOW opflow,Vec Xl,Vec Xu)
 	loc += 2;
 	if(!load->status) xl[loc] = xu[loc] = xl[loc+1] = xu[loc+1] = 0.0;
 	else {
-	xl[loc] = 0.0;
-	xu[loc] = load->pl;
-	xl[loc+1] = 0.0;
-	xu[loc+1] = load->ql;
+	  xl[loc] = PetscMin(0.0,load->pl);
+	  xu[loc] = PetscMax(0.0,load->pl);
+	  xl[loc+1] = PetscMin(0.0,load->ql);
+	  xu[loc+1] = PetscMax(0.0,load->ql);
 	}
       }
     }
