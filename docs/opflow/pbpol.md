@@ -1,6 +1,32 @@
 # Optimal Power Flow Formulation in Power Balance Formulation with Polar Representation of Bus Voltages
 
+## Sizes
+
+<table>
+<tr>
+<td>Number of buses</td> <td>nb</td>
+</tr>
+<tr>
+<td>Number of branches</td> <td>nbr</td>
+</tr>
+<tr>
+<td>Number of generators</td> <td>ng</td>
+</tr>
+<tr>
+<td>Number of loads</td> <td>nl</td>
+</tr>
+</table>
+
 ## Variables
+
+- Two variables at each bus i for the voltage magnitude and angle, $`V_{Mt}`$,$`\theta`$. ($`{v}_{mt} = \left | v_{mt}\right|\exp{j\theta} `$)
+- Two variables at each generator k for the real and reactive power output, $`P_{Gk}`$,$`Q_{Gk}`$
+- Two variables at each load j for the real and reactive power load loss, $`\delta{P_{Dj}}`$,$`\delta{Q_{Dj}}`$. These variables are only included 
+if the load loss variable flag, -opflow_include_loadloss_variables, is ON.
+- Two variables at each bus i for real and imaginary power imbalance (slack) variables, $`\delta{P_{i}}`$,$`\delta{Q_{i}}`$. These variables are included
+only if the power imbalance variable flag, -opflow_include_imbalance_variables, is ON.
+
+
 ## Objective function
 
 ### Minimize generation cost
@@ -16,6 +42,19 @@ and $`c_{\delta{S_i}}`$ is the penalty cost for power imbalance at bus i.
 
 ## Gradient
 ## Equality constraints
+
+```math
+\begin{aligned}
+\sum_{A_{br}(f,t) = 1} (G_{ff}(V^2_{Mf}) + V_{Mf}(G_{ft}V_{Mt}\cos(\theta_{mt}) + V_{Mt}B_{ft}\sin(\theta_{mt}))
+- \sum_{A_G(f,k) = 1}P_{Gk} + \sum_{A_L(f,j) \neq 0}(P_{Dj} - \delta{P_{Dj}}) + \delta{P_{f}} = \Delta{P_f} = 0 \\
+\sum_{A_{br}(f,t) = 1} (-B_{ff}(V^2_{Mf}) + V_{Mf}(G_{ft}V_{Mt}\sin(\theta_{mt})) - V_{Mt}B_{ft}\sin(\theta_{mt}))
+    - \sum_{A_G(f,k) \neq 0}Q_{Gk} + \sum_{A_L(f,j) = 1}(Q_{Dj} - \delta{Q_{Dj}}) + \delta{Q_{f}} = \Delta{Q_f} = 0 \\
+\end{aligned}
+```
+Here, $`G_{ff}`$,$`G_{ft}`$ are the self and mutual conductances for line ft, while $`B_{ff}`$,$`B_{ft}`$ are the
+self and mutual susceptances, respectively.
+
+
 ## Inequality constraints
 ## Equality constraint Jacobian
 ## Inequality constraint Jacobian
