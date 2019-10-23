@@ -46,7 +46,7 @@ and $`c_{\delta{S_i}}`$ is the penalty cost for power imbalance at bus i.
 \begin{aligned}
 \sum_{A_{br}(f,t) = 1} (G_{ff}(V^2_{Mf}) + V_{Mf}(G_{ft}V_{Mt}\cos(\theta_{mt}) + V_{Mt}B_{ft}\sin(\theta_{mt}))
 - \sum_{A_G(f,k) = 1}P_{Gk} + \sum_{A_L(f,j) \neq 0}(P_{Dj} - \delta{P_{Dj}}) + \delta{P_{f}} = \Delta{P_f} = 0 \\
-\sum_{A_{br}(f,t) = 1} (-B_{ff}(V^2_{Mf}) + V_{Mf}(G_{ft}V_{Mt}\sin(\theta_{mt})) - V_{Mt}B_{ft}\sin(\theta_{mt}))
+\sum_{A_{br}(f,t) = 1} (-B_{ff}(V^2_{Mf}) + V_{Mf}(G_{ft}V_{Mt}\sin(\theta_{mt})) - V_{Mt}B_{ft}\cos(\theta_{mt}))
     - \sum_{A_G(f,k) \neq 0}Q_{Gk} + \sum_{A_L(f,j) = 1}(Q_{Dj} - \delta{Q_{Dj}}) + \delta{Q_{f}} = \Delta{Q_f} = 0 \\
 \end{aligned}
 ```
@@ -57,10 +57,15 @@ self and mutual susceptances, respectively.
 ## Inequality constraints
 
 ### Voltage magnitude constraints for each bus i
-The voltage magnitude at bus i is $`V_{Mi} `$. The inequality constraint considered is on the square of the voltage magnitude
+The voltage magnitude at bus i is $`V_{Mi} `$. 
 ```math
-(V^-_i)^2 \le V^2_{Mi}  \le (V^+_i)^2
+(V^-_i) \le V_{Mi}  \le (V^+_i)
 ```
+### Phase angle constraints for each bus i
+```math
+\theta_{mi}^{-}\leq \theta _{mi}\leq \theta _{mi}^{+}
+```
+
 ### Apparent line flow constraints for each line between 'from' bus f and 'to' bus t
 Let $`P_{ft}`$ and $`Q_{ft}`$ be the real and reactive power flow from bus f to bus t on line ft. 
 Similarly, let $`P_{tf}`$ and $`Q_{tf}`$ be the real and reactive power flow from bus t to bus f.
