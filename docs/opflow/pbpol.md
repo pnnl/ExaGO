@@ -106,6 +106,16 @@ where the maximum flow,$`S^+_{ft}`$ is either the RATE_A (normal), RATE_B (short
 
 
 ## Equality constraint Jacobian
+
+```math
+\begin{aligned}
+\dfrac{\partial{\Delta{P_f}}}{\partial{V_{f}}} &= \sum_{A_{br}(f,t) = 1} 2G_{ff}V_{f} + G_{ft}V_{t}\cos(\theta_{t}-\theta_f) + V_{t}B_{ft}\sin(\theta_{t}-\theta_f)\\
+\dfrac{\partial{\Delta{P_f}}}{\partial{V_{t}}} &= \sum_{A_{br}(f,t) = 1} V_{f}(G_{ft}\cos(\theta_{t}-\theta_f) + B_{ft}\sin(\theta_{t}-\theta_f))
+\end{aligned}
+```
+
+
+
 ## Inequality constraint Jacobian
 ## Objective Hessian
 ## Equality constraint Hessian
