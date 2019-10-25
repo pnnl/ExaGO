@@ -107,16 +107,78 @@ where the maximum flow,$`S^+_{ft}`$ is either the RATE_A (normal), RATE_B (short
 
 ## Equality constraint Jacobian
 
+### Jacobian terms for power balance constraints at bus f
+
+#### Partials with respect to from and to bus voltage variables
+
 ```math
 \begin{aligned}
 \dfrac{\partial{\Delta{P_f}}}{\partial{V_{f}}} &= \sum_{A_{br}(f,t) = 1} 2G_{ff}V_{f} + G_{ft}V_{t}\cos(\theta_{t}-\theta_f) + V_{t}B_{ft}\sin(\theta_{t}-\theta_f)\\
 \dfrac{\partial{\Delta{P_f}}}{\partial{V_{t}}} &= \sum_{A_{br}(f,t) = 1} V_{f}(G_{ft}\cos(\theta_{t}-\theta_f) + B_{ft}\sin(\theta_{t}-\theta_f))
 \end{aligned}
 ```
+```math
+\begin{aligned}
+\dfrac{\partial{\Delta{Q_f}}}{\partial{V_{f}}} &= \sum_{A_{br}(f,t) = 1} -2B_{ff}V_{f} + G_{ft}V_{t}\sin(\theta_{t}-\theta_f) - V_{t}B_{ft}\cos(\theta_{t}-\theta_f)\\
+\dfrac{\partial{\Delta{Q_f}}}{\partial{V_{t}}} &= \sum_{A_{br}(f,t) = 1} V_{f}(G_{ft}\sin(\theta_{t}-\theta_f) - B_{ft}\cos(\theta_{t}-\theta_f))\\
 
+\end{aligned}
+```
+#### Partials w.r.t generator k injections, load loss for load j, and power imbalance at bus f
+
+```math
+\begin{aligned}
+\dfrac{\partial{\Delta{P_f}}}{\partial{P_{Gk}}} &= -1 \\
+\dfrac{\partial{\Delta{Q_f}}}{\partial{Q_{Gk}}} &= -1 \\
+\dfrac{\partial{\Delta{P_f}}}{\partial{\delta{P_{Dj}}}} &= -1 \\
+\dfrac{\partial{\Delta{Q_f}}}{\partial{\delta{Q_{Dj}}}} &= -1 \\
+\dfrac{\partial{\Delta{P_f}}}{\partial{\delta{P_{i}}}} &= 1 \\
+\dfrac{\partial{\Delta{Q_f}}}{\partial{\delta{Q_{i}}}} &= 1
+\end{aligned}
+```
 
 
 ## Inequality constraint Jacobian
+
+The from and to bus real and reactive power flows on line ft are
+
+```math
+\begin{aligned}
+  P_f &=  G_{ff}(V^2_{f}) + V_{f}(G_{ft}V_{t}\cos(\theta_{t}-\theta_f) + V_{t}B_{ft}\sin(\theta_{t}-\theta_f)) \\
+  Q_f &= -B_{ff}(V^2_{f}) + V_{f}(G_{ft}V_{t}\sin(\theta_{t}-\theta_f) - V_{t}B_{ft}\cos(\theta_{t}-\theta_f)) \\
+  P_t &=  G_{tt}(V^2_{t}) + V_{t}(G_{tf}V_{f}\cos(\theta_{f}-\theta_t) + V_{f}B_{tf}\sin(\theta_{f}-\theta_t))  \\
+  Q_t &= -B_{tt}(V^2_{t}) + V_{t}(G_{tf}V_{f}\sin(\theta_{f}-\theta_t) - V_{f}B_{tf}\cos(\theta_{f}-\theta_t))
+\end{aligned}
+```
+```math
+\begin{aligned}
+\dfrac{\partial{S^2_f}}{\partial{V_{f}}} &= \dfrac{\partial{S^2_f}}{\partial{P_f}}\dfrac{\partial{P_f}}{\partial{V_{f}}} 
+                                           + \dfrac{\partial{S^2_f}}{\partial{Q_f}}\dfrac{\partial{Q_f}}{\partial{V_{f}}}\\
+                                          &= 2P_f(2G_{ff}V_{f} + G_{ft}V_{t}\cos(\theta_{t}-\theta_f) + V_{t}B_{ft}\sin(\theta_{t}-\theta_f)) 
+                                          + 2Q_f(-2B_{ff}V_{f} + G_{ft}V_{t}\sin(\theta_{t}-\theta_f) - V_{t}B_{ft}\cos(\theta_{t}-\theta_f))
+\end{aligned}
+```
+Similarly,
+```math
+\begin{aligned}
+\dfrac{\partial{S^2_f}}{\partial{V_{t}}} &= 2P_f(V_{f}(G_{ft}\cos(\theta_{t}-\theta_f) + B_{ft}\sin(\theta_{t}-\theta_f)) ) 
+                                                + 2Q_f(V_{f}(G_{ft}\sin(\theta_{t}-\theta_f) - B_{ft}\cos(\theta_{t}-\theta_f)))\\
+\end{aligned}
+```
+```math
+\begin{aligned}
+\dfrac{\partial{S^2_t}}{\partial{V_f}} &= 2P_t(V_{t}(G_{tf}\cos(\theta_{f}-\theta_t) + B_{tf}\sin(\theta_{f}-\theta_t)) ) 
+                                                + 2Q_f(V_{t}(G_{tf}\sin(\theta_{f}-\theta_t) - B_{tf}\cos(\theta_{f}-\theta_t)))\\
+\end{aligned}
+```
+```math
+\begin{aligned}
+\dfrac{\partial{S^2_t}}{\partial{V_t}} &= 2P_t(2G_{tt}V_{t} + G_{tf}V_{f}\cos(\theta_{f}-\theta_t) + V_{f}B_{tf}\sin(\theta_{f}-\theta_t)) 
+                                                + 2Q_t(-2B_{tt}V_{t} + G_{tf}V_{f}\sin(\theta_{f}-\theta_t) - V_{f}B_{tf}\cos(\theta_{f}-\theta_t))\\
+\end{aligned}
+```
+
+
 ## Objective Hessian
 ## Equality constraint Hessian
 ## Inequality constraint Hessian
