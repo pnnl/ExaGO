@@ -177,8 +177,33 @@ Similarly,
                                                 + 2Q_t(-2B_{tt}V_{t} + G_{tf}V_{f}\sin(\theta_{f}-\theta_t) - V_{f}B_{tf}\cos(\theta_{f}-\theta_t))\\
 \end{aligned}
 ```
-
-
+```math
+\begin{aligned}
+\dfrac{\partial{S^2_f}}{\partial{\theta_{f}}} &= \dfrac{\partial{S^2_f}}{\partial{P_f}}\dfrac{\partial{P_f}}{\partial{\theta_{f}}} 
+                                           + \dfrac{\partial{S^2_f}}{\partial{Q_f}}\dfrac{\partial{Q_f}}{\partial{\theta_{f}}}\\
+                                          &= 2P_f(V_{f}V_{t}G_{ft}\sin(\theta_{t}-\theta_f) - V_{f}V_{t}B_{ft}\cos(\theta_{t}-\theta_f)) 
+                                          + 2Q_f(-V_{f}V_{t}G_{ft}\cos(\theta_{t}-\theta_f) - V_{f}V_{t}B_{ft}\sin(\theta_{t}-\theta_f))\\
+\end{aligned}
+```
+Similarly
+```math
+\begin{aligned}
+\dfrac{\partial{S^2_f}}{\partial{\theta_t}} &= 2P_f(-V_fV_tG_{ft}\sin(\theta_{t}-\theta_f) + V_fV_{t}B_{ft}\cos(\theta_{t}-\theta_f))
+                                                 + 2Q_f(V_{f}V_{t}G_{ft}\cos(\theta_{t}-\theta_f) + V_{f}V_{t}B_{ft}\sin(\theta_{t}-\theta_f))\\
+\end{aligned}
+```
+```math
+\begin{aligned}
+\dfrac{\partial{S^2_t}}{\partial{\theta_f}} &= 2P_t(-V_{t}V_{f}G_{tf}\sin(\theta_{f}-\theta_t) + V_tV_{f}B_{tf}\cos(\theta_{f}-\theta_t))
+                                                 + 2Q_t(V_{t}G_{tf}V_{f}\cos(\theta_{f}-\theta_t) + V_tV_{f}B_{tf}\sin(\theta_{f}-\theta_t))\\
+\end{aligned}
+```
+```math
+\begin{aligned}
+\dfrac{\partial{S^2_t}}{\partial{\theta_t}} &= 2P_t(V_{t}G_{tf}V_{f}\sin(\theta_{f}-\theta_t) - V_tV_{f}B_{tf}\cos(\theta_{f}-\theta_t))
+                                                 + 2Q_t(-V_{t}G_{tf}V_{f}\cos(\theta_{f}-\theta_t) - V_tV_{f}B_{tf}\sin(\theta_{f}-\theta_t)))\\
+\end{aligned}
+```
 ## Objective Hessian
 ## Equality constraint Hessian
 ## Inequality constraint Hessian
