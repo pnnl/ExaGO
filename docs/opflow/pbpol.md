@@ -58,6 +58,13 @@ and $`c_{\delta{S_i}}`$ is the penalty cost for power imbalance at bus i.
 Here, $`G_{ff}`$,$`G_{ft}`$ are the self and mutual conductances for line ft, while $`B_{ff}`$,$`B_{ft}`$ are the
 self and mutual susceptances, respectively.
 
+### Voltage angle constraint at ref. bus
+This constraint attempts to hold the reference bus angle fixed at $`\theta_{ref}`$.
+```math
+\begin{aligned}
+    \Delta{\theta_{ref}} = 0
+\end{aligned}
+```
 
 ## Inequality constraints
 
@@ -65,10 +72,6 @@ self and mutual susceptances, respectively.
 The voltage magnitude at bus i is $`V_{i} `$. 
 ```math
 (V^-_i) \le V_{i}  \le (V^+_i)
-```
-### Phase angle constraints for each bus i
-```math
-\theta_{i}^{-}\leq \theta _{i}\leq \theta _{i}^{+}
 ```
 
 ### Apparent line flow constraints for each line between 'from' bus f and 'to' bus t
