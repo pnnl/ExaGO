@@ -117,13 +117,17 @@ where the maximum flow,$`S^+_{ft}`$ is either the RATE_A (normal), RATE_B (short
 ```math
 \begin{aligned}
 \dfrac{\partial{\Delta{P_f}}}{\partial{V_{f}}} &= \sum_{A_{br}(f,t) = 1} 2G_{ff}V_{f} + G_{ft}V_{t}\cos(\theta_{t}-\theta_f) + V_{t}B_{ft}\sin(\theta_{t}-\theta_f)\\
-\dfrac{\partial{\Delta{P_f}}}{\partial{V_{t}}} &= \sum_{A_{br}(f,t) = 1} V_{f}(G_{ft}\cos(\theta_{t}-\theta_f) + B_{ft}\sin(\theta_{t}-\theta_f))
+\dfrac{\partial{\Delta{P_f}}}{\partial{V_{t}}} &= \sum_{A_{br}(f,t) = 1} V_{f}(G_{ft}\cos(\theta_{t}-\theta_f) + B_{ft}\sin(\theta_{t}-\theta_f))\\
+\dfrac{\partial{\Delta{P_f}}}{\partial{\theta_{f}}} &= \sum_{A_{br}(f,t) = 1} (V_{f}V_{t}G_{ft}\sin(\theta_{t}-\theta_f) - V_{f}V_{t}B_{ft}\cos(\theta_{t}-\theta_f))\\
+\dfrac{\partial{\Delta{P_f}}}{\partial{\theta_{t}}} &= \sum_{A_{br}(f,t) = 1} (-V_{f}V_{t}G_{ft}\sin(\theta_{t}-\theta_f) + V_{f}V_{t}B_{ft}\cos(\theta_{t}-\theta_f))
 \end{aligned}
 ```
 ```math
 \begin{aligned}
 \dfrac{\partial{\Delta{Q_f}}}{\partial{V_{f}}} &= \sum_{A_{br}(f,t) = 1} -2B_{ff}V_{f} + G_{ft}V_{t}\sin(\theta_{t}-\theta_f) - V_{t}B_{ft}\cos(\theta_{t}-\theta_f)\\
 \dfrac{\partial{\Delta{Q_f}}}{\partial{V_{t}}} &= \sum_{A_{br}(f,t) = 1} V_{f}(G_{ft}\sin(\theta_{t}-\theta_f) - B_{ft}\cos(\theta_{t}-\theta_f))\\
+\dfrac{\partial{\Delta{Q_f}}}{\partial{\theta_{f}}} &= \sum_{A_{br}(f,t) = 1} ( -V_{f}V_{t}G_{ft}\cos(\theta_{t}-\theta_f) - V_{f}V_{t}B_{ft}\sin(\theta_{t}-\theta_f))\\
+\dfrac{\partial{\Delta{Q_f}}}{\partial{\theta_{t}}} &= \sum_{A_{br}(f,t) = 1} ( V_{f}G_{ft}V_{t}\cos(\theta_{t}-\theta_f) + V_{f}V_{t}B_{ft}\sin(\theta_{t}-\theta_f))
 
 \end{aligned}
 ```
