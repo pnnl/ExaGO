@@ -54,6 +54,8 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   opflow->setupcalled = PETSC_FALSE;
 
   *opflowout = opflow;
+
+  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Application created\n");
   PetscFunctionReturn(0);
 }
 
@@ -208,6 +210,7 @@ PetscErrorCode OPFLOWReadMatPowerData(OPFLOW opflow,const char netfile[])
   PetscFunctionBegin;
   /* Read MatPower data file and populate the PS data structure */
   ierr = PSReadMatPowerData(opflow->ps,netfile);CHKERRQ(ierr);
+  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Finished reading network data file %s\n",netfile);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -332,9 +335,11 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   if(formulationset) {
     if(opflow->formulation) ierr = (*opflow->formops.destroy)(opflow);
     ierr = OPFLOWSetFormulation(opflow,formulationname);CHKERRQ(ierr);
+    ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s formulation\n",formulationname);CHKERRQ(ierr);
   } else {
     if(!opflow->formulation) {
       ierr = OPFLOWSetFormulation(opflow,OPFLOWFORMULATION_PBCAR);CHKERRQ(ierr);
+      ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s formulation\n",OPFLOWFORMULATION_PBCAR);CHKERRQ(ierr);
     }
   }
 
@@ -342,9 +347,11 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   if(solverset) {
     if(opflow->solver) ierr = (*opflow->solverops.destroy)(opflow);
     ierr = OPFLOWSetSolver(opflow,solvername);CHKERRQ(ierr);
+    ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s solver\n",solvername);CHKERRQ(ierr);
   } else {
     if(!opflow->solver) {
-      ierr = OPFLOWSetSolver(opflow,OPFLOWSOLVER_IPOPT);CHKERRQ(ierr); 
+      ierr = OPFLOWSetSolver(opflow,OPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
+      ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s solver\n",OPFLOWSOLVER_IPOPT);CHKERRQ(ierr); 
     }
   }
 
@@ -372,10 +379,9 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   opflow->Nconeq = recvbuf[1];
   opflow->Nconineq = recvbuf[2];
   opflow->Ncon = opflow->Nconeq + opflow->Nconineq;
-  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d: nx = %d nconeq = %d, nconineq = %d, ncon = %d\n",opflow->comm->rank,opflow->nx,opflow->nconeq,opflow->nconineq,opflow->ncon);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d: Nx = %d Nconeq = %d, Nconineq = %d, Ncon = %d\n",opflow->comm->rank,opflow->Nx,opflow->Nconeq,opflow->Nconineq,opflow->Ncon);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_SELF,"OPFLOW: Rank %d: nx = %d nconeq = %d, nconineq = %d, ncon = %d\n",opflow->comm->rank,opflow->nx,opflow->nconeq,opflow->nconineq,opflow->ncon);CHKERRQ(ierr);
+  //  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d: Nx = %d Nconeq = %d, Nconineq = %d, Ncon = %d\n",opflow->comm->rank,opflow->Nx,opflow->Nconeq,opflow->Nconineq,opflow->Ncon);CHKERRQ(ierr);
 
-  exit(1);
   /* Set vertex local to global ordering */
   ierr = DMNetworkSetVertexLocalToGlobalOrdering(opflow->ps->networkdm);CHKERRQ(ierr);
 
@@ -387,7 +393,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 
   /* Vectors for constraints */
   ierr = VecCreate(ps->comm->type,&opflow->G);CHKERRQ(ierr);
-  ierr = VecSetSizes(opflow->G,PETSC_DECIDE,opflow->ncon);CHKERRQ(ierr);
+  ierr = VecSetSizes(opflow->G,opflow->ncon,opflow->Ncon);CHKERRQ(ierr);
   ierr = VecSetFromOptions(opflow->G);CHKERRQ(ierr);
   
   ierr = VecDuplicate(opflow->G,&opflow->Gl);CHKERRQ(ierr);
@@ -395,30 +401,34 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = VecDuplicate(opflow->G,&opflow->Lambda);CHKERRQ(ierr);
 
   ierr = VecCreate(ps->comm->type,&opflow->Ge);CHKERRQ(ierr);
-  ierr = VecSetSizes(opflow->Ge,PETSC_DECIDE,opflow->nconeq);CHKERRQ(ierr);
+  ierr = VecSetSizes(opflow->Ge,opflow->nconeq,opflow->Nconeq);CHKERRQ(ierr);
   ierr = VecSetFromOptions(opflow->Ge);CHKERRQ(ierr);
 
   if(opflow->nconineq) {
     ierr = VecCreate(ps->comm->type,&opflow->Gi);CHKERRQ(ierr);
-    ierr = VecSetSizes(opflow->Gi,PETSC_DECIDE,opflow->nconineq);CHKERRQ(ierr);
+    ierr = VecSetSizes(opflow->Gi,opflow->nconineq,opflow->Nconineq);CHKERRQ(ierr);
     ierr = VecSetFromOptions(opflow->Gi);CHKERRQ(ierr);
   }
 
   /* Create equality and inequality constraint Jacobian matrices */
   ierr = MatCreate(opflow->comm->type,&opflow->Jac_Ge);CHKERRQ(ierr);
-  ierr = MatSetSizes(opflow->Jac_Ge,opflow->nconeq,opflow->nx,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
+  ierr = MatSetSizes(opflow->Jac_Ge,opflow->nconeq,opflow->nx,opflow->Nconeq,opflow->Nx);CHKERRQ(ierr);
   ierr = MatSetUp(opflow->Jac_Ge);CHKERRQ(ierr);
   ierr = MatSetFromOptions(opflow->Jac_Ge);CHKERRQ(ierr);
 
   if(opflow->nconineq) {
     ierr = MatCreate(opflow->comm->type,&opflow->Jac_Gi);CHKERRQ(ierr);
-    ierr = MatSetSizes(opflow->Jac_Gi,opflow->nconineq,opflow->nx,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
+    ierr = MatSetSizes(opflow->Jac_Gi,opflow->nconineq,opflow->nx,opflow->Nconineq,opflow->Nx);CHKERRQ(ierr);
     ierr = MatSetUp(opflow->Jac_Gi);CHKERRQ(ierr);
     ierr = MatSetFromOptions(opflow->Jac_Gi);CHKERRQ(ierr);
   }
 
   /* Create Hessian */
   ierr = PSCreateMatrix(opflow->ps,&opflow->Hes);CHKERRQ(ierr);
+
+  ierr = (*opflow->solverops.setup)(opflow);CHKERRQ(ierr);
+  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Setup completed\n");CHKERRQ(ierr);
+  exit(1);
 
   PetscFunctionReturn(0);
 }
