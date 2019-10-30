@@ -182,7 +182,7 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
 {
   PetscErrorCode ierr;
   PetscInt       nrow;
-  Mat_SeqAIJ     *aij;
+  Mat_SeqSBAIJ   *sbaij;
   OPFLOW         opflow=(OPFLOW)user_data;
   OPFLOWSolver_IPOPT ipopt=(OPFLOWSolver_IPOPT)opflow->solver;
 
@@ -191,10 +191,11 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
   if(values == NULL) {
     ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambda,opflow->Hes);CHKERRQ(ierr);
     ierr = MatGetSize(opflow->Hes,&nrow,&nrow);CHKERRQ(ierr);
-    aij = (Mat_SeqAIJ*)opflow->Hes->data;
-    ierr = PetscMemcpy(ipopt->hes->rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
-    ierr = PetscMemcpy(ipopt->hes->colptr,aij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
-    ierr = PetscMemcpy(ipopt->hes->values,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
+    ierr = MatConvert(opflow->Hes,MATSEQSBAIJ,MAT_REUSE_MATRIX,&ipopt->Hes_sbaij);CHKERRQ(ierr);
+    sbaij = (Mat_SeqSBAIJ*)ipopt->Hes_sbaij->data;
+    ierr = PetscMemcpy(ipopt->hes->rowidx,sbaij->j,sbaij->nz*sizeof(PetscInt));CHKERRQ(ierr);
+    ierr = PetscMemcpy(ipopt->hes->colptr,sbaij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
+    ierr = PetscMemcpy(ipopt->hes->values,sbaij->a,sbaij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
     CCMatrixToMatrixMarketLocationsOnly(ipopt->hes,opflow->nx,iRow,jCol,0,0,ipopt->nnz_hes);
   } else {
     ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
@@ -202,11 +203,11 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
 
     /* Compute non-zeros for Hessian */
     ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambda,opflow->Hes);CHKERRQ(ierr);
-
+    ierr = MatConvert(opflow->Hes,MATSEQSBAIJ,MAT_REUSE_MATRIX,&ipopt->Hes_sbaij);CHKERRQ(ierr);
     /* Since the Hessian is symmetric, we don't need to convert it to column compressed sparse format */
-    aij = (Mat_SeqAIJ*)opflow->Hes->data;
-    ipopt->nnz_hes = aij->nz;
-    ierr = PetscMemcpy(ipopt->hes->values,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
+    sbaij = (Mat_SeqSBAIJ*)ipopt->Hes_sbaij->data;
+    ipopt->nnz_hes = sbaij->nz;
+    ierr = PetscMemcpy(ipopt->hes->values,sbaij->a,sbaij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
     CCMatrixToMatrixMarketValuesOnly(ipopt->hes,ipopt->nnz_hes,values);
 
     ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
@@ -221,6 +222,7 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
   PetscErrorCode     ierr;
   OPFLOWSolver_IPOPT ipopt=opflow->solver;
   Mat_SeqAIJ         *aij;
+  Mat_SeqSBAIJ       *sbaij;
   PetscScalar        *x,*xl,*xu,*gl,*gu;
 
   PetscFunctionBegin;
@@ -248,20 +250,22 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
     aij = (Mat_SeqAIJ*)ipopt->Jac_GiT->data;
     ipopt->nnz_jac_gi = aij->nz;
 
-  /* Create ccmatrix object for inequality constrained Jacobian */
-  ierr = PetscCalloc1(1,&ipopt->jac_gi);CHKERRQ(ierr);
-  ierr = PetscMalloc1(opflow->nx+1,&ipopt->jac_gi->colptr);CHKERRQ(ierr);
-  ierr = PetscMalloc1(ipopt->nnz_jac_ge,&ipopt->jac_gi->rowidx);CHKERRQ(ierr);
-  ierr = PetscMalloc1(ipopt->nnz_jac_gi,&ipopt->jac_gi->values);CHKERRQ(ierr);
-
+    /* Create ccmatrix object for inequality constrained Jacobian */
+    ierr = PetscCalloc1(1,&ipopt->jac_gi);CHKERRQ(ierr);
+    ierr = PetscMalloc1(opflow->nx+1,&ipopt->jac_gi->colptr);CHKERRQ(ierr);
+    ierr = PetscMalloc1(ipopt->nnz_jac_ge,&ipopt->jac_gi->rowidx);CHKERRQ(ierr);
+    ierr = PetscMalloc1(ipopt->nnz_jac_gi,&ipopt->jac_gi->values);CHKERRQ(ierr);
   }   
   ipopt->nnz_jac_g = ipopt->nnz_jac_ge + ipopt->nnz_jac_gi;
 
   /* Compute non-zeros for Hessian */
   ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambda,opflow->Hes);CHKERRQ(ierr);
+  /* Convert matrix to symmetric sbaij format needed for the IPOPT solver */
+  ierr = MatSetOption(opflow->Hes,MAT_SYMMETRIC,PETSC_TRUE);CHKERRQ(ierr);
+  ierr = MatConvert(opflow->Hes,MATSEQSBAIJ,MAT_INITIAL_MATRIX,&ipopt->Hes_sbaij);CHKERRQ(ierr);
   /* Since the Hessian is symmetric, we don't need to convert it to column compressed sparse format */
-  aij = (Mat_SeqAIJ*)opflow->Hes->data;
-  ipopt->nnz_hes = aij->nz;
+  sbaij = (Mat_SeqSBAIJ*)ipopt->Hes_sbaij->data;
+  ipopt->nnz_hes = sbaij->nz;
 
   /* Create ccmatrix object for hessian */
   ierr = PetscCalloc1(1,&ipopt->hes);CHKERRQ(ierr);
@@ -317,6 +321,7 @@ PetscErrorCode OPFLOWSolverDestroy_IPOPT(OPFLOW opflow)
     ierr = PetscFree(ipopt->jac_gi);CHKERRQ(ierr);
   }
 
+  ierr = MatDestroy(&(ipopt->Hes_sbaij));CHKERRQ(ierr);
   ierr = PetscFree(ipopt->hes->colptr);CHKERRQ(ierr);
   ierr = PetscFree(ipopt->hes->rowidx);CHKERRQ(ierr);
   ierr = PetscFree(ipopt->hes->values);CHKERRQ(ierr);
