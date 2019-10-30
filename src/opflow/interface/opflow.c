@@ -316,6 +316,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   PetscBool      solverset=PETSC_FALSE;
   char           formulationname[32],solvername[32];
   PetscInt       *busnvararray,*branchnvararray;
+  PetscInt       sendbuf[3],recvbuf[3];
 
   PetscFunctionBegin;
 
@@ -363,6 +364,18 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PetscFree(busnvararray);CHKERRQ(ierr); 
   ierr = PetscFree(branchnvararray);CHKERRQ(ierr);
 
+  sendbuf[0] = opflow->nx;
+  sendbuf[1] = opflow->nconeq;
+  sendbuf[2] = opflow->nconineq;
+  ierr = MPI_Allreduce(sendbuf,recvbuf,3,MPIU_INT,MPI_SUM,opflow->comm->type);CHKERRQ(ierr);
+  opflow->Nx = recvbuf[0];
+  opflow->Nconeq = recvbuf[1];
+  opflow->Nconineq = recvbuf[2];
+  opflow->Ncon = opflow->Nconeq + opflow->Nconineq;
+  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d: nx = %d nconeq = %d, nconineq = %d, ncon = %d\n",opflow->comm->rank,opflow->nx,opflow->nconeq,opflow->nconineq,opflow->ncon);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d: Nx = %d Nconeq = %d, Nconineq = %d, Ncon = %d\n",opflow->comm->rank,opflow->Nx,opflow->Nconeq,opflow->Nconineq,opflow->Ncon);CHKERRQ(ierr);
+
+  exit(1);
   /* Set vertex local to global ordering */
   ierr = DMNetworkSetVertexLocalToGlobalOrdering(opflow->ps->networkdm);CHKERRQ(ierr);
 

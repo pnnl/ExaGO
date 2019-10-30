@@ -854,6 +854,7 @@ PetscErrorCode OPFLOWFormulationSetNumVariables_PBPOL(OPFLOW opflow,PetscInt *bu
   PS       ps=opflow->ps;
   PSBUS    bus;
   PetscErrorCode ierr;
+  PetscBool isghost;
 
   PetscFunctionBegin;
   
@@ -867,9 +868,12 @@ PetscErrorCode OPFLOWFormulationSetNumVariables_PBPOL(OPFLOW opflow,PetscInt *bu
   /* Variables for the buses */
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
+    //    if(isghost) continue;
+    busnvar[i] = 2; /* 2 variables for the bus */
     ierr = PSBUSGetNGen(bus,&ngen);CHKERRQ(ierr);
     /* Number of variables = 2 + 2*ngen (2 variables for voltage + Pg, Qg for each gen) */
-    busnvar[i] = 2 + 2*ngen;
+    busnvar[i] += 2*ngen;
 
     if(opflow->include_loadloss_variables) {
       ierr = PSBUSGetNLoad(bus,&nload);CHKERRQ(ierr);
@@ -878,7 +882,7 @@ PetscErrorCode OPFLOWFormulationSetNumVariables_PBPOL(OPFLOW opflow,PetscInt *bu
     }
 
     if(opflow->include_powerimbalance_variables) busnvar[i] += 2;
-    *nx += busnvar[i];
+    if(!isghost) *nx += busnvar[i];
   }
 
   PetscFunctionReturn(0);
@@ -886,10 +890,21 @@ PetscErrorCode OPFLOWFormulationSetNumVariables_PBPOL(OPFLOW opflow,PetscInt *bu
 
 PetscErrorCode OPFLOWFormulationSetNumConstraints_PBPOL(OPFLOW opflow,PetscInt *nconeq,PetscInt *nconineq)
 {
-  PS  ps = opflow->ps;
+  PetscInt i;
+  PS       ps=opflow->ps;
+  PSBUS    bus;
+  PetscErrorCode ierr;
+  PetscBool isghost;
 
   PetscFunctionBegin;
-  *nconeq = 2*ps->nbus;
+  *nconeq = *nconineq = 0;
+
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
+    if(isghost) continue;
+    *nconeq += 2;
+  }
   *nconineq = 2*ps->nbranch;
 
   PetscFunctionReturn(0);

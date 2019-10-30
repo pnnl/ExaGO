@@ -921,6 +921,7 @@ PetscErrorCode OPFLOWFormulationSetNumVariables_PBCAR(OPFLOW opflow,PetscInt *bu
   PS       ps=opflow->ps;
   PSBUS    bus;
   PetscErrorCode ierr;
+  PetscBool      isghost;
 
   PetscFunctionBegin;
   
@@ -935,9 +936,11 @@ PetscErrorCode OPFLOWFormulationSetNumVariables_PBCAR(OPFLOW opflow,PetscInt *bu
   /* Real and imaginary part of voltages at each bus + Pg,Qg for each gen */
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
+    busnvar[i] = 2; /* 2 variables for voltage */
     ierr = PSBUSGetNGen(bus,&ngen);CHKERRQ(ierr);
-    /* Number of variables = 2 + 2*ngen (2 variables for voltage + Pg, Qg for each gen) */
-    busnvar[i] = 2 + 2*ngen;
+    /* Number of variables = 2 + 2*ngen (2 variables Pg, Qg for each gen) */
+    busnvar[i] += 2*ngen;
 
     if(opflow->include_loadloss_variables) {
       ierr = PSBUSGetNLoad(bus,&nload);CHKERRQ(ierr);
@@ -946,7 +949,7 @@ PetscErrorCode OPFLOWFormulationSetNumVariables_PBCAR(OPFLOW opflow,PetscInt *bu
     }
 
     if(opflow->include_powerimbalance_variables) busnvar[i] += 2;
-    *nx += busnvar[i];
+    if(!isghost) *nx += busnvar[i];
   }
 
   
@@ -955,11 +958,27 @@ PetscErrorCode OPFLOWFormulationSetNumVariables_PBCAR(OPFLOW opflow,PetscInt *bu
 
 PetscErrorCode OPFLOWFormulationSetNumConstraints_PBCAR(OPFLOW opflow,PetscInt *nconeq,PetscInt *nconineq)
 {
-  PS  ps = opflow->ps;
+  PetscInt i;
+  PS       ps=opflow->ps;
+  PSBUS    bus;
+  PetscErrorCode ierr;
+  PetscBool      isghost;
 
   PetscFunctionBegin;
-  *nconeq = 2*ps->nbus + ps->nref; /* Power balance constraint at each bus (2) + angle constraint at ref. bus */
-  *nconineq = 2*ps->nbranch + ps->nbus; /* Line flow constraints + voltage magnitude constraints */
+  
+  *nconeq = 0;
+  *nconineq = 0;
+
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
+    if(isghost) continue;
+    *nconeq += 2; /* Power balance constraints */
+    if(bus->ide == REF_BUS) *nconeq += 1; /* Reference angle constraint */
+    *nconineq += 1; /* Voltage magnitude constraint */
+  }
+
+  *nconineq += 2*ps->nbranch; /* Line flow constraints */
 
   PetscFunctionReturn(0);
 }

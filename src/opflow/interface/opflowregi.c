@@ -70,6 +70,8 @@ PetscErrorCode OPFLOWFormulationRegisterAll(OPFLOW opflow)
 }
 
 extern PetscErrorCode OPFLOWSolverCreate_IPOPT(OPFLOW);
+extern PetscErrorCode OPFLOWSolverCreate_TAO(OPFLOW);
+
 /*
   OPFLOWSolverRegisterAll - Registers all OPFLOW solvers
 */
@@ -80,6 +82,7 @@ PetscErrorCode OPFLOWSolverRegisterAll(OPFLOW opflow)
   if(opflow->OPFLOWSolverRegisterAllCalled) PetscFunctionReturn(0);
 
   ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_IPOPT,OPFLOWSolverCreate_IPOPT);CHKERRQ(ierr);
+  ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_TAO,OPFLOWSolverCreate_TAO);CHKERRQ(ierr);
   opflow->OPFLOWSolverRegisterAllCalled = PETSC_TRUE;
 
   PetscFunctionReturn(0);
