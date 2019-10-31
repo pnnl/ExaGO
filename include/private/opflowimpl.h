@@ -25,7 +25,7 @@ struct _p_OPFLOWFormulationOps {
   PetscErrorCode (*computeconstraints)(OPFLOW,Vec,Vec);
   PetscErrorCode (*computeequalityconstraintjacobian)(OPFLOW,Vec,Mat);
   PetscErrorCode (*computeinequalityconstraintjacobian)(OPFLOW,Vec,Mat);
-  PetscErrorCode (*computehessian)(OPFLOW,Vec,Vec,Mat);
+  PetscErrorCode (*computehessian)(OPFLOW,Vec,Vec,Vec,Mat);
   PetscErrorCode (*computeobjandgradient)(OPFLOW,Vec,PetscScalar*,Vec); /* Objective and gradient routine */
   PetscErrorCode (*computeobjective)(OPFLOW,Vec,PetscScalar*); /* Objective */
   PetscErrorCode (*computegradient)(OPFLOW,Vec,Vec); /* Gradient of the objective function */
@@ -90,7 +90,7 @@ struct _p_OPFLOW{
   //  Mat Jac_GiT; /* Transpose of inequality constraint Jacobian */
 
   /* Lagrange multipliers */
-  Vec Lambda,Lambdae,Lambdai // Lagrange multipliers for constraints Lambda = [Lambdae; Lambdai];
+  Vec Lambda,Lambdae,Lambdai; // Lagrange multipliers for constraints Lambda = [Lambdae; Lambdai];
 
   void* solver; /* Solver object */
   struct _p_OPFLOWSolverOps solverops;

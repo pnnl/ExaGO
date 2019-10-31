@@ -1415,7 +1415,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR(OPFLOW opflow, Ve
   PSBUS          bus,busf,bust;
   const PetscScalar *x;
   const PetscScalar *lambda;
-  PetscInt       gloc;
+  PetscInt       gloc=0;
   PetscInt       row[12],col[12];
   PetscScalar    val[12];
   PetscScalar    Vrf,Vif,Vrt,Vit;
@@ -1426,8 +1426,6 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR(OPFLOW opflow, Ve
 
   ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecGetArrayRead(Lambda,&lambda);CHKERRQ(ierr);
-
-  gloc = opflow->nconeq; /* offset for the inequality constraints in the Lambda vector */
 
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
@@ -1853,7 +1851,7 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_IBCAR(OPFLOW opflow,Vec X,Mat H)
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeHessian_IBCAR(OPFLOW opflow,Vec X,Vec Lambda,Mat H)
+PetscErrorCode OPFLOWComputeHessian_IBCAR(OPFLOW opflow,Vec X,Vec Lambdae,Vec Lambdai,Mat H)
 {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -1863,11 +1861,11 @@ PetscErrorCode OPFLOWComputeHessian_IBCAR(OPFLOW opflow,Vec X,Vec Lambda,Mat H)
   ierr = OPFLOWComputeObjectiveHessian_IBCAR(opflow,X,H);CHKERRQ(ierr);
 
   /* Equality constraints Hessian */
-  ierr = OPFLOWComputeEqualityConstraintsHessian_IBCAR(opflow,X,Lambda,H);CHKERRQ(ierr);
+  ierr = OPFLOWComputeEqualityConstraintsHessian_IBCAR(opflow,X,Lambdae,H);CHKERRQ(ierr);
   
   /* Inequality constraints Hessian */
   if(opflow->nconineq) {
-    ierr = OPFLOWComputeInequalityConstraintsHessian_IBCAR(opflow,X,Lambda,H);CHKERRQ(ierr);
+    ierr = OPFLOWComputeInequalityConstraintsHessian_IBCAR(opflow,X,Lambdai,H);CHKERRQ(ierr);
   }
 
   ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);

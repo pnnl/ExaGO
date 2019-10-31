@@ -189,7 +189,7 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
   opflow->obj_factor = obj_factor;
 
   if(values == NULL) {
-    ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambda,opflow->Hes);CHKERRQ(ierr);
+    ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
     ierr = MatGetSize(opflow->Hes,&nrow,&nrow);CHKERRQ(ierr);
     ierr = MatConvert(opflow->Hes,MATSEQSBAIJ,MAT_REUSE_MATRIX,&ipopt->Hes_sbaij);CHKERRQ(ierr);
     sbaij = (Mat_SeqSBAIJ*)ipopt->Hes_sbaij->data;
@@ -199,10 +199,11 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
     CCMatrixToMatrixMarketLocationsOnly(ipopt->hes,opflow->nx,iRow,jCol,0,0,ipopt->nnz_hes);
   } else {
     ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
-    ierr = VecPlaceArray(opflow->Lambda,lambda);CHKERRQ(ierr);
+    ierr = VecPlaceArray(opflow->Lambdae,lambda);CHKERRQ(ierr);
+    ierr = VecPlaceArray(opflow->Lambdai,lambda+opflow->nconeq);CHKERRQ(ierr);
 
     /* Compute non-zeros for Hessian */
-    ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambda,opflow->Hes);CHKERRQ(ierr);
+    ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
     ierr = MatConvert(opflow->Hes,MATSEQSBAIJ,MAT_REUSE_MATRIX,&ipopt->Hes_sbaij);CHKERRQ(ierr);
     /* Since the Hessian is symmetric, we don't need to convert it to column compressed sparse format */
     sbaij = (Mat_SeqSBAIJ*)ipopt->Hes_sbaij->data;
@@ -211,7 +212,8 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
     CCMatrixToMatrixMarketValuesOnly(ipopt->hes,ipopt->nnz_hes,values);
 
     ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
-    ierr = VecResetArray(opflow->Lambda);CHKERRQ(ierr);
+    ierr = VecResetArray(opflow->Lambdae);CHKERRQ(ierr);
+    ierr = VecResetArray(opflow->Lambdai);CHKERRQ(ierr);
   }
 
   return 1;
@@ -259,7 +261,7 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
   ipopt->nnz_jac_g = ipopt->nnz_jac_ge + ipopt->nnz_jac_gi;
 
   /* Compute non-zeros for Hessian */
-  ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambda,opflow->Hes);CHKERRQ(ierr);
+  ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
   /* Convert matrix to symmetric sbaij format needed for the IPOPT solver */
   ierr = MatSetOption(opflow->Hes,MAT_SYMMETRIC,PETSC_TRUE);CHKERRQ(ierr);
   ierr = MatConvert(opflow->Hes,MATSEQSBAIJ,MAT_INITIAL_MATRIX,&ipopt->Hes_sbaij);CHKERRQ(ierr);

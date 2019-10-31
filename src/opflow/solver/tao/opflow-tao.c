@@ -71,7 +71,7 @@ PetscErrorCode OPFLOWHessian_TAO(Tao nlp,Vec X, Mat H, Mat H_pre, void *ctx)
   OPFLOW         opflow=(OPFLOW)ctx;
 
   PetscFunctionBegin;
-  ierr = (*opflow->formops.computehessian)(opflow,X,opflow->Lambda,H);CHKERRQ(ierr);
+  ierr = (*opflow->formops.computehessian)(opflow,X,opflow->Lambdae,opflow->Lambdai,H);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

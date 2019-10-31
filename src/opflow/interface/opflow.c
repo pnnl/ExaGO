@@ -470,6 +470,10 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
   if(opflow->formops.setinitialguess) {
     ierr = (*opflow->formops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
     ierr = VecSet(opflow->Lambda,1.0);CHKERRQ(ierr);
+    ierr = VecSet(opflow->Lambdae,1.0);CHKERRQ(ierr);
+    if(opflow->Nconineq) {
+      ierr = VecSet(opflow->Lambdai,1.0);CHKERRQ(ierr);
+    }
   }
 
   /* Only for debugging */
