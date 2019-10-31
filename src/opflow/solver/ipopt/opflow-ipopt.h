@@ -31,11 +31,6 @@ struct _p_OPFLOWSolver_IPOPT {
   CCMatrix jac_gi;
   CCMatrix hes;
 
-  /* Lagrange multipliers */
-  Vec lambda_g;
-  Vec lambda_xl;
-  Vec lambda_xu;
-
   IpoptProblem nlp; /**< Ipopt solver */
   enum ApplicationReturnStatus solve_status;
 

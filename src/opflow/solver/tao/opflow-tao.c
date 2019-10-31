@@ -27,9 +27,19 @@ PetscErrorCode OPFLOWInequalityConstraintsFunction_TAO(Tao nlp,Vec X,Vec Gi,void
 {
   PetscErrorCode ierr;
   OPFLOW         opflow=(OPFLOW)ctx;
+  PetscInt       gloc=opflow->nconeq,i;
+  PetscScalar    *gi,*gu;
 
   PetscFunctionBegin;
   ierr = (*opflow->formops.computeinequalityconstraints)(opflow,X,Gi);CHKERRQ(ierr);
+  ierr = VecGetArray(Gi,&gi);CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->Gu,&gu);CHKERRQ(ierr);
+  for(i=0; i < opflow->nconineq; i++) {
+    gi[i] = gu[gloc+i] - gi[i];
+  }
+  ierr = VecRestoreArray(Gi,&gi);CHKERRQ(ierr);
+  ierr = VecRestoreArray(opflow->Gu,&gu);CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -50,6 +60,7 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobian_TAO(Tao nlp, Vec X, Mat Ji, M
 
   PetscFunctionBegin;
   ierr = (*opflow->formops.computeinequalityconstraintjacobian)(opflow,X,Ji);CHKERRQ(ierr);
+  ierr = MatScale(Ji,-1.0);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -67,10 +78,13 @@ PetscErrorCode OPFLOWHessian_TAO(Tao nlp,Vec X, Mat H, Mat H_pre, void *ctx)
 PetscErrorCode OPFLOWSolverSolve_TAO(OPFLOW opflow)
 {
   PetscErrorCode     ierr;
-  OPFLOWSolver_TAO tao=opflow->solver;
+  OPFLOWSolver_TAO   tao=(OPFLOWSolver_TAO)opflow->solver;
 
   PetscFunctionBegin;
 
+  ierr = TaoSetInitialVector(tao->nlp,opflow->X);CHKERRQ(ierr);
+
+  ierr = TaoSolve(tao->nlp);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -109,16 +123,16 @@ PetscErrorCode OPFLOWSolverSetUp_TAO(OPFLOW opflow)
   ierr = TaoSetEqualityConstraintsRoutine(tao->nlp,opflow->Ge,OPFLOWEqualityConstraintsFunction_TAO,(void*)opflow);CHKERRQ(ierr);
 
   /* Inequality Constraints */
-  ierr = TaoSetInequalityConstraintsRoutine(opflow->nlp,opflow->Gi,OPFLOWInequalityConstraintsFunction_TAO,(void*)opflow);CHKERRQ(ierr);
+  ierr = TaoSetInequalityConstraintsRoutine(tao->nlp,opflow->Gi,OPFLOWInequalityConstraintsFunction_TAO,(void*)opflow);CHKERRQ(ierr);
 
   /* Equality Jacobian */
-  ierr = TaoSetJacobianEqualityRoutine(opflow->nlp,opflow->Jac_Ge,opflow->Jac_Ge,OPFLOWEqualityConstraintsJacobian,(void*)opflow);CHKERRQ(ierr);
+  ierr = TaoSetJacobianEqualityRoutine(tao->nlp,opflow->Jac_Ge,opflow->Jac_Ge,OPFLOWEqualityConstraintsJacobian_TAO,(void*)opflow);CHKERRQ(ierr);
 
   /* Inequality Jacobian */
-  ierr = TaoSetJacobianInequalityRoutine(opflow->nlp,opflow->Jac_Gi,opflow->Jac_Gi,OPFLOWInequalityConstraintsJacobian,(void*)opflow);CHKERRQ(ierr);
-  ierr = TaoSetFromOptions(opflow->nlp);CHKERRQ(ierr);
+  ierr = TaoSetJacobianInequalityRoutine(tao->nlp,opflow->Jac_Gi,opflow->Jac_Gi,OPFLOWInequalityConstraintsJacobian_TAO,(void*)opflow);CHKERRQ(ierr);
+  ierr = TaoSetFromOptions(tao->nlp);CHKERRQ(ierr);
 
-  ierr = TaoSetHessianRoutine(opflow->nlp,NULL,NULL,OPFLOWHessian,NULL);CHKERRQ(ierr);
+  ierr = TaoSetHessianRoutine(tao->nlp,opflow->Hes,opflow->Hes,OPFLOWHessian_TAO,(void*)opflow);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
