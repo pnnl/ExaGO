@@ -89,11 +89,8 @@ struct _p_OPFLOW{
   //  Mat Jac_GeT; /* Transpose of equality constraint Jacobian */
   //  Mat Jac_GiT; /* Transpose of inequality constraint Jacobian */
 
-  Vec Lambda;
   /* Lagrange multipliers */
-  Vec lambda_g;
-  Vec lambda_xl;
-  Vec lambda_xu;
+  Vec Lambda,Lambdae,Lambdai // Lagrange multipliers for constraints Lambda = [Lambdae; Lambdai];
 
   void* solver; /* Solver object */
   struct _p_OPFLOWSolverOps solverops;

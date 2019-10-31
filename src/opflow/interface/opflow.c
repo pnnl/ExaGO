@@ -84,8 +84,10 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow)
   /* Constraints vector */
   ierr = VecDestroy(&(*opflow)->G);CHKERRQ(ierr);
   ierr = VecDestroy(&(*opflow)->Ge);CHKERRQ(ierr);
+  ierr = VecDestroy(&(*opflow)->Lambdae);CHKERRQ(ierr);
   if((*opflow)->nconineq) {
     ierr = VecDestroy(&(*opflow)->Gi);CHKERRQ(ierr);
+    ierr = VecDestroy(&(*opflow)->Lambdai);CHKERRQ(ierr);
   }
   ierr = VecDestroy(&(*opflow)->Gl);CHKERRQ(ierr);
   ierr = VecDestroy(&(*opflow)->Gu);CHKERRQ(ierr);
@@ -380,7 +382,6 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   opflow->Nconineq = recvbuf[2];
   opflow->Ncon = opflow->Nconeq + opflow->Nconineq;
   ierr = PetscPrintf(PETSC_COMM_SELF,"OPFLOW: Rank %d: nx = %d nconeq = %d, nconineq = %d, ncon = %d\n",opflow->comm->rank,opflow->nx,opflow->nconeq,opflow->nconineq,opflow->ncon);CHKERRQ(ierr);
-  //  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d: Nx = %d Nconeq = %d, Nconineq = %d, Ncon = %d\n",opflow->comm->rank,opflow->Nx,opflow->Nconeq,opflow->Nconineq,opflow->Ncon);CHKERRQ(ierr);
 
   /* Set vertex local to global ordering */
   ierr = DMNetworkSetVertexLocalToGlobalOrdering(opflow->ps->networkdm);CHKERRQ(ierr);
@@ -403,11 +404,13 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = VecCreate(ps->comm->type,&opflow->Ge);CHKERRQ(ierr);
   ierr = VecSetSizes(opflow->Ge,opflow->nconeq,opflow->Nconeq);CHKERRQ(ierr);
   ierr = VecSetFromOptions(opflow->Ge);CHKERRQ(ierr);
+  ierr = VecDuplicate(opflow->Ge,&opflow->Lambdae);CHKERRQ(ierr);
 
   if(opflow->nconineq) {
     ierr = VecCreate(ps->comm->type,&opflow->Gi);CHKERRQ(ierr);
     ierr = VecSetSizes(opflow->Gi,opflow->nconineq,opflow->Nconineq);CHKERRQ(ierr);
     ierr = VecSetFromOptions(opflow->Gi);CHKERRQ(ierr);
+    ierr = VecDuplicate(opflow->Gi,&opflow->Lambdai);CHKERRQ(ierr);
   }
 
   /* Create equality and inequality constraint Jacobian matrices */
@@ -428,7 +431,6 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 
   ierr = (*opflow->solverops.setup)(opflow);CHKERRQ(ierr);
   ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Setup completed\n");CHKERRQ(ierr);
-  exit(1);
 
   PetscFunctionReturn(0);
 }
