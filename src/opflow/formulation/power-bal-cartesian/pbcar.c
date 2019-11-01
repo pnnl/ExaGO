@@ -133,8 +133,9 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBCAR(OPFLOW opflow,Vec Gl,Vec Gu)
     }
     
     
-    for(i=0; i < ps->Nbranch; i++) {
+    for(i=0; i < ps->nbranch; i++) {
       line = &ps->line[i];
+      if(line->rateA > 1e5) continue;
       
       /* Line flow inequality constraints */
       if(!line->status) gl[gloc] = gu[gloc] = gl[gloc+1] = gu[gloc+1] = 0.0;
@@ -688,6 +689,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBCAR(OPFLOW opflow,Vec
     
   for (i=0; i < ps->nbranch; i++) {
     line = &ps->line[i];
+    if(line->rateA > 1e5) continue;
     if(!line->status) {
       gloc += 2;
       continue;
@@ -961,6 +963,7 @@ PetscErrorCode OPFLOWFormulationSetNumConstraints_PBCAR(OPFLOW opflow,PetscInt *
   PetscInt i;
   PS       ps=opflow->ps;
   PSBUS    bus;
+  PSLINE   line;
   PetscErrorCode ierr;
   PetscBool      isghost;
 
@@ -978,7 +981,10 @@ PetscErrorCode OPFLOWFormulationSetNumConstraints_PBCAR(OPFLOW opflow,PetscInt *
     *nconineq += 1; /* Voltage magnitude constraint */
   }
 
-  *nconineq += 2*ps->nbranch; /* Line flow constraints */
+  for(i=0; i < ps->nbranch; i++) {
+    line = &ps->line[i];
+    if(line->rateA < 1e5) *nconineq += 2; /* Line flow constraints */
+  }
 
   PetscFunctionReturn(0);
 }
@@ -1339,9 +1345,9 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBCAR(OPFLOW opflow, Ve
 
   val[0] = val[1] = val[2] = val[3] = 0.0;
   // for the part of line constraints
-  for(i=0; i < ps->Nbranch; i++) {
+  for(i=0; i < ps->nbranch; i++) {
     line = &ps->line[i];
-
+    if(line->rateA > 1e5) continue;
     if(!line->status) {
       gloc += 2;
       continue;
