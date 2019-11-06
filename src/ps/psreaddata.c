@@ -487,6 +487,10 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
 	     &Bus[busi].bus_i,&Bus[busi].ide,&Pd,&Qd,&Bus[busi].gl,	\
 	     &Bus[busi].bl,&Bus[busi].area,&Bus[busi].vm,&Bus[busi].va,&Bus[busi].basekV,&Bus[busi].zone,\
 	     &Bus[busi].Vmax,&Bus[busi].Vmin);
+
+      Bus[busi].Vmax = Bus[busi].Vmax == 0 ? 1.1:Bus[busi].Vmax;
+      Bus[busi].Vmin = Bus[busi].Vmin == 0 ? 0.9:Bus[busi].Vmin;
+ 
       if(Bus[busi].ide == REF_BUS) ps->Nref++;
       Bus[busi].internal_i = busi;
       busext2intmap[Bus[busi].bus_i] = busi;
@@ -525,6 +529,11 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
 	     &Gen[geni].pb);
 
       intbusnum = busext2intmap[Gen[geni].bus_i];
+
+      Gen[geni].qt = Gen[geni].qt > 1e10 ? PETSC_INFINITY: Gen[geni].qt;
+      Gen[geni].qb = Gen[geni].qb < -1e10 ? PETSC_NINFINITY: Gen[geni].qb;
+      Gen[geni].pt = Gen[geni].pt > 1e10 ? PETSC_INFINITY: Gen[geni].pt;
+      Gen[geni].pb = Gen[geni].pb < -1e10 ? PETSC_NINFINITY: Gen[geni].pb;
 
       Gen[geni].initial_status = Gen[geni].status;
       /* Convert Pg and Qg to per unit */
