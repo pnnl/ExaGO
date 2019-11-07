@@ -113,7 +113,7 @@ PetscErrorCode OPFLOWSolverSetUp_TAO(OPFLOW opflow)
 
   /* Create Tao solver and set type */
   ierr = TaoCreate(opflow->comm->type,&tao->nlp);CHKERRQ(ierr);
-  ierr = TaoSetType(tao->nlp,TAOPDIPM);CHKERRQ(ierr);
+  /*  ierr = TaoSetType(tao->nlp,TAOPDIPM);CHKERRQ(ierr); */
   ierr = TaoSetOptionsPrefix(tao->nlp,"opflow_");CHKERRQ(ierr);
 
   /* Set Callback routines */
