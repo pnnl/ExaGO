@@ -9,10 +9,10 @@ CFLAGS += -I${PIPS_DIR}/PIPS-NLP # For PIPS-NLP
 FFLAGS           =
 CPPFLAGS         =
 FPPFLAGS         =
-## Turn this off for SCOPFLOW_PIPS
-CFLAGS_IPOPT     = -DSCOPFLOW_HAVE_IPOPT
-# Turn this off for SCOPFLOW_IPOPT
-CFLAGS_PIPS      = -DSCOPFLOW_HAVE_PIPS
+## Turn this ON for using IPOPT
+CFLAGS_IPOPT     = #-DSCOPFLOW_HAVE_IPOPT
+# Turn this ON for using PIPS
+CFLAGS_PIPS      = #-DSCOPFLOW_HAVE_PIPS
 
 CFLAGS += ${CFLAGS_IPOPT} ${CFLAGS_PIPS}
 

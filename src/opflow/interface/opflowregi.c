@@ -69,7 +69,9 @@ PetscErrorCode OPFLOWFormulationRegisterAll(OPFLOW opflow)
   PetscFunctionReturn(0);
 }
 
+#if defined(SCOPFLOW_HAVE_IPOPT)
 extern PetscErrorCode OPFLOWSolverCreate_IPOPT(OPFLOW);
+#endif
 extern PetscErrorCode OPFLOWSolverCreate_TAO(OPFLOW);
 
 /*
@@ -81,7 +83,9 @@ PetscErrorCode OPFLOWSolverRegisterAll(OPFLOW opflow)
   PetscFunctionBegin;
   if(opflow->OPFLOWSolverRegisterAllCalled) PetscFunctionReturn(0);
 
+#if defined(SCOPFLOW_HAVE_IPOPT)
   ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_IPOPT,OPFLOWSolverCreate_IPOPT);CHKERRQ(ierr);
+#endif
   ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_TAO,OPFLOWSolverCreate_TAO);CHKERRQ(ierr);
   opflow->OPFLOWSolverRegisterAllCalled = PETSC_TRUE;
 
