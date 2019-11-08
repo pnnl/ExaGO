@@ -15,7 +15,7 @@
 struct _p_OPFLOWFormulationOps {
   PetscErrorCode (*destroy)(OPFLOW);
   PetscErrorCode (*setnumvariables)(OPFLOW,PetscInt*,PetscInt*,PetscInt*); /* Set number of variables for buses and branches, and total number of variables */
-  PetscErrorCode (*setnumconstraints)(OPFLOW,PetscInt*,PetscInt*); /* Set number of equality and inequality constraints */
+  PetscErrorCode (*setnumconstraints)(OPFLOW,PetscInt*,PetscInt*,PetscInt*); /* Set number of equality and inequality constraints */
   PetscErrorCode (*setvariablebounds)(OPFLOW,Vec,Vec); /* Upper and lower bounds on the vector */
   PetscErrorCode (*setconstraintbounds)(OPFLOW,Vec,Vec); /* Lower and upper bounds on constraints */
   PetscErrorCode (*setvariableandconstraintbounds)(OPFLOW,Vec,Vec,Vec,Vec); /* Lower and upper bounds on variables and constraints */
@@ -113,6 +113,10 @@ struct _p_OPFLOW{
 
   PetscBool include_powerimbalance_variables; /* Include variables for power imbalance */
   PetscReal powerimbalance_penalty;
+
+ /* This is a section to hold the global indices for the equality constraints.
+    It is used when operating on equality constraints */
+  PetscSection buseqconglobsection;
 
 };
 
