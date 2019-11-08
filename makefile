@@ -1,18 +1,23 @@
-# To use forward sensitivity, add option -DFWDSA to CFLAGS
-# override CFLAGS += -DFWDSA -O2 -Iinclude
-# For debugging
-# override CFLAGS += -Iinclude -DPFLOW_DISPLAY_RESULTS -DDEBUGPS
+
+BUILD_WITH_IPOPT=${WITH_IPOPT}
+BUILD_WITH_PIPS=${WITH_PIPS}
 
 CFLAGS += -Iinclude 
-CFLAGS += -I${IPOPT_BUILD_DIR}/include/coin # For IPOPT
-CFLAGS += -I${PIPS_DIR}/PIPS-NLP # For PIPS-NLP
 FFLAGS           =
 CPPFLAGS         =
 FPPFLAGS         =
-## Turn this ON for using IPOPT
-CFLAGS_IPOPT     = #-DSCOPFLOW_HAVE_IPOPT
-# Turn this ON for using PIPS
-CFLAGS_PIPS      = #-DSCOPFLOW_HAVE_PIPS
+
+ifeq ($(BUILD_WITH_IPOPT),1)
+  CFLAGS_IPOPT = -DSCOPFLOW_HAVE_IPOPT
+  IPOPT_LIB    = -lipopt
+  CFLAGS += -I${IPOPT_BUILD_DIR}/include/coin
+endif
+
+ifeq ($(BUILD_WITH_PIPS),1)
+  CFLAGS_PIPS = -DSCOPFLOW_HAVE_PIPS
+  PIPS_LIB    = -lparpipsnlp
+  CFLAGS += -I${PIPS_DIR}/PIPS-NLP # For PIPS-NLP
+endif
 
 CFLAGS += ${CFLAGS_IPOPT} ${CFLAGS_PIPS}
 
@@ -94,7 +99,7 @@ libpflow:$(PFLOW_SRC_OBJECTS) chkopts
 	 -$(CLINKER) $(LDFLAGS) -o libpflow.$(LIB_EXT) $(PFLOW_SRC_OBJECTS) $(PETSC_TS_LIB)
 
 libopflow:$(OPFLOW_SRC_OBJECTS) chkopts
-	 -$(CLINKER) $(LDFLAGS) -o libopflow.$(LIB_EXT) $(OPFLOW_SRC_OBJECTS)  -L${IPOPT_BUILD_DIR}/lib -lipopt $(PETSC_TAO_LIB)
+	 -$(CLINKER) $(LDFLAGS) -o libopflow.$(LIB_EXT) $(OPFLOW_SRC_OBJECTS)  -L${IPOPT_BUILD_DIR}/lib ${IPOPT_LIB} $(PETSC_TAO_LIB)
 
 
 SCOPFLOW_IPOPT_SRC_OBJECTS = src/scopflow/scopflow-ipopt.o src/scopflow/scopflow-ipopt-constraints.o src/scopflow/scopflow-ipopt-objective.o src/scopflow/scopflow-ipopt-hessian.o src/scopflow/scopflow-ipopt-pipsfunctions.o ${OPFLOW_IPOPT_SRC_OBJECTS}
@@ -103,7 +108,7 @@ libscopflowipopt:$(SCOPFLOW_IPOPT_SRC_OBJECTS) chkopts
 
 SCOPFLOW_PIPS_SRC_OBJECTS = src/scopflow/scopflow-pips.o src/scopflow/scopflow-pips-constraints.o src/scopflow/scopflow-pips-hessian.o src/scopflow/scopflow-pips-objective.o ${OPFLOW_SRC_OBJECTS}
 libscopflowpips:$(SCOPFLOW_PIPS_SRC_OBJECTS) chkopts
-	 -$(CLINKER) $(LDFLAGS) -o libscopflowpips.$(LIB_EXT) $(SCOPFLOW_PIPS_SRC_OBJECTS) -L${PIPS_DIR}/build/PIPS-NLP -lparpipsnlp $(PETSC_TAO_LIB)
+	 -$(CLINKER) $(LDFLAGS) -o libscopflowpips.$(LIB_EXT) $(SCOPFLOW_PIPS_SRC_OBJECTS) -L${PIPS_DIR}/build/PIPS-NLP ${PIPS_LIB} $(PETSC_TAO_LIB)
 
 #******************************
 #	Remove .o Command
