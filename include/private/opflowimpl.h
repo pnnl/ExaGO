@@ -114,9 +114,8 @@ struct _p_OPFLOW{
   PetscBool include_powerimbalance_variables; /* Include variables for power imbalance */
   PetscReal powerimbalance_penalty;
 
- /* This is a section to hold the global indices for the equality constraints.
-    It is used when operating on equality constraints */
-  PetscSection buseqconglobsection;
+ /* Global indices for the equality constraints. It is used when operating on equality constraints */
+  PetscInt *eqconglobloc;
 
 };
 

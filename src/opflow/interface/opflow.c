@@ -109,6 +109,7 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow)
     ierr = ((*opflow)->formops.destroy)(*opflow);
   }
 
+  ierr = PetscFree((*opflow)->eqconglobloc);CHKERRQ(ierr);
 
   ierr = PetscFree(*opflow);CHKERRQ(ierr);
   *opflow = 0;
@@ -235,7 +236,7 @@ PetscErrorCode OPFLOWSetNumConstraints(OPFLOW opflow,PetscInt *busnconeq,PetscIn
   DM             networkdm=opflow->ps->networkdm;
   PS             ps=opflow->ps;
   DM             plexdm;
-  PetscSection   buseqconsection;
+  PetscSection   buseqconsection,buseqconglobsection;
   PetscSection   varsection,varglobsection;
 
   PetscFunctionBegin;
@@ -259,13 +260,18 @@ PetscErrorCode OPFLOWSetNumConstraints(OPFLOW opflow,PetscInt *busnconeq,PetscIn
   ierr = PetscSectionSetUp(buseqconsection);CHKERRQ(ierr);
 
   /* What we want to do here is have the DM set up the global section
-     for the equality constraints (opflow->busnconeqglobsection) so that
-     we can use it later when operating with equality constraints. To do
-     so, we need to 
-     i) Get the local and global variables section (varsection and globvarsection) from the DM
+     for the equality constraints (busnconeqglobsection) to get the global
+     indices for equality constraints. We will use it later when operating 
+     with equality constraints. 
+     To do so, we need to 
+     i) Get the local and global variables section (varsection and globvarsection) from the DM.
+        Increase the reference count for the sections so that they do not get destroyed when
+        the new section is set in ii
      ii) Set the section for equality constraints (busnconeqsection) on the DM
-     iii) Have the DM generate the Global section and save it to opflow->busnconeqglobsection
-     iv) Reset the variable sections on the DM
+     iii) Have the DM generate the Global section and save it to busnconeqglobsection
+     iv) Copy over the global indices from busnconeqglobsection.
+      v) Reset the variable sections on the DM and decrement the reference count otherwise
+         there will be a memory leak.
   */
   /* (i) */
   ierr = DMNetworkGetPlex(networkdm,&plexdm);CHKERRQ(ierr);
@@ -278,17 +284,23 @@ PetscErrorCode OPFLOWSetNumConstraints(OPFLOW opflow,PetscInt *busnconeq,PetscIn
   ierr = DMSetSection(plexdm,buseqconsection);CHKERRQ(ierr);
 
   /* (iii) */
-  ierr = DMGetGlobalSection(plexdm,&opflow->buseqconglobsection);CHKERRQ(ierr);
-  ierr = PetscObjectReference((PetscObject)opflow->buseqconglobsection);CHKERRQ(ierr);
+  ierr = DMGetGlobalSection(plexdm,&buseqconglobsection);CHKERRQ(ierr);
+  ierr = PetscObjectReference((PetscObject)buseqconglobsection);CHKERRQ(ierr);
 
-  /* (iv) */
+  /* (iv) Set the global indices */
+  ierr = PetscCalloc1(ps->nbus,&opflow->eqconglobloc);CHKERRQ(ierr);
+  for(i=0; i < ps->nbus; i++) {
+    ierr = DMNetworkGetVariableGlobalOffset(networkdm,vStart+i,&opflow->eqconglobloc[i]);CHKERRQ(ierr);
+  }
+
+  /* (v) */
   ierr = DMSetSection(plexdm,varsection);CHKERRQ(ierr);
   ierr = DMSetGlobalSection(plexdm,varglobsection);CHKERRQ(ierr);
+  ierr = PetscObjectDereference((PetscObject)varsection);CHKERRQ(ierr);
+  ierr = PetscObjectDereference((PetscObject)varglobsection);CHKERRQ(ierr);
 
-  ierr = PetscSectionView(buseqconsection,0);CHKERRQ(ierr);
-  ierr = PetscSectionView(opflow->buseqconglobsection,0);CHKERRQ(ierr);
-  //  exit(1);
   ierr = PetscSectionDestroy(&buseqconsection);CHKERRQ(ierr);
+  ierr = PetscSectionDestroy(&buseqconglobsection);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -345,7 +357,6 @@ PetscErrorCode OPFLOWSetNumVariables(OPFLOW opflow,PetscInt *busnvararray,PetscI
   DM_Network *networkdmdata = (DM_Network*)(networkdm->data);
   networkdmdata->DofSection = 0;
   
-
   /* Set the section with number of variables */
   ierr = DMSetSection(plexdm,varsection);CHKERRQ(ierr);
   ierr = DMGetGlobalSection(plexdm,&globalvarsection);CHKERRQ(ierr);
