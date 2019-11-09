@@ -84,7 +84,9 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow)
   /* Constraints vector */
   ierr = VecDestroy(&(*opflow)->G);CHKERRQ(ierr);
   ierr = VecDestroy(&(*opflow)->Ge);CHKERRQ(ierr);
+  ierr = VecDestroy(&(*opflow)->Gelocal);CHKERRQ(ierr);
   ierr = VecDestroy(&(*opflow)->Lambdae);CHKERRQ(ierr);
+  ierr = VecDestroy(&(*opflow)->Lambdaelocal);CHKERRQ(ierr);
   if((*opflow)->nconineq) {
     ierr = VecDestroy(&(*opflow)->Gi);CHKERRQ(ierr);
     ierr = VecDestroy(&(*opflow)->Lambdai);CHKERRQ(ierr);
@@ -92,6 +94,11 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow)
   ierr = VecDestroy(&(*opflow)->Gl);CHKERRQ(ierr);
   ierr = VecDestroy(&(*opflow)->Gu);CHKERRQ(ierr);
   ierr = VecDestroy(&(*opflow)->Lambda);CHKERRQ(ierr);
+
+  /* Index sets and vecscatter for equality constraints */
+  ierr = ISDestroy(&(*opflow)->isconeqlocal);CHKERRQ(ierr);
+  ierr = ISDestroy(&(*opflow)->isconeqglob);CHKERRQ(ierr);
+  ierr = VecScatterDestroy(&(*opflow)->scattereqcon);CHKERRQ(ierr);
 
   /* Jacobian of constraints */
   ierr = MatDestroy(&(*opflow)->Jac);CHKERRQ(ierr);
@@ -238,6 +245,7 @@ PetscErrorCode OPFLOWSetNumConstraints(OPFLOW opflow,PetscInt *busnconeq,PetscIn
   DM             plexdm;
   PetscSection   buseqconsection,buseqconglobsection;
   PetscSection   varsection,varglobsection;
+  PetscInt       nconeqloc=0;
 
   PetscFunctionBegin;
   ierr = (*opflow->formops.setnumconstraints)(opflow,busnconeq,nconeq,nconineq);
@@ -256,6 +264,7 @@ PetscErrorCode OPFLOWSetNumConstraints(OPFLOW opflow,PetscInt *busnconeq,PetscIn
 
   for(i=0; i < ps->nbus; i++) {
     ierr = PetscSectionSetDof(buseqconsection,vStart+i,busnconeq[i]);CHKERRQ(ierr);
+    nconeqloc += busnconeq[i];
   }
   ierr = PetscSectionSetUp(buseqconsection);CHKERRQ(ierr);
 
@@ -302,6 +311,21 @@ PetscErrorCode OPFLOWSetNumConstraints(OPFLOW opflow,PetscInt *busnconeq,PetscIn
   ierr = PetscSectionDestroy(&buseqconsection);CHKERRQ(ierr);
   ierr = PetscSectionDestroy(&buseqconglobsection);CHKERRQ(ierr);
 
+  /* Create VecScatter for scattering values from global eq. constraints vector to local eq. constraints vector. */
+  PetscInt *eqconloc,*eqconglobloc,ctr=0,j;
+  ierr = PetscCalloc1(nconeqloc,&eqconloc);CHKERRQ(ierr);
+  ierr = PetscCalloc1(nconeqloc,&eqconglobloc);CHKERRQ(ierr);
+  for(i=0; i < ps->nbus; i++) {
+    for(j = 0; j < busnconeq[i]; j++) {
+      eqconloc[ctr] = ctr;
+      eqconglobloc[ctr] = opflow->eqconglobloc[i] + j;
+      ctr++;
+    }
+  }
+
+  ierr = ISCreateGeneral(opflow->comm->type,nconeqloc,eqconloc,PETSC_OWN_POINTER,&opflow->isconeqlocal);CHKERRQ(ierr);
+  ierr = ISCreateGeneral(opflow->comm->type,nconeqloc,eqconglobloc,PETSC_OWN_POINTER,&opflow->isconeqglob);CHKERRQ(ierr);
+  
   PetscFunctionReturn(0);
 }
 	  
@@ -479,6 +503,16 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = VecSetSizes(opflow->Ge,opflow->nconeq,opflow->Nconeq);CHKERRQ(ierr);
   ierr = VecSetFromOptions(opflow->Ge);CHKERRQ(ierr);
   ierr = VecDuplicate(opflow->Ge,&opflow->Lambdae);CHKERRQ(ierr);
+
+  PetscInt nconeqlocal;
+
+  ierr = ISGetSize(opflow->isconeqlocal,&nconeqlocal);CHKERRQ(ierr);
+  ierr = VecCreate(PETSC_COMM_SELF,&opflow->Gelocal);CHKERRQ(ierr);
+  ierr = VecSetSizes(opflow->Gelocal,nconeqlocal,nconeqlocal);CHKERRQ(ierr);
+  ierr = VecSetFromOptions(opflow->Gelocal);CHKERRQ(ierr);
+  ierr = VecDuplicate(opflow->Gelocal,&opflow->Lambdaelocal);CHKERRQ(ierr);
+
+  ierr = VecScatterCreate(opflow->Ge,opflow->isconeqglob,opflow->Gelocal,opflow->isconeqlocal,&opflow->scattereqcon);CHKERRQ(ierr);
 
   if(opflow->Nconineq) {
     ierr = VecCreate(ps->comm->type,&opflow->Gi);CHKERRQ(ierr);
