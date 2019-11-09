@@ -10,7 +10,7 @@ FFLAGS           =
 CPPFLAGS         =
 FPPFLAGS         =
 ## Turn this ON for using IPOPT
-CFLAGS_IPOPT     = -DSCOPFLOW_HAVE_IPOPT
+CFLAGS_IPOPT     = #-DSCOPFLOW_HAVE_IPOPT
 # Turn this ON for using PIPS
 CFLAGS_PIPS      = #-DSCOPFLOW_HAVE_PIPS
 
