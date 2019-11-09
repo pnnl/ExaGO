@@ -78,7 +78,7 @@ Bool eval_opflow_g(PetscInt n, PetscScalar* x, Bool new_x,
   ierr = (*opflow->formops.computeequalityconstraints)(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
 
-  if(opflow->nconineq) {
+  if(opflow->Nconineq) {
     /* Inequality constraints */
     ierr = VecPlaceArray(opflow->Gi,g+opflow->nconeq);CHKERRQ(ierr);
     ierr = (*opflow->formops.computeinequalityconstraints)(opflow,opflow->X,opflow->Gi);CHKERRQ(ierr);
@@ -296,6 +296,7 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
   ipopt->solve_status = IpoptSolve(ipopt->nlp,x,NULL,&opflow->obj,NULL,NULL,NULL,opflow);
 
   ierr = VecRestoreArray(opflow->X,&x);CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 

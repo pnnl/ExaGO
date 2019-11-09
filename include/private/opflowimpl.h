@@ -15,7 +15,7 @@
 struct _p_OPFLOWFormulationOps {
   PetscErrorCode (*destroy)(OPFLOW);
   PetscErrorCode (*setnumvariables)(OPFLOW,PetscInt*,PetscInt*,PetscInt*); /* Set number of variables for buses and branches, and total number of variables */
-  PetscErrorCode (*setnumconstraints)(OPFLOW,PetscInt*,PetscInt*); /* Set number of equality and inequality constraints */
+  PetscErrorCode (*setnumconstraints)(OPFLOW,PetscInt*,PetscInt*,PetscInt*); /* Set number of equality and inequality constraints */
   PetscErrorCode (*setvariablebounds)(OPFLOW,Vec,Vec); /* Upper and lower bounds on the vector */
   PetscErrorCode (*setconstraintbounds)(OPFLOW,Vec,Vec); /* Lower and upper bounds on constraints */
   PetscErrorCode (*setvariableandconstraintbounds)(OPFLOW,Vec,Vec,Vec,Vec); /* Lower and upper bounds on variables and constraints */
@@ -59,7 +59,7 @@ struct _p_OPFLOW{
 
   Vec  X,localX;    /* Global and local solution vector */
   Vec  G; /**< Inequality and equality constraint function */
-  Vec  Ge; /** < Equality constraint function vector */
+  Vec  Ge,Gelocal; /** < Equality constraint function vector (global and local) */
   Vec  Gi; /** < Inequality constraint function vector */
 
   Mat  Jac; /* Jacobian for equality and inequality constraints */
@@ -91,6 +91,7 @@ struct _p_OPFLOW{
 
   /* Lagrange multipliers */
   Vec Lambda,Lambdae,Lambdai; // Lagrange multipliers for constraints Lambda = [Lambdae; Lambdai];
+  Vec Lambdaelocal; /* Local Lambdae vector */
 
   void* solver; /* Solver object */
   struct _p_OPFLOWSolverOps solverops;
@@ -113,6 +114,15 @@ struct _p_OPFLOW{
 
   PetscBool include_powerimbalance_variables; /* Include variables for power imbalance */
   PetscReal powerimbalance_penalty;
+
+  /* Global indices for the equality constraints. It is used when operating on equality constraints */
+  PetscInt *eqconglobloc;
+
+  VecScatter scattereqcon; /* Vector scatter object for scattering from global equality constraints to local equality constraints vector */
+
+  /* Local and global index sets used in VecScatter */
+  IS       isconeqlocal;
+  IS       isconeqglob;
 
 };
 
