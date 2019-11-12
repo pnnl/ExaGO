@@ -127,7 +127,7 @@ Bool eval_opflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
     iRowstart += ipopt->nnz_jac_ge;
     jColstart += ipopt->nnz_jac_ge;
 
-    if(opflow->nconineq) {
+    if(opflow->Nconineq) {
       /* Inequality constrained Jacobian */
       roffset = opflow->nconeq;
 
@@ -157,8 +157,7 @@ Bool eval_opflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
 
     CCMatrixToMatrixMarketValuesOnly(ipopt->jac_ge,ipopt->nnz_jac_ge,values);
 
-    if(opflow->nconineq) {
-
+    if(opflow->Nconineq) {
       /* Compute inequality constraint jacobian */
       ierr = (*opflow->formops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
 
@@ -200,7 +199,9 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
   } else {
     ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
     ierr = VecPlaceArray(opflow->Lambdae,lambda);CHKERRQ(ierr);
-    ierr = VecPlaceArray(opflow->Lambdai,lambda+opflow->nconeq);CHKERRQ(ierr);
+    if(opflow->Nconineq) {
+      ierr = VecPlaceArray(opflow->Lambdai,lambda+opflow->nconeq);CHKERRQ(ierr);
+    }
 
     /* Compute non-zeros for Hessian */
     ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
@@ -213,7 +214,9 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
 
     ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->Lambdae);CHKERRQ(ierr);
-    ierr = VecResetArray(opflow->Lambdai);CHKERRQ(ierr);
+    if(opflow->Nconineq) {
+      ierr = VecResetArray(opflow->Lambdai);CHKERRQ(ierr);
+    }
   }
 
   return 1;
@@ -244,7 +247,8 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
   ierr = PetscMalloc1(ipopt->nnz_jac_ge,&ipopt->jac_ge->rowidx);CHKERRQ(ierr);
   ierr = PetscMalloc1(ipopt->nnz_jac_ge,&ipopt->jac_ge->values);CHKERRQ(ierr);
 
-  if(opflow->nconineq) {
+  ipopt->nnz_jac_gi = 0;
+  if(opflow->Nconineq) {
     ierr = (*opflow->formops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
     /* Transpose the matrix to convert it to column compressed sparse format */
     ierr = MatTranspose(opflow->Jac_Gi,MAT_INITIAL_MATRIX,&ipopt->Jac_GiT);CHKERRQ(ierr);
@@ -255,7 +259,7 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
     /* Create ccmatrix object for inequality constrained Jacobian */
     ierr = PetscCalloc1(1,&ipopt->jac_gi);CHKERRQ(ierr);
     ierr = PetscMalloc1(opflow->nx+1,&ipopt->jac_gi->colptr);CHKERRQ(ierr);
-    ierr = PetscMalloc1(ipopt->nnz_jac_ge,&ipopt->jac_gi->rowidx);CHKERRQ(ierr);
+    ierr = PetscMalloc1(ipopt->nnz_jac_gi,&ipopt->jac_gi->rowidx);CHKERRQ(ierr);
     ierr = PetscMalloc1(ipopt->nnz_jac_gi,&ipopt->jac_gi->values);CHKERRQ(ierr);
   }   
   ipopt->nnz_jac_g = ipopt->nnz_jac_ge + ipopt->nnz_jac_gi;
@@ -316,7 +320,7 @@ PetscErrorCode OPFLOWSolverDestroy_IPOPT(OPFLOW opflow)
   ierr = PetscFree(ipopt->jac_ge->values);CHKERRQ(ierr);
   ierr = PetscFree(ipopt->jac_ge);CHKERRQ(ierr);
 
-  if(opflow->nconineq) {
+  if(opflow->Nconineq) {
     ierr = MatDestroy(&ipopt->Jac_GiT);CHKERRQ(ierr);
     ierr = PetscFree(ipopt->jac_gi->colptr);CHKERRQ(ierr);
     ierr = PetscFree(ipopt->jac_gi->rowidx);CHKERRQ(ierr);

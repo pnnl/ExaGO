@@ -29,6 +29,8 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   opflow->Nconineq = opflow->nconineq = -1;
   opflow->Ncon     = opflow->ncon     = -1;
   opflow->Nx       = opflow->nx       = -1;
+  opflow->Gi       = NULL;
+  opflow->Lambdai  = NULL;
   
   opflow->obj_factor = 1.0;
   opflow->obj = 0.0;
