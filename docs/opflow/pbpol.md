@@ -1,4 +1,4 @@
-# Optimal Power Flow Formulation in Power Balance Formulation with Polar Representation of Bus Voltages
+# Optimal Power Flow Formulation in Power Balance Form with Polar Representation of Bus Voltages
 
 ## Sizes
 
@@ -19,7 +19,7 @@
 
 ## Variables
 
-- Two variables at each bus i for the voltage magnitude and angle, $`V_{i}`$,$`\theta_{i}`$. ($`\tilde{v}_{i} = V_{i}e^{j\theta_{i}}`$,$`V_{i}= \left | {v}_{i} \right | `$)
+- Two variables at each bus i for the voltage magnitude and angle, $`V_{i}`$,$`\theta_{i}`$. ($`\bar{V}_{i} = V_{i}e^{j\theta_{i}}`$)
 - Two variables at each generator k for the real and reactive power output, $`P_{Gk}`$,$`Q_{Gk}`$
 - Two variables at each load j for the real and reactive power load loss, $`\delta{P_{Dj}}`$,$`\delta{Q_{Dj}}`$. These variables are only included 
 if the load loss variable flag, -opflow_include_loadloss_variables, is ON.
@@ -28,9 +28,10 @@ only if the power imbalance variable flag, -opflow_include_imbalance_variables, 
 
 ## Bounds
 
-- Bounds on generator k real and reactive power injections:$`P_{Gk}^- \le P_{Gk} \le P_{Gk}^+`$,$`Q_{Gk}^- \le Q_{Gk} \le Q_{Gk}^+`$
+- Bounds on generator k real and reactive power injections: $`P_{Gk}^- \le P_{Gk} \le P_{Gk}^+`$,$`Q_{Gk}^- \le Q_{Gk} \le Q_{Gk}^+`$
 - Bounds on real and reactive power load loss for load j: $`0 \le \delta{P_{Dj}} \le P_{Dj}`$,$`0 \le \delta{Q_{Dj}} \le Q_{Dj}`$
-
+- Bounds on voltage magnitude for each bus i: $`(V^-_i) \le V_{i}  \le (V^+_i)`$
+- Bound  on the reference bus angle: $`\theta_{ref} = \theta_{ref0}`$, i.e., the reference bus angle is held constant.
 
 ## Objective function
 
@@ -58,25 +59,20 @@ and $`c_{\delta{S_i}}`$ is the penalty cost for power imbalance at bus i.
 Here, $`G_{ff}`$,$`G_{ft}`$ are the self and mutual conductances for line ft, while $`B_{ff}`$,$`B_{ft}`$ are the
 self and mutual susceptances, respectively.
 
-### Voltage angle constraint at ref. bus
-This constraint attempts to hold the reference bus angle fixed at $`\theta_{ref}`$.
-```math
-\begin{aligned}
-    \Delta{\theta_{ref}} = 0
-\end{aligned}
-```
-
 ## Inequality constraints
 
-### Voltage magnitude constraints for each bus i
-The voltage magnitude at bus i is $`V_{i} `$. 
-```math
-(V^-_i) \le V_{i}  \le (V^+_i)
-```
-
 ### Apparent line flow constraints for each line between 'from' bus f and 'to' bus t
-Let $`P_{ft}`$ and $`Q_{ft}`$ be the real and reactive power flow from bus f to bus t on line ft. 
-Similarly, let $`P_{tf}`$ and $`Q_{tf}`$ be the real and reactive power flow from bus t to bus f.
+Let $`P_{f}`$ and $`Q_{f}`$ be the real and reactive power flow from bus f to bus t on line ft. 
+Similarly, let $`P_{t}`$ and $`Q_{t}`$ be the real and reactive power flow from bus t to bus f.
+These are given by
+```math
+\begin{aligned}
+  P_f &=  G_{ff}(V^2_{f}) + V_{f}(G_{ft}V_{t}\cos(\theta_{f}-\theta_t) + V_{t}B_{ft}\sin(\theta_{f}-\theta_t)) \\
+  Q_f &= -B_{ff}(V^2_{f}) + V_{f}(G_{ft}V_{t}\sin(\theta_{f}-\theta_t) - V_{t}B_{ft}\cos(\theta_{f}-\theta_t)) \\
+  P_t &=  G_{tt}(V^2_{t}) + V_{t}(G_{tf}V_{f}\cos(\theta_{t}-\theta_f) + V_{f}B_{tf}\sin(\theta_{t}-\theta_f))  \\
+  Q_t &= -B_{tt}(V^2_{t}) + V_{t}(G_{tf}V_{f}\sin(\theta_{t}-\theta_f) - V_{f}B_{tf}\cos(\theta_{t}-\theta_f))
+\end{aligned}
+```
 The apparent power flows $`S_{f}`$ and $`S_{t}`$ at the from and to ends of the line are given by
 ```math
 \begin{aligned}
@@ -93,8 +89,6 @@ The apparent line flow constraints are considered on the square of the from and 
 ```
 where the maximum flow,$`S^+_{ft}`$ is either the RATE_A (normal), RATE_B (short-term), or RATE_C (emergency) rating of the line.
 
-
-
 ## Gradient
 
 ```math
@@ -106,7 +100,6 @@ where the maximum flow,$`S^+_{ft}`$ is either the RATE_A (normal), RATE_B (short
 \dfrac{\partial{C}}{\partial{\delta{Q_{i}}}} &= 2c_{\delta{S_i}}\delta{Q_{i}}
 \end{aligned}
 ```
-
 
 ## Equality constraint Jacobian
 
@@ -147,16 +140,6 @@ where the maximum flow,$`S^+_{ft}`$ is either the RATE_A (normal), RATE_B (short
 
 ## Inequality constraint Jacobian
 
-The from and to bus real and reactive power flows on line ft are
-
-```math
-\begin{aligned}
-  P_f &=  G_{ff}(V^2_{f}) + V_{f}(G_{ft}V_{t}\cos(\theta_{f}-\theta_t) + V_{t}B_{ft}\sin(\theta_{f}-\theta_t)) \\
-  Q_f &= -B_{ff}(V^2_{f}) + V_{f}(G_{ft}V_{t}\sin(\theta_{f}-\theta_t) - V_{t}B_{ft}\cos(\theta_{f}-\theta_t)) \\
-  P_t &=  G_{tt}(V^2_{t}) + V_{t}(G_{tf}V_{f}\cos(\theta_{t}-\theta_f) + V_{f}B_{tf}\sin(\theta_{t}-\theta_f))  \\
-  Q_t &= -B_{tt}(V^2_{t}) + V_{t}(G_{tf}V_{f}\sin(\theta_{t}-\theta_f) - V_{f}B_{tf}\cos(\theta_{t}-\theta_f))
-\end{aligned}
-```
 ```math
 \begin{aligned}
 \dfrac{\partial{S^2_f}}{\partial{V_{f}}} &= \dfrac{\partial{S^2_f}}{\partial{P_f}}\dfrac{\partial{P_f}}{\partial{V_{f}}} 
