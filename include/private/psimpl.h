@@ -172,8 +172,8 @@ struct _p_PSLINE{
   PetscInt      internal_j; /**< Internal To Bus Number */
   PetscScalar   yff[2],yft[2],ytf[2],ytt[2]; /**< [G,B] */
   PetscScalar   pf,qf,pt,qt; /**< Real and reactive power flows from and to ends */
+  PetscBool     reversed_ends; /* Reversed line end (bus numbers are swapped) */
 
-  
   PSBUS  connbuses[2]; /**< From and to buses */
 
   

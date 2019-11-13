@@ -591,6 +591,19 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
       if(!Branch[bri].tapratio) Branch[bri].tapratio = 1.0;
       Branch[bri].phaseshift *= PETSC_PI/180.0;
 
+      Branch[bri].reversed_ends = PETSC_FALSE;
+      if(Branch[bri].fbus > Branch[bri].tbus) {
+	/* Swap ends.. Some solvers (like IPOPT) which
+	   require symmetric matrices (only lower or upper
+	   triangle) complain that Hessian is incorrect
+           if fbus > tbus. Hence, this workaround. 
+	*/
+	PetscInt temp;
+	temp = Branch[bri].fbus;
+	Branch[bri].fbus = Branch[bri].tbus;
+	Branch[bri].tbus = temp;
+	Branch[bri].reversed_ends = PETSC_TRUE;
+      }
       Branch[bri].rateA = (Branch[bri].rateA == 0 ? PETSC_INFINITY:Branch[bri].rateA);
       intbusnum = busext2intmap[Branch[bri].fbus];
       Branch[bri].internal_i = intbusnum;
@@ -622,18 +635,31 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
       tapr = tap*cos(shift);
       tapi = tap*sin(shift);
 
-      Branch[bri].yff[0] = G/tap2; 
-      Branch[bri].yff[1] = (B+Bc/2.0)/tap2;
-      
-      Branch[bri].yft[0] = -(G*tapr - B*tapi)/tap2;
-      Branch[bri].yft[1] = -(B*tapr + G*tapi)/tap2;
-
-      Branch[bri].ytf[0] = -(G*tapr + B*tapi)/tap2;
-      Branch[bri].ytf[1] = -(B*tapr - G*tapi)/tap2;
-
-      Branch[bri].ytt[0] = G;
-      Branch[bri].ytt[1] = B+Bc/2.0;
-
+      if(!Branch[bri].reversed_ends) {
+	Branch[bri].yff[0] = G/tap2; 
+	Branch[bri].yff[1] = (B+Bc/2.0)/tap2;
+	
+	Branch[bri].yft[0] = -(G*tapr - B*tapi)/tap2;
+	Branch[bri].yft[1] = -(B*tapr + G*tapi)/tap2;
+	
+	Branch[bri].ytf[0] = -(G*tapr + B*tapi)/tap2;
+	Branch[bri].ytf[1] = -(B*tapr - G*tapi)/tap2;
+	
+	Branch[bri].ytt[0] = G;
+	Branch[bri].ytt[1] = B+Bc/2.0;
+      } else {
+	Branch[bri].ytt[0] = G/tap2; 
+	Branch[bri].ytt[1] = (B+Bc/2.0)/tap2;
+	
+	Branch[bri].ytf[0] = -(G*tapr - B*tapi)/tap2;
+	Branch[bri].ytf[1] = -(B*tapr + G*tapi)/tap2;
+	
+	Branch[bri].yft[0] = -(G*tapr + B*tapi)/tap2;
+	Branch[bri].yft[1] = -(B*tapr - G*tapi)/tap2;
+	
+	Branch[bri].yff[0] = G;
+	Branch[bri].yff[1] = B+Bc/2.0;
+      }
       bri++;
     }
   }
