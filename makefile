@@ -83,6 +83,11 @@ OPFLOW: $(OBJECTS_OPFLOW) libopflow chkopts
 #******************************
 #	SCOPFLOW Specific Make
 #******************************
+SCOPFLOW_INTERFACE_OBJECTS = src/scopflow/interface/scopflow.o src/scopflow/interface/scopflowregi.o
+SCOPFLOW_SOLVER_OBJECTS = src/scopflow/solver/ipopt/scopflow-ipopt.o
+
+SCOPFLOW_SRC_OBJECTS = ${SCOPFLOW_INTERFACE_OBJECTS} ${SCOPFLOW_SOLVER_OBJECTS} ${OPFLOW_SRC_OBJECTS}
+
 SCOPFLOW_APP_OBJECTS = applications/scopflow-main.o
 #******** Option 2 **********
 OBJECTS_SCOPFLOW2 = $(SCOPFLOW_APP_OBJECTS) 
@@ -96,6 +101,11 @@ SCOPFLOW_PIPS: $(OBJECTS_SCOPFLOW3) libscopflowpips chkopts
 	 -$(CLINKER) -o SCOPFLOW_PIPS $(OBJECTS_SCOPFLOW3) -L${SCOPFLOW_DIR} -lscopflowpips ${PETSC_LIB}
 	$(RM) $(OBJECTS_SCOPFLOW3)
 
+OBJECTS_SCOPFLOW = $(SCOPFLOW_APP_OBJECTS) 
+SCOPFLOW: $(OBJECTS_SCOPFLOW) libscopflow chkopts
+	 -$(CLINKER) -o SCOPFLOW $(OBJECTS_SCOPFLOW) -L${SCOPFLOW_DIR} -lscopflow ${PETSC_LIB}
+	$(RM) $(OBJECTS_SCOPFLOW)
+
 #***************************
 #	Make Library Commands
 #***************************
@@ -105,6 +115,8 @@ libpflow:$(PFLOW_SRC_OBJECTS) chkopts
 libopflow:$(OPFLOW_SRC_OBJECTS) chkopts
 	 -$(CLINKER) $(LDFLAGS) -o libopflow.$(LIB_EXT) $(OPFLOW_SRC_OBJECTS)  -L${IPOPT_BUILD_DIR}/lib ${IPOPT_LIB} $(PETSC_TAO_LIB)
 
+libscopflow:${SCOPFLOW_SRC_OBJECTS} chkopts
+	 -$(CLINKER) $(LDFLAGS) -o libscopflow.$(LIB_EXT) $(SCOPFLOW_SRC_OBJECTS) -L${IPOPT_BUILD_DIR}/lib ${IPOPT_LIB} ${PETSC_TAO_LIB}
 
 SCOPFLOW_IPOPT_SRC_OBJECTS = src/scopflow/scopflow-ipopt.o src/scopflow/scopflow-ipopt-constraints.o src/scopflow/scopflow-ipopt-objective.o src/scopflow/scopflow-ipopt-hessian.o src/scopflow/scopflow-ipopt-pipsfunctions.o ${OPFLOW_IPOPT_SRC_OBJECTS}
 libscopflowipopt:$(SCOPFLOW_IPOPT_SRC_OBJECTS) chkopts
@@ -118,4 +130,4 @@ libscopflowpips:$(SCOPFLOW_PIPS_SRC_OBJECTS) chkopts
 #	Remove .o Command
 #******************************
 cleanobj:
-	rm -rf $(OBJECTS_PFLOW) $(OBJECTS_PFLOW2) $(PFLOW_SRC_OBJECTS) $(OBJECTS_OPFLOW) $(OPFLOW_SRC_OBJECTS) $(OBJECTS_SCOPFLOW2) $(SCOPFLOW_IPOPT_SRC_OBJECTS) $(SCOPFLOW_PIPS_SRC_OBJECTS) *.dylib *.dSYM PFLOW PFLOW2 OPFLOW SCOPFLOW_IPOPT SCOPFLOW_PIPS
+	rm -rf $(OBJECTS_PFLOW) $(OBJECTS_PFLOW2) $(PFLOW_SRC_OBJECTS) $(OBJECTS_OPFLOW) $(OPFLOW_SRC_OBJECTS) $(OBJECTS_SCOPFLOW2) $(SCOPFLOW_IPOPT_SRC_OBJECTS) $(SCOPFLOW_PIPS_SRC_OBJECTS) $(SCOPFLOW_SRC_OBJECTS) *.dylib *.dSYM PFLOW PFLOW2 OPFLOW SCOPFLOW SCOPFLOW_IPOPT SCOPFLOW_PIPS
