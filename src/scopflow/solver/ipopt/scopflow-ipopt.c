@@ -41,11 +41,23 @@ Bool eval_scopflow_f(PetscInt n, PetscScalar* x, Bool new_x,
 {
   PetscErrorCode ierr;
   SCOPFLOW  scopflow=(SCOPFLOW)user_data;
+  SCOPFLOWSolver_IPOPT scopflowipopt = (SCOPFLOWSolver_IPOPT)scopflow->solver;
+  OPFLOW    opflow;
+  PetscInt  i;
+  PetscScalar *xi;
+  PetscScalar opflowobj;
 
   *obj_value = 0.0;
-  ierr = VecPlaceArray(scopflow->X,x);CHKERRQ(ierr);
-  //  ierr = (*scopflow->formops.computeobjective)(scopflow,scopflow->X,obj_value);CHKERRQ(ierr);
-  ierr = VecResetArray(scopflow->X);CHKERRQ(ierr);
+
+  for(i=0; i < scopflow->Ns; i++) {
+    opflowobj = 0.0;
+    xi = x + scopflowipopt->xstarti[i];
+    opflow = scopflow->opflows[0];
+    ierr = VecPlaceArray(opflow->X,xi);CHKERRQ(ierr);
+    ierr = (*opflow->formops.computeobjective)(opflow,opflow->X,&opflowobj);CHKERRQ(ierr);
+    *obj_value += opflowobj;
+    ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+  }
 				
   return TRUE;
 }
@@ -55,14 +67,25 @@ Bool eval_scopflow_grad_f(PetscInt n, PetscScalar* x, Bool new_x,
 {
   PetscErrorCode ierr;
   SCOPFLOW  scopflow=(SCOPFLOW)user_data;
+  SCOPFLOWSolver_IPOPT scopflowipopt = (SCOPFLOWSolver_IPOPT)scopflow->solver;
+  OPFLOW    opflow;
+  PetscInt  i;
+  PetscScalar *xi,*gradi;
 
-  ierr = VecPlaceArray(scopflow->X,x);CHKERRQ(ierr);
-  ierr = VecPlaceArray(scopflow->gradobj,grad_f);CHKERRQ(ierr);
-  ierr = VecSet(scopflow->gradobj,0.0);CHKERRQ(ierr);
-  //  ierr = (*scopflow->formops.computegradient)(scopflow,scopflow->X,scopflow->gradobj);CHKERRQ(ierr);
-  ierr = VecResetArray(scopflow->X);CHKERRQ(ierr);
-  ierr = VecResetArray(scopflow->gradobj);CHKERRQ(ierr);
+  for(i=0; i < scopflow->Ns; i++) {
+    xi = x + scopflowipopt->xstarti[i];
+    gradi = grad_f + scopflowipopt->xstarti[i];
+    opflow = scopflow->opflows[0];
 
+    ierr = VecPlaceArray(opflow->X,xi);CHKERRQ(ierr);
+    ierr = VecPlaceArray(opflow->gradobj,gradi);CHKERRQ(ierr);
+    ierr = VecSet(opflow->gradobj,0.0);CHKERRQ(ierr);
+
+    ierr = (*opflow->formops.computegradient)(opflow,opflow->X,opflow->gradobj);CHKERRQ(ierr);
+    
+    ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+    ierr = VecResetArray(opflow->gradobj);CHKERRQ(ierr);
+  }
   return TRUE;
 }
 
@@ -70,23 +93,41 @@ Bool eval_scopflow_g(PetscInt n, PetscScalar* x, Bool new_x,
             PetscInt m, PetscScalar* g, UserDataPtr user_data)
 {
   PetscErrorCode ierr;
-  SCOPFLOW         scopflow=(SCOPFLOW)user_data;
+  SCOPFLOW  scopflow=(SCOPFLOW)user_data;
+  SCOPFLOWSolver_IPOPT scopflowipopt = (SCOPFLOWSolver_IPOPT)scopflow->solver;
+  OPFLOW    opflow;
+  PetscInt  i;
+  PetscScalar *xi,*geqi,*gineqi,*gineqcoupi;
 
-  ierr = VecPlaceArray(scopflow->X,x);CHKERRQ(ierr);
+  for(i=0; i < scopflow->Ns; i++) {
+    xi   = x + scopflowipopt->xstarti[i];
+    geqi = g + scopflowipopt->gstarti[i];
 
-  /* Equality constraints */
-  ierr = VecPlaceArray(scopflow->Ge,g);CHKERRQ(ierr);
-  //  ierr = (*scopflow->formops.computeequalityconstraints)(scopflow,scopflow->X,scopflow->Ge);CHKERRQ(ierr);
-  ierr = VecResetArray(scopflow->Ge);CHKERRQ(ierr);
+    opflow = scopflow->opflows[0];
 
-  if(scopflow->Nconineq) {
-    /* Inequality constraints */
-    ierr = VecPlaceArray(scopflow->Gi,g+scopflow->nconeq);CHKERRQ(ierr);
-    //    ierr = (*scopflow->formops.computeinequalityconstraints)(scopflow,scopflow->X,scopflow->Gi);CHKERRQ(ierr);
-    ierr = VecResetArray(scopflow->Gi);CHKERRQ(ierr);
+    ierr = VecPlaceArray(opflow->X,xi);CHKERRQ(ierr);
+
+    /* Equality constraints */
+    ierr = VecPlaceArray(opflow->Ge,geqi);CHKERRQ(ierr);
+    ierr = (*opflow->formops.computeequalityconstraints)(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
+    ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
+
+    if(scopflow->Nconineq) {
+      gineqi = geqi + opflow->nconineq;
+
+      /* Inequality constraints */
+      ierr = VecPlaceArray(scopflow->Gi,gineqi);CHKERRQ(ierr);
+      ierr = (*opflow->formops.computeinequalityconstraints)(opflow,opflow->X,opflow->Gi);CHKERRQ(ierr);
+      ierr = VecResetArray(opflow->Gi);CHKERRQ(ierr);
+    }
+
+    if(scopflow->iscoupling) {
+      /* Coupling constraints */
+      /**** START FROM HERE ****/
+    }
+
+    ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
   }
-
-  ierr = VecResetArray(scopflow->X);CHKERRQ(ierr);
 
   return TRUE;
 }
