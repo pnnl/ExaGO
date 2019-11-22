@@ -96,9 +96,13 @@ Bool eval_scopflow_g(PetscInt n, PetscScalar* x, Bool new_x,
   SCOPFLOW  scopflow=(SCOPFLOW)user_data;
   SCOPFLOWSolver_IPOPT scopflowipopt = (SCOPFLOWSolver_IPOPT)scopflow->solver;
   OPFLOW    opflow;
-  PetscInt  i;
-  PetscScalar *xi,*geqi,*gineqi,*gineqcoupi;
+  PetscInt  i,j,k,loc,ctr;
+  PetscScalar *x0,*xi,*geqi,*gineqi,*gineqcoupi;
+  PS        ps;
+  PSBUS     bus;
+  PSGEN     gen;
 
+  x0 = x;
   for(i=0; i < scopflow->Ns; i++) {
     xi   = x + scopflowipopt->xstarti[i];
     geqi = g + scopflowipopt->gstarti[i];
@@ -112,8 +116,9 @@ Bool eval_scopflow_g(PetscInt n, PetscScalar* x, Bool new_x,
     ierr = (*opflow->formops.computeequalityconstraints)(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
 
+    /* This code needs to be moved to formulation */
     if(scopflow->Nconineq) {
-      gineqi = geqi + opflow->nconineq;
+      gineqi = geqi + opflow->nconeq;
 
       /* Inequality constraints */
       ierr = VecPlaceArray(scopflow->Gi,gineqi);CHKERRQ(ierr);
@@ -121,9 +126,20 @@ Bool eval_scopflow_g(PetscInt n, PetscScalar* x, Bool new_x,
       ierr = VecResetArray(opflow->Gi);CHKERRQ(ierr);
     }
 
-    if(scopflow->iscoupling) {
-      /* Coupling constraints */
-      /**** START FROM HERE ****/
+    if(scopflow->nconineqcoup[i]) {
+      gineqcoupi = gineqi + opflow->nconineq;
+      ctr = 0;
+      ps = opflow->ps;
+      for(j=0; j < ps->nbus; j++) {
+	bus = &ps->bus[i];
+	ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
+	
+	for(k=0; k < bus->ngen; k++) {
+	  loc += 2;
+	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	  gineqcoupi[ctr++] = xi[loc] - x0[loc]; /* PGi - PG0 */
+	}
+      }
     }
 
     ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
@@ -503,7 +519,7 @@ PetscErrorCode SCOPFLOWSolverSetUp_IPOPT(SCOPFLOW scopflow)
     ierr = VecResetArray(opflow->Gl);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->Gu);CHKERRQ(ierr);
     
-    if(scopflow->iscoupling) {
+    if(scopflow->nconineqcoup[i]) {
       ctr = 0;
       ps = opflow->ps;
       /* Bounds on coupling constraints */
