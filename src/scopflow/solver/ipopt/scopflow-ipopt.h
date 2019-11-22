@@ -1,19 +1,13 @@
 #if defined(SCOPFLOW_HAVE_IPOPT)
 
+#ifndef SCOPFLOWIPOPT_H
+#define SCOPFLOWIPOPT_H
+
 #include <scopflow.h>
 #include <IpStdCInterface.h>
 #include <../src/mat/impls/aij/seq/aij.h>
 #include <../src/mat/impls/sbaij/seq/sbaij.h>
-
-/* Data structure for converting matrix in PETSc format (compressed row aij) to matrix market format (row idx, col idx, value)
-*/
-struct _p_CCMatrix {
-  PetscInt    *rowidx;
-  PetscInt    *colptr;
-  PetscScalar *values;
-};
-
-typedef struct _p_CCMatrix *CCMatrix;
+#include "../../../opflow/solver/ipopt/opflow-ipopt.h"
 
 typedef struct _p_SCOPFLOWSolver_IPOPT *SCOPFLOWSolver_IPOPT;
 
@@ -31,10 +25,16 @@ struct _p_SCOPFLOWSolver_IPOPT {
   CCMatrix jac_gi;
   CCMatrix hes;
 
+  PetscInt *nxi; /* Number of variables for each scenario */
+  PetscInt *ngi; /* Number of constraints for each scenario (includes coupling constraints) */
+  PetscInt *xstarti; /* Starting location for the variables for scenario i in the big X vector */
+  PetscInt *gstarti; /* Starting location for the constraints for scenario i in the big G vector */
+
   IpoptProblem nlp; /**< Ipopt solver */
   enum ApplicationReturnStatus solve_status;
 
   PetscScalar obj_factor; /* objective scaling factor set by IPOPT for hessian */
 };
 
+#endif
 #endif

@@ -1,5 +1,8 @@
 #if defined(SCOPFLOW_HAVE_IPOPT)
 
+#ifndef OPFLOWIPOPT_H
+#define OPFLOWIPOPT_H
+
 #include <opflow.h>
 #include <IpStdCInterface.h>
 #include <../src/mat/impls/aij/seq/aij.h>
@@ -36,5 +39,5 @@ struct _p_OPFLOWSolver_IPOPT {
 
   PetscScalar obj_factor; /* objective scaling factor set by IPOPT for hessian */
 };
-
+#endif
 #endif

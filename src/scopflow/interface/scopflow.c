@@ -1,3 +1,4 @@
+#include <private/opflowimpl.h>
 #include <private/scopflowimpl.h>
 #include <petsc/private/dmnetworkimpl.h>
 
@@ -20,10 +21,10 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
 
   ierr = COMMCreate(mpicomm,&scopflow->comm);CHKERRQ(ierr);
 
-  scopflow->Nconeq   = scopflow->nconeq  = -1;
-  scopflow->Nconineq = scopflow->nconineq = -1;
-  scopflow->Ncon     = scopflow->ncon     = -1;
-  scopflow->Nx       = scopflow->nx       = -1;
+  scopflow->Nconeq   = scopflow->nconeq  = 0;
+  scopflow->Nconineq = scopflow->nconineq = 0;
+  scopflow->Ncon     = scopflow->ncon     = 0;
+  scopflow->Nx       = scopflow->nx       = 0;
   scopflow->Gi       = NULL;
   scopflow->Lambdai  = NULL;
   
@@ -61,6 +62,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
 PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
 {
   PetscErrorCode ierr;
+  PetscInt       i;
 
   PetscFunctionBegin;
   ierr = COMMDestroy(&(*scopflow)->comm);CHKERRQ(ierr);
@@ -80,7 +82,7 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
   ierr = VecDestroy(&(*scopflow)->Gelocal);CHKERRQ(ierr);
   ierr = VecDestroy(&(*scopflow)->Lambdae);CHKERRQ(ierr);
   ierr = VecDestroy(&(*scopflow)->Lambdaelocal);CHKERRQ(ierr);
-  if((*scopflow)->nconineq) {
+  if((*scopflow)->Nconineq) {
     ierr = VecDestroy(&(*scopflow)->Gi);CHKERRQ(ierr);
     ierr = VecDestroy(&(*scopflow)->Lambdai);CHKERRQ(ierr);
   }
@@ -99,6 +101,14 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
     ierr = ((*scopflow)->solverops.destroy)(*scopflow);
   }
 
+  /* Destroy OPFLOW objects */
+  for(i=0; i < (*scopflow)->Ns; i++) {
+    ierr = OPFLOWDestroy(&(*scopflow)->opflows[i]);CHKERRQ(ierr);
+  }
+
+  ierr = PetscFree((*scopflow)->nconineqcoup);CHKERRQ(ierr);
+  ierr = PetscFree((*scopflow)->ctgclist.cont);CHKERRQ(ierr);
+  ierr = PetscFree((*scopflow)->opflows);CHKERRQ(ierr);
   ierr = PetscFree(*scopflow);CHKERRQ(ierr);
   *scopflow = 0;
   PetscFunctionReturn(0);
@@ -179,6 +189,67 @@ PetscErrorCode SCOPFLOWSetContingencyData(SCOPFLOW scopflow,const char ctgcfile[
 }
 
 /*
+  SCOPFLOWReadContingencyData - Reads the contingency list data file
+
+  Input Parameters
++ scopflow - the scopflow object
+- ctgcfile - the contingency file name
+
+*/
+PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW scopflow,const char ctgcfile[])
+{
+  PetscErrorCode ierr;
+  FILE           *fp;
+  ContingencyList *ctgclist=&scopflow->ctgclist;
+  Contingency    *cont;
+  Outage         *outage;
+  char           line[MAXLINE];
+  char           *out;
+  PetscInt       bus,fbus,tbus,type,num;
+  char           equipid[3];
+  PetscInt       status;
+  PetscScalar    prob;
+
+  PetscFunctionBegin;
+
+  fp = fopen(ctgcfile,"r");
+  if (fp == NULL) {
+    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_FILE_OPEN,"Cannot open file %s",ctgcfile);CHKERRQ(ierr);
+  }
+
+  ctgclist->Ncont = -1;
+  while((out = fgets(line,MAXLINE,fp)) != NULL) {
+    if(strcmp(line,"\r\n") == 0 || strcmp(line,"\n") == 0) {
+      continue; /* Skip blank lines */
+    }
+    sscanf(line,"%d,%d,%d,%d,%d,'%[^\t\']',%d,%lf",&num,&type,&bus,&fbus,&tbus,equipid,&status,&prob);
+
+    if(num == scopflow->Ns) break;
+
+    if(num == MAX_CONTINGENCIES) {
+      SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Exceeding max. allowed contingencies = %d\n",num,MAX_CONTINGENCIES);
+    }
+    cont   = &ctgclist->cont[num];
+    outage = &cont->outagelist[cont->noutages];
+    outage->num  = num;
+    outage->type = type;
+    outage->bus  = bus;
+    outage->fbus = fbus;
+    outage->tbus = tbus;
+    ierr = PetscMemcpy(outage->id,equipid,3*sizeof(char));CHKERRQ(ierr);
+    outage->status = status;
+    outage->prob   = prob;
+    cont->noutages++;
+
+
+    if(num > ctgclist->Ncont) ctgclist->Ncont = num;
+  }
+  fclose(fp);
+
+  PetscFunctionReturn(0);
+}
+
+/*
   SCOPFLOWSetUp - Sets up an security constrained optimal power flow application object
 
   Input Parameters:
@@ -193,7 +264,10 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   PetscErrorCode ierr;
   PetscBool      formulationset=PETSC_FALSE;
   PetscBool      solverset=PETSC_FALSE;
-  char           solvername[32];
+  char           formulationname[32]="POWER_BALANCE_POLAR";
+  char           solvername[32]="IPOPT";
+  PetscInt       i,j;
+  PS             ps;
 
   PetscFunctionBegin;
 
@@ -204,6 +278,20 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_ignore_line_flow_constraints",&scopflow->ignore_line_flow_constraints,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetInt(NULL,NULL,"-scopflow_Ns",&scopflow->Ns,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_replicate_basecase",&scopflow->replicate_basecase,NULL);CHKERRQ(ierr);
+
+  if(scopflow->ctgcfileset && !scopflow->replicate_basecase) {
+    if(scopflow->Ns < 0) scopflow->Ns = MAX_CONTINGENCIES;
+    else scopflow->Ns += 1; 
+
+    ierr = PetscMalloc1(scopflow->Ns,&scopflow->ctgclist.cont);CHKERRQ(ierr);
+    for(i=0; i < scopflow->Ns; i++) scopflow->ctgclist.cont->noutages = 0;
+    ierr = SCOPFLOWReadContingencyData(scopflow,scopflow->ctgcfile);CHKERRQ(ierr);
+    scopflow->Ns = scopflow->ctgclist.Ncont+1;
+  } else {
+    if(scopflow->Ns == -1) scopflow->Ns = 1;
+  }
+
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"SCOPFLOW running with %d scenarios (base case + %d scenarios)\n",scopflow->Ns,scopflow->Ns-1);CHKERRQ(ierr);
 
   /* Set solver */
   if(solverset) {
@@ -217,6 +305,41 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
     }
   }
 
+  /* Create OPFLOW objects */
+  ierr = PetscMalloc1(scopflow->Ns,&scopflow->opflows);CHKERRQ(ierr);
+  for(i=0; i < scopflow->Ns; i++) {
+    ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflows[i]);CHKERRQ(ierr);
+    ierr = OPFLOWSetFormulation(scopflow->opflows[i],formulationname);CHKERRQ(ierr);
+    ierr = OPFLOWSetSolver(scopflow->opflows[i],solvername);CHKERRQ(ierr);
+    ierr = OPFLOWReadMatPowerData(scopflow->opflows[i],scopflow->netfile);CHKERRQ(ierr);
+    /* Set up the PS object for opflow */
+    ps = scopflow->opflows[i]->ps;
+    ierr = PSSetUp(ps);CHKERRQ(ierr);
+    /* Set contingencies */
+    if(scopflow->ctgcfileset && !scopflow->replicate_basecase) {
+      Contingency ctgc=scopflow->ctgclist.cont[i];
+      for(j=0; j < ctgc.noutages; j++) {
+	if(ctgc.outagelist[j].type == GEN_OUTAGE) {
+	  PetscInt gbus=ctgc.outagelist[j].bus;
+	  char     *gid = ctgc.outagelist[j].id;
+	  PetscInt status = ctgc.outagelist[j].status;
+	  ierr = PSSetGenStatus(ps,gbus,gid,status);CHKERRQ(ierr);
+	}
+	if(ctgc.outagelist[j].type == BR_OUTAGE) {
+	  PetscInt fbus=ctgc.outagelist[j].fbus;
+	  PetscInt tbus=ctgc.outagelist[j].tbus;
+	  char     *brid = ctgc.outagelist[j].id;
+	  PetscInt status = ctgc.outagelist[j].status;
+	  ierr = PSSetLineStatus(ps,fbus,tbus,brid,status);CHKERRQ(ierr);
+	}
+      }
+    }
+
+    /* Set up OPFLOW object */
+    ierr = OPFLOWSetUp(scopflow->opflows[i]);CHKERRQ(ierr);
+  }
+  
+  ierr = PetscCalloc1(scopflow->Ns,&scopflow->nconineqcoup);CHKERRQ(ierr);
   ierr = (*scopflow->solverops.setup)(scopflow);CHKERRQ(ierr);
   ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW: Setup completed\n");CHKERRQ(ierr);
 

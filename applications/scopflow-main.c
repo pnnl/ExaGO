@@ -51,6 +51,8 @@ int main(int argc,char **argv)
   ierr = PetscLogStagePop();CHKERRQ(ierr);
 
   ierr = PetscLogStagePush(stages[1]);CHKERRQ(ierr);
+  /* Setup */
+  ierr = SCOPFLOWSetUp(scopflow);CHKERRQ(ierr);
   /* Solve */
   ierr = SCOPFLOWSolve(scopflow);CHKERRQ(ierr);
   /*End of Final Stage */

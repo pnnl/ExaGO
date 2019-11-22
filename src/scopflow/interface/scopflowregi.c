@@ -24,7 +24,7 @@ PetscErrorCode SCOPFLOWSolverRegister(SCOPFLOW scopflow,const char sname[],Petsc
   PetscFunctionReturn(0);
 }
 
-#if defined(SCSCOPFLOW_HAVE_IPOPT)
+#if defined(SCOPFLOW_HAVE_IPOPT)
 extern PetscErrorCode SCOPFLOWSolverCreate_IPOPT(SCOPFLOW);
 #endif
 
@@ -37,7 +37,7 @@ PetscErrorCode SCOPFLOWSolverRegisterAll(SCOPFLOW scopflow)
   PetscFunctionBegin;
   if(scopflow->SCOPFLOWSolverRegisterAllCalled) PetscFunctionReturn(0);
 
-#if defined(SCSCOPFLOW_HAVE_IPOPT)
+#if defined(SCOPFLOW_HAVE_IPOPT)
   ierr = SCOPFLOWSolverRegister(scopflow,SCOPFLOWSOLVER_IPOPT,SCOPFLOWSolverCreate_IPOPT);CHKERRQ(ierr);
 #endif
   scopflow->SCOPFLOWSolverRegisterAllCalled = PETSC_TRUE;
