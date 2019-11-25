@@ -110,7 +110,7 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
   ierr = PetscFree((*scopflow)->ctgclist.cont);CHKERRQ(ierr);
   ierr = PetscFree((*scopflow)->opflows);CHKERRQ(ierr);
   ierr = PetscFree(*scopflow);CHKERRQ(ierr);
-  *scopflow = 0;
+  //  *scopflow = 0;
   PetscFunctionReturn(0);
 }
 
