@@ -542,6 +542,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = (*opflow->solverops.setup)(opflow);CHKERRQ(ierr);
   ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Setup completed\n");CHKERRQ(ierr);
 
+  opflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);
 }
 

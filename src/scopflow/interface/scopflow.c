@@ -342,7 +342,8 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscCalloc1(scopflow->Ns,&scopflow->nconineqcoup);CHKERRQ(ierr);
   ierr = (*scopflow->solverops.setup)(scopflow);CHKERRQ(ierr);
   ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW: Setup completed\n");CHKERRQ(ierr);
-
+  
+  scopflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);
 }
 

@@ -52,7 +52,7 @@ Bool eval_scopflow_f(PetscInt n, PetscScalar* x, Bool new_x,
   for(i=0; i < scopflow->Ns; i++) {
     opflowobj = 0.0;
     xi = x + scopflowipopt->xstarti[i];
-    opflow = scopflow->opflows[0];
+    opflow = scopflow->opflows[i];
     ierr = VecPlaceArray(opflow->X,xi);CHKERRQ(ierr);
     ierr = (*opflow->formops.computeobjective)(opflow,opflow->X,&opflowobj);CHKERRQ(ierr);
     *obj_value += opflowobj;
@@ -73,9 +73,10 @@ Bool eval_scopflow_grad_f(PetscInt n, PetscScalar* x, Bool new_x,
   PetscScalar *xi,*gradi;
 
   for(i=0; i < scopflow->Ns; i++) {
+    opflow = scopflow->opflows[i];
     xi = x + scopflowipopt->xstarti[i];
     gradi = grad_f + scopflowipopt->xstarti[i];
-    opflow = scopflow->opflows[0];
+
 
     ierr = VecPlaceArray(opflow->X,xi);CHKERRQ(ierr);
     ierr = VecPlaceArray(opflow->gradobj,gradi);CHKERRQ(ierr);
@@ -107,7 +108,7 @@ Bool eval_scopflow_g(PetscInt n, PetscScalar* x, Bool new_x,
     xi   = x + scopflowipopt->xstarti[i];
     geqi = g + scopflowipopt->gstarti[i];
 
-    opflow = scopflow->opflows[0];
+    opflow = scopflow->opflows[i];
 
     ierr = VecPlaceArray(opflow->X,xi);CHKERRQ(ierr);
 
@@ -117,11 +118,11 @@ Bool eval_scopflow_g(PetscInt n, PetscScalar* x, Bool new_x,
     ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
 
     /* This code needs to be moved to formulation */
-    if(scopflow->Nconineq) {
+    if(opflow->Nconineq) {
       gineqi = geqi + opflow->nconeq;
 
       /* Inequality constraints */
-      ierr = VecPlaceArray(scopflow->Gi,gineqi);CHKERRQ(ierr);
+      ierr = VecPlaceArray(opflow->Gi,gineqi);CHKERRQ(ierr);
       ierr = (*opflow->formops.computeinequalityconstraints)(opflow,opflow->X,opflow->Gi);CHKERRQ(ierr);
       ierr = VecResetArray(opflow->Gi);CHKERRQ(ierr);
     }
@@ -131,7 +132,7 @@ Bool eval_scopflow_g(PetscInt n, PetscScalar* x, Bool new_x,
       ctr = 0;
       ps = opflow->ps;
       for(j=0; j < ps->nbus; j++) {
-	bus = &ps->bus[i];
+	bus = &ps->bus[j];
 	ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
 	
 	for(k=0; k < bus->ngen; k++) {
@@ -164,7 +165,9 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
   Mat_SeqAIJ     *aij;
   PetscInt       nrow,ncol;
   PetscScalar    *xi,*valuesi;
-  PetscInt       i;
+  PetscInt       i,j,k,loc,x0loc,xiloc;
+  PS             ps;
+  PSBUS          bus;
 
   if(values == NULL) {
     /* Set locations only */
@@ -176,7 +179,13 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
       roffset = scopflowipopt->gstarti[i];
       coffset = scopflowipopt->xstarti[i];
 
-      /* Jac_GeT already calculated during set up stage */
+      xi = x + scopflowipopt->xstarti[i];
+      ierr = VecPlaceArray(opflow->X,xi);CHKERRQ(ierr);
+
+      ierr = (*opflow->formops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
+      /* Transpose the matrix to convert it to column compressed sparse format */
+      ierr = MatTranspose(opflow->Jac_Ge,MAT_REUSE_MATRIX,&opflowipopt->Jac_GeT);CHKERRQ(ierr);
+
       ierr = MatGetSize(opflowipopt->Jac_GeT,&nrow,&ncol);CHKERRQ(ierr);
       aij = (Mat_SeqAIJ*)opflowipopt->Jac_GeT->data;
       ierr = PetscMemcpy(opflowipopt->jac_ge->rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
@@ -184,15 +193,17 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
       ierr = PetscMemcpy(opflowipopt->jac_ge->values,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
       CCMatrixToMatrixMarketLocationsOnly(opflowipopt->jac_ge,opflow->nx,iRowstart,jColstart,roffset,coffset,opflowipopt->nnz_jac_ge);
 
-      /* Increment iRow,jCol pointers */
+      /* Increment iRow,jCol pointers and roffset */
       iRowstart += opflowipopt->nnz_jac_ge;
       jColstart += opflowipopt->nnz_jac_ge;
+      roffset += opflow->nconeq;
 
       if(opflow->Nconineq) {
 	/* Inequality constrained Jacobian */
-	roffset += opflow->nconeq;
+	ierr = (*opflow->formops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
+	/* Transpose the matrix to convert it to column compressed sparse format */
+	ierr = MatTranspose(opflow->Jac_Gi,MAT_INITIAL_MATRIX,&opflowipopt->Jac_GiT);CHKERRQ(ierr);
 
-	/* Jac_GiT already computed during set up stage */
 	ierr = MatGetSize(opflowipopt->Jac_GiT,&nrow,&ncol);CHKERRQ(ierr);
 	aij = (Mat_SeqAIJ*)opflowipopt->Jac_GiT->data;
 	ierr = PetscMemcpy(opflowipopt->jac_gi->rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
@@ -200,10 +211,30 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
 	ierr = PetscMemcpy(opflowipopt->jac_gi->values,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
       
 	CCMatrixToMatrixMarketLocationsOnly(opflowipopt->jac_gi,opflow->nx,iRowstart,jColstart,roffset,coffset,opflowipopt->nnz_jac_gi);
+
+	iRowstart += opflowipopt->nnz_jac_gi;
+	jColstart += opflowipopt->nnz_jac_gi;
+	roffset += opflow->nconineq;
       }
 
-      if(scopflow->iscoupling) {
-	/***** Coupling constraint Jacobian to be added here ********/
+      if(scopflow->nconineqcoup[i]) {
+	ps = opflow->ps;
+	for(j=0; j < ps->nbus; j++) {
+	  bus = &ps->bus[j];
+	  ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
+	  for(k=0; k < bus->ngen; k++) {
+	    loc += 2;
+	    x0loc = scopflowipopt->xstarti[0] + loc;
+	    xiloc = scopflowipopt->xstarti[i] + loc;
+	    iRowstart[0] = roffset;
+	    jColstart[0] = x0loc;
+	    iRowstart[1] = roffset;
+	    jColstart[1] = xiloc;
+	    iRowstart += 2;
+	    jColstart += 2;
+	    roffset += 1;
+	  }
+	}
       }
 
       ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
@@ -237,14 +268,26 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
 
 	ierr = PetscMemcpy(opflowipopt->jac_gi->values,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
       
-
 	CCMatrixToMatrixMarketValuesOnly(opflowipopt->jac_gi,opflowipopt->nnz_jac_gi,valuesi);
 	valuesi += opflowipopt->nnz_jac_gi;
       }
 
-      if(scopflow->iscoupling) {
-	/*** Coupling constraint Jacobian part to be added here */
+      if(scopflow->nconineqcoup[i]) {
+	ps = opflow->ps;
+	for(j=0; j < ps->nbus; j++) {
+	  bus = &ps->bus[j];
+	  ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
+	  for(k=0; k < bus->ngen; k++) {
+	    loc += 2;
+	    x0loc = scopflowipopt->xstarti[0] + loc;
+	    xiloc = scopflowipopt->xstarti[i] + loc;
+	    valuesi[0] = -1;
+	    valuesi[1] = 1;
+	    valuesi += 2;
+	  }
+	}
       }
+
       ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
     }
   }
@@ -294,6 +337,7 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
     for(i=0; i < scopflow->Ns; i++) {
       opflow = scopflow->opflows[i];
       opflowipopt = opflow->solver;
+      opflow->obj_factor = obj_factor;
 
       roffset = scopflowipopt->xstarti[i];
 
@@ -388,7 +432,7 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
     opflowipopt->nnz_jac_g = opflowipopt->nnz_jac_ge + opflowipopt->nnz_jac_gi;
 
     /* Add non-zeros for Jacobian of coupling constraints */
-    if(scopflow->iscoupling) scopflowipopt->nnz_jac_gi += 2*scopflow->nconineqcoup[i];
+    if(scopflow->nconineqcoup[i]) scopflowipopt->nnz_jac_gi += 2*scopflow->nconineqcoup[i];
 
 
     /* Compute non-zeros for Hessian */
@@ -439,7 +483,7 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
   ierr = VecGetArray(scopflow->X,&x);CHKERRQ(ierr);
 
   /* Solve */
-  //  scopflowipopt->solve_status = IpoptSolve(scopflowipopt->nlp,x,NULL,&scopflow->obj,NULL,NULL,NULL,scopflow);
+  scopflowipopt->solve_status = IpoptSolve(scopflowipopt->nlp,x,NULL,&scopflow->obj,NULL,NULL,NULL,scopflow);
 
   ierr = VecRestoreArray(scopflow->X,&x);CHKERRQ(ierr);
 
