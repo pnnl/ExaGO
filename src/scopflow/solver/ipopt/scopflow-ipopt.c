@@ -164,14 +164,14 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
   PetscInt       roffset,coffset;
   Mat_SeqAIJ     *aij;
   PetscInt       nrow,ncol;
-  PetscScalar    *xi,*valuesi;
+  PetscScalar    *xi,*xarr,*valuesi;
   PetscInt       i,j,k,loc,x0loc,xiloc;
   PS             ps;
   PSBUS          bus;
 
   if(values == NULL) {
     /* Set locations only */
-
+    ierr = VecGetArray(scopflow->X,&xarr);CHKERRQ(ierr);
     for(i=0; i < scopflow->Ns; i++) {
       opflow = scopflow->opflows[i];
       opflowipopt = opflow->solver;
@@ -179,7 +179,7 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
       roffset = scopflowipopt->gstarti[i];
       coffset = scopflowipopt->xstarti[i];
 
-      xi = x + scopflowipopt->xstarti[i];
+      xi = xarr + scopflowipopt->xstarti[i];
       ierr = VecPlaceArray(opflow->X,xi);CHKERRQ(ierr);
 
       ierr = (*opflow->formops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
@@ -239,6 +239,7 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
 
       ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
     }
+    ierr = VecRestoreArray(scopflow->X,&xarr);CHKERRQ(ierr);
   } else {
 
     valuesi = values;
@@ -389,6 +390,7 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
 
   ierr = VecGetArray(scopflow->X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(scopflow->Lambda,&lam);CHKERRQ(ierr);
+
   for(i=0; i < scopflow->Ns; i++) {
     opflow = scopflow->opflows[i];
     opflowipopt = opflow->solver;
@@ -462,6 +464,10 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
     ierr = VecResetArray(opflow->Lambdai);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
   }
+
+  ierr = VecRestoreArray(scopflow->X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArray(scopflow->Lambda,&lam);CHKERRQ(ierr);
+
   scopflowipopt->nnz_jac_g = scopflowipopt->nnz_jac_ge + scopflowipopt->nnz_jac_gi;
 
   /* Create IPOPT solver instance */
