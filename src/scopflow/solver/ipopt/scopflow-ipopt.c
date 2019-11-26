@@ -117,7 +117,6 @@ Bool eval_scopflow_g(PetscInt n, PetscScalar* x, Bool new_x,
     ierr = (*opflow->formops.computeequalityconstraints)(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
 
-    /* This code needs to be moved to formulation */
     if(opflow->Nconineq) {
       gineqi = geqi + opflow->nconeq;
 
@@ -352,12 +351,10 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
 	ierr = VecPlaceArray(opflow->Lambdai,lamineqi);CHKERRQ(ierr);
       }
 
-      /* Compute non-zeros for Hessian */
       ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
       ierr = MatConvert(opflow->Hes,MATSEQSBAIJ,MAT_REUSE_MATRIX,&opflowipopt->Hes_sbaij);CHKERRQ(ierr);
       /* Since the Hessian is symmetric, we don't need to convert it to column compressed sparse format */
       sbaij = (Mat_SeqSBAIJ*)opflowipopt->Hes_sbaij->data;
-      opflowipopt->nnz_hes = sbaij->nz;
       ierr = PetscMemcpy(opflowipopt->hes->values,sbaij->a,sbaij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
       CCMatrixToMatrixMarketValuesOnly(opflowipopt->hes,opflowipopt->nnz_hes,valuesi);
       valuesi += opflowipopt->nnz_hes;
