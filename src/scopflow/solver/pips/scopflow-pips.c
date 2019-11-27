@@ -176,7 +176,11 @@ int scopflow_eval_grad_f(double* x0, double* x1, double* grad, CallBackDataPtr c
       ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
       ierr = VecResetArray(opflow->gradobj);CHKERRQ(ierr);
     }
-  } else return 0;
+  } else {
+    ierr = VecPlaceArray(opflow->gradobj,grad);CHKERRQ(ierr);
+    ierr = VecSet(opflow->gradobj,0.0);CHKERRQ(ierr);
+    ierr = VecResetArray(opflow->gradobj);CHKERRQ(ierr);
+  }
     
   return 1;
 }
@@ -213,10 +217,9 @@ int scopflow_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elt
       ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
 
       lameq = lambda;
-      lamineq = lambda + opflow->nconeq;
-
       ierr = VecPlaceArray(opflow->Lambdae,lameq);CHKERRQ(ierr);
       if(opflow->Nconineq) {
+	lamineq = lambda + opflow->nconeq;
 	ierr = VecPlaceArray(opflow->Lambdai,lamineq);CHKERRQ(ierr);
       }
 
@@ -309,6 +312,7 @@ int scopflow_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
   int col = cbd->col_node_id;
   PetscErrorCode ierr;
   SCOPFLOW scopflow=(SCOPFLOW)cbd->prob;
+  SCOPFLOWSolver_PIPS pips=scopflow->solver;
   /*  PetscInt rank=scopflow->comm->rank; */
   OPFLOW   opflow=scopflow->opflows[row];
   OPFLOWSolver_IPOPT opflowipopt = opflow->solver;
@@ -328,17 +332,13 @@ int scopflow_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
       else x = x1;
 
       *e_nz = opflowipopt->nnz_jac_ge;
-      *i_nz = opflowipopt->nnz_jac_gi + scopflow->nconineqcoup[row];
+      *i_nz = opflowipopt->nnz_jac_gi; /* Includes coupling non-zeros */
 
     } else {
       if(col == 0) {
 	*e_nz = 0;
 	*i_nz = 0;
-	/* The actual non-zeros should be only scopflow->nconineqcoup[row]. The opflowipopt->nnz_jac_gi nonzeros
-	   are because we are reusing Jac_GiT matrix with the values zeroed out for the inequality constraints
-	   and non-zero values for the coupling part only 
-	*/
-	if(scopflow->nconineqcoup[row])	*i_nz = opflowipopt->nnz_jac_gi + scopflow->nconineqcoup[row];
+	if(scopflow->nconineqcoup[row])	*i_nz = scopflow->nconineqcoup[row];
       }
     }
   } else {
@@ -361,9 +361,12 @@ int scopflow_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
       ierr = PetscMemcpy(e_colptr,aij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
       ierr = PetscMemcpy(e_elts,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
 
-      if(opflow->Nconineq) {
-	/* Inequality constrained Jacobian */
-	ierr = (*opflow->formops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
+      if(opflow->Nconineq + scopflow->nconineqcoup[row]) {
+	ierr = MatZeroEntries(opflow->Jac_Gi);CHKERRQ(ierr);
+	if(opflow->Nconineq) {
+	  /* Inequality constrained Jacobian */
+	  ierr = (*opflow->formops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
+	}
 
 	if(scopflow->nconineqcoup[row]) {
 	  ps = opflow->ps;
@@ -395,26 +398,8 @@ int scopflow_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
 
     } else {
       if(scopflow->nconineqcoup[row] && col == 0) {
-	ierr = MatZeroEntries(opflow->Jac_Gi);CHKERRQ(ierr);
-	ps = opflow->ps;
-	roffset = opflow->nconineq - scopflow->nconineqcoup[row];
-	for(j=0; j < ps->nbus; j++) {
-	  bus = &ps->bus[j];
-	  ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
-	  for(k=0; k < bus->ngen; k++) {
-	    loc += 2;
-	    ridx = roffset; cidx = loc;
-	    val  = -1.0;
-	    ierr = MatSetValues(opflow->Jac_Gi,1,&ridx,1,&cidx,&val,INSERT_VALUES);CHKERRQ(ierr);
-	    roffset += 1;
-	  }
-	}
-	ierr = MatAssemblyBegin(opflow->Jac_Gi,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(opflow->Jac_Gi,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-
-	ierr = MatTranspose(opflow->Jac_Gi,MAT_REUSE_MATRIX,&opflowipopt->Jac_GiT);CHKERRQ(ierr);	
-	ierr = MatGetSize(opflowipopt->Jac_GiT,&nrow,&ncol);CHKERRQ(ierr);
-	aij = (Mat_SeqAIJ*)opflowipopt->Jac_GiT->data;
+	ierr = MatGetSize(pips->Jac_GicoupT[row],&nrow,&ncol);CHKERRQ(ierr);
+	aij = (Mat_SeqAIJ*)pips->Jac_GicoupT[row]->data;
 	ierr = PetscMemcpy(i_rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
 	ierr = PetscMemcpy(i_colptr,aij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
 	ierr = PetscMemcpy(i_elts,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
@@ -443,6 +428,7 @@ PetscErrorCode SCOPFLOWSolverSolve_PIPS(SCOPFLOW scopflow)
   ierr = VecGetArray(scopflow->X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(scopflow->Lambda,&lam);CHKERRQ(ierr);
 
+  ierr = PetscCalloc1(scopflow->Ns,&pips->Jac_GicoupT);CHKERRQ(ierr);
   for(i=0; i < scopflow->Ns; i++) {
     opflow = scopflow->opflows[i];
     opflowipopt = opflow->solver;
@@ -468,7 +454,7 @@ PetscErrorCode SCOPFLOWSolverSolve_PIPS(SCOPFLOW scopflow)
     ierr = PetscMalloc1(opflowipopt->nnz_jac_ge,&opflowipopt->jac_ge->values);CHKERRQ(ierr);
 
     opflowipopt->nnz_jac_gi = 0;
-    if(opflow->Nconineq) {
+    if(opflow->Nconineq + scopflow->nconineqcoup[i]) {
       /* Create a bigger inequality constrained Jacobian matrix that includes the coupling constraints */
       /* Also update the number of inequality constraints */
       ierr = MatDestroy(&opflow->Jac_Gi);CHKERRQ(ierr);
@@ -477,13 +463,43 @@ PetscErrorCode SCOPFLOWSolverSolve_PIPS(SCOPFLOW scopflow)
       ierr = MatSetSizes(opflow->Jac_Gi,opflow->Nconineq+scopflow->nconineqcoup[i],opflow->Nx,opflow->Nconineq+scopflow->nconineqcoup[i],opflow->Nx);CHKERRQ(ierr);
       ierr = MatSetUp(opflow->Jac_Gi);CHKERRQ(ierr);
       ierr = MatSetFromOptions(opflow->Jac_Gi);CHKERRQ(ierr);
-      ierr = (*opflow->formops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
+
+      if(opflow->Nconineq) {
+	ierr = (*opflow->formops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
+      }
+
+      /* Add non-zeros for Jacobian of coupling constraints */
+      if(scopflow->nconineqcoup[i]) {
+	PS ps;
+	PSBUS bus;
+	PetscInt j,k,roffset,loc,ridx,cidx;
+	PetscScalar val;
+	ps = opflow->ps;
+	roffset = opflow->Nconineq;
+	for(j=0; j < ps->nbus; j++) {
+	  bus = &ps->bus[j];
+	  ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
+	  for(k=0; k < bus->ngen; k++) {
+	    loc += 2;
+	    ridx = roffset; cidx = loc;
+	    val  = 1.0;
+	    ierr = MatSetValues(opflow->Jac_Gi,1,&ridx,1,&cidx,&val,INSERT_VALUES);CHKERRQ(ierr);
+	    roffset += 1;
+	  }
+	}
+	ierr = MatAssemblyBegin(opflow->Jac_Gi,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(opflow->Jac_Gi,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+
+	opflowipopt->nnz_jac_gi += 2*scopflow->nconineqcoup[i];
+
+      }
 
       /* Transpose the matrix to convert it to column compressed sparse format */
       ierr = MatTranspose(opflow->Jac_Gi,MAT_INITIAL_MATRIX,&opflowipopt->Jac_GiT);CHKERRQ(ierr);
       ierr = MatSetOption(opflowipopt->Jac_GiT,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
       aij = (Mat_SeqAIJ*)opflowipopt->Jac_GiT->data;
       opflowipopt->nnz_jac_gi = aij->nz;
+
       pips->nnz_jac_gi += opflowipopt->nnz_jac_gi;
 
       /* Create ccmatrix object for inequality constrained Jacobian */
@@ -491,20 +507,48 @@ PetscErrorCode SCOPFLOWSolverSolve_PIPS(SCOPFLOW scopflow)
       ierr = PetscMalloc1(opflow->nx+1,&opflowipopt->jac_gi->colptr);CHKERRQ(ierr);
       ierr = PetscMalloc1(opflowipopt->nnz_jac_gi,&opflowipopt->jac_gi->rowidx);CHKERRQ(ierr);
       ierr = PetscMalloc1(opflowipopt->nnz_jac_gi,&opflowipopt->jac_gi->values);CHKERRQ(ierr);
-    }   
-    opflowipopt->nnz_jac_g = opflowipopt->nnz_jac_ge + opflowipopt->nnz_jac_gi;
 
-    /* Add non-zeros for Jacobian of coupling constraints */
-    if(scopflow->nconineqcoup[i]) pips->nnz_jac_gi += 2*scopflow->nconineqcoup[i];
+      /* Create coupling matrix */
+      ierr = MatCreate(PETSC_COMM_SELF,&pips->Jac_GicoupT[i]);CHKERRQ(ierr);
+      ierr = MatSetSizes(pips->Jac_GicoupT[i],opflow->nx,opflow->nconineq+scopflow->nconineqcoup[i],opflow->nx,opflow->nconineq+scopflow->nconineqcoup[i]);CHKERRQ(ierr);
+      ierr = MatSetFromOptions(pips->Jac_GicoupT[i]);CHKERRQ(ierr);
+      ierr = MatSetUp(pips->Jac_GicoupT[i]);CHKERRQ(ierr);
+      /* Add non-zeros for Jacobian of coupling constraints */
+      if(scopflow->nconineqcoup[i]) {
+	PS ps;
+	PSBUS bus;
+	PetscInt j,k,roffset,loc,ridx,cidx;
+	PetscScalar val;
+	ps = opflow->ps;
+	roffset = opflow->Nconineq;
+	for(j=0; j < ps->nbus; j++) {
+	  bus = &ps->bus[j];
+	  ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
+	  for(k=0; k < bus->ngen; k++) {
+	    loc += 2;
+	    ridx = roffset; cidx = loc;
+	    val  = -1.0;
+	    ierr = MatSetValues(pips->Jac_GicoupT[i],1,&cidx,1,&ridx,&val,INSERT_VALUES);CHKERRQ(ierr);
+	    roffset += 1;
+	  }
+	}
+	ierr = MatAssemblyBegin(pips->Jac_GicoupT[i],MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(pips->Jac_GicoupT[i],MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+
+      }
+
+    }
+    opflowipopt->nnz_jac_g = opflowipopt->nnz_jac_ge + opflowipopt->nnz_jac_gi;
 
     /* Compute non-zeros for Hessian */
 
     lameqi = lam + pips->gstarti[i];
-    lamineqi = lam + pips->gstarti[i]+opflow->nconeq;
-
     ierr = VecPlaceArray(opflow->Lambdae,lameqi);CHKERRQ(ierr);
-    ierr = VecPlaceArray(opflow->Lambdai,lamineqi);CHKERRQ(ierr);
 
+    if(opflow->Nconineq) {
+      lamineqi = lam + pips->gstarti[i]+opflow->nconeq;
+      ierr = VecPlaceArray(opflow->Lambdai,lamineqi);CHKERRQ(ierr);
+    }
     ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
     /* Convert matrix to symmetric sbaij format needed for the PIPS solver */
     ierr = MatSetOption(opflow->Hes,MAT_SYMMETRIC,PETSC_TRUE);CHKERRQ(ierr);
@@ -521,7 +565,9 @@ PetscErrorCode SCOPFLOWSolverSolve_PIPS(SCOPFLOW scopflow)
     ierr = PetscMalloc1(opflowipopt->nnz_hes,&opflowipopt->hes->values);CHKERRQ(ierr);
 
     ierr = VecResetArray(opflow->Lambdae);CHKERRQ(ierr);
-    ierr = VecResetArray(opflow->Lambdai);CHKERRQ(ierr);
+    if(opflow->Nconineq) {
+      ierr = VecResetArray(opflow->Lambdai);CHKERRQ(ierr);
+    }
     ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
   }
 
@@ -547,17 +593,23 @@ PetscErrorCode SCOPFLOWSolverDestroy_PIPS(SCOPFLOW scopflow)
   SCOPFLOWSolver_PIPS pips=scopflow->solver;
 
   PetscFunctionBegin;
+  PetscInt i;
 
   if(pips->nlp) {
-    /* need to free Pips problem struct */
-    //    FreePipsProblem(pips->nlp);
-    //    pips->nlp = NULL;
+    /* Free Pips problem struct */
+    FreePipsNlpProblemStruct(pips->nlp);
+    pips->nlp = NULL;
   }
 
   ierr = PetscFree(pips->xstarti);CHKERRQ(ierr);
   ierr = PetscFree(pips->gstarti);CHKERRQ(ierr);
   ierr = PetscFree(pips->nxi);CHKERRQ(ierr);
   ierr = PetscFree(pips->ngi);CHKERRQ(ierr);
+
+  for(i=0; i < scopflow->Ns; i++) {
+    ierr = MatDestroy(&pips->Jac_GicoupT[i]);CHKERRQ(ierr);
+  }
+  ierr = PetscFree(pips->Jac_GicoupT);CHKERRQ(ierr);
 
   ierr = PetscFree(pips);CHKERRQ(ierr);
   PetscFunctionReturn(0);
@@ -688,7 +740,7 @@ PetscErrorCode SCOPFLOWSolverSetUp_PIPS(SCOPFLOW scopflow)
 
   /* Initialize Lagrange multiplier */
   ierr = VecSet(scopflow->Lambda,1.0);CHKERRQ(ierr);
-  
+
   PetscFunctionReturn(0);
 }
 

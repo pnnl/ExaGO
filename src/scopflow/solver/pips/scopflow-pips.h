@@ -21,6 +21,7 @@ struct _p_SCOPFLOWSolver_PIPS {
   PetscInt *xstarti; /* Starting location for the variables for scenario i in the big X vector */
   PetscInt *gstarti; /* Starting location for the constraints for scenario i in the big G vector */
 
+  Mat      *Jac_GicoupT; /* Transpose of coupling jacobian */
   PipsNlpProblemStructPtr nlp;
 
 };
