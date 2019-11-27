@@ -334,7 +334,11 @@ int scopflow_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
       if(col == 0) {
 	*e_nz = 0;
 	*i_nz = 0;
-	if(scopflow->nconineqcoup[row])	*i_nz = scopflow->nconineqcoup[row];
+	/* The actual non-zeros should be only scopflow->nconineqcoup[row]. The opflowipopt->nnz_jac_gi nonzeros
+	   are because we are reusing Jac_GiT matrix with the values zeroed out for the inequality constraints
+	   and non-zero values for the coupling part only 
+	*/
+	if(scopflow->nconineqcoup[row])	*i_nz = opflowipopt->nnz_jac_gi + scopflow->nconineqcoup[row];
       }
     }
   } else {
@@ -343,8 +347,9 @@ int scopflow_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
       if(row == 0) x = x0;
       else x = x1;
 
-      /* Equality constraints Jacobian */
       ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
+
+      /* Equality constraints Jacobian */
       ierr = (*opflow->formops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
       /* Transpose the matrix to convert it to column compressed sparse format */
       ierr = MatTranspose(opflow->Jac_Ge,MAT_REUSE_MATRIX,&opflowipopt->Jac_GeT);CHKERRQ(ierr);
@@ -362,7 +367,7 @@ int scopflow_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
 
 	if(scopflow->nconineqcoup[row]) {
 	  ps = opflow->ps;
-	  roffset = opflow->ncon;
+	  roffset = opflow->Nconineq;
 	  for(j=0; j < ps->nbus; j++) {
 	    bus = &ps->bus[j];
 	    ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
@@ -386,7 +391,8 @@ int scopflow_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
 	ierr = PetscMemcpy(i_colptr,aij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
 	ierr = PetscMemcpy(i_elts,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
       }
-      
+      ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+
     } else {
       if(scopflow->nconineqcoup[row] && col == 0) {
 	ierr = MatZeroEntries(opflow->Jac_Gi);CHKERRQ(ierr);
@@ -427,7 +433,7 @@ PetscErrorCode SCOPFLOWSolverSolve_PIPS(SCOPFLOW scopflow)
   OPFLOWSolver_IPOPT opflowipopt;
   Mat_SeqAIJ         *aij;
   Mat_SeqSBAIJ       *sbaij;
-  PetscScalar        *x,*xl,*xu,*gl,*gu,*xi,*lameqi,*lamineqi,*lam;
+  PetscScalar        *x,*xi,*lameqi,*lamineqi,*lam;
   PetscInt           i;
 
   PetscFunctionBegin;
@@ -491,7 +497,6 @@ PetscErrorCode SCOPFLOWSolverSolve_PIPS(SCOPFLOW scopflow)
     /* Add non-zeros for Jacobian of coupling constraints */
     if(scopflow->nconineqcoup[i]) pips->nnz_jac_gi += 2*scopflow->nconineqcoup[i];
 
-
     /* Compute non-zeros for Hessian */
 
     lameqi = lam + pips->gstarti[i];
@@ -526,27 +531,12 @@ PetscErrorCode SCOPFLOWSolverSolve_PIPS(SCOPFLOW scopflow)
   pips->nnz_jac_g = pips->nnz_jac_ge + pips->nnz_jac_gi;
 
   /* Create PIPS solver instance */
-  ierr = VecGetArray(scopflow->Xl,&xl);CHKERRQ(ierr);
-  ierr = VecGetArray(scopflow->Xu,&xu);CHKERRQ(ierr);
-  ierr = VecGetArray(scopflow->Gl,&gl);CHKERRQ(ierr);
-  ierr = VecGetArray(scopflow->Gu,&gu);CHKERRQ(ierr);
-
-  /* Create PIPS problem */
-  pips->nlp = CreatePipsNlpProblemStruct(scopflow->comm->type, scopflow->Ns,
+  pips->nlp = CreatePipsNlpProblemStruct(scopflow->comm->type, scopflow->Ns-1,
 							       scopflow_init_x0, scopflow_prob_info, scopflow_eval_f, scopflow_eval_g, scopflow_eval_grad_f, scopflow_eval_jac_g,
 						               scopflow_eval_h, scopflow_write_solution, (UserDataPtr)scopflow);
 
-
-  ierr = VecRestoreArray(scopflow->Xl,&xl);CHKERRQ(ierr);
-  ierr = VecRestoreArray(scopflow->Xu,&xu);CHKERRQ(ierr);
-  ierr = VecRestoreArray(scopflow->Gl,&gl);CHKERRQ(ierr);
-  ierr = VecRestoreArray(scopflow->Gu,&gu);CHKERRQ(ierr);
-
-  ierr = VecGetArray(scopflow->X,&x);CHKERRQ(ierr);
-
   /* Solve */
-
-  ierr = VecRestoreArray(scopflow->X,&x);CHKERRQ(ierr);
+  PipsNlpSolveStruct(pips->nlp);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

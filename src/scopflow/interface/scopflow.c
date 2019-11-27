@@ -268,6 +268,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   char           solvername[32]="IPOPT";
   PetscInt       i,j;
   PS             ps;
+  PetscBool      flg;
 
   PetscFunctionBegin;
 
@@ -310,7 +311,12 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   for(i=0; i < scopflow->Ns; i++) {
     ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflows[i]);CHKERRQ(ierr);
     ierr = OPFLOWSetFormulation(scopflow->opflows[i],formulationname);CHKERRQ(ierr);
-    ierr = OPFLOWSetSolver(scopflow->opflows[i],solvername);CHKERRQ(ierr);
+    ierr = PetscStrcmp(solvername,SCOPFLOWSOLVER_PIPS,&flg);CHKERRQ(ierr);
+    if(flg) {
+      ierr = OPFLOWSetSolver(scopflow->opflows[i],OPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
+    } else {
+      ierr = OPFLOWSetSolver(scopflow->opflows[i],solvername);CHKERRQ(ierr);
+    }
     ierr = OPFLOWReadMatPowerData(scopflow->opflows[i],scopflow->netfile);CHKERRQ(ierr);
     /* Set up the PS object for opflow */
     ps = scopflow->opflows[i]->ps;
