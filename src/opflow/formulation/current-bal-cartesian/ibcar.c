@@ -135,13 +135,9 @@ PetscErrorCode OPFLOWSetConstraintBounds_IBCAR(OPFLOW opflow,Vec Gl,Vec Gu)
     
     for(i=0; i < ps->nbranch; i++) {
       line = &ps->line[i];
-      if(line->rateA > 1e5) continue;
-      /* Line flow inequality constraints */
-      if(!line->status) gl[gloc] = gu[gloc] = gl[gloc+1] = gu[gloc+1] = 0.0;
-      else {
-	gl[gloc] = gl[gloc+1] = 0.0; 
-	gu[gloc] = gu[gloc+1] = (line->rateA/ps->MVAbase)*(line->rateA/ps->MVAbase);
-      }    
+      if(!line->status || line->rateA > 1e5) continue;
+      gl[gloc] = gl[gloc+1] = 0.0; 
+      gu[gloc] = gu[gloc+1] = (line->rateA/ps->MVAbase)*(line->rateA/ps->MVAbase);    
       gloc += 2;
     }
   }
@@ -680,12 +676,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec 
 
   for(i=0; i<ps->nbranch; i++) {
     line = &ps->line[i];
-    if(line->rateA > 1e5) continue;
-
-    if(!line->status) {
-      gloc += 2;
-      continue;
-    }
+    if(!line->status || line->rateA > 1e5) continue;
 
     Gff = line->yff[0];
     Bff = line->yff[1];
@@ -783,11 +774,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,Vec
     
   for (i=0; i < ps->nbranch; i++) {
     line = &ps->line[i];
-    if(line->rateA > 1e5) continue;
-    if(!line->status) {
-      gloc += 2;
-      continue;
-    }
+    if(!line->status || line->rateA > 1e5) continue;
 
     Gff = line->yff[0];
     Bff = line->yff[1];
@@ -1077,7 +1064,7 @@ PetscErrorCode OPFLOWFormulationSetNumConstraints_IBCAR(OPFLOW opflow,PetscInt *
 
   for(i=0; i < ps->nbranch; i++) {
     line = &ps->line[i];
-    if(line->rateA < 1e5) *nconineq += 2; /* Line flow constraints */
+    if(line->status && line->rateA < 1e5) *nconineq += 2; /* Line flow constraints */
   }
 
   PetscFunctionReturn(0);
@@ -1455,11 +1442,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR(OPFLOW opflow, Ve
   // for the part of line constraints
   for(i=0; i < ps->Nbranch; i++) {
     line = &ps->line[i];
-    if(line->rateA > 1e5) continue;
-    if(!line->status) {
-      gloc += 2;
-      continue;
-    }
+    if(!line->status || line->rateA > 1e5) continue;
 
     PetscScalar Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
     Gff = line->yff[0];
