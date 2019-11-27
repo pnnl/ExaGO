@@ -48,7 +48,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   ierr = OPFLOWSolverRegisterAll(opflow);
 
   /* Run-time options */
-  opflow->ignore_inequality_constraints = PETSC_FALSE;
+  opflow->ignore_lineflow_constraints = PETSC_FALSE;
   opflow->include_loadloss_variables = PETSC_FALSE;
   opflow->include_powerimbalance_variables = PETSC_FALSE;
   opflow->loadloss_penalty = 1e1;
@@ -251,7 +251,6 @@ PetscErrorCode OPFLOWSetNumConstraints(OPFLOW opflow,PetscInt *busnconeq,PetscIn
 
   PetscFunctionBegin;
   ierr = (*opflow->formops.setnumconstraints)(opflow,busnconeq,nconeq,nconineq);
-  if(opflow->ignore_inequality_constraints) *nconineq = 0;
 
   ierr = PetscSectionCreate(opflow->comm->type,&buseqconsection);CHKERRQ(ierr);
 
@@ -422,7 +421,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 
   ierr = PetscOptionsGetString(NULL,NULL,"-opflow_formulation",formulationname,32,&formulationset);CHKERRQ(ierr);
   ierr = PetscOptionsGetString(NULL,NULL,"-opflow_solver",solvername,32,&solverset);CHKERRQ(ierr);
-  ierr = PetscOptionsGetBool(NULL,NULL,"-opflow_ignore_inequality_constraints",&opflow->ignore_inequality_constraints,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(NULL,NULL,"-opflow_ignore_lineflow_constraints",&opflow->ignore_lineflow_constraints,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-opflow_include_loadloss_variables",&opflow->include_loadloss_variables,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetReal(NULL,NULL,"-opflow_loadloss_penalty",&opflow->loadloss_penalty,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-opflow_include_powerimbalance_variables",&opflow->include_powerimbalance_variables,NULL);CHKERRQ(ierr);
