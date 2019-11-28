@@ -208,7 +208,6 @@ int scopflow_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elt
       *nz = opflowipopt->nnz_hes;
     }
   } else {
-    opflow = scopflow->opflows[row];
     if(row == col) {
       PetscScalar *x;
       if(row == 0) x = x0;
@@ -489,9 +488,6 @@ PetscErrorCode SCOPFLOWSolverSolve_PIPS(SCOPFLOW scopflow)
 	}
 	ierr = MatAssemblyBegin(opflow->Jac_Gi,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(opflow->Jac_Gi,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-
-	opflowipopt->nnz_jac_gi += 2*scopflow->nconineqcoup[i];
-
       }
 
       /* Transpose the matrix to convert it to column compressed sparse format */
@@ -591,6 +587,8 @@ PetscErrorCode SCOPFLOWSolverDestroy_PIPS(SCOPFLOW scopflow)
 {
   PetscErrorCode     ierr;
   SCOPFLOWSolver_PIPS pips=scopflow->solver;
+  OPFLOWSolver_IPOPT  opflowipopt;
+  OPFLOW              opflow;
 
   PetscFunctionBegin;
   PetscInt i;
@@ -607,6 +605,18 @@ PetscErrorCode SCOPFLOWSolverDestroy_PIPS(SCOPFLOW scopflow)
   ierr = PetscFree(pips->ngi);CHKERRQ(ierr);
 
   for(i=0; i < scopflow->Ns; i++) {
+    opflow = scopflow->opflows[i];
+    if(opflow->Nconineq + scopflow->nconineqcoup[i]) {
+      opflowipopt = opflow->solver;
+      if(!opflow->Nconineq) {
+	ierr = MatDestroy(&opflow->Jac_Gi);CHKERRQ(ierr);
+	ierr = MatDestroy(&opflowipopt->Jac_GiT);CHKERRQ(ierr);
+	ierr = PetscFree(opflowipopt->jac_gi->colptr);CHKERRQ(ierr);
+	ierr = PetscFree(opflowipopt->jac_gi->rowidx);CHKERRQ(ierr);
+	ierr = PetscFree(opflowipopt->jac_gi->values);CHKERRQ(ierr);
+	ierr = PetscFree(opflowipopt->jac_gi);CHKERRQ(ierr);
+      }
+    }
     ierr = MatDestroy(&pips->Jac_GicoupT[i]);CHKERRQ(ierr);
   }
   ierr = PetscFree(pips->Jac_GicoupT);CHKERRQ(ierr);
