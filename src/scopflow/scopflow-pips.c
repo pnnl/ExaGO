@@ -555,7 +555,6 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
   /* Solve with PIPS */
   PipsNlpSolveStruct(scopflow->nlp_pips);
 
-
   PetscFunctionReturn(0);
 }
 

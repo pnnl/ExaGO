@@ -107,7 +107,7 @@ struct _p_OPFLOW{
   PetscBool OPFLOWFormulationRegisterAllCalled;
   PetscBool OPFLOWSolverRegisterAllCalled;
 
-  PetscBool ignore_inequality_constraints; /* Ignore inequality constraints */
+  PetscBool ignore_lineflow_constraints; /* Ignore line flow constraints */
 
   PetscBool include_loadloss_variables; /* Include variables for loadloss */
   PetscReal loadloss_penalty;

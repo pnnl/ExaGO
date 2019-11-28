@@ -7,16 +7,20 @@ FFLAGS           =
 CPPFLAGS         =
 FPPFLAGS         =
 
-ifeq ($(BUILD_WITH_IPOPT),1)
+ifeq ($(BUILD_WITH_PIPS),1)
+  CFLAGS_PIPS = -DSCOPFLOW_HAVE_PIPS
+  PIPS_LIB    = -lparpipsnlp
+  CFLAGS += -I${PIPS_DIR}/PIPS-NLP # For PIPS-NLP
+
   CFLAGS_IPOPT = -DSCOPFLOW_HAVE_IPOPT
   IPOPT_LIB    = -lipopt
   CFLAGS += -I${IPOPT_BUILD_DIR}/include/coin
 endif
 
-ifeq ($(BUILD_WITH_PIPS),1)
-  CFLAGS_PIPS = -DSCOPFLOW_HAVE_PIPS
-  PIPS_LIB    = -lparpipsnlp
-  CFLAGS += -I${PIPS_DIR}/PIPS-NLP # For PIPS-NLP
+ifeq ($(BUILD_WITH_IPOPT),1)
+  CFLAGS_IPOPT = -DSCOPFLOW_HAVE_IPOPT
+  IPOPT_LIB    = -lipopt
+  CFLAGS += -I${IPOPT_BUILD_DIR}/include/coin
 endif
 
 CFLAGS += ${CFLAGS_IPOPT} ${CFLAGS_PIPS}
@@ -38,7 +42,7 @@ include $(PETSC_DIR)/lib/petsc/conf/variables
 include $(PETSC_DIR)/lib/petsc/conf/rules
 
 #******************************
-#	Genral use Objects
+#	General use Objects
 #******************************
 
 PS_SRC_OBJECTS = src/ps/ps.o src/ps/psreaddata.o src/ps/psislanding.o src/utils/comm.o src/utils/utils.o
@@ -84,7 +88,7 @@ OPFLOW: $(OBJECTS_OPFLOW) libopflow chkopts
 #	SCOPFLOW Specific Make
 #******************************
 SCOPFLOW_INTERFACE_OBJECTS = src/scopflow/interface/scopflow.o src/scopflow/interface/scopflowregi.o
-SCOPFLOW_SOLVER_OBJECTS = src/scopflow/solver/ipopt/scopflow-ipopt.o
+SCOPFLOW_SOLVER_OBJECTS = src/scopflow/solver/ipopt/scopflow-ipopt.o src/scopflow/solver/pips/scopflow-pips.o
 
 SCOPFLOW_SRC_OBJECTS = ${SCOPFLOW_INTERFACE_OBJECTS} ${SCOPFLOW_SOLVER_OBJECTS} ${OPFLOW_SRC_OBJECTS}
 
@@ -116,7 +120,7 @@ libopflow:$(OPFLOW_SRC_OBJECTS) chkopts
 	 -$(CLINKER) $(LDFLAGS) -o libopflow.$(LIB_EXT) $(OPFLOW_SRC_OBJECTS)  -L${IPOPT_BUILD_DIR}/lib ${IPOPT_LIB} $(PETSC_TAO_LIB)
 
 libscopflow:${SCOPFLOW_SRC_OBJECTS} chkopts
-	 -$(CLINKER) $(LDFLAGS) -o libscopflow.$(LIB_EXT) $(SCOPFLOW_SRC_OBJECTS) -L${IPOPT_BUILD_DIR}/lib ${IPOPT_LIB} ${PETSC_TAO_LIB}
+	 -$(CLINKER) $(LDFLAGS) -o libscopflow.$(LIB_EXT) $(SCOPFLOW_SRC_OBJECTS) -L${IPOPT_BUILD_DIR}/lib ${IPOPT_LIB} -L${PIPS_DIR}/build/PIPS-NLP ${PIPS_LIB} ${PETSC_TAO_LIB}
 
 SCOPFLOW_IPOPT_SRC_OBJECTS = src/scopflow/scopflow-ipopt.o src/scopflow/scopflow-ipopt-constraints.o src/scopflow/scopflow-ipopt-objective.o src/scopflow/scopflow-ipopt-hessian.o src/scopflow/scopflow-ipopt-pipsfunctions.o ${OPFLOW_IPOPT_SRC_OBJECTS}
 libscopflowipopt:$(SCOPFLOW_IPOPT_SRC_OBJECTS) chkopts

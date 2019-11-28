@@ -7,10 +7,10 @@
 -scopflow_iscoupling 1
 
 # Use only first stage generation cost?
--scopflow_first_stage_gen_cost_only 1
+-scopflow_first_stage_gen_cost_only 0
 
 # Ignore line flow constraints
--scopflow_ignore_line_flow_constraints 1
+-scopflow_ignore_line_flow_constraints 0
 
 # Number of scenarios
 -scopflow_Ns 1

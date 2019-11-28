@@ -19,7 +19,6 @@
 #define SCOPFLOWSOLVER_TAO   "TAO"
 #define SCOPFLOWSOLVER_PIPS  "PIPS"
 
-
 typedef struct _p_SCOPFLOW *SCOPFLOW;
 
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetFormulation(SCOPFLOW,const char[]);
