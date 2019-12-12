@@ -91,7 +91,7 @@ SCOPFLOW needs the environment variable SCOPFLOW_DIR set to the location of the 
 export SCOPFLOW_DIR=<location of SCOPFLOW>
 ```
 
-## 2. Compiling and running SCOPFLOW
+## 3. Building, execution, and options
 
 ### Compiling
 SCOPFLOW can be either built with IPOPT or PIPS-NLP. To build with IPOPT do
