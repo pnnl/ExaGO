@@ -93,17 +93,6 @@ SCOPFLOW_SOLVER_OBJECTS = src/scopflow/solver/ipopt/scopflow-ipopt.o src/scopflo
 SCOPFLOW_SRC_OBJECTS = ${SCOPFLOW_INTERFACE_OBJECTS} ${SCOPFLOW_SOLVER_OBJECTS} ${OPFLOW_SRC_OBJECTS}
 
 SCOPFLOW_APP_OBJECTS = applications/scopflow-main.o
-#******** Option 2 **********
-OBJECTS_SCOPFLOW2 = $(SCOPFLOW_APP_OBJECTS) 
-SCOPFLOW_IPOPT: $(OBJECTS_SCOPFLOW2) libscopflowipopt chkopts
-	 -$(CLINKER) -o SCOPFLOW_IPOPT $(OBJECTS_SCOPFLOW2) -L${SCOPFLOW_DIR} -lscopflowipopt ${PETSC_LIB}
-	$(RM) $(OBJECTS_SCOPFLOW2)
-
-# SCOPFLOW with PIPS
-OBJECTS_SCOPFLOW3 = $(SCOPFLOW_APP_OBJECTS) 
-SCOPFLOW_PIPS: $(OBJECTS_SCOPFLOW3) libscopflowpips chkopts
-	 -$(CLINKER) -o SCOPFLOW_PIPS $(OBJECTS_SCOPFLOW3) -L${SCOPFLOW_DIR} -lscopflowpips ${PETSC_LIB}
-	$(RM) $(OBJECTS_SCOPFLOW3)
 
 OBJECTS_SCOPFLOW = $(SCOPFLOW_APP_OBJECTS) 
 SCOPFLOW: $(OBJECTS_SCOPFLOW) libscopflow chkopts
@@ -122,16 +111,8 @@ libopflow:$(OPFLOW_SRC_OBJECTS) chkopts
 libscopflow:${SCOPFLOW_SRC_OBJECTS} chkopts
 	 -$(CLINKER) $(LDFLAGS) -o libscopflow.$(LIB_EXT) $(SCOPFLOW_SRC_OBJECTS) -L${IPOPT_BUILD_DIR}/lib ${IPOPT_LIB} -L${PIPS_DIR}/build/PIPS-NLP ${PIPS_LIB} ${PETSC_TAO_LIB}
 
-SCOPFLOW_IPOPT_SRC_OBJECTS = src/scopflow/scopflow-ipopt.o src/scopflow/scopflow-ipopt-constraints.o src/scopflow/scopflow-ipopt-objective.o src/scopflow/scopflow-ipopt-hessian.o src/scopflow/scopflow-ipopt-pipsfunctions.o ${OPFLOW_IPOPT_SRC_OBJECTS}
-libscopflowipopt:$(SCOPFLOW_IPOPT_SRC_OBJECTS) chkopts
-	 -$(CLINKER) $(LDFLAGS) -o libscopflowipopt.$(LIB_EXT) $(SCOPFLOW_IPOPT_SRC_OBJECTS) -L${IPOPT_BUILD_DIR}/lib -lipopt $(PETSC_TAO_LIB)
-
-SCOPFLOW_PIPS_SRC_OBJECTS = src/scopflow/scopflow-pips.o src/scopflow/scopflow-pips-constraints.o src/scopflow/scopflow-pips-hessian.o src/scopflow/scopflow-pips-objective.o ${OPFLOW_SRC_OBJECTS}
-libscopflowpips:$(SCOPFLOW_PIPS_SRC_OBJECTS) chkopts
-	 -$(CLINKER) $(LDFLAGS) -o libscopflowpips.$(LIB_EXT) $(SCOPFLOW_PIPS_SRC_OBJECTS) -L${PIPS_DIR}/build/PIPS-NLP ${PIPS_LIB} $(PETSC_TAO_LIB)
-
 #******************************
 #	Remove .o Command
 #******************************
 cleanobj:
-	rm -rf $(OBJECTS_PFLOW) $(OBJECTS_PFLOW2) $(PFLOW_SRC_OBJECTS) $(OBJECTS_OPFLOW) $(OPFLOW_SRC_OBJECTS) $(OBJECTS_SCOPFLOW2) $(SCOPFLOW_IPOPT_SRC_OBJECTS) $(SCOPFLOW_PIPS_SRC_OBJECTS) $(SCOPFLOW_SRC_OBJECTS) *.dylib *.dSYM PFLOW PFLOW2 OPFLOW SCOPFLOW SCOPFLOW_IPOPT SCOPFLOW_PIPS
+	rm -rf $(OBJECTS_PFLOW) $(OBJECTS_PFLOW2) $(PFLOW_SRC_OBJECTS) $(OBJECTS_OPFLOW) $(OPFLOW_SRC_OBJECTS) $(SCOPFLOW_SRC_OBJECTS) ${OBJECTS_SCOPFLOW} *.dylib *.dSYM PFLOW PFLOW2 OPFLOW SCOPFLOW
