@@ -8,9 +8,9 @@ static int CCMatrixToMatrixMarketValuesOnly(CCMatrix ccmatrix,PetscInt nz,PetscS
 {
   PetscErrorCode ierr;
 
-  ierr = PetscMemcpy(values,ccmatrix->values,nz*sizeof(PetscScalar));
+  ierr = PetscMemcpy(values,ccmatrix->values,nz*sizeof(PetscScalar));CHKERRQ(ierr);
 
-  return 0;
+  return ierr;
 }
 
 static int CCMatrixToMatrixMarketLocationsOnly(CCMatrix ccmatrix,PetscInt ncol,PetscInt *iRow,PetscInt *jCol,PetscInt roffset,PetscInt coffset,PetscInt nval)

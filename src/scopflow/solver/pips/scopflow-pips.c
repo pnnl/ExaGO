@@ -197,19 +197,15 @@ int scopflow_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elt
   OPFLOWSolver_IPOPT opflowipopt = opflow->solver;
   PetscInt nrow,ncol;
   PetscScalar *lameq,*lamineq;
+  PetscScalar *x;
 
   if(elts==NULL) {
     *nz = 0;
     if(row == col) {
-      PetscScalar *x;
-      if(row == 0) x = x0;
-      else x = x1;
-
       *nz = opflowipopt->nnz_hes;
     }
   } else {
     if(row == col) {
-      PetscScalar *x;
       if(row == 0) x = x0;
       else x = x1;
 
@@ -321,18 +317,14 @@ int scopflow_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
   PSBUS bus;
   PetscInt ridx,cidx,roffset,j,k,loc;
   PetscScalar val;
+  PetscScalar *x;
 
   if(e_elts==NULL && i_elts == NULL) {
     /* Number of non-zeros in equality and inequality constraint Jacobian */
     opflow = scopflow->opflows[row];
     if(row == col) {
-      PetscScalar *x;
-      if(row == 0) x = x0;
-      else x = x1;
-
       *e_nz = opflowipopt->nnz_jac_ge;
       *i_nz = opflowipopt->nnz_jac_gi; /* Includes coupling non-zeros */
-
     } else {
       if(col == 0) {
 	*e_nz = 0;
@@ -342,7 +334,6 @@ int scopflow_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
     }
   } else {
     if(row == col) {
-      PetscScalar *x;
       if(row == 0) x = x0;
       else x = x1;
 
