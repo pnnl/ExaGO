@@ -352,7 +352,7 @@ PetscErrorCode OPFLOWSolverCreate_IPOPT(OPFLOW opflow)
   
   PetscFunctionBegin;
 
-  if(opflow->comm->size > 1) SETERRQ1(PETSC_ERR_SUP,PETSC_COMM_SELF,"nrank = %d, IPOPT solver does not support execution in parallel\n",opflow->comm->size); 
+  if(opflow->comm->size > 1) SETERRQ(PETSC_COMM_WORLD,PETSC_ERR_SUP,"IPOPT solver does not support execution in parallel\n"); 
   ierr = PetscCalloc1(1,&ipopt);CHKERRQ(ierr);
 
   ipopt->nlp = NULL;
