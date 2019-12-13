@@ -1520,13 +1520,6 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR(OPFLOW opflow, Ve
     dQt_dVrf =  Vit*Gtf - Vrt*Btf;
     dQt_dVif  = -Vit*Btf - Vrt*Gtf;
 
-    PetscScalar d2Sf2_dPf2, d2Sf2_dQf2, d2St2_dPt2, d2St2_dQt2;
-
-    d2Sf2_dPf2 = 2.0;
-    d2Sf2_dQf2 = 2.0;
-    d2St2_dPt2 = 2.0;
-    d2St2_dQt2 = 2.0;
-
     PetscScalar d2Pf_dVrf_dVrf,d2Pf_dVrf_dVif,d2Pf_dVrf_dVrt,d2Pf_dVrf_dVit;
     PetscScalar d2Pf_dVif_dVrf,d2Pf_dVif_dVif,d2Pf_dVif_dVrt,d2Pf_dVif_dVit;
     PetscScalar d2Pf_dVrt_dVrf,d2Pf_dVrt_dVif,d2Pf_dVrt_dVrt,d2Pf_dVrt_dVit;

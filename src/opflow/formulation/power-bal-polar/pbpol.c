@@ -94,7 +94,6 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBPOL(OPFLOW opflow,Vec Gl,Vec Gu)
   PetscScalar    *gl,*gu;
   PetscInt       i;
   PSLINE         line;
-  PSBUS          bus;
   PetscInt       gloc=0;
 
   PetscFunctionBegin;
@@ -104,8 +103,6 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBPOL(OPFLOW opflow,Vec Gl,Vec Gu)
   ierr = VecGetArray(Gu,&gu);CHKERRQ(ierr);
 
   for(i=0; i < ps->nbus; i++) {
-    bus = &ps->bus[i];
-
     /* Equality constraint bounds for real and reactive power mismatch at the bus */
     gl[gloc] = 0.0;   gu[gloc] = 0.0;
     gl[gloc+1] = 0.0; gu[gloc+1] = 0.0;
@@ -949,12 +946,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL(OPFLOW opflow,Vec X
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
     
-    PetscScalar theta,Vm;
-    
     ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
-    
-    theta = x[xloc];
-    Vm    = x[xloc+1];
     
     row[0] = xloc + 1; col[0] = xloc + 1;
     val[0] = lambda[gloc]*2*bus->gl + lambda[gloc+1]*(-2*bus->bl);
@@ -1260,7 +1252,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow, Ve
       thetatf = thetat - thetaf;
       
       // Sf2 and St2 are the constraints	
-      PetscScalar Pf,Qf,Pt,Qt,Sf2,St2;
+      PetscScalar Pf,Qf,Pt,Qt;
       
       Pf =  Gff*Vmf*Vmf + Vmf*Vmt*( Gft*PetscCosScalar(thetaft) + Bft*PetscSinScalar(thetaft));
       Qf = -Bff*Vmf*Vmf + Vmf*Vmt*(-Bft*PetscCosScalar(thetaft) + Gft*PetscSinScalar(thetaft));
@@ -1268,24 +1260,12 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow, Ve
       Pt =  Gtt*Vmt*Vmt + Vmt*Vmf*( Gtf*PetscCosScalar(thetatf) + Btf*PetscSinScalar(thetatf));
       Qt = -Btt*Vmt*Vmt + Vmt*Vmf*(-Btf*PetscCosScalar(thetatf) + Gtf*PetscSinScalar(thetatf));
       
-      Sf2 = Pf*Pf + Qf*Qf;
-      St2 = Pt*Pt + Qt*Qt;
-      
       PetscScalar dSf2_dPf, dSf2_dQf, dSt2_dPt, dSt2_dQt;
       
       dSf2_dPf = 2.*Pf;
       dSf2_dQf = 2.*Qf;
       dSt2_dPt = 2.*Pt;
       dSt2_dQt = 2.*Qt;
-      
-      PetscScalar dSf2_dPf_dPf, dSt2_dPt_dPt;
-      PetscScalar dSf2_dQf_dQf, dSt2_dQt_dQt;
-      
-      dSf2_dPf_dPf = 2.;
-      dSf2_dQf_dQf = 2.;	
-      dSt2_dPt_dPt = 2.;
-      dSt2_dQt_dQt = 2.;
-      
       
       PetscScalar dPf_dthetaf,dPf_dVmf,dPf_dthetat,dPf_dVmt;
       PetscScalar dQf_dthetaf,dQf_dVmf,dQf_dthetat,dQf_dVmt;
@@ -1427,30 +1407,6 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow, Ve
       d2Qt_dVmf_dVmt       =    (-Btf*PetscCosScalar(thetatf) + Gtf*PetscSinScalar(thetatf));
       d2Qt_dVmf_dthetaf    = Vmt*(-Btf*PetscSinScalar(thetatf) - Gtf*PetscCosScalar(thetatf));
       d2Qt_dVmf_dVmf       = 0.0;
-      
-      PetscScalar dSf2_dPf_dthetaf, dSf2_dQf_dthetaf, dSt2_dPt_dthetaf, dSt2_dQt_dthetaf;
-      dSf2_dPf_dthetaf = dSf2_dPf_dPf*dPf_dthetaf;
-      dSf2_dQf_dthetaf = dSf2_dQf_dQf*dQf_dthetaf;
-      dSt2_dPt_dthetaf = dSt2_dPt_dPt*dPt_dthetaf;
-      dSt2_dQt_dthetaf = dSt2_dQt_dQt*dQt_dthetaf;
-      
-      PetscScalar dSf2_dPf_dVmf, dSf2_dQf_dVmf, dSt2_dPt_dVmf, dSt2_dQt_dVmf;
-      dSf2_dPf_dVmf = dSf2_dPf_dPf*dPf_dVmf;
-      dSf2_dQf_dVmf = dSf2_dQf_dQf*dQf_dVmf;
-      dSt2_dPt_dVmf = dSt2_dPt_dPt*dPt_dVmf;
-      dSt2_dQt_dVmf = dSt2_dQt_dQt*dQt_dVmf;
-      
-      PetscScalar dSf2_dPf_dthetat, dSf2_dQf_dthetat, dSt2_dPt_dthetat, dSt2_dQt_dthetat;
-      dSf2_dPf_dthetat = dSf2_dPf_dPf*dPf_dthetat;
-      dSf2_dQf_dthetat = dSf2_dQf_dQf*dQf_dthetat;
-      dSt2_dPt_dthetat = dSt2_dPt_dPt*dPt_dthetat;
-      dSt2_dQt_dthetat = dSt2_dQt_dQt*dQt_dthetat;
-      
-      PetscScalar dSf2_dPf_dVmt, dSf2_dQf_dVmt, dSt2_dPt_dVmt, dSt2_dQt_dVmt;
-      dSf2_dPf_dVmt = dSf2_dPf_dPf*dPf_dVmt;
-      dSf2_dQf_dVmt = dSf2_dQf_dQf*dQf_dVmt;
-      dSt2_dPt_dVmt = dSt2_dPt_dPt*dPt_dVmt;
-      dSt2_dQt_dVmt = dSt2_dQt_dQt*dQt_dVmt;
       
       PetscScalar d2Sf2_dthetaf_dthetaf=0.0,d2Sf2_dthetaf_dVmf=0.0,d2Sf2_dthetaf_dthetat=0.0,d2Sf2_dthetaf_dVmt=0.0;
       PetscScalar d2St2_dthetaf_dthetaf=0.0,d2St2_dthetaf_dVmf=0.0,d2St2_dthetaf_dthetat=0.0,d2St2_dthetaf_dVmt=0.0;

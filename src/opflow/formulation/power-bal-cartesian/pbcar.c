@@ -444,7 +444,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBCAR(OPFLOW opflow,Vec X
   PetscErrorCode ierr;
   PetscInt       i,k,row[3],col[4],genctr,loadctr;
   PetscInt       nconnlines,locglob,loc,locglobf,locglobt,locf,loct;
-  PetscScalar    Vr,Vi,Vm,val[8],Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
+  PetscScalar    Vr,Vi,val[8],Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
   PetscScalar    Vrf,Vrt,Vif,Vit;
   PS             ps=opflow->ps;
   PSBUS          bus;
@@ -476,7 +476,6 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBCAR(OPFLOW opflow,Vec X
 
     Vr = xarr[loc];
     Vi = xarr[loc+1];
-    Vm = PetscSqrtScalar(Vr*Vr + Vi*Vi);
 
     col[0] = locglob; col[1] = locglob+1;
 
@@ -1135,7 +1134,6 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBCAR(OPFLOW opflow,Vec X
   PetscInt       gloc=0;
   PetscInt       row[12],col[12];
   PetscScalar    val[12];
-  PetscScalar    Vr,Vi;
   Vec            localX;
   PetscBool      isghost;
 
@@ -1158,9 +1156,6 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBCAR(OPFLOW opflow,Vec X
     
     ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
     ierr = PSBUSGetVariableGlobalLocation(bus,&xlocglob);CHKERRQ(ierr);
-    
-    Vr = x[xloc];
-    Vi = x[xloc+1];
     
     if(!isghost) {
       /* Shunt */
@@ -1199,13 +1194,6 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBCAR(OPFLOW opflow,Vec X
       ierr = PSBUSGetVariableGlobalLocation(busf,&xlocfglob);CHKERRQ(ierr);
       ierr = PSBUSGetVariableGlobalLocation(bust,&xloctglob);CHKERRQ(ierr);
      
-      PetscScalar Vrf,Vif,Vrt,Vit;
-      
-      Vrf  = x[xlocf];
-      Vif  = x[xlocf+1];
-      Vrt  = x[xloct];
-      Vit  = x[xloct+1];
-    
       if(bus == busf) {
 	 
 	PetscScalar dPf_dVrf_dVrf,dPf_dVrf_dVif,dPf_dVrf_dVrt,dPf_dVrf_dVit;
@@ -1567,13 +1555,6 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBCAR(OPFLOW opflow, Ve
     dQt_dVit = -2*Btt*Vit + (Gtf*Vrf - Btf*Vif);
     dQt_dVrf =  Vit*Gtf - Vrt*Btf;
     dQt_dVif  = -Vit*Btf - Vrt*Gtf;
-
-    PetscScalar d2Sf2_dPf2, d2Sf2_dQf2, d2St2_dPt2, d2St2_dQt2;
-
-    d2Sf2_dPf2 = 2.0;
-    d2Sf2_dQf2 = 2.0;
-    d2St2_dPt2 = 2.0;
-    d2St2_dQt2 = 2.0;
 
     PetscScalar d2Pf_dVrf_dVrf,d2Pf_dVrf_dVif,d2Pf_dVrf_dVrt,d2Pf_dVrf_dVit;
     PetscScalar d2Pf_dVif_dVrf,d2Pf_dVif_dVif,d2Pf_dVif_dVrt,d2Pf_dVif_dVit;
