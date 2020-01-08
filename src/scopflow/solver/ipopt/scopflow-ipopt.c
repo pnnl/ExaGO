@@ -409,9 +409,9 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
 
     /* Create ccmatrix object for equality constrained Jacobian */
     ierr = PetscCalloc1(1,&opflowipopt->jac_ge);CHKERRQ(ierr);
-    ierr = PetscMalloc1(opflow->nx+1,&opflowipopt->jac_ge->colptr);CHKERRQ(ierr);
-    ierr = PetscMalloc1(opflowipopt->nnz_jac_ge,&opflowipopt->jac_ge->rowidx);CHKERRQ(ierr);
-    ierr = PetscMalloc1(opflowipopt->nnz_jac_ge,&opflowipopt->jac_ge->values);CHKERRQ(ierr);
+    ierr = PetscCalloc1(opflow->nx+1,&opflowipopt->jac_ge->colptr);CHKERRQ(ierr);
+    ierr = PetscCalloc1(opflowipopt->nnz_jac_ge,&opflowipopt->jac_ge->rowidx);CHKERRQ(ierr);
+    ierr = PetscCalloc1(opflowipopt->nnz_jac_ge,&opflowipopt->jac_ge->values);CHKERRQ(ierr);
 
     opflowipopt->nnz_jac_gi = 0;
     if(opflow->Nconineq) {
@@ -425,9 +425,9 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
 
       /* Create ccmatrix object for inequality constrained Jacobian */
       ierr = PetscCalloc1(1,&opflowipopt->jac_gi);CHKERRQ(ierr);
-      ierr = PetscMalloc1(opflow->nx+1,&opflowipopt->jac_gi->colptr);CHKERRQ(ierr);
-      ierr = PetscMalloc1(opflowipopt->nnz_jac_gi,&opflowipopt->jac_gi->rowidx);CHKERRQ(ierr);
-      ierr = PetscMalloc1(opflowipopt->nnz_jac_gi,&opflowipopt->jac_gi->values);CHKERRQ(ierr);
+      ierr = PetscCalloc1(opflow->nx+1,&opflowipopt->jac_gi->colptr);CHKERRQ(ierr);
+      ierr = PetscCalloc1(opflowipopt->nnz_jac_gi,&opflowipopt->jac_gi->rowidx);CHKERRQ(ierr);
+      ierr = PetscCalloc1(opflowipopt->nnz_jac_gi,&opflowipopt->jac_gi->values);CHKERRQ(ierr);
     }   
     opflowipopt->nnz_jac_g = opflowipopt->nnz_jac_ge + opflowipopt->nnz_jac_gi;
 
@@ -458,9 +458,9 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
 
     /* Create ccmatrix object for hessian */
     ierr = PetscCalloc1(1,&opflowipopt->hes);CHKERRQ(ierr);
-    ierr = PetscMalloc1(opflow->nx+1,&opflowipopt->hes->colptr);CHKERRQ(ierr);
-    ierr = PetscMalloc1(opflowipopt->nnz_hes,&opflowipopt->hes->rowidx);CHKERRQ(ierr);
-    ierr = PetscMalloc1(opflowipopt->nnz_hes,&opflowipopt->hes->values);CHKERRQ(ierr);
+    ierr = PetscCalloc1(opflow->nx+1,&opflowipopt->hes->colptr);CHKERRQ(ierr);
+    ierr = PetscCalloc1(opflowipopt->nnz_hes,&opflowipopt->hes->rowidx);CHKERRQ(ierr);
+    ierr = PetscCalloc1(opflowipopt->nnz_hes,&opflowipopt->hes->values);CHKERRQ(ierr);
 
     ierr = VecResetArray(opflow->Lambdae);CHKERRQ(ierr);
     if(opflow->Nconineq) {

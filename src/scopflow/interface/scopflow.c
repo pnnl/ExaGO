@@ -218,6 +218,7 @@ PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW scopflow,const char ctgcfile
   }
 
   ctgclist->Ncont = -1;
+
   while((out = fgets(line,MAXLINE,fp)) != NULL) {
     if(strcmp(line,"\r\n") == 0 || strcmp(line,"\n") == 0) {
       continue; /* Skip blank lines */
@@ -284,7 +285,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
     if(scopflow->Ns < 0) scopflow->Ns = MAX_CONTINGENCIES;
     else scopflow->Ns += 1; 
 
-    ierr = PetscMalloc1(scopflow->Ns,&scopflow->ctgclist.cont);CHKERRQ(ierr);
+    ierr = PetscCalloc1(scopflow->Ns,&scopflow->ctgclist.cont);CHKERRQ(ierr);
     for(i=0; i < scopflow->Ns; i++) scopflow->ctgclist.cont->noutages = 0;
     ierr = SCOPFLOWReadContingencyData(scopflow,scopflow->ctgcfile);CHKERRQ(ierr);
     scopflow->Ns = scopflow->ctgclist.Ncont+1;
@@ -307,7 +308,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   }
 
   /* Create OPFLOW objects */
-  ierr = PetscMalloc1(scopflow->Ns,&scopflow->opflows);CHKERRQ(ierr);
+  ierr = PetscCalloc1(scopflow->Ns,&scopflow->opflows);CHKERRQ(ierr);
   for(i=0; i < scopflow->Ns; i++) {
     ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflows[i]);CHKERRQ(ierr);
     ierr = OPFLOWSetFormulation(scopflow->opflows[i],formulationname);CHKERRQ(ierr);

@@ -243,9 +243,9 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
 
   /* Create ccmatrix object for equality constrained Jacobian */
   ierr = PetscCalloc1(1,&ipopt->jac_ge);CHKERRQ(ierr);
-  ierr = PetscMalloc1(opflow->nx+1,&ipopt->jac_ge->colptr);CHKERRQ(ierr);
-  ierr = PetscMalloc1(ipopt->nnz_jac_ge,&ipopt->jac_ge->rowidx);CHKERRQ(ierr);
-  ierr = PetscMalloc1(ipopt->nnz_jac_ge,&ipopt->jac_ge->values);CHKERRQ(ierr);
+  ierr = PetscCalloc1(opflow->nx+1,&ipopt->jac_ge->colptr);CHKERRQ(ierr);
+  ierr = PetscCalloc1(ipopt->nnz_jac_ge,&ipopt->jac_ge->rowidx);CHKERRQ(ierr);
+  ierr = PetscCalloc1(ipopt->nnz_jac_ge,&ipopt->jac_ge->values);CHKERRQ(ierr);
 
   ipopt->nnz_jac_gi = 0;
   if(opflow->Nconineq) {
@@ -258,9 +258,9 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
 
     /* Create ccmatrix object for inequality constrained Jacobian */
     ierr = PetscCalloc1(1,&ipopt->jac_gi);CHKERRQ(ierr);
-    ierr = PetscMalloc1(opflow->nx+1,&ipopt->jac_gi->colptr);CHKERRQ(ierr);
-    ierr = PetscMalloc1(ipopt->nnz_jac_gi,&ipopt->jac_gi->rowidx);CHKERRQ(ierr);
-    ierr = PetscMalloc1(ipopt->nnz_jac_gi,&ipopt->jac_gi->values);CHKERRQ(ierr);
+    ierr = PetscCalloc1(opflow->nx+1,&ipopt->jac_gi->colptr);CHKERRQ(ierr);
+    ierr = PetscCalloc1(ipopt->nnz_jac_gi,&ipopt->jac_gi->rowidx);CHKERRQ(ierr);
+    ierr = PetscCalloc1(ipopt->nnz_jac_gi,&ipopt->jac_gi->values);CHKERRQ(ierr);
   }   
   ipopt->nnz_jac_g = ipopt->nnz_jac_ge + ipopt->nnz_jac_gi;
 
@@ -275,9 +275,9 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
 
   /* Create ccmatrix object for hessian */
   ierr = PetscCalloc1(1,&ipopt->hes);CHKERRQ(ierr);
-  ierr = PetscMalloc1(opflow->nx+1,&ipopt->hes->colptr);CHKERRQ(ierr);
-  ierr = PetscMalloc1(ipopt->nnz_hes,&ipopt->hes->rowidx);CHKERRQ(ierr);
-  ierr = PetscMalloc1(ipopt->nnz_hes,&ipopt->hes->values);CHKERRQ(ierr);
+  ierr = PetscCalloc1(opflow->nx+1,&ipopt->hes->colptr);CHKERRQ(ierr);
+  ierr = PetscCalloc1(ipopt->nnz_hes,&ipopt->hes->rowidx);CHKERRQ(ierr);
+  ierr = PetscCalloc1(ipopt->nnz_hes,&ipopt->hes->values);CHKERRQ(ierr);
 
   /* Create IPOPT solver instance */
   ierr = VecGetArray(opflow->Xl,&xl);CHKERRQ(ierr);

@@ -5,7 +5,7 @@
  * Note: The functions on below are not defined on header file, but implemented on cpp file:\n
  * PSGetNumGlobalLines(PS ps,PetscInt *Nlines)\n
  * PSGetNumGlobalBuses(PS ps,PetscInt *Nbuses)\n
- * PSGetLineConnectivity(PS ps,PetscInt Nlines,int lineconn[])\n
+ * PSGetLineConnectivity(PS ps,PetscInt Nlines,PetscInt lineconn[])\n
  */
 
 #ifndef __PS_H
