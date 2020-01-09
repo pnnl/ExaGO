@@ -240,6 +240,18 @@ int scopflow_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elt
       /*      ierr = MatView(opflow->Hes,0);CHKERRQ(ierr);
       exit(1);
       */
+    } else {
+      if(row > col && col == 0) {
+	  opflow = scopflow->opflows[0];
+	  opflowipopt = opflow->solver;
+
+	  ierr = MatGetSize(opflow->Hes,&nrow,&ncol);CHKERRQ(ierr);
+
+	  sbaij = (Mat_SeqSBAIJ*)opflowipopt->Hes_sbaij->data;
+	  ierr = PetscMemcpy(rowidx,sbaij->j,sbaij->nz*sizeof(PetscInt));CHKERRQ(ierr);
+	  ierr = PetscMemcpy(colptr,sbaij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
+	  ierr = PetscMemzero(elts,sbaij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
+      }
     }
   }
   
