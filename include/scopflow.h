@@ -7,27 +7,26 @@
 #ifndef SCOPFLOW_H
 #define SCOPFLOW_H
 
-#include <opflow.h>
+#include <ps.h>
+
+/* Formulations */
+#define SCOPFLOWFORMULATION_PBPOL "POWER_BALANCE_POLAR" 
+#define SCOPFLOWFORMULATION_PBCAR "POWER_BALANCE_CARTESIAN"
+#define SCOPFLOWFORMULATION_IBCAR "CURRENT_BALANCE_CARTESIAN"
+
+/* Solvers */
+#define SCOPFLOWSOLVER_IPOPT "IPOPT"
+#define SCOPFLOWSOLVER_TAO   "TAO"
+#define SCOPFLOWSOLVER_PIPS  "PIPS"
 
 typedef struct _p_SCOPFLOW *SCOPFLOW;
 
-/**
- * @brief Creates an security constrained optimal power flow application object
- * @param [in] MPI_Comm mpicomm - The MPI communicator
- * @param [out] OPFLOW* opflowout - The scopf application object
- */
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetFormulation(SCOPFLOW,const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetSolve(SCOPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWCreate(MPI_Comm,SCOPFLOW*);
-/**
- * @brief Destroys the scopf application object
- * @param [in] SCOPFLOW* scopflow - The scopflow application object
- */
 PETSC_EXTERN PetscErrorCode SCOPFLOWDestroy(SCOPFLOW*);
-/**
- * @brief Sets the network data given in MATPOWER data format 
- * @param [in] SCOPFLOW scopflow - The SCOPFLOW object
- * @param [in] const char[] netfile - The name of the network file
- */
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW,const char[]);
+
 /**
  * @brief Sets the contingency data file 
  * @param [in] SCOPFLOW scopflow - The SCOPFLOW object
@@ -56,37 +55,10 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW,const char[]);
     3,1,0,8,9,1 ,0,0.1
  */
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetContingencyData(SCOPFLOW,const char[]);
-
-/**
- * @brief Sets up a security constrained power flow application object
- * @param [in] SCOPFLOW scopflow - The security constrained optimal power flow application object
- * Notes:
- * This routine sets up the SCOPFLOW object and the underlying PS object.
- */
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetUp(SCOPFLOW);
-
-/**
- * @brief Returns a global vector of the appropriate size and distribution conforming to the distribution of the PS object.
- * @param [in] SCOPFLOW scopflow - The security constrained optimal power flow application object
- * @param [out] Vec* vec - the global vector
- * Notes:
- * SCOPFLOWSetUp() must be called before calling this routine.
- */
 PETSC_EXTERN PetscErrorCode SCOPFLOWCreateGlobalVector(SCOPFLOW,Vec*);
-/**
- * @brief NOT IMPLIMENTED
- */
 PETSC_EXTERN PetscErrorCode SCOPFLOWCreateMatrix(SCOPFLOW,Mat*);
-/**
- * @brief Solves the AC SCOPF optimal power flow
- * @param [in] OPFLOW opflow - The OPFLOW object
- */
 PETSC_EXTERN PetscErrorCode SCOPFLOWSolve(SCOPFLOW);
-/**
- * @brief Select the number of scenarios
- * @param [in] SCOPFLOW scopflow - The SCOPFLOW object
- * @param [in] Ns                - Number of scenarios to select
- */
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetNumScenarios(SCOPFLOW,PetscInt);
 
 #endif

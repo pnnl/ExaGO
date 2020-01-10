@@ -1,41 +1,49 @@
+# Option for selecting data file
 -netfile datafiles/case9mod.m
 #-netfile datafiles/case118.m
 #-netfile datafiles/case5.m
 
--opflow_tao_type ipm
-
-# Gradient calculation via finite differencing
-#-opflow_tao_fd_gradient 1
-
-# Hessian calculation via finite differencing
-#-opflow_tao_fd_hessian 1
-
-# Max funcs (what is this and why is this needed?)
+# Options for TAO solver
+-opflow_tao_type pdipm  # Primal-Dual Interior Point Method (PDIPM)
 -opflow_tao_max_funcs 100000
-
-# Optimal Power Flow Nonlinear Solver Options
+-opflow_tao_max_it 200
+# PDIPM SNES Solver Options
 -opflow_snes_fd
--opflow_snes_max_it 20
--opflow_snes_monitor
+-opflow_snes_max_it 200
+-opflow_snes_max_funcs 100000
+#-opflow_snes_monitor
 
-# Optimal Power Flow Linear Solver Options
+# PDIPM SNES-KSP Solver Options
 -opflow_pc_type lu
--opflow_pc_factor_mat_solver_type superlu_dist
+-opflow_pc_factor_shift_type NONZERO
+-opflow_pc_factor_mat_solver_type petsc
 -opflow_ksp_error_if_not_converged
--opflow_ksp_monitor
+#-opflow_ksp_monitor
 
 # Tao tolerances
--opflow_tao_catol 1e-2 
--opflow_tao_crtol 1e-4 
--opflow_tao_grtol 1e-4
--opflow_tao_gatol 1e-2
--opflow_tao_max_it 20
+-opflow_tao_catol 1e-6 
+-opflow_tao_crtol 1e-6 
+-opflow_tao_grtol 1e-6
+-opflow_tao_gatol 1e-6
 
 # Convergence monitor
 -opflow_tao_monitor
 
 # Convergence status
 -opflow_tao_converged_reason
+
+# Reduced KKT option does not work yet (??)
+#-opflow_tao_pdipm_solve_reduced_kkt # Solve PDIPM with reduced KKT system using Schur-complement
+# Options for tuning fieldsplit Schur complement solver
+#-opflow_fieldsplit_1_pc_type lu
+#-opflow_fieldsplit_1_pc_factor_shift_type NONZERO
+#-opflow_fieldsplit_1_ksp_rtol 1e-10
+#-opflow_fieldsplit_1_pc_factor_mat_ordering_type qmd
+#-opflow_fieldsplit_1_pc_factor_mat_solver_type mumps
+#-opflow_fieldsplit_2_pc_type lu
+#-opflow_fieldsplit_2_pc_factor_shift_type NONZERO
+#-opflow_fieldsplit_2_pc_factor_mat_solver_type mumps
+#-opflow_fieldsplit_2_ksp_rtol 1e-10
 
 # performance
 #-------------

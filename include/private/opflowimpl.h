@@ -8,12 +8,50 @@
 #include <ps.h>
 #include <private/psimpl.h>
 #include <opflow.h>
-#if defined(SCOPFLOW_HAVE_IPOPT)
-#include <IpStdCInterface.h>
-#endif
- /**
-  * @brief private struct for optimal power flow application
-  */
+
+#define OPFLOWFORMULATIONSMAX 4
+#define OPFLOWSOLVERSMAX      3
+
+struct _p_OPFLOWFormulationOps {
+  PetscErrorCode (*destroy)(OPFLOW);
+  PetscErrorCode (*setnumvariables)(OPFLOW,PetscInt*,PetscInt*,PetscInt*); /* Set number of variables for buses and branches, and total number of variables */
+  PetscErrorCode (*setnumconstraints)(OPFLOW,PetscInt*,PetscInt*,PetscInt*); /* Set number of equality and inequality constraints */
+  PetscErrorCode (*setvariablebounds)(OPFLOW,Vec,Vec); /* Upper and lower bounds on the vector */
+  PetscErrorCode (*setconstraintbounds)(OPFLOW,Vec,Vec); /* Lower and upper bounds on constraints */
+  PetscErrorCode (*setvariableandconstraintbounds)(OPFLOW,Vec,Vec,Vec,Vec); /* Lower and upper bounds on variables and constraints */
+  PetscErrorCode (*setinitialguess)(OPFLOW,Vec); /* Set the initial guess for the optimization */
+  PetscErrorCode (*computeequalityconstraints)(OPFLOW,Vec,Vec); /* Set equality constraints */
+  PetscErrorCode (*computeinequalityconstraints)(OPFLOW,Vec,Vec); /* Set inequality constraints */
+  PetscErrorCode (*computeconstraints)(OPFLOW,Vec,Vec);
+  PetscErrorCode (*computeequalityconstraintjacobian)(OPFLOW,Vec,Mat);
+  PetscErrorCode (*computeinequalityconstraintjacobian)(OPFLOW,Vec,Mat);
+  PetscErrorCode (*computehessian)(OPFLOW,Vec,Vec,Vec,Mat);
+  PetscErrorCode (*computeobjandgradient)(OPFLOW,Vec,PetscScalar*,Vec); /* Objective and gradient routine */
+  PetscErrorCode (*computeobjective)(OPFLOW,Vec,PetscScalar*); /* Objective */
+  PetscErrorCode (*computegradient)(OPFLOW,Vec,Vec); /* Gradient of the objective function */
+  PetscErrorCode (*computejacobian)(OPFLOW,Vec,Mat); /* Jacobian of the constraints */
+};
+
+struct _p_OPFLOWSolverOps {
+  PetscErrorCode (*destroy)(OPFLOW);
+  PetscErrorCode (*setup)(OPFLOW);
+  PetscErrorCode (*solve)(OPFLOW);
+};
+
+struct _p_OPFLOWFormulationList{
+  char name[32]; /* Name of the formulation */
+  PetscErrorCode (*create)(OPFLOW); /* Formulation creation routine */
+};
+
+struct _p_OPFLOWSolverList{
+  char name[32]; /* Name of the solver */
+  PetscErrorCode (*create)(OPFLOW); /* Solver object creation routine */
+};
+
+
+/**
+ * @brief private struct for optimal power flow application
+ */
 struct _p_OPFLOW{
   /* Common fields */
   COMM comm; /**< Communicator context */
@@ -21,148 +59,77 @@ struct _p_OPFLOW{
 
   Vec  X,localX;    /* Global and local solution vector */
   Vec  G; /**< Inequality and equality constraint function */
+  Vec  Ge,Gelocal; /** < Equality constraint function vector (global and local) */
+  Vec  Gi; /** < Inequality constraint function vector */
 
+  Mat  Jac; /* Jacobian for equality and inequality constraints */
+  Mat  Jac_Ge; /* Equality constraint Jacobian */
+  Mat  Jac_Gi; /* Inequality constraint Jacobian */
+
+  Mat  Hes;  /* Lagrangian Hessian */
+  
   Vec Xl; /**< Lower bound on solution */
   Vec Xu; /**< Upper bound on solution */
 
+  Vec Gl; /**< Lower bound on G */
+  Vec Gu; /**< Upper bound on G */
+
   PetscScalar obj; /**< Objective function */
   Vec gradobj; /**< Gradient of the objective function */
+  
+  PetscScalar obj_factor; /* IPOPT scales the objective hessian part with this factor. For all other solvers, unless it is set, obj_factor = 1.0. */
 
   PetscBool setupcalled; /* OPFLOWSetUp called? */
 
   PetscInt nconeq, Nconeq;     /* Local and global number of equality constraints, excluding ghosts! */
   PetscInt nconineq, Nconineq; /* Local and global number of inequality constraints */
-  PetscInt Ncon;               /* Total number of constraints (equality + inequality) */
-  PetscInt nvar,Nvar;          /* Total number of local and global variables, excluding ghosts! */
+  PetscInt Ncon,ncon;               /* Total number of constraints (equality + inequality) */
+  PetscInt nx,Nx;          /* Total number of local and global variables, excluding ghosts! */
 
-  PetscInt n; /**< Number of variables */
-  PetscInt m; /**< Number of constraints */
-
-  /* For TAO */
-  Vec  Ge; /** < Equality constraint function vector */
-  Vec  Gi; /** < Inequality constraint function vector */
-
-  Mat Jac_Ge; /* Equality constraint Jacobian */
-  Mat Jac_Gi; /* Inequality constraint Jacobian */
-
-  Mat Jac_GeT; /* Transpose of equality constraint Jacobian */
-  Mat Jac_GiT; /* Transpose of inequality constraint Jacobian */
-
-  Tao nlp;    /* Optimization problem */
-
-  PetscBool converged; // Convergence status
-
-  /* For IPOPT */
-  Vec Gl; /**< Lower bound on G */
-  Vec Gu; /**< Upper bound on G */
-
-  Mat  Jac;  /* Jacobian of constraints */
-  Mat  Hes;  /* Lagrangian Hessian */
-
-  PetscScalar *x; /**< Solution array - same as the array for X */
-
-  PetscInt nnz_jac_g; /**< Number of nonzeros in the jacobian of the constraints */
-  PetscInt nnz_hes; /**< Number of nonzeros in the Lagrangian Hessian */
-
-  Vec Lambda;
+  //  Mat Jac_GeT; /* Transpose of equality constraint Jacobian */
+  //  Mat Jac_GiT; /* Transpose of inequality constraint Jacobian */
 
   /* Lagrange multipliers */
-  Vec lambda_g;
-  Vec lambda_xl;
-  Vec lambda_xu;
+  Vec Lambda,Lambdae,Lambdai; // Lagrange multipliers for constraints Lambda = [Lambdae; Lambdai];
+  Vec Lambdaelocal; /* Local Lambdae vector */
 
-#if defined(SCOPFLOW_HAVE_IPOPT)
-  /* Ipopt specific terms */
-  IpoptProblem nlp_ipopt; /**< Ipopt solver */
-  enum ApplicationReturnStatus solve_status;
-#endif
+  void* solver; /* Solver object */
+  struct _p_OPFLOWSolverOps solverops;
 
+  void* formulation; /* Formulation object */
+  struct _p_OPFLOWFormulationOps formops;
+
+  /* List of formulations and solvers registered */
+  struct _p_OPFLOWFormulationList OPFLOWFormulationList[OPFLOWFORMULATIONSMAX];
+  struct _p_OPFLOWSolverList OPFLOWSolverList[OPFLOWSOLVERSMAX];
+  PetscInt nformulationsregistered;
+  PetscInt nsolversregistered;
+  PetscBool OPFLOWFormulationRegisterAllCalled;
+  PetscBool OPFLOWSolverRegisterAllCalled;
+
+  PetscBool ignore_lineflow_constraints; /* Ignore line flow constraints */
+
+  PetscBool include_loadloss_variables; /* Include variables for loadloss */
+  PetscReal loadloss_penalty;
+
+  PetscBool include_powerimbalance_variables; /* Include variables for power imbalance */
+  PetscReal powerimbalance_penalty;
+
+  /* Global indices for the equality constraints. It is used when operating on equality constraints */
+  PetscInt *eqconglobloc;
+
+  VecScatter scattereqcon; /* Vector scatter object for scattering from global equality constraints to local equality constraints vector */
+
+  /* Local and global index sets used in VecScatter */
+  IS       isconeqlocal;
+  IS       isconeqglob;
 
 };
-/**
- * @brief Sets the bounds on variables and constraints
- * @param [in] OPFLOW opflow - the OPFLOW object
- * @param [out] Vec Xl     - vector of lower bound on variables
- * @param [out] Vec Xu     - vector of upper bound on variables
- * @param [out] Vec Gl     - vector of lower bound on constraints
- * @param [out] Vec Gu     - vector of lower bound on constraints
- */
-extern PetscErrorCode OPFLOWSetVariableandConstraintBounds(OPFLOW,Vec,Vec,Vec,Vec);
-/**
- * @brief Sets the initial guess for the optimization
- * @param [in] OPFLOW opflow - the OPFLOW object
- * @param [out] Vec X     - initial guess
- */
-extern PetscErrorCode OPFLOWSetInitialGuess(OPFLOW,Vec);
-/*
-  * @breif Evalulates the equality constraints for the optimal power flow
-  * @param [in] Tao - the Tao nlp solver object
-  * @param [in] X   - the current iterate
-  * @param [in] ctx - application data set with TaoSetEqualityConstraintsRoutine
-  * @param [out] Ge  - vector of equality constraints
-*/
-extern PetscErrorCode OPFLOWEqualityConstraintsFunction(Tao nlp,Vec X,Vec Ge,void* ctx);
-/*
-  * @breif Returns a distributed Jacobian for the equality constraints
-  * @param [in] opflow - the optimal power flow application object
-  * @param [out] mat - the jacobian of the equality constraints
-*/
-extern PetscErrorCode OPFLOWCreateEqualityConstraintsJacobian(OPFLOW opflow,Mat *mat);
-/*
-  * @breif  Sets the nonzero values for the equality constraints Jacobian
-  * @param [in] nlp - Tao nlp solver object
-  * @param [in] X   - the current iterate
-  * @param [in] ctx - application data set with OPFLOWEqualityConstraintsJacobianRoutine
-  * @param [out] Je - Jacobian of equality constraints
-  * @param [out] Je_pre - Preconditioner for equality constraints
-*/
-extern PetscErrorCode OPFLOWEqualityConstraintsJacobianFunction(Tao nlp,Vec X,Mat Je, Mat Je_pre, void* ctx);
-/*
-  * @breif Evalulates the inequality constraints for the optimal power flow
-  * @param [in] Tao - the Tao nlp solver object
-  * @param [in] X   - the current iterate
-  * @param [in] ctx - application data set with TaoSetEqualityConstraintsRoutine
-  * @param [out] Gi  - vector of equality constraints
-*/
-extern PetscErrorCode OPFLOWInequalityConstraintsFunction(Tao nlp,Vec X,Vec Gi,void* ctx);
-/*
-  * @breif Returns a distributed Jacobian for the inequality constraints
-  * @param [in] opflow - the optimal power flow application object
-  * @param [out] mat - the jacobian of the inequality constraints
-*/
-extern PetscErrorCode OPFLOWCreateInequalityConstraintsJacobian(OPFLOW opflow,Mat *mat);
-/*
-  * @breif  Sets the nonzero values for the equality constraints Jacobian
-  * @param [in] nlp - Tao nlp solver object
-  * @param [in] X   - the current iterate
-  * @param [in] ctx - application data set with OPFLOWInequalityConstraintsJacobianRoutine
-  * @param [out] Ji - Jacobian of inequality constraints
-  * @param [out] Ji_pre - Preconditioner for inequality constraints
-*/
-extern PetscErrorCode OPFLOWInequalityConstraintsJacobianFunction(Tao nlp, Vec X, Mat Ji, Mat Ji_pre, void* ctx);
-/*
-  * @breif The objective and gradient function for the optimal power flow
-  * @param [in] nlp - Tao nlp solver object
-  * @param [in] X   - the current iterate
-  * @param [out] obj  - the objective function value (scalar)
-  * @param [out] grad - the gradient vector
-*/
-extern PetscErrorCode OPFLOWObjectiveandGradientFunction(Tao nlp,Vec X,PetscScalar* obj,Vec grad,void* ctx);
-/*
-  * @breif Creates the constant Hessian matrix for the objective function f(x)
-  * @param [in] opflow - the optimal power flow application object
-  * @param [out] N/A - sets hessian directly into tao->hessian
-*/
-extern PetscErrorCode OPFLOWCreateObjectiveHessian(OPFLOW opflow);
-/*
-  * @breif Tao resets hessian each itteration, this function prevents wasted recalculations
-  * @param [in] tao - Tao solver object
-  * @param [in] X   - the current iterate
-  * @param [in] ctx - application data set
-  * @param [out] H - Hessain matrix
-  * @param [out] H_pre - Preconditioner for Hessian
-*/
-extern PetscErrorCode OPFLOWHessian(Tao tao, Vec X, Mat H, Mat H_pre, void* ctx);
 
+/* Registers all the OPFLOW formulations */
+extern PetscErrorCode OPFLOWFormulationRegisterAll(OPFLOW);
+
+/* Register all OPFLOW solvers */
+extern PetscErrorCode OPFLOWSolverRegisterAll(OPFLOW);
 
 #endif

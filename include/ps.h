@@ -5,7 +5,7 @@
  * Note: The functions on below are not defined on header file, but implemented on cpp file:\n
  * PSGetNumGlobalLines(PS ps,PetscInt *Nlines)\n
  * PSGetNumGlobalBuses(PS ps,PetscInt *Nbuses)\n
- * PSGetLineConnectivity(PS ps,PetscInt Nlines,int lineconn[])\n
+ * PSGetLineConnectivity(PS ps,PetscInt Nlines,PetscInt lineconn[])\n
  */
 
 #ifndef __PS_H
@@ -100,9 +100,10 @@ extern PetscErrorCode PSDescreaseReferenceCount(PS);
 /**
  * @brief Sets the type of application to be run on the PS object
  * @param [in] PS ps - The PS object
- * @param [in] PSApp psapp - The application (ACPF,ACOPF)
+ * @param [n]  PS psapp - the application object
+ * @param [in] PSApp psappname - The application (ACPF,ACOPF)
  */
-extern PetscErrorCode PSSetApplication(PS,PSApp);
+extern PetscErrorCode PSSetApplication(PS,void*,PSApp);
 /**
  * @brief Sets up the PS object to be ready to be used by the application
  * @param [in] PS ps - The PS object
@@ -140,6 +141,13 @@ extern PetscErrorCode PSBUSIsGhosted(PSBUS,PetscBool*);
  * @param [out] PetscInt* ngen - number of generators incident at the bus
  */
 extern PetscErrorCode PSBUSGetNGen(PSBUS,PetscInt*);
+/**
+ * @brief Gets the number of loads incident at the bus
+ * @param [in] PSBUS PSBUS - The PSBUS object
+ * @param [out] PetscInt* nload - number of loads incident at the bus
+ */
+extern PetscErrorCode PSBUSGetNLoad(PSBUS,PetscInt*);
+
 /**
  * @brief Gets the generator incident at the bus
  * @param [in] PSBUS PSBUS - The PSBUS object

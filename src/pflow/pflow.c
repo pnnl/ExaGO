@@ -23,7 +23,7 @@ PetscErrorCode PFLOWCreate(MPI_Comm mpicomm, PFLOW *pflowout)
   ierr = PSCreate(mpicomm,&pflow->ps);CHKERRQ(ierr);
 
   /* Set the application with the PS object */
-  ierr = PSSetApplication(pflow->ps,APP_ACPF);CHKERRQ(ierr);
+  ierr = PSSetApplication(pflow->ps,pflow,APP_ACPF);CHKERRQ(ierr);
 
   /* Create the nonlinear solver object */
   ierr = SNESCreate(pflow->comm->type,&pflow->snes);CHKERRQ(ierr);

@@ -172,8 +172,8 @@ struct _p_PSLINE{
   PetscInt      internal_j; /**< Internal To Bus Number */
   PetscScalar   yff[2],yft[2],ytf[2],ytt[2]; /**< [G,B] */
   PetscScalar   pf,qf,pt,qt; /**< Real and reactive power flows from and to ends */
+  PetscBool     reversed_ends; /* Reversed line end (bus numbers are swapped) */
 
-  
   PSBUS  connbuses[2]; /**< From and to buses */
 
   
@@ -213,6 +213,7 @@ struct _p_PS {
                                           out of service */
   PetscInt    nbus,ngen,nbranch,nload; /* local # of buses,gens,branches,and loads */
   PetscInt    NgenON,ngenON;           /* Number of active generators */
+  PetscInt    Nref,nref;               /* Number of reference buses */
   PSBUS       bus;
   PSLOAD      load;
   PSGEN       gen;
@@ -223,7 +224,9 @@ struct _p_PS {
   PetscInt    *busext2intmap; /* Maps external bus numbers to internal bus numbers */
   PetscInt    maxbusnum;      /* Max. bus number -- used for allocating busext2intmap */
 
-  PSApp       app;            /* the application using this ps */
+  void*       app;            /* the application using this ps */
+  PSApp       appname;        /* the application name using this ps */
+
   PetscInt    ndiff;          /* Number of differential equations.. only used for applications involving differential eqs. */
   
   PetscInt    compkey[10];    /* keys for components */
@@ -242,5 +245,6 @@ extern PetscErrorCode PSGetGen(PS,PetscInt,const char*,PSGEN*);
 extern PetscErrorCode PSSetGenStatus(PS,PetscInt,const char*,PetscInt);
 extern PetscErrorCode PSSetLineStatus(PS,PetscInt,PetscInt,const char*,PetscInt);
 extern PetscErrorCode PSIslandCheckandSetRefBus(PS,PetscInt);
+extern PetscErrorCode PSConnCompDestroy(PS);
 #endif
 

@@ -41,7 +41,7 @@ AbsTolForZero 0
 !		linear solver
 !-------------------------------------------------------------------------
 ! 	0:Ma27 	(1):Ma57  	2:pardiso 3:Umfpack
-SymLinearSolver 1
+SymLinearSolver 0
 !  	HSL pivot level. range is (0,0.5],  0:fast, 0.5:stable 	(1e-4)
 HSL_PivotLV		1e-4
 ! MA57 Ordering method: (5) automatic choice(MA47 or Metis); 4 use Metis (ND); 3 min degree ordering as in MA27; 2 use MC47;
