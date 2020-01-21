@@ -569,7 +569,7 @@ PetscErrorCode PSSetApplication(PS ps,void *psapp, PSApp psappname)
   PetscFunctionBegin;
   ps->app     = psapp;
   ps->appname = psappname;
-  app_found = (ps->appname == APP_ACPF || ps->appname == APP_ACOPF);
+  app_found = (PetscBool)(ps->appname == APP_ACPF || ps->appname == APP_ACOPF);
   if(!app_found) SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Application not supported");
   PetscFunctionReturn(0);
 }

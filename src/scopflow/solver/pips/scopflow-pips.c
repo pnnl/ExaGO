@@ -6,7 +6,7 @@
 
 int scopflow_init_x0(double* x0, CallBackDataPtr cbd) {
   int row = cbd->row_node_id;
-  SCOPFLOW scopflow=cbd->prob;
+  SCOPFLOW scopflow = (SCOPFLOW)cbd->prob;
   OPFLOW   opflow = scopflow->opflows[row];
   PetscErrorCode ierr;
   
@@ -83,9 +83,15 @@ int scopflow_prob_info(int* n, double* col_lb, double* col_ub, int* m,
 	
 	for(k=0; k < bus->ngen; k++) {
 	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-	  /* Generator can do a full ramp up to its max. capacity */
-	  row_lb[opflow->ncon + ctr] = -gen->pt;
-	  row_ub[opflow->ncon + ctr] =  gen->pt;
+	  if(!gen->status) {
+	    /* Generator can do a full ramp up to its max. capacity */
+	    row_lb[opflow->ncon + ctr] = -10000;
+	    row_ub[opflow->ncon + ctr] =  10000;
+	  } else {
+	    /* Generator can do a full ramp up to its max. capacity */
+	    row_lb[opflow->ncon + ctr] = -gen->pt;
+	    row_ub[opflow->ncon + ctr] =  gen->pt;
+	  }
 	  ctr++;
 	}
       }
@@ -194,7 +200,7 @@ int scopflow_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elt
   SCOPFLOW scopflow=(SCOPFLOW)cbd->prob;
   Mat_SeqSBAIJ  *sbaij;
   OPFLOW   opflow = scopflow->opflows[row];
-  OPFLOWSolver_IPOPT opflowipopt = opflow->solver;
+  OPFLOWSolver_IPOPT opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
   PetscInt nrow,ncol;
   PetscScalar *lameq,*lamineq;
   PetscScalar *x;
@@ -243,7 +249,7 @@ int scopflow_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elt
     } else {
       if(row > col && col == 0) {
 	  opflow = scopflow->opflows[0];
-	  opflowipopt = opflow->solver;
+	  opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
 
 	  ierr = MatGetSize(opflow->Hes,&nrow,&ncol);CHKERRQ(ierr);
 
@@ -319,10 +325,10 @@ int scopflow_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
   int col = cbd->col_node_id;
   PetscErrorCode ierr;
   SCOPFLOW scopflow=(SCOPFLOW)cbd->prob;
-  SCOPFLOWSolver_PIPS pips=scopflow->solver;
+  SCOPFLOWSolver_PIPS pips = (SCOPFLOWSolver_PIPS)scopflow->solver;
   /*  PetscInt rank=scopflow->comm->rank; */
   OPFLOW   opflow=scopflow->opflows[row];
-  OPFLOWSolver_IPOPT opflowipopt = opflow->solver;
+  OPFLOWSolver_IPOPT opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
   Mat_SeqAIJ *aij;
   PetscInt    nrow,ncol;
   PS   ps;
@@ -415,7 +421,7 @@ int scopflow_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
 PetscErrorCode SCOPFLOWSolverSolve_PIPS(SCOPFLOW scopflow)
 {
   PetscErrorCode     ierr;
-  SCOPFLOWSolver_PIPS pips=scopflow->solver;
+  SCOPFLOWSolver_PIPS pips = (SCOPFLOWSolver_PIPS)scopflow->solver;
   OPFLOW             opflow;
   OPFLOWSolver_IPOPT opflowipopt;
   Mat_SeqAIJ         *aij;
@@ -433,7 +439,7 @@ PetscErrorCode SCOPFLOWSolverSolve_PIPS(SCOPFLOW scopflow)
   ierr = PetscCalloc1(scopflow->Ns,&pips->Jac_GicoupT);CHKERRQ(ierr);
   for(i=0; i < scopflow->Ns; i++) {
     opflow = scopflow->opflows[i];
-    opflowipopt = opflow->solver;
+    opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
     xi = x + pips->xstarti[i];
 
     ierr = VecPlaceArray(opflow->X,xi);CHKERRQ(ierr);
@@ -589,7 +595,7 @@ PetscErrorCode SCOPFLOWSolverSolve_PIPS(SCOPFLOW scopflow)
 PetscErrorCode SCOPFLOWSolverDestroy_PIPS(SCOPFLOW scopflow)
 {
   PetscErrorCode     ierr;
-  SCOPFLOWSolver_PIPS pips=scopflow->solver;
+  SCOPFLOWSolver_PIPS pips = (SCOPFLOWSolver_PIPS)scopflow->solver;
   OPFLOWSolver_IPOPT  opflowipopt;
   OPFLOW              opflow;
 
@@ -610,7 +616,7 @@ PetscErrorCode SCOPFLOWSolverDestroy_PIPS(SCOPFLOW scopflow)
   for(i=0; i < scopflow->Ns; i++) {
     opflow = scopflow->opflows[i];
     if(opflow->Nconineq + scopflow->nconineqcoup[i]) {
-      opflowipopt = opflow->solver;
+      opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
       if(!opflow->Nconineq) {
 	ierr = MatDestroy(&opflow->Jac_Gi);CHKERRQ(ierr);
 	ierr = MatDestroy(&opflowipopt->Jac_GiT);CHKERRQ(ierr);

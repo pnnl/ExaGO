@@ -233,7 +233,7 @@ PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW scopflow,const char ctgcfile
     cont   = &ctgclist->cont[num];
     outage = &cont->outagelist[cont->noutages];
     outage->num  = num;
-    outage->type = type;
+    outage->type = (OutageType)type;
     outage->bus  = bus;
     outage->fbus = fbus;
     outage->tbus = tbus;

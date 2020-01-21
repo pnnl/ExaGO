@@ -174,7 +174,7 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
     ierr = VecGetArray(scopflow->X,&xarr);CHKERRQ(ierr);
     for(i=0; i < scopflow->Ns; i++) {
       opflow = scopflow->opflows[i];
-      opflowipopt = opflow->solver;
+      opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
 
       roffset = scopflowipopt->gstarti[i];
       coffset = scopflowipopt->xstarti[i];
@@ -245,7 +245,7 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
     valuesi = values;
     for(i=0; i < scopflow->Ns; i++) {
       opflow = scopflow->opflows[i];
-      opflowipopt = opflow->solver;
+      opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
 
       xi = x + scopflowipopt->xstarti[i];
       ierr = VecPlaceArray(opflow->X,xi);CHKERRQ(ierr);
@@ -319,7 +319,7 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
 
     for(i=0; i < scopflow->Ns; i++) {
       opflow = scopflow->opflows[i];
-      opflowipopt = opflow->solver;
+      opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
 
       roffset = scopflowipopt->xstarti[i];
 
@@ -337,7 +337,7 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
 
     for(i=0; i < scopflow->Ns; i++) {
       opflow = scopflow->opflows[i];
-      opflowipopt = opflow->solver;
+      opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
       opflow->obj_factor = obj_factor;
 
       roffset = scopflowipopt->xstarti[i];
@@ -374,7 +374,7 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
 PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
 {
   PetscErrorCode     ierr;
-  SCOPFLOWSolver_IPOPT scopflowipopt=scopflow->solver;
+  SCOPFLOWSolver_IPOPT scopflowipopt = (SCOPFLOWSolver_IPOPT)scopflow->solver;
   OPFLOW             opflow;
   OPFLOWSolver_IPOPT opflowipopt;
   Mat_SeqAIJ         *aij;
@@ -391,7 +391,7 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
 
   for(i=0; i < scopflow->Ns; i++) {
     opflow = scopflow->opflows[i];
-    opflowipopt = opflow->solver;
+    opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
     xi = x + scopflowipopt->xstarti[i];
 
     ierr = VecPlaceArray(opflow->X,xi);CHKERRQ(ierr);
@@ -503,7 +503,7 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
 PetscErrorCode SCOPFLOWSolverDestroy_IPOPT(SCOPFLOW scopflow)
 {
   PetscErrorCode     ierr;
-  SCOPFLOWSolver_IPOPT ipopt=scopflow->solver;
+  SCOPFLOWSolver_IPOPT ipopt = (SCOPFLOWSolver_IPOPT)scopflow->solver;
 
   PetscFunctionBegin;
 

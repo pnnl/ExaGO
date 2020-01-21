@@ -225,7 +225,7 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
 PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
 {
   PetscErrorCode     ierr;
-  OPFLOWSolver_IPOPT ipopt=opflow->solver;
+  OPFLOWSolver_IPOPT ipopt = (OPFLOWSolver_IPOPT)opflow->solver;
   Mat_SeqAIJ         *aij;
   Mat_SeqSBAIJ       *sbaij;
   PetscScalar        *x,*xl,*xu,*gl,*gu;
@@ -307,7 +307,7 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
 PetscErrorCode OPFLOWSolverDestroy_IPOPT(OPFLOW opflow)
 {
   PetscErrorCode     ierr;
-  OPFLOWSolver_IPOPT ipopt=opflow->solver;
+  OPFLOWSolver_IPOPT ipopt = (OPFLOWSolver_IPOPT)opflow->solver;
 
   PetscFunctionBegin;
 

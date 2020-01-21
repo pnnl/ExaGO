@@ -93,7 +93,7 @@ PetscErrorCode OPFLOWSolverSolve_TAO(OPFLOW opflow)
 PetscErrorCode OPFLOWSolverDestroy_TAO(OPFLOW opflow)
 {
   PetscErrorCode     ierr;
-  OPFLOWSolver_TAO tao=opflow->solver;
+  OPFLOWSolver_TAO tao = (OPFLOWSolver_TAO)opflow->solver;
 
   PetscFunctionBegin;
 
