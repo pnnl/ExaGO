@@ -265,7 +265,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   PetscErrorCode ierr;
   PetscBool      formulationset=PETSC_FALSE;
   PetscBool      solverset=PETSC_FALSE;
-  char           formulationname[32]="POWER_BALANCE_POLAR";
+  char           formulationname[32]="POWER_BALANCE_CARTESIAN";
   char           solvername[32]="IPOPT";
   PetscInt       i,j;
   PS             ps;
