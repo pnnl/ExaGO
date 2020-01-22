@@ -23,13 +23,14 @@ int scopflow_prob_info(int* n, double* col_lb, double* col_ub, int* m,
   int col = cbd->col_node_id;
   SCOPFLOW scopflow = (SCOPFLOW)cbd->prob;
   OPFLOW   opflow = scopflow->opflows[row];
+  OPFLOW   opflow0 = scopflow->opflows[0];
   PetscInt rank=scopflow->comm->rank;
   int type = cbd->typeflag;
   PetscErrorCode ierr;
   Vec            Xl,Xu,Gl,Gu;
-  PS     ps;
-  PSBUS  bus;
-  PSGEN  gen;
+  PS     ps,ps0;
+  PSBUS  bus,bus0;
+  PSGEN  gen,gen0;
   PetscInt ctr;
   PetscInt j,k;
 
@@ -77,21 +78,20 @@ int scopflow_prob_info(int* n, double* col_lb, double* col_ub, int* m,
       /* Coupling constraint bounds */
       ctr = 0;
       ps = opflow->ps;
+      ps0 = opflow0->ps;
       /* Bounds on coupling constraints */
       for(j=0; j < ps->nbus; j++) {
 	bus = &ps->bus[j];
+	bus0 = &ps0->bus[j];
 	
 	for(k=0; k < bus->ngen; k++) {
 	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-	  if(!gen->status) {
-	    /* Generator can do a full ramp up to its max. capacity */
-	    row_lb[opflow->ncon + ctr] = -10000;
-	    row_ub[opflow->ncon + ctr] =  10000;
-	  } else {
-	    /* Generator can do a full ramp up to its max. capacity */
-	    row_lb[opflow->ncon + ctr] = -gen->pt;
-	    row_ub[opflow->ncon + ctr] =  gen->pt;
-	  }
+	  ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
+	  if(!gen->status || !gen0->status) continue;
+	  /* Generator can do a full ramp up to its max. capacity */
+	  row_lb[opflow->ncon + ctr] = -gen->pt;
+	  row_ub[opflow->ncon + ctr] =  gen->pt;
+
 	  ctr++;
 	}
       }
@@ -271,12 +271,13 @@ int scopflow_eval_g(double* x0, double* x1, double* eq_g, double* inq_g,
   int row = cbd->row_node_id;
   SCOPFLOW scopflow=(SCOPFLOW)cbd->prob;
   OPFLOW   opflow=scopflow->opflows[row];
+  OPFLOW   opflow0=scopflow->opflows[0];
   double   *x;
-  PS       ps;
-  PSBUS    bus;
-  PSGEN    gen;
+  PS       ps,ps0;
+  PSBUS    bus,bus0;
+  PSGEN    gen,gen0;
   PetscScalar *inqcoup_g;
-  PetscInt ctr,j,k,loc;
+  PetscInt ctr,j,k,loc,loc0;
 
   if(row == 0) x = x0;
   else x = x1;
@@ -300,14 +301,27 @@ int scopflow_eval_g(double* x0, double* x1, double* eq_g, double* inq_g,
     inqcoup_g = inq_g + opflow->nconineq;
     ctr = 0;
     ps = opflow->ps;
+    ps0 = opflow0->ps;
     for(j=0; j < ps->nbus; j++) {
       bus = &ps->bus[j];
+      bus0 = &ps0->bus[j];
       ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
-      
+      ierr = PSBUSGetVariableLocation(bus0,&loc0);CHKERRQ(ierr);
+
       for(k=0; k < bus->ngen; k++) {
-	loc += 2;
 	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-	inqcoup_g[ctr++] = x1[loc] - x0[loc]; /* PGi - PG0 */
+	ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
+
+	if(!gen->status) {
+	  if(gen0->status) loc0 += 2;
+	  continue;
+	} else {
+	  loc += 2;
+	  if(!gen0->status) continue;
+	  loc0 += 2;
+	}
+
+	inqcoup_g[ctr++] = x1[loc] - x0[loc0]; /* PGi - PG0 */
       }
     }
   }
@@ -328,12 +342,14 @@ int scopflow_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
   SCOPFLOWSolver_PIPS pips = (SCOPFLOWSolver_PIPS)scopflow->solver;
   /*  PetscInt rank=scopflow->comm->rank; */
   OPFLOW   opflow=scopflow->opflows[row];
+  OPFLOW   opflow0 = scopflow->opflows[0];
   OPFLOWSolver_IPOPT opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
   Mat_SeqAIJ *aij;
   PetscInt    nrow,ncol;
-  PS   ps;
-  PSBUS bus;
-  PetscInt ridx,cidx,roffset,j,k,loc;
+  PS   ps,ps0;
+  PSBUS bus,bus0;
+  PSGEN gen,gen0;
+  PetscInt ridx,cidx,roffset,j,k,loc,loc0;
   PetscScalar val;
   PetscScalar *x;
 
@@ -378,12 +394,26 @@ int scopflow_eval_jac_g(double* x0, double* x1, int* e_nz, double* e_elts,
 
 	if(scopflow->nconineqcoup[row]) {
 	  ps = opflow->ps;
+	  ps0 = opflow0->ps;
 	  roffset = opflow->Nconineq;
 	  for(j=0; j < ps->nbus; j++) {
 	    bus = &ps->bus[j];
+	    bus0 = &ps0->bus[j];
 	    ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
+	    ierr = PSBUSGetVariableLocation(bus0,&loc0);CHKERRQ(ierr);
 	    for(k=0; k < bus->ngen; k++) {
-	      loc += 2;
+	      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	      ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
+
+	      if(!gen->status) {
+		if(gen0->status) loc0 += 2;
+		continue;
+	      } else {
+		loc += 2;
+		if(!gen0->status) continue;
+		loc0 += 2;
+	      }
+
 	      ridx = roffset; cidx = loc;
 	      val  = 1.0;
 	      ierr = MatSetValues(opflow->Jac_Gi,1,&ridx,1,&cidx,&val,INSERT_VALUES);CHKERRQ(ierr);
@@ -422,7 +452,7 @@ PetscErrorCode SCOPFLOWSolverSolve_PIPS(SCOPFLOW scopflow)
 {
   PetscErrorCode     ierr;
   SCOPFLOWSolver_PIPS pips = (SCOPFLOWSolver_PIPS)scopflow->solver;
-  OPFLOW             opflow;
+  OPFLOW             opflow,opflow0;
   OPFLOWSolver_IPOPT opflowipopt;
   Mat_SeqAIJ         *aij;
   Mat_SeqSBAIJ       *sbaij;
@@ -436,6 +466,7 @@ PetscErrorCode SCOPFLOWSolverSolve_PIPS(SCOPFLOW scopflow)
   ierr = VecGetArray(scopflow->X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(scopflow->Lambda,&lam);CHKERRQ(ierr);
 
+  opflow0 = scopflow->opflows[0];
   ierr = PetscCalloc1(scopflow->Ns,&pips->Jac_GicoupT);CHKERRQ(ierr);
   for(i=0; i < scopflow->Ns; i++) {
     opflow = scopflow->opflows[i];
@@ -478,17 +509,31 @@ PetscErrorCode SCOPFLOWSolverSolve_PIPS(SCOPFLOW scopflow)
 
       /* Add non-zeros for Jacobian of coupling constraints */
       if(scopflow->nconineqcoup[i]) {
-	PS ps;
-	PSBUS bus;
-	PetscInt j,k,roffset,loc,ridx,cidx;
+	PS ps,ps0=opflow0->ps;
+	PSBUS bus,bus0;
+	PSGEN gen,gen0;
+	PetscInt j,k,roffset,loc,loc0,ridx,cidx;
 	PetscScalar val;
 	ps = opflow->ps;
 	roffset = opflow->Nconineq;
 	for(j=0; j < ps->nbus; j++) {
 	  bus = &ps->bus[j];
+	  bus0 = &ps0->bus[j];
 	  ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
+	  ierr = PSBUSGetVariableLocation(bus0,&loc0);CHKERRQ(ierr);
 	  for(k=0; k < bus->ngen; k++) {
-	    loc += 2;
+	    ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	    ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
+
+	    if(!gen->status) {
+	      if(gen0->status) loc0 += 2;
+	      continue;
+	    } else {
+	      loc += 2;
+	      if(!gen0->status) continue;
+	      loc0 += 2;
+	    }
+
 	    ridx = roffset; cidx = loc;
 	    val  = 1.0;
 	    ierr = MatSetValues(opflow->Jac_Gi,1,&ridx,1,&cidx,&val,INSERT_VALUES);CHKERRQ(ierr);
@@ -515,23 +560,38 @@ PetscErrorCode SCOPFLOWSolverSolve_PIPS(SCOPFLOW scopflow)
 
       /* Create coupling matrix */
       ierr = MatCreate(PETSC_COMM_SELF,&pips->Jac_GicoupT[i]);CHKERRQ(ierr);
-      ierr = MatSetSizes(pips->Jac_GicoupT[i],opflow->nx,opflow->nconineq+scopflow->nconineqcoup[i],opflow->nx,opflow->nconineq+scopflow->nconineqcoup[i]);CHKERRQ(ierr);
+      ierr = MatSetSizes(pips->Jac_GicoupT[i],opflow0->nx,opflow->nconineq+scopflow->nconineqcoup[i],opflow0->nx,opflow->nconineq+scopflow->nconineqcoup[i]);CHKERRQ(ierr);
       ierr = MatSetFromOptions(pips->Jac_GicoupT[i]);CHKERRQ(ierr);
       ierr = MatSetUp(pips->Jac_GicoupT[i]);CHKERRQ(ierr);
       /* Add non-zeros for Jacobian of coupling constraints */
       if(scopflow->nconineqcoup[i]) {
-	PS ps;
-	PSBUS bus;
-	PetscInt j,k,roffset,loc,ridx,cidx;
+	PS ps,ps0=opflow0->ps;
+	PSBUS bus,bus0;
+	PSGEN gen,gen0;
+	PetscInt j,k,roffset,loc,loc0,ridx,cidx;
 	PetscScalar val;
 	ps = opflow->ps;
+	
 	roffset = opflow->Nconineq;
 	for(j=0; j < ps->nbus; j++) {
 	  bus = &ps->bus[j];
+	  bus0 = &ps0->bus[j];
 	  ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
+	  ierr = PSBUSGetVariableLocation(bus0,&loc0);CHKERRQ(ierr);
 	  for(k=0; k < bus->ngen; k++) {
-	    loc += 2;
-	    ridx = roffset; cidx = loc;
+	    ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	    ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
+
+	    if(!gen->status) {
+	      if(gen0->status) loc0 += 2;
+	      continue;
+	    } else {
+	      loc += 2;
+	      if(!gen0->status) continue;
+	      loc0 += 2;
+	    }
+
+	    ridx = roffset; cidx = loc0;
 	    val  = -1.0;
 	    ierr = MatSetValues(pips->Jac_GicoupT[i],1,&cidx,1,&ridx,&val,INSERT_VALUES);CHKERRQ(ierr);
 	    roffset += 1;
@@ -639,12 +699,12 @@ PetscErrorCode SCOPFLOWSolverSetUp_PIPS(SCOPFLOW scopflow)
   PetscErrorCode ierr;
   SCOPFLOWSolver_PIPS pips = (SCOPFLOWSolver_PIPS)scopflow->solver;
   PetscInt       i,j,k,ctr;
-  OPFLOW         opflow;
-  PetscInt       ngen;
+  OPFLOW         opflow,opflow0;
+  PetscInt       ngenON;
   PetscScalar    *x,*xi,*xl,*xu,*xli,*xui,*gl,*gu,*gli,*gui;
-  PS             ps;
-  PSBUS          bus;
-  PSGEN          gen;
+  PS             ps,ps0;
+  PSBUS          bus,bus0;
+  PSGEN          gen,gen0;
 
   PetscFunctionBegin;
 
@@ -658,11 +718,11 @@ PetscErrorCode SCOPFLOWSolverSetUp_PIPS(SCOPFLOW scopflow)
   pips->xstarti[0] = 0;
   pips->gstarti[0] = 0;
 
-  ierr = PSGetNumGenerators(scopflow->opflows[0]->ps,&ngen,NULL);CHKERRQ(ierr);
   for(i=0; i < scopflow->Ns; i++) {
     opflow = scopflow->opflows[i];
+    ierr = PSGetNumActiveGenerators(opflow->ps,&ngenON,NULL);CHKERRQ(ierr);
     pips->nxi[i] = opflow->nx;
-    if(scopflow->iscoupling) scopflow->nconineqcoup[i] = (i == 0)?0:ngen;
+    if(scopflow->iscoupling) scopflow->nconineqcoup[i] = (i == 0)?0:ngenON;
     else scopflow->nconineqcoup[i] = 0;
 
     pips->ngi[i] = opflow->ncon + scopflow->nconineqcoup[i];
@@ -701,6 +761,7 @@ PetscErrorCode SCOPFLOWSolverSetUp_PIPS(SCOPFLOW scopflow)
   ierr = VecGetArray(scopflow->Gl,&gl);CHKERRQ(ierr);
   ierr = VecGetArray(scopflow->Gu,&gu);CHKERRQ(ierr);
 
+  opflow0 = scopflow->opflows[0];
   for(i=0; i < scopflow->Ns; i++) {
     opflow = scopflow->opflows[i];
     /* Set initial guess and bounds on variables */
@@ -737,12 +798,16 @@ PetscErrorCode SCOPFLOWSolverSetUp_PIPS(SCOPFLOW scopflow)
     if(scopflow->nconineqcoup[i]) {
       ctr = 0;
       ps = opflow->ps;
+      ps0 = opflow0->ps;
       /* Bounds on coupling constraints */
       for(j=0; j < ps->nbus; j++) {
 	bus = &ps->bus[j];
+	bus0 = &ps0->bus[j];
 
 	for(k=0; k < bus->ngen; k++) {
 	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	  ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
+	  if(!gen->status || !gen0->status) continue;
 	  /* Generator can do a full ramp up to its max. capacity */
 	  gli[opflow->ncon + ctr] = -gen->pt;
 	  gui[opflow->ncon + ctr] =  gen->pt;
