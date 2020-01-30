@@ -12,6 +12,15 @@
 #define OPFLOWFORMULATIONSMAX 4
 #define OPFLOWSOLVERSMAX      3
 
+typedef enum {
+  OPFLOWINIT_MIDPOINT, /* Midpoint */
+  OPFLOWINIT_FROMFILE, /* From file */
+  OPFLOWINIT_ACPF      /* From AC power flow solution */
+}OPFLOWInitializationType; 
+
+extern const char *const OPFLOWInitializationTypes[];
+
+
 struct _p_OPFLOWFormulationOps {
   PetscErrorCode (*destroy)(OPFLOW);
   PetscErrorCode (*setnumvariables)(OPFLOW,PetscInt*,PetscInt*,PetscInt*); /* Set number of variables for buses and branches, and total number of variables */
@@ -80,6 +89,8 @@ struct _p_OPFLOW{
   PetscScalar obj_factor; /* IPOPT scales the objective hessian part with this factor. For all other solvers, unless it is set, obj_factor = 1.0. */
 
   PetscBool setupcalled; /* OPFLOWSetUp called? */
+
+  OPFLOWInitializationType initializationtype; /* OPFLOW Initialization type */
 
   PetscInt nconeq, Nconeq;     /* Local and global number of equality constraints, excluding ghosts! */
   PetscInt nconineq, Nconineq; /* Local and global number of inequality constraints */

@@ -1,6 +1,7 @@
 #include <private/opflowimpl.h>
 #include <petsc/private/dmnetworkimpl.h>
 
+const char *const OPFLOWInitializationTypes[] = {"MIDPOINT","FROMFILE","ACP","OPFLOWInitializationType","OPFLOWINIT_",NULL};
 /*
   OPFLOWCreate - Creates an optimal power flow application object
 
@@ -37,6 +38,8 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
 
   opflow->solver   = NULL;
   opflow->formulation = NULL;
+
+  opflow->initializationtype = OPFLOWINIT_MIDPOINT;
 
   opflow->nformulationsregistered = opflow->nsolversregistered = 0;
   opflow->OPFLOWFormulationRegisterAllCalled = opflow->OPFLOWSolverRegisterAllCalled = PETSC_FALSE;
@@ -426,6 +429,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PetscOptionsGetReal(NULL,NULL,"-opflow_loadloss_penalty",&opflow->loadloss_penalty,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-opflow_include_powerimbalance_variables",&opflow->include_powerimbalance_variables,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetReal(NULL,NULL,"-opflow_powerimbalance_penalty",&opflow->powerimbalance_penalty,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsGetEnum(NULL,NULL,"-opflow_initialization",OPFLOWInitializationTypes,(PetscEnum*)&opflow->initializationtype,NULL);CHKERRQ(ierr);
 
   /* Set formulation */
   if(formulationset) {
@@ -545,7 +549,6 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   PetscFunctionReturn(0);
 }
 
-
 /*
   OPFLOWSolve - Solves the AC optimal power flow
 
@@ -577,13 +580,27 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
   }
 
   /* Set initial guess */
-  if(opflow->formops.setinitialguess) {
-    ierr = (*opflow->formops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
-    ierr = VecSet(opflow->Lambda,1.0);CHKERRQ(ierr);
-    ierr = VecSet(opflow->Lambdae,1.0);CHKERRQ(ierr);
-    if(opflow->Nconineq) {
-      ierr = VecSet(opflow->Lambdai,1.0);CHKERRQ(ierr);
-    }
+  switch (opflow->initializationtype) {
+    case OPFLOWINIT_MIDPOINT:
+      if(opflow->formops.setinitialguess) {
+	ierr = (*opflow->formops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
+      }
+      break;
+    case OPFLOWINIT_FROMFILE:
+      if(opflow->formops.setinitialguess) {
+	ierr = (*opflow->formops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
+      }
+     break;
+    case OPFLOWINIT_ACPF:
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Unknown initialization type\n");
+  }
+
+  ierr = VecSet(opflow->Lambda,1.0);CHKERRQ(ierr);
+  ierr = VecSet(opflow->Lambdae,1.0);CHKERRQ(ierr);
+  if(opflow->Nconineq) {
+    ierr = VecSet(opflow->Lambdai,1.0);CHKERRQ(ierr);
   }
 
   /* Only for debugging */
