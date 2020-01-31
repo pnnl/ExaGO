@@ -181,13 +181,17 @@ PetscErrorCode OPFLOWSetInitialGuess_IBCAR(OPFLOW opflow,Vec X)
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
 
-    /* Initial guess for real and imaginary part of voltages */
-    x[loc]   = 1.0;
-    x[loc+1] = 0.0;
-    
     if(bus->ide == ISOLATED_BUS) {
       x[loc]   = bus->vm*PetscCosScalar(bus->va*PETSC_PI/180.0);
       x[loc+1] = bus->vm*PetscCosScalar(bus->va*PETSC_PI/180.0);
+    } else {
+      if(opflow->initializationtype == OPFLOWINIT_MIDPOINT) {
+	x[loc]   = 0.5*(bus->Vmin + bus->Vmax)*PetscCosScalar(bus->va*PETSC_PI/180.0);
+	x[loc+1] = 0; //0.5*(bus->Vmin + bus->Vmax)*PetscCosScalar(bus->va*PETSC_PI/180.0);
+      } else if(opflow->initializationtype == OPFLOWINIT_FROMFILE || opflow->initializationtype == OPFLOWINIT_ACPF) {
+	x[loc]   = PetscMax(bus->Vmin,PetscMin(bus->vm,bus->Vmax))*PetscCosScalar(bus->va*PETSC_PI/180.0);
+	x[loc+1] = 0.0; // PetscMax(bus->Vmin,PetscMin(bus->vm,bus->Vmax))*PetscCosScalar(bus->va*PETSC_PI/180.0);
+      }
     }
 
     for(k=0; k < bus->ngen; k++) {
@@ -195,8 +199,13 @@ PetscErrorCode OPFLOWSetInitialGuess_IBCAR(OPFLOW opflow,Vec X)
       if(!gen->status) continue;
       loc = loc+2;
 
-      x[loc]   = (xl[loc] + xu[loc])/2.0;   /* Initial guess for Pg */
-      x[loc+1] = (xl[loc+1] + xu[loc+1])/2.0; /* Initial guess for Qg */
+      if(opflow->initializationtype == OPFLOWINIT_MIDPOINT) {
+	x[loc]   = 0.5*(xl[loc] + xu[loc]);
+	x[loc+1] = 0.5*(xl[loc+1] + xu[loc+1]);
+      } else if(opflow->initializationtype == OPFLOWINIT_FROMFILE || opflow->initializationtype == OPFLOWINIT_ACPF) {
+	x[loc] = PetscMax(gen->pb,PetscMin(gen->pg,gen->pt));
+	x[loc+1] = PetscMax(gen->qb,PetscMin(gen->qg,gen->qt));
+      }
     }
 
     if(opflow->include_loadloss_variables) {
