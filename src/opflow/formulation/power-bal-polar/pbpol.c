@@ -163,16 +163,19 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow,Vec X)
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
 
     if(bus->ide == ISOLATED_BUS) {
-      x[loc] = bus->vm;
-      x[loc+1] = bus->va*PETSC_PI/180.0;
+      x[loc] = bus->va*PETSC_PI/180.0;
+      x[loc+1] = bus->vm;
     } else {
       if(opflow->initializationtype == OPFLOWINIT_MIDPOINT) {
 	/* Initial guess for voltage angles and bounds on voltage magnitudes */
 	x[loc]   = (xl[loc] + xu[loc])/2.0;
 	x[loc+1] = (xl[loc+1] + xu[loc+1])/2.0;
       } else if(opflow->initializationtype == OPFLOWINIT_FROMFILE || opflow->initializationtype == OPFLOWINIT_ACPF) {
-	x[loc]   = PetscMax(bus->Vmin,PetscMin(bus->vm,bus->Vmax));
-	x[loc+1] = bus->va*PETSC_PI/180.0;
+	x[loc] = bus->va*PETSC_PI/180.0;
+	x[loc+1]   = PetscMax(bus->Vmin,PetscMin(bus->vm,bus->Vmax));
+      } else if(opflow->initializationtype == OPFLOWINIT_FLATSTART) {
+	x[loc] = 0.0;
+	x[loc+1] = 1.0;
       }
     }
 
@@ -184,7 +187,7 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow,Vec X)
 
       loc = loc+2;
 
-      if(opflow->initializationtype == OPFLOWINIT_MIDPOINT) {
+      if(opflow->initializationtype == OPFLOWINIT_MIDPOINT || opflow->initializationtype == OPFLOWINIT_FLATSTART) {
 	x[loc]   = 0.5*(xl[loc] + xu[loc]);
 	x[loc+1] = 0.5*(xl[loc+1] + xu[loc+1]);
       } else if(opflow->initializationtype == OPFLOWINIT_FROMFILE || opflow->initializationtype == OPFLOWINIT_ACPF) {

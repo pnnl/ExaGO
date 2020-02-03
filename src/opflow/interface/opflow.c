@@ -1,7 +1,7 @@
 #include <private/opflowimpl.h>
 #include <petsc/private/dmnetworkimpl.h>
 
-const char *const OPFLOWInitializationTypes[] = {"MIDPOINT","FROMFILE","ACP","OPFLOWInitializationType","OPFLOWINIT_",NULL};
+const char *const OPFLOWInitializationTypes[] = {"MIDPOINT","FROMFILE","ACP","FLATSTART","OPFLOWInitializationType","OPFLOWINIT_",NULL};
 /*
   OPFLOWCreate - Creates an optimal power flow application object
 
@@ -582,19 +582,17 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
   /* Set initial guess */
   switch (opflow->initializationtype) {
     case OPFLOWINIT_MIDPOINT:
+    case OPFLOWINIT_FROMFILE:
+    case OPFLOWINIT_FLATSTART:
       if(opflow->formops.setinitialguess) {
 	ierr = (*opflow->formops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
       }
       break;
-    case OPFLOWINIT_FROMFILE:
-      if(opflow->formops.setinitialguess) {
-	ierr = (*opflow->formops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
-      }
-     break;
     case OPFLOWINIT_ACPF:
+      SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"AC power flow initialization not supported yet\n");
       break;
     default:
-      SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Unknown initialization type\n");
+      SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Unknown OPFLOW initialization type\n");
   }
 
   ierr = VecSet(opflow->Lambda,1.0);CHKERRQ(ierr);

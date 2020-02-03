@@ -236,6 +236,9 @@ PetscErrorCode OPFLOWSetInitialGuess_PBCAR(OPFLOW opflow,Vec X)
       } else if(opflow->initializationtype == OPFLOWINIT_FROMFILE || opflow->initializationtype == OPFLOWINIT_ACPF) {
 	x[loc]   = PetscMax(bus->Vmin,PetscMin(bus->vm,bus->Vmax))*PetscCosScalar(bus->va*PETSC_PI/180.0);
 	x[loc+1] = 0.0; // PetscMax(bus->Vmin,PetscMin(bus->vm,bus->Vmax))*PetscCosScalar(bus->va*PETSC_PI/180.0);
+      } else if(opflow->initializationtype == OPFLOWINIT_FLATSTART) {
+	x[loc] = 1.0;
+	x[loc+1] = 0.0;
       }
     }
 
@@ -247,7 +250,7 @@ PetscErrorCode OPFLOWSetInitialGuess_PBCAR(OPFLOW opflow,Vec X)
       if(!gen->status) continue;
       loc = loc+2;
 
-      if(opflow->initializationtype == OPFLOWINIT_MIDPOINT) {
+      if(opflow->initializationtype == OPFLOWINIT_MIDPOINT || opflow->initializationtype == OPFLOWINIT_FLATSTART) {
 	x[loc]   = 0.5*(xl[loc] + xu[loc]);
 	x[loc+1] = 0.5*(xl[loc+1] + xu[loc+1]);
       } else if(opflow->initializationtype == OPFLOWINIT_FROMFILE || opflow->initializationtype == OPFLOWINIT_ACPF) {

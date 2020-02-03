@@ -15,7 +15,8 @@
 typedef enum {
   OPFLOWINIT_MIDPOINT, /* Midpoint */
   OPFLOWINIT_FROMFILE, /* From file */
-  OPFLOWINIT_ACPF      /* From AC power flow solution */
+  OPFLOWINIT_ACPF,      /* From AC power flow solution */
+  OPFLOWINIT_FLATSTART  /* Voltage flat start */
 }OPFLOWInitializationType; 
 
 extern const char *const OPFLOWInitializationTypes[];
