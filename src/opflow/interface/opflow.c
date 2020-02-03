@@ -4,9 +4,6 @@
 
 const char *const OPFLOWInitializationTypes[] = {"MIDPOINT","FROMFILE","ACPF","FLATSTART","OPFLOWInitializationType","OPFLOWINIT_",NULL};
 
-
-
-
 void swap_dm(DM *dm1, DM *dm2)
 {
   DM temp = *dm1;
@@ -728,6 +725,46 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   PetscFunctionReturn(0);
 }
 
+/* OPFLOWSetInitialGuess - Sets the initial guess for OPFLOW
+
+   Input Parameters:
+.  opflow - the optimal power flow application object
+
+   Output Parameters:
+.  X - initial guess
+
+*/
+PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
+{
+  PetscErrorCode ierr;
+  PetscBool      pflowconverged=PETSC_FALSE;
+
+  PetscFunctionBegin;
+
+  /* Set initial guess */
+  switch (opflow->initializationtype) {
+    case OPFLOWINIT_MIDPOINT:
+    case OPFLOWINIT_FROMFILE:
+    case OPFLOWINIT_FLATSTART:
+      if(opflow->formops.setinitialguess) {
+	ierr = (*opflow->formops.setinitialguess)(opflow,X);CHKERRQ(ierr);
+      }
+      break;
+    case OPFLOWINIT_ACPF:
+      ierr = OPFLOWComputePrePflow(opflow,&pflowconverged);CHKERRQ(ierr);
+      if(!pflowconverged) {
+	SETERRQ(PETSC_COMM_SELF,0,"AC power flow initialization did not converged\n");
+      }
+      ierr = (*opflow->formops.setinitialguess)(opflow,X);CHKERRQ(ierr);
+
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Unknown OPFLOW initialization type\n");
+  }
+
+  PetscFunctionReturn(0);
+}
+
 /*
   OPFLOWSolve - Solves the AC optimal power flow
 
@@ -737,7 +774,6 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 PetscErrorCode OPFLOWSolve(OPFLOW opflow)
 {
   PetscErrorCode ierr;
-  PetscBool      pflowconverged=PETSC_FALSE;
 
   PetscFunctionBegin;
 
@@ -759,26 +795,7 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
     ierr = (*opflow->formops.setvariableandconstraintbounds)(opflow,opflow->Xl,opflow->Xu,opflow->Gl,opflow->Gu);CHKERRQ(ierr);
   }
 
-  /* Set initial guess */
-  switch (opflow->initializationtype) {
-    case OPFLOWINIT_MIDPOINT:
-    case OPFLOWINIT_FROMFILE:
-    case OPFLOWINIT_FLATSTART:
-      if(opflow->formops.setinitialguess) {
-	ierr = (*opflow->formops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
-      }
-      break;
-    case OPFLOWINIT_ACPF:
-      ierr = OPFLOWComputePrePflow(opflow,&pflowconverged);CHKERRQ(ierr);
-      if(!pflowconverged) {
-	SETERRQ(PETSC_COMM_SELF,0,"AC power flow initialization did not converged\n");
-      }
-      ierr = (*opflow->formops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
-
-      break;
-    default:
-      SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Unknown OPFLOW initialization type\n");
-  }
+  ierr = OPFLOWSetInitialGuess(opflow,opflow->X);CHKERRQ(ierr);
 
   ierr = VecSet(opflow->Lambda,1.0);CHKERRQ(ierr);
   ierr = VecSet(opflow->Lambdae,1.0);CHKERRQ(ierr);
