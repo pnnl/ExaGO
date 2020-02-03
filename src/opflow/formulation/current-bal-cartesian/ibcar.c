@@ -1,3 +1,4 @@
+
 #include <private/opflowimpl.h>
 #include "ibcar.h"
 
@@ -183,14 +184,14 @@ PetscErrorCode OPFLOWSetInitialGuess_IBCAR(OPFLOW opflow,Vec X)
 
     if(bus->ide == ISOLATED_BUS) {
       x[loc]   = bus->vm*PetscCosScalar(bus->va*PETSC_PI/180.0);
-      x[loc+1] = bus->vm*PetscCosScalar(bus->va*PETSC_PI/180.0);
+      x[loc+1] = bus->vm*PetscSinScalar(bus->va*PETSC_PI/180.0);
     } else {
       if(opflow->initializationtype == OPFLOWINIT_MIDPOINT) {
 	x[loc]   = 0.5*(bus->Vmin + bus->Vmax)*PetscCosScalar(bus->va*PETSC_PI/180.0);
 	x[loc+1] = 0; //0.5*(bus->Vmin + bus->Vmax)*PetscCosScalar(bus->va*PETSC_PI/180.0);
       } else if(opflow->initializationtype == OPFLOWINIT_FROMFILE || opflow->initializationtype == OPFLOWINIT_ACPF) {
 	x[loc]   = PetscMax(bus->Vmin,PetscMin(bus->vm,bus->Vmax))*PetscCosScalar(bus->va*PETSC_PI/180.0);
-	x[loc+1] = 0.0; // PetscMax(bus->Vmin,PetscMin(bus->vm,bus->Vmax))*PetscCosScalar(bus->va*PETSC_PI/180.0);
+	x[loc+1] = PetscMax(bus->Vmin,PetscMin(bus->vm,bus->Vmax))*PetscSinScalar(bus->va*PETSC_PI/180.0);
       } else if(opflow->initializationtype == OPFLOWINIT_FLATSTART) {
 	x[loc] = 1.0;
 	x[loc+1] = 0.0;
@@ -280,7 +281,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Ge
     
     if (bus->ide == ISOLATED_BUS) {
       val[0] = Vr - bus->vm*PetscCosScalar(bus->va*PETSC_PI/180.0);
-      val[1] = Vi - bus->vm*PetscCosScalar(bus->va*PETSC_PI/180.0);
+      val[1] = Vi - bus->vm*PetscSinScalar(bus->va*PETSC_PI/180.0);
   
       ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
       gloc += 2;

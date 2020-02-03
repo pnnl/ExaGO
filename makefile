@@ -50,7 +50,7 @@ PS_SRC_OBJECTS = src/ps/ps.o src/ps/psreaddata.o src/ps/psislanding.o src/utils/
 #******************************
 #	PFLOW Specific Make
 #******************************
-PFLOW_SRC_OBJECTS = src/pflow/pflow.o ${PS_SRC_OBJECTS}
+PFLOW_SRC_OBJECTS = src/pflow/pflow.o
 
 #******** Option 1 **********
 PFLOW_APP_OBJECTS = applications/pflow-main.o
@@ -75,7 +75,7 @@ OPFLOW_INTERFACE_OBJECTS = src/opflow/interface/opflow.o src/opflow/interface/op
 OPFLOW_FORMULATION_OBJECTS = src/opflow/formulation/power-bal-polar/pbpol.o src/opflow/formulation/power-bal-cartesian/pbcar.o src/opflow/formulation/current-bal-cartesian/ibcar.o
 OPFLOW_SOLVER_OBJECTS = src/opflow/solver/ipopt/opflow-ipopt.o src/opflow/solver/tao/opflow-tao.o
 
-OPFLOW_SRC_OBJECTS = ${OPFLOW_INTERFACE_OBJECTS} ${OPFLOW_FORMULATION_OBJECTS} ${OPFLOW_SOLVER_OBJECTS} ${PS_SRC_OBJECTS}
+OPFLOW_SRC_OBJECTS = ${PFLOW_SRC_OBJECTS} ${OPFLOW_INTERFACE_OBJECTS} ${OPFLOW_FORMULATION_OBJECTS} ${OPFLOW_SOLVER_OBJECTS} ${PS_SRC_OBJECTS}
 
 OPFLOW_APP_OBJECTS = applications/opflow-main.o
 OBJECTS_OPFLOW = $(OPFLOW_APP_OBJECTS)
@@ -102,8 +102,8 @@ SCOPFLOW: $(OBJECTS_SCOPFLOW) libscopflow chkopts
 #***************************
 #	Make Library Commands
 #***************************
-libpflow:$(PFLOW_SRC_OBJECTS) chkopts
-	 -$(CLINKER) $(LDFLAGS) -o libpflow.$(LIB_EXT) $(PFLOW_SRC_OBJECTS) $(PETSC_TS_LIB)
+libpflow:${PS_SRC_OBJECTS} $(PFLOW_SRC_OBJECTS) chkopts
+	 -$(CLINKER) $(LDFLAGS) -o libpflow.$(LIB_EXT) ${PS_SRC_OBJECTS} $(PFLOW_SRC_OBJECTS) $(PETSC_TS_LIB)
 
 libopflow:$(OPFLOW_SRC_OBJECTS) chkopts
 	 -$(CLINKER) $(LDFLAGS) -o libopflow.$(LIB_EXT) $(OPFLOW_SRC_OBJECTS) -L${IPOPT_BUILD_DIR}/lib ${IPOPT_LIB} $(PETSC_TAO_LIB)

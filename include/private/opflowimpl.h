@@ -7,6 +7,7 @@
 
 #include <ps.h>
 #include <private/psimpl.h>
+#include <pflow.h>
 #include <opflow.h>
 
 #define OPFLOWFORMULATIONSMAX 4
@@ -136,6 +137,14 @@ struct _p_OPFLOW{
   IS       isconeqlocal;
   IS       isconeqglob;
 
+  /* Used only when initialization from power flow (ACPF) is called */
+  PFLOW initpflow; /**< power flow solver context for obtaining initial conditions */
+  PetscSection initpflowpsection; /** < PetscSection object to hold dofs at each vertex */
+  PetscSection initpflowpglobsection; /** <Global section for initpflow */
+  PetscSection defaultsection;      /** < PetscSection used with opflow. This is temporarily stored when running the initial power flow */
+  PetscSection defaultglobalsection; /** <Global section used with opflow. This is temporarily stored when running the initial power flow */
+  DM           initpflowdm; /* DM used with initial power flow */
+  
 };
 
 /* Registers all the OPFLOW formulations */

@@ -1115,3 +1115,25 @@ PetscErrorCode PSSetLineStatus(PS ps,PetscInt fbus, PetscInt tbus, const char* i
   
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode PSSetEdgeandBusStartLoc(PS ps)
+{
+  PetscErrorCode ierr;
+  PetscInt       i,vStart,vEnd,eStart,eEnd;
+
+  PetscFunctionBegin;
+  /* Reset the start locations for the buses and lines */
+  ierr = DMNetworkGetVertexRange(ps->networkdm,&vStart,&vEnd);CHKERRQ(ierr);
+  ierr = DMNetworkGetEdgeRange(ps->networkdm,&eStart,&eEnd);CHKERRQ(ierr);
+  
+  for(i=eStart; i < eEnd; i++) {
+    ierr = DMNetworkGetVariableOffset(ps->networkdm,i,&ps->line[i].startloc);CHKERRQ(ierr);
+    ierr = DMNetworkGetVariableGlobalOffset(ps->networkdm,i,&ps->line[i].startlocglob);CHKERRQ(ierr);
+  }
+  
+  for(i=vStart; i < vEnd; i++) {
+    ierr = DMNetworkGetVariableOffset(ps->networkdm,i,&ps->bus[i-vStart].startloc);CHKERRQ(ierr);
+    ierr = DMNetworkGetVariableGlobalOffset(ps->networkdm,i,&ps->bus[i-vStart].startlocglob);CHKERRQ(ierr);
+  }
+  PetscFunctionReturn(0);
+}
