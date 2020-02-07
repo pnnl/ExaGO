@@ -1,5 +1,164 @@
+#include <private/pflowimpl.h>
 #include <private/opflowimpl.h>
 #include <petsc/private/dmnetworkimpl.h>
+
+const char *const OPFLOWInitializationTypes[] = {"MIDPOINT","FROMFILE","ACPF","FLATSTART","OPFLOWInitializationType","OPFLOWINIT_",NULL};
+
+void swap_dm(DM *dm1, DM *dm2)
+{
+  DM temp = *dm1;
+  *dm1 = *dm2;
+  *dm2 = temp;
+}
+
+/*
+  OPFLOWSetUpInitPflow - Sets up the power flow solver object used in obtaining initial conditions.
+
+  Note: This power flow solver object shares the underlying power system object and all the data. It
+  is created at the end of OPFLOWSetUp. So, it already has the distributed ps object. The only
+  difference is that it uses a different PetscSection for storing the degrees of freedom that
+  gets associated with the dmnetwork (and plex)
+*/
+PetscErrorCode OPFLOWSetUpInitPflow(OPFLOW opflow)
+{
+  PetscErrorCode ierr;
+  PetscInt       vStart,vEnd,eStart,eEnd;
+  DM             networkdm,plexdm;
+  PetscInt       i;
+
+  PetscFunctionBegin;
+
+  networkdm = opflow->ps->networkdm;
+
+  ierr = PFLOWCreate(opflow->comm->type,&opflow->initpflow);CHKERRQ(ierr);
+
+  /* PFLOW creates a new PS object. Destroy it so that we can associate the
+     PS from OPFLOW with initpflow
+  */
+  ierr = PSDestroy(&opflow->initpflow->ps);CHKERRQ(ierr);
+
+  opflow->initpflow->ps = opflow->ps;
+  /* Increase the reference count for opflow->ps */
+  ierr = PSIncreaseReferenceCount(opflow->ps);CHKERRQ(ierr);
+
+  ierr = PetscSectionCreate(opflow->comm->type,&opflow->initpflowpsection);CHKERRQ(ierr);
+
+  ierr = DMNetworkGetVertexRange(networkdm,&vStart,&vEnd);CHKERRQ(ierr);
+  ierr = DMNetworkGetEdgeRange(networkdm,&eStart,&eEnd);CHKERRQ(ierr);
+
+  ierr = PetscSectionSetChart(opflow->initpflowpsection,eStart,vEnd);CHKERRQ(ierr);
+
+  for(i=vStart; i < vEnd; i++) {
+    /* Two variables at each bus/vertex */
+    ierr = PetscSectionSetDof(opflow->initpflowpsection,i,2);CHKERRQ(ierr);
+  }
+  ierr = PetscSectionSetUp(opflow->initpflowpsection);CHKERRQ(ierr);
+
+  /* Clone DM to be used with initpflow */
+  ierr = DMClone(networkdm,&opflow->initpflowdm);CHKERRQ(ierr);
+
+  /* Set initpflowdm in opflow->ps->networkdm, the previous networkdm get stashed in opflow->initpflowdm */
+  swap_dm(&opflow->ps->networkdm,&opflow->initpflowdm);
+  networkdm = opflow->ps->networkdm;
+
+  /* Get the plex dm */
+  ierr = DMNetworkGetPlex(networkdm,&plexdm);CHKERRQ(ierr);
+
+  /* Get default sections associated with this plex */
+  ierr = DMGetDefaultSection(plexdm,&opflow->defaultsection);CHKERRQ(ierr);
+  ierr = PetscObjectReference((PetscObject)opflow->defaultsection);CHKERRQ(ierr);
+
+  ierr = DMGetDefaultGlobalSection(plexdm,&opflow->defaultglobalsection);CHKERRQ(ierr);
+  ierr = PetscObjectReference((PetscObject)opflow->defaultglobalsection);CHKERRQ(ierr);
+
+  /* Set the new section created for initial power flow */
+  ierr = DMSetDefaultSection(plexdm,opflow->initpflowpsection);CHKERRQ(ierr);
+  ierr = DMGetDefaultGlobalSection(plexdm,&opflow->initpflowpglobsection);CHKERRQ(ierr);
+
+  /* Set up PFLOW object. Note pflow->ps will not be set up again as it has
+     been already set up by opflow
+  */
+  ierr = PFLOWSetUp(opflow->initpflow);CHKERRQ(ierr);
+
+  /*
+     Update the ref. counts for init pflow sections so that they do not
+     get destroyed when DMSetDefaultSection is called
+  */
+  // ierr = PetscObjectReference((PetscObject)opflow->initpflowpsection);CHKERRQ(ierr);
+  ierr = PetscObjectReference((PetscObject)opflow->initpflowpglobsection);CHKERRQ(ierr);
+  
+  /* Reset the sections */
+  ierr = DMSetDefaultSection(plexdm,opflow->defaultsection);CHKERRQ(ierr);
+  ierr = DMSetDefaultGlobalSection(plexdm,opflow->defaultglobalsection);CHKERRQ(ierr);
+
+  /* Reset dm */
+  swap_dm(&opflow->ps->networkdm,&opflow->initpflowdm);
+
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWComputePrePflow - Computes the steady-state power flow for initializing optimal power flow
+
+  Input Parameters:
+. opflow - the OPFLOW object
+*/
+PetscErrorCode OPFLOWComputePrePflow(OPFLOW opflow,PetscBool *converged)
+{
+  PetscErrorCode ierr;
+  DM             plexdm;
+  PFLOW          initpflow=opflow->initpflow;
+  PS             ps=opflow->ps;
+
+  PetscFunctionBegin;
+  /* Set initpflowdm for solving the power flow */
+  swap_dm(&opflow->ps->networkdm,&opflow->initpflowdm);
+
+  ierr = DMNetworkGetPlex(opflow->ps->networkdm,&plexdm);CHKERRQ(ierr);
+
+  /* Increase the ref. counts for the default sections so that they do not get
+     destroyed when DMSetDefaultXXX is called with the initpflowxxx sections
+  */
+  ierr = PetscObjectReference((PetscObject)opflow->defaultsection);CHKERRQ(ierr);
+  ierr = PetscObjectReference((PetscObject)opflow->defaultglobalsection);CHKERRQ(ierr);
+
+  /* Set the new section created for initial power flow. */
+  ierr = DMSetDefaultSection(plexdm,opflow->initpflowpsection);CHKERRQ(ierr);
+  ierr = DMSetDefaultGlobalSection(plexdm,opflow->initpflowpglobsection);CHKERRQ(ierr);
+
+  ierr = DMCreateDefaultSF(plexdm,opflow->initpflowpsection,opflow->initpflowpglobsection);CHKERRQ(ierr);
+
+  /* Reset the edge and bus starting locations of variables */
+  ierr = PSSetEdgeandBusStartLoc(ps);CHKERRQ(ierr);
+
+  /* Solve */
+  ierr = PFLOWSolve(initpflow);CHKERRQ(ierr);
+  ierr = PFLOWConverged(initpflow,converged);CHKERRQ(ierr);
+
+  /* Update bus and gen structs in pflow->ps */
+  ierr = PFLOWPostSolve(initpflow);CHKERRQ(ierr);
+
+  /*
+     Update the ref. counts for init pflow sections so that they do not
+     get destroyed when DMSetDefaultSection is called
+  */
+  ierr = PetscObjectReference((PetscObject)opflow->initpflowpsection);CHKERRQ(ierr);
+  ierr = PetscObjectReference((PetscObject)opflow->initpflowpglobsection);CHKERRQ(ierr);
+
+  /* Reset the sections */
+  ierr = DMSetDefaultSection(plexdm,opflow->defaultsection);CHKERRQ(ierr);
+  ierr = DMSetDefaultGlobalSection(plexdm,opflow->defaultglobalsection);CHKERRQ(ierr);
+
+  /* Reset SF */
+  ierr = DMCreateDefaultSF(plexdm,opflow->defaultsection,opflow->defaultglobalsection);CHKERRQ(ierr);
+
+  /* Reset the bus and edge starting locations for variables */
+  ierr = PSSetEdgeandBusStartLoc(ps);CHKERRQ(ierr);
+
+  /* Reset dm */
+  swap_dm(&opflow->initpflowdm,&opflow->ps->networkdm);
+  PetscFunctionReturn(0);
+}
 
 /*
   OPFLOWCreate - Creates an optimal power flow application object
@@ -38,6 +197,8 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   opflow->solver   = NULL;
   opflow->formulation = NULL;
 
+  opflow->initializationtype = OPFLOWINIT_MIDPOINT;
+
   opflow->nformulationsregistered = opflow->nsolversregistered = 0;
   opflow->OPFLOWFormulationRegisterAllCalled = opflow->OPFLOWSolverRegisterAllCalled = PETSC_FALSE;
 
@@ -72,6 +233,20 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow)
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
+
+  if((*opflow)->initializationtype == OPFLOWINIT_ACPF) {
+    /* Destroy objects created for initial power flow */
+    ierr = PFLOWDestroy(&(*opflow)->initpflow);CHKERRQ(ierr);
+    
+    ierr = DMDestroy(&(*opflow)->initpflowdm);CHKERRQ(ierr);
+
+    PetscObjectDereference((PetscObject)((*opflow)->initpflowpsection));
+    PetscObjectDereference((PetscObject)((*opflow)->initpflowpglobsection));
+    ierr = PetscSectionDestroy(&(*opflow)->initpflowpsection);CHKERRQ(ierr);
+    ierr = PetscSectionDestroy(&(*opflow)->initpflowpglobsection);CHKERRQ(ierr);
+  }
+
+
   ierr = COMMDestroy(&(*opflow)->comm);CHKERRQ(ierr);
 
   /* Solution vector */
@@ -426,6 +601,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PetscOptionsGetReal(NULL,NULL,"-opflow_loadloss_penalty",&opflow->loadloss_penalty,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-opflow_include_powerimbalance_variables",&opflow->include_powerimbalance_variables,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetReal(NULL,NULL,"-opflow_powerimbalance_penalty",&opflow->powerimbalance_penalty,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsGetEnum(NULL,NULL,"-opflow_initialization",OPFLOWInitializationTypes,(PetscEnum*)&opflow->initializationtype,NULL);CHKERRQ(ierr);
 
   /* Set formulation */
   if(formulationset) {
@@ -541,10 +717,53 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = (*opflow->solverops.setup)(opflow);CHKERRQ(ierr);
   ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Setup completed\n");CHKERRQ(ierr);
 
+  if(opflow->initializationtype == OPFLOWINIT_ACPF) {
+    ierr = OPFLOWSetUpInitPflow(opflow);CHKERRQ(ierr);
+  }
+
   opflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);
 }
 
+/* OPFLOWSetInitialGuess - Sets the initial guess for OPFLOW
+
+   Input Parameters:
+.  opflow - the optimal power flow application object
+
+   Output Parameters:
+.  X - initial guess
+
+*/
+PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
+{
+  PetscErrorCode ierr;
+  PetscBool      pflowconverged=PETSC_FALSE;
+
+  PetscFunctionBegin;
+
+  /* Set initial guess */
+  switch (opflow->initializationtype) {
+    case OPFLOWINIT_MIDPOINT:
+    case OPFLOWINIT_FROMFILE:
+    case OPFLOWINIT_FLATSTART:
+      if(opflow->formops.setinitialguess) {
+	ierr = (*opflow->formops.setinitialguess)(opflow,X);CHKERRQ(ierr);
+      }
+      break;
+    case OPFLOWINIT_ACPF:
+      ierr = OPFLOWComputePrePflow(opflow,&pflowconverged);CHKERRQ(ierr);
+      if(!pflowconverged) {
+	SETERRQ(PETSC_COMM_SELF,0,"AC power flow initialization did not converged\n");
+      }
+      ierr = (*opflow->formops.setinitialguess)(opflow,X);CHKERRQ(ierr);
+
+      break;
+    default:
+      SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Unknown OPFLOW initialization type\n");
+  }
+
+  PetscFunctionReturn(0);
+}
 
 /*
   OPFLOWSolve - Solves the AC optimal power flow
@@ -576,14 +795,12 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
     ierr = (*opflow->formops.setvariableandconstraintbounds)(opflow,opflow->Xl,opflow->Xu,opflow->Gl,opflow->Gu);CHKERRQ(ierr);
   }
 
-  /* Set initial guess */
-  if(opflow->formops.setinitialguess) {
-    ierr = (*opflow->formops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
-    ierr = VecSet(opflow->Lambda,1.0);CHKERRQ(ierr);
-    ierr = VecSet(opflow->Lambdae,1.0);CHKERRQ(ierr);
-    if(opflow->Nconineq) {
-      ierr = VecSet(opflow->Lambdai,1.0);CHKERRQ(ierr);
-    }
+  ierr = OPFLOWSetInitialGuess(opflow,opflow->X);CHKERRQ(ierr);
+
+  ierr = VecSet(opflow->Lambda,1.0);CHKERRQ(ierr);
+  ierr = VecSet(opflow->Lambdae,1.0);CHKERRQ(ierr);
+  if(opflow->Nconineq) {
+    ierr = VecSet(opflow->Lambdai,1.0);CHKERRQ(ierr);
   }
 
   /* Only for debugging */
@@ -601,4 +818,7 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
 
   PetscFunctionReturn(0);
 }
+
+
+
 

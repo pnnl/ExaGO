@@ -11,7 +11,7 @@ int scopflow_init_x0(double* x0, CallBackDataPtr cbd) {
   PetscErrorCode ierr;
   
   ierr = VecPlaceArray(opflow->X,x0);CHKERRQ(ierr);
-  ierr = (*opflow->formops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
+  ierr = OPFLOWSetInitialGuess(opflow,opflow->X);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
 	
   return 1;

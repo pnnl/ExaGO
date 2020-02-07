@@ -648,7 +648,7 @@ PetscErrorCode SCOPFLOWSolverSetUp_IPOPT(SCOPFLOW scopflow)
     ierr = (*opflow->formops.setvariablebounds)(opflow,opflow->Xl,opflow->Xu);CHKERRQ(ierr);
 
     /* Set initial guess */
-    ierr = (*opflow->formops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
+    ierr = OPFLOWSetInitialGuess(opflow,opflow->X);CHKERRQ(ierr);
 
     ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->Xl);CHKERRQ(ierr);

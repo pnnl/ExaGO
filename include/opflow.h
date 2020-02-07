@@ -31,6 +31,7 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetUp(OPFLOW);
 PETSC_EXTERN PetscErrorCode OPFLOWCreateGlobalVector(OPFLOW,Vec*);
 PETSC_EXTERN PetscErrorCode OPFLOWCreateMatrix(OPFLOW,Mat*);
 PETSC_EXTERN PetscErrorCode OPFLOWSolve(OPFLOW);
+PETSC_EXTERN PetscErrorCode OPFLOWSetInitialGuess(OPFLOW,Vec);
 #endif
 
 
