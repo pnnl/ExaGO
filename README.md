@@ -147,10 +147,11 @@ Set the formulation (representation of variables and equations) to be used for S
 ```
 mpiexec -n <N> ./SCOPFLOW -netfile <netfilename> -ctgcfile <ctgcfilename> -scopflow_formulation <formulationname>
 ```
-Currently, three formulations are supported by SCOPFLOW.
+Currently, the following formulations are supported by SCOPFLOW.
 1. POWER_BALANCE_POLAR: Power balance form with polar representation of voltages.
 1. POWER_BALANCE_CARTESIAN: Power balance form with cartesian representation of voltages.
 1. CURRENT_BALANCE_CARTESIAN: Current balance form with cartesian representation of voltages.
+1. CURRENT_BALANCE_CARTESIAN2: Modified current balance form with bounds on line currents instead of MVA flow.
 
 If this option is not set then SCOPFLOW uses POWER_BALANCE_POLAR formulation
 
