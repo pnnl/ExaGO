@@ -72,7 +72,8 @@ PFLOW2: $(OBJECTS_PFLOW2) libpflow chkopts
 #	OPFLOW Specific Make
 #******************************
 OPFLOW_INTERFACE_OBJECTS = src/opflow/interface/opflow.o src/opflow/interface/opflowregi.o
-OPFLOW_FORMULATION_OBJECTS = src/opflow/formulation/power-bal-polar/pbpol.o src/opflow/formulation/power-bal-cartesian/pbcar.o src/opflow/formulation/current-bal-cartesian/ibcar.o
+OPFLOW_FORMULATION_OBJECTS = src/opflow/formulation/power-bal-polar/pbpol.o src/opflow/formulation/power-bal-cartesian/pbcar.o src/opflow/formulation/current-bal-cartesian/ibcar.o src/opflow/formulation/current-bal-cartesian/ibcar2.o
+
 OPFLOW_SOLVER_OBJECTS = src/opflow/solver/ipopt/opflow-ipopt.o src/opflow/solver/tao/opflow-tao.o
 
 OPFLOW_SRC_OBJECTS = ${PFLOW_SRC_OBJECTS} ${OPFLOW_INTERFACE_OBJECTS} ${OPFLOW_FORMULATION_OBJECTS} ${OPFLOW_SOLVER_OBJECTS} ${PS_SRC_OBJECTS}

@@ -1,8 +1,14 @@
-
 #include <private/opflowimpl.h>
 #include "ibcar.h"
 
-PetscErrorCode OPFLOWFormulationDestroy_IBCAR(OPFLOW opflow)
+/** 
+    This is a revised formulation of the current-balance-cartesian (ibcar) formulation with
+    the following differences:
+    -- The line flows considered are based on "current", not the "MVA flow"
+    -- Additional variables for the "current flow" on the lines (at to and from ends) are introduced.
+**/
+
+PetscErrorCode OPFLOWFormulationDestroy_IBCAR2(OPFLOW opflow)
 {
   PetscErrorCode ierr;
 
@@ -12,15 +18,17 @@ PetscErrorCode OPFLOWFormulationDestroy_IBCAR(OPFLOW opflow)
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSetVariableBounds_IBCAR(OPFLOW opflow,Vec Xl,Vec Xu)
+PetscErrorCode OPFLOWSetVariableBounds_IBCAR2(OPFLOW opflow,Vec Xl,Vec Xu)
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
   PetscScalar    *xl,*xu;
   PetscInt       i;
   PSBUS          bus;
+  PSLINE         line;
   PSGEN          gen;
   PetscInt       loc;
+  PetscInt       k;
 
   PetscFunctionBegin;
 
@@ -28,9 +36,20 @@ PetscErrorCode OPFLOWSetVariableBounds_IBCAR(OPFLOW opflow,Vec Xl,Vec Xu)
   ierr = VecGetArray(Xl,&xl);CHKERRQ(ierr);
   ierr = VecGetArray(Xu,&xu);CHKERRQ(ierr);
 
-  for(i=0; i < ps->nbus; i++) {
-    PetscInt k;
+  for(i=0; i < ps->nbranch; i++) {
+    line = &ps->line[i];
 
+    ierr = PSLINEGetVariableLocation(line,&loc);CHKERRQ(ierr);
+    /* Bounds on real and imaginary parts of line from and to current flows */
+    xl[loc] = PETSC_NINFINITY; xu[loc] = PETSC_INFINITY;
+    xl[loc+1] = PETSC_NINFINITY; xu[loc+1] = PETSC_INFINITY;
+    xl[loc+2] = PETSC_NINFINITY; xu[loc+2] = PETSC_INFINITY;
+    xl[loc+3] = PETSC_NINFINITY; xu[loc+3] = PETSC_INFINITY;
+
+  }
+
+
+  for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
@@ -83,7 +102,7 @@ PetscErrorCode OPFLOWSetVariableBounds_IBCAR(OPFLOW opflow,Vec Xl,Vec Xu)
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSetConstraintBounds_IBCAR(OPFLOW opflow,Vec Gl,Vec Gu)
+PetscErrorCode OPFLOWSetConstraintBounds_IBCAR2(OPFLOW opflow,Vec Gl,Vec Gu)
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
@@ -99,6 +118,15 @@ PetscErrorCode OPFLOWSetConstraintBounds_IBCAR(OPFLOW opflow,Vec Gl,Vec Gu)
   ierr = VecGetArray(Gl,&gl);CHKERRQ(ierr);
   ierr = VecGetArray(Gu,&gu);CHKERRQ(ierr);
 
+  /* Equality constraint bounds for line flow balance equations */
+  for(i=0; i < ps->nbranch; i++) {
+    line = &ps->line[i];
+    if(!line->status) continue;
+    gl[gloc] = gl[gloc+1] = gl[gloc+2] = gl[gloc+3] = 0.0;
+    gu[gloc] = gu[gloc+1] = gu[gloc+2] = gu[gloc+3] = 0.0;
+
+    gloc += 4;
+  }
   /* Equality constraint bounds for balance equations and ref. bus angle */
   for(i=0; i < ps->nbus; i++) {
 
@@ -146,18 +174,18 @@ PetscErrorCode OPFLOWSetConstraintBounds_IBCAR(OPFLOW opflow,Vec Gl,Vec Gu)
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSetVariableandConstraintBounds_IBCAR(OPFLOW opflow,Vec Xl,Vec Xu, Vec Gl, Vec Gu)
+PetscErrorCode OPFLOWSetVariableandConstraintBounds_IBCAR2(OPFLOW opflow,Vec Xl,Vec Xu, Vec Gl, Vec Gu)
 {
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
-  ierr = OPFLOWSetVariableBounds_IBCAR(opflow,Xl,Xu);CHKERRQ(ierr);
-  ierr = OPFLOWSetConstraintBounds_IBCAR(opflow,Gl,Gu);CHKERRQ(ierr);
+  ierr = OPFLOWSetVariableBounds_IBCAR2(opflow,Xl,Xu);CHKERRQ(ierr);
+  ierr = OPFLOWSetConstraintBounds_IBCAR2(opflow,Gl,Gu);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSetInitialGuess_IBCAR(OPFLOW opflow,Vec X)
+PetscErrorCode OPFLOWSetInitialGuess_IBCAR2(OPFLOW opflow,Vec X)
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
@@ -166,7 +194,9 @@ PetscErrorCode OPFLOWSetInitialGuess_IBCAR(OPFLOW opflow,Vec X)
   PetscInt       i;
   PSBUS          bus;
   PSGEN          gen;
+  PSLINE         line;
   PetscInt       loc;
+  PetscInt       k;
 
   PetscFunctionBegin;
 
@@ -176,8 +206,6 @@ PetscErrorCode OPFLOWSetInitialGuess_IBCAR(OPFLOW opflow,Vec X)
   ierr = VecGetArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
   
   for(i=0; i < ps->nbus; i++) {
-    PetscInt k;
-
     bus = &ps->bus[i];
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
@@ -231,6 +259,48 @@ PetscErrorCode OPFLOWSetInitialGuess_IBCAR(OPFLOW opflow,Vec X)
 
   }
 
+  /* Initialize branch currents */
+  for(i=0; i < ps->nbranch; i++) {
+    line = &ps->line[i];
+    if(!line->status) continue;
+    ierr = PSLINEGetVariableLocation(line,&loc);CHKERRQ(ierr);
+    PetscScalar Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
+    const PSBUS *connbuses;
+    PSBUS busf,bust;
+    PetscInt xlocf,xloct;
+    PetscScalar Vrf,Vif,Vrt,Vit;
+
+    Gff = line->yff[0];
+    Bff = line->yff[1];
+    Gft = line->yft[0];
+    Bft = line->yft[1];
+    Gtf = line->ytf[0];
+    Btf = line->ytf[1];
+    Gtt = line->ytt[0];
+    Btt = line->ytt[1];
+
+    ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
+    busf = connbuses[0];
+    bust = connbuses[1];
+
+    ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
+    ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
+    
+    Vrf  = x[xlocf];
+    Vif  = x[xlocf+1];
+    Vrt  = x[xloct];
+    Vit  = x[xloct+1];
+    
+    x[loc]   = Gff*Vrf - Bff*Vif + Gft*Vrt - Bft*Vit;
+    x[loc+1] = Bff*Vrf + Gff*Vif + Bft*Vrt + Gft*Vit;
+    
+    x[loc+2] = Gtt*Vrt - Btt*Vit + Gtf*Vrf - Btf*Vif;
+    x[loc+3] = Btt*Vrt + Gtt*Vit + Btf*Vrf + Gtf*Vif;
+
+  }
+
+
+
   ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
@@ -238,13 +308,13 @@ PetscErrorCode OPFLOWSetInitialGuess_IBCAR(OPFLOW opflow,Vec X)
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Ge)
+PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR2(OPFLOW opflow,Vec X,Vec Ge)
 {
   PetscErrorCode ierr;
   PetscInt       i,k,nconnlines;
-  PetscInt       gloc=0,row[3];
-  PetscInt       xloc,xlocf,xloct;
-  PetscScalar    val[3];
+  PetscInt       gloc=0,row[6];
+  PetscInt       xloc,xlocf,xloct,xlocl;
+  PetscScalar    val[6];
   PetscScalar    Pg,Qg,Pd,Qd;
   PetscScalar    Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
   PetscScalar    Vrf,Vif,Vrt,Vit;
@@ -265,6 +335,44 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Ge
   ierr = VecGetOwnershipRange(Ge,&rstart,NULL);CHKERRQ(ierr);
 
   ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+
+  for(i=0; i < ps->nbranch; i++) {
+    line = &ps->line[i];
+    if(!line->status) continue;
+
+    ierr = PSLINEGetVariableLocation(line,&xloc);CHKERRQ(ierr);
+    Irf = x[xloc];   Iif = x[xloc+1];
+    Irt = x[xloc+2]; Iit = x[xloc+3];
+
+    Gff = line->yff[0]; Bff = line->yff[1];
+    Gft = line->yft[0]; Bft = line->yft[1];
+    Gtf = line->ytf[0]; Btf = line->ytf[1];
+    Gtt = line->ytt[0]; Btt = line->ytt[1];
+
+    ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
+    busf = connbuses[0];
+    bust = connbuses[1];
+
+    ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
+    ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
+      
+    Vrf  = x[xlocf];
+    Vif  = x[xlocf+1];
+    Vrt  = x[xloct];
+    Vit  = x[xloct+1];
+
+    val[0] = Gff*Vrf - Bff*Vif + Gft*Vrt - Bft*Vit - Irf;
+    val[1] = Bff*Vrf + Gff*Vif + Bft*Vrt + Gft*Vit - Iif;
+    val[2] = Gtt*Vrt - Btt*Vit + Gtf*Vrf - Btf*Vif - Irt;
+    val[3] = Btt*Vrt + Gtt*Vit + Btf*Vrf + Gtf*Vif - Iit;
+
+    row[0] = rstart + gloc; row[1] = row[0] + 1; row[2] = row[1] + 1; row[3] = row[2] + 1;
+    ierr = VecSetValues(Ge,4,row,val,ADD_VALUES);CHKERRQ(ierr);
+
+    gloc += 4;
+  }
+
+
 
   for (i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
@@ -340,37 +448,21 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Ge
       line = connlines[k];
       if (!line->status) continue;
 
-      Gff = line->yff[0];
-      Bff = line->yff[1];
-      Gft = line->yft[0];
-      Bft = line->yft[1];
-      Gtf = line->ytf[0];
-      Btf = line->ytf[1];
-      Gtt = line->ytt[0];
-      Btt = line->ytt[1];
-
       ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
       busf = connbuses[0];
       bust = connbuses[1];
 
-      ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
-      ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
-      
-      Vrf  = x[xlocf];
-      Vif  = x[xlocf+1];
-      Vrt  = x[xloct];
-      Vit  = x[xloct+1];
-
+      ierr = PSLINEGetVariableLocation(line,&xlocl);CHKERRQ(ierr);
       if (bus == busf) {
-	Irf = Gff*Vrf - Bff*Vif + Gft*Vrt - Bft*Vit;
-	Iif = Bff*Vrf + Gff*Vif + Bft*Vrt + Gft*Vit;
+	Irf = x[xlocl];
+	Iif = x[xlocl+1];
 
         val[0] = Irf;
         val[1] = Iif;
         ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
       } else {
-	Irt = Gtt*Vrt - Btt*Vit + Gtf*Vrf - Btf*Vif;
-	Iit = Btt*Vrt + Gtt*Vit + Btf*Vrf + Gtf*Vif;
+	Irt = x[xlocl+2];
+	Iit = x[xlocl+3];
 
         val[0] = Irt;
         val[1] = Iit;
@@ -394,11 +486,12 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Ge
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR(OPFLOW opflow,Vec X,Mat Je)
+PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR2(OPFLOW opflow,Vec X,Mat Je)
 {
   PetscErrorCode ierr;
   PetscInt       i,k,row[3],col[4],genctr,gloc=0,loadctr;
   PetscInt       nconnlines,locglob,loc,locglobf,locglobt;
+  PetscInt       locl,locglobl;
   PetscScalar    Vr,Vi,Vm,Vm2,Vm4,val[8],Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
   PS             ps=opflow->ps;
   PSBUS          bus;
@@ -414,6 +507,105 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR(OPFLOW opflow,Vec X
   ierr = MatZeroEntries(Je);CHKERRQ(ierr);
 
   ierr = MatGetOwnershipRange(Je,&rstart,NULL);CHKERRQ(ierr);
+
+  for(i=0; i < ps->nbranch; i++) {
+    line = &ps->line[i];
+    if(!line->status) continue;
+    
+    ierr = PSLINEGetVariableLocation(line,&locl);CHKERRQ(ierr);
+    ierr = PSLINEGetVariableGlobalLocation(line,&locglobl);CHKERRQ(ierr);
+    
+    Gff = line->yff[0];
+    Bff = line->yff[1];
+    Gft = line->yft[0];
+    Bft = line->yft[1];
+    Gtf = line->ytf[0];
+    Btf = line->ytf[1];
+    Gtt = line->ytt[0];
+    Btt = line->ytt[1];
+
+    /* Get the connected buses to this line */
+    ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
+    busf = connbuses[0];
+    bust = connbuses[1];
+
+    ierr = PSBUSGetVariableGlobalLocation(busf,&locglobf);CHKERRQ(ierr);
+    ierr = PSBUSGetVariableGlobalLocation(bust,&locglobt);CHKERRQ(ierr);
+
+    row[0] = locglobl; row[1] = locglobl + 1;
+    col[0] = locglobf; col[1] = locglobf+1; col[2] = locglobt; col[3] = locglobt+1;
+    /* dIrf_dVrf */
+    val[0] = Gff;
+    /* dIrf_dVif */
+    val[1] = -Bff;
+    /* dIrf_dVrt */
+    val[2] = Gft;
+    /* dIrf_dVit */
+    val[3] = -Bft;
+    
+    /* dIif_dVrf */
+    val[4] = Bff;
+    /* dIif_dVif */
+    val[5] = Gff;
+    /* dIif_dVrt */
+    val[6] =  Bft;
+    /* dIif_dVit */
+    val[7] = Gft;
+
+    ierr = MatSetValues(Je,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+
+    col[0] = locglobl; col[1] = locglobl + 1;
+    /* dIrf_dIrf */
+    val[0] = -1.0;
+    /* dIrf_dIif */
+    val[1] = 0.0;
+    /* dIif_dIrf */
+    val[2] = 0.0;
+    /* dIif_dIif */
+    val[3] = -1.0;
+
+    ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
+
+
+    row[0] = locglobl + 2; row[1] = locglobl + 3;
+    col[0] = locglobt; col[1] = locglobt+1; col[2] = locglobf; col[3] = locglobf+1;
+
+    /* dIrt_dVrt */
+    val[0] = Gtt;
+    /* dIrt_dVit */
+    val[1] = -Btt;
+    /* dIrt_dVrf */
+    val[2] = Gtf;
+    /* dIrt_dVif */
+    val[3] = -Btf;
+    
+    /* dIit_dVrt */
+    val[4] = Btt;
+    /* dIit_dVit */
+    val[5] = Gtt;
+    /* dIit_dVrf */
+    val[6]=  Btf;
+    /* dIit_dVif */
+    val[7] = Gtf;
+
+    ierr = MatSetValues(Je,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+
+    col[0] = locglobl + 2; col[1] = locglobl + 3;
+ 
+    /* dIrt_dIrt */
+    val[0] = -1.0;
+    /* dIrt_dIit */
+    val[1] = 0.0;
+    /* dIit_dIrt */
+    val[2] = 0.0;
+    /* dIit_dIit */
+    val[3] = -1.0;
+
+    ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
+
+    gloc += 4;
+  }
+  
 
   ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
   for (i=0; i < ps->nbus; i++) {
@@ -576,66 +768,22 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR(OPFLOW opflow,Vec X
     for (k=0; k < nconnlines; k++) {
       line = connlines[k];
       if (!line->status) continue;
-      Gff = line->yff[0];
-      Bff = line->yff[1];
-      Gft = line->yft[0];
-      Bft = line->yft[1];
-      Gtf = line->ytf[0];
-      Btf = line->ytf[1];
-      Gtt = line->ytt[0];
-      Btt = line->ytt[1];
 
       /* Get the connected buses to this line */
       ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
       busf = connbuses[0];
       bust = connbuses[1];
 
-      ierr = PSBUSGetVariableGlobalLocation(busf,&locglobf);CHKERRQ(ierr);
-      ierr = PSBUSGetVariableGlobalLocation(bust,&locglobt);CHKERRQ(ierr);
+      ierr = PSLINEGetVariableGlobalLocation(line,&locglobl);CHKERRQ(ierr);
 
       if (bus == busf) {
-      	col[0] = locglobf; col[1] = locglobf+1; col[2] = locglobt; col[3] = locglobt+1;
-	/* dIrf_dVrf */
-	val[0] = Gff;
-	/* dIrf_dVif */
-	val[1] = -Bff;
-	/* dIrf_dVrt */
-	val[2] = Gft;
-	/* dIrf_dVit */
-	val[3] = -Bft;
-	
-	/* dIif_dVrf */
-	val[4] = Bff;
-	/* dIif_dVif */
-	val[5] = Gff;
-	/* dIif_dVrt */
-	val[6] =  Bft;
-	/* dIif_dVit */
-	val[7] = Gft;
-        ierr = MatSetValues(Je,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+	col[0] = locglobl; col[1] = locglobl + 1;
       } else {
-      	col[0] = locglobt; col[1] = locglobt+1; col[2] = locglobf; col[3] = locglobf+1;
-
-	/* dIrt_dVrt */
-	val[0] = Gtt;
-	/* dIrt_dVit */
-	val[1] = -Btt;
-	/* dIrt_dVrf */
-	val[2] = Gtf;
-	/* dIrt_dVif */
-	val[3] = -Btf;
-	
-	/* dIit_dVrt */
-	val[4] = Btt;
-	/* dIit_dVit */
-	val[5] = Gtt;
-	/* dIit_dVrf */
-	val[6]=  Btf;
-	/* dIit_dVif */
-	val[7] = Gtf;
-
-        ierr = MatSetValues(Je,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+	col[0] = locglobl + 2; col[1] = locglobl + 3;
       }
+      val[0] = val[3] = 1.0;
+      val[1] = val[2] = 0.0;
+      ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
     }
     gloc += 2;
     if(bus->ide == REF_BUS) {
@@ -656,21 +804,18 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR(OPFLOW opflow,Vec X
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeInequalityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Gi)
+PetscErrorCode OPFLOWComputeInequalityConstraints_IBCAR2(OPFLOW opflow,Vec X,Vec Gi)
 {
   PetscErrorCode ierr;
   PetscInt       i;
   PetscInt       gloc=0;
-  PetscInt       xloc,xlocf,xloct;
+  PetscInt       xloc;
   PetscScalar    *g;
-  PetscScalar    Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
-  PetscScalar    Vr,Vi,Vrf,Vrt,Vif,Vit;
-  PetscScalar    Pf,Qf,Pt,Qt,Sf2,St2;
+  PetscScalar    Irf,Iif,Irt,Iit;
+  PetscScalar    Vr,Vi;
   PS             ps=opflow->ps;
   PSBUS          bus;
   PSLINE         line;
-  PSBUS          busf,bust;
-  const PSBUS    *connbuses;
   const PetscScalar *x;
 
   PetscFunctionBegin;
@@ -694,40 +839,15 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec 
     line = &ps->line[i];
     if(!line->status || line->rateA > 1e5) continue;
 
-    Gff = line->yff[0];
-    Bff = line->yff[1];
-    Gft = line->yft[0];
-    Bft = line->yft[1];
-    Gtf = line->ytf[0];
-    Btf = line->ytf[1];
-    Gtt = line->ytt[0];
-    Btt = line->ytt[1];
+    ierr = PSLINEGetVariableLocation(line,&xloc);CHKERRQ(ierr);
 
-    ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
-    busf = connbuses[0];
-    bust = connbuses[1];
+    Irf = x[xloc]; Iif = x[xloc+1];
+    Irt = x[xloc+2]; Iit = x[xloc+3];
 
-    ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
-    ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
+    g[gloc]   = Irf*Irf + Iif*Iif;
+    g[gloc+1] = Irt*Irt + Iit*Iit;
 
-    Vrf  = x[xlocf];
-    Vif  = x[xlocf+1];
-    Vrt  = x[xloct];
-    Vit  = x[xloct+1];
-
-    Pf =  Gff*(Vrf*Vrf + Vif*Vif) + Vrf*(Gft*Vrt - Bft*Vit) + Vif*(Bft*Vrt + Gft*Vit);
-    Qf = -Bff*(Vrf*Vrf + Vif*Vif) + Vif*(Gft*Vrt - Bft*Vit) - Vrf*(Bft*Vrt + Gft*Vit);
-
-    Pt =  Gtt*(Vrt*Vrt + Vit*Vit) + Vrt*(Gtf*Vrf - Btf*Vif) + Vit*(Btf*Vrf + Gtf*Vif);
-    Qt = -Btt*(Vrt*Vrt + Vit*Vit) + Vit*(Gtf*Vrf - Btf*Vif) - Vrt*(Btf*Vrf + Gtf*Vif);
-
-    Sf2 = Pf*Pf + Qf*Qf;
-    St2 = Pt*Pt + Qt*Qt;
-
-    g[gloc]   = Sf2;
-    g[gloc+1] = St2;
-
-    gloc = gloc + 2;
+    gloc += 2;
   }
   
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
@@ -736,29 +856,20 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,Vec X,Mat Ji)
+PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR2(OPFLOW opflow,Vec X,Mat Ji)
 {
   PetscErrorCode ierr;
   PetscInt       i;
   PetscInt       row[2],col[4];
   PetscInt       rstart,rend;
-  PetscInt       gloc=0,xloc,xlocf,xloct,xlocglob;
+  PetscInt       gloc=0,xloc,xlocglob;
   PetscScalar    val[4];
-  PetscScalar    Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
-  PetscScalar    Vr,Vi,Vrf,Vrt,Vif,Vit;
-  PetscScalar    Pf,Qf,Pt,Qt;
-  PetscScalar    dSf2_dPf, dSf2_dQf, dSt2_dPt, dSt2_dQt;
-  PetscScalar    dPf_dVrf,dPf_dVif,dPf_dVrt,dPf_dVit;
-  PetscScalar    dQf_dVrf,dQf_dVif,dQf_dVrt,dQf_dVit;
-  PetscScalar    dPt_dVrf,dPt_dVif,dPt_dVrt,dPt_dVit;
-  PetscScalar    dQt_dVrf,dQt_dVif,dQt_dVrt,dQt_dVit;
-  PetscScalar    dSf2_dVrf,dSf2_dVif,dSf2_dVrt,dSf2_dVit;
-  PetscScalar    dSt2_dVrf,dSt2_dVif,dSt2_dVrt,dSt2_dVit;
+  PetscScalar    Irf,Iif,Irt,Iit;
+  PetscScalar    Vr,Vi;
   PS             ps=opflow->ps;
   MPI_Comm       comm=opflow->comm->type;
   PSLINE         line;
-  PSBUS          bus,busf,bust;
-  const PSBUS    *connbuses;
+  PSBUS          bus;
   const PetscScalar *x;
 
   PetscFunctionBegin;
@@ -792,83 +903,32 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,Vec
     line = &ps->line[i];
     if(!line->status || line->rateA > 1e5) continue;
 
-    Gff = line->yff[0];
-    Bff = line->yff[1];
-    Gft = line->yft[0];
-    Bft = line->yft[1];
-    Gtf = line->ytf[0];
-    Btf = line->ytf[1];
-    Gtt = line->ytt[0];
-    Btt = line->ytt[1];
-
-    ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
-    busf = connbuses[0];
-    bust = connbuses[1];
-
-    ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
-    ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
-
-    Vrf  = x[xlocf];
-    Vif  = x[xlocf+1];
-    Vrt  = x[xloct];
-    Vit  = x[xloct+1];
-
-    Pf =  Gff*(Vrf*Vrf + Vif*Vif) + Vrf*(Gft*Vrt - Bft*Vit) + Vif*(Bft*Vrt + Gft*Vit);
-    Qf = -Bff*(Vrf*Vrf + Vif*Vif) + Vif*(Gft*Vrt - Bft*Vit) - Vrf*(Bft*Vrt + Gft*Vit);
-
-    Pt =  Gtt*(Vrt*Vrt + Vit*Vit) + Vrt*(Gtf*Vrf - Btf*Vif) + Vit*(Btf*Vrf + Gtf*Vif);
-    Qt = -Btt*(Vrt*Vrt + Vit*Vit) + Vit*(Gtf*Vrf - Btf*Vif) - Vrt*(Btf*Vrf + Gtf*Vif);
-
-    dSf2_dPf = 2*Pf;
-    dSf2_dQf = 2*Qf;
-    dSt2_dPt = 2*Pt;
-    dSt2_dQt = 2*Qt;
-
-    dPf_dVrf = 2*Gff*Vrf + (Gft*Vrt - Bft*Vit);
-    dPf_dVif = 2*Gff*Vif + (Bft*Vrt + Gft*Vit);
-    dPf_dVrt = Vrf*Gft + Vif*Bft;
-    dPf_dVit = -Vrf*Bft + Vif*Gft;
-
-    dQf_dVrf = -2*Bff*Vrf - (Bft*Vrt + Gft*Vit);
-    dQf_dVif = -2*Bff*Vif + (Gft*Vrt - Bft*Vit);
-    dQf_dVrt =  Vif*Gft - Vrf*Bft;
-    dQf_dVit = -Vif*Bft - Vrf*Gft;
-
-    dPt_dVrt = 2*Gtt*Vrt + (Gtf*Vrf - Btf*Vif);
-    dPt_dVit = 2*Gtt*Vit + (Btf*Vrf + Gtf*Vif);
-    dPt_dVrf = Vrt*Gtf  + Vit*Btf;
-    dPt_dVif = -Vrt*Btf + Vit*Gtf;
-
-    dQt_dVrt = -2*Btt*Vrt - (Btf*Vrf + Gtf*Vif);
-    dQt_dVit = -2*Btt*Vit + (Gtf*Vrf - Btf*Vif);
-    dQt_dVrf =  Vit*Gtf - Vrt*Btf;
-    dQt_dVif  = -Vit*Btf - Vrt*Gtf;
-
-    dSf2_dVrf = dSf2_dPf*dPf_dVrf + dSf2_dQf*dQf_dVrf;
-    dSf2_dVrt = dSf2_dPf*dPf_dVrt + dSf2_dQf*dQf_dVrt;
-    dSf2_dVif = dSf2_dPf*dPf_dVif + dSf2_dQf*dQf_dVif;
-    dSf2_dVit = dSf2_dPf*dPf_dVit + dSf2_dQf*dQf_dVit;
+    ierr = PSLINEGetVariableLocation(line,&xloc);CHKERRQ(ierr);
+    ierr = PSLINEGetVariableGlobalLocation(line,&xlocglob);CHKERRQ(ierr);
 
     row[0] = gloc;
-    col[0] = xlocf; col[1] = xlocf+1; col[2] = xloct; col[3] = xloct+1;
-    val[0] = dSf2_dVrf;
-    val[1] = dSf2_dVif;
-    val[2] = dSf2_dVrt;
-    val[3] = dSf2_dVit;
-    ierr = MatSetValues(Ji,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+    col[0] = xlocglob; col[1] = xlocglob + 1;
 
-    dSt2_dVrf = dSt2_dPt*dPt_dVrf + dSt2_dQt*dQt_dVrf;
-    dSt2_dVrt = dSt2_dPt*dPt_dVrt + dSt2_dQt*dQt_dVrt;
-    dSt2_dVif = dSt2_dPt*dPt_dVif + dSt2_dQt*dQt_dVif;
-    dSt2_dVit = dSt2_dPt*dPt_dVit + dSt2_dQt*dQt_dVit;
+    Irf = x[xloc]; Iif = x[xloc+1];
+
+    /* dIf2_dIrf */
+    val[0] = 2*Irf;
+    /* dIf_dIif */
+    val[1] = 2*Iif;
+
+    ierr = MatSetValues(Ji,1,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
 
     row[0] = gloc+1;
-    col[0] = xloct; col[1] = xloct+1; col[2] = xlocf; col[3] = xlocf+1;
-    val[0] = dSt2_dVrt;
-    val[1] = dSt2_dVit;
-    val[2] = dSt2_dVrf;
-    val[3] = dSt2_dVif;
-    ierr = MatSetValues(Ji,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+    col[0] = xlocglob + 2; col[1] = xlocglob + 3;
+
+    Irt = x[xloc+2]; Iit = x[xloc+3];
+
+    /* dIt2_dIrt */
+    val[0] = 2*Irt;
+    /* dIt2_dIit */
+    val[1] = 2*Iit;
+
+    ierr = MatSetValues(Ji,1,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
 
     gloc += 2;
   }
@@ -881,14 +941,14 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,Vec
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeConstraints_IBCAR(OPFLOW opflow,Vec X,Vec G)
+PetscErrorCode OPFLOWComputeConstraints_IBCAR2(OPFLOW opflow,Vec X,Vec G)
 {
   PetscFunctionBegin;
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeObjective_IBCAR(OPFLOW opflow,Vec X,PetscScalar *obj)
+PetscErrorCode OPFLOWComputeObjective_IBCAR2(OPFLOW opflow,Vec X,PetscScalar *obj)
 {
   PetscErrorCode ierr;
   const PetscScalar *x;
@@ -944,7 +1004,7 @@ PetscErrorCode OPFLOWComputeObjective_IBCAR(OPFLOW opflow,Vec X,PetscScalar *obj
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeGradient_IBCAR(OPFLOW opflow,Vec X,Vec grad)
+PetscErrorCode OPFLOWComputeGradient_IBCAR2(OPFLOW opflow,Vec X,Vec grad)
 {
   PetscErrorCode ierr;
   const PetscScalar *x;
@@ -1003,22 +1063,23 @@ PetscErrorCode OPFLOWComputeGradient_IBCAR(OPFLOW opflow,Vec X,Vec grad)
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeObjandGradient_IBCAR(OPFLOW opflow,Vec X,PetscScalar *obj,Vec Grad)
+PetscErrorCode OPFLOWComputeObjandGradient_IBCAR2(OPFLOW opflow,Vec X,PetscScalar *obj,Vec Grad)
 {
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
-  ierr = OPFLOWComputeObjective_IBCAR(opflow,X,obj);CHKERRQ(ierr);
-  ierr = OPFLOWComputeGradient_IBCAR(opflow,X,Grad);CHKERRQ(ierr);
+  ierr = OPFLOWComputeObjective_IBCAR2(opflow,X,obj);CHKERRQ(ierr);
+  ierr = OPFLOWComputeGradient_IBCAR2(opflow,X,Grad);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWFormulationSetNumVariables_IBCAR(OPFLOW opflow,PetscInt *busnvar,PetscInt *branchnvar,PetscInt *nx)
+PetscErrorCode OPFLOWFormulationSetNumVariables_IBCAR2(OPFLOW opflow,PetscInt *busnvar,PetscInt *branchnvar,PetscInt *nx)
 {
   PetscInt i,ngen,nload,k;
   PS       ps=opflow->ps;
   PSBUS    bus;
+  PSLINE   line;
   PSGEN    gen;
   PetscErrorCode ierr;
   PetscBool      isghost;
@@ -1028,7 +1089,9 @@ PetscErrorCode OPFLOWFormulationSetNumVariables_IBCAR(OPFLOW opflow,PetscInt *bu
   *nx = 0;
   /* No variables for the branches */
   for(i=0; i < ps->nbranch; i++) {
-    branchnvar[i] = 0;
+    line = &ps->line[i];
+    if(!line->status) branchnvar[i] = 0;
+    else branchnvar[i] = 4; /* Ifr, Ifi, Itr, Iti From and to bus currents (real and imaginary parts)*/
     *nx += branchnvar[i];
   }
 
@@ -1054,12 +1117,11 @@ PetscErrorCode OPFLOWFormulationSetNumVariables_IBCAR(OPFLOW opflow,PetscInt *bu
     if(opflow->include_powerimbalance_variables) busnvar[i] += 2;
     if(!isghost) *nx += busnvar[i];
   }
-
   
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWFormulationSetNumConstraints_IBCAR(OPFLOW opflow,PetscInt *branchnconeq,PetscInt *busnconeq,PetscInt *nconeq,PetscInt *nconineq)
+PetscErrorCode OPFLOWFormulationSetNumConstraints_IBCAR2(OPFLOW opflow,PetscInt *branchnconeq,PetscInt *busnconeq,PetscInt *nconeq,PetscInt *nconineq)
 {
   PetscInt i;
   PS       ps=opflow->ps;
@@ -1072,6 +1134,11 @@ PetscErrorCode OPFLOWFormulationSetNumConstraints_IBCAR(OPFLOW opflow,PetscInt *
   
   *nconeq = 0;
   *nconineq = 0;
+
+  for(i=0; i < ps->nbranch; i++) {
+    line = &ps->line[i];
+    if(line->status) *nconeq += 4;
+  }
 
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
@@ -1102,13 +1169,14 @@ PetscErrorCode OPFLOWFormulationSetNumConstraints_IBCAR(OPFLOW opflow,PetscInt *
 . H - the Hessian part for the equality constraints
 
 */
-PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,Vec X,Vec Lambda,Mat H) 
+PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR2(OPFLOW opflow,Vec X,Vec Lambda,Mat H) 
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
   PetscInt       i,k;
   PSBUS          bus;
   PSGEN          gen;
+  PSLINE         line;
   PetscInt       xloc,xlocglob;
   const PetscScalar *x;
   const PetscScalar *lambda;
@@ -1121,6 +1189,12 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,Vec X
 
   ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecGetArrayRead(Lambda,&lambda);CHKERRQ(ierr);
+
+  for(i=0; i < ps->nbranch; i++) {
+    line = &ps->line[i];
+    if(!line->status) continue;
+    gloc += 4; /* No Hessian contribution from line flow constraints, only increment gloc counter */
+  }
 
   // For equality constraints (power flow) */
   for(i=0; i < ps->nbus; i++) {
@@ -1421,23 +1495,20 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,Vec X
 + H   - the Hessian matrix
 
 */
-PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR(OPFLOW opflow, Vec X, Vec Lambda,Mat H)
+PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR2(OPFLOW opflow, Vec X, Vec Lambda,Mat H)
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
   PetscInt       i;
   PSLINE         line;
-  const PSBUS    *connbuses;
-  PetscInt       xloc,xlocf,xloct,xlocglob,xlocglobf,xlocglobt;
-  PSBUS          bus,busf,bust;
+  PetscInt       xloc,xlocglob;
+  PSBUS          bus;
   const PetscScalar *x;
   const PetscScalar *lambda;
   PetscInt       gloc=0;
   PetscInt       row[12],col[12];
   PetscScalar    val[12];
-  PetscScalar    Vrf,Vif,Vrt,Vit;
   PetscScalar    dVm2_dVr2,dVm2_dVi2;
-  PetscScalar    Pf,Qf,Pt,Qt;
 
   PetscFunctionBegin;
 
@@ -1464,308 +1535,39 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR(OPFLOW opflow, Ve
 
   val[0] = val[1] = val[2] = val[3] = 0.0;
   // for the part of line constraints
-  for(i=0; i < ps->Nbranch; i++) {
+  for(i=0; i < ps->nbranch; i++) {
     line = &ps->line[i];
     if(!line->status || line->rateA > 1e5) continue;
 
-    PetscScalar Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
-    Gff = line->yff[0];
-    Bff = line->yff[1];
-    Gft = line->yft[0];
-    Bft = line->yft[1];
-    Gtf = line->ytf[0];
-    Btf = line->ytf[1];
-    Gtt = line->ytt[0];
-    Btt = line->ytt[1];
+    ierr = PSLINEGetVariableGlobalLocation(line,&xlocglob);CHKERRQ(ierr);
 
-    ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
-    busf = connbuses[0];
-    bust = connbuses[1];
+    PetscScalar dIf2_dIrf_dIrf,dIf2_dIif_dIif;
+    PetscScalar dIt2_dIrt_dIrt,dIt2_dIit_dIit;
 
-    ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
-    ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
+    row[0] = xlocglob; row[1] = xlocglob + 1;
+    col[0] = xlocglob; col[1] = xlocglob + 1;
+    dIf2_dIrf_dIrf = 2.0; dIf2_dIif_dIif = 2.0;
+    dIt2_dIrt_dIrt = 2.0; dIt2_dIit_dIit = 2.0;
 
-    ierr = PSBUSGetVariableGlobalLocation(busf,&xlocglobf);CHKERRQ(ierr);
-    ierr = PSBUSGetVariableGlobalLocation(bust,&xlocglobt);CHKERRQ(ierr);
+    val[0] = lambda[gloc]*dIf2_dIrf_dIrf;
+    val[1] = val[2] = 0.0;
+    val[3] = lambda[gloc]*dIf2_dIif_dIif;
 
-    Vrf  = x[xlocf];
-    Vif  = x[xlocf+1];
-    Vrt  = x[xloct];
-    Vit  = x[xloct+1];
+    ierr = MatSetValues(H,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
 
-    Pf =  Gff*(Vrf*Vrf + Vif*Vif) + Vrf*(Gft*Vrt - Bft*Vit) + Vif*(Bft*Vrt + Gft*Vit);
-    Qf = -Bff*(Vrf*Vrf + Vif*Vif) + Vif*(Gft*Vrt - Bft*Vit) - Vrf*(Bft*Vrt + Gft*Vit);
+    gloc++;
 
-    Pt =  Gtt*(Vrt*Vrt + Vit*Vit) + Vrt*(Gtf*Vrf - Btf*Vif) + Vit*(Btf*Vrf + Gtf*Vif);
-    Qt = -Btt*(Vrt*Vrt + Vit*Vit) + Vit*(Gtf*Vrf - Btf*Vif) - Vrt*(Btf*Vrf + Gtf*Vif);
+    row[0] = xlocglob+2; row[1] = xlocglob + 3;
+    col[0] = xlocglob+2; col[1] = xlocglob + 3;
 
-    PetscScalar dSf2_dPf,dSf2_dQf,dSt2_dPt,dSt2_dQt;
-    dSf2_dPf = 2*Pf;
-    dSf2_dQf = 2*Qf;
-    dSt2_dPt = 2*Pt;
-    dSt2_dQt = 2*Qt;
+    val[0] = lambda[gloc]*dIt2_dIrt_dIrt;
+    val[1] = val[2] = 0.0;
+    val[3] = lambda[gloc]*dIt2_dIit_dIit;
 
-    /* Need to calculat the partial derivatives w.r.t. these terms
-    dSf2_dVrf = dSf2_dPf*dPf_dVrf + dSf2_dQf*dQf_dVrf;
-    dSf2_dVrt = dSf2_dPf*dPf_dVrt + dSf2_dQf*dQf_dVrt;
-    dSf2_dVif = dSf2_dPf*dPf_dVif + dSf2_dQf*dQf_dVif;
-    dSf2_dVit = dSf2_dPf*dPf_dVit + dSf2_dQf*dQf_dVit;
+    ierr = MatSetValues(H,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
 
-    which would be
+    gloc++;
 
-    dSf2_dVrf_dVrf = dSf2_dPf_dVrf*dPf_dVrf + dSf2_dPf*dPf_dVrf_Vrf + dSf2_dQf_dVrf*dQf_dVrf + dSf2_dQf*dQf_dVrf_dVrf
-     = 2*dPf_dVr*dPf_dVrf + dSf2_dPf*dPf_dVrf_dVrf + 2*dQf_dVrf*dQf_dVrf + dSf2_dQf*dQf_dVrf_dVrf
-
-    dSf2_dVrf_dVif = dSf2_dPf_dVif*dPf_dVrf + dSf2_dPf*dPf_dVrf_dVif
-                     + dSf2_dPf_dVif*dPf_dVrf + dSf2_dPf*dPf_dVrf_dVif
-    */
-    PetscScalar    dPf_dVrf,dPf_dVif,dPf_dVrt,dPf_dVit;
-    PetscScalar    dQf_dVrf,dQf_dVif,dQf_dVrt,dQf_dVit;
-    PetscScalar    dPt_dVrf,dPt_dVif,dPt_dVrt,dPt_dVit;
-    PetscScalar    dQt_dVrf,dQt_dVif,dQt_dVrt,dQt_dVit;
-
-    dPf_dVrf = 2*Gff*Vrf + (Gft*Vrt - Bft*Vit);
-    dPf_dVif = 2*Gff*Vif + (Bft*Vrt + Gft*Vit);
-    dPf_dVrt = Vrf*Gft + Vif*Bft;
-    dPf_dVit = -Vrf*Bft + Vif*Gft;
-
-    dQf_dVrf = -2*Bff*Vrf - (Bft*Vrt + Gft*Vit);
-    dQf_dVif = -2*Bff*Vif + (Gft*Vrt - Bft*Vit);
-    dQf_dVrt =  Vif*Gft - Vrf*Bft;
-    dQf_dVit = -Vif*Bft - Vrf*Gft;
-
-    dPt_dVrt = 2*Gtt*Vrt + (Gtf*Vrf - Btf*Vif);
-    dPt_dVit = 2*Gtt*Vit + (Btf*Vrf + Gtf*Vif);
-    dPt_dVrf = Vrt*Gtf  + Vit*Btf;
-    dPt_dVif = -Vrt*Btf + Vit*Gtf;
-
-    dQt_dVrt = -2*Btt*Vrt - (Btf*Vrf + Gtf*Vif);
-    dQt_dVit = -2*Btt*Vit + (Gtf*Vrf - Btf*Vif);
-    dQt_dVrf =  Vit*Gtf - Vrt*Btf;
-    dQt_dVif  = -Vit*Btf - Vrt*Gtf;
-
-    PetscScalar d2Pf_dVrf_dVrf,d2Pf_dVrf_dVif,d2Pf_dVrf_dVrt,d2Pf_dVrf_dVit;
-    PetscScalar d2Pf_dVif_dVrf,d2Pf_dVif_dVif,d2Pf_dVif_dVrt,d2Pf_dVif_dVit;
-    PetscScalar d2Pf_dVrt_dVrf,d2Pf_dVrt_dVif,d2Pf_dVrt_dVrt,d2Pf_dVrt_dVit;
-    PetscScalar d2Pf_dVit_dVrf,d2Pf_dVit_dVif,d2Pf_dVit_dVrt,d2Pf_dVit_dVit;
-
-    /* Partial of     dPf_dVrf = 2*Gff*Vrf + (Gft*Vrt - Bft*Vit); */
-    d2Pf_dVrf_dVrf = 2*Gff;
-    d2Pf_dVrf_dVif = 0.0;
-    d2Pf_dVrf_dVrt = Gft;
-    d2Pf_dVrf_dVit = -Bft;
-
-    /* Partial of dPf_dVif = 2*Gff*Vif + (Bft*Vrt + Gft*Vit); */
-    d2Pf_dVif_dVrf = 0.0;
-    d2Pf_dVif_dVif = 2*Gff;
-    d2Pf_dVif_dVrt = Bft;
-    d2Pf_dVif_dVit = Gft;
-    
-    /* Partial of dPf_dVrt = Vrf*Gft + Vif*Bft; */
-    d2Pf_dVrt_dVrf = Gft;
-    d2Pf_dVrt_dVif = Bft;
-    d2Pf_dVrt_dVrt = 0.0;
-    d2Pf_dVrt_dVit = 0.0;
-    
-    /* Partial of dPf_dVit = -Vrf*Bft + Vif*Gft; */
-    d2Pf_dVit_dVrf = -Bft;
-    d2Pf_dVit_dVif =  Gft;
-    d2Pf_dVit_dVrt = 0.0;
-    d2Pf_dVit_dVit = 0.0;
-    
-    PetscScalar d2Qf_dVrf_dVrf,d2Qf_dVrf_dVif,d2Qf_dVrf_dVrt,d2Qf_dVrf_dVit;
-    PetscScalar d2Qf_dVif_dVrf,d2Qf_dVif_dVif,d2Qf_dVif_dVrt,d2Qf_dVif_dVit;
-    PetscScalar d2Qf_dVrt_dVrf,d2Qf_dVrt_dVif,d2Qf_dVrt_dVrt,d2Qf_dVrt_dVit;
-    PetscScalar d2Qf_dVit_dVrf,d2Qf_dVit_dVif,d2Qf_dVit_dVrt,d2Qf_dVit_dVit;
-    
-    /* Partial of     dQf_dVrf = -2*Bff*Vrf - (Bft*Vrt + Gft*Vit) */
-    d2Qf_dVrf_dVrf = -2*Bff;
-    d2Qf_dVrf_dVif = 0.0;
-    d2Qf_dVrf_dVrt = -Bft;
-    d2Qf_dVrf_dVit = -Gft;
-    
-    /* Partial of     dQf_dVif = -2*Bff*Vif + (Gft*Vrt - Bft*Vit); */
-    d2Qf_dVif_dVrf = 0.0;
-    d2Qf_dVif_dVif = -2*Bff;
-    d2Qf_dVif_dVrt = Gft;
-    d2Qf_dVif_dVit = -Bft;
-    
-    /* Partial of dQf_dVrt =  Vif*Gft - Vrf*Bft; */
-    d2Qf_dVrt_dVrf = -Bft;
-    d2Qf_dVrt_dVif = Gft;
-    d2Qf_dVrt_dVrt = 0.0;
-    d2Qf_dVrt_dVit = 0.0;
-    
-    /* Partial of dQf_dVit = -Vif*Bft - Vrf*Gft; */
-    d2Qf_dVit_dVrf = -Gft;
-    d2Qf_dVit_dVif = -Bft;
-    d2Qf_dVit_dVrt = 0.0;
-    d2Qf_dVit_dVit = 0.0;
-
-    PetscScalar d2Pt_dVrf_dVrf,d2Pt_dVrf_dVif,d2Pt_dVrf_dVrt,d2Pt_dVrf_dVit;
-    PetscScalar d2Pt_dVif_dVrf,d2Pt_dVif_dVif,d2Pt_dVif_dVrt,d2Pt_dVif_dVit;
-    PetscScalar d2Pt_dVrt_dVrf,d2Pt_dVrt_dVif,d2Pt_dVrt_dVrt,d2Pt_dVrt_dVit;
-    PetscScalar d2Pt_dVit_dVrf,d2Pt_dVit_dVif,d2Pt_dVit_dVrt,d2Pt_dVit_dVit;
-    
-    /* Partial of     dPt_dVrt = 2*Gtt*Vrt + (Gtf*Vrf - Btf*Vif); */
-    d2Pt_dVrt_dVrt = 2*Gtt;
-    d2Pt_dVrt_dVit = 0.0;
-    d2Pt_dVrt_dVrf = Gtf;
-    d2Pt_dVrt_dVif = -Btf;
-    
-    /* Partial of dPt_dVit = 2*Gtt*Vit + (Btf*Vrf + Gtf*Vif); */
-    d2Pt_dVit_dVrt = 0.0;
-    d2Pt_dVit_dVit = 2*Gtt;
-    d2Pt_dVit_dVrf = Btf;
-    d2Pt_dVit_dVif = Gtf;
-    
-    /* Partial of dPt_dVrf = Vrt*Gtf + Vit*Btf; */
-    d2Pt_dVrf_dVrt = Gtf;
-    d2Pt_dVrf_dVit = Btf;
-    d2Pt_dVrf_dVrf = 0.0;
-    d2Pt_dVrf_dVif = 0.0;
-    
-    /* Partial of dPt_dVif = -Vrt*Btf + Vit*Gtf; */
-    d2Pt_dVif_dVrt = -Btf;
-    d2Pt_dVif_dVit =  Gtf;
-    d2Pt_dVif_dVrf = 0.0;
-    d2Pt_dVif_dVif = 0.0;
-    
-    PetscScalar d2Qt_dVrf_dVrf,d2Qt_dVrf_dVif,d2Qt_dVrf_dVrt,d2Qt_dVrf_dVit;
-    PetscScalar d2Qt_dVif_dVrf,d2Qt_dVif_dVif,d2Qt_dVif_dVrt,d2Qt_dVif_dVit;
-    PetscScalar d2Qt_dVrt_dVrf,d2Qt_dVrt_dVif,d2Qt_dVrt_dVrt,d2Qt_dVrt_dVit;
-    PetscScalar d2Qt_dVit_dVrf,d2Qt_dVit_dVif,d2Qt_dVit_dVrt,d2Qt_dVit_dVit;
-    
-    /* Partial of dQt_dVrt = -2*Btt*Vrt - (Btf*Vrf + Gtf*Vif) */
-    d2Qt_dVrt_dVrt = -2*Btt;
-    d2Qt_dVrt_dVit = 0.0;
-    d2Qt_dVrt_dVrf = -Btf;
-    d2Qt_dVrt_dVif = -Gtf;
-    
-    /* Partial of dQt_dVit = -2*Btt*Vit + (Gtf*Vrf - Btf*Vif); */
-    d2Qt_dVit_dVrt = 0.0;
-    d2Qt_dVit_dVit = -2*Btt;
-    d2Qt_dVit_dVrf = Gtf;
-    d2Qt_dVit_dVif = -Btf;
-    
-    /* Partial of dQt_dVrf =  Vit*Gtf - Vrt*Btf; */
-    d2Qt_dVrf_dVrt = -Btf;
-    d2Qt_dVrf_dVit = Gtf;
-    d2Qt_dVrf_dVrf = 0.0;
-    d2Qt_dVrf_dVif = 0.0;
-    
-    /* Partial of dQt_dVif = -Vit*Btf - Vrt*Gtf; */
-    d2Qt_dVif_dVrt = -Gtf;
-    d2Qt_dVif_dVit = -Btf;
-    d2Qt_dVif_dVrf =  0.0;
-    d2Qt_dVif_dVif =  0.0;
-    
-    PetscScalar d2Sf2_dVrf_dVrf=0.0,d2Sf2_dVrf_dVif=0.0,d2Sf2_dVrf_dVrt=0.0,d2Sf2_dVrf_dVit=0.0;
-    PetscScalar d2St2_dVrf_dVrf=0.0,d2St2_dVrf_dVif=0.0,d2St2_dVrf_dVrt=0.0,d2St2_dVrf_dVit=0.0;
-
-    d2Sf2_dVrf_dVrf = 2*dPf_dVrf*dPf_dVrf + dSf2_dPf*d2Pf_dVrf_dVrf +  2*dQf_dVrf*dQf_dVrf + dSf2_dQf*d2Qf_dVrf_dVrf;
-    d2Sf2_dVrf_dVif = 2*dPf_dVif*dPf_dVrf + dSf2_dPf*d2Pf_dVrf_dVif +  2*dQf_dVif*dQf_dVrf + dSf2_dQf*d2Qf_dVrf_dVif;
-    d2Sf2_dVrf_dVrt = 2*dPf_dVrt*dPf_dVrf + dSf2_dPf*d2Pf_dVrf_dVrt +  2*dQf_dVrt*dQf_dVrf + dSf2_dQf*d2Qf_dVrf_dVrt;
-    d2Sf2_dVrf_dVit = 2*dPf_dVit*dPf_dVrf + dSf2_dPf*d2Pf_dVrf_dVit +  2*dQf_dVit*dQf_dVrf + dSf2_dQf*d2Qf_dVrf_dVit;
-
-    d2St2_dVrf_dVrf = 2*dPt_dVrf*dPt_dVrf + dSt2_dPt*d2Pt_dVrf_dVrf +  2*dQt_dVrf*dQt_dVrf + dSt2_dQt*d2Qt_dVrf_dVrf;
-    d2St2_dVrf_dVif = 2*dPt_dVif*dPt_dVrf + dSt2_dPt*d2Pt_dVrf_dVif +  2*dQt_dVif*dQt_dVrf + dSt2_dQt*d2Qt_dVrf_dVif;
-    d2St2_dVrf_dVrt = 2*dPt_dVrt*dPt_dVrf + dSt2_dPt*d2Pt_dVrf_dVrt +  2*dQt_dVrt*dQt_dVrf + dSt2_dQt*d2Qt_dVrf_dVrt;
-    d2St2_dVrf_dVit = 2*dPt_dVit*dPt_dVrf + dSt2_dPt*d2Pt_dVrf_dVit +  2*dQt_dVit*dQt_dVrf + dSt2_dQt*d2Qt_dVrf_dVit;
-
-    val[0] = val[1] = val[2] = val[3] = 0.0;
-    col[0] = xlocglobf; 
-    col[1] = xlocglobf+1; 
-    col[2] = xlocglobt;
-    col[3] = xlocglobt+1;
-    row[0] = xlocglobf;
-    val[0] = lambda[gloc]*d2Sf2_dVrf_dVrf + lambda[gloc+1]*d2St2_dVrf_dVrf;
-    val[1] = lambda[gloc]*d2Sf2_dVrf_dVif + lambda[gloc+1]*d2St2_dVrf_dVif;
-    val[2] = lambda[gloc]*d2Sf2_dVrf_dVrt + lambda[gloc+1]*d2St2_dVrf_dVrt;
-    val[3] = lambda[gloc]*d2Sf2_dVrf_dVit + lambda[gloc+1]*d2St2_dVrf_dVit;
-
-    ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
-
-    PetscScalar d2Sf2_dVif_dVrf,d2Sf2_dVif_dVif,d2Sf2_dVif_dVrt,d2Sf2_dVif_dVit;
-    PetscScalar d2St2_dVif_dVrf,d2St2_dVif_dVif,d2St2_dVif_dVrt,d2St2_dVif_dVit;
-
-    d2Sf2_dVif_dVrf = 2*dPf_dVrf*dPf_dVif + dSf2_dPf*d2Pf_dVif_dVrf +  2*dQf_dVrf*dQf_dVif + dSf2_dQf*d2Qf_dVif_dVrf;
-    d2Sf2_dVif_dVif = 2*dPf_dVif*dPf_dVif + dSf2_dPf*d2Pf_dVif_dVif +  2*dQf_dVif*dQf_dVif + dSf2_dQf*d2Qf_dVif_dVif;
-    d2Sf2_dVif_dVrt = 2*dPf_dVrt*dPf_dVif + dSf2_dPf*d2Pf_dVif_dVrt +  2*dQf_dVrt*dQf_dVif + dSf2_dQf*d2Qf_dVif_dVrt;
-    d2Sf2_dVif_dVit = 2*dPf_dVit*dPf_dVif + dSf2_dPf*d2Pf_dVif_dVit +  2*dQf_dVit*dQf_dVif + dSf2_dQf*d2Qf_dVif_dVit;
-
-    d2St2_dVif_dVrf = 2*dPt_dVrf*dPt_dVif + dSt2_dPt*d2Pt_dVif_dVrf +  2*dQt_dVrf*dQt_dVif + dSt2_dQt*d2Qt_dVif_dVrf;
-    d2St2_dVif_dVif = 2*dPt_dVif*dPt_dVif + dSt2_dPt*d2Pt_dVif_dVif +  2*dQt_dVif*dQt_dVif + dSt2_dQt*d2Qt_dVif_dVif;
-    d2St2_dVif_dVrt = 2*dPt_dVrt*dPt_dVif + dSt2_dPt*d2Pt_dVif_dVrt +  2*dQt_dVrt*dQt_dVif + dSt2_dQt*d2Qt_dVif_dVrt;
-    d2St2_dVif_dVit = 2*dPt_dVit*dPt_dVif + dSt2_dPt*d2Pt_dVif_dVit +  2*dQt_dVit*dQt_dVif + dSt2_dQt*d2Qt_dVif_dVit;
-
-    val[0] = val[1] = val[2] = val[3] = 0.0;
-    col[0] = xlocglobf; 
-    col[1] = xlocglobf+1; 
-    col[2] = xlocglobt;
-    col[3] = xlocglobt+1;
-    row[0] = xlocglobf+1;
-    val[0] = lambda[gloc]*d2Sf2_dVif_dVrf + lambda[gloc+1]*d2St2_dVif_dVrf;
-    val[1] = lambda[gloc]*d2Sf2_dVif_dVif + lambda[gloc+1]*d2St2_dVif_dVif;
-    val[2] = lambda[gloc]*d2Sf2_dVif_dVrt + lambda[gloc+1]*d2St2_dVif_dVrt;
-    val[3] = lambda[gloc]*d2Sf2_dVif_dVit + lambda[gloc+1]*d2St2_dVif_dVit;
-    ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
-
-    PetscScalar d2Sf2_dVrt_dVrf,d2Sf2_dVrt_dVif,d2Sf2_dVrt_dVrt,d2Sf2_dVrt_dVit;
-    PetscScalar d2St2_dVrt_dVrf,d2St2_dVrt_dVif,d2St2_dVrt_dVrt,d2St2_dVrt_dVit;
-
-    d2Sf2_dVrt_dVrf = 2*dPf_dVrf*dPf_dVrt + dSf2_dPf*d2Pf_dVrt_dVrf +  2*dQf_dVrt*dQf_dVrf + dSf2_dQf*d2Qf_dVrt_dVrf;
-    d2Sf2_dVrt_dVif = 2*dPf_dVif*dPf_dVrt + dSf2_dPf*d2Pf_dVrt_dVif +  2*dQf_dVrt*dQf_dVif + dSf2_dQf*d2Qf_dVrt_dVif;
-    d2Sf2_dVrt_dVrt = 2*dPf_dVrt*dPf_dVrt + dSf2_dPf*d2Pf_dVrt_dVrt +  2*dQf_dVrt*dQf_dVrt + dSf2_dQf*d2Qf_dVrt_dVrt;
-    d2Sf2_dVrt_dVit = 2*dPf_dVit*dPf_dVrt + dSf2_dPf*d2Pf_dVrt_dVit +  2*dQf_dVrt*dQf_dVit + dSf2_dQf*d2Qf_dVrt_dVit;
-
-    d2St2_dVrt_dVrf = 2*dPt_dVrf*dPt_dVrt + dSt2_dPt*d2Pt_dVrt_dVrf +  2*dQt_dVrf*dQt_dVrt + dSt2_dQt*d2Qt_dVrt_dVrf;
-    d2St2_dVrt_dVif = 2*dPt_dVif*dPt_dVrt + dSt2_dPt*d2Pt_dVrt_dVif +  2*dQt_dVif*dQt_dVrt + dSt2_dQt*d2Qt_dVrt_dVif;
-    d2St2_dVrt_dVrt = 2*dPt_dVrt*dPt_dVrt + dSt2_dPt*d2Pt_dVrt_dVrt +  2*dQt_dVrt*dQt_dVrt + dSt2_dQt*d2Qt_dVrt_dVrt;
-    d2St2_dVrt_dVit = 2*dPt_dVit*dPt_dVrt + dSt2_dPt*d2Pt_dVrt_dVit +  2*dQt_dVit*dQt_dVrt + dSt2_dQt*d2Qt_dVrt_dVit;
-
-    val[0] = val[1] = val[2] = val[3] = 0.0;
-    col[0] = xlocglobf; 
-    col[1] = xlocglobf+1; 
-    col[2] = xlocglobt;
-    col[3] = xlocglobt+1;
-    row[0] = xlocglobt;
-
-    val[0] = lambda[gloc]*d2Sf2_dVrt_dVrf + lambda[gloc+1]*d2St2_dVrt_dVrf;
-    val[1] = lambda[gloc]*d2Sf2_dVrt_dVif + lambda[gloc+1]*d2St2_dVrt_dVif;
-    val[2] = lambda[gloc]*d2Sf2_dVrt_dVrt + lambda[gloc+1]*d2St2_dVrt_dVrt;
-    val[3] = lambda[gloc]*d2Sf2_dVrt_dVit + lambda[gloc+1]*d2St2_dVrt_dVit;
-    
-    ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
-
-    PetscScalar d2Sf2_dVit_dVrf,d2Sf2_dVit_dVif,d2Sf2_dVit_dVrt,d2Sf2_dVit_dVit;
-    PetscScalar d2St2_dVit_dVrf,d2St2_dVit_dVif,d2St2_dVit_dVrt,d2St2_dVit_dVit;
-
-    d2Sf2_dVit_dVrf = 2*dPf_dVrf*dPf_dVit + dSf2_dPf*d2Pf_dVit_dVrf +  2*dQf_dVrf*dQf_dVit + dSf2_dQf*d2Qf_dVit_dVrf;
-    d2Sf2_dVit_dVif = 2*dPf_dVif*dPf_dVit + dSf2_dPf*d2Pf_dVit_dVif +  2*dQf_dVif*dQf_dVit + dSf2_dQf*d2Qf_dVit_dVif;
-    d2Sf2_dVit_dVrt = 2*dPf_dVrt*dPf_dVit + dSf2_dPf*d2Pf_dVit_dVrt +  2*dQf_dVrt*dQf_dVit + dSf2_dQf*d2Qf_dVit_dVrt;
-    d2Sf2_dVit_dVit = 2*dPf_dVit*dPf_dVit + dSf2_dPf*d2Pf_dVit_dVit +  2*dQf_dVit*dQf_dVit + dSf2_dQf*d2Qf_dVit_dVit;
-
-    d2St2_dVit_dVrf = 2*dPt_dVrf*dPt_dVit + dSt2_dPt*d2Pt_dVit_dVrf +  2*dQt_dVrf*dQt_dVit + dSt2_dQt*d2Qt_dVit_dVrf;
-    d2St2_dVit_dVif = 2*dPt_dVif*dPt_dVit + dSt2_dPt*d2Pt_dVit_dVif +  2*dQt_dVif*dQt_dVit + dSt2_dQt*d2Qt_dVit_dVif;
-    d2St2_dVit_dVrt = 2*dPt_dVrt*dPt_dVit + dSt2_dPt*d2Pt_dVit_dVrt +  2*dQt_dVrt*dQt_dVit + dSt2_dQt*d2Qt_dVit_dVrt;
-    d2St2_dVit_dVit = 2*dPt_dVit*dPt_dVit + dSt2_dPt*d2Pt_dVit_dVit +  2*dQt_dVit*dQt_dVit + dSt2_dQt*d2Qt_dVit_dVit;
-
-    val[0] = val[1] = val[2] = val[3] = 0.0;
-    col[0] = xlocglobf; 
-    col[1] = xlocglobf+1; 
-    col[2] = xlocglobt;
-    col[3] = xlocglobt+1;
-    row[0] = xlocglobt+1;
-
-    val[0] = lambda[gloc]*d2Sf2_dVit_dVrf + lambda[gloc+1]*d2St2_dVit_dVrf;
-    val[1] = lambda[gloc]*d2Sf2_dVit_dVif + lambda[gloc+1]*d2St2_dVit_dVif;
-    val[2] = lambda[gloc]*d2Sf2_dVit_dVrt + lambda[gloc+1]*d2St2_dVit_dVrt;
-    val[3] = lambda[gloc]*d2Sf2_dVit_dVit + lambda[gloc+1]*d2St2_dVit_dVit;
-    
-    ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
-
-    gloc +=  2;
   }
 
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
@@ -1785,7 +1587,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR(OPFLOW opflow, Ve
 . H - the Hessian part for the objective function
 
 */
-PetscErrorCode OPFLOWComputeObjectiveHessian_IBCAR(OPFLOW opflow,Vec X,Mat H) 
+PetscErrorCode OPFLOWComputeObjectiveHessian_IBCAR2(OPFLOW opflow,Vec X,Mat H) 
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
@@ -1857,21 +1659,21 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_IBCAR(OPFLOW opflow,Vec X,Mat H)
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeHessian_IBCAR(OPFLOW opflow,Vec X,Vec Lambdae,Vec Lambdai,Mat H)
+PetscErrorCode OPFLOWComputeHessian_IBCAR2(OPFLOW opflow,Vec X,Vec Lambdae,Vec Lambdai,Mat H)
 {
   PetscErrorCode ierr;
   PetscFunctionBegin;
   ierr = MatZeroEntries(H);CHKERRQ(ierr);
 
   /* Objective function Hessian */
-  ierr = OPFLOWComputeObjectiveHessian_IBCAR(opflow,X,H);CHKERRQ(ierr);
+  ierr = OPFLOWComputeObjectiveHessian_IBCAR2(opflow,X,H);CHKERRQ(ierr);
 
   /* Equality constraints Hessian */
-  ierr = OPFLOWComputeEqualityConstraintsHessian_IBCAR(opflow,X,Lambdae,H);CHKERRQ(ierr);
+  ierr = OPFLOWComputeEqualityConstraintsHessian_IBCAR2(opflow,X,Lambdae,H);CHKERRQ(ierr);
   
   /* Inequality constraints Hessian */
   if(opflow->nconineq) {
-    ierr = OPFLOWComputeInequalityConstraintsHessian_IBCAR(opflow,X,Lambdai,H);CHKERRQ(ierr);
+    ierr = OPFLOWComputeInequalityConstraintsHessian_IBCAR2(opflow,X,Lambdai,H);CHKERRQ(ierr);
   }
 
   ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -1880,33 +1682,33 @@ PetscErrorCode OPFLOWComputeHessian_IBCAR(OPFLOW opflow,Vec X,Vec Lambdae,Vec La
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWFormulationCreate_IBCAR(OPFLOW opflow)
+PetscErrorCode OPFLOWFormulationCreate_IBCAR2(OPFLOW opflow)
 {
-  IBCAR ibcar;
+  IBCAR ibcar2;
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
   
-  ierr = PetscCalloc1(1,&ibcar);CHKERRQ(ierr);
+  ierr = PetscCalloc1(1,&ibcar2);CHKERRQ(ierr);
 
-  opflow->formulation = ibcar;
+  opflow->formulation = ibcar2;
 
   /* Inherit Ops */
-  opflow->formops.destroy = OPFLOWFormulationDestroy_IBCAR;
-  opflow->formops.setnumvariables = OPFLOWFormulationSetNumVariables_IBCAR;
-  opflow->formops.setnumconstraints = OPFLOWFormulationSetNumConstraints_IBCAR;
-  opflow->formops.setvariablebounds = OPFLOWSetVariableBounds_IBCAR;
-  opflow->formops.setconstraintbounds = OPFLOWSetConstraintBounds_IBCAR;
-  opflow->formops.setvariableandconstraintbounds = OPFLOWSetVariableandConstraintBounds_IBCAR;
-  opflow->formops.setinitialguess = OPFLOWSetInitialGuess_IBCAR;
-  opflow->formops.computeequalityconstraints = OPFLOWComputeEqualityConstraints_IBCAR;
-  opflow->formops.computeinequalityconstraints = OPFLOWComputeInequalityConstraints_IBCAR;
-  opflow->formops.computeequalityconstraintjacobian = OPFLOWComputeEqualityConstraintJacobian_IBCAR;
-  opflow->formops.computeinequalityconstraintjacobian = OPFLOWComputeInequalityConstraintJacobian_IBCAR;
-  opflow->formops.computehessian = OPFLOWComputeHessian_IBCAR;
-  opflow->formops.computeobjandgradient = OPFLOWComputeObjandGradient_IBCAR;
-  opflow->formops.computeobjective = OPFLOWComputeObjective_IBCAR;
-  opflow->formops.computegradient  = OPFLOWComputeGradient_IBCAR;
+  opflow->formops.destroy = OPFLOWFormulationDestroy_IBCAR2;
+  opflow->formops.setnumvariables = OPFLOWFormulationSetNumVariables_IBCAR2;
+  opflow->formops.setnumconstraints = OPFLOWFormulationSetNumConstraints_IBCAR2;
+  opflow->formops.setvariablebounds = OPFLOWSetVariableBounds_IBCAR2;
+  opflow->formops.setconstraintbounds = OPFLOWSetConstraintBounds_IBCAR2;
+  opflow->formops.setvariableandconstraintbounds = OPFLOWSetVariableandConstraintBounds_IBCAR2;
+  opflow->formops.setinitialguess = OPFLOWSetInitialGuess_IBCAR2;
+  opflow->formops.computeequalityconstraints = OPFLOWComputeEqualityConstraints_IBCAR2;
+  opflow->formops.computeinequalityconstraints = OPFLOWComputeInequalityConstraints_IBCAR2;
+  opflow->formops.computeequalityconstraintjacobian = OPFLOWComputeEqualityConstraintJacobian_IBCAR2;
+  opflow->formops.computeinequalityconstraintjacobian = OPFLOWComputeInequalityConstraintJacobian_IBCAR2;
+  opflow->formops.computehessian = OPFLOWComputeHessian_IBCAR2;
+  opflow->formops.computeobjandgradient = OPFLOWComputeObjandGradient_IBCAR2;
+  opflow->formops.computeobjective = OPFLOWComputeObjective_IBCAR2;
+  opflow->formops.computegradient  = OPFLOWComputeGradient_IBCAR2;
   
   PetscFunctionReturn(0);
 }

@@ -1090,7 +1090,7 @@ PetscErrorCode OPFLOWFormulationSetNumVariables_PBCAR(OPFLOW opflow,PetscInt *bu
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWFormulationSetNumConstraints_PBCAR(OPFLOW opflow,PetscInt *busnconeq,PetscInt *nconeq,PetscInt *nconineq)
+PetscErrorCode OPFLOWFormulationSetNumConstraints_PBCAR(OPFLOW opflow,PetscInt *branchnconeq,PetscInt *busnconeq,PetscInt *nconeq,PetscInt *nconineq)
 {
   PetscInt i;
   PS       ps=opflow->ps;

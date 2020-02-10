@@ -26,7 +26,7 @@ extern const char *const OPFLOWInitializationTypes[];
 struct _p_OPFLOWFormulationOps {
   PetscErrorCode (*destroy)(OPFLOW);
   PetscErrorCode (*setnumvariables)(OPFLOW,PetscInt*,PetscInt*,PetscInt*); /* Set number of variables for buses and branches, and total number of variables */
-  PetscErrorCode (*setnumconstraints)(OPFLOW,PetscInt*,PetscInt*,PetscInt*); /* Set number of equality and inequality constraints */
+  PetscErrorCode (*setnumconstraints)(OPFLOW,PetscInt*,PetscInt*,PetscInt*,PetscInt*); /* Set number of equality and inequality constraints */
   PetscErrorCode (*setvariablebounds)(OPFLOW,Vec,Vec); /* Upper and lower bounds on the vector */
   PetscErrorCode (*setconstraintbounds)(OPFLOW,Vec,Vec); /* Lower and upper bounds on constraints */
   PetscErrorCode (*setvariableandconstraintbounds)(OPFLOW,Vec,Vec,Vec,Vec); /* Lower and upper bounds on variables and constraints */

@@ -409,11 +409,12 @@ PetscErrorCode OPFLOWReadMatPowerData(OPFLOW opflow,const char netfile[])
 
    Output Parameters:
 +  busnconeq - number of equality constraints at each bus
+.  branchnconeq - number of equality constraints at each branch
 .  nconeq   -  local number of equality constraints
 -  nconineq -  local number of inequality constraints
 
 */
-PetscErrorCode OPFLOWSetNumConstraints(OPFLOW opflow,PetscInt *busnconeq,PetscInt *nconeq,PetscInt *nconineq)
+PetscErrorCode OPFLOWSetNumConstraints(OPFLOW opflow,PetscInt *branchnconeq, PetscInt *busnconeq,PetscInt *nconeq,PetscInt *nconineq)
 {
   PetscErrorCode ierr;
   PetscInt       i,vStart,vEnd,eStart,eEnd;
@@ -425,7 +426,7 @@ PetscErrorCode OPFLOWSetNumConstraints(OPFLOW opflow,PetscInt *busnconeq,PetscIn
   PetscInt       nconeqloc=0;
 
   PetscFunctionBegin;
-  ierr = (*opflow->formops.setnumconstraints)(opflow,busnconeq,nconeq,nconineq);
+  ierr = (*opflow->formops.setnumconstraints)(opflow,branchnconeq,busnconeq,nconeq,nconineq);
 
   ierr = PetscSectionCreate(opflow->comm->type,&buseqconsection);CHKERRQ(ierr);
 
@@ -562,6 +563,12 @@ PetscErrorCode OPFLOWSetNumVariables(OPFLOW opflow,PetscInt *busnvararray,PetscI
   ierr = DMGetGlobalSection(plexdm,&globalvarsection);CHKERRQ(ierr);
   networkdmdata->DofSection = varsection;
 
+  /* Update starting locations for variables at each line */
+  for(i=0; i < ps->nbranch; i++) {
+    ierr = DMNetworkGetVariableOffset(networkdm,eStart+i,&ps->line[i].startloc);CHKERRQ(ierr);
+    ierr = DMNetworkGetVariableGlobalOffset(networkdm,eStart+i,&ps->line[i].startlocglob);CHKERRQ(ierr);
+  }
+
   /* Update starting locations for variables at each bus */
   for(i=0; i < ps->nbus; i++) {
     ierr = DMNetworkGetVariableOffset(networkdm,vStart+i,&ps->bus[i].startloc);CHKERRQ(ierr);
@@ -589,7 +596,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   PetscBool      solverset=PETSC_FALSE;
   char           formulationname[32],solvername[32];
   PetscInt       *busnvararray,*branchnvararray;
-  PetscInt       *busnconeq;
+  PetscInt       *branchnconeq,*busnconeq;
   PetscInt       sendbuf[3],recvbuf[3];
 
   PetscFunctionBegin;
@@ -636,16 +643,18 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   /* Set up number of variables for branches and buses */
   ierr = OPFLOWSetNumVariables(opflow,busnvararray,branchnvararray,&opflow->nx);CHKERRQ(ierr);
 
+  ierr = PetscCalloc1(ps->nbranch,&branchnconeq);CHKERRQ(ierr);
   ierr = PetscCalloc1(ps->nbus,&busnconeq);CHKERRQ(ierr);
   /* Set up number of equality and inequality constraints and 
      number of equality constraints at each bus */
 
   /* Set number of constraints */
-  ierr = OPFLOWSetNumConstraints(opflow,busnconeq,&opflow->nconeq,&opflow->nconineq);CHKERRQ(ierr);
+  ierr = OPFLOWSetNumConstraints(opflow,branchnconeq,busnconeq,&opflow->nconeq,&opflow->nconineq);CHKERRQ(ierr);
   opflow->ncon = opflow->nconeq + opflow->nconineq;
 
   ierr = PetscFree(busnvararray);CHKERRQ(ierr); 
   ierr = PetscFree(branchnvararray);CHKERRQ(ierr);
+  ierr = PetscFree(branchnconeq);CHKERRQ(ierr);
   ierr = PetscFree(busnconeq);CHKERRQ(ierr);
 
   sendbuf[0] = opflow->nx;
@@ -666,6 +675,9 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = VecDuplicate(opflow->X,&opflow->gradobj);CHKERRQ(ierr);
   ierr = VecDuplicate(opflow->X,&opflow->Xl);CHKERRQ(ierr);
   ierr = VecDuplicate(opflow->X,&opflow->Xu);CHKERRQ(ierr);
+  /* Default variable bounds are -inf <= x <= +inf */
+  ierr = VecSet(opflow->Xl,PETSC_NINFINITY);CHKERRQ(ierr);
+  ierr = VecSet(opflow->Xu,PETSC_NINFINITY);CHKERRQ(ierr);
 
   /* Vectors for constraints */
   ierr = VecCreate(ps->comm->type,&opflow->G);CHKERRQ(ierr);
