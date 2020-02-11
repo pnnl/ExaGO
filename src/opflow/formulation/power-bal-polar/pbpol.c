@@ -1638,9 +1638,10 @@ PetscErrorCode OPFLOWComputeHessian_PBPOL(OPFLOW opflow,Vec X,Vec Lambdae,Vec La
   PetscFunctionBegin;
   ierr = MatZeroEntries(H);CHKERRQ(ierr);
 
-  /* Objective function Hessian */
-  ierr = OPFLOWComputeObjectiveHessian_PBPOL(opflow,X,H);CHKERRQ(ierr);
-
+  if(opflow->compute_obj_hessian) {
+    /* Objective function Hessian */
+    ierr = OPFLOWComputeObjectiveHessian_PBPOL(opflow,X,H);CHKERRQ(ierr);
+  }
   /* Equality constraints Hessian */
   ierr = OPFLOWComputeEqualityConstraintsHessian_PBPOL(opflow,X,Lambdae,H);CHKERRQ(ierr);
   

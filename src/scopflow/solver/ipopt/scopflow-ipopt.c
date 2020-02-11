@@ -46,10 +46,13 @@ Bool eval_scopflow_f(PetscInt n, PetscScalar* x, Bool new_x,
   PetscInt  i;
   PetscScalar *xi;
   PetscScalar opflowobj;
+  PetscInt    k;
 
   *obj_value = 0.0;
 
-  for(i=0; i < scopflow->Ns; i++) {
+  k = scopflow->first_stage_gen_cost_only?1:scopflow->Ns;
+
+  for(i=0; i < k; i++) {
     opflowobj = 0.0;
     xi = x + scopflowipopt->xstarti[i];
     opflow = scopflow->opflows[i];
@@ -82,7 +85,13 @@ Bool eval_scopflow_grad_f(PetscInt n, PetscScalar* x, Bool new_x,
     ierr = VecPlaceArray(opflow->gradobj,gradi);CHKERRQ(ierr);
     ierr = VecSet(opflow->gradobj,0.0);CHKERRQ(ierr);
 
-    ierr = (*opflow->formops.computegradient)(opflow,opflow->X,opflow->gradobj);CHKERRQ(ierr);
+    if(!scopflow->first_stage_gen_cost_only) {
+      ierr = (*opflow->formops.computegradient)(opflow,opflow->X,opflow->gradobj);CHKERRQ(ierr);
+    } else {
+      if(i == 0) {
+	ierr = (*opflow->formops.computegradient)(opflow,opflow->X,opflow->gradobj);CHKERRQ(ierr);
+      }
+    }
     
     ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->gradobj);CHKERRQ(ierr);
@@ -383,6 +392,11 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
       opflow = scopflow->opflows[i];
       opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
       opflow->obj_factor = obj_factor;
+      if(!scopflow->first_stage_gen_cost_only) opflow->compute_obj_hessian = PETSC_TRUE;
+      else {
+	if(i == 0) opflow->compute_obj_hessian = PETSC_TRUE;
+	else opflow->compute_obj_hessian = PETSC_FALSE;
+      }
 
       roffset = scopflowipopt->xstarti[i];
 

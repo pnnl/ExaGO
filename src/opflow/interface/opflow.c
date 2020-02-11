@@ -193,6 +193,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   
   opflow->obj_factor = 1.0;
   opflow->obj = 0.0;
+  opflow->compute_obj_hessian = PETSC_TRUE;
 
   opflow->solver   = NULL;
   opflow->formulation = NULL;
