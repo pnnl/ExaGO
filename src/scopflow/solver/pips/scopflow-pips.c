@@ -67,7 +67,7 @@ int scopflow_prob_info(int* n, double* col_lb, double* col_ub, int* m,
 
     /* Set constraint bounds */
     ierr = (*opflow->formops.setconstraintbounds)(opflow,opflow->Gl,opflow->Gu);CHKERRQ(ierr);
-    
+
     ierr = VecResetArray(Xl);CHKERRQ(ierr);
     ierr = VecResetArray(Xu);CHKERRQ(ierr);
     ierr = VecResetArray(Gl);CHKERRQ(ierr);
@@ -144,7 +144,7 @@ int scopflow_eval_f(double* x0, double* x1, double* obj, CallBackDataPtr cbd)
 	ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
       }
     }
-  } else return 0;
+  }
 
   return 1;
 }
@@ -224,6 +224,11 @@ int scopflow_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elt
 	ierr = VecPlaceArray(opflow->Lambdai,lamineq);CHKERRQ(ierr);
       }
 
+      if(scopflow->first_stage_gen_cost_only) {
+	if(row == 0) opflow->compute_obj_hessian = PETSC_TRUE;
+	else opflow->compute_obj_hessian = PETSC_FALSE;
+      } else opflow->compute_obj_hessian = PETSC_TRUE;
+
       /* Compute Hessian */
       ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
       ierr = MatConvert(opflow->Hes,MATSEQSBAIJ,MAT_REUSE_MATRIX,&opflowipopt->Hes_sbaij);CHKERRQ(ierr);
@@ -248,15 +253,17 @@ int scopflow_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elt
       */
     } else {
       if(row > col && col == 0) {
+	if(!scopflow->first_stage_gen_cost_only) {
 	  opflow = scopflow->opflows[0];
 	  opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
-
+	  
 	  ierr = MatGetSize(opflow->Hes,&nrow,&ncol);CHKERRQ(ierr);
-
+	  
 	  sbaij = (Mat_SeqSBAIJ*)opflowipopt->Hes_sbaij->data;
 	  ierr = PetscMemcpy(rowidx,sbaij->j,sbaij->nz*sizeof(PetscInt));CHKERRQ(ierr);
 	  ierr = PetscMemcpy(colptr,sbaij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
 	  ierr = PetscMemzero(elts,sbaij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
+	}
       }
     }
   }
@@ -614,6 +621,12 @@ PetscErrorCode SCOPFLOWSolverSolve_PIPS(SCOPFLOW scopflow)
       lamineqi = lam + pips->gstarti[i]+opflow->nconeq;
       ierr = VecPlaceArray(opflow->Lambdai,lamineqi);CHKERRQ(ierr);
     }
+
+    if(scopflow->first_stage_gen_cost_only) {
+      if(i == 0) opflow->compute_obj_hessian = PETSC_TRUE;
+      else opflow->compute_obj_hessian = PETSC_FALSE;
+    } else opflow->compute_obj_hessian = PETSC_TRUE;
+
     ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
     /* Convert matrix to symmetric sbaij format needed for the PIPS solver */
     ierr = MatSetOption(opflow->Hes,MAT_SYMMETRIC,PETSC_TRUE);CHKERRQ(ierr);
