@@ -579,43 +579,6 @@ PetscErrorCode OPFLOWSetNumVariables(OPFLOW opflow,PetscInt *busnvararray,PetscI
   PetscFunctionReturn(0);
 }
 
-/* 
-   OPFLOWSetFromOptions - Sets options for optimal power flow object
-
-   Input Parameters:
-.  opflow - the OPFLOW object
-*/
-PetscErrorCode OPFLOWSetFromOptions(OPFLOW opflow)
-{
-  char           formulationname[32],solvername[32];
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-  ierr =  PetscOptionsBegin(opflow->comm->type,NULL,"OPFLOW options",NULL);CHKERRQ(ierr);
-  PetscStrcpy(formulationname,"POWER_BALANCE_CARTESIAN");
-  ierr = PetscOptionsString("-opflow_formulation","OPFLOW formulation type","",formulationname,formulationname,32,NULL);CHKERRQ(ierr);
-  PetscStrcpy(solvername,"IPOPT");
-  ierr = PetscOptionsString("-opflow_solver","OPFLOW solver type","",solvername,solvername,32,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsEnum("-opflow_initialization","Type of OPFLOW initialization","",OPFLOWInitializationTypes,(PetscEnum)opflow->initializationtype,(PetscEnum*)&opflow->initializationtype,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsBool("-opflow_ignore_lineflow_constraints","Ignore line flow constraints?","",opflow->ignore_lineflow_constraints,&opflow->ignore_lineflow_constraints,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsBool("-opflow_include_loadloss_variables","Include load loss?","",opflow->include_loadloss_variables,&opflow->include_loadloss_variables,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsReal("-opflow_loadloss_penalty","Penalty for load loss","",opflow->loadloss_penalty,&opflow->loadloss_penalty,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsBool("-opflow_include_powerimbalance_variables","Allow power imbalance?","",opflow->include_powerimbalance_variables,&opflow->include_powerimbalance_variables,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsReal("-opflow_powerimbalance_penalty","Power imbalance penalty","",opflow->powerimbalance_penalty,&opflow->powerimbalance_penalty,NULL);CHKERRQ(ierr);
-  PetscOptionsEnd();
-
-  /* Set formulation */
-  ierr = OPFLOWSetFormulation(opflow,formulationname);CHKERRQ(ierr);
-  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s formulation\n",formulationname);CHKERRQ(ierr);
-
-  /* Set solver */
-  ierr = OPFLOWSetSolver(opflow,solvername);CHKERRQ(ierr);
-  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s solver\n",solvername);CHKERRQ(ierr);
-
-  PetscFunctionReturn(0);
-}
-  
-
 /*
   OPFLOWSetUp - Sets up an optimal power flow application object
 
@@ -629,6 +592,8 @@ PetscErrorCode OPFLOWSetFromOptions(OPFLOW opflow)
 PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 {
   PetscErrorCode ierr;
+  char           formulationname[32],solvername[32];
+  PetscBool      formulationset=PETSC_FALSE,solverset=PETSC_FALSE;
   PS             ps=opflow->ps;
   PetscInt       *busnvararray,*branchnvararray;
   PetscInt       *branchnconeq,*busnconeq;
@@ -636,7 +601,43 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 
   PetscFunctionBegin;
 
-  ierr = OPFLOWSetFromOptions(opflow);CHKERRQ(ierr);
+  ierr =  PetscOptionsBegin(opflow->comm->type,NULL,"OPFLOW options",NULL);CHKERRQ(ierr);
+  PetscStrcpy(formulationname,"POWER_BALANCE_CARTESIAN");
+  ierr = PetscOptionsString("-opflow_formulation","OPFLOW formulation type","",formulationname,formulationname,32,&formulationset);CHKERRQ(ierr);
+  PetscStrcpy(solvername,"IPOPT");
+  ierr = PetscOptionsString("-opflow_solver","OPFLOW solver type","",solvername,solvername,32,&solverset);CHKERRQ(ierr);
+  ierr = PetscOptionsEnum("-opflow_initialization","Type of OPFLOW initialization","",OPFLOWInitializationTypes,(PetscEnum)opflow->initializationtype,(PetscEnum*)&opflow->initializationtype,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsBool("-opflow_ignore_lineflow_constraints","Ignore line flow constraints?","",opflow->ignore_lineflow_constraints,&opflow->ignore_lineflow_constraints,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsBool("-opflow_include_loadloss_variables","Include load loss?","",opflow->include_loadloss_variables,&opflow->include_loadloss_variables,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsReal("-opflow_loadloss_penalty","Penalty for load loss","",opflow->loadloss_penalty,&opflow->loadloss_penalty,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsBool("-opflow_include_powerimbalance_variables","Allow power imbalance?","",opflow->include_powerimbalance_variables,&opflow->include_powerimbalance_variables,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsReal("-opflow_powerimbalance_penalty","Power imbalance penalty","",opflow->powerimbalance_penalty,&opflow->powerimbalance_penalty,NULL);CHKERRQ(ierr);
+  PetscOptionsEnd();
+
+  /* Set formulation */
+  if(formulationset) {
+    if(opflow->formulation) ierr = (*opflow->formops.destroy)(opflow);
+    ierr = OPFLOWSetFormulation(opflow,formulationname);CHKERRQ(ierr);
+    ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s formulation\n",formulationname);CHKERRQ(ierr);
+  } else {
+    if(!opflow->formulation) {
+      ierr = OPFLOWSetFormulation(opflow,OPFLOWFORMULATION_PBCAR);CHKERRQ(ierr);
+      ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s formulation\n",OPFLOWFORMULATION_PBCAR);CHKERRQ(ierr);
+    }
+  }
+
+  /* Set solver */
+  if(solverset) {
+    if(opflow->solver) ierr = (*opflow->solverops.destroy)(opflow);
+    ierr = OPFLOWSetSolver(opflow,solvername);CHKERRQ(ierr);
+    ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s solver\n",solvername);CHKERRQ(ierr);
+  } else {
+    if(!opflow->solver) {
+      ierr = OPFLOWSetSolver(opflow,OPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
+      ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s solver\n",OPFLOWSOLVER_IPOPT);CHKERRQ(ierr); 
+    }
+  }
+
 
   /* Set up underlying PS object */
   ierr = PSSetUp(ps);CHKERRQ(ierr);

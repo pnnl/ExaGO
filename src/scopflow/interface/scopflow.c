@@ -262,8 +262,7 @@ PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW scopflow,const char ctgcfile
 PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 {
   PetscErrorCode ierr;
-  PetscBool      formulationset=PETSC_FALSE;
-  PetscBool      solverset=PETSC_FALSE;
+  PetscBool      solverset;
   char           formulationname[32]="POWER_BALANCE_CARTESIAN";
   char           solvername[32]="IPOPT";
   PetscInt       i,j;
@@ -272,12 +271,14 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 
   PetscFunctionBegin;
 
-  ierr = PetscOptionsGetString(NULL,NULL,"-scopflow_formulation",formulationname,32,&formulationset);CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(NULL,NULL,"-scopflow_solver",solvername,32,&solverset);CHKERRQ(ierr);
-  ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_iscoupling",&scopflow->iscoupling,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_first_stage_gen_cost_only",&scopflow->first_stage_gen_cost_only,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsGetInt(NULL,NULL,"-scopflow_Ns",&scopflow->Ns,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_replicate_basecase",&scopflow->replicate_basecase,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(scopflow->comm->type,NULL,"SCOPFLOW options",NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsString("-scopflow_formulation","SCOPFLOW formulation type","",formulationname,formulationname,32,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsString("-scopflow_solver","SCOPFLOW solver type","",solvername,solvername,32,&solverset);CHKERRQ(ierr);
+  ierr = PetscOptionsBool("-scopflow_iscoupling","Include coupling between first stage and second stage","",scopflow->iscoupling,&scopflow->iscoupling,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsBool("-scopflow_first_stage_gen_cost_only","Include objective cost for first stage only","",scopflow->first_stage_gen_cost_only,&scopflow->first_stage_gen_cost_only,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsInt("-scopflow_Ns","Number of second stage scenarios","",scopflow->Ns,&scopflow->Ns,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsBool("-scopflow_replicate_basecase","Only for debugging: Replicate first stage for all second stage scenarios","",scopflow->replicate_basecase,&scopflow->replicate_basecase,NULL);CHKERRQ(ierr);
+  PetscOptionsEnd();
 
   if(scopflow->ctgcfileset && !scopflow->replicate_basecase) {
     if(scopflow->Ns < 0) scopflow->Ns = MAX_CONTINGENCIES;
