@@ -155,6 +155,7 @@ int scopflow_eval_grad_f(double* x0, double* x1, double* grad, CallBackDataPtr c
   int row = cbd->row_node_id;
   int col = cbd->col_node_id;
   SCOPFLOW scopflow=(SCOPFLOW)cbd->prob;
+  OPFLOW   opflow0=scopflow->opflows[0];
   OPFLOW   opflow=scopflow->opflows[row];
   double   *x;
   
@@ -183,9 +184,9 @@ int scopflow_eval_grad_f(double* x0, double* x1, double* grad, CallBackDataPtr c
       ierr = VecResetArray(opflow->gradobj);CHKERRQ(ierr);
     }
   } else {
-    ierr = VecPlaceArray(opflow->gradobj,grad);CHKERRQ(ierr);
-    ierr = VecSet(opflow->gradobj,0.0);CHKERRQ(ierr);
-    ierr = VecResetArray(opflow->gradobj);CHKERRQ(ierr);
+    ierr = VecPlaceArray(opflow0->gradobj,grad);CHKERRQ(ierr);
+    ierr = VecSet(opflow0->gradobj,0.0);CHKERRQ(ierr);
+    ierr = VecResetArray(opflow0->gradobj);CHKERRQ(ierr);
   }
     
   return 1;
@@ -209,6 +210,12 @@ int scopflow_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elt
     *nz = 0;
     if(row == col) {
       *nz = opflowipopt->nnz_hes;
+    } else {
+      if(col == 0) {
+	opflow = scopflow->opflows[0];
+	opflowipopt = opflow->solver;
+	*nz = opflowipopt->nnz_hes;
+      }
     }
   } else {
     if(row == col) {
@@ -253,7 +260,7 @@ int scopflow_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elt
       */
     } else {
       if(row > col && col == 0) {
-	if(!scopflow->first_stage_gen_cost_only) {
+	//	if(!scopflow->first_stage_gen_cost_only) {
 	  opflow = scopflow->opflows[0];
 	  opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
 	  
@@ -263,7 +270,7 @@ int scopflow_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elt
 	  ierr = PetscMemcpy(rowidx,sbaij->j,sbaij->nz*sizeof(PetscInt));CHKERRQ(ierr);
 	  ierr = PetscMemcpy(colptr,sbaij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
 	  ierr = PetscMemzero(elts,sbaij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
-	}
+	  //	}
       }
     }
   }
