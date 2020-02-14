@@ -155,7 +155,12 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBCAR(OPFLOW opflow,Vec Gl,Vec Gu)
       gloc++;
     }
     
-    
+    if(opflow->ignore_lineflow_constraints) {
+      ierr = VecRestoreArray(Gl,&gl);CHKERRQ(ierr);
+      ierr = VecRestoreArray(Gu,&gu);CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
     for(i=0; i < ps->nbranch; i++) {
       line = &ps->line[i];
       if(!line->status || line->rateA > 1e5) continue;
@@ -676,10 +681,18 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBCAR(OPFLOW opflow,Vec X,Vec 
     gloc++;
   }
 
+  if(opflow->ignore_lineflow_constraints) {
+    ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
+    ierr = VecRestoreArray(Gi,&g);CHKERRQ(ierr);
+    ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+    
+    PetscFunctionReturn(0);
+  }
+
   for(i=0; i<ps->nbranch; i++) {
     line = &ps->line[i];
     if(!line->status || line->rateA > 1e5) continue;
-
+    
     Gff = line->yff[0];
     Bff = line->yff[1];
     Gft = line->yft[0];
@@ -688,34 +701,33 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBCAR(OPFLOW opflow,Vec X,Vec 
     Btf = line->ytf[1];
     Gtt = line->ytt[0];
     Btt = line->ytt[1];
-
+    
     ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
     busf = connbuses[0];
     bust = connbuses[1];
-
+    
     ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
     ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
-
+    
     Vrf  = x[xlocf];
     Vif  = x[xlocf+1];
     Vrt  = x[xloct];
     Vit  = x[xloct+1];
-
+    
     Pf =  Gff*(Vrf*Vrf + Vif*Vif) + Vrf*(Gft*Vrt - Bft*Vit) + Vif*(Bft*Vrt + Gft*Vit);
     Qf = -Bff*(Vrf*Vrf + Vif*Vif) + Vif*(Gft*Vrt - Bft*Vit) - Vrf*(Bft*Vrt + Gft*Vit);
-
+    
     Pt =  Gtt*(Vrt*Vrt + Vit*Vit) + Vrt*(Gtf*Vrf - Btf*Vif) + Vit*(Btf*Vrf + Gtf*Vif);
     Qt = -Btt*(Vrt*Vrt + Vit*Vit) + Vit*(Gtf*Vrf - Btf*Vif) - Vrt*(Btf*Vrf + Gtf*Vif);
-
+    
     Sf2 = Pf*Pf + Qf*Qf;
     St2 = Pt*Pt + Qt*Qt;
-
+    
     g[gloc]   = Sf2;
     g[gloc+1] = St2;
-
+    
     gloc = gloc + 2;
   }
-  
   ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
   ierr = VecRestoreArray(Gi,&g);CHKERRQ(ierr);
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
@@ -784,6 +796,16 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBCAR(OPFLOW opflow,Vec
     gloc += 1;
   }
     
+  if(opflow->ignore_lineflow_constraints) {
+    ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
+    ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+    
+    ierr = MatAssemblyBegin(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+    
+    PetscFunctionReturn(0);
+  }
+
   for (i=0; i < ps->nbranch; i++) {
     line = &ps->line[i];
     if(!line->status || line->rateA > 1e5) continue;
@@ -1116,9 +1138,11 @@ PetscErrorCode OPFLOWFormulationSetNumConstraints_PBCAR(OPFLOW opflow,PetscInt *
     }
   }
 
-  for(i=0; i < ps->nbranch; i++) {
-    line = &ps->line[i];
-    if(line->status && line->rateA < 1e5) *nconineq += 2; /* Line flow constraints */
+  if(!opflow->ignore_lineflow_constraints) {
+    for(i=0; i < ps->nbranch; i++) {
+      line = &ps->line[i];
+      if(line->status && line->rateA < 1e5) *nconineq += 2; /* Line flow constraints */
+    }
   }
 
   PetscFunctionReturn(0);
@@ -1491,6 +1515,14 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBCAR(OPFLOW opflow, Ve
 
     ierr = MatSetValues(H,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
     gloc++;
+  }
+
+  if(opflow->ignore_lineflow_constraints) {
+    ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
+    ierr = VecRestoreArrayRead(Lambda,&lambda);CHKERRQ(ierr);
+
+    ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+    PetscFunctionReturn(0);
   }
 
   val[0] = val[1] = val[2] = val[3] = 0.0;

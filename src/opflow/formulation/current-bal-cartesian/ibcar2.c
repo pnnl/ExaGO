@@ -144,21 +144,21 @@ PetscErrorCode OPFLOWSetConstraintBounds_IBCAR2(OPFLOW opflow,Vec Gl,Vec Gu)
     }
   }
 
-  if(opflow->nconineq) {
-    /* Inequality constraints on voltage magnitude */
-    for(i=0; i < ps->nbus; i++) {
-      bus = &ps->bus[i];
-      
-      gl[gloc] = bus->Vmin*bus->Vmin;
-      gu[gloc] = bus->Vmax*bus->Vmax;
-      if(bus->ide == ISOLATED_BUS) {
-	gl[gloc] = PETSC_NINFINITY;
-	gu[gloc] = PETSC_INFINITY;
-      }
-      gloc++;
+  /* Inequality constraints on voltage magnitude */
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    
+    gl[gloc] = bus->Vmin*bus->Vmin;
+    gu[gloc] = bus->Vmax*bus->Vmax;
+    if(bus->ide == ISOLATED_BUS) {
+      gl[gloc] = PETSC_NINFINITY;
+      gu[gloc] = PETSC_INFINITY;
     }
+    gloc++;
+  }
     
-    
+  if(!opflow->ignore_lineflow_constraints) {
+    /* Bounds on inequality constraints for line flows */
     for(i=0; i < ps->nbranch; i++) {
       line = &ps->line[i];
       if(!line->status || line->rateA > 1e5) continue;
@@ -835,21 +835,23 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_IBCAR2(OPFLOW opflow,Vec X,Vec
     gloc++;
   }
 
-  for(i=0; i<ps->nbranch; i++) {
-    line = &ps->line[i];
-    if(!line->status || line->rateA > 1e5) continue;
-
-    ierr = PSLINEGetVariableLocation(line,&xloc);CHKERRQ(ierr);
-
-    Irf = x[xloc]; Iif = x[xloc+1];
-    Irt = x[xloc+2]; Iit = x[xloc+3];
-
-    g[gloc]   = Irf*Irf + Iif*Iif;
-    g[gloc+1] = Irt*Irt + Iit*Iit;
-
-    gloc += 2;
+  if(!opflow->ignore_lineflow_constraints) {
+    for(i=0; i<ps->nbranch; i++) {
+      line = &ps->line[i];
+      if(!line->status || line->rateA > 1e5) continue;
+      
+      ierr = PSLINEGetVariableLocation(line,&xloc);CHKERRQ(ierr);
+      
+      Irf = x[xloc]; Iif = x[xloc+1];
+      Irt = x[xloc+2]; Iit = x[xloc+3];
+      
+      g[gloc]   = Irf*Irf + Iif*Iif;
+      g[gloc+1] = Irt*Irt + Iit*Iit;
+      
+      gloc += 2;
+    }
   }
-  
+
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArray(Gi,&g);CHKERRQ(ierr);
 
@@ -897,6 +899,15 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR2(OPFLOW opflow,Ve
     ierr = MatSetValues(Ji,1,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
 
     gloc += 1;
+  }
+
+  if(opflow->ignore_lineflow_constraints) {
+    ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+    
+    ierr = MatAssemblyBegin(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+    
+    PetscFunctionReturn(0);
   }
     
   for (i=0; i < ps->nbranch; i++) {
@@ -1149,9 +1160,11 @@ PetscErrorCode OPFLOWFormulationSetNumConstraints_IBCAR2(OPFLOW opflow,PetscInt 
     *nconineq += 1; /* Voltage magnitude constraint */
   }
 
-  for(i=0; i < ps->nbranch; i++) {
-    line = &ps->line[i];
-    if(line->status && line->rateA < 1e5) *nconineq += 2; /* Line flow constraints */
+  if(!opflow->ignore_lineflow_constraints) {
+    for(i=0; i < ps->nbranch; i++) {
+      line = &ps->line[i];
+      if(line->status && line->rateA < 1e5) *nconineq += 2; /* Line flow constraints */
+    }
   }
 
   PetscFunctionReturn(0);
@@ -1531,6 +1544,13 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR2(OPFLOW opflow, V
 
     ierr = MatSetValues(H,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
     gloc++;
+  }
+
+  if(opflow->ignore_lineflow_constraints) {
+    ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+    ierr = VecRestoreArrayRead(Lambda,&lambda);CHKERRQ(ierr);
+    
+    PetscFunctionReturn(0);
   }
 
   val[0] = val[1] = val[2] = val[3] = 0.0;
