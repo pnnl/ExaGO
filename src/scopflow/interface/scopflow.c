@@ -42,7 +42,6 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
   /* Run-time options */
   scopflow->iscoupling = PETSC_FALSE;
   scopflow->first_stage_gen_cost_only = PETSC_FALSE;
-  scopflow->ignore_line_flow_constraints = PETSC_FALSE;
   scopflow->replicate_basecase = PETSC_FALSE;
 
   scopflow->ctgcfileset = PETSC_FALSE;
@@ -277,7 +276,6 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscOptionsGetString(NULL,NULL,"-scopflow_solver",solvername,32,&solverset);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_iscoupling",&scopflow->iscoupling,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_first_stage_gen_cost_only",&scopflow->first_stage_gen_cost_only,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_ignore_line_flow_constraints",&scopflow->ignore_line_flow_constraints,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetInt(NULL,NULL,"-scopflow_Ns",&scopflow->Ns,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-scopflow_replicate_basecase",&scopflow->replicate_basecase,NULL);CHKERRQ(ierr);
 

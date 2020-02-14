@@ -78,7 +78,6 @@ struct _p_SCOPFLOW{
 
   PetscBool iscoupling; /* Is each scenario coupled with base scenario? */
   PetscBool first_stage_gen_cost_only; /* Only include the gen cost for first stage only */
-  PetscBool ignore_line_flow_constraints; /* Ignore line flow constraints */
   PetscBool replicate_basecase; /* Replicate base case for all scenarios */
 
   void *solver; /* Solver object */
