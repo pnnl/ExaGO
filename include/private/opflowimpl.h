@@ -147,6 +147,7 @@ struct _p_OPFLOW{
   PetscSection defaultglobalsection; /** <Global section used with opflow. This is temporarily stored when running the initial power flow */
   DM           initpflowdm; /* DM used with initial power flow */
   
+  PetscInt *busnvararray,*branchnvararray; /* Number of variables at buses and branches */
 };
 
 /* Registers all the OPFLOW formulations */

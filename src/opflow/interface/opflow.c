@@ -294,6 +294,8 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow)
     ierr = ((*opflow)->formops.destroy)(*opflow);
   }
 
+  ierr = PetscFree((*opflow)->busnvararray);CHKERRQ(ierr); 
+  ierr = PetscFree((*opflow)->branchnvararray);CHKERRQ(ierr);
   ierr = PetscFree((*opflow)->eqconglobloc);CHKERRQ(ierr);
 
   ierr = PetscFree(*opflow);CHKERRQ(ierr);
@@ -595,7 +597,6 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   char           formulationname[32],solvername[32];
   PetscBool      formulationset=PETSC_FALSE,solverset=PETSC_FALSE;
   PS             ps=opflow->ps;
-  PetscInt       *busnvararray,*branchnvararray;
   PetscInt       *branchnconeq,*busnconeq;
   PetscInt       sendbuf[3],recvbuf[3];
 
@@ -642,11 +643,11 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   /* Set up underlying PS object */
   ierr = PSSetUp(ps);CHKERRQ(ierr);
 
-  ierr = PetscCalloc1(ps->nbus,&busnvararray);CHKERRQ(ierr);
-  ierr = PetscCalloc1(ps->nbranch,&branchnvararray);CHKERRQ(ierr);
+  ierr = PetscCalloc1(ps->nbus,&opflow->busnvararray);CHKERRQ(ierr);
+  ierr = PetscCalloc1(ps->nbranch,&opflow->branchnvararray);CHKERRQ(ierr);
 
   /* Set up number of variables for branches and buses */
-  ierr = OPFLOWSetNumVariables(opflow,busnvararray,branchnvararray,&opflow->nx);CHKERRQ(ierr);
+  ierr = OPFLOWSetNumVariables(opflow,opflow->busnvararray,opflow->branchnvararray,&opflow->nx);CHKERRQ(ierr);
 
   ierr = PetscCalloc1(ps->nbranch,&branchnconeq);CHKERRQ(ierr);
   ierr = PetscCalloc1(ps->nbus,&busnconeq);CHKERRQ(ierr);
@@ -657,8 +658,6 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = OPFLOWSetNumConstraints(opflow,branchnconeq,busnconeq,&opflow->nconeq,&opflow->nconineq);CHKERRQ(ierr);
   opflow->ncon = opflow->nconeq + opflow->nconineq;
 
-  ierr = PetscFree(busnvararray);CHKERRQ(ierr); 
-  ierr = PetscFree(branchnvararray);CHKERRQ(ierr);
   ierr = PetscFree(branchnconeq);CHKERRQ(ierr);
   ierr = PetscFree(busnconeq);CHKERRQ(ierr);
 
