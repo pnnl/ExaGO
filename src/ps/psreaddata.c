@@ -129,7 +129,8 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
   ps->Ngen    = ps->ngen    = Ngenerator;
   ps->Nline = ps->nline = Nline + Ntransformer;
   ps->NgenON  = 0;
- 
+  ps->NlineON = 0;
+
 #if defined DEBUGPS
   ierr = PetscPrintf(PETSC_COMM_SELF,"System summary : Nbus = %d, Nload = %d, Ngenerator = %d, Nbranch = %d\n",ps->Nbus,ps->Ngen,ps->Nload,ps->Nline);CHKERRQ(ierr);
 #endif
@@ -252,6 +253,7 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
 #if defined DEBUGPS
         if(bri < 2) ierr = PetscPrintf(PETSC_COMM_SELF,"BRANCHData[%d] : %d, %d, '%s', %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %d, %d, %lf, %d, %lf\n",bri, Branch[bri].fbus, Branch[bri].tbus, Branch[bri].ckt, Branch[bri].r, Branch[bri].x, Branch[bri].b, Branch[bri].rateA, Branch[bri].rateB, Branch[bri].rateC, Branch[bri].gi, Branch[bri].bi, Branch[bri].gj, Branch[bri].bj, Branch[bri].status, MET, Branch[bri].length, Branch[bri].o1, Branch[bri].f1);CHKERRQ(ierr);
 #endif 
+	if(Branch[bri].status) ps->NlineON++;
         Branch[bri].met = 1;
         internalindex = busext2intmap[Branch[bri].fbus];
         Branch[bri].internal_i = internalindex;        
@@ -452,6 +454,7 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
   ps->Nline = ps->nline = br_end_line  - br_start_line - br_nblank_lines;
   ps->nload = ps->Nload;
   ps->NgenON = 0;
+  ps->NlineON = 0;
 
 #if defined DEBUGPS
   ierr = PetscPrintf(PETSC_COMM_SELF,"System summary : Nbuses = %d, Ngen = %d, Nload = %d, Nbranch = %d\n",ps->Nbus,ps->Ngen,ps->Nload,ps->Nline);CHKERRQ(ierr);
@@ -588,6 +591,7 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
 	     &Branch[bri].r,&Branch[bri].x,&Branch[bri].b,		\
 	     &Branch[bri].rateA,&Branch[bri].rateB,&Branch[bri].rateC, \
 	     &Branch[bri].tapratio,&Branch[bri].phaseshift,&Branch[bri].status);
+      if(Branch[bri].status) ps->NlineON++;
       if(!Branch[bri].tapratio) Branch[bri].tapratio = 1.0;
       Branch[bri].phaseshift *= PETSC_PI/180.0;
 

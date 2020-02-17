@@ -626,6 +626,8 @@ PetscErrorCode PSCreate(MPI_Comm mpicomm,PS *psout)
   ps->Ngen  = -1;
   ps->NgenON = -1;
   ps->Nline = -1;
+  ps->nlineON = -1;
+  ps->NlineON = -1;
   ps->Nload   = -1;
   ps->refct   = 0;
   ps->app     = NULL;
@@ -852,7 +854,7 @@ PetscErrorCode PSSetUp(PS ps)
     }
 
     /* Broadcast global Nbus,Ngen,Nbranch, Nload,and maxbusnum to all processors */
-    PetscInt temp[7];
+    PetscInt temp[8];
     /* Pack variables */
     temp[0] = ps->Nbus;
     temp[1] = ps->Ngen;
@@ -860,8 +862,9 @@ PetscErrorCode PSSetUp(PS ps)
     temp[3] = ps->Nload;
     temp[4] = ps->maxbusnum;
     temp[5] = ps->NgenON;
-    temp[6] = ps->Nref;
-    ierr = MPI_Bcast(temp,7,MPI_INT,0,ps->comm->type);CHKERRQ(ierr);
+    temp[6] = ps->NlineON;
+    temp[7] = ps->Nref;
+    ierr = MPI_Bcast(temp,8,MPI_INT,0,ps->comm->type);CHKERRQ(ierr);
     /* Unpack */
     ps->Nbus = temp[0];
     ps->Ngen = temp[1];
@@ -869,13 +872,14 @@ PetscErrorCode PSSetUp(PS ps)
     ps->Nload   = temp[3];
     ps->maxbusnum = temp[4];
     ps->NgenON  = temp[5];
-    ps->Nref    = temp[6];
+    ps->NlineON = temp[6];
+    ps->Nref    = temp[7];
 
     /* Recreate busext2intmap..this will map the local bus numbers to external numbers */
     ierr = PetscCalloc1(ps->maxbusnum+1,&ps->busext2intmap);CHKERRQ(ierr);
     for(i=0; i < ps->maxbusnum+1; i++) ps->busext2intmap[i] = -1;
 
-    ps->ngen = ps->nload = ps->ngenON = 0;
+    ps->ngen = ps->nload = ps->ngenON = ps->nlineON = 0;
   /* Get the local number of gens and loads */
     for(i = 0; i < nv; i++) {
       ierr = DMNetworkGetNumComponents(ps->networkdm,vtx[i],&numComponents);CHKERRQ(ierr);
@@ -896,6 +900,7 @@ PetscErrorCode PSSetUp(PS ps)
     for(i = 0; i < ne; i++) {
       ierr = DMNetworkGetComponent(ps->networkdm,edge[i],0,&key,&component);CHKERRQ(ierr);
       ierr = PetscMemcpy(&ps->line[i],component,sizeof(struct _p_PSLINE));CHKERRQ(ierr);
+      ps->nlineON += ps->line[i].status;
     }
     PetscInt genj=0,loadj=0;
     PetscInt genctr,loadctr;
@@ -923,6 +928,7 @@ PetscErrorCode PSSetUp(PS ps)
     ps->ngen = ps->Ngen;
     ps->nload = ps->Nload;
     ps->ngenON = ps->NgenON;
+    ps->nlineON = ps->NlineON;
   }
 
   /* Set up
@@ -1111,6 +1117,8 @@ PetscErrorCode PSSetLineStatus(PS ps,PetscInt fbus, PetscInt tbus, const char* i
   
   if(line) {
     ierr = PSLINESetStatus(line,status);CHKERRQ(ierr);
+    if(line->status && !status) ps->nlineON--; /* Line switching to OFF status */
+    else if(!line->status && status) ps->nlineON++; /* Line switching to ON status */
   }
   
   PetscFunctionReturn(0);
