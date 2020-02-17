@@ -438,7 +438,7 @@ PetscErrorCode OPFLOWSetNumConstraints(OPFLOW opflow,PetscInt *branchnconeq, Pet
 
   ierr = PetscSectionSetChart(buseqconsection,eStart,vEnd);CHKERRQ(ierr);
 
-  for(i=0; i < ps->nbranch; i++) {
+  for(i=0; i < ps->nline; i++) {
     ierr = PetscSectionSetDof(buseqconsection,eStart+i,0);
   }
 
@@ -541,7 +541,7 @@ PetscErrorCode OPFLOWSetNumVariables(OPFLOW opflow,PetscInt *busnvararray,PetscI
 
   ierr = (*opflow->formops.setnumvariables)(opflow,busnvararray,branchnvararray,nx);
 
-  for(i=0; i < ps->nbranch; i++) {
+  for(i=0; i < ps->nline; i++) {
     ierr = PetscSectionSetDof(varsection,eStart+i,branchnvararray[i]);
   }
 
@@ -567,7 +567,7 @@ PetscErrorCode OPFLOWSetNumVariables(OPFLOW opflow,PetscInt *busnvararray,PetscI
   networkdmdata->DofSection = varsection;
 
   /* Update starting locations for variables at each line */
-  for(i=0; i < ps->nbranch; i++) {
+  for(i=0; i < ps->nline; i++) {
     ierr = DMNetworkGetVariableOffset(networkdm,eStart+i,&ps->line[i].startloc);CHKERRQ(ierr);
     ierr = DMNetworkGetVariableGlobalOffset(networkdm,eStart+i,&ps->line[i].startlocglob);CHKERRQ(ierr);
   }
@@ -644,12 +644,12 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PSSetUp(ps);CHKERRQ(ierr);
 
   ierr = PetscCalloc1(ps->nbus,&opflow->busnvararray);CHKERRQ(ierr);
-  ierr = PetscCalloc1(ps->nbranch,&opflow->branchnvararray);CHKERRQ(ierr);
+  ierr = PetscCalloc1(ps->nline,&opflow->branchnvararray);CHKERRQ(ierr);
 
   /* Set up number of variables for branches and buses */
   ierr = OPFLOWSetNumVariables(opflow,opflow->busnvararray,opflow->branchnvararray,&opflow->nx);CHKERRQ(ierr);
 
-  ierr = PetscCalloc1(ps->nbranch,&branchnconeq);CHKERRQ(ierr);
+  ierr = PetscCalloc1(ps->nline,&branchnconeq);CHKERRQ(ierr);
   ierr = PetscCalloc1(ps->nbus,&busnconeq);CHKERRQ(ierr);
   /* Set up number of equality and inequality constraints and 
      number of equality constraints at each bus */

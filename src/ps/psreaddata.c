@@ -28,7 +28,7 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
   PetscInt Nbus = 0;
   PetscInt Nload = 0;
   PetscInt Ngenerator = 0;
-  PetscInt Nbranch = 0;
+  PetscInt Nline = 0;
   PetscInt Ntransformer = 0;
   PetscInt Nshunt = 0;
   // Case Identification Data
@@ -59,7 +59,7 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
   PetscScalar gshunt,bshunt;
 
   if(ps->comm->type != PETSC_COMM_SELF && ps->comm->rank != 0) {
-    ps->Nbranch = ps->Nbus = ps->Ngen = ps->Nload = 0;
+    ps->Nline = ps->Nbus = ps->Ngen = ps->Nload = 0;
     PetscFunctionReturn(0);
   }
 
@@ -109,7 +109,7 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
         Ngenerator++;
       break;
       case 4:
-        Nbranch++;
+        Nline++;
       break;
       case 5:
         out = fgets(line,MAXLINE,fp);
@@ -127,16 +127,16 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
   ps->Nbus    = ps->nbus    = Nbus;
   ps->Nload   = ps->nload   = Nload;
   ps->Ngen    = ps->ngen    = Ngenerator;
-  ps->Nbranch = ps->nbranch = Nbranch + Ntransformer;
+  ps->Nline = ps->nline = Nline + Ntransformer;
   ps->NgenON  = 0;
  
 #if defined DEBUGPS
-  ierr = PetscPrintf(PETSC_COMM_SELF,"System summary : Nbus = %d, Nload = %d, Ngenerator = %d, Nbranch = %d\n",ps->Nbus,ps->Ngen,ps->Nload,ps->Nbranch);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_SELF,"System summary : Nbus = %d, Nload = %d, Ngenerator = %d, Nbranch = %d\n",ps->Nbus,ps->Ngen,ps->Nload,ps->Nline);CHKERRQ(ierr);
 #endif
   ierr = PetscCalloc1(ps->Nbus,&ps->bus);CHKERRQ(ierr);
   ierr = PetscCalloc1(ps->Ngen,&ps->gen);CHKERRQ(ierr);
   ierr = PetscCalloc1(ps->Nload,&ps->load);CHKERRQ(ierr);
-  ierr = PetscCalloc1(ps->Nbranch,&ps->line);CHKERRQ(ierr);
+  ierr = PetscCalloc1(ps->Nline,&ps->line);CHKERRQ(ierr);
   Bus = ps->bus; Gen = ps->gen; Load = ps->load; Branch = ps->line;
 
   //Set initial and default data for bus
@@ -307,7 +307,7 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
         out = fgets(line,MAXLINE,fp);
         sscanf(line,"%lf %lf",&WINDV2, &NOMV2);
 #if defined DEBUGPS
-        if(bri - Nbranch < 2) ierr = PetscPrintf(PETSC_COMM_SELF,"TRANSFORMERData[%d] : %d, %d, %s, %lf, %lf, %lf, %lf, %lf, %lf, %d, %d, %lf, %lf, %lf\n",bri-Nbranch, Branch[bri].fbus, Branch[bri].tbus, Branch[bri].ckt, Branch[bri].r, Branch[bri].x, Branch[bri].b, Branch[bri].rateA, Branch[bri].rateB, Branch[bri].rateC, Branch[bri].status, Branch[bri].o1, Branch[bri].f1, Branch[bri].tapratio, Branch[bri].phaseshift);CHKERRQ(ierr);
+        if(bri - Nline < 2) ierr = PetscPrintf(PETSC_COMM_SELF,"TRANSFORMERData[%d] : %d, %d, %s, %lf, %lf, %lf, %lf, %lf, %lf, %d, %d, %lf, %lf, %lf\n",bri-Nline, Branch[bri].fbus, Branch[bri].tbus, Branch[bri].ckt, Branch[bri].r, Branch[bri].x, Branch[bri].b, Branch[bri].rateA, Branch[bri].rateB, Branch[bri].rateC, Branch[bri].status, Branch[bri].o1, Branch[bri].f1, Branch[bri].tapratio, Branch[bri].phaseshift);CHKERRQ(ierr);
 #endif  
         internalindex = busext2intmap[Branch[bri].fbus];
         Branch[bri].internal_i = internalindex;        
@@ -389,7 +389,7 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
   PetscFunctionBegin;
 
   if(ps->comm->type != PETSC_COMM_SELF && ps->comm->rank != 0) {
-    ps->Nbranch = ps->Nbus = ps->Ngen = ps->Nload = 0;
+    ps->Nline = ps->Nbus = ps->Ngen = ps->Nload = 0;
     PetscFunctionReturn(0);
   }
 
@@ -449,17 +449,17 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
 
   ps->Nbus    = ps->nbus    = bus_end_line - bus_start_line - bus_nblank_lines;
   ps->Ngen    = ps->ngen    = gen_end_line - gen_start_line - gen_nblank_lines;
-  ps->Nbranch = ps->nbranch = br_end_line  - br_start_line - br_nblank_lines;
+  ps->Nline = ps->nline = br_end_line  - br_start_line - br_nblank_lines;
   ps->nload = ps->Nload;
   ps->NgenON = 0;
 
 #if defined DEBUGPS
-  ierr = PetscPrintf(PETSC_COMM_SELF,"System summary : Nbuses = %d, Ngen = %d, Nload = %d, Nbranch = %d\n",ps->Nbus,ps->Ngen,ps->Nload,ps->Nbranch);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_SELF,"System summary : Nbuses = %d, Ngen = %d, Nload = %d, Nbranch = %d\n",ps->Nbus,ps->Ngen,ps->Nload,ps->Nline);CHKERRQ(ierr);
 #endif
   ierr = PetscCalloc1(ps->Nbus,&ps->bus);CHKERRQ(ierr);
   ierr = PetscCalloc1(ps->Ngen,&ps->gen);CHKERRQ(ierr);
   ierr = PetscCalloc1(ps->Nload,&ps->load);CHKERRQ(ierr);
-  ierr = PetscCalloc1(ps->Nbranch,&ps->line);CHKERRQ(ierr);
+  ierr = PetscCalloc1(ps->Nline,&ps->line);CHKERRQ(ierr);
   Bus = ps->bus; Gen = ps->gen; Load = ps->load; Branch = ps->line;
 
   for(i=0; i < ps->Nbus; i++) {

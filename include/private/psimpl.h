@@ -209,9 +209,9 @@ typedef struct {
 */
 struct _p_PS {
   PetscScalar MVAbase;                 /* System base MVA */
-  PetscInt    Nbus,Ngen,Nbranch,Nload; /* global # of buses,gens,branches, and loads (includes elements which are
+  PetscInt    Nbus,Ngen,Nline,Nload; /* global # of buses,gens,branches, and loads (includes elements which are
                                           out of service */
-  PetscInt    nbus,ngen,nbranch,nload; /* local # of buses,gens,branches,and loads */
+  PetscInt    nbus,ngen,nline,nload; /* local # of buses,gens,branches,and loads */
   PetscInt    NgenON,ngenON;           /* Number of active generators */
   PetscInt    Nref,nref;               /* Number of reference buses */
   PSBUS       bus;

@@ -108,7 +108,7 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBPOL(OPFLOW opflow,Vec Gl,Vec Gu)
   }
   
   if(!opflow->ignore_lineflow_constraints) {
-    for(i=0; i < ps->nbranch; i++) {
+    for(i=0; i < ps->nline; i++) {
       line = &ps->line[i];
       if(!line->status || line->rateA > 1e5) continue;
       
@@ -548,7 +548,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec 
   ierr = VecGetArray(Gi,&g);CHKERRQ(ierr);
 
   if(!opflow->ignore_lineflow_constraints) {
-    for(i=0; i<ps->nbranch; i++) {
+    for(i=0; i<ps->nline; i++) {
       line = &ps->line[i];
       if(!line->status || line->rateA > 1e5) continue;
       
@@ -632,7 +632,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,Vec
 
   gloc = rstart;
   if(!opflow->ignore_lineflow_constraints) {
-    for (i=0; i < ps->nbranch; i++) {
+    for (i=0; i < ps->nline; i++) {
       line = &ps->line[i];
       if(!line->status || line->rateA > 1e5) continue;
       
@@ -874,7 +874,7 @@ PetscErrorCode OPFLOWFormulationSetNumVariables_PBPOL(OPFLOW opflow,PetscInt *bu
   
   *nx = 0;
   /* No variables for the branches */
-  for(i=0; i < ps->nbranch; i++) {
+  for(i=0; i < ps->nline; i++) {
     branchnvar[i] = 0;
     *nx += branchnvar[i];
   }
@@ -925,7 +925,7 @@ PetscErrorCode OPFLOWFormulationSetNumConstraints_PBPOL(OPFLOW opflow,PetscInt *
   }
 
   if(!opflow->ignore_lineflow_constraints) {
-    for(i=0; i < ps->nbranch; i++) {
+    for(i=0; i < ps->nline; i++) {
       line = &ps->line[i];
       if(line->status && line->rateA < 1e5) *nconineq += 2; /* Line flow constraints */
     }
@@ -1245,7 +1245,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow, Ve
 
   // for the part of line constraints
   if(!opflow->ignore_lineflow_constraints) {
-    for(i=0; i < ps->nbranch; i++) {
+    for(i=0; i < ps->nline; i++) {
       line = &ps->line[i];
       
       if(!line->status || line->rateA > 1e5) continue;

@@ -36,7 +36,7 @@ PetscErrorCode OPFLOWSetVariableBounds_IBCAR2(OPFLOW opflow,Vec Xl,Vec Xu)
   ierr = VecGetArray(Xl,&xl);CHKERRQ(ierr);
   ierr = VecGetArray(Xu,&xu);CHKERRQ(ierr);
 
-  for(i=0; i < ps->nbranch; i++) {
+  for(i=0; i < ps->nline; i++) {
     line = &ps->line[i];
 
     ierr = PSLINEGetVariableLocation(line,&loc);CHKERRQ(ierr);
@@ -119,7 +119,7 @@ PetscErrorCode OPFLOWSetConstraintBounds_IBCAR2(OPFLOW opflow,Vec Gl,Vec Gu)
   ierr = VecGetArray(Gu,&gu);CHKERRQ(ierr);
 
   /* Equality constraint bounds for line flow balance equations */
-  for(i=0; i < ps->nbranch; i++) {
+  for(i=0; i < ps->nline; i++) {
     line = &ps->line[i];
     if(!line->status) continue;
     gl[gloc] = gl[gloc+1] = gl[gloc+2] = gl[gloc+3] = 0.0;
@@ -159,7 +159,7 @@ PetscErrorCode OPFLOWSetConstraintBounds_IBCAR2(OPFLOW opflow,Vec Gl,Vec Gu)
     
   if(!opflow->ignore_lineflow_constraints) {
     /* Bounds on inequality constraints for line flows */
-    for(i=0; i < ps->nbranch; i++) {
+    for(i=0; i < ps->nline; i++) {
       line = &ps->line[i];
       if(!line->status || line->rateA > 1e5) continue;
       gl[gloc] = gl[gloc+1] = 0.0; 
@@ -260,7 +260,7 @@ PetscErrorCode OPFLOWSetInitialGuess_IBCAR2(OPFLOW opflow,Vec X)
   }
 
   /* Initialize branch currents */
-  for(i=0; i < ps->nbranch; i++) {
+  for(i=0; i < ps->nline; i++) {
     line = &ps->line[i];
     if(!line->status) continue;
     ierr = PSLINEGetVariableLocation(line,&loc);CHKERRQ(ierr);
@@ -336,7 +336,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR2(OPFLOW opflow,Vec X,Vec G
 
   ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
 
-  for(i=0; i < ps->nbranch; i++) {
+  for(i=0; i < ps->nline; i++) {
     line = &ps->line[i];
     if(!line->status) continue;
 
@@ -508,7 +508,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR2(OPFLOW opflow,Vec 
 
   ierr = MatGetOwnershipRange(Je,&rstart,NULL);CHKERRQ(ierr);
 
-  for(i=0; i < ps->nbranch; i++) {
+  for(i=0; i < ps->nline; i++) {
     line = &ps->line[i];
     if(!line->status) continue;
     
@@ -836,7 +836,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_IBCAR2(OPFLOW opflow,Vec X,Vec
   }
 
   if(!opflow->ignore_lineflow_constraints) {
-    for(i=0; i<ps->nbranch; i++) {
+    for(i=0; i<ps->nline; i++) {
       line = &ps->line[i];
       if(!line->status || line->rateA > 1e5) continue;
       
@@ -910,7 +910,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR2(OPFLOW opflow,Ve
     PetscFunctionReturn(0);
   }
     
-  for (i=0; i < ps->nbranch; i++) {
+  for (i=0; i < ps->nline; i++) {
     line = &ps->line[i];
     if(!line->status || line->rateA > 1e5) continue;
 
@@ -1099,7 +1099,7 @@ PetscErrorCode OPFLOWFormulationSetNumVariables_IBCAR2(OPFLOW opflow,PetscInt *b
   
   *nx = 0;
   /* No variables for the branches */
-  for(i=0; i < ps->nbranch; i++) {
+  for(i=0; i < ps->nline; i++) {
     line = &ps->line[i];
     if(!line->status) branchnvar[i] = 0;
     else branchnvar[i] = 4; /* Ifr, Ifi, Itr, Iti From and to bus currents (real and imaginary parts)*/
@@ -1146,7 +1146,7 @@ PetscErrorCode OPFLOWFormulationSetNumConstraints_IBCAR2(OPFLOW opflow,PetscInt 
   *nconeq = 0;
   *nconineq = 0;
 
-  for(i=0; i < ps->nbranch; i++) {
+  for(i=0; i < ps->nline; i++) {
     line = &ps->line[i];
     if(line->status) *nconeq += 4;
   }
@@ -1161,7 +1161,7 @@ PetscErrorCode OPFLOWFormulationSetNumConstraints_IBCAR2(OPFLOW opflow,PetscInt 
   }
 
   if(!opflow->ignore_lineflow_constraints) {
-    for(i=0; i < ps->nbranch; i++) {
+    for(i=0; i < ps->nline; i++) {
       line = &ps->line[i];
       if(line->status && line->rateA < 1e5) *nconineq += 2; /* Line flow constraints */
     }
@@ -1203,7 +1203,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR2(OPFLOW opflow,Vec 
   ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecGetArrayRead(Lambda,&lambda);CHKERRQ(ierr);
 
-  for(i=0; i < ps->nbranch; i++) {
+  for(i=0; i < ps->nline; i++) {
     line = &ps->line[i];
     if(!line->status) continue;
     gloc += 4; /* No Hessian contribution from line flow constraints, only increment gloc counter */
@@ -1555,7 +1555,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR2(OPFLOW opflow, V
 
   val[0] = val[1] = val[2] = val[3] = 0.0;
   // for the part of line constraints
-  for(i=0; i < ps->nbranch; i++) {
+  for(i=0; i < ps->nline; i++) {
     line = &ps->line[i];
     if(!line->status || line->rateA > 1e5) continue;
 

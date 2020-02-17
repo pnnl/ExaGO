@@ -625,7 +625,7 @@ PetscErrorCode PSCreate(MPI_Comm mpicomm,PS *psout)
   ps->Nbus  = -1;
   ps->Ngen  = -1;
   ps->NgenON = -1;
-  ps->Nbranch = -1;
+  ps->Nline = -1;
   ps->Nload   = -1;
   ps->refct   = 0;
   ps->app     = NULL;
@@ -686,7 +686,7 @@ PetscErrorCode PSDestroy(PS *ps)
 PetscErrorCode PSGetNumGlobalLines(PS ps,PetscInt *Nlines)
 {
   PetscFunctionBegin;
-  *Nlines = ps->Nbranch;
+  *Nlines = ps->Nline;
   PetscFunctionReturn(0);
 }
 
@@ -838,7 +838,7 @@ PetscErrorCode PSSetUp(PS ps)
   
   /* Set local sizes of buses and branches */
   ps->nbus = nv;
-  ps->nbranch = ne;
+  ps->nline = ne;
 
   if(ps->comm->size > 1) {
     if(ps->comm->rank == 0) {
@@ -856,7 +856,7 @@ PetscErrorCode PSSetUp(PS ps)
     /* Pack variables */
     temp[0] = ps->Nbus;
     temp[1] = ps->Ngen;
-    temp[2] = ps->Nbranch;
+    temp[2] = ps->Nline;
     temp[3] = ps->Nload;
     temp[4] = ps->maxbusnum;
     temp[5] = ps->NgenON;
@@ -865,7 +865,7 @@ PetscErrorCode PSSetUp(PS ps)
     /* Unpack */
     ps->Nbus = temp[0];
     ps->Ngen = temp[1];
-    ps->Nbranch = temp[2];
+    ps->Nline = temp[2];
     ps->Nload   = temp[3];
     ps->maxbusnum = temp[4];
     ps->NgenON  = temp[5];
@@ -888,7 +888,7 @@ PetscErrorCode PSSetUp(PS ps)
 
     /* Create local PSBUS, PSBRANCH, PSGEN, and PSLOAD */
     ierr = PetscCalloc1(ps->nbus,&ps->bus);CHKERRQ(ierr);
-    ierr = PetscCalloc1(ps->nbranch,&ps->line);CHKERRQ(ierr);
+    ierr = PetscCalloc1(ps->nline,&ps->line);CHKERRQ(ierr);
     ierr = PetscCalloc1(ps->ngen,&ps->gen);CHKERRQ(ierr);
     ierr = PetscCalloc1(ps->nload,&ps->load);CHKERRQ(ierr);
 
@@ -988,9 +988,9 @@ PetscErrorCode PSSetUp(PS ps)
     if(ps->bus[i].ide == REF_BUS) ps->nref++;
   }
 #if defined DEBUGPS
-  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank[%d]:nbuses = %d,nlines = %d,ngen = %d, nload = %d\n",ps->comm->rank,ps->nbus,ps->nbranch,ps->ngen,ps->nload);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank[%d]:nbuses = %d,nlines = %d,ngen = %d, nload = %d\n",ps->comm->rank,ps->nbus,ps->nline,ps->ngen,ps->nload);CHKERRQ(ierr);
   PSLINE line;
-  for(i= 0; i < ps->nbranch; i++) {
+  for(i= 0; i < ps->nline; i++) {
     line = &ps->line[i];
     ierr = PetscPrintf(PETSC_COMM_SELF,"Rank[%d]:Line %d ----- %d\n",ps->comm->rank,line->fbus,line->tbus);CHKERRQ(ierr);
   }

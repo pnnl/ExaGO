@@ -611,7 +611,7 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow)
   ierr = DMGlobalToLocalEnd(ps->networkdm,pflow->X,INSERT_VALUES,localX);CHKERRQ(ierr);
   ierr = VecGetArrayRead(localX,&xarr);CHKERRQ(ierr);
 
-  for(i=0; i < ps->nbranch; i++) {
+  for(i=0; i < ps->nline; i++) {
     line = &ps->line[i];
     line->pf = line->qf = line->pt = line->qt = 0.0;
   }
@@ -843,7 +843,7 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow)
   ierr = PetscPrintf(pflow->comm->type,"=============================================================\n");CHKERRQ(ierr);
   ierr = PetscPrintf(pflow->comm->type,"%-6s %-6s %-11s %-8s %-8s %-8s %-8s\n","Rank","From","To","Pf","Qf","Pt","Qt");CHKERRQ(ierr);
   MPI_Barrier(pflow->comm->type);
-  for(i=0; i < ps->nbranch; i++) {
+  for(i=0; i < ps->nline; i++) {
     PSLINE line;
     line = &ps->line[i];
     ierr = PetscPrintf(PETSC_COMM_SELF,"%-6d %-6d %-6d %8.2f %8.2f %8.2f %8.2f\n",pflow->comm->rank,line->fbus,line->tbus,line->pf*ps->MVAbase,line->qf*ps->MVAbase,line->pt*ps->MVAbase,line->qt*ps->MVAbase);CHKERRQ(ierr);

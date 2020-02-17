@@ -130,7 +130,7 @@ PetscErrorCode OPFLOWSetConstraintBounds_IBCAR(OPFLOW opflow,Vec Gl,Vec Gu)
   }
     
   if(!opflow->ignore_lineflow_constraints) {  
-    for(i=0; i < ps->nbranch; i++) {
+    for(i=0; i < ps->nline; i++) {
       line = &ps->line[i];
       if(!line->status || line->rateA > 1e5) continue;
       gl[gloc] = gl[gloc+1] = 0.0; 
@@ -696,7 +696,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec 
     PetscFunctionReturn(0);
   }
 
-  for(i=0; i<ps->nbranch; i++) {
+  for(i=0; i<ps->nline; i++) {
     line = &ps->line[i];
     if(!line->status || line->rateA > 1e5) continue;
 
@@ -804,7 +804,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,Vec
 ;
   }
 
-  for (i=0; i < ps->nbranch; i++) {
+  for (i=0; i < ps->nline; i++) {
     line = &ps->line[i];
     if(!line->status || line->rateA > 1e5) continue;
 
@@ -1043,7 +1043,7 @@ PetscErrorCode OPFLOWFormulationSetNumVariables_IBCAR(OPFLOW opflow,PetscInt *bu
   
   *nx = 0;
   /* No variables for the branches */
-  for(i=0; i < ps->nbranch; i++) {
+  for(i=0; i < ps->nline; i++) {
     branchnvar[i] = 0;
     *nx += branchnvar[i];
   }
@@ -1099,7 +1099,7 @@ PetscErrorCode OPFLOWFormulationSetNumConstraints_IBCAR(OPFLOW opflow,PetscInt *
   }
 
   if(!opflow->ignore_lineflow_constraints) {
-    for(i=0; i < ps->nbranch; i++) {
+    for(i=0; i < ps->nline; i++) {
       line = &ps->line[i];
       if(line->status && line->rateA < 1e5) *nconineq += 2; /* Line flow constraints */
     }
@@ -1489,7 +1489,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR(OPFLOW opflow, Ve
 
   val[0] = val[1] = val[2] = val[3] = 0.0;
   // for the part of line constraints
-  for(i=0; i < ps->Nbranch; i++) {
+  for(i=0; i < ps->Nline; i++) {
     line = &ps->line[i];
     if(!line->status || line->rateA > 1e5) continue;
 
