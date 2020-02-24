@@ -214,6 +214,7 @@ struct _p_PS {
   PetscInt    Nbus,Ngen,Nline,Nload; /* global # of buses,gens,branches, and loads (includes elements which are
                                           out of service */
   PetscInt    nbus,ngen,nline,nload; /* local # of buses,gens,branches,and loads */
+  PetscInt    nbusowned;               /* local # of owned buses (no ghost buses) */
   PetscInt    NlineON,nlineON;       /* Number of active lines */
   PetscInt    NgenON,ngenON;           /* Number of active generators */
   PetscInt    Nref,nref;               /* Number of reference buses */

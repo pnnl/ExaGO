@@ -629,6 +629,7 @@ PetscErrorCode PSCreate(MPI_Comm mpicomm,PS *psout)
   ps->nlineON = -1;
   ps->NlineON = -1;
   ps->Nload   = -1;
+  ps->nbusowned = 0;
   ps->refct   = 0;
   ps->app     = NULL;
   ps->appname = APP_NONE;
@@ -966,6 +967,9 @@ PetscErrorCode PSSetUp(PS ps)
 
     /* Is bus ghosted? */
     ierr = DMNetworkIsGhostVertex(ps->networkdm,vtx[i],&ps->bus[i].isghost);CHKERRQ(ierr);
+
+    /* Update the number of owned buses */
+    if(!ps->bus[i].isghost) ps->nbusowned++;
 
     /* Starting location in the local array */
     ierr = DMNetworkGetVariableOffset(ps->networkdm,vtx[i],&ps->bus[i].startloc);CHKERRQ(ierr);
