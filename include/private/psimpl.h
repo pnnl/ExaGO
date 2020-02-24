@@ -67,6 +67,8 @@ struct _p_PSBUS{
      the local vector, while startlocglob is used for setting the values in the matrix */
   
   PetscInt  startlocglob; /**< Starting location for the variables for this bus in the application "global" residual array */
+
+  PetscInt   hasinj;       /* 1 if the bus has an active injector (gen,load, or shunt) */
 };
 
 /**

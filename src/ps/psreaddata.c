@@ -146,6 +146,7 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
     ps->bus[i].qrange = ps->bus[i].qmintot = ps->bus[i].Pgtot = ps->bus[i].MVAbasetot =  0.0 ;
     ps->bus[i].Vmax = 1.1;
     ps->bus[i].Vmin = 0.9;
+    ps->bus[i].hasinj = 0;
   }
   /* Allocate external to internal bus number mapping array */
 
@@ -210,6 +211,7 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
         Load[loadi].internal_i = internalindex;
         Bus[internalindex].lidx[Bus[internalindex].nload] = loadi;
         Bus[internalindex].nload++;
+	Bus[internalindex].hasinj = 1;
         loadi++;
       break;
       case 2:
@@ -220,6 +222,7 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
 	  Bus[internalindex].nshunt++;
 	  Bus[internalindex].gl = gshunt/ps->MVAbase;
 	  Bus[internalindex].bl = bshunt/ps->MVAbase;
+	  Bus[internalindex].hasinj = 1;
 	}
       break;
       case 3:
@@ -243,6 +246,7 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
 	  Bus[internalindex].Pgtot += PetscAbsScalar(Gen[geni].pg);
           Bus[internalindex].MVAbasetot += Gen[geni].mbase;
       	  Bus[internalindex].ngenON++;
+	  Bus[internalindex].hasinj = 1;
 	  ps->NgenON++;
       	}
         Bus[internalindex].ngen++;
@@ -465,9 +469,11 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
   ierr = PetscCalloc1(ps->Nline,&ps->line);CHKERRQ(ierr);
   Bus = ps->bus; Gen = ps->gen; Load = ps->load; Branch = ps->line;
 
+  /* Zero initialize some bus struct members */
   for(i=0; i < ps->Nbus; i++) {
     ps->bus[i].ngen = ps->bus[i].nload = ps->bus[i].ngenON = ps->bus[i].nshunt = 0;
     ps->bus[i].qrange = ps->bus[i].qmintot = ps->bus[i].Pgtot = ps->bus[i].MVAbasetot = 0.0;
+    ps->bus[i].hasinj = 0;
   }
 
   /*  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank[%d] maxbusnum %d",ps->comm->rank,ps->maxbusnum);CHKERRQ(ierr); */
@@ -500,7 +506,10 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
       /* Convert bl and gl to per unit */
       Bus[busi].bl = Bus[busi].bl/ps->MVAbase;
       Bus[busi].gl = Bus[busi].gl/ps->MVAbase;
-      Bus[busi].nshunt++;
+      if(!((Bus[busi].bl == 0.0) && (Bus[busi].gl == 0.0))) {
+	Bus[busi].nshunt++;
+	Bus[busi].hasinj = 1;
+      }
 
       if(!((Pd == 0.0) && (Qd == 0.0))) {
 	Load[loadi].bus_i = Bus[busi].bus_i;
@@ -516,6 +525,7 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
 	snprintf(Load[loadi].id,3,"%-2d",1+Bus[intbusnum].nload);
 
 	Bus[busi].lidx[Bus[busi].nload++] = loadi;
+	Bus[busi].hasinj = 1;
 	if (Bus[busi].nload > NLOAD_AT_BUS_MAX)
 	  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Exceeded maximum number of loads allowed at bus");
 	loadi++;
@@ -552,6 +562,7 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
 	Bus[intbusnum].Pgtot += PetscAbsScalar(Gen[geni].pg);
 	Bus[intbusnum].MVAbasetot += Gen[geni].mbase;
 	Bus[intbusnum].ngenON++;
+	Bus[intbusnum].hasinj = 0;
 	ps->NgenON++;
       } else {
 	Gen[geni].pg = Gen[geni].qg = 0.0;
