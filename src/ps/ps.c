@@ -636,6 +636,7 @@ PetscErrorCode PSCreate(MPI_Comm mpicomm,PS *psout)
   ps->ndiff   = 0;
   ps->nconncomp = 0;
   ps->nref = ps->Nref = 0;
+  ps->Ybus = NULL;
  
   ierr = PSIncreaseReferenceCount(ps);CHKERRQ(ierr);
 
@@ -673,6 +674,9 @@ PetscErrorCode PSDestroy(PS *ps)
 
   ierr = PSConnCompDestroy(*ps);CHKERRQ(ierr);
 
+  if((*ps)->Ybus) {
+    ierr = MatDestroy(&(*ps)->Ybus);CHKERRQ(ierr);
+  }
   ierr = PetscFree((*ps)->busext2intmap);CHKERRQ(ierr);
   ierr = DMDestroy(&(*ps)->networkdm);CHKERRQ(ierr);
   ierr = PetscFree(*ps);CHKERRQ(ierr);
@@ -806,7 +810,7 @@ PetscErrorCode PSSetUp(PS ps)
   for(i=0; i < nv; i++) {
     /* Set the number of variables for buses */
     if(ps->appname == APP_ACPF) numbusvariables = 2;
-    if(ps->appname == APP_ACOPF) numbusvariables = 0; /* The variables are set later by the application */
+    if(ps->appname == APP_ACOPF) numbusvariables = 2; /* Note - the actual variables are set later by the application */
 
     ierr = DMNetworkAddNumVariables(networkdm,vtx[i],numbusvariables);CHKERRQ(ierr); /* Bus variables */
     ierr = DMNetworkAddComponent(networkdm,vtx[i],ps->compkey[1],&ps->bus[i]);CHKERRQ(ierr);
@@ -1009,8 +1013,13 @@ PetscErrorCode PSSetUp(PS ps)
   /* Broadcast MVAbase */
   ierr = MPI_Bcast(&ps->MVAbase,1,MPIU_SCALAR,0,ps->comm->type);CHKERRQ(ierr);
 
+
   //  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d Came here\n",ps->comm->rank);CHKERRQ(ierr);
   ps->setupcalled = PETSC_TRUE;
+
+  /* Make Ybus matrix */
+  ierr = PSMakeYbus(ps,&ps->Ybus);CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 

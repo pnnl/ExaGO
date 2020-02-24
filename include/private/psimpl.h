@@ -240,7 +240,8 @@ struct _p_PS {
   PetscInt    nconncomp;           /* Number of connected components */
   PSConnComp  conncomp[MAXCONNECTEDCOMPS]; /* List of connected components */
 
-  PetscBool setupcalled; /* Is setup called on PS? */
+  Mat         Ybus;  /* Ybus matrix */
+  PetscBool   setupcalled; /* Is setup called on PS? */
 };
 
 extern PetscErrorCode PSCheckTopology(PS);

@@ -274,5 +274,13 @@ extern PetscErrorCode PSSetGenDispatchandStatus(PS,PetscInt,PetscInt,PetscInt,Pe
  * If it is not defined, then the first PV bus is used.
  */
 extern PetscErrorCode PSCheckandSetRefBus(PS);
+
+/**
+ * @brief Makes the Ybus matrix for the network
+ * @param [in] PS ps - The PS object
+ * @param [out] Ybus - the Ybus matrix
+ */
+extern PetscErrorCode PSMakeYbus(PS,Mat*);
+
 #endif
 

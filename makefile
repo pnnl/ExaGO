@@ -45,7 +45,7 @@ include $(PETSC_DIR)/lib/petsc/conf/rules
 #	General use Objects
 #******************************
 
-PS_SRC_OBJECTS = src/ps/ps.o src/ps/psreaddata.o src/ps/psislanding.o src/utils/comm.o src/utils/utils.o
+PS_SRC_OBJECTS = src/ps/ps.o src/ps/psreaddata.o src/ps/psislanding.o src/ps/psmakeybus.o src/utils/comm.o src/utils/utils.o
 
 #******************************
 #	PFLOW Specific Make
