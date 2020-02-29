@@ -508,7 +508,7 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
       Bus[busi].gl = Bus[busi].gl/ps->MVAbase;
       if(!((Bus[busi].bl == 0.0) && (Bus[busi].gl == 0.0))) {
 	Bus[busi].nshunt++;
-	Bus[busi].hasinj = 1;
+	//	Bus[busi].hasinj = 1;
       }
 
       if(!((Pd == 0.0) && (Qd == 0.0))) {
@@ -562,7 +562,7 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
 	Bus[intbusnum].Pgtot += PetscAbsScalar(Gen[geni].pg);
 	Bus[intbusnum].MVAbasetot += Gen[geni].mbase;
 	Bus[intbusnum].ngenON++;
-	Bus[intbusnum].hasinj = 0;
+	Bus[intbusnum].hasinj = 1;
 	ps->NgenON++;
       } else {
 	Gen[geni].pg = Gen[geni].qg = 0.0;

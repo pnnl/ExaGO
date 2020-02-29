@@ -1,6 +1,73 @@
 #include <private/psimpl.h>
 
 /*
+  PSMakeYbusred - Creates the reduced Ybus matrix by eliminating the rows/columns corresponding to buses having no injectors (gen, load, branches)
+
+  Input parameters
+. ps - The PS application object
+
+  Output parameters
+. Ybusred - the reduced Ybus matrix
+*/
+PetscErrorCode PSMakeYbusred(PS ps,Mat *Ybusred)
+{
+  PetscInt       i,ctr_act=0,ctr_pas=0;
+  PetscInt       nact=0,npas=0; /* Number of active and passive buses */
+  PetscInt       *idx_act,*idx_pas; /* Ybus row numbers for active and passive bus contributions */
+  PetscErrorCode ierr;
+  PSBUS          bus;
+  PetscBool      isghost;
+  PetscInt       locxg;
+  IS             is_act,is_pas;
+
+  PetscFunctionBegin;
+
+  /* Count the number of active buses */
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
+    if(isghost) continue;
+    if(bus->hasinj) nact++;
+  }
+      
+  /* Number of passive buses */
+  npas = ps->nbusowned - nact;
+  
+  /* Create arrays for storing row numbers for active and passive buses in Ybus */
+  ierr = PetscCalloc1(2*nact,&idx_act);CHKERRQ(ierr);
+  ierr = PetscCalloc1(2*npas,&idx_pas);CHKERRQ(ierr);
+
+  /* Set active and passive bus row numbers */
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
+    if(isghost) continue;
+
+    ierr = PSBUSGetVariableGlobalLocation(bus,&locxg);CHKERRQ(ierr);
+    if(bus->hasinj) {
+      idx_act[ctr_act]   = locxg;
+      idx_act[ctr_act+1] = locxg+1;
+      ctr_act += 2;
+    } else {
+      idx_pas[ctr_pas]   = locxg;
+      idx_pas[ctr_pas+1] = locxg+1;
+      ctr_pas += 2;
+    }
+  }
+
+  /* Create index sets for active and passive bus row numbers */
+  ierr = ISCreateGeneral(ps->comm->type,2*nact,idx_act,PETSC_OWN_POINTER,&is_act);CHKERRQ(ierr);
+  ierr = ISCreateGeneral(ps->comm->type,2*npas,idx_pas,PETSC_OWN_POINTER,&is_pas);CHKERRQ(ierr);
+  
+  ierr = ISView(is_act,0);CHKERRQ(ierr);
+  ierr = ISView(is_pas,0);CHKERRQ(ierr);
+  exit(-1);
+  PetscFunctionReturn(0);
+}
+
+  
+
+/*
   PSMakeYbus - Creates the Ybus matrix
 
   Input parameters
@@ -76,8 +143,12 @@ PetscErrorCode PSMakeYbus(PS ps,Mat *Ybus)
   ierr = MatAssemblyBegin(Yb,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Yb,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
-  ierr = MatView(Yb,0);
-  exit(1);
+  //  ierr = MatView(Yb,0);
+  //  exit(1);
   *Ybus = Yb;
+
+  Mat Ybusred;
+  ierr = PSMakeYbusred(ps,&Ybusred);CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
