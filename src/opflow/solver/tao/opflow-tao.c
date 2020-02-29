@@ -65,12 +65,14 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobian_TAO(Tao nlp, Vec X, Mat Ji, M
 }
 
 
-PetscErrorCode OPFLOWHessian_TAO(Tao nlp,Vec X, Vec Lambdae, Vec Lambdai,Mat H, Mat H_pre, void *ctx)
+PetscErrorCode OPFLOWHessian_TAO(Tao nlp,Vec X, Mat H, Mat H_pre, void *ctx)
 {
   PetscErrorCode ierr;
   OPFLOW         opflow=(OPFLOW)ctx;
+  Vec            Lambdae,Lambdai;
 
   PetscFunctionBegin;
+  ierr = TaoGetDualVariables(nlp,&Lambdae,&Lambdai);CHKERRQ(ierr);
   ierr = (*opflow->formops.computehessian)(opflow,X,Lambdae,Lambdai,H);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -137,7 +139,7 @@ PetscErrorCode OPFLOWSolverSetUp_TAO(OPFLOW opflow)
   ierr = TaoSetFromOptions(tao->nlp);CHKERRQ(ierr);
 
   /* Set Hessian routine */
-  ierr = TaoSetPDIPMHessianRoutine(tao->nlp,opflow->Hes,opflow->Hes,OPFLOWHessian_TAO,(void*)opflow);CHKERRQ(ierr);
+  ierr = TaoSetHessianRoutine(tao->nlp,opflow->Hes,opflow->Hes,OPFLOWHessian_TAO,(void*)opflow);CHKERRQ(ierr);
 
   /* Create vectors for inequality constraint bounds */
   ierr = VecDuplicate(opflow->Gi,&tao->Glineq);CHKERRQ(ierr);
