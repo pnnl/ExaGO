@@ -8,7 +8,7 @@ PetscErrorCode OPFLOWObjectiveandGradientFunction_TAO(Tao nlp,Vec X,PetscScalar 
 
   PetscFunctionBegin;
   *obj = 0.0;
-  ierr = (*opflow->formops.computeobjandgradient)(opflow,opflow->X,obj,grad);CHKERRQ(ierr);
+  ierr = (*opflow->formops.computeobjandgradient)(opflow,X,obj,grad);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -69,9 +69,12 @@ PetscErrorCode OPFLOWHessian_TAO(Tao nlp,Vec X, Mat H, Mat H_pre, void *ctx)
 {
   PetscErrorCode ierr;
   OPFLOW         opflow=(OPFLOW)ctx;
+  Vec            DE,DI;
 
   PetscFunctionBegin;
-  ierr = (*opflow->formops.computehessian)(opflow,X,opflow->Lambdae,opflow->Lambdai,H);CHKERRQ(ierr);
+  ierr = TaoGetDualVariables(nlp,&DE,&DI);CHKERRQ(ierr);
+  //  ierr = VecScale(opflow->Lambdai,-1.0);CHKERRQ(ierr);
+  ierr = (*opflow->formops.computehessian)(opflow,X,DE,DI,H);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

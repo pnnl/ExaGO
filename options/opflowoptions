@@ -8,7 +8,7 @@
 -opflow_tao_max_funcs 100000
 -opflow_tao_max_it 200
 # PDIPM SNES Solver Options
--opflow_snes_fd
+#-opflow_snes_fd
 -opflow_snes_max_it 200
 -opflow_snes_max_funcs 100000
 #-opflow_snes_monitor
