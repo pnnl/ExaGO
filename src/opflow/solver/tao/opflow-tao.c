@@ -100,6 +100,9 @@ PetscErrorCode OPFLOWSolverDestroy_TAO(OPFLOW opflow)
 
   PetscFunctionBegin;
 
+  ierr = VecDestroy(&tao->Glineq);CHKERRQ(ierr);
+  ierr = VecDestroy(&tao->Guineq);CHKERRQ(ierr);
+
   if(tao->nlp) {
     TaoDestroy(&tao->nlp);
   }
@@ -120,7 +123,6 @@ PetscErrorCode OPFLOWSolverSetUp_TAO(OPFLOW opflow)
   ierr = TaoSetOptionsPrefix(tao->nlp,"opflow_");CHKERRQ(ierr);
 
   /* Set Callback routines */
-
   /* Objective and gradient */
   ierr = TaoSetObjectiveAndGradientRoutine(tao->nlp,OPFLOWObjectiveandGradientFunction_TAO,(void*)opflow);CHKERRQ(ierr);
 
@@ -137,7 +139,12 @@ PetscErrorCode OPFLOWSolverSetUp_TAO(OPFLOW opflow)
   ierr = TaoSetJacobianInequalityRoutine(tao->nlp,opflow->Jac_Gi,opflow->Jac_Gi,OPFLOWInequalityConstraintsJacobian_TAO,(void*)opflow);CHKERRQ(ierr);
   ierr = TaoSetFromOptions(tao->nlp);CHKERRQ(ierr);
 
+  /* Set Hessian routine */
   ierr = TaoSetHessianRoutine(tao->nlp,opflow->Hes,opflow->Hes,OPFLOWHessian_TAO,(void*)opflow);CHKERRQ(ierr);
+
+  /* Create vectors for inequality constraint bounds */
+  ierr = VecDuplicate(opflow->Gi,&tao->Glineq);CHKERRQ(ierr);
+  ierr = VecDuplicate(opflow->Gu,&tao->Guineq);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
