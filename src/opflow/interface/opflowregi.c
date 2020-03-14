@@ -76,6 +76,9 @@ PetscErrorCode OPFLOWFormulationRegisterAll(OPFLOW opflow)
 extern PetscErrorCode OPFLOWSolverCreate_IPOPT(OPFLOW);
 #endif
 extern PetscErrorCode OPFLOWSolverCreate_TAO(OPFLOW);
+#if defined(SCOPFLOW_HAVE_HIOP)
+extern PetscErrorCode OPFLOWSolverCreate_HIOP(OPFLOW);
+#endif
 
 /*
   OPFLOWSolverRegisterAll - Registers all OPFLOW solvers
@@ -90,6 +93,9 @@ PetscErrorCode OPFLOWSolverRegisterAll(OPFLOW opflow)
   ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_IPOPT,OPFLOWSolverCreate_IPOPT);CHKERRQ(ierr);
 #endif
   ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_TAO,OPFLOWSolverCreate_TAO);CHKERRQ(ierr);
+#if defined(SCOPFLOW_HAVE_HIOP)
+  ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_HIOP,OPFLOWSolverCreate_HIOP);CHKERRQ(ierr);
+#endif
   opflow->OPFLOWSolverRegisterAllCalled = PETSC_TRUE;
 
   PetscFunctionReturn(0);
