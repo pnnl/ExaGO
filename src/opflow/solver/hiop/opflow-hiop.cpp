@@ -228,8 +228,8 @@ PetscErrorCode OPFLOWSolverDestroy_HIOP(OPFLOW opflow)
 
   PetscFunctionBegin;
 
-  free(hiop->mds);
-  free(hiop->nlp);
+  delete hiop->mds;
+  delete hiop->nlp;
 
   ierr = PetscFree(hiop);CHKERRQ(ierr);
 
