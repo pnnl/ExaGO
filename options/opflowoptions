@@ -3,10 +3,18 @@
 #-netfile datafiles/case118.m
 #-netfile datafiles/case5.m
 
-# Solver
--opflow_solver TAO
+# Select Solver (IPOPT,TAO, HIOP)
+-opflow_solver HIOP
 
+#-------------------------
+# Options for HIOP solver
+#--------------------------
+-opflow_formulation POWER_BALANCE_POLAR
+-opflow_ignore_lineflow_constraints
+
+#-------------------------
 # Options for TAO solver
+#--------------------------
 -opflow_tao_type pdipm  # Primal-Dual Interior Point Method (PDIPM)
 -opflow_tao_max_funcs 100000
 -opflow_tao_max_it 200
