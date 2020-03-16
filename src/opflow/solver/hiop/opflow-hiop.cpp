@@ -74,10 +74,52 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
   OPFLOWSolver_HIOP hiop=(OPFLOWSolver_HIOP)opflow->solver;
   PetscFunctionBegin;
 
-  hiop->mds = new hiop::hiopNlpMDS(hiop->nlp);
+  hiop->nlp = new OPFLOWSolverHIOP();
+  hiop->nlp->opflow = opflow;
+  hiop->mds = new hiop::hiopNlpMDS(*hiop->nlp);
+
+  /* Set options */
+  hiop->mds->options->SetStringValue("dualsUpdateType", "linear");
+  hiop->mds->options->SetStringValue("dualsInitialization", "zero");
+
+  hiop->mds->options->SetStringValue("Hessian", "analytical_exact");
+  hiop->mds->options->SetStringValue("KKTLinsys", "xdycyd");
+  hiop->mds->options->SetStringValue("compute_mode", "cpu");
+
+  hiop->mds->options->SetIntegerValue("verbosity_level", 3);
+  hiop->mds->options->SetNumericValue("mu0", 1e-1);
+
+  hiop->solver = new hiop::hiopAlgFilterIPMNewton(hiop->mds);
 
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode OPFLOWSolverSolve_HIOP(OPFLOW opflow)
+{
+  PetscErrorCode     ierr;
+  OPFLOWSolver_HIOP  hiop=(OPFLOWSolver_HIOP)opflow->solver;
+
+  PetscFunctionBegin;
+
+  hiop->solver->run();
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWSolverDestroy_HIOP(OPFLOW opflow)
+{
+  PetscErrorCode     ierr;
+  OPFLOWSolver_HIOP  hiop=(OPFLOWSolver_HIOP)opflow->solver;
+
+  PetscFunctionBegin;
+
+  free(hiop->mds);
+  free(hiop->nlp);
+
+  ierr = PetscFree(hiop);CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
 
 PetscErrorCode OPFLOWSolverCreate_HIOP(OPFLOW opflow)
 {
@@ -88,11 +130,10 @@ PetscErrorCode OPFLOWSolverCreate_HIOP(OPFLOW opflow)
   ierr = PetscCalloc1(1,&hiop);CHKERRQ(ierr);
 
   opflow->solver = hiop;
-  hiop->nlp.opflow = opflow;
-
-  //  opflow->solverops.setup = OPFLOWSolverSetUp_HIOP;
-  //  opflow->solverops.solve = OPFLOWSolverSolve_HIOP;
-  //  opflow->solverops.destroy = OPFLOWSolverDestroy_HIOP;
+  
+  opflow->solverops.setup = OPFLOWSolverSetUp_HIOP;
+  opflow->solverops.solve = OPFLOWSolverSolve_HIOP;
+  opflow->solverops.destroy = OPFLOWSolverDestroy_HIOP;
 
   PetscFunctionReturn(0);
 }

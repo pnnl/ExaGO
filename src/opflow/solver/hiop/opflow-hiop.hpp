@@ -15,11 +15,10 @@
 class OPFLOWSolverHIOP : public hiop::hiopInterfaceMDS
 {
 public:
-  OPFLOWSolverHIOP();
+  OPFLOWSolverHIOP() {};
   OPFLOW opflow;
 
   bool get_prob_sizes(long long& n, long long& m);
-
 
   bool get_vars_info(const long long& n, double *xlow, double* xupp, NonlinearityType* type);
 
@@ -65,9 +64,10 @@ typedef struct _p_OPFLOWSolver_HIOP *OPFLOWSolver_HIOP;
 
 struct _p_OPFLOWSolver_HIOP {
   
-  OPFLOWSolverHIOP nlp;
-  hiop::hiopSolveStatus  status;
-  hiop::hiopNlpMDS       *mds;
+  OPFLOWSolverHIOP              *nlp;
+  hiop::hiopSolveStatus         status;
+  hiop::hiopNlpMDS              *mds;
+  hiop::hiopAlgFilterIPMNewton  *solver;
 
 };
 
