@@ -110,9 +110,11 @@ struct _p_OPFLOW{
 
   void* solver; /* Solver object */
   struct _p_OPFLOWSolverOps solverops;
+  char  solvername[64];
 
   void* formulation; /* Formulation object */
   struct _p_OPFLOWFormulationOps formops;
+  char formulationname[64];
 
   /* List of formulations and solvers registered */
   struct _p_OPFLOWFormulationList OPFLOWFormulationList[OPFLOWFORMULATIONSMAX];
