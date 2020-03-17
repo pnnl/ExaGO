@@ -15,8 +15,50 @@
 class OPFLOWSolverHIOP : public hiop::hiopInterfaceMDS
 {
 public:
-  OPFLOWSolverHIOP() {};
-  OPFLOW opflow;
+  OPFLOWSolverHIOP(OPFLOW opflowin) {
+    PS ps;
+    PSBUS bus;
+    int   ngen;
+    PSGEN gen;
+    
+
+    opflow   = opflowin;
+
+    ps = opflow->ps;
+    nxsparse = 2*ps->ngenON;
+    nxdense  = 2*ps->nbus;
+
+    PetscMalloc1(opflow->nx,&idxsd_map);
+
+    int i,k;
+    int spct=0,dnct=0;
+    int loc;
+    for(i=0; i < ps->nbus; i++) {
+      bus = &ps->bus[i];
+      PSBUSGetVariableLocation(bus,&loc);
+      idxsd_map[nxsparse+spct] = loc; /* theta */
+      idxsd_map[nxsparse+spct+1] = loc+1; /* Vm */
+      spct += 2;
+      loc += 2;
+      PSBUSGetNGen(bus,&ngen);
+      for(k=0; k < ngen; k++) {
+	PSBUSGetGen(bus,k,&gen);
+	if(!gen->status) continue;
+	idxsd_map[dnct] = loc; /* Pg */
+	idxsd_map[dnct+1] = loc+1; /* Qg */
+	dnct += 2;
+	loc += 2;
+      }
+    };
+    
+    for(i=0; i < opflow->nx; i++) {
+      PetscPrintf(PETSC_COMM_SELF,"%d\t%d\n",i,idxsd_map[i]);
+    }
+  }
+
+  ~OPFLOWSolverHIOP() {
+    PetscFree(idxsd_map);
+  }
 
   bool get_prob_sizes(long long& n, long long& m);
 
@@ -57,7 +99,19 @@ public:
 		      int& nnzHSD, int* iHSD, int* jHSD, double* MHSD);
 
   bool get_starting_point(const long long& global_n, double* x0);
-
+private:
+  OPFLOW   opflow;
+  PetscInt nxsparse,nxdense;
+  /* HIOP uses an ordering of variables where the sparse variablesd
+     are ordered first followed by the dense variables. OPFLOW uses
+     a different (natural) ordering where variables are ordered by
+     buses. idxsd_map is an index mapping to go from the natural ordering
+     to the sparse-dense ordering.
+     
+     We assume that all generator powers (active and reactive power)
+     are sparse variables and all voltage variables are dense variables
+  */
+  PetscInt *idxsd_map;
 };
 
 typedef struct _p_OPFLOWSolver_HIOP *OPFLOWSolver_HIOP;
