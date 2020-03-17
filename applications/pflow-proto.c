@@ -2,6 +2,7 @@ static char help[] = "Prototype version of C code for CUDA/GPU/Accelerator imple
 
 #include <private/psimpl.h>
 #include <private/pflowimpl.h>
+#include <scopflow_config.h>
 
 /* The parameters are packed in each busparams[i] as follows
 busparams[i] = {# of gens
@@ -296,8 +297,14 @@ int main(int argc,char **argv)
      it needs to compute its residual */
   int               **xidx,**fidx;
   /* arrays to hold f locations where each bus needs to insert its residuals */
-  
-  PetscInitialize(&argc,&argv,"options/pflowoptions",help);
+  char options_pathname[200] = SCOPFLOW_OPTIONS_DIR;
+  char* filename = "/pflowoptions";
+  printf("%s\n", options_pathname);
+  printf("%s\n", filename);
+  strcat(options_pathname, filename);
+  printf("%s\n", options_pathname);
+
+  PetscInitialize(&argc,&argv,options_pathname,help);
   
   ierr = PetscLogStageRegister("ReadData",&read);CHKERRQ(ierr);
   ierr = PetscLogStageRegister("SetUp",&setup);CHKERRQ(ierr);
