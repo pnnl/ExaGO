@@ -81,7 +81,8 @@ export SCOPFLOW_DIR=<location of SCOPFLOW>
 
 ## 2. Compiling and running SCOPFLOW
 
-### Compiling
+### Compiling with `make`
+
 SCOPFLOW currently uses separate codes for IPOPT and PIPS-NLP. In the future, we plan to unify these codes to share the common pieces. For now, there are separate executables for SCOPFLOW-IPOPT and SCOPFLOW-PIPSNLP implementation. To build SCOPFLOW with IPOPT do
 ```
 make SCOPFLOW_IPOPT
@@ -99,6 +100,40 @@ and similiarly with PIPS-NLP it is
 ```
 make SCOPFLOW_PIPS -DCFLAGS_IPOPT=
 ```
+
+### Compiling with `cmake`
+
+Note: CMake instructions are work in progress and may be incomplete.
+
+First create build directory outside the SCOPFLOW source directory. For example
+```
+$ mkdir build
+$ ls
+build  scopflow
+$
+```
+Then from build directory configure SCOPFLOW using `cmake`:
+```
+$ cd build
+$ cmake ../scopflow
+$ make install
+```
+The SCOPFLOW library and its applications are installed in the default installation
+directory. To change installation directory run CMake with flag
+```
+$ cmake ../scopflow -DCMAKE_INSTALL_PREFIX=<your_scopflow_install_dir>
+```
+If SCOPFLOW is linked to PETSc build with MPI support, you need to set compiler
+environment variables at the configure command as: 
+```
+$ CC=mpicc CXX=mpicxx FC=mpif90 cmake ../scopflow
+```
+In case PETSc dependency is not automatically found, you can specify it using
+`ccmake` interactive shell or add command line option like this:
+```
+$ cmake ../scopflow -DPETSC_DIR=<petsc_install_dir>
+```
+
 
 ### Execution
 Running SCOPFLOW-IPOPT
