@@ -2,29 +2,84 @@
 #include <private/opflowimpl.h>
 #include "opflow-hiop.hpp"
 /* Converts an array xin in natural ordering to an array xout in sparse-dense
-   ordering using the idxsd_map index mapping
+   ordering
 */
-static void naturaltospdense(int n,int* idxsd_map,const double *xin,double *xout)
+void OPFLOWSolverHIOP::naturaltospdense(const double *xin,double *xout)
 {
   int i;
 
-  for(i=0; i < n; i++) {
-    xout[i] = xin[idxsd_map[i]];
+  for(i=0; i < opflow->nx; i++) {
+    xout[idxn2sd_map[i]] = xin[i];
   }
 }
 
 /* Converts an array xin in sparse dense ordering to an array xout in natural
-   ordering using the idxsd_map index mapping
+   ordering
 */
-static void spdensetonatural(int n,int* idxsd_map,const double *xin,double *xout)
+void OPFLOWSolverHIOP::spdensetonatural(const double *xin,double *xout)
 {
   int i;
 
-  for(i=0; i < n; i++) {
-    xout[idxsd_map[i]] = xin[i];
+  for(i=0; i < opflow->nx; i++) {
+    xout[i] = xin[idxn2sd_map[i]];
   }
 }
 
+OPFLOWSolverHIOP::OPFLOWSolverHIOP(OPFLOW opflowin) 
+{
+  PS ps;
+  PSBUS bus;
+  int   ngen;
+  PSGEN gen;
+  
+  opflow   = opflowin;
+  
+  ps = opflow->ps;
+  nxsparse = 2*ps->ngenON;
+  nxdense  = 2*ps->nbus;
+  
+  PetscMalloc1(opflow->nx,&idxsd2n_map);
+  PetscMalloc1(opflow->nx,&idxn2sd_map);
+  PetscMalloc1(opflow->nx,&xtype);
+  
+  int i,k;
+  int spct=0,dnct=0;
+  int loc;
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    PSBUSGetVariableLocation(bus,&loc);
+
+    idxn2sd_map[loc] = nxsparse + dnct;
+    idxn2sd_map[loc+1] = nxsparse + dnct+1;
+
+    idxsd2n_map[nxsparse+dnct] = loc;
+    idxsd2n_map[nxsparse+dnct+1] = loc+1;
+    
+    xtype[idxsd2n_map[nxsparse+dnct]] = DENSE_VAR;
+    xtype[idxsd2n_map[nxsparse+dnct+1]] = DENSE_VAR;
+    dnct += 2;
+    loc += 2;
+    PSBUSGetNGen(bus,&ngen);
+    for(k=0; k < ngen; k++) {
+      PSBUSGetGen(bus,k,&gen);
+      if(!gen->status) continue;
+
+      idxn2sd_map[loc] = spct;
+      idxn2sd_map[loc+1] = spct + 1;
+
+      idxsd2n_map[spct] = loc; /* Pg */
+      idxsd2n_map[spct+1] = loc+1; /* Qg */
+      xtype[idxsd2n_map[spct]] = SPARSE_VAR;
+      xtype[idxsd2n_map[spct+1]] = SPARSE_VAR;
+      spct += 2;
+      loc += 2;
+    }
+  }
+  
+  for(i=0; i < opflow->nx; i++) {
+    PetscPrintf(PETSC_COMM_SELF,"Variable[%d]: xtype[i] = %d, type = %s\tnatural =%d\tn2sd=%d\n",i,xtype[i],(xtype[i]==SPARSE_VAR)?"SPARSE_VAR":"DENSE_VAR",i,idxn2sd_map[i]);
+  }
+}
 
 bool OPFLOWSolverHIOP::get_prob_sizes(long long& n, long long& m)
 { 
@@ -46,8 +101,8 @@ bool OPFLOWSolverHIOP::get_vars_info(const long long& n, double *xlow, double* x
 
 
   /* Natural to sparse-dense conversion */
-  naturaltospdense((int)n,idxsd_map,xl,xlow);
-  naturaltospdense((int)n,idxsd_map,xu,xupp);
+  naturaltospdense(xl,xlow);
+  naturaltospdense(xu,xupp);
 
   for(i=0; i < n; i++) {
     type[i] = hiopNonlinear;
@@ -84,8 +139,8 @@ bool OPFLOWSolverHIOP::get_sparse_dense_blocks_info(int& nx_sparse, int& nx_dens
   nx_sparse = nxsparse;
   nx_dense  = nxdense;
 
-  nnz_sparse_Jace = nxsparse;
-  nnz_sparse_Jaci = nnz_sparse_Hess_Lagr_SS = nnz_sparse_Hess_Lagr_SD = 0;
+  nnz_sparse_Jace = nnz_sparse_Hess_Lagr_SS = nxsparse;
+  nnz_sparse_Jaci = nnz_sparse_Hess_Lagr_SD = 0;
   return true;
 }
 
@@ -97,7 +152,7 @@ bool OPFLOWSolverHIOP::eval_f(const long long& n, const double* x, bool new_x, d
   obj_value = 0.0;
   ierr = VecGetArray(opflow->X,&xarr);CHKERRQ(ierr);
   /* Convert from sparse-dense to natural ordering */
-  spdensetonatural((int)n,idxsd_map,x,xarr);
+  spdensetonatural(x,xarr);
   ierr = VecRestoreArray(opflow->X,&xarr);CHKERRQ(ierr);
 
   /* Compute objective */
@@ -117,13 +172,12 @@ bool OPFLOWSolverHIOP::eval_cons(const long long& n, const long long& m,
 
   ierr = VecGetArray(opflow->X,&xarr);CHKERRQ(ierr);
   /* Convert from sparse-dense to natural ordering */
-  spdensetonatural((int)n,idxsd_map,x,xarr);
+  spdensetonatural(x,xarr);
   ierr = VecRestoreArray(opflow->X,&xarr);CHKERRQ(ierr);
 
   ierr = VecPlaceArray(opflow->Ge,cons+idx_cons[0]);CHKERRQ(ierr);
   ierr = (*opflow->formops.computeequalityconstraints)(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
-
 
   return true;
 }
@@ -136,7 +190,7 @@ bool OPFLOWSolverHIOP::eval_grad_f(const long long& n, const double* x, bool new
 
   ierr = VecGetArray(opflow->X,&xarr);CHKERRQ(ierr);
   /* Convert from sparse-dense to natural ordering */
-  spdensetonatural((int)n,idxsd_map,x,xarr);
+  spdensetonatural(x,xarr);
   ierr = VecRestoreArray(opflow->X,&xarr);CHKERRQ(ierr);
 
   ierr = VecSet(opflow->gradobj,0.0);CHKERRQ(ierr);
@@ -144,7 +198,7 @@ bool OPFLOWSolverHIOP::eval_grad_f(const long long& n, const double* x, bool new
 
   ierr = VecGetArrayRead(opflow->gradobj,&gradarr);CHKERRQ(ierr);
   /* Convert from natural to sparse-dense ordering */
-  naturaltospdense((int)n,idxsd_map,gradarr,gradf);
+  naturaltospdense(gradarr,gradf);
   ierr = VecRestoreArrayRead(opflow->gradobj,&gradarr);CHKERRQ(ierr);
 
   return true;
@@ -162,19 +216,72 @@ bool OPFLOWSolverHIOP::eval_Jac_cons(const long long& n, const long long& m,
   PetscInt       ncols;
   const PetscInt *cols;
   const PetscScalar *vals;
+  int               nnzs=0,ngen,gi=0;
+  PS             ps=opflow->ps;
+  PSBUS          bus;
+  PSGEN          gen;
+  PetscScalar    *xarr;
+  PetscInt       dcol;
 
   if(!num_cons) return true;
+  if(iJacS != NULL && jJacS!= NULL) {
+    /* Sparse equality constraint Jacobian locations w.r.t Pg,Qg */
+    for(i=0; i < ps->nbus; i++) {
+      bus = &ps->bus[i];
+
+      ierr = PSBUSGetNGen(bus,&ngen);CHKERRQ(ierr);
+      for(k=0; k < ngen; k++) {
+	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	if(!gen->status) continue;
+	iJacS[nnzs] = 2*i;
+	jJacS[nnzs] = 2*gi;
+
+	iJacS[nnzs+1] = 2*i+1;
+	jJacS[nnzs+1] = 2*gi+1;
+
+	nnzs += 2;
+	gi += 1;
+      }
+    }
+  }
+
+  nnzs = 0;
+  if(MJacS != NULL) {
+    /* Sparse equality constraint Jacobian values w.r.t Pg,Qg */
+    for(i=0; i < ps->nbus; i++) {
+      bus = &ps->bus[i];
+
+      ierr = PSBUSGetNGen(bus,&ngen);CHKERRQ(ierr);
+      for(k=0; k < ngen; k++) {
+	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	if(!gen->status) continue;
+	MJacS[nnzs] = -1;
+	MJacS[nnzs+1] = -1;
+
+	nnzs += 2;
+      }
+    }
+  }
+
   if(JacD != NULL) {
-    ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
-    
+    ierr = VecGetArray(opflow->X,&xarr);CHKERRQ(ierr);
+    /* Convert from sparse-dense to natural ordering */
+    spdensetonatural(x,xarr);
+    ierr = VecRestoreArray(opflow->X,&xarr);CHKERRQ(ierr);
+
     /* Equality constraints Jacobian */
     ierr = (*opflow->formops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
-    ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
-    
+
     for(i=0; i < m; i++) {
-      for(j=0; j < n; j++) JacD[i][j] = 0.0;
+      for(j=0; j < nxdense; j++) JacD[i][j] = 0.0;
       ierr = MatGetRow(opflow->Jac_Ge,i,&ncols,&cols,&vals);CHKERRQ(ierr);
-      for(k=0; k < ncols; k++) JacD[i][cols[k]] = vals[k];
+      for(k=0; k < ncols; k++) {
+	if(idxn2sd_map[cols[k]]-nxsparse >= 0) {
+	  /* Dense variables */
+	  dcol = idxn2sd_map[cols[k]] - nxsparse; /* Column number for dense variable in the dense block */
+	  JacD[i][dcol] = vals[k];
+	}
+      }
       ierr = MatRestoreRow(opflow->Jac_Ge,i,&ncols,&cols,&vals);CHKERRQ(ierr);
     }
   }
@@ -194,29 +301,77 @@ bool OPFLOWSolverHIOP::eval_Hess_Lagr(const long long& n, const long long& m,
   PetscInt       ncols;
   const PetscInt *cols;
   const PetscScalar *vals;
+  PetscInt       nnzs=0;
+  PetscScalar    *xarr;
+  PS             ps=opflow->ps;
+  PetscInt       dcol,dnct=0;
 
   opflow->obj_factor = obj_factor;
-  if(HDD != NULL) {
-    ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
-    ierr = VecPlaceArray(opflow->Lambdae,lambda);CHKERRQ(ierr);
-    if(opflow->Nconineq) {
-      ierr = VecPlaceArray(opflow->Lambdai,lambda+opflow->nconeq);CHKERRQ(ierr);
-    }
-    
-    /* Compute Hessian */
-    ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
-    
-    ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
-    ierr = VecResetArray(opflow->Lambdae);CHKERRQ(ierr);
-    if(opflow->Nconineq) {
-      ierr = VecResetArray(opflow->Lambdai);CHKERRQ(ierr);
-    }
 
+  if(iHSS != NULL && jHSS!= NULL) {
+    for(i=0; i < ps->ngenON; i++) {
+      iHSS[nnzs] = 2*i;
+      jHSS[nnzs] = 2*i;
+
+      iHSS[nnzs+1] = 2*i+1;
+      jHSS[nnzs+1] = 2*i+1;
+
+      nnzs += 2;
+    }
+  }
+
+  ierr = VecGetArray(opflow->X,&xarr);CHKERRQ(ierr);
+  /* Convert from sparse-dense to natural ordering */
+  spdensetonatural(x,xarr);
+  ierr = VecRestoreArray(opflow->X,&xarr);CHKERRQ(ierr);
+
+  ierr = VecPlaceArray(opflow->Lambdae,lambda);CHKERRQ(ierr);
+  if(opflow->Nconineq) {
+    ierr = VecPlaceArray(opflow->Lambdai,lambda+opflow->nconeq);CHKERRQ(ierr);
+  }
+    
+  /* Compute Hessian */
+  ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
+    
+  ierr = VecResetArray(opflow->Lambdae);CHKERRQ(ierr);
+  if(opflow->Nconineq) {
+    ierr = VecResetArray(opflow->Lambdai);CHKERRQ(ierr);
+  }
+
+  nnzs = 0;
+  if(MHSS != NULL) {
     for(i=0; i < n; i++) {
-      for(j=0; j < n; j++) HDD[i][j] = 0.0;
-      ierr = MatGetRow(opflow->Hes,i,&ncols,&cols,&vals);CHKERRQ(ierr);
-      for(k=0; k < ncols; k++) HDD[i][cols[k]] = vals[k];
-      ierr = MatRestoreRow(opflow->Hes,i,&ncols,&cols,&vals);CHKERRQ(ierr);
+      if(idxn2sd_map[i] < nxsparse) {
+	/* Rows for sparse variables */
+	ierr = MatGetRow(opflow->Hes,i,&ncols,&cols,&vals);CHKERRQ(ierr);
+	for(k=0; k < ncols; k++) {
+	  if(cols[k] == i) {
+	    /* Diagonal element */
+	    MHSS[nnzs] = vals[k];
+	    MHSS[nnzs+1] = 0.0;
+
+	    nnzs += 2;
+	  }
+	}
+      }
+    }
+  }
+
+  if(HDD != NULL) {
+    for(i=0; i < n; i++) {
+      if(idxn2sd_map[i] >= nxsparse) {
+	/* Rows for dense variables */
+	ierr = MatGetRow(opflow->Hes,i,&ncols,&cols,&vals);CHKERRQ(ierr);
+	for(k=0; k < ncols; k++) {
+	  if(idxn2sd_map[k] >= nxsparse) {
+	    dcol = idxn2sd_map[cols[k]] - nxsparse; /* Column number for dense variable in the dense block */
+	    HDD[dnct][dcol] = vals[k];
+	  }
+	}
+	ierr = MatRestoreRow(opflow->Hes,i,&ncols,&cols,&vals);CHKERRQ(ierr);
+
+	dnct++;
+      }
     }
   }
 
@@ -233,7 +388,7 @@ bool OPFLOWSolverHIOP::get_starting_point(const long long& global_n, double* x0)
 
   ierr = VecGetArrayRead(opflow->X,&xarr);CHKERRQ(ierr);
   /* Convert from natural to sparse-dense ordering */
-  naturaltospdense((int)global_n,idxsd_map,xarr,x0);
+  naturaltospdense(xarr,x0);
   ierr = VecRestoreArrayRead(opflow->X,&xarr);CHKERRQ(ierr);
 
   return true;
