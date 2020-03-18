@@ -84,7 +84,7 @@ OPFLOWSolverHIOP::OPFLOWSolverHIOP(OPFLOW opflowin)
 bool OPFLOWSolverHIOP::get_prob_sizes(long long& n, long long& m)
 { 
   n = opflow->nx;
-  m = opflow->nconeq;
+  m = opflow->ncon;
   return true; 
 }
 
@@ -175,9 +175,19 @@ bool OPFLOWSolverHIOP::eval_cons(const long long& n, const long long& m,
   spdensetonatural(x,xarr);
   ierr = VecRestoreArray(opflow->X,&xarr);CHKERRQ(ierr);
 
-  ierr = VecPlaceArray(opflow->Ge,cons+idx_cons[0]);CHKERRQ(ierr);
-  ierr = (*opflow->formops.computeequalityconstraints)(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
-  ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
+  if(idx_cons[0] == 0) {
+    /* Equality constaints */
+    ierr = VecPlaceArray(opflow->Ge,cons+idx_cons[0]);CHKERRQ(ierr);
+    ierr = (*opflow->formops.computeequalityconstraints)(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
+    ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
+  }
+
+  if(idx_cons[0] == opflow->nconeq && opflow->nconineq) {
+    /* Inequality constraints */
+    ierr = VecPlaceArray(opflow->Gi,cons);CHKERRQ(ierr);
+    ierr = (*opflow->formops.computeinequalityconstraints)(opflow,opflow->X,opflow->Gi);CHKERRQ(ierr);
+    ierr = VecResetArray(opflow->Gi);CHKERRQ(ierr);
+  }
 
   return true;
 }
@@ -223,8 +233,7 @@ bool OPFLOWSolverHIOP::eval_Jac_cons(const long long& n, const long long& m,
   PetscScalar    *xarr;
   PetscInt       dcol;
 
-  if(!num_cons) return true;
-  if(iJacS != NULL && jJacS!= NULL) {
+  if(idx_cons[0] == 0 && iJacS != NULL && jJacS!= NULL) {
     /* Sparse equality constraint Jacobian locations w.r.t Pg,Qg */
     for(i=0; i < ps->nbus; i++) {
       bus = &ps->bus[i];
@@ -246,7 +255,7 @@ bool OPFLOWSolverHIOP::eval_Jac_cons(const long long& n, const long long& m,
   }
 
   nnzs = 0;
-  if(MJacS != NULL) {
+  if(idx_cons[0] == 0 && MJacS != NULL) {
     /* Sparse equality constraint Jacobian values w.r.t Pg,Qg */
     for(i=0; i < ps->nbus; i++) {
       bus = &ps->bus[i];
@@ -269,20 +278,39 @@ bool OPFLOWSolverHIOP::eval_Jac_cons(const long long& n, const long long& m,
     spdensetonatural(x,xarr);
     ierr = VecRestoreArray(opflow->X,&xarr);CHKERRQ(ierr);
 
-    /* Equality constraints Jacobian */
-    ierr = (*opflow->formops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
+    if(idx_cons[0] == 0) {
+      /* Equality constraints Jacobian */
+      ierr = (*opflow->formops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
 
-    for(i=0; i < m; i++) {
-      for(j=0; j < nxdense; j++) JacD[i][j] = 0.0;
-      ierr = MatGetRow(opflow->Jac_Ge,i,&ncols,&cols,&vals);CHKERRQ(ierr);
-      for(k=0; k < ncols; k++) {
-	if(idxn2sd_map[cols[k]]-nxsparse >= 0) {
-	  /* Dense variables */
-	  dcol = idxn2sd_map[cols[k]] - nxsparse; /* Column number for dense variable in the dense block */
-	  JacD[i][dcol] = vals[k];
+      for(i=0; i < opflow->nconeq; i++) {
+	for(j=0; j < nxdense; j++) JacD[i][j] = 0.0;
+	ierr = MatGetRow(opflow->Jac_Ge,i,&ncols,&cols,&vals);CHKERRQ(ierr);
+	for(k=0; k < ncols; k++) {
+	  if(idxn2sd_map[cols[k]]-nxsparse >= 0) {
+	    /* Dense variables */
+	    dcol = idxn2sd_map[cols[k]] - nxsparse; /* Column number for dense variable in the dense block */
+	    JacD[i][dcol] = vals[k];
+	  }
 	}
+	ierr = MatRestoreRow(opflow->Jac_Ge,i,&ncols,&cols,&vals);CHKERRQ(ierr);
       }
-      ierr = MatRestoreRow(opflow->Jac_Ge,i,&ncols,&cols,&vals);CHKERRQ(ierr);
+    } else {
+      
+      /* Inequality constraints Jacobian */
+      ierr = (*opflow->formops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
+
+      for(i=0; i < opflow->nconineq; i++) {
+	for(j=0; j < nxdense; j++) JacD[i][j] = 0.0;
+	ierr = MatGetRow(opflow->Jac_Gi,i,&ncols,&cols,&vals);CHKERRQ(ierr);
+	for(k=0; k < ncols; k++) {
+	  if(idxn2sd_map[cols[k]]-nxsparse >= 0) {
+	    /* Dense variables */
+	    dcol = idxn2sd_map[cols[k]] - nxsparse; /* Column number for dense variable in the dense block */
+	    JacD[i][dcol] = vals[k];
+	  }
+	}
+	ierr = MatRestoreRow(opflow->Jac_Gi,i,&ncols,&cols,&vals);CHKERRQ(ierr);
+      }
     }
   }
   return true;

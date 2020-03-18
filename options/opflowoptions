@@ -10,7 +10,7 @@
 # Options for HIOP solver
 #--------------------------
 -opflow_formulation POWER_BALANCE_POLAR
--opflow_ignore_lineflow_constraints
+#-opflow_ignore_lineflow_constraints
 
 #-------------------------
 # Options for TAO solver
