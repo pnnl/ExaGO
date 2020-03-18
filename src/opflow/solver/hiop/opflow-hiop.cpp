@@ -38,9 +38,7 @@ OPFLOWHIOPInterface::OPFLOWHIOPInterface(OPFLOW opflowin)
   nxsparse = 2*ps->ngenON;
   nxdense  = 2*ps->nbus;
   
-  PetscMalloc1(opflow->nx,&idxsd2n_map);
   PetscMalloc1(opflow->nx,&idxn2sd_map);
-  PetscMalloc1(opflow->nx,&xtype);
   
   int i,k;
   int spct=0,dnct=0;
@@ -52,11 +50,6 @@ OPFLOWHIOPInterface::OPFLOWHIOPInterface(OPFLOW opflowin)
     idxn2sd_map[loc] = nxsparse + dnct;
     idxn2sd_map[loc+1] = nxsparse + dnct+1;
 
-    idxsd2n_map[nxsparse+dnct] = loc;
-    idxsd2n_map[nxsparse+dnct+1] = loc+1;
-    
-    xtype[idxsd2n_map[nxsparse+dnct]] = DENSE_VAR;
-    xtype[idxsd2n_map[nxsparse+dnct+1]] = DENSE_VAR;
     dnct += 2;
     loc += 2;
     PSBUSGetNGen(bus,&ngen);
@@ -67,17 +60,13 @@ OPFLOWHIOPInterface::OPFLOWHIOPInterface(OPFLOW opflowin)
       idxn2sd_map[loc] = spct;
       idxn2sd_map[loc+1] = spct + 1;
 
-      idxsd2n_map[spct] = loc; /* Pg */
-      idxsd2n_map[spct+1] = loc+1; /* Qg */
-      xtype[idxsd2n_map[spct]] = SPARSE_VAR;
-      xtype[idxsd2n_map[spct+1]] = SPARSE_VAR;
       spct += 2;
       loc += 2;
     }
   }
   /*  
   for(i=0; i < opflow->nx; i++) {
-    PetscPrintf(PETSC_COMM_SELF,"Variable[%d]: xtype[i] = %d, type = %s\tnatural =%d\tn2sd=%d\n",i,xtype[i],(xtype[i]==SPARSE_VAR)?"SPARSE_VAR":"DENSE_VAR",i,idxn2sd_map[i]);
+    PetscPrintf(PETSC_COMM_SELF,"Variable[%d]: natural =%d\tn2sd=%d\n",i,i,idxn2sd_map[i]);
   }
   */
 }

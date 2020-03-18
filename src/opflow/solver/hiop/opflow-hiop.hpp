@@ -12,9 +12,6 @@
 #include <cstring>
 #include <cstdio>
 
-#define SPARSE_VAR 0
-#define DENSE_VAR 1
-
 class OPFLOWHIOPInterface : public hiop::hiopInterfaceMDS
 {
 public:
@@ -22,7 +19,7 @@ public:
 
 
   ~OPFLOWHIOPInterface() {
-    PetscFree(idxsd2n_map);
+    PetscFree(idxn2sd_map);
     PetscFree(xtype);
   }
 
