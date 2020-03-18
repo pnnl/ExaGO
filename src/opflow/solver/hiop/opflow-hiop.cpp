@@ -130,7 +130,10 @@ bool OPFLOWHIOPInterface::get_sparse_dense_blocks_info(int& nx_sparse, int& nx_d
   nx_dense  = nxdense;
 
   nnz_sparse_Jace = nnz_sparse_Hess_Lagr_SS = nxsparse;
-  nnz_sparse_Jaci = nnz_sparse_Hess_Lagr_SD = 0;
+  /* HIOP requires both the equality and inequality constraints to be dependent on both the sparse and dense variables. The inequality constraints not being functions of the sparse variables (Pg,Qg) cause a crash in HIOP.Hence, setting nnz_sparse_Jaci = 1 to add a fake value that will (hopefully) not make HIOP crash 
+   */
+  nnz_sparse_Jaci = 1; 
+  nnz_sparse_Hess_Lagr_SD = 0;
   return true;
 }
 
@@ -245,6 +248,17 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
   }
 
   nnzs = 0;
+  if(idx_cons[0] == opflow->nconeq && iJacS != NULL && jJacS!= NULL) {
+    /* Dummy entry to help avoid HIOP crash */
+    iJacS[nnzs] = 0;
+    jJacS[nnzs] = 0;
+  }
+
+  if(idx_cons[0] == opflow->nconeq && MJacS != NULL) {
+    MJacS[nnzs] = 0.0;
+  }
+  
+  nnzs = 0;
   if(idx_cons[0] == 0 && MJacS != NULL) {
     /* Sparse equality constraint Jacobian values w.r.t Pg,Qg */
     for(i=0; i < ps->nbus; i++) {
@@ -315,7 +329,7 @@ bool OPFLOWHIOPInterface::eval_Hess_Lagr(const long long& n, const long long& m,
 		    int& nnzHSD, int* iHSD, int* jHSD, double* MHSD)
 {
   PetscErrorCode ierr;
-  PetscInt       i,j,k;
+  PetscInt       i,k;
   PetscInt       ncols;
   const PetscInt *cols;
   const PetscScalar *vals;
@@ -366,9 +380,7 @@ bool OPFLOWHIOPInterface::eval_Hess_Lagr(const long long& n, const long long& m,
 	  if(cols[k] == i) {
 	    /* Diagonal element */
 	    MHSS[nnzs] = vals[k];
-	    MHSS[nnzs+1] = 0.0;
-
-	    nnzs += 2;
+	    nnzs += 1;
 	  }
 	}
       }
@@ -378,6 +390,7 @@ bool OPFLOWHIOPInterface::eval_Hess_Lagr(const long long& n, const long long& m,
   if(HDD != NULL) {
     for(i=0; i < n; i++) {
       if(idxn2sd_map[i] >= nxsparse) {
+	for(k=0; k < nxdense; k++) HDD[dnct][k] = 0.0;
 	/* Rows for dense variables */
 	ierr = MatGetRow(opflow->Hes,i,&ncols,&cols,&vals);CHKERRQ(ierr);
 	for(k=0; k < ncols; k++) {
