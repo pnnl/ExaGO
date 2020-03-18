@@ -75,10 +75,11 @@ OPFLOWSolverHIOP::OPFLOWSolverHIOP(OPFLOW opflowin)
       loc += 2;
     }
   }
-  
+  /*  
   for(i=0; i < opflow->nx; i++) {
     PetscPrintf(PETSC_COMM_SELF,"Variable[%d]: xtype[i] = %d, type = %s\tnatural =%d\tn2sd=%d\n",i,xtype[i],(xtype[i]==SPARSE_VAR)?"SPARSE_VAR":"DENSE_VAR",i,idxn2sd_map[i]);
   }
+  */
 }
 
 bool OPFLOWSolverHIOP::get_prob_sizes(long long& n, long long& m)
@@ -440,9 +441,6 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
   ierr = PetscStrcmp(opflow->formulationname,OPFLOWFORMULATION_PBPOL,&flg);CHKERRQ(ierr);
   if(!flg) {
     SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Only power balance form formulation supported with HIOP solver\nUse -opflow_formulation POWER_BALANCE_POLAR\n");
-  }
-  if(opflow->nconineq) {
-    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Line flow inequality constraints are not supported with HIOP solver\n Run with option -opflow_ignore_lineflow_constraints\n");
   }
 
   PetscFunctionReturn(0);
