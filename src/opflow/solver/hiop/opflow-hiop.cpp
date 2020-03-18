@@ -4,7 +4,7 @@
 /* Converts an array xin in natural ordering to an array xout in sparse-dense
    ordering
 */
-void OPFLOWSolverHIOP::naturaltospdense(const double *xin,double *xout)
+void OPFLOWHIOPInterface::naturaltospdense(const double *xin,double *xout)
 {
   int i;
 
@@ -16,7 +16,7 @@ void OPFLOWSolverHIOP::naturaltospdense(const double *xin,double *xout)
 /* Converts an array xin in sparse dense ordering to an array xout in natural
    ordering
 */
-void OPFLOWSolverHIOP::spdensetonatural(const double *xin,double *xout)
+void OPFLOWHIOPInterface::spdensetonatural(const double *xin,double *xout)
 {
   int i;
 
@@ -25,7 +25,7 @@ void OPFLOWSolverHIOP::spdensetonatural(const double *xin,double *xout)
   }
 }
 
-OPFLOWSolverHIOP::OPFLOWSolverHIOP(OPFLOW opflowin) 
+OPFLOWHIOPInterface::OPFLOWHIOPInterface(OPFLOW opflowin) 
 {
   PS ps;
   PSBUS bus;
@@ -82,14 +82,14 @@ OPFLOWSolverHIOP::OPFLOWSolverHIOP(OPFLOW opflowin)
   */
 }
 
-bool OPFLOWSolverHIOP::get_prob_sizes(long long& n, long long& m)
+bool OPFLOWHIOPInterface::get_prob_sizes(long long& n, long long& m)
 { 
   n = opflow->nx;
   m = opflow->ncon;
   return true; 
 }
 
-bool OPFLOWSolverHIOP::get_vars_info(const long long& n, double *xlow, double* xupp, NonlinearityType* type)
+bool OPFLOWHIOPInterface::get_vars_info(const long long& n, double *xlow, double* xupp, NonlinearityType* type)
 {
   PetscInt       i;
   PetscErrorCode ierr;
@@ -115,7 +115,7 @@ bool OPFLOWSolverHIOP::get_vars_info(const long long& n, double *xlow, double* x
   return true;
 }
 
-bool OPFLOWSolverHIOP::get_cons_info(const long long& m, double* clow, double* cupp, NonlinearityType* type)
+bool OPFLOWHIOPInterface::get_cons_info(const long long& m, double* clow, double* cupp, NonlinearityType* type)
 {
   PetscInt i;
   PetscErrorCode ierr;
@@ -133,7 +133,7 @@ bool OPFLOWSolverHIOP::get_cons_info(const long long& m, double* clow, double* c
   return true;
 }
 
-bool OPFLOWSolverHIOP::get_sparse_dense_blocks_info(int& nx_sparse, int& nx_dense,
+bool OPFLOWHIOPInterface::get_sparse_dense_blocks_info(int& nx_sparse, int& nx_dense,
 				  int& nnz_sparse_Jace, int& nnz_sparse_Jaci,
 				  int& nnz_sparse_Hess_Lagr_SS, int& nnz_sparse_Hess_Lagr_SD)
 {
@@ -145,7 +145,7 @@ bool OPFLOWSolverHIOP::get_sparse_dense_blocks_info(int& nx_sparse, int& nx_dens
   return true;
 }
 
-bool OPFLOWSolverHIOP::eval_f(const long long& n, const double* x, bool new_x, double& obj_value)
+bool OPFLOWHIOPInterface::eval_f(const long long& n, const double* x, bool new_x, double& obj_value)
 {
   PetscErrorCode ierr;
   PetscScalar    *xarr;
@@ -162,7 +162,7 @@ bool OPFLOWSolverHIOP::eval_f(const long long& n, const double* x, bool new_x, d
   return true;
 }
 
-bool OPFLOWSolverHIOP::eval_cons(const long long& n, const long long& m, 
+bool OPFLOWHIOPInterface::eval_cons(const long long& n, const long long& m, 
 	       const long long& num_cons, const long long* idx_cons,  
 	       const double* x, bool new_x, double* cons)
 {
@@ -193,7 +193,7 @@ bool OPFLOWSolverHIOP::eval_cons(const long long& n, const long long& m,
   return true;
 }
 
-bool OPFLOWSolverHIOP::eval_grad_f(const long long& n, const double* x, bool new_x, double* gradf)
+bool OPFLOWHIOPInterface::eval_grad_f(const long long& n, const double* x, bool new_x, double* gradf)
 {
   PetscErrorCode ierr;
   PetscScalar    *xarr;
@@ -215,7 +215,7 @@ bool OPFLOWSolverHIOP::eval_grad_f(const long long& n, const double* x, bool new
   return true;
 }
 
-bool OPFLOWSolverHIOP::eval_Jac_cons(const long long& n, const long long& m, 
+bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m, 
 		   const long long& num_cons, const long long* idx_cons,
 		   const double* x, bool new_x,
 		   const long long& nsparse, const long long& ndense, 
@@ -317,7 +317,7 @@ bool OPFLOWSolverHIOP::eval_Jac_cons(const long long& n, const long long& m,
   return true;
 }
 
-bool OPFLOWSolverHIOP::eval_Hess_Lagr(const long long& n, const long long& m, 
+bool OPFLOWHIOPInterface::eval_Hess_Lagr(const long long& n, const long long& m, 
 		    const double* x, bool new_x, const double& obj_factor,
 		    const double* lambda, bool new_lambda,
 		    const long long& nsparse, const long long& ndense, 
@@ -407,7 +407,7 @@ bool OPFLOWSolverHIOP::eval_Hess_Lagr(const long long& n, const long long& m,
   return true;
 }
 
-bool OPFLOWSolverHIOP::get_starting_point(const long long& global_n, double* x0)
+bool OPFLOWHIOPInterface::get_starting_point(const long long& global_n, double* x0)
 {
   PetscErrorCode ierr;
   const PetscScalar    *xarr;
@@ -430,7 +430,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
   PetscBool         flg;
   PetscFunctionBegin;
 
-  hiop->nlp = new OPFLOWSolverHIOP(opflow);
+  hiop->nlp = new OPFLOWHIOPInterface(opflow);
   hiop->mds = new hiop::hiopNlpMDS(*hiop->nlp);
 
   /* Options set in hiop.options file */

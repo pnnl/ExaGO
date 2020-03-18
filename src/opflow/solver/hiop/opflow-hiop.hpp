@@ -15,13 +15,13 @@
 #define SPARSE_VAR 0
 #define DENSE_VAR 1
 
-class OPFLOWSolverHIOP : public hiop::hiopInterfaceMDS
+class OPFLOWHIOPInterface : public hiop::hiopInterfaceMDS
 {
 public:
-  OPFLOWSolverHIOP(OPFLOW);
+  OPFLOWHIOPInterface(OPFLOW);
 
 
-  ~OPFLOWSolverHIOP() {
+  ~OPFLOWHIOPInterface() {
     PetscFree(idxsd2n_map);
     PetscFree(xtype);
   }
@@ -83,7 +83,7 @@ typedef struct _p_OPFLOWSolver_HIOP *OPFLOWSolver_HIOP;
 
 struct _p_OPFLOWSolver_HIOP {
   
-  OPFLOWSolverHIOP              *nlp;
+  OPFLOWHIOPInterface           *nlp;
   hiop::hiopSolveStatus         status;
   hiop::hiopNlpMDS              *mds;
   hiop::hiopAlgFilterIPMNewton  *solver;
