@@ -64,11 +64,11 @@ OPFLOWHIOPInterface::OPFLOWHIOPInterface(OPFLOW opflowin)
       loc += 2;
     }
   }
-  /*  
+  
   for(i=0; i < opflow->nx; i++) {
     PetscPrintf(PETSC_COMM_SELF,"Variable[%d]: natural =%d\tn2sd=%d\n",i,i,idxn2sd_map[i]);
   }
-  */
+  
 }
 
 bool OPFLOWHIOPInterface::get_prob_sizes(long long& n, long long& m)
@@ -219,10 +219,9 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
   PetscInt       ncols;
   const PetscInt *cols;
   const PetscScalar *vals;
-  int               nnzs=0,ngen,gi=0;
+  int               nnzs=0,gi=0;
   PS             ps=opflow->ps;
   PSBUS          bus;
-  PSGEN          gen;
   PetscScalar    *xarr;
   PetscInt       dcol;
 
@@ -231,20 +230,18 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
     for(i=0; i < ps->nbus; i++) {
       bus = &ps->bus[i];
 
-      ierr = PSBUSGetNGen(bus,&ngen);CHKERRQ(ierr);
-      for(k=0; k < ngen; k++) {
-	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-	if(!gen->status) continue;
-	iJacS[nnzs] = 2*i;
-	jJacS[nnzs] = 2*gi;
+      for(k=0; k < bus->ngenON; k++) {
+	iJacS[nnzs + k] = 2*i;
+	jJacS[nnzs + k] = 2*gi;
 
-	iJacS[nnzs+1] = 2*i+1;
-	jJacS[nnzs+1] = 2*gi+1;
+	iJacS[nnzs + bus->ngenON + k] = 2*i+1;
+	jJacS[nnzs + bus->ngenON + k] = 2*gi+1;
 
-	nnzs += 2;
 	gi += 1;
       }
+      nnzs += 2*bus->ngenON;
     }
+    if(nnzs != nnzJacS) SETERRQ(PETSC_COMM_SELF,0,"Incorrect number of entries in sparse equality constraint Jacobian\n");
   }
 
   nnzs = 0;
@@ -264,10 +261,7 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
     for(i=0; i < ps->nbus; i++) {
       bus = &ps->bus[i];
 
-      ierr = PSBUSGetNGen(bus,&ngen);CHKERRQ(ierr);
-      for(k=0; k < ngen; k++) {
-	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-	if(!gen->status) continue;
+      for(k=0; k < bus->ngenON; k++) {
 	MJacS[nnzs] = -1;
 	MJacS[nnzs+1] = -1;
 
@@ -350,6 +344,7 @@ bool OPFLOWHIOPInterface::eval_Hess_Lagr(const long long& n, const long long& m,
 
       nnzs += 2;
     }
+    if(nnzHSS != nnzs) SETERRQ2(PETSC_COMM_SELF,0,"Incorrect number of non-zeros for sparse Hessian %d != %d\n",nnzHSS,nnzs);
   }
 
   ierr = VecGetArray(opflow->X,&xarr);CHKERRQ(ierr);
