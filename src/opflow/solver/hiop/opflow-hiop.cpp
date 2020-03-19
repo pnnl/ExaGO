@@ -389,7 +389,7 @@ bool OPFLOWHIOPInterface::eval_Hess_Lagr(const long long& n, const long long& m,
 	/* Rows for dense variables */
 	ierr = MatGetRow(opflow->Hes,i,&ncols,&cols,&vals);CHKERRQ(ierr);
 	for(k=0; k < ncols; k++) {
-	  if(idxn2sd_map[k] >= nxsparse) {
+	  if(idxn2sd_map[cols[k]] >= nxsparse) {
 	    dcol = idxn2sd_map[cols[k]] - nxsparse; /* Column number for dense variable in the dense block */
 	    HDD[dnct][dcol] = vals[k];
 	  }
