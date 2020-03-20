@@ -1009,6 +1009,9 @@ PetscErrorCode PSSetUp(PS ps)
   /* Broadcast MVAbase */
   ierr = MPI_Bcast(&ps->MVAbase,1,MPIU_SCALAR,0,ps->comm->type);CHKERRQ(ierr);
 
+  /* Update reference bus if needed */
+  ierr = PSCheckandSetRefBus(ps);CHKERRQ(ierr);
+
   //  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d Came here\n",ps->comm->rank);CHKERRQ(ierr);
   ps->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);
