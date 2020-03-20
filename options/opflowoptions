@@ -44,8 +44,8 @@
 # Convergence status
 -opflow_tao_converged_reason
 
--opflow_tao_pdipm_solve_reduced_kkt # Solve PDIPM with reduced KKT system using Schur-complement
--opflow_pc_type fieldsplit
+#-opflow_tao_pdipm_solve_reduced_kkt # Solve PDIPM with reduced KKT system using Schur-complement
+#-opflow_pc_type fieldsplit
 -opflow_pc_fieldsplit_type schur
 -opflow_pc_fieldsplit_schur_precondition full
 -opflow_pc_fieldsplit_schur_fact_type full
