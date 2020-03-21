@@ -132,7 +132,7 @@ bool OPFLOWHIOPInterface::get_sparse_dense_blocks_info(int& nx_sparse, int& nx_d
   nnz_sparse_Jace = nnz_sparse_Hess_Lagr_SS = nxsparse;
   /* HIOP requires both the equality and inequality constraints to be dependent on both the sparse and dense variables. The inequality constraints not being functions of the sparse variables (Pg,Qg) cause a crash in HIOP.Hence, setting nnz_sparse_Jaci = 1 to add a fake value that will (hopefully) not make HIOP crash 
    */
-  nnz_sparse_Jaci = 1; 
+  nnz_sparse_Jaci = opflow->nconineq?1:0; 
   nnz_sparse_Hess_Lagr_SD = 0;
   return true;
 }
@@ -225,6 +225,8 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
   PetscScalar    *xarr;
   PetscInt       dcol;
 
+  if(!num_cons) return true;
+
   if(idx_cons[0] == 0 && iJacS != NULL && jJacS!= NULL) {
     /* Sparse equality constraint Jacobian locations w.r.t Pg,Qg */
     for(i=0; i < ps->nbus; i++) {
@@ -245,13 +247,13 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
   }
 
   nnzs = 0;
-  if(idx_cons[0] == opflow->nconeq && iJacS != NULL && jJacS!= NULL) {
+  if(idx_cons[0] == opflow->nconeq && opflow->nconineq && iJacS != NULL && jJacS!= NULL) {
     /* Dummy entry to help avoid HIOP crash */
     iJacS[nnzs] = 0;
     jJacS[nnzs] = 0;
   }
 
-  if(idx_cons[0] == opflow->nconeq && MJacS != NULL) {
+  if(idx_cons[0] == opflow->nconeq && opflow->nconineq && MJacS != NULL) {
     MJacS[nnzs] = 0.0;
   }
   
