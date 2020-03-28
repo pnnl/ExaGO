@@ -41,13 +41,12 @@ export PETSC_ARCH=<arch-name>
 arch-name can be any name.
 
 #### Switch branch
-Use the PETSc branch shri/tao-pdipm. This is the branch of PETSc that works with SCOPFLOW. In the future, this branch will merged with PETSc's master. Till then,
-use shri/tao-pdipm
+SCOPFLOW is updated with the latest PETSc development branch. So, it should work with the development branch (master) or the atest release. 
 
 #### Installation
 ```
 cd $PETSC_DIR
-git checkout shri/tao-pdipm
+git checkout master
 ./config/configure.py --download-mpich --with-cc=gcc --with-\
 cxx=g++ --with-fc=gfortran --download-mumps --download-scalapack --download-superlu --download-superlu_dist --download-suitespar\
 se --download-metis --download-parmetis --download-cmake --with-cxx-dialect=C++11
