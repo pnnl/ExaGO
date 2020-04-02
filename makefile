@@ -36,8 +36,8 @@ else
   LDFLAGS = -shared
 endif
 
-ALL:
 
+ALL:
 include $(PETSC_DIR)/lib/petsc/conf/variables
 include $(PETSC_DIR)/lib/petsc/conf/rules
 
@@ -55,16 +55,23 @@ PFLOW_SRC_OBJECTS = src/pflow/pflow.o
 #******** Option 1 **********
 PFLOW_APP_OBJECTS = applications/pflow-main.o
 OBJECTS_PFLOW = $(PFLOW_APP_OBJECTS)
+
 PFLOW: $(OBJECTS_PFLOW) libpflow chkopts
-	 -$(CLINKER) -o PFLOW $(OBJECTS_PFLOW) ${PETSC_SNES_LIB} -L${SCOPFLOW_DIR} -lpflow
+	 -$(CLINKER) -o PFLOW $(OBJECTS_PFLOW) ${PETSC_SNES_LIB} -L${SCOPFLOW_DIR} -lpflow -Wl,-rpath=${SCOPFLOW_DIR}
 	$(RM) $(OBJECTS_PFLOW)
 
+PFLOW_PROTOAPP_OBJECTS = applications/pflow-proto.o
+OBJECTS_PFLOWPROTO = $(PFLOW_PROTOAPP_OBJECTS)
+PFLOWPROTO: $(OBJECTS_PFLOWPROTO) libpflow chkopts
+	 -$(CLINKER) -o PFLOWPROTO $(OBJECTS_PFLOWPROTO) ${PETSC_SNES_LIB} -L${SCOPFLOW_DIR} -lpflow -Wl,-rpath=${SCOPFLOW_DIR}
+	$(RM) $(OBJECTS_PFLOWPROTO)
 
-PFLOW_APP2_OBJECTS = applications/pflow-main2.o
 #******** Option 2 **********
+PFLOW_APP2_OBJECTS = applications/pflow-main2.o
 OBJECTS_PFLOW2 = $(PFLOW_APP2_OBJECTS)
+
 PFLOW2: $(OBJECTS_PFLOW2) libpflow chkopts
-	 -$(CLINKER) -o PFLOW2 $(OBJECTS_PFLOW2) ${PETSC_SNES_LIB} -L${SCOPFLOW_DIR} -lpflow
+	 -$(CLINKER) -o PFLOW2 $(OBJECTS_PFLOW2) ${PETSC_SNES_LIB} -L${SCOPFLOW_DIR} -lpflow -Wl,-rpath=${SCOPFLOW_DIR}
 	$(RM) $(OBJECTS_PFLOW2)
 
 
@@ -80,8 +87,9 @@ OPFLOW_SRC_OBJECTS = ${PFLOW_SRC_OBJECTS} ${OPFLOW_INTERFACE_OBJECTS} ${OPFLOW_F
 
 OPFLOW_APP_OBJECTS = applications/opflow-main.o
 OBJECTS_OPFLOW = $(OPFLOW_APP_OBJECTS)
+
 OPFLOW: $(OBJECTS_OPFLOW) libopflow chkopts
-	 -$(CLINKER) -o OPFLOW $(OBJECTS_OPFLOW) ${PETSC_TAO_LIB} -L${SCOPFLOW_DIR} -lopflow
+	 -$(CLINKER) -o OPFLOW $(OBJECTS_OPFLOW) ${PETSC_TAO_LIB} -L${SCOPFLOW_DIR} -lopflow -Wl,-rpath=${SCOPFLOW_DIR}
 	$(RM) $(OBJECTS_OPFLOW)
 
 
@@ -111,9 +119,8 @@ libopflow:$(OPFLOW_SRC_OBJECTS) chkopts
 
 libscopflow:${SCOPFLOW_SRC_OBJECTS} chkopts
 	 -$(CLINKER) $(LDFLAGS) -o libscopflow.$(LIB_EXT) $(SCOPFLOW_SRC_OBJECTS) -L${PIPS_DIR}/build_pips/PIPS-NLP ${PIPS_LIB} -L${IPOPT_BUILD_DIR}/lib ${IPOPT_LIB} ${PETSC_TAO_LIB}
-
 #******************************
 #	Remove .o Command
 #******************************
 cleanobj:
-	rm -rf $(OBJECTS_PFLOW) $(OBJECTS_PFLOW2) $(PFLOW_SRC_OBJECTS) $(OBJECTS_OPFLOW) $(OPFLOW_SRC_OBJECTS) $(SCOPFLOW_SRC_OBJECTS) ${OBJECTS_SCOPFLOW} *.dylib *.so* *.dSYM PFLOW PFLOW2 OPFLOW SCOPFLOW
+	rm -rf $(OBJECTS_PFLOW) $(OBJECTS_PFLOW2) $(PFLOW_SRC_OBJECTS) $(OBJECTS_OPFLOW) $(OPFLOW_SRC_OBJECTS) $(SCOPFLOW_SRC_OBJECTS) ${OBJECTS_SCOPFLOW} *.dylib *.so* *.dSYM PFLOW PFLOW2 PFLOWPROTO OPFLOW SCOPFLOW

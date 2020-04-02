@@ -112,7 +112,7 @@ PETSC_EXTERN PetscErrorCode PFLOWGetLoadPower(PFLOW,PetscInt,PetscScalar*,PetscS
 
 PETSC_EXTERN PetscErrorCode PFLOWAddBusShunt(PFLOW,PetscInt,PetscScalar,PetscScalar);
 
-
+PETSC_EXTERN PetscErrorCode PFLOWSetInitialGuess(PFLOW,Vec);
 #endif
 
 

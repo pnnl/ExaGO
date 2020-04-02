@@ -23,6 +23,9 @@ struct _p_PFLOW{
 
   PetscBool setupcalled; /* PFSetUp called? */
   PetscBool converged;
+
+  PetscBool  split_gen_power_within_limits; /* Splits the generator powers (after a power flow is solved) by respecing the real and reactive power generator limits. If 0, it simply splits the powers in proportion to the MVAbase
+					     */
 };
 
 #endif
