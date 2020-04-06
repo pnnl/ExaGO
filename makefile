@@ -3,6 +3,7 @@ BUILD_WITH_IPOPT=${WITH_IPOPT}
 BUILD_WITH_PIPS=${WITH_PIPS}
 
 CFLAGS += -Iinclude 
+CXXFLAGS += -Iinclude
 FFLAGS           =
 CPPFLAGS         =
 FPPFLAGS         =
@@ -11,19 +12,24 @@ ifeq ($(BUILD_WITH_PIPS),1)
   CFLAGS_PIPS = -DSCOPFLOW_HAVE_PIPS
   PIPS_LIB    = -lparpipsnlp
   CFLAGS += -I${PIPS_DIR}/PIPS-NLP # For PIPS-NLP
+  CXXFLAGS += -I${PIPS_DIR}/PIPS-NLP # For PIPS-NLP
 
   CFLAGS_IPOPT = -DSCOPFLOW_HAVE_IPOPT
   IPOPT_LIB    = -lipopt
   CFLAGS += -I${IPOPT_BUILD_DIR}/include/coin
+  CXXFLAGS += -I${IPOPT_BUILD_DIR}/include/coin
+
 endif
 
 ifeq ($(BUILD_WITH_IPOPT),1)
   CFLAGS_IPOPT = -DSCOPFLOW_HAVE_IPOPT
   IPOPT_LIB    = -lipopt
   CFLAGS += -I${IPOPT_BUILD_DIR}/include/coin
+  CXXFLAGS += -I${IPOPT_BUILD_DIR}/include/coin
 endif
 
 CFLAGS += ${CFLAGS_IPOPT} ${CFLAGS_PIPS}
+CXXFLAGS += ${CFLAGS_IPOPT} ${CFLAGS_PIPS}
 
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
