@@ -26,7 +26,7 @@ set(PFLOW_SRC
 add_library(pflow SHARED ${PFLOW_SRC})
 
 # Link pflow library
-target_link_libraries(pflow PETSC::SNES ${MPI_mpi_LIBRARY})
+target_link_libraries(pflow PRIVATE PETSC::SNES MPI::MPI_C)
 
 # Add pflow library to SCOPFLOW_PFLOW_LIBS variable in the parent scope
 set(SCOPFLOW_PFLOW_LIBS ${SCOPFLOW_PFLOW_LIBS} pflow PARENT_SCOPE)

@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.10)
 
 project(Scopflow)
 
+## Preamble
+
+# Enable setting Mac OS X rpath
+set(CMAKE_MACOSX_RPATH 1)
+
 ## Configure
 
 # Specify where CMake modules are to be found
@@ -38,6 +43,10 @@ find_package(MPI REQUIRED COMPONENTS C CXX)
 if(SCOPFLOW_ENABLE_PETSC)
   include(FindPETSC)
   include_directories(${PETSC_INCLUDE_CONF})
+endif()
+
+if(SCOPFLOW_ENABLE_IPOPT)
+  include(FindIpopt)
 endif()
 
 # Set install rpath to the locations where Scopflow and PETSc libraries reside.
