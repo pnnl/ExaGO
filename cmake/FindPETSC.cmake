@@ -392,13 +392,18 @@ if (NOT petsc_config_current)
     endif ()
 
     if (PETSC_ARCH)
-      set (PETSC_INCLUDE_DIR "${PETSC_DIR}/${PETSC_ARCH}/include" CACHE INTERNAL "Internal PETSc include directory" FORCE)
+      set (PETSC_INCLUDE_DIR "${PETSC_DIR}/include" CACHE INTERNAL "Internal PETSc include directory" FORCE)
       set (PETSC_LIBRARY_DIR "${PETSC_DIR}/${PETSC_ARCH}/lib"     CACHE INTERNAL "Internal PETSc library directory" FORCE)
     else ()
       set (PETSC_INCLUDE_DIR "${PETSC_DIR}/include" CACHE INTERNAL "Internal PETSc include directory" FORCE)
       set (PETSC_LIBRARY_DIR "${PETSC_DIR}/lib"     CACHE INTERNAL "Internal PETSc library directory" FORCE)
     endif ()
 
+    message(STATUS "PETSC_DIR=${PETSC_DIR}")
+    message(STATUS "PETSC_ARCH=${PETSC_ARCH}")
+    message(STATUS "PETSC_INCLUDE_DIR=${PETSC_INCLUDE_DIR}")
+    message(STATUS " PETSC_LIBRARY_DIR=${PETSC_LIBRARY_DIR}")
+    
     # set internal PETSC_DIR and PETSC_ARCH variables
     set (PETSC_DIR_  "${PETSC_DIR}"  CACHE INTERNAL "Internal PETS_DIR"  FORCE)
     set (PETSC_ARCH_ "${PETSC_ARCH}" CACHE INTERNAL "Internal PETS_ARCH" FORCE)
@@ -408,9 +413,12 @@ if (NOT petsc_config_current)
   # Resolve the conf/rules and conf/variables files.
   # The location of these files has changed with different PETSc versions,
   # so look in a few different locations for them.
-  if (EXISTS "${PETSC_LIBRARY_DIR}/petsc/conf/petscvariables") # > 3.5
-    set (petsc_conf_rules "${PETSC_LIBRARY_DIR}/petsc/conf/rules")
-    set (petsc_conf_variables "${PETSC_LIBRARY_DIR}/petsc/conf/variables")
+  if (EXISTS "${PETSC_DIR}/lib/petsc/conf/variables") # 3.13
+    set (petsc_conf_rules "${PETSC_DIR}/lib/petsc/conf/rules")
+    set (petsc_conf_variables "${PETSC_DIR}/lib/petsc/conf/variables")
+  elseif (EXISTS "${PETSC_LIBRARY_DIR}/petsc/conf/petscvariables") # > 3.5
+    set (petsc_conf_rules "${PETSC_DIR}/petsc/conf/rules")
+    set (petsc_conf_variables "${PETSC_DIR}/petsc/conf/variables")
   elseif (EXISTS "${PETSC_INCLUDE_DIR}/petscconf.h")   # > 2.3.3
     set (petsc_conf_rules "${PETSC_DIR_}/conf/rules")
     set (petsc_conf_variables "${PETSC_DIR_}/conf/variables")
@@ -423,6 +431,8 @@ if (NOT petsc_config_current)
     message (FATAL_ERROR "PETSC_DIR=${PETSC_DIR} and PETSC_ARCH=${PETSC_ARCH} do not specify a valid PETSC installation")
   endif ()
 
+  message(STATUS "petsc_conf_rules = ${petsc_conf_rules}")
+  message(STATUS "petsc_conf_variables = ${petsc_conf_variables}")
   # ----------------------------------------------------------------------------
   # Probe the PETSc installation for information about how it was configured.
   # ----------------------------------------------------------------------------
@@ -623,9 +633,10 @@ show :
 
     # determine the include and library variables needed to create targets below
 
-    find_path (PETSC_INCLUDE_CONF petscconf.h HINTS "${PETSC_INCLUDE_DIR}" "${PETSC_DIR_}/bmake/${PETSC_ARCH_}" NO_DEFAULT_PATH)
+    find_path (PETSC_INCLUDE_CONF petscconf.h HINTS "${PETSC_INCLUDE_DIR}" "${PETSC_DIR}/${PETSC_ARCH}/include" $"${PETSC_DIR_}/bmake/${PETSC_ARCH_}" NO_DEFAULT_PATH)
     mark_as_advanced (PETSC_INCLUDE_CONF)
 
+    message(STATUS "PETSC_INCLUDE_CONF = ${PETSC_INCLUDE_CONF}")
     set (petsc_includes_minimal ${PETSC_INCLUDE_CONF} ${PETSC_INCLUDE_DIR})
 
     petsc_test_runs ("${petsc_includes_minimal}" "${PETSC_LIBRARIES_TS}" petsc_works_minimal)
