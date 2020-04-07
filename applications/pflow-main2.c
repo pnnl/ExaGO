@@ -8,14 +8,20 @@ static char help[] = "User example calling PFLOW and changing branch status.\n \
 
 
 #include <pflow.h>
-
+#include <scopflow_config.h>
 
 int main(int argc,char **argv)
 {
   PetscErrorCode ierr;
   PFLOW             pflow;
+  char options_pathname[200] = SCOPFLOW_OPTIONS_DIR;
+  char* filename = "/pflowoptions";
+  printf("%s\n", options_pathname);
+  printf("%s\n", filename);
+  strcat(options_pathname, filename);
+  printf("%s\n", options_pathname);
 
-  PetscInitialize(&argc,&argv,"options/pflowoptions",help);
+  PetscInitialize(&argc,&argv,options_pathname,help);
   
   /* Create PFLOW object */
   ierr = PFLOWCreate(PETSC_COMM_WORLD,&pflow);CHKERRQ(ierr);
