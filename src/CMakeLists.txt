@@ -5,6 +5,8 @@
 # Specify PowerSystem module sources (shared across libraries)
 set(POWERSYS_SRC
   ps/ps.c
+  ps/psreaddata.c
+  ps/psislanding.c
 )
 
 # Specify sources for utility functions shared across libraries
@@ -24,7 +26,7 @@ set(PFLOW_SRC
 add_library(pflow SHARED ${PFLOW_SRC})
 
 # Link pflow library
-target_link_libraries(pflow PETSC::SNES)
+target_link_libraries(pflow PETSC::SNES ${MPI_mpi_LIBRARY})
 
 # Add pflow library to SCOPFLOW_PFLOW_LIBS variable in the parent scope
 set(SCOPFLOW_PFLOW_LIBS ${SCOPFLOW_PFLOW_LIBS} pflow PARENT_SCOPE)
