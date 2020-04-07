@@ -24,11 +24,12 @@ git clone ssh://git@gitlab.pnnl.gov:2222/exasgd/frameworks/scopflow.git
 ```
 
 ## 2. Install dependencies
-SCOPFLOW is dependent on PETSc and either PIPS-NLP or IPOPT. Below, we provide installation instructions for these libraries.
+SCOPFLOW is dependent on PETSc (ver 3.13) and either PIPS-NLP or IPOPT. Below, we provide installation instructions for these libraries.
 
 ### PETSc
 
 #### Download
+Download the PETSc release version (ver 3.13) 
 ```
 git clone https://bitbucket.org/petsc/petsc petsc
 ```
@@ -41,12 +42,12 @@ export PETSC_ARCH=<arch-name>
 arch-name can be any name.
 
 #### Switch branch
-SCOPFLOW is updated with the latest PETSc development branch. So, it should work with the development branch (master) or the atest release. 
+SCOPFLOW is compatible with the current release of PETSc (version 3.13). To use it, switch to the `maint` branch
 
 #### Installation
 ```
 cd $PETSC_DIR
-git checkout master
+git checkout maint
 ./config/configure.py --download-mpich --with-cc=gcc --with-\
 cxx=g++ --with-fc=gfortran --download-mumps --download-scalapack --download-superlu --download-superlu_dist --download-suitespar\
 se --download-metis --download-parmetis --download-cmake --with-cxx-dialect=C++11
@@ -141,9 +142,8 @@ $ CC=mpicc CXX=mpicxx FC=mpif90 cmake ../scopflow
 In case PETSc dependency is not automatically found, you can specify it using
 `ccmake` interactive shell or add command line option like this:
 ```
-$ cmake ../scopflow -DPETSC_DIR=<petsc_install_dir>
+$ cmake ../scopflow -DPETSC_DIR=<petsc_install_dir> -DPETSC_ARCH=<petsc_arch>
 ```
-
 
 ### Execution
 The SCOPFLOW code is executed via
