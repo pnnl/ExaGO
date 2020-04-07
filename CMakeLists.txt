@@ -75,6 +75,18 @@ set(SCOPFLOW_OPTIONS_FILES
 install(FILES ${SCOPFLOW_OPTIONS_FILES} DESTINATION options)
 
 
+# Scopflow datafiles to instal
+set(SCOPFLOW_DATA_FILES
+  "${CMAKE_CURRENT_SOURCE_DIR}/datafiles/case9mod.m"
+  datafiles/case118.m
+  datafiles/case118.cont
+  datafiles/case_ACTIVSg200.m
+  datafiles/case9.cont
+)
+
+# Install data files
+install(FILES ${SCOPFLOW_DATA_FILES} DESTINATION bin/datafiles)
+
 # Scopflow headers to install
 set(SCOPFLOW_COMMON_INCLUDE
   include/common.h

@@ -3,7 +3,6 @@ add_subdirectory(utils)
 add_subdirectory(ps)
 add_subdirectory(pflow)
 
-
 # Add variables in the parent scope
 set(SCOPFLOW_UTIL_LIBS ${SCOPFLOW_UTIL_LIBS} PARENT_SCOPE)
 set(SCOPFLOW_PS_LIBS ${SCOPFLOW_PS_LIBS} PARENT_SCOPE)
