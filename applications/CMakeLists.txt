@@ -11,7 +11,9 @@ add_executable(pflowproto ${PFLOWPROTO_SRC})
 
 # Link pflowproto application
 target_link_libraries(pflowproto 
-  ${SCOPFLOW_PFLOW_LIBS}
+  ${SCOPFLOW_UTIL_LIBS}	
+  ${SCOPFLOW_PS_LIBS}
+  ${SCOPFLOW_PFLOW_LIBS}	 
   ${SCOPFLOW_MATH_LIB}
   PETSC::SNES
   MPI::MPI_C

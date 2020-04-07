@@ -62,7 +62,6 @@ add_subdirectory(src)
 # Build applications (specified in applications/CMakeLists.txt)
 add_subdirectory(applications)
 
-
 ## Install
 
 # Scopflow options files to install (note difference between strings and vars)
