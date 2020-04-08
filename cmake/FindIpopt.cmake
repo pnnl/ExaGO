@@ -19,7 +19,7 @@ message(STATUS "IPOPT Include directory = ${IPOPT_INCLUDE_DIR}")
 
 if(IPOPT_INCLUDE_DIR AND IPOPT_LIBRARY)
   include_directories(${IPOPT_INCLUDE_DIR})
-  set(SCOPFLOW_HAVE_IPOPT TRUE)
+  set(SCOPFLOW_HAVE_IPOPT 1)
 else()
   message(FATAL_ERROR "IPOPT not found!")
 endif()

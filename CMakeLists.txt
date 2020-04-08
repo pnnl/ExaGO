@@ -44,6 +44,8 @@ endif()
 
 if(SCOPFLOW_ENABLE_IPOPT)
   include(FindIpopt)
+else()
+#  set(SCOPFLOW_HAVE_IPOPT 0)
 endif(SCOPFLOW_ENABLE_IPOPT)
 
 # Set up configuration header file
