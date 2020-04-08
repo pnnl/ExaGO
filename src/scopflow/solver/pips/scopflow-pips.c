@@ -201,7 +201,9 @@ int scopflow_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elt
   SCOPFLOW scopflow=(SCOPFLOW)cbd->prob;
   Mat_SeqSBAIJ  *sbaij;
   OPFLOW   opflow = scopflow->opflows[row];
+  OPFLOW   opflow0;
   OPFLOWSolver_IPOPT opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
+  OPFLOWSolver_IPOPT opflowipopt0;
   PetscInt nrow,ncol;
   PetscScalar *lameq,*lamineq;
   PetscScalar *x;
@@ -212,9 +214,9 @@ int scopflow_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elt
       *nz = opflowipopt->nnz_hes;
     } else {
       if(col == 0) {
-	opflow = scopflow->opflows[0];
-	opflowipopt = opflow->solver;
-	*nz = opflowipopt->nnz_hes;
+	opflow0 = (OPFLOW)scopflow->opflows[0];
+	opflowipopt0 = (OPFLOWSolver_IPOPT)opflow->solver;
+	*nz = opflowipopt0->nnz_hes;
       }
     }
   } else {
@@ -261,15 +263,15 @@ int scopflow_eval_h(double* x0, double* x1, double* lambda, int* nz, double* elt
     } else {
       if(row > col && col == 0) {
 	//	if(!scopflow->first_stage_gen_cost_only) {
-	  opflow = scopflow->opflows[0];
-	  opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
+	opflow0 = (OPFLOW)scopflow->opflows[0];
+	opflowipopt0 = (OPFLOWSolver_IPOPT)opflow->solver;
 	  
-	  ierr = MatGetSize(opflow->Hes,&nrow,&ncol);CHKERRQ(ierr);
+	ierr = MatGetSize(opflow0->Hes,&nrow,&ncol);CHKERRQ(ierr);
 	  
-	  sbaij = (Mat_SeqSBAIJ*)opflowipopt->Hes_sbaij->data;
-	  ierr = PetscMemcpy(rowidx,sbaij->j,sbaij->nz*sizeof(PetscInt));CHKERRQ(ierr);
-	  ierr = PetscMemcpy(colptr,sbaij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
-	  ierr = PetscMemzero(elts,sbaij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
+	sbaij = (Mat_SeqSBAIJ*)opflowipopt0->Hes_sbaij->data;
+	ierr = PetscMemcpy(rowidx,sbaij->j,sbaij->nz*sizeof(PetscInt));CHKERRQ(ierr);
+	ierr = PetscMemcpy(colptr,sbaij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
+	ierr = PetscMemzero(elts,sbaij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
 	  //	}
       }
     }

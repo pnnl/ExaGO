@@ -65,15 +65,15 @@ PetscErrorCode OPFLOWSetUpInitPflow(OPFLOW opflow)
   ierr = DMNetworkGetPlex(networkdm,&plexdm);CHKERRQ(ierr);
 
   /* Get default sections associated with this plex */
-  ierr = DMGetDefaultSection(plexdm,&opflow->defaultsection);CHKERRQ(ierr);
+  ierr = DMGetSection(plexdm,&opflow->defaultsection);CHKERRQ(ierr);
   ierr = PetscObjectReference((PetscObject)opflow->defaultsection);CHKERRQ(ierr);
 
-  ierr = DMGetDefaultGlobalSection(plexdm,&opflow->defaultglobalsection);CHKERRQ(ierr);
+  ierr = DMGetGlobalSection(plexdm,&opflow->defaultglobalsection);CHKERRQ(ierr);
   ierr = PetscObjectReference((PetscObject)opflow->defaultglobalsection);CHKERRQ(ierr);
 
   /* Set the new section created for initial power flow */
-  ierr = DMSetDefaultSection(plexdm,opflow->initpflowpsection);CHKERRQ(ierr);
-  ierr = DMGetDefaultGlobalSection(plexdm,&opflow->initpflowpglobsection);CHKERRQ(ierr);
+  ierr = DMSetSection(plexdm,opflow->initpflowpsection);CHKERRQ(ierr);
+  ierr = DMGetGlobalSection(plexdm,&opflow->initpflowpglobsection);CHKERRQ(ierr);
 
   /* Set up PFLOW object. Note pflow->ps will not be set up again as it has
      been already set up by opflow
@@ -88,8 +88,8 @@ PetscErrorCode OPFLOWSetUpInitPflow(OPFLOW opflow)
   ierr = PetscObjectReference((PetscObject)opflow->initpflowpglobsection);CHKERRQ(ierr);
   
   /* Reset the sections */
-  ierr = DMSetDefaultSection(plexdm,opflow->defaultsection);CHKERRQ(ierr);
-  ierr = DMSetDefaultGlobalSection(plexdm,opflow->defaultglobalsection);CHKERRQ(ierr);
+  ierr = DMSetSection(plexdm,opflow->defaultsection);CHKERRQ(ierr);
+  ierr = DMSetGlobalSection(plexdm,opflow->defaultglobalsection);CHKERRQ(ierr);
 
   /* Reset dm */
   swap_dm(&opflow->ps->networkdm,&opflow->initpflowdm);
@@ -123,10 +123,10 @@ PetscErrorCode OPFLOWComputePrePflow(OPFLOW opflow,PetscBool *converged)
   ierr = PetscObjectReference((PetscObject)opflow->defaultglobalsection);CHKERRQ(ierr);
 
   /* Set the new section created for initial power flow. */
-  ierr = DMSetDefaultSection(plexdm,opflow->initpflowpsection);CHKERRQ(ierr);
-  ierr = DMSetDefaultGlobalSection(plexdm,opflow->initpflowpglobsection);CHKERRQ(ierr);
+  ierr = DMSetSection(plexdm,opflow->initpflowpsection);CHKERRQ(ierr);
+  ierr = DMSetGlobalSection(plexdm,opflow->initpflowpglobsection);CHKERRQ(ierr);
 
-  ierr = DMCreateDefaultSF(plexdm,opflow->initpflowpsection,opflow->initpflowpglobsection);CHKERRQ(ierr);
+  ierr = DMCreateSectionSF(plexdm,opflow->initpflowpsection,opflow->initpflowpglobsection);CHKERRQ(ierr);
 
   /* Reset the edge and bus starting locations of variables */
   ierr = PSSetEdgeandBusStartLoc(ps);CHKERRQ(ierr);
@@ -140,17 +140,17 @@ PetscErrorCode OPFLOWComputePrePflow(OPFLOW opflow,PetscBool *converged)
 
   /*
      Update the ref. counts for init pflow sections so that they do not
-     get destroyed when DMSetDefaultSection is called
+     get destroyed when DMSetSection is called
   */
   ierr = PetscObjectReference((PetscObject)opflow->initpflowpsection);CHKERRQ(ierr);
   ierr = PetscObjectReference((PetscObject)opflow->initpflowpglobsection);CHKERRQ(ierr);
 
   /* Reset the sections */
-  ierr = DMSetDefaultSection(plexdm,opflow->defaultsection);CHKERRQ(ierr);
-  ierr = DMSetDefaultGlobalSection(plexdm,opflow->defaultglobalsection);CHKERRQ(ierr);
+  ierr = DMSetSection(plexdm,opflow->defaultsection);CHKERRQ(ierr);
+  ierr = DMSetGlobalSection(plexdm,opflow->defaultglobalsection);CHKERRQ(ierr);
 
   /* Reset SF */
-  ierr = DMCreateDefaultSF(plexdm,opflow->defaultsection,opflow->defaultglobalsection);CHKERRQ(ierr);
+  ierr = DMCreateSectionSF(plexdm,opflow->defaultsection,opflow->defaultglobalsection);CHKERRQ(ierr);
 
   /* Reset the bus and edge starting locations for variables */
   ierr = PSSetEdgeandBusStartLoc(ps);CHKERRQ(ierr);
