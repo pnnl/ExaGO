@@ -290,6 +290,7 @@ int main(int argc,char **argv)
   PetscLogStage     read,setup,solve,cuda_proto;
   Vec               X; /* Global solution vector */
   Vec               F; /* Global residual vector */
+  PetscInt          i;
   /* array of arrays to hold parameters needed by each bus to
      compute its residual */
   double            **busparams;
@@ -359,7 +360,7 @@ int main(int argc,char **argv)
   ierr = ComputeGlobalResidual(pflow,busparams,xidx,fidx,pflow->X,F);CHKERRQ(ierr);
   PetscLogStagePop();
 
-  for(PetscInt i=0; i < pflow->ps->nbus; i++) {
+  for(i=0; i < pflow->ps->nbus; i++) {
     ierr = PetscFree(busparams[i]);CHKERRQ(ierr);
     ierr = PetscFree(xidx[i]);CHKERRQ(ierr);
     ierr = PetscFree(fidx[i]);CHKERRQ(ierr);
