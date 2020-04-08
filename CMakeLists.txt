@@ -66,9 +66,9 @@ add_subdirectory(applications)
 
 ## Install
 
-# Scopflow options files to install (note difference between strings and vars)
+# Scopflow options files to install
 set(SCOPFLOW_OPTIONS_FILES
-  "${CMAKE_CURRENT_SOURCE_DIR}/options/pflowoptions"
+  options/pflowoptions
   options/opflowoptions
   options/scopflowoptions
 )
@@ -79,7 +79,7 @@ install(FILES ${SCOPFLOW_OPTIONS_FILES} DESTINATION options)
 
 # Scopflow datafiles to instal
 set(SCOPFLOW_DATA_FILES
-  "${CMAKE_CURRENT_SOURCE_DIR}/datafiles/case9mod.m"
+  datafiles/case9mod.m
   datafiles/case118.m
   datafiles/case118.cont
   datafiles/case_ACTIVSg200.m
