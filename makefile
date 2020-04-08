@@ -33,7 +33,7 @@ ifeq ($(BUILD_WITH_HIOP),1)
   CFLAGS_HIOP = -DSCOPFLOW_HAVE_HIOP
   HIOP_LIB    = -lhiop
   CFLAGS += -I${HIOP_BUILD_DIR}/include
-  CXXFLAGS += -I${HIOP_BUILD_DIR}/include -I${HIOP_SRC_DIR}/LinAlg -I${HIOP_SRC_DIR}/Optimization
+  CXXFLAGS += -I${HIOP_BUILD_DIR}/include #-I${HIOP_SRC_DIR}/LinAlg -I${HIOP_SRC_DIR}/Optimization
 endif
 
 CFLAGS += ${CFLAGS_IPOPT} ${CFLAGS_PIPS} ${CFLAGS_HIOP}
