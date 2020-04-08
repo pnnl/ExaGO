@@ -18,6 +18,12 @@ set(OPFLOW_SRC
 	${OPFLOW_SOLVER_SRC}
 )
 
+
+# Header files for opflow
+set(OPFLOW_INCLUDE
+ ${CMAKE_SOURCE_DIR}/include/opflow.h
+)
+
 #Compile library
 add_library(opflow SHARED ${OPFLOW_SRC})
 
@@ -31,7 +37,10 @@ target_link_libraries(opflow PRIVATE
 			     ${SCOPFLOW_PFLOW_LIBS}
 )
 
-# Install shared objects
+# Install shared object
 install(TARGETS opflow DESTINATION lib)
+
+# Install header
+install(FILES ${OPFLOW_INCLUDE} DESTINATION include)
 
 set(SCOPFLOW_OPFLOW_LIBS ${SCOPFLOW_OPFLOW_LIBS} opflow PARENT_SCOPE)

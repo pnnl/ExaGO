@@ -6,6 +6,10 @@ set(PS_SRC
   psislanding.c
 )
 
+set(PS_INCLUDE
+  ${CMAKE_SOURCE_DIR}/include/ps.h
+)
+
 # Compile library
 add_library(ps SHARED ${PS_SRC})
 
@@ -14,7 +18,10 @@ target_link_libraries(ps PRIVATE
                          MPI::MPI_C
 			 ${SCOPFLOW_UTIL_LIBS})
 
-# Install shared objects
+# Install library
 install(TARGETS ps DESTINATION lib)
+
+# Install header
+install(FILES ${PS_INCLUDE} DESTINATION include)
 
 set(SCOPFLOW_PS_LIBS ${SCOPFLOW_PS_LIBS} ps PARENT_SCOPE)
