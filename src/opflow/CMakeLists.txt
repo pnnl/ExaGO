@@ -8,6 +8,7 @@ set(OPFLOW_FORM_SRC
 
 set(OPFLOW_SOLVER_SRC
     solver/tao/opflow-tao.c
+    solver/ipopt/opflow-ipopt.c
 )
 
 set(OPFLOW_SRC
@@ -24,6 +25,7 @@ add_library(opflow SHARED ${OPFLOW_SRC})
 target_link_libraries(opflow PRIVATE
 			     PETSC::SNES
 			     MPI::MPI_C
+			     ${IPOPT_LIBRARY}
 			     ${SCOPFLOW_UTIL_LIBS}
 			     ${SCOPFLOW_PS_LIBS}
 			     ${SCOPFLOW_PFLOW_LIBS}

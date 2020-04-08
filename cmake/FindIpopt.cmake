@@ -1,36 +1,25 @@
-# Find Ipopt installation path
-find_path (IPOPT_DIR NAMES share/coin/doc/Ipopt/ipopt_addlibs_cpp.txt HINTS ~/local/ipopt)
-message (STATUS "Found Ipopt in ${IPOPT_DIR}")
+# If IPOPT_DIR is not set then try to find it at default locations
+if(NOT IPOPT_DIR)
+   find_path(IPOPT_DIR NAMES share/coin/doc/Ipopt/ipopt_addlibs_cpp.txt HINTS ~/local/ipopt)
+endif()
 
+# Exit if IPOPT_DIR is not set and cannot be found in default locations
+if(NOT IPOPT_DIR)
+   message(FATAL_ERROR "Ipopt directory could not be found. Please specify the directory using the flag -DIPOPT_DIR=<location_of_Ipopt_install>")
+endif(NOT IPOPT_DIR)
+
+# Ipopt library location
+find_library(IPOPT_LIBRARY NAME libipopt.a libipopt.so libipopt.dylib HINTS ${IPOPT_DIR}/lib)
+message(STATUS "IPOPT library directory=${IPOPT_LIBRARY}")
+
+# Ipopt include directories
 # Find Ipopt header path and ensure all needed files are there
-find_path(IPOPT_INCLUDE_DIR
-  IpTNLP.hpp
-  HINTS ${IPOPT_DIR}/include/coin
-)
-message (STATUS "Found Ipopt headers in ${IPOPT_INCLUDE_DIR}")
+find_path(IPOPT_INCLUDE_DIR NAME IpIpoptNLP.hpp HINTS ${IPOPT_DIR}/include/coin)
+message(STATUS "IPOPT Include directory = ${IPOPT_INCLUDE_DIR}")
 
-# Assume Ipopt lib directory is in the same place as the include directory
-set(IPOPT_LIBRARY_DIR ${IPOPT_DIR}/lib)
-
-# Ipopt modules needed for the build
-# The order matters in case of static build!
-set(IPOPT_MODULES 
-  ipopt 
-  coinmetis
-  coinmumps
-)
-
-# Find each Ipopt module and add it to the list of libraries to link
-set(IPOPT_LIBRARY)
-foreach(mod ${IPOPT_MODULES})
-  find_library(IPOPT_${mod}
-    NAMES ${mod}
-    HINTS ${IPOPT_LIBRARY_DIR}
-  )
-  if(IPOPT_${mod})
-    set(IPOPT_LIBRARY ${IPOPT_LIBRARY} ${IPOPT_${mod}})
-  else()
-    # unset ${IPOPT_LIBRARY_DIR} and ask user to supply it
-  endif()
-endforeach()
-message (STATUS "Found Ipopt libraries ${IPOPT_LIBRARY}")
+if(IPOPT_INCLUDE_DIR AND IPOPT_LIBRARY)
+  include_directories(${IPOPT_INCLUDE_DIR})
+  set(SCOPFLOW_HAVE_IPOPT TRUE)
+else()
+  message(FATAL_ERROR "IPOPT not found!")
+endif()

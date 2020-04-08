@@ -1,4 +1,5 @@
 #include <private/opflowimpl.h>
+#include <scopflow_config.h>
 
 /*
   OPFLOWFormulationRegister - Registers an OPFLOW formulation

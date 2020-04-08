@@ -15,9 +15,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 # Set the path to options file in Scopflow installation
 set(SCOPFLOW_OPTIONS_DIR "${CMAKE_INSTALL_PREFIX}/options")
 
-# Set up configuration header file
-configure_file(include/scopflow_config.h.in scopflow_config.h)
-
 # Enable PETSc by default
 option(SCOPFLOW_ENABLE_PETSC "Enable PETSc support" ON)
 
@@ -47,7 +44,10 @@ endif()
 
 if(SCOPFLOW_ENABLE_IPOPT)
   include(FindIpopt)
-endif()
+endif(SCOPFLOW_ENABLE_IPOPT)
+
+# Set up configuration header file
+configure_file(include/scopflow_config.h.in scopflow_config.h)
 
 # Set install rpath to the locations where Scopflow and PETSc libraries reside.
 # TODO: Automatically skip if PETSc and Scopflow are already on system lib path.

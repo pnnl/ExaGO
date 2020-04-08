@@ -1,3 +1,4 @@
+#include <scopflow_config.h>
 #if defined(SCOPFLOW_HAVE_IPOPT)
 
 #ifndef OPFLOWIPOPT_H
