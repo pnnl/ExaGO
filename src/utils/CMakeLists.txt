@@ -7,13 +7,21 @@ set(UTILS_SRC
   comm.c
 )
 
+# Headers
+set(UTILS_INCLUDE
+  ${CMAKE_SOURCE_DIR}/include/common.h
+)
+
 # Add library
 add_library(util SHARED ${UTILS_SRC})
 
 # Link libraries
 target_link_libraries(util PRIVATE PETSC::SNES MPI::MPI_C)
 
-# Install shared objects
+# Install library
 install(TARGETS util DESTINATION lib)
+
+# Install header
+install(FILES ${UTILS_INCLUDE} DESTINATION include)
 
 set(SCOPFLOW_UTIL_LIBS ${SCOPFLOW_UTIL_LIBS} util PARENT_SCOPE)

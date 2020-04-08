@@ -29,11 +29,6 @@ if(UNIX)
   set(SCOPFLOW_MATH_LIB m)
 endif()
 
-# Variable to store power flow libraries
-set(SCOPFLOW_PFLOW_LIBS
-  #
-)
-
 find_package(MPI REQUIRED COMPONENTS C CXX)
 
 # Find PETSc and configure related variables
@@ -44,8 +39,6 @@ endif()
 
 if(SCOPFLOW_ENABLE_IPOPT)
   include(FindIpopt)
-else()
-#  set(SCOPFLOW_HAVE_IPOPT 0)
 endif(SCOPFLOW_ENABLE_IPOPT)
 
 # Set up configuration header file
@@ -76,8 +69,7 @@ set(SCOPFLOW_OPTIONS_FILES
 # Install options files
 install(FILES ${SCOPFLOW_OPTIONS_FILES} DESTINATION options)
 
-
-# Scopflow datafiles to instal
+# Scopflow datafiles to install
 set(SCOPFLOW_DATA_FILES
   "${CMAKE_CURRENT_SOURCE_DIR}/datafiles/case9mod.m"
   datafiles/case118.m
@@ -91,9 +83,7 @@ install(FILES ${SCOPFLOW_DATA_FILES} DESTINATION bin/datafiles)
 
 # Scopflow headers to install
 set(SCOPFLOW_COMMON_INCLUDE
-  include/common.h
   include/constants.h
-  include/ps.h
   "${PROJECT_BINARY_DIR}/scopflow_config.h"
 )
  

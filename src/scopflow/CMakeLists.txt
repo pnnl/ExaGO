@@ -8,6 +8,11 @@ set(SCOPFLOW_SRC
 	${SCOPFLOW_SOLVER_SRC}
 )
 
+# Header files for scopflow
+set(SCOPFLOW_INCLUDE
+ ${CMAKE_SOURCE_DIR}/include/scopflow.h
+)
+
 #Compile library
 add_library(scopflow SHARED ${SCOPFLOW_SRC})
 
@@ -22,7 +27,10 @@ target_link_libraries(scopflow PRIVATE
 			     ${SCOPFLOW_OPFLOW_LIBS}
 )
 
-# Install shared objects
+# Install library
 install(TARGETS scopflow DESTINATION lib)
+
+# Install header
+install(FILES ${SCOPFLOW_INCLUDE} DESTINATION include)
 
 set(SCOPFLOW_LIBS ${SCOPFLOW_LIBS} scopflow PARENT_SCOPE)
