@@ -1,8 +1,10 @@
 
 BUILD_WITH_IPOPT=${WITH_IPOPT}
 BUILD_WITH_PIPS=${WITH_PIPS}
+BUILD_WITH_HIOP=${WITH_HIOP}
 
 CFLAGS += -Iinclude 
+CXXFLAGS += -Iinclude
 FFLAGS           =
 CPPFLAGS         =
 FPPFLAGS         =
@@ -11,19 +13,32 @@ ifeq ($(BUILD_WITH_PIPS),1)
   CFLAGS_PIPS = -DSCOPFLOW_HAVE_PIPS
   PIPS_LIB    = -lparpipsnlp
   CFLAGS += -I${PIPS_DIR}/PIPS-NLP # For PIPS-NLP
+  CXXFLAGS += -I${PIPS_DIR}/PIPS-NLP # For PIPS-NLP
 
   CFLAGS_IPOPT = -DSCOPFLOW_HAVE_IPOPT
   IPOPT_LIB    = -lipopt
   CFLAGS += -I${IPOPT_BUILD_DIR}/include/coin
+  CXXFLAGS += -I${IPOPT_BUILD_DIR}/include/coin
+
 endif
 
 ifeq ($(BUILD_WITH_IPOPT),1)
   CFLAGS_IPOPT = -DSCOPFLOW_HAVE_IPOPT
   IPOPT_LIB    = -lipopt
   CFLAGS += -I${IPOPT_BUILD_DIR}/include/coin
+  CXXFLAGS += -I${IPOPT_BUILD_DIR}/include/coin
 endif
 
-CFLAGS += ${CFLAGS_IPOPT} ${CFLAGS_PIPS}
+ifeq ($(BUILD_WITH_HIOP),1)
+  CFLAGS_HIOP = -DSCOPFLOW_HAVE_HIOP
+  HIOP_LIB    = -lhiop
+  CFLAGS += -I${HIOP_BUILD_DIR}/include
+  CXXFLAGS += -I${HIOP_BUILD_DIR}/include #-I${HIOP_SRC_DIR}/LinAlg -I${HIOP_SRC_DIR}/Optimization
+endif
+
+CFLAGS += ${CFLAGS_IPOPT} ${CFLAGS_PIPS} ${CFLAGS_HIOP}
+CXXFLAGS += ${CFLAGS_IPOPT} ${CFLAGS_PIPS} ${CFLAGS_HIOP}
+
 
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
@@ -81,7 +96,7 @@ PFLOW2: $(OBJECTS_PFLOW2) libpflow chkopts
 OPFLOW_INTERFACE_OBJECTS = src/opflow/interface/opflow.o src/opflow/interface/opflowregi.o
 OPFLOW_FORMULATION_OBJECTS = src/opflow/formulation/power-bal-polar/pbpol.o src/opflow/formulation/power-bal-cartesian/pbcar.o src/opflow/formulation/current-bal-cartesian/ibcar.o src/opflow/formulation/current-bal-cartesian/ibcar2.o
 
-OPFLOW_SOLVER_OBJECTS = src/opflow/solver/ipopt/opflow-ipopt.o src/opflow/solver/tao/opflow-tao.o
+OPFLOW_SOLVER_OBJECTS = src/opflow/solver/ipopt/opflow-ipopt.o src/opflow/solver/tao/opflow-tao.o src/opflow/solver/hiop/opflow-hiop.o
 
 OPFLOW_SRC_OBJECTS = ${PFLOW_SRC_OBJECTS} ${OPFLOW_INTERFACE_OBJECTS} ${OPFLOW_FORMULATION_OBJECTS} ${OPFLOW_SOLVER_OBJECTS} ${PS_SRC_OBJECTS}
 
@@ -115,7 +130,7 @@ libpflow:${PS_SRC_OBJECTS} $(PFLOW_SRC_OBJECTS) chkopts
 	 -$(CLINKER) $(LDFLAGS) -o libpflow.$(LIB_EXT) ${PS_SRC_OBJECTS} $(PFLOW_SRC_OBJECTS) $(PETSC_TS_LIB)
 
 libopflow:$(OPFLOW_SRC_OBJECTS) chkopts
-	 -$(CLINKER) $(LDFLAGS) -o libopflow.$(LIB_EXT) $(OPFLOW_SRC_OBJECTS) -L${IPOPT_BUILD_DIR}/lib ${IPOPT_LIB} $(PETSC_TAO_LIB)
+	 -$(CLINKER) $(LDFLAGS) -o libopflow.$(LIB_EXT) $(OPFLOW_SRC_OBJECTS) -L${IPOPT_BUILD_DIR}/lib ${IPOPT_LIB} -L${HIOP_BUILD_DIR}/lib ${HIOP_LIB} $(PETSC_TAO_LIB)
 
 libscopflow:${SCOPFLOW_SRC_OBJECTS} chkopts
 	 -$(CLINKER) $(LDFLAGS) -o libscopflow.$(LIB_EXT) $(SCOPFLOW_SRC_OBJECTS) -L${PIPS_DIR}/build_pips/PIPS-NLP ${PIPS_LIB} -L${IPOPT_BUILD_DIR}/lib ${IPOPT_LIB} ${PETSC_TAO_LIB}

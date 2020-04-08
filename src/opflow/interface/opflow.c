@@ -331,6 +331,7 @@ PetscErrorCode OPFLOWSetSolver(OPFLOW opflow,const char* solvername)
   opflow->solverops.solve   = 0;
   opflow->solverops.setup   = 0;
 
+  ierr = PetscStrcpy(opflow->solvername,solvername);CHKERRQ(ierr);
   /* Call the underlying implementation constructor */
   ierr = (*r)(opflow);CHKERRQ(ierr);
 
@@ -379,6 +380,7 @@ PetscErrorCode OPFLOWSetFormulation(OPFLOW opflow,const char* formulationname)
   opflow->formops.computegradient                = 0;
   opflow->formops.computejacobian                = 0;
 
+  ierr = PetscStrcpy(opflow->formulationname,formulationname);CHKERRQ(ierr);
   /* Call the underlying implementation constructor */
   ierr = (*r)(opflow);CHKERRQ(ierr);
 

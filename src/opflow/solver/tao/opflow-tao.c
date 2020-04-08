@@ -100,8 +100,10 @@ PetscErrorCode OPFLOWSolverDestroy_TAO(OPFLOW opflow)
 
   PetscFunctionBegin;
 
-  ierr = VecDestroy(&tao->Glineq);CHKERRQ(ierr);
-  ierr = VecDestroy(&tao->Guineq);CHKERRQ(ierr);
+  if(opflow->Nconineq) {
+    ierr = VecDestroy(&tao->Glineq);CHKERRQ(ierr);
+    ierr = VecDestroy(&tao->Guineq);CHKERRQ(ierr);
+  }
 
   if(tao->nlp) {
     TaoDestroy(&tao->nlp);
@@ -143,8 +145,10 @@ PetscErrorCode OPFLOWSolverSetUp_TAO(OPFLOW opflow)
   ierr = TaoSetHessianRoutine(tao->nlp,opflow->Hes,opflow->Hes,OPFLOWHessian_TAO,(void*)opflow);CHKERRQ(ierr);
 
   /* Create vectors for inequality constraint bounds */
-  ierr = VecDuplicate(opflow->Gi,&tao->Glineq);CHKERRQ(ierr);
-  ierr = VecDuplicate(opflow->Gu,&tao->Guineq);CHKERRQ(ierr);
+  if(opflow->Nconineq) {
+    ierr = VecDuplicate(opflow->Gi,&tao->Glineq);CHKERRQ(ierr);
+    ierr = VecDuplicate(opflow->Gu,&tao->Guineq);CHKERRQ(ierr);
+  }
 
   PetscFunctionReturn(0);
 }
