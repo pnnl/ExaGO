@@ -18,6 +18,7 @@
 /* Solvers */
 #define OPFLOWSOLVER_IPOPT "IPOPT"
 #define OPFLOWSOLVER_TAO   "TAO"
+#define OPFLOWSOLVER_HIOP  "HIOP"
 
 typedef struct _p_OPFLOW *OPFLOW;
 

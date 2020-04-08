@@ -1,7 +1,9 @@
+
 #include <private/psimpl.h>
 
+
 /*
-  PSCheckandSetRefBus - Checks for active ref. bus and sets one if not available
+     PSCheckandSetRefBus - Checks for active ref. bus and sets one if not available
 
   Input Parameters:
 . ps - The PS object
@@ -450,11 +452,13 @@ PetscErrorCode PSBUSSetGenStatus(PSBUS bus,char gid[],PetscInt status)
 {
   PetscErrorCode ierr;
   PetscInt       i;
-  PSGEN          gen;
+  PSGEN          gen=NULL;
   PetscBool      flg;
   PetscBool      statusupdate;
 
   PetscFunctionBegin;
+  if(!bus->ngen) PetscFunctionReturn(0);
+
   for(i=0; i < bus->ngen; i++) {
     ierr = PSBUSGetGen(bus,i,&gen);CHKERRQ(ierr);
     ierr = PetscStrcmp(gid,gen->id,&flg);CHKERRQ(ierr);
@@ -1005,6 +1009,9 @@ PetscErrorCode PSSetUp(PS ps)
   /* Broadcast MVAbase */
   ierr = MPI_Bcast(&ps->MVAbase,1,MPIU_SCALAR,0,ps->comm->type);CHKERRQ(ierr);
 
+  /* Update reference bus if needed */
+  ierr = PSCheckandSetRefBus(ps);CHKERRQ(ierr);
+
   //  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d Came here\n",ps->comm->rank);CHKERRQ(ierr);
   ps->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);
@@ -1108,7 +1115,7 @@ PetscErrorCode PSSetGenStatus(PS ps,PetscInt gbus,const char* gid,PetscInt statu
 PetscErrorCode PSSetLineStatus(PS ps,PetscInt fbus, PetscInt tbus, const char* id,PetscInt status)
 {
   PetscErrorCode ierr;
-  PSLINE         line;
+  PSLINE         line=NULL;
 
   PetscFunctionBegin;
   if(!ps->setupcalled) SETERRQ(PETSC_COMM_SELF,0,"PSSetUp() must be called before calling PFLOWGetLine()\n");
