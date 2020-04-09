@@ -13,12 +13,12 @@ SCOPFLOW applications can use the following solvers:
 - [PETSc/TAO](https://www.mcs.anl.gov/petsc/) is a high-performance library providing numerical solvers for linear, nonlinear, time-dependent, and optimizatin problems. TAO includes a parallel primal-dual interior method (TAOPDIPM) that can be used for solving OPFLOW.
 
 
-|  Solver | OPFLOW   | SCOPFLOW  | PFLOW  | Parallel/GPU  |
-|:----------:|:---:|:---:|:---:|:---:|
-| IPOPT      | Y   | Y   |     |     |
-| HIOP       | Y   |     |     | Y   |
-| PIPS-NLP   | Y   | Y   |     | Y   |
-| PETSc/TAO  | Y   |     | Y   | Y   |
+|  Solver | OPFLOW   | SCOPFLOW  | PFLOW  | Parallel  | GPU |
+|:----------:|:---:|:---:|:---:|:---:|:---:|
+| IPOPT      | Y   | Y   |     |     |   |
+| HIOP       | Y   |     |     | Y   | Y |
+| PIPS-NLP   | Y   | Y   |     | Y   |   |
+| PETSc/TAO  | Y   |     | Y   | Y   | Y |
 
 ## Prerequisites
 SCOPFLOW depends on various third-party packages. PETSc is a core-dependency of SCOPFLOW. At least one of the solver packages (IPOPT, HiOp, or PIPS-NLP) should be installed depending the application.
