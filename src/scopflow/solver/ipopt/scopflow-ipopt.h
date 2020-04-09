@@ -6,8 +6,8 @@
 
 #include <scopflow.h>
 #include <IpStdCInterface.h>
-#include <../src/mat/impls/aij/seq/aij.h>
-#include <../src/mat/impls/sbaij/seq/sbaij.h>
+#include "../../../opflow/solver/ipopt/aij.h"
+#include "../../../opflow/solver/ipopt/sbaij.h"
 #include "../../../opflow/solver/ipopt/opflow-ipopt.h"
 
 typedef struct _p_SCOPFLOWSolver_IPOPT *SCOPFLOWSolver_IPOPT;
