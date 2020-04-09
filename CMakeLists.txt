@@ -1,3 +1,4 @@
+
 cmake_minimum_required(VERSION 3.10)
 
 project(Scopflow)
@@ -21,6 +22,9 @@ option(SCOPFLOW_ENABLE_PETSC "Enable PETSc support" ON)
 # Ipopt support is disabled by default
 option(SCOPFLOW_ENABLE_IPOPT "Enable Ipopt support" OFF)
 
+# HiOP support is disabled by default
+option(SCOPFLOW_ENABLE_HIOP "Enable HiOP support" OFF)
+
 # Set default include path for the project
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR})
 
@@ -41,13 +45,16 @@ if(SCOPFLOW_ENABLE_IPOPT)
   include(FindIpopt)
 endif(SCOPFLOW_ENABLE_IPOPT)
 
+if(SCOPFLOW_ENABLE_HIOP)
+  include(FindHiop)
+endif(SCOPFLOW_ENABLE_HIOP)
+
 # Set up configuration header file
 configure_file(include/scopflow_config.h.in scopflow_config.h)
 
 # Set install rpath to the locations where Scopflow and PETSc libraries reside.
 # TODO: Automatically skip if PETSc and Scopflow are already on system lib path.
 set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib ${PETSC_DIR}/lib)
-
 
 ## Build
 

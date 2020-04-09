@@ -4,7 +4,7 @@
 #-netfile datafiles/case5.m
 
 # Select Solver (IPOPT,TAO, HIOP)
--opflow_solver HIOP
+-opflow_solver TAO
 
 #-------------------------
 # Options for HIOP solver

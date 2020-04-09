@@ -1,3 +1,5 @@
+#include <scopflow_config.h>
+
 #if defined(SCOPFLOW_HAVE_HIOP)
 
 #ifndef OPFLOWHIOP_H
