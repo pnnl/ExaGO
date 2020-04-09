@@ -1,6 +1,9 @@
 # If IPOPT_DIR is not set then try to find it at default locations
 if(NOT IPOPT_DIR)
-   find_path(IPOPT_DIR NAMES share/coin/doc/Ipopt/ipopt_addlibs_cpp.txt 
+   find_path(IPOPT_DIR 
+     NAMES
+     share/coin/doc/Ipopt/ipopt_addlibs_cpp.txt
+     lib/pkgconfig/ipopt.pc
      HINTS
      /usr
      /usr/local

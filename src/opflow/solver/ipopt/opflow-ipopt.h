@@ -6,8 +6,8 @@
 
 #include <opflow.h>
 #include <IpStdCInterface.h>
-#include <../src/mat/impls/aij/seq/aij.h>
-#include <../src/mat/impls/sbaij/seq/sbaij.h>
+#include "aij.h"
+#include "sbaij.h"
 
 /* Data structure for converting matrix in PETSc format (compressed row aij) to matrix market format (row idx, col idx, value)
 */
