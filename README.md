@@ -1,9 +1,9 @@
 # SCOPFLOW (<b>S</b>ecurity <b>C</b>onstrained <b>O</b>ptimal <b>P</b>ower <b>FLOW</b>)
 SCOPFLOW is a package for solving large-scale power grid optimization problems on parallel and distributed architectures, particularly targeted for exascale machines. It is wrritten in C/C++ using the [PETSc](https://www.mcs.anl.gov/petsc/) library. SCOPFLOW includes the following power grid applications:
 
-- [SC-ACOPF or SCOPFLOW](docs/web/apps/scopflow.md) solves a security-constrained (contingency) constrained optimal power
-- [ACOPF or OPFLOW](docs/web/apps/opflow.md) solves an AC optimal power flow. OPFLOW is the basic building block for the SCOPFLOW application
-- [ACPF or PFLOW](docs/web/apps/pflow.md) solves an AC power flow
+- [SC-ACOPF or SCOPFLOW](docs/web/scopflow.md) solves a security-constrained (contingency) constrained optimal power
+- [ACOPF or OPFLOW](docs/web/opflow.md) solves an AC optimal power flow. OPFLOW is the basic building block for the SCOPFLOW application
+- [ACPF or PFLOW](docs/web/pflow.md) solves an AC power flow
 
 SCOPFLOW applications can use the following solvers:
 
