@@ -1,7 +1,7 @@
 static char help[] = "User example calling PFLOW. Reads data in PSSE raw format\n\n";
 
 #include <pflow.h>
-
+#include <scopflow_config.h>
 
 int main(int argc,char **argv)
 {
@@ -10,8 +10,14 @@ int main(int argc,char **argv)
   char              file[PETSC_MAX_PATH_LEN];
   PetscBool         flg;
   PetscLogStage     read,setup,solve;
+  char options_pathname[200] = SCOPFLOW_OPTIONS_DIR;
+  char* filename = "/pflowoptions";
+  printf("%s\n", options_pathname);
+  printf("%s\n", filename);
+  strcat(options_pathname, filename);
+  printf("%s\n", options_pathname);
 
-  PetscInitialize(&argc,&argv,"options/pflowoptions",help);
+  PetscInitialize(&argc,&argv,options_pathname,help);
   
   ierr = PetscLogStageRegister("ReadData",&read);CHKERRQ(ierr);
   ierr = PetscLogStageRegister("SetUp",&setup);CHKERRQ(ierr);

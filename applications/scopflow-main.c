@@ -1,5 +1,6 @@
 static char help[] = "User example calling SCOPFLOW.\n\n";
 
+#include <scopflow_config.h>
 #include <scopflow.h>
 
 
@@ -13,8 +14,14 @@ int main(int argc,char **argv)
   #if defined(PETSC_USE_LOG)
     PetscLogStage stages[2];
   #endif
+  char options_pathname[200] = SCOPFLOW_OPTIONS_DIR;
+  char* filename = "/scopflowoptions";
+  printf("%s\n", options_pathname);
+  printf("%s\n", filename);
+  strcat(options_pathname, filename);
+  printf("%s\n", options_pathname);
 
-  PetscInitialize(&argc,&argv,"options/scopflowoptions",help);
+  PetscInitialize(&argc,&argv,options_pathname,help);
 
   /* PetscLogStageRegister */
   ierr = PetscLogStageRegister("Reading Data",&stages[0]);CHKERRQ(ierr);

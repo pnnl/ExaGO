@@ -1,3 +1,4 @@
+#include <scopflow_config.h>
 #if defined(SCOPFLOW_HAVE_HIOP)
 #include <private/opflowimpl.h>
 #include "opflow-hiop.hpp"
@@ -65,9 +66,11 @@ OPFLOWHIOPInterface::OPFLOWHIOPInterface(OPFLOW opflowin)
     }
   }
   
+  /*  
   for(i=0; i < opflow->nx; i++) {
     PetscPrintf(PETSC_COMM_SELF,"Variable[%d]: natural =%d\tn2sd=%d\n",i,i,idxn2sd_map[i]);
   }
+  */
   
 }
 
