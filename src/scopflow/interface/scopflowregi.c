@@ -1,3 +1,4 @@
+#include <scopflow_config.h>
 #include <private/scopflowimpl.h>
 
 /*
