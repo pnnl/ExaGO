@@ -8,6 +8,11 @@ project(Scopflow)
 # Enable setting Mac OS X rpath
 set(CMAKE_MACOSX_RPATH 1)
 
+if (POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW) # CMake 3.12
+endif ()
+
+
 ## Configure
 
 # Specify where CMake modules are to be found

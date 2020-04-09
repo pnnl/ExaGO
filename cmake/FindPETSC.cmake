@@ -353,6 +353,8 @@ if (NOT petsc_config_current)
         # MacPorts path
         /opt/local/lib/petsc
         $ENV{HOME}/petsc
+	# PNNL specific
+	/qfs/projects/exasgd/newell/petsc
         DOC "PETSC Directory")
 
       # check if PETSC_DIR was set/found
