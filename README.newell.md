@@ -2,20 +2,14 @@
 
 ## System description
 
-Newell is a cluster of five IBM AC922 Power9 servers.
-
-Deep learning research is computationally demanding and requires specialized
-hardware. In support of deep learning, Research Computing has recently
-made several infrastructure upgrades. These include six new compute nodes with
-NVIDIA Volta GPUs and five IBM Power 9 systems with four NVIDIA Volta GPUs per
-system. The new systems both expand our capability in deep learning and, in
-the case of the IBM machines, give researchers unfettered access to
+Newell is a cluster of five IBM AC922 Power9 servers four NVIDIA Volta GPUs per
+system. This system gives researchers unfettered access to
 architectures found in the Summit supercomputer at Oak Ridge that is currently
-ranked #1 on the Top500 list.
+ranked No. 1 on the [Top500 list](https://www.top500.org/).
 
 Specs:
 
-- 2 Power9 CPUs with a total of 128 logical cores per system
+- 2 Power9 CPUs with a total of 128 logical cores per node
 - 4 NVIDIA V100 GPUs with NVLINK (16GB per GPU)
 - 1TB of system memory per node
 - EDR Infiniband internal network
@@ -28,7 +22,7 @@ More information is available at Research Computing
 ## Environment variables
 
 Currently, runing OpenMPI on Newell requires some nonstandard flags to be
-passed to the `mpirun` script. The full MPI command
+passed to the `mpirun` script. The MPI run command
 ```
 mpirun -n 4
 ```
@@ -168,7 +162,7 @@ fi
 ```
 
 This will check if you are logged on Newell, load default GCC and OpenMPI
-modules, and then set up environment variables needed by OpenMPI.You can edit
+modules, and then set up environment variables needed by OpenMPI. You can edit
 this script to meet your needs.
 
 C-shell equivalent is here:
