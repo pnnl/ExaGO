@@ -7,7 +7,7 @@ if(NOT HIOP_DIR)
      /opt/local
      ~/local/ipopt
      # PNNL specific paths
-#     /share/apps/ipopt/3.13.0 # What is the PNNL specific path for HIOP?
+     /qfs/projects/exasgd/newell/hiop-cpu # PNNL power9 system-specific
    )
 endif()
 
