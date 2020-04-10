@@ -11,7 +11,7 @@ SCOPFLOW solves a contingency-constrained optimal power flow problem. The proble
 -\delta{x}& \le x_i - x_0 \le \delta{x}~~i \in \{1,N_s\}&
 \end{aligned}
  ```
-where $N_s$ is the number of scenarios. The last equation is the coupling between the 2nd stage scenarios and the first-stage that enforces a limit on the deviation on second stage decision variable $x_i$ from its corresponding base case decision variable $x_0$.
+where $N_s$ is the number of scenarios. Each scenario is an optimal power flow formulation. See [OPFLOW](opflow.md). The last equation is the coupling between the 2nd stage scenarios and the first-stage that enforces a limit on the deviation on second stage decision variable $x_i$ from its corresponding base case decision variable $x_0$.
 
 ### Usage
 The SCOPFLOW code is executed via
