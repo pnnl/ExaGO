@@ -1,6 +1,9 @@
 # If HIOP_DIR is not set then try to find it at default locations
 if(NOT HIOP_DIR)
-   find_path(HIOP_DIR NAMES _dist-default-build 
+   find_path(HIOP_DIR 
+     NAMES 
+     _dist-default-build
+     lib/libhiop.a 
      HINTS
      /usr
      /usr/local
