@@ -1,6 +1,5 @@
-/**
- * @file constants.h
- * @brief Public header file defining constants
+/*
+ * Public header file containing the constants
  */
 
 #ifndef CONSTANTS_H
