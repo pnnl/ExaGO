@@ -13,15 +13,15 @@ set(UTILS_INCLUDE
 )
 
 # Add library
-add_library(util SHARED ${UTILS_SRC})
+add_library(psutil SHARED ${UTILS_SRC})
 
 # Link libraries
-target_link_libraries(util PRIVATE PETSC::SNES MPI::MPI_C)
+target_link_libraries(psutil PRIVATE PETSC::SNES MPI::MPI_C)
 
 # Install library
-install(TARGETS util DESTINATION lib)
+install(TARGETS psutil DESTINATION lib)
 
 # Install header
 install(FILES ${UTILS_INCLUDE} DESTINATION include)
 
-set(SCOPFLOW_UTIL_LIBS ${SCOPFLOW_UTIL_LIBS} util PARENT_SCOPE)
+set(SCOPFLOW_UTIL_LIBS ${SCOPFLOW_UTIL_LIBS} psutil PARENT_SCOPE)
