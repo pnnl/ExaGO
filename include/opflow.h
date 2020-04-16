@@ -1,7 +1,5 @@
-/**
- * @file opflow.h
- * @brief Public header file for optimal power flow application.
- *
+/*
+ * Public header file for optimal power flow application.
  */
 
 #ifndef OPFLOW_H

@@ -1,6 +1,5 @@
-/**
- * @file scopflow.h
- * @brief Public header file for security constrained optimal power flow application.
+/*
+ * Public header file for security constrained optimal power flow application.
  *
  */
 
@@ -27,11 +26,7 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWCreate(MPI_Comm,SCOPFLOW*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWDestroy(SCOPFLOW*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW,const char[]);
 
-/**
- * @brief Sets the contingency data file 
- * @param [in] SCOPFLOW scopflow - The SCOPFLOW object
- * @param [in] const char[] ctgcfile - The name of the contingency list file
- *
+/*
  * Notes: Each field in the contingency file has the following format
  * Num,Type,Bus,Fbus,Tbus,Id,Status,prob
  * Num - Contingency number
