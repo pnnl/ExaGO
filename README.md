@@ -17,7 +17,7 @@ SCOPFLOW applications can use the following solvers:
 |:----------:|:---:|:---:|:---:|:---:|:---:|
 | IPOPT      | Y   | Y   |     |     |   |
 | HIOP       | Y   |     |     | Y   | Y |
-| PIPS-NLP   | Y   | Y   |     | Y   |   |
+| PIPS-NLP   |     | Y   |     | Y   |   |
 | PETSc/TAO  | Y   |     | Y   | Y   | Y |
 
 ## Prerequisites
