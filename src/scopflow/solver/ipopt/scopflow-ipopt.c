@@ -5,37 +5,6 @@
 #include <private/scopflowimpl.h>
 #include "scopflow-ipopt.h"
 
-static int CCMatrixToMatrixMarketValuesOnly(CCMatrix ccmatrix,PetscInt nz,PetscScalar *values)
-{
-  PetscErrorCode ierr;
-
-  ierr = PetscMemcpy(values,ccmatrix->values,nz*sizeof(PetscScalar));CHKERRQ(ierr);
-
-  return ierr;
-}
-
-static int CCMatrixToMatrixMarketLocationsOnly(CCMatrix ccmatrix,PetscInt ncol,PetscInt *iRow,PetscInt *jCol,PetscInt roffset,PetscInt coffset,PetscInt nval)
-{
-  PetscInt *rowidx;
-  PetscInt *colptr;
-  PetscInt j,k,ctr=0;
-  
-  rowidx = ccmatrix->rowidx;
-  colptr = ccmatrix->colptr;
-
-  /* Copy from compressed column to (row,col,val) format */
-  for(j=0; j < ncol; j++) {
-    for(k=colptr[j]; k < colptr[j+1]; k++) {
-      iRow[ctr] = rowidx[k] + roffset;
-      jCol[ctr] = j + coffset;
-      ctr++;
-    }
-  }
-  if(ctr != nval) SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Incorrect number of entries ctr = %d given = %d\n",ctr,nval);
-
-  return 0;
-}
-
 /* IPOPT callback functions */
 Bool eval_scopflow_f(PetscInt n, PetscScalar* x, Bool new_x,
             PetscScalar* obj_value, UserDataPtr user_data)
@@ -186,13 +155,15 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
   OPFLOWSolver_IPOPT opflowipopt;
   PetscInt       *iRowstart = iRow,*jColstart=jCol;
   PetscInt       roffset,coffset;
-  Mat_SeqAIJ     *aij;
   PetscInt       nrow,ncol;
-  PetscScalar    *xi,*xarr,*valuesi;
+  PetscScalar    *xi,*xarr;
   PetscInt       i,j,k,loc,loc0,x0loc,xiloc;
   PS             ps,ps0;
   PSBUS          bus,bus0;
   PSGEN          gen,gen0;
+  PetscInt       nvals;
+  const PetscInt *cols;
+  const PetscScalar *vals;
 
   if(values == NULL) {
     /* Set locations only */
@@ -209,37 +180,40 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
       ierr = VecPlaceArray(opflow->X,xi);CHKERRQ(ierr);
 
       ierr = (*opflow->formops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
-      /* Transpose the matrix to convert it to column compressed sparse format */
-      ierr = MatTranspose(opflow->Jac_Ge,MAT_REUSE_MATRIX,&opflowipopt->Jac_GeT);CHKERRQ(ierr);
 
-      ierr = MatGetSize(opflowipopt->Jac_GeT,&nrow,&ncol);CHKERRQ(ierr);
-      aij = (Mat_SeqAIJ*)opflowipopt->Jac_GeT->data;
-      ierr = PetscMemcpy(opflowipopt->jac_ge->rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
-      ierr = PetscMemcpy(opflowipopt->jac_ge->colptr,aij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
-      ierr = PetscMemcpy(opflowipopt->jac_ge->values,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
-      CCMatrixToMatrixMarketLocationsOnly(opflowipopt->jac_ge,opflow->nx,iRowstart,jColstart,roffset,coffset,opflowipopt->nnz_jac_ge);
+      ierr = MatGetSize(opflow->Jac_Ge,&nrow,&ncol);CHKERRQ(ierr);
+      /* Copy over locations to triplet format */
+      for(j=0; j < nrow; j++) {
+	ierr = MatGetRow(opflow->Jac_Ge,j,&nvals,&cols,&vals);CHKERRQ(ierr);
+	for(k=0; k < nvals; k++) {
+	  iRowstart[k] = roffset + j;
+	  jColstart[k] = coffset + cols[k];
+	}
+	/* Increment iRow,jCol pointers */
+	iRowstart += nvals;
+	jColstart += nvals;
+	ierr = MatRestoreRow(opflow->Jac_Ge,j,&nvals,&cols,&vals);CHKERRQ(ierr);
+      }
 
-      /* Increment iRow,jCol pointers and roffset */
-      iRowstart += opflowipopt->nnz_jac_ge;
-      jColstart += opflowipopt->nnz_jac_ge;
       roffset += opflow->nconeq;
-
       if(opflow->Nconineq) {
 	/* Inequality constrained Jacobian */
 	ierr = (*opflow->formops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
-	/* Transpose the matrix to convert it to column compressed sparse format */
-	ierr = MatTranspose(opflow->Jac_Gi,MAT_REUSE_MATRIX,&opflowipopt->Jac_GiT);CHKERRQ(ierr);
 
-	ierr = MatGetSize(opflowipopt->Jac_GiT,&nrow,&ncol);CHKERRQ(ierr);
-	aij = (Mat_SeqAIJ*)opflowipopt->Jac_GiT->data;
-	ierr = PetscMemcpy(opflowipopt->jac_gi->rowidx,aij->j,aij->nz*sizeof(PetscInt));CHKERRQ(ierr);
-	ierr = PetscMemcpy(opflowipopt->jac_gi->colptr,aij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
-	ierr = PetscMemcpy(opflowipopt->jac_gi->values,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
-      
-	CCMatrixToMatrixMarketLocationsOnly(opflowipopt->jac_gi,opflow->nx,iRowstart,jColstart,roffset,coffset,opflowipopt->nnz_jac_gi);
+	ierr = MatGetSize(opflow->Jac_Gi,&nrow,&ncol);CHKERRQ(ierr);
+	/* Copy over locations to triplet format */
+	for(j=0; j < nrow; j++) {
+	  ierr = MatGetRow(opflow->Jac_Gi,j,&nvals,&cols,&vals);CHKERRQ(ierr);
+	  for(k=0; k < nvals; k++) {
+	    iRowstart[k] = roffset + j;
+	    jColstart[k] = coffset + cols[k];
+	  }
+	  /* Increment iRow,jCol pointers */
+	  iRowstart += nvals;
+	  jColstart += nvals;
+	  ierr = MatRestoreRow(opflow->Jac_Gi,j,&nvals,&cols,&vals);CHKERRQ(ierr);
+	}
 
-	iRowstart += opflowipopt->nnz_jac_gi;
-	jColstart += opflowipopt->nnz_jac_gi;
 	roffset += opflow->nconineq;
       }
 
@@ -283,7 +257,6 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
   } else {
 
     opflow0 = scopflow->opflows[0];
-    valuesi = values;
     for(i=0; i < scopflow->Ns; i++) {
       opflow = scopflow->opflows[i];
       opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
@@ -292,26 +265,33 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
       ierr = VecPlaceArray(opflow->X,xi);CHKERRQ(ierr);
       /* Compute equality constraint jacobian */
       ierr = (*opflow->formops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
-      ierr = MatTranspose(opflow->Jac_Ge,MAT_REUSE_MATRIX,&opflowipopt->Jac_GeT);CHKERRQ(ierr);
-      ierr = MatGetSize(opflowipopt->Jac_GeT,&nrow,&ncol);CHKERRQ(ierr);
-      aij = (Mat_SeqAIJ*)opflowipopt->Jac_GeT->data;
 
-      ierr = PetscMemcpy(opflowipopt->jac_ge->values,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
-
-      CCMatrixToMatrixMarketValuesOnly(opflowipopt->jac_ge,opflowipopt->nnz_jac_ge,valuesi);
-      valuesi += opflowipopt->nnz_jac_ge;
+      ierr = MatGetSize(opflow->Jac_Ge,&nrow,&ncol);CHKERRQ(ierr);
+      /* Copy over values */
+      for(j=0; j < nrow; j++) {
+	ierr = MatGetRow(opflow->Jac_Ge,j,&nvals,&cols,&vals);CHKERRQ(ierr);
+	for(k=0; k < nvals; k++) {
+	  values[k] = vals[k];
+	}
+	values += nvals;
+	ierr = MatRestoreRow(opflow->Jac_Ge,j,&nvals,&cols,&vals);CHKERRQ(ierr);
+      }
 
       if(opflow->Nconineq) {
 	/* Compute inequality constraint jacobian */
 	ierr = (*opflow->formops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
 
-	ierr = MatTranspose(opflow->Jac_Gi,MAT_REUSE_MATRIX,&opflowipopt->Jac_GiT);CHKERRQ(ierr);
-	aij = (Mat_SeqAIJ*)opflowipopt->Jac_GiT->data;
+	ierr = MatGetSize(opflow->Jac_Gi,&nrow,&ncol);CHKERRQ(ierr);
+	/* Copy over values */
+	for(j=0; j < nrow; j++) {
+	  ierr = MatGetRow(opflow->Jac_Gi,j,&nvals,&cols,&vals);CHKERRQ(ierr);
+	  for(k=0; k < nvals; k++) {
+	    values[k] = vals[k];
+	  }
+	  values += nvals;
+	  ierr = MatRestoreRow(opflow->Jac_Gi,j,&nvals,&cols,&vals);CHKERRQ(ierr);
+	}
 
-	ierr = PetscMemcpy(opflowipopt->jac_gi->values,aij->a,aij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
-      
-	CCMatrixToMatrixMarketValuesOnly(opflowipopt->jac_gi,opflowipopt->nnz_jac_gi,valuesi);
-	valuesi += opflowipopt->nnz_jac_gi;
       }
 
       if(scopflow->nconineqcoup[i]) {
@@ -336,9 +316,9 @@ Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
 
 	    x0loc = scopflowipopt->xstarti[0] + loc0;
 	    xiloc = scopflowipopt->xstarti[i] + loc;
-	    valuesi[0] = -1;
-	    valuesi[1] = 1;
-	    valuesi += 2;
+	    values[0] = -1;
+	    values[1] = 1;
+	    values += 2;
 	  }
 	}
       }
@@ -357,7 +337,6 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
 {
   PetscErrorCode ierr;
   PetscInt       nrow;
-  Mat_SeqSBAIJ   *sbaij;
   SCOPFLOW         scopflow=(SCOPFLOW)user_data;
   SCOPFLOWSolver_IPOPT scopflowipopt=(SCOPFLOWSolver_IPOPT)scopflow->solver;
   OPFLOW          opflow;
@@ -366,6 +345,11 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
   PetscInt         i;
   PetscInt        *iRowStart=iRow,*jColStart=jCol;
   PetscInt        roffset;
+  PetscInt       nvals;
+  const PetscInt *cols;
+  const PetscScalar *vals;
+  PetscInt j,k;
+  PetscInt ctr=0;
 
   scopflow->obj_factor = obj_factor;
 
@@ -377,15 +361,29 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
 
       roffset = scopflowipopt->xstarti[i];
 
-      ierr = MatGetSize(opflowipopt->Hes_sbaij,&nrow,NULL);CHKERRQ(ierr);
-      sbaij = (Mat_SeqSBAIJ*)opflowipopt->Hes_sbaij->data;
-      ierr = PetscMemcpy(opflowipopt->hes->rowidx,sbaij->j,sbaij->nz*sizeof(PetscInt));CHKERRQ(ierr);
-      ierr = PetscMemcpy(opflowipopt->hes->colptr,sbaij->i,(nrow+1)*sizeof(PetscInt));CHKERRQ(ierr);
-      ierr = PetscMemcpy(opflowipopt->hes->values,sbaij->a,sbaij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
-      CCMatrixToMatrixMarketLocationsOnly(opflowipopt->hes,opflow->nx,iRowStart,jColStart,roffset,roffset,opflowipopt->nnz_hes);
+      ierr = MatGetSize(opflow->Hes,&nrow,NULL);CHKERRQ(ierr);
 
-      iRowStart += opflowipopt->nnz_hes;
-      jColStart += opflowipopt->nnz_hes;
+      /* Copy over locations to triplet format */
+      /* Note that IPOPT
+	 requires a lower diagonal Hessian (see note https://coin-or.github.io/Ipopt/INTERFACES.html#INTERFACE_CODE)
+	 Hence, we only add lower diagonal locations
+      */
+      for(j=0; j < nrow; j++) {
+	ierr = MatGetRow(opflow->Hes,j,&nvals,&cols,&vals);CHKERRQ(ierr);
+	ctr = 0;
+	for(k=0; k < nvals; k++) {
+	  if(cols[k] >= j) { /* upper triangle */
+	    /* save as lower triangle locations */
+	    iRow[ctr] = roffset + cols[k];
+	    jCol[ctr] = roffset + j;
+	    ctr++;
+	  }
+	}
+	iRow += ctr;
+	jCol += ctr;
+	ierr = MatRestoreRow(opflow->Hes,j,&nvals,&cols,&vals);CHKERRQ(ierr);
+      }
+
     }
   } else {
 
@@ -412,12 +410,21 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
       }
 
       ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
-      ierr = MatConvert(opflow->Hes,MATSEQSBAIJ,MAT_REUSE_MATRIX,&opflowipopt->Hes_sbaij);CHKERRQ(ierr);
-      /* Since the Hessian is symmetric, we don't need to convert it to column compressed sparse format */
-      sbaij = (Mat_SeqSBAIJ*)opflowipopt->Hes_sbaij->data;
-      ierr = PetscMemcpy(opflowipopt->hes->values,sbaij->a,sbaij->nz*sizeof(PetscScalar));CHKERRQ(ierr);
-      CCMatrixToMatrixMarketValuesOnly(opflowipopt->hes,opflowipopt->nnz_hes,valuesi);
-      valuesi += opflowipopt->nnz_hes;
+
+      /* Copy over values */
+      ierr = MatGetSize(opflow->Hes,&nrow,&nrow);CHKERRQ(ierr);
+      for(j=0; j < nrow; j++) {
+	ierr = MatGetRow(opflow->Hes,j,&nvals,&cols,&vals);CHKERRQ(ierr);
+	ctr = 0;
+	for(k=0; k < nvals; k++) {
+	  if(cols[k] >= j) { /* Upper triangle values (same as lower triangle) */
+	    values[ctr] = vals[k];
+	    ctr++;
+	  }
+	}
+	values += ctr;
+	ierr = MatRestoreRow(opflow->Hes,j,&nvals,&cols,&vals);CHKERRQ(ierr);
+      }
 
       ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
       ierr = VecResetArray(opflow->Lambdae);CHKERRQ(ierr);
@@ -436,10 +443,9 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
   SCOPFLOWSolver_IPOPT scopflowipopt = (SCOPFLOWSolver_IPOPT)scopflow->solver;
   OPFLOW             opflow;
   OPFLOWSolver_IPOPT opflowipopt;
-  Mat_SeqAIJ         *aij;
-  Mat_SeqSBAIJ       *sbaij;
   PetscScalar        *x,*xl,*xu,*gl,*gu,*xi,*lameqi,*lamineqi,*lam;
   PetscInt           i;
+  MatInfo            info_eq,info_ineq,info_hes;
 
   PetscFunctionBegin;
 
@@ -458,35 +464,19 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
     /* Compute nonzeros for the Jacobian */
     /* Equality constraint Jacobian */
     ierr = (*opflow->formops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
-    /* Transpose the matrix to convert it to column compressed sparse format */
-    ierr = MatTranspose(opflow->Jac_Ge,MAT_INITIAL_MATRIX,&opflowipopt->Jac_GeT);CHKERRQ(ierr);
-    ierr = MatSetOption(opflowipopt->Jac_GeT,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
-    aij = (Mat_SeqAIJ*)opflowipopt->Jac_GeT->data;
+    ierr = MatGetInfo(opflow->Jac_Ge,MAT_LOCAL,&info_eq);CHKERRQ(ierr);
 
-    opflowipopt->nnz_jac_ge = aij->nz;
+    opflowipopt->nnz_jac_ge = info_eq.nz_used;
     scopflowipopt->nnz_jac_ge += opflowipopt->nnz_jac_ge;
-
-    /* Create ccmatrix object for equality constrained Jacobian */
-    ierr = PetscCalloc1(1,&opflowipopt->jac_ge);CHKERRQ(ierr);
-    ierr = PetscCalloc1(opflow->nx+1,&opflowipopt->jac_ge->colptr);CHKERRQ(ierr);
-    ierr = PetscCalloc1(opflowipopt->nnz_jac_ge,&opflowipopt->jac_ge->rowidx);CHKERRQ(ierr);
-    ierr = PetscCalloc1(opflowipopt->nnz_jac_ge,&opflowipopt->jac_ge->values);CHKERRQ(ierr);
 
     opflowipopt->nnz_jac_gi = 0;
     if(opflow->Nconineq) {
       ierr = (*opflow->formops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
-      /* Transpose the matrix to convert it to column compressed sparse format */
-      ierr = MatTranspose(opflow->Jac_Gi,MAT_INITIAL_MATRIX,&opflowipopt->Jac_GiT);CHKERRQ(ierr);
-      ierr = MatSetOption(opflowipopt->Jac_GiT,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
-      aij = (Mat_SeqAIJ*)opflowipopt->Jac_GiT->data;
-      opflowipopt->nnz_jac_gi = aij->nz;
-      scopflowipopt->nnz_jac_gi += opflowipopt->nnz_jac_gi;
+      ierr = MatGetInfo(opflow->Jac_Gi,MAT_LOCAL,&info_ineq);CHKERRQ(ierr);
 
-      /* Create ccmatrix object for inequality constrained Jacobian */
-      ierr = PetscCalloc1(1,&opflowipopt->jac_gi);CHKERRQ(ierr);
-      ierr = PetscCalloc1(opflow->nx+1,&opflowipopt->jac_gi->colptr);CHKERRQ(ierr);
-      ierr = PetscCalloc1(opflowipopt->nnz_jac_gi,&opflowipopt->jac_gi->rowidx);CHKERRQ(ierr);
-      ierr = PetscCalloc1(opflowipopt->nnz_jac_gi,&opflowipopt->jac_gi->values);CHKERRQ(ierr);
+      opflowipopt->nnz_jac_gi = info_ineq.nz_used;
+      
+      scopflowipopt->nnz_jac_gi += opflowipopt->nnz_jac_gi;
     }   
     opflowipopt->nnz_jac_g = opflowipopt->nnz_jac_ge + opflowipopt->nnz_jac_gi;
 
@@ -507,19 +497,11 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
     }
 
     ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
-    /* Convert matrix to symmetric sbaij format needed for the IPOPT solver */
-    ierr = MatSetOption(opflow->Hes,MAT_SYMMETRIC,PETSC_TRUE);CHKERRQ(ierr);
-    ierr = MatConvert(opflow->Hes,MATSEQSBAIJ,MAT_INITIAL_MATRIX,&opflowipopt->Hes_sbaij);CHKERRQ(ierr);
-    /* Since the Hessian is symmetric, we don't need to convert it to column compressed sparse format */
-    sbaij = (Mat_SeqSBAIJ*)opflowipopt->Hes_sbaij->data;
-    opflowipopt->nnz_hes = sbaij->nz;
-    scopflowipopt->nnz_hes += opflowipopt->nnz_hes;
+    ierr = MatGetInfo(opflow->Hes,MAT_LOCAL,&info_hes);CHKERRQ(ierr);
 
-    /* Create ccmatrix object for hessian */
-    ierr = PetscCalloc1(1,&opflowipopt->hes);CHKERRQ(ierr);
-    ierr = PetscCalloc1(opflow->nx+1,&opflowipopt->hes->colptr);CHKERRQ(ierr);
-    ierr = PetscCalloc1(opflowipopt->nnz_hes,&opflowipopt->hes->rowidx);CHKERRQ(ierr);
-    ierr = PetscCalloc1(opflowipopt->nnz_hes,&opflowipopt->hes->values);CHKERRQ(ierr);
+    opflowipopt->nnz_hes = (info_hes.nz_used  -opflow->nx)/2 + opflow->nx;
+
+    scopflowipopt->nnz_hes += opflowipopt->nnz_hes;
 
     ierr = VecResetArray(opflow->Lambdae);CHKERRQ(ierr);
     if(opflow->Nconineq) {
