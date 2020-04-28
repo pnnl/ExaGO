@@ -135,9 +135,8 @@ struct _p_PSGEN{
   PetscScalar   cost_beta;
   PetscScalar   cost_alpha;
 
-  PetscBool     hasexc; /**< Flag for checking if this generator has an exciter */
-  PetscBool     hasturbgov; /**< Flag for checking if this generator has a turbine-governor */
-  PetscBool     hasstab;    /**< Flag for checking if this generator has a stabilizer */
+  /* genfuel type - See GENFUEL_TYPES defined in constants.h */
+  PetscInt      genfuel_type;
 };
 
 /**

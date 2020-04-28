@@ -17,4 +17,12 @@
 #define NLOAD_AT_BUS_MAX 32 /**< Maximum number of loads allowed at a bus */
 #define NPHASE 1 /**< Per-phase analysis */
 
+/* Fuel types for generators */
+#define GENFUEL_COAL 0 /* Coal */
+#define GENFUEL_WIND 1 /* Wind */
+#define GENFUEL_SOLAR 2 /* Solar */
+#define GENFUEL_NG    3 /* Natural gas */
+#define GENFUEL_NUCLEAR 4 /* Nuclear */
+#define GENFUEL_UNDEFINED -1 /* All other sources (undefined) */
+
 #endif
