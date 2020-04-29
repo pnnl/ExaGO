@@ -193,7 +193,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   
   opflow->obj_factor = 1.0;
   opflow->obj = 0.0;
-  opflow->compute_obj_hessian = PETSC_TRUE;
+  opflow->obj_gencost = PETSC_TRUE;
 
   opflow->solver   = NULL;
   opflow->formulation = NULL;
@@ -616,6 +616,8 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PetscOptionsBool("-opflow_include_powerimbalance_variables","Allow power imbalance?","",opflow->include_powerimbalance_variables,&opflow->include_powerimbalance_variables,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsReal("-opflow_powerimbalance_penalty","Power imbalance penalty","",opflow->powerimbalance_penalty,&opflow->powerimbalance_penalty,NULL);CHKERRQ(ierr);
   PetscOptionsEnd();
+
+  opflow->obj_gencost = PETSC_TRUE; /* Generation cost minimization ON by default */
 
   /* Set formulation */
   if(formulationset) {

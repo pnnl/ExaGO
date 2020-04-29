@@ -922,6 +922,8 @@ PetscErrorCode OPFLOWComputeObjective_PBCAR(OPFLOW opflow,Vec X,PetscScalar *obj
   PetscBool      isghost;
   Vec            localX;
   PetscReal      localobj;
+  PetscInt       k;
+  PetscScalar    Pg;
 
   PetscFunctionBegin;
 
@@ -938,15 +940,15 @@ PetscErrorCode OPFLOWComputeObjective_PBCAR(OPFLOW opflow,Vec X,PetscScalar *obj
     if(isghost) continue;
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
-    
-    PetscInt k;
-    PetscScalar Pg;
-    for(k=0; k < bus->ngen; k++) {
-      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      if(!gen->status) continue;
-      loc = loc+2;
-      Pg = x[loc]*ps->MVAbase;
-      localobj += gen->cost_alpha*Pg*Pg + gen->cost_beta*Pg + gen->cost_gamma;
+
+    if(opflow->obj_gencost) {    
+      for(k=0; k < bus->ngen; k++) {
+	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	if(!gen->status) continue;
+	loc = loc+2;
+	Pg = x[loc]*ps->MVAbase;
+	localobj += gen->cost_alpha*Pg*Pg + gen->cost_beta*Pg + gen->cost_gamma;
+      }
     }
 
     if(opflow->include_loadloss_variables) {
@@ -990,6 +992,8 @@ PetscErrorCode OPFLOWComputeGradient_PBCAR(OPFLOW opflow,Vec X,Vec grad)
   PetscInt       loc;
   Vec            localX,localgrad;
   PetscBool      isghost;
+  PetscInt       k;
+  PetscScalar    Pg;
 
   PetscFunctionBegin;
 
@@ -1012,15 +1016,15 @@ PetscErrorCode OPFLOWComputeGradient_PBCAR(OPFLOW opflow,Vec X,Vec grad)
     if(isghost) continue;
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
-    
-    PetscInt k;
-    PetscScalar Pg;
-    for(k=0; k < bus->ngen; k++) {
-      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      if(!gen->status) continue;
-      loc = loc+2;
-      Pg = x[loc]*ps->MVAbase;
+
+    if(opflow->obj_gencost) {    
+      for(k=0; k < bus->ngen; k++) {
+	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	if(!gen->status) continue;
+	loc = loc+2;
+	Pg = x[loc]*ps->MVAbase;
       df[loc] = ps->MVAbase*(2*gen->cost_alpha*Pg + gen->cost_beta);
+      }
     }
 
     if(opflow->include_loadloss_variables) {
@@ -1937,7 +1941,7 @@ PetscErrorCode OPFLOWComputeHessian_PBCAR(OPFLOW opflow,Vec X,Vec Lambdae,Vec La
   PetscFunctionBegin;
   ierr = MatZeroEntries(H);CHKERRQ(ierr);
 
-  if(opflow->compute_obj_hessian) {
+  if(opflow->obj_gencost) {
     /* Objective function Hessian */
     ierr = OPFLOWComputeObjectiveHessian_PBCAR(opflow,X,H);CHKERRQ(ierr);
   }
