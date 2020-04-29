@@ -90,7 +90,7 @@ struct _p_OPFLOW{
   
   PetscScalar obj_factor; /* IPOPT scales the objective hessian part with this factor. For all other solvers, unless it is set, obj_factor = 1.0. */
 
-  PetscBool   compute_obj_hessian; /* Allows to conditionally compute the objective function contribution to the Hessian (used by SCOPFLOW) */
+  PetscBool   obj_gencost; /* Allows to conditionally include generator cost in the objective function */
 
   PetscBool setupcalled; /* OPFLOWSetUp called? */
 

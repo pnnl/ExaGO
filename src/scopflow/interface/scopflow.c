@@ -41,7 +41,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
 
   /* Run-time options */
   scopflow->iscoupling = PETSC_FALSE;
-  scopflow->first_stage_gen_cost_only = PETSC_FALSE;
+  scopflow->first_stage_gen_cost_only = PETSC_TRUE;
   scopflow->replicate_basecase = PETSC_FALSE;
 
   scopflow->ctgcfileset = PETSC_FALSE;
@@ -343,6 +343,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 
     /* Set up OPFLOW object */
     ierr = OPFLOWSetUp(scopflow->opflows[i]);CHKERRQ(ierr);
+    if(i > 0 && scopflow->first_stage_gen_cost_only) scopflow->opflows[i]->obj_gencost = PETSC_FALSE; /* No gen. cost minimization for second stage */
   }
   
   ierr = PetscCalloc1(scopflow->Ns,&scopflow->nconineqcoup);CHKERRQ(ierr);
