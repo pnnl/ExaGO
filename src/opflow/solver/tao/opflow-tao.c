@@ -12,7 +12,6 @@ PetscErrorCode OPFLOWObjectiveandGradientFunction_TAO(Tao nlp,Vec X,PetscScalar 
   PetscFunctionReturn(0);
 }
 
-
 PetscErrorCode OPFLOWEqualityConstraintsFunction_TAO(Tao nlp,Vec X,Vec Ge,void *ctx)
 {
   PetscErrorCode ierr;
@@ -153,6 +152,109 @@ PetscErrorCode OPFLOWSolverSetUp_TAO(OPFLOW opflow)
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode OPFLOWSolverGetObjective_TAO(OPFLOW opflow, PetscReal *obj)
+{
+  PetscErrorCode ierr;
+  OPFLOWSolver_TAO   tao=(OPFLOWSolver_TAO)opflow->solver;
+
+  PetscFunctionBegin;
+  ierr = TaoGetObjective(tao->nlp,obj);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWSolverGetSolution_TAO(OPFLOW opflow, Vec *X)
+{
+  PetscErrorCode ierr;
+  OPFLOWSolver_TAO   tao=(OPFLOWSolver_TAO)opflow->solver;
+
+  PetscFunctionBegin;
+  ierr = TaoGetSolutionVector(tao->nlp,X);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWSolverGetConstraints_TAO(OPFLOW opflow, Vec *G)
+{
+  PetscErrorCode ierr;
+  OPFLOWSolver_TAO   tao=(OPFLOWSolver_TAO)opflow->solver;
+  PetscScalar        *g,*ge,*gi,*gu;
+  PetscInt           gloc=opflow->nconeq,i;
+
+  PetscFunctionBegin;
+  ierr = VecGetArray(opflow->G,&g);CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->Ge,&ge);CHKERRQ(ierr);
+
+  ierr = PetscMemcpy(g,ge,opflow->nconeq*sizeof(PetscScalar));
+  if(opflow->Nconineq) {
+    ierr = VecGetArray(opflow->Gi,&gi);CHKERRQ(ierr);
+    ierr = VecGetArray(opflow->Gu,&gu);CHKERRQ(ierr);
+    /* TAO needs the equations in the form g(x) > 0 as opposed
+       to gl <= g(x) <= gu which is used by IPOPT and others. 
+       So, the OPFLOW TAO interface uses gu - g(x) as the 
+       inequality constraint (See OPFLOWComputeInequalityConstraints_TAO 
+       above). So, we need to do the manipulation below to retrieve
+       g(x)
+    */
+    for(i=0; i < opflow->nconineq; i++) {
+      g[gloc+i] = -(gi[i] - gu[gloc+i]);
+    }
+    ierr = VecRestoreArray(opflow->Gi,&gi);CHKERRQ(ierr);
+    ierr = VecRestoreArray(opflow->Gu,&gu);CHKERRQ(ierr);
+  }
+  ierr = VecRestoreArray(opflow->G,&g);CHKERRQ(ierr);
+  ierr = VecRestoreArray(opflow->Ge,&ge);CHKERRQ(ierr);
+  
+  *G = opflow->G;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWSolverGetConstraintMultipliers_TAO(OPFLOW opflow, Vec *Lambda)
+{
+  PetscErrorCode ierr;
+  OPFLOWSolver_TAO   tao=(OPFLOWSolver_TAO)opflow->solver;
+  Vec                DE,DI;
+  PetscScalar        *lambda,*lambdae,*lambdai;
+  PetscInt           gloc=opflow->nconeq,i;
+
+  PetscFunctionBegin;
+  ierr = TaoGetDualVariables(tao->nlp,&DE,&DI);CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->Lambda,&lambda);CHKERRQ(ierr);
+  ierr = VecGetArray(DE,&lambdae);CHKERRQ(ierr);
+
+  ierr = PetscMemcpy(lambda,lambdae,opflow->nconeq*sizeof(PetscScalar));
+  if(opflow->Nconineq) {
+    ierr = VecGetArray(DI,&lambdai);CHKERRQ(ierr);
+    /* TAO needs the equations in the form g(x) > 0 as opposed
+       to gl <= g(x) <= gu which is used by IPOPT and others. 
+       So, the OPFLOW TAO interface uses gu - g(x) as the 
+       inequality constraint (See OPFLOWComputeInequalityConstraints_TAO 
+       above). So, the lagrange multipliers obtained may be different than
+       IPOPT.
+    */
+    ierr = PetscMemcpy(lambda+opflow->nconeq,lambdai,opflow->nconineq*sizeof(PetscScalar));
+
+    ierr = VecRestoreArray(DI,&lambdai);CHKERRQ(ierr);
+  }
+  ierr = VecRestoreArray(opflow->Lambda,&lambda);CHKERRQ(ierr);
+  ierr = VecRestoreArray(DE,&lambdae);CHKERRQ(ierr);
+  
+  *Lambda = opflow->Lambda;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWSolverGetConvergenceStatus_TAO(OPFLOW opflow,PetscBool *status)
+{
+  PetscErrorCode ierr;
+  OPFLOWSolver_TAO tao = (OPFLOWSolver_TAO)opflow->solver;
+  TaoConvergedReason convergedreason;
+
+  PetscFunctionBegin;
+  ierr = TaoGetConvergedReason(tao->nlp,&convergedreason);CHKERRQ(ierr);
+  if(convergedreason > 0) *status = PETSC_TRUE; /* See IpReturnCodes_inc.h in IPOPT. The first two denote convergence */
+  else *status = PETSC_FALSE;
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode OPFLOWSolverCreate_TAO(OPFLOW opflow)
 {
   PetscErrorCode ierr;
@@ -164,9 +266,14 @@ PetscErrorCode OPFLOWSolverCreate_TAO(OPFLOW opflow)
   tao->nlp = NULL;
   opflow->solver = tao;
 
-  opflow->solverops.setup = OPFLOWSolverSetUp_TAO;
-  opflow->solverops.solve = OPFLOWSolverSolve_TAO;
-  opflow->solverops.destroy = OPFLOWSolverDestroy_TAO;
+  opflow->solverops.setup        = OPFLOWSolverSetUp_TAO;
+  opflow->solverops.solve        = OPFLOWSolverSolve_TAO;
+  opflow->solverops.destroy      = OPFLOWSolverDestroy_TAO;
+  opflow->solverops.getobjective = OPFLOWSolverGetObjective_TAO;
+  opflow->solverops.getsolution  = OPFLOWSolverGetSolution_TAO;
+  opflow->solverops.getconvergencestatus = OPFLOWSolverGetConvergenceStatus_TAO;
+  opflow->solverops.getconstraints = OPFLOWSolverGetConstraints_TAO;
+  opflow->solverops.getconstraintmultipliers = OPFLOWSolverGetConstraintMultipliers_TAO;
 
   PetscFunctionReturn(0);
 }
