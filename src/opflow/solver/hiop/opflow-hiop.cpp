@@ -460,6 +460,28 @@ PetscErrorCode OPFLOWSolverSolve_HIOP(OPFLOW opflow)
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode OPFLOWSolverGetObjective_HIOP(OPFLOW opflow, PetscReal *obj)
+{
+  PetscErrorCode ierr;
+  OPFLOWSolver_HIOP   hiop=(OPFLOWSolver_HIOP)opflow->solver;
+
+  PetscFunctionBegin;
+  *obj = hiop->solver->getObjective();
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWSolverGetConvergenceStatus_HIOP(OPFLOW opflow,PetscBool *status)
+{
+  OPFLOWSolver_HIOP hiop = (OPFLOWSolver_HIOP)opflow->solver;
+
+  PetscFunctionBegin;
+  if(hiop->status < 3) *status = PETSC_TRUE; /* See hiopInterface.hpp. The first three denote convergence */
+  else *status = PETSC_FALSE;
+
+  PetscFunctionReturn(0);
+}
+
+
 PetscErrorCode OPFLOWSolverDestroy_HIOP(OPFLOW opflow)
 {
   PetscErrorCode     ierr;
@@ -489,6 +511,7 @@ PetscErrorCode OPFLOWSolverCreate_HIOP(OPFLOW opflow)
   opflow->solverops.setup = OPFLOWSolverSetUp_HIOP;
   opflow->solverops.solve = OPFLOWSolverSolve_HIOP;
   opflow->solverops.destroy = OPFLOWSolverDestroy_HIOP;
+  opflow->solverops.getobjective = OPFLOWSolverGetObjective_HIOP;
 
   PetscFunctionReturn(0);
 }

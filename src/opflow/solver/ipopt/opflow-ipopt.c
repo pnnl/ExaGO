@@ -239,7 +239,7 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
 {
   PetscErrorCode     ierr;
   OPFLOWSolver_IPOPT ipopt = (OPFLOWSolver_IPOPT)opflow->solver;
-  PetscScalar        *x,*xl,*xu,*gl,*gu;
+  PetscScalar        *x,*xl,*xu,*g,*gl,*gu,*lambda;
   MatInfo            info_eq,info_ineq,info_hes;
 
   PetscFunctionBegin;
@@ -286,10 +286,14 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
   ierr = VecRestoreArray(opflow->Gu,&gu);CHKERRQ(ierr);
 
   ierr = VecGetArray(opflow->X,&x);CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->G,&g);CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->Lambda,&lambda);CHKERRQ(ierr);
   /* Solve */
-  ipopt->solve_status = IpoptSolve(ipopt->nlp,x,NULL,&opflow->obj,NULL,NULL,NULL,opflow);
+  ipopt->solve_status = IpoptSolve(ipopt->nlp,x,g,&opflow->obj,lambda,NULL,NULL,opflow);
 
   ierr = VecRestoreArray(opflow->X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArray(opflow->G,&g);CHKERRQ(ierr);
+  ierr = VecRestoreArray(opflow->Lambda,&lambda);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -306,6 +310,46 @@ PetscErrorCode OPFLOWSolverDestroy_IPOPT(OPFLOW opflow)
   }
 
   ierr = PetscFree(ipopt);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWSolverGetObjective_IPOPT(OPFLOW opflow,PetscReal *obj)
+{
+  PetscFunctionBegin;
+  *obj = opflow->obj;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWSolverGetSolution_IPOPT(OPFLOW opflow,Vec *X)
+{
+  PetscFunctionBegin;
+  *X = opflow->X;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWSolverGetConstraints_IPOPT(OPFLOW opflow,Vec *G)
+{
+  PetscFunctionBegin;
+  *G = opflow->G;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWSolverGetConstraintMultipliers_IPOPT(OPFLOW opflow,Vec *Lambda)
+{
+  PetscFunctionBegin;
+  *Lambda = opflow->Lambda;
+  PetscFunctionReturn(0);
+}
+
+
+PetscErrorCode OPFLOWSolverGetConvergenceStatus_IPOPT(OPFLOW opflow,PetscBool *status)
+{
+  OPFLOWSolver_IPOPT ipopt = (OPFLOWSolver_IPOPT)opflow->solver;
+
+  PetscFunctionBegin;
+  if(ipopt->solve_status < 2) *status = PETSC_TRUE; /* See IpReturnCodes_inc.h in IPOPT. The first two denote convergence */
+  else *status = PETSC_FALSE;
+
   PetscFunctionReturn(0);
 }
 
@@ -334,6 +378,11 @@ PetscErrorCode OPFLOWSolverCreate_IPOPT(OPFLOW opflow)
   opflow->solverops.setup = OPFLOWSolverSetUp_IPOPT;
   opflow->solverops.solve = OPFLOWSolverSolve_IPOPT;
   opflow->solverops.destroy = OPFLOWSolverDestroy_IPOPT;
+  opflow->solverops.getobjective = OPFLOWSolverGetObjective_IPOPT;
+  opflow->solverops.getsolution  = OPFLOWSolverGetSolution_IPOPT;
+  opflow->solverops.getconvergencestatus = OPFLOWSolverGetConvergenceStatus_IPOPT;
+  opflow->solverops.getconstraints = OPFLOWSolverGetConstraints_IPOPT;
+  opflow->solverops.getconstraintmultipliers = OPFLOWSolverGetConstraintMultipliers_IPOPT;
 
   PetscFunctionReturn(0);
 }

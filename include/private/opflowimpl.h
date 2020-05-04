@@ -47,6 +47,11 @@ struct _p_OPFLOWSolverOps {
   PetscErrorCode (*destroy)(OPFLOW);
   PetscErrorCode (*setup)(OPFLOW);
   PetscErrorCode (*solve)(OPFLOW);
+  PetscErrorCode (*getobjective)(OPFLOW,PetscReal*);
+  PetscErrorCode (*getsolution)(OPFLOW,Vec*);
+  PetscErrorCode (*getconvergencestatus)(OPFLOW,PetscBool*);
+  PetscErrorCode (*getconstraints)(OPFLOW,Vec*);
+  PetscErrorCode (*getconstraintmultipliers)(OPFLOW,Vec*);
 };
 
 struct _p_OPFLOWFormulationList{
