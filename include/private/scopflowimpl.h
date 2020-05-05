@@ -22,6 +22,11 @@ struct _p_SCOPFLOWSolverOps {
   PetscErrorCode (*destroy)(SCOPFLOW);
   PetscErrorCode (*setup)(SCOPFLOW);
   PetscErrorCode (*solve)(SCOPFLOW);
+  PetscErrorCode (*getobjective)(SCOPFLOW,PetscReal*);
+  PetscErrorCode (*getbasecasesolution)(SCOPFLOW,Vec*);
+  PetscErrorCode (*getconvergencestatus)(SCOPFLOW,PetscBool*);
+  PetscErrorCode (*getconstraints)(SCOPFLOW,Vec*);
+  PetscErrorCode (*getconstraintmultipliers)(SCOPFLOW,Vec*);
 };
 
 
@@ -99,5 +104,8 @@ struct _p_SCOPFLOW{
 
 /* Register all SCOPFLOW solvers */
 extern PetscErrorCode SCOPFLOWSolverRegisterAll(SCOPFLOW);
+extern PetscErrorCode SCOPFLOWGetConstraints(SCOPFLOW,Vec*);
+extern PetscErrorCode SCOPFLOWGetConstraintMultipliers(SCOPFLOW,Vec*);
+
 
 #endif

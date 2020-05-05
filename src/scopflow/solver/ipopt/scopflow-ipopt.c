@@ -430,7 +430,7 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
   SCOPFLOWSolver_IPOPT scopflowipopt = (SCOPFLOWSolver_IPOPT)scopflow->solver;
   OPFLOW             opflow;
   OPFLOWSolver_IPOPT opflowipopt;
-  PetscScalar        *x,*xl,*xu,*gl,*gu,*xi,*lameqi,*lamineqi,*lam;
+  PetscScalar        *x,*xl,*xu,*g,*gl,*gu,*xi,*lameqi,*lamineqi,*lam;
   PetscInt           i;
   MatInfo            info_eq,info_ineq,info_hes;
 
@@ -469,7 +469,6 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
 
     /* Add non-zeros for Jacobian of coupling constraints */
     if(scopflow->nconineqcoup[i]) scopflowipopt->nnz_jac_gi += 2*scopflow->nconineqcoup[i];
-
 
     /* Compute non-zeros for Hessian */
 
@@ -519,11 +518,15 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
   ierr = VecRestoreArray(scopflow->Gu,&gu);CHKERRQ(ierr);
 
   ierr = VecGetArray(scopflow->X,&x);CHKERRQ(ierr);
+  ierr = VecGetArray(scopflow->G,&g);CHKERRQ(ierr);
+  ierr = VecGetArray(scopflow->Lambda,&lam);CHKERRQ(ierr);
 
   /* Solve */
-  scopflowipopt->solve_status = IpoptSolve(scopflowipopt->nlp,x,NULL,&scopflow->obj,NULL,NULL,NULL,scopflow);
+  scopflowipopt->solve_status = IpoptSolve(scopflowipopt->nlp,x,g,&scopflow->obj,lam,NULL,NULL,scopflow);
 
   ierr = VecRestoreArray(scopflow->X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArray(scopflow->G,&g);CHKERRQ(ierr);
+  ierr = VecRestoreArray(scopflow->Lambda,&lam);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -548,6 +551,61 @@ PetscErrorCode SCOPFLOWSolverDestroy_IPOPT(SCOPFLOW scopflow)
   ierr = PetscFree(ipopt);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode SCOPFLOWSolverGetObjective_IPOPT(SCOPFLOW scopflow,PetscReal *obj)
+{
+  PetscFunctionBegin;
+  *obj = scopflow->obj;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SCOPFLOWSolverGetBaseCaseSolution_IPOPT(SCOPFLOW scopflow,Vec *X)
+{
+  PetscErrorCode ierr;
+  OPFLOW         opflow0=scopflow->opflows[0];
+  Vec            X0=opflow0->X;
+  PetscInt       nx0=opflow0->nx;
+  PetscScalar    *x0,*x;
+
+  PetscFunctionBegin;
+  ierr = VecGetArray(X0,&x0);CHKERRQ(ierr);
+  ierr = VecGetArray(scopflow->X,&x);CHKERRQ(ierr);
+
+  ierr = PetscArraycpy(x0,x,nx0);CHKERRQ(ierr);
+
+  ierr = VecRestoreArray(X0,&x0);CHKERRQ(ierr);
+  ierr = VecRestoreArray(scopflow->X,&x);CHKERRQ(ierr);
+
+  *X = X0;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SCOPFLOWSolverGetConstraints_IPOPT(SCOPFLOW scopflow,Vec *G)
+{
+  PetscFunctionBegin;
+  *G = scopflow->G;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SCOPFLOWSolverGetConstraintMultipliers_IPOPT(SCOPFLOW scopflow,Vec *Lambda)
+{
+  PetscFunctionBegin;
+  *Lambda = scopflow->Lambda;
+  PetscFunctionReturn(0);
+}
+
+
+PetscErrorCode SCOPFLOWSolverGetConvergenceStatus_IPOPT(SCOPFLOW scopflow,PetscBool *status)
+{
+  SCOPFLOWSolver_IPOPT ipopt = (SCOPFLOWSolver_IPOPT)scopflow->solver;
+
+  PetscFunctionBegin;
+  if(ipopt->solve_status < 2) *status = PETSC_TRUE; /* See IpReturnCodes_inc.h in IPOPT. The first two denote convergence */
+  else *status = PETSC_FALSE;
+
+  PetscFunctionReturn(0);
+}
+
 
 PetscErrorCode SCOPFLOWSolverSetUp_IPOPT(SCOPFLOW scopflow)
 {
@@ -701,6 +759,12 @@ PetscErrorCode SCOPFLOWSolverCreate_IPOPT(SCOPFLOW scopflow)
   scopflow->solverops.setup = SCOPFLOWSolverSetUp_IPOPT;
   scopflow->solverops.solve = SCOPFLOWSolverSolve_IPOPT;
   scopflow->solverops.destroy = SCOPFLOWSolverDestroy_IPOPT;
+  scopflow->solverops.getobjective = SCOPFLOWSolverGetObjective_IPOPT;
+  scopflow->solverops.getbasecasesolution  = SCOPFLOWSolverGetBaseCaseSolution_IPOPT;
+  scopflow->solverops.getconvergencestatus = SCOPFLOWSolverGetConvergenceStatus_IPOPT;
+  scopflow->solverops.getconstraints = SCOPFLOWSolverGetConstraints_IPOPT;
+  scopflow->solverops.getconstraintmultipliers = SCOPFLOWSolverGetConstraintMultipliers_IPOPT;
+
 
   PetscFunctionReturn(0);
 }

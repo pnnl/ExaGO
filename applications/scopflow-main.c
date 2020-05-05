@@ -8,6 +8,9 @@ int main(int argc,char **argv)
 {
   PetscErrorCode    ierr;
   SCOPFLOW          scopflow;
+  Vec               X;
+  PetscBool         conv_status;
+  PetscReal         obj=0.0;
   char              file[PETSC_MAX_PATH_LEN];
   char              ctgcfile[PETSC_MAX_PATH_LEN];
   PetscBool         flg=PETSC_FALSE,flgctgc=PETSC_FALSE;
@@ -63,7 +66,20 @@ int main(int argc,char **argv)
   /*End of Final Stage */
   ierr = PetscLogStagePop();CHKERRQ(ierr);
 
-  /* Destroy OPFLOW object */
+  /* Get convergence status */
+  ierr = SCOPFLOWGetConvergenceStatus(scopflow,&conv_status);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"SCOPFLOW %s\n",conv_status?"converged":"did not converge");
+
+  /* Get objective function */
+  ierr = SCOPFLOWGetObjective(scopflow,&obj);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"SCOPFLOW objective = %lf\n",obj);CHKERRQ(ierr);
+
+  /* Get solution */
+  ierr = SCOPFLOWGetBaseCaseSolution(scopflow,&X);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"SCOPFLOW base case solution\n");
+  ierr = VecView(X,0);CHKERRQ(ierr);
+
+  /* Destroy SCOPFLOW object */
   ierr = SCOPFLOWDestroy(&scopflow);CHKERRQ(ierr);
 
   PetscFinalize();
