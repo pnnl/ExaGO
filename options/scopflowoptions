@@ -6,8 +6,8 @@
 # Coupling between second stage and first stage?
 -scopflow_iscoupling 1
 
-# Use only first stage generation cost?
--scopflow_first_stage_gen_cost_only 0
+# Operation mode (preventive (0) or corrective (1))
+-scopflow_mode 0
 
 # Ignore line flow constraints
 -opflow_ignore_lineflow_constraints 0

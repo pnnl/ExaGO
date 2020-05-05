@@ -1,17 +1,17 @@
 ## Security-constrained optimal power flow (SCOPFLOW)
-SCOPFLOW solves a contingency-constrained optimal power flow problem. The problem is set up as a two-stage optimization problem where the first-stage (base-case) represents the normal operation of the grid and the second-stage comprises of $N_s$ scenarios representing deviations from the normal operation such as those caused by contingencies or renewable uncertainties. Compactly, the problem can be set up in the following form:
+SCOPFLOW solves a contingency-constrained optimal power flow problem. The problem is set up as a two-stage optimization problem where the first-stage (base-case) represents the normal operation of the grid and the second-stage comprises of $N_s$ contingency scenarios. Compactly, the problem can be set up in the following form:
 
 ```math
 \begin{aligned}
-\text{min}&~\sum_{i=0}^{Ns} f(x_i)& \\
+\text{min}&~f(x_0)& \\
 &\text{s.t.}& \\
 &~g(x_i) = 0~~~i \in \{0,N_s\}& \\
 &~h(x_i) \le 0~~i \in \{0,N_s\}& \\
 &x^- \le x_i \le x^+~~i\in \{0,N_s\}& \\
--\delta{x}& \le x_i - x_0 \le \delta{x}~~i \in \{1,N_s\}&
+-\text{mode}*\delta{x} & \le x_i - x_0 \le \text{mode}*\delta{x}~~i \in \{1,N_s\}&
 \end{aligned}
  ```
-where $N_s$ is the number of scenarios. Each scenario is an optimal power flow formulation. See [OPFLOW](opflow.md). The last equation is the coupling between the 2nd stage scenarios and the first-stage that enforces a limit on the deviation on second stage decision variable $x_i$ from its corresponding base case decision variable $x_0$.
+where $N_s$ is the number of scenarios. Each scenario is an optimal power flow formulation. See [OPFLOW](opflow.md). The last equation is the coupling between the 2nd stage contingency scenarios and the first-stage. Depending on the `mode`, SCOPFLOW can either be `preventive` (mode = 0) or `corrective` (mode = 1). In the preventive, the generator real power is not allowed to deviate from its base-case solution. The corrective mode allows deviation from the base-case dispatch constrained its 30-min. ramp rate capability.
 
 
 ### Usage
@@ -19,13 +19,13 @@ The SCOPFLOW code is executed via
 ```
 mpiexec -n <N> ./SCOPFLOW <options>
 ```
-where \<options\> are the available command line options as given in the next section. 
+where \<options\> are the available command line options as given in the next section.
 
 ### Options
 The current version has several options available for SCOPFLOW. These options can be either set through the options file `options/scopflowoptions` or via the command line.
 
 #### Network file (-netfile <netfilename>): 
-Set the name of the network file (MATPOWER format only currently). There is support for reading the PSSE format as well, but the PSSE raw data file does not contain the generator cost data. A separate file needs to be set for the generator cost which is not supported yet with SCOPFLOW.
+Set the name of the network file. Only MATPOWER format is currently supported.
 
 ```
 mpiexec -n <N> ./SCOPFLOW -netfile <netfilename>
@@ -45,19 +45,21 @@ mpiexec -n <N> ./SCOPFLOW -netfile <netfilename> -ctgcfile <ctgcfilename> -scopf
 ```
 If this option is not set then SCOPFLOW uses IPOPT solver.
 
+Note: Currently, only IPOPT solver is supported.
+
+#### Mode (-scopflow_mode <0 or 1>)
+Set SCOPFLOW to either run in `preventive` (0) or `corrective` (1) mode. In preventive mode, the base-case and contingency real-power dispatch is equal. In the corrective mode, the contingency real-power dispatch is allowed to deviate from the base-case maximum upto its 30-min ramping limit. 
+```
+mpiexec -n <N> ./SCOPFLOW -netfile <netfilename> -ctgcfile <ctgcfilename> -scopflow_mode <0 or 1>
+```
+
 #### Number of scenarios (-scopflow_Ns <Ns>): 
 Sets the number of second-stage scenarios. This should be less than or equal to the number of contingencies set in the contingency file.
 ```
 ./SCOPFLOW -netfile <netfilename> -ctgcfile <ctgcfilename> -scopflow_Ns <Ns>
 ```
-With this option set, SCOPFLOW will only pick up the first Ns contingencies in the contingency file. 
+With this option set, SCOPFLOW will only pick up the first Ns contingencies in the contingency file. To select all contingencies, use `Ns = -1` 
 With PIPS as the solver for SCOPFLOW, the number of scenarios set should be larger than the number of ranks ($N_s > N$).
-
-#### Include second stage cost (-scopflow_first_stage_gen_cost_only <0,1>)
-If this option is set then only the first stage (base case) objective is considered, second stage (contingency scenarios) objective costs are ignored. 
-```
-mpiexec -n <N> ./SCOPFLOW -netfile <netfilename> -ctgcfile <ctgcfilename> -scopflow_first_stage_gen_cost_only <0,1>
-```
 
 #### Formulation (-opflow_formulation <formulationname>)
 This is an option inherited from [OPFLOW](opflow.md). It sets the formulation (representation of variables and equations) to be used for SCOPFLOW. The default formulation is power balance form with polar representation for voltages

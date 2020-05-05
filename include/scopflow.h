@@ -18,6 +18,10 @@
 #define SCOPFLOWSOLVER_TAO   "TAO"
 #define SCOPFLOWSOLVER_PIPS  "PIPS"
 
+/* Mode */
+#define SCOPFLOWMODE_PREVENTIVE 0
+#define SCOPFLOWMODE_CORRECTIVE 1
+
 typedef struct _p_SCOPFLOW *SCOPFLOW;
 
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetFormulation(SCOPFLOW,const char[]);
@@ -58,6 +62,8 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWSetNumScenarios(SCOPFLOW,PetscInt);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetObjective(SCOPFLOW,PetscReal*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetBaseCaseSolution(SCOPFLOW,Vec*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetConvergenceStatus(SCOPFLOW,PetscBool*);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetMode(SCOPFLOW,PetscInt);
+PETSC_EXTERN PetscErrorCode SCOPFLOWGetMode(SCOPFLOW,PetscInt*);
 
 #endif
 
