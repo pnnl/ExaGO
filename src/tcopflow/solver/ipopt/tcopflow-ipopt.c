@@ -20,7 +20,7 @@ Bool eval_tcopflow_f(PetscInt n, PetscScalar* x, Bool new_x,
 
   *obj_value = 0.0;
 
-  for(i=0; i < tcopflow->Ns; i++) {
+  for(i=0; i < tcopflow->Nt; i++) {
     opflowobj = 0.0;
     xi = x + tcopflowipopt->xstarti[i];
     opflow = tcopflow->opflows[i];
@@ -43,7 +43,7 @@ Bool eval_tcopflow_grad_f(PetscInt n, PetscScalar* x, Bool new_x,
   PetscInt  i;
   PetscScalar *xi,*gradi;
 
-  for(i=0; i < tcopflow->Ns; i++) {
+  for(i=0; i < tcopflow->Nt; i++) {
     opflow = tcopflow->opflows[i];
     xi = x + tcopflowipopt->xstarti[i];
     gradi = grad_f + tcopflowipopt->xstarti[i];
@@ -74,7 +74,7 @@ Bool eval_tcopflow_g(PetscInt n, PetscScalar* x, Bool new_x,
   PSBUS     bus,bustpre;
   PSGEN     gen,gentpre;
 
-  for(i=0; i < tcopflow->Ns; i++) {
+  for(i=0; i < tcopflow->Nt; i++) {
     xi   = x + tcopflowipopt->xstarti[i];
     gi   = g + tcopflowipopt->gstarti[i];
 
@@ -159,7 +159,7 @@ Bool eval_tcopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
   if(values == NULL) {
     /* Set locations only */
     ierr = VecGetArray(tcopflow->X,&xarr);CHKERRQ(ierr);
-    for(i=0; i < tcopflow->Ns; i++) {
+    for(i=0; i < tcopflow->Nt; i++) {
       opflow = tcopflow->opflows[i];
       opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
 
@@ -247,7 +247,7 @@ Bool eval_tcopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
     ierr = VecRestoreArray(tcopflow->X,&xarr);CHKERRQ(ierr);
   } else {
 
-    for(i=0; i < tcopflow->Ns; i++) {
+    for(i=0; i < tcopflow->Nt; i++) {
       opflow = tcopflow->opflows[i];
       opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
 
@@ -346,7 +346,7 @@ Bool eval_tcopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
 
   if(values == NULL) {
 
-    for(i=0; i < tcopflow->Ns; i++) {
+    for(i=0; i < tcopflow->Nt; i++) {
       opflow = tcopflow->opflows[i];
       opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
 
@@ -378,7 +378,7 @@ Bool eval_tcopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
     }
   } else {
 
-    for(i=0; i < tcopflow->Ns; i++) {
+    for(i=0; i < tcopflow->Nt; i++) {
       opflow = tcopflow->opflows[i];
       opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
       opflow->obj_factor = obj_factor;
@@ -440,7 +440,7 @@ PetscErrorCode TCOPFLOWSolverSolve_IPOPT(TCOPFLOW tcopflow)
   ierr = VecGetArray(tcopflow->X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(tcopflow->Lambda,&lam);CHKERRQ(ierr);
 
-  for(i=0; i < tcopflow->Ns; i++) {
+  for(i=0; i < tcopflow->Nt; i++) {
     opflow = tcopflow->opflows[i];
     opflowipopt = (OPFLOWSolver_IPOPT)opflow->solver;
     xi = x + tcopflowipopt->xstarti[i];
@@ -562,17 +562,17 @@ PetscErrorCode TCOPFLOWSolverSetUp_IPOPT(TCOPFLOW tcopflow)
 
   PetscFunctionBegin;
 
-  ierr = PetscCalloc1(tcopflow->Ns,&ipopt->xstarti);CHKERRQ(ierr);
-  ierr = PetscCalloc1(tcopflow->Ns,&ipopt->gstarti);CHKERRQ(ierr);
-  ierr = PetscCalloc1(tcopflow->Ns,&ipopt->nxi);CHKERRQ(ierr);
-  ierr = PetscCalloc1(tcopflow->Ns,&ipopt->ngi);CHKERRQ(ierr);
+  ierr = PetscCalloc1(tcopflow->Nt,&ipopt->xstarti);CHKERRQ(ierr);
+  ierr = PetscCalloc1(tcopflow->Nt,&ipopt->gstarti);CHKERRQ(ierr);
+  ierr = PetscCalloc1(tcopflow->Nt,&ipopt->nxi);CHKERRQ(ierr);
+  ierr = PetscCalloc1(tcopflow->Nt,&ipopt->ngi);CHKERRQ(ierr);
 
   tcopflow->Nx = 0;
   tcopflow->Ncon = 0;
   ipopt->xstarti[0] = 0;
   ipopt->gstarti[0] = 0;
 
-  for(i=0; i < tcopflow->Ns; i++) {
+  for(i=0; i < tcopflow->Nt; i++) {
     opflow = tcopflow->opflows[i];
     ierr = PSGetNumActiveGenerators(opflow->ps,&ngenON,NULL);CHKERRQ(ierr);
     ipopt->nxi[i] = opflow->nx;
@@ -580,7 +580,7 @@ PetscErrorCode TCOPFLOWSolverSetUp_IPOPT(TCOPFLOW tcopflow)
     else tcopflow->nconineqcoup[i] = 0;
 
     ipopt->ngi[i] = opflow->ncon + tcopflow->nconineqcoup[i];
-    if(i < tcopflow->Ns - 1) {
+    if(i < tcopflow->Nt - 1) {
       ipopt->xstarti[i+1] = ipopt->xstarti[i] + ipopt->nxi[i];
       ipopt->gstarti[i+1] = ipopt->gstarti[i] + ipopt->ngi[i];
     }
@@ -616,7 +616,7 @@ PetscErrorCode TCOPFLOWSolverSetUp_IPOPT(TCOPFLOW tcopflow)
   ierr = VecGetArray(tcopflow->Gu,&gu);CHKERRQ(ierr);
 
   opflow0 = tcopflow->opflows[0];
-  for(i=0; i < tcopflow->Ns; i++) {
+  for(i=0; i < tcopflow->Nt; i++) {
     opflow = tcopflow->opflows[i];
     /* Set initial guess and bounds on variables */
     xi  = x  + ipopt->xstarti[i];

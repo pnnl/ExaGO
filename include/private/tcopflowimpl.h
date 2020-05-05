@@ -30,7 +30,7 @@ struct _p_TCOPFLOWSolverOps {
 */
 struct _p_TCOPFLOW{
   /* Sizes */
-  PetscInt ns,Ns; /* Number of local and global time-steps */
+  PetscInt nt,Nt; /* Number of local and global time-steps */
   PetscInt nx,Nx; /* Local and global (total) number of variables */
   PetscInt Ncon,ncon; /* Number of constraints */
   PetscInt Nconeq,nconeq; /* Local and global number of equality constraints */
@@ -39,7 +39,7 @@ struct _p_TCOPFLOW{
   
   COMM comm; /**< Communicator context */
   OPFLOW *opflows; /* Array of optimal power flow application objects.
-  		      Each processor creates ns objects, one for each 
+  		      Each processor creates nt objects, one for each 
 		      scenario */
 
   PetscBool setupcalled; /* TCOPFLOWSetUp called? */
@@ -90,7 +90,6 @@ struct _p_TCOPFLOW{
 
   PetscReal  dT; /* Time-step (in minutes) */
   PetscReal  duration; /* Time horizon (in hours) */
-  PetscInt   ntimesteps; /* Number of time-steps - This needs to replace Ns */
 
   /* Data for time-periods */
   char ploadprofile[100]; /* Active load profile */

@@ -6,8 +6,8 @@
 
   Input Parameter
 +  tcopflow - The SCOPFLOW object
-.  ploadproffile - The name of the file with real power load variations
--  qloadproffile - The name of the file with reactive power load variations
+.  ploadproffile - The name of the file with real power load variationt
+-  qloadproffile - The name of the file with reactive power load variationt
 */
 PetscErrorCode TCOPFLOWSetLoadProfiles(TCOPFLOW tcopflow,const char ploadprofile[],const char qloadprofile[])
 {
@@ -81,7 +81,7 @@ PetscErrorCode TCOPFLOWCreate(MPI_Comm mpicomm, TCOPFLOW *tcopflowout)
 
   tcopflow->duration = 1.0;
   tcopflow->dT       = 60.0;
-  tcopflow->ntimesteps = 1;
+  tcopflow->Nt       = 1;
   tcopflow->ploadprofileset = PETSC_FALSE;
   tcopflow->qloadprofileset = PETSC_FALSE;
   tcopflow->windgenprofileset = PETSC_FALSE;
@@ -94,7 +94,7 @@ PetscErrorCode TCOPFLOWCreate(MPI_Comm mpicomm, TCOPFLOW *tcopflowout)
   /* Register all solvers */
   ierr = TCOPFLOWSolverRegisterAll(tcopflow);
 
-  /* Run-time options */
+  /* Run-time optiont */
   tcopflow->iscoupling = PETSC_FALSE;
 
   tcopflow->setupcalled = PETSC_FALSE;
@@ -127,7 +127,7 @@ PetscErrorCode TCOPFLOWDestroy(TCOPFLOW *tcopflow)
   ierr = VecDestroy(&(*tcopflow)->Xl);CHKERRQ(ierr);
   ierr = VecDestroy(&(*tcopflow)->Xu);CHKERRQ(ierr);
 
-  /* Constraints vector */
+  /* Conttraints vector */
   ierr = VecDestroy(&(*tcopflow)->G);CHKERRQ(ierr);
   ierr = VecDestroy(&(*tcopflow)->Ge);CHKERRQ(ierr);
   ierr = VecDestroy(&(*tcopflow)->Gelocal);CHKERRQ(ierr);
@@ -141,7 +141,7 @@ PetscErrorCode TCOPFLOWDestroy(TCOPFLOW *tcopflow)
   ierr = VecDestroy(&(*tcopflow)->Gu);CHKERRQ(ierr);
   ierr = VecDestroy(&(*tcopflow)->Lambda);CHKERRQ(ierr);
 
-  /* Jacobian of constraints */
+  /* Jacobian of conttraints */
   ierr = MatDestroy(&(*tcopflow)->Jac);CHKERRQ(ierr);
   ierr = MatDestroy(&(*tcopflow)->Jac_Ge);CHKERRQ(ierr);
   ierr = MatDestroy(&(*tcopflow)->Jac_Gi);CHKERRQ(ierr);
@@ -153,7 +153,7 @@ PetscErrorCode TCOPFLOWDestroy(TCOPFLOW *tcopflow)
   }
 
   /* Destroy OPFLOW objects */
-  for(i=0; i < (*tcopflow)->Ns; i++) {
+  for(i=0; i < (*tcopflow)->Nt; i++) {
     ierr = OPFLOWDestroy(&(*tcopflow)->opflows[i]);CHKERRQ(ierr);
   }
 
@@ -247,9 +247,10 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
   ierr = PetscOptionsReal("-tcopflow_dT","Length of time-step (minutes)","",tcopflow->dT,&tcopflow->dT,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsReal("-tcopflow_duration","Time horizon (hours)","",tcopflow->duration,&tcopflow->duration,NULL);CHKERRQ(ierr);
   PetscOptionsEnd();
-  tcopflow->ntimesteps = round(tcopflow->duration*60.0/tcopflow->dT);
-  tcopflow->Ns = tcopflow->ntimesteps;
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"TCOPFLOW: Duration = %lf hours, timestep = %lf minutes, number of time-steps = %d\n",tcopflow->duration,tcopflow->dT,tcopflow->Ns);CHKERRQ(ierr);
+
+  tcopflow->Nt = round(tcopflow->duration*60.0/tcopflow->dT);
+
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"TCOPFLOW: Duration = %lf hours, timestep = %lf minutes, number of time-steps = %d\n",tcopflow->duration,tcopflow->dT,tcopflow->Nt);CHKERRQ(ierr);
 
   /* Set solver */
   if(solverset) {
@@ -264,8 +265,8 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
   }
 
   /* Create OPFLOW objects */
-  ierr = PetscCalloc1(tcopflow->Ns,&tcopflow->opflows);CHKERRQ(ierr);
-  for(i=0; i < tcopflow->Ns; i++) {
+  ierr = PetscCalloc1(tcopflow->Nt,&tcopflow->opflows);CHKERRQ(ierr);
+  for(i=0; i < tcopflow->Nt; i++) {
     ierr = OPFLOWCreate(PETSC_COMM_SELF,&tcopflow->opflows[i]);CHKERRQ(ierr);
     ierr = OPFLOWSetFormulation(tcopflow->opflows[i],formulationname);CHKERRQ(ierr);
 
@@ -295,7 +296,7 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
   }
 
   
-  ierr = PetscCalloc1(tcopflow->Ns,&tcopflow->nconineqcoup);CHKERRQ(ierr);
+  ierr = PetscCalloc1(tcopflow->Nt,&tcopflow->nconineqcoup);CHKERRQ(ierr);
   ierr = (*tcopflow->solverops.setup)(tcopflow);CHKERRQ(ierr);
   ierr = PetscPrintf(tcopflow->comm->type,"TCOPFLOW: Setup completed\n");CHKERRQ(ierr);
   
