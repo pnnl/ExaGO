@@ -1,0 +1,30 @@
+-netfile datafiles/case_ACTIVSg200.m
+
+# Active load power profile file
+-tcopflow_ploadprofile datafiles/load_P.csv
+
+# Reactive load power profile file
+-tcopflow_qloadprofile datafiles/load_Q.csv
+
+# Wind generation profile file
+-tcopflow_windgenprofile datafiles/scenarios.csv
+
+# Coupling between time-steps? (Ramp constraints)
+-tcopflow_iscoupling 1
+
+# Time-step (in minutes)
+-tcopflow_dT 5.0
+
+# Duration (in hours)
+-tcopflow_duration 0.5 # half hour
+
+# Ignore line flow constraints
+-opflow_ignore_lineflow_constraints 0
+
+# performance
+#-------------
+#-log_summary
+
+#options
+# Display options left
+-options_left no

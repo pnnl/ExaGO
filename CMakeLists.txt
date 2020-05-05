@@ -76,6 +76,7 @@ set(SCOPFLOW_OPTIONS_FILES
   options/pflowoptions
   options/opflowoptions
   options/scopflowoptions
+  options/tcopflowoptions
 )
 
 # Install options files

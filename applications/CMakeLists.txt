@@ -26,6 +26,11 @@ set(SCOPFLOW_SRC
   scopflow-main.c
 )
 
+#TCOPFLOW
+set(TCOPFLOW_SRC
+  tcopflow-main.c
+)
+
 set(SCOPFLOW_PFLOW_APP_LIBS   
   ${SCOPFLOW_UTIL_LIBS}	
   ${SCOPFLOW_PS_LIBS}
@@ -46,6 +51,8 @@ add_executable(app_pflow2 ${PFLOW2_SRC})
 add_executable(app_opflow ${OPFLOW_SRC})
 #SCOPFLOW
 add_executable(app_scopflow ${SCOPFLOW_SRC})
+#TCOPFLOW
+add_executable(app_tcopflow ${TCOPFLOW_SRC})
 
 # Link libraries
 target_link_libraries(app_pflowproto 
@@ -71,12 +78,20 @@ target_link_libraries(app_scopflow
 	${SCOPFLOW_PFLOW_APP_LIBS}
 )
 
+target_link_libraries(app_tcopflow
+	${TCOPFLOW_LIBS}
+	${TCOPFLOW_OPFLOW_LIBS}
+	${SCOPFLOW_PFLOW_APP_LIBS}
+)
+
 # Install the executables
 install(TARGETS app_pflowproto RUNTIME DESTINATION bin)
 install(TARGETS app_pflow RUNTIME DESTINATION bin)
 install(TARGETS app_pflow2 RUNTIME DESTINATION bin)
 install(TARGETS app_opflow RUNTIME DESTINATION bin)
 install(TARGETS app_scopflow RUNTIME DESTINATION bin)
+install(TARGETS app_tcopflow RUNTIME DESTINATION bin)
+
 
 
 

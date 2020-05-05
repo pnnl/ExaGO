@@ -389,7 +389,7 @@ PetscErrorCode PSBUSGetLoad(PSBUS bus,PetscInt load_num,PSLOAD *load)
 - id   - generator id
 
   Output Parameters
-. gen - the PSGEN object
+. gen - the PSGEN object (or NULL if not found)
 
 */
 PetscErrorCode PSGetGen(PS ps,PetscInt gbus, const char* id,PSGEN *gen)
@@ -413,6 +413,43 @@ PetscErrorCode PSGetGen(PS ps,PetscInt gbus, const char* id,PSGEN *gen)
     }
   }
   *gen = NULL;
+  
+  PetscFunctionReturn(0);
+}
+
+/*
+  PSGetLoad - Gets the load object given the load bus, and id
+
+  Input Parameters
++ ps - the PS object
+. lbus - load bus
+- id   - load id
+
+  Output Parameters
+. load - the PSLOAD object (or NULL if not found)
+
+*/
+PetscErrorCode PSGetLoad(PS ps,PetscInt lbus, const char* id,PSLOAD *load)
+{
+  PetscErrorCode ierr;
+  PSBUS          bus;
+  PetscInt       i;
+  PSLOAD         busload;
+  PetscBool      flg=PETSC_FALSE;
+
+  PetscFunctionBegin;
+  if(ps->busext2intmap[lbus] != -1) {
+    bus = &ps->bus[ps->busext2intmap[lbus]];
+    for(i=0; i < bus->nload; i++) {
+      ierr = PSBUSGetLoad(bus,i,&busload);CHKERRQ(ierr);
+      ierr = PetscStrcmp(id,busload->id,&flg);CHKERRQ(ierr);
+      if(flg) {
+	*load = busload;
+	PetscFunctionReturn(0);
+      }
+    }
+  }
+  *load = NULL;
   
   PetscFunctionReturn(0);
 }

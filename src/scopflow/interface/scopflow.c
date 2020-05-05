@@ -1,6 +1,5 @@
 #include <private/opflowimpl.h>
 #include <private/scopflowimpl.h>
-#include <petsc/private/dmnetworkimpl.h>
 
 /*
   SCOPFLOWCreate - Creates an security constrained optimal power flow application object
