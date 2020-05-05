@@ -40,8 +40,9 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
 
   /* Run-time options */
   scopflow->iscoupling = PETSC_FALSE;
-  scopflow->first_stage_gen_cost_only = PETSC_TRUE;
   scopflow->replicate_basecase = PETSC_FALSE;
+
+  scopflow->mode = SCOPFLOWMODE_PREVENTIVE;
 
   scopflow->ctgcfileset = PETSC_FALSE;
   scopflow->setupcalled = PETSC_FALSE;
@@ -249,6 +250,46 @@ PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW scopflow,const char ctgcfile
 }
 
 /*
+  SCOPFLOWSetMode - Sets the operation mode (preventive or corrective) for SCOPFLOW
+
+  Input Parameters:
++ scopflow - the SCOPFLOW object
+- mode     - the operation mode (SCOPFLOWMODE_PREVENTIVE or SCOPFLOWMODE_CORRECTIVE)
+
+  Notes: 
+    In the preventive mode, Pg,0 = Pg,i \forall i \in Nc, i.e., the base case real
+    power generation is same as the real power generation for contingency cases.
+    In the corrective mode, the real power generation is allowed to deviate from the
+    base case limited by 30-min ramp. rate, i.e., -ramp_30 \le Pg,i - Pg,0 \le ramp_30
+*/
+PetscErrorCode SCOPFLOWSetMode(SCOPFLOW scopflow,PetscInt mode)
+{
+  PetscFunctionBegin;
+  if(mode != 0 || mode != 0) {
+    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Incorrect mode in SCOPFLOWSetMode, Use 0 for preventive OR 1 for corrective mode\n");
+  }
+  scopflow->mode = mode;
+  PetscFunctionReturn(0);
+}
+
+/*
+  SCOPFLOWGetMode - Gets the operation mode (preventive or corrective) for SCOPFLOW
+
+  Input Parameters:
+. scopflow - the SCOPFLOW object
+
+  Output Parameters:
+. mode     - the operation mode (SCOPFLOWMODE_PREVENTIVE (0) or SCOPFLOWMODE_CORRECTIVE (1))
+
+*/
+PetscErrorCode SCOPFLOWGetMode(SCOPFLOW scopflow,PetscInt *mode)
+{
+  PetscFunctionBegin;
+  *mode = scopflow->mode;
+  PetscFunctionReturn(0);
+}
+
+/*
   SCOPFLOWSetUp - Sets up an security constrained optimal power flow application object
 
   Input Parameters:
@@ -274,9 +315,10 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscOptionsString("-scopflow_formulation","SCOPFLOW formulation type","",formulationname,formulationname,32,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsString("-scopflow_solver","SCOPFLOW solver type","",solvername,solvername,32,&solverset);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-scopflow_iscoupling","Include coupling between first stage and second stage","",scopflow->iscoupling,&scopflow->iscoupling,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsBool("-scopflow_first_stage_gen_cost_only","Include objective cost for first stage only","",scopflow->first_stage_gen_cost_only,&scopflow->first_stage_gen_cost_only,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-scopflow_Ns","Number of second stage scenarios","",scopflow->Ns,&scopflow->Ns,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-scopflow_replicate_basecase","Only for debugging: Replicate first stage for all second stage scenarios","",scopflow->replicate_basecase,&scopflow->replicate_basecase,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsInt("-scopflow_mode","Operation mode:Preventive (0) or Corrective (1)","",scopflow->mode,&scopflow->mode,NULL);CHKERRQ(ierr);
+  
   PetscOptionsEnd();
 
   if(scopflow->ctgcfileset && !scopflow->replicate_basecase) {
@@ -342,7 +384,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 
     /* Set up OPFLOW object */
     ierr = OPFLOWSetUp(scopflow->opflows[i]);CHKERRQ(ierr);
-    if(i > 0 && scopflow->first_stage_gen_cost_only) scopflow->opflows[i]->obj_gencost = PETSC_FALSE; /* No gen. cost minimization for second stage */
+    if(i > 0) scopflow->opflows[i]->obj_gencost = PETSC_FALSE; /* No gen. cost minimization for second stage */
   }
   
   ierr = PetscCalloc1(scopflow->Ns,&scopflow->nconineqcoup);CHKERRQ(ierr);

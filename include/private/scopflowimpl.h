@@ -81,8 +81,9 @@ struct _p_SCOPFLOW{
   Mat *Jcoup;  /* Jacobian for the coupling constraints (one per scenario) */
   Mat *JcoupT; /* Transpose of the coupling Jacobian (one per scenario)*/
 
+  PetscInt mode; /* Preventive or corrective mode */
+
   PetscBool iscoupling; /* Is each scenario coupled with base scenario? */
-  PetscBool first_stage_gen_cost_only; /* Only include the gen cost for first stage only */
   PetscBool replicate_basecase; /* Replicate base case for all scenarios */
 
   void *solver; /* Solver object */
