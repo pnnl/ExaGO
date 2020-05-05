@@ -35,7 +35,7 @@ struct _p_SCOPFLOWSolverOps {
 */
 struct _p_SCOPFLOW{
   /* Sizes */
-  PetscInt ns,Ns; /* Number of local and global (total) scenarios */
+  PetscInt nc,Nc; /* Number of local and global (total) contingencies */
   PetscInt nx,Nx; /* Local and global (total) number of variables */
   PetscInt Ncon,ncon; /* Number of constraints */
   PetscInt Nconeq,nconeq; /* Local and global number of equality constraints */
