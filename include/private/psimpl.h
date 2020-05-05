@@ -135,6 +135,17 @@ struct _p_PSGEN{
   PetscScalar   cost_beta;
   PetscScalar   cost_alpha;
 
+  PetscScalar   pc1; /* lower real power output of PQ capability curve (pu) */
+  PetscScalar   pc2; /* upper real power output of PQ capability curve (pu) */
+  PetscScalar   qc1min; /* minimum reactive power output at Pc1 (pu) */
+  PetscScalar   qc1max; /* maximum reactive power output at Pc1 (pu) */
+  PetscScalar   qc2min; /* minimum reactive power output at Pc2 (pu)  */
+  PetscScalar   qc2max; /* maximum reactive power output at Pc2 (pu) */
+  PetscScalar   ramp_rate_min; /* ramp rate or load following/AGC per minute (pu) */
+  PetscScalar   ramp_rate_10min; /* ramp rate for 10 minute reserves (pu) */
+  PetscScalar   ramp_rate_30min; /* ramp rate for 30 minute reserves (pu) */
+  PetscScalar   ramp_rate_min_mvar; /* ramp rate for reactive power (2 sec timescale) (pu) */
+  PetscScalar   apf; /* area participation factor */
   /* genfuel type - See GENFUEL_TYPES defined in constants.h */
   PetscInt      genfuel_type;
 };
@@ -242,6 +253,7 @@ struct _p_PS {
 extern PetscErrorCode PSCheckTopology(PS);
 extern PetscErrorCode PSGetLine(PS,PetscInt,PetscInt,const char*,PSLINE*);
 extern PetscErrorCode PSGetGen(PS,PetscInt,const char*,PSGEN*);
+extern PetscErrorCode PSGetLoad(PS,PetscInt,const char*,PSLOAD*);
 extern PetscErrorCode PSSetGenStatus(PS,PetscInt,const char*,PetscInt);
 extern PetscErrorCode PSSetLineStatus(PS,PetscInt,PetscInt,const char*,PetscInt);
 extern PetscErrorCode PSIslandCheckandSetRefBus(PS,PetscInt);

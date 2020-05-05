@@ -542,10 +542,13 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
     /* Read generator data */
     if(i >= gen_start_line && i < gen_end_line) {
       if(strcmp(line,"\n")==0 || strcmp(line,"\r\n")==0) continue;
-      sscanf(line,"%d %lf %lf %lf %lf %lf %lf %d %lf %lf",&Gen[geni].bus_i, \
+      sscanf(line,"%d %lf %lf %lf %lf %lf %lf %d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",&Gen[geni].bus_i, \
 	     &Gen[geni].pg,&Gen[geni].qg,&Gen[geni].qt,&Gen[geni].qb, \
 	     &Gen[geni].vs,&Gen[geni].mbase,&Gen[geni].status,&Gen[geni].pt, \
-	     &Gen[geni].pb);
+	     &Gen[geni].pb,&Gen[geni].pc1,&Gen[geni].pc2,&Gen[geni].qc1min, \
+       &Gen[geni].qc1max,&Gen[geni].qc2min,&Gen[geni].qc2max, \
+       &Gen[geni].ramp_rate_min,&Gen[geni].ramp_rate_10min,&Gen[geni].ramp_rate_30min, \
+       &Gen[geni].ramp_rate_min_mvar,&Gen[geni].apf);
 
       intbusnum = busext2intmap[Gen[geni].bus_i];
 
@@ -557,20 +560,39 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
       Gen[geni].initial_status = Gen[geni].status;
       /* Convert Pg and Qg to per unit */
       if(Gen[geni].status) {
-	Gen[geni].pg = Gen[geni].pg/ps->MVAbase;
-	Gen[geni].qg = Gen[geni].qg/ps->MVAbase;
-	Gen[geni].pb = Gen[geni].pb/ps->MVAbase;
-	Gen[geni].pt = Gen[geni].pt/ps->MVAbase;
-	Gen[geni].qt = Gen[geni].qt/ps->MVAbase;
-	Gen[geni].qb = Gen[geni].qb/ps->MVAbase;
-	Bus[intbusnum].qrange += (Gen[geni].qt - Gen[geni].qb);
-	Bus[intbusnum].qmintot += Gen[geni].qb;
-	Bus[intbusnum].Pgtot += PetscAbsScalar(Gen[geni].pg);
-	Bus[intbusnum].MVAbasetot += Gen[geni].mbase;
-	Bus[intbusnum].ngenON++;
-	ps->NgenON++;
+        Gen[geni].pg  = Gen[geni].pg/ps->MVAbase;
+        Gen[geni].qg  = Gen[geni].qg/ps->MVAbase;
+        Gen[geni].pb  = Gen[geni].pb/ps->MVAbase;
+        Gen[geni].pt  = Gen[geni].pt/ps->MVAbase;
+        Gen[geni].qt  = Gen[geni].qt/ps->MVAbase;
+        Gen[geni].qb  = Gen[geni].qb/ps->MVAbase;
+        Gen[geni].pc1 = Gen[geni].pc1/ps->MVAbase;
+        Gen[geni].pc2 = Gen[geni].pc2/ps->MVAbase;
+        Gen[geni].qc1min = Gen[geni].qc1min/ps->MVAbase;
+        Gen[geni].qc1max = Gen[geni].qc1max/ps->MVAbase;
+        Gen[geni].qc2min = Gen[geni].qc2min/ps->MVAbase;
+        Gen[geni].qc2max = Gen[geni].qc2max/ps->MVAbase;
+        Gen[geni].ramp_rate_min = Gen[geni].ramp_rate_min/ps->MVAbase;
+        Gen[geni].ramp_rate_10min = Gen[geni].ramp_rate_10min/ps->MVAbase;
+        Gen[geni].ramp_rate_30min = Gen[geni].ramp_rate_30min/ps->MVAbase;
+        Gen[geni].ramp_rate_min_mvar = Gen[geni].ramp_rate_min_mvar/ps->MVAbase;
+
+        if(genfuel_start_line == -1 && genfuel_end_line == -1) {
+          /* Fuel source not defined in file so use COAL RAMP RATES FOR ALL GENERATORS */
+          Gen[geni].genfuel_type = GENFUEL_UNDEFINED;
+          Gen[geni].ramp_rate_min = GENRAMPRATE_COAL/ps->MVAbase; /* Defaults to COAL ramp rate */
+          Gen[geni].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
+          Gen[geni].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
+        }
+
+        Bus[intbusnum].qrange += (Gen[geni].qt - Gen[geni].qb);
+        Bus[intbusnum].qmintot += Gen[geni].qb;
+        Bus[intbusnum].Pgtot += PetscAbsScalar(Gen[geni].pg);
+        Bus[intbusnum].MVAbasetot += Gen[geni].mbase;
+        Bus[intbusnum].ngenON++;
+        ps->NgenON++;
       } else {
-	Gen[geni].pg = Gen[geni].qg = 0.0;
+	      Gen[geni].pg = Gen[geni].qg = 0.0;
       }
 
       Gen[geni].internal_i = intbusnum;
@@ -605,16 +627,41 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
       if(strcmp(line,"\n")==0 || strcmp(line,"\r\n")==0) continue;
       if(strstr(line,"coal") != NULL) {
 	Gen[genfueli].genfuel_type = GENFUEL_COAL;
+        Gen[genfueli].ramp_rate_min = GENRAMPRATE_COAL/ps->MVAbase;
+        Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
+        Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
       } else if(strstr(line,"wind") != NULL) {
-	Gen[genfueli].genfuel_type = GENFUEL_WIND;	
+	Gen[genfueli].genfuel_type = GENFUEL_WIND;
+        Gen[genfueli].ramp_rate_min = GENRAMPRATE_WIND/ps->MVAbase;
+        Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
+        Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;	
+
+	Gen[genfueli].pb = 0.0; /* Set lower Pg limit to 0.0 so that wind power can be curtailed if need be */
       } else if(strstr(line,"ng") != NULL) {
 	Gen[genfueli].genfuel_type = GENFUEL_NG;
+        Gen[genfueli].ramp_rate_min = GENRAMPRATE_NG/ps->MVAbase;
+        Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
+        Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
       } else if(strstr(line,"solar") != NULL) {
 	Gen[genfueli].genfuel_type = GENFUEL_SOLAR;
+        Gen[genfueli].ramp_rate_min = GENRAMPRATE_SOLAR/ps->MVAbase;
+        Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
+        Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
       } else if(strstr(line,"nuclear") != NULL) {
 	Gen[genfueli].genfuel_type = GENFUEL_NUCLEAR;
+        Gen[genfueli].ramp_rate_min = GENRAMPRATE_NUCLEAR/ps->MVAbase;
+        Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
+        Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
+      } else if(strstr(line,"hydro") != NULL) {
+        Gen[genfueli].genfuel_type = GENFUEL_HYDRO; 
+        Gen[genfueli].ramp_rate_min = GENRAMPRATE_HYDRO/ps->MVAbase;
+        Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
+        Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
       } else {
 	Gen[genfueli].genfuel_type = GENFUEL_UNDEFINED;
+        Gen[genfueli].ramp_rate_min = GENRAMPRATE_COAL/ps->MVAbase; /* Defaults to COAL ramp rate */
+        Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
+        Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
       }
       genfueli++;
     }
