@@ -13,7 +13,7 @@
 -opflow_ignore_lineflow_constraints 0
 
 # Number of scenarios
--scopflow_Ns 1
+-scopflow_Nc 1
 
 # performance
 #-------------

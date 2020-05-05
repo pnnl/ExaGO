@@ -1,17 +1,17 @@
 ## Security-constrained optimal power flow (SCOPFLOW)
-SCOPFLOW solves a contingency-constrained optimal power flow problem. The problem is set up as a two-stage optimization problem where the first-stage (base-case) represents the normal operation of the grid and the second-stage comprises of $N_s$ contingency scenarios. Compactly, the problem can be set up in the following form:
+SCOPFLOW solves a contingency-constrained optimal power flow problem. The problem is set up as a two-stage optimization problem where the first-stage (base-case) represents the normal operation of the grid and the second-stage comprises of $N_c$ contingency scenarios. Compactly, the problem can be set up in the following form:
 
 ```math
 \begin{aligned}
 \text{min}&~f(x_0)& \\
 &\text{s.t.}& \\
-&~g(x_i) = 0~~~i \in \{0,N_s\}& \\
-&~h(x_i) \le 0~~i \in \{0,N_s\}& \\
-&x^- \le x_i \le x^+~~i\in \{0,N_s\}& \\
--\text{mode}*\delta{x} & \le x_i - x_0 \le \text{mode}*\delta{x}~~i \in \{1,N_s\}&
+&~g(x_i) = 0~~~i \in \{0,N_c\}& \\
+&~h(x_i) \le 0~~i \in \{0,N_c\}& \\
+&x^- \le x_i \le x^+~~i\in \{0,N_c\}& \\
+-\text{mode}*\delta{x} & \le x_i - x_0 \le \text{mode}*\delta{x}~~i \in \{1,N_c\}&
 \end{aligned}
  ```
-where $N_s$ is the number of scenarios. Each scenario is an optimal power flow formulation. See [OPFLOW](opflow.md). The last equation is the coupling between the 2nd stage contingency scenarios and the first-stage. Depending on the `mode`, SCOPFLOW can either be `preventive` (mode = 0) or `corrective` (mode = 1). In the preventive, the generator real power is not allowed to deviate from its base-case solution. The corrective mode allows deviation from the base-case dispatch constrained its 30-min. ramp rate capability.
+where $N_c$ is the number of contingency. Each scenario is an optimal power flow formulation. See [OPFLOW](opflow.md). The last equation is the coupling between the 2nd stage contingency scenarios and the first-stage. Depending on the `mode`, SCOPFLOW can either be `preventive` (mode = 0) or `corrective` (mode = 1). In the preventive, the generator real power is not allowed to deviate from its base-case solution. The corrective mode allows deviation from the base-case dispatch constrained its 30-min. ramp rate capability.
 
 
 ### Usage
@@ -53,13 +53,13 @@ Set SCOPFLOW to either run in `preventive` (0) or `corrective` (1) mode. In prev
 mpiexec -n <N> ./SCOPFLOW -netfile <netfilename> -ctgcfile <ctgcfilename> -scopflow_mode <0 or 1>
 ```
 
-#### Number of scenarios (-scopflow_Ns <Ns>): 
+#### Number of scenarios (-scopflow_Nc <Nc>): 
 Sets the number of second-stage scenarios. This should be less than or equal to the number of contingencies set in the contingency file.
 ```
-./SCOPFLOW -netfile <netfilename> -ctgcfile <ctgcfilename> -scopflow_Ns <Ns>
+./SCOPFLOW -netfile <netfilename> -ctgcfile <ctgcfilename> -scopflow_Nc <Nc>
 ```
-With this option set, SCOPFLOW will only pick up the first Ns contingencies in the contingency file. To select all contingencies, use `Ns = -1` 
-With PIPS as the solver for SCOPFLOW, the number of scenarios set should be larger than the number of ranks ($N_s > N$).
+With this option set, SCOPFLOW will only pick up the first Nc contingencies in the contingency file. To select all contingencies, use `Nc = -1` 
+With PIPS as the solver for SCOPFLOW, the number of scenarios set should be larger than the number of ranks ($N_c > N$).
 
 #### Formulation (-opflow_formulation <formulationname>)
 This is an option inherited from [OPFLOW](opflow.md). It sets the formulation (representation of variables and equations) to be used for SCOPFLOW. The default formulation is power balance form with polar representation for voltages

@@ -101,7 +101,7 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
   }
 
   /* Destroy OPFLOW objects */
-  for(i=0; i < (*scopflow)->Ns; i++) {
+  for(i=0; i < (*scopflow)->Nc; i++) {
     ierr = OPFLOWDestroy(&(*scopflow)->opflows[i]);CHKERRQ(ierr);
   }
 
@@ -224,7 +224,7 @@ PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW scopflow,const char ctgcfile
     }
     sscanf(line,"%d,%d,%d,%d,%d,'%[^\t\']',%d,%lf",&num,&type,&bus,&fbus,&tbus,equipid,&status,&prob);
 
-    if(num == scopflow->Ns) break;
+    if(num == scopflow->Nc) break;
 
     if(num == MAX_CONTINGENCIES) {
       SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Exceeding max. allowed contingencies = %d\n",num,MAX_CONTINGENCIES);
@@ -315,25 +315,25 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscOptionsString("-scopflow_formulation","SCOPFLOW formulation type","",formulationname,formulationname,32,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsString("-scopflow_solver","SCOPFLOW solver type","",solvername,solvername,32,&solverset);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-scopflow_iscoupling","Include coupling between first stage and second stage","",scopflow->iscoupling,&scopflow->iscoupling,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsInt("-scopflow_Ns","Number of second stage scenarios","",scopflow->Ns,&scopflow->Ns,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsInt("-scopflow_Nc","Number of second stage scenarios","",scopflow->Nc,&scopflow->Nc,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-scopflow_replicate_basecase","Only for debugging: Replicate first stage for all second stage scenarios","",scopflow->replicate_basecase,&scopflow->replicate_basecase,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-scopflow_mode","Operation mode:Preventive (0) or Corrective (1)","",scopflow->mode,&scopflow->mode,NULL);CHKERRQ(ierr);
   
   PetscOptionsEnd();
 
   if(scopflow->ctgcfileset && !scopflow->replicate_basecase) {
-    if(scopflow->Ns < 0) scopflow->Ns = MAX_CONTINGENCIES;
-    else scopflow->Ns += 1; 
+    if(scopflow->Nc < 0) scopflow->Nc = MAX_CONTINGENCIES;
+    else scopflow->Nc += 1; 
 
-    ierr = PetscCalloc1(scopflow->Ns,&scopflow->ctgclist.cont);CHKERRQ(ierr);
-    for(i=0; i < scopflow->Ns; i++) scopflow->ctgclist.cont->noutages = 0;
+    ierr = PetscCalloc1(scopflow->Nc,&scopflow->ctgclist.cont);CHKERRQ(ierr);
+    for(i=0; i < scopflow->Nc; i++) scopflow->ctgclist.cont->noutages = 0;
     ierr = SCOPFLOWReadContingencyData(scopflow,scopflow->ctgcfile);CHKERRQ(ierr);
-    scopflow->Ns = scopflow->ctgclist.Ncont+1;
+    scopflow->Nc = scopflow->ctgclist.Ncont+1;
   } else {
-    if(scopflow->Ns == -1) scopflow->Ns = 1;
+    if(scopflow->Nc == -1) scopflow->Nc = 1;
   }
 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"SCOPFLOW running with %d scenarios (base case + %d scenarios)\n",scopflow->Ns,scopflow->Ns-1);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"SCOPFLOW running with %d scenarios (base case + %d scenarios)\n",scopflow->Nc,scopflow->Nc-1);CHKERRQ(ierr);
 
   /* Set solver */
   if(solverset) {
@@ -348,8 +348,8 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   }
 
   /* Create OPFLOW objects */
-  ierr = PetscCalloc1(scopflow->Ns,&scopflow->opflows);CHKERRQ(ierr);
-  for(i=0; i < scopflow->Ns; i++) {
+  ierr = PetscCalloc1(scopflow->Nc,&scopflow->opflows);CHKERRQ(ierr);
+  for(i=0; i < scopflow->Nc; i++) {
     ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflows[i]);CHKERRQ(ierr);
     ierr = OPFLOWSetFormulation(scopflow->opflows[i],formulationname);CHKERRQ(ierr);
     ierr = PetscStrcmp(solvername,SCOPFLOWSOLVER_PIPS,&flg);CHKERRQ(ierr);
@@ -387,7 +387,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
     if(i > 0) scopflow->opflows[i]->obj_gencost = PETSC_FALSE; /* No gen. cost minimization for second stage */
   }
   
-  ierr = PetscCalloc1(scopflow->Ns,&scopflow->nconineqcoup);CHKERRQ(ierr);
+  ierr = PetscCalloc1(scopflow->Nc,&scopflow->nconineqcoup);CHKERRQ(ierr);
   ierr = (*scopflow->solverops.setup)(scopflow);CHKERRQ(ierr);
   ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW: Setup completed\n");CHKERRQ(ierr);
   
@@ -491,7 +491,6 @@ PetscErrorCode SCOPFLOWGetConstraintMultipliers(SCOPFLOW scopflow,Vec *Lambda)
   ierr = (*scopflow->solverops.getconstraintmultipliers)(scopflow,Lambda);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-
 
 /*
   SCOPFLOWGetConvergenceStatus - Did SCOPFLOW converge?
