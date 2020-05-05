@@ -66,7 +66,7 @@ PetscErrorCode TCOPFLOWReadPloadProfile(TCOPFLOW tcopflow, char ploadprofile[])
     }
 
     t++;
-    if(t == tcopflow->ntimesteps) break;
+    if(t == tcopflow->Nt) break;
   }
 
   ierr = PetscFree(lbus);CHKERRQ(ierr);
@@ -140,7 +140,7 @@ PetscErrorCode TCOPFLOWReadQloadProfile(TCOPFLOW tcopflow, char qloadprofile[])
     }
 
     t++;
-    if(t == tcopflow->ntimesteps) break;
+    if(t == tcopflow->Nt) break;
   }
 
   ierr = PetscFree(lbus);CHKERRQ(ierr);
@@ -229,7 +229,7 @@ PetscErrorCode TCOPFLOWReadWindGenProfile(TCOPFLOW tcopflow, char windgenprofile
     }
 
     t++;
-    if(t == tcopflow->ntimesteps) break;
+    if(t == tcopflow->Nt) break;
   }
 
   ierr = PetscFree(windgenbus);CHKERRQ(ierr);
