@@ -55,6 +55,9 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWCreateGlobalVector(SCOPFLOW,Vec*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWCreateMatrix(SCOPFLOW,Mat*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSolve(SCOPFLOW);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetNumScenarios(SCOPFLOW,PetscInt);
+PETSC_EXTERN PetscErrorCode SCOPFLOWGetObjective(SCOPFLOW,PetscReal*);
+PETSC_EXTERN PetscErrorCode SCOPFLOWGetBaseCaseSolution(SCOPFLOW,Vec*);
+PETSC_EXTERN PetscErrorCode SCOPFLOWGetConvergenceStatus(SCOPFLOW,PetscBool*);
 
 #endif
 

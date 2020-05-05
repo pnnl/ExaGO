@@ -377,3 +377,97 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
   PetscFunctionReturn(0);
 }
 
+/*
+  SCOPFLOWGetObjective - Returns the objective function value
+
+  Input Parameters:
++ SCOPFLOW - the SCOPFLOW object
+- obj    - the objective function value
+
+  Notes: Should be called after the optimization finishes
+*/
+PetscErrorCode SCOPFLOWGetObjective(SCOPFLOW scopflow,PetscReal *obj)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*scopflow->solverops.getobjective)(scopflow,obj);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  SCOPFLOWGetBaseCaseSolution - Returns the SCOPFLOW base case (x0) solution
+
+  Input Parameters:
++ SCOPFLOW - the SCOPFLOW object
+- X        - the scopflow base case solution
+
+  Notes: Should be called after the optimization finishes
+*/
+PetscErrorCode SCOPFLOWGetBaseCaseSolution(SCOPFLOW scopflow,Vec *X)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*scopflow->solverops.getbasecasesolution)(scopflow,X);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  SCOPFLOWGetConstraints - Returns the SCOPFLOW constraints
+
+  Input Parameters:
++ SCOPFLOW - the SCOPFLOW object
+- G    - the scopflow constraints
+
+  Notes: Should be called after the optimization finishes.
+         Equality constraints first followed by inequality constraints
+*/
+PetscErrorCode SCOPFLOWGetConstraints(SCOPFLOW scopflow,Vec *G)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*scopflow->solverops.getconstraints)(scopflow,G);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  SCOPFLOWGetConstraintMultipliers - Returns the SCOPFLOW constraint multipliers
+
+  Input Parameters:
++ SCOPFLOW - the SCOPFLOW object
+- G    - the scopflow constraint lagrange multipliers
+
+  Notes: Should be called after the optimization finishes.
+    Equality constraint multipliers first followed by inequality constraint multipliers
+*/
+PetscErrorCode SCOPFLOWGetConstraintMultipliers(SCOPFLOW scopflow,Vec *Lambda)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*scopflow->solverops.getconstraintmultipliers)(scopflow,Lambda);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+
+/*
+  SCOPFLOWGetConvergenceStatus - Did SCOPFLOW converge?
+
+  Input Parameters:
++ SCOPFLOW - the SCOPFLOW object
+- status - PETSC_TRUE if converged, PETSC_FALSE otherwise
+
+  Notes: Should be called after the optimization finishes
+*/
+PetscErrorCode SCOPFLOWGetConvergenceStatus(SCOPFLOW scopflow,PetscBool *status)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*scopflow->solverops.getconvergencestatus)(scopflow,status);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+
