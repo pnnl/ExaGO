@@ -982,11 +982,11 @@ PetscErrorCode OPFLOWComputeObjective_IBCAR2(OPFLOW opflow,Vec X,PetscScalar *ob
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
 
-    if(opflow->obj_gencost) {
-      for(k=0; k < bus->ngen; k++) {
-	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-	if(!gen->status) continue;
-	loc = loc+2;
+    for(k=0; k < bus->ngen; k++) {
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      if(!gen->status) continue;
+      loc = loc+2;
+      if(opflow->obj_gencost) {
 	Pg = x[loc]*ps->MVAbase;
 	*obj += gen->cost_alpha*Pg*Pg + gen->cost_beta*Pg + gen->cost_gamma;
       }
@@ -1041,11 +1041,11 @@ PetscErrorCode OPFLOWComputeGradient_IBCAR2(OPFLOW opflow,Vec X,Vec grad)
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
 
-    if(opflow->obj_gencost) {
-      for(k=0; k < bus->ngen; k++) {
-	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-	if(!gen->status) continue;
-	loc = loc+2;
+    for(k=0; k < bus->ngen; k++) {
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      if(!gen->status) continue;
+      loc = loc+2;
+      if(opflow->obj_gencost) {
 	Pg = x[loc]*ps->MVAbase;
 	df[loc] = ps->MVAbase*(2*gen->cost_alpha*Pg + gen->cost_beta);
       }
@@ -1644,8 +1644,10 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_IBCAR2(OPFLOW opflow,Vec X,Mat H)
       xlocglob = xlocglob+2;
       row[0] = xlocglob;
       col[0] = xlocglob;
-      val[0] = obj_factor*2.0*gen->cost_alpha*ps->MVAbase*ps->MVAbase;
-      ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+      if(opflow->obj_gencost) {
+	val[0] = obj_factor*2.0*gen->cost_alpha*ps->MVAbase*ps->MVAbase;
+	ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+      }
     }
 
     if(opflow->include_loadloss_variables) {
@@ -1691,10 +1693,8 @@ PetscErrorCode OPFLOWComputeHessian_IBCAR2(OPFLOW opflow,Vec X,Vec Lambdae,Vec L
   PetscFunctionBegin;
   ierr = MatZeroEntries(H);CHKERRQ(ierr);
 
-  if(opflow->obj_gencost) {
-    /* Objective function Hessian */
-    ierr = OPFLOWComputeObjectiveHessian_IBCAR2(opflow,X,H);CHKERRQ(ierr);
-  }
+  /* Objective function Hessian */
+  ierr = OPFLOWComputeObjectiveHessian_IBCAR2(opflow,X,H);CHKERRQ(ierr);
 
   /* Equality constraints Hessian */
   ierr = OPFLOWComputeEqualityConstraintsHessian_IBCAR2(opflow,X,Lambdae,H);CHKERRQ(ierr);
