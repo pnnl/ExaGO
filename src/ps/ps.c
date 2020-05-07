@@ -1,6 +1,7 @@
 
 #include <private/psimpl.h>
 
+const char *const PSGENFuelTypes[] = {"COAL","WIND","SOLAR","NG","NUCLEAR","HYDRO","UNDEFINED","GENFUELTYPE_",NULL};
 
 /*
      PSCheckandSetRefBus - Checks for active ref. bus and sets one if not available

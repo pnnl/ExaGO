@@ -194,6 +194,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   opflow->obj_factor = 1.0;
   opflow->obj = 0.0;
   opflow->obj_gencost = PETSC_TRUE;
+  opflow->solutiontops = PETSC_FALSE;
 
   opflow->solver   = NULL;
   opflow->formulation = NULL;
@@ -219,7 +220,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
 
   *opflowout = opflow;
 
-  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Application created\n");
+  //  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Application created\n");
   PetscFunctionReturn(0);
 }
 
@@ -379,6 +380,7 @@ PetscErrorCode OPFLOWSetFormulation(OPFLOW opflow,const char* formulationname)
   opflow->formops.computeobjective               = 0;
   opflow->formops.computegradient                = 0;
   opflow->formops.computejacobian                = 0;
+  opflow->formops.solutiontops                   = 0;
 
   ierr = PetscStrcpy(opflow->formulationname,formulationname);CHKERRQ(ierr);
   /* Call the underlying implementation constructor */
@@ -402,7 +404,7 @@ PetscErrorCode OPFLOWReadMatPowerData(OPFLOW opflow,const char netfile[])
   PetscFunctionBegin;
   /* Read MatPower data file and populate the PS data structure */
   ierr = PSReadMatPowerData(opflow->ps,netfile);CHKERRQ(ierr);
-  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Finished reading network data file %s\n",netfile);CHKERRQ(ierr);
+  //  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Finished reading network data file %s\n",netfile);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -605,7 +607,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   PetscFunctionBegin;
 
   ierr =  PetscOptionsBegin(opflow->comm->type,NULL,"OPFLOW options",NULL);CHKERRQ(ierr);
-  PetscStrcpy(formulationname,"POWER_BALANCE_CARTESIAN");
+  PetscStrcpy(formulationname,"POWER_BALANCE_POLAR");
   ierr = PetscOptionsString("-opflow_formulation","OPFLOW formulation type","",formulationname,formulationname,32,&formulationset);CHKERRQ(ierr);
   PetscStrcpy(solvername,"IPOPT");
   ierr = PetscOptionsString("-opflow_solver","OPFLOW solver type","",solvername,solvername,32,&solverset);CHKERRQ(ierr);
@@ -623,11 +625,11 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   if(formulationset) {
     if(opflow->formulation) ierr = (*opflow->formops.destroy)(opflow);
     ierr = OPFLOWSetFormulation(opflow,formulationname);CHKERRQ(ierr);
-    ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s formulation\n",formulationname);CHKERRQ(ierr);
+    //    ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s formulation\n",formulationname);CHKERRQ(ierr);
   } else {
     if(!opflow->formulation) {
       ierr = OPFLOWSetFormulation(opflow,OPFLOWFORMULATION_PBCAR);CHKERRQ(ierr);
-      ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s formulation\n",OPFLOWFORMULATION_PBCAR);CHKERRQ(ierr);
+      //      ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s formulation\n",OPFLOWFORMULATION_PBCAR);CHKERRQ(ierr);
     }
   }
 
@@ -635,11 +637,11 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   if(solverset) {
     if(opflow->solver) ierr = (*opflow->solverops.destroy)(opflow);
     ierr = OPFLOWSetSolver(opflow,solvername);CHKERRQ(ierr);
-    ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s solver\n",solvername);CHKERRQ(ierr);
+    //    ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s solver\n",solvername);CHKERRQ(ierr);
   } else {
     if(!opflow->solver) {
       ierr = OPFLOWSetSolver(opflow,OPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
-      ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s solver\n",OPFLOWSOLVER_IPOPT);CHKERRQ(ierr); 
+      //      ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s solver\n",OPFLOWSOLVER_IPOPT);CHKERRQ(ierr); 
     }
   }
 
@@ -673,7 +675,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   opflow->Nconeq = recvbuf[1];
   opflow->Nconineq = recvbuf[2];
   opflow->Ncon = opflow->Nconeq + opflow->Nconineq;
-  ierr = PetscPrintf(PETSC_COMM_SELF,"OPFLOW: Rank %d: nx = %d nconeq = %d, nconineq = %d, ncon = %d\n",opflow->comm->rank,opflow->nx,opflow->nconeq,opflow->nconineq,opflow->ncon);CHKERRQ(ierr);
+  //  ierr = PetscPrintf(PETSC_COMM_SELF,"OPFLOW: Rank %d: nx = %d nconeq = %d, nconineq = %d, ncon = %d\n",opflow->comm->rank,opflow->nx,opflow->nconeq,opflow->nconineq,opflow->ncon);CHKERRQ(ierr);
 
   /* Set vertex local to global ordering */
   ierr = DMNetworkSetVertexLocalToGlobalOrdering(opflow->ps->networkdm);CHKERRQ(ierr);
@@ -735,7 +737,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PSCreateMatrix(opflow->ps,&opflow->Hes);CHKERRQ(ierr);
 
   ierr = (*opflow->solverops.setup)(opflow);CHKERRQ(ierr);
-  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Setup completed\n");CHKERRQ(ierr);
+  //  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Setup completed\n");CHKERRQ(ierr);
 
   if(opflow->initializationtype == OPFLOWINIT_ACPF) {
     ierr = OPFLOWSetUpInitPflow(opflow);CHKERRQ(ierr);
@@ -851,6 +853,106 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
 PetscErrorCode OPFLOWGetObjective(OPFLOW opflow,PetscReal *obj)
 {
   PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*opflow->solverops.getobjective)(opflow,obj);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWGetSolution - Returns the OPFLOW solution
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+- X      - the opflow solution
+
+  Notes: Should be called after the optimization finishes
+*/
+PetscErrorCode OPFLOWGetSolution(OPFLOW opflow,Vec *X)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*opflow->solverops.getsolution)(opflow,X);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWGetConstraints - Returns the OPFLOW constraints
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+- G    - the opflow constraints
+
+  Notes: Should be called after the optimization finishes.
+         Equality constraints first followed by inequality constraints
+*/
+PetscErrorCode OPFLOWGetConstraints(OPFLOW opflow,Vec *G)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*opflow->solverops.getconstraints)(opflow,G);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWGetConstraintMultipliers - Returns the OPFLOW constraint multipliers
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+- G    - the opflow constraint lagrange multipliers
+
+  Notes: Should be called after the optimization finishes.
+    Equality constraint multipliers first followed by inequality constraint multipliers
+*/
+PetscErrorCode OPFLOWGetConstraintMultipliers(OPFLOW opflow,Vec *Lambda)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*opflow->solverops.getconstraintmultipliers)(opflow,Lambda);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+
+/*
+  OPFLOWGetConvergenceStatus - Did OPFLOW converge?
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+- status - PETSC_TRUE if converged, PETSC_FALSE otherwise
+
+  Notes: Should be called after the optimization finishes
+*/
+PetscErrorCode OPFLOWGetConvergenceStatus(OPFLOW opflow,PetscBool *status)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*opflow->solverops.getconvergencestatus)(opflow,status);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWSolutionToPS - Updates the PS struct from OPFLOW solution
+
+  Input Parameters:
+. opflow - the OPFLOW object
+
+  Notes: Updates the different fields in the PS struct from the OPFLOW solution
+*/
+PetscErrorCode OPFLOWSolutionToPS(OPFLOW opflow)
+{
+  PetscErrorCode     ierr;
+
+  PetscFunctionBegin;
+
+  ierr = (*opflow->formops.solutiontops)(opflow);
+
+  opflow->solutiontops = PETSC_TRUE;
+  PetscFunctionReturn(0);
+}
 
   PetscFunctionBegin;
   ierr = (*opflow->solverops.getobjective)(opflow,obj);CHKERRQ(ierr);

@@ -55,12 +55,16 @@ struct _p_PSBUS{
   PetscInt      nconnlines;  /**< Number of connected edges to this bus */
   PSLINE        connlines[MAXCONNLINES];   /**< Array of connected edges to this bus */
 
-  
   PetscBool isghost;  /**< Is the bus ghosted? (Owned by other processor) */
 
   PSGEN     gens[NGEN_AT_BUS_MAX];  /**< Array of included generators to this bus */
   PSLOAD    loads[NLOAD_AT_BUS_MAX];  /**< Array of connected loads to this bus */
 
+  PetscScalar pimb; /* Real power imbalance (set from OPFLOW solution) */
+  PetscScalar qimb; /* Reactive power imbalance (set from OPFLOW solution) */
+
+  PetscScalar mult_pmis; /* Lagrange multiplier for Re(power/current balance) mismatch */
+  PetscScalar mult_qmis; /* Lagrange multiplier for Im(power/current balance) mismatch */
   
   PetscInt  startloc; /**< Starting location for the variables for this bus in the application residual "local" array.
      The local array also contains ghosted values. startloc is typically used to access values in
@@ -182,16 +186,21 @@ struct _p_PSLINE{
   PetscInt      internal_j; /**< Internal To Bus Number */
   PetscScalar   yff[2],yft[2],ytf[2],ytt[2]; /**< [G,B] */
   PetscScalar   pf,qf,pt,qt; /**< Real and reactive power flows from and to ends */
+  PetscScalar   sf,st;       /**<Apparent power flows at the two ends */
   PetscBool     reversed_ends; /* Reversed line end (bus numbers are swapped) */
 
   PSBUS  connbuses[2]; /**< From and to buses */
 
+  PetscScalar   mult_sf; /* Lagrange multiplier for from bus injection (set by OPFLOW) */
+  PetscScalar   mult_st; /* Lagrange multiplier for to bus injection (set by OPFLOW) */
   
   PetscInt startloc; /**< Starting location for the variables for this line in the local vector */
 
   
   PetscInt startlocglob; /**< Starting location for the variables for this line in the global vector */
 };
+
+extern const char *const PSGENFuelTypes[];
 
 typedef struct {
   PetscInt nv; /* Number of vertices in connected set */

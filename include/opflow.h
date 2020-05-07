@@ -37,6 +37,8 @@ PETSC_EXTERN PetscErrorCode OPFLOWGetSolution(OPFLOW,Vec*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetConvergenceStatus(OPFLOW,PetscBool*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetConstraints(OPFLOW,Vec*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetConstraintMultipliers(OPFLOW,Vec*);
+PETSC_EXTERN PetscErrorCode OPFLOWPrintSolution(OPFLOW);
+PETSC_EXTERN PetscErrorCode OPFLOWSaveSolution(OPFLOW,OutputFormat,const char[]);
 #endif
 
 

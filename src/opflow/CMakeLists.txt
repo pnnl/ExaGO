@@ -15,6 +15,7 @@ set(OPFLOW_SOLVER_SRC
 set(OPFLOW_SRC
 	interface/opflow.c
 	interface/opflowregi.c
+	interface/opflowoutput.c
 	${OPFLOW_FORM_SRC}
 	${OPFLOW_SOLVER_SRC}
 )

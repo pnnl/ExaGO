@@ -41,6 +41,7 @@ struct _p_OPFLOWFormulationOps {
   PetscErrorCode (*computeobjective)(OPFLOW,Vec,PetscScalar*); /* Objective */
   PetscErrorCode (*computegradient)(OPFLOW,Vec,Vec); /* Gradient of the objective function */
   PetscErrorCode (*computejacobian)(OPFLOW,Vec,Mat); /* Jacobian of the constraints */
+  PetscErrorCode (*solutiontops)(OPFLOW); /* Update PS struct from OPFLOW solution */
 };
 
 struct _p_OPFLOWSolverOps {
@@ -137,6 +138,9 @@ struct _p_OPFLOW{
   PetscBool include_powerimbalance_variables; /* Include variables for power imbalance */
   PetscReal powerimbalance_penalty;
 
+  /* Flag to denote if the OPFLOW solution has been transfered to PS struct via OPLOWSolutionToPS call */
+  PetscBool solutiontops;
+
   /* Global indices for the equality constraints. It is used when operating on equality constraints */
   PetscInt *eqconglobloc;
 
@@ -163,4 +167,6 @@ extern PetscErrorCode OPFLOWFormulationRegisterAll(OPFLOW);
 /* Register all OPFLOW solvers */
 extern PetscErrorCode OPFLOWSolverRegisterAll(OPFLOW);
 
+/* Update PS struct from OPFLOW solution */
+extern PetscErrorCode OPFLOWSolutionToPS(OPFLOW);
 #endif

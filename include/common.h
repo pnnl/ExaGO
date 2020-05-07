@@ -7,6 +7,8 @@
 
 #include <petsc.h>
 
+typedef enum {CSV,MATPOWER}OutputFormat;
+
 /** 
  * The communicator context 
  */
