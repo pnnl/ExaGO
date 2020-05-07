@@ -915,7 +915,6 @@ PetscErrorCode OPFLOWGetConstraintMultipliers(OPFLOW opflow,Vec *Lambda)
   PetscFunctionReturn(0);
 }
 
-
 /*
   OPFLOWGetConvergenceStatus - Did OPFLOW converge?
 
