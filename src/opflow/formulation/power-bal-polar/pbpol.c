@@ -1661,6 +1661,137 @@ PetscErrorCode OPFLOWComputeHessian_PBPOL(OPFLOW opflow,Vec X,Vec Lambdae,Vec La
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow)
+{
+  PetscErrorCode ierr;
+  PS             ps=(PS)opflow->ps;
+  PetscInt       i,k;
+  Vec            X,Lambda;
+  PSBUS          bus;
+  PSGEN          gen;
+  PSLOAD         load;
+  PSLINE         line;
+  const PetscScalar *x,*lambda,*lambdae,*lambdai;
+  PetscInt       loc,gloc=0;
+  PetscScalar    Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
+  PetscScalar    Vmf,Vmt,thetaf,thetat,thetaft,thetatf;
+  PetscScalar    Pf,Qf,Pt,Qt;
+  PSBUS          busf,bust;
+  const PSBUS    *connbuses;
+  PetscInt       xlocf,xloct;
+
+  PetscFunctionBegin;
+
+  ierr = OPFLOWGetSolution(opflow,&X);CHKERRQ(ierr);
+  ierr = OPFLOWGetConstraintMultipliers(opflow,&Lambda);CHKERRQ(ierr);
+
+  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecGetArrayRead(Lambda,&lambda);CHKERRQ(ierr);
+  lambdae = lambda;
+  if(opflow->Nconineq) {
+    lambdai = lambdae + opflow->nconeq;
+  }
+
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+
+    ierr = PSBUSGetVariableLocation(bus,&loc);
+
+    bus->va = x[loc];
+    bus->vm = x[loc+1];
+
+    bus->mult_pmis = lambdae[gloc];
+    bus->mult_qmis = lambdae[gloc+1];
+    gloc += 2;
+
+    for(k=0; k < bus->ngen; k++) {
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      if(!gen->status) continue;
+
+      loc += 2;
+
+      gen->pg = x[loc];
+      gen->qg = x[loc+1];
+    }
+
+    if(opflow->include_loadloss_variables) {
+      for(k=0; k < bus->nload; k++) {
+	ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
+	loc += 2;
+	load->pl = load->pl - x[loc];
+	load->ql = load->ql - x[loc+1];
+      }
+    }
+
+    if(opflow->include_powerimbalance_variables) {
+      loc += 2;
+      bus->pimb = x[loc];
+      bus->qimb = x[loc+1];
+    }
+  }
+
+  gloc = 0;
+
+  if(!opflow->ignore_lineflow_constraints) {
+    for(i=0; i<ps->nline; i++) {
+      line = &ps->line[i];
+      if(!line->status) {
+	line->mult_sf = line->mult_st = 0.0;
+	continue;
+      }
+      
+      Gff = line->yff[0];
+      Bff = line->yff[1];
+      Gft = line->yft[0];
+      Bft = line->yft[1];
+      Gtf = line->ytf[0];
+      Btf = line->ytf[1];
+      Gtt = line->ytt[0];
+      Btt = line->ytt[1];
+      
+      ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
+      busf = connbuses[0];
+      bust = connbuses[1];
+      
+      ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
+      ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
+      
+      thetaf  = x[xlocf];
+      Vmf     = x[xlocf+1];
+      thetat  = x[xloct];
+      Vmt     = x[xloct+1];
+      thetaft = thetaf - thetat;
+      thetatf = thetat - thetaf;
+      
+      Pf = Gff*Vmf*Vmf  + Vmf*Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
+      Qf = -Bff*Vmf*Vmf + Vmf*Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
+      
+      Pt = Gtt*Vmt*Vmt  + Vmt*Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
+      Qt = -Btt*Vmt*Vmt + Vmt*Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
+
+      line->pf = Pf;
+      line->qf = Qf;
+      line->pt = Pt;
+      line->qt = Qt;
+      line->sf = PetscSqrtScalar(Pf*Pf + Qf*Qf);
+      line->st = PetscSqrtScalar(Pt*Pt + Qt*Qt);
+
+      if(line->rateA > 1e5) {
+	line->mult_sf = line->mult_st = 0.0;
+      } else {
+	line->mult_sf = lambdai[gloc];
+	line->mult_st = lambdai[gloc+1];
+	gloc += 2;
+      }
+    }
+  }
+
+  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(Lambda,&lambda);CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
 
 PetscErrorCode OPFLOWFormulationCreate_PBPOL(OPFLOW opflow)
 {
@@ -1689,6 +1820,7 @@ PetscErrorCode OPFLOWFormulationCreate_PBPOL(OPFLOW opflow)
   opflow->formops.computeobjandgradient = OPFLOWComputeObjandGradient_PBPOL;
   opflow->formops.computeobjective = OPFLOWComputeObjective_PBPOL;
   opflow->formops.computegradient  = OPFLOWComputeGradient_PBPOL;
+  opflow->formops.solutiontops     = OPFLOWSolutionToPS_PBPOL;
   
   PetscFunctionReturn(0);
 }

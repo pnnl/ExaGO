@@ -649,14 +649,8 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
         Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
       } else if(strstr(line,"nuclear") != NULL) {
 	Gen[genfueli].genfuel_type = GENFUEL_NUCLEAR;
-        Gen[genfueli].ramp_rate_min = GENRAMPRATE_NUCLEAR/ps->MVAbase;
-        Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
-        Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
-      } else if(strstr(line,"hydro") != NULL) {
-        Gen[genfueli].genfuel_type = GENFUEL_HYDRO; 
-        Gen[genfueli].ramp_rate_min = GENRAMPRATE_HYDRO/ps->MVAbase;
-        Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
-        Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
+      } else if(strstr(line,"nuclear") != NULL) {
+	Gen[genfueli].genfuel_type = GENFUEL_HYDRO;
       } else {
 	Gen[genfueli].genfuel_type = GENFUEL_UNDEFINED;
         Gen[genfueli].ramp_rate_min = GENRAMPRATE_COAL/ps->MVAbase; /* Defaults to COAL ramp rate */

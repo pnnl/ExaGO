@@ -7,6 +7,7 @@ int main(int argc,char **argv)
 {
   PetscErrorCode ierr;
   OPFLOW             opflow;
+  OutputFormat       fmt=CSV;
   char              file[PETSC_MAX_PATH_LEN];
   PetscBool         flg;
   PetscReal         obj;
@@ -47,28 +48,9 @@ int main(int argc,char **argv)
   /* Solve */
   ierr = OPFLOWSolve(opflow);CHKERRQ(ierr);
 
-  /* Get convergence status */
-  ierr = OPFLOWGetConvergenceStatus(opflow,&conv_status);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"OPFLOW %s\n",conv_status?"converged":"did not converge");
+  ierr = OPFLOWPrintSolution(opflow);CHKERRQ(ierr);
 
-  /* Get objective function */
-  ierr = OPFLOWGetObjective(opflow,&obj);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"OPFLOW objective = %lf\n",obj);CHKERRQ(ierr);
-
-  /* Get solution */
-  ierr = OPFLOWGetSolution(opflow,&X);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"OPFLOW solution\n");
-  ierr = VecView(X,0);CHKERRQ(ierr);
-
-  /* Get constraints */
-  ierr = OPFLOWGetConstraints(opflow,&G);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"OPFLOW constraints\n");
-  ierr = VecView(G,0);CHKERRQ(ierr);
-
-  /* Get constraint multipliers */
-  ierr = OPFLOWGetConstraintMultipliers(opflow,&Lambda);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"OPFLOW constraint lagrange multipliers\n");
-  ierr = VecView(Lambda,0);CHKERRQ(ierr);
+  ierr = OPFLOWSaveSolution(opflow,fmt,"opflow.csv");CHKERRQ(ierr);
 
   /*End of Final Stage */
   ierr = PetscLogStagePop();CHKERRQ(ierr);

@@ -18,13 +18,13 @@
 #define NPHASE 1 /**< Per-phase analysis */
 
 /* Fuel types for generators */
-#define GENFUEL_COAL       0 /* Coal */
-#define GENFUEL_WIND       1 /* Wind */
-#define GENFUEL_SOLAR      2 /* Solar */
-#define GENFUEL_NG         3 /* Natural gas */
-#define GENFUEL_NUCLEAR    4 /* Nuclear */
-#define GENFUEL_HYDRO      5 /* Hydro */
-#define GENFUEL_UNDEFINED -1 /* All other sources (undefined) */
+#define GENFUEL_COAL 0 /* Coal */
+#define GENFUEL_WIND 1 /* Wind */
+#define GENFUEL_SOLAR 2 /* Solar */
+#define GENFUEL_NG    3 /* Natural gas */
+#define GENFUEL_NUCLEAR 4 /* Nuclear */
+#define GENFUEL_HYDRO   5 /* hydro */
+#define GENFUEL_UNDEFINED 6 /* All other sources (undefined) */
 
 /* Default ramp rates (MW/min) */
 /* From https://www.researchgate.net/post/What_is_the_typical_MW_minute_ramping_capability_for_each_type_of_reserve */
