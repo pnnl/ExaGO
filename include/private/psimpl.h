@@ -268,5 +268,7 @@ extern PetscErrorCode PSSetLineStatus(PS,PetscInt,PetscInt,const char*,PetscInt)
 extern PetscErrorCode PSIslandCheckandSetRefBus(PS,PetscInt);
 extern PetscErrorCode PSConnCompDestroy(PS);
 extern PetscErrorCode PSSetEdgeandBusStartLoc(PS);
+extern PetscErrorCode PSPrintSystemSummary(PS);
+extern PetscErrorCode PSSaveSolution(PS,OutputFormat,const char[]);
 #endif
 

@@ -559,38 +559,74 @@ PetscErrorCode SCOPFLOWSolverGetObjective_IPOPT(SCOPFLOW scopflow,PetscReal *obj
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SCOPFLOWSolverGetBaseCaseSolution_IPOPT(SCOPFLOW scopflow,Vec *X)
+PetscErrorCode SCOPFLOWSolverGetSolution_IPOPT(SCOPFLOW scopflow,PetscInt cont_num,Vec *X)
 {
   PetscErrorCode ierr;
-  OPFLOW         opflow0=scopflow->opflows[0];
-  Vec            X0=opflow0->X;
-  PetscInt       nx0=opflow0->nx;
-  PetscScalar    *x0,*x;
+  SCOPFLOWSolver_IPOPT scopflowipopt = (SCOPFLOWSolver_IPOPT)scopflow->solver;
+  OPFLOW         opflow=scopflow->opflows[cont_num];
+  Vec            Xi=opflow->X;
+  PetscInt       nxi=opflow->nx;
+  PetscScalar    *xi,*x;
+  PetscInt       ix=scopflowipopt->xstarti[cont_num];
 
   PetscFunctionBegin;
-  ierr = VecGetArray(X0,&x0);CHKERRQ(ierr);
+  ierr = VecGetArray(Xi,&xi);CHKERRQ(ierr);
   ierr = VecGetArray(scopflow->X,&x);CHKERRQ(ierr);
 
-  ierr = PetscArraycpy(x0,x,nx0);CHKERRQ(ierr);
+  ierr = PetscArraycpy(xi,x+ix,nxi);CHKERRQ(ierr);
 
-  ierr = VecRestoreArray(X0,&x0);CHKERRQ(ierr);
+  ierr = VecRestoreArray(Xi,&xi);CHKERRQ(ierr);
   ierr = VecRestoreArray(scopflow->X,&x);CHKERRQ(ierr);
 
-  *X = X0;
+  *X = Xi;
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SCOPFLOWSolverGetConstraints_IPOPT(SCOPFLOW scopflow,Vec *G)
+PetscErrorCode SCOPFLOWSolverGetConstraints_IPOPT(SCOPFLOW scopflow,PetscInt cont_num,Vec *G)
 {
+  PetscErrorCode ierr;
+  SCOPFLOWSolver_IPOPT scopflowipopt = (SCOPFLOWSolver_IPOPT)scopflow->solver;
+  OPFLOW         opflow=scopflow->opflows[cont_num];
+  Vec            Gi=opflow->G;
+  PetscInt       ngi=opflow->ncon;
+  PetscScalar    *gi,*g;
+  PetscInt       ig=scopflowipopt->gstarti[cont_num];
+
   PetscFunctionBegin;
-  *G = scopflow->G;
+  ierr = VecGetArray(Gi,&gi);CHKERRQ(ierr);
+  ierr = VecGetArray(scopflow->G,&g);CHKERRQ(ierr);
+
+  ierr = PetscArraycpy(gi,g+ig,ngi);CHKERRQ(ierr);
+
+  ierr = VecRestoreArray(Gi,&gi);CHKERRQ(ierr);
+  ierr = VecRestoreArray(scopflow->G,&g);CHKERRQ(ierr);
+
+  *G = Gi;
+
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SCOPFLOWSolverGetConstraintMultipliers_IPOPT(SCOPFLOW scopflow,Vec *Lambda)
+PetscErrorCode SCOPFLOWSolverGetConstraintMultipliers_IPOPT(SCOPFLOW scopflow,PetscInt cont_num,Vec *Lambda)
 {
+  PetscErrorCode ierr;
+  SCOPFLOWSolver_IPOPT scopflowipopt = (SCOPFLOWSolver_IPOPT)scopflow->solver;
+  OPFLOW         opflow=scopflow->opflows[cont_num];
+  Vec            Lambdai=opflow->Lambda;
+  PetscInt       ngi=opflow->ncon;
+  PetscScalar    *lambdai,*lambda;
+  PetscInt       ig=scopflowipopt->gstarti[cont_num];
+
   PetscFunctionBegin;
-  *Lambda = scopflow->Lambda;
+  ierr = VecGetArray(Lambdai,&lambdai);CHKERRQ(ierr);
+  ierr = VecGetArray(scopflow->Lambda,&lambda);CHKERRQ(ierr);
+
+  ierr = PetscArraycpy(lambdai,lambda+ig,ngi);CHKERRQ(ierr);
+
+  ierr = VecRestoreArray(Lambdai,&lambdai);CHKERRQ(ierr);
+  ierr = VecRestoreArray(scopflow->Lambda,&lambda);CHKERRQ(ierr);
+
+  *Lambda = Lambdai;
+
   PetscFunctionReturn(0);
 }
 
@@ -628,6 +664,9 @@ PetscErrorCode SCOPFLOWSolverSetUp_IPOPT(SCOPFLOW scopflow)
 
   scopflow->Nx = 0;
   scopflow->Ncon = 0;
+  scopflow->Nconeq = 0;
+  scopflow->Nconineq = 0;
+  scopflow->Nconcoup = 0;
   ipopt->xstarti[0] = 0;
   ipopt->gstarti[0] = 0;
 
@@ -643,8 +682,11 @@ PetscErrorCode SCOPFLOWSolverSetUp_IPOPT(SCOPFLOW scopflow)
       ipopt->xstarti[i+1] = ipopt->xstarti[i] + ipopt->nxi[i];
       ipopt->gstarti[i+1] = ipopt->gstarti[i] + ipopt->ngi[i];
     }
-    scopflow->Nx += ipopt->nxi[i];
-    scopflow->Ncon += ipopt->ngi[i];
+    scopflow->Nx +=        ipopt->nxi[i];
+    scopflow->Ncon +=      ipopt->ngi[i];
+    scopflow->Nconeq +=    opflow->nconeq;
+    scopflow->Nconineq += opflow->nconineq;
+    scopflow->Nconcoup +=  scopflow->nconineqcoup[i];
   }
 
   /* Create vector X */
@@ -765,7 +807,7 @@ PetscErrorCode SCOPFLOWSolverCreate_IPOPT(SCOPFLOW scopflow)
   scopflow->solverops.solve = SCOPFLOWSolverSolve_IPOPT;
   scopflow->solverops.destroy = SCOPFLOWSolverDestroy_IPOPT;
   scopflow->solverops.getobjective = SCOPFLOWSolverGetObjective_IPOPT;
-  scopflow->solverops.getbasecasesolution  = SCOPFLOWSolverGetBaseCaseSolution_IPOPT;
+  scopflow->solverops.getsolution  = SCOPFLOWSolverGetSolution_IPOPT;
   scopflow->solverops.getconvergencestatus = SCOPFLOWSolverGetConvergenceStatus_IPOPT;
   scopflow->solverops.getconstraints = SCOPFLOWSolverGetConstraints_IPOPT;
   scopflow->solverops.getconstraintmultipliers = SCOPFLOWSolverGetConstraintMultipliers_IPOPT;

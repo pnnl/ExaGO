@@ -23,10 +23,10 @@ struct _p_SCOPFLOWSolverOps {
   PetscErrorCode (*setup)(SCOPFLOW);
   PetscErrorCode (*solve)(SCOPFLOW);
   PetscErrorCode (*getobjective)(SCOPFLOW,PetscReal*);
-  PetscErrorCode (*getbasecasesolution)(SCOPFLOW,Vec*);
+  PetscErrorCode (*getsolution)(SCOPFLOW,PetscInt,Vec*);
   PetscErrorCode (*getconvergencestatus)(SCOPFLOW,PetscBool*);
-  PetscErrorCode (*getconstraints)(SCOPFLOW,Vec*);
-  PetscErrorCode (*getconstraintmultipliers)(SCOPFLOW,Vec*);
+  PetscErrorCode (*getconstraints)(SCOPFLOW,PetscInt,Vec*);
+  PetscErrorCode (*getconstraintmultipliers)(SCOPFLOW,PetscInt,Vec*);
 };
 
 
@@ -41,6 +41,7 @@ struct _p_SCOPFLOW{
   PetscInt Nconeq,nconeq; /* Local and global number of equality constraints */
   PetscInt nconineq, Nconineq; /* Local and global number of inequality constraints */
   PetscInt *nconineqcoup;      /* Number of inequality coupling constraints */
+  PetscInt Nconcoup;           /* Number of coupling constraints */
   
   COMM comm; /**< Communicator context */
   OPFLOW *opflows; /* Array of optimal power flow application objects.
@@ -88,6 +89,7 @@ struct _p_SCOPFLOW{
 
   void *solver; /* Solver object */
   struct _p_SCOPFLOWSolverOps solverops;
+  char   solvername[64];
 
   /* List of solvers registered */
   struct _p_SCOPFLOWSolverList SCOPFLOWSolverList[SCOPFLOWSOLVERSMAX];
@@ -101,12 +103,13 @@ struct _p_SCOPFLOW{
   PetscBool       ctgcfileset;   /* Is the contingency file set ? */
   char            ctgcfile[100]; /* Contingency file */
 
+  PetscBool       solutiontops;
 };
 
 /* Register all SCOPFLOW solvers */
 extern PetscErrorCode SCOPFLOWSolverRegisterAll(SCOPFLOW);
-extern PetscErrorCode SCOPFLOWGetConstraints(SCOPFLOW,Vec*);
-extern PetscErrorCode SCOPFLOWGetConstraintMultipliers(SCOPFLOW,Vec*);
+extern PetscErrorCode SCOPFLOWGetConstraints(SCOPFLOW,PetscInt,Vec*);
+extern PetscErrorCode SCOPFLOWGetConstraintMultipliers(SCOPFLOW,PetscInt,Vec*);
 
 
 #endif
