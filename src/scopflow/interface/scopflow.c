@@ -44,6 +44,8 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
 
   scopflow->mode = SCOPFLOWMODE_PREVENTIVE;
 
+  scopflow->solutiontops = PETSC_FALSE;
+
   scopflow->ctgcfileset = PETSC_FALSE;
   scopflow->setupcalled = PETSC_FALSE;
   *scopflowout = scopflow;
@@ -141,6 +143,7 @@ PetscErrorCode SCOPFLOWSetSolver(SCOPFLOW scopflow,const char* solvername)
   scopflow->solverops.solve   = 0;
   scopflow->solverops.setup   = 0;
 
+  ierr = PetscStrcpy(scopflow->solvername,solvername);CHKERRQ(ierr);
   /* Call the underlying implementation constructor */
   ierr = (*r)(scopflow);CHKERRQ(ierr);
 
@@ -303,7 +306,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 {
   PetscErrorCode ierr;
   PetscBool      solverset;
-  char           formulationname[32]="POWER_BALANCE_CARTESIAN";
+  char           formulationname[32]="POWER_BALANCE_POLAR";
   char           solvername[32]="IPOPT";
   PetscInt       i,j;
   PS             ps;
@@ -333,7 +336,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
     if(scopflow->Nc == -1) scopflow->Nc = 1;
   }
 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"SCOPFLOW running with %d scenarios (base case + %d scenarios)\n",scopflow->Nc,scopflow->Nc-1);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"SCOPFLOW running with %d contingencies (base case + %d scenarios)\n",scopflow->Nc,scopflow->Nc-1);CHKERRQ(ierr);
 
   /* Set solver */
   if(solverset) {
@@ -437,58 +440,61 @@ PetscErrorCode SCOPFLOWGetObjective(SCOPFLOW scopflow,PetscReal *obj)
 }
 
 /*
-  SCOPFLOWGetBaseCaseSolution - Returns the SCOPFLOW base case (x0) solution
+  SCOPFLOWGetBaseSolution - Returns the SCOPFLOW solution for a given contingency
 
   Input Parameters:
 + SCOPFLOW - the SCOPFLOW object
-- X        - the scopflow base case solution
+. contnum  - Contingency number (0 for base/no-contingency)
+- X        - the scopflow solution for the given contingency
 
   Notes: Should be called after the optimization finishes
 */
-PetscErrorCode SCOPFLOWGetBaseCaseSolution(SCOPFLOW scopflow,Vec *X)
+PetscErrorCode SCOPFLOWGetSolution(SCOPFLOW scopflow,PetscInt contnum,Vec *X)
 {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  ierr = (*scopflow->solverops.getbasecasesolution)(scopflow,X);CHKERRQ(ierr);
+  ierr = (*scopflow->solverops.getsolution)(scopflow,contnum,X);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
 /*
-  SCOPFLOWGetConstraints - Returns the SCOPFLOW constraints
+  SCOPFLOWGetConstraints - Returns the SCOPFLOW constraints for a given contingency
 
   Input Parameters:
 + SCOPFLOW - the SCOPFLOW object
+. contnum  - Contingency number (0 for base/no-contingency)
 - G    - the scopflow constraints
 
   Notes: Should be called after the optimization finishes.
          Equality constraints first followed by inequality constraints
 */
-PetscErrorCode SCOPFLOWGetConstraints(SCOPFLOW scopflow,Vec *G)
+PetscErrorCode SCOPFLOWGetConstraints(SCOPFLOW scopflow,PetscInt contnum,Vec *G)
 {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  ierr = (*scopflow->solverops.getconstraints)(scopflow,G);CHKERRQ(ierr);
+  ierr = (*scopflow->solverops.getconstraints)(scopflow,contnum,G);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
 /*
-  SCOPFLOWGetConstraintMultipliers - Returns the SCOPFLOW constraint multipliers
+  SCOPFLOWGetConstraintMultipliers - Returns the SCOPFLOW constraint multipliers for a given contingency
 
   Input Parameters:
 + SCOPFLOW - the SCOPFLOW object
+. contnum  - Contingency number (0 for base/no-contingency)
 - G    - the scopflow constraint lagrange multipliers
 
   Notes: Should be called after the optimization finishes.
     Equality constraint multipliers first followed by inequality constraint multipliers
 */
-PetscErrorCode SCOPFLOWGetConstraintMultipliers(SCOPFLOW scopflow,Vec *Lambda)
+PetscErrorCode SCOPFLOWGetConstraintMultipliers(SCOPFLOW scopflow,PetscInt contnum,Vec *Lambda)
 {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  ierr = (*scopflow->solverops.getconstraintmultipliers)(scopflow,Lambda);CHKERRQ(ierr);
+  ierr = (*scopflow->solverops.getconstraintmultipliers)(scopflow,contnum,Lambda);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -511,3 +517,25 @@ PetscErrorCode SCOPFLOWGetConvergenceStatus(SCOPFLOW scopflow,PetscBool *status)
 }
 
 
+/*
+  SCOPFLOWSolutionToPS - Updates the PS struct for base case and contingencies
+                       from SCOPFLOW solution
+
+  Input Parameters:
+. scopflow - the SCOPFLOW object
+
+  Notes: Updates the different fields in the PS struct from the SCOPFLOW solution
+*/
+PetscErrorCode SCOPFLOWSolutionToPS(SCOPFLOW scopflow)
+{
+  PetscErrorCode     ierr;
+  PetscInt           i;
+  OPFLOW             opflow;
+
+  PetscFunctionBegin;
+
+  ierr = (*opflow->formops.solutiontops)(opflow);
+
+  scopflow->solutiontops = PETSC_TRUE;
+  PetscFunctionReturn(0);
+}

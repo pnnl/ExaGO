@@ -3,6 +3,7 @@
 set(PS_SRC
   ps.c
   psreaddata.c
+  psoutput.c
   psislanding.c
 )
 
