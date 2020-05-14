@@ -2,8 +2,8 @@
 
 #if defined(SCOPFLOW_HAVE_HIOP)
 
-#ifndef OPFLOWHIOP_H
-#define OPFFLOWHIOP_H
+#ifndef OPFLOWHIOP_HPP
+#define OPFFLOWHIOP_HPP
 #include <opflow.h>
 #include <hiopInterface.hpp>
 #include <hiopMatrix.hpp>
@@ -58,6 +58,14 @@ public:
 		      int& nnzHSD, int* iHSD, int* jHSD, double* MHSD);
 
   bool get_starting_point(const long long& global_n, double* x0);
+
+  void solution_callback(hiop::hiopSolveStatus status,
+                                 int n, const double* x,
+                                 const double* z_L,
+                                 const double* z_U,
+                                 int m, const double* g,
+                                 const double* lambda,
+			         double obj_value);
 
   void naturaltospdense(const double*,double*);
 
