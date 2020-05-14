@@ -425,6 +425,51 @@ bool OPFLOWHIOPInterface::get_starting_point(const long long& global_n, double* 
   return true;
 }
 
+void OPFLOWHIOPInterface::solution_callback(hiop::hiopSolveStatus status,
+							 int n, const double* xsol,
+							 const double* z_L,
+							 const double* z_U,
+							 int m, const double* gsol,
+							 const double* lamsol,
+							 double obj_value)
+{
+  PetscErrorCode    ierr;
+  OPFLOWSolver_HIOP hiop=(OPFLOWSolver_HIOP)opflow->solver;
+  PetscScalar       *x,*lam,*g;
+
+  /* Copy over solution details */
+  hiop->status = status;
+  opflow->obj = obj_value;
+
+  ierr = VecGetArray(opflow->X,&x);CHKERRV(ierr);
+  spdensetonatural(xsol,x);
+  ierr = VecRestoreArray(opflow->X,&x);CHKERRV(ierr);
+
+  if(lamsol) { 
+    /* HIOP returns a NULL for lamsol - probably lamsol needs to be added to HIOP. Need to
+     remove this condition once it is fixed 
+    */
+    ierr = VecGetArray(opflow->Lambda,&lam);CHKERRV(ierr);
+    ierr = PetscMemcpy((double*)lamsol,lam,opflow->nconeq*sizeof(PetscScalar));CHKERRV(ierr);
+    if(opflow->Nconineq) {
+      ierr = PetscMemcpy((double*)(lamsol+opflow->nconeq),lam+opflow->nconeq,opflow->nconineq*sizeof(PetscScalar));CHKERRV(ierr);
+    }
+    ierr = VecRestoreArray(opflow->Lambda,&lam);CHKERRV(ierr);
+  } else {
+    ierr = VecSet(opflow->Lambda,-9999.0);CHKERRV(ierr);
+  }
+
+  if(gsol) {
+    /* Same situation as lamsol - gsol is NULL */
+    ierr = VecGetArray(opflow->G,&g);CHKERRV(ierr);
+    ierr = PetscMemcpy((double*)gsol,g,opflow->nconeq*sizeof(PetscScalar));CHKERRV(ierr);
+    if(opflow->Nconineq) {
+      ierr = PetscMemcpy((double*)(gsol+opflow->nconeq),g+opflow->nconeq,opflow->nconineq*sizeof(PetscScalar));CHKERRV(ierr);
+    }
+    ierr = VecRestoreArray(opflow->G,&g);CHKERRV(ierr);
+  }
+}
+
 PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
 {
   PetscErrorCode ierr;
@@ -451,22 +496,10 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
 PetscErrorCode OPFLOWSolverSolve_HIOP(OPFLOW opflow)
 {
   OPFLOWSolver_HIOP  hiop=(OPFLOWSolver_HIOP)opflow->solver;
-  PetscScalar        obj_value;
 
   PetscFunctionBegin;
 
   hiop->status = hiop->solver->run();
-  obj_value = hiop->solver->getObjective();
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode OPFLOWSolverGetObjective_HIOP(OPFLOW opflow, PetscReal *obj)
-{
-  PetscErrorCode ierr;
-  OPFLOWSolver_HIOP   hiop=(OPFLOWSolver_HIOP)opflow->solver;
-
-  PetscFunctionBegin;
-  *obj = hiop->solver->getObjective();
   PetscFunctionReturn(0);
 }
 
@@ -481,6 +514,33 @@ PetscErrorCode OPFLOWSolverGetConvergenceStatus_HIOP(OPFLOW opflow,PetscBool *st
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode OPFLOWSolverGetObjective_HIOP(OPFLOW opflow,PetscReal *obj)
+{
+  PetscFunctionBegin;
+  *obj = opflow->obj;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWSolverGetSolution_HIOP(OPFLOW opflow,Vec *X)
+{
+  PetscFunctionBegin;
+  *X = opflow->X;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWSolverGetConstraints_HIOP(OPFLOW opflow,Vec *G)
+{
+  PetscFunctionBegin;
+  *G = opflow->G;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWSolverGetConstraintMultipliers_HIOP(OPFLOW opflow,Vec *Lambda)
+{
+  PetscFunctionBegin;
+  *Lambda = opflow->Lambda;
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode OPFLOWSolverDestroy_HIOP(OPFLOW opflow)
 {
@@ -498,6 +558,8 @@ PetscErrorCode OPFLOWSolverDestroy_HIOP(OPFLOW opflow)
 }
 
 
+extern "C" {
+
 PetscErrorCode OPFLOWSolverCreate_HIOP(OPFLOW opflow)
 {
   PetscErrorCode ierr;
@@ -512,8 +574,14 @@ PetscErrorCode OPFLOWSolverCreate_HIOP(OPFLOW opflow)
   opflow->solverops.solve = OPFLOWSolverSolve_HIOP;
   opflow->solverops.destroy = OPFLOWSolverDestroy_HIOP;
   opflow->solverops.getobjective = OPFLOWSolverGetObjective_HIOP;
+  opflow->solverops.getconvergencestatus = OPFLOWSolverGetConvergenceStatus_HIOP;
+  opflow->solverops.getsolution = OPFLOWSolverGetSolution_HIOP;
+  opflow->solverops.getconstraints = OPFLOWSolverGetConstraints_HIOP;
+  opflow->solverops.getconstraintmultipliers = OPFLOWSolverGetConstraintMultipliers_HIOP;
 
   PetscFunctionReturn(0);
 }
+
+} // End of extern "C"
 
 #endif
