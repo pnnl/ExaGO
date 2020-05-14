@@ -52,6 +52,7 @@ if(SCOPFLOW_HAVE_HIOP)
   # it in bin because HIOP needs to have the options file in the same directory
   # as executable
   install(FILES ${CMAKE_SOURCE_DIR}/hiop.options DESTINATION bin)
+  install(FILES ${CMAKE_SOURCE_DIR}/hiop.options DESTINATION ${PROJECT_BINARY_DIR})
 endif()
 
 set(SCOPFLOW_OPFLOW_LIBS ${SCOPFLOW_OPFLOW_LIBS} opflow PARENT_SCOPE)
