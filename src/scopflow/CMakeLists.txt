@@ -15,7 +15,7 @@ set(SCOPFLOW_INCLUDE
 )
 
 #Compile library
-add_library(scopflow SHARED ${SCOPFLOW_SRC})
+add_library(scopflow ${SCOPFLOW_SRC})
 
 # link libraries
 target_link_libraries(scopflow PRIVATE

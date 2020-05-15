@@ -15,7 +15,7 @@ set(TCOPFLOW_INCLUDE
 )
 
 #Compile library
-add_library(tcopflow SHARED ${TCOPFLOW_SRC})
+add_library(tcopflow ${TCOPFLOW_SRC})
 
 # link libraries
 target_link_libraries(tcopflow PRIVATE

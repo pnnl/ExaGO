@@ -27,7 +27,7 @@ set(OPFLOW_INCLUDE
 )
 
 #Compile library
-add_library(opflow SHARED ${OPFLOW_SRC})
+add_library(opflow ${OPFLOW_SRC})
 
 # link libraries
 target_link_libraries(opflow PRIVATE
