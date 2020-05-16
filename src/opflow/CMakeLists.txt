@@ -38,6 +38,7 @@ target_link_libraries(opflow PRIVATE
 			     ${SCOPFLOW_UTIL_LIBS}
 			     ${SCOPFLOW_PS_LIBS}
 			     ${SCOPFLOW_PFLOW_LIBS}
+           Magma
 )
 
 # Install shared object
