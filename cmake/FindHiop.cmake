@@ -10,11 +10,8 @@ if(NOT HIOP_DIR)
      /opt/local
      ~/local/ipopt
      # PNNL specific paths
-     /qfs/projects/exasgd/newell/hiop
+     /qfs/projects/exasgd/newell/hiop_shared_gpu
      /qfs/projects/exasgd/newell/hiop_shared_cpu
-     /qfs/projects/exasgd/newell/hiop_master-cuda_10.2-gcc_7.4.0-metis_5.1.0-magma_2.5.2_cuda10.2-openmpi_3.1.5
-     /qfs/projects/exasgd/newell/hiop_PIC
-     /qfs/projects/exasgd/newell/hiop-cpu # PNNL power9 system-specific
    )
 endif()
 
@@ -30,15 +27,6 @@ find_library(HIOP_LIBRARY NAME libhiop.so libhiop.dylib libhiop.a
   ${HIOP_DIR}/lib64
 )
 message(STATUS "HIOP library directory=${HIOP_LIBRARY}")
-
-find_library(MAGMA_LIBRARY NAME libmagma.so libmagma.a libmagam.dylib magma.pc
-  HINTS
-  ${MAGMA_DIR}/lib
-  ${MAGMA_DIR}/lib/pkgconfig
-)
-message(STATUS "MAGMA DIR=${MAGMA_DIR}")
-message(STATUS "MAGMA library directory=${MAGMA_LIBRARY}")
-
 
 # HiOP include directories
 # Find HiOP header path and ensure all needed files are there
