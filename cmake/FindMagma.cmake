@@ -30,11 +30,12 @@ find_path(MAGMA_INCLUDE_DIR
   PATH_SUFFIXES
   include)
 
-message(STATUS "MAGMA include directory = ${MAGMA_INCLUDE_DIR}")
-message(STATUS "MAGMA library =  ${MAGMA_LIBRARY}")
-
 if(MAGMA_LIBRARY AND MAGMA_INCLUDE_DIR)
-  include_directories(${MAGMA_INCLUDE_DIR})
+  add_library(Magma INTERFACE)
+  target_link_libraries(Magma INTERFACE ${MAGMA_LIBRARY})
+  target_include_directories(Magma INTERFACE ${MAGMA_INCLUDE_DIR})
+  message(STATUS "Found Magma include: ${MAGMA_INCLUDE_DIR}")
+  message(STATUS "Found Magma library: ${MAGMA_LIBRARY}")
 else()
   message(STATUS "Magma was not found.")
 endif()
