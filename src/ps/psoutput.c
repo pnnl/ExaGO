@@ -54,7 +54,7 @@ PetscErrorCode PSSaveSolution_CSV(PS ps,const char outfile[])
   fprintf(fp,"From,To,Status,Sft,Stf,Slim,mult_Sf,mult_St\n");
   for(i=0; i < ps->nline; i++) {
     line = &ps->line[i];
-    fprintf(fp,"%10d, %10d, %4d, %8.2f, %8.2f, %8.2f, %8.2f, %8.2f\n",line->fbus,line->tbus,line->status,line->sf*ps->MVAbase,line->st*ps->MVAbase,line->rateA,line->mult_sf,line->mult_st);CHKERRQ(ierr);
+    fprintf(fp,"%10d, %10d, %4d, %8.2f, %8.2f, %8.2f, %8.2f, %8.2f\n",line->fbus,line->tbus,line->status,line->sf*ps->MVAbase,line->st*ps->MVAbase,(line->rateA>1e5)?10000:line->rateA,line->mult_sf,line->mult_st);CHKERRQ(ierr);
   }
 
   fprintf(fp,"Gen bus,Status,Fuel,Pg,Qg,Pmin,Pmax,Qmin,Qmax\n");
@@ -150,7 +150,7 @@ PetscErrorCode PSPrintSystemSummary(PS ps)
   MPI_Barrier(ps->comm->type);
   for(i=0; i < ps->nline; i++) {
     line = &ps->line[i];
-    ierr = PetscPrintf(ps->comm->type,"%-10d %-10d %-4d %8.2f %8.2f %8.2f %8.2f %8.2f\n",line->fbus,line->tbus,line->status,line->sf*ps->MVAbase,line->st*ps->MVAbase,line->rateA,line->mult_sf,line->mult_st);CHKERRQ(ierr);
+    ierr = PetscPrintf(ps->comm->type,"%-10d %-10d %-4d %8.2f %8.2f %8.2f %8.2f %8.2f\n",line->fbus,line->tbus,line->status,line->sf*ps->MVAbase,line->st*ps->MVAbase,(line->rateA>1e5)?10000:line->rateA,line->mult_sf,line->mult_st);CHKERRQ(ierr);
   }
   ierr = PetscPrintf(ps->comm->type,"\n");CHKERRQ(ierr);
   MPI_Barrier(ps->comm->type);
