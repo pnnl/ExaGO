@@ -8,6 +8,7 @@ int main(int argc,char **argv)
 {
   PetscErrorCode    ierr;
   TCOPFLOW          tcopflow;
+  Vec               X;
   char              file[PETSC_MAX_PATH_LEN];
   char              ploadprofile[PETSC_MAX_PATH_LEN];
   char              qloadprofile[PETSC_MAX_PATH_LEN];
@@ -70,6 +71,11 @@ int main(int argc,char **argv)
   ierr = TCOPFLOWSolve(tcopflow);CHKERRQ(ierr);
   /*End of Final Stage */
   ierr = PetscLogStagePop();CHKERRQ(ierr);
+
+  /* Print solution */
+  ierr = TCOPFLOWPrintSolution(tcopflow,0);CHKERRQ(ierr);
+
+  ierr = TCOPFLOWSaveSolutionAll(tcopflow,CSV,"tcopflowout");CHKERRQ(ierr);
 
   /* Destroy OPFLOW object */
   ierr = TCOPFLOWDestroy(&tcopflow);CHKERRQ(ierr);

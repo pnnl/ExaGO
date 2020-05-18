@@ -94,6 +94,8 @@ set(SCOPFLOW_DATA_FILES
 # Install data files
 install(FILES ${SCOPFLOW_DATA_FILES} DESTINATION bin/datafiles)
 install(FILES ${SCOPFLOW_DATA_FILES} DESTINATION datafiles)
+install(DIRECTORY datafiles/TAMU200_scenarios DESTINATION bin/datafiles)
+install(DIRECTORY datafiles/TAMU200_scenarios DESTINATION datafiles)
 
 # Scopflow headers to install
 set(SCOPFLOW_COMMON_INCLUDE

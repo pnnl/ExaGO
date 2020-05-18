@@ -5,6 +5,7 @@ set(TCOPFLOW_SOLVER_SRC
 set(TCOPFLOW_SRC
 	interface/tcopflow.c
 	interface/tcopflowregi.c
+	interface/tcopflowoutput.c
 	interface/tcopflowreadprofiles.c
 	${TCOPFLOW_SOLVER_SRC}
 )
