@@ -812,7 +812,6 @@ PetscErrorCode SCOPFLOWSolverCreate_IPOPT(SCOPFLOW scopflow)
   scopflow->solverops.getconstraints = SCOPFLOWSolverGetConstraints_IPOPT;
   scopflow->solverops.getconstraintmultipliers = SCOPFLOWSolverGetConstraintMultipliers_IPOPT;
 
-
   PetscFunctionReturn(0);
 }
 

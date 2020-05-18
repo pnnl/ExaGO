@@ -429,7 +429,7 @@ PetscErrorCode TCOPFLOWSolverSolve_IPOPT(TCOPFLOW tcopflow)
   TCOPFLOWSolver_IPOPT tcopflowipopt = (TCOPFLOWSolver_IPOPT)tcopflow->solver;
   OPFLOW             opflow;
   OPFLOWSolver_IPOPT opflowipopt;
-  PetscScalar        *x,*xl,*xu,*gl,*gu,*xi,*lameqi,*lamineqi,*lam;
+  PetscScalar        *x,*xl,*xu,*g,*gl,*gu,*xi,*lameqi,*lamineqi,*lam;
   PetscInt           i;
   MatInfo            info_eq,info_ineq,info_hes;
 
@@ -518,11 +518,15 @@ PetscErrorCode TCOPFLOWSolverSolve_IPOPT(TCOPFLOW tcopflow)
   ierr = VecRestoreArray(tcopflow->Gu,&gu);CHKERRQ(ierr);
 
   ierr = VecGetArray(tcopflow->X,&x);CHKERRQ(ierr);
+  ierr = VecGetArray(tcopflow->G,&g);CHKERRQ(ierr);
+  ierr = VecGetArray(tcopflow->Lambda,&lam);CHKERRQ(ierr);
 
   /* Solve */
-  tcopflowipopt->solve_status = IpoptSolve(tcopflowipopt->nlp,x,NULL,&tcopflow->obj,NULL,NULL,NULL,tcopflow);
+  tcopflowipopt->solve_status = IpoptSolve(tcopflowipopt->nlp,x,g,&tcopflow->obj,lam,NULL,NULL,tcopflow);
 
   ierr = VecRestoreArray(tcopflow->X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArray(tcopflow->G,&g);CHKERRQ(ierr);
+  ierr = VecRestoreArray(tcopflow->Lambda,&lam);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -569,6 +573,9 @@ PetscErrorCode TCOPFLOWSolverSetUp_IPOPT(TCOPFLOW tcopflow)
 
   tcopflow->Nx = 0;
   tcopflow->Ncon = 0;
+  tcopflow->Nconeq = 0;
+  tcopflow->Nconineq = 0;
+  tcopflow->Nconcoup = 0;
   ipopt->xstarti[0] = 0;
   ipopt->gstarti[0] = 0;
 
@@ -586,6 +593,9 @@ PetscErrorCode TCOPFLOWSolverSetUp_IPOPT(TCOPFLOW tcopflow)
     }
     tcopflow->Nx += ipopt->nxi[i];
     tcopflow->Ncon += ipopt->ngi[i];
+    tcopflow->Nconeq += opflow->nconeq;
+    tcopflow->Nconineq += opflow->nconineq;
+    tcopflow->Nconcoup += tcopflow->nconineqcoup[i];
   }
 
   /* Create vector X */
@@ -662,7 +672,7 @@ PetscErrorCode TCOPFLOWSolverSetUp_IPOPT(TCOPFLOW tcopflow)
 	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
 	  ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
 	  if(!gen->status || !gen0->status) continue;
-	  /* Generator can do a full ramp up to its max. capacity */
+	  /* Ramp constraints */
 	  gli[opflow->ncon + ctr] = -gen->ramp_rate_min*tcopflow->dT;
 	  gui[opflow->ncon + ctr] =  gen->ramp_rate_min*tcopflow->dT;
 	  ctr++;
@@ -679,6 +689,95 @@ PetscErrorCode TCOPFLOWSolverSetUp_IPOPT(TCOPFLOW tcopflow)
   /* Initialize Lagrange multiplier */
   ierr = VecSet(tcopflow->Lambda,1.0);CHKERRQ(ierr);
   
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode TCOPFLOWSolverGetObjective_IPOPT(TCOPFLOW tcopflow,PetscReal *obj)
+{
+  PetscFunctionBegin;
+  *obj = tcopflow->obj;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode TCOPFLOWSolverGetSolution_IPOPT(TCOPFLOW tcopflow,PetscInt t_num,Vec *X)
+{
+  PetscErrorCode ierr;
+  TCOPFLOWSolver_IPOPT tcopflowipopt = (TCOPFLOWSolver_IPOPT)tcopflow->solver;
+  OPFLOW         opflow=tcopflow->opflows[t_num];
+  Vec            Xi=opflow->X;
+  PetscInt       nxi=opflow->nx;
+  PetscScalar    *xi,*x;
+  PetscInt       ix=tcopflowipopt->xstarti[t_num];
+
+  PetscFunctionBegin;
+  ierr = VecGetArray(Xi,&xi);CHKERRQ(ierr);
+  ierr = VecGetArray(tcopflow->X,&x);CHKERRQ(ierr);
+
+  ierr = PetscArraycpy(xi,x+ix,nxi);CHKERRQ(ierr);
+
+  ierr = VecRestoreArray(Xi,&xi);CHKERRQ(ierr);
+  ierr = VecRestoreArray(tcopflow->X,&x);CHKERRQ(ierr);
+
+  *X = Xi;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode TCOPFLOWSolverGetConstraints_IPOPT(TCOPFLOW tcopflow,PetscInt t_num,Vec *G)
+{
+  PetscErrorCode ierr;
+  TCOPFLOWSolver_IPOPT tcopflowipopt = (TCOPFLOWSolver_IPOPT)tcopflow->solver;
+  OPFLOW         opflow=tcopflow->opflows[t_num];
+  Vec            Gi=opflow->G;
+  PetscInt       ngi=opflow->ncon;
+  PetscScalar    *gi,*g;
+  PetscInt       ig=tcopflowipopt->gstarti[t_num];
+
+  PetscFunctionBegin;
+  ierr = VecGetArray(Gi,&gi);CHKERRQ(ierr);
+  ierr = VecGetArray(tcopflow->G,&g);CHKERRQ(ierr);
+
+  ierr = PetscArraycpy(gi,g+ig,ngi);CHKERRQ(ierr);
+
+  ierr = VecRestoreArray(Gi,&gi);CHKERRQ(ierr);
+  ierr = VecRestoreArray(tcopflow->G,&g);CHKERRQ(ierr);
+
+  *G = Gi;
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode TCOPFLOWSolverGetConstraintMultipliers_IPOPT(TCOPFLOW tcopflow,PetscInt t_num,Vec *Lambda)
+{
+  PetscErrorCode ierr;
+  TCOPFLOWSolver_IPOPT tcopflowipopt = (TCOPFLOWSolver_IPOPT)tcopflow->solver;
+  OPFLOW         opflow=tcopflow->opflows[t_num];
+  Vec            Lambdai=opflow->Lambda;
+  PetscInt       ngi=opflow->ncon;
+  PetscScalar    *lambdai,*lambda;
+  PetscInt       ig=tcopflowipopt->gstarti[t_num];
+
+  PetscFunctionBegin;
+  ierr = VecGetArray(Lambdai,&lambdai);CHKERRQ(ierr);
+  ierr = VecGetArray(tcopflow->Lambda,&lambda);CHKERRQ(ierr);
+
+  ierr = PetscArraycpy(lambdai,lambda+ig,ngi);CHKERRQ(ierr);
+
+  ierr = VecRestoreArray(Lambdai,&lambdai);CHKERRQ(ierr);
+  ierr = VecRestoreArray(tcopflow->Lambda,&lambda);CHKERRQ(ierr);
+
+  *Lambda = Lambdai;
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode TCOPFLOWSolverGetConvergenceStatus_IPOPT(TCOPFLOW tcopflow,PetscBool *status)
+{
+  TCOPFLOWSolver_IPOPT ipopt = (TCOPFLOWSolver_IPOPT)tcopflow->solver;
+
+  PetscFunctionBegin;
+  if(ipopt->solve_status < 2) *status = PETSC_TRUE; /* See IpReturnCodes_inc.h in IPOPT. The first two denote convergence */
+  else *status = PETSC_FALSE;
+
   PetscFunctionReturn(0);
 }
 
@@ -700,6 +799,11 @@ PetscErrorCode TCOPFLOWSolverCreate_IPOPT(TCOPFLOW tcopflow)
   tcopflow->solverops.setup = TCOPFLOWSolverSetUp_IPOPT;
   tcopflow->solverops.solve = TCOPFLOWSolverSolve_IPOPT;
   tcopflow->solverops.destroy = TCOPFLOWSolverDestroy_IPOPT;
+  tcopflow->solverops.getobjective = TCOPFLOWSolverGetObjective_IPOPT;
+  tcopflow->solverops.getsolution  = TCOPFLOWSolverGetSolution_IPOPT;
+  tcopflow->solverops.getconvergencestatus = TCOPFLOWSolverGetConvergenceStatus_IPOPT;
+  tcopflow->solverops.getconstraints = TCOPFLOWSolverGetConstraints_IPOPT;
+  tcopflow->solverops.getconstraintmultipliers = TCOPFLOWSolverGetConstraintMultipliers_IPOPT;
 
   PetscFunctionReturn(0);
 }
