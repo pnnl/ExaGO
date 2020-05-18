@@ -8,7 +8,7 @@ PetscErrorCode OPFLOWObjectiveandGradientFunction_TAO(Tao nlp,Vec X,PetscScalar 
 
   PetscFunctionBegin;
   *obj = 0.0;
-  ierr = (*opflow->formops.computeobjandgradient)(opflow,X,obj,grad);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computeobjandgradient)(opflow,X,obj,grad);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -18,7 +18,7 @@ PetscErrorCode OPFLOWEqualityConstraintsFunction_TAO(Tao nlp,Vec X,Vec Ge,void *
   OPFLOW         opflow=(OPFLOW)ctx;
 
   PetscFunctionBegin;
-  ierr = (*opflow->formops.computeequalityconstraints)(opflow,X,Ge);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computeequalityconstraints)(opflow,X,Ge);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -30,7 +30,7 @@ PetscErrorCode OPFLOWInequalityConstraintsFunction_TAO(Tao nlp,Vec X,Vec Gi,void
   PetscScalar    *gi,*gu;
 
   PetscFunctionBegin;
-  ierr = (*opflow->formops.computeinequalityconstraints)(opflow,X,Gi);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computeinequalityconstraints)(opflow,X,Gi);CHKERRQ(ierr);
   ierr = VecGetArray(Gi,&gi);CHKERRQ(ierr);
   ierr = VecGetArray(opflow->Gu,&gu);CHKERRQ(ierr);
   for(i=0; i < opflow->nconineq; i++) {
@@ -48,7 +48,7 @@ PetscErrorCode OPFLOWEqualityConstraintsJacobian_TAO(Tao nlp, Vec X, Mat Je, Mat
   OPFLOW         opflow=(OPFLOW)ctx;
 
   PetscFunctionBegin;
-  ierr = (*opflow->formops.computeequalityconstraintjacobian)(opflow,X,Je);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computeequalityconstraintjacobian)(opflow,X,Je);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -58,7 +58,7 @@ PetscErrorCode OPFLOWInequalityConstraintsJacobian_TAO(Tao nlp, Vec X, Mat Ji, M
   OPFLOW         opflow=(OPFLOW)ctx;
 
   PetscFunctionBegin;
-  ierr = (*opflow->formops.computeinequalityconstraintjacobian)(opflow,X,Ji);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computeinequalityconstraintjacobian)(opflow,X,Ji);CHKERRQ(ierr);
   ierr = MatScale(Ji,-1.0);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -73,7 +73,7 @@ PetscErrorCode OPFLOWHessian_TAO(Tao nlp,Vec X, Mat H, Mat H_pre, void *ctx)
   PetscFunctionBegin;
   ierr = TaoGetDualVariables(nlp,&DE,&DI);CHKERRQ(ierr);
   //  ierr = VecScale(opflow->Lambdai,-1.0);CHKERRQ(ierr);
-  ierr = (*opflow->formops.computehessian)(opflow,X,DE,DI,H);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computehessian)(opflow,X,DE,DI,H);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

@@ -197,15 +197,15 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   opflow->solutiontops = PETSC_FALSE;
 
   opflow->solver   = NULL;
-  opflow->formulation = NULL;
+  opflow->model = NULL;
 
   opflow->initializationtype = OPFLOWINIT_MIDPOINT;
 
-  opflow->nformulationsregistered = opflow->nsolversregistered = 0;
-  opflow->OPFLOWFormulationRegisterAllCalled = opflow->OPFLOWSolverRegisterAllCalled = PETSC_FALSE;
+  opflow->nmodelsregistered = opflow->nsolversregistered = 0;
+  opflow->OPFLOWModelRegisterAllCalled = opflow->OPFLOWSolverRegisterAllCalled = PETSC_FALSE;
 
-  /* Register all formulations */
-  ierr = OPFLOWFormulationRegisterAll(opflow);
+  /* Register all models */
+  ierr = OPFLOWModelRegisterAll(opflow);
 
   /* Register all solvers */
   ierr = OPFLOWSolverRegisterAll(opflow);
@@ -291,8 +291,8 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow)
     ierr = ((*opflow)->solverops.destroy)(*opflow);
   }
 
-  if((*opflow)->formops.destroy) {
-    ierr = ((*opflow)->formops.destroy)(*opflow);
+  if((*opflow)->modelops.destroy) {
+    ierr = ((*opflow)->modelops.destroy)(*opflow);
   }
 
   ierr = PetscFree((*opflow)->busnvararray);CHKERRQ(ierr); 
@@ -340,49 +340,49 @@ PetscErrorCode OPFLOWSetSolver(OPFLOW opflow,const char* solvername)
 }
 
 /*
-  OPFLOWSetFormulation - Sets the formulation for OPFLOW
+  OPFLOWSetModel - Sets the model for OPFLOW
 
   Input Parameters:
 + opflow - opflow application object
-- solvername - name of the formulation
+- modelname - name of the model
 */
-PetscErrorCode OPFLOWSetFormulation(OPFLOW opflow,const char* formulationname)
+PetscErrorCode OPFLOWSetModel(OPFLOW opflow,const char* modelname)
 {
   PetscErrorCode ierr,(*r)(OPFLOW)=NULL;
   PetscInt       i;
   PetscFunctionBegin;
   PetscBool match;
-  for(i=0;i < opflow->nformulationsregistered;i++) {
-    ierr = PetscStrcmp(opflow->OPFLOWFormulationList[i].name,formulationname,&match);CHKERRQ(ierr);
+  for(i=0;i < opflow->nmodelsregistered;i++) {
+    ierr = PetscStrcmp(opflow->OPFLOWModelList[i].name,modelname,&match);CHKERRQ(ierr);
     if(match) {
-      r = opflow->OPFLOWFormulationList[i].create;
+      r = opflow->OPFLOWModelList[i].create;
       break;
     }
   }
 
-  if(!r) SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_UNKNOWN_TYPE,"Unknown type for OPFLOW Formulation %s",formulationname);
+  if(!r) SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_UNKNOWN_TYPE,"Unknown type for OPFLOW Model %s",modelname);
 
   /* Null the function pointers */
-  opflow->formops.destroy                        = 0;
-  opflow->formops.setnumvariables                = 0;
-  opflow->formops.setnumconstraints              = 0;
-  opflow->formops.setvariablebounds              = 0;
-  opflow->formops.setconstraintbounds            = 0;
-  opflow->formops.setvariableandconstraintbounds = 0;
-  opflow->formops.setinitialguess                = 0;
-  opflow->formops.computeequalityconstraints     = 0;
-  opflow->formops.computeinequalityconstraints   = 0;
-  opflow->formops.computeconstraints             = 0;
-  opflow->formops.computeequalityconstraintjacobian = 0;
-  opflow->formops.computeinequalityconstraintjacobian = 0;
-  opflow->formops.computehessian                 = 0;
-  opflow->formops.computeobjandgradient          = 0;
-  opflow->formops.computeobjective               = 0;
-  opflow->formops.computegradient                = 0;
-  opflow->formops.computejacobian                = 0;
-  opflow->formops.solutiontops                   = 0;
+  opflow->modelops.destroy                        = 0;
+  opflow->modelops.setnumvariables                = 0;
+  opflow->modelops.setnumconstraints              = 0;
+  opflow->modelops.setvariablebounds              = 0;
+  opflow->modelops.setconstraintbounds            = 0;
+  opflow->modelops.setvariableandconstraintbounds = 0;
+  opflow->modelops.setinitialguess                = 0;
+  opflow->modelops.computeequalityconstraints     = 0;
+  opflow->modelops.computeinequalityconstraints   = 0;
+  opflow->modelops.computeconstraints             = 0;
+  opflow->modelops.computeequalityconstraintjacobian = 0;
+  opflow->modelops.computeinequalityconstraintjacobian = 0;
+  opflow->modelops.computehessian                 = 0;
+  opflow->modelops.computeobjandgradient          = 0;
+  opflow->modelops.computeobjective               = 0;
+  opflow->modelops.computegradient                = 0;
+  opflow->modelops.computejacobian                = 0;
+  opflow->modelops.solutiontops                   = 0;
 
-  ierr = PetscStrcpy(opflow->formulationname,formulationname);CHKERRQ(ierr);
+  ierr = PetscStrcpy(opflow->modelname,modelname);CHKERRQ(ierr);
   /* Call the underlying implementation constructor */
   ierr = (*r)(opflow);CHKERRQ(ierr);
 
@@ -433,7 +433,7 @@ PetscErrorCode OPFLOWSetNumConstraints(OPFLOW opflow,PetscInt *branchnconeq, Pet
   PetscInt       nconeqloc=0;
 
   PetscFunctionBegin;
-  ierr = (*opflow->formops.setnumconstraints)(opflow,branchnconeq,busnconeq,nconeq,nconineq);
+  ierr = (*opflow->modelops.setnumconstraints)(opflow,branchnconeq,busnconeq,nconeq,nconineq);
 
   ierr = PetscSectionCreate(opflow->comm->type,&buseqconsection);CHKERRQ(ierr);
 
@@ -543,7 +543,7 @@ PetscErrorCode OPFLOWSetNumVariables(OPFLOW opflow,PetscInt *busnvararray,PetscI
 
   ierr = PetscSectionSetChart(varsection,eStart,vEnd);CHKERRQ(ierr);
 
-  ierr = (*opflow->formops.setnumvariables)(opflow,busnvararray,branchnvararray,nx);
+  ierr = (*opflow->modelops.setnumvariables)(opflow,busnvararray,branchnvararray,nx);
 
   for(i=0; i < ps->nline; i++) {
     ierr = PetscSectionSetDof(varsection,eStart+i,branchnvararray[i]);
@@ -598,8 +598,8 @@ PetscErrorCode OPFLOWSetNumVariables(OPFLOW opflow,PetscInt *busnvararray,PetscI
 PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 {
   PetscErrorCode ierr;
-  char           formulationname[32],solvername[32];
-  PetscBool      formulationset=PETSC_FALSE,solverset=PETSC_FALSE;
+  char           modelname[32],solvername[32];
+  PetscBool      modelset=PETSC_FALSE,solverset=PETSC_FALSE;
   PS             ps=opflow->ps;
   PetscInt       *branchnconeq,*busnconeq;
   PetscInt       sendbuf[3],recvbuf[3];
@@ -607,8 +607,8 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   PetscFunctionBegin;
 
   ierr =  PetscOptionsBegin(opflow->comm->type,NULL,"OPFLOW options",NULL);CHKERRQ(ierr);
-  PetscStrcpy(formulationname,"POWER_BALANCE_POLAR");
-  ierr = PetscOptionsString("-opflow_formulation","OPFLOW formulation type","",formulationname,formulationname,32,&formulationset);CHKERRQ(ierr);
+  PetscStrcpy(modelname,"POWER_BALANCE_POLAR");
+  ierr = PetscOptionsString("-opflow_model","OPFLOW model type","",modelname,modelname,32,&modelset);CHKERRQ(ierr);
   PetscStrcpy(solvername,"IPOPT");
   ierr = PetscOptionsString("-opflow_solver","OPFLOW solver type","",solvername,solvername,32,&solverset);CHKERRQ(ierr);
   ierr = PetscOptionsEnum("-opflow_initialization","Type of OPFLOW initialization","",OPFLOWInitializationTypes,(PetscEnum)opflow->initializationtype,(PetscEnum*)&opflow->initializationtype,NULL);CHKERRQ(ierr);
@@ -621,15 +621,15 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 
   opflow->obj_gencost = PETSC_TRUE; /* Generation cost minimization ON by default */
 
-  /* Set formulation */
-  if(formulationset) {
-    if(opflow->formulation) ierr = (*opflow->formops.destroy)(opflow);
-    ierr = OPFLOWSetFormulation(opflow,formulationname);CHKERRQ(ierr);
-    //    ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s formulation\n",formulationname);CHKERRQ(ierr);
+  /* Set model */
+  if(modelset) {
+    if(opflow->model) ierr = (*opflow->modelops.destroy)(opflow);
+    ierr = OPFLOWSetModel(opflow,modelname);CHKERRQ(ierr);
+    //    ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s model\n",modelname);CHKERRQ(ierr);
   } else {
-    if(!opflow->formulation) {
-      ierr = OPFLOWSetFormulation(opflow,OPFLOWFORMULATION_PBCAR);CHKERRQ(ierr);
-      //      ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s formulation\n",OPFLOWFORMULATION_PBCAR);CHKERRQ(ierr);
+    if(!opflow->model) {
+      ierr = OPFLOWSetModel(opflow,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
+      //      ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s model\n",OPFLOWMODEL_PBCAR);CHKERRQ(ierr);
     }
   }
 
@@ -768,8 +768,8 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
     case OPFLOWINIT_MIDPOINT:
     case OPFLOWINIT_FROMFILE:
     case OPFLOWINIT_FLATSTART:
-      if(opflow->formops.setinitialguess) {
-	ierr = (*opflow->formops.setinitialguess)(opflow,X);CHKERRQ(ierr);
+      if(opflow->modelops.setinitialguess) {
+	ierr = (*opflow->modelops.setinitialguess)(opflow,X);CHKERRQ(ierr);
       }
       break;
     case OPFLOWINIT_ACPF:
@@ -777,7 +777,7 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
       if(!pflowconverged) {
 	SETERRQ(PETSC_COMM_SELF,0,"AC power flow initialization did not converged\n");
       }
-      ierr = (*opflow->formops.setinitialguess)(opflow,X);CHKERRQ(ierr);
+      ierr = (*opflow->modelops.setinitialguess)(opflow,X);CHKERRQ(ierr);
 
       break;
     default:
@@ -803,18 +803,18 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
     ierr = OPFLOWSetUp(opflow);
   }
   /* Set bounds on variables */
-  if(opflow->formops.setvariablebounds) {
-    ierr = (*opflow->formops.setvariablebounds)(opflow,opflow->Xl,opflow->Xu);CHKERRQ(ierr);
+  if(opflow->modelops.setvariablebounds) {
+    ierr = (*opflow->modelops.setvariablebounds)(opflow,opflow->Xl,opflow->Xu);CHKERRQ(ierr);
   }
 
   /* Set bounds on constraints */
-  if(opflow->formops.setconstraintbounds) {
-    ierr = (*opflow->formops.setconstraintbounds)(opflow,opflow->Gl,opflow->Gu);CHKERRQ(ierr);
+  if(opflow->modelops.setconstraintbounds) {
+    ierr = (*opflow->modelops.setconstraintbounds)(opflow,opflow->Gl,opflow->Gu);CHKERRQ(ierr);
   }
 
   /* Set bounds on variables and constraints */
-  if(opflow->formops.setvariableandconstraintbounds) {
-    ierr = (*opflow->formops.setvariableandconstraintbounds)(opflow,opflow->Xl,opflow->Xu,opflow->Gl,opflow->Gu);CHKERRQ(ierr);
+  if(opflow->modelops.setvariableandconstraintbounds) {
+    ierr = (*opflow->modelops.setvariableandconstraintbounds)(opflow,opflow->Xl,opflow->Xu,opflow->Gl,opflow->Gu);CHKERRQ(ierr);
   }
 
   ierr = OPFLOWSetInitialGuess(opflow,opflow->X);CHKERRQ(ierr);
@@ -827,8 +827,8 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
 
   /* Only for debugging */
   /*
-  ierr = (*opflow->formops.computeequalityconstraints)(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
-  ierr = (*opflow->formops.computeinequalityconstraints)(opflow,opflow->X,opflow->Gi);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computeequalityconstraints)(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computeinequalityconstraints)(opflow,opflow->X,opflow->Gi);CHKERRQ(ierr);
   ierr = VecView(opflow->Gi,0);
   exit(1);
   */
@@ -947,7 +947,7 @@ PetscErrorCode OPFLOWSolutionToPS(OPFLOW opflow)
 
   PetscFunctionBegin;
 
-  ierr = (*opflow->formops.solutiontops)(opflow);
+  ierr = (*opflow->modelops.solutiontops)(opflow);
 
   opflow->solutiontops = PETSC_TRUE;
   PetscFunctionReturn(0);

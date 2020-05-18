@@ -2,13 +2,13 @@
 #include <private/opflowimpl.h>
 #include "pbpol.h"
 
-PetscErrorCode OPFLOWFormulationDestroy_PBPOL(OPFLOW opflow)
+PetscErrorCode OPFLOWModelDestroy_PBPOL(OPFLOW opflow)
 {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
 
-  ierr = PetscFree(opflow->formulation);CHKERRQ(ierr);
+  ierr = PetscFree(opflow->model);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -865,7 +865,7 @@ PetscErrorCode OPFLOWComputeObjandGradient_PBPOL(OPFLOW opflow,Vec X,PetscScalar
 }
 
 
-PetscErrorCode OPFLOWFormulationSetNumVariables_PBPOL(OPFLOW opflow,PetscInt *busnvar,PetscInt *branchnvar,PetscInt *nx)
+PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW opflow,PetscInt *busnvar,PetscInt *branchnvar,PetscInt *nx)
 {
   PetscInt i,ngen,nload,k;
   PS       ps=opflow->ps;
@@ -909,7 +909,7 @@ PetscErrorCode OPFLOWFormulationSetNumVariables_PBPOL(OPFLOW opflow,PetscInt *bu
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWFormulationSetNumConstraints_PBPOL(OPFLOW opflow,PetscInt *branchnconeq,PetscInt *busnconeq,PetscInt *nconeq,PetscInt *nconineq)
+PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW opflow,PetscInt *branchnconeq,PetscInt *busnconeq,PetscInt *nconeq,PetscInt *nconineq)
 {
   PetscInt i;
   PS       ps=opflow->ps;
@@ -1793,7 +1793,7 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow)
 }
 
 
-PetscErrorCode OPFLOWFormulationCreate_PBPOL(OPFLOW opflow)
+PetscErrorCode OPFLOWModelCreate_PBPOL(OPFLOW opflow)
 {
   PBPOL pbpol;
   PetscErrorCode ierr;
@@ -1802,25 +1802,25 @@ PetscErrorCode OPFLOWFormulationCreate_PBPOL(OPFLOW opflow)
   
   ierr = PetscCalloc1(1,&pbpol);CHKERRQ(ierr);
 
-  opflow->formulation = pbpol;
+  opflow->model = pbpol;
 
   /* Inherit Ops */
-  opflow->formops.destroy = OPFLOWFormulationDestroy_PBPOL;
-  opflow->formops.setnumvariables = OPFLOWFormulationSetNumVariables_PBPOL;
-  opflow->formops.setnumconstraints = OPFLOWFormulationSetNumConstraints_PBPOL;
-  opflow->formops.setvariablebounds = OPFLOWSetVariableBounds_PBPOL;
-  opflow->formops.setconstraintbounds = OPFLOWSetConstraintBounds_PBPOL;
-  opflow->formops.setvariableandconstraintbounds = OPFLOWSetVariableandConstraintBounds_PBPOL;
-  opflow->formops.setinitialguess = OPFLOWSetInitialGuess_PBPOL;
-  opflow->formops.computeequalityconstraints = OPFLOWComputeEqualityConstraints_PBPOL;
-  opflow->formops.computeinequalityconstraints = OPFLOWComputeInequalityConstraints_PBPOL;
-  opflow->formops.computeequalityconstraintjacobian = OPFLOWComputeEqualityConstraintJacobian_PBPOL;
-  opflow->formops.computeinequalityconstraintjacobian = OPFLOWComputeInequalityConstraintJacobian_PBPOL;
-  opflow->formops.computehessian = OPFLOWComputeHessian_PBPOL;
-  opflow->formops.computeobjandgradient = OPFLOWComputeObjandGradient_PBPOL;
-  opflow->formops.computeobjective = OPFLOWComputeObjective_PBPOL;
-  opflow->formops.computegradient  = OPFLOWComputeGradient_PBPOL;
-  opflow->formops.solutiontops     = OPFLOWSolutionToPS_PBPOL;
+  opflow->modelops.destroy = OPFLOWModelDestroy_PBPOL;
+  opflow->modelops.setnumvariables = OPFLOWModelSetNumVariables_PBPOL;
+  opflow->modelops.setnumconstraints = OPFLOWModelSetNumConstraints_PBPOL;
+  opflow->modelops.setvariablebounds = OPFLOWSetVariableBounds_PBPOL;
+  opflow->modelops.setconstraintbounds = OPFLOWSetConstraintBounds_PBPOL;
+  opflow->modelops.setvariableandconstraintbounds = OPFLOWSetVariableandConstraintBounds_PBPOL;
+  opflow->modelops.setinitialguess = OPFLOWSetInitialGuess_PBPOL;
+  opflow->modelops.computeequalityconstraints = OPFLOWComputeEqualityConstraints_PBPOL;
+  opflow->modelops.computeinequalityconstraints = OPFLOWComputeInequalityConstraints_PBPOL;
+  opflow->modelops.computeequalityconstraintjacobian = OPFLOWComputeEqualityConstraintJacobian_PBPOL;
+  opflow->modelops.computeinequalityconstraintjacobian = OPFLOWComputeInequalityConstraintJacobian_PBPOL;
+  opflow->modelops.computehessian = OPFLOWComputeHessian_PBPOL;
+  opflow->modelops.computeobjandgradient = OPFLOWComputeObjandGradient_PBPOL;
+  opflow->modelops.computeobjective = OPFLOWComputeObjective_PBPOL;
+  opflow->modelops.computegradient  = OPFLOWComputeGradient_PBPOL;
+  opflow->modelops.solutiontops     = OPFLOWSolutionToPS_PBPOL;
   
   PetscFunctionReturn(0);
 }

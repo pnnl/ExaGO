@@ -22,7 +22,7 @@ PetscErrorCode OPFLOWPrintSolution(OPFLOW opflow)
   ierr = PetscPrintf(opflow->comm->type,"=============================================================\n");CHKERRQ(ierr);
   ierr = PetscPrintf(opflow->comm->type,"\t\tOptimal Power Flow\n");CHKERRQ(ierr);
   ierr = PetscPrintf(opflow->comm->type,"=============================================================\n");CHKERRQ(ierr);
-  ierr = PetscPrintf(opflow->comm->type,"%-35s %s\n","Formulation",opflow->formulationname);CHKERRQ(ierr);
+  ierr = PetscPrintf(opflow->comm->type,"%-35s %s\n","Model",opflow->modelname);CHKERRQ(ierr);
   ierr = PetscPrintf(opflow->comm->type,"%-35s %s\n","Solver",opflow->solvername);CHKERRQ(ierr);
   ierr = PetscPrintf(opflow->comm->type,"%-35s %s\n","Initialization",OPFLOWInitializationTypes[opflow->initializationtype]);CHKERRQ(ierr);
 

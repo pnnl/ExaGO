@@ -35,12 +35,12 @@ mpiexec -n <N> ./OPFLOW -netfile <netfilename> -scopflow_solver <IPOPT, TAO, HiO
 ```
 The default solver is TAO.
 
-#### Set the formulation (-opflow_formulation <formulationname>): 
-Sets the formulation (represent of network balance equations and voltages). There are four different representations that can be run as mentioned above
+#### Set the model (-opflow_model <modelname>): 
+Sets the model (represent of network balance equations and voltages). There are four different representations that can be run as mentioned above
 ```
-./OPFLOW -netfile <netfilename> -opflow_formulation <formulationname>
+./OPFLOW -netfile <netfilename> -opflow_model <modelname>
 ```
-The formulation name can be one of `POWER_BALANCE_POLAR`,`POWER_BALANCE_CARTESIAN`,`CURRENT_BALANCE_CARTESIAN`, or `CURRENT_BALANCE_CARTESIAN2`. The default is `POWER_BALANCE_CARTESIAN`.
+The model name can be one of `POWER_BALANCE_POLAR`,`POWER_BALANCE_CARTESIAN`,`CURRENT_BALANCE_CARTESIAN`, or `CURRENT_BALANCE_CARTESIAN2`. The default is `POWER_BALANCE_CARTESIAN`.
 
 #### Set the initialization type (-opflow_initialization <initializationtype>)
 Sets the initialization (initial guess) for OPFLOW.

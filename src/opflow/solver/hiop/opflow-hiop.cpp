@@ -87,7 +87,7 @@ bool OPFLOWHIOPInterface::get_vars_info(const long long& n, double *xlow, double
   PetscErrorCode ierr;
   const PetscScalar    *xl,*xu;
 
-  ierr = (*opflow->formops.setvariablebounds)(opflow,opflow->Xl,opflow->Xu);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.setvariablebounds)(opflow,opflow->Xl,opflow->Xu);CHKERRQ(ierr);
 
   ierr = VecGetArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
   ierr = VecGetArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
@@ -115,7 +115,7 @@ bool OPFLOWHIOPInterface::get_cons_info(const long long& m, double* clow, double
   ierr = VecPlaceArray(opflow->Gl,clow);CHKERRQ(ierr);
   ierr = VecPlaceArray(opflow->Gu,cupp);CHKERRQ(ierr);
 
-  ierr = (*opflow->formops.setconstraintbounds)(opflow,opflow->Gl,opflow->Gu);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.setconstraintbounds)(opflow,opflow->Gl,opflow->Gu);CHKERRQ(ierr);
 
   ierr = VecResetArray(opflow->Gl);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->Gu);CHKERRQ(ierr);
@@ -152,7 +152,7 @@ bool OPFLOWHIOPInterface::eval_f(const long long& n, const double* x, bool new_x
   ierr = VecRestoreArray(opflow->X,&xarr);CHKERRQ(ierr);
 
   /* Compute objective */
-  ierr = (*opflow->formops.computeobjective)(opflow,opflow->X,&obj_value);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computeobjective)(opflow,opflow->X,&obj_value);CHKERRQ(ierr);
 
   return true;
 }
@@ -174,14 +174,14 @@ bool OPFLOWHIOPInterface::eval_cons(const long long& n, const long long& m,
   if(idx_cons[0] == 0) {
     /* Equality constaints */
     ierr = VecPlaceArray(opflow->Ge,cons+idx_cons[0]);CHKERRQ(ierr);
-    ierr = (*opflow->formops.computeequalityconstraints)(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
+    ierr = (*opflow->modelops.computeequalityconstraints)(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
   }
 
   if(idx_cons[0] == opflow->nconeq && opflow->nconineq) {
     /* Inequality constraints */
     ierr = VecPlaceArray(opflow->Gi,cons);CHKERRQ(ierr);
-    ierr = (*opflow->formops.computeinequalityconstraints)(opflow,opflow->X,opflow->Gi);CHKERRQ(ierr);
+    ierr = (*opflow->modelops.computeinequalityconstraints)(opflow,opflow->X,opflow->Gi);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->Gi);CHKERRQ(ierr);
   }
 
@@ -200,7 +200,7 @@ bool OPFLOWHIOPInterface::eval_grad_f(const long long& n, const double* x, bool 
   ierr = VecRestoreArray(opflow->X,&xarr);CHKERRQ(ierr);
 
   ierr = VecSet(opflow->gradobj,0.0);CHKERRQ(ierr);
-  ierr = (*opflow->formops.computegradient)(opflow,opflow->X,opflow->gradobj);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computegradient)(opflow,opflow->X,opflow->gradobj);CHKERRQ(ierr);
 
   ierr = VecGetArrayRead(opflow->gradobj,&gradarr);CHKERRQ(ierr);
   /* Convert from natural to sparse-dense ordering */
@@ -283,7 +283,7 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
 
     if(idx_cons[0] == 0) {
       /* Equality constraints Jacobian */
-      ierr = (*opflow->formops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
+      ierr = (*opflow->modelops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
 
       for(i=0; i < opflow->nconeq; i++) {
 	for(j=0; j < nxdense; j++) JacD[i][j] = 0.0;
@@ -300,7 +300,7 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
     } else {
       
       /* Inequality constraints Jacobian */
-      ierr = (*opflow->formops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
+      ierr = (*opflow->modelops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
 
       for(i=0; i < opflow->nconineq; i++) {
 	for(j=0; j < nxdense; j++) JacD[i][j] = 0.0;
@@ -363,7 +363,7 @@ bool OPFLOWHIOPInterface::eval_Hess_Lagr(const long long& n, const long long& m,
   }
     
   /* Compute Hessian */
-  ierr = (*opflow->formops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
     
   ierr = VecResetArray(opflow->Lambdae);CHKERRQ(ierr);
   if(opflow->Nconineq) {
@@ -415,7 +415,7 @@ bool OPFLOWHIOPInterface::get_starting_point(const long long& global_n, double* 
   const PetscScalar    *xarr;
 
   /* Set initial guess */
-  ierr = (*opflow->formops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
 
   ierr = VecGetArrayRead(opflow->X,&xarr);CHKERRQ(ierr);
   /* Convert from natural to sparse-dense ordering */
@@ -484,10 +484,10 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
 
   hiop->solver = new hiop::hiopAlgFilterIPMNewton(hiop->mds);
 
-  /* Error if formulation is not power balance */
-  ierr = PetscStrcmp(opflow->formulationname,OPFLOWFORMULATION_PBPOL,&flg);CHKERRQ(ierr);
+  /* Error if model is not power balance */
+  ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBPOL,&flg);CHKERRQ(ierr);
   if(!flg) {
-    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Only power balance form formulation supported with HIOP solver\nUse -opflow_formulation POWER_BALANCE_POLAR\n");
+    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Only power balance model supported with HIOP solver\nUse -opflow_model POWER_BALANCE_POLAR\n");
   }
 
   PetscFunctionReturn(0);

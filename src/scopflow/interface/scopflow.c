@@ -306,7 +306,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 {
   PetscErrorCode ierr;
   PetscBool      solverset;
-  char           formulationname[32]="POWER_BALANCE_POLAR";
+  char           modelname[32]="POWER_BALANCE_POLAR";
   char           solvername[32]="IPOPT";
   PetscInt       i,j;
   PS             ps;
@@ -315,7 +315,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   PetscFunctionBegin;
 
   ierr = PetscOptionsBegin(scopflow->comm->type,NULL,"SCOPFLOW options",NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsString("-scopflow_formulation","SCOPFLOW formulation type","",formulationname,formulationname,32,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsString("-scopflow_model","SCOPFLOW-OPFLOW model type","",modelname,modelname,32,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsString("-scopflow_solver","SCOPFLOW solver type","",solvername,solvername,32,&solverset);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-scopflow_iscoupling","Include coupling between first stage and second stage","",scopflow->iscoupling,&scopflow->iscoupling,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-scopflow_Nc","Number of second stage scenarios","",scopflow->Nc,&scopflow->Nc,NULL);CHKERRQ(ierr);
@@ -354,7 +354,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscCalloc1(scopflow->Nc,&scopflow->opflows);CHKERRQ(ierr);
   for(i=0; i < scopflow->Nc; i++) {
     ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflows[i]);CHKERRQ(ierr);
-    ierr = OPFLOWSetFormulation(scopflow->opflows[i],formulationname);CHKERRQ(ierr);
+    ierr = OPFLOWSetModel(scopflow->opflows[i],modelname);CHKERRQ(ierr);
     ierr = PetscStrcmp(solvername,SCOPFLOWSOLVER_PIPS,&flg);CHKERRQ(ierr);
     if(flg) {
       ierr = OPFLOWSetSolver(scopflow->opflows[i],OPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
@@ -534,7 +534,7 @@ PetscErrorCode SCOPFLOWSolutionToPS(SCOPFLOW scopflow)
 
   PetscFunctionBegin;
 
-  ierr = (*opflow->formops.solutiontops)(opflow);
+  ierr = (*opflow->modelops.solutiontops)(opflow);
 
   scopflow->solutiontops = PETSC_TRUE;
   PetscFunctionReturn(0);
