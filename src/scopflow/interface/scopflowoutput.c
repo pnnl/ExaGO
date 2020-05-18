@@ -29,7 +29,7 @@ PetscErrorCode SCOPFLOWPrintSolution(SCOPFLOW scopflow,PetscInt cont_num)
   ierr = PetscPrintf(scopflow->comm->type,"=============================================================\n");CHKERRQ(ierr);
   ierr = PetscPrintf(scopflow->comm->type,"\tSecurity-Constrained Optimal Power Flow\n");CHKERRQ(ierr);
   ierr = PetscPrintf(scopflow->comm->type,"=============================================================\n");CHKERRQ(ierr);
-  ierr = PetscPrintf(scopflow->comm->type,"%-35s %s\n","OPFLOW Formulation",opflow->formulationname);CHKERRQ(ierr);
+  ierr = PetscPrintf(scopflow->comm->type,"%-35s %s\n","OPFLOW Formulation",opflow->modelname);CHKERRQ(ierr);
   ierr = PetscPrintf(scopflow->comm->type,"%-35s %s\n","Solver",scopflow->solvername);CHKERRQ(ierr);
   ierr = PetscPrintf(scopflow->comm->type,"%-35s %s\n","Initialization",OPFLOWInitializationTypes[opflow->initializationtype]);CHKERRQ(ierr);
   ierr = PetscPrintf(scopflow->comm->type,"%-35s %s\n","Operation Mode",scopflow->mode?"Corrective":"Preventive");CHKERRQ(ierr);

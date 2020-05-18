@@ -10,7 +10,7 @@
 #include <pflow.h>
 #include <opflow.h>
 
-#define OPFLOWFORMULATIONSMAX 4
+#define OPFLOWMODELSMAX 4
 #define OPFLOWSOLVERSMAX      3
 
 typedef enum {
@@ -23,7 +23,7 @@ typedef enum {
 extern const char *const OPFLOWInitializationTypes[];
 
 
-struct _p_OPFLOWFormulationOps {
+struct _p_OPFLOWModelOps {
   PetscErrorCode (*destroy)(OPFLOW);
   PetscErrorCode (*setnumvariables)(OPFLOW,PetscInt*,PetscInt*,PetscInt*); /* Set number of variables for buses and branches, and total number of variables */
   PetscErrorCode (*setnumconstraints)(OPFLOW,PetscInt*,PetscInt*,PetscInt*,PetscInt*); /* Set number of equality and inequality constraints */
@@ -55,9 +55,9 @@ struct _p_OPFLOWSolverOps {
   PetscErrorCode (*getconstraintmultipliers)(OPFLOW,Vec*);
 };
 
-struct _p_OPFLOWFormulationList{
-  char name[32]; /* Name of the formulation */
-  PetscErrorCode (*create)(OPFLOW); /* Formulation creation routine */
+struct _p_OPFLOWModelList{
+  char name[32]; /* Name of the model */
+  PetscErrorCode (*create)(OPFLOW); /* Model creation routine */
 };
 
 struct _p_OPFLOWSolverList{
@@ -118,16 +118,16 @@ struct _p_OPFLOW{
   struct _p_OPFLOWSolverOps solverops;
   char  solvername[64];
 
-  void* formulation; /* Formulation object */
-  struct _p_OPFLOWFormulationOps formops;
-  char formulationname[64];
+  void* model; /* Model object */
+  struct _p_OPFLOWModelOps modelops;
+  char modelname[64];
 
-  /* List of formulations and solvers registered */
-  struct _p_OPFLOWFormulationList OPFLOWFormulationList[OPFLOWFORMULATIONSMAX];
+  /* List of models and solvers registered */
+  struct _p_OPFLOWModelList OPFLOWModelList[OPFLOWMODELSMAX];
   struct _p_OPFLOWSolverList OPFLOWSolverList[OPFLOWSOLVERSMAX];
-  PetscInt nformulationsregistered;
+  PetscInt nmodelsregistered;
   PetscInt nsolversregistered;
-  PetscBool OPFLOWFormulationRegisterAllCalled;
+  PetscBool OPFLOWModelRegisterAllCalled;
   PetscBool OPFLOWSolverRegisterAllCalled;
 
   PetscBool ignore_lineflow_constraints; /* Ignore line flow constraints */
@@ -161,8 +161,8 @@ struct _p_OPFLOW{
   PetscInt *busnvararray,*branchnvararray; /* Number of variables at buses and branches */
 };
 
-/* Registers all the OPFLOW formulations */
-extern PetscErrorCode OPFLOWFormulationRegisterAll(OPFLOW);
+/* Registers all the OPFLOW models */
+extern PetscErrorCode OPFLOWModelRegisterAll(OPFLOW);
 
 /* Register all OPFLOW solvers */
 extern PetscErrorCode OPFLOWSolverRegisterAll(OPFLOW);

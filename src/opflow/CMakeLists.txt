@@ -1,9 +1,9 @@
-# Formulations
+# Models
 set(OPFLOW_FORM_SRC
-    formulation/current-bal-cartesian/ibcar.c
-    formulation/current-bal-cartesian/ibcar2.c
-    formulation/power-bal-polar/pbpol.c
-    formulation/power-bal-cartesian/pbcar.c
+    model/current-bal-cartesian/ibcar.c
+    model/current-bal-cartesian/ibcar2.c
+    model/power-bal-polar/pbpol.c
+    model/power-bal-cartesian/pbcar.c
 )
 
 set(OPFLOW_SOLVER_SRC

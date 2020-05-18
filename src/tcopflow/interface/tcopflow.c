@@ -232,7 +232,7 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
 {
   PetscErrorCode ierr;
   PetscBool      solverset;
-  char           formulationname[32]="POWER_BALANCE_CARTESIAN";
+  char           modelname[32]="POWER_BALANCE_CARTESIAN";
   char           solvername[32]="IPOPT";
   PetscInt       i,j;
   PS             ps;
@@ -241,7 +241,7 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
   PetscFunctionBegin;
 
   ierr = PetscOptionsBegin(tcopflow->comm->type,NULL,"TCOPFLOW options",NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsString("-tcopflow_formulation","TCOPFLOW formulation type","",formulationname,formulationname,32,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsString("-tcopflow_model","TCOPFLOW model type","",modelname,modelname,32,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsString("-tcopflow_solver","TCOPFLOW solver type","",solvername,solvername,32,&solverset);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-tcopflow_iscoupling","Include coupling between first stage and second stage","",tcopflow->iscoupling,&tcopflow->iscoupling,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsReal("-tcopflow_dT","Length of time-step (minutes)","",tcopflow->dT,&tcopflow->dT,NULL);CHKERRQ(ierr);
@@ -268,7 +268,7 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
   ierr = PetscCalloc1(tcopflow->Nt,&tcopflow->opflows);CHKERRQ(ierr);
   for(i=0; i < tcopflow->Nt; i++) {
     ierr = OPFLOWCreate(PETSC_COMM_SELF,&tcopflow->opflows[i]);CHKERRQ(ierr);
-    ierr = OPFLOWSetFormulation(tcopflow->opflows[i],formulationname);CHKERRQ(ierr);
+    ierr = OPFLOWSetModel(tcopflow->opflows[i],modelname);CHKERRQ(ierr);
 
     /* Read network data file */
     ierr = OPFLOWReadMatPowerData(tcopflow->opflows[i],tcopflow->netfile);CHKERRQ(ierr);
