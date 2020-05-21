@@ -162,6 +162,27 @@ PetscErrorCode PSGetNumActiveGenerators(PS ps,PetscInt *ngenON, PetscInt *NgenON
   PetscFunctionReturn(0);
 }
 
+/*
+  PSGetNumActiveLines - Gets the number of local and global active lines (status ON) in this system
+
+  Input Parameters
+. ps - the PS object
+
+  Output Parameters
++ nlineON - number of local lines with STATUS ON
+- NlineON - number of global lines with STATUS ON
+ 
+  Notes:
+   PSSetUp() must be called before a call to PSGetNumActiveLines
+*/
+PetscErrorCode PSGetNumActiveLines(PS ps,PetscInt *nlineON, PetscInt *NlineON)
+{
+  PetscFunctionBegin;
+  if(nlineON) *nlineON = ps->nlineON;
+  if(NlineON) *NlineON = ps->NlineON;
+  PetscFunctionReturn(0);
+}
+
 
 /*
   PSLINESetStatus - Sets the status of the line
@@ -342,6 +363,28 @@ PetscErrorCode PSBUSGetNLoad(PSBUS bus,PetscInt *nload)
   *nload = bus->nload;
   PetscFunctionReturn(0);
 }
+
+/*
+  PSGetNumLoads - Gets the number of local and global loads in this system
+
+  Input Parameters
+. ps - the PS object
+
+  Output Parameters
++ nload - number of local loads
+- Nload - number of global loads
+ 
+  Notes:
+   PSSetUp() must be called before a call to PSGetNumLoads
+*/
+PetscErrorCode PSGetNumLoads(PS ps,PetscInt *nload, PetscInt *Nload)
+{
+  PetscFunctionBegin;
+  if(nload) *nload = ps->nload;
+  if(Nload) *Nload = ps->Nload;
+  PetscFunctionReturn(0);
+}
+
 
 /*
   PSBUSGetGen - Gets the generator incident at the bus
@@ -1165,6 +1208,7 @@ PetscErrorCode PSSetLineStatus(PS ps,PetscInt fbus, PetscInt tbus, const char* i
     if(line->status && !status) ps->nlineON--; /* Line switching to OFF status */
     else if(!line->status && status) ps->nlineON++; /* Line switching to ON status */
   }
+  ierr = MPI_Allreduce(&ps->nlineON,&ps->NlineON,1,MPIU_INT,MPI_SUM,ps->comm->type);CHKERRQ(ierr);
   
   PetscFunctionReturn(0);
 }

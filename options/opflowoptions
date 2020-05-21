@@ -39,7 +39,7 @@
 -opflow_tao_gatol 1e-6
 
 # Convergence monitor
--opflow_tao_monitor
+#-opflow_tao_monitor
 
 # Convergence status
 -opflow_tao_converged_reason
