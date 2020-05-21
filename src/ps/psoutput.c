@@ -4,11 +4,121 @@
 PetscErrorCode PSSaveSolution_MATPOWER(PS ps,const char outfile[])
 {
   PetscErrorCode ierr;
+  FILE           *fd;
+  char           busformat[100];
+  const char*    prefix="mpc.";
+  PSBUS          bus;
+  PSLOAD         load;
+  PSGEN          gen;
+  PSLINE         line;
+  PetscScalar    Pd,Qd;
+  PetscInt       i,k;
+  PetscScalar    MVAbase=ps->MVAbase;
+  char           filename[PETSC_MAX_PATH_LEN];
+  char           *pch;
+  char           fcn_name[100];
+  char           *tok,*tok2;
+  char           *sep="/";
+  char           *ext=".m";
+  char           file1[PETSC_MAX_PATH_LEN];
 
   PetscFunctionBegin;
+  strcpy(file1,outfile);
+  /* Check if file has .m extension */
+  tok = strtok(file1,ext);
+  strcpy(filename,tok);
 
-  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Saving file to MATPOWER format not supported yet\n");
+  strcpy(file1,filename);
+  tok2 = strtok(file1,sep);
+  strcpy(fcn_name,file1);
+  while((tok2 = strtok(NULL,sep)) != NULL) {
+    strcpy(fcn_name,tok2);
+  }
 
+  /* Add .m extension to file name */
+  ierr = PetscStrlcat(filename,".m",256);CHKERRQ(ierr);
+    
+  fd = fopen(filename,"w");
+  if (fd == NULL) {
+    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_FILE_OPEN,"Cannot open OPFLOW output file %s",outfile);CHKERRQ(ierr);
+  }
+
+  /* Function header */
+  fprintf(fd, "function mpc = %s\n", fcn_name);
+
+  /* Write system MVAbase */
+  fprintf(fd, "\n%%%%-----  Power Flow Data  -----%%%%\n");
+  fprintf(fd, "%%%% system MVA base\n");
+  fprintf(fd, "%sbaseMVA = %.9g;\n",prefix, ps->MVAbase);
+
+  /* Write bus data */
+  fprintf(fd, "\n%%%% bus data\n");
+  fprintf(fd, "%%\tbus_i\ttype\tPd\tQd\tGs\tBs\tarea\tVm\tVa\tbaseKV\tzone\tVmax\tVmin");
+  fprintf(fd, "\n%sbus = [\n", prefix);
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    /* Get total load on the bus */
+    Pd = Qd = 0.0;
+    for(k=0; k < bus->nload; k++) {
+      ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
+      Pd += load->pl*ps->MVAbase;
+      Qd += load->ql*ps->MVAbase;
+    }
+    fprintf(fd, "\t%d\t%d\t%.9g\t%.9g\t%.9g\t%.9g\t%d\t%.9g\t%.9g\t%.9g\t%d\t%.9g\t%.9g;\n", \
+	    bus->bus_i,bus->ide,Pd,Qd,bus->gl*MVAbase,bus->bl*MVAbase,	\
+	    bus->area,bus->vm,bus->va*180.0/PETSC_PI,bus->basekV,bus->zone,bus->Vmax,bus->Vmin);
+  }
+  fprintf(fd, "];\n");
+
+  /* Write generator data */
+  fprintf(fd, "\n%%%% generator data\n");
+  fprintf(fd, "%%\tbus\tPg\tQg\tQmax\tQmin\tVg\tmBase\tstatus\tPmax\tPmin");
+  fprintf(fd, "\tPc1\tPc2\tQc1min\tQc1max\tQc2min\tQc2max\tramp_agc\tramp_10\tramp_30\tramp_q\tapf\n");
+  fprintf(fd, "%sgen = [\n", prefix);
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    for(k=0; k < bus->ngen; k++) {
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      fprintf(fd, "\t%d\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%d\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g;\n",
+	      bus->bus_i,gen->pg*MVAbase,gen->qg*MVAbase,gen->qt*MVAbase,gen->qb*MVAbase,bus->vm,gen->mbase,gen->status,gen->pt*MVAbase,gen->pb*MVAbase, \
+	      gen->pc1*MVAbase,gen->pc2*MVAbase,gen->qc1min*MVAbase,gen->qc1max*MVAbase,gen->qc2min*MVAbase,gen->qc2max*MVAbase, \
+	      gen->ramp_rate_min*MVAbase,gen->ramp_rate_10min*MVAbase,gen->ramp_rate_30min*MVAbase,gen->ramp_rate_min_mvar*MVAbase,gen->apf);
+    }
+  }
+  fprintf(fd, "];\n");
+
+  /* Write branch data */
+  fprintf(fd, "\n%%%% branch data\n");
+  fprintf(fd, "%%\tfbus\ttbus\tr\tx\tb\trateA\trateB\trateC\tratio\tangle\tstatus");
+  fprintf(fd, "\tangmin\tangmax\tPf\tQf\tPt\tQt\n");
+  fprintf(fd, "%sbranch = [\n", prefix);
+  for(i=0; i < ps->nline; i++) {
+    line = &ps->line[i];
+    fprintf(fd, "\t%d\t%d\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%d\t%.9g\t%.9g\t%.4f\t%.4f\t%.4f\t%.4f;\n",\
+	    line->fbus,line->tbus,line->r,line->x,line->b,line->rateA,line->rateB,line->rateC,\
+	    line->tapratio,line->phaseshift,line->status,0.0,0.0,
+	    line->pf*MVAbase,line->qf*MVAbase,line->pt*MVAbase,line->qt*MVAbase);
+  }
+  fprintf(fd, "];\n");
+
+  /* Generator cost data */
+  fprintf(fd, "\n%%%% generator cost data\n");
+  fprintf(fd, "%%\t2\tstartup\tshutdown\tn\tc(n-1)\t...\tc0\n");
+  fprintf(fd, "%%\tUsing quadratic cost curves only\n");
+  fprintf(fd, "%sgencost = [\n", prefix);
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    for(k=0; k < bus->ngen; k++) {
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      ierr = fprintf(fd, "\t%d\t%.9g\t%.9g\t%d\t%.9g\t%.9g\t%.9g;\n",\
+		     2,gen->cost_startup,gen->cost_shutdown,3,gen->cost_alpha,gen->cost_beta,gen->cost_gamma);
+    }
+  }
+  fprintf(fd, "];\n");
+
+
+  
+  fclose(fd);
   PetscFunctionReturn(0);
 }
 
