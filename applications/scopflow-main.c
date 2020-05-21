@@ -67,7 +67,7 @@ int main(int argc,char **argv)
   /* Print solution */
   ierr = SCOPFLOWPrintSolution(scopflow,0);CHKERRQ(ierr);
 
-  ierr = SCOPFLOWSaveSolutionAll(scopflow,CSV,"scopflowout");CHKERRQ(ierr);
+  ierr = SCOPFLOWSaveSolutionAll(scopflow,MATPOWER,"scopflowout");CHKERRQ(ierr);
 
   /* Destroy SCOPFLOW object */
   ierr = SCOPFLOWDestroy(&scopflow);CHKERRQ(ierr);

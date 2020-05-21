@@ -5,16 +5,16 @@ static char help[] = "User example calling OPFLOW.\n\n";
 
 int main(int argc,char **argv)
 {
-  PetscErrorCode ierr;
+  PetscErrorCode     ierr;
   OPFLOW             opflow;
-  OutputFormat       fmt=CSV;
-  char              file[PETSC_MAX_PATH_LEN];
-  PetscBool         flg;
-  PetscReal         obj;
-  Vec               X,G,Lambda;
-  PetscBool         conv_status;
+  OutputFormat       fmt=MATPOWER;
+  char               file[PETSC_MAX_PATH_LEN];
+  PetscBool          flg;
+  PetscReal          obj;
+  Vec                X,G,Lambda;
+  PetscBool          conv_status;
   #if defined(PETSC_USE_LOG)
-    PetscLogStage stages[2];
+    PetscLogStage    stages[2];
   #endif
   char options_pathname[200] = SCOPFLOW_OPTIONS_DIR;
   char* filename = "/opflowoptions";
@@ -50,7 +50,7 @@ int main(int argc,char **argv)
 
   ierr = OPFLOWPrintSolution(opflow);CHKERRQ(ierr);
 
-  ierr = OPFLOWSaveSolution(opflow,fmt,"opflow.csv");CHKERRQ(ierr);
+  ierr = OPFLOWSaveSolution(opflow,fmt,"opflowout");CHKERRQ(ierr);
 
   /*End of Final Stage */
   ierr = PetscLogStagePop();CHKERRQ(ierr);
