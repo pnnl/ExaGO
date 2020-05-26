@@ -7,7 +7,7 @@
 -scopflow_iscoupling 1
 
 # Operation mode (preventive (0) or corrective (1))
--scopflow_mode 0
+-scopflow_mode 1
 
 # Ignore line flow constraints
 -opflow_ignore_lineflow_constraints 0

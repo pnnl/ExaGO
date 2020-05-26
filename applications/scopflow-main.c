@@ -49,7 +49,7 @@ int main(int argc,char **argv)
 
   /* Set Contingency Data file */
   if(flgctgc) {
-    ierr = SCOPFLOWSetContingencyData(scopflow,ctgcfile);CHKERRQ(ierr);
+    ierr = SCOPFLOWSetContingencyData(scopflow,NATIVE,ctgcfile);CHKERRQ(ierr);
   }
   
   /* Set a subset of scenarios to be selected. Can use the option -scopflow_Ns instead */
