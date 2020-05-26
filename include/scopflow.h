@@ -31,6 +31,7 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWDestroy(SCOPFLOW*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW,const char[]);
 
 /*
+ * The native format for Contingency input file is as follows:
  * Notes: Each field in the contingency file has the following format
  * Num,Type,Bus,Fbus,Tbus,Id,Status,prob
  * Num - Contingency number
@@ -53,7 +54,7 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW,const char[]);
     3,0,1,0,0,1 ,0,0.1  
     3,1,0,8,9,1 ,0,0.1
  */
-PETSC_EXTERN PetscErrorCode SCOPFLOWSetContingencyData(SCOPFLOW,const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetContingencyData(SCOPFLOW,ContingencyFileInputFormat,const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetUp(SCOPFLOW);
 PETSC_EXTERN PetscErrorCode SCOPFLOWCreateGlobalVector(SCOPFLOW,Vec*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWCreateMatrix(SCOPFLOW,Mat*);
