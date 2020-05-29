@@ -22,6 +22,11 @@ struct _p_TCOPFLOWSolverOps {
   PetscErrorCode (*destroy)(TCOPFLOW);
   PetscErrorCode (*setup)(TCOPFLOW);
   PetscErrorCode (*solve)(TCOPFLOW);
+  PetscErrorCode (*getobjective)(TCOPFLOW,PetscReal*);
+  PetscErrorCode (*getsolution)(TCOPFLOW,PetscInt,Vec*);
+  PetscErrorCode (*getconvergencestatus)(TCOPFLOW,PetscBool*);
+  PetscErrorCode (*getconstraints)(TCOPFLOW,PetscInt,Vec*);
+  PetscErrorCode (*getconstraintmultipliers)(TCOPFLOW,PetscInt,Vec*);
 };
 
 
@@ -36,6 +41,7 @@ struct _p_TCOPFLOW{
   PetscInt Nconeq,nconeq; /* Local and global number of equality constraints */
   PetscInt nconineq, Nconineq; /* Local and global number of inequality constraints */
   PetscInt *nconineqcoup;      /* Number of inequality coupling constraints */
+  PetscInt Nconcoup;  /* Number of coupling constraints between time-steps */
   
   COMM comm; /**< Communicator context */
   OPFLOW *opflows; /* Array of optimal power flow application objects.
@@ -80,6 +86,7 @@ struct _p_TCOPFLOW{
 
   void *solver; /* Solver object */
   struct _p_TCOPFLOWSolverOps solverops;
+  char   solvername[64];
 
   /* List of solvers registered */
   struct _p_TCOPFLOWSolverList TCOPFLOWSolverList[TCOPFLOWSOLVERSMAX];
@@ -99,6 +106,7 @@ struct _p_TCOPFLOW{
   char windgenprofile[100]; /* Wind generation profiles */
   PetscBool windgenprofileset; /* Is the wind generation profile set ? */
   
+  PetscBool solutiontops;
 };
 
 /* Register all TCOPFLOW solvers */
@@ -106,5 +114,8 @@ extern PetscErrorCode TCOPFLOWSolverRegisterAll(TCOPFLOW);
 extern PetscErrorCode TCOPFLOWReadPloadProfile(TCOPFLOW,char[]);
 extern PetscErrorCode TCOPFLOWReadQloadProfile(TCOPFLOW,char[]);
 extern PetscErrorCode TCOPFLOWReadWindGenProfile(TCOPFLOW,char[]);
+extern PetscErrorCode TCOPFLOWGetConstraints(TCOPFLOW,PetscInt,Vec*);
+extern PetscErrorCode TCOPFLOWGetConstraintMultipliers(TCOPFLOW,PetscInt,Vec*);
+
 
 #endif

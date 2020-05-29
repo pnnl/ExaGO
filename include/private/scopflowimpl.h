@@ -104,12 +104,15 @@ struct _p_SCOPFLOW{
   char            ctgcfile[100]; /* Contingency file */
 
   PetscBool       solutiontops;
+
+  ContingencyFileInputFormat ctgcfileformat;
 };
 
 /* Register all SCOPFLOW solvers */
 extern PetscErrorCode SCOPFLOWSolverRegisterAll(SCOPFLOW);
 extern PetscErrorCode SCOPFLOWGetConstraints(SCOPFLOW,PetscInt,Vec*);
 extern PetscErrorCode SCOPFLOWGetConstraintMultipliers(SCOPFLOW,PetscInt,Vec*);
+extern PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW,ContingencyFileInputFormat,const char[]);
 
 
 #endif

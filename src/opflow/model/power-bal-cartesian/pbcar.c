@@ -1,42 +1,53 @@
-
 #include <private/opflowimpl.h>
-#include "ibcar.h"
+#include "pbcar.h"
 
-PetscErrorCode OPFLOWFormulationDestroy_IBCAR(OPFLOW opflow)
+PetscErrorCode OPFLOWModelDestroy_PBCAR(OPFLOW opflow)
 {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
 
-  ierr = PetscFree(opflow->formulation);CHKERRQ(ierr);
+  ierr = PetscFree(opflow->model);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSetVariableBounds_IBCAR(OPFLOW opflow,Vec Xl,Vec Xu)
+PetscErrorCode OPFLOWSetVariableBounds_PBCAR(OPFLOW opflow,Vec Xl,Vec Xu)
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
   PetscScalar    *xl,*xu;
   PetscInt       i;
   PSBUS          bus;
-  PSGEN          gen;
   PetscInt       loc;
+  PetscBool      isghost;
+  Vec            localXl,localXu;
 
   PetscFunctionBegin;
 
+  ierr = DMGetLocalVector(ps->networkdm,&localXl);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(ps->networkdm,&localXu);CHKERRQ(ierr);
+  ierr = VecSet(Xl,0.0);CHKERRQ(ierr);
+  ierr = VecSet(Xu,0.0);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,Xl,INSERT_VALUES,localXl);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,Xl,INSERT_VALUES,localXl);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,Xu,INSERT_VALUES,localXu);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,Xu,INSERT_VALUES,localXu);CHKERRQ(ierr);
+
   /* Get array pointers */
-  ierr = VecGetArray(Xl,&xl);CHKERRQ(ierr);
-  ierr = VecGetArray(Xu,&xu);CHKERRQ(ierr);
+  ierr = VecGetArray(localXl,&xl);CHKERRQ(ierr);
+  ierr = VecGetArray(localXu,&xu);CHKERRQ(ierr);
 
   for(i=0; i < ps->nbus; i++) {
     PetscInt k;
 
     bus = &ps->bus[i];
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
+    if(isghost) continue;
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
 
     /* Bounds on real and imaginary part of voltages */
-    xl[loc]   = -bus->Vmax; xu[loc] = bus->Vmax;
+    xl[loc] = -bus->Vmax; xu[loc] = bus->Vmax;
     xl[loc+1] = -bus->Vmax; xu[loc+1] = bus->Vmax;
 
     if(bus->ide == ISOLATED_BUS) {
@@ -45,6 +56,7 @@ PetscErrorCode OPFLOWSetVariableBounds_IBCAR(OPFLOW opflow,Vec Xl,Vec Xu)
     }
 
     for(k=0; k < bus->ngen; k++) {
+      PSGEN gen;
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
       loc = loc+2;
@@ -77,13 +89,21 @@ PetscErrorCode OPFLOWSetVariableBounds_IBCAR(OPFLOW opflow,Vec Xl,Vec Xu)
     }
   }
   
-  ierr = VecRestoreArray(Xl,&xl);CHKERRQ(ierr);
-  ierr = VecRestoreArray(Xu,&xu);CHKERRQ(ierr);
+  ierr = VecRestoreArray(localXl,&xl);CHKERRQ(ierr);
+  ierr = VecRestoreArray(localXu,&xu);CHKERRQ(ierr);
+
+  ierr = DMLocalToGlobalBegin(ps->networkdm,localXl,ADD_VALUES,Xl);CHKERRQ(ierr);
+  ierr = DMLocalToGlobalEnd(ps->networkdm,localXl,ADD_VALUES,Xl);CHKERRQ(ierr);
+  ierr = DMLocalToGlobalBegin(ps->networkdm,localXu,ADD_VALUES,Xu);CHKERRQ(ierr);
+  ierr = DMLocalToGlobalEnd(ps->networkdm,localXu,ADD_VALUES,Xu);CHKERRQ(ierr);
+
+  ierr = DMRestoreLocalVector(ps->networkdm,&localXl);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(ps->networkdm,&localXu);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSetConstraintBounds_IBCAR(OPFLOW opflow,Vec Gl,Vec Gu)
+PetscErrorCode OPFLOWSetConstraintBounds_PBCAR(OPFLOW opflow,Vec Gl,Vec Gu)
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
@@ -92,6 +112,7 @@ PetscErrorCode OPFLOWSetConstraintBounds_IBCAR(OPFLOW opflow,Vec Gl,Vec Gu)
   PSLINE         line;
   PSBUS          bus;
   PetscInt       gloc=0;
+  PetscBool      isghost;
 
   PetscFunctionBegin;
 
@@ -103,6 +124,8 @@ PetscErrorCode OPFLOWSetConstraintBounds_IBCAR(OPFLOW opflow,Vec Gl,Vec Gu)
   for(i=0; i < ps->nbus; i++) {
 
     bus = &ps->bus[i];
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
+    if(isghost) continue;
 
     gl[gloc]   = 0.0;   gu[gloc]   = 0.0;
     gl[gloc+1] = 0.0;   gu[gloc+1] = 0.0;
@@ -116,25 +139,35 @@ PetscErrorCode OPFLOWSetConstraintBounds_IBCAR(OPFLOW opflow,Vec Gl,Vec Gu)
     }
   }
 
-  /* Inequality constraints on voltage magnitude */
-  for(i=0; i < ps->nbus; i++) {
-    bus = &ps->bus[i];
-    
-    gl[gloc] = bus->Vmin*bus->Vmin;
-    gu[gloc] = bus->Vmax*bus->Vmax;
-    if(bus->ide == ISOLATED_BUS) {
-      gl[gloc] = PETSC_NINFINITY;
-      gu[gloc] = PETSC_INFINITY;
+  if(opflow->nconineq) {
+    /* Inequality constraints on voltage magnitude */
+    for(i=0; i < ps->nbus; i++) {
+      bus = &ps->bus[i]; 
+      ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
+      if(isghost) continue;
+     
+      gl[gloc] = bus->Vmin*bus->Vmin;
+      gu[gloc] = bus->Vmax*bus->Vmax;
+      if(bus->ide == ISOLATED_BUS) {
+	gl[gloc] = PETSC_NINFINITY;
+	gu[gloc] = PETSC_INFINITY;
+      }
+      gloc++;
     }
-    gloc++;
-  }
     
-  if(!opflow->ignore_lineflow_constraints) {  
+    if(opflow->ignore_lineflow_constraints) {
+      ierr = VecRestoreArray(Gl,&gl);CHKERRQ(ierr);
+      ierr = VecRestoreArray(Gu,&gu);CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
     for(i=0; i < ps->nline; i++) {
       line = &ps->line[i];
       if(!line->status || line->rateA > 1e5) continue;
+      
+      /* Line flow inequality constraints */
       gl[gloc] = gl[gloc+1] = 0.0; 
-      gu[gloc] = gu[gloc+1] = (line->rateA/ps->MVAbase)*(line->rateA/ps->MVAbase);    
+      gu[gloc] = gu[gloc+1] = (line->rateA/ps->MVAbase)*(line->rateA/ps->MVAbase);
       gloc += 2;
     }
   }
@@ -145,18 +178,18 @@ PetscErrorCode OPFLOWSetConstraintBounds_IBCAR(OPFLOW opflow,Vec Gl,Vec Gu)
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSetVariableandConstraintBounds_IBCAR(OPFLOW opflow,Vec Xl,Vec Xu, Vec Gl, Vec Gu)
+PetscErrorCode OPFLOWSetVariableandConstraintBounds_PBCAR(OPFLOW opflow,Vec Xl,Vec Xu, Vec Gl, Vec Gu)
 {
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
-  ierr = OPFLOWSetVariableBounds_IBCAR(opflow,Xl,Xu);CHKERRQ(ierr);
-  ierr = OPFLOWSetConstraintBounds_IBCAR(opflow,Gl,Gu);CHKERRQ(ierr);
+  ierr = OPFLOWSetVariableBounds_PBCAR(opflow,Xl,Xu);CHKERRQ(ierr);
+  ierr = OPFLOWSetConstraintBounds_PBCAR(opflow,Gl,Gu);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSetInitialGuess_IBCAR(OPFLOW opflow,Vec X)
+PetscErrorCode OPFLOWSetInitialGuess_PBCAR(OPFLOW opflow,Vec X)
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
@@ -164,20 +197,37 @@ PetscErrorCode OPFLOWSetInitialGuess_IBCAR(OPFLOW opflow,Vec X)
   PetscScalar    *x;
   PetscInt       i;
   PSBUS          bus;
-  PSGEN          gen;
   PetscInt       loc;
+  PetscBool      isghost;
+  Vec            localX,localXl,localXu;
 
   PetscFunctionBegin;
 
+  ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(ps->networkdm,&localXl);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(ps->networkdm,&localXu);CHKERRQ(ierr);
+
+  ierr = VecSet(X,0.0);CHKERRQ(ierr);
+
+  ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,opflow->Xl,INSERT_VALUES,localXl);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,opflow->Xl,INSERT_VALUES,localXl);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,opflow->Xu,INSERT_VALUES,localXu);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,opflow->Xu,INSERT_VALUES,localXu);CHKERRQ(ierr);
+
+
   /* Get array pointers */
-  ierr = VecGetArray(X,&x);CHKERRQ(ierr);
-  ierr = VecGetArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
-  ierr = VecGetArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
+  ierr = VecGetArray(localX,&x);CHKERRQ(ierr);
+  ierr = VecGetArrayRead(localXl,&xl);CHKERRQ(ierr);
+  ierr = VecGetArrayRead(localXu,&xu);CHKERRQ(ierr);
   
   for(i=0; i < ps->nbus; i++) {
     PetscInt k;
 
     bus = &ps->bus[i];
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
+    if(isghost) continue;
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
 
@@ -187,7 +237,7 @@ PetscErrorCode OPFLOWSetInitialGuess_IBCAR(OPFLOW opflow,Vec X)
     } else {
       if(opflow->initializationtype == OPFLOWINIT_MIDPOINT) {
 	x[loc]   = 0.5*(bus->Vmin + bus->Vmax)*PetscCosScalar(bus->va*PETSC_PI/180.0);
-	x[loc+1] = 0; //0.5*(bus->Vmin + bus->Vmax)*PetscCosScalar(bus->va*PETSC_PI/180.0);
+	x[loc+1] = 0; //0.5*(bus->Vmin + bus->Vmax)*PetscSinScalar(bus->va*PETSC_PI/180.0);
       } else if(opflow->initializationtype == OPFLOWINIT_FROMFILE || opflow->initializationtype == OPFLOWINIT_ACPF) {
 	x[loc]   = PetscMax(bus->Vmin,PetscMin(bus->vm,bus->Vmax))*PetscCosScalar(bus->va*PETSC_PI/180.0);
 	x[loc+1] = PetscMax(bus->Vmin,PetscMin(bus->vm,bus->Vmax))*PetscSinScalar(bus->va*PETSC_PI/180.0);
@@ -197,7 +247,10 @@ PetscErrorCode OPFLOWSetInitialGuess_IBCAR(OPFLOW opflow,Vec X)
       }
     }
 
+
     for(k=0; k < bus->ngen; k++) {
+      PSGEN gen;
+
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
       loc = loc+2;
@@ -230,25 +283,33 @@ PetscErrorCode OPFLOWSetInitialGuess_IBCAR(OPFLOW opflow,Vec X)
 
   }
 
-  ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
-  ierr = VecRestoreArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
-  ierr = VecRestoreArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
+  ierr = VecRestoreArray(localX,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(localXl,&xl);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(localXu,&xu);CHKERRQ(ierr);
+
+  ierr = DMLocalToGlobalBegin(ps->networkdm,localX,ADD_VALUES,X);CHKERRQ(ierr);
+  ierr = DMLocalToGlobalEnd(ps->networkdm,localX,ADD_VALUES,X);CHKERRQ(ierr);
+
+  ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(ps->networkdm,&localXl);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(ps->networkdm,&localXu);CHKERRQ(ierr);
+
+  //  ierr = VecView(X,0);CHKERRQ(ierr);
+
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Ge)
+PetscErrorCode OPFLOWComputeEqualityConstraints_PBCAR(OPFLOW opflow,Vec X,Vec Ge)
 {
   PetscErrorCode ierr;
   PetscInt       i,k,nconnlines;
-  PetscInt       gloc=0,row[3];
   PetscInt       xloc,xlocf,xloct;
-  PetscScalar    val[3];
   PetscScalar    Pg,Qg,Pd,Qd;
   PetscScalar    Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
   PetscScalar    Vrf,Vif,Vrt,Vit;
-  PetscScalar    Irf,Iif,Irt,Iit;
-  PetscScalar    Vr,Vi,Vm,Vm2;
+  PetscScalar    Pf,Qf,Pt,Qt;
+  PetscScalar    Vr,Vi,Vm;
   PS             ps=opflow->ps;
   PSLOAD         load;
   PSLINE         line;
@@ -256,19 +317,26 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Ge
   PSGEN          gen;
   const PSBUS    *connbuses;
   const PSLINE   *connlines;
+  PetscScalar    *ge;
   const PetscScalar *x;
-  PetscInt       rstart;
+  Vec            localX;
+  PetscBool      isghost;
+  PetscInt       gloc=0;
 
   PetscFunctionBegin;
   ierr = VecSet(Ge,0.0);CHKERRQ(ierr);
-  ierr = VecGetOwnershipRange(Ge,&rstart,NULL);CHKERRQ(ierr);
+  ierr = VecSet(opflow->Gelocal,0.0);CHKERRQ(ierr);
 
-  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
 
+  ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->Gelocal,&ge);CHKERRQ(ierr);
+  
   for (i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
-
-    row[0] = rstart + gloc; row[1] = row[0] + 1;
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
 
     ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
 
@@ -276,61 +344,56 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Ge
     Vr = x[xloc];
     Vi = x[xloc+1];
     Vm = PetscSqrtScalar(Vr*Vr + Vi*Vi);
-    Vm2 = Vm*Vm;
     
-    if (bus->ide == ISOLATED_BUS) {
-      val[0] = Vr - bus->vm*PetscCosScalar(bus->va*PETSC_PI/180.0);
-      val[1] = Vi - bus->vm*PetscSinScalar(bus->va*PETSC_PI/180.0);
+    if(!isghost) {
+      if (bus->ide == ISOLATED_BUS) {
+	ge[gloc]   = Vr - bus->vm*PetscCosScalar(bus->va*PETSC_PI/180.0);
+	ge[gloc+1] = Vi - bus->vm*PetscSinScalar(bus->va*PETSC_PI/180.0);
   
-      ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
-      gloc += 2;
-      continue;
-    }
-
-    /* Shunt current injections */
-    val[0] = bus->gl*Vr - bus->bl*Vi;
-    val[1] = bus->bl*Vr + bus->gl*Vi;
-    ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
-
-    /* Generation current injection */
-    for (k=0; k < bus->ngen; k++) {
-      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      if(!gen->status) continue;
-      xloc += 2;
-      Pg = x[xloc];
-      Qg = x[xloc+1];
-      
-      val[0] = -(Pg*Vr + Qg*Vi)/Vm2;
-      val[1] = -(-Qg*Vr + Pg*Vi)/Vm2;
-      ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);      
-    }
-
-    /* Load current injection */
-    for (k=0; k < bus->nload; k++) {
-      ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
-      if(opflow->include_loadloss_variables) {
-	xloc += 2;
-	Pd = load->pl - x[xloc];
-	Qd = load->ql - x[xloc+1];
-      } else {
-	Pd = load->pl;
-	Qd = load->ql;
+	gloc += 2;
+	continue;
       }
-      val[0] = (Pd*Vr + Qd*Vi)/Vm2;
-      val[1] = (-Qd*Vr + Pd*Vi)/Vm2;
 
-      ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
-    }
+      /* Shunt injections */
+      ge[gloc]   += Vm*Vm*bus->gl;
+      ge[gloc+1] += -Vm*Vm*bus->bl;
 
-    /* Power imbalance current addition */
-    if(opflow->include_powerimbalance_variables) {
-      PetscScalar Pimb,Qimb;
-      xloc += 2;
-      Pimb = x[xloc];
-      Qimb = x[xloc+1];
-      val[0] = (Pimb*Vr + Qimb*Vi)/Vm2;
-      val[1] = (-Qimb*Vr + Pimb*Vi)/Vm2;
-      ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+      /* Generation injection */
+      for (k=0; k < bus->ngen; k++) {
+	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	if(!gen->status) continue;
+	xloc += 2;
+	Pg = x[xloc];
+	Qg = x[xloc+1];
+      
+	ge[gloc]   += -Pg;
+	ge[gloc+1] += -Qg;
+      }
+
+      /* Load injection */
+      for (k=0; k < bus->nload; k++) {
+	ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
+	if(opflow->include_loadloss_variables) {
+	  xloc += 2;
+	  Pd = load->pl - x[xloc];
+	  Qd = load->ql - x[xloc+1];
+	} else {
+	  Pd = load->pl;
+	  Qd = load->ql;
+	}
+	ge[gloc]   += Pd;
+	ge[gloc+1] += Qd;
+      }
+
+      /* Power imbalance addition */
+      if(opflow->include_powerimbalance_variables) {
+	PetscScalar Pimb,Qimb;
+	xloc += 2;
+	Pimb = x[xloc];
+	Qimb = x[xloc+1];
+	ge[gloc]   += Pimb;
+	ge[gloc+1] += Qimb;
+      }
     }
 
     /* Branch flow injections */
@@ -361,211 +424,130 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Ge
       Vit  = x[xloct+1];
 
       if (bus == busf) {
-	Irf = Gff*Vrf - Bff*Vif + Gft*Vrt - Bft*Vit;
-	Iif = Bff*Vrf + Gff*Vif + Bft*Vrt + Gft*Vit;
+	Pf =  Gff*(Vrf*Vrf + Vif*Vif) + Vrf*(Gft*Vrt - Bft*Vit) + Vif*(Bft*Vrt + Gft*Vit);
+	Qf = -Bff*(Vrf*Vrf + Vif*Vif) + Vif*(Gft*Vrt - Bft*Vit) - Vrf*(Bft*Vrt + Gft*Vit);
 
-        val[0] = Irf;
-        val[1] = Iif;
-        ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+        ge[gloc]   += Pf;
+        ge[gloc+1] += Qf;
       } else {
-	Irt = Gtt*Vrt - Btt*Vit + Gtf*Vrf - Btf*Vif;
-	Iit = Btt*Vrt + Gtt*Vit + Btf*Vrf + Gtf*Vif;
+	Pt =  Gtt*(Vrt*Vrt + Vit*Vit) + Vrt*(Gtf*Vrf - Btf*Vif) + Vit*(Btf*Vrf + Gtf*Vif);
+	Qt = -Btt*(Vrt*Vrt + Vit*Vit) + Vit*(Gtf*Vrf - Btf*Vif) - Vrt*(Btf*Vrf + Gtf*Vif);
 
-        val[0] = Irt;
-        val[1] = Iit;
-        ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+        ge[gloc]   += Pt;
+        ge[gloc+1] += Qt;
       }
     }
     gloc += 2;
     if(bus->ide == REF_BUS) {
-      /* Equality constraint for angle */
-      row[2] = row[1] + 1;
-      val[2] = Vi - Vr*PetscTanScalar(bus->va*PETSC_PI/180.0); 
-      ierr = VecSetValues(Ge,1,&row[2],&val[2],ADD_VALUES);CHKERRQ(ierr);
-      gloc += 1;
+      if(!isghost) {
+	/* Equality constraint for angle */
+	ge[gloc] = Vi - Vr*PetscTanScalar(bus->va*PETSC_PI/180.0);
+      }
+      gloc++;
     }
   }
-  ierr = VecAssemblyBegin(Ge);CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(Ge);CHKERRQ(ierr);
 
-  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+
+  ierr = VecRestoreArray(opflow->Gelocal,&ge);CHKERRQ(ierr);
+
+  ierr = VecScatterBegin(opflow->scattereqcon,opflow->Gelocal,Ge,ADD_VALUES,SCATTER_REVERSE);CHKERRQ(ierr);
+  ierr = VecScatterEnd(opflow->scattereqcon,opflow->Gelocal,Ge,ADD_VALUES,SCATTER_REVERSE);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR(OPFLOW opflow,Vec X,Mat Je)
+PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBCAR(OPFLOW opflow,Vec X,Mat Je)
 {
   PetscErrorCode ierr;
-  PetscInt       i,k,row[3],col[4],genctr,gloc=0,loadctr;
-  PetscInt       nconnlines,locglob,loc,locglobf,locglobt;
-  PetscScalar    Vr,Vi,Vm,Vm2,Vm4,val[8],Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
+  PetscInt       i,k,row[3],col[4],genctr,loadctr;
+  PetscInt       nconnlines,locglob,loc,locglobf,locglobt,locf,loct;
+  PetscScalar    Vr,Vi,val[8],Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
+  PetscScalar    Vrf,Vrt,Vif,Vit;
   PS             ps=opflow->ps;
   PSBUS          bus;
-  PSGEN          gen;
   PSLINE         line;
   PSBUS          busf,bust;
+  PSGEN          gen;
   const PSLINE   *connlines;
   const PSBUS    *connbuses;
-  const PetscScalar *x;
-  PetscInt       rstart;
+  const PetscScalar *xarr;
+  PetscBool      isghost;
+  Vec            localX;
 
   PetscFunctionBegin;
   ierr = MatZeroEntries(Je);CHKERRQ(ierr);
 
-  ierr = MatGetOwnershipRange(Je,&rstart,NULL);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
 
-  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecGetArrayRead(localX,&xarr);CHKERRQ(ierr);
   for (i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
 
-    row[0] = rstart + gloc; row[1] = row[0] + 1;
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
+
+    row[0] = opflow->eqconglobloc[i]; row[1] = row[0] + 1;
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
     ierr = PSBUSGetVariableGlobalLocation(bus,&locglob);CHKERRQ(ierr);
 
-    Vr = x[loc];
-    Vi = x[loc+1];
-    Vm = PetscSqrtScalar(Vr*Vr + Vi*Vi);
-    Vm2 = Vm*Vm;
-    Vm4 = Vm2*Vm2;
+    Vr = xarr[loc];
+    Vi = xarr[loc+1];
 
     col[0] = locglob; col[1] = locglob+1;
-    /* Isolated and reference bus */
-    if(bus->ide == ISOLATED_BUS) {
-      val[0] = val[3] = 1.0;
-      val[1] = val[2] = 0.0;
-      ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-      gloc += 2;
-      continue;
-    }
-    /* Partial derivative for shunt contribution */
-    val[0] = bus->gl; val[1] = -bus->bl;
-    val[2] = bus->bl; val[3] =  bus->gl;
-    ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-    
-    genctr = 0;
-    for (k=0; k < bus->ngen; k++) {
-      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      if(!gen->status) continue;
-      PetscScalar Pg,Qg;
-      loc += 2;
-      Pg = x[loc];
-      Qg = x[loc+1];
 
-      col[0] = locglob;
-      col[1] = locglob + 1;
-
-      /* dIrg_dVr */
-      val[0] = (Pg*Vr*Vr + 2*Qg*Vr*Vi - Pg*Vi*Vi)/Vm4;
-      /* dIrg_dVi */
-      val[1] = (Qg*Vi*Vi + 2*Pg*Vr*Vi - Qg*Vr*Vr)/Vm4;
-      /* dIig_dVr */
-      val[2] = (-Qg*Vr*Vr + 2*Pg*Vr*Vi + Qg*Vi*Vi)/Vm4;
-      /* dIig_dVi */
-      val[3] = (Pg*Vi*Vi - 2*Qg*Vr*Vi - Pg*Vr*Vr)/Vm4;
-
-      ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-
-      col[0] = locglob + 2 + genctr;
-      col[1] = locglob + 2 + genctr + 1;
-
-      /* dIrg_dPg */
-      val[0] = -Vr/Vm2;
-      /* dIrg_dQg */
-      val[1] = -Vi/Vm2;
-      /* dIig_dPg */
-      val[2] = -Vi/Vm2;
-      /* dIig_dQg */
-      val[3] = Vr/Vm2;
-
-      ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-
-      genctr += 2;      
-    }
-
-    loadctr = 0;
-    for(k=0; k < bus->nload; k++) {
-      PSLOAD load;
-      PetscScalar Pd,Qd,Pdloss,Qdloss;
-      ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
-      if(opflow->include_loadloss_variables) {
-	loc += 2;
-	Pdloss = x[loc];
-	Qdloss = x[loc+1];
-	
-	Pd = load->pl - Pdloss;
-	Qd = load->ql - Qdloss;
-      } else {
-	Pd = load->pl;
-	Qd = load->ql;
-      }
-
-      col[0] = locglob; col[1] = locglob + 1;
-
-      /* dIrd_dVr */
-      val[0] = (-Pd*Vr*Vr - 2*Qd*Vr*Vi + Pd*Vi*Vi)/Vm4;
-      /* dIrd_dVi */
-      val[1] = (-Qd*Vi*Vi - 2*Pd*Vr*Vi + Qd*Vr*Vr)/Vm4;
-      /* dIid_dVr */
-      val[2] = (Qd*Vr*Vr - 2*Pd*Vr*Vi - Qd*Vi*Vi)/Vm4;
-      /* dIid_dVi */
-      val[3] = (-Pd*Vi*Vi + 2*Qd*Vr*Vi + Pd*Vr*Vr)/Vm4;
-
-      ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-
-      if(opflow->include_loadloss_variables) {
-
-	col[0] = locglob + 2 + 2*bus->ngen + loadctr;
-	col[1] = locglob + 2 + 2*bus->ngen + loadctr + 1;
-
-	/* dIrd_dPdloss */
-	val[0] = -Vr/Vm2;
-	/* dIrd_dQdloss */
-	val[1] = -Vi/Vm2;
-	/* dIid_dPdloss */
-	val[2] = -Vi/Vm2;
-	/* dIid_dQdloss */
-	val[3] = Vr/Vm2;
-
+    if(!isghost) {
+      /* Isolated and reference bus */
+      if(bus->ide == ISOLATED_BUS) {
+	val[0] = val[3] = 1.0;
+	val[1] = val[2] = 0.0;
 	ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-	loadctr += 2;
+	continue;
       }
-    }
 
-    /* Power imbalance Jacobian terms */
-    if(opflow->include_powerimbalance_variables) {
-      PetscScalar Pimb,Qimb;
-      loc += 2;
-      Pimb = x[loc];
-      Qimb = x[loc+1];
-
-      col[0] = locglob;
-      col[1] = locglob + 1;
-
-      /* dIrg_dVr */
-      val[0] = (-Pimb*Vr*Vr - 2*Qimb*Vr*Vi + Pimb*Vi*Vi)/Vm4;
-      /* dIrg_dVi */
-      val[1] = (-Qimb*Vi*Vi - 2*Pimb*Vr*Vi + Qimb*Vr*Vr)/Vm4;
-      /* dIig_dVr */
-      val[2] = (Qimb*Vr*Vr - 2*Pimb*Vr*Vi - Qimb*Vi*Vi)/Vm4;
-      /* dIig_dVi */
-      val[3] = (-Pimb*Vi*Vi + 2*Qimb*Vr*Vi + Pimb*Vr*Vr)/Vm4;
-
+      /* Partial derivative for shunt contribution */
+      val[0] = 2*Vr*bus->gl;  val[1] = 2*Vi*bus->gl;
+      val[2] = -2*Vr*bus->bl; val[3]= -2*Vi*bus->bl; 
       ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
+    
+      genctr = 0;
+      for (k=0; k < bus->ngen; k++) {
+	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	if(!gen->status) continue;
+	val[0] = -1;
+	col[0] = locglob + 2 + genctr;
+	ierr = MatSetValues(Je,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+      
+	col[0] = locglob + 2 + genctr+1;
+	ierr = MatSetValues(Je,1,row+1,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+	genctr += 2;
+      }
 
-      col[0] = locglob + 2 + 2*bus->ngen + opflow->include_loadloss_variables*2*bus->nload;
-      col[1] = locglob + 2 + 2*bus->ngen + opflow->include_loadloss_variables*2*bus->nload + 1;
+      if(opflow->include_loadloss_variables) {
+	loadctr = 0;
+	for(k=0; k < bus->nload; k++) {
+	  val[0] = -1;
+	  col[0] = locglob + 2 + 2*bus->ngen + loadctr;
+	  ierr = MatSetValues(Je,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
-      /* dIrmb_dPimb */
-      val[0] = Vr/Vm2;
-      /* dIrmb_dQimb */
-      val[1] = Vi/Vm2;
-      /* dIiimb_dPimb */
-      val[2] = Vi/Vm2;
-      /* dIiimb_dQimb */
-      val[3] = -Vr/Vm2;
+	  col[0] = locglob + 2 + 2*bus->ngen + loadctr + 1;
+	  ierr = MatSetValues(Je,1,row+1,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+	  loadctr += 2;
+	}
+      }
 
-      ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
+      /* Power imbalance Jacobian terms */
+      if(opflow->include_powerimbalance_variables) {
+	val[0] = 1;
+	col[0] = locglob + 2 + 2*bus->ngen + opflow->include_loadloss_variables*2*bus->nload;
+	ierr = MatSetValues(Je,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+
+	col[0] = locglob + 2 + 2*bus->ngen + opflow->include_loadloss_variables*2*bus->nload + 1;
+	ierr = MatSetValues(Je,1,row+1,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+      }
     }
 
     /* Partial derivatives of network equations */
@@ -592,62 +574,62 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR(OPFLOW opflow,Vec X
       ierr = PSBUSGetVariableGlobalLocation(busf,&locglobf);CHKERRQ(ierr);
       ierr = PSBUSGetVariableGlobalLocation(bust,&locglobt);CHKERRQ(ierr);
 
+      ierr = PSBUSGetVariableLocation(busf,&locf);CHKERRQ(ierr);
+      ierr = PSBUSGetVariableLocation(bust,&loct);CHKERRQ(ierr);
+
+      Vrf = xarr[locf];  Vif = xarr[locf+1];
+      Vrt = xarr[loct];  Vit = xarr[loct+1];
+
       if (bus == busf) {
       	col[0] = locglobf; col[1] = locglobf+1; col[2] = locglobt; col[3] = locglobt+1;
-	/* dIrf_dVrf */
-	val[0] = Gff;
-	/* dIrf_dVif */
-	val[1] = -Bff;
-	/* dIrf_dVrt */
-	val[2] = Gft;
-	/* dIrf_dVit */
-	val[3] = -Bft;
+	/* dPf_dVrf */
+	val[0] = 2*Gff*Vrf + (Gft*Vrt - Bft*Vit);
+	/* dPf_dVif */
+	val[1] = 2*Gff*Vif + (Bft*Vrt + Gft*Vit);
+	/* dPf_dVrt */
+	val[2] = Vrf*Gft + Vif*Bft;
+	/* dPf_dVit */
+	val[3] = -Vrf*Bft + Vif*Gft;
 	
-	/* dIif_dVrf */
-	val[4] = Bff;
-	/* dIif_dVif */
-	val[5] = Gff;
-	/* dIif_dVrt */
-	val[6] =  Bft;
-	/* dIif_dVit */
-	val[7] = Gft;
+	/* dQf_dVrf */
+	val[4] = -2*Bff*Vrf - (Bft*Vrt + Gft*Vit);
+	/* dQf_dVif */
+	val[5] = -2*Bff*Vif + (Gft*Vrt - Bft*Vit);
+	/* dQf_dVrt */
+	val[6] =  Vif*Gft - Vrf*Bft;
+	/* dQf_dVit */
+	val[7] = -Vif*Bft - Vrf*Gft;
         ierr = MatSetValues(Je,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
       } else {
       	col[0] = locglobt; col[1] = locglobt+1; col[2] = locglobf; col[3] = locglobf+1;
+	val[0] = 2*Gtt*Vrt + (Gtf*Vrf - Btf*Vif);
+	val[1] = 2*Gtt*Vit + (Btf*Vrf + Gtf*Vif);
+	val[2] = Vrt*Gtf  + Vit*Btf;
+	val[3] = -Vrt*Btf + Vit*Gtf;
 
-	/* dIrt_dVrt */
-	val[0] = Gtt;
-	/* dIrt_dVit */
-	val[1] = -Btt;
-	/* dIrt_dVrf */
-	val[2] = Gtf;
-	/* dIrt_dVif */
-	val[3] = -Btf;
-	
-	/* dIit_dVrt */
-	val[4] = Btt;
-	/* dIit_dVit */
-	val[5] = Gtt;
-	/* dIit_dVrf */
-	val[6]=  Btf;
-	/* dIit_dVif */
-	val[7] = Gtf;
+	val[4] = -2*Btt*Vrt - (Btf*Vrf + Gtf*Vif);
+	val[5] = -2*Btt*Vit + (Gtf*Vrf - Btf*Vif);
+	val[6] =  Vit*Gtf - Vrt*Btf;
+	val[7] = -Vit*Btf - Vrt*Gtf;
 
         ierr = MatSetValues(Je,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
       }
     }
-    gloc += 2;
-    if(bus->ide == REF_BUS) {
-      /* Partial of equality constraint for ref. bus angle */
-      row[2] = row[1] + 1;
-      col[0] = locglob; col[1] = locglob + 1;
-      val[0] = -PetscTanScalar(bus->va*PETSC_PI/180.0);
-      val[1] = 1.0;
-      ierr = MatSetValues(Je,1,row+2,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-      gloc += 1;
+
+    if(!isghost) {
+      if(bus->ide == REF_BUS) {
+	/* Partial of equality constraint for ref. bus angle */
+	row[2] = row[1] + 1;
+	col[0] = locglob; col[1] = locglob + 1;
+	val[0] = -PetscTanScalar(bus->va*PETSC_PI/180.0);
+	val[1] = 1.0;
+	ierr = MatSetValues(Je,1,row+2,2,col,val,ADD_VALUES);CHKERRQ(ierr);
+      }
     }
   }
-  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+
+  ierr = VecRestoreArrayRead(localX,&xarr);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -655,7 +637,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR(OPFLOW opflow,Vec X
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeInequalityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Gi)
+PetscErrorCode OPFLOWComputeInequalityConstraints_PBCAR(OPFLOW opflow,Vec X,Vec Gi)
 {
   PetscErrorCode ierr;
   PetscInt       i;
@@ -671,15 +653,25 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec 
   PSBUS          busf,bust;
   const PSBUS    *connbuses;
   const PetscScalar *x;
+  PetscBool      isghost;
+  Vec            localX;
 
   PetscFunctionBegin;
   ierr = VecSet(Gi,0.0);CHKERRQ(ierr);
 
-  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+
+  ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
   ierr = VecGetArray(Gi,&g);CHKERRQ(ierr);
 
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
+
+    if(isghost) continue;
+
     ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
 
     Vr = x[xloc];
@@ -690,8 +682,9 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec 
   }
 
   if(opflow->ignore_lineflow_constraints) {
-    ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+    ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
     ierr = VecRestoreArray(Gi,&g);CHKERRQ(ierr);
+    ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
     
     PetscFunctionReturn(0);
   }
@@ -699,7 +692,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec 
   for(i=0; i<ps->nline; i++) {
     line = &ps->line[i];
     if(!line->status || line->rateA > 1e5) continue;
-
+    
     Gff = line->yff[0];
     Bff = line->yff[1];
     Gft = line->yft[0];
@@ -708,47 +701,47 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec 
     Btf = line->ytf[1];
     Gtt = line->ytt[0];
     Btt = line->ytt[1];
-
+    
     ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
     busf = connbuses[0];
     bust = connbuses[1];
-
+    
     ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
     ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
-
+    
     Vrf  = x[xlocf];
     Vif  = x[xlocf+1];
     Vrt  = x[xloct];
     Vit  = x[xloct+1];
-
+    
     Pf =  Gff*(Vrf*Vrf + Vif*Vif) + Vrf*(Gft*Vrt - Bft*Vit) + Vif*(Bft*Vrt + Gft*Vit);
     Qf = -Bff*(Vrf*Vrf + Vif*Vif) + Vif*(Gft*Vrt - Bft*Vit) - Vrf*(Bft*Vrt + Gft*Vit);
-
+    
     Pt =  Gtt*(Vrt*Vrt + Vit*Vit) + Vrt*(Gtf*Vrf - Btf*Vif) + Vit*(Btf*Vrf + Gtf*Vif);
     Qt = -Btt*(Vrt*Vrt + Vit*Vit) + Vit*(Gtf*Vrf - Btf*Vif) - Vrt*(Btf*Vrf + Gtf*Vif);
-
+    
     Sf2 = Pf*Pf + Qf*Qf;
     St2 = Pt*Pt + Qt*Qt;
-
+    
     g[gloc]   = Sf2;
     g[gloc+1] = St2;
-
+    
     gloc = gloc + 2;
   }
-  
-  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
   ierr = VecRestoreArray(Gi,&g);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,Vec X,Mat Ji)
+PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBCAR(OPFLOW opflow,Vec X,Mat Ji)
 {
   PetscErrorCode ierr;
   PetscInt       i;
   PetscInt       row[2],col[4];
   PetscInt       rstart,rend;
-  PetscInt       gloc=0,xloc,xlocf,xloct,xlocglob;
+  PetscInt       gloc=0,xloc,xlocf,xloct,xlocglob,xlocfglob,xloctglob;
   PetscScalar    val[4];
   PetscScalar    Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
   PetscScalar    Vr,Vi,Vrf,Vrt,Vif,Vit;
@@ -766,11 +759,17 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,Vec
   PSBUS          bus,busf,bust;
   const PSBUS    *connbuses;
   const PetscScalar *x;
+  Vec            localX;
+  PetscBool      isghost;
 
   PetscFunctionBegin;
   ierr = MatZeroEntries(Ji);CHKERRQ(ierr);
 
-  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+
+  ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
 
   ierr = MatGetOwnershipRange(Ji,&rstart,&rend);CHKERRQ(ierr);
   ierr = MPI_Barrier(comm);CHKERRQ(ierr);
@@ -778,6 +777,9 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,Vec
   gloc = rstart;
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
+
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
+    if(isghost) continue;
 
     row[0] = gloc;
 
@@ -793,15 +795,15 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,Vec
 
     gloc += 1;
   }
-
+    
   if(opflow->ignore_lineflow_constraints) {
-    ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+    ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
+    ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
     
     ierr = MatAssemblyBegin(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
     ierr = MatAssemblyEnd(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
     
-    PetscFunctionReturn(0)
-;
+    PetscFunctionReturn(0);
   }
 
   for (i=0; i < ps->nline; i++) {
@@ -823,6 +825,9 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,Vec
 
     ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
     ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
+    ierr = PSBUSGetVariableGlobalLocation(busf,&xlocfglob);CHKERRQ(ierr);
+    ierr = PSBUSGetVariableGlobalLocation(bust,&xloctglob);CHKERRQ(ierr);
+
 
     Vrf  = x[xlocf];
     Vif  = x[xlocf+1];
@@ -866,7 +871,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,Vec
     dSf2_dVit = dSf2_dPf*dPf_dVit + dSf2_dQf*dQf_dVit;
 
     row[0] = gloc;
-    col[0] = xlocf; col[1] = xlocf+1; col[2] = xloct; col[3] = xloct+1;
+    col[0] = xlocfglob; col[1] = xlocfglob+1; col[2] = xloctglob; col[3] = xloctglob+1;
     val[0] = dSf2_dVrf;
     val[1] = dSf2_dVif;
     val[2] = dSf2_dVrt;
@@ -879,7 +884,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,Vec
     dSt2_dVit = dSt2_dPt*dPt_dVit + dSt2_dQt*dQt_dVit;
 
     row[0] = gloc+1;
-    col[0] = xloct; col[1] = xloct+1; col[2] = xlocf; col[3] = xlocf+1;
+    col[0] = xloctglob; col[1] = xloctglob+1; col[2] = xlocfglob; col[3] = xlocfglob+1;
     val[0] = dSt2_dVrt;
     val[1] = dSt2_dVit;
     val[2] = dSt2_dVrf;
@@ -889,7 +894,8 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,Vec
     gloc += 2;
   }
 
-  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -897,14 +903,14 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,Vec
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeConstraints_IBCAR(OPFLOW opflow,Vec X,Vec G)
+PetscErrorCode OPFLOWComputeConstraints_PBCAR(OPFLOW opflow,Vec X,Vec G)
 {
   PetscFunctionBegin;
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeObjective_IBCAR(OPFLOW opflow,Vec X,PetscScalar *obj)
+PetscErrorCode OPFLOWComputeObjective_PBCAR(OPFLOW opflow,Vec X,PetscScalar *obj)
 {
   PetscErrorCode ierr;
   const PetscScalar *x;
@@ -913,26 +919,35 @@ PetscErrorCode OPFLOWComputeObjective_IBCAR(OPFLOW opflow,Vec X,PetscScalar *obj
   PSBUS          bus;
   PSGEN          gen;
   PetscInt       loc;
+  PetscBool      isghost;
+  Vec            localX;
+  PetscReal      localobj;
   PetscInt       k;
   PetscScalar    Pg;
 
   PetscFunctionBegin;
 
-  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
 
-  *obj = 0.0;
+  ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
+
+  localobj = 0.0;
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
+    if(isghost) continue;
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
-    
+
     for(k=0; k < bus->ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
       loc = loc+2;
-      if(opflow->obj_gencost) {
+      if(opflow->obj_gencost) {    
 	Pg = x[loc]*ps->MVAbase;
-	*obj += gen->cost_alpha*Pg*Pg + gen->cost_beta*Pg + gen->cost_gamma;
+	localobj += gen->cost_alpha*Pg*Pg + gen->cost_beta*Pg + gen->cost_gamma;
       }
     }
 
@@ -945,7 +960,7 @@ PetscErrorCode OPFLOWComputeObjective_IBCAR(OPFLOW opflow,Vec X,PetscScalar *obj
 	if(!load->status) continue;
 	Pdloss = x[loc];
 	Qdloss = x[loc+1];
-	*obj += opflow->loadloss_penalty*ps->MVAbase*ps->MVAbase*(Pdloss*Pdloss + Qdloss*Qdloss);
+	localobj += opflow->loadloss_penalty*ps->MVAbase*ps->MVAbase*(Pdloss*Pdloss + Qdloss*Qdloss);
       }
     }
 
@@ -954,15 +969,18 @@ PetscErrorCode OPFLOWComputeObjective_IBCAR(OPFLOW opflow,Vec X,PetscScalar *obj
       loc += 2;
       Pimb = x[loc];
       Qimb = x[loc+1];
-      *obj += opflow->powerimbalance_penalty*ps->MVAbase*ps->MVAbase*(Pimb*Pimb + Qimb*Qimb);
+      localobj += opflow->powerimbalance_penalty*ps->MVAbase*ps->MVAbase*(Pimb*Pimb + Qimb*Qimb);
     }
   }
-  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+
+  ierr = MPI_Allreduce(&localobj,obj,1,MPIU_REAL,MPI_SUM,opflow->comm->type);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeGradient_IBCAR(OPFLOW opflow,Vec X,Vec grad)
+PetscErrorCode OPFLOWComputeGradient_PBCAR(OPFLOW opflow,Vec X,Vec grad)
 {
   PetscErrorCode ierr;
   const PetscScalar *x;
@@ -972,24 +990,38 @@ PetscErrorCode OPFLOWComputeGradient_IBCAR(OPFLOW opflow,Vec X,Vec grad)
   PSBUS          bus;
   PSGEN          gen;
   PetscInt       loc;
+  Vec            localX,localgrad;
+  PetscBool      isghost;
   PetscInt       k;
   PetscScalar    Pg;
 
-
   PetscFunctionBegin;
-  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
-  ierr = VecGetArray(grad,&df);CHKERRQ(ierr);
+
+  ierr = VecSet(grad,0.0);CHKERRQ(ierr);
+
+  ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(ps->networkdm,&localgrad);CHKERRQ(ierr);
+
+  ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,grad,INSERT_VALUES,localgrad);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,grad,INSERT_VALUES,localgrad);CHKERRQ(ierr);
+
+  ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
+  ierr = VecGetArray(localgrad,&df);CHKERRQ(ierr);
 
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
+    if(isghost) continue;
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
-    
+
     for(k=0; k < bus->ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
       loc = loc+2;
-      if(opflow->obj_gencost) {
+      if(opflow->obj_gencost) {    
 	Pg = x[loc]*ps->MVAbase;
 	df[loc] = ps->MVAbase*(2*gen->cost_alpha*Pg + gen->cost_beta);
       }
@@ -1018,26 +1050,32 @@ PetscErrorCode OPFLOWComputeGradient_IBCAR(OPFLOW opflow,Vec X,Vec grad)
       df[loc+1] = opflow->powerimbalance_penalty*ps->MVAbase*ps->MVAbase*2*Qimb;
     }
   }
-  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
-  ierr = VecRestoreArray(grad,&df);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArray(localgrad,&df);CHKERRQ(ierr);
+
+  ierr = DMLocalToGlobalBegin(ps->networkdm,localgrad,INSERT_VALUES,grad);CHKERRQ(ierr);
+  ierr = DMLocalToGlobalEnd(ps->networkdm,localgrad,INSERT_VALUES,grad);CHKERRQ(ierr);
+
+  ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(ps->networkdm,&localgrad);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeObjandGradient_IBCAR(OPFLOW opflow,Vec X,PetscScalar *obj,Vec Grad)
+PetscErrorCode OPFLOWComputeObjandGradient_PBCAR(OPFLOW opflow,Vec X,PetscScalar *obj,Vec Grad)
 {
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
-  ierr = OPFLOWComputeObjective_IBCAR(opflow,X,obj);CHKERRQ(ierr);
-  ierr = OPFLOWComputeGradient_IBCAR(opflow,X,Grad);CHKERRQ(ierr);
+  ierr = OPFLOWComputeObjective_PBCAR(opflow,X,obj);CHKERRQ(ierr);
+  ierr = OPFLOWComputeGradient_PBCAR(opflow,X,Grad);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWFormulationSetNumVariables_IBCAR(OPFLOW opflow,PetscInt *busnvar,PetscInt *branchnvar,PetscInt *nx)
+PetscErrorCode OPFLOWModelSetNumVariables_PBCAR(OPFLOW opflow,PetscInt *busnvar,PetscInt *branchnvar,PetscInt *nx)
 {
-  PetscInt i,ngen,nload,k;
+  PetscInt i,ngen,nload,j;
   PS       ps=opflow->ps;
   PSBUS    bus;
   PSGEN    gen;
@@ -1058,14 +1096,12 @@ PetscErrorCode OPFLOWFormulationSetNumVariables_IBCAR(OPFLOW opflow,PetscInt *bu
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
     ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
-    busnvar[i] = 2; /* 2 variables for the voltages */
+    busnvar[i] = 2; /* 2 variables for voltage */
     ierr = PSBUSGetNGen(bus,&ngen);CHKERRQ(ierr);
-    for(k=0; k < bus->ngen; k++) {
-      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      if(!gen->status) continue;
-      busnvar[i] += 2; /* (2 variables Pg, Qg for each gen) */
+    for(j=0; j < ngen; j++) {
+      ierr = PSBUSGetGen(bus,j,&gen);CHKERRQ(ierr);
+      if(gen->status) busnvar[i] += 2; /* (2 variables Pg, Qg for each in-service gen) */
     }
-
     if(opflow->include_loadloss_variables) {
       ierr = PSBUSGetNLoad(bus,&nload);CHKERRQ(ierr);
       /* Load loss variables..Real and imaginary part of the load loss */
@@ -1080,7 +1116,7 @@ PetscErrorCode OPFLOWFormulationSetNumVariables_IBCAR(OPFLOW opflow,PetscInt *bu
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWFormulationSetNumConstraints_IBCAR(OPFLOW opflow,PetscInt *branchnconeq,PetscInt *busnconeq,PetscInt *nconeq,PetscInt *nconineq)
+PetscErrorCode OPFLOWModelSetNumConstraints_PBCAR(OPFLOW opflow,PetscInt *branchnconeq,PetscInt *busnconeq,PetscInt *nconeq,PetscInt *nconineq)
 {
   PetscInt i;
   PS       ps=opflow->ps;
@@ -1097,10 +1133,13 @@ PetscErrorCode OPFLOWFormulationSetNumConstraints_IBCAR(OPFLOW opflow,PetscInt *
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
     ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
-    if(isghost) continue;
-    *nconeq += 2; /* Power balance constraints */
-    if(bus->ide == REF_BUS) *nconeq += 1; /* Reference angle constraint */
-    *nconineq += 1; /* Voltage magnitude constraint */
+    busnconeq[i] = 2; /* Power balance constraints */
+    if(bus->ide == REF_BUS) busnconeq[i] += 1;
+    if(!isghost) {
+      *nconeq += 2;
+      if(bus->ide == REF_BUS) *nconeq += 1; /* Reference angle constraint */
+      *nconineq += 1; /* Voltage magnitude constraint */
+    }
   }
 
   if(!opflow->ignore_lineflow_constraints) {
@@ -1125,309 +1164,293 @@ PetscErrorCode OPFLOWFormulationSetNumConstraints_IBCAR(OPFLOW opflow,PetscInt *
 . H - the Hessian part for the equality constraints
 
 */
-PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,Vec X,Vec Lambda,Mat H) 
+PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBCAR(OPFLOW opflow,Vec X,Vec Lambda,Mat H) 
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
   PetscInt       i,k;
+  PSLINE         line;
   PSBUS          bus;
-  PSGEN          gen;
-  PetscInt       xloc,xlocglob;
+  PetscInt       nconnlines;
+  const PSLINE   *connlines;
+  const PSBUS    *connbuses;
+  PetscInt       xloc,xlocf,xloct,xlocglob,xlocfglob,xloctglob;
+  PSBUS          busf,bust;
   const PetscScalar *x;
   const PetscScalar *lambda;
   PetscInt       gloc=0;
   PetscInt       row[12],col[12];
   PetscScalar    val[12];
-  PetscScalar    Vr,Vi,Vm2,Vm4,Vm6;
+  Vec            localX;
+  PetscBool      isghost;
 
   PetscFunctionBegin;
 
-  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
-  ierr = VecGetArrayRead(Lambda,&lambda);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+
+  ierr = VecScatterBegin(opflow->scattereqcon,Lambda,opflow->Lambdaelocal,INSERT_VALUES,SCATTER_FORWARD);CHKERRQ(ierr);
+  ierr = VecScatterEnd(opflow->scattereqcon,Lambda,opflow->Lambdaelocal,INSERT_VALUES,SCATTER_FORWARD);CHKERRQ(ierr);
+
+  ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
+  ierr = VecGetArrayRead(opflow->Lambdaelocal,&lambda);CHKERRQ(ierr);
 
   // For equality constraints (power flow) */
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
     
     ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
     ierr = PSBUSGetVariableGlobalLocation(bus,&xlocglob);CHKERRQ(ierr);
     
-    Vr = x[xloc];
-    Vi = x[xloc+1];
-    Vm2 = Vr*Vr + Vi*Vi;
-    Vm4 = Vm2*Vm2;
-    Vm6 = Vm2*Vm2*Vm2;
+    if(!isghost) {
+      /* Shunt */
+      row[0] = xlocglob; row[1] = xlocglob+1;
+      col[0] = xlocglob; col[1] = xlocglob+1;
+      val[0] = lambda[gloc]*2*bus->gl + lambda[gloc+1]*(-2*bus->bl);
+      val[3] = val[0];
+      val[1] = val[2] = 0.0;
+      ierr = MatSetValues(H,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
+    }
+
+    ierr = PSBUSGetSupportingLines(bus,&nconnlines,&connlines);CHKERRQ(ierr);
     
-    PetscInt genctr = 0;
-    for(k=0; k < bus->ngen; k++) {
-      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      if(!gen->status) continue;
-
-      PetscScalar Pg,Qg;
-      PetscScalar d2Irg_dVr2,d2Irg_dVr_dVi,d2Irg_dVr_dPg,d2Irg_dVr_dQg;
-      PetscScalar d2Irg_dVi_dVr,d2Irg_dVi2,d2Irg_dVi_dPg,d2Irg_dVi_dQg;
-      PetscScalar d2Iig_dVr2,d2Iig_dVr_dVi,d2Iig_dVr_dPg,d2Iig_dVr_dQg;
-      PetscScalar d2Iig_dVi_dVr,d2Iig_dVi2,d2Iig_dVi_dPg,d2Iig_dVi_dQg;
-
-      xloc += 2;
-      Pg = x[xloc];
-      Qg = x[xloc+1];
-
-      d2Irg_dVr2    = -2*(Pg*Vr*Vr*Vr + 3*Qg*Vr*Vr*Vi - 3*Pg*Vr*Vi*Vi - Qg*Vi*Vi*Vi)/Vm6;
-      d2Irg_dVr_dVi =  2*(Pg*Vi*Vi*Vi - 3*Qg*Vr*Vi*Vi - 3*Pg*Vr*Vr*Vi + Qg*Vr*Vr*Vr)/Vm6;
-      d2Irg_dVr_dPg = (Vr*Vr - Vi*Vi)/Vm4;
-      d2Irg_dVr_dQg = 2*Vr*Vi/Vm4;
-
-      d2Irg_dVi_dVr =  2*(Qg*Vr*Vr*Vr - 3*Pg*Vi*Vr*Vr - 3*Qg*Vi*Vi*Vr + Pg*Vi*Vi*Vi)/Vm6;
-      d2Irg_dVi2    = -2*(Qg*Vi*Vi*Vi + 3*Pg*Vr*Vi*Vi - 3*Qg*Vr*Vr*Vi - Pg*Vr*Vr*Vr)/Vm6;
-      d2Irg_dVi_dPg =   2*Vr*Vi/Vm4;
-      d2Irg_dVi_dQg = (Vi*Vi - Vr*Vr)/Vm4;
-       
-      d2Iig_dVr2    =  2*(Qg*Vr*Vr*Vr - 3*Pg*Vi*Vr*Vr-  3*Qg*Vi*Vi*Vr + Pg*Vi*Vi*Vi)/Vm6;
-      d2Iig_dVr_dVi = -2*(Qg*Vi*Vi*Vi + 3*Pg*Vr*Vi*Vi - 3*Qg*Vr*Vr*Vi - Pg*Vr*Vr*Vr)/Vm6; 
-      d2Iig_dVr_dPg =   2*Vr*Vi/Vm4;
-      d2Iig_dVr_dQg = (Vi*Vi - Vr*Vr)/Vm4;
-
-      d2Iig_dVi_dVr =  2*(Pg*Vr*Vr*Vr + 3*Qg*Vr*Vr*Vi - 3*Pg*Vr*Vi*Vi - Qg*Vi*Vi*Vi)/Vm6;
-      d2Iig_dVi2    = -2*(Pg*Vi*Vi*Vi - 3*Qg*Vr*Vi*Vi - 3*Pg*Vr*Vr*Vi + Qg*Vr*Vr*Vr)/Vm6;
-      d2Iig_dVi_dPg = (Vi*Vi - Vr*Vr)/Vm4;
-      d2Iig_dVi_dQg = -2*Vr*Vi/Vm4;
+    for(k=0; k < nconnlines; k++) {
+      line = connlines[k];
       
-      row[0] = xlocglob; row[1] = xlocglob+1;
-      col[0] = xlocglob; col[1] = xlocglob+1; col[2] = xlocglob + 2 + genctr; col[3] = xlocglob + 2 + genctr + 1;
+      if(!line->status) continue;
+      
+      PetscScalar Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
+      Gff = line->yff[0];
+      Bff = line->yff[1];
+      Gft = line->yft[0];
+      Bft = line->yft[1];
+      Gtf = line->ytf[0];
+      Btf = line->ytf[1];
+      Gtt = line->ytt[0];
+      Btt = line->ytt[1];
 
-      val[0] = val[1] = val[2] = val[3] = val[4] = val[5] = val[6] = val[7] = 0.0;
+      ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
+      busf = connbuses[0];
+      bust = connbuses[1];
 
-      val[0] = lambda[gloc]*d2Irg_dVr2    + lambda[gloc+1]*d2Iig_dVr2;
-      val[1] = lambda[gloc]*d2Irg_dVr_dVi + lambda[gloc+1]*d2Iig_dVr_dVi;
-      val[2] = lambda[gloc]*d2Irg_dVr_dPg + lambda[gloc+1]*d2Iig_dVr_dPg;
-      val[3] = lambda[gloc]*d2Irg_dVr_dQg + lambda[gloc+1]*d2Iig_dVr_dQg;
+      ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
+      ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
 
-      val[4] = lambda[gloc]*d2Irg_dVi_dVr + lambda[gloc+1]*d2Iig_dVi_dVr;
-      val[5] = lambda[gloc]*d2Irg_dVi2    + lambda[gloc+1]*d2Iig_dVi2;
-      val[6] = lambda[gloc]*d2Irg_dVi_dPg + lambda[gloc+1]*d2Iig_dVi_dPg;
-      val[7] = lambda[gloc]*d2Irg_dVi_dQg + lambda[gloc+1]*d2Iig_dVi_dQg;
+      ierr = PSBUSGetVariableGlobalLocation(busf,&xlocfglob);CHKERRQ(ierr);
+      ierr = PSBUSGetVariableGlobalLocation(bust,&xloctglob);CHKERRQ(ierr);
+     
+      if(bus == busf) {
+	 
+	PetscScalar dPf_dVrf_dVrf,dPf_dVrf_dVif,dPf_dVrf_dVrt,dPf_dVrf_dVit;
+	PetscScalar dPf_dVif_dVrf,dPf_dVif_dVif,dPf_dVif_dVrt,dPf_dVif_dVit;
+	PetscScalar dPf_dVrt_dVrf,dPf_dVrt_dVif,dPf_dVrt_dVrt,dPf_dVrt_dVit;
+	PetscScalar dPf_dVit_dVrf,dPf_dVit_dVif,dPf_dVit_dVrt,dPf_dVit_dVit;
 
-      ierr = MatSetValues(H,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+	/* Partial of     dPf_dVrf = 2*Gff*Vrf + (Gft*Vrt - Bft*Vit); */
+	dPf_dVrf_dVrf = 2*Gff;
+	dPf_dVrf_dVif = 0.0;
+	dPf_dVrf_dVrt = Gft;
+	dPf_dVrf_dVit = -Bft;
 
-      PetscScalar d2Irg_dPg_dVr,d2Irg_dPg_dVi,d2Irg_dQg_dVr,d2Irg_dQg_dVi;
-      PetscScalar d2Iig_dPg_dVr,d2Iig_dPg_dVi,d2Iig_dQg_dVr,d2Iig_dQg_dVi;
+	/* Partial of dPf_dVif = 2*Gff*Vif + (Bft*Vrt + Gft*Vit); */
+	dPf_dVif_dVrf = 0.0;
+	dPf_dVif_dVif = 2*Gff;
+	dPf_dVif_dVrt = Bft;
+	dPf_dVif_dVit = Gft;
 
-      row[0] = xlocglob + 2 + genctr;
-      row[1] = xlocglob + 2 + genctr + 1;
-      col[0] = xlocglob; col[1] = xlocglob + 1;
+	/* Partial of dPf_dVrt = Vrf*Gft + Vif*Bft; */
+	dPf_dVrt_dVrf = Gft;
+	dPf_dVrt_dVif = Bft;
+	dPf_dVrt_dVrt = 0.0;
+	dPf_dVrt_dVit = 0.0;
 
-      d2Irg_dPg_dVr = (Vr*Vr - Vi*Vi)/Vm4;
-      d2Irg_dPg_dVi = 2*Vr*Vi/Vm4;
-      d2Irg_dQg_dVr = 2*Vr*Vi/Vm4;
-      d2Irg_dQg_dVi = (Vi*Vi - Vr*Vr)/Vm4;
+	/* Partial of dPf_dVit = -Vrf*Bft + Vif*Gft; */
+	dPf_dVit_dVrf = -Bft;
+	dPf_dVit_dVif =  Gft;
+	dPf_dVit_dVrt = 0.0;
+	dPf_dVit_dVit = 0.0;
 
-      d2Iig_dPg_dVr = 2*Vr*Vi/Vm4;
-      d2Iig_dPg_dVi = (Vi*Vi - Vr*Vr)/Vm4;
+	PetscScalar dQf_dVrf_dVrf,dQf_dVrf_dVif,dQf_dVrf_dVrt,dQf_dVrf_dVit;
+	PetscScalar dQf_dVif_dVrf,dQf_dVif_dVif,dQf_dVif_dVrt,dQf_dVif_dVit;
+	PetscScalar dQf_dVrt_dVrf,dQf_dVrt_dVif,dQf_dVrt_dVrt,dQf_dVrt_dVit;
+	PetscScalar dQf_dVit_dVrf,dQf_dVit_dVif,dQf_dVit_dVrt,dQf_dVit_dVit;
 
-      d2Iig_dQg_dVr = (Vi*Vi - Vr*Vr)/Vm4;
-      d2Iig_dQg_dVi = -2*Vr*Vi/Vm4;
+	/* Partial of     dQf_dVrf = -2*Bff*Vrf - (Bft*Vrt + Gft*Vit) */
+	dQf_dVrf_dVrf = -2*Bff;
+	dQf_dVrf_dVif = 0.0;
+	dQf_dVrf_dVrt = -Bft;
+	dQf_dVrf_dVit = -Gft;
 
-      val[0] = val[1] = val[2] = val[3] = 0.0;
+	/* Partial of     dQf_dVif = -2*Bff*Vif + (Gft*Vrt - Bft*Vit); */
+	dQf_dVif_dVrf = 0.0;
+	dQf_dVif_dVif = -2*Bff;
+	dQf_dVif_dVrt = Gft;
+	dQf_dVif_dVit = -Bft;
 
-      val[0]  = lambda[gloc]*d2Irg_dPg_dVr + lambda[gloc+1]*d2Iig_dPg_dVr;
-      val[1]  = lambda[gloc]*d2Irg_dPg_dVi + lambda[gloc+1]*d2Iig_dPg_dVi;
-      val[2]  = lambda[gloc]*d2Irg_dQg_dVr + lambda[gloc+1]*d2Iig_dQg_dVr;
-      val[3]  = lambda[gloc]*d2Irg_dQg_dVi + lambda[gloc+1]*d2Iig_dQg_dVi;
+	/* Partial of dQf_dVrt =  Vif*Gft - Vrf*Bft; */
+	dQf_dVrt_dVrf = -Bft;
+	dQf_dVrt_dVif = Gft;
+	dQf_dVrt_dVrt = 0.0;
+	dQf_dVrt_dVit = 0.0;
 
-      ierr = MatSetValues(H,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
+	/* Partial of dQf_dVit = -Vif*Bft - Vrf*Gft; */
+	dQf_dVit_dVrf = -Gft;
+	dQf_dVit_dVif = -Bft;
+	dQf_dVit_dVrt = 0.0;
+	dQf_dVit_dVit = 0.0;
 
-      genctr += 2;
-    }
+	row[0] 	= xlocfglob; 	
+	row[1] 	= xlocfglob+1;
+	row[2]  = xloctglob;
+	row[3]  = xloctglob+1;
 
-    PetscInt loadctr = 0;
-    for(k=0; k < bus->nload; k++) {
-      PSLOAD      load;
-      PetscScalar Pd,Qd,Pdloss,Qdloss;
-      PetscScalar d2Ird_dVr2,d2Ird_dVr_dVi,d2Ird_dVr_dPdloss,d2Ird_dVr_dQdloss;
-      PetscScalar d2Ird_dVi_dVr,d2Ird_dVi2,d2Ird_dVi_dPdloss,d2Ird_dVi_dQdloss;
-      PetscScalar d2Iid_dVr2,d2Iid_dVr_dVi,d2Iid_dVr_dPdloss,d2Iid_dVr_dQdloss;
-      PetscScalar d2Iid_dVi_dVr,d2Iid_dVi2,d2Iid_dVi_dPdloss,d2Iid_dVi_dQdloss;
+	col[0] 	= xlocfglob;
 
-      ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
-      if(opflow->include_loadloss_variables) {
-	xloc += 2;
-	Pdloss = x[xloc];
-	Qdloss = x[xloc+1];
-	Pd = load->pl - Pdloss;
-	Qd = load->ql - Qdloss;
+	val[0] = val[1] = val[2] = val[3] = 0.0;
+	val[0]  = lambda[gloc]*dPf_dVrf_dVrf + lambda[gloc+1]*dQf_dVrf_dVrf;
+	val[1]  = lambda[gloc]*dPf_dVif_dVrf + lambda[gloc+1]*dQf_dVif_dVrf;
+	val[2]  = lambda[gloc]*dPf_dVrt_dVrf + lambda[gloc+1]*dQf_dVrt_dVrf;
+	val[3]  = lambda[gloc]*dPf_dVit_dVrf + lambda[gloc+1]*dQf_dVit_dVrf;
+	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+
+	col[0] 	= xlocfglob+1;
+
+	val[0] = val[1] = val[2] = val[3] = 0.0;
+	val[0]  = lambda[gloc]*dPf_dVrf_dVif + lambda[gloc+1]*dQf_dVrf_dVif;
+	val[1]  = lambda[gloc]*dPf_dVif_dVif + lambda[gloc+1]*dQf_dVif_dVif;
+	val[2]  = lambda[gloc]*dPf_dVrt_dVif + lambda[gloc+1]*dQf_dVrt_dVif;
+	val[3]  = lambda[gloc]*dPf_dVit_dVif + lambda[gloc+1]*dQf_dVit_dVif;
+
+	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+
+	col[0] 	= xloctglob;
+
+	val[0] = val[1] = val[2] = val[3] = 0.0;
+	val[0]  = lambda[gloc]*dPf_dVrf_dVrt + lambda[gloc+1]*dQf_dVrf_dVrt;
+	val[1]  = lambda[gloc]*dPf_dVif_dVrt + lambda[gloc+1]*dQf_dVif_dVrt;
+	val[2]  = lambda[gloc]*dPf_dVrt_dVrt + lambda[gloc+1]*dQf_dVrt_dVrt;
+	val[3]  = lambda[gloc]*dPf_dVit_dVrt + lambda[gloc+1]*dQf_dVit_dVrt;
+	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+
+	col[0] 	= xloctglob+1;
+
+	val[0] = val[1] = val[2] = val[3] = 0.0;
+	val[0]  = lambda[gloc]*dPf_dVrf_dVit + lambda[gloc+1]*dQf_dVrf_dVit;
+	val[1]  = lambda[gloc]*dPf_dVif_dVit + lambda[gloc+1]*dQf_dVif_dVit;
+	val[2]  = lambda[gloc]*dPf_dVrt_dVit + lambda[gloc+1]*dQf_dVrt_dVit;
+	val[3]  = lambda[gloc]*dPf_dVit_dVit + lambda[gloc+1]*dQf_dVit_dVit;
+	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
       } else {
-	Pd = load->pl;
-	Qd = load->ql;
-      }
+	PetscScalar dPt_dVrf_dVrf,dPt_dVrf_dVif,dPt_dVrf_dVrt,dPt_dVrf_dVit;
+	PetscScalar dPt_dVif_dVrf,dPt_dVif_dVif,dPt_dVif_dVrt,dPt_dVif_dVit;
+	PetscScalar dPt_dVrt_dVrf,dPt_dVrt_dVif,dPt_dVrt_dVrt,dPt_dVrt_dVit;
+	PetscScalar dPt_dVit_dVrf,dPt_dVit_dVif,dPt_dVit_dVrt,dPt_dVit_dVit;
 
-      d2Ird_dVr2        =  2*(Pd*Vr*Vr*Vr + 3*Qd*Vr*Vr*Vi - 3*Pd*Vr*Vi*Vi - Qd*Vi*Vi*Vi)/Vm6;
-      d2Ird_dVr_dVi     = -2*(Pd*Vi*Vi*Vi - 3*Qd*Vr*Vi*Vi - 3*Pd*Vr*Vr*Vi + Qd*Vr*Vr*Vr)/Vm6;
+	/* Partial of     dPt_dVrt = 2*Gtt*Vrt + (Gtf*Vrf - Btf*Vif); */
+	dPt_dVrt_dVrt = 2*Gtt;
+	dPt_dVrt_dVit = 0.0;
+	dPt_dVrt_dVrf = Gtf;
+	dPt_dVrt_dVif = -Btf;
 
+	/* Partial of dPt_dVit = 2*Gtt*Vit + (Btf*Vrf + Gtf*Vif); */
+	dPt_dVit_dVrt = 0.0;
+	dPt_dVit_dVit = 2*Gtt;
+	dPt_dVit_dVrf = Btf;
+	dPt_dVit_dVif = Gtf;
 
-      d2Ird_dVr_dPdloss = (Vr*Vr - Vi*Vi)/Vm4;
-      d2Ird_dVr_dQdloss = 2*Vr*Vi/Vm4;
+	/* Partial of dPt_dVrf = Vrt*Gtf + Vit*Btf; */
+	dPt_dVrf_dVrt = Gtf;
+	dPt_dVrf_dVit = Btf;
+	dPt_dVrf_dVrf = 0.0;
+	dPt_dVrf_dVif = 0.0;
 
-      d2Ird_dVi_dVr = -2*(Qd*Vr*Vr*Vr - 3*Pd*Vi*Vr*Vr - 3*Qd*Vi*Vi*Vr + Pd*Vi*Vi*Vi)/Vm6;
-      d2Ird_dVi2    =  2*(Qd*Vi*Vi*Vi + 3*Pd*Vr*Vi*Vi - 3*Qd*Vr*Vr*Vi - Pd*Vr*Vr*Vr)/Vm6;
+	/* Partial of dPt_dVif = -Vrt*Btf + Vit*Gtf; */
+	dPt_dVif_dVrt = -Btf;
+	dPt_dVif_dVit =  Gtf;
+	dPt_dVif_dVrf = 0.0;
+	dPt_dVif_dVif = 0.0;
+	
+	PetscScalar dQt_dVrf_dVrf,dQt_dVrf_dVif,dQt_dVrf_dVrt,dQt_dVrf_dVit;
+	PetscScalar dQt_dVif_dVrf,dQt_dVif_dVif,dQt_dVif_dVrt,dQt_dVif_dVit;
+	PetscScalar dQt_dVrt_dVrf,dQt_dVrt_dVif,dQt_dVrt_dVrt,dQt_dVrt_dVit;
+	PetscScalar dQt_dVit_dVrf,dQt_dVit_dVif,dQt_dVit_dVrt,dQt_dVit_dVit;
 
-      d2Ird_dVi_dPdloss =   2*Vr*Vi/Vm4;
-      d2Ird_dVi_dQdloss = (Vi*Vi - Vr*Vr)/Vm4;
-       
-      d2Iid_dVr2    = -2*(Qd*Vr*Vr*Vr - 3*Pd*Vi*Vr*Vr-  3*Qd*Vi*Vi*Vr + Pd*Vi*Vi*Vi)/Vm6;
-      d2Iid_dVr_dVi =  2*(Qd*Vi*Vi*Vi + 3*Pd*Vr*Vi*Vi - 3*Qd*Vr*Vr*Vi - Pd*Vr*Vr*Vr)/Vm6; 
+	/* Partial of dQt_dVrt = -2*Btt*Vrt - (Btf*Vrf + Gtf*Vif) */
+	dQt_dVrt_dVrt = -2*Btt;
+	dQt_dVrt_dVit = 0.0;
+	dQt_dVrt_dVrf = -Btf;
+	dQt_dVrt_dVif = -Gtf;
 
-      d2Iid_dVr_dPdloss =   2*Vr*Vi/Vm4;
-      d2Iid_dVr_dQdloss = (Vi*Vi - Vr*Vr)/Vm4;
+	/* Partial of dQt_dVit = -2*Btt*Vit + (Gtf*Vrf - Btf*Vif); */
+	dQt_dVit_dVrt = 0.0;
+	dQt_dVit_dVit = -2*Btt;
+	dQt_dVit_dVrf = Gtf;
+	dQt_dVit_dVif = -Btf;
 
-      d2Iid_dVi_dVr = -2*(Pd*Vr*Vr*Vr + 3*Qd*Vr*Vr*Vi - 3*Pd*Vr*Vi*Vi - Qd*Vi*Vi*Vi)/Vm6;
-      d2Iid_dVi2    =  2*(Pd*Vi*Vi*Vi - 3*Qd*Vr*Vi*Vi - 3*Pd*Vr*Vr*Vi + Qd*Vr*Vr*Vr)/Vm6;
+	/* Partial of dQt_dVrf =  Vit*Gtf - Vrt*Btf; */
+	dQt_dVrf_dVrt = -Btf;
+	dQt_dVrf_dVit = Gtf;
+	dQt_dVrf_dVrf = 0.0;
+	dQt_dVrf_dVif = 0.0;
 
-      d2Iid_dVi_dPdloss = (Vi*Vi - Vr*Vr)/Vm4;
-      d2Iid_dVi_dQdloss = -2*Vr*Vi/Vm4;
-      
-      row[0] = xlocglob; row[1] = xlocglob+1;
-      col[0] = xlocglob; col[1] = xlocglob+1; 
+	/* Partial of dQt_dVif = -Vit*Btf - Vrt*Gtf; */
+	dQt_dVif_dVrt = -Gtf;
+	dQt_dVif_dVit = -Btf;
+	dQt_dVif_dVrf =  0.0;
+	dQt_dVif_dVif =  0.0;
 
-      val[0] = val[1] = val[2] = val[3] = 0.0;
-      val[0] = lambda[gloc]*d2Ird_dVr2    + lambda[gloc+1]*d2Iid_dVr2;
-      val[1] = lambda[gloc]*d2Ird_dVr_dVi + lambda[gloc+1]*d2Iid_dVr_dVi;
-      val[2] = lambda[gloc]*d2Ird_dVi_dVr + lambda[gloc+1]*d2Iid_dVi_dVr;
-      val[3] = lambda[gloc]*d2Ird_dVi2    + lambda[gloc+1]*d2Iid_dVi2;
+	row[0] 	= xloctglob; 	
+	row[1] 	= xloctglob+1;
+	row[2]  = xlocfglob;
+	row[3]  = xlocfglob+1;
 
-      ierr = MatSetValues(H,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-
-      if(opflow->include_loadloss_variables) {
-
-	col[0] = xlocglob + 2 + 2*bus->ngen + loadctr;
-	col[1] = xlocglob + 2 + 2*bus->ngen + loadctr + 1;
+	col[0] 	= xloctglob;
 
 	val[0] = val[1] = val[2] = val[3] = 0.0;
-	val[0] = lambda[gloc]*d2Ird_dVr_dPdloss + lambda[gloc+1]*d2Iid_dVr_dPdloss;
-	val[1] = lambda[gloc]*d2Ird_dVr_dQdloss + lambda[gloc+1]*d2Iid_dVr_dQdloss;
-	val[2] = lambda[gloc]*d2Ird_dVi_dPdloss + lambda[gloc+1]*d2Iid_dVi_dPdloss;
-	val[3] = lambda[gloc]*d2Ird_dVi_dQdloss + lambda[gloc+1]*d2Iid_dVi_dQdloss;
+	val[0]  = lambda[gloc]*dPt_dVrt_dVrt + lambda[gloc+1]*dQt_dVrt_dVrt;
+	val[1]  = lambda[gloc]*dPt_dVit_dVrt + lambda[gloc+1]*dQt_dVit_dVrt;
+	val[2]  = lambda[gloc]*dPt_dVrf_dVrt + lambda[gloc+1]*dQt_dVrf_dVrt;
+	val[3]  = lambda[gloc]*dPt_dVif_dVrt + lambda[gloc+1]*dQt_dVif_dVrt;
+	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
-	ierr = MatSetValues(H,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-	
-	PetscScalar d2Ird_dPdloss_dVr,d2Ird_dPdloss_dVi,d2Ird_dQdloss_dVr,d2Ird_dQdloss_dVi;
-	PetscScalar d2Iid_dPdloss_dVr,d2Iid_dPdloss_dVi,d2Iid_dQdloss_dVr,d2Iid_dQdloss_dVi;
+	col[0] 	= xloctglob+1;
 
-	row[0] = xlocglob + 2 + genctr;
-	row[1] = xlocglob + 2 + genctr + 1;
-	col[0] = xlocglob; col[1] = xlocglob + 1;
-
-	d2Ird_dPdloss_dVr = (Vr*Vr - Vi*Vi)/Vm4;
-	d2Ird_dPdloss_dVi = 2*Vr*Vi/Vm4;
-	d2Ird_dQdloss_dVr = 2*Vr*Vi/Vm4;
-	d2Ird_dQdloss_dVi = (Vi*Vi - Vr*Vr)/Vm4;
-	
-	d2Iid_dPdloss_dVr = 2*Vr*Vi/Vm4;
-	d2Iid_dPdloss_dVi = (Vi*Vi - Vr*Vr)/Vm4;
-	
-	d2Iid_dQdloss_dVr = (Vi*Vi - Vr*Vr)/Vm4;
-	d2Iid_dQdloss_dVi = -2*Vr*Vi/Vm4;
-	
 	val[0] = val[1] = val[2] = val[3] = 0.0;
-	
-	val[0]  = lambda[gloc]*d2Ird_dPdloss_dVr + lambda[gloc+1]*d2Iid_dPdloss_dVr;
-	val[1]  = lambda[gloc]*d2Ird_dPdloss_dVi + lambda[gloc+1]*d2Iid_dPdloss_dVi;
-	val[2]  = lambda[gloc]*d2Ird_dQdloss_dVr + lambda[gloc+1]*d2Iid_dQdloss_dVr;
-	val[3]  = lambda[gloc]*d2Ird_dQdloss_dVi + lambda[gloc+1]*d2Iid_dQdloss_dVi;
-	
-	ierr = MatSetValues(H,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-	
+	val[0]  = lambda[gloc]*dPt_dVrt_dVit + lambda[gloc+1]*dQt_dVrt_dVit;
+	val[1]  = lambda[gloc]*dPt_dVit_dVit + lambda[gloc+1]*dQt_dVit_dVit;
+	val[2]  = lambda[gloc]*dPt_dVrf_dVit + lambda[gloc+1]*dQt_dVrf_dVit;
+	val[3]  = lambda[gloc]*dPt_dVif_dVit + lambda[gloc+1]*dQt_dVif_dVit;
+	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+
+	col[0] 	= xlocfglob;
+
+	val[0] = val[1] = val[2] = val[3] = 0.0;
+	val[0]  = lambda[gloc]*dPt_dVrt_dVrf + lambda[gloc+1]*dQt_dVrt_dVrf;
+	val[1]  = lambda[gloc]*dPt_dVit_dVrf + lambda[gloc+1]*dQt_dVit_dVrf;
+	val[2]  = lambda[gloc]*dPt_dVrf_dVrf + lambda[gloc+1]*dQt_dVrf_dVrf;
+	val[3]  = lambda[gloc]*dPt_dVif_dVrf + lambda[gloc+1]*dQt_dVif_dVrf;
+	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+
+	col[0] 	= xlocfglob+1;
+
+	val[0] = val[1] = val[2] = val[3] = 0.0;
+	val[0]  = lambda[gloc]*dPt_dVrt_dVif + lambda[gloc+1]*dQt_dVrt_dVif;
+	val[1]  = lambda[gloc]*dPt_dVit_dVif + lambda[gloc+1]*dQt_dVit_dVif;
+	val[2]  = lambda[gloc]*dPt_dVrf_dVif + lambda[gloc+1]*dQt_dVrf_dVif;
+	val[3]  = lambda[gloc]*dPt_dVif_dVif + lambda[gloc+1]*dQt_dVif_dVif;
+	ierr = MatSetValues(H,4,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
       }
-      loadctr += 2;
     }
-
-    if(opflow->include_powerimbalance_variables) {
-      PetscScalar Pimb,Qimb;
-      PetscScalar d2Irimb_dVr2,d2Irimb_dVr_dVi,d2Irimb_dVr_dPimb,d2Irimb_dVr_dQimb;
-      PetscScalar d2Irimb_dVi_dVr,d2Irimb_dVi2,d2Irimb_dVi_dPimb,d2Irimb_dVi_dQimb;
-      PetscScalar d2Iiimb_dVr2,d2Iiimb_dVr_dVi,d2Iiimb_dVr_dPimb,d2Iiimb_dVr_dQimb;
-      PetscScalar d2Iiimb_dVi_dVr,d2Iiimb_dVi2,d2Iiimb_dVi_dPimb,d2Iiimb_dVi_dQimb;
-      
-      xloc += 2;
-      Pimb = x[xloc];
-      Qimb = x[xloc+1];
-      
-      d2Irimb_dVr2    =   2*(Pimb*Vr*Vr*Vr + 3*Qimb*Vr*Vr*Vi - 3*Pimb*Vr*Vi*Vi - Qimb*Vi*Vi*Vi)/Vm6;
-      d2Irimb_dVr_dVi =  -2*(Pimb*Vi*Vi*Vi - 3*Qimb*Vr*Vi*Vi - 3*Pimb*Vr*Vr*Vi + Qimb*Vr*Vr*Vr)/Vm6;
-      d2Irimb_dVr_dPimb = (Vi*Vi - Vr*Vr)/Vm4;
-      d2Irimb_dVr_dQimb = -2*Vr*Vi/Vm4;
-      
-      d2Irimb_dVi_dVr =  -2*(Qimb*Vr*Vr*Vr - 3*Pimb*Vi*Vr*Vr - 3*Qimb*Vi*Vi*Vr + Pimb*Vi*Vi*Vi)/Vm6;
-      d2Irimb_dVi2    =   2*(Qimb*Vi*Vi*Vi + 3*Pimb*Vr*Vi*Vi - 3*Qimb*Vr*Vr*Vi - Pimb*Vr*Vr*Vr)/Vm6;
-      d2Irimb_dVi_dPimb = -2*Vr*Vi/Vm4;
-      d2Irimb_dVi_dQimb = (Vr*Vr- Vi*Vi)/Vm4;
-      
-      d2Iiimb_dVr2    =  -2*(Qimb*Vr*Vr*Vr - 3*Pimb*Vi*Vr*Vr-  3*Qimb*Vi*Vi*Vr + Pimb*Vi*Vi*Vi)/Vm6;
-      d2Iiimb_dVr_dVi =   2*(Qimb*Vi*Vi*Vi + 3*Pimb*Vr*Vi*Vi - 3*Qimb*Vr*Vr*Vi - Pimb*Vr*Vr*Vr)/Vm6; 
-      d2Iiimb_dVr_dPimb = -2*Vr*Vi/Vm4;
-      d2Iiimb_dVr_dQimb = (Vr*Vr - Vi*Vi)/Vm4;
-      
-      d2Iiimb_dVi_dVr =  -2*(Pimb*Vr*Vr*Vr + 3*Qimb*Vr*Vr*Vi - 3*Pimb*Vr*Vi*Vi - Qimb*Vi*Vi*Vi)/Vm6;
-      d2Iiimb_dVi2    =   2*(Pimb*Vi*Vi*Vi - 3*Qimb*Vr*Vi*Vi - 3*Pimb*Vr*Vr*Vi + Qimb*Vr*Vr*Vr)/Vm6;
-      d2Iiimb_dVi_dPimb = (Vr*Vr - Vi*Vi)/Vm4;
-      d2Iiimb_dVi_dQimb =  2*Vr*Vi/Vm4;
-      
-      row[0] = xlocglob; row[1] = xlocglob+1;
-      col[0] = xlocglob; col[1] = xlocglob+1; 
-      col[2] = xlocglob + 2 + 2*bus->ngen + 2*opflow->include_loadloss_variables*bus->nload; 
-      col[3] = xlocglob + 2 + 2*bus->ngen + 2*opflow->include_loadloss_variables*bus->nload + 1; 
-      
-      val[0] = val[1] = val[2] = val[3] = val[4] = val[5] = val[6] = val[7] = 0.0;
-      
-      val[0] = lambda[gloc]*d2Irimb_dVr2    + lambda[gloc+1]*d2Iiimb_dVr2;
-      val[1] = lambda[gloc]*d2Irimb_dVr_dVi + lambda[gloc+1]*d2Iiimb_dVr_dVi;
-      val[2] = lambda[gloc]*d2Irimb_dVr_dPimb + lambda[gloc+1]*d2Iiimb_dVr_dPimb;
-      val[3] = lambda[gloc]*d2Irimb_dVr_dQimb + lambda[gloc+1]*d2Iiimb_dVr_dQimb;
-      
-      val[4] = lambda[gloc]*d2Irimb_dVi_dVr + lambda[gloc+1]*d2Iiimb_dVi_dVr;
-      val[5] = lambda[gloc]*d2Irimb_dVi2    + lambda[gloc+1]*d2Iiimb_dVi2;
-      val[6] = lambda[gloc]*d2Irimb_dVi_dPimb + lambda[gloc+1]*d2Iiimb_dVi_dPimb;
-      val[7] = lambda[gloc]*d2Irimb_dVi_dQimb + lambda[gloc+1]*d2Iiimb_dVi_dQimb;
-      
-      ierr = MatSetValues(H,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
-      
-      PetscScalar d2Irimb_dPimb_dVr,d2Irimb_dPimb_dVi,d2Irimb_dQimb_dVr,d2Irimb_dQimb_dVi;
-      PetscScalar d2Iiimb_dPimb_dVr,d2Iiimb_dPimb_dVi,d2Iiimb_dQimb_dVr,d2Iiimb_dQimb_dVi;
-      
-      row[0] = xlocglob + 2 + 2*bus->ngen + 2*opflow->include_loadloss_variables*bus->nload; 
-      row[1] = xlocglob + 2 + 2*bus->ngen + 2*opflow->include_loadloss_variables*bus->nload + 1; 
-      
-      col[0] = xlocglob; col[1] = xlocglob + 1;
-      
-      d2Irimb_dPimb_dVr = (Vi*Vi - Vr*Vr)/Vm4;
-      d2Irimb_dPimb_dVi = -2*Vr*Vi/Vm4;
-      d2Irimb_dQimb_dVr = -2*Vr*Vi/Vm4;
-      d2Irimb_dQimb_dVi = (Vr*Vr - Vi*Vi)/Vm4;
-      
-      d2Iiimb_dPimb_dVr = -2*Vr*Vi/Vm4;
-      d2Iiimb_dPimb_dVi = (Vr*Vr - Vi*Vi)/Vm4;
-      
-      d2Iiimb_dQimb_dVr = (Vr*Vr - Vi*Vi)/Vm4;
-      d2Iiimb_dQimb_dVi =  2*Vr*Vi/Vm4;
-      
-      val[0] = val[1] = val[2] = val[3] = 0.0;
-      
-      val[0]  = lambda[gloc]*d2Irimb_dPimb_dVr + lambda[gloc+1]*d2Iiimb_dPimb_dVr;
-      val[1]  = lambda[gloc]*d2Irimb_dPimb_dVi + lambda[gloc+1]*d2Iiimb_dPimb_dVi;
-      val[2]  = lambda[gloc]*d2Irimb_dQimb_dVr + lambda[gloc+1]*d2Iiimb_dQimb_dVr;
-      val[3]  = lambda[gloc]*d2Irimb_dQimb_dVi + lambda[gloc+1]*d2Iiimb_dQimb_dVi;
-      
-      ierr = MatSetValues(H,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-    }
-
     gloc += 2;
-
     if(bus->ide == REF_BUS) gloc++;
   }
 
-  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
-  ierr = VecRestoreArrayRead(Lambda,&lambda);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(opflow->Lambdaelocal,&lambda);CHKERRQ(ierr);
   
+  ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -1444,7 +1467,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,Vec X
 + H   - the Hessian matrix
 
 */
-PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR(OPFLOW opflow, Vec X, Vec Lambda,Mat H)
+PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBCAR(OPFLOW opflow, Vec X, Vec Lambda,Mat H)
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
@@ -1461,14 +1484,27 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR(OPFLOW opflow, Ve
   PetscScalar    Vrf,Vif,Vrt,Vit;
   PetscScalar    dVm2_dVr2,dVm2_dVi2;
   PetscScalar    Pf,Qf,Pt,Qt;
+  Vec            localX;
+  PetscBool      isghost;
+  PetscInt       rstart;
 
   PetscFunctionBegin;
 
-  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = MatGetOwnershipRange(H,&rstart,NULL);CHKERRQ(ierr);
+
+  ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+
+  ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
   ierr = VecGetArrayRead(Lambda,&lambda);CHKERRQ(ierr);
 
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
+
+    if(isghost) continue;
+
     ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
     ierr = PSBUSGetVariableGlobalLocation(bus,&xlocglob);CHKERRQ(ierr);
 
@@ -1486,15 +1522,16 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR(OPFLOW opflow, Ve
   }
 
   if(opflow->ignore_lineflow_constraints) {
-    ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+    ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
     ierr = VecRestoreArrayRead(Lambda,&lambda);CHKERRQ(ierr);
 
+    ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
   val[0] = val[1] = val[2] = val[3] = 0.0;
   // for the part of line constraints
-  for(i=0; i < ps->Nline; i++) {
+  for(i=0; i < ps->nline; i++) {
     line = &ps->line[i];
     if(!line->status || line->rateA > 1e5) continue;
 
@@ -1798,9 +1835,10 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR(OPFLOW opflow, Ve
     gloc +=  2;
   }
 
-  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(Lambda,&lambda);CHKERRQ(ierr);
 
+  ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -1809,13 +1847,13 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR(OPFLOW opflow, Ve
   
   Input Parameters:
 + opflow - the OPFLOW object
-- X        - solution vecto X
+- X        - solution vector X
 
   Output Parameters:
 . H - the Hessian part for the objective function
 
 */
-PetscErrorCode OPFLOWComputeObjectiveHessian_IBCAR(OPFLOW opflow,Vec X,Mat H) 
+PetscErrorCode OPFLOWComputeObjectiveHessian_PBCAR(OPFLOW opflow,Vec X,Mat H) 
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
@@ -1827,15 +1865,25 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_IBCAR(OPFLOW opflow,Vec X,Mat H)
   PetscInt       row[2],col[2];
   PetscScalar    val[2];
   PetscScalar    obj_factor = opflow->obj_factor;
+  PetscBool      isghost;
+  Vec            localX;
 
 
   PetscFunctionBegin;
 
-  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = DMGetLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(ps->networkdm,X,INSERT_VALUES,localX);CHKERRQ(ierr);
+
+  ierr = VecGetArrayRead(localX,&x);CHKERRQ(ierr);
 
   // for the part of objective
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
+
+    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
+
+    if(isghost) continue;
 
     ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
     ierr = PSBUSGetVariableGlobalLocation(bus,&xlocglob);CHKERRQ(ierr);
@@ -1884,25 +1932,27 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_IBCAR(OPFLOW opflow,Vec X,Mat H)
     }
   }
 
-  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
-
+  ierr = VecRestoreArrayRead(localX,&x);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeHessian_IBCAR(OPFLOW opflow,Vec X,Vec Lambdae,Vec Lambdai,Mat H)
+PetscErrorCode OPFLOWComputeHessian_PBCAR(OPFLOW opflow,Vec X,Vec Lambdae,Vec Lambdai,Mat H)
 {
   PetscErrorCode ierr;
   PetscFunctionBegin;
   ierr = MatZeroEntries(H);CHKERRQ(ierr);
 
   /* Objective function Hessian */
-  ierr = OPFLOWComputeObjectiveHessian_IBCAR(opflow,X,H);CHKERRQ(ierr);
+  ierr = OPFLOWComputeObjectiveHessian_PBCAR(opflow,X,H);CHKERRQ(ierr);
 
   /* Equality constraints Hessian */
-  ierr = OPFLOWComputeEqualityConstraintsHessian_IBCAR(opflow,X,Lambdae,H);CHKERRQ(ierr);
+  ierr = OPFLOWComputeEqualityConstraintsHessian_PBCAR(opflow,X,Lambdae,H);CHKERRQ(ierr);
   
   /* Inequality constraints Hessian */
-  ierr = OPFLOWComputeInequalityConstraintsHessian_IBCAR(opflow,X,Lambdai,H);CHKERRQ(ierr);
+  if(opflow->nconineq) {
+    ierr = OPFLOWComputeInequalityConstraintsHessian_PBCAR(opflow,X,Lambdai,H);CHKERRQ(ierr);
+  }
 
   ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -1910,33 +1960,33 @@ PetscErrorCode OPFLOWComputeHessian_IBCAR(OPFLOW opflow,Vec X,Vec Lambdae,Vec La
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWFormulationCreate_IBCAR(OPFLOW opflow)
+PetscErrorCode OPFLOWModelCreate_PBCAR(OPFLOW opflow)
 {
-  IBCAR ibcar;
+  PBCAR pbcar;
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
   
-  ierr = PetscCalloc1(1,&ibcar);CHKERRQ(ierr);
+  ierr = PetscCalloc1(1,&pbcar);CHKERRQ(ierr);
 
-  opflow->formulation = ibcar;
+  opflow->model = pbcar;
 
   /* Inherit Ops */
-  opflow->formops.destroy = OPFLOWFormulationDestroy_IBCAR;
-  opflow->formops.setnumvariables = OPFLOWFormulationSetNumVariables_IBCAR;
-  opflow->formops.setnumconstraints = OPFLOWFormulationSetNumConstraints_IBCAR;
-  opflow->formops.setvariablebounds = OPFLOWSetVariableBounds_IBCAR;
-  opflow->formops.setconstraintbounds = OPFLOWSetConstraintBounds_IBCAR;
-  opflow->formops.setvariableandconstraintbounds = OPFLOWSetVariableandConstraintBounds_IBCAR;
-  opflow->formops.setinitialguess = OPFLOWSetInitialGuess_IBCAR;
-  opflow->formops.computeequalityconstraints = OPFLOWComputeEqualityConstraints_IBCAR;
-  opflow->formops.computeinequalityconstraints = OPFLOWComputeInequalityConstraints_IBCAR;
-  opflow->formops.computeequalityconstraintjacobian = OPFLOWComputeEqualityConstraintJacobian_IBCAR;
-  opflow->formops.computeinequalityconstraintjacobian = OPFLOWComputeInequalityConstraintJacobian_IBCAR;
-  opflow->formops.computehessian = OPFLOWComputeHessian_IBCAR;
-  opflow->formops.computeobjandgradient = OPFLOWComputeObjandGradient_IBCAR;
-  opflow->formops.computeobjective = OPFLOWComputeObjective_IBCAR;
-  opflow->formops.computegradient  = OPFLOWComputeGradient_IBCAR;
+  opflow->modelops.destroy = OPFLOWModelDestroy_PBCAR;
+  opflow->modelops.setnumvariables = OPFLOWModelSetNumVariables_PBCAR;
+  opflow->modelops.setnumconstraints = OPFLOWModelSetNumConstraints_PBCAR;
+  opflow->modelops.setvariablebounds = OPFLOWSetVariableBounds_PBCAR;
+  opflow->modelops.setconstraintbounds = OPFLOWSetConstraintBounds_PBCAR;
+  opflow->modelops.setvariableandconstraintbounds = OPFLOWSetVariableandConstraintBounds_PBCAR;
+  opflow->modelops.setinitialguess = OPFLOWSetInitialGuess_PBCAR;
+  opflow->modelops.computeequalityconstraints = OPFLOWComputeEqualityConstraints_PBCAR;
+  opflow->modelops.computeinequalityconstraints = OPFLOWComputeInequalityConstraints_PBCAR;
+  opflow->modelops.computeequalityconstraintjacobian = OPFLOWComputeEqualityConstraintJacobian_PBCAR;
+  opflow->modelops.computeinequalityconstraintjacobian = OPFLOWComputeInequalityConstraintJacobian_PBCAR;
+  opflow->modelops.computehessian = OPFLOWComputeHessian_PBCAR;
+  opflow->modelops.computeobjandgradient = OPFLOWComputeObjandGradient_PBCAR;
+  opflow->modelops.computeobjective = OPFLOWComputeObjective_PBCAR;
+  opflow->modelops.computegradient  = OPFLOWComputeGradient_PBCAR;
   
   PetscFunctionReturn(0);
 }

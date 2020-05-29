@@ -42,7 +42,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
   scopflow->iscoupling = PETSC_FALSE;
   scopflow->replicate_basecase = PETSC_FALSE;
 
-  scopflow->mode = SCOPFLOWMODE_PREVENTIVE;
+  scopflow->mode = SCOPFLOWMODE_CORRECTIVE;
 
   scopflow->solutiontops = PETSC_FALSE;
 
@@ -170,87 +170,6 @@ PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW scopflow,const char netfile[])
   PetscFunctionReturn(0);
 }
 
-/*
-  SCOPFLOWSetContingencyData - Sets the contingency data
-
-  Input Parameter
-+  scopflow - The SCOPFLOW object
--  ctgcfile - The name of the contingency list file
-
-*/
-PetscErrorCode SCOPFLOWSetContingencyData(SCOPFLOW scopflow,const char ctgcfile[])
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
-  ierr = PetscMemcpy(scopflow->ctgcfile,ctgcfile,100*sizeof(char));CHKERRQ(ierr);
-
-  scopflow->ctgcfileset = PETSC_TRUE;
-  PetscFunctionReturn(0);
-}
-
-/*
-  SCOPFLOWReadContingencyData - Reads the contingency list data file
-
-  Input Parameters
-+ scopflow - the scopflow object
-- ctgcfile - the contingency file name
-
-*/
-PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW scopflow,const char ctgcfile[])
-{
-  PetscErrorCode ierr;
-  FILE           *fp;
-  ContingencyList *ctgclist=&scopflow->ctgclist;
-  Contingency    *cont;
-  Outage         *outage;
-  char           line[MAXLINE];
-  char           *out;
-  PetscInt       bus,fbus,tbus,type,num;
-  char           equipid[3];
-  PetscInt       status;
-  PetscScalar    prob;
-
-  PetscFunctionBegin;
-
-  fp = fopen(ctgcfile,"r");
-  if (fp == NULL) {
-    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_FILE_OPEN,"Cannot open file %s",ctgcfile);CHKERRQ(ierr);
-  }
-
-  ctgclist->Ncont = -1;
-
-  while((out = fgets(line,MAXLINE,fp)) != NULL) {
-    if(strcmp(line,"\r\n") == 0 || strcmp(line,"\n") == 0) {
-      continue; /* Skip blank lines */
-    }
-    sscanf(line,"%d,%d,%d,%d,%d,'%[^\t\']',%d,%lf",&num,&type,&bus,&fbus,&tbus,equipid,&status,&prob);
-
-    if(num == scopflow->Nc) break;
-
-    if(num == MAX_CONTINGENCIES) {
-      SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Exceeding max. allowed contingencies = %d\n",num,MAX_CONTINGENCIES);
-    }
-    cont   = &ctgclist->cont[num];
-    outage = &cont->outagelist[cont->noutages];
-    outage->num  = num;
-    outage->type = (OutageType)type;
-    outage->bus  = bus;
-    outage->fbus = fbus;
-    outage->tbus = tbus;
-    ierr = PetscMemcpy(outage->id,equipid,3*sizeof(char));CHKERRQ(ierr);
-    outage->status = status;
-    outage->prob   = prob;
-    cont->noutages++;
-
-
-    if(num > ctgclist->Ncont) ctgclist->Ncont = num;
-  }
-  fclose(fp);
-
-  PetscFunctionReturn(0);
-}
 
 /*
   SCOPFLOWSetMode - Sets the operation mode (preventive or corrective) for SCOPFLOW
@@ -306,7 +225,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 {
   PetscErrorCode ierr;
   PetscBool      solverset;
-  char           formulationname[32]="POWER_BALANCE_POLAR";
+  char           modelname[32]="POWER_BALANCE_POLAR";
   char           solvername[32]="IPOPT";
   PetscInt       i,j;
   PS             ps;
@@ -315,7 +234,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   PetscFunctionBegin;
 
   ierr = PetscOptionsBegin(scopflow->comm->type,NULL,"SCOPFLOW options",NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsString("-scopflow_formulation","SCOPFLOW formulation type","",formulationname,formulationname,32,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsString("-scopflow_model","SCOPFLOW-OPFLOW model type","",modelname,modelname,32,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsString("-scopflow_solver","SCOPFLOW solver type","",solvername,solvername,32,&solverset);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-scopflow_iscoupling","Include coupling between first stage and second stage","",scopflow->iscoupling,&scopflow->iscoupling,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-scopflow_Nc","Number of second stage scenarios","",scopflow->Nc,&scopflow->Nc,NULL);CHKERRQ(ierr);
@@ -330,7 +249,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 
     ierr = PetscCalloc1(scopflow->Nc,&scopflow->ctgclist.cont);CHKERRQ(ierr);
     for(i=0; i < scopflow->Nc; i++) scopflow->ctgclist.cont->noutages = 0;
-    ierr = SCOPFLOWReadContingencyData(scopflow,scopflow->ctgcfile);CHKERRQ(ierr);
+    ierr = SCOPFLOWReadContingencyData(scopflow,scopflow->ctgcfileformat,scopflow->ctgcfile);CHKERRQ(ierr);
     scopflow->Nc = scopflow->ctgclist.Ncont+1;
   } else {
     if(scopflow->Nc == -1) scopflow->Nc = 1;
@@ -354,7 +273,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscCalloc1(scopflow->Nc,&scopflow->opflows);CHKERRQ(ierr);
   for(i=0; i < scopflow->Nc; i++) {
     ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflows[i]);CHKERRQ(ierr);
-    ierr = OPFLOWSetFormulation(scopflow->opflows[i],formulationname);CHKERRQ(ierr);
+    ierr = OPFLOWSetModel(scopflow->opflows[i],modelname);CHKERRQ(ierr);
     ierr = PetscStrcmp(solvername,SCOPFLOWSOLVER_PIPS,&flg);CHKERRQ(ierr);
     if(flg) {
       ierr = OPFLOWSetSolver(scopflow->opflows[i],OPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
@@ -534,7 +453,7 @@ PetscErrorCode SCOPFLOWSolutionToPS(SCOPFLOW scopflow)
 
   PetscFunctionBegin;
 
-  ierr = (*opflow->formops.solutiontops)(opflow);
+  ierr = (*opflow->modelops.solutiontops)(opflow);
 
   scopflow->solutiontops = PETSC_TRUE;
   PetscFunctionReturn(0);

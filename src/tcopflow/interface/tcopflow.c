@@ -5,7 +5,7 @@
   TCOPFLOWSetLoadProfiles - Sets the data files for time-varying load profiles
 
   Input Parameter
-+  tcopflow - The SCOPFLOW object
++  tcopflow - The TCOPFLOW object
 .  ploadproffile - The name of the file with real power load variationt
 -  qloadproffile - The name of the file with reactive power load variationt
 */
@@ -32,7 +32,7 @@ PetscErrorCode TCOPFLOWSetLoadProfiles(TCOPFLOW tcopflow,const char ploadprofile
   TCOPFLOWWindGenProfiles - Sets the data file for wind generation profiles
 
   Input Parameter
-+  tcopflow - The SCOPFLOW object
++  tcopflow - The TCOPFLOW object
 -  windgenproffile - The name of the file with wind generation profile
 */
 PetscErrorCode TCOPFLOWSetWindGenProfiles(TCOPFLOW tcopflow,const char windgenprofile[])
@@ -94,6 +94,7 @@ PetscErrorCode TCOPFLOWCreate(MPI_Comm mpicomm, TCOPFLOW *tcopflowout)
   /* Register all solvers */
   ierr = TCOPFLOWSolverRegisterAll(tcopflow);
 
+  tcopflow->solutiontops = PETSC_FALSE;
   /* Run-time optiont */
   tcopflow->iscoupling = PETSC_FALSE;
 
@@ -192,6 +193,7 @@ PetscErrorCode TCOPFLOWSetSolver(TCOPFLOW tcopflow,const char* solvername)
   tcopflow->solverops.solve   = 0;
   tcopflow->solverops.setup   = 0;
 
+  ierr = PetscStrcpy(tcopflow->solvername,solvername);CHKERRQ(ierr);
   /* Call the underlying implementation constructor */
   ierr = (*r)(tcopflow);CHKERRQ(ierr);
 
@@ -232,7 +234,7 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
 {
   PetscErrorCode ierr;
   PetscBool      solverset;
-  char           formulationname[32]="POWER_BALANCE_CARTESIAN";
+  char           modelname[32]="POWER_BALANCE_POLAR";
   char           solvername[32]="IPOPT";
   PetscInt       i,j;
   PS             ps;
@@ -241,7 +243,7 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
   PetscFunctionBegin;
 
   ierr = PetscOptionsBegin(tcopflow->comm->type,NULL,"TCOPFLOW options",NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsString("-tcopflow_formulation","TCOPFLOW formulation type","",formulationname,formulationname,32,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsString("-tcopflow_model","TCOPFLOW model type","",modelname,modelname,32,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsString("-tcopflow_solver","TCOPFLOW solver type","",solvername,solvername,32,&solverset);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-tcopflow_iscoupling","Include coupling between first stage and second stage","",tcopflow->iscoupling,&tcopflow->iscoupling,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsReal("-tcopflow_dT","Length of time-step (minutes)","",tcopflow->dT,&tcopflow->dT,NULL);CHKERRQ(ierr);
@@ -268,7 +270,7 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
   ierr = PetscCalloc1(tcopflow->Nt,&tcopflow->opflows);CHKERRQ(ierr);
   for(i=0; i < tcopflow->Nt; i++) {
     ierr = OPFLOWCreate(PETSC_COMM_SELF,&tcopflow->opflows[i]);CHKERRQ(ierr);
-    ierr = OPFLOWSetFormulation(tcopflow->opflows[i],formulationname);CHKERRQ(ierr);
+    ierr = OPFLOWSetModel(tcopflow->opflows[i],modelname);CHKERRQ(ierr);
 
     /* Read network data file */
     ierr = OPFLOWReadMatPowerData(tcopflow->opflows[i],tcopflow->netfile);CHKERRQ(ierr);
@@ -327,3 +329,120 @@ PetscErrorCode TCOPFLOWSolve(TCOPFLOW tcopflow)
   PetscFunctionReturn(0);
 }
 
+/*
+  TCOPFLOWGetObjective - Returns the objective function value
+
+  Input Parameters:
++ TCOPFLOW - the TCOPFLOW object
+- obj    - the objective function value
+
+  Notes: Should be called after the optimization finishes
+*/
+PetscErrorCode TCOPFLOWGetObjective(TCOPFLOW tcopflow,PetscReal *obj)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*tcopflow->solverops.getobjective)(tcopflow,obj);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  TCOPFLOWGetSolution - Returns the TCOPFLOW solution for a given time-step
+
+  Input Parameters:
++ TCOPFLOW - the TCOPFLOW object
+. tnum     - time-step (0 is the first time-step)
+- X        - the tcopflow solution for the given time-step
+
+  Notes: Should be called after the optimization finishes
+*/
+PetscErrorCode TCOPFLOWGetSolution(TCOPFLOW tcopflow,PetscInt tnum,Vec *X)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*tcopflow->solverops.getsolution)(tcopflow,tnum,X);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  TCOPFLOWGetConstraints - Returns the TCOPFLOW constraints for a given time-step
+
+  Input Parameters:
++ TCOPFLOW - the TCOPFLOW object
+. tnum     - time-step (0 for the first time-step)
+- G        - the tcopflow constraints
+
+  Notes: Should be called after the optimization finishes.
+         Equality constraints first followed by inequality constraints
+*/
+PetscErrorCode TCOPFLOWGetConstraints(TCOPFLOW tcopflow,PetscInt tnum,Vec *G)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*tcopflow->solverops.getconstraints)(tcopflow,tnum,G);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  TCOPFLOWGetConstraintMultipliers - Returns the TCOPFLOW constraint multipliers for a given time-step
+
+  Input Parameters:
++ TCOPFLOW - the TCOPFLOW object
+. tnum     - time-step (0 for the first time-step)
+- G    - the tcopflow constraint lagrange multipliers
+
+  Notes: Should be called after the optimization finishes.
+    Equality constraint multipliers first followed by inequality constraint multipliers
+*/
+PetscErrorCode TCOPFLOWGetConstraintMultipliers(TCOPFLOW tcopflow,PetscInt tnum,Vec *Lambda)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*tcopflow->solverops.getconstraintmultipliers)(tcopflow,tnum,Lambda);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  TCOPFLOWGetConvergenceStatus - Did TCOPFLOW converge?
+
+  Input Parameters:
++ TCOPFLOW - the TCOPFLOW object
+- status - PETSC_TRUE if converged, PETSC_FALSE otherwise
+
+  Notes: Should be called after the optimization finishes
+*/
+PetscErrorCode TCOPFLOWGetConvergenceStatus(TCOPFLOW tcopflow,PetscBool *status)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*tcopflow->solverops.getconvergencestatus)(tcopflow,status);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+
+/*
+  TCOPFLOWSolutionToPS - Updates the PS struct from TCOPFLOW solution
+
+  Input Parameters:
+. tcopflow - the TCOPFLOW object
+
+  Notes: Updates the different fields in the PS struct from the TCOPFLOW solution
+*/
+PetscErrorCode TCOPFLOWSolutionToPS(TCOPFLOW tcopflow)
+{
+  PetscErrorCode     ierr;
+  PetscInt           i;
+  OPFLOW             opflow;
+
+  PetscFunctionBegin;
+
+  ierr = (*opflow->modelops.solutiontops)(opflow);
+
+  tcopflow->solutiontops = PETSC_TRUE;
+  PetscFunctionReturn(0);
+}

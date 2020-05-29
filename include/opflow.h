@@ -7,11 +7,11 @@
 
 #include <ps.h>
 
-/* Formulations */
-#define OPFLOWFORMULATION_PBPOL "POWER_BALANCE_POLAR" 
-#define OPFLOWFORMULATION_PBCAR "POWER_BALANCE_CARTESIAN"
-#define OPFLOWFORMULATION_IBCAR "CURRENT_BALANCE_CARTESIAN"
-#define OPFLOWFORMULATION_IBCAR2 "CURRENT_BALANCE_CARTESIAN2"
+/* Models */
+#define OPFLOWMODEL_PBPOL "POWER_BALANCE_POLAR" 
+#define OPFLOWMODEL_PBCAR "POWER_BALANCE_CARTESIAN"
+#define OPFLOWMODEL_IBCAR "CURRENT_BALANCE_CARTESIAN"
+#define OPFLOWMODEL_IBCAR2 "CURRENT_BALANCE_CARTESIAN2"
 
 /* Solvers */
 #define OPFLOWSOLVER_IPOPT "IPOPT"
@@ -20,9 +20,9 @@
 
 typedef struct _p_OPFLOW *OPFLOW;
 
-PETSC_EXTERN PetscErrorCode OPFLOWSetFormulation(OPFLOW,const char[]);
+PETSC_EXTERN PetscErrorCode OPFLOWSetModel(OPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode OPFLOWSetSolver(OPFLOW,const char[]);
-PETSC_EXTERN PetscErrorCode OPFLOWFormulationRegister(OPFLOW,const char[],PetscErrorCode (*create)(OPFLOW));
+PETSC_EXTERN PetscErrorCode OPFLOWModelRegister(OPFLOW,const char[],PetscErrorCode (*create)(OPFLOW));
 PETSC_EXTERN PetscErrorCode OPFLOWSolverRegister(OPFLOW,const char[],PetscErrorCode (*create)(OPFLOW));
 PETSC_EXTERN PetscErrorCode OPFLOWCreate(MPI_Comm,OPFLOW*);
 PETSC_EXTERN PetscErrorCode OPFLOWDestroy(OPFLOW*);

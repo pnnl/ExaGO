@@ -6,6 +6,11 @@ set(PFLOWPROTO_SRC
   pflow-proto.c
 )
 
+#OPFLOWPROTO
+set(OPFLOWPROTO_SRC
+  opflow-proto3.c
+)
+
 # PFLOW
 set(PFLOW_SRC
   pflow-main.c
@@ -49,6 +54,8 @@ add_executable(app_pflow ${PFLOW_SRC})
 add_executable(app_pflow2 ${PFLOW2_SRC})
 # OPFLOW
 add_executable(app_opflow ${OPFLOW_SRC})
+# OPFLOWPROTO
+add_executable(app_opflowproto ${OPFLOWPROTO_SRC})
 #SCOPFLOW
 add_executable(app_scopflow ${SCOPFLOW_SRC})
 #TCOPFLOW
@@ -72,6 +79,11 @@ target_link_libraries(app_opflow
 	${SCOPFLOW_PFLOW_APP_LIBS}
 )
 
+target_link_libraries(app_opflowproto
+	${SCOPFLOW_OPFLOW_LIBS} 
+	${SCOPFLOW_PFLOW_APP_LIBS}
+)
+
 target_link_libraries(app_scopflow
 	${SCOPFLOW_LIBS}
 	${SCOPFLOW_OPFLOW_LIBS}
@@ -89,6 +101,7 @@ install(TARGETS app_pflowproto RUNTIME DESTINATION bin)
 install(TARGETS app_pflow RUNTIME DESTINATION bin)
 install(TARGETS app_pflow2 RUNTIME DESTINATION bin)
 install(TARGETS app_opflow RUNTIME DESTINATION bin)
+install(TARGETS app_opflowproto RUNTIME DESTINATION bin)
 install(TARGETS app_scopflow RUNTIME DESTINATION bin)
 install(TARGETS app_tcopflow RUNTIME DESTINATION bin)
 

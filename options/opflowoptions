@@ -4,13 +4,10 @@
 #-netfile datafiles/case5.m
 
 # Select Solver (IPOPT,TAO, HIOP)
--opflow_solver TAO
+-opflow_solver IPOPT
 
-#-------------------------
-# Options for HIOP solver
-#--------------------------
--opflow_formulation POWER_BALANCE_POLAR
-#-opflow_ignore_lineflow_constraints
+# Select model
+-opflow_model POWER_BALANCE_POLAR
 
 #-------------------------
 # Options for TAO solver
@@ -39,7 +36,7 @@
 -opflow_tao_gatol 1e-6
 
 # Convergence monitor
--opflow_tao_monitor
+#-opflow_tao_monitor
 
 # Convergence status
 -opflow_tao_converged_reason

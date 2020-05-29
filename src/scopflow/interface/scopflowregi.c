@@ -2,10 +2,10 @@
 #include <private/scopflowimpl.h>
 
 /*
-  SCOPFLOWSolverRegister - Registers an SCOPFLOW formulation
+  SCOPFLOWSolverRegister - Registers an SCOPFLOW model
 
   Input Parameters:
-+ sname     - formuation name (string)
++ sname           - model name (string)
 - createfunction  - the class constructor
 */
 PetscErrorCode SCOPFLOWSolverRegister(SCOPFLOW scopflow,const char sname[],PetscErrorCode (*createfunction)(SCOPFLOW))

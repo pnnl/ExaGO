@@ -6,6 +6,7 @@ set(SCOPFLOW_SRC
 	interface/scopflow.c
 	interface/scopflowregi.c
 	interface/scopflowoutput.c
+	interface/scopflowctgc.c
 	${SCOPFLOW_SOLVER_SRC}
 )
 
