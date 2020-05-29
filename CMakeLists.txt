@@ -49,9 +49,6 @@ if(SCOPFLOW_ENABLE_PETSC)
   include_directories(${PETSC_INCLUDE_CONF})
 endif()
 
-# Set up configuration header file
-configure_file(include/scopflow_config.h.in scopflow_config.h)
-
 # Set install rpath to the locations where Scopflow and PETSc libraries reside.
 # TODO: Automatically skip if PETSc and Scopflow are already on system lib path.
 set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib ${PETSC_DIR}/lib)
@@ -65,6 +62,9 @@ if(SCOPFLOW_ENABLE_HIOP)
   include(FindHiop)
   set(CMAKE_INSTALL_RPATH  ${HIOP_DIR}/lib ${CMAKE_INSTALL_RPATH})
 endif(SCOPFLOW_ENABLE_HIOP)
+
+# Set up configuration header file
+configure_file(include/scopflow_config.h.in scopflow_config.h)
 
 ## Build
 
