@@ -33,6 +33,7 @@ extern PetscErrorCode SCOPFLOWSolverCreate_IPOPT(SCOPFLOW);
 extern PetscErrorCode SCOPFLOWSolverCreate_PIPS(SCOPFLOW);
 #endif
 
+extern PetscErrorCode SCOPFLOWSolverCreate_EMPAR(SCOPFLOW);
 
 /*
   SCOPFLOWSolverRegisterAll - Registers all SCOPFLOW solvers
@@ -50,7 +51,7 @@ PetscErrorCode SCOPFLOWSolverRegisterAll(SCOPFLOW scopflow)
 #if defined(SCOPFLOW_HAVE_PIPS)
   ierr = SCOPFLOWSolverRegister(scopflow,SCOPFLOWSOLVER_PIPS,SCOPFLOWSolverCreate_PIPS);CHKERRQ(ierr);
 #endif
-
+  ierr = SCOPFLOWSolverRegister(scopflow,SCOPFLOWSOLVER_EMPAR,SCOPFLOWSolverCreate_EMPAR);CHKERRQ(ierr);
   scopflow->SCOPFLOWSolverRegisterAllCalled = PETSC_TRUE;
 
   PetscFunctionReturn(0);

@@ -2,7 +2,7 @@
 #include <private/scopflowimpl.h>
 
 /*
-  SCOPFLOWCreate - Creates an security constrained optimal power flow application object
+  SCOPFLOWCreate - Creates a security constrained optimal power flow application object
 
   Input Parameters
 . mpicomm - The MPI communicator
@@ -20,10 +20,11 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
 
   ierr = COMMCreate(mpicomm,&scopflow->comm);CHKERRQ(ierr);
 
-  scopflow->Nconeq   = scopflow->nconeq  = 0;
+  scopflow->Nconeq   = scopflow->nconeq   = 0;
   scopflow->Nconineq = scopflow->nconineq = 0;
   scopflow->Ncon     = scopflow->ncon     = 0;
   scopflow->Nx       = scopflow->nx       = 0;
+  scopflow->Nc       = scopflow->nc       = 0;
   scopflow->Gi       = NULL;
   scopflow->Lambdai  = NULL;
   
@@ -63,7 +64,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
 PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
 {
   PetscErrorCode ierr;
-  PetscInt       i;
+  PetscInt       c;
 
   PetscFunctionBegin;
   ierr = COMMDestroy(&(*scopflow)->comm);CHKERRQ(ierr);
@@ -103,8 +104,8 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
   }
 
   /* Destroy OPFLOW objects */
-  for(i=0; i < (*scopflow)->Nc; i++) {
-    ierr = OPFLOWDestroy(&(*scopflow)->opflows[i]);CHKERRQ(ierr);
+  for(c=0; c < (*scopflow)->nc; c++) {
+    ierr = OPFLOWDestroy(&(*scopflow)->opflows[c]);CHKERRQ(ierr);
   }
 
   ierr = PetscFree((*scopflow)->nconineqcoup);CHKERRQ(ierr);
@@ -179,7 +180,7 @@ PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW scopflow,const char netfile[])
 - mode     - the operation mode (SCOPFLOWMODE_PREVENTIVE or SCOPFLOWMODE_CORRECTIVE)
 
   Notes: 
-    In the preventive mode, Pg,0 = Pg,i \forall i \in Nc, i.e., the base case real
+    In the preventive mode, Pgi-Pg0 = 0,i \forall i \in Nc, i.e., the base case real
     power generation is same as the real power generation for contingency cases.
     In the corrective mode, the real power generation is allowed to deviate from the
     base case limited by 30-min ramp. rate, i.e., -ramp_30 \le Pg,i - Pg,0 \le ramp_30
@@ -224,18 +225,19 @@ PetscErrorCode SCOPFLOWGetMode(SCOPFLOW scopflow,PetscInt *mode)
 PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 {
   PetscErrorCode ierr;
-  PetscBool      solverset;
-  char           modelname[32]="POWER_BALANCE_POLAR";
-  char           solvername[32]="IPOPT";
-  PetscInt       i,j;
+  PetscBool      opflowsolverset,scopflowsolverset;
+  char           opflowmodelname[32]="POWER_BALANCE_POLAR";
+  char           opflowsolvername[32]="IPOPT";
+  char           scopflowsolvername[32]="IPOPT";
+  PetscInt       c,j;
   PS             ps;
   PetscBool      flg;
 
   PetscFunctionBegin;
 
   ierr = PetscOptionsBegin(scopflow->comm->type,NULL,"SCOPFLOW options",NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsString("-scopflow_model","SCOPFLOW-OPFLOW model type","",modelname,modelname,32,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsString("-scopflow_solver","SCOPFLOW solver type","",solvername,solvername,32,&solverset);CHKERRQ(ierr);
+  ierr = PetscOptionsString("-scopflow_solver","SCOPFLOW solver type","",scopflowsolvername,scopflowsolvername,32,&scopflowsolverset);CHKERRQ(ierr);
+
   ierr = PetscOptionsBool("-scopflow_iscoupling","Include coupling between first stage and second stage","",scopflow->iscoupling,&scopflow->iscoupling,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-scopflow_Nc","Number of second stage scenarios","",scopflow->Nc,&scopflow->Nc,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-scopflow_replicate_basecase","Only for debugging: Replicate first stage for all second stage scenarios","",scopflow->replicate_basecase,&scopflow->replicate_basecase,NULL);CHKERRQ(ierr);
@@ -248,20 +250,32 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
     else scopflow->Nc += 1; 
 
     ierr = PetscCalloc1(scopflow->Nc,&scopflow->ctgclist.cont);CHKERRQ(ierr);
-    for(i=0; i < scopflow->Nc; i++) scopflow->ctgclist.cont->noutages = 0;
+    for(c=0; c < scopflow->Nc; c++) scopflow->ctgclist.cont->noutages = 0;
     ierr = SCOPFLOWReadContingencyData(scopflow,scopflow->ctgcfileformat,scopflow->ctgcfile);CHKERRQ(ierr);
     scopflow->Nc = scopflow->ctgclist.Ncont+1;
   } else {
     if(scopflow->Nc == -1) scopflow->Nc = 1;
   }
 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"SCOPFLOW running with %d contingencies (base case + %d scenarios)\n",scopflow->Nc,scopflow->Nc-1);CHKERRQ(ierr);
+  int q = scopflow->Nc/scopflow->comm->size;
+  int d = scopflow->Nc%scopflow->comm->size;
+  if(d) {
+    scopflow->nc = q + ((scopflow->comm->rank < d)?1:0); 
+  } else {
+    scopflow->nc = q;
+  }
+  int cstart,cend;
+  ierr = MPI_Scan(&scopflow->nc,&scopflow->cend,1,MPIU_INT,MPI_SUM,scopflow->comm->type);CHKERRQ(ierr);
+  scopflow->cstart = scopflow->cend - scopflow->nc;
+
+  ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW running with %d contingencies (base case + %d scenarios)\n",scopflow->Nc,scopflow->Nc-1);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d has %d contingencies, range [%d -- %d]\n",scopflow->comm->rank,scopflow->nc,scopflow->cstart,scopflow->cend);CHKERRQ(ierr);
 
   /* Set solver */
-  if(solverset) {
+  if(scopflowsolverset) {
     if(scopflow->solver) ierr = (*scopflow->solverops.destroy)(scopflow);
-    ierr = SCOPFLOWSetSolver(scopflow,solvername);CHKERRQ(ierr);
-    ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW: Using %s solver\n",solvername);CHKERRQ(ierr);
+    ierr = SCOPFLOWSetSolver(scopflow,scopflowsolvername);CHKERRQ(ierr);
+    ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW: Using %s solver\n",scopflowsolvername);CHKERRQ(ierr);
   } else {
     if(!scopflow->solver) {
       ierr = SCOPFLOWSetSolver(scopflow,SCOPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
@@ -270,23 +284,20 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   }
 
   /* Create OPFLOW objects */
-  ierr = PetscCalloc1(scopflow->Nc,&scopflow->opflows);CHKERRQ(ierr);
-  for(i=0; i < scopflow->Nc; i++) {
-    ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflows[i]);CHKERRQ(ierr);
-    ierr = OPFLOWSetModel(scopflow->opflows[i],modelname);CHKERRQ(ierr);
-    ierr = PetscStrcmp(solvername,SCOPFLOWSOLVER_PIPS,&flg);CHKERRQ(ierr);
-    if(flg) {
-      ierr = OPFLOWSetSolver(scopflow->opflows[i],OPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
-    } else {
-      ierr = OPFLOWSetSolver(scopflow->opflows[i],solvername);CHKERRQ(ierr);
-    }
-    ierr = OPFLOWReadMatPowerData(scopflow->opflows[i],scopflow->netfile);CHKERRQ(ierr);
+  ierr = PetscCalloc1(scopflow->nc,&scopflow->opflows);CHKERRQ(ierr);
+  for(c=0; c < scopflow->nc; c++) {
+    ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflows[c]);CHKERRQ(ierr);
+    ierr = OPFLOWSetModel(scopflow->opflows[c],opflowmodelname);CHKERRQ(ierr);
+    ierr = OPFLOWSetSolver(scopflow->opflows[c],opflowsolvername);CHKERRQ(ierr);
+
+    ierr = OPFLOWReadMatPowerData(scopflow->opflows[c],scopflow->netfile);CHKERRQ(ierr);
     /* Set up the PS object for opflow */
-    ps = scopflow->opflows[i]->ps;
+    ps = scopflow->opflows[c]->ps;
     ierr = PSSetUp(ps);CHKERRQ(ierr);
+
     /* Set contingencies */
     if(scopflow->ctgcfileset && !scopflow->replicate_basecase) {
-      Contingency ctgc=scopflow->ctgclist.cont[i];
+      Contingency ctgc=scopflow->ctgclist.cont[scopflow->cstart+c];
       for(j=0; j < ctgc.noutages; j++) {
 	if(ctgc.outagelist[j].type == GEN_OUTAGE) {
 	  PetscInt gbus=ctgc.outagelist[j].bus;
@@ -305,11 +316,11 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
     }
 
     /* Set up OPFLOW object */
-    ierr = OPFLOWSetUp(scopflow->opflows[i]);CHKERRQ(ierr);
-    if(i > 0) scopflow->opflows[i]->obj_gencost = PETSC_FALSE; /* No gen. cost minimization for second stage */
+    ierr = OPFLOWSetUp(scopflow->opflows[c]);CHKERRQ(ierr);
+    //    if(scopflow->cstart+c > 0) scopflow->opflows[c]->obj_gencost = PETSC_FALSE; /* No gen. cost minimization for second stage */
   }
   
-  ierr = PetscCalloc1(scopflow->Nc,&scopflow->nconineqcoup);CHKERRQ(ierr);
+  ierr = PetscCalloc1(scopflow->nc,&scopflow->nconineqcoup);CHKERRQ(ierr);
   ierr = (*scopflow->solverops.setup)(scopflow);CHKERRQ(ierr);
   ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW: Setup completed\n");CHKERRQ(ierr);
   
