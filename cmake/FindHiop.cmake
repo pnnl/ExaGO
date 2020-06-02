@@ -36,10 +36,13 @@ find_path(HIOP_INCLUDE_DIR NAME hiopNlpFormulation.hpp
 )
 message(STATUS "HIOP Include directory = ${HIOP_INCLUDE_DIR}")
 
+include(CheckSymbolExists)
+
 if(HIOP_INCLUDE_DIR AND HIOP_LIBRARY)
   include_directories(${HIOP_INCLUDE_DIR})
   set(SCOPFLOW_HAVE_HIOP 1)
-  if(MAGMA_DIR)
+  check_symbol_exists(HIOP_USE_GPU "${HIOP_INCLUDE_DIR}/hiop_defs.hpp" HIOP_USE_GPU)
+  if(HIOP_USE_GPU)
     include(FindMagma)
   endif()
 else()
