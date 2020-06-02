@@ -39,6 +39,7 @@ target_link_libraries(opflow PRIVATE
 			     ${SCOPFLOW_PS_LIBS}
 			     ${SCOPFLOW_PFLOW_LIBS}
            		     ${MAGMA_LIBRARY}
+			     -lblas -llapack
 )
 
 # Install shared object
