@@ -17,6 +17,7 @@
 #define SCOPFLOWSOLVER_IPOPT "IPOPT"
 #define SCOPFLOWSOLVER_TAO   "TAO"
 #define SCOPFLOWSOLVER_PIPS  "PIPS"
+#define SCOPFLOWSOLVER_EMPAR  "EMPAR" /* Embarassingly parallel solver - solves each OPFLOW independently */
 
 /* Mode */
 #define SCOPFLOWMODE_PREVENTIVE 0
@@ -25,7 +26,7 @@
 typedef struct _p_SCOPFLOW *SCOPFLOW;
 
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetModel(SCOPFLOW,const char[]);
-PETSC_EXTERN PetscErrorCode SCOPFLOWSetSolve(SCOPFLOW,const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetSolver(SCOPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWCreate(MPI_Comm,SCOPFLOW*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWDestroy(SCOPFLOW*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW,const char[]);
