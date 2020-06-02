@@ -10,7 +10,8 @@ if(NOT HIOP_DIR)
      /opt/local
      ~/local/ipopt
      # PNNL specific paths
-     /qfs/projects/exasgd/newell/hiop-cpu # PNNL power9 system-specific
+     /qfs/projects/exasgd/newell/hiop_shared_gpu
+     /qfs/projects/exasgd/newell/hiop_shared_cpu
    )
 endif()
 
@@ -20,7 +21,7 @@ if(NOT HIOP_DIR)
 endif(NOT HIOP_DIR)
 
 # Ipopt library location
-find_library(HIOP_LIBRARY NAME libhiop.a libhiop.so libhiop.dylib 
+find_library(HIOP_LIBRARY NAME libhiop.so libhiop.dylib libhiop.a
   HINTS 
   ${HIOP_DIR}/lib
   ${HIOP_DIR}/lib64
@@ -35,9 +36,15 @@ find_path(HIOP_INCLUDE_DIR NAME hiopNlpFormulation.hpp
 )
 message(STATUS "HIOP Include directory = ${HIOP_INCLUDE_DIR}")
 
+include(CheckSymbolExists)
+
 if(HIOP_INCLUDE_DIR AND HIOP_LIBRARY)
   include_directories(${HIOP_INCLUDE_DIR})
   set(SCOPFLOW_HAVE_HIOP 1)
+  check_symbol_exists(HIOP_USE_GPU "${HIOP_INCLUDE_DIR}/hiop_defs.hpp" HIOP_USE_GPU)
+  if(HIOP_USE_GPU)
+    include(FindMagma)
+  endif()
 else()
   message(FATAL_ERROR "HIOP not found!")
 endif()

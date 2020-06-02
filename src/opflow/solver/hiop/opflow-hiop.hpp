@@ -14,6 +14,10 @@
 #include <cstring>
 #include <cstdio>
 
+#ifdef HIOP_USE_MAGMA
+#include "magma_v2.h"
+#endif
+
 class OPFLOWHIOPInterface : public hiop::hiopInterfaceMDS
 {
 public:

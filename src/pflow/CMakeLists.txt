@@ -9,7 +9,7 @@ set(PFLOW_INCLUDE
 )
 
 # Compile library
-add_library(pflow SHARED ${PFLOW_SRC})
+add_library(pflow ${PFLOW_SRC})
 
 target_link_libraries(pflow PRIVATE
 			 PETSC::SNES 

@@ -63,6 +63,12 @@ if(SCOPFLOW_ENABLE_HIOP)
   set(CMAKE_INSTALL_RPATH  ${HIOP_DIR}/lib ${CMAKE_INSTALL_RPATH})
 endif(SCOPFLOW_ENABLE_HIOP)
 
+if(NOT DEFINED LAPACK_LIBRARIES)
+  # in case the toolchain defines them
+  find_package(LAPACK REQUIRED)
+  message(STATUS "Found LAPACK libraries: ${LAPACK_LIBRARIES}")
+endif(NOT DEFINED LAPACK_LIBRARIES)
+
 # Set up configuration header file
 configure_file(include/scopflow_config.h.in scopflow_config.h)
 

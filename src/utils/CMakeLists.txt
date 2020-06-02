@@ -13,7 +13,7 @@ set(UTILS_INCLUDE
 )
 
 # Add library
-add_library(psutil SHARED ${UTILS_SRC})
+add_library(psutil ${UTILS_SRC})
 
 # Link libraries
 target_link_libraries(psutil PRIVATE PETSC::SNES MPI::MPI_C)

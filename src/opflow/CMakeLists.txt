@@ -27,7 +27,7 @@ set(OPFLOW_INCLUDE
 )
 
 #Compile library
-add_library(opflow SHARED ${OPFLOW_SRC})
+add_library(opflow ${OPFLOW_SRC})
 
 # link libraries
 target_link_libraries(opflow PRIVATE
@@ -38,6 +38,8 @@ target_link_libraries(opflow PRIVATE
 			     ${SCOPFLOW_UTIL_LIBS}
 			     ${SCOPFLOW_PS_LIBS}
 			     ${SCOPFLOW_PFLOW_LIBS}
+           		     ${MAGMA_LIBRARY}
+			     -lblas -llapack
 )
 
 # Install shared object

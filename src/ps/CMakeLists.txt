@@ -12,7 +12,7 @@ set(PS_INCLUDE
 )
 
 # Compile library
-add_library(ps SHARED ${PS_SRC})
+add_library(ps ${PS_SRC})
 
 target_link_libraries(ps PRIVATE
 			 PETSC::SNES 

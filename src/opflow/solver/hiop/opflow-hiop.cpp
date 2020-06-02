@@ -554,6 +554,10 @@ PetscErrorCode OPFLOWSolverDestroy_HIOP(OPFLOW opflow)
 
   ierr = PetscFree(hiop);CHKERRQ(ierr);
 
+#ifdef HIOP_USE_MAGMA
+  magma_finalize();
+#endif
+
   PetscFunctionReturn(0);
 }
 
@@ -579,6 +583,9 @@ PetscErrorCode OPFLOWSolverCreate_HIOP(OPFLOW opflow)
   opflow->solverops.getconstraints = OPFLOWSolverGetConstraints_HIOP;
   opflow->solverops.getconstraintmultipliers = OPFLOWSolverGetConstraintMultipliers_HIOP;
 
+#ifdef HIOP_USE_MAGMA
+  magma_init();
+#endif
   PetscFunctionReturn(0);
 }
 
