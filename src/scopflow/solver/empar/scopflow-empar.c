@@ -69,9 +69,12 @@ PetscErrorCode SCOPFLOWSolverGetConstraints_EMPAR(SCOPFLOW scopflow,PetscInt con
 {
   PetscErrorCode ierr;
   SCOPFLOWSolver_EMPAR scopflowempar = (SCOPFLOWSolver_EMPAR)scopflow->solver;
+  PetscInt c=cont_num-scopflow->cstart;
+  OPFLOW   opflow=scopflow->opflows[c];
 
   PetscFunctionBegin;
 
+  *G = opflow->G;
 
   PetscFunctionReturn(0);
 }
@@ -80,12 +83,15 @@ PetscErrorCode SCOPFLOWSolverGetConstraintMultipliers_EMPAR(SCOPFLOW scopflow,Pe
 {
   PetscErrorCode ierr;
   SCOPFLOWSolver_EMPAR scopflowempar = (SCOPFLOWSolver_EMPAR)scopflow->solver;
+  PetscInt c=cont_num-scopflow->cstart;
+  OPFLOW   opflow=scopflow->opflows[c];
 
   PetscFunctionBegin;
 
+  *Lambda = opflow->Lambda;
+
   PetscFunctionReturn(0);
 }
-
 
 PetscErrorCode SCOPFLOWSolverGetConvergenceStatus_EMPAR(SCOPFLOW scopflow,PetscBool *status)
 {
