@@ -59,13 +59,14 @@ int main(int argc,char **argv)
   ierr = PetscLogStagePop();CHKERRQ(ierr);
 
   ierr = PetscLogStagePush(stages[1]);CHKERRQ(ierr);
+
   /* Solve */
   ierr = SCOPFLOWSolve(scopflow);CHKERRQ(ierr);
   /*End of Final Stage */
   ierr = PetscLogStagePop();CHKERRQ(ierr);
 
   /* Print solution */
-  ierr = SCOPFLOWPrintSolution(scopflow,0);CHKERRQ(ierr);
+  //  ierr = SCOPFLOWPrintSolution(scopflow,0);CHKERRQ(ierr);
 
   ierr = SCOPFLOWSaveSolutionAll(scopflow,MATPOWER,"scopflowout");CHKERRQ(ierr);
 

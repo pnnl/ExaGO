@@ -11,7 +11,7 @@
 #include <scopflow.h>
 #include <private/contingencylist.h>
 
-#define SCOPFLOWSOLVERSMAX 3
+#define SCOPFLOWSOLVERSMAX 10
 
 struct _p_SCOPFLOWSolverList{
   char name[32]; /* Name of the solver */
@@ -42,7 +42,10 @@ struct _p_SCOPFLOW{
   PetscInt nconineq, Nconineq; /* Local and global number of inequality constraints */
   PetscInt *nconineqcoup;      /* Number of inequality coupling constraints */
   PetscInt Nconcoup;           /* Number of coupling constraints */
-  
+
+  PetscInt cstart;  /* Contingency list start index for this processor */
+  PetscInt cend;    /* Contingency list end idx (cstart+nc) for this processor */
+		       
   COMM comm; /**< Communicator context */
   OPFLOW *opflows; /* Array of optimal power flow application objects.
   		      Each processor creates ns objects, one for each 

@@ -8,3 +8,4 @@ compute_mode cpu
 verbosity_level 3
 mu0 1e-1
 fixed_var relax
+tolerance 1e-6
