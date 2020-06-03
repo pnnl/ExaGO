@@ -126,43 +126,42 @@ if(SCOPFLOW_RUN_TESTS)
   )
   message(STATUS "Starting tests")
 
-  # SCOPFLOW tests - Preventive mode
-  foreach(nc RANGE 1 9)
-    add_test(NAME SCOPFLOW_9bus_${nc}cont_preventive COMMAND mpiexec -n 1 $<TARGET_FILE:app_scopflow> -netfile datafiles/case9mod.m -ctgcfile datafiles/case9.cont -scopflow_solver IPOPT -scopflow_mode 0 -opflow_include_loadloss_variables -scopflow_Nc ${nc})
-  endforeach(nc)
+  # Tests with IPOPT
+  if(SCOPFLOW_HAVE_IPOPT)
+    # SCOPFLOW tests - Preventive mode
+    foreach(nc RANGE 1 9)
+      add_test(NAME SCOPFLOW_9bus_${nc}cont_preventive COMMAND mpiexec -n 1 $<TARGET_FILE:app_scopflow> -netfile datafiles/case9mod.m -ctgcfile datafiles/case9.cont -scopflow_solver IPOPT -scopflow_mode 0 -opflow_include_loadloss_variables -scopflow_Nc ${nc})
+    endforeach(nc)
 
-  # SCOPFLOW tests - Corrective mode
-  foreach(nc RANGE 1 9)
-    add_test(NAME SCOPFLOW_9bus_${nc}cont_corrective COMMAND mpiexec -n 1 $<TARGET_FILE:app_scopflow> -netfile datafiles/case9mod.m -ctgcfile datafiles/case9.cont -scopflow_solver IPOPT -scopflow_mode 1 -opflow_include_loadloss_variables -scopflow_Nc ${nc})
-  endforeach(nc)
+    # SCOPFLOW tests - Corrective mode
+    foreach(nc RANGE 1 9)
+      add_test(NAME SCOPFLOW_9bus_${nc}cont_corrective COMMAND mpiexec -n 1 $<TARGET_FILE:app_scopflow> -netfile datafiles/case9mod.m -ctgcfile datafiles/case9.cont -scopflow_solver IPOPT -scopflow_mode 1 -opflow_include_loadloss_variables -scopflow_Nc ${nc})
+    endforeach(nc)
 
-  message(STATUS "Running OPFLOW formulation tests")
+    message(STATUS "Running OPFLOW formulation tests")
 
-  # OPFLOW tests
-  foreach(test_net ${network_files})
-    foreach(opflow_form POWER_BALANCE_POLAR)
-      foreach(opflow_init FROMFILE FLATSTART ACPF MIDPOINT)
-        string(REPLACE "${PROJECT_BINARY_DIR}/datafiles/" "" input_file ${test_net})
-        add_test(NAME OPFLOW_${opflow_form}_${opflow_init}_${input_file} COMMAND mpiexec -n 1 $<TARGET_FILE:app_opflow> -netfile ${test_net} -opflow_formulation ${opflow_form} -opflow_initialization ${opflow_init} -opflow_solver IPOPT)
+    # OPFLOW tests
+    foreach(test_net ${network_files})
+      foreach(opflow_form POWER_BALANCE_POLAR)
+        foreach(opflow_init FROMFILE FLATSTART ACPF MIDPOINT)
+          string(REPLACE "${PROJECT_BINARY_DIR}/datafiles/" "" input_file ${test_net})
+          add_test(NAME OPFLOW_${opflow_form}_${opflow_init}_${input_file} COMMAND mpiexec -n 1 $<TARGET_FILE:app_opflow> -netfile ${test_net} -opflow_formulation ${opflow_form} -opflow_initialization ${opflow_init} -opflow_solver IPOPT)
+        endforeach()
       endforeach()
     endforeach()
-  endforeach()
-
-  message(STATUS "Running OPFLOW solver tests")
-  if(SCOPFLOW_HAVE_IPOPT)
-    foreach(test_net ${network_files})
-     string(REPLACE "${PROJECT_BINARY_DIR}/" "" input_file ${test_net})
-     add_test(NAME OPFLOW_IPOPT_${input_file} COMMAND mpiexec -n 1 $<TARGET_FILE:app_opflow> -netfile ${test_net} -opflow_solver IPOPT)
-    endforeach(test_net)
   endif(SCOPFLOW_HAVE_IPOPT)
 
+  # Tests with HIOP
   if(SCOPFLOW_HAVE_HIOP)
     foreach(test_net ${network_files})
-      string(REPLACE "${PROJECT_BINARY_DIR}/" "" input_file ${test_net})
-      add_test(NAME OPFLOW_HIOP_${input_file} COMMAND mpiexec -n 1 $<TARGET_FILE:app_opflow> -netfile ${test_net} -opflow_solver HIOP)
-    endforeach(test_net)
+      foreach(opflow_init FROMFILE FLATSTART ACPF MIDPOINT)
+        string(REPLACE "${PROJECT_BINARY_DIR}/datafiles/" "" input_file ${test_net})
+        add_test(NAME OPFLOW_HIOP_${opflow_init}_${input_file} COMMAND mpiexec -n 1 $<TARGET_FILE:app_opflow> -netfile ${test_net} -opflow_initialization ${opflow_init} -opflow_solver HIOP)
+      endforeach()
+    endforeach()
   endif(SCOPFLOW_HAVE_HIOP)
 
+  # Tests with TAO solver
   foreach(np RANGE 1 1)
     # Tests for > 1 proc are failing because DMNetwork in PS needs to be updated
     foreach(test_net ${network_files})
