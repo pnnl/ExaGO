@@ -347,7 +347,7 @@ PetscErrorCode OPFLOWSolverGetConvergenceStatus_IPOPT(OPFLOW opflow,PetscBool *s
   OPFLOWSolver_IPOPT ipopt = (OPFLOWSolver_IPOPT)opflow->solver;
 
   PetscFunctionBegin;
-  if(ipopt->solve_status < 2) *status = PETSC_TRUE; /* See IpReturnCodes_inc.h in IPOPT. The first two denote convergence */
+  if(ipopt->solve_status == 0 || ipopt->solve_status == 1) *status = PETSC_TRUE; /* See IpReturnCodes_inc.h in IPOPT. The first two denote convergence */
   else *status = PETSC_FALSE;
 
   PetscFunctionReturn(0);
