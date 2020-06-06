@@ -22,12 +22,21 @@ add_library(tcopflow ${TCOPFLOW_SRC})
 target_link_libraries(tcopflow PRIVATE
 			     PETSC::SNES
 			     MPI::MPI_C
-			     ${IPOPT_LIBRARY}
 			     ${SCOPFLOW_UTIL_LIBS}
 			     ${SCOPFLOW_PS_LIBS}
 			     ${SCOPFLOW_PFLOW_LIBS}
 			     ${SCOPFLOW_OPFLOW_LIBS}
 )
+
+if(SCOPFLOW_HAVE_IPOPT)
+	target_link_libraries(tcopflow PUBLIC INTERFACE Ipopt)
+	target_include_directories(tcopflow PUBLIC ${IPOPT_INCLUDE_DIR})
+endif()
+
+if(SCOPFLOW_HAVE_HIOP)
+	target_link_libraries(tcopflow PUBLIC INTERFACE HiOp)
+	target_include_directories(tcopflow PUBLIC ${HIOP_INCLUDE_DIR})
+endif()
 
 # Install library
 install(TARGETS tcopflow DESTINATION lib)
