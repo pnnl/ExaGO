@@ -1,44 +1,49 @@
-# If IPOPT_DIR is not set then try to find it at default locations
-if(NOT IPOPT_DIR)
-   find_path(IPOPT_DIR 
-     NAMES
-     share/coin/doc/Ipopt/ipopt_addlibs_cpp.txt
-     lib/pkgconfig/ipopt.pc
-     HINTS
-     /usr
-     /usr/local
-     /opt/local
-     ~/local/ipopt
-     # PNNL specific paths
-     /share/apps/ipopt/3.13.0
-   )
+#[[
+
+Finds Ipopt include directory and libraries and exports target `Ipopt`
+
+User may set:
+- IPOPT_ROOT_DIR
+
+]]
+
+find_library(IPOPT_LIBRARY
+  NAMES
+  ipopt
+  PATHS
+  ${IPOPT_DIR} $ENV{IPOPT_DIR} ${IPOPT_ROOT_DIR}
+  ENV LD_LIBRARY_PATH ENV DYLD_LIBRARY_PATH
+  PATH_SUFFIXES
+  lib64 lib)
+
+if(IPOPT_LIBRARY)
+  get_filename_component(IPOPT_LIBRARY_DIR ${IPOPT_LIBRARY} DIRECTORY)
 endif()
 
-# Exit if IPOPT_DIR is not set and cannot be found in default locations
-if(NOT IPOPT_DIR)
-   message(FATAL_ERROR "Ipopt directory could not be found. Please specify the directory using the flag -DIPOPT_DIR=<location_of_Ipopt_install>")
-endif(NOT IPOPT_DIR)
+find_path(IPOPT_INCLUDE_DIR
+  NAMES
+  IpTNLP.hpp
+  PATHS
+  ${IPOPT_DIR} ${IPOPT_ROOT_DIR} $ENV{IPOPT_DIR} ${IPOPT_LIBRARY_DIR}/..
+  PATH_SUFFIXES
+  include
+  include/coin
+  include/coin-or)
 
-# Ipopt library location
-find_library(IPOPT_LIBRARY NAME libipopt.a libipopt.so libipopt.dylib 
-  HINTS 
-  ${IPOPT_DIR}/lib
-  ${IPOPT_DIR}/lib64
-)
-message(STATUS "IPOPT library directory=${IPOPT_LIBRARY}")
-
-# Ipopt include directories
-# Find Ipopt header path and ensure all needed files are there
-find_path(IPOPT_INCLUDE_DIR NAME IpIpoptNLP.hpp 
-  HINTS 
-  ${IPOPT_DIR}/include/coin
-  ${IPOPT_DIR}/include/coin-or
-)
-message(STATUS "IPOPT Include directory = ${IPOPT_INCLUDE_DIR}")
-
-if(IPOPT_INCLUDE_DIR AND IPOPT_LIBRARY)
-  include_directories(${IPOPT_INCLUDE_DIR})
-  set(SCOPFLOW_HAVE_IPOPT 1)
+if(IPOPT_LIBRARY AND IPOPT_INCLUDE_DIR)
+  message(STATUS "Found Ipopt library: " ${IPOPT_LIBRARY})
+  message(STATUS "Found Ipopt include directory: " ${IPOPT_INCLUDE_DIR})
+  add_library(Ipopt INTERFACE)
+  target_link_libraries(Ipopt INTERFACE ${IPOPT_LIBRARY})
+  target_include_directories(Ipopt INTERFACE ${IPOPT_INCLUDE_DIR})
 else()
-  message(FATAL_ERROR "IPOPT not found!")
+  if(NOT IPOPT_LIB)
+    message(STATUS "Ipopt library not found! Please provide correct filepath.")
+  endif()
+  if(NOT IPOPT_INCLUDE_DIR)
+    message(STATUS "Ipopt include directory  not found! Please provide correct path.")
+  endif()
 endif()
+
+set(IPOPT_INCLUDE_DIR CACHE PATH "Path to Ipopt header files")
+set(IPOPT_LIBRARY CACHE FILEPATH "Path to Ipopt library")

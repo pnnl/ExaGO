@@ -32,15 +32,23 @@ add_library(opflow ${OPFLOW_SRC})
 # link libraries
 target_link_libraries(opflow PRIVATE
 			     PETSC::ALL
-			     MPI::MPI_C
-			     ${IPOPT_LIBRARY}
-			     ${HIOP_LIBRARY}
+					 MPI::MPI_C
 			     ${SCOPFLOW_UTIL_LIBS}
 			     ${SCOPFLOW_PS_LIBS}
 			     ${SCOPFLOW_PFLOW_LIBS}
-           		     ${MAGMA_LIBRARY}
+           ${MAGMA_LIBRARY}
 			     -lblas -llapack
 )
+
+if(SCOPFLOW_HAVE_IPOPT)
+	target_link_libraries(opflow PUBLIC INTERFACE Ipopt)
+	target_include_directories(opflow PUBLIC ${IPOPT_INCLUDE_DIR})
+endif()
+
+if(SCOPFLOW_HAVE_HIOP)
+	target_link_libraries(opflow PUBLIC INTERFACE HiOp)
+	target_include_directories(opflow PUBLIC ${HIOP_INCLUDE_DIR})
+endif()
 
 # Install shared object
 install(TARGETS opflow DESTINATION lib)
