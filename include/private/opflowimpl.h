@@ -10,8 +10,8 @@
 #include <pflow.h>
 #include <opflow.h>
 
-#define OPFLOWMODELSMAX 4
-#define OPFLOWSOLVERSMAX      3
+#define OPFLOWMODELSMAX  10
+#define OPFLOWSOLVERSMAX 10
 
 typedef enum {
   OPFLOWINIT_MIDPOINT, /* Midpoint */
@@ -25,6 +25,7 @@ extern const char *const OPFLOWInitializationTypes[];
 
 struct _p_OPFLOWModelOps {
   PetscErrorCode (*destroy)(OPFLOW);
+  PetscErrorCode (*setup)(OPFLOW);
   PetscErrorCode (*setnumvariables)(OPFLOW,PetscInt*,PetscInt*,PetscInt*); /* Set number of variables for buses and branches, and total number of variables */
   PetscErrorCode (*setnumconstraints)(OPFLOW,PetscInt*,PetscInt*,PetscInt*,PetscInt*); /* Set number of equality and inequality constraints */
   PetscErrorCode (*setvariablebounds)(OPFLOW,Vec,Vec); /* Upper and lower bounds on the vector */

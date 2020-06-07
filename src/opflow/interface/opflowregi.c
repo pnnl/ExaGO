@@ -18,6 +18,9 @@ PetscErrorCode OPFLOWModelRegister(OPFLOW opflow,const char sname[],PetscErrorCo
     ierr = PetscStrcmp(opflow->OPFLOWModelList[i].name,sname,&match);
     if(match) PetscFunctionReturn(0);
   }
+  if(opflow->nmodelsregistered == OPFLOWMODELSMAX) {
+    SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Cannot register %s OPFLOW model, maximum limit %d reached\n",sname,OPFLOWMODELSMAX);
+  }
   i = opflow->nmodelsregistered;
   ierr = PetscStrcpy(opflow->OPFLOWModelList[i].name,sname);CHKERRQ(ierr);
   opflow->OPFLOWModelList[i].create = createfunction;
@@ -42,6 +45,9 @@ PetscErrorCode OPFLOWSolverRegister(OPFLOW opflow,const char sname[],PetscErrorC
     ierr = PetscStrcmp(opflow->OPFLOWSolverList[i].name,sname,&match);
     if(match) PetscFunctionReturn(0);
   }
+  if(opflow->nsolversregistered == OPFLOWSOLVERSMAX) {
+    SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Cannot register %s OPFLOW solver, maximum limit %d reached\n",sname,OPFLOWSOLVERSMAX);
+  }
   i = opflow->nsolversregistered;
   ierr = PetscStrcpy(opflow->OPFLOWSolverList[i].name,sname);CHKERRQ(ierr);
   opflow->OPFLOWSolverList[i].create = createfunction;
@@ -53,6 +59,7 @@ extern PetscErrorCode OPFLOWModelCreate_PBPOL(OPFLOW);
 extern PetscErrorCode OPFLOWModelCreate_PBCAR(OPFLOW);
 extern PetscErrorCode OPFLOWModelCreate_IBCAR(OPFLOW);
 extern PetscErrorCode OPFLOWModelCreate_IBCAR2(OPFLOW);
+extern PetscErrorCode OPFLOWModelCreate_PBPOL2(OPFLOW);
 
 /*
   OPFLOWModelRegisterAll - Registers all built OPFLOW models
@@ -67,6 +74,7 @@ PetscErrorCode OPFLOWModelRegisterAll(OPFLOW opflow)
   ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_PBCAR,OPFLOWModelCreate_PBCAR);CHKERRQ(ierr);
   ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_IBCAR,OPFLOWModelCreate_IBCAR);CHKERRQ(ierr);
   ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_IBCAR2,OPFLOWModelCreate_IBCAR2);CHKERRQ(ierr);
+  ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_PBPOL2,OPFLOWModelCreate_PBPOL2);CHKERRQ(ierr);
 
   opflow->OPFLOWModelRegisterAllCalled = PETSC_TRUE;
 

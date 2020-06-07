@@ -7,7 +7,7 @@
 -opflow_solver IPOPT
 
 # Select model
--opflow_model POWER_BALANCE_POLAR
+#-opflow_model POWER_BALANCE_POLAR
 
 #-------------------------
 # Options for TAO solver

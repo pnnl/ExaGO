@@ -1,3 +1,4 @@
+
 #include <private/pflowimpl.h>
 #include <private/opflowimpl.h>
 #include <petsc/private/dmnetworkimpl.h>
@@ -364,6 +365,7 @@ PetscErrorCode OPFLOWSetModel(OPFLOW opflow,const char* modelname)
 
   /* Null the function pointers */
   opflow->modelops.destroy                        = 0;
+  opflow->modelops.setup                          = 0;
   opflow->modelops.setnumvariables                = 0;
   opflow->modelops.setnumconstraints              = 0;
   opflow->modelops.setvariablebounds              = 0;
@@ -747,6 +749,10 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
     ierr = OPFLOWSetUpInitPflow(opflow);CHKERRQ(ierr);
   }
 
+  if(opflow->modelops.setup) {
+    ierr = (*opflow->modelops.setup)(opflow);CHKERRQ(ierr);
+  }
+
   opflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);
 }
@@ -849,7 +855,9 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
   OPFLOWGetObjective - Returns the objective function value
 
   Input Parameters:
-+ OPFLOW - the OPFLOW object
+- OPFLOW - the OPFLOW object
+
+  Output Parameters:
 - obj    - the objective function value
 
   Notes: Should be called after the optimization finishes
@@ -860,6 +868,88 @@ PetscErrorCode OPFLOWGetObjective(OPFLOW opflow,PetscReal *obj)
 
   PetscFunctionBegin;
   ierr = (*opflow->solverops.getobjective)(opflow,obj);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWGetVariableBounds - Returns the variable bounds
+
+  Input Parameters:
+- OPFLOW - the OPFLOW object
+
+  Output Parameters:
++ Xl     - lower bound on X
+- Xu     - upper bound on X
+
+  Notes: Should be called after the optimization finishes. This function merely
+         returns the already computed lower and upper bound vectors.
+*/
+PetscErrorCode OPFLOWGetVariableBounds(OPFLOW opflow,Vec *Xl, Vec *Xu)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  *Xl = opflow->Xl;
+  *Xu = opflow->Xu;
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWComputeObjective - Computes the objective function value
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+- X      - the solution vector
+
+  Output Parameters:
+- obj    - the objective function value
+
+*/
+PetscErrorCode OPFLOWComputeObjective(OPFLOW opflow,Vec X,PetscReal *obj)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*opflow->modelops.computeobjective)(opflow,X,obj);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWComputeVariableBounds - Computes the bounds on X
+
+  Input Parameters:
+- OPFLOW - the OPFLOW object
+
+  Output Parameters:
++ Xl     - lower bound on X
+- Xu     - upper bound on X
+
+  Notes: Should be called after the optimization is set up.
+*/
+PetscErrorCode OPFLOWComputeVariableBounds(OPFLOW opflow,Vec Xl, Vec Xu)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*opflow->modelops.setvariablebounds)(opflow,Xl,Xu);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWComputeGradient - Computes the gradient of the objective function
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+. X      - the solution vector
+- grad    - the gradient of the objective function
+
+  Notes: Should be called after the optimization is set up
+*/
+PetscErrorCode OPFLOWComputeGradient(OPFLOW opflow,Vec X,Vec grad)
+{
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = (*opflow->modelops.computegradient)(opflow,X,grad);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -886,6 +976,8 @@ PetscErrorCode OPFLOWGetSolution(OPFLOW opflow,Vec *X)
 
   Input Parameters:
 + OPFLOW - the OPFLOW object
+
+  Output Parameters:
 - G    - the opflow constraints
 
   Notes: Should be called after the optimization finishes.
@@ -901,10 +993,90 @@ PetscErrorCode OPFLOWGetConstraints(OPFLOW opflow,Vec *G)
 }
 
 /*
+  OPFLOWComputeConstraints - Computes the OPFLOW constraints
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+. X      - the solution vector
+
+  Output Parameters:
+- G    - the opflow constraints
+
+  Notes: Should be called after the optimization is set up. G has
+         equality constraints followed by inequality constraints
+*/
+PetscErrorCode OPFLOWComputeConstraints(OPFLOW opflow,Vec X,Vec G)
+{
+  PetscErrorCode ierr;
+  PetscScalar    *g;
+
+  PetscFunctionBegin;
+  ierr = VecGetArray(G,&g);CHKERRQ(ierr);
+
+  ierr = VecPlaceArray(opflow->Ge,g);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computeequalityconstraints)(opflow,X,opflow->Ge);CHKERRQ(ierr);
+  ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
+
+  if(opflow->Nconineq) {
+    ierr = VecPlaceArray(opflow->Gi,g+opflow->nconeq);CHKERRQ(ierr);
+    ierr = (*opflow->modelops.computeinequalityconstraints)(opflow,X,opflow->Gi);CHKERRQ(ierr);
+    ierr = VecResetArray(opflow->Gi);CHKERRQ(ierr);
+  }
+
+  ierr = VecRestoreArray(G,&g);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWGetConstraintBounds - Returns the OPFLOW constraint bounds
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+
+  Output Parameters:
++ Gl    - lower bound on constraints
+- Gu    - upper bound on constraints
+
+  Notes: Should be called after the optimization finishes.
+         Equality constraint bounds first followed by inequality constraints
+*/
+PetscErrorCode OPFLOWGetConstraintBounds(OPFLOW opflow,Vec *Gl,Vec *Gu)
+{
+
+  PetscFunctionBegin;
+  *Gl = opflow->Gl;
+  *Gu = opflow->Gu;
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWComputeConstraintBounds - Computes the bounds on constraints
+
+  Input Parameters:
+- OPFLOW - the OPFLOW object
+
+  Output Parameters:
++ Gl     - lower bound on constraints
+- Gu     - upper bound on constraints
+
+  Notes: Should be called after the optimization is set up.
+*/
+PetscErrorCode OPFLOWComputeConstraintBounds(OPFLOW opflow,Vec Gl, Vec Gu)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*opflow->modelops.setconstraintbounds)(opflow,Gl,Gu);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
   OPFLOWGetConstraintMultipliers - Returns the OPFLOW constraint multipliers
 
   Input Parameters:
 + OPFLOW - the OPFLOW object
+
+  Output Parameters:
 - G    - the opflow constraint lagrange multipliers
 
   Notes: Should be called after the optimization finishes.
