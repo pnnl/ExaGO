@@ -84,6 +84,9 @@ add_subdirectory(src)
 # Build applications (specified in applications/CMakeLists.txt)
 add_subdirectory(applications)
 
+# Build unit tests
+add_subdirectory(tests)
+
 ## Install
 
 # Scopflow options files to install
@@ -109,6 +112,7 @@ set(SCOPFLOW_DATA_FILES
 # Install data files
 install(FILES ${SCOPFLOW_DATA_FILES} DESTINATION bin/datafiles)
 install(FILES ${SCOPFLOW_DATA_FILES} DESTINATION datafiles)
+install(FILES ${SCOPFLOW_DATA_FILES} DESTINATION tests/datafiles)
 install(DIRECTORY datafiles/TAMU200_scenarios DESTINATION bin/datafiles)
 install(DIRECTORY datafiles/TAMU200_scenarios DESTINATION datafiles)
 

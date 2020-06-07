@@ -4,6 +4,8 @@ set(OPFLOW_FORM_SRC
     model/current-bal-cartesian/ibcar2.c
     model/power-bal-polar/pbpol.c
     model/power-bal-cartesian/pbcar.c
+    model/power-bal-polar2/pbpol2.c
+    model/power-bal-polar2/pbpol2kernels.c
 )
 
 set(OPFLOW_SOLVER_SRC
@@ -32,11 +34,11 @@ add_library(opflow ${OPFLOW_SRC})
 # link libraries
 target_link_libraries(opflow PRIVATE
 			     PETSC::ALL
-					 MPI::MPI_C
+			     MPI::MPI_C
 			     ${SCOPFLOW_UTIL_LIBS}
 			     ${SCOPFLOW_PS_LIBS}
 			     ${SCOPFLOW_PFLOW_LIBS}
-           ${MAGMA_LIBRARY}
+			     ${MAGMA_LIBRARY}
 			     -lblas -llapack
 )
 
