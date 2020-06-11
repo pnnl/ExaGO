@@ -890,7 +890,7 @@ PetscErrorCode PSSetUp(PS ps)
   for(i=0; i < nv; i++) {
     /* Set the number of variables for buses */
     if(ps->appname == APP_ACPF) numbusvariables = 2;
-    if(ps->appname == APP_ACOPF) numbusvariables = 0; /* The variables are set later by the application */
+    if(ps->appname == APP_ACOPF) numbusvariables = 2; /* The variables are set later by the application */
 
     ierr = DMNetworkAddNumVariables(networkdm,vtx[i],numbusvariables);CHKERRQ(ierr); /* Bus variables */
     ierr = DMNetworkAddComponent(networkdm,vtx[i],ps->compkey[1],&ps->bus[i]);CHKERRQ(ierr);

@@ -1960,6 +1960,141 @@ PetscErrorCode OPFLOWComputeHessian_PBCAR(OPFLOW opflow,Vec X,Vec Lambdae,Vec La
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode OPFLOWSolutionToPS_PBCAR(OPFLOW opflow)
+{
+  PetscErrorCode ierr;
+  PS             ps=(PS)opflow->ps;
+  PetscInt       i,k;
+  Vec            X,Lambda;
+  PSBUS          bus;
+  PSGEN          gen;
+  PSLOAD         load;
+  PSLINE         line;
+  const PetscScalar *x,*lambda,*lambdae,*lambdai;
+  PetscInt       loc,gloc=0;
+  PetscScalar    Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
+  PetscScalar    Vrf,Vrt,Vif,Vit,Vr,Vi;
+  PetscScalar    Pf,Qf,Pt,Qt;
+  PSBUS          busf,bust;
+  const PSBUS    *connbuses;
+  PetscInt       xlocf,xloct;
+
+  PetscFunctionBegin;
+  if(opflow->comm->size > 1) {
+    SETERRQ(opflow->comm->type,PETSC_ERR_SUP,"Parallel solution printing/saving not supported yet\n");
+  }
+
+  ierr = OPFLOWGetSolution(opflow,&X);CHKERRQ(ierr);
+  ierr = OPFLOWGetConstraintMultipliers(opflow,&Lambda);CHKERRQ(ierr);
+
+  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecGetArrayRead(Lambda,&lambda);CHKERRQ(ierr);
+  lambdae = lambda;
+  if(opflow->Nconineq) {
+    lambdai = lambdae + opflow->nconeq;
+  }
+
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+
+    ierr = PSBUSGetVariableLocation(bus,&loc);
+
+    Vr = x[loc];
+    Vi = x[loc+1];
+    bus->va = atan2(Vi,Vr);
+    bus->vm = PetscSqrtScalar(Vr*Vr + Vi*Vi);
+
+    bus->mult_pmis = lambdae[gloc];
+    bus->mult_qmis = lambdae[gloc+1];
+    gloc += 2;
+
+    for(k=0; k < bus->ngen; k++) {
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      if(!gen->status) continue;
+
+      loc += 2;
+
+      gen->pg = x[loc];
+      gen->qg = x[loc+1];
+    }
+
+    if(opflow->include_loadloss_variables) {
+      for(k=0; k < bus->nload; k++) {
+	ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
+	loc += 2;
+	load->pl = load->pl - x[loc];
+	load->ql = load->ql - x[loc+1];
+      }
+    }
+
+    if(opflow->include_powerimbalance_variables) {
+      loc += 2;
+      bus->pimb = x[loc];
+      bus->qimb = x[loc+1];
+    }
+    if(bus->ide == REF_BUS) gloc++;
+  }
+
+  gloc = ps->nbus;
+
+  if(!opflow->ignore_lineflow_constraints) {
+    for(i=0; i<ps->nline; i++) {
+      line = &ps->line[i];
+      if(!line->status) {
+	line->mult_sf = line->mult_st = 0.0;
+	continue;
+      }
+      
+      Gff = line->yff[0];
+      Bff = line->yff[1];
+      Gft = line->yft[0];
+      Bft = line->yft[1];
+      Gtf = line->ytf[0];
+      Btf = line->ytf[1];
+      Gtt = line->ytt[0];
+      Btt = line->ytt[1];
+      
+      ierr = PSLINEGetConnectedBuses(line,&connbuses);CHKERRQ(ierr);
+      busf = connbuses[0];
+      bust = connbuses[1];
+      
+      ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
+      ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
+      
+      Vrf  = x[xlocf];
+      Vif  = x[xlocf+1];
+      Vrt  = x[xloct];
+      Vit  = x[xloct+1];
+
+      Pf =  Gff*(Vrf*Vrf + Vif*Vif) + Vrf*(Gft*Vrt - Bft*Vit) + Vif*(Bft*Vrt + Gft*Vit);
+      Qf = -Bff*(Vrf*Vrf + Vif*Vif) + Vif*(Gft*Vrt - Bft*Vit) - Vrf*(Bft*Vrt + Gft*Vit);
+      
+      Pt =  Gtt*(Vrt*Vrt + Vit*Vit) + Vrt*(Gtf*Vrf - Btf*Vif) + Vit*(Btf*Vrf + Gtf*Vif);
+      Qt = -Btt*(Vrt*Vrt + Vit*Vit) + Vit*(Gtf*Vrf - Btf*Vif) - Vrt*(Btf*Vrf + Gtf*Vif);
+      
+      line->pf = Pf;
+      line->qf = Qf;
+      line->pt = Pt;
+      line->qt = Qt;
+      line->sf = PetscSqrtScalar(Pf*Pf + Qf*Qf);
+      line->st = PetscSqrtScalar(Pt*Pt + Qt*Qt);
+
+      if(line->rateA > 1e5) {
+	line->mult_sf = line->mult_st = 0.0;
+      } else {
+	line->mult_sf = lambdai[gloc];
+	line->mult_st = lambdai[gloc+1];
+	gloc += 2;
+      }
+    }
+  }
+
+  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(Lambda,&lambda);CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode OPFLOWModelCreate_PBCAR(OPFLOW opflow)
 {
   PBCAR pbcar;
@@ -1987,6 +2122,7 @@ PetscErrorCode OPFLOWModelCreate_PBCAR(OPFLOW opflow)
   opflow->modelops.computeobjandgradient = OPFLOWComputeObjandGradient_PBCAR;
   opflow->modelops.computeobjective = OPFLOWComputeObjective_PBCAR;
   opflow->modelops.computegradient  = OPFLOWComputeGradient_PBCAR;
+  opflow->modelops.solutiontops     = OPFLOWSolutionToPS_PBCAR;
   
   PetscFunctionReturn(0);
 }

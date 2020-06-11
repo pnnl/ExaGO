@@ -1792,7 +1792,6 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow)
   PetscFunctionReturn(0);
 }
 
-
 PetscErrorCode OPFLOWModelCreate_PBPOL(OPFLOW opflow)
 {
   PBPOL pbpol;
