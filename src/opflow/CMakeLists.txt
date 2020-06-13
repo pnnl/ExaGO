@@ -59,6 +59,14 @@ install(TARGETS opflow DESTINATION lib)
 install(FILES ${OPFLOW_INCLUDE} DESTINATION include)
 
 # Install options file
+if(SCOPFLOW_HAVE_IPOPT)
+  # Need to figure out where should options file go eventually, putting
+  # it in bin because IPOPT needs to have the options file in the same directory
+  # as executable
+  install(FILES ${CMAKE_SOURCE_DIR}/ipopt.opt DESTINATION bin)
+  install(FILES ${CMAKE_SOURCE_DIR}/ipopt.opt DESTINATION ${PROJECT_BINARY_DIR})
+endif()
+
 if(SCOPFLOW_HAVE_HIOP)
   # Need to figure out where should options file go eventually, putting
   # it in bin because HIOP needs to have the options file in the same directory
