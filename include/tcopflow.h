@@ -11,10 +11,14 @@
 /* Solvers */
 #define TCOPFLOWSOLVER_IPOPT "IPOPT"
 
+/* Models */
+#define TCOPFLOWMODEL_GENRAMP "GENRAMP"
+
 typedef struct _p_TCOPFLOW *TCOPFLOW;
 
-PETSC_EXTERN PetscErrorCode TCOPFLOWSetFormulation(TCOPFLOW,const char[]);
-PETSC_EXTERN PetscErrorCode TCOPFLOWSetSolve(TCOPFLOW,const char[]);
+PETSC_EXTERN PetscErrorCode TCOPFLOWSetModel(TCOPFLOW,const char[]);
+PETSC_EXTERN PetscErrorCode TCOPFLOWModelRegister(TCOPFLOW,const char[],PetscErrorCode (*create)(TCOPFLOW));
+PETSC_EXTERN PetscErrorCode TCOPFLOWSetSolver(TCOPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode TCOPFLOWCreate(MPI_Comm,TCOPFLOW*);
 PETSC_EXTERN PetscErrorCode TCOPFLOWDestroy(TCOPFLOW*);
 PETSC_EXTERN PetscErrorCode TCOPFLOWSetNetworkData(TCOPFLOW,const char[]);
