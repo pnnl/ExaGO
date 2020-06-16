@@ -225,13 +225,12 @@ PetscErrorCode SCOPFLOWGetMode(SCOPFLOW scopflow,PetscInt *mode)
 PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 {
   PetscErrorCode ierr;
-  PetscBool      opflowsolverset,scopflowsolverset;
+  PetscBool      scopflowsolverset;
   char           opflowmodelname[32]="POWER_BALANCE_POLAR";
   char           opflowsolvername[32]="IPOPT";
   char           scopflowsolvername[32]="IPOPT";
   PetscInt       c,j;
   PS             ps;
-  PetscBool      flg;
 
   PetscFunctionBegin;
 
@@ -264,7 +263,6 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   } else {
     scopflow->nc = q;
   }
-  int cstart,cend;
   ierr = MPI_Scan(&scopflow->nc,&scopflow->cend,1,MPIU_INT,MPI_SUM,scopflow->comm->type);CHKERRQ(ierr);
   scopflow->cstart = scopflow->cend - scopflow->nc;
 
@@ -459,7 +457,6 @@ PetscErrorCode SCOPFLOWGetConvergenceStatus(SCOPFLOW scopflow,PetscBool *status)
 PetscErrorCode SCOPFLOWSolutionToPS(SCOPFLOW scopflow)
 {
   PetscErrorCode     ierr;
-  PetscInt           i;
   OPFLOW             opflow;
 
   PetscFunctionBegin;

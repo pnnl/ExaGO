@@ -14,7 +14,7 @@ int main(int argc, char** argv)
   PetscBool          flg;
   Vec                X;
   char options_pathname[200] = SCOPFLOW_OPTIONS_DIR;
-  char* filename = "/opflowoptions";
+  char filename[] = "/opflowoptions";
   printf("%s\n", options_pathname);
   printf("%s\n", filename);
   strcat(options_pathname, filename);

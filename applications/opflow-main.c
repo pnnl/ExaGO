@@ -10,14 +10,11 @@ int main(int argc,char **argv)
   OutputFormat       fmt=MATPOWER;
   char               file[PETSC_MAX_PATH_LEN];
   PetscBool          flg;
-  PetscReal          obj;
-  Vec                X,G,Lambda;
-  PetscBool          conv_status;
   #if defined(PETSC_USE_LOG)
     PetscLogStage    stages[2];
   #endif
   char options_pathname[200] = SCOPFLOW_OPTIONS_DIR;
-  char* filename = "/opflowoptions";
+  char filename[] = "/opflowoptions";
   printf("%s\n", options_pathname);
   printf("%s\n", filename);
   strcat(options_pathname, filename);

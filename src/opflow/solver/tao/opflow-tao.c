@@ -175,9 +175,8 @@ PetscErrorCode OPFLOWSolverGetSolution_TAO(OPFLOW opflow, Vec *X)
 PetscErrorCode OPFLOWSolverGetConstraints_TAO(OPFLOW opflow, Vec *G)
 {
   PetscErrorCode ierr;
-  OPFLOWSolver_TAO   tao=(OPFLOWSolver_TAO)opflow->solver;
-  PetscScalar        *g,*ge,*gi,*gu;
-  PetscInt           gloc=opflow->nconeq,i;
+  PetscScalar    *g,*ge,*gi,*gu;
+  PetscInt       gloc=opflow->nconeq,i;
 
   PetscFunctionBegin;
   ierr = VecGetArray(opflow->G,&g);CHKERRQ(ierr);
@@ -209,11 +208,10 @@ PetscErrorCode OPFLOWSolverGetConstraints_TAO(OPFLOW opflow, Vec *G)
 
 PetscErrorCode OPFLOWSolverGetConstraintMultipliers_TAO(OPFLOW opflow, Vec *Lambda)
 {
-  PetscErrorCode ierr;
+  PetscErrorCode     ierr;
   OPFLOWSolver_TAO   tao=(OPFLOWSolver_TAO)opflow->solver;
   Vec                DE,DI;
   PetscScalar        *lambda,*lambdae,*lambdai;
-  PetscInt           gloc=opflow->nconeq,i;
 
   PetscFunctionBegin;
   ierr = TaoGetDualVariables(tao->nlp,&DE,&DI);CHKERRQ(ierr);

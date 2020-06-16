@@ -68,7 +68,6 @@ Bool eval_opflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
 
   PetscErrorCode ierr;
   OPFLOW         opflow=(OPFLOW)user_data;
-  OPFLOWSolver_IPOPT ipopt=(OPFLOWSolver_IPOPT)opflow->solver;
   PetscInt       *iRowstart = iRow,*jColstart=jCol;
   PetscInt       roffset,coffset;
   PetscInt       nrow,ncol;
@@ -166,7 +165,6 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
   PetscErrorCode ierr;
   PetscInt       nrow;
   OPFLOW         opflow=(OPFLOW)user_data;
-  OPFLOWSolver_IPOPT ipopt=(OPFLOWSolver_IPOPT)opflow->solver;
   PetscInt       nvals;
   const PetscInt *cols;
   const PetscScalar *vals;

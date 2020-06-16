@@ -236,9 +236,8 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
   PetscBool      solverset;
   char           modelname[32]="POWER_BALANCE_POLAR";
   char           solvername[32]="IPOPT";
-  PetscInt       i,j;
   PS             ps;
-  PetscBool      flg;
+  PetscInt       i;
 
   PetscFunctionBegin;
 
@@ -436,7 +435,6 @@ PetscErrorCode TCOPFLOWGetConvergenceStatus(TCOPFLOW tcopflow,PetscBool *status)
 PetscErrorCode TCOPFLOWSolutionToPS(TCOPFLOW tcopflow)
 {
   PetscErrorCode     ierr;
-  PetscInt           i;
   OPFLOW             opflow;
 
   PetscFunctionBegin;

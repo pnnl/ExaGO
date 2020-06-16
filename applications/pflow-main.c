@@ -11,7 +11,7 @@ int main(int argc,char **argv)
   PetscBool         flg;
   PetscLogStage     read,setup,solve;
   char options_pathname[200] = SCOPFLOW_OPTIONS_DIR;
-  char* filename = "/pflowoptions";
+  char filename[] = "/pflowoptions";
   printf("%s\n", options_pathname);
   printf("%s\n", filename);
   strcat(options_pathname, filename);

@@ -110,11 +110,9 @@ PetscErrorCode DestroyLineParams(LINEParams *lineparams)
 PetscErrorCode CreateLineParams(OPFLOW opflow,LINEParams *lineparams)
 {
   PS             ps=opflow->ps;
-  PetscInt       loc,linei=0,linelimi=0;
-  PetscInt       locf,loct;
+  PetscInt       linei=0,linelimi=0;
   PSLINE         line;
-  PSBUS          bus;
-  PetscInt       i,j;
+  PetscInt       i;
   PetscErrorCode ierr;
   const PSBUS    *connbuses;
   PSBUS          busf,bust;
@@ -383,7 +381,6 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL2(OPFLOW opflow, Vec X, Vec
   LINEParams     *lineparams=&pbpol2->lineparams;
   PetscScalar    *x,*ge;
   PetscInt       i;
-  PS             ps=opflow->ps;
 
   PetscFunctionBegin;
   ierr = VecSet(Ge,0.0);CHKERRQ(ierr);
@@ -447,7 +444,6 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL2(OPFLOW opflow, Vec X, V
   LINEParams     *lineparams=&pbpol2->lineparams;
   PetscScalar    *x,*gi;
   PetscInt       i;
-  PS             ps=opflow->ps;
 
   PetscFunctionBegin;
   ierr = VecSet(Gi,0.0);CHKERRQ(ierr);
@@ -544,8 +540,7 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL2(OPFLOW opflow,Vec Xl,Vec Xu)
   BUSParams      *busparams=&pbpol2->busparams;
   GENParams      *genparams=&pbpol2->genparams;
   PetscInt       i;
-  PetscScalar    *x,*xl,*xu;
-  PS             ps=opflow->ps;
+  PetscScalar    *xl,*xu;
 
   PetscFunctionBegin;
   ierr = VecGetArray(Xl,&xl);CHKERRQ(ierr);
@@ -577,14 +572,12 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL2(OPFLOW opflow,Vec Xl,Vec Xu)
 PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL2(OPFLOW opflow,Vec X,Mat Je)
 {
   PetscErrorCode ierr;
-  PetscInt       i,k,row[2],col[4];
+  PetscInt       i,row[2],col[4];
   PBPOL2         pbpol2=(PBPOL2)opflow->model;
   BUSParams      *busparams=&pbpol2->busparams;
   GENParams      *genparams=&pbpol2->genparams;
-  LOADParams     *loadparams=&pbpol2->loadparams;
   LINEParams     *lineparams=&pbpol2->lineparams;
   PetscScalar    val[8];
-  PS             ps=opflow->ps;
   PetscScalar    *x;
 
   PetscFunctionBegin;
@@ -594,7 +587,6 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL2(OPFLOW opflow,Vec 
 
   /* Jacobian from bus contributions */
   for(i=0; i < busparams->nbus; i++) {
-    double theta = x[busparams->xidx[i]];
     double Vm    = x[busparams->xidx[i]+1];
     row[0] = busparams->gidx[i];
     row[1] = busparams->gidx[i]+1;
@@ -703,7 +695,6 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL2(OPFLOW opflow,Ve
   LINEParams     *lineparams=&pbpol2->lineparams;
   PetscInt       row[2],col[4];
   PetscScalar    val[4];
-  PS             ps=opflow->ps;
   PetscScalar    *x;
 
   PetscFunctionBegin;
@@ -714,7 +705,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL2(OPFLOW opflow,Ve
   for(i=0; i < lineparams->nlinelim; i++) {
     int j = lineparams->linelimidx[i];
 
-    double Pf,Qf,Pt,Qt,Sf2,St2;
+    double Pf,Qf,Pt,Qt;
     double thetaf=x[lineparams->xidxf[j]], Vmf=x[lineparams->xidxf[j]+1];
     double thetat=x[lineparams->xidxt[j]], Vmt=x[lineparams->xidxt[j]+1];
     double thetaft=thetaf-thetat;
@@ -862,11 +853,8 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL2(OPFLOW opflow,Vec X,Mat H)
 PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL2(OPFLOW opflow,Vec X,Vec Lambda,Mat H) 
 {
   PetscErrorCode ierr;
-  PS             ps=opflow->ps;
   PBPOL2         pbpol2=(PBPOL2)opflow->model;
   BUSParams      *busparams=&pbpol2->busparams;
-  GENParams      *genparams=&pbpol2->genparams;
-  LOADParams     *loadparams=&pbpol2->loadparams;
   LINEParams     *lineparams=&pbpol2->lineparams;
   PetscInt       i;
   PetscInt       row[16],col[16];
@@ -1131,12 +1119,8 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL2(OPFLOW opflow,Vec 
 PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL2(OPFLOW opflow, Vec X, Vec Lambda,Mat H)
 {
   PetscErrorCode ierr;
-  PS             ps=opflow->ps;
   PetscInt       i;
   PBPOL2         pbpol2=(PBPOL2)opflow->model;
-  BUSParams      *busparams=&pbpol2->busparams;
-  GENParams      *genparams=&pbpol2->genparams;
-  LOADParams     *loadparams=&pbpol2->loadparams;
   LINEParams     *lineparams=&pbpol2->lineparams;
   PetscScalar    *x;
   PetscScalar    *lambda;
@@ -1153,7 +1137,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL2(OPFLOW opflow, V
     int j = lineparams->linelimidx[i];
     int gloc;
       
-    double Pf,Qf,Pt,Qt,Sf2,St2;
+    double Pf,Qf,Pt,Qt;
     double thetaf=x[lineparams->xidxf[j]], Vmf=x[lineparams->xidxf[j]+1];
     double thetat=x[lineparams->xidxt[j]], Vmt=x[lineparams->xidxt[j]+1];
     double thetaft=thetaf-thetat;
