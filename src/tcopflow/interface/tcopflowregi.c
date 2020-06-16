@@ -2,6 +2,51 @@
 #include <private/tcopflowimpl.h>
 
 /*
+  TCOPFLOWModelRegister - Registers a TCOPFLOW model
+
+  Input Parameters:
++ sname     - model name (string)
+- createfunction  - the class constructor
+*/
+PetscErrorCode TCOPFLOWModelRegister(TCOPFLOW tcopflow,const char sname[],PetscErrorCode (*createfunction)(TCOPFLOW))
+{
+  PetscErrorCode ierr;
+  PetscInt       i;
+  PetscFunctionBegin;
+  for(i=0; i < tcopflow->nmodelsregistered;i++) {
+    PetscBool match;
+    ierr = PetscStrcmp(tcopflow->TCOPFLOWModelList[i].name,sname,&match);
+    if(match) PetscFunctionReturn(0);
+  }
+  if(tcopflow->nmodelsregistered == TCOPFLOWMODELSMAX) {
+    SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Cannot register %s OPFLOW model, maximum limit %d reached\n",sname,TCOPFLOWMODELSMAX);
+  }
+  i = tcopflow->nmodelsregistered;
+  ierr = PetscStrcpy(tcopflow->TCOPFLOWModelList[i].name,sname);CHKERRQ(ierr);
+  tcopflow->TCOPFLOWModelList[i].create = createfunction;
+  tcopflow->nmodelsregistered++;
+  PetscFunctionReturn(0);
+}
+
+extern PetscErrorCode TCOPFLOWModelCreate_GENRAMP(TCOPFLOW);
+
+/*
+  TCOPFLOWModelRegisterAll - Registers all built-in TCOPFLOW models
+*/
+PetscErrorCode TCOPFLOWModelRegisterAll(TCOPFLOW tcopflow)
+{
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  if(tcopflow->TCOPFLOWModelRegisterAllCalled) PetscFunctionReturn(0);
+
+  ierr = TCOPFLOWModelRegister(tcopflow,TCOPFLOWMODEL_GENRAMP,TCOPFLOWModelCreate_GENRAMP);CHKERRQ(ierr);
+
+  tcopflow->TCOPFLOWModelRegisterAllCalled = PETSC_TRUE;
+
+  PetscFunctionReturn(0);
+}
+
+/*
   TCOPFLOWSolverRegister - Registers an TCOPFLOW formulation
 
   Input Parameters:

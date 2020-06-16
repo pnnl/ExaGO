@@ -2,11 +2,16 @@ set(TCOPFLOW_SOLVER_SRC
     solver/ipopt/tcopflow-ipopt.c
 )
 
+set(TCOPFLOW_MODEL_SRC
+  model/genramp/genramp.c
+)
+
 set(TCOPFLOW_SRC
 	interface/tcopflow.c
 	interface/tcopflowregi.c
 	interface/tcopflowoutput.c
 	interface/tcopflowreadprofiles.c
+	${TCOPFLOW_MODEL_SRC}
 	${TCOPFLOW_SOLVER_SRC}
 )
 

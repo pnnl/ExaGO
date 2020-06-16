@@ -73,8 +73,6 @@ PetscErrorCode TCOPFLOWCreate(MPI_Comm mpicomm, TCOPFLOW *tcopflowout)
   tcopflow->Nconineq = tcopflow->nconineq = 0;
   tcopflow->Ncon     = tcopflow->ncon     = 0;
   tcopflow->Nx       = tcopflow->nx       = 0;
-  tcopflow->Gi       = NULL;
-  tcopflow->Lambdai  = NULL;
   
   tcopflow->obj_factor = 1.0;
   tcopflow->obj = 0.0;
@@ -87,6 +85,12 @@ PetscErrorCode TCOPFLOWCreate(MPI_Comm mpicomm, TCOPFLOW *tcopflowout)
   tcopflow->windgenprofileset = PETSC_FALSE;
 
   tcopflow->solver   = NULL;
+
+  tcopflow->nmodelsregistered = 0;
+  tcopflow->TCOPFLOWModelRegisterAllCalled = PETSC_FALSE;
+
+  /* Register all models */
+  ierr = TCOPFLOWModelRegisterAll(tcopflow);
 
   tcopflow->nsolversregistered = 0;
   tcopflow->TCOPFLOWSolverRegisterAllCalled = PETSC_FALSE;
@@ -121,36 +125,31 @@ PetscErrorCode TCOPFLOWDestroy(TCOPFLOW *tcopflow)
 
   /* Solution vector */
   ierr = VecDestroy(&(*tcopflow)->X);CHKERRQ(ierr);
-  ierr = VecDestroy(&(*tcopflow)->localX);CHKERRQ(ierr);
-  ierr = VecDestroy(&(*tcopflow)->gradobj);CHKERRQ(ierr);
 
   /* Lower and upper bounds on X */
   ierr = VecDestroy(&(*tcopflow)->Xl);CHKERRQ(ierr);
   ierr = VecDestroy(&(*tcopflow)->Xu);CHKERRQ(ierr);
 
-  /* Conttraints vector */
+  /* Destroy gradient vector */
+  ierr = VecDestroy(&(*tcopflow)->gradobj);CHKERRQ(ierr);
+
+  /* Constraints vector */
   ierr = VecDestroy(&(*tcopflow)->G);CHKERRQ(ierr);
-  ierr = VecDestroy(&(*tcopflow)->Ge);CHKERRQ(ierr);
-  ierr = VecDestroy(&(*tcopflow)->Gelocal);CHKERRQ(ierr);
-  ierr = VecDestroy(&(*tcopflow)->Lambdae);CHKERRQ(ierr);
-  ierr = VecDestroy(&(*tcopflow)->Lambdaelocal);CHKERRQ(ierr);
-  if((*tcopflow)->Nconineq) {
-    ierr = VecDestroy(&(*tcopflow)->Gi);CHKERRQ(ierr);
-    ierr = VecDestroy(&(*tcopflow)->Lambdai);CHKERRQ(ierr);
-  }
+
   ierr = VecDestroy(&(*tcopflow)->Gl);CHKERRQ(ierr);
   ierr = VecDestroy(&(*tcopflow)->Gu);CHKERRQ(ierr);
+
   ierr = VecDestroy(&(*tcopflow)->Lambda);CHKERRQ(ierr);
 
-  /* Jacobian of conttraints */
   ierr = MatDestroy(&(*tcopflow)->Jac);CHKERRQ(ierr);
-  ierr = MatDestroy(&(*tcopflow)->Jac_Ge);CHKERRQ(ierr);
-  ierr = MatDestroy(&(*tcopflow)->Jac_Gi);CHKERRQ(ierr);
-
   ierr = MatDestroy(&(*tcopflow)->Hes);CHKERRQ(ierr);
 
   if((*tcopflow)->solverops.destroy) {
     ierr = ((*tcopflow)->solverops.destroy)(*tcopflow);
+  }
+
+  if((*tcopflow)->modelops.destroy) {
+    ierr = ((*tcopflow)->modelops.destroy)(*tcopflow);
   }
 
   /* Destroy OPFLOW objects */
@@ -162,6 +161,51 @@ PetscErrorCode TCOPFLOWDestroy(TCOPFLOW *tcopflow)
   ierr = PetscFree((*tcopflow)->opflows);CHKERRQ(ierr);
   ierr = PetscFree(*tcopflow);CHKERRQ(ierr);
   //  *tcopflow = 0;
+  PetscFunctionReturn(0);
+}
+
+/*
+  TCOPFLOWSetModel - Sets the model for TCOPFLOW
+
+  Input Parameters:
++ tcopflow - opflow application object
+- modelname - name of the model
+*/
+PetscErrorCode TCOPFLOWSetModel(TCOPFLOW tcopflow,const char* modelname)
+{
+  PetscErrorCode ierr,(*r)(TCOPFLOW)=NULL;
+  PetscInt       i;
+  PetscFunctionBegin;
+  PetscBool match;
+  for(i=0;i < tcopflow->nmodelsregistered;i++) {
+    ierr = PetscStrcmp(tcopflow->TCOPFLOWModelList[i].name,modelname,&match);CHKERRQ(ierr);
+    if(match) {
+      r = tcopflow->TCOPFLOWModelList[i].create;
+      break;
+    }
+  }
+
+  if(!r) SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_UNKNOWN_TYPE,"Unknown type for TCOPFLOW Model %s",modelname);
+
+  /* Null the function pointers */
+  tcopflow->modelops.destroy                        = 0;
+  tcopflow->modelops.setup                          = 0;
+  tcopflow->modelops.setnumvariablesandconstraints  = 0;
+  tcopflow->modelops.setvariablebounds              = 0;
+  tcopflow->modelops.setconstraintbounds            = 0;
+  tcopflow->modelops.setvariableandconstraintbounds = 0;
+  tcopflow->modelops.setinitialguess                = 0;
+  tcopflow->modelops.computeconstraints             = 0;
+  tcopflow->modelops.computejacobian                = 0;
+  tcopflow->modelops.computehessian                 = 0;
+  tcopflow->modelops.computeobjandgradient          = 0;
+  tcopflow->modelops.computeobjective               = 0;
+  tcopflow->modelops.computegradient                = 0;
+
+  ierr = PetscStrcpy(tcopflow->modelname,modelname);CHKERRQ(ierr);
+  /* Call the underlying implementation constructor */
+  ierr = (*r)(tcopflow);CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -238,6 +282,7 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
   char           solvername[32]="IPOPT";
   PS             ps;
   PetscInt       i;
+  OPFLOW         opflow;
 
   PetscFunctionBegin;
 
@@ -252,6 +297,9 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
   tcopflow->Nt = round(tcopflow->duration*60.0/tcopflow->dT);
 
   ierr = PetscPrintf(PETSC_COMM_WORLD,"TCOPFLOW: Duration = %lf hours, timestep = %lf minutes, number of time-steps = %d\n",tcopflow->duration,tcopflow->dT,tcopflow->Nt);CHKERRQ(ierr);
+
+  /* Set Model */
+  ierr = TCOPFLOWSetModel(tcopflow,TCOPFLOWMODEL_GENRAMP);CHKERRQ(ierr);
 
   /* Set solver */
   if(solverset) {
@@ -296,9 +344,69 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
     ierr = TCOPFLOWReadWindGenProfile(tcopflow,tcopflow->windgenprofile);
   }
 
-  
   ierr = PetscCalloc1(tcopflow->Nt,&tcopflow->nconineqcoup);CHKERRQ(ierr);
+  ierr = PetscCalloc1(tcopflow->Nt,&tcopflow->nxi);CHKERRQ(ierr);
+  ierr = PetscCalloc1(tcopflow->Nt,&tcopflow->ngi);CHKERRQ(ierr);
+
+  /* Set number of variables and constraints */
+  ierr = (*tcopflow->modelops.setnumvariablesandconstraints)(tcopflow,tcopflow->nxi,tcopflow->ngi,tcopflow->nconineqcoup);
+
+  ierr = PetscCalloc1(tcopflow->Nt,&tcopflow->xstarti);CHKERRQ(ierr);
+  ierr = PetscCalloc1(tcopflow->Nt,&tcopflow->gstarti);CHKERRQ(ierr);
+
+  tcopflow->nx = tcopflow->Nx = tcopflow->nxi[0];
+  tcopflow->Ncon = tcopflow->ngi[0];
+  tcopflow->Nconcoup = tcopflow->nconineqcoup[0];
+  opflow = tcopflow->opflows[0];
+  tcopflow->Nconeq   = opflow->nconeq;
+  tcopflow->Nconineq = opflow->nconineq; 
+
+  for(i=1; i < tcopflow->Nt; i++) {
+    tcopflow->xstarti[i] = tcopflow->xstarti[i-1] + tcopflow->nxi[i-1];
+    tcopflow->gstarti[i] = tcopflow->gstarti[i-1] + tcopflow->ngi[i-1];
+    tcopflow->Nx += tcopflow->nxi[i];
+    tcopflow->Ncon += tcopflow->ngi[i];
+    tcopflow->Nconcoup += tcopflow->nconineqcoup[i];
+    opflow = tcopflow->opflows[i];
+    tcopflow->Nconeq   += opflow->nconeq;
+    tcopflow->Nconineq += opflow->nconineq;
+  }
+
+  /* Create vector X */
+  ierr = VecCreate(tcopflow->comm->type,&tcopflow->X);CHKERRQ(ierr);
+  ierr = VecSetSizes(tcopflow->X,tcopflow->Nx,PETSC_DECIDE);CHKERRQ(ierr);
+  ierr = VecSetFromOptions(tcopflow->X);CHKERRQ(ierr);
+
+  ierr = VecDuplicate(tcopflow->X,&tcopflow->Xl);CHKERRQ(ierr);
+  ierr = VecDuplicate(tcopflow->X,&tcopflow->Xu);CHKERRQ(ierr);
+  ierr = VecDuplicate(tcopflow->X,&tcopflow->gradobj);CHKERRQ(ierr);
+
+  /* vector for constraints */
+  ierr = VecCreate(tcopflow->comm->type,&tcopflow->G);CHKERRQ(ierr);
+  ierr = VecSetSizes(tcopflow->G,tcopflow->Ncon,PETSC_DECIDE);CHKERRQ(ierr);
+  ierr = VecSetFromOptions(tcopflow->G);CHKERRQ(ierr);
+
+  /* Constraint bounds vectors  */
+  ierr = VecDuplicate(tcopflow->G,&tcopflow->Gl);CHKERRQ(ierr);
+  ierr = VecDuplicate(tcopflow->G,&tcopflow->Gu);CHKERRQ(ierr);
+
+  /* Constraint Jacobian */
+  ierr = MatCreate(tcopflow->comm->type,&tcopflow->Jac);CHKERRQ(ierr);
+  ierr = MatSetSizes(tcopflow->Jac,tcopflow->Ncon,tcopflow->Nx,tcopflow->Ncon,tcopflow->Nx);CHKERRQ(ierr);
+  ierr = MatSetUp(tcopflow->Jac);CHKERRQ(ierr);
+  ierr = MatSetFromOptions(tcopflow->Jac);CHKERRQ(ierr);
+
+  /* Hessian */
+  ierr = MatCreate(tcopflow->comm->type,&tcopflow->Hes);CHKERRQ(ierr);
+  ierr = MatSetSizes(tcopflow->Hes,tcopflow->Nx,tcopflow->Nx,tcopflow->Nx,tcopflow->Nx);CHKERRQ(ierr);
+  ierr = MatSetUp(tcopflow->Hes);CHKERRQ(ierr);
+  ierr = MatSetFromOptions(tcopflow->Hes);CHKERRQ(ierr);
+
+  /* Lagrangian multipliers */
+  ierr = VecDuplicate(tcopflow->G,&tcopflow->Lambda);CHKERRQ(ierr);
+
   ierr = (*tcopflow->solverops.setup)(tcopflow);CHKERRQ(ierr);
+
   ierr = PetscPrintf(tcopflow->comm->type,"TCOPFLOW: Setup completed\n");CHKERRQ(ierr);
   
   tcopflow->setupcalled = PETSC_TRUE;
@@ -322,6 +430,24 @@ PetscErrorCode TCOPFLOWSolve(TCOPFLOW tcopflow)
     ierr = TCOPFLOWSetUp(tcopflow);
   }
 
+  /* Set bounds on variables */
+  if(tcopflow->modelops.setvariablebounds) {
+    ierr = (*tcopflow->modelops.setvariablebounds)(tcopflow,tcopflow->Xl,tcopflow->Xu);CHKERRQ(ierr);
+  }
+  
+  /* Set bounds on constraints */
+  if(tcopflow->modelops.setconstraintbounds) {
+    ierr = (*tcopflow->modelops.setconstraintbounds)(tcopflow,tcopflow->Gl,tcopflow->Gu);CHKERRQ(ierr);
+  }
+  
+  /* Set initial guess */
+  
+  if(tcopflow->modelops.setinitialguess) {
+    ierr = (*tcopflow->modelops.setinitialguess)(tcopflow,tcopflow->X);CHKERRQ(ierr);
+  }
+
+  ierr = VecSet(tcopflow->Lambda,1.0);CHKERRQ(ierr);
+  
   /* Solve */
   ierr = (*tcopflow->solverops.solve)(tcopflow);CHKERRQ(ierr);
 

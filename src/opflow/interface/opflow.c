@@ -1,4 +1,4 @@
-
+#include <scopflow_config.h>
 #include <private/pflowimpl.h>
 #include <private/opflowimpl.h>
 #include <petsc/private/dmnetworkimpl.h>
