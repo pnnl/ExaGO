@@ -5,7 +5,6 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps,const char outfile[])
 {
   PetscErrorCode ierr;
   FILE           *fd;
-  char           busformat[100];
   const char*    prefix="mpc.";
   PSBUS          bus;
   PSLOAD         load;
@@ -15,11 +14,10 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps,const char outfile[])
   PetscInt       i,k;
   PetscScalar    MVAbase=ps->MVAbase;
   char           filename[PETSC_MAX_PATH_LEN];
-  char           *pch;
   char           fcn_name[100];
   char           *tok,*tok2;
-  char           *sep="/";
-  char           *ext=".m";
+  char           sep[]="/";
+  char           ext[]=".m";
   char           file1[PETSC_MAX_PATH_LEN];
 
   PetscFunctionBegin;
@@ -133,7 +131,6 @@ PetscErrorCode PSSaveSolution_CSV(PS ps,const char outfile[])
   PetscBool      ghostbus;
   PetscInt       i,k;
   PetscScalar    Pd,Qd;
-  PetscReal      cost;
 
   PetscFunctionBegin;
 
@@ -226,8 +223,6 @@ PetscErrorCode PSPrintSystemSummary(PS ps)
   PetscBool   ghostbus;
   PetscInt    i,k;
   PetscScalar Pd,Qd;
-  PetscBool   conv_status;
-  PetscReal   cost;
 
   PetscFunctionBegin;
 

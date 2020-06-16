@@ -299,7 +299,7 @@ int main(int argc,char **argv)
   int               **xidx,**fidx;
   /* arrays to hold f locations where each bus needs to insert its residuals */
   char options_pathname[200] = SCOPFLOW_OPTIONS_DIR;
-  char* filename = "/pflowoptions";
+  char filename[] = "/pflowoptions";
   printf("%s\n", options_pathname);
   printf("%s\n", filename);
   strcat(options_pathname, filename);

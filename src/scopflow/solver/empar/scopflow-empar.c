@@ -7,7 +7,6 @@
 PetscErrorCode SCOPFLOWSolverSolve_EMPAR(SCOPFLOW scopflow)
 {
   PetscErrorCode      ierr;
-  SCOPFLOWSolver_EMPAR scopflowempar = (SCOPFLOWSolver_EMPAR)scopflow->solver;
   PetscInt            c;
   OPFLOW              opflow;
 
@@ -49,10 +48,7 @@ PetscErrorCode SCOPFLOWSolverGetObjective_EMPAR(SCOPFLOW scopflow,PetscReal *obj
 
 PetscErrorCode SCOPFLOWSolverGetSolution_EMPAR(SCOPFLOW scopflow,PetscInt cont_num,Vec *X)
 {
-  PetscErrorCode ierr;
-  SCOPFLOWSolver_EMPAR scopflowempar = (SCOPFLOWSolver_EMPAR)scopflow->solver;
   OPFLOW         opflow;
-  PetscInt       c;
 
   PetscFunctionBegin;
 
@@ -67,10 +63,7 @@ PetscErrorCode SCOPFLOWSolverGetSolution_EMPAR(SCOPFLOW scopflow,PetscInt cont_n
 
 PetscErrorCode SCOPFLOWSolverGetConstraints_EMPAR(SCOPFLOW scopflow,PetscInt cont_num,Vec *G)
 {
-  PetscErrorCode ierr;
-  SCOPFLOWSolver_EMPAR scopflowempar = (SCOPFLOWSolver_EMPAR)scopflow->solver;
-  PetscInt c=cont_num-scopflow->cstart;
-  OPFLOW   opflow=scopflow->opflows[c];
+  OPFLOW              opflow;
 
   PetscFunctionBegin;
 
@@ -81,10 +74,7 @@ PetscErrorCode SCOPFLOWSolverGetConstraints_EMPAR(SCOPFLOW scopflow,PetscInt con
 
 PetscErrorCode SCOPFLOWSolverGetConstraintMultipliers_EMPAR(SCOPFLOW scopflow,PetscInt cont_num,Vec *Lambda)
 {
-  PetscErrorCode ierr;
-  SCOPFLOWSolver_EMPAR scopflowempar = (SCOPFLOWSolver_EMPAR)scopflow->solver;
-  PetscInt c=cont_num-scopflow->cstart;
-  OPFLOW   opflow=scopflow->opflows[c];
+  OPFLOW              opflow;
 
   PetscFunctionBegin;
 
@@ -95,9 +85,8 @@ PetscErrorCode SCOPFLOWSolverGetConstraintMultipliers_EMPAR(SCOPFLOW scopflow,Pe
 
 PetscErrorCode SCOPFLOWSolverGetConvergenceStatus_EMPAR(SCOPFLOW scopflow,PetscBool *status)
 {
-  SCOPFLOWSolver_EMPAR empar = (SCOPFLOWSolver_EMPAR)scopflow->solver;
-
   PetscFunctionBegin;
+
   *status = PETSC_TRUE;
 
   PetscFunctionReturn(0);
@@ -105,9 +94,6 @@ PetscErrorCode SCOPFLOWSolverGetConvergenceStatus_EMPAR(SCOPFLOW scopflow,PetscB
 
 PetscErrorCode SCOPFLOWSolverSetUp_EMPAR(SCOPFLOW scopflow)
 {
-  PetscErrorCode ierr;
-  SCOPFLOWSolver_EMPAR empar = (SCOPFLOWSolver_EMPAR)scopflow->solver;
-
   PetscFunctionBegin;
 
   PetscFunctionReturn(0);

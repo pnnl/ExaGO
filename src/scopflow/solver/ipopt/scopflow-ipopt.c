@@ -16,7 +16,6 @@ Bool eval_scopflow_f(PetscInt n, PetscScalar* x, Bool new_x,
   PetscInt  i;
   PetscScalar *xi;
   PetscScalar opflowobj;
-  PetscInt    k;
 
   *obj_value = 0.0;
 
@@ -327,21 +326,20 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
             PetscInt nele_hess, PetscInt *iRow, PetscInt *jCol,
             PetscScalar *values, UserDataPtr user_data)
 {
-  PetscErrorCode ierr;
-  PetscInt       nrow;
-  SCOPFLOW         scopflow=(SCOPFLOW)user_data;
+  PetscErrorCode       ierr;
+  PetscInt             nrow;
+  SCOPFLOW             scopflow=(SCOPFLOW)user_data;
   SCOPFLOWSolver_IPOPT scopflowipopt=(SCOPFLOWSolver_IPOPT)scopflow->solver;
-  OPFLOW          opflow;
-  OPFLOWSolver_IPOPT opflowipopt;
-  PetscScalar     *xi,*valuesi=values,*lameqi,*lamineqi;
-  PetscInt         i;
-  PetscInt        *iRowStart=iRow,*jColStart=jCol;
-  PetscInt        roffset;
-  PetscInt       nvals;
-  const PetscInt *cols;
-  const PetscScalar *vals;
-  PetscInt j,k;
-  PetscInt ctr=0;
+  OPFLOW               opflow;
+  OPFLOWSolver_IPOPT   opflowipopt;
+  PetscScalar          *xi,*lameqi,*lamineqi;
+  PetscInt             i;
+  PetscInt             roffset;
+  PetscInt             nvals;
+  const PetscInt       *cols;
+  const PetscScalar    *vals;
+  PetscInt             j,k;
+  PetscInt             ctr=0;
 
   scopflow->obj_factor = obj_factor;
 

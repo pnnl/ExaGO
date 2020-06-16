@@ -886,8 +886,6 @@ PetscErrorCode OPFLOWGetObjective(OPFLOW opflow,PetscReal *obj)
 */
 PetscErrorCode OPFLOWGetVariableBounds(OPFLOW opflow,Vec *Xl, Vec *Xu)
 {
-  PetscErrorCode ierr;
-
   PetscFunctionBegin;
   *Xl = opflow->Xl;
   *Xu = opflow->Xu;

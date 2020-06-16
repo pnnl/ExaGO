@@ -16,7 +16,6 @@ Bool eval_tcopflow_f(PetscInt n, PetscScalar* x, Bool new_x,
   PetscInt  i;
   PetscScalar *xi;
   PetscScalar opflowobj;
-  PetscInt    k;
 
   *obj_value = 0.0;
 
@@ -332,9 +331,8 @@ Bool eval_tcopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
   TCOPFLOWSolver_IPOPT tcopflowipopt=(TCOPFLOWSolver_IPOPT)tcopflow->solver;
   OPFLOW          opflow;
   OPFLOWSolver_IPOPT opflowipopt;
-  PetscScalar     *xi,*valuesi=values,*lameqi,*lamineqi;
+  PetscScalar     *xi,*lameqi,*lamineqi;
   PetscInt         i;
-  PetscInt        *iRowStart=iRow,*jColStart=jCol;
   PetscInt        roffset;
   PetscInt       nvals;
   const PetscInt *cols;

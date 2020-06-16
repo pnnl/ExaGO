@@ -8,7 +8,6 @@ int main(int argc,char **argv)
 {
   PetscErrorCode    ierr;
   TCOPFLOW          tcopflow;
-  Vec               X;
   char              file[PETSC_MAX_PATH_LEN];
   char              ploadprofile[PETSC_MAX_PATH_LEN];
   char              qloadprofile[PETSC_MAX_PATH_LEN];
@@ -18,7 +17,7 @@ int main(int argc,char **argv)
     PetscLogStage stages[2];
   #endif
   char options_pathname[200] = SCOPFLOW_OPTIONS_DIR;
-  char* filename = "/tcopflowoptions";
+  char filename[] = "/tcopflowoptions";
   printf("%s\n", options_pathname);
   printf("%s\n", filename);
   strcat(options_pathname, filename);
