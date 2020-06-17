@@ -38,8 +38,9 @@ target_link_libraries(opflow PRIVATE
 			     ${SCOPFLOW_UTIL_LIBS}
 			     ${SCOPFLOW_PS_LIBS}
 			     ${SCOPFLOW_PFLOW_LIBS}
-			     ${MAGMA_LIBRARY}
 			     -lblas -llapack
+           PUBLIC
+			     ${MAGMA_LIBRARY}
 )
 
 if(SCOPFLOW_HAVE_IPOPT)

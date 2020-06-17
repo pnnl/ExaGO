@@ -7,6 +7,7 @@ project(Scopflow)
 
 # Enable setting Mac OS X rpath
 set(CMAKE_MACOSX_RPATH 1)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
 if (POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW) # CMake 3.12

@@ -5,7 +5,7 @@ set(SCOPFLOW_PFLOW_APP_LIBS
   ${SCOPFLOW_PFLOW_LIBS}	 
   ${SCOPFLOW_MATH_LIB}
   PETSC::SNES
-  MPI::MPI_C
+  MPI::MPI_CXX
 )
 
 
@@ -15,4 +15,4 @@ target_link_libraries(testAcopf
 	${SCOPFLOW_PFLOW_APP_LIBS}
 )
 
-install(TARGETS testAcopf RUNTIME DESTINATION tests)
+install(TARGETS testAcopf DESTINATION tests)
