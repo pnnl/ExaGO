@@ -31,8 +31,13 @@ find_path(HIOP_INCLUDE_DIR
 if(HIOP_LIBRARY AND HIOP_INCLUDE_DIR)
   message(STATUS "Found HiOp library: " ${HIOP_LIBRARY})
   message(STATUS "Found HiOp include directory: " ${HIOP_INCLUDE_DIR})
+
+  # if(HIOP_USE_GPU)
+    include(FindMagma)
+    # endif()
+
   add_library(HiOp INTERFACE)
-  target_link_libraries(HiOp INTERFACE ${HIOP_LIBRARY})
+  target_link_libraries(HiOp INTERFACE Magma ${HIOP_LIBRARY})
   target_include_directories(HiOp INTERFACE ${HIOP_INCLUDE_DIR})
 else()
   if(NOT HIOP_LIB)
