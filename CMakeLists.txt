@@ -150,6 +150,7 @@ if(SCOPFLOW_RUN_TESTS)
     message(STATUS "Running OPFLOW formulation tests")
 
     # OPFLOW tests
+
     foreach(test_net ${network_files})
       foreach(opflow_form POWER_BALANCE_POLAR)
         foreach(opflow_init FROMFILE FLATSTART ACPF MIDPOINT)
