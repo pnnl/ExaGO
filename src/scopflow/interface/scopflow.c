@@ -250,8 +250,10 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 
     ierr = PetscCalloc1(scopflow->Nc,&scopflow->ctgclist.cont);CHKERRQ(ierr);
     for(c=0; c < scopflow->Nc; c++) scopflow->ctgclist.cont->noutages = 0;
-    ierr = SCOPFLOWReadContingencyData(scopflow,scopflow->ctgcfileformat,scopflow->ctgcfile);CHKERRQ(ierr);
-    scopflow->Nc = scopflow->ctgclist.Ncont+1;
+    if(scopflow->Nc > 1) { 
+      ierr = SCOPFLOWReadContingencyData(scopflow,scopflow->ctgcfileformat,scopflow->ctgcfile);CHKERRQ(ierr);
+      scopflow->Nc = scopflow->ctgclist.Ncont+1;
+    }
   } else {
     if(scopflow->Nc == -1) scopflow->Nc = 1;
   }
@@ -286,7 +288,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   for(c=0; c < scopflow->nc; c++) {
     ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflows[c]);CHKERRQ(ierr);
     ierr = OPFLOWSetModel(scopflow->opflows[c],opflowmodelname);CHKERRQ(ierr);
-    ierr = OPFLOWSetSolver(scopflow->opflows[c],opflowsolvername);CHKERRQ(ierr);
+    //    ierr = OPFLOWSetSolver(scopflow->opflows[c],opflowsolvername);CHKERRQ(ierr);
 
     ierr = OPFLOWReadMatPowerData(scopflow->opflows[c],scopflow->netfile);CHKERRQ(ierr);
     /* Set up the PS object for opflow */
