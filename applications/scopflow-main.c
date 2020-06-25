@@ -57,8 +57,9 @@ int main(int argc,char **argv)
   /* End of First Stage and Start of Second */
   ierr = PetscLogStagePop();CHKERRQ(ierr);
 
-  ierr = PetscLogStagePush(stages[1]);CHKERRQ(ierr);
+  ierr = SCOPFLOWSetUp(scopflow);CHKERRQ(ierr);
 
+  ierr = PetscLogStagePush(stages[1]);CHKERRQ(ierr);
   /* Solve */
   ierr = SCOPFLOWSolve(scopflow);CHKERRQ(ierr);
   /*End of Final Stage */
@@ -67,7 +68,7 @@ int main(int argc,char **argv)
   /* Print solution */
   //  ierr = SCOPFLOWPrintSolution(scopflow,0);CHKERRQ(ierr);
 
-  ierr = SCOPFLOWSaveSolutionAll(scopflow,MATPOWER,"scopflowout");CHKERRQ(ierr);
+  //  ierr = SCOPFLOWSaveSolutionAll(scopflow,MATPOWER,"scopflowout");CHKERRQ(ierr);
 
   /* Destroy SCOPFLOW object */
   ierr = SCOPFLOWDestroy(&scopflow);CHKERRQ(ierr);

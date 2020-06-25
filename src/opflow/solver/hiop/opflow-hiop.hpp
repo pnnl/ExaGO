@@ -71,6 +71,8 @@ public:
                                  const double* lambda,
 			         double obj_value);
 
+  bool get_MPI_comm(MPI_Comm& comm_out) {comm_out = MPI_COMM_SELF; return true;}
+
   void naturaltospdense(const double*,double*);
 
   void spdensetonatural(const double*,double*);

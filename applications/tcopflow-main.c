@@ -74,7 +74,7 @@ int main(int argc,char **argv)
   /* Print solution */
   ierr = TCOPFLOWPrintSolution(tcopflow,0);CHKERRQ(ierr);
 
-  ierr = TCOPFLOWSaveSolutionAll(tcopflow,CSV,"tcopflowout");CHKERRQ(ierr);
+  ierr = TCOPFLOWSaveSolutionAll(tcopflow,MATPOWER,"tcopflowout");CHKERRQ(ierr);
 
   /* Destroy OPFLOW object */
   ierr = TCOPFLOWDestroy(&tcopflow);CHKERRQ(ierr);
