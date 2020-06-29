@@ -1,6 +1,8 @@
 #include <private/opflowimpl.h>
 #include <private/scopflowimpl.h>
 
+extern void clean2Char(char *);
+extern char** blankTokenizer(const char *str, int *numtok, int maxtokens, int maxchar);
 /*
   SCOPFLOWSetContingencyData - Sets the contingency data
 
@@ -121,6 +123,17 @@ PetscErrorCode SCOPFLOWReadContingencyData_PSSE(SCOPFLOW scopflow,const char ctg
   PetscErrorCode ierr;
   FILE           *fp;
   ContingencyList *ctgclist=&scopflow->ctgclist;
+  Contingency    *cont;
+  Outage         *outage;
+  char           *out;
+  char           line[MAXLINE];
+  PetscInt       i,one,two;
+  PetscInt       reading=0;
+  PetscInt       numCont=0;
+  char           equipid[32];
+  PetscInt       ntokens;
+  PetscInt       maxtokens=10;
+  PetscInt       maxchar=32;
 
   PetscFunctionBegin;
 
@@ -130,10 +143,73 @@ PetscErrorCode SCOPFLOWReadContingencyData_PSSE(SCOPFLOW scopflow,const char ctg
   }
 
   ctgclist->Ncont = -1;
-
-  /* PARSER to be added here ..currently just errors out */
-  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Contingency input format PSSE not supported yet\n");
-
+  one = 1;
+  two = 2;
+  while((out = fgets(line,MAXLINE,fp)) != NULL && numCont < scopflow->Nc-1) {
+    if(strcmp(line,"\r\n") == 0 || strcmp(line,"\n") == 0) {
+      continue; /* Skip blank lines */
+    }
+    char **tokens = blankTokenizer(line,&ntokens,maxtokens,maxchar);
+    if (!reading) {
+      if (!strcmp(tokens[0],"CONTINGENCY")) {
+        reading = 1;
+      }
+    } else {
+      numCont++;
+      while (strcmp(tokens[0],"END")) {
+        if (!strcmp(tokens[0],"REMOVE")) {
+          // Generator contingency
+          cont   = &ctgclist->cont[numCont];
+          outage = &cont->outagelist[cont->noutages];
+          outage->num  = numCont;
+          outage->type = (OutageType)one;
+          outage->bus  = atoi(tokens[5]);
+          outage->fbus = 0;
+          outage->tbus = 0;
+          strcpy(equipid,tokens[2]);
+          clean2Char(equipid);
+          ierr = PetscMemcpy(outage->id,equipid,3*sizeof(char));CHKERRQ(ierr);
+          outage->status = 0;
+          outage->prob   = 0.01;
+          cont->noutages++;
+        } else if (!strcmp(tokens[0],"OPEN")) {
+          cont   = &ctgclist->cont[numCont];
+          outage = &cont->outagelist[cont->noutages];
+          outage->num  = numCont;
+          outage->type = (OutageType)two;
+          outage->bus  = 0;
+          outage->fbus = atoi(tokens[4]);
+          outage->tbus = atoi(tokens[6]);
+          strcpy(equipid,tokens[8]);
+          clean2Char(equipid);
+          ierr = PetscMemcpy(outage->id,equipid,3*sizeof(char));CHKERRQ(ierr);
+          outage->status = 0;
+          outage->prob   = 0.01;
+          cont->noutages++;
+        } else {
+          free(tokens);
+          SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,
+             "Cannot Identify contingency\n");
+        }
+        for (i=0; i<maxtokens; i++) {
+          free(tokens[i]);
+        }
+        free(tokens);
+        if ((out = fgets(line,MAXLINE,fp)) == NULL) {
+          SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,
+              "End of file encountered before END statement\n");
+        }
+        tokens = blankTokenizer(line,&ntokens,maxtokens,maxchar);
+      }
+      reading = 0;
+    }
+    for (i=0; i<maxtokens; i++) {
+      free(tokens[i]);
+    }
+    free(tokens);
+    if(numCont > ctgclist->Ncont) ctgclist->Ncont = numCont;
+  }
+  fclose(fp);
   PetscFunctionReturn(0);
 }
 

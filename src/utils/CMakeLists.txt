@@ -4,6 +4,7 @@
 # Specify sources for utility functions shared across libraries
 set(UTILS_SRC
   utils.c
+  scopflowutils.c
   comm.c
 )
 
