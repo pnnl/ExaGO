@@ -108,6 +108,7 @@ set(SCOPFLOW_DATA_FILES
   datafiles/case118.cont
   datafiles/case_ACTIVSg200.m
   datafiles/case9.cont
+  datafiles/case9.con
 )
 
 # Install data files
