@@ -1,3 +1,4 @@
+
 /**
  * @file scopflowimpl.h
  * @brief Private header file that defines data and structures for Security constrained Optimal Power Flow application
@@ -89,6 +90,11 @@ struct _p_SCOPFLOW{
 
   PetscBool iscoupling; /* Is each scenario coupled with base scenario? */
   PetscBool replicate_basecase; /* Replicate base case for all scenarios */
+
+  PetscInt makeup_power_source; /* Make up power is supplied by 
+				   0 - ref. bus generators only 
+				   1 - all generators (decided by optimization) 
+				   2 - all generators (agc based) - not implemented */
 
   void *solver; /* Solver object */
   struct _p_SCOPFLOWSolverOps solverops;

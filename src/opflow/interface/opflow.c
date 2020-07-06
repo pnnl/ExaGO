@@ -162,6 +162,24 @@ PetscErrorCode OPFLOWComputePrePflow(OPFLOW opflow,PetscBool *converged)
 }
 
 /*
+  OPFLOWGenbusVoltageFixed - Treat gen. bus voltage magnitude fixed ?
+
+  Input Parameters:
++ opflow - the OPFLOW object
+- isfixed - TRUE if gen. bus voltage is fixed, 0 otherwise
+
+  Notes:
+  If TRUE, the generator bus voltage is fixed at the generator set point voltage
+  given in the generator data
+*/
+PetscErrorCode OPFLOWGenbusVoltageFixed(OPFLOW opflow,PetscBool isfixed)
+{
+  PetscFunctionBegin;
+  opflow->genbusVmfixed = isfixed;
+  PetscFunctionReturn(0);
+}
+
+/*
   OPFLOWCreate - Creates an optimal power flow application object
 
   Input Parameters
@@ -217,6 +235,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   opflow->include_powerimbalance_variables = PETSC_FALSE;
   opflow->loadloss_penalty = 1e1;
   opflow->powerimbalance_penalty = 1e2;
+  opflow->genbusVmfixed = PETSC_FALSE;
   opflow->setupcalled = PETSC_FALSE;
 
   *opflowout = opflow;
@@ -619,6 +638,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PetscOptionsReal("-opflow_loadloss_penalty","Penalty for load loss","",opflow->loadloss_penalty,&opflow->loadloss_penalty,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-opflow_include_powerimbalance_variables","Allow power imbalance?","",opflow->include_powerimbalance_variables,&opflow->include_powerimbalance_variables,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsReal("-opflow_powerimbalance_penalty","Power imbalance penalty","",opflow->powerimbalance_penalty,&opflow->powerimbalance_penalty,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsBool("-opflow_genbusvoltage_fixed","Treat gen. bus voltage fixed?","",opflow->genbusVmfixed,&opflow->genbusVmfixed,NULL);CHKERRQ(ierr);
   PetscOptionsEnd();
 
   opflow->obj_gencost = PETSC_TRUE; /* Generation cost minimization ON by default */

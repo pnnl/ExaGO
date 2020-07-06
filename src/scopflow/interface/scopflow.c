@@ -31,6 +31,9 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
   scopflow->obj_factor = 1.0;
   scopflow->obj = 0.0;
 
+
+  scopflow->makeup_power_source = 1;
+
   scopflow->solver   = NULL;
 
   scopflow->nsolversregistered = 0;
@@ -241,6 +244,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscOptionsInt("-scopflow_Nc","Number of second stage scenarios","",scopflow->Nc,&scopflow->Nc,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-scopflow_replicate_basecase","Only for debugging: Replicate first stage for all second stage scenarios","",scopflow->replicate_basecase,&scopflow->replicate_basecase,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-scopflow_mode","Operation mode:Preventive (0) or Corrective (1)","",scopflow->mode,&scopflow->mode,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsInt("-scopflow_makeup_power_source","Make-up power source for contingencies","",scopflow->makeup_power_source,&scopflow->makeup_power_source,NULL);CHKERRQ(ierr);
   
   PetscOptionsEnd();
 
@@ -317,7 +321,8 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 
     /* Set up OPFLOW object */
     ierr = OPFLOWSetUp(scopflow->opflows[c]);CHKERRQ(ierr);
-    //    if(scopflow->cstart+c > 0) scopflow->opflows[c]->obj_gencost = PETSC_FALSE; /* No gen. cost minimization for second stage */
+    ierr = OPFLOWGenbusVoltageFixed(scopflow->opflows[c],PETSC_TRUE);CHKERRQ(ierr);
+    if(scopflow->cstart+c > 0) scopflow->opflows[c]->obj_gencost = PETSC_FALSE; /* No gen. cost minimization for second stage */
   }
   
   ierr = PetscCalloc1(scopflow->nc,&scopflow->nconineqcoup);CHKERRQ(ierr);

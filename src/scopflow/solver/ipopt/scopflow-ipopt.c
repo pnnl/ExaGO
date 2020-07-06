@@ -761,14 +761,20 @@ PetscErrorCode SCOPFLOWSolverSetUp_IPOPT(SCOPFLOW scopflow)
 	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
 	  ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
 	  if(!gen->status || !gen0->status) continue;
-	  /* 
-	     Preventive mode: scopflow->mode = 0
-	       No ramping allowed
-	     Corrective mode: scopflow->mode = 1
-	       Generator can ramp up/down constrained by 30min ramp rate
-	  */
-	  gli[opflow->ncon + ctr] = -scopflow->mode*gen->ramp_rate_30min;
-	  gui[opflow->ncon + ctr] =  scopflow->mode*gen->ramp_rate_30min;
+
+	  if(scopflow->makeup_power_source == 0) {
+	    /* Only ref. bus responsible for make-up power for contingencies */
+	    if(bus->ide == REF_BUS) {
+	      gli[opflow->ncon + ctr] = -10000;
+	      gui[opflow->ncon + ctr] =  10000;
+	    } else {
+	      gli[opflow->ncon + ctr] = 0.0;
+	      gui[opflow->ncon + ctr] = 0.0;
+	    }	    
+	  } else {
+	    gli[opflow->ncon + ctr] = -scopflow->mode*gen->ramp_rate_30min;
+	    gui[opflow->ncon + ctr] =  scopflow->mode*gen->ramp_rate_30min;
+	  }
 	  ctr++;
 	}
       }

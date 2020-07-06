@@ -242,6 +242,8 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
 	  Bus[internalindex].qmintot += Gen[geni].qb;
 	  Bus[internalindex].Pgtot += PetscAbsScalar(Gen[geni].pg);
           Bus[internalindex].MVAbasetot += Gen[geni].mbase;
+	  Bus[internalindex].vm = Gen[geni].vs; /* Set bus voltage magnitude at generator set point voltage. Assume all generators at the bus have the same
+						   setpoint voltage in the daa file */
       	  Bus[internalindex].ngenON++;
 	  ps->NgenON++;
       	}

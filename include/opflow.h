@@ -47,6 +47,7 @@ PETSC_EXTERN PetscErrorCode OPFLOWComputeConstraintBounds(OPFLOW,Vec,Vec);
 PETSC_EXTERN PetscErrorCode OPFLOWGetConstraintMultipliers(OPFLOW,Vec*);
 PETSC_EXTERN PetscErrorCode OPFLOWPrintSolution(OPFLOW);
 PETSC_EXTERN PetscErrorCode OPFLOWSaveSolution(OPFLOW,OutputFormat,const char[]);
+PETSC_EXTERN PetscErrorCode OPFLOWGenbusVoltageFixed(OPFLOW,PetscBool);
 #endif
 
 
