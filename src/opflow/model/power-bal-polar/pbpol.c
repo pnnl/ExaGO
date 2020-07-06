@@ -39,7 +39,16 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow,Vec Xl,Vec Xu)
     xl[loc] = PETSC_NINFINITY; xu[loc] = PETSC_INFINITY;
 
     /* Bounds on voltage magnitudes and bounds on reactive power mismatch equality constraints */
-    xl[loc+1] = bus->Vmin; xu[loc+1] = bus->Vmax;
+    if(!opflow->genbusVmfixed) {
+      xl[loc+1] = bus->Vmin; xu[loc+1] = bus->Vmax;
+    } else {
+      if(bus->ide == REF_BUS || bus->ide == PV_BUS) {
+	/* Hold bus voltage at generator set point voltage */
+	xl[loc+1] = xu[loc+1] = bus->vm; /* Note: For pv buses bus->vm is already set to generator set point voltage when the data is read */
+      } else {
+	xl[loc+1] = bus->Vmin; xu[loc+1] = bus->Vmax; /* PQ buses */
+      }
+    }
 
     if(bus->ide == REF_BUS || bus->ide == ISOLATED_BUS) xl[loc] = xu[loc] = bus->va*PETSC_PI/180.0;
     if(bus->ide == ISOLATED_BUS) xl[loc+1] = xu[loc+1] = bus->vm;

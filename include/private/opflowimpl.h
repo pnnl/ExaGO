@@ -160,6 +160,8 @@ struct _p_OPFLOW{
   DM           initpflowdm; /* DM used with initial power flow */
   
   PetscInt *busnvararray,*branchnvararray; /* Number of variables at buses and branches */
+
+  PetscBool genbusVmfixed; /* TRUE if gen. bus is fixed at set point */
 };
 
 /* Registers all the OPFLOW models */
