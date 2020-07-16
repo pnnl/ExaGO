@@ -8,11 +8,11 @@ set(SCOPFLOW_PFLOW_APP_LIBS
   MPI::MPI_CXX
 )
 
-
 add_executable(testAcopf TestAcopf.cpp)
 target_link_libraries(testAcopf
 	${SCOPFLOW_OPFLOW_LIBS} 
 	${SCOPFLOW_PFLOW_APP_LIBS}
 )
+target_include_directories(testAcopf PRIVATE ./utils)
 
 install(TARGETS testAcopf DESTINATION tests)
