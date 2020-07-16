@@ -5,6 +5,7 @@ project(Scopflow)
 
 ## Preamble
 
+set(CMAKE_CXX_STANDARD 11)
 # Enable setting Mac OS X rpath
 set(CMAKE_MACOSX_RPATH 1)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
@@ -79,6 +80,10 @@ configure_file(include/scopflow_config.h.in scopflow_config.h)
 
 ## Build
 
+if(SCOPFLOW_RUN_TESTS)
+  enable_testing()
+endif()
+
 # Build libraries (specified in src/CMakeLists.txt)
 add_subdirectory(src)
 
@@ -128,9 +133,6 @@ set(SCOPFLOW_COMMON_INCLUDE
 install(FILES ${SCOPFLOW_COMMON_INCLUDE} DESTINATION include)
 
 if(SCOPFLOW_RUN_TESTS)
-  # Testing
-  enable_testing()
-
   file(GLOB network_files
     "${PROJECT_BINARY_DIR}/datafiles/*.m"
   )

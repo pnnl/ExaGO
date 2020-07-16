@@ -38,7 +38,7 @@ declare -a builds=(
   -DHIOP_DIR=/qfs/projects/exasgd/newell/hiop \
   -DCMAKE_INSTALL_PREFIX=$installdir/ \
   -DCMAKE_BUILD_TYPE=Debug \
-  -DSCOPFLOW_ENABLE_IPOPT=OFF \
+  -DSCOPFLOW_ENABLE_IPOPT=ON \
   -DIPOPT_DIR=/qfs/projects/exasgd/newell/ipopt \
   -DMAGMA_DIR=/share/apps/magma/2.5.2/cuda10.2/ \
   -DSCOPFLOW_RUN_TESTS=ON \
@@ -96,6 +96,9 @@ do
   echo Testing
   echo
   ctest -VV || exit 1
+  popd
+  pushd $installdir
+  ./tests/testAcopf || exit 1
 
   popd
 

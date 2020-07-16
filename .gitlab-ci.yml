@@ -44,4 +44,4 @@ build_on_newell:
   <<: *tags_definition
   <<: *script_definition
   only:
-    - branches@exasgd/frameworks/scopflow
+    - branches@exasgd/frameworks/exago
