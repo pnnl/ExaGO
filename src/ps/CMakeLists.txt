@@ -17,7 +17,7 @@ add_library(ps ${PS_SRC})
 target_link_libraries(ps PRIVATE
 			 PETSC::SNES 
                          MPI::MPI_C
-			 ${SCOPFLOW_UTIL_LIBS})
+			 ${EXAGO_UTIL_LIBS})
 
 # Install library
 install(TARGETS ps DESTINATION lib)
@@ -25,4 +25,4 @@ install(TARGETS ps DESTINATION lib)
 # Install header
 install(FILES ${PS_INCLUDE} DESTINATION include)
 
-set(SCOPFLOW_PS_LIBS ${SCOPFLOW_PS_LIBS} ps PARENT_SCOPE)
+set(EXAGO_PS_LIBS ${EXAGO_PS_LIBS} ps PARENT_SCOPE)

@@ -1,5 +1,5 @@
 #include <scopflow_config.h>
-#if defined(SCOPFLOW_HAVE_HIOP)
+#if defined(EXAGO_HAVE_HIOP)
 #include <private/opflowimpl.h>
 #include "opflow-hiop.hpp"
 /* Converts an array xin in natural ordering to an array xout in sparse-dense

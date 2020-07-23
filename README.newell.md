@@ -1,4 +1,4 @@
-# Installation and running SCOPFLOW on Newell cluster
+# Installation and running ExaGO on Newell cluster
 
 ## System description
 
@@ -44,8 +44,8 @@ For more information take a look at OpenMPI [FAQs](https://www.open-mpi.org/faq/
 
 ## Modules
 
-Currently tested (and recommended) tool chain for building SCOPFLOW consists of
-GCC 7.4 and OpenMPI 3.1.5. You will also need recent version of CMake. SCOPFLOW
+Currently tested (and recommended) tool chain for building ExaGO consists of
+GCC 7.4 and OpenMPI 3.1.5. You will also need recent version of CMake. ExaGO
 depends on PETSc >= 3.13, and optionally on Ipopt and HiOp optimization
 libraries. To get needed modules
 ```console
@@ -90,50 +90,50 @@ These instructions assume you loaded modules as described above.
 
 ## Install
 
-SCOPFLOW can be installed either on Newell easily with `cmake`.
+ExaGO can be installed either on Newell easily with `cmake`.
 
-First create build directory outside the SCOPFLOW source directory. For example
+First create build directory outside the ExaGO source directory. For example
 ```
 $ mkdir build
 $ ls
-build  scopflow
+build  exago
 $
 ```
-Then from build directory configure SCOPFLOW using `cmake`:
+Then from build directory configure ExaGO using `cmake`:
 ```
 $ cd build
-$ cmake ../scopflow
+$ cmake ../exago
 $ make install
 ```
-The SCOPFLOW library and its applications are installed in the default
+The ExaGO library and its applications are installed in the default
 installation directory. To change installation directory run CMake with flag
 ```
-$ cmake ../scopflow -DCMAKE_INSTALL_PREFIX=<your_scopflow_install_dir>
+$ cmake ../exago -DCMAKE_INSTALL_PREFIX=<your_exago_install_dir>
 ```
-If SCOPFLOW is linked to PETSc build with MPI support, you need to set compiler
-environment variables at the configure command as: 
+ExaGO assumes PETSc is built with MPI support. If it is not, it is recommended
+you configure ExaGO not to use MPI: 
 ```
-$ CC=mpicc CXX=mpicxx FC=mpif90 cmake ../scopflow
+$ cmake -DEXAGO_ENABLE_MPI=Off ../exago
 ```
 In case PETSc dependency is not automatically found, you can specify it using
 `ccmake` interactive shell or add command line option like this:
 ```
-$ cmake ../scopflow -DPETSC_DIR=<petsc_install_dir> -DPETSC_ARCH=<petsc_arch>
+$ cmake ../exago -DPETSC_DIR=<petsc_install_dir> -DPETSC_ARCH=<petsc_arch>
 ```
 
-To use IPOPT with SCOPFLOW, set:
+To use IPOPT with ExaGO, set:
 ```
-cmake ../scopflow -DSCOPFLOW_ENABLE_IPOPT=ON
+cmake ../exago -DEXAGO_ENABLE_IPOPT=ON
 ```
-SCOPFLOW will find Ipopt module you loaded on Newell. If you want to use your
+ExaGO will find Ipopt module you loaded on Newell. If you want to use your
 own Ipopt build, you will most likely need to specify its location like this:
 ```
-cmake ../scopflow -DSCOPFLOW_ENABLE_IPOPT=ON -DIPOPT_DIR=<ipopt_install_dir>
+cmake ../exago -DEXAGO_ENABLE_IPOPT=ON -DIPOPT_DIR=<ipopt_install_dir>
 ```
-Similar to IPOPT, the corresponding flags for HiOp are `SCOPFLOW_ENABLE_HIOP`
+Similar to IPOPT, the corresponding flags for HiOp are `EXAGO_ENABLE_HIOP`
 and `HIOP_DIR`.
 ```
-cmake ../scopflow -DSCOPFLOW_ENABLE_HIOP=ON -DHIOP_DIR=<hiop_install_dir>
+cmake ../exago -DEXAGO_ENABLE_HIOP=ON -DHIOP_DIR=<hiop_install_dir>
 ```
 
 The CMake installer should specify dynamic run paths. 

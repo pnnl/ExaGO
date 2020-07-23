@@ -1,6 +1,6 @@
 #include <scopflow_config.h>
 
-#if defined(SCOPFLOW_HAVE_HIOP)
+#if defined(EXAGO_HAVE_HIOP)
 
 #ifndef OPFLOWHIOP_HPP
 #define OPFFLOWHIOP_HPP

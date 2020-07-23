@@ -25,11 +25,11 @@ PetscErrorCode SCOPFLOWSolverRegister(SCOPFLOW scopflow,const char sname[],Petsc
   PetscFunctionReturn(0);
 }
 
-#if defined(SCOPFLOW_HAVE_IPOPT)
+#if defined(EXAGO_HAVE_IPOPT)
 extern PetscErrorCode SCOPFLOWSolverCreate_IPOPT(SCOPFLOW);
 #endif
 
-#if defined(SCOPFLOW_HAVE_PIPS)
+#if defined(EXAGO_HAVE_PIPS)
 extern PetscErrorCode SCOPFLOWSolverCreate_PIPS(SCOPFLOW);
 #endif
 
@@ -44,11 +44,11 @@ PetscErrorCode SCOPFLOWSolverRegisterAll(SCOPFLOW scopflow)
   PetscFunctionBegin;
   if(scopflow->SCOPFLOWSolverRegisterAllCalled) PetscFunctionReturn(0);
 
-#if defined(SCOPFLOW_HAVE_IPOPT)
+#if defined(EXAGO_HAVE_IPOPT)
   ierr = SCOPFLOWSolverRegister(scopflow,SCOPFLOWSOLVER_IPOPT,SCOPFLOWSolverCreate_IPOPT);CHKERRQ(ierr);
 #endif
 
-#if defined(SCOPFLOW_HAVE_PIPS)
+#if defined(EXAGO_HAVE_PIPS)
   ierr = SCOPFLOWSolverRegister(scopflow,SCOPFLOWSOLVER_PIPS,SCOPFLOWSolverCreate_PIPS);CHKERRQ(ierr);
 #endif
   ierr = SCOPFLOWSolverRegister(scopflow,SCOPFLOWSOLVER_EMPAR,SCOPFLOWSolverCreate_EMPAR);CHKERRQ(ierr);

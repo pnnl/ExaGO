@@ -34,14 +34,18 @@ module list
 export CXXFLAGS='-I/share/apps/magma/2.5.2/cuda10.2/include -I/share/apps/cuda/10.2/include/'
 
 declare -a builds=(
-  "-DSCOPFLOW_ENABLE_HIOP=ON \
-  -DHIOP_DIR=/qfs/projects/exasgd/newell/hiop \
+  " \
   -DCMAKE_INSTALL_PREFIX=$installdir/ \
   -DCMAKE_BUILD_TYPE=Debug \
-  -DSCOPFLOW_ENABLE_IPOPT=ON \
+  -DEXAGO_ENABLE_GPU=ON \
+  -DEXAGO_ENABLE_HIOP=ON \
+  -DEXAGO_ENABLE_IPOPT=ON \
+  -DEXAGO_ENABLE_MPI=ON \
+  -DEXAGO_ENABLE_PETSC=ON \
+  -DEXAGO_RUN_TESTS=ON \
+  -DHIOP_DIR=/qfs/projects/exasgd/newell/hiop \
   -DIPOPT_DIR=/qfs/projects/exasgd/newell/ipopt \
   -DMAGMA_DIR=/share/apps/magma/2.5.2/cuda10.2/ \
-  -DSCOPFLOW_RUN_TESTS=ON \
   -DPETSC_DIR=$petsc_dir"
 )
 
@@ -95,11 +99,7 @@ do
   echo
   echo Testing
   echo
-  ctest -VV || exit 1
-  popd
-  pushd $installdir
-  ./tests/testAcopf || exit 1
-
+  ctest || exit 1
   popd
 
   echo

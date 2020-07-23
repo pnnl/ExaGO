@@ -1,5 +1,5 @@
 #include <scopflow_config.h>
-#if defined(SCOPFLOW_HAVE_IPOPT)
+#if defined(EXAGO_HAVE_IPOPT)
 
 #ifndef SCOPFLOWIPOPT_H
 #define SCOPFLOWIPOPT_H

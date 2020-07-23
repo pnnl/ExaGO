@@ -520,7 +520,7 @@ int main(int argc,char **argv)
   /* arrays to hold ineq. constraint locations where each bus and branch needs to insert its residuals */
   int               **fineqidx;
   PetscInt          i;
-  char options_pathname[200] = SCOPFLOW_OPTIONS_DIR;
+  char options_pathname[200] = EXAGO_OPTIONS_DIR;
   char* filename = "/opflowoptions";
   printf("%s\n", options_pathname);
   printf("%s\n", filename);
