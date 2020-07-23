@@ -1,4 +1,4 @@
-#if defined(SCOPFLOW_HAVE_PIPS)
+#if defined(EXAGO_HAVE_PIPS)
 
 #include <private/opflowimpl.h>
 #include <private/scopflowimpl.h>

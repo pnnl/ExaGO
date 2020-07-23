@@ -23,18 +23,18 @@ add_library(scopflow ${SCOPFLOW_SRC})
 target_link_libraries(scopflow PRIVATE
 			     PETSC::SNES
 			     MPI::MPI_C
-			     ${SCOPFLOW_UTIL_LIBS}
-			     ${SCOPFLOW_PS_LIBS}
-			     ${SCOPFLOW_PFLOW_LIBS}
-			     ${SCOPFLOW_OPFLOW_LIBS}
+			     ${EXAGO_UTIL_LIBS}
+			     ${EXAGO_PS_LIBS}
+			     ${EXAGO_PFLOW_LIBS}
+			     ${EXAGO_OPFLOW_LIBS}
 )
 
-if(SCOPFLOW_HAVE_IPOPT)
+if(EXAGO_HAVE_IPOPT)
 	target_link_libraries(scopflow PUBLIC INTERFACE Ipopt)
 	target_include_directories(scopflow PUBLIC ${IPOPT_INCLUDE_DIR})
 endif()
 
-if(SCOPFLOW_HAVE_HIOP)
+if(EXAGO_HAVE_HIOP)
 	target_link_libraries(scopflow PUBLIC INTERFACE HiOp)
 	target_include_directories(scopflow PUBLIC ${HIOP_INCLUDE_DIR})
 endif()

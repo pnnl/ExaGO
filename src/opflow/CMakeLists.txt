@@ -35,22 +35,26 @@ add_library(opflow ${OPFLOW_SRC})
 target_link_libraries(opflow PRIVATE
 			     PETSC::ALL
 			     MPI::MPI_C
-			     ${SCOPFLOW_UTIL_LIBS}
-			     ${SCOPFLOW_PS_LIBS}
-			     ${SCOPFLOW_PFLOW_LIBS}
+			     ${EXAGO_UTIL_LIBS}
+			     ${EXAGO_PS_LIBS}
+			     ${EXAGO_PFLOW_LIBS}
 			     -lblas -llapack
-           PUBLIC
-			     ${MAGMA_LIBRARY}
 )
 
-if(SCOPFLOW_HAVE_IPOPT)
+# If Ipopt interface is enabled, link to Ipopt libs
+if(EXAGO_HAVE_IPOPT)
 	target_link_libraries(opflow PUBLIC INTERFACE Ipopt)
 	target_include_directories(opflow PUBLIC ${IPOPT_INCLUDE_DIR})
 endif()
 
-if(SCOPFLOW_HAVE_HIOP)
+# If HiOp interface is enabled, link to HiOp libs
+if(EXAGO_HAVE_HIOP)
 	target_link_libraries(opflow PUBLIC INTERFACE HiOp)
-	target_include_directories(opflow PUBLIC ${HIOP_INCLUDE_DIR})
+  target_include_directories(opflow PUBLIC ${HIOP_INCLUDE_DIR})
+  # If HiOp is using GPU add CUDA includes
+  if(EXAGO_ENABLE_GPU)
+    target_include_directories(opflow PUBLIC ${CUDA_TOOLKIT_INCLUDE})
+  endif()
 endif()
 
 # Install shared object
@@ -60,20 +64,24 @@ install(TARGETS opflow DESTINATION lib)
 install(FILES ${OPFLOW_INCLUDE} DESTINATION include)
 
 # Install options file
-if(SCOPFLOW_HAVE_IPOPT)
+if(EXAGO_HAVE_IPOPT)
   # Need to figure out where should options file go eventually, putting
   # it in bin because IPOPT needs to have the options file in the same directory
   # as executable
   install(FILES ${CMAKE_SOURCE_DIR}/ipopt.opt DESTINATION bin)
   install(FILES ${CMAKE_SOURCE_DIR}/ipopt.opt DESTINATION ${PROJECT_BINARY_DIR})
+  file(COPY ${CMAKE_SOURCE_DIR}/ipopt.opt DESTINATION bin)
+  file(COPY ${CMAKE_SOURCE_DIR}/ipopt.opt DESTINATION ${PROJECT_BINARY_DIR})
 endif()
 
-if(SCOPFLOW_HAVE_HIOP)
+if(EXAGO_HAVE_HIOP)
   # Need to figure out where should options file go eventually, putting
   # it in bin because HIOP needs to have the options file in the same directory
   # as executable
   install(FILES ${CMAKE_SOURCE_DIR}/hiop.options DESTINATION bin)
   install(FILES ${CMAKE_SOURCE_DIR}/hiop.options DESTINATION ${PROJECT_BINARY_DIR})
+  file(COPY ${CMAKE_SOURCE_DIR}/hiop.options DESTINATION bin)
+  file(COPY ${CMAKE_SOURCE_DIR}/hiop.options DESTINATION ${PROJECT_BINARY_DIR})
 endif()
 
-set(SCOPFLOW_OPFLOW_LIBS ${SCOPFLOW_OPFLOW_LIBS} opflow PARENT_SCOPE)
+set(EXAGO_OPFLOW_LIBS ${EXAGO_OPFLOW_LIBS} opflow PARENT_SCOPE)

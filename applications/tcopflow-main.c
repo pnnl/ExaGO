@@ -16,7 +16,7 @@ int main(int argc,char **argv)
   #if defined(PETSC_USE_LOG)
     PetscLogStage stages[2];
   #endif
-  char options_pathname[200] = SCOPFLOW_OPTIONS_DIR;
+  char options_pathname[200] = EXAGO_OPTIONS_DIR;
   char filename[] = "/tcopflowoptions";
   printf("%s\n", options_pathname);
   printf("%s\n", filename);

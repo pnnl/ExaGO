@@ -1,17 +1,17 @@
 
-set(SCOPFLOW_PFLOW_APP_LIBS   
-  ${SCOPFLOW_UTIL_LIBS}	
-  ${SCOPFLOW_PS_LIBS}
-  ${SCOPFLOW_PFLOW_LIBS}	 
-  ${SCOPFLOW_MATH_LIB}
+set(EXAGO_PFLOW_APP_LIBS   
+  ${EXAGO_UTIL_LIBS}	
+  ${EXAGO_PS_LIBS}
+  ${EXAGO_PFLOW_LIBS}	 
+  ${EXAGO_MATH_LIB}
   PETSC::SNES
   MPI::MPI_CXX
 )
 
 add_executable(testAcopf TestAcopf.cpp)
 target_link_libraries(testAcopf
-	${SCOPFLOW_OPFLOW_LIBS} 
-	${SCOPFLOW_PFLOW_APP_LIBS}
+	${EXAGO_OPFLOW_LIBS} 
+	${EXAGO_PFLOW_APP_LIBS}
 )
 target_include_directories(testAcopf PRIVATE ./utils)
 

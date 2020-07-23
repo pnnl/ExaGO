@@ -31,11 +31,11 @@ set(TCOPFLOW_SRC
   tcopflow-main.c
 )
 
-set(SCOPFLOW_PFLOW_APP_LIBS   
-  ${SCOPFLOW_UTIL_LIBS}	
-  ${SCOPFLOW_PS_LIBS}
-  ${SCOPFLOW_PFLOW_LIBS}	 
-  ${SCOPFLOW_MATH_LIB}
+set(EXAGO_PFLOW_APP_LIBS   
+  ${EXAGO_UTIL_LIBS}	
+  ${EXAGO_PS_LIBS}
+  ${EXAGO_PFLOW_LIBS}	 
+  ${EXAGO_MATH_LIB}
   PETSC::SNES
   MPI::MPI_C
 )
@@ -56,32 +56,31 @@ add_executable(app_tcopflow ${TCOPFLOW_SRC})
 
 # Link libraries
 target_link_libraries(app_pflowproto 
-	${SCOPFLOW_PFLOW_APP_LIBS}
+	${EXAGO_PFLOW_APP_LIBS}
 )
 
 target_link_libraries(app_pflow 
-	${SCOPFLOW_PFLOW_APP_LIBS}
+	${EXAGO_PFLOW_APP_LIBS}
 )
 
 target_link_libraries(app_pflow2 
-	${SCOPFLOW_PFLOW_APP_LIBS}
+	${EXAGO_PFLOW_APP_LIBS}
 )
 
 target_link_libraries(app_opflow
-	${SCOPFLOW_OPFLOW_LIBS} 
-	${SCOPFLOW_PFLOW_APP_LIBS}
+	${EXAGO_OPFLOW_LIBS} 
+	${EXAGO_PFLOW_APP_LIBS}
 )
 
 target_link_libraries(app_scopflow
 	${SCOPFLOW_LIBS}
-	${SCOPFLOW_OPFLOW_LIBS}
-	${SCOPFLOW_PFLOW_APP_LIBS}
+	${EXAGO_OPFLOW_LIBS}
+	${EXAGO_PFLOW_APP_LIBS}
 )
 
 target_link_libraries(app_tcopflow
 	${TCOPFLOW_LIBS}
-	${TCOPFLOW_OPFLOW_LIBS}
-	${SCOPFLOW_PFLOW_APP_LIBS}
+	${EXAGO_PFLOW_APP_LIBS}
 )
 
 # Install the executables
