@@ -88,6 +88,10 @@
 #
 # Redistribution and use is allowed according to the terms of the BSD license.
 # ------------------------------------------------------------------------------
+# This module contains modifications by Cody J. Balos and David J. Gardner, LLNL
+# and Slaven Peles, Asher J. Mancinelly and Shrirang Abhyankar, PNNL
+# ------------------------------------------------------------------------------
+
 
 # ------------------------------------------------------------------------------
 # helper macros and functions
@@ -404,7 +408,7 @@ if (NOT petsc_config_current)
     message(STATUS "PETSC_DIR=${PETSC_DIR}")
     message(STATUS "PETSC_ARCH=${PETSC_ARCH}")
     message(STATUS "PETSC_INCLUDE_DIR=${PETSC_INCLUDE_DIR}")
-    message(STATUS " PETSC_LIBRARY_DIR=${PETSC_LIBRARY_DIR}")
+    message(STATUS "PETSC_LIBRARY_DIR=${PETSC_LIBRARY_DIR}")
     
     # set internal PETSC_DIR and PETSC_ARCH variables
     set (PETSC_DIR_  "${PETSC_DIR}"  CACHE INTERNAL "Internal PETS_DIR"  FORCE)

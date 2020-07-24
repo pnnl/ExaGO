@@ -2,6 +2,7 @@ static char help[] = "User example calling OPFLOW.\n\n";
 
 #include <opflow.h>
 #include <scopflow_config.h>
+#include <utils.h>
 
 int main(int argc,char **argv)
 {
@@ -13,14 +14,23 @@ int main(int argc,char **argv)
   #if defined(PETSC_USE_LOG)
     PetscLogStage    stages[2];
   #endif
-  char options_pathname[200] = SCOPFLOW_OPTIONS_DIR;
+  char options_pathname[200] = EXAGO_OPTIONS_DIR;
   char filename[] = "/opflowoptions";
-  printf("%s\n", options_pathname);
-  printf("%s\n", filename);
   strcat(options_pathname, filename);
-  printf("%s\n", options_pathname);
 
-  PetscInitialize(&argc,&argv,options_pathname,help);
+  const int npths = 3;
+  char** pths = malloc(PETSC_MAX_PATH_LEN * npths);
+  pths[0] = strdup(options_pathname);
+  pths[1] = strdup("./opflowoptions");
+  pths[2] = strdup("./options/opflowoptions");
+  const int idx = doFilesExist(pths, npths);
+  if (idx < 0)
+  {
+    fputs("Could not options file", stderr);
+    return 1;
+  }
+
+  PetscInitialize(&argc,&argv,pths[idx],help);
 
   /* PetscLogStageRegister */
   ierr = PetscLogStageRegister("Reading Data",&stages[0]);CHKERRQ(ierr);

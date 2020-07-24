@@ -11,6 +11,7 @@ set(UTILS_SRC
 # Headers
 set(UTILS_INCLUDE
   ${CMAKE_SOURCE_DIR}/include/common.h
+  ${CMAKE_SOURCE_DIR}/include/utils.h
 )
 
 # Add library
@@ -24,5 +25,5 @@ install(TARGETS psutil DESTINATION lib)
 
 # Install header
 install(FILES ${UTILS_INCLUDE} DESTINATION include)
-
-set(SCOPFLOW_UTIL_LIBS ${SCOPFLOW_UTIL_LIBS} psutil PARENT_SCOPE)
+#EXAGO_EXAGO_
+set(EXAGO_UTIL_LIBS ${EXAGO_UTIL_LIBS} psutil PARENT_SCOPE)

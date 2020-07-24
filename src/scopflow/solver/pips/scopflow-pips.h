@@ -1,4 +1,4 @@
-#if defined(SCOPFLOW_HAVE_PIPS)
+#if defined(EXAGO_HAVE_PIPS)
 
 #ifndef SCOPFLOWPIPS_H
 #define SCOPFLOWPIPS_H

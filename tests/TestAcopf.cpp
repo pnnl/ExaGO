@@ -19,7 +19,7 @@ int main(int argc, char** argv)
   OPFLOW         opflow;
   char           file_c_str[PETSC_MAX_PATH_LEN];
   std::string file;
-  std::string options_pathname(SCOPFLOW_OPTIONS_DIR);
+  std::string options_pathname(EXAGO_OPTIONS_DIR);
   std::string filename("/opflowoptions");
   std::cout << options_pathname << "\n";
   std::cout << filename << "\n";
