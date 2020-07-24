@@ -9,10 +9,10 @@
 
 int main(int argc, char** argv)
 {
-  const bool     isTestOpflowModelPBPOL2 = true;
-  const bool     isTestOpflowModelPBCAR  = false;
-  const bool     isTestOpflowModelIBCAR2 = false;
-  const bool     isTestOpflowModelIBCAR  = false;
+  const bool     isTestOpflowModelPBPOL2    = true;
+  const bool     isTestOpflowModelPBCAR     = false;
+  const bool     isTestOpflowModelIBCAR2    = false;
+  const bool     isTestOpflowModelIBCAR     = false;
   PetscErrorCode ierr;
   PetscBool      flg;
   OPFLOW         opflow;
@@ -36,6 +36,8 @@ int main(int argc, char** argv)
      model type=OPFLOWMODEL
   */
 
+  // Create reference data for testing 
+
   /* Create reference opflow */
   ierr = OPFLOWCreate(PETSC_COMM_WORLD,&opflow);CHKERRQ(ierr);
 
@@ -58,43 +60,43 @@ int main(int argc, char** argv)
   /* Solve OPFLOW to get the reference solution */
   ierr = OPFLOWSolve(opflow);
 
-  /*
-   * This test block has more verbose comments explaining what each step is
-   * doing. The latter tests will reuse much of this, so refer to this test
-   * for comments.
-   */
+  /* Get the reference solution */
+  Vec X;
+  ierr = OPFLOWGetSolution(opflow,&X);CHKERRQ(ierr);
+
+  /* Get reference variable bounds */
+  Vec Xl, Xu;
+  ierr = OPFLOWGetVariableBounds(opflow,&Xl,&Xu);CHKERRQ(ierr);
+
+  /* Get reference objective value */
+  double obj;
+  ierr = OPFLOWGetObjective(opflow,&obj);CHKERRQ(ierr);
+
+  /* Get reference value for the objective radient */
+  Vec grad;
+  ierr = VecDuplicate(X,&grad);CHKERRQ(ierr);
+  ierr = OPFLOWComputeGradient(opflow,X,grad);CHKERRQ(ierr);
+
+  /* Get reference constraint residuals */
+  Vec G;
+  ierr = OPFLOWGetConstraints(opflow,&G);CHKERRQ(ierr);
+
+  /* Get reference constraint bounds */
+  Vec Gl, Gu;
+  ierr = OPFLOWGetConstraintBounds(opflow,&Gl,&Gu);CHKERRQ(ierr);
+
+  // Failure counter
+  int fail = 0;
+
   if(isTestOpflowModelPBPOL2)
   {
-    Vec                      X;
-    Vec                      Xl, Xu;
-    Vec                      G;
-    Vec                      Gl, Gu;
-    Vec                      grad;
-    double                   obj;
-    OPFLOW                   opflowtest;
+    OPFLOW opflowtest;
     exago::tests::TestOpflow test;
-    int                      fail = 0;
 
-    /* Get the solution */
-    ierr = OPFLOWGetSolution(opflow,&X);CHKERRQ(ierr);
+    std::cout << "\nTesting power balance model in polar coordinates "
+              << "(componentwise assembly) ... \n";
 
-    /* Test for Variable bounds */
-    ierr = OPFLOWGetVariableBounds(opflow,&Xl,&Xu);CHKERRQ(ierr); /* Reference */
-
-    /* Test for objective value */
-    ierr = OPFLOWGetObjective(opflow,&obj);CHKERRQ(ierr); /* Reference */
-
-    /* Gradient */
-    ierr = VecDuplicate(X,&grad);CHKERRQ(ierr);
-    ierr = OPFLOWComputeGradient(opflow,X,grad);CHKERRQ(ierr); /* Reference */
-    /* Constraints */
-
-    ierr = OPFLOWGetConstraints(opflow,&G);CHKERRQ(ierr); /* Reference */
-
-    /* Constraint bounds */
-    ierr = OPFLOWGetConstraintBounds(opflow,&Gl,&Gu);CHKERRQ(ierr); /* Reference */
-
-    /* Create the test opflow */
+    // Create optimal power flow model
     ierr = OPFLOWCreate(PETSC_COMM_WORLD,&opflowtest);CHKERRQ(ierr);
 
     /* Read Network data */
@@ -112,36 +114,16 @@ int main(int argc, char** argv)
     fail += test.computeConstraints(opflowtest,X,G);
     fail += test.computeConstraintBounds(opflowtest,Gl,Gu);
 
-    ierr = VecDestroy(&G);CHKERRQ(ierr);
-    ierr = VecDestroy(&Gl);CHKERRQ(ierr);
-    ierr = VecDestroy(&Gu);CHKERRQ(ierr);
-    ierr = VecDestroy(&X);CHKERRQ(ierr);
-    ierr = VecDestroy(&Xl);CHKERRQ(ierr);
-    ierr = VecDestroy(&Xu);CHKERRQ(ierr);
-    ierr = VecDestroy(&grad);CHKERRQ(ierr);
     ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
   }
 
   if (isTestOpflowModelPBCAR)
   {
-    Vec                      X;
-    Vec                      Xl, Xu;
-    Vec                      G;
-    Vec                      Gl, Gu;
-    Vec                      grad;
-    double                   obj;
     OPFLOW                   opflowtest;
     exago::tests::TestOpflow test;
-    int                      fail = 0;
 
-    /* Recreate references */
-    ierr = OPFLOWGetSolution(opflow,&X);CHKERRQ(ierr);
-    ierr = OPFLOWGetVariableBounds(opflow,&Xl,&Xu);CHKERRQ(ierr); 
-    ierr = OPFLOWGetObjective(opflow,&obj);CHKERRQ(ierr); 
-    ierr = VecDuplicate(X,&grad);CHKERRQ(ierr);
-    ierr = OPFLOWComputeGradient(opflow,X,grad);CHKERRQ(ierr); 
-    ierr = OPFLOWGetConstraints(opflow,&G);CHKERRQ(ierr); 
-    ierr = OPFLOWGetConstraintBounds(opflow,&Gl,&Gu);CHKERRQ(ierr); 
+    std::cout << "\nTesting power balance model in cartesian coordinates "
+              << "(nodewise assembly) ... \n";
 
     /* Set up test opflow */
     ierr = OPFLOWCreate(PETSC_COMM_WORLD,&opflowtest);CHKERRQ(ierr);
@@ -155,35 +137,16 @@ int main(int argc, char** argv)
     fail += test.computeConstraints(opflowtest,X,G);
     fail += test.computeConstraintBounds(opflowtest,Gl,Gu);
 
-    ierr = VecDestroy(&G);CHKERRQ(ierr);
-    ierr = VecDestroy(&Gl);CHKERRQ(ierr);
-    ierr = VecDestroy(&Gu);CHKERRQ(ierr);
-    ierr = VecDestroy(&X);CHKERRQ(ierr);
-    ierr = VecDestroy(&Xl);CHKERRQ(ierr);
-    ierr = VecDestroy(&Xu);CHKERRQ(ierr);
-    ierr = VecDestroy(&grad);CHKERRQ(ierr);
     ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
   }
 
   if (isTestOpflowModelIBCAR)
   {
-    Vec                      X;
-    Vec                      Xl, Xu;
-    Vec                      G;
-    Vec                      Gl, Gu;
-    Vec                      grad;
-    double                   obj;
-    OPFLOW                   opflowtest;
+    OPFLOW opflowtest;
     exago::tests::TestOpflow test;
-    int                      fail = 0;
 
-    ierr = OPFLOWGetSolution(opflow,&X);CHKERRQ(ierr);
-    ierr = OPFLOWGetVariableBounds(opflow,&Xl,&Xu);CHKERRQ(ierr); 
-    ierr = OPFLOWGetObjective(opflow,&obj);CHKERRQ(ierr); 
-    ierr = VecDuplicate(X,&grad);CHKERRQ(ierr);
-    ierr = OPFLOWComputeGradient(opflow,X,grad);CHKERRQ(ierr); 
-    ierr = OPFLOWGetConstraints(opflow,&G);CHKERRQ(ierr); 
-    ierr = OPFLOWGetConstraintBounds(opflow,&Gl,&Gu);CHKERRQ(ierr); 
+    std::cout << "\nTesting current balance model in cartesian coordinates "
+              << "(nodewise assembly) ... \n";
 
     ierr = OPFLOWCreate(PETSC_COMM_WORLD,&opflowtest);CHKERRQ(ierr);
     ierr = OPFLOWReadMatPowerData(opflowtest,file.c_str());CHKERRQ(ierr);
@@ -196,35 +159,16 @@ int main(int argc, char** argv)
     fail += test.computeConstraints(opflowtest,X,G);
     fail += test.computeConstraintBounds(opflowtest,Gl,Gu);
 
-    ierr = VecDestroy(&G);CHKERRQ(ierr);
-    ierr = VecDestroy(&Gl);CHKERRQ(ierr);
-    ierr = VecDestroy(&Gu);CHKERRQ(ierr);
-    ierr = VecDestroy(&X);CHKERRQ(ierr);
-    ierr = VecDestroy(&Xl);CHKERRQ(ierr);
-    ierr = VecDestroy(&Xu);CHKERRQ(ierr);
-    ierr = VecDestroy(&grad);CHKERRQ(ierr);
     ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
   }
 
   if (isTestOpflowModelIBCAR2)
   {
-    Vec                      X;
-    Vec                      Xl, Xu;
-    Vec                      G;
-    Vec                      Gl, Gu;
-    Vec                      grad;
-    double                   obj;
-    OPFLOW                   opflowtest;
+    OPFLOW opflowtest;
     exago::tests::TestOpflow test;
-    int                      fail = 0;
 
-    ierr = OPFLOWGetSolution(opflow,&X);CHKERRQ(ierr);
-    ierr = OPFLOWGetVariableBounds(opflow,&Xl,&Xu);CHKERRQ(ierr); 
-    ierr = OPFLOWGetObjective(opflow,&obj);CHKERRQ(ierr); 
-    ierr = VecDuplicate(X,&grad);CHKERRQ(ierr);
-    ierr = OPFLOWComputeGradient(opflow,X,grad);CHKERRQ(ierr); 
-    ierr = OPFLOWGetConstraints(opflow,&G);CHKERRQ(ierr); 
-    ierr = OPFLOWGetConstraintBounds(opflow,&Gl,&Gu);CHKERRQ(ierr); 
+    std::cout << "\nTesting current balance model in cartesian coordinates "
+              << "(?) ... \n";
 
     ierr = OPFLOWCreate(PETSC_COMM_WORLD,&opflowtest);CHKERRQ(ierr);
     ierr = OPFLOWReadMatPowerData(opflowtest,file.c_str());CHKERRQ(ierr);
@@ -237,19 +181,13 @@ int main(int argc, char** argv)
     fail += test.computeConstraints(opflowtest,X,G);
     fail += test.computeConstraintBounds(opflowtest,Gl,Gu);
 
-    ierr = VecDestroy(&G);CHKERRQ(ierr);
-    ierr = VecDestroy(&Gl);CHKERRQ(ierr);
-    ierr = VecDestroy(&Gu);CHKERRQ(ierr);
-    ierr = VecDestroy(&X);CHKERRQ(ierr);
-    ierr = VecDestroy(&Xl);CHKERRQ(ierr);
-    ierr = VecDestroy(&Xu);CHKERRQ(ierr);
-    ierr = VecDestroy(&grad);CHKERRQ(ierr);
     ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
   }
 
-  // Why does this cause a SEGV?
-  // ierr = OPFLOWDestroy(&opflow);CHKERRQ(ierr);
+  /* Destroy OPFLOW objects */
+  ierr = OPFLOWDestroy(&opflow);CHKERRQ(ierr);
+  ierr = VecDestroy(&grad);CHKERRQ(ierr);
   PetscFinalize();
 
-  return 0;    
+  return fail;
 }
