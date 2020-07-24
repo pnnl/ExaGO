@@ -13,6 +13,7 @@ int main(int argc, char** argv)
   const bool     isTestOpflowModelPBCAR  = false;
   const bool     isTestOpflowModelIBCAR2 = false;
   const bool     isTestOpflowModelIBCAR  = false;
+  int            globalFail              = 0;
   PetscErrorCode ierr;
   PetscBool      flg;
   OPFLOW         opflow;
@@ -120,6 +121,7 @@ int main(int argc, char** argv)
     ierr = VecDestroy(&Xu);CHKERRQ(ierr);
     ierr = VecDestroy(&grad);CHKERRQ(ierr);
     ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
+    globalFail += fail;
   }
 
   if (isTestOpflowModelPBCAR)
@@ -163,6 +165,7 @@ int main(int argc, char** argv)
     ierr = VecDestroy(&Xu);CHKERRQ(ierr);
     ierr = VecDestroy(&grad);CHKERRQ(ierr);
     ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
+    globalFail += fail;
   }
 
   if (isTestOpflowModelIBCAR)
@@ -204,6 +207,7 @@ int main(int argc, char** argv)
     ierr = VecDestroy(&Xu);CHKERRQ(ierr);
     ierr = VecDestroy(&grad);CHKERRQ(ierr);
     ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
+    globalFail += fail;
   }
 
   if (isTestOpflowModelIBCAR2)
@@ -245,11 +249,12 @@ int main(int argc, char** argv)
     ierr = VecDestroy(&Xu);CHKERRQ(ierr);
     ierr = VecDestroy(&grad);CHKERRQ(ierr);
     ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
+    globalFail += fail;
   }
 
   // Why does this cause a SEGV?
   // ierr = OPFLOWDestroy(&opflow);CHKERRQ(ierr);
   PetscFinalize();
 
-  return 0;    
+  return globalFail;    
 }
