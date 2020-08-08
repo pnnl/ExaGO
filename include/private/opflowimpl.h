@@ -29,20 +29,32 @@ struct _p_OPFLOWModelOps {
   PetscErrorCode (*setnumvariables)(OPFLOW,PetscInt*,PetscInt*,PetscInt*); /* Set number of variables for buses and branches, and total number of variables */
   PetscErrorCode (*setnumconstraints)(OPFLOW,PetscInt*,PetscInt*,PetscInt*,PetscInt*); /* Set number of equality and inequality constraints */
   PetscErrorCode (*setvariablebounds)(OPFLOW,Vec,Vec); /* Upper and lower bounds on the vector */
+  PetscErrorCode (*setvariableboundsarray)(OPFLOW,double*,double*); /* Array version of set variable bounds */
   PetscErrorCode (*setconstraintbounds)(OPFLOW,Vec,Vec); /* Lower and upper bounds on constraints */
+  PetscErrorCode (*setconstraintboundsarray)(OPFLOW,double*,double*); /* Array version of constraint bounds */
   PetscErrorCode (*setvariableandconstraintbounds)(OPFLOW,Vec,Vec,Vec,Vec); /* Lower and upper bounds on variables and constraints */
+  PetscErrorCode (*setvariableandconstraintboundsarray)(OPFLOW,double*,double*,double*,double*); /* Array version of setvariable and constraint bounds */
   PetscErrorCode (*setinitialguess)(OPFLOW,Vec); /* Set the initial guess for the optimization */
+  PetscErrorCode (*setinitialguessarray)(OPFLOW,double*); /* Array version of set initial guess */
   PetscErrorCode (*computeequalityconstraints)(OPFLOW,Vec,Vec); /* Set equality constraints */
+  PetscErrorCode (*computeequalityconstraintsarray)(OPFLOW,const double*,double*); /* Array version of set equality constraints */
   PetscErrorCode (*computeinequalityconstraints)(OPFLOW,Vec,Vec); /* Set inequality constraints */
+  PetscErrorCode (*computeinequalityconstraintsarray)(OPFLOW,const double*,double*); /* Set equality constraints */
   PetscErrorCode (*computeconstraints)(OPFLOW,Vec,Vec);
+  PetscErrorCode (*computeconstraintsarray)(OPFLOW,double*,double*); /* Array version of compute constraints */
   PetscErrorCode (*computeequalityconstraintjacobian)(OPFLOW,Vec,Mat);
   PetscErrorCode (*computeinequalityconstraintjacobian)(OPFLOW,Vec,Mat);
   PetscErrorCode (*computehessian)(OPFLOW,Vec,Vec,Vec,Mat);
   PetscErrorCode (*computeobjandgradient)(OPFLOW,Vec,PetscScalar*,Vec); /* Objective and gradient routine */
   PetscErrorCode (*computeobjective)(OPFLOW,Vec,PetscScalar*); /* Objective */
+  PetscErrorCode (*computeobjectivearray)(OPFLOW,const double*,double*); /* Array version of compute objective */
   PetscErrorCode (*computegradient)(OPFLOW,Vec,Vec); /* Gradient of the objective function */
+  PetscErrorCode (*computegradientarray)(OPFLOW,const double*,double*); /* Array version of compute gradient */
   PetscErrorCode (*computejacobian)(OPFLOW,Vec,Mat); /* Jacobian of the constraints */
   PetscErrorCode (*solutiontops)(OPFLOW); /* Update PS struct from OPFLOW solution */
+  /* Following methods are only used with HIOP */
+  PetscErrorCode  (*setsparsejacobianlocationshiop)(OPFLOW,int*,int*,int*); /* Sparse Jacobian locations */
+
 };
 
 struct _p_OPFLOWSolverOps {
@@ -162,6 +174,9 @@ struct _p_OPFLOW{
   PetscInt *busnvararray,*branchnvararray; /* Number of variables at buses and branches */
 
   PetscBool genbusVmfixed; /* TRUE if gen. bus is fixed at set point */
+
+  PetscBool spdnordering; /* TRUE if model uses sparse dense ordering */
+  PetscInt  *idxn2sd_map; /* Mapping from natural to sparse-dense ordering */
 };
 
 /* Registers all the OPFLOW models */

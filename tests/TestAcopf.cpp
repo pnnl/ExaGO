@@ -7,9 +7,34 @@
 
 #include "opflow/OpflowTests.hpp"
 
+/* Converts an array xin in natural ordering to an array xout in sparse-dense                                                                   
+   ordering                                                                                                                                     
+*/
+void naturaltospdense(const double *xin,double *xout,int *idxn2sd_map,int nx)
+{
+  int i;
+
+  for(i=0; i < nx; i++) {
+    xout[idxn2sd_map[i]] = xin[i];
+  }
+}
+
+/* Converts an array xin in sparse dense ordering to an array xout in natural                                                                   
+   ordering                                                                                                                                     
+*/
+void spdensetonatural(const double *xin,double *xout,int *idxn2sd_map,int nx)
+{
+  int i;
+
+  for(i=0; i < nx; i++) {
+    xout[i] = xin[idxn2sd_map[i]];
+  }
+}
+
 int main(int argc, char** argv)
 {
-  const bool     isTestOpflowModelPBPOL2    = true;
+  const bool     isTestOpflowModelPBPOLHIOP = true;
+  const bool     isTestOpflowModelPBPOL2    = false;
   const bool     isTestOpflowModelPBCAR     = false;
   const bool     isTestOpflowModelIBCAR2    = false;
   const bool     isTestOpflowModelIBCAR     = false;
@@ -57,6 +82,9 @@ int main(int argc, char** argv)
   /* Set opflow model type to power balance polar (no component assembly) */
   ierr = OPFLOWSetModel(opflow,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
 
+  /* Set opflow solver type to IPOPT */
+  ierr = OPFLOWSetSolver(opflow,OPFLOWSOLVER_TAO);CHKERRQ(ierr);
+
   /* Solve OPFLOW to get the reference solution */
   ierr = OPFLOWSolve(opflow);
 
@@ -85,8 +113,90 @@ int main(int argc, char** argv)
   Vec Gl, Gu;
   ierr = OPFLOWGetConstraintBounds(opflow,&Gl,&Gu);CHKERRQ(ierr);
 
+  /* Get reference equality constraint and inequality constraint Jacobian */
+  Mat Jeq,Jineq;
+  ierr = OPFLOWGetConstraintJacobian(opflow,&Jeq,&Jineq);CHKERRQ(ierr);
+
+  Vec Lambda;
+  Mat Hess;
+  PetscScalar obj_factor;
+  ierr = OPFLOWGetConstraintMultipliers(opflow,&Lambda);CHKERRQ(ierr);
+  ierr = OPFLOWGetHessian(opflow,&Hess,&obj_factor);CHKERRQ(ierr);
+
   // Failure counter
   int fail = 0;
+
+  if(isTestOpflowModelPBPOLHIOP)
+  {
+    OPFLOW opflowtest;
+    exago::tests::TestOpflow test;
+
+    std::cout << "\nTesting custom power balance model in polar coordinates for HIOP"
+              << "(componentwise assembly) ... \n";
+
+    // Create optimal power flow model
+    ierr = OPFLOWCreate(PETSC_COMM_WORLD,&opflowtest);CHKERRQ(ierr);
+
+    /* Read Network data */
+    ierr = OPFLOWReadMatPowerData(opflowtest,file.c_str());CHKERRQ(ierr);
+
+    /* Set opflow model type to power balance polar2 (component assembly) */
+    ierr = OPFLOWSetModel(opflowtest,OPFLOWMODEL_PBPOLHIOP);CHKERRQ(ierr);
+
+    /* Set solver to HIOP */
+    ierr = OPFLOWSetSolver(opflowtest,OPFLOWSOLVER_HIOPNEW);CHKERRQ(ierr);
+
+    /* Set up */
+    ierr = OPFLOWSetUp(opflowtest);CHKERRQ(ierr);
+
+    int nx,nconeq,nconineq,*idxn2sd_map;
+    ierr = OPFLOWGetSizes(opflowtest,&nx,&nconeq,&nconineq);CHKERRQ(ierr);
+    ierr = OPFLOWGetVariableOrdering(opflowtest,&idxn2sd_map);CHKERRQ(ierr);
+
+    std::cout << "nx = " << nx << std::endl  << "nconeq = " << nconeq << std::endl
+              << "nconineq = " << nconineq << std::endl;
+
+    double *x_vec, *xl_vec, *xu_vec, *grad_vec, \
+           *x_ref, *xl_ref, *xu_ref, *grad_ref, *g_ref, *gl_ref, *gu_ref;
+
+    ierr = PetscMalloc1(nx,&x_ref);CHKERRQ(ierr);
+    ierr = PetscMalloc1(nx,&xl_ref);CHKERRQ(ierr);
+    ierr = PetscMalloc1(nx,&xu_ref);CHKERRQ(ierr);
+    ierr = PetscMalloc1(nx,&grad_ref);CHKERRQ(ierr);
+
+    // Petsc Documentation mentions "You MUST call VecRestoreArray() when you no longer need access to the array."...
+    ierr = VecGetArray(X,&x_vec);CHKERRQ(ierr);
+    ierr = VecGetArray(Xl,&xl_vec);CHKERRQ(ierr);
+    ierr = VecGetArray(Xu,&xu_vec);CHKERRQ(ierr);
+    ierr = VecGetArray(grad,&grad_vec);CHKERRQ(ierr);
+
+    ierr = VecGetArray(G,&g_ref);CHKERRQ(ierr);
+    ierr = VecGetArray(Gl,&gl_ref);CHKERRQ(ierr);
+    ierr = VecGetArray(Gu,&gu_ref);CHKERRQ(ierr);
+
+    /* Convert from natural to sparse dense ordering */
+    naturaltospdense(x_vec,x_ref,idxn2sd_map,nx);CHKERRQ(ierr);
+    naturaltospdense(xl_vec,xl_ref,idxn2sd_map,nx);CHKERRQ(ierr);
+    naturaltospdense(xu_vec,xu_ref,idxn2sd_map,nx);CHKERRQ(ierr);
+    naturaltospdense(grad_vec,grad_ref,idxn2sd_map,nx);CHKERRQ(ierr);
+    /* _ref pointers are now in sparse-dense ordering */
+    
+    fail += test.computeVariableBounds(opflowtest,xl_ref,xu_ref);
+    fail += test.computeObjective(opflowtest,x_ref,obj);
+    fail += test.computeGradient(opflowtest,x_ref,grad_ref);
+    fail += test.computeConstraints(opflowtest,x_ref,g_ref);
+    fail += test.computeConstraintBounds(opflowtest,gl_ref,gu_ref);
+
+    //    fail += test.computeConstraintJacobian(opflowtest,X,Jeq,Jineq);
+    //    fail += test.computeHessian(opflowtest,X,Lambda,obj_factor,Hess);
+
+    ierr = PetscFree(x_ref);CHKERRQ(ierr);
+    ierr = PetscFree(xl_ref);CHKERRQ(ierr);
+    ierr = PetscFree(xu_ref);CHKERRQ(ierr);
+    ierr = PetscFree(grad_ref);CHKERRQ(ierr);
+
+    ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
+  }
 
   if(isTestOpflowModelPBPOL2)
   {
@@ -113,6 +223,8 @@ int main(int argc, char** argv)
     fail += test.computeGradient(opflowtest,X,grad);
     fail += test.computeConstraints(opflowtest,X,G);
     fail += test.computeConstraintBounds(opflowtest,Gl,Gu);
+    fail += test.computeConstraintJacobian(opflowtest,X,Jeq,Jineq);
+    fail += test.computeHessian(opflowtest,X,Lambda,obj_factor,Hess);
 
     ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
   }
