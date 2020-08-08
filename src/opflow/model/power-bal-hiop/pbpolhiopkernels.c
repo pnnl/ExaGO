@@ -1,31 +1,33 @@
+#include <scopflow_config.h>
+
+#if defined(EXAGO_HAVE_HIOP) 
+
 #include <private/psimpl.h>
 #include <private/opflowimpl.h>
-#include "pbpol2.h"
+#include "pbpolhiop.h"
 
 /************* NOTE ***********************/
 /* No Load loss or power imbalance variables considered yet */
 /********************************************/
 
-
-/* The calculations for different routines start from here */
-
-/** CONSTRAINT BOUNDS  **/
-PetscErrorCode OPFLOWSetConstraintBounds_PBPOL2(OPFLOW opflow,Vec Gl, Vec Gu)
+PetscErrorCode OPFLOWSetConstraintBoundsArray_PBPOLHIOP(OPFLOW opflow,double *gl,double *gu)
 {
-  PetscErrorCode ierr;
-  PBPOL2         pbpol2=(PBPOL2)opflow->model;
-  LINEParams     *lineparams=&pbpol2->lineparams;
-  PetscScalar    *gl,*gu;
+  PBPOLHIOP      pbpolhiop=(PBPOLHIOP)opflow->model;
+  BUSParams      *busparams=&pbpolhiop->busparams;
+  LINEParams     *lineparams=&pbpolhiop->lineparams;
   PetscInt       i;
   PS             ps=opflow->ps;
 
   PetscFunctionBegin;
 
-  ierr = VecSet(Gl,0.0);
-  ierr = VecSet(Gu,0.0);
+  /* Equallity constraints (all zeros) */
+  for(i=0; i < busparams->nbus; i++) {
+    gl[busparams->gidx[i]] = 0.0;
+    gu[busparams->gidx[i]] = 0.0;
 
-  ierr = VecGetArray(Gl,&gl);CHKERRQ(ierr);
-  ierr = VecGetArray(Gu,&gu);CHKERRQ(ierr);
+    gl[busparams->gidx[i]+1] = 0.0;
+    gu[busparams->gidx[i]+1] = 0.0;
+  }
 
   /* Inequality constraints */
   for(i=0; i < lineparams->nlinelim; i++) {
@@ -37,30 +39,47 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBPOL2(OPFLOW opflow,Vec Gl, Vec Gu)
     gu[lineparams->gbineqidx[i]+1] = (lineparams->rateA[j]/ps->MVAbase)*(lineparams->rateA[j]/ps->MVAbase);
   }
 
+  PetscFunctionReturn(0);
+}
+
+/* The calculations for different routines start from here */
+
+/** CONSTRAINT BOUNDS  **/
+PetscErrorCode OPFLOWSetConstraintBounds_PBPOLHIOP(OPFLOW opflow,Vec Gl, Vec Gu)
+{
+  PetscErrorCode ierr;
+  PetscScalar    *gl,*gu;
+
+  PetscFunctionBegin;
+
+  ierr = VecSet(Gl,0.0);
+  ierr = VecSet(Gu,0.0);
+
   ierr = VecGetArray(Gl,&gl);CHKERRQ(ierr);
   ierr = VecGetArray(Gu,&gu);CHKERRQ(ierr);
+
+  ierr = OPFLOWSetConstraintBoundsArray_PBPOLHIOP(opflow,gl,gu);CHKERRQ(ierr);
+
+  ierr = VecRestoreArray(Gl,&gl);CHKERRQ(ierr);
+  ierr = VecRestoreArray(Gu,&gu);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
 /** EQUALITY CONSTRAINTS */
-PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL2(OPFLOW opflow, Vec X, Vec Ge)
+PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLHIOP(OPFLOW opflow,const double *x, double *ge)
 {
-  PetscErrorCode ierr;
-  PBPOL2         pbpol2=(PBPOL2)opflow->model;
-  BUSParams      *busparams=&pbpol2->busparams;
-  GENParams      *genparams=&pbpol2->genparams;
-  LOADParams     *loadparams=&pbpol2->loadparams;
-  LINEParams     *lineparams=&pbpol2->lineparams;
-  PetscScalar    *x,*ge;
+  PBPOLHIOP       pbpolhiop=(PBPOLHIOP)opflow->model;
+  BUSParams      *busparams=&pbpolhiop->busparams;
+  GENParams      *genparams=&pbpolhiop->genparams;
+  LOADParams     *loadparams=&pbpolhiop->loadparams;
+  LINEParams     *lineparams=&pbpolhiop->lineparams;
   PetscInt       i;
 
   PetscFunctionBegin;
-  ierr = VecSet(Ge,0.0);CHKERRQ(ierr);
-  ierr = VecGetArray(X,&x);CHKERRQ(ierr);
-  ierr = VecGetArray(Ge,&ge);CHKERRQ(ierr);
 
-  /* Equality constraints */
+  for(i=0; i < opflow->nconeq; i++) ge[i] = 0.0;
+
   /* Generator contributions */
   for(i=0; i < genparams->ngenON; i++) {
     /* atomic operation */
@@ -84,6 +103,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL2(OPFLOW opflow, Vec X, Vec
     ge[busparams->gidx[i]+1] += busparams->isisolated[i]*(Vm    - busparams->vm[i]) - busparams->ispvpq[i]*Vm*Vm*busparams->bl[i];
   }
 
+  /* Line contributions */
   for(i=0; i < lineparams->nlineON; i++) {
     double Pf,Qf,Pt,Qt;
     double thetaf=x[lineparams->xidxf[i]], Vmf=x[lineparams->xidxf[i]+1];
@@ -103,27 +123,40 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL2(OPFLOW opflow, Vec X, Vec
     ge[lineparams->geqidxt[i]+1] += Qt;
   }
 
-  ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOLHIOP(OPFLOW opflow, Vec X, Vec Ge)
+{
+  PetscErrorCode ierr;
+  PetscScalar    *ge;
+  const PetscScalar *x;
+
+  PetscFunctionBegin;
+
+  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecGetArray(Ge,&ge);CHKERRQ(ierr);
+
+  ierr = OPFLOWComputeEqualityConstraintsArray_PBPOLHIOP(opflow,x,ge);CHKERRQ(ierr);
+
+  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArray(Ge,&ge);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
 /** INEQUALITY CONSTRAINTS **/
-PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL2(OPFLOW opflow, Vec X, Vec Gi)
+PetscErrorCode OPFLOWComputeInequalityConstraintsArray_PBPOLHIOP(OPFLOW opflow, const double *x, double *gi)
 {
-  PetscErrorCode ierr;
-  PBPOL2         pbpol2=(PBPOL2)opflow->model;
-  LINEParams     *lineparams=&pbpol2->lineparams;
-  PetscScalar    *x,*gi;
+  PBPOLHIOP         pbpolhiop=(PBPOLHIOP)opflow->model;
+  LINEParams     *lineparams=&pbpolhiop->lineparams;
   PetscInt       i;
 
   PetscFunctionBegin;
-  ierr = VecSet(Gi,0.0);CHKERRQ(ierr);
-  ierr = VecGetArray(X,&x);CHKERRQ(ierr);
-  ierr = VecGetArray(Gi,&gi);CHKERRQ(ierr);
 
-  /* Inequality constraints */
+  for(i=0; i < opflow->nconineq; i++) gi[i] = 0.0;
+
+  /* Line contributions */
   for(i=0; i < lineparams->nlinelim; i++) {
     int    j=lineparams->linelimidx[i];
     double Pf,Qf,Pt,Qt,Sf2,St2;
@@ -145,27 +178,41 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL2(OPFLOW opflow, Vec X, V
     gi[lineparams->gineqidx[i]+1] = St2;
   }
 
-  ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOLHIOP(OPFLOW opflow, Vec X, Vec Gi)
+{
+  PetscErrorCode ierr;
+  PetscScalar    *gi;
+  const PetscScalar *x;
+
+  PetscFunctionBegin;
+  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecGetArray(Gi,&gi);CHKERRQ(ierr);
+
+  ierr = OPFLOWComputeInequalityConstraintsArray_PBPOLHIOP(opflow,x,gi);CHKERRQ(ierr);
+
+  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArray(Gi,&gi);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
+
 /** OBJECTIVE FUNCTION **/
-PetscErrorCode OPFLOWComputeObjective_PBPOL2(OPFLOW opflow,Vec X,double *obj)
+PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLHIOP(OPFLOW opflow,const double *x,double *obj)
 {
-  PetscErrorCode ierr;
-  PBPOL2         pbpol2=(PBPOL2)opflow->model;
-  GENParams     *genparams=&pbpol2->genparams;
+  PBPOLHIOP      pbpolhiop=(PBPOLHIOP)opflow->model;
+  GENParams     *genparams=&pbpolhiop->genparams;
   PetscInt       i;
-  PetscScalar    *x;
   PS             ps=opflow->ps;
   double         obj_val=0.0;
   int            isobj_gencost=opflow->obj_gencost;
   double         MVAbase=ps->MVAbase;
 
   PetscFunctionBegin;
-  ierr = VecGetArray(X,&x);CHKERRQ(ierr);
+
   /* Generator objective function contributions */
   for(i=0; i < genparams->ngenON; i++) {
     double Pg = x[genparams->xidx[i]]*MVAbase;
@@ -173,25 +220,37 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL2(OPFLOW opflow,Vec X,double *obj)
   }
 
   *obj = obj_val;
-  ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWComputeObjective_PBPOLHIOP(OPFLOW opflow,Vec X,double *obj)
+{
+  PetscErrorCode ierr;
+  const PetscScalar *x;
+
+  PetscFunctionBegin;
+  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+
+  ierr = OPFLOWComputeObjectiveArray_PBPOLHIOP(opflow,x,obj);CHKERRQ(ierr);
+
+  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
 /** GRADIENT **/
-PetscErrorCode OPFLOWComputeGradient_PBPOL2(OPFLOW opflow,Vec X,Vec Grad)
+PetscErrorCode OPFLOWComputeGradientArray_PBPOLHIOP(OPFLOW opflow,const double *x, double* grad)
 {
-  PetscErrorCode ierr;
-  PBPOL2         pbpol2=(PBPOL2)opflow->model;
-  GENParams     *genparams=&pbpol2->genparams;
+  PBPOLHIOP         pbpolhiop=(PBPOLHIOP)opflow->model;
+  GENParams     *genparams=&pbpolhiop->genparams;
   PetscInt       i;
-  PetscScalar    *x,*grad;
   PS             ps=opflow->ps;
   int            isobj_gencost=opflow->obj_gencost;
   double         MVAbase=ps->MVAbase;
 
   PetscFunctionBegin;
-  ierr = VecGetArray(X,&x);CHKERRQ(ierr);
-  ierr = VecGetArray(Grad,&grad);CHKERRQ(ierr);
+
+  for(i=0; i < opflow->nx; i++) grad[i] = 0.0;
 
   /* Generator gradient contributions */
   for(i=0; i < genparams->ngenON; i++) {
@@ -199,25 +258,35 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL2(OPFLOW opflow,Vec X,Vec Grad)
     grad[genparams->xidx[i]] = isobj_gencost*MVAbase*(2.0*genparams->cost_alpha[i]*Pg + genparams->cost_beta[i]);
   }
 
-  ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWComputeGradient_PBPOLHIOP(OPFLOW opflow,Vec X,Vec Grad)
+{
+  PetscErrorCode ierr;
+  PetscScalar    *grad;
+  const PetscScalar *x;
+
+  PetscFunctionBegin;
+  ierr = VecGetArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = VecGetArray(Grad,&grad);CHKERRQ(ierr);
+
+  ierr = OPFLOWComputeGradientArray_PBPOLHIOP(opflow,x,grad);CHKERRQ(ierr);
+
+  ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArray(Grad,&grad);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
-/** VARIABLE BOUNDS **/
-PetscErrorCode OPFLOWSetVariableBounds_PBPOL2(OPFLOW opflow,Vec Xl,Vec Xu)
+PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLHIOP(OPFLOW opflow,double *xl,double *xu)
 {
-  PetscErrorCode ierr;
-  PBPOL2         pbpol2=(PBPOL2)opflow->model;
-  BUSParams      *busparams=&pbpol2->busparams;
-  GENParams      *genparams=&pbpol2->genparams;
+  PBPOLHIOP      pbpolhiop=(PBPOLHIOP)opflow->model;
+  BUSParams      *busparams=&pbpolhiop->busparams;
+  GENParams      *genparams=&pbpolhiop->genparams;
   PetscInt       i;
-  PetscScalar    *xl,*xu;
 
   PetscFunctionBegin;
-  ierr = VecGetArray(Xl,&xl);CHKERRQ(ierr);
-  ierr = VecGetArray(Xu,&xu);CHKERRQ(ierr);
 
   /* Bounds for bus voltages */
   for(i=0; i < busparams->nbus; i++) {
@@ -236,20 +305,36 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL2(OPFLOW opflow,Vec Xl,Vec Xu)
     xu[genparams->xidx[i]+1] = genparams->qt[i];
   }
 
+  PetscFunctionReturn(0);
+}
+
+
+/** VARIABLE BOUNDS **/
+PetscErrorCode OPFLOWSetVariableBounds_PBPOLHIOP(OPFLOW opflow,Vec Xl,Vec Xu)
+{
+  PetscErrorCode ierr;
+  PetscScalar    *xl,*xu;
+
+  PetscFunctionBegin;
+  ierr = VecGetArray(Xl,&xl);CHKERRQ(ierr);
+  ierr = VecGetArray(Xu,&xu);CHKERRQ(ierr);
+
+  ierr = OPFLOWSetVariableBoundsArray_PBPOLHIOP(opflow,xl,xu);CHKERRQ(ierr);
+
   ierr = VecRestoreArray(Xl,&xl);CHKERRQ(ierr);
   ierr = VecRestoreArray(Xu,&xu);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL2(OPFLOW opflow,Vec X,Mat Je)
+PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOLHIOP(OPFLOW opflow,Vec X,Mat Je)
 {
   PetscErrorCode ierr;
   PetscInt       i,row[2],col[4];
-  PBPOL2         pbpol2=(PBPOL2)opflow->model;
-  BUSParams      *busparams=&pbpol2->busparams;
-  GENParams      *genparams=&pbpol2->genparams;
-  LINEParams     *lineparams=&pbpol2->lineparams;
+  PBPOLHIOP         pbpolhiop=(PBPOLHIOP)opflow->model;
+  BUSParams      *busparams=&pbpolhiop->busparams;
+  GENParams      *genparams=&pbpolhiop->genparams;
+  LINEParams     *lineparams=&pbpolhiop->lineparams;
   PetscScalar    val[8];
   PetscScalar    *x;
 
@@ -360,12 +445,12 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL2(OPFLOW opflow,Vec 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL2(OPFLOW opflow,Vec X,Mat Ji)
+PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOLHIOP(OPFLOW opflow,Vec X,Mat Ji)
 {
   PetscErrorCode ierr;
   PetscInt       i;
-  PBPOL2         pbpol2=(PBPOL2)opflow->model;
-  LINEParams     *lineparams=&pbpol2->lineparams;
+  PBPOLHIOP         pbpolhiop=(PBPOLHIOP)opflow->model;
+  LINEParams     *lineparams=&pbpolhiop->lineparams;
   PetscInt       row[2],col[4];
   PetscScalar    val[4];
   PetscScalar    *x;
@@ -479,11 +564,11 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL2(OPFLOW opflow,Ve
 . H - the Hessian part for the objective function
 
 */
-PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL2(OPFLOW opflow,Vec X,Mat H) 
+PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOLHIOP(OPFLOW opflow,Vec X,Mat H) 
 {
   PetscErrorCode ierr;
-  PBPOL2         pbpol2=(PBPOL2)opflow->model;
-  GENParams     *genparams=&pbpol2->genparams;
+  PBPOLHIOP         pbpolhiop=(PBPOLHIOP)opflow->model;
+  GENParams     *genparams=&pbpolhiop->genparams;
   PS             ps=opflow->ps;
   PetscInt       i;
   PetscScalar    *x;
@@ -523,12 +608,12 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL2(OPFLOW opflow,Vec X,Mat H)
 . H - the Hessian part for the equality constraints
 
 */
-PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL2(OPFLOW opflow,Vec X,Vec Lambda,Mat H) 
+PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOLHIOP(OPFLOW opflow,Vec X,Vec Lambda,Mat H) 
 {
   PetscErrorCode ierr;
-  PBPOL2         pbpol2=(PBPOL2)opflow->model;
-  BUSParams      *busparams=&pbpol2->busparams;
-  LINEParams     *lineparams=&pbpol2->lineparams;
+  PBPOLHIOP         pbpolhiop=(PBPOLHIOP)opflow->model;
+  BUSParams      *busparams=&pbpolhiop->busparams;
+  LINEParams     *lineparams=&pbpolhiop->lineparams;
   PetscInt       i;
   PetscInt       row[16],col[16];
   PetscScalar    val[16];
@@ -789,12 +874,12 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL2(OPFLOW opflow,Vec 
 + H   - the Hessian matrix
 
 */
-PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL2(OPFLOW opflow, Vec X, Vec Lambda,Mat H)
+PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOLHIOP(OPFLOW opflow, Vec X, Vec Lambda,Mat H)
 {
   PetscErrorCode ierr;
   PetscInt       i;
-  PBPOL2         pbpol2=(PBPOL2)opflow->model;
-  LINEParams     *lineparams=&pbpol2->lineparams;
+  PBPOLHIOP         pbpolhiop=(PBPOLHIOP)opflow->model;
+  LINEParams     *lineparams=&pbpolhiop->lineparams;
   PetscScalar    *x;
   PetscScalar    *lambda;
   PetscInt       row[12],col[12];
@@ -1075,7 +1160,6 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL2(OPFLOW opflow, V
     d2St2_dVmt_dVmt = 2*dPt_dVmt*dPt_dVmt + dSt2_dPt*d2Pt_dVmt_dVmt +  2*dQt_dVmt*dQt_dVmt + dSt2_dQt*d2Qt_dVmt_dVmt;
     
     val[0] = val[1] = val[2] = val[3] = 0.0;
-
     row[0] = lineparams->xidxt[j] + 1;
     col[0] = lineparams->xidxf[j];
     col[1] = col[0]+1;
@@ -1095,3 +1179,28 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL2(OPFLOW opflow, V
 
   PetscFunctionReturn(0);
 }
+
+/** Custom routines that work with HIOP interface only */
+PetscErrorCode OPFLOWSetSparseJacobianLocations_PBPOLHIOP(OPFLOW opflow,int *iJacS, int *jJacS,int *nnz)
+{
+  PBPOLHIOP      pbpolhiop=(PBPOLHIOP)opflow->model;
+  GENParams     *genparams=&pbpolhiop->genparams;
+  int            i;
+
+  /* Generator contributions */
+  for(i=0; i < genparams->ngenON; i++) {
+    iJacS[genparams->jacsp_idx[i]] = genparams->gidx[i];
+    jJacS[genparams->jacsp_idx[i]] = genparams->xidx[i];
+
+    iJacS[genparams->jacsq_idx[i]] = genparams->gidx[i]+1;
+    jJacS[genparams->jacsq_idx[i]] = genparams->xidx[i]+1;
+
+    *nnz = genparams->jacsq_idx[i]+1;
+  }
+
+  PetscFunctionReturn(0);
+}
+    
+
+
+#endif
