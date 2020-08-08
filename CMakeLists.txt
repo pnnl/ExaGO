@@ -246,8 +246,7 @@ if(EXAGO_RUN_TESTS)
                  mpiexec -n 1 $<TARGET_FILE:app_opflow>
                  -netfile ${test_net}
                  -opflow_initialization ${opflow_init}
-                 -opflow_solver HIOP
-		 -opflow_model POWER_BALANCE_POLAR)
+                 -opflow_solver HIOP)
       endforeach()
     endforeach()
   endif(EXAGO_HAVE_HIOP)
