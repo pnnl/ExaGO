@@ -88,19 +88,21 @@ bool OPFLOWHIOPInterface::get_vars_info(const long long& n, double *xlow, double
   const PetscScalar    *xl,*xu;
 
   ierr = (*opflow->modelops.setvariablebounds)(opflow,opflow->Xl,opflow->Xu);CHKERRQ(ierr);
-    
+
   ierr = VecGetArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
   ierr = VecGetArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
 
+
+  /* Natural to sparse-dense conversion */
   naturaltospdense(xl,xlow);
   naturaltospdense(xu,xupp);
 
   for(i=0; i < n; i++) {
     type[i] = hiopNonlinear;
-  }    
+  }
 
   ierr = VecRestoreArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
-  ierr = VecRestoreArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);  
+  ierr = VecRestoreArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
 
   return true;
 }
@@ -286,16 +288,13 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
       for(i=0; i < opflow->nconeq; i++) {
 	for(j=0; j < nxdense; j++) JacD[i][j] = 0.0;
 	ierr = MatGetRow(opflow->Jac_Ge,i,&ncols,&cols,&vals);CHKERRQ(ierr);
-	//	printf("%d:",i);
 	for(k=0; k < ncols; k++) {
 	  if(idxn2sd_map[cols[k]]-nxsparse >= 0) {
 	    /* Dense variables */
 	    dcol = idxn2sd_map[cols[k]] - nxsparse; /* Column number for dense variable in the dense block */
 	    JacD[i][dcol] = vals[k];
-	    //	    printf("(%d, %lf)",dcol,vals[k]);
 	  }
 	}
-	//	printf("\n");
 	ierr = MatRestoreRow(opflow->Jac_Ge,i,&ncols,&cols,&vals);CHKERRQ(ierr);
       }
     } else {
@@ -306,16 +305,13 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
       for(i=0; i < opflow->nconineq; i++) {
 	for(j=0; j < nxdense; j++) JacD[i][j] = 0.0;
 	ierr = MatGetRow(opflow->Jac_Gi,i,&ncols,&cols,&vals);CHKERRQ(ierr);
-	//	printf("%d:",i);
 	for(k=0; k < ncols; k++) {
 	  if(idxn2sd_map[cols[k]]-nxsparse >= 0) {
 	    /* Dense variables */
 	    dcol = idxn2sd_map[cols[k]] - nxsparse; /* Column number for dense variable in the dense block */
 	    JacD[i][dcol] = vals[k];
-	    //	    printf("(%d, %lf)",dcol,vals[k]);
 	  }
 	}
-	//	printf("\n");
 	ierr = MatRestoreRow(opflow->Jac_Gi,i,&ncols,&cols,&vals);CHKERRQ(ierr);
       }
     }
@@ -397,16 +393,12 @@ bool OPFLOWHIOPInterface::eval_Hess_Lagr(const long long& n, const long long& m,
 	for(k=0; k < nxdense; k++) HDD[dnct][k] = 0.0;
 	/* Rows for dense variables */
 	ierr = MatGetRow(opflow->Hes,i,&ncols,&cols,&vals);CHKERRQ(ierr);
-	//	printf("%d:",dnct);
 	for(k=0; k < ncols; k++) {
 	  if(idxn2sd_map[cols[k]] >= nxsparse) {
 	    dcol = idxn2sd_map[cols[k]] - nxsparse; /* Column number for dense variable in the dense block */
 	    HDD[dnct][dcol] = vals[k];
-	    //	    printf("(%d, %lf)",dcol, vals[k]);
-
 	  }
 	}
-	//	printf("\n");
 	ierr = MatRestoreRow(opflow->Hes,i,&ncols,&cols,&vals);CHKERRQ(ierr);
 
 	dnct++;
@@ -482,31 +474,20 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
 {
   PetscErrorCode ierr;
   OPFLOWSolver_HIOP hiop=(OPFLOWSolver_HIOP)opflow->solver;
-  PetscBool         flg1;
+  PetscBool         flg;
   PetscFunctionBegin;
 
   hiop->nlp = new OPFLOWHIOPInterface(opflow);
   hiop->mds = new hiop::hiopNlpMDS(*hiop->nlp);
 
-  hiop->mds->options->SetStringValue("dualsUpdateType", "linear");
-  hiop->mds->options->SetStringValue("dualsInitialization", "zero");
-  hiop->mds->options->SetStringValue("fixed_var", "relax");
-
-  hiop->mds->options->SetStringValue("Hessian", "analytical_exact");
-  hiop->mds->options->SetStringValue("KKTLinsys", "xdycyd");
-  hiop->mds->options->SetStringValue("compute_mode", "auto");
-
-  hiop->mds->options->SetIntegerValue("verbosity_level", 3);
-  hiop->mds->options->SetNumericValue("mu0", 1e-1);
-  hiop->mds->options->SetNumericValue("tolerance", 1e-5);
+  /* Options set in hiop.options file */
 
   hiop->solver = new hiop::hiopAlgFilterIPMNewton(hiop->mds);
 
-  /* Error if model is not power balance hiop */
-  ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBPOL,&flg1);CHKERRQ(ierr);
-  if(!flg1) {
-    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Only power balance polar model allowed\n Run with -opflow_model POWER_BALANCE_POLAR\n");
-    exit(1);
+  /* Error if model is not power balance */
+  ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBPOL,&flg);CHKERRQ(ierr);
+  if(!flg) {
+    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Only power balance model supported with HIOP solver\nUse -opflow_model POWER_BALANCE_POLAR\n");
   }
 
   PetscFunctionReturn(0);

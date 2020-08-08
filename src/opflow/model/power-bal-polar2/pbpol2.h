@@ -29,10 +29,6 @@ typedef struct {
   double *qb;          /* max. reactive power gen. limits */
   int    *xidx;        /* starting locations in X vector */
   int    *gidx;         /* starting locations in constraint vector */
-
-  /* The following members are only used with HIOP */
-  int   *jacsp_idx; /* Location number in the sparse Jacobian for Pg */
-  int   *jacsq_idx; /* Location number in the sparse Jacobian for Qg */
 }GENParams;
 
 typedef struct{

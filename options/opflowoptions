@@ -4,7 +4,7 @@
 #-netfile datafiles/case5.m
 
 # Select Solver (IPOPT,TAO, HIOP)
-#-opflow_solver IPOPT
+-opflow_solver IPOPT
 
 # Select model
 #-opflow_model POWER_BALANCE_POLAR
