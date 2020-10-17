@@ -5,13 +5,33 @@ set(OPFLOW_FORM_SRC
     model/power-bal-polar/pbpol.c
     model/power-bal-cartesian/pbcar.c
     model/power-bal-polar2/pbpol2.c
+    model/power-bal-polar2/pbpol2params.c
     model/power-bal-polar2/pbpol2kernels.c
+    model/power-bal-hiop/pbpolhiop.c
+    model/power-bal-hiop/pbpolhiopkernels.c
 )
+
+# Build RAJA/Umpire modules if RAJA and Umpire are enabled
+if(EXAGO_HAVE_RAJA)
+  set(OPFLOW_FORM_SRC ${OPFLOW_FORM_SRC} 
+    model/pbpol-raja/pbpolraja.cpp
+    model/pbpol-raja/pbpolrajakernels.cpp
+    model/power-bal-hiop/pbpolrajahiop.cpp
+    model/power-bal-hiop/pbpolrajahiopkernels.cpp
+  )
+endif()
+
+if(EXAGO_HAVE_RAJA AND EXAGO_ENABLE_GPU)
+  set_source_files_properties(model/pbpol-raja/pbpolrajakernels.cpp PROPERTIES LANGUAGE CUDA)
+  set_source_files_properties(model/power-bal-hiop/pbpolrajahiopkernels.cpp PROPERTIES LANGUAGE CUDA)
+endif()
+
 
 set(OPFLOW_SOLVER_SRC
     solver/tao/opflow-tao.c
     solver/ipopt/opflow-ipopt.c
     solver/hiop/opflow-hiop.cpp
+    solver/hiop/opflow-hiopnew.cpp
 )
 
 set(OPFLOW_SRC
@@ -38,7 +58,7 @@ target_link_libraries(opflow PRIVATE
 			     ${EXAGO_UTIL_LIBS}
 			     ${EXAGO_PS_LIBS}
 			     ${EXAGO_PFLOW_LIBS}
-			     -lblas -llapack
+			     ${LAPACK_LIBRARIES}
 )
 
 # If Ipopt interface is enabled, link to Ipopt libs
@@ -57,31 +77,16 @@ if(EXAGO_HAVE_HIOP)
   endif()
 endif()
 
+if(EXAGO_HAVE_RAJA)
+  target_link_libraries(opflow PUBLIC umpire RAJA OpenMP::OpenMP_CXX)
+  target_include_directories(opflow PUBLIC ${UMPIRE_INCLUDE_DIRS} ${camp_INSTALL_PREFIX}/include)
+endif()
+
+
 # Install shared object
 install(TARGETS opflow DESTINATION lib)
 
 # Install header
 install(FILES ${OPFLOW_INCLUDE} DESTINATION include)
-
-# Install options file
-if(EXAGO_HAVE_IPOPT)
-  # Need to figure out where should options file go eventually, putting
-  # it in bin because IPOPT needs to have the options file in the same directory
-  # as executable
-  install(FILES ${CMAKE_SOURCE_DIR}/ipopt.opt DESTINATION bin)
-  install(FILES ${CMAKE_SOURCE_DIR}/ipopt.opt DESTINATION ${PROJECT_BINARY_DIR})
-  file(COPY ${CMAKE_SOURCE_DIR}/ipopt.opt DESTINATION bin)
-  file(COPY ${CMAKE_SOURCE_DIR}/ipopt.opt DESTINATION ${PROJECT_BINARY_DIR})
-endif()
-
-if(EXAGO_HAVE_HIOP)
-  # Need to figure out where should options file go eventually, putting
-  # it in bin because HIOP needs to have the options file in the same directory
-  # as executable
-  install(FILES ${CMAKE_SOURCE_DIR}/hiop.options DESTINATION bin)
-  install(FILES ${CMAKE_SOURCE_DIR}/hiop.options DESTINATION ${PROJECT_BINARY_DIR})
-  file(COPY ${CMAKE_SOURCE_DIR}/hiop.options DESTINATION bin)
-  file(COPY ${CMAKE_SOURCE_DIR}/hiop.options DESTINATION ${PROJECT_BINARY_DIR})
-endif()
 
 set(EXAGO_OPFLOW_LIBS ${EXAGO_OPFLOW_LIBS} opflow PARENT_SCOPE)

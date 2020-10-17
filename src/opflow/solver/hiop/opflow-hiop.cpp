@@ -1,7 +1,13 @@
-#include <scopflow_config.h>
+#include <exago_config.h>
 #if defined(EXAGO_HAVE_HIOP)
 #include <private/opflowimpl.h>
 #include "opflow-hiop.hpp"
+
+typedef enum {
+  AUTO = 0, CPU = 1,HYBRID = 2
+}HIOPComputeMode;
+const char* HIOPComputeModeChoices[] = {"auto","cpu","hybrid","HIOPComputeModeChoices","",0};
+
 /* Converts an array xin in natural ordering to an array xout in sparse-dense
    ordering
 */
@@ -88,21 +94,19 @@ bool OPFLOWHIOPInterface::get_vars_info(const long long& n, double *xlow, double
   const PetscScalar    *xl,*xu;
 
   ierr = (*opflow->modelops.setvariablebounds)(opflow,opflow->Xl,opflow->Xu);CHKERRQ(ierr);
-
+    
   ierr = VecGetArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
   ierr = VecGetArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
 
-
-  /* Natural to sparse-dense conversion */
   naturaltospdense(xl,xlow);
   naturaltospdense(xu,xupp);
 
   for(i=0; i < n; i++) {
     type[i] = hiopNonlinear;
-  }
+  }    
 
   ierr = VecRestoreArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
-  ierr = VecRestoreArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);  
 
   return true;
 }
@@ -133,9 +137,7 @@ bool OPFLOWHIOPInterface::get_sparse_dense_blocks_info(int& nx_sparse, int& nx_d
   nx_dense  = nxdense;
 
   nnz_sparse_Jace = nnz_sparse_Hess_Lagr_SS = nxsparse;
-  /* HIOP requires both the equality and inequality constraints to be dependent on both the sparse and dense variables. The inequality constraints not being functions of the sparse variables (Pg,Qg) cause a crash in HIOP.Hence, setting nnz_sparse_Jaci = 1 to add a fake value that will (hopefully) not make HIOP crash 
-   */
-  nnz_sparse_Jaci = opflow->nconineq?1:0; 
+  nnz_sparse_Jaci = 0; 
   nnz_sparse_Hess_Lagr_SD = 0;
   return true;
 }
@@ -250,17 +252,6 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
   }
 
   nnzs = 0;
-  if(idx_cons[0] == opflow->nconeq && opflow->nconineq && iJacS != NULL && jJacS!= NULL) {
-    /* Dummy entry to help avoid HIOP crash */
-    iJacS[nnzs] = 0;
-    jJacS[nnzs] = 0;
-  }
-
-  if(idx_cons[0] == opflow->nconeq && opflow->nconineq && MJacS != NULL) {
-    MJacS[nnzs] = 0.0;
-  }
-  
-  nnzs = 0;
   if(idx_cons[0] == 0 && MJacS != NULL) {
     /* Sparse equality constraint Jacobian values w.r.t Pg,Qg */
     for(i=0; i < ps->nbus; i++) {
@@ -288,13 +279,16 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
       for(i=0; i < opflow->nconeq; i++) {
 	for(j=0; j < nxdense; j++) JacD[i][j] = 0.0;
 	ierr = MatGetRow(opflow->Jac_Ge,i,&ncols,&cols,&vals);CHKERRQ(ierr);
+	//	printf("%d:",i);
 	for(k=0; k < ncols; k++) {
 	  if(idxn2sd_map[cols[k]]-nxsparse >= 0) {
 	    /* Dense variables */
 	    dcol = idxn2sd_map[cols[k]] - nxsparse; /* Column number for dense variable in the dense block */
 	    JacD[i][dcol] = vals[k];
+	    //	    printf("(%d, %lf)",dcol,vals[k]);
 	  }
 	}
+	//	printf("\n");
 	ierr = MatRestoreRow(opflow->Jac_Ge,i,&ncols,&cols,&vals);CHKERRQ(ierr);
       }
     } else {
@@ -305,13 +299,16 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
       for(i=0; i < opflow->nconineq; i++) {
 	for(j=0; j < nxdense; j++) JacD[i][j] = 0.0;
 	ierr = MatGetRow(opflow->Jac_Gi,i,&ncols,&cols,&vals);CHKERRQ(ierr);
+	//	printf("%d:",i);
 	for(k=0; k < ncols; k++) {
 	  if(idxn2sd_map[cols[k]]-nxsparse >= 0) {
 	    /* Dense variables */
 	    dcol = idxn2sd_map[cols[k]] - nxsparse; /* Column number for dense variable in the dense block */
 	    JacD[i][dcol] = vals[k];
+	    //	    printf("(%d, %lf)",dcol,vals[k]);
 	  }
 	}
+	//	printf("\n");
 	ierr = MatRestoreRow(opflow->Jac_Gi,i,&ncols,&cols,&vals);CHKERRQ(ierr);
       }
     }
@@ -393,12 +390,16 @@ bool OPFLOWHIOPInterface::eval_Hess_Lagr(const long long& n, const long long& m,
 	for(k=0; k < nxdense; k++) HDD[dnct][k] = 0.0;
 	/* Rows for dense variables */
 	ierr = MatGetRow(opflow->Hes,i,&ncols,&cols,&vals);CHKERRQ(ierr);
+	//	printf("%d:",dnct);
 	for(k=0; k < ncols; k++) {
 	  if(idxn2sd_map[cols[k]] >= nxsparse) {
 	    dcol = idxn2sd_map[cols[k]] - nxsparse; /* Column number for dense variable in the dense block */
 	    HDD[dnct][dcol] = vals[k];
+	    //	    printf("(%d, %lf)",dcol, vals[k]);
+
 	  }
 	}
+	//	printf("\n");
 	ierr = MatRestoreRow(opflow->Hes,i,&ncols,&cols,&vals);CHKERRQ(ierr);
 
 	dnct++;
@@ -472,22 +473,43 @@ void OPFLOWHIOPInterface::solution_callback(hiop::hiopSolveStatus status,
 
 PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
 {
-  PetscErrorCode ierr;
+  PetscErrorCode    ierr;
   OPFLOWSolver_HIOP hiop=(OPFLOWSolver_HIOP)opflow->solver;
-  PetscBool         flg;
+  PetscBool         flg1;
+  PetscReal         tol=1e-6;
+  HIOPComputeMode   compute_mode=AUTO;
+  int               verbose_level=0;
+
   PetscFunctionBegin;
 
   hiop->nlp = new OPFLOWHIOPInterface(opflow);
   hiop->mds = new hiop::hiopNlpMDS(*hiop->nlp);
 
-  /* Options set in hiop.options file */
+  ierr = PetscOptionsBegin(opflow->comm->type,NULL,"HIOP options",NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsEnum("-hiop_compute_mode","Type of compute mode","",HIOPComputeModeChoices,(PetscEnum)compute_mode,(PetscEnum*)&compute_mode,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsReal("-hiop_tolerance","HIOP solver tolerance","",tol,&tol,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsInt("-hiop_verbosity_level","HIOP verbosity level (Integer 0 to 12)","",verbose_level,&verbose_level,NULL);CHKERRQ(ierr);
+  PetscOptionsEnd();
+
+  hiop->mds->options->SetStringValue("dualsUpdateType", "linear");
+  hiop->mds->options->SetStringValue("dualsInitialization", "zero");
+  hiop->mds->options->SetStringValue("fixed_var", "relax");
+
+  hiop->mds->options->SetStringValue("Hessian", "analytical_exact");
+  hiop->mds->options->SetStringValue("KKTLinsys", "xdycyd");
+  hiop->mds->options->SetStringValue("compute_mode", HIOPComputeModeChoices[compute_mode]);
+
+  hiop->mds->options->SetIntegerValue("verbosity_level", verbose_level);
+  hiop->mds->options->SetNumericValue("mu0", 1e-1);
+  hiop->mds->options->SetNumericValue("tolerance", tol);
 
   hiop->solver = new hiop::hiopAlgFilterIPMNewton(hiop->mds);
 
-  /* Error if model is not power balance */
-  ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBPOL,&flg);CHKERRQ(ierr);
-  if(!flg) {
-    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Only power balance model supported with HIOP solver\nUse -opflow_model POWER_BALANCE_POLAR\n");
+  /* Error if model is not power balance hiop */
+  ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBPOL,&flg1);CHKERRQ(ierr);
+  if(!flg1) {
+    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Only power balance polar model allowed\n Run with -opflow_model POWER_BALANCE_POLAR\n");
+    exit(1);
   }
 
   PetscFunctionReturn(0);

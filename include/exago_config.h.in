@@ -1,3 +1,4 @@
+
 #ifndef _EXAGO_CONFIG_H_
 #define _EXAGO_CONFIG_H_
 
@@ -6,5 +7,7 @@
 #cmakedefine EXAGO_HAVE_IPOPT @EXAGO_HAVE_IPOPT@
 
 #cmakedefine EXAGO_HAVE_HIOP @EXAGO_HAVE_HIOP@
+
+#cmakedefine EXAGO_HAVE_RAJA @EXAGO_HAVE_RAJA@
 
 #endif /* _EXAGO_CONFIG_H_ */

@@ -1,4 +1,4 @@
-#include <scopflow_config.h>
+#include <exago_config.h>
 
 #include <private/opflowimpl.h>
 #include <private/scopflowimpl.h>
@@ -67,7 +67,12 @@ PetscErrorCode SCOPFLOWSolverGetConstraints_EMPAR(SCOPFLOW scopflow,PetscInt con
 
   PetscFunctionBegin;
 
-  *G = opflow->G;
+  if(scopflow->cstart <= cont_num && cont_num < scopflow->cend) {
+    opflow = scopflow->opflows[cont_num-scopflow->cstart];
+    *G = opflow->G; 
+  } else {
+    *G = NULL;
+  }
 
   PetscFunctionReturn(0);
 }
@@ -78,7 +83,12 @@ PetscErrorCode SCOPFLOWSolverGetConstraintMultipliers_EMPAR(SCOPFLOW scopflow,Pe
 
   PetscFunctionBegin;
 
-  *Lambda = opflow->Lambda;
+  if(scopflow->cstart <= cont_num && cont_num < scopflow->cend) {
+    opflow = scopflow->opflows[cont_num-scopflow->cstart];
+    *Lambda = opflow->Lambda; 
+  } else {
+    *Lambda = NULL;
+  }
 
   PetscFunctionReturn(0);
 }

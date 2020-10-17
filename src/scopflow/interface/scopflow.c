@@ -230,7 +230,6 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   PetscErrorCode ierr;
   PetscBool      scopflowsolverset;
   char           opflowmodelname[32]="POWER_BALANCE_POLAR";
-  char           opflowsolvername[32]="IPOPT";
   char           scopflowsolvername[32]="IPOPT";
   PetscInt       c,j;
   PS             ps;
@@ -320,9 +319,9 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
     }
 
     /* Set up OPFLOW object */
+    //    ierr = OPFLOWGenbusVoltageFixed(scopflow->opflows[c],PETSC_TRUE);CHKERRQ(ierr);
+    //    if(scopflow->cstart+c > 0) scopflow->opflows[c]->obj_gencost = PETSC_FALSE; /* No gen. cost minimization for second stage */
     ierr = OPFLOWSetUp(scopflow->opflows[c]);CHKERRQ(ierr);
-    ierr = OPFLOWGenbusVoltageFixed(scopflow->opflows[c],PETSC_TRUE);CHKERRQ(ierr);
-    if(scopflow->cstart+c > 0) scopflow->opflows[c]->obj_gencost = PETSC_FALSE; /* No gen. cost minimization for second stage */
   }
   
   ierr = PetscCalloc1(scopflow->nc,&scopflow->nconineqcoup);CHKERRQ(ierr);
@@ -448,28 +447,5 @@ PetscErrorCode SCOPFLOWGetConvergenceStatus(SCOPFLOW scopflow,PetscBool *status)
 
   PetscFunctionBegin;
   ierr = (*scopflow->solverops.getconvergencestatus)(scopflow,status);CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
-
-/*
-  SCOPFLOWSolutionToPS - Updates the PS struct for base case and contingencies
-                       from SCOPFLOW solution
-
-  Input Parameters:
-. scopflow - the SCOPFLOW object
-
-  Notes: Updates the different fields in the PS struct from the SCOPFLOW solution
-*/
-PetscErrorCode SCOPFLOWSolutionToPS(SCOPFLOW scopflow)
-{
-  PetscErrorCode     ierr;
-  OPFLOW             opflow;
-
-  PetscFunctionBegin;
-
-  ierr = (*opflow->modelops.solutiontops)(opflow);
-
-  scopflow->solutiontops = PETSC_TRUE;
   PetscFunctionReturn(0);
 }

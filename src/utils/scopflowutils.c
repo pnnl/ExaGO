@@ -56,7 +56,7 @@ int find_first_not_of(char token, char *string, int start)
 void clean2Char(char *string)
 {
   int len = strlen(string);
-  char *tag = (char*)malloc(sizeof(char)*len);;
+  //  char *tag = (char*)malloc(sizeof(char)*len);;
   int ntok1, ntok2, sngl_qt, no_qt, i;
   /* Find and remove single or double quotes */
   ntok1 = find_char('\'',string,0);

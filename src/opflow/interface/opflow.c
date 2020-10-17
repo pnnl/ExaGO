@@ -1,4 +1,4 @@
-#include <scopflow_config.h>
+#include <exago_config.h>
 #include <private/pflowimpl.h>
 #include <private/opflowimpl.h>
 #include <petsc/private/dmnetworkimpl.h>
@@ -11,6 +11,37 @@ void swap_dm(DM *dm1, DM *dm2)
   *dm1 = *dm2;
   *dm2 = temp;
 }
+
+/*
+  OPFLOWGetSizes - Returns the size of solution vector, and constraints
+
+  Input Parameters:
+- opflow - the OPFLOW object
+
+  Output Parameters:
++ nx - size of X vector
+. nconeq - size of equality constraints vector
+- nconineq - size of inequality constraints vector
+
+  Notes:
+  Should be called after OPFLOWSetUp()
+*/
+PetscErrorCode OPFLOWGetSizes(OPFLOW opflow,int *nx,int *nconeq,int *nconineq)
+{
+  PetscFunctionBegin;
+  *nx = opflow->nx;
+  *nconeq = opflow->nconeq;
+  *nconineq = opflow->nconineq;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWGetVariableOrdering(OPFLOW opflow,int **ordering)
+{
+  PetscFunctionBegin;
+  *ordering = opflow->idxn2sd_map;
+  PetscFunctionReturn(0);
+}
+  
 
 /*
   OPFLOWSetUpInitPflow - Sets up the power flow solver object used in obtaining initial conditions.
@@ -212,7 +243,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   
   opflow->obj_factor = 1.0;
   opflow->obj = 0.0;
-  opflow->obj_gencost = PETSC_TRUE;
+  opflow->obj_gencost = PETSC_TRUE; /* Generation cost minimization ON by default */
   opflow->solutiontops = PETSC_FALSE;
 
   opflow->solver   = NULL;
@@ -236,6 +267,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   opflow->loadloss_penalty = 1e1;
   opflow->powerimbalance_penalty = 1e2;
   opflow->genbusVmfixed = PETSC_FALSE;
+  opflow->spdnordering = PETSC_FALSE;
   opflow->setupcalled = PETSC_FALSE;
 
   *opflowout = opflow;
@@ -307,14 +339,15 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow)
   ierr = MatDestroy(&(*opflow)->Hes);CHKERRQ(ierr);
   ierr = PSDestroy(&(*opflow)->ps);CHKERRQ(ierr);
 
-  if((*opflow)->solverops.destroy) {
-    ierr = ((*opflow)->solverops.destroy)(*opflow);
-  }
-
   if((*opflow)->modelops.destroy) {
     ierr = ((*opflow)->modelops.destroy)(*opflow);
   }
 
+  if((*opflow)->solverops.destroy) {
+    ierr = ((*opflow)->solverops.destroy)(*opflow);
+  }
+
+  ierr = PetscFree((*opflow)->idxn2sd_map);CHKERRQ(ierr);
   ierr = PetscFree((*opflow)->busnvararray);CHKERRQ(ierr); 
   ierr = PetscFree((*opflow)->branchnvararray);CHKERRQ(ierr);
   ierr = PetscFree((*opflow)->eqconglobloc);CHKERRQ(ierr);
@@ -388,18 +421,27 @@ PetscErrorCode OPFLOWSetModel(OPFLOW opflow,const char* modelname)
   opflow->modelops.setnumvariables                = 0;
   opflow->modelops.setnumconstraints              = 0;
   opflow->modelops.setvariablebounds              = 0;
+  opflow->modelops.setvariableboundsarray         = 0;
   opflow->modelops.setconstraintbounds            = 0;
+  opflow->modelops.setconstraintboundsarray       = 0;
   opflow->modelops.setvariableandconstraintbounds = 0;
+  opflow->modelops.setvariableandconstraintboundsarray = 0;
   opflow->modelops.setinitialguess                = 0;
+  opflow->modelops.setinitialguessarray           = 0;
   opflow->modelops.computeequalityconstraints     = 0;
+  opflow->modelops.computeequalityconstraintsarray = 0;
   opflow->modelops.computeinequalityconstraints   = 0;
+  opflow->modelops.computeinequalityconstraintsarray = 0;
   opflow->modelops.computeconstraints             = 0;
+  opflow->modelops.computeconstraintsarray        = 0;
   opflow->modelops.computeequalityconstraintjacobian = 0;
   opflow->modelops.computeinequalityconstraintjacobian = 0;
   opflow->modelops.computehessian                 = 0;
   opflow->modelops.computeobjandgradient          = 0;
   opflow->modelops.computeobjective               = 0;
+  opflow->modelops.computeobjectivearray          = 0;
   opflow->modelops.computegradient                = 0;
+  opflow->modelops.computegradientarray           = 0;
   opflow->modelops.computejacobian                = 0;
   opflow->modelops.solutiontops                   = 0;
 
@@ -623,7 +665,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   PetscBool      modelset=PETSC_FALSE,solverset=PETSC_FALSE;
   PS             ps=opflow->ps;
   PetscInt       *branchnconeq,*busnconeq;
-  PetscInt       sendbuf[3],recvbuf[3];
+  PetscInt       sendbuf[3],recvbuf[3],i;
 
   PetscFunctionBegin;
 
@@ -640,8 +682,6 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PetscOptionsReal("-opflow_powerimbalance_penalty","Power imbalance penalty","",opflow->powerimbalance_penalty,&opflow->powerimbalance_penalty,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-opflow_genbusvoltage_fixed","Treat gen. bus voltage fixed?","",opflow->genbusVmfixed,&opflow->genbusVmfixed,NULL);CHKERRQ(ierr);
   PetscOptionsEnd();
-
-  opflow->obj_gencost = PETSC_TRUE; /* Generation cost minimization ON by default */
 
   /* Set model */
   if(modelset) {
@@ -713,7 +753,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = VecDuplicate(opflow->X,&opflow->Xu);CHKERRQ(ierr);
   /* Default variable bounds are -inf <= x <= +inf */
   ierr = VecSet(opflow->Xl,PETSC_NINFINITY);CHKERRQ(ierr);
-  ierr = VecSet(opflow->Xu,PETSC_NINFINITY);CHKERRQ(ierr);
+  ierr = VecSet(opflow->Xu,PETSC_INFINITY);CHKERRQ(ierr);
 
   /* Vectors for constraints */
   ierr = VecCreate(ps->comm->type,&opflow->G);CHKERRQ(ierr);
@@ -761,16 +801,29 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 
   /* Create Hessian */
   ierr = PSCreateMatrix(opflow->ps,&opflow->Hes);CHKERRQ(ierr);
+  /*
+  ierr = MatCreate(opflow->comm->type,&opflow->Hes);CHKERRQ(ierr);
+  ierr = MatSetSizes(opflow->Hes,opflow->nx,opflow->nx,opflow->Nx,opflow->Nx);CHKERRQ(ierr);
+  ierr = MatSetUp(opflow->Hes);CHKERRQ(ierr);
+  ierr = MatSetFromOptions(opflow->Hes);CHKERRQ(ierr);
+  */
+
+  /* Create natural to sparse dense ordering mapping (needed for some models)
+     Here, we create the mapping array and fill up natural ordering. The model
+     set up function should change the mapping to what it needs
+  */
+  ierr = PetscMalloc1(opflow->nx,&opflow->idxn2sd_map);CHKERRQ(ierr);
+  for(i=0; i < opflow->nx; i++) opflow->idxn2sd_map[i] = i;
+  
+  if(opflow->modelops.setup) {
+    ierr = (*opflow->modelops.setup)(opflow);CHKERRQ(ierr);
+  }
 
   ierr = (*opflow->solverops.setup)(opflow);CHKERRQ(ierr);
   //  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Setup completed\n");CHKERRQ(ierr);
 
   if(opflow->initializationtype == OPFLOWINIT_ACPF) {
     ierr = OPFLOWSetUpInitPflow(opflow);CHKERRQ(ierr);
-  }
-
-  if(opflow->modelops.setup) {
-    ierr = (*opflow->modelops.setup)(opflow);CHKERRQ(ierr);
   }
 
   opflow->setupcalled = PETSC_TRUE;
@@ -1046,6 +1099,88 @@ PetscErrorCode OPFLOWComputeConstraints(OPFLOW opflow,Vec X,Vec G)
 }
 
 /*
+  OPFLOWComputeHessian - Computes the OPFLOW Hessian
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+. X      - the solution vector
+. Lambda - Lagrange multiplier
+- obj_factor - scaling factor for objective part of Hessian (used by IPOPT)
+
+  Output Parameters:
+- H    - the Hessian
+
+  Notes: Should be called after the optimization is set up. Lambda has multipliers -
+         equality constraints followed by inequality constraints
+*/
+PetscErrorCode OPFLOWComputeHessian(OPFLOW opflow,Vec X, Vec Lambda, PetscScalar obj_factor, Mat H)
+{
+  PetscErrorCode ierr;
+  PetscScalar    *lambda;
+
+  PetscFunctionBegin;
+  opflow->obj_factor = obj_factor;
+
+  /* IPOPT passes the scaled Lagrangian multipliers for Hessian calculation. The scaling
+     factor is the Hessian objective factor it uses in the Hessian calculation
+  */
+  ierr = VecScale(Lambda,obj_factor);CHKERRQ(ierr);
+
+  ierr = VecGetArray(Lambda,&lambda);CHKERRQ(ierr);
+
+  ierr = VecPlaceArray(opflow->Lambdae,lambda);CHKERRQ(ierr);
+  if(opflow->Nconineq) {
+    ierr = VecPlaceArray(opflow->Lambdai,lambda+opflow->nconeq);CHKERRQ(ierr);
+  }
+
+  /* Compute Hessian */
+  ierr = (*opflow->modelops.computehessian)(opflow,X,opflow->Lambdae,opflow->Lambdai,H);CHKERRQ(ierr);
+
+  ierr = VecResetArray(opflow->Lambdae);CHKERRQ(ierr);
+
+  if(opflow->Nconineq) {
+    ierr = VecResetArray(opflow->Lambdai);CHKERRQ(ierr);
+  }
+
+  ierr = VecRestoreArray(Lambda,&lambda);CHKERRQ(ierr);
+
+  /* Rescale Lambda back to its original value */
+  ierr = VecScale(Lambda,1./obj_factor);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWComputeConstraintJacobian - Computes the OPFLOW constraint Jacobians
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+. X      - the solution vector
+
+  Output Parameters:
++ Jeq    - equality constraint Jacobian
+- Jineq  - Inequality constraint Jacobian
+
+  Notes: Should be called after the optimization is set up. 
+*/
+PetscErrorCode OPFLOWComputeConstraintJacobian(OPFLOW opflow,Vec X,Mat Jeq, Mat Jineq)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = MatZeroEntries(Jeq);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computeequalityconstraintjacobian)(opflow,X,Jeq);CHKERRQ(ierr);
+
+  if(opflow->Nconineq) {
+    ierr = MatZeroEntries(Jineq);CHKERRQ(ierr);
+    ierr = (*opflow->modelops.computeinequalityconstraintjacobian)(opflow,X,Jineq);CHKERRQ(ierr);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+
+
+/*
   OPFLOWGetConstraintBounds - Returns the OPFLOW constraint bounds
 
   Input Parameters:
@@ -1066,6 +1201,55 @@ PetscErrorCode OPFLOWGetConstraintBounds(OPFLOW opflow,Vec *Gl,Vec *Gu)
   *Gu = opflow->Gu;
   PetscFunctionReturn(0);
 }
+
+
+/*
+  OPFLOWGetConstraintJacobian - Returns the OPFLOW equality and inequality constraint jacobian
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+
+  Output Parameters:
++ Jeq    - equality constraint Jacobian
+- Jineq  - inequality constraint Jacobian
+
+  Notes: Should be called after the optimization finishes.
+         Jineq is set to NULL if no inequality constraints exists
+*/
+PetscErrorCode OPFLOWGetConstraintJacobian(OPFLOW opflow,Mat *Jeq,Mat *Jineq)
+{
+
+  PetscFunctionBegin;
+
+  *Jeq = opflow->Jac_Ge;
+  if(opflow->nconineq) *Jineq = opflow->Jac_Gi;
+  else *Jineq = NULL;
+
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWGetHessian - Returns the OPFLOW Hessian
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+
+  Output Parameters:
++ Hess    - Hessian matrix
+- obj_factor - factor used in scaling objective Hessian (used by IPOPT)
+  Notes: Should be called after the optimization finishes.
+*/
+PetscErrorCode OPFLOWGetHessian(OPFLOW opflow,Mat *Hess,PetscScalar *obj_factor)
+{
+
+  PetscFunctionBegin;
+
+  *Hess = opflow->Hes;
+  *obj_factor = opflow->obj_factor;
+
+  PetscFunctionReturn(0);
+}
+
 
 /*
   OPFLOWComputeConstraintBounds - Computes the bounds on constraints

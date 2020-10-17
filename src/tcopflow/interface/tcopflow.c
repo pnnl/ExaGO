@@ -548,25 +548,3 @@ PetscErrorCode TCOPFLOWGetConvergenceStatus(TCOPFLOW tcopflow,PetscBool *status)
   ierr = (*tcopflow->solverops.getconvergencestatus)(tcopflow,status);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-
-
-/*
-  TCOPFLOWSolutionToPS - Updates the PS struct from TCOPFLOW solution
-
-  Input Parameters:
-. tcopflow - the TCOPFLOW object
-
-  Notes: Updates the different fields in the PS struct from the TCOPFLOW solution
-*/
-PetscErrorCode TCOPFLOWSolutionToPS(TCOPFLOW tcopflow)
-{
-  PetscErrorCode     ierr;
-  OPFLOW             opflow;
-
-  PetscFunctionBegin;
-
-  ierr = (*opflow->modelops.solutiontops)(opflow);
-
-  tcopflow->solutiontops = PETSC_TRUE;
-  PetscFunctionReturn(0);
-}
