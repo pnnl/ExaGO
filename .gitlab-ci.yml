@@ -1,6 +1,7 @@
 .script_template: &script_definition
   script:
     - |
+      set -xv
       #
       #  NOTES:  WORKDIR is on constance/marianas/newell
       #          ./      is only on the Kubernetes instance
@@ -9,16 +10,25 @@
       mkdir -p "$WORKDIR"
       cp -a ./ "$WORKDIR"
       cd "$WORKDIR"
-      # touch output
-      # tail -f output &
       # echo submitting batch job
-      # Follow job output
+      [ -f output ] && rm output
       touch output
-      # tail -f output
-      sbatch -A EXASGD -p $SLURM_Q --wait -o output -e output $WORKDIR/build.sh
-      res=$?
-      echo "finished batch job: $res"
-      # cat output
+      tail -f output &
+      tailpid=$!
+      sbatch --export=MY_CLUSTER=$CLUSTER -A EXASGD --gres=gpu:1 -p $SLURM_Q -o output -e output -t 1:00:00 $WORKDIR/build.sh
+      res=1
+      # Uncomment when we find nondeterministic CI issue.
+      # set +xv
+      while :;
+      do
+        if [[ "$(awk 'BEGIN{i=0}/BUILD_STATUS/{i++}END{print i}' output)" != "0" ]]; then
+          kill $tailpid
+          res=$(grep BUILD_STATUS output | tail -n 1 | cut -f2 -d':')
+          break
+        fi
+        sleep 10
+      done
+      echo "Finished batch job with exit code: $res"
       #
       #  NOTE:  If the job fails, comment out the line below and cd to
       #         $HOME/gitlab/$CI_JOB_ID and run ./build.sh by hand to
@@ -40,7 +50,18 @@
 build_on_newell:
   stage: build
   variables:
-    SLURM_Q: "newell"
+    SLURM_Q: "newell_shared"
+    CLUSTER: "newell"
+  <<: *tags_definition
+  <<: *script_definition
+  only:
+    - branches@exasgd/frameworks/exago
+
+build_on_marianas:
+  stage: build
+  variables:
+    SLURM_Q: "shared"
+    CLUSTER: "marianas"
   <<: *tags_definition
   <<: *script_definition
   only:

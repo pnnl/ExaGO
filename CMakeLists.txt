@@ -17,6 +17,8 @@ endif ()
 
 ## Configure
 
+#set(MPI_ASSUME_NO_BUILTIN_MPI On)
+
 # Specify where CMake modules are to be found
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -25,6 +27,9 @@ set(EXAGO_OPTIONS_DIR "${CMAKE_INSTALL_PREFIX}/options")
 
 # Enable PETSc by default
 option(EXAGO_ENABLE_PETSC "Enable PETSc support" ON)
+
+# Enable MPI
+option(SCOPFLOW_ENABLE_MPI "Enable MPI support" ON)
 
 # Ipopt support is disabled by default
 option(EXAGO_ENABLE_IPOPT "Enable Ipopt support" OFF)
@@ -37,6 +42,9 @@ option(EXAGO_ENABLE_MPI "Enable MPI support" ON)
 
 # GPU support is disabled by default
 option(EXAGO_ENABLE_GPU "Enable GPU support" OFF)
+
+# Enable RAJA support
+option(EXAGO_ENABLE_RAJA "Enables RAJA and Umpire libraries" OFF)
 
 # Enable tests
 option(EXAGO_RUN_TESTS "Enable tests" OFF)
@@ -107,6 +115,20 @@ if(EXAGO_ENABLE_HIOP)
   set(EXAGO_HAVE_HIOP 1)
 endif(EXAGO_ENABLE_HIOP)
 
+if(EXAGO_ENABLE_RAJA)
+  # Find OpenMP -- this is a temporary fix
+  find_package(OpenMP)
+  # Look for CMake configuration file in RAJA installation
+  find_package(RAJA CONFIG
+    PATHS ${RAJA_DIR} ${RAJA_DIR}/share/raja/cmake
+    REQUIRED)
+  # Look for CMake configuration file in Umpire installation
+  find_package(umpire CONFIG
+    PATHS ${umpire_DIR} ${umpire_DIR}/share/umpire/cmake
+    REQUIRED)
+  set(EXAGO_HAVE_RAJA 1)
+endif(EXAGO_ENABLE_RAJA)
+
 if(NOT DEFINED LAPACK_LIBRARIES)
   # in case the toolchain defines them
   find_package(LAPACK REQUIRED)
@@ -114,7 +136,7 @@ if(NOT DEFINED LAPACK_LIBRARIES)
 endif(NOT DEFINED LAPACK_LIBRARIES)
 
 # Set up configuration header file
-configure_file(include/scopflow_config.h.in scopflow_config.h)
+configure_file(include/exago_config.h.in exago_config.h)
 
 ## Build
 
@@ -139,6 +161,8 @@ set(EXAGO_OPTIONS_FILES
   options/opflowoptions
   options/scopflowoptions
   options/tcopflowoptions
+  options/hiop.options
+  options/ipopt.opt
 )
 
 # Install options files
@@ -152,6 +176,7 @@ set(EXAGO_DATA_FILES
   datafiles/case_ACTIVSg200.m
   datafiles/case9.cont
   datafiles/case9.con
+  datafiles/case_ACTIVSg200.cont
 )
 
 # Install data files
@@ -164,10 +189,13 @@ install(DIRECTORY datafiles/TAMU200_scenarios DESTINATION datafiles)
 set(EXAGO_SRC_DATAFILES_DIR ${PROJECT_SOURCE_DIR}/datafiles)
 set(EXAGO_SRC_OPTIONS_DIR   ${PROJECT_SOURCE_DIR}/options)
 
+# Custom testing data files
+install(DIRECTORY datafiles/test_validation DESTINATION tests/datafiles)
+
 # Scopflow headers to install
 set(EXAGO_COMMON_INCLUDE
   include/constants.h
-  ${PROJECT_BINARY_DIR}/scopflow_config.h
+  ${PROJECT_BINARY_DIR}/exago_config.h
 )
  
 # Install header files
@@ -185,38 +213,24 @@ if(EXAGO_RUN_TESTS)
   # Unit tests
   foreach(test_net ${network_files})
     get_filename_component(input_file ${test_net} NAME)
-    add_test(NAME OPFLOW_MODEL_${input_file}_TEST COMMAND
-             mpiexec -n 1 $<TARGET_FILE:testAcopf>
-             -netfile ${test_net}
-             -opflow_solver TAO)
+    add_test(NAME UNIT_TESTS_OPFLOW_MODEL_${input_file}_TEST COMMAND
+        mpiexec -n 1 -mca oob tcp $<TARGET_FILE:testAcopf>
+        -netfile ${test_net} 
+        -gen_test_data)
   endforeach()
 
 
   # Tests with IPOPT
   if(EXAGO_HAVE_IPOPT)
-    # SCOPFLOW tests - Preventive mode
-    foreach(nc RANGE 1 9)
-      add_test(NAME SCOPFLOW_9bus_${nc}cont_preventive COMMAND 
-               mpiexec -n 1 $<TARGET_FILE:app_scopflow> 
-               -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9mod.m
-               -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9.cont
-               -scopflow_solver IPOPT
-               -scopflow_mode 0
-               -opflow_include_loadloss_variables
-               -scopflow_Nc ${nc})
-    endforeach(nc)
-
-    # SCOPFLOW tests - Corrective mode
-    foreach(nc RANGE 1 9)
-      add_test(NAME SCOPFLOW_9bus_${nc}cont_corrective COMMAND
-               mpiexec -n 1 $<TARGET_FILE:app_scopflow>
-               -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9mod.m
-               -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9.cont
-               -scopflow_solver IPOPT
-               -scopflow_mode 1
-               -opflow_include_loadloss_variables
-               -scopflow_Nc ${nc})
-    endforeach(nc)
+    #  SCOPFLOW tests
+    #  foreach(nc RANGE 1 9)
+    #    add_test(NAME SCOPFLOW_9bus_${nc}cont COMMAND 
+    #             mpiexec -n 1 $<TARGET_FILE:app_scopflow> 
+    #             -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9mod.m
+    #             -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9.cont
+    #             -scopflow_solver IPOPT
+    #             -scopflow_Nc ${nc})
+    #  endforeach(nc)
 
     message(STATUS "Running OPFLOW formulation tests")
 
@@ -227,7 +241,7 @@ if(EXAGO_RUN_TESTS)
         foreach(opflow_init FROMFILE FLATSTART ACPF MIDPOINT)
           get_filename_component(input_file ${test_net} NAME)
           add_test(NAME OPFLOW_${opflow_form}_${opflow_init}_${input_file} COMMAND
-                   mpiexec -n 1 $<TARGET_FILE:app_opflow>
+                   mpiexec -n 1 -mca oob tcp $<TARGET_FILE:app_opflow>
                    -netfile ${test_net}
                    -opflow_formulation ${opflow_form}
                    -opflow_initialization ${opflow_init}
@@ -243,10 +257,11 @@ if(EXAGO_RUN_TESTS)
       foreach(opflow_init FROMFILE FLATSTART ACPF MIDPOINT)
         get_filename_component(input_file ${test_net} NAME)
         add_test(NAME OPFLOW_HIOP_${opflow_init}_${input_file} COMMAND
-                 mpiexec -n 1 $<TARGET_FILE:app_opflow>
+                 mpiexec -n 1 -mca oob tcp $<TARGET_FILE:app_opflow>
                  -netfile ${test_net}
                  -opflow_initialization ${opflow_init}
-                 -opflow_solver HIOP)
+                 -opflow_solver HIOP
+		             -opflow_model POWER_BALANCE_POLAR)
       endforeach()
     endforeach()
   endif(EXAGO_HAVE_HIOP)
@@ -257,7 +272,7 @@ if(EXAGO_RUN_TESTS)
     foreach(test_net ${network_files})
       get_filename_component(input_file ${test_net} NAME)
       add_test(NAME OPFLOW_TAO_${input_file} COMMAND
-               mpiexec -n 1 $<TARGET_FILE:app_opflow>
+               mpiexec -n 1 -mca oob tcp $<TARGET_FILE:app_opflow>
                -netfile ${test_net}
                -opflow_solver TAO)
     endforeach(test_net)
@@ -269,7 +284,7 @@ if(EXAGO_RUN_TESTS)
     foreach(test_net ${network_files})
       get_filename_component(input_file ${test_net} NAME)
       add_test(NAME PFLOW_${input_file}_${np}proc COMMAND
-               mpiexec -n 1 $<TARGET_FILE:app_pflow>
+               mpiexec -n 1 -mca oob tcp $<TARGET_FILE:app_pflow>
                -netfile ${test_net})
     endforeach(test_net)
   endforeach(np)

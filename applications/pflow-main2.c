@@ -8,7 +8,7 @@ static char help[] = "User example calling PFLOW and changing branch status.\n \
 
 
 #include <pflow.h>
-#include <scopflow_config.h>
+#include <exago_config.h>
 
 int main(int argc,char **argv)
 {

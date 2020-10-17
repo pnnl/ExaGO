@@ -1,6 +1,6 @@
 static char help[] = "Prototype version of OPFLOW code for CUDA/GPU/Accelerator implementation\n\n";
 
-#include <scopflow_config.h>
+#include <exago_config.h>
 #include <private/psimpl.h>
 #include <private/opflowimpl.h>
 

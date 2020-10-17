@@ -87,7 +87,7 @@ PetscErrorCode SCOPFLOWReadContingencyData_Native(SCOPFLOW scopflow,const char c
 
     if(num == scopflow->Nc) break;
 
-    if(num == MAX_CONTINGENCIES) {
+    if(num == PetscMax(scopflow->Nc,MAX_CONTINGENCIES)) {
       SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Exceeding max. allowed contingencies = %d\n",num,MAX_CONTINGENCIES);
     }
     cont   = &ctgclist->cont[num];

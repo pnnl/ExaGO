@@ -8,7 +8,11 @@ set(EXAGO_PFLOW_APP_LIBS
   MPI::MPI_CXX
 )
 
-add_executable(testAcopf TestAcopf.cpp)
+if(EXAGO_HAVE_RAJA AND EXAGO_ENABLE_GPU)
+  set_source_files_properties(TestAcopf.cpp PROPERTIES LANGUAGE CUDA)
+endif()
+
+add_executable(testAcopf TestAcopf.cpp utils/TestAcopfUtils.cpp)
 target_link_libraries(testAcopf
 	${EXAGO_OPFLOW_LIBS} 
 	${EXAGO_PFLOW_APP_LIBS}

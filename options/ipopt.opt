@@ -2,7 +2,7 @@ print_level 5
 
 max_iter 5000
 #max_cpu_time 1200
-tol 1e-6
+tol 1e-8
 
 mu_strategy monotone
 #mu_strategy adaptive

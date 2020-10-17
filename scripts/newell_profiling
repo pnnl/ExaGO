@@ -1,0 +1,45 @@
+#!/bin/bash
+##### These lines are for Slurm
+#SBATCH -t 60:00
+#SBATCH -N 3
+#SBATCH -p newell
+#SBATCH -o logs/newell-profiling
+#SBATCH -J ExaGoProfiling
+#SBATCH -A exasgd
+#SBATCH -n 128
+#SBATCH --gres=gpu:1
+
+INSTALL_DIR=../install
+
+##### These are shell commands
+cd $INSTALL_DIR/bin
+echo -n 'This machine is '; hostname
+echo -n 'My jobid is '; echo $SLURM_JOBID
+echo 'My path is:'
+echo $PATH
+echo ' '
+echo '--------------------- Job Output Below ---------------------'
+echo ' '
+NETFILE=datafiles/case_ACTIVSg200.m
+CTGCFILE=datafiles/case_ACTIVSg200.cont
+HIOP_VERBOSITY=0
+
+OMPI_MCA_btl_openib_warn_default_gid_prefix=0
+export OMPI_MCA_btl_openib_warn_default_gid_prefix
+
+for COMPUTE_MODE in HYBRID CPU
+do
+        echo "$COMPUTE_MODE compute mode"
+        echo
+        echo "NPROC     TIME(s)"
+        for NPROC in 64 32 16 8 4 2 1
+        do
+                NCONT=127
+                arr=`mpiexec -n $NPROC ./app_scopflow -scopflow_Nc $NCONT -hiop_compute_mode \
+                        $COMPUTE_MODE -opflow_solver HIOP -opflow_model POWER_BALANCE_POLAR -log_view \
+                        -scopflow_solver EMPAR -netfile $NETFILE -ctgcfile $CTGCFILE -hiop_verbosity_level \
+                        $HIOP_VERBOSITY -opflow_initialization ACPF | grep -i 'Solve:'`
+                splitarr=($arr)
+                echo "$NPROC    ${splitarr[2]}"
+        done
+done

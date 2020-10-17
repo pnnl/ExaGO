@@ -13,11 +13,15 @@
 #define OPFLOWMODEL_IBCAR "CURRENT_BALANCE_CARTESIAN"
 #define OPFLOWMODEL_IBCAR2 "CURRENT_BALANCE_CARTESIAN2"
 #define OPFLOWMODEL_PBPOL2 "POWER_BALANCE_POLAR2"
+#define OPFLOWMODEL_PBPOLHIOP "POWER_BALANCE_HIOP"
+#define OPFLOWMODEL_PBPOLRAJA "PBPOLRAJA"
+#define OPFLOWMODEL_PBPOLRAJAHIOP "PBPOLRAJAHIOP"
 
 /* Solvers */
 #define OPFLOWSOLVER_IPOPT "IPOPT"
 #define OPFLOWSOLVER_TAO   "TAO"
 #define OPFLOWSOLVER_HIOP  "HIOP"
+#define OPFLOWSOLVER_HIOPNEW "HIOPNEW"
 
 typedef struct _p_OPFLOW *OPFLOW;
 
@@ -33,21 +37,31 @@ PETSC_EXTERN PetscErrorCode OPFLOWCreateGlobalVector(OPFLOW,Vec*);
 PETSC_EXTERN PetscErrorCode OPFLOWCreateMatrix(OPFLOW,Mat*);
 PETSC_EXTERN PetscErrorCode OPFLOWSolve(OPFLOW);
 PETSC_EXTERN PetscErrorCode OPFLOWSetInitialGuess(OPFLOW,Vec);
+
 PETSC_EXTERN PetscErrorCode OPFLOWGetObjective(OPFLOW,PetscReal*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetVariableBounds(OPFLOW,Vec*,Vec*);
-PETSC_EXTERN PetscErrorCode OPFLOWComputeVariableBounds(OPFLOW,Vec,Vec);
-PETSC_EXTERN PetscErrorCode OPFLOWComputeGradient(OPFLOW,Vec,Vec);
-PETSC_EXTERN PetscErrorCode OPFLOWComputeObjective(OPFLOW,Vec,PetscReal*);
+PETSC_EXTERN PetscErrorCode OPFLOWGetConstraintJacobian(OPFLOW,Mat*,Mat*);
+PETSC_EXTERN PetscErrorCode OPFLOWGetHessian(OPFLOW,Mat*,PetscScalar*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetSolution(OPFLOW,Vec*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetConvergenceStatus(OPFLOW,PetscBool*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetConstraints(OPFLOW,Vec*);
+PETSC_EXTERN PetscErrorCode OPFLOWGetConstraintMultipliers(OPFLOW,Vec*);
+
+PETSC_EXTERN PetscErrorCode OPFLOWComputeVariableBounds(OPFLOW,Vec,Vec);
+PETSC_EXTERN PetscErrorCode OPFLOWComputeGradient(OPFLOW,Vec,Vec);
+PETSC_EXTERN PetscErrorCode OPFLOWComputeObjective(OPFLOW,Vec,PetscReal*);
 PETSC_EXTERN PetscErrorCode OPFLOWComputeConstraints(OPFLOW,Vec,Vec);
 PETSC_EXTERN PetscErrorCode OPFLOWGetConstraintBounds(OPFLOW,Vec*,Vec*);
 PETSC_EXTERN PetscErrorCode OPFLOWComputeConstraintBounds(OPFLOW,Vec,Vec);
-PETSC_EXTERN PetscErrorCode OPFLOWGetConstraintMultipliers(OPFLOW,Vec*);
+PETSC_EXTERN PetscErrorCode OPFLOWComputeConstraintJacobian(OPFLOW,Vec,Mat,Mat);
+PETSC_EXTERN PetscErrorCode OPFLOWComputeHessian(OPFLOW,Vec,Vec,PetscScalar,Mat);
+
 PETSC_EXTERN PetscErrorCode OPFLOWPrintSolution(OPFLOW);
 PETSC_EXTERN PetscErrorCode OPFLOWSaveSolution(OPFLOW,OutputFormat,const char[]);
 PETSC_EXTERN PetscErrorCode OPFLOWGenbusVoltageFixed(OPFLOW,PetscBool);
+
+PETSC_EXTERN PetscErrorCode OPFLOWGetVariableOrdering(OPFLOW,int**);
+PETSC_EXTERN PetscErrorCode OPFLOWGetSizes(OPFLOW,int*,int*,int*);
 #endif
 
 

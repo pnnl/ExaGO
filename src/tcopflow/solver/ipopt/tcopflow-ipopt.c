@@ -1,4 +1,4 @@
-#include <scopflow_config.h>
+#include <exago_config.h>
 #if defined(EXAGO_HAVE_IPOPT)
 
 #include <private/opflowimpl.h>

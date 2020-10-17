@@ -560,33 +560,33 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
       Gen[geni].pb = Gen[geni].pb < -1e10 ? PETSC_NINFINITY: Gen[geni].pb;
 
       Gen[geni].initial_status = Gen[geni].status;
-      /* Convert Pg and Qg to per unit */
+
+      Gen[geni].pg  = Gen[geni].pg/ps->MVAbase;
+      Gen[geni].qg  = Gen[geni].qg/ps->MVAbase;
+      Gen[geni].pb  = Gen[geni].pb/ps->MVAbase;
+      Gen[geni].pt  = Gen[geni].pt/ps->MVAbase;
+      Gen[geni].qt  = Gen[geni].qt/ps->MVAbase;
+      Gen[geni].qb  = Gen[geni].qb/ps->MVAbase;
+      Gen[geni].pc1 = Gen[geni].pc1/ps->MVAbase;
+      Gen[geni].pc2 = Gen[geni].pc2/ps->MVAbase;
+      Gen[geni].qc1min = Gen[geni].qc1min/ps->MVAbase;
+      Gen[geni].qc1max = Gen[geni].qc1max/ps->MVAbase;
+      Gen[geni].qc2min = Gen[geni].qc2min/ps->MVAbase;
+      Gen[geni].qc2max = Gen[geni].qc2max/ps->MVAbase;
+      Gen[geni].ramp_rate_min = Gen[geni].ramp_rate_min/ps->MVAbase;
+      Gen[geni].ramp_rate_10min = Gen[geni].ramp_rate_10min/ps->MVAbase;
+      Gen[geni].ramp_rate_30min = Gen[geni].ramp_rate_30min/ps->MVAbase;
+      Gen[geni].ramp_rate_min_mvar = Gen[geni].ramp_rate_min_mvar/ps->MVAbase;
+
+      if(genfuel_start_line == -1 && genfuel_end_line == -1) {
+	/* Fuel source not defined in file so use COAL RAMP RATES FOR ALL GENERATORS */
+	Gen[geni].genfuel_type = GENFUEL_UNDEFINED;
+	Gen[geni].ramp_rate_min = GENRAMPRATE_COAL/ps->MVAbase; /* Defaults to COAL ramp rate */
+	Gen[geni].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
+	Gen[geni].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
+      }
+
       if(Gen[geni].status) {
-        Gen[geni].pg  = Gen[geni].pg/ps->MVAbase;
-        Gen[geni].qg  = Gen[geni].qg/ps->MVAbase;
-        Gen[geni].pb  = Gen[geni].pb/ps->MVAbase;
-        Gen[geni].pt  = Gen[geni].pt/ps->MVAbase;
-        Gen[geni].qt  = Gen[geni].qt/ps->MVAbase;
-        Gen[geni].qb  = Gen[geni].qb/ps->MVAbase;
-        Gen[geni].pc1 = Gen[geni].pc1/ps->MVAbase;
-        Gen[geni].pc2 = Gen[geni].pc2/ps->MVAbase;
-        Gen[geni].qc1min = Gen[geni].qc1min/ps->MVAbase;
-        Gen[geni].qc1max = Gen[geni].qc1max/ps->MVAbase;
-        Gen[geni].qc2min = Gen[geni].qc2min/ps->MVAbase;
-        Gen[geni].qc2max = Gen[geni].qc2max/ps->MVAbase;
-        Gen[geni].ramp_rate_min = Gen[geni].ramp_rate_min/ps->MVAbase;
-        Gen[geni].ramp_rate_10min = Gen[geni].ramp_rate_10min/ps->MVAbase;
-        Gen[geni].ramp_rate_30min = Gen[geni].ramp_rate_30min/ps->MVAbase;
-        Gen[geni].ramp_rate_min_mvar = Gen[geni].ramp_rate_min_mvar/ps->MVAbase;
-
-        if(genfuel_start_line == -1 && genfuel_end_line == -1) {
-          /* Fuel source not defined in file so use COAL RAMP RATES FOR ALL GENERATORS */
-          Gen[geni].genfuel_type = GENFUEL_UNDEFINED;
-          Gen[geni].ramp_rate_min = GENRAMPRATE_COAL/ps->MVAbase; /* Defaults to COAL ramp rate */
-          Gen[geni].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
-          Gen[geni].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
-        }
-
         Bus[intbusnum].qrange += (Gen[geni].qt - Gen[geni].qb);
         Bus[intbusnum].qmintot += Gen[geni].qb;
         Bus[intbusnum].Pgtot += PetscAbsScalar(Gen[geni].pg);

@@ -28,6 +28,16 @@ namespace tests
 using LocalOrdinalType = int;
 using GlobalOrdinalType = long long int;
 using RealType = double;
+static const RealType zero = 0.0;
+static const RealType quarter = 0.25;
+static const RealType half = 0.5;
+static const RealType one = 1.0;
+static const RealType two = 2.0;
+static const RealType three = 3.0;
+  // static const RealType eps = 10*std::numeric_limits<RealType>::epsilon();
+static const RealType eps = 1e-8;
+
+static const LocalOrdinalType SKIP_TEST = -1;
 
 /**
   @brief Base class for all testing classes. Each child class will call the
@@ -35,17 +45,7 @@ using RealType = double;
  */
 class TestBase
 {
-
-  static constexpr RealType zero = 0.0;
-  static constexpr RealType quarter = 0.25;
-  static constexpr RealType half = 0.5;
-  static constexpr RealType one = 1.0;
-  static constexpr RealType two = 2.0;
-  static constexpr RealType three = 3.0;
-  static constexpr RealType eps =
-      10*std::numeric_limits<RealType>::epsilon();
-  static constexpr LocalOrdinalType SKIP_TEST = -1;
-
+protected:
   /*
    * must be const pointer and const dest for
    * const string declarations to pass
@@ -65,9 +65,9 @@ protected:
    */
   [[nodiscard]]
   static
-  LocalOrdinalType isEqual(const RealType value, const RealType reference)
+  LocalOrdinalType isEqual(const RealType value, const RealType reference, const RealType tol=eps)
   {
-    return (std::abs(value - reference)/(one + std::abs(reference)) < eps);
+    return (std::abs(value - reference)/(one + std::abs(reference)) < tol);
   }
 
   /// Prints error output for each rank

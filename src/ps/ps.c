@@ -1,4 +1,5 @@
 
+
 #include <private/psimpl.h>
 
 const char *const PSGENFuelTypes[] = {"COAL","WIND","SOLAR","NG","NUCLEAR","HYDRO","UNDEFINED","GENFUELTYPE_",NULL};
@@ -1197,6 +1198,7 @@ PetscErrorCode PSSetLineStatus(PS ps,PetscInt fbus, PetscInt tbus, const char* i
 {
   PetscErrorCode ierr;
   PSLINE         line=NULL;
+  PetscBool      statusupdate=PETSC_FALSE;
 
   PetscFunctionBegin;
   if(!ps->setupcalled) SETERRQ(PETSC_COMM_SELF,0,"PSSetUp() must be called before calling PFLOWGetLine()\n");
@@ -1204,9 +1206,12 @@ PetscErrorCode PSSetLineStatus(PS ps,PetscInt fbus, PetscInt tbus, const char* i
   ierr = PSGetLine(ps,fbus,tbus,id,&line);CHKERRQ(ierr);
   
   if(line) {
+    if(line->status != status) statusupdate = PETSC_TRUE;
     ierr = PSLINESetStatus(line,status);CHKERRQ(ierr);
-    if(line->status && !status) ps->nlineON--; /* Line switching to OFF status */
-    else if(!line->status && status) ps->nlineON++; /* Line switching to ON status */
+    if(statusupdate) {
+      if(!status) ps->nlineON--; /* Line switching to OFF status */
+      else ps->nlineON++; /* Line switching to ON status */
+    }
   }
   ierr = MPI_Allreduce(&ps->nlineON,&ps->NlineON,1,MPIU_INT,MPI_SUM,ps->comm->type);CHKERRQ(ierr);
   

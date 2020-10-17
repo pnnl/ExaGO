@@ -2,7 +2,7 @@ static char help[] = "Prototype version of C code for CUDA/GPU/Accelerator imple
 
 #include <private/psimpl.h>
 #include <private/pflowimpl.h>
-#include <scopflow_config.h>
+#include <exago_config.h>
 
 /* The parameters are packed in each busparams[i] as follows
 busparams[i] = {# of gens

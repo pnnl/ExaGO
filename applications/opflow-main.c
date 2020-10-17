@@ -1,7 +1,7 @@
 static char help[] = "User example calling OPFLOW.\n\n";
 
 #include <opflow.h>
-#include <scopflow_config.h>
+#include <exago_config.h>
 #include <utils.h>
 
 int main(int argc,char **argv)
@@ -10,10 +10,8 @@ int main(int argc,char **argv)
   OPFLOW             opflow;
   OutputFormat       fmt=MATPOWER;
   char               file[PETSC_MAX_PATH_LEN];
-  PetscBool          flg;
-  #if defined(PETSC_USE_LOG)
-    PetscLogStage    stages[2];
-  #endif
+  PetscBool          flg=PETSC_FALSE,print_output=PETSC_FALSE,save_output=PETSC_FALSE;
+  PetscLogStage    stages[3];
   char options_pathname[200] = EXAGO_OPTIONS_DIR;
   char filename[] = "/opflowoptions";
   strcat(options_pathname, filename);
@@ -32,35 +30,55 @@ int main(int argc,char **argv)
 
   PetscInitialize(&argc,&argv,pths[idx],help);
 
-  /* PetscLogStageRegister */
+  ierr = PetscOptionsGetBool(NULL,NULL,"-print_output",&print_output,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(NULL,NULL,"-save_output",&save_output,NULL);CHKERRQ(ierr);
+  
+  /* Register stages for profiling application code sections */
   ierr = PetscLogStageRegister("Reading Data",&stages[0]);CHKERRQ(ierr);
-  ierr = PetscLogStageRegister("Allocation & Setting",&stages[1]);CHKERRQ(ierr);
-
-  /* Petsc Stage Push 1 */
-  ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
-  /* Create OPFLOW object */
-  ierr = OPFLOWCreate(PETSC_COMM_WORLD,&opflow);CHKERRQ(ierr);
+  ierr = PetscLogStageRegister("Set up",&stages[1]);CHKERRQ(ierr);
+  ierr = PetscLogStageRegister("Solve",&stages[2]);CHKERRQ(ierr);
 
   /* Get network data file from command line */
   ierr = PetscOptionsGetString(NULL,NULL,"-netfile",file,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
+
+  /* Stage 1 - Application creation and reading data */
+  ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
+
+  /* Create OPFLOW object */
+  ierr = OPFLOWCreate(PETSC_COMM_WORLD,&opflow);CHKERRQ(ierr);
+  
   /* Read Network Data file */
   if(flg) {
     ierr = OPFLOWReadMatPowerData(opflow,file);CHKERRQ(ierr);
   } else {
     ierr = OPFLOWReadMatPowerData(opflow,"datafiles/case9mod.m");CHKERRQ(ierr);
   }
-  /* End of First Stage and Start of Second */
+
   ierr = PetscLogStagePop();CHKERRQ(ierr);
+
+  /* Stage 2 - Set up OPFLOW application */
   ierr = PetscLogStagePush(stages[1]);CHKERRQ(ierr);
+
+  /* Set up */
+  ierr = OPFLOWSetUp(opflow);CHKERRQ(ierr);
+
+  ierr = PetscLogStagePop();CHKERRQ(ierr);
+
+  /* Stage 3 - Solve */
+  ierr = PetscLogStagePush(stages[2]);CHKERRQ(ierr);
+
   /* Solve */
   ierr = OPFLOWSolve(opflow);CHKERRQ(ierr);
 
-  ierr = OPFLOWPrintSolution(opflow);CHKERRQ(ierr);
-
-  ierr = OPFLOWSaveSolution(opflow,fmt,"opflowout");CHKERRQ(ierr);
-
-  /*End of Final Stage */
   ierr = PetscLogStagePop();CHKERRQ(ierr);
+  
+  if(print_output) {
+    ierr = OPFLOWPrintSolution(opflow);CHKERRQ(ierr);
+  }
+
+  if(save_output) {
+    ierr = OPFLOWSaveSolution(opflow,fmt,"opflowout");CHKERRQ(ierr);
+  }
 
   /* Destroy OPFLOW object */
   ierr = OPFLOWDestroy(&opflow);CHKERRQ(ierr);

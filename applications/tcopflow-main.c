@@ -1,6 +1,6 @@
 static char help[] = "User example calling TCOPFLOW.\n\n";
 
-#include <scopflow_config.h>
+#include <exago_config.h>
 #include <tcopflow.h>
 
 
