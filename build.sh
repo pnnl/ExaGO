@@ -16,10 +16,25 @@ cleanup() {
 
 trap 'cleanup $? $LINENO' EXIT
 
-set -xv
+# set -xv
 make_args="-j 8"
+ctest_args=" -VV "
 export CXXFLAGS='-I/share/apps/magma/2.5.2/cuda10.2/include -I/share/apps/cuda/10.2/include/'
 export OMPI_MCA_btl="^vader,tcp,openib,uct"
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+  -s|--short)
+    echo "Only running representative subset of unit tests."
+    ctest_args="$ctest_args -R UNIT_TEST"
+    shift
+    ;;
+  *)
+    echo "Argument $1 not recognized."
+    exit 1
+    ;;
+  esac
+done
 
 if [[ ! -v MY_CLUSTER ]]
 then
@@ -148,7 +163,7 @@ do
   echo
   echo Testing
   echo
-  ctest -VV || exit 1
+  ctest $ctest_args || exit 1
   popd
 
   echo
