@@ -68,7 +68,6 @@ extern PetscErrorCode OPFLOWModelCreate_PBPOLHIOP(OPFLOW);
 
 #if defined(EXAGO_HAVE_RAJA)
 extern PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOP(OPFLOW);
-extern PetscErrorCode OPFLOWModelCreate_PBPOLRAJA(OPFLOW);
 #endif
 
 /*
@@ -92,7 +91,6 @@ PetscErrorCode OPFLOWModelRegisterAll(OPFLOW opflow)
 
 #if defined(EXAGO_HAVE_RAJA)
   ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_PBPOLRAJAHIOP,OPFLOWModelCreate_PBPOLRAJAHIOP);CHKERRQ(ierr);
-  ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_PBPOLRAJA,OPFLOWModelCreate_PBPOLRAJA);CHKERRQ(ierr);
 #endif
 
   opflow->OPFLOWModelRegisterAllCalled = PETSC_TRUE;

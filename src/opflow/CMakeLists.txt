@@ -14,15 +14,12 @@ set(OPFLOW_FORM_SRC
 # Build RAJA/Umpire modules if RAJA and Umpire are enabled
 if(EXAGO_HAVE_RAJA)
   set(OPFLOW_FORM_SRC ${OPFLOW_FORM_SRC} 
-    model/pbpol-raja/pbpolraja.cpp
-    model/pbpol-raja/pbpolrajakernels.cpp
     model/power-bal-hiop/pbpolrajahiop.cpp
     model/power-bal-hiop/pbpolrajahiopkernels.cpp
   )
 endif()
 
 if(EXAGO_HAVE_RAJA AND EXAGO_ENABLE_GPU)
-  set_source_files_properties(model/pbpol-raja/pbpolrajakernels.cpp PROPERTIES LANGUAGE CUDA)
   set_source_files_properties(model/power-bal-hiop/pbpolrajahiopkernels.cpp PROPERTIES LANGUAGE CUDA)
 endif()
 
