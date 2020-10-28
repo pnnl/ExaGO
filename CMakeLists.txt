@@ -22,14 +22,14 @@ endif ()
 # Specify where CMake modules are to be found
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-# Set the path to options file in Scopflow installation
+# Set the path to options file in EXAGO installation
 set(EXAGO_OPTIONS_DIR "${CMAKE_INSTALL_PREFIX}/options")
 
 # Enable PETSc by default
 option(EXAGO_ENABLE_PETSC "Enable PETSc support" ON)
 
 # Enable MPI
-option(SCOPFLOW_ENABLE_MPI "Enable MPI support" ON)
+option(EXAGO_ENABLE_MPI "Enable MPI support" ON)
 
 # Ipopt support is disabled by default
 option(EXAGO_ENABLE_IPOPT "Enable Ipopt support" OFF)
@@ -103,8 +103,8 @@ if(EXAGO_ENABLE_PETSC)
   include_directories(${PETSC_INCLUDE_CONF})
 endif()
 
-# Set install rpath to the locations where Scopflow and PETSc libraries reside.
-# TODO: Automatically skip if PETSc and Scopflow are already on system lib path.
+# Set install rpath to the locations where EXAGO and PETSc libraries reside.
+# TODO: Automatically skip if PETSc and EXAGO are already on system lib path.
 set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib ${PETSC_DIR}/lib)
 
 if(EXAGO_ENABLE_IPOPT)
@@ -161,7 +161,7 @@ add_subdirectory(tests)
 
 ## Install
 
-# Scopflow options files to install
+# EXAGO options files to install
 set(EXAGO_OPTIONS_FILES
   options/pflowoptions
   options/opflowoptions
@@ -174,7 +174,7 @@ set(EXAGO_OPTIONS_FILES
 # Install options files
 install(FILES ${EXAGO_OPTIONS_FILES} DESTINATION options)
 
-# Scopflow datafiles to install
+# EXAGO datafiles to install
 set(EXAGO_DATA_FILES
   datafiles/case9mod.m
   datafiles/case118.m
@@ -198,7 +198,7 @@ set(EXAGO_SRC_OPTIONS_DIR   ${PROJECT_SOURCE_DIR}/options)
 # Custom testing data files
 install(DIRECTORY datafiles/test_validation DESTINATION tests/datafiles)
 
-# Scopflow headers to install
+# EXAGO headers to install
 set(EXAGO_COMMON_INCLUDE
   include/constants.h
   ${PROJECT_BINARY_DIR}/exago_config.h
@@ -238,18 +238,18 @@ if(EXAGO_RUN_TESTS)
     #             -scopflow_Nc ${nc})
     #  endforeach(nc)
 
-    message(STATUS "Running OPFLOW formulation tests")
+    message(STATUS "Running OPFLOW model tests")
 
     # OPFLOW tests
 
     foreach(test_net ${network_files})
-      foreach(opflow_form POWER_BALANCE_POLAR)
+      foreach(opflow_model POWER_BALANCE_POLAR)
         foreach(opflow_init FROMFILE FLATSTART ACPF MIDPOINT)
           get_filename_component(input_file ${test_net} NAME)
-          add_test(NAME OPFLOW_${opflow_form}_${opflow_init}_${input_file} COMMAND
+          add_test(NAME OPFLOW_${opflow_model}_${opflow_init}_${input_file} COMMAND
                    mpiexec -n 1 -mca oob tcp $<TARGET_FILE:app_opflow>
                    -netfile ${test_net}
-                   -opflow_formulation ${opflow_form}
+                   -opflow_model ${opflow_model}
                    -opflow_initialization ${opflow_init}
                    -opflow_solver IPOPT)
         endforeach()
@@ -260,14 +260,30 @@ if(EXAGO_RUN_TESTS)
   # Tests with HIOP
   if(EXAGO_HAVE_HIOP)
     foreach(test_net ${network_files})
-      foreach(opflow_init FROMFILE FLATSTART ACPF MIDPOINT)
+      foreach(opflow_init ACPF MIDPOINT)
         get_filename_component(input_file ${test_net} NAME)
-        add_test(NAME OPFLOW_HIOP_${opflow_init}_${input_file} COMMAND
+        add_test(NAME OPFLOW_HIOP_CPU_${opflow_init}_${input_file} COMMAND
                  mpiexec -n 1 -mca oob tcp $<TARGET_FILE:app_opflow>
                  -netfile ${test_net}
                  -opflow_initialization ${opflow_init}
+		 -hiop_compute_mode CPU
                  -opflow_solver HIOP
-		             -opflow_model POWER_BALANCE_POLAR)
+		 -opflow_ignore_lineflow_constraints 1
+                 -opflow_model POWER_BALANCE_HIOP)
+      endforeach()
+    endforeach()
+
+    foreach(test_net ${network_files})
+      foreach(opflow_init ACPF MIDPOINT)
+        get_filename_component(input_file ${test_net} NAME)
+        add_test(NAME OPFLOW_HIOP_GPU_${opflow_init}_${input_file} COMMAND
+                 mpiexec -n 1 -mca oob tcp $<TARGET_FILE:app_opflow>
+                 -netfile ${test_net}
+                 -opflow_initialization ${opflow_init}
+		 -hiop_compute_mode HYBRID
+                 -opflow_solver HIOP
+		 -opflow_ignore_lineflow_constraints 1
+                 -opflow_model PBPOLRAJAHIOP)
       endforeach()
     endforeach()
   endif(EXAGO_HAVE_HIOP)

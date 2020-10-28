@@ -5,18 +5,6 @@
 #include <private/opflowimpl.h>
 #include "pbpolrajahiopkernels.hpp"
 
-PetscErrorCode OPFLOWSetVariableandConstraintBounds_PBPOLRAJAHIOP(OPFLOW opflow,Vec Xl,Vec Xu, Vec Gl, Vec Gu)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
-  ierr = OPFLOWSetVariableBounds_PBPOLRAJAHIOP(opflow,Xl,Xu);CHKERRQ(ierr);
-  ierr = OPFLOWSetConstraintBounds_PBPOLRAJAHIOP(opflow,Gl,Gu);CHKERRQ(ierr);
-
-  PetscFunctionReturn(0);
-}
-
 PetscErrorCode OPFLOWSetInitialGuess_PBPOLRAJAHIOP(OPFLOW opflow,Vec X)
 {
   PetscErrorCode ierr;
@@ -108,24 +96,6 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOLRAJAHIOP(OPFLOW opflow,Vec X)
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeConstraints_PBPOLRAJAHIOP(OPFLOW opflow,Vec X,Vec G)
-{
-  PetscFunctionBegin;
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode OPFLOWComputeObjandGradient_PBPOLRAJAHIOP(OPFLOW opflow,Vec X,PetscScalar *obj,Vec Grad)
-{
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-
-  ierr = OPFLOWComputeObjective_PBPOLRAJAHIOP(opflow,X,obj);CHKERRQ(ierr);
-  ierr = OPFLOWComputeGradient_PBPOLRAJAHIOP(opflow,X,Grad);CHKERRQ(ierr);
-
-  PetscFunctionReturn(0);
-}
-
 PetscErrorCode OPFLOWModelSetNumVariables_PBPOLRAJAHIOP(OPFLOW opflow,PetscInt *busnvar,PetscInt *branchnvar,PetscInt *nx)
 {
   PetscInt i,ngen,nload,k;
@@ -195,29 +165,6 @@ PetscErrorCode OPFLOWModelSetNumConstraints_PBPOLRAJAHIOP(OPFLOW opflow,PetscInt
       if(line->status && line->rateA < 1e5) *nconineq += 2; /* Line flow constraints */
     }
   }
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode OPFLOWComputeHessian_PBPOLRAJAHIOP(OPFLOW opflow,Vec X,Vec Lambdae,Vec Lambdai,Mat H)
-{
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-  ierr = MatZeroEntries(H);CHKERRQ(ierr);
-
-  /* Objective function Hessian */
-  ierr = OPFLOWComputeObjectiveHessian_PBPOLRAJAHIOP(opflow,X,H);CHKERRQ(ierr);
-
-  /* Equality constraints Hessian */
-  ierr = OPFLOWComputeEqualityConstraintsHessian_PBPOLRAJAHIOP(opflow,X,Lambdae,H);CHKERRQ(ierr);
-  
-  /* Inequality constraints Hessian */
-  if(opflow->nconineq) {
-    ierr = OPFLOWComputeInequalityConstraintsHessian_PBPOLRAJAHIOP(opflow,X,Lambdai,H);CHKERRQ(ierr);
-  }
-
-  ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -438,23 +385,12 @@ PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOP(OPFLOW opflow)
   opflow->modelops.destroy                              = OPFLOWModelDestroy_PBPOLRAJAHIOP;
   opflow->modelops.setnumvariables                      = OPFLOWModelSetNumVariables_PBPOLRAJAHIOP;
   opflow->modelops.setnumconstraints                    = OPFLOWModelSetNumConstraints_PBPOLRAJAHIOP;
-  opflow->modelops.setvariablebounds                    = OPFLOWSetVariableBounds_PBPOLRAJAHIOP;
   opflow->modelops.setvariableboundsarray               = OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP;
-  opflow->modelops.setconstraintbounds                  = OPFLOWSetConstraintBounds_PBPOLRAJAHIOP;
   opflow->modelops.setconstraintboundsarray             = OPFLOWSetConstraintBoundsArray_PBPOLRAJAHIOP;
-  opflow->modelops.setvariableandconstraintbounds       = OPFLOWSetVariableandConstraintBounds_PBPOLRAJAHIOP;
   opflow->modelops.setinitialguess                      = OPFLOWSetInitialGuess_PBPOLRAJAHIOP;
   opflow->modelops.setinitialguessarray                 = OPFLOWSetInitialGuessArray_PBPOLRAJAHIOP;
-  opflow->modelops.computeequalityconstraints           = OPFLOWComputeEqualityConstraints_PBPOLRAJAHIOP;
-  opflow->modelops.computeinequalityconstraints         = OPFLOWComputeInequalityConstraints_PBPOLRAJAHIOP;
   opflow->modelops.computeequalityconstraintsarray      = OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP;
   opflow->modelops.computeinequalityconstraintsarray    = OPFLOWComputeInequalityConstraintsArray_PBPOLRAJAHIOP;
-  opflow->modelops.computeequalityconstraintjacobian    = OPFLOWComputeEqualityConstraintJacobian_PBPOLRAJAHIOP;
-  opflow->modelops.computeinequalityconstraintjacobian  = OPFLOWComputeInequalityConstraintJacobian_PBPOLRAJAHIOP;
-  opflow->modelops.computehessian                       = OPFLOWComputeHessian_PBPOLRAJAHIOP;
-  opflow->modelops.computeobjandgradient                = OPFLOWComputeObjandGradient_PBPOLRAJAHIOP;
-  opflow->modelops.computeobjective                     = OPFLOWComputeObjective_PBPOLRAJAHIOP;
-  opflow->modelops.computegradient                      = OPFLOWComputeGradient_PBPOLRAJAHIOP;
   opflow->modelops.computeobjectivearray                = OPFLOWComputeObjectiveArray_PBPOLRAJAHIOP;
   opflow->modelops.computegradientarray                 = OPFLOWComputeGradientArray_PBPOLRAJAHIOP;
   opflow->modelops.solutiontops                         = OPFLOWSolutionToPS_PBPOLRAJAHIOP;

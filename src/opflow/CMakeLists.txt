@@ -4,9 +4,6 @@ set(OPFLOW_FORM_SRC
     model/current-bal-cartesian/ibcar2.c
     model/power-bal-polar/pbpol.c
     model/power-bal-cartesian/pbcar.c
-    model/power-bal-polar2/pbpol2.c
-    model/power-bal-polar2/pbpol2params.c
-    model/power-bal-polar2/pbpol2kernels.c
     model/power-bal-hiop/pbpolhiop.c
     model/power-bal-hiop/pbpolhiopkernels.c
 )
@@ -27,8 +24,8 @@ endif()
 set(OPFLOW_SOLVER_SRC
     solver/tao/opflow-tao.c
     solver/ipopt/opflow-ipopt.c
+    solver/hiop/opflow-hiopold.cpp
     solver/hiop/opflow-hiop.cpp
-    solver/hiop/opflow-hiopnew.cpp
 )
 
 set(OPFLOW_SRC

@@ -60,7 +60,6 @@ extern PetscErrorCode OPFLOWModelCreate_PBPOL(OPFLOW);
 extern PetscErrorCode OPFLOWModelCreate_PBCAR(OPFLOW);
 extern PetscErrorCode OPFLOWModelCreate_IBCAR(OPFLOW);
 extern PetscErrorCode OPFLOWModelCreate_IBCAR2(OPFLOW);
-extern PetscErrorCode OPFLOWModelCreate_PBPOL2(OPFLOW);
 
 #if defined(EXAGO_HAVE_HIOP)
 extern PetscErrorCode OPFLOWModelCreate_PBPOLHIOP(OPFLOW);
@@ -83,7 +82,6 @@ PetscErrorCode OPFLOWModelRegisterAll(OPFLOW opflow)
   ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_PBCAR,OPFLOWModelCreate_PBCAR);CHKERRQ(ierr);
   ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_IBCAR,OPFLOWModelCreate_IBCAR);CHKERRQ(ierr);
   ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_IBCAR2,OPFLOWModelCreate_IBCAR2);CHKERRQ(ierr);
-  ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_PBPOL2,OPFLOWModelCreate_PBPOL2);CHKERRQ(ierr);
 
 #if defined(EXAGO_HAVE_HIOP)
   ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_PBPOLHIOP,OPFLOWModelCreate_PBPOLHIOP);CHKERRQ(ierr);
@@ -103,8 +101,8 @@ extern PetscErrorCode OPFLOWSolverCreate_IPOPT(OPFLOW);
 #endif
 extern PetscErrorCode OPFLOWSolverCreate_TAO(OPFLOW);
 #if defined(EXAGO_HAVE_HIOP)
+extern PetscErrorCode OPFLOWSolverCreate_HIOPOLD(OPFLOW);
 extern PetscErrorCode OPFLOWSolverCreate_HIOP(OPFLOW);
-extern PetscErrorCode OPFLOWSolverCreate_HIOPNEW(OPFLOW);
 #endif
 
 /*
@@ -121,8 +119,8 @@ PetscErrorCode OPFLOWSolverRegisterAll(OPFLOW opflow)
 #endif
   ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_TAO,OPFLOWSolverCreate_TAO);CHKERRQ(ierr);
 #if defined(EXAGO_HAVE_HIOP)
+  ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_HIOPOLD,OPFLOWSolverCreate_HIOPOLD);CHKERRQ(ierr);
   ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_HIOP,OPFLOWSolverCreate_HIOP);CHKERRQ(ierr);
-  ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_HIOPNEW,OPFLOWSolverCreate_HIOPNEW);CHKERRQ(ierr);
 #endif
   opflow->OPFLOWSolverRegisterAllCalled = PETSC_TRUE;
 

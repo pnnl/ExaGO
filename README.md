@@ -1,36 +1,38 @@
-# ExaGO (<b>Exa</b>scale <b>G</b>rid <b>O</b>ptimization)
-ExaGO is a package for solving large-scale power grid optimization problems on parallel and distributed architectures, particularly targeted for exascale machines. It is wrritten in C/C++ using the [PETSc](https://www.mcs.anl.gov/petsc/) library. ExaGO includes the following power grid applications:
+# <b>Exa</b>scale <b>G</b>rid <b>O</b>ptimization toolkit (ExaGO<sup>TM</sup>)
+ExaGO<sup>TM</sup> is a package for solving large-scale power grid optimization problems on parallel and distributed architectures, particularly targeted for exascale machines with heteregenous architectures (GPU). It is written in C/C++ using the [PETSc](https://www.mcs.anl.gov/petsc/) library. ExaGO<sup>TM</sup> includes the following power grid applications:
 
-- [SC-ACOPF or SCOPFLOW](docs/web/scopflow.md) solves a security-constrained (contingency) constrained optimal power
-- [ACOPF or OPFLOW](docs/web/opflow.md) solves an AC optimal power flow. OPFLOW is the basic building block for the SCOPFLOW application
+- [ACOPF or OPFLOW](docs/web/opflow.md) solves an AC optimal power flow either on CPU and GPU
 - [ACPF or PFLOW](docs/web/pflow.md) solves an AC power flow
+- [SC-ACOPF or SCOPFLOW](docs/web/scopflow.md) solves a security-constrained (contingency) constrained optimal power
+- [TC-ACOPF or TCOPFLOW](docs/web/tcopflow.md) solves a multi-period optimal power flow
 
-ExaGO applications can use the following solvers:
+ExaGO<sup>TM</sup> applications can use the following solvers:
 
 - [IPOPT](https://github.com/coin-or/Ipopt) is a popular optimization package for solving nonlinear optimization problems that uses an interior-point algorithm.
 - [HiOp](https://github.com/LLNL/hiop) is a HPC solver for optimization. OPFLOW uses HiOp's mixed sparse-dense interior-point solver (NewtonMDS) that allows part of the computation to be run on GPU and part on CPU.
-- [PIPS-NLP](https://github.com/Argonne-National-Laboratory/PIPS/tree/master/PIPS-NLP) is an HPC solver for structured optimization problems, such as those found in security-constrained optimization.
-- [PETSc/TAO](https://www.mcs.anl.gov/petsc/) is a high-performance library providing numerical solvers for linear, nonlinear, time-dependent, and optimizatin problems. TAO includes a parallel primal-dual interior method (TAOPDIPM) that can be used for solving OPFLOW.
+- [PETSc/TAO](https://www.mcs.anl.gov/petsc/) is a high-performance library providing numerical solvers for linear, nonlinear, time-dependent, and optimizatin problems. The optimization package is PETSc, TAO, includes a parallel primal-dual interior method (TAOPDIPM) that can be used for solving OPFLOW.
 
 
-|  Solver | OPFLOW   | SCOPFLOW  | PFLOW  | Parallel  | GPU |
-|:----------:|:---:|:---:|:---:|:---:|:---:|
-| IPOPT      | Y   | Y   |     |     |   |
-| HIOP       | Y   |     |     | Y   | Y |
-| PIPS-NLP   |     | Y   |     | Y   |   |
-| PETSc/TAO  | Y   |     | Y   | Y   | Y |
+|  Solver | OPFLOW   | SCOPFLOW  | PFLOW  |
+|:----------:|:---:|:---:|:---:|
+| IPOPT      | Y   | Y   |     |
+| HIOP       | Y   |     |     |
+| PETSc/TAO  | Y   |     | Y   |
+
 
 ## Prerequisites
-ExaGO depends on various third-party packages. PETSc is a core-dependency of ExaGO. At least one of the solver packages (IPOPT, HiOp, or PIPS-NLP) should be installed depending the application.
-1. [PETSc ver. 3.13](docs/web/petsc_install.md)
-1. [IPOPT](docs/web/ipopt_install.md) 
-1. [HiOp](docs/web/hiop_install.md)
-1. [PIPS-NLP](docs/web/pips_install.md)
+ExaGO depends on the [PETSc](docs/web/petsc_install.md) library and is compatible with version 3.13.
 
-In addition, we recommend installing `git` and `cmake` (ver. 3.10 or higher)
+In addtion, at least one of the solver packages should be installed depending the application.
+1. [IPOPT](docs/web/ipopt_install.md) (version 3.12 and above)
+1. [HiOP](docs/web/hiop_install.md) (develop branch)
+
+ExaGO can run the OPFLOW application on the GPU using HiOP solver library and, in addition, needs UMPIRE and RAJA libraries that provide portability layer and memory management for running calculations on the GPU.
+1. [RAJA](https://github.com/LLNL/RAJA)
+1. [UMPIRE](https://github.com/LLNL/Umpire) 
 
 ## Download
-Download ExaGO from gitlab via
+Download ExaGO<sup>TM</sup> from gitlab via
 ```
 git clone https://gitlab.pnnl.gov/exasgd/frameworks/exago.git
 ```
@@ -39,15 +41,9 @@ or if you have SSH access to the repository
 git clone ssh://git@gitlab.pnnl.gov:2222/exasgd/frameworks/exago.git
 ```
 
-## Install
-
-ExaGO can be installed either with `cmake` (preferred) or `make`.
-
-### Building with `cmake`
-
-Note: CMake instructions are work in progress and will continue to be updated
-
-First create build directory outside the ExaGO source directory. For example
+## Building and Installing with CMake
+ExaGO uses a CMake build system for building, installing, and testing. We recommend using `cmake` ver. 3.10 or higher. To build
+ExaGO with CMake, first create build directory outside the ExaGO source directory. For example
 ```shell
 $ mkdir build
 $ ls
@@ -85,44 +81,49 @@ Similar to IPOPT, the corresponding flags for HiOp are 'EXAGO_ENABLE_HIOP' and '
 ```
 cmake ../exago -DEXAGO_ENABLE_HIOP=ON -DHIOP_DIR=<hiop_install_dir>
 ```
-### Building with `make`
-Another way to build ExaGO is to use `make`. This is purely for development purposes and will be replace with `cmake` once it is stable. For building with `make`, an environment variable for ExaGO directory location needs to be set.
-```
-export EXAGO_DIR=<location of ExaGO>
-```
-Environment variables for [PETSc](docs/web/petsc_install.md), [IPOPT](docs/web/ipopt_install.md), [HIOP](docs/web/hiop_install.md), and [PIPS](docs/web/pips_install.md). 
 
-Individual application can then be compiled with the `make` command.
+Below is an example build with all (optional) dependencies installed
 ```
-cd $EXAGO_DIR
-make <appliction_name>
-```
-Appication name is either `ExaGO`, `OPFLOW`, or `PFLOW`. Use flags `WITH_IPOPT=1`,`WITH_HIOP=1`, or `WITH_PIPS=1` to enable IPOPT, HiOp, and PIPS, respectively. For example,
-```
-make OPFLOW WITH_HIOP=1
-```
-will build OPFLOW application enabling HiOp package.
-
-#### Additional installation tips (Linking third-party libraries)
-Depending on how you installed PETSc, PIPS and IPOPT, you may need to update the linker environment variables to include the PETSc, IPOPT, PIPS-NLP, and ExaGO library paths
-```
-export LD_LIBRARY_PATH=$PETSC_DIR/$PETSC_ARCH/lib:$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=$EXAGO_DIR:$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=$IPOPT_BUILD_DIR/lib:$LD_LIBRARY_PATH
-LD_LIBRARY_PATH=$PIPS_DIR/build/PIPS-NLP:$LD_LIBRARY_PATH
+cmake ../
+-DCMAKE_INSTALL_PREFIX=$installdir/ \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DEXAGO_ENABLE_GPU=ON \
+  -DEXAGO_ENABLE_HIOP=ON \
+  -DEXAGO_ENABLE_IPOPT=ON \
+  -DEXAGO_ENABLE_MPI=ON \
+  -DEXAGO_ENABLE_PETSC=ON \
+  -DEXAGO_RUN_TESTS=ON \
+  -DEXAGO_ENABLE_RAJA=ON \
+  -DRAJA_DIR=$raja_dir \
+  -Dumpire_DIR=$umpire_dir \
+  -DHIOP_DIR=$hiop_dir \
+  -DIPOPT_DIR=$ipopt_dir \
+  -DMAGMA_DIR=$magma_dir \
+  -DPETSC_DIR=$petsc_dir
 ```
 
 ## Usage
-
-- [SCOPFLOW](docs/web/scopflow.md)
+Instructions for executing the different ExaGO applications is given below.
 - [OPFLOW](docs/web/opflow.md)
+- [SCOPFLOW](docs/web/scopflow.md)
 - [PFLOW](docs/web/pflow.md)
 
 ## Authors
+- Shrirang Abhyankar
+- Slaven Peles
+- Asher Mancinelli
+- Robert Rutherford
+- Bruce Palmer
 
 ## Acknowledgement
 This package is developed as a part of [ExaSGD](https://www.exascaleproject.org/wp-content/uploads/2019/10/ExaSGD.pdf) project under the [Exascale computing project](https://www.exascaleproject.org/).
 
-## License
+## Copyright
 
+Copyright &copy; 2020, Battelle Memorial Institute
 
+1. Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity lawfully obtaining a copy of this software and associated documentation files (hereinafter “the Software”) to redistribute and use the Software in source and binary forms, with or without modification.  Such person or entity may use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and may permit others to do so, subject to the following conditions:
+   - Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimers. 
+   - Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution. 
+   - Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any form whatsoever without the express written consent of Battelle.  
+1. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
