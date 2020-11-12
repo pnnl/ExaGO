@@ -10,4 +10,8 @@
 
 #cmakedefine EXAGO_HAVE_RAJA @EXAGO_HAVE_RAJA@
 
+#cmakedefine EXAGO_FLOPS_SINOP @EXAGO_FLOPS_SINOP@
+
+#cmakedefine EXAGO_FLOPS_COSOP @EXAGO_FLOPS_COSOP@
+
 #endif /* _EXAGO_CONFIG_H_ */
