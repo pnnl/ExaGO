@@ -57,6 +57,7 @@ int main(int argc, char** argv)
   Vec            X, Xl, Xu, G, Gl, Gu, grad, Lambda;
   Mat            Jeq, Jineq, Hess;
   int            fail;
+  PetscLogStage  stages[2];
   double         obj_value, obj_factor;
   char           file_c_str[PETSC_MAX_PATH_LEN];
   char           gen_test_data_c_str[PETSC_MAX_PATH_LEN];
@@ -91,6 +92,11 @@ int main(int argc, char** argv)
 
   ierr = PetscOptionsGetString(NULL, NULL, "-gen_test_data", gen_test_data_c_str,PETSC_MAX_PATH_LEN,&gen_test_data);CHKERRQ(ierr);
   ierr = PetscOptionsGetString(NULL, NULL, "-write_test_data", write_test_data_c_str,PETSC_MAX_PATH_LEN,&write_test_data);CHKERRQ(ierr);
+
+  ierr = PetscLogStageRegister("Solution key",&stages[0]);CHKERRQ(ierr);
+  ierr = PetscLogStageRegister("Test stage",&stages[1]);CHKERRQ(ierr);
+
+  ierr = PetscLogStagePush(stages[0]);
 
   if(gen_test_data || write_test_data)
   {
@@ -184,6 +190,10 @@ int main(int argc, char** argv)
     readFromFile(&Hess, file_path + "Hess_valid.bin");
     readFromFile(&obj_factor, file_path + "obj_factor_valid.txt");
   }
+
+  ierr = PetscLogStagePop();CHKERRQ(ierr);
+
+  ierr = PetscLogStagePush(stages[1]);CHKERRQ(ierr);
 
   if(isTestOpflowModelPBPOLHIOP)
   {
@@ -557,6 +567,9 @@ int main(int argc, char** argv)
 
     ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
   }
+
+  ierr = PetscLogStagePop();CHKERRQ(ierr);
+
 
   /* Destroy OPFLOW objects */
   ierr = VecDestroy(&G);CHKERRQ(ierr);

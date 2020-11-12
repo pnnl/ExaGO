@@ -826,6 +826,16 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
     ierr = OPFLOWSetUpInitPflow(opflow);CHKERRQ(ierr);
   }
 
+  /* Register events for logging */
+  ierr = PetscLogEventRegister("OPFLOWObj",0,&opflow->objlogger);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWGrad",0,&opflow->gradlogger);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWEqCons",0,&opflow->eqconslogger);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWIneqCons",0,&opflow->ineqconslogger);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWEqConsJac",0,&opflow->eqconsjaclogger);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWIneqConsJac",0,&opflow->ineqconsjaclogger);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWHess",0,&opflow->hesslogger);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWSolve",0,&opflow->solvelogger);CHKERRQ(ierr);
+
   opflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);
 }
@@ -917,7 +927,9 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
   */
 
   /* Solve */
+  ierr = PetscLogEventBegin(opflow->solvelogger,0,0,0,0);CHKERRQ(ierr);
   ierr = (*opflow->solverops.solve)(opflow);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->solvelogger,0,0,0,0);CHKERRQ(ierr);
 
   //  ierr = VecView(opflow->X,0);CHKERRQ(ierr);
 
@@ -981,9 +993,34 @@ PetscErrorCode OPFLOWComputeObjective(OPFLOW opflow,Vec X,PetscReal *obj)
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
+  ierr = PetscLogEventBegin(opflow->objlogger,0,0,0,0);CHKERRQ(ierr);
   ierr = (*opflow->modelops.computeobjective)(opflow,X,obj);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->objlogger,0,0,0,0);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+
+/*
+  OPFLOWComputeObjectiveArray - Computes the objective function value
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+- x      - the solution array
+
+  Output Parameters:
+- obj    - the objective function value
+
+*/
+PetscErrorCode OPFLOWComputeObjectiveArray(OPFLOW opflow,const double* x,double *obj)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = PetscLogEventBegin(opflow->objlogger,0,0,0,0);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computeobjectivearray)(opflow,x,obj);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->objlogger,0,0,0,0);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
 
 /*
   OPFLOWComputeVariableBounds - Computes the bounds on X
@@ -1020,9 +1057,32 @@ PetscErrorCode OPFLOWComputeGradient(OPFLOW opflow,Vec X,Vec grad)
 {
   PetscErrorCode ierr;
   PetscFunctionBegin;
+  ierr = PetscLogEventBegin(opflow->gradlogger,0,0,0,0);CHKERRQ(ierr);
   ierr = (*opflow->modelops.computegradient)(opflow,X,grad);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->gradlogger,0,0,0,0);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+
+/*
+  OPFLOWComputeGradientArray - Computes the gradient of the objective function (array version)
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+. x      - the solution array
+- grad    - the gradient of the objective function
+
+  Notes: Should be called after the optimization is set up
+*/
+PetscErrorCode OPFLOWComputeGradientArray(OPFLOW opflow,const double *x,double *grad)
+{
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = PetscLogEventBegin(opflow->gradlogger,0,0,0,0);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computegradientarray)(opflow,x,grad);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->gradlogger,0,0,0,0);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
 
 /*
   OPFLOWGetSolution - Returns the OPFLOW solution
@@ -1064,6 +1124,97 @@ PetscErrorCode OPFLOWGetConstraints(OPFLOW opflow,Vec *G)
 }
 
 /*
+  OPFLOWComputeEqualityConstraints - Computes OPFLOW equality constraints
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+. X      - the solution vector
+
+  Output Parameters:
+- Ge      - OPFLOW equallity constraints
+
+  Notes: Should be called after the optimization is set up.
+
+*/
+PetscErrorCode OPFLOWComputeEqualityConstraints(OPFLOW opflow,Vec X,Vec Ge)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = PetscLogEventBegin(opflow->eqconslogger,0,0,0,0);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computeequalityconstraints)(opflow,X,Ge);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->eqconslogger,0,0,0,0);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWComputeInequalityConstraints - Computes OPFLOW inequality constraints
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+. X      - the solution vector
+
+  Output Parameters:
+- Gi      - OPFLOW inequallity constraints
+
+  Notes: Should be called after the optimization is set up.
+*/
+PetscErrorCode OPFLOWComputeInequalityConstraints(OPFLOW opflow,Vec X,Vec Gi)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = PetscLogEventBegin(opflow->ineqconslogger,0,0,0,0);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computeinequalityconstraints)(opflow,X,Gi);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->ineqconslogger,0,0,0,0);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWComputeEqualityConstraintsArray - Computes OPFLOW equality constraints (array version)
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+. x      - the solution array
+
+  Output Parameters:
+- ge      - OPFLOW equality constraints array
+
+  Notes: Should be called after the optimization is set up.
+*/
+PetscErrorCode OPFLOWComputeEqualityConstraintsArray(OPFLOW opflow,const double* x,double *ge)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = PetscLogEventBegin(opflow->eqconslogger,0,0,0,0);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computeequalityconstraintsarray)(opflow,x,ge);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->eqconslogger,0,0,0,0);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWComputeInequalityConstraintsArray - Computes OPFLOW inequality constraints (array version)
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+. x      - the solution array
+
+  Output Parameters:
+- gi      - OPFLOW inequality constraints array
+
+  Notes: Should be called after the optimization is set up.
+*/
+PetscErrorCode OPFLOWComputeInequalityConstraintsArray(OPFLOW opflow,const double* x,double *gi)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = PetscLogEventBegin(opflow->ineqconslogger,0,0,0,0);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computeinequalityconstraintsarray)(opflow,x,gi);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->ineqconslogger,0,0,0,0);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
   OPFLOWComputeConstraints - Computes the OPFLOW constraints
 
   Input Parameters:
@@ -1085,12 +1236,12 @@ PetscErrorCode OPFLOWComputeConstraints(OPFLOW opflow,Vec X,Vec G)
   ierr = VecGetArray(G,&g);CHKERRQ(ierr);
 
   ierr = VecPlaceArray(opflow->Ge,g);CHKERRQ(ierr);
-  ierr = (*opflow->modelops.computeequalityconstraints)(opflow,X,opflow->Ge);CHKERRQ(ierr);
+  ierr = OPFLOWComputeEqualityConstraints(opflow,X,opflow->Ge);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
 
   if(opflow->Nconineq) {
     ierr = VecPlaceArray(opflow->Gi,g+opflow->nconeq);CHKERRQ(ierr);
-    ierr = (*opflow->modelops.computeinequalityconstraints)(opflow,X,opflow->Gi);CHKERRQ(ierr);
+    ierr = OPFLOWComputeInequalityConstraints(opflow,X,opflow->Gi);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->Gi);CHKERRQ(ierr);
   }
 
@@ -1119,6 +1270,7 @@ PetscErrorCode OPFLOWComputeHessian(OPFLOW opflow,Vec X, Vec Lambda, PetscScalar
   PetscScalar    *lambda;
 
   PetscFunctionBegin;
+
   opflow->obj_factor = obj_factor;
 
   /* IPOPT passes the scaled Lagrangian multipliers for Hessian calculation. The scaling
@@ -1133,8 +1285,10 @@ PetscErrorCode OPFLOWComputeHessian(OPFLOW opflow,Vec X, Vec Lambda, PetscScalar
     ierr = VecPlaceArray(opflow->Lambdai,lambda+opflow->nconeq);CHKERRQ(ierr);
   }
 
+  ierr = PetscLogEventBegin(opflow->hesslogger,0,0,0,0);CHKERRQ(ierr);
   /* Compute Hessian */
   ierr = (*opflow->modelops.computehessian)(opflow,X,opflow->Lambdae,opflow->Lambdai,H);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->hesslogger,0,0,0,0);CHKERRQ(ierr);
 
   ierr = VecResetArray(opflow->Lambdae);CHKERRQ(ierr);
 
@@ -1146,6 +1300,7 @@ PetscErrorCode OPFLOWComputeHessian(OPFLOW opflow,Vec X, Vec Lambda, PetscScalar
 
   /* Rescale Lambda back to its original value */
   ierr = VecScale(Lambda,1./obj_factor);CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -1168,11 +1323,15 @@ PetscErrorCode OPFLOWComputeConstraintJacobian(OPFLOW opflow,Vec X,Mat Jeq, Mat 
 
   PetscFunctionBegin;
   ierr = MatZeroEntries(Jeq);CHKERRQ(ierr);
+  ierr = PetscLogEventBegin(opflow->eqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
   ierr = (*opflow->modelops.computeequalityconstraintjacobian)(opflow,X,Jeq);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->eqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
 
   if(opflow->Nconineq) {
     ierr = MatZeroEntries(Jineq);CHKERRQ(ierr);
+    ierr = PetscLogEventBegin(opflow->ineqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
     ierr = (*opflow->modelops.computeinequalityconstraintjacobian)(opflow,X,Jineq);CHKERRQ(ierr);
+    ierr = PetscLogEventEnd(opflow->ineqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);

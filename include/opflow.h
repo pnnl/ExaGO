@@ -49,8 +49,15 @@ PETSC_EXTERN PetscErrorCode OPFLOWGetConstraintMultipliers(OPFLOW,Vec*);
 
 PETSC_EXTERN PetscErrorCode OPFLOWComputeVariableBounds(OPFLOW,Vec,Vec);
 PETSC_EXTERN PetscErrorCode OPFLOWComputeGradient(OPFLOW,Vec,Vec);
+PETSC_EXTERN PetscErrorCode OPFLOWComputeGradientArray(OPFLOW,const double*,double*);
 PETSC_EXTERN PetscErrorCode OPFLOWComputeObjective(OPFLOW,Vec,PetscReal*);
+PETSC_EXTERN PetscErrorCode OPFLOWComputeObjectiveArray(OPFLOW,const double*,double*);
 PETSC_EXTERN PetscErrorCode OPFLOWComputeConstraints(OPFLOW,Vec,Vec);
+PETSC_EXTERN PetscErrorCode OPFLOWComputeEqualityConstraints(OPFLOW,Vec,Vec);
+PETSC_EXTERN PetscErrorCode OPFLOWComputeInequalityConstraints(OPFLOW,Vec,Vec);
+PETSC_EXTERN PetscErrorCode OPFLOWComputeEqualityConstraintsArray(OPFLOW,const double*,double*);
+PETSC_EXTERN PetscErrorCode OPFLOWComputeInequalityConstraintsArray(OPFLOW,const double*,double*);
+
 PETSC_EXTERN PetscErrorCode OPFLOWGetConstraintBounds(OPFLOW,Vec*,Vec*);
 PETSC_EXTERN PetscErrorCode OPFLOWComputeConstraintBounds(OPFLOW,Vec,Vec);
 PETSC_EXTERN PetscErrorCode OPFLOWComputeConstraintJacobian(OPFLOW,Vec,Mat,Mat);

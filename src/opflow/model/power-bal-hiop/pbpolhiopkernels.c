@@ -75,6 +75,8 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLHIOP(OPFLOW opflow,con
   LOADParams     *loadparams=&pbpolhiop->loadparams;
   LINEParams     *lineparams=&pbpolhiop->lineparams;
   PetscInt       i;
+  double         flps=0.0;
+  PetscErrorCode ierr;
 
   PetscFunctionBegin;
 
@@ -86,6 +88,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLHIOP(OPFLOW opflow,con
     ge[genparams->gidx[i]]   -= x[genparams->xidx[i]];
     ge[genparams->gidx[i]+1] -= x[genparams->xidx[i]+1];
   }
+  flps += genparams->ngenON*2.0;
 
   /* Load contributions */
   for(i=0; i < loadparams->nload; i++) {
@@ -93,6 +96,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLHIOP(OPFLOW opflow,con
     ge[loadparams->gidx[i]]   += loadparams->pl[i];
     ge[loadparams->gidx[i]+1] += loadparams->ql[i];
   }
+  flps += loadparams->nload*2.0;
 
   /* Bus contributions */
   for(i=0; i < busparams->nbus; i++) {
@@ -102,6 +106,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLHIOP(OPFLOW opflow,con
     ge[busparams->gidx[i]]   += busparams->isisolated[i]*(theta - busparams->va[i]*PETSC_PI/180.0) + busparams->ispvpq[i]*Vm*Vm*busparams->gl[i];
     ge[busparams->gidx[i]+1] += busparams->isisolated[i]*(Vm    - busparams->vm[i]) - busparams->ispvpq[i]*Vm*Vm*busparams->bl[i];
   }
+  flps += busparams->nbus*14.0;
 
   /* Line contributions */
   for(i=0; i < lineparams->nlineON; i++) {
@@ -122,7 +127,9 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLHIOP(OPFLOW opflow,con
     ge[lineparams->geqidxt[i]]   += Pt;
     ge[lineparams->geqidxt[i]+1] += Qt;
   }
+  flps += lineparams->nlineON*(46+(4*EXAGO_FLOPS_COSOP)+(4*EXAGO_FLOPS_SINOP));
 
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -151,6 +158,8 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsArray_PBPOLHIOP(OPFLOW opflow, 
   PBPOLHIOP         pbpolhiop=(PBPOLHIOP)opflow->model;
   LINEParams     *lineparams=&pbpolhiop->lineparams;
   PetscInt       i;
+  double         flps=0.0;
+  PetscErrorCode ierr;
 
   PetscFunctionBegin;
 
@@ -176,8 +185,11 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsArray_PBPOLHIOP(OPFLOW opflow, 
     /* Not atomic */
     gi[lineparams->gineqidx[i]]   = Sf2;
     gi[lineparams->gineqidx[i]+1] = St2;
+    
   }
+  flps += lineparams->nlinelim*(72+(4*EXAGO_FLOPS_COSOP)+(4*EXAGO_FLOPS_SINOP));
 
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -206,6 +218,7 @@ PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLHIOP(OPFLOW opflow,const double 
   PBPOLHIOP      pbpolhiop=(PBPOLHIOP)opflow->model;
   GENParams     *genparams=&pbpolhiop->genparams;
   PetscInt       i;
+  PetscErrorCode ierr;
   PS             ps=opflow->ps;
   double         obj_val=0.0;
   int            isobj_gencost=opflow->obj_gencost;
@@ -220,6 +233,7 @@ PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLHIOP(OPFLOW opflow,const double 
   }
 
   *obj = obj_val;
+  ierr = PetscLogFlops(genparams->ngenON*8.0);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -244,6 +258,7 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLHIOP(OPFLOW opflow,const double *
   PBPOLHIOP         pbpolhiop=(PBPOLHIOP)opflow->model;
   GENParams     *genparams=&pbpolhiop->genparams;
   PetscInt       i;
+  PetscErrorCode ierr;
   PS             ps=opflow->ps;
   int            isobj_gencost=opflow->obj_gencost;
   double         MVAbase=ps->MVAbase;
@@ -258,6 +273,7 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLHIOP(OPFLOW opflow,const double *
     grad[genparams->xidx[i]] = isobj_gencost*MVAbase*(2.0*genparams->cost_alpha[i]*Pg + genparams->cost_beta[i]);
   }
 
+  ierr = PetscLogFlops(genparams->ngenON*6.0);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -337,8 +353,10 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOLHIOP(OPFLOW opflow,V
   LINEParams     *lineparams=&pbpolhiop->lineparams;
   PetscScalar    val[8];
   PetscScalar    *x;
+  double         flps = 0.0;
 
   PetscFunctionBegin;
+
   ierr = MatZeroEntries(Je);CHKERRQ(ierr);
 
   ierr = VecGetArray(X,&x);CHKERRQ(ierr);
@@ -359,6 +377,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOLHIOP(OPFLOW opflow,V
 
     ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
   }
+  flps += busparams->nbus*15.0;
 
   /* Jacobian from generator contributions */
   for(i=0; i < genparams->ngenON; i++) {
@@ -373,6 +392,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOLHIOP(OPFLOW opflow,V
     col[0] = genparams->xidx[i]+1;
     ierr = MatSetValues(Je,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
   }
+  flps += genparams->ngenON*2.0;
 
   /* Jacobian from line contributions */
   for(i=0; i < lineparams->nlineON; i++) {
@@ -436,11 +456,14 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOLHIOP(OPFLOW opflow,V
     val[7] = Vmt*(-lineparams->Btf[i]*cos(thetatf) + lineparams->Gtf[i]*sin(thetatf));
     ierr = MatSetValues(Je,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
   }
+  flps += (188+(16*EXAGO_FLOPS_COSOP)+(16*EXAGO_FLOPS_SINOP))*lineparams->nlineON;
 
   ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -454,8 +477,10 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOLHIOP(OPFLOW opflow
   PetscInt       row[2],col[4];
   PetscScalar    val[4];
   PetscScalar    *x;
+  double         flps=0.0;
 
   PetscFunctionBegin;
+
   ierr = MatZeroEntries(Ji);CHKERRQ(ierr);
 
   ierr = VecGetArray(X,&x);CHKERRQ(ierr);
@@ -1214,12 +1239,14 @@ PetscErrorCode OPFLOWComputeSparseJacobian_PBPOLHIOP(OPFLOW opflow,int *iJacS, i
 PetscErrorCode OPFLOWComputeSparseHessian_PBPOLHIOP(OPFLOW opflow,const double *x,int *iHSS, int *jHSS,double *MHSS)
 {
   PBPOLHIOP      pbpolhiop=(PBPOLHIOP)opflow->model;
+  PetscErrorCode ierr;
   GENParams     *genparams=&pbpolhiop->genparams;
   PS             ps=opflow->ps;
   int            i;
   double         obj_factor = opflow->obj_factor;
   int            isobj_gencost=opflow->obj_gencost;
   double         MVAbase=ps->MVAbase;
+  double         flps=0.0;
 
   if(iHSS != NULL && jHSS != NULL) {
     /* Generator contributions */
@@ -1232,6 +1259,7 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLHIOP(OPFLOW opflow,const double *
       
       //      *nnz = genparams->jacsq_idx[i]+1;
     }
+    flps += 2.0*genparams->ngenON;
   }
 
   if(MHSS != NULL) {
@@ -1240,8 +1268,10 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLHIOP(OPFLOW opflow,const double *
       MHSS[genparams->jacsp_idx[i]] = isobj_gencost*obj_factor*2.0*genparams->cost_alpha[i]*MVAbase*MVAbase;
       MHSS[genparams->jacsq_idx[i]]  = 0.0;
     }
+    flps += 5.0*genparams->ngenON;
   }    
 
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -1253,6 +1283,8 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLHIOP(OPFLOW opf
   LINEParams     *lineparams=&pbpolhiop->lineparams;
   double         val[8];
   int            nxsparse=2*opflow->ps->ngenON;
+  double         flps = 0.0;
+  PetscErrorCode ierr;
 
   PetscFunctionBegin;
 
@@ -1285,6 +1317,8 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLHIOP(OPFLOW opf
     JacD[row[1]][col[0]] += val[2];
     JacD[row[1]][col[1]] += val[3];
   }
+  flps += busparams->nbus*15.0;
+
 
   /* Jacobian from line contributions */
   for(i=0; i < lineparams->nlineON; i++) {
@@ -1366,6 +1400,8 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLHIOP(OPFLOW opf
     JacD[row[1]][col[3]] += val[7];
 
   }
+  flps += (188+(16*EXAGO_FLOPS_COSOP)+(16*EXAGO_FLOPS_SINOP))*lineparams->nlineON;
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -1379,6 +1415,7 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLHIOP(OPFLOW o
   int       row[2],col[4];
   double    val[4];
   int       nxsparse=2*opflow->ps->ngenON;
+  double    flps=0.0;
 
   PetscFunctionBegin;
   
@@ -1487,6 +1524,9 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLHIOP(OPFLOW o
     JacD[row[0]][col[3]] += val[3];
   }
 
+  flps += (206+(20*EXAGO_FLOPS_COSOP)+(20*EXAGO_FLOPS_SINOP))*lineparams->nlinelim;
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -1500,6 +1540,7 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLHIOP(OPFLOW opfl
   int            row[16],col[16];
   double         val[16];
   int            nxsparse = 2*opflow->ps->ngenON;
+  double         flps=0.0;
 
   PetscFunctionBegin;
 
@@ -1511,6 +1552,7 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLHIOP(OPFLOW opfl
     HDD[row[0]][col[0]] += val[0];
     //    ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
   }
+  flps += 10.0*busparams->nbus;
 
   /* Hessian from line contributions */
   for(i=0; i < lineparams->nlineON; i++) {
@@ -1775,6 +1817,8 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLHIOP(OPFLOW opfl
 
     //    ierr = MatSetValues(H,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
   }
+  flps += ((56.0*EXAGO_FLOPS_SINOP) + (56.0*EXAGO_FLOPS_SINOP) + 462.0)*lineparams->nlineON;
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -1787,6 +1831,8 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLHIOP(OPFLOW op
   int            row[12],col[12];
   double         val[12];
   int            nxsparse=2*opflow->ps->ngenON;
+  PetscErrorCode ierr;
+  double         flps=0.0;
 
   PetscFunctionBegin;
       
@@ -2094,6 +2140,8 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLHIOP(OPFLOW op
 
     //    ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
   }
+  flps += (972+(92*EXAGO_FLOPS_COSOP)+(92*EXAGO_FLOPS_SINOP))*lineparams->nlinelim;
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

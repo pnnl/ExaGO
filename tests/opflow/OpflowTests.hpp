@@ -42,7 +42,7 @@ public:
     PetscErrorCode   ierr;
     LocalOrdinalType fail = 0;
     RealType         obj_val=0.0;
-    ierr = (*opflow->modelops.computeobjectivearray)(opflow, xref, &obj_val);CHKERRQ(ierr);
+    ierr = OPFLOWComputeObjectiveArray(opflow, xref, &obj_val);CHKERRQ(ierr);
     fail += !isEqual(obj_val, obj_ref);
     cleanup(fail, opflow);
   }
@@ -73,7 +73,7 @@ public:
 
     ierr = PetscMalloc1(nx,&grad);CHKERRQ(ierr);
 
-    ierr = (*opflow->modelops.computegradientarray)(opflow, xref, grad);CHKERRQ(ierr);
+    ierr = OPFLOWComputeGradientArray(opflow,xref,grad);CHKERRQ(ierr);
 
     fail += verifyAnswer(grad_ref, grad, nx);
 
@@ -101,7 +101,7 @@ public:
     grad = static_cast<double*>(h_allocator.allocate(nx*sizeof(double)));
     grad_dev = static_cast<double*>(d_allocator.allocate(nx*sizeof(double)));
 
-    ierr = (*opflow->modelops.computegradientarray)(opflow, xref_dev, grad_dev);CHKERRQ(ierr);
+    ierr = OPFLOWComputeGradientArray(opflow,xref_dev,grad_dev);CHKERRQ(ierr);
 
     // Copy back from device to host
     resmgr.copy(grad,grad_dev);
@@ -225,9 +225,10 @@ public:
     ge = g;
     if(opflow->nconineq) gi = g + opflow->nconeq;
 
-    ierr = (*opflow->modelops.computeequalityconstraintsarray)(opflow, xref, ge);CHKERRQ(ierr);
+    ierr = OPFLOWComputeEqualityConstraintsArray(opflow,xref,ge);CHKERRQ(ierr);
+
     if(opflow->nconineq) {
-      ierr = (*opflow->modelops.computeinequalityconstraintsarray)(opflow, xref, gi);CHKERRQ(ierr);
+      ierr = OPFLOWComputeInequalityConstraintsArray(opflow,xref,gi);CHKERRQ(ierr);
     }
 
     fail += verifyAnswer(g, gref, nconeq + nconineq);
@@ -242,7 +243,7 @@ public:
   {
     PetscErrorCode   ierr;
     LocalOrdinalType fail = 0;
-    double           *g,*ge,*gi;
+    double           *g;
     double           *g_dev,*ge_dev,*gi_dev;
     int              nx,nconeq,nconineq,i;
     umpire::Allocator h_allocator,d_allocator;
@@ -258,15 +259,15 @@ public:
 
     for(i=0; i < opflow->ncon; i++) g[i] = 0.0;
 
-    ge = g; ge_dev = g_dev;
+    ge_dev = g_dev;
     if(opflow->nconineq) {
-      gi     = g     + opflow->nconeq;
       gi_dev = g_dev + opflow->nconeq;
     }
 
-    ierr = (*opflow->modelops.computeequalityconstraintsarray)(opflow, xref_dev, ge_dev);CHKERRQ(ierr);
+    ierr = OPFLOWComputeEqualityConstraintsArray(opflow,xref_dev,ge_dev);CHKERRQ(ierr);
+
     if(opflow->nconineq) {
-      ierr = (*opflow->modelops.computeinequalityconstraintsarray)(opflow, xref_dev, gi_dev);CHKERRQ(ierr);
+      ierr = OPFLOWComputeInequalityConstraintsArray(opflow,xref_dev,gi_dev);CHKERRQ(ierr);
     }
    
     // Copy back from device to host

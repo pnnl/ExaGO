@@ -13,7 +13,7 @@ Bool eval_opflow_f(PetscInt n, PetscScalar* x, Bool new_x,
 
   *obj_value = 0.0;
   ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
-  ierr = (*opflow->modelops.computeobjective)(opflow,opflow->X,obj_value);CHKERRQ(ierr);
+  ierr = OPFLOWComputeObjective(opflow,opflow->X,obj_value);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
 				
   return TRUE;
@@ -28,7 +28,7 @@ Bool eval_opflow_grad_f(PetscInt n, PetscScalar* x, Bool new_x,
   ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
   ierr = VecPlaceArray(opflow->gradobj,grad_f);CHKERRQ(ierr);
   ierr = VecSet(opflow->gradobj,0.0);CHKERRQ(ierr);
-  ierr = (*opflow->modelops.computegradient)(opflow,opflow->X,opflow->gradobj);CHKERRQ(ierr);
+  ierr = OPFLOWComputeGradient(opflow,opflow->X,opflow->gradobj);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->gradobj);CHKERRQ(ierr);
 
@@ -45,13 +45,13 @@ Bool eval_opflow_g(PetscInt n, PetscScalar* x, Bool new_x,
 
   /* Equality constraints */
   ierr = VecPlaceArray(opflow->Ge,g);CHKERRQ(ierr);
-  ierr = (*opflow->modelops.computeequalityconstraints)(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
+  ierr = OPFLOWComputeEqualityConstraints(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
 
   if(opflow->Nconineq) {
     /* Inequality constraints */
     ierr = VecPlaceArray(opflow->Gi,g+opflow->nconeq);CHKERRQ(ierr);
-    ierr = (*opflow->modelops.computeinequalityconstraints)(opflow,opflow->X,opflow->Gi);CHKERRQ(ierr);
+    ierr = OPFLOWComputeInequalityConstraints(opflow,opflow->X,opflow->Gi);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->Gi);CHKERRQ(ierr);
   }
 
