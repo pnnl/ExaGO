@@ -13,6 +13,19 @@
 #include <umpire/Allocator.hpp>
 #include <umpire/ResourceManager.hpp>
 #include <RAJA/RAJA.hpp>
+
+#ifdef EXAGO_HAVE_GPU
+  using exago_raja_exec = RAJA::cuda_exec<128>;
+  using exago_raja_reduce = RAJA::cuda_reduce;
+  using exago_raja_atomic = RAJA::cuda_atomic;
+  #define RAJA_LAMBDA [=] __device__
+#else
+  using exago_raja_exec = RAJA::omp_parallel_for_exec;
+  using exago_raja_reduce = RAJA::omp_reduce;
+  using exago_raja_atomic = RAJA::omp_atomic;
+  #define RAJA_LAMBDA [=]
+#endif
+
 #endif
 
 /* Converts an array xin in natural ordering to an array xout in sparse-dense                                                                   
@@ -389,8 +402,8 @@ int main(int argc, char** argv)
       hess_dense[i] = data_hess_host + i*nxdense;
     }
 
-    RAJA::forall<RAJA::cuda_exec<128>>(RAJA::RangeSegment(0, nxdense),
-      [=] __device__ (RAJA::Index_type i)
+    RAJA::forall<exago_raja_exec>(RAJA::RangeSegment(0, nxdense),
+      RAJA_LAMBDA (RAJA::Index_type i)
       {
         hess_dense_dev[i] = data_hess_dev + i*nxdense;
       }
