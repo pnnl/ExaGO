@@ -14,4 +14,6 @@
 
 #cmakedefine EXAGO_FLOPS_COSOP @EXAGO_FLOPS_COSOP@
 
+#cmakedefine EXAGO_HAVE_GPU @EXAGO_HAVE_GPU@
+
 #endif /* _EXAGO_CONFIG_H_ */

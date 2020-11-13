@@ -76,8 +76,10 @@ if(EXAGO_ENABLE_GPU)
   include(CheckLanguage)
   enable_language(CUDA)
   check_language(CUDA)
-
+  
   find_package(CUDA REQUIRED)
+
+  set(EXAGO_HAVE_GPU 1)
 
   if(NOT DEFINED CMAKE_CUDA_STANDARD)
     set(CMAKE_CUDA_STANDARD 11)
