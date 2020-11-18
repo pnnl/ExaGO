@@ -1,11 +1,15 @@
+/*
+   This is the first HiOP interface for OPFLOW. It only works with power_balance_polar model. This
+   implementation is deprecated. Use the other hiop implementation
+*/
+
 #include <exago_config.h>
 
 #if defined(EXAGO_HAVE_HIOP)
 
-#ifndef OPFLOWHIOPNEW_HPP
-#define OPFFLOWHIOPNEW_HPP
+#ifndef OPFLOWHIOPOLD_HPP
+#define OPFFLOWHIOPOLD_HPP
 #include <opflow.h>
-#include <hiopLinAlgFactory.hpp>
 #include <hiopInterface.hpp>
 #include <hiopMatrix.hpp>
 #include <hiopNlpFormulation.hpp>
@@ -19,13 +23,13 @@
 #include "magma_v2.h"
 #endif
 
-class OPFLOWHIOPNEWInterface : public hiop::hiopInterfaceMDS
+class OPFLOWHIOPOLDInterface : public hiop::hiopInterfaceMDS
 {
 public:
-  OPFLOWHIOPNEWInterface(OPFLOW);
+  OPFLOWHIOPOLDInterface(OPFLOW);
 
 
-  ~OPFLOWHIOPNEWInterface() {
+  ~OPFLOWHIOPOLDInterface() {
     PetscFree(idxn2sd_map);
   }
 
@@ -91,11 +95,11 @@ private:
   PetscInt *idxn2sd_map;
 };
 
-typedef struct _p_OPFLOWSolver_HIOPNEW *OPFLOWSolver_HIOPNEW;
+typedef struct _p_OPFLOWSolver_HIOPOLD *OPFLOWSolver_HIOPOLD;
 
-struct _p_OPFLOWSolver_HIOPNEW {
+struct _p_OPFLOWSolver_HIOPOLD {
   
-  OPFLOWHIOPNEWInterface           *nlp;
+  OPFLOWHIOPOLDInterface           *nlp;
   hiop::hiopSolveStatus         status;
   hiop::hiopNlpMDS              *mds;
   hiop::hiopAlgFilterIPMNewton  *solver;

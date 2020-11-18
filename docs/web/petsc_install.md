@@ -16,7 +16,7 @@ export PETSC_ARCH=<arch-name>
 arch-name can be any name.
 
 ### 3. Switch branch
-SCOPFLOW is compatible with the current release of PETSc (version 3.13). To use it, switch to the `maint` branch
+ExaGO is compatible with the current release of PETSc (version 3.13). To use it, switch to the `maint` branch of PETSc
 
 ```
 cd $PETSC_DIR

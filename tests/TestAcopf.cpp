@@ -28,9 +28,10 @@
 
 #endif
 
-/* Converts an array xin in natural ordering to an array xout in sparse-dense                                                                   
-   ordering                                                                                                                                     
-*/
+/**
+ * @brief Converts an array xin in natural ordering to an array xout in
+ * sparse-dense ordering
+ */
 void naturaltospdense(const double *xin,double *xout,int *idxn2sd_map,int nx)
 {
   int i;
@@ -40,9 +41,10 @@ void naturaltospdense(const double *xin,double *xout,int *idxn2sd_map,int nx)
   }
 }
 
-/* Converts an array xin in sparse dense ordering to an array xout in natural                                                                   
-   ordering                                                                                                                                     
-*/
+/**
+ * @brief Converts an array xin in sparse dense ordering to an array xout in
+ * natural ordering
+ */
 void spdensetonatural(const double *xin,double *xout,int *idxn2sd_map,int nx)
 {
   int i;
@@ -52,18 +54,32 @@ void spdensetonatural(const double *xin,double *xout,int *idxn2sd_map,int nx)
   }
 }
 
+/**
+ * @brief Unit test driver for ACOPF models
+ * @see opflow/OpflowTests.hpp for kernels tested by this driver
+ *
+ * You can pass several options to the TestAcopf executatable through the command line (implemented using PETSc options):
+ *
+ *    ~ -netfile <data_file> : Specifies the input data file to test against. Default value is `/<exago_dir>/datafiles/case9mod.m`.
+ *                             See directory datafiles for other potential inputs.
+ *
+ *    ~ -gen_test_data       : If used, generates an answer key using IPOPT to test against.
+ *                             If not used, uses existing answer keys located in `/<exago_dir>/datafiles/test_validation`.
+ *
+ *    ~ -write_test_data     : If used, generates test data, and then writes out the results to `/<install_dir>/tests/datafiles/test_validation/<data_file>/`.
+ *                             In order to save generated results, you should copy them into `/<exago_dir>/datafiles/test_validation/<data_file>/` and add them to git.
+ *      
+ */
 int main(int argc, char** argv)
 {
-  const bool     isTestOpflowModelPBPOLHIOP = false;
-  const bool     isTestOpflowModelPBPOL2    = false;
   const bool     isTestOpflowModelPBPOL     = false;
 #if defined(EXAGO_HAVE_RAJA)
   const bool     isTestOpflowModelPBPOLRAJAHIOP = true;
-  const bool     isTestOpflowModelPBPOLRAJA = false;
+  const bool     isTestOpflowModelPBPOLHIOP = false;
+#else
+  const bool     isTestOpflowModelPBPOLRAJAHIOP = false;
+  const bool     isTestOpflowModelPBPOLHIOP = true;
 #endif
-  const bool     isTestOpflowModelPBCAR     = false;
-  const bool     isTestOpflowModelIBCAR2    = false;
-  const bool     isTestOpflowModelIBCAR     = false;
   PetscErrorCode ierr;
   PetscBool      flg, gen_test_data, write_test_data;
   bool           ineq_present = false;
@@ -140,21 +156,21 @@ int main(int argc, char** argv)
 
     /* Get reference objective value */
     ierr = OPFLOWComputeObjective(opflow,X,&obj_value);CHKERRQ(ierr);
-    
+
 
     /* Get reference value for the objective radient */
     ierr = VecDuplicate(X,&grad);CHKERRQ(ierr);
     ierr = OPFLOWComputeGradient(opflow,X,grad);CHKERRQ(ierr);
-    
+
 
     /* Get reference constraint residuals */
     ierr = OPFLOWGetConstraints(opflow,&G);CHKERRQ(ierr);
     ierr = OPFLOWComputeConstraints(opflow,X,G);CHKERRQ(ierr);
-    
+
 
     /* Get reference constraint bounds */
     ierr = OPFLOWGetConstraintBounds(opflow,&Gl,&Gu);CHKERRQ(ierr);
-    
+
 
     /* Get reference equality constraint and inequality constraint Jacobian */
     ierr = OPFLOWGetConstraintJacobian(opflow,&Jeq,&Jineq);CHKERRQ(ierr);
@@ -226,7 +242,7 @@ int main(int argc, char** argv)
     ierr = OPFLOWSetModel(opflowtest,OPFLOWMODEL_PBPOLHIOP);CHKERRQ(ierr);
 
     /* Set solver to HIOP */
-    ierr = OPFLOWSetSolver(opflowtest,OPFLOWSOLVER_HIOPNEW);CHKERRQ(ierr);
+    ierr = OPFLOWSetSolver(opflowtest,OPFLOWSOLVER_HIOP);CHKERRQ(ierr);
 
     /* Set up */
     ierr = OPFLOWSetUp(opflowtest);CHKERRQ(ierr);
@@ -248,11 +264,14 @@ int main(int argc, char** argv)
     ierr = VecGetArray(Xu,&xu_vec);CHKERRQ(ierr);
     ierr = VecGetArray(grad,&grad_vec);CHKERRQ(ierr);
 
-    /* IPOPT passes the scaled Lagrangian multipliers for Hessian calculation. The scaling
-       factor is the Hessian objective factor it uses in the Hessian calculation, so we need
-       to scale Lambda. Note that obj_factor = 1.0 except when the solver is IPOPT which sets
-       obj_factor
-    */
+
+    /**
+     * @note IPOPT passes the scaled Lagrangian multipliers for Hessian 
+     * calculation. The scaling factor is the Hessian objective factor it 
+     * uses in the Hessian calculation, so we need to scale Lambda. Note 
+     * that obj_factor = 1.0 except when the solver is IPOPT which sets 
+     * obj_factor
+     */
     ierr = VecScale(Lambda,obj_factor);CHKERRQ(ierr);
 
     ierr = VecGetArray(Lambda, &lambda_ref);CHKERRQ(ierr);
@@ -313,7 +332,7 @@ int main(int argc, char** argv)
     ierr = OPFLOWSetModel(opflowtest,OPFLOWMODEL_PBPOLRAJAHIOP);CHKERRQ(ierr);
 
     /* Set solver to HIOP */
-    ierr = OPFLOWSetSolver(opflowtest,OPFLOWSOLVER_HIOPNEW);CHKERRQ(ierr);
+    ierr = OPFLOWSetSolver(opflowtest,OPFLOWSOLVER_HIOP);CHKERRQ(ierr);
 
     /* Set up */
     ierr = OPFLOWSetUp(opflowtest);CHKERRQ(ierr);
@@ -338,11 +357,14 @@ int main(int argc, char** argv)
     ierr = VecGetArray(Xl,&xl_vec);CHKERRQ(ierr);
     ierr = VecGetArray(Xu,&xu_vec);CHKERRQ(ierr);
     ierr = VecGetArray(grad,&grad_vec);CHKERRQ(ierr);
-    /* IPOPT passes the scaled Lagrangian multipliers for Hessian calculation. The scaling                                    
-       factor is the Hessian objective factor it uses in the Hessian calculation, so we need                                  
-       to scale Lambda. Note that obj_factor = 1.0 except when the solver is IPOPT which sets                                 
-       obj_factor                                                                                                             
-    */
+
+    /**
+     * @note IPOPT passes the scaled Lagrangian multipliers for Hessian 
+     * calculation. The scaling factor is the Hessian objective factor it 
+     * uses in the Hessian calculation, so we need to scale Lambda. Note 
+     * that obj_factor = 1.0 except when the solver is IPOPT which sets 
+     * obj_factor
+     */
     ierr = VecScale(Lambda,obj_factor);CHKERRQ(ierr);
 
     ierr = VecGetArray(Lambda,&lambda_ref);CHKERRQ(ierr);
@@ -440,60 +462,7 @@ int main(int argc, char** argv)
     ierr = VecScale(Lambda,1/obj_factor);CHKERRQ(ierr);
     ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
   }
-
-  if(isTestOpflowModelPBPOLRAJA)
-  {
-    OPFLOW opflowtest;
-    exago::tests::TestOpflow test;
-
-    std::cout << "\nTesting power balance model in polar coordinates "
-              << "(componentwise assembly, RAJA implementation\n";
-
-    ierr = OPFLOWCreate(PETSC_COMM_WORLD,&opflowtest);CHKERRQ(ierr);
-    ierr = OPFLOWReadMatPowerData(opflowtest,file.c_str());CHKERRQ(ierr);
-    ierr = OPFLOWSetModel(opflowtest,OPFLOWMODEL_PBPOLRAJA);CHKERRQ(ierr);
-    ierr = OPFLOWSetUp(opflowtest);CHKERRQ(ierr);
-
-    fail += test.computeVariableBounds(opflowtest,Xl,Xu);
-    fail += test.computeObjective(opflowtest,X,obj_value);
-    fail += test.computeGradient(opflowtest,X,grad);
-    fail += test.computeConstraints(opflowtest,X,G);
-    fail += test.computeConstraintBounds(opflowtest,Gl,Gu);
-
-    ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
-  }
 #endif
-
-  if(isTestOpflowModelPBPOL2)
-  {
-    OPFLOW opflowtest;
-    exago::tests::TestOpflow test;
-
-    std::cout << "\nTesting power balance model in polar coordinates "
-              << "(componentwise assembly) ... \n";
-
-    // Create optimal power flow model
-    ierr = OPFLOWCreate(PETSC_COMM_WORLD,&opflowtest);CHKERRQ(ierr);
-
-    /* Read Network data */
-    ierr = OPFLOWReadMatPowerData(opflowtest,file.c_str());CHKERRQ(ierr);
-
-    /* Set opflow model type to power balance polar2 (component assembly) */
-    ierr = OPFLOWSetModel(opflowtest,OPFLOWMODEL_PBPOL2);CHKERRQ(ierr);
-
-    /* Set up */
-    ierr = OPFLOWSetUp(opflowtest);CHKERRQ(ierr);
-
-    fail += test.computeVariableBounds(opflowtest,Xl,Xu);
-    fail += test.computeObjective(opflowtest,X,obj_value);
-    fail += test.computeGradient(opflowtest,X,grad);
-    fail += test.computeConstraints(opflowtest,X,G);
-    fail += test.computeConstraintBounds(opflowtest,Gl,Gu);
-    fail += test.computeConstraintJacobian(opflowtest,X,Jeq,Jineq);
-    fail += test.computeHessian(opflowtest,X,Lambda,obj_factor,Hess);
-
-    ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
-  }
 
   if (isTestOpflowModelPBPOL)
   {
@@ -521,68 +490,6 @@ int main(int argc, char** argv)
 
     ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
   }
-
-
-  if (isTestOpflowModelPBCAR)
-  {
-    OPFLOW                   opflowtest;
-    exago::tests::TestOpflow test;
-
-    /* Set up test opflow */
-    ierr = OPFLOWCreate(PETSC_COMM_WORLD,&opflowtest);CHKERRQ(ierr);
-    ierr = OPFLOWReadMatPowerData(opflowtest,file.c_str());CHKERRQ(ierr);
-    ierr = OPFLOWSetModel(opflowtest,OPFLOWMODEL_PBCAR);CHKERRQ(ierr);
-    ierr = OPFLOWSetUp(opflowtest);CHKERRQ(ierr);
-
-    fail += test.computeVariableBounds(opflowtest,Xl,Xu);
-    fail += test.computeObjective(opflowtest,X,obj_value);
-    fail += test.computeGradient(opflowtest,X,grad);
-    fail += test.computeConstraints(opflowtest,X,G);
-    fail += test.computeConstraintBounds(opflowtest,Gl,Gu);
-
-    ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
-  }
-
-  if (isTestOpflowModelIBCAR)
-  {
-    OPFLOW opflowtest;
-    exago::tests::TestOpflow test;
-
-    ierr = OPFLOWCreate(PETSC_COMM_WORLD,&opflowtest);CHKERRQ(ierr);
-    ierr = OPFLOWReadMatPowerData(opflowtest,file.c_str());CHKERRQ(ierr);
-    ierr = OPFLOWSetModel(opflowtest,OPFLOWMODEL_IBCAR);CHKERRQ(ierr);
-    ierr = OPFLOWSetUp(opflowtest);CHKERRQ(ierr);
-
-    fail += test.computeVariableBounds(opflowtest,Xl,Xu);
-    fail += test.computeObjective(opflowtest,X,obj_value);
-    fail += test.computeGradient(opflowtest,X,grad);
-    fail += test.computeConstraints(opflowtest,X,G);
-    fail += test.computeConstraintBounds(opflowtest,Gl,Gu);
-
-    ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
-  }
-
-  if (isTestOpflowModelIBCAR2)
-  {
-    OPFLOW opflowtest;
-    exago::tests::TestOpflow test;
-
-    ierr = OPFLOWCreate(PETSC_COMM_WORLD,&opflowtest);CHKERRQ(ierr);
-    ierr = OPFLOWReadMatPowerData(opflowtest,file.c_str());CHKERRQ(ierr);
-    ierr = OPFLOWSetModel(opflowtest,OPFLOWMODEL_IBCAR2);CHKERRQ(ierr);
-    ierr = OPFLOWSetUp(opflowtest);CHKERRQ(ierr);
-
-    fail += test.computeVariableBounds(opflowtest,Xl,Xu);
-    fail += test.computeObjective(opflowtest,X,obj_value);
-    fail += test.computeGradient(opflowtest,X,grad);
-    fail += test.computeConstraints(opflowtest,X,G);
-    fail += test.computeConstraintBounds(opflowtest,Gl,Gu);
-
-    ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
-  }
-
-  ierr = PetscLogStagePop();CHKERRQ(ierr);
-
 
   /* Destroy OPFLOW objects */
   ierr = VecDestroy(&G);CHKERRQ(ierr);

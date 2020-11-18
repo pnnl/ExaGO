@@ -1,3 +1,4 @@
+
 #include <exago_config.h>
 #if defined(EXAGO_HAVE_HIOP)
 #include <private/opflowimpl.h>
@@ -91,23 +92,14 @@ bool OPFLOWHIOPInterface::get_vars_info(const long long& n, double *xlow, double
 {
   PetscInt       i;
   PetscErrorCode ierr;
-  const PetscScalar    *xl,*xu;
+  //  PetscPrintf(MPI_COMM_SELF,"Enter get_vars_info\n");
 
-  ierr = (*opflow->modelops.setvariablebounds)(opflow,opflow->Xl,opflow->Xu);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.setvariableboundsarray)(opflow,xlow,xupp);CHKERRQ(ierr);
     
-  ierr = VecGetArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
-  ierr = VecGetArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
-
-  naturaltospdense(xl,xlow);
-  naturaltospdense(xu,xupp);
-
   for(i=0; i < n; i++) {
     type[i] = hiopNonlinear;
   }    
-
-  ierr = VecRestoreArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
-  ierr = VecRestoreArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);  
-
+  //  PetscPrintf(MPI_COMM_SELF,"Exit get_vars_info\n");
   return true;
 }
 
@@ -115,16 +107,13 @@ bool OPFLOWHIOPInterface::get_cons_info(const long long& m, double* clow, double
 {
   PetscInt i;
   PetscErrorCode ierr;
+  //  PetscPrintf(MPI_COMM_SELF,"Enter get_cons_info \n");
 
-  ierr = VecPlaceArray(opflow->Gl,clow);CHKERRQ(ierr);
-  ierr = VecPlaceArray(opflow->Gu,cupp);CHKERRQ(ierr);
-
-  ierr = (*opflow->modelops.setconstraintbounds)(opflow,opflow->Gl,opflow->Gu);CHKERRQ(ierr);
-
-  ierr = VecResetArray(opflow->Gl);CHKERRQ(ierr);
-  ierr = VecResetArray(opflow->Gu);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.setconstraintboundsarray)(opflow,clow,cupp);CHKERRQ(ierr);
 
   for(i=0; i < m; i++) type[i] = hiopNonlinear;
+
+  //  PetscPrintf(MPI_COMM_SELF,"Exit get_cons_info \n");
 
   return true;
 }
@@ -133,28 +122,32 @@ bool OPFLOWHIOPInterface::get_sparse_dense_blocks_info(int& nx_sparse, int& nx_d
 				  int& nnz_sparse_Jace, int& nnz_sparse_Jaci,
 				  int& nnz_sparse_Hess_Lagr_SS, int& nnz_sparse_Hess_Lagr_SD)
 {
+  //  PetscPrintf(MPI_COMM_SELF,"Enter sparse_dense_blocks_info \n");
+
   nx_sparse = nxsparse;
   nx_dense  = nxdense;
 
   nnz_sparse_Jace = nnz_sparse_Hess_Lagr_SS = nxsparse;
   nnz_sparse_Jaci = 0; 
   nnz_sparse_Hess_Lagr_SD = 0;
+
+  //  PetscPrintf(MPI_COMM_SELF,"Enter sparse_dense_blocks_info \n");
+
   return true;
 }
 
 bool OPFLOWHIOPInterface::eval_f(const long long& n, const double* x, bool new_x, double& obj_value)
 {
   PetscErrorCode ierr;
-  PetscScalar    *xarr;
+
+  //  PetscPrintf(MPI_COMM_SELF,"Enter eval_f \n");
 
   obj_value = 0.0;
-  ierr = VecGetArray(opflow->X,&xarr);CHKERRQ(ierr);
-  /* Convert from sparse-dense to natural ordering */
-  spdensetonatural(x,xarr);
-  ierr = VecRestoreArray(opflow->X,&xarr);CHKERRQ(ierr);
 
   /* Compute objective */
-  ierr = (*opflow->modelops.computeobjective)(opflow,opflow->X,&obj_value);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computeobjectivearray)(opflow,x,&obj_value);CHKERRQ(ierr);
+
+  //  PetscPrintf(MPI_COMM_SELF,"Exit eval_f \n");
 
   return true;
 }
@@ -164,50 +157,33 @@ bool OPFLOWHIOPInterface::eval_cons(const long long& n, const long long& m,
 	       const double* x, bool new_x, double* cons)
 {
   PetscErrorCode ierr;
-  PetscScalar    *xarr;
+
+  //  PetscPrintf(MPI_COMM_SELF,"Enter eval_cons \n");
 
   if(!num_cons) return true;
 
-  ierr = VecGetArray(opflow->X,&xarr);CHKERRQ(ierr);
-  /* Convert from sparse-dense to natural ordering */
-  spdensetonatural(x,xarr);
-  ierr = VecRestoreArray(opflow->X,&xarr);CHKERRQ(ierr);
-
   if(idx_cons[0] == 0) {
     /* Equality constaints */
-    ierr = VecPlaceArray(opflow->Ge,cons+idx_cons[0]);CHKERRQ(ierr);
-    ierr = (*opflow->modelops.computeequalityconstraints)(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
-    ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
+    ierr = (*opflow->modelops.computeequalityconstraintsarray)(opflow,x,cons);CHKERRQ(ierr);
   }
 
   if(idx_cons[0] == opflow->nconeq && opflow->nconineq) {
     /* Inequality constraints */
-    ierr = VecPlaceArray(opflow->Gi,cons);CHKERRQ(ierr);
-    ierr = (*opflow->modelops.computeinequalityconstraints)(opflow,opflow->X,opflow->Gi);CHKERRQ(ierr);
-    ierr = VecResetArray(opflow->Gi);CHKERRQ(ierr);
+    ierr = (*opflow->modelops.computeinequalityconstraintsarray)(opflow,x,cons);CHKERRQ(ierr);
   }
 
+  //  PetscPrintf(MPI_COMM_SELF,"Exit eval_cons \n");
   return true;
 }
 
 bool OPFLOWHIOPInterface::eval_grad_f(const long long& n, const double* x, bool new_x, double* gradf)
 {
   PetscErrorCode ierr;
-  PetscScalar    *xarr;
-  const PetscScalar *gradarr;
+  //  PetscPrintf(MPI_COMM_SELF,"Enter eval_grad_f \n");
 
-  ierr = VecGetArray(opflow->X,&xarr);CHKERRQ(ierr);
-  /* Convert from sparse-dense to natural ordering */
-  spdensetonatural(x,xarr);
-  ierr = VecRestoreArray(opflow->X,&xarr);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computegradientarray)(opflow,x,gradf);CHKERRQ(ierr);
 
-  ierr = VecSet(opflow->gradobj,0.0);CHKERRQ(ierr);
-  ierr = (*opflow->modelops.computegradient)(opflow,opflow->X,opflow->gradobj);CHKERRQ(ierr);
-
-  ierr = VecGetArrayRead(opflow->gradobj,&gradarr);CHKERRQ(ierr);
-  /* Convert from natural to sparse-dense ordering */
-  naturaltospdense(gradarr,gradf);
-  ierr = VecRestoreArrayRead(opflow->gradobj,&gradarr);CHKERRQ(ierr);
+  //  PetscPrintf(MPI_COMM_SELF,"Exit eval_grad_f \n");
 
   return true;
 }
@@ -220,99 +196,29 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
 		   double** JacD)
 {
   PetscErrorCode ierr;
-  PetscInt       i,j,k;
-  PetscInt       ncols;
-  const PetscInt *cols;
-  const PetscScalar *vals;
-  int               nnzs=0,gi=0;
-  PS             ps=opflow->ps;
-  PSBUS          bus;
-  PetscScalar    *xarr;
-  PetscInt       dcol;
+  //  PetscPrintf(MPI_COMM_SELF,"Enter eval_Jac_cons \n");
 
   if(!num_cons) return true;
 
-  if(idx_cons[0] == 0 && iJacS != NULL && jJacS!= NULL) {
-    /* Sparse equality constraint Jacobian locations w.r.t Pg,Qg */
-    for(i=0; i < ps->nbus; i++) {
-      bus = &ps->bus[i];
+  /* Equality constraints */
+  if(idx_cons[0] == 0) {
+    //    PetscPrintf(MPI_COMM_SELF,"Came here eq. \n");
 
-      for(k=0; k < bus->ngenON; k++) {
-	iJacS[nnzs + k] = 2*i;
-	jJacS[nnzs + k] = 2*gi;
+    /* Sparse Jacobian */
+    ierr = (*opflow->modelops.computesparsejacobianhiop)(opflow,iJacS,jJacS,MJacS);CHKERRQ(ierr);
 
-	iJacS[nnzs + bus->ngenON + k] = 2*i+1;
-	jJacS[nnzs + bus->ngenON + k] = 2*gi+1;
+    /* Dense equality constraint Jacobian */
+    ierr = (*opflow->modelops.computedenseequalityconstraintjacobianhiop)(opflow,x,JacD);CHKERRQ(ierr);
+  } else {
+    /* Dense inequality constraint Jacobian */
+    //    PetscPrintf(MPI_COMM_SELF,"Came here ineq. \n");
 
-	gi += 1;
-      }
-      nnzs += 2*bus->ngenON;
-    }
-    if(nnzs != nnzJacS) SETERRQ(PETSC_COMM_SELF,0,"Incorrect number of entries in sparse equality constraint Jacobian\n");
-  }
-
-  nnzs = 0;
-  if(idx_cons[0] == 0 && MJacS != NULL) {
-    /* Sparse equality constraint Jacobian values w.r.t Pg,Qg */
-    for(i=0; i < ps->nbus; i++) {
-      bus = &ps->bus[i];
-
-      for(k=0; k < bus->ngenON; k++) {
-	MJacS[nnzs] = -1;
-	MJacS[nnzs+1] = -1;
-
-	nnzs += 2;
-      }
+    if(opflow->nconineq) {
+      ierr = (*opflow->modelops.computedenseinequalityconstraintjacobianhiop)(opflow,x,JacD);CHKERRQ(ierr);
     }
   }
+  //  PetscPrintf(MPI_COMM_SELF,"Exit eval_Jac_cons \n");
 
-  if(JacD != NULL) {
-    ierr = VecGetArray(opflow->X,&xarr);CHKERRQ(ierr);
-    /* Convert from sparse-dense to natural ordering */
-    spdensetonatural(x,xarr);
-    ierr = VecRestoreArray(opflow->X,&xarr);CHKERRQ(ierr);
-
-    if(idx_cons[0] == 0) {
-      /* Equality constraints Jacobian */
-      ierr = (*opflow->modelops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
-
-      for(i=0; i < opflow->nconeq; i++) {
-	for(j=0; j < nxdense; j++) JacD[i][j] = 0.0;
-	ierr = MatGetRow(opflow->Jac_Ge,i,&ncols,&cols,&vals);CHKERRQ(ierr);
-	//	printf("%d:",i);
-	for(k=0; k < ncols; k++) {
-	  if(idxn2sd_map[cols[k]]-nxsparse >= 0) {
-	    /* Dense variables */
-	    dcol = idxn2sd_map[cols[k]] - nxsparse; /* Column number for dense variable in the dense block */
-	    JacD[i][dcol] = vals[k];
-	    //	    printf("(%d, %lf)",dcol,vals[k]);
-	  }
-	}
-	//	printf("\n");
-	ierr = MatRestoreRow(opflow->Jac_Ge,i,&ncols,&cols,&vals);CHKERRQ(ierr);
-      }
-    } else {
-      
-      /* Inequality constraints Jacobian */
-      ierr = (*opflow->modelops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
-
-      for(i=0; i < opflow->nconineq; i++) {
-	for(j=0; j < nxdense; j++) JacD[i][j] = 0.0;
-	ierr = MatGetRow(opflow->Jac_Gi,i,&ncols,&cols,&vals);CHKERRQ(ierr);
-	//	printf("%d:",i);
-	for(k=0; k < ncols; k++) {
-	  if(idxn2sd_map[cols[k]]-nxsparse >= 0) {
-	    /* Dense variables */
-	    dcol = idxn2sd_map[cols[k]] - nxsparse; /* Column number for dense variable in the dense block */
-	    JacD[i][dcol] = vals[k];
-	    //	    printf("(%d, %lf)",dcol,vals[k]);
-	  }
-	}
-	//	printf("\n");
-	ierr = MatRestoreRow(opflow->Jac_Gi,i,&ncols,&cols,&vals);CHKERRQ(ierr);
-      }
-    }
-  }
   return true;
 }
 
@@ -325,87 +231,15 @@ bool OPFLOWHIOPInterface::eval_Hess_Lagr(const long long& n, const long long& m,
 		    int& nnzHSD, int* iHSD, int* jHSD, double* MHSD)
 {
   PetscErrorCode ierr;
-  PetscInt       i,k;
-  PetscInt       ncols;
-  const PetscInt *cols;
-  const PetscScalar *vals;
-  PetscInt       nnzs=0;
-  PetscScalar    *xarr;
-  PS             ps=opflow->ps;
-  PetscInt       dcol,dnct=0;
+  //  PetscPrintf(MPI_COMM_SELF,"Enter eval_Hess_Lagr \n");
 
-  opflow->obj_factor = obj_factor;
+  /* Compute sparse hessian */    
+  ierr = (*opflow->modelops.computesparsehessianhiop)(opflow,x,iHSS,jHSS,MHSS);CHKERRQ(ierr);
 
-  if(iHSS != NULL && jHSS!= NULL) {
-    for(i=0; i < ps->ngenON; i++) {
-      iHSS[nnzs] = 2*i;
-      jHSS[nnzs] = 2*i;
+  /* Compute dense hessian */
+  ierr = (*opflow->modelops.computedensehessianhiop)(opflow,x,lambda,HDD);CHKERRQ(ierr);
 
-      iHSS[nnzs+1] = 2*i+1;
-      jHSS[nnzs+1] = 2*i+1;
-
-      nnzs += 2;
-    }
-    if(nnzHSS != nnzs) SETERRQ2(PETSC_COMM_SELF,0,"Incorrect number of non-zeros for sparse Hessian %d != %d\n",nnzHSS,nnzs);
-  }
-
-  ierr = VecGetArray(opflow->X,&xarr);CHKERRQ(ierr);
-  /* Convert from sparse-dense to natural ordering */
-  spdensetonatural(x,xarr);
-  ierr = VecRestoreArray(opflow->X,&xarr);CHKERRQ(ierr);
-
-  ierr = VecPlaceArray(opflow->Lambdae,lambda);CHKERRQ(ierr);
-  if(opflow->Nconineq) {
-    ierr = VecPlaceArray(opflow->Lambdai,lambda+opflow->nconeq);CHKERRQ(ierr);
-  }
-    
-  /* Compute Hessian */
-  ierr = (*opflow->modelops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
-    
-  ierr = VecResetArray(opflow->Lambdae);CHKERRQ(ierr);
-  if(opflow->Nconineq) {
-    ierr = VecResetArray(opflow->Lambdai);CHKERRQ(ierr);
-  }
-
-  nnzs = 0;
-  if(MHSS != NULL) {
-    for(i=0; i < n; i++) {
-      if(idxn2sd_map[i] < nxsparse) {
-	/* Rows for sparse variables */
-	ierr = MatGetRow(opflow->Hes,i,&ncols,&cols,&vals);CHKERRQ(ierr);
-	for(k=0; k < ncols; k++) {
-	  if(cols[k] == i) {
-	    /* Diagonal element */
-	    MHSS[nnzs] = vals[k];
-	    nnzs += 1;
-	  }
-	}
-      }
-    }
-  }
-
-  if(HDD != NULL) {
-    for(i=0; i < n; i++) {
-      if(idxn2sd_map[i] >= nxsparse) {
-	for(k=0; k < nxdense; k++) HDD[dnct][k] = 0.0;
-	/* Rows for dense variables */
-	ierr = MatGetRow(opflow->Hes,i,&ncols,&cols,&vals);CHKERRQ(ierr);
-	//	printf("%d:",dnct);
-	for(k=0; k < ncols; k++) {
-	  if(idxn2sd_map[cols[k]] >= nxsparse) {
-	    dcol = idxn2sd_map[cols[k]] - nxsparse; /* Column number for dense variable in the dense block */
-	    HDD[dnct][dcol] = vals[k];
-	    //	    printf("(%d, %lf)",dcol, vals[k]);
-
-	  }
-	}
-	//	printf("\n");
-	ierr = MatRestoreRow(opflow->Hes,i,&ncols,&cols,&vals);CHKERRQ(ierr);
-
-	dnct++;
-      }
-    }
-  }
+  //  PetscPrintf(MPI_COMM_SELF,"Exit eval_Hess_Lagr \n");
 
   return true;
 }
@@ -413,15 +247,11 @@ bool OPFLOWHIOPInterface::eval_Hess_Lagr(const long long& n, const long long& m,
 bool OPFLOWHIOPInterface::get_starting_point(const long long& global_n, double* x0)
 {
   PetscErrorCode ierr;
-  const PetscScalar    *xarr;
+  //  PetscPrintf(MPI_COMM_SELF,"Enter get_starting_point \n");
 
-  /* Set initial guess */
-  ierr = (*opflow->modelops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.setinitialguessarray)(opflow,x0);CHKERRQ(ierr);
 
-  ierr = VecGetArrayRead(opflow->X,&xarr);CHKERRQ(ierr);
-  /* Convert from natural to sparse-dense ordering */
-  naturaltospdense(xarr,x0);
-  ierr = VecRestoreArrayRead(opflow->X,&xarr);CHKERRQ(ierr);
+  //  PetscPrintf(MPI_COMM_SELF,"Exit get_starting_point \n");
 
   return true;
 }
@@ -473,9 +303,9 @@ void OPFLOWHIOPInterface::solution_callback(hiop::hiopSolveStatus status,
 
 PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
 {
-  PetscErrorCode    ierr;
+  PetscErrorCode ierr;
   OPFLOWSolver_HIOP hiop=(OPFLOWSolver_HIOP)opflow->solver;
-  PetscBool         flg1;
+  PetscBool         ismodelpbpolhiop,ismodelpbpolrajahiop;
   PetscReal         tol=1e-6;
   HIOPComputeMode   compute_mode=AUTO;
   int               verbose_level=0;
@@ -503,14 +333,27 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
   hiop->mds->options->SetNumericValue("mu0", 1e-1);
   hiop->mds->options->SetNumericValue("tolerance", tol);
 
+  /* Error if model is not power balance hiop or power balance raja hiop */
+  ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBPOLHIOP,&ismodelpbpolhiop);CHKERRQ(ierr);
+#if defined(EXAGO_HAVE_RAJA)
+  ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBPOLRAJAHIOP,&ismodelpbpolrajahiop);CHKERRQ(ierr);
+#endif
+  if(!ismodelpbpolhiop && !ismodelpbpolrajahiop) {
+    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_SUP,"%s opflow model not supported with HIOP\n",opflow->modelname);
+    PetscFunctionReturn(1);
+    exit(0);
+  }
+
+#if defined(HIOP_USE_RAJA)
+  if(ismodelpbpolrajahiop) {
+    hiop::LinearAlgebraFactory::set_mem_space("um");
+    hiop->mds->options->SetStringValue("mem_space","um");
+  }
+#endif
+  //  ierr = PetscPrintf(MPI_COMM_SELF,"Came in OPFLOWSetUp\n");CHKERRQ(ierr);
   hiop->solver = new hiop::hiopAlgFilterIPMNewton(hiop->mds);
 
-  /* Error if model is not power balance hiop */
-  ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBPOL,&flg1);CHKERRQ(ierr);
-  if(!flg1) {
-    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Only power balance polar model allowed\n Run with -opflow_model POWER_BALANCE_POLAR\n");
-    exit(1);
-  }
+  //  ierr = PetscPrintf(MPI_COMM_SELF,"Exit OPFLOWSetUp\n");CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
