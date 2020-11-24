@@ -1,6 +1,11 @@
 set(SCOPFLOW_SOLVER_SRC
     solver/ipopt/scopflow-ipopt.c
+    solver/ipopt/scopflow-ipopt2.c
     solver/empar/scopflow-empar.c
+)
+
+set(SCOPFLOW_MODEL_SRC
+  model/genramp/genramp.c
 )
 
 set(SCOPFLOW_SRC
@@ -8,6 +13,7 @@ set(SCOPFLOW_SRC
 	interface/scopflowregi.c
 	interface/scopflowoutput.c
 	interface/scopflowctgc.c
+	${SCOPFLOW_MODEL_SRC}
 	${SCOPFLOW_SOLVER_SRC}
 )
 

@@ -9,23 +9,19 @@
 #include <ps.h>
 
 /* Models */
-#define SCOPFLOWMODEL_PBPOL "POWER_BALANCE_POLAR" 
-#define SCOPFLOWMODEL_PBCAR "POWER_BALANCE_CARTESIAN"
-#define SCOPFLOWMODEL_IBCAR "CURRENT_BALANCE_CARTESIAN"
+#define SCOPFLOWMODEL_GENRAMP "GENRAMP" 
 
 /* Solvers */
+#define SCOPFLOWSOLVER_IPOPTNEW "IPOPTNEW"
 #define SCOPFLOWSOLVER_IPOPT "IPOPT"
 #define SCOPFLOWSOLVER_TAO   "TAO"
 #define SCOPFLOWSOLVER_PIPS  "PIPS"
 #define SCOPFLOWSOLVER_EMPAR  "EMPAR" /* Embarassingly parallel solver - solves each OPFLOW independently */
 
-/* Mode */
-#define SCOPFLOWMODE_PREVENTIVE 0
-#define SCOPFLOWMODE_CORRECTIVE 1
-
 typedef struct _p_SCOPFLOW *SCOPFLOW;
 
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetModel(SCOPFLOW,const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWModelRegister(SCOPFLOW,const char[],PetscErrorCode (*create)(SCOPFLOW));
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetSolver(SCOPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWCreate(MPI_Comm,SCOPFLOW*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWDestroy(SCOPFLOW*);
@@ -67,7 +63,6 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWPrintSolution(SCOPFLOW,PetscInt);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSaveSolution(SCOPFLOW,PetscInt,OutputFormat,const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSaveSolutionAll(SCOPFLOW,OutputFormat,const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetConvergenceStatus(SCOPFLOW,PetscBool*);
-PETSC_EXTERN PetscErrorCode SCOPFLOWSetMode(SCOPFLOW,PetscInt);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetMode(SCOPFLOW,PetscInt*);
 
 #endif

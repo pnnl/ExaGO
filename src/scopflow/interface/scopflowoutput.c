@@ -38,7 +38,6 @@ PetscErrorCode SCOPFLOWPrintSolution(SCOPFLOW scopflow,PetscInt cont_num)
     ierr = PetscPrintf(scopflow->comm->type,"%-35s %s\n","OPFLOW Formulation",opflow->modelname);CHKERRQ(ierr);
     ierr = PetscPrintf(scopflow->comm->type,"%-35s %s\n","Solver",scopflow->solvername);CHKERRQ(ierr);
     ierr = PetscPrintf(scopflow->comm->type,"%-35s %s\n","Initialization",OPFLOWInitializationTypes[opflow->initializationtype]);CHKERRQ(ierr);
-    ierr = PetscPrintf(scopflow->comm->type,"%-35s %s\n","Operation Mode",scopflow->mode?"Corrective":"Preventive");CHKERRQ(ierr);
     ierr = PetscPrintf(scopflow->comm->type,"%-35s %d\n","Number of contingencies",scopflow->Nc-1);CHKERRQ(ierr);
     
     ierr = PetscPrintf(scopflow->comm->type,"%-35s %s\n","Load loss allowed",opflow->include_loadloss_variables?"YES":"NO");CHKERRQ(ierr);
