@@ -1,4 +1,33 @@
-.script_template: &script_definition
+.ornl_script_template: &ornl_script_definition
+  script:
+    - |
+      # Do _not_ clean up WORKDIR as files are needed for testing
+      set -xv
+      mkdir -p "$WORKDIR"
+      cp -R ./* "$WORKDIR"
+      cd "$WORKDIR"
+      MY_CLUSTER=ascent ./build.sh --build-only || exit 1
+
+.ornl_test_script_template: &ornl_test_script_definition
+  script:
+    - |
+      set -xv
+      cd "$WORKDIR"
+      MY_CLUSTER="ascent" ./build.sh --test-only
+      res=$?
+      exit $res
+  after_script:
+    - |
+      cd "$WORKDIR/.."
+      rm -rf "$WORKDIR"
+
+
+.ornl_environment_template: &ornl_environment_variables
+  variables:
+    SCHEDULER_PARAMETERS: "-P CSC359 -nnodes 1 -W 30"
+    WORKDIR: /gpfs/wolf/proj-shared/csc359/ci/${CI_PIPELINE_ID}
+
+.pnnl_script_template: &pnnl_script_definition
   script:
     - |
       set -xv
@@ -8,7 +37,7 @@
       #
       export WORKDIR="$HOME/gitlab/$CI_JOB_ID/"
       mkdir -p "$WORKDIR"
-      cp -a ./ "$WORKDIR"
+      cp -R ./* "$WORKDIR"
       cd "$WORKDIR"
       # echo submitting batch job
       [ -f output ] && rm output
@@ -40,29 +69,57 @@
       exit $res
 
 
-.tags_template: &tags_definition
+.pnnl_tags_template: &pnnl_tags_definition
   tags:
     - k8s
     - ikp
     - exasgd
     - marianas
 
+stages:
+  - build
+  - test
+
+# For Ascent CI
+build_on_login_node:
+  stage: build
+  tags:
+    - nobatch
+  rules:
+    - if: '$CI_PROJECT_PATH == "ecpcitest/exasgd/exago"'
+  <<: *ornl_script_definition
+  <<: *ornl_environment_variables
+
+test_on_compute_node:
+  stage: test
+  dependencies:
+    - build_on_login_node
+  tags:
+    - batch
+  rules:
+    - if: '$CI_PROJECT_PATH == "ecpcitest/exasgd/exago"'
+  <<: *ornl_test_script_definition
+  <<: *ornl_environment_variables
+# ---
+
+# For PNNL CI
 build_on_newell:
   stage: build
   variables:
     SLURM_Q: "newell_shared"
     CLUSTER: "newell"
-  <<: *tags_definition
-  <<: *script_definition
-  only:
-    - branches@exasgd/frameworks/exago
+  <<: *pnnl_tags_definition
+  <<: *pnnl_script_definition
+  rules:
+    - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"'
 
 build_on_marianas:
   stage: build
   variables:
     SLURM_Q: "shared"
     CLUSTER: "marianas"
-  <<: *tags_definition
-  <<: *script_definition
-  only:
-    - branches@exasgd/frameworks/exago
+  <<: *pnnl_tags_definition
+  <<: *pnnl_script_definition
+  rules:
+    - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"'
+# ---
