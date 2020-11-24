@@ -117,15 +117,20 @@ ascent)
   module load raja
   module load umpire
   module load openblas
+  module load metis/5.1.0
   module load cmake/3.18.2
   export MY_RAJA_DIR=$RAJA_ROOT
   export MY_UMPIRE_DIR=$UMPIRE_ROOT
   export MY_MAGMA_DIR=$MAGMA_ROOT
   export MY_PETSC_DIR=$PROJ_DIR/$MY_CLUSTER/petsc-3.13.5
+  export MY_IPOPT_DIR=$PROJ_DIR/$MY_CLUSTER/ipopt
   export MY_HIOP_DIR=$PROJ_DIR/installs/hiop
   export MY_NVCC_ARCH="sm_70"
-  extra_cmake_args="$extra_cmake_args -DHIOP_NVCC_ARCH=$MY_NVCC_ARCH"
-  extra_cmake_args="$extra_cmake_args -DEXAGO_TEST_WITH_BSUB=ON"
+  extra_cmake_args="\
+    $extra_cmake_args \
+    -DHIOP_NVCC_ARCH=$MY_NVCC_ARCH \
+    -DEXAGO_TEST_WITH_BSUB=ON \
+    "
   if [[ ! -f $builddir/nvblas.conf ]]; then
     cat > $builddir/nvblas.conf <<-EOD
 	NVBLAS_LOGFILE  nvblas.log
@@ -157,15 +162,15 @@ cmake_args=" \
   -DCMAKE_BUILD_TYPE=Debug \
   -DEXAGO_ENABLE_GPU=ON \
   -DEXAGO_ENABLE_HIOP=ON \
-  -DEXAGO_ENABLE_IPOPT=OFF \
   -DEXAGO_ENABLE_MPI=ON \
   -DEXAGO_ENABLE_PETSC=ON \
   -DEXAGO_RUN_TESTS=ON \
   -DEXAGO_ENABLE_RAJA=ON \
+  -DEXAGO_ENABLE_IPOPT=ON \
+  -DIPOPT_DIR=$MY_IPOPT_DIR \
   -DRAJA_DIR=$MY_RAJA_DIR \
   -Dumpire_DIR=$MY_UMPIRE_DIR \
   -DHIOP_DIR=$MY_HIOP_DIR \
-  -DIPOPT_DIR=$MY_IPOPT_DIR \
   -DMAGMA_DIR=$MY_MAGMA_DIR \
   -DPETSC_DIR=$MY_PETSC_DIR \
   $extra_cmake_args"
