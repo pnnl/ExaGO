@@ -82,7 +82,6 @@ PetscErrorCode SCOPFLOWSolverGetConstraintMultipliers_EMPAR(SCOPFLOW scopflow,Pe
   OPFLOW              opflow;
 
   PetscFunctionBegin;
-
   if(scopflow->cstart <= cont_num && cont_num < scopflow->cend) {
     opflow = scopflow->opflows[cont_num-scopflow->cstart];
     *Lambda = opflow->Lambda; 

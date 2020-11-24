@@ -85,6 +85,7 @@ PetscErrorCode TCOPFLOWCreate(MPI_Comm mpicomm, TCOPFLOW *tcopflowout)
   tcopflow->windgenprofileset = PETSC_FALSE;
 
   tcopflow->solver   = NULL;
+  tcopflow->model    = NULL;
 
   tcopflow->nmodelsregistered = 0;
   tcopflow->TCOPFLOWModelRegisterAllCalled = PETSC_FALSE;
@@ -98,7 +99,6 @@ PetscErrorCode TCOPFLOWCreate(MPI_Comm mpicomm, TCOPFLOW *tcopflowout)
   /* Register all solvers */
   ierr = TCOPFLOWSolverRegisterAll(tcopflow);
 
-  tcopflow->solutiontops = PETSC_FALSE;
   /* Run-time optiont */
   tcopflow->iscoupling = PETSC_FALSE;
 
@@ -157,6 +157,10 @@ PetscErrorCode TCOPFLOWDestroy(TCOPFLOW *tcopflow)
     ierr = OPFLOWDestroy(&(*tcopflow)->opflows[i]);CHKERRQ(ierr);
   }
 
+  ierr = PetscFree((*tcopflow)->xstarti);CHKERRQ(ierr);
+  ierr = PetscFree((*tcopflow)->gstarti);CHKERRQ(ierr);
+  ierr = PetscFree((*tcopflow)->nxi);CHKERRQ(ierr);
+  ierr = PetscFree((*tcopflow)->ngi);CHKERRQ(ierr);
   ierr = PetscFree((*tcopflow)->nconineqcoup);CHKERRQ(ierr);
   ierr = PetscFree((*tcopflow)->opflows);CHKERRQ(ierr);
   ierr = PetscFree(*tcopflow);CHKERRQ(ierr);
@@ -278,7 +282,7 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
 {
   PetscErrorCode ierr;
   PetscBool      solverset;
-  char           modelname[32]="POWER_BALANCE_POLAR";
+  char           modelname[32]="GENRAMP";
   char           solvername[32]="IPOPT";
   PS             ps;
   PetscInt       i;
@@ -299,7 +303,7 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
   ierr = PetscPrintf(PETSC_COMM_WORLD,"TCOPFLOW: Duration = %lf hours, timestep = %lf minutes, number of time-steps = %d\n",tcopflow->duration,tcopflow->dT,tcopflow->Nt);CHKERRQ(ierr);
 
   /* Set Model */
-  ierr = TCOPFLOWSetModel(tcopflow,TCOPFLOWMODEL_GENRAMP);CHKERRQ(ierr);
+  ierr = TCOPFLOWSetModel(tcopflow,modelname);CHKERRQ(ierr);
 
   /* Set solver */
   if(solverset) {
@@ -317,7 +321,7 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
   ierr = PetscCalloc1(tcopflow->Nt,&tcopflow->opflows);CHKERRQ(ierr);
   for(i=0; i < tcopflow->Nt; i++) {
     ierr = OPFLOWCreate(PETSC_COMM_SELF,&tcopflow->opflows[i]);CHKERRQ(ierr);
-    ierr = OPFLOWSetModel(tcopflow->opflows[i],modelname);CHKERRQ(ierr);
+    ierr = OPFLOWSetModel(tcopflow->opflows[i],OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
 
     /* Read network data file */
     ierr = OPFLOWReadMatPowerData(tcopflow->opflows[i],tcopflow->netfile);CHKERRQ(ierr);
@@ -441,7 +445,6 @@ PetscErrorCode TCOPFLOWSolve(TCOPFLOW tcopflow)
   }
   
   /* Set initial guess */
-  
   if(tcopflow->modelops.setinitialguess) {
     ierr = (*tcopflow->modelops.setinitialguess)(tcopflow,tcopflow->X);CHKERRQ(ierr);
   }

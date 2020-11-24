@@ -13,10 +13,27 @@
 #include <private/contingencylist.h>
 
 #define SCOPFLOWSOLVERSMAX 10
+#define SCOPFLOWMODELSMAX  10
 
-struct _p_SCOPFLOWSolverList{
-  char name[32]; /* Name of the solver */
-  PetscErrorCode (*create)(SCOPFLOW); /* Solver object creation routine */
+struct _p_SCOPFLOWModelOps {
+  PetscErrorCode (*destroy)(SCOPFLOW);
+  PetscErrorCode (*setup)(SCOPFLOW);
+  PetscErrorCode (*setnumvariablesandconstraints)(SCOPFLOW,PetscInt*,PetscInt*,PetscInt*); /* Set number of variables for buses and branches, and total number of variables */
+  PetscErrorCode (*setvariablebounds)(SCOPFLOW,Vec,Vec); /* Upper and lower bounds on the vector */
+  PetscErrorCode (*setconstraintbounds)(SCOPFLOW,Vec,Vec); /* Lower and upper bounds on constraints */
+  PetscErrorCode (*setvariableandconstraintbounds)(SCOPFLOW,Vec,Vec,Vec,Vec); /* Lower and upper bounds on variables and constraints */
+  PetscErrorCode (*setinitialguess)(SCOPFLOW,Vec); /* Set the initial guess for the optimization */
+  PetscErrorCode (*computeconstraints)(SCOPFLOW,Vec,Vec);
+  PetscErrorCode (*computejacobian)(SCOPFLOW,Vec,Mat);
+  PetscErrorCode (*computehessian)(SCOPFLOW,Vec,Vec,Mat);
+  PetscErrorCode (*computeobjandgradient)(SCOPFLOW,Vec,PetscScalar*,Vec); /* Objective and gradient routine */
+  PetscErrorCode (*computeobjective)(SCOPFLOW,Vec,PetscScalar*); /* Objective */
+  PetscErrorCode (*computegradient)(SCOPFLOW,Vec,Vec); /* Gradient of the objective function */
+};
+
+struct _p_SCOPFLOWModelList{
+  char name[32]; /* Name of the model */
+  PetscErrorCode (*create)(SCOPFLOW); /* Model creation routine */
 };
 
 struct _p_SCOPFLOWSolverOps {
@@ -30,6 +47,10 @@ struct _p_SCOPFLOWSolverOps {
   PetscErrorCode (*getconstraintmultipliers)(SCOPFLOW,PetscInt,Vec*);
 };
 
+struct _p_SCOPFLOWSolverList{
+  char name[32]; /* Name of the solver */
+  PetscErrorCode (*create)(SCOPFLOW); /* Solver object creation routine */
+};
 
 /**
  * @brief private struct for security optimal power flow application
@@ -38,11 +59,15 @@ struct _p_SCOPFLOW{
   /* Sizes */
   PetscInt nc,Nc; /* Number of local and global (total) contingencies */
   PetscInt nx,Nx; /* Local and global (total) number of variables */
-  PetscInt Ncon,ncon; /* Number of constraints */
-  PetscInt Nconeq,nconeq; /* Local and global number of equality constraints */
+  PetscInt ncon,Ncon; /* Number of constraints */
+  PetscInt nconeq,Nconeq; /* Local and global number of equality constraints */
   PetscInt nconineq, Nconineq; /* Local and global number of inequality constraints */
-  PetscInt *nconineqcoup;      /* Number of inequality coupling constraints */
-  PetscInt Nconcoup;           /* Number of coupling constraints */
+  PetscInt *nconineqcoup;     /* Number of inequality coupling constraints for each contingency */
+  PetscInt nconcoup,Nconcoup; /* Number of coupling constraints */
+  PetscInt *nxi; /* Number of variables for each contingency */
+  PetscInt *ngi; /* Number of constraints for each contingency (includes coupling constraints) */
+  PetscInt *xstarti; /* Starting location for the variables for contingency i in the big X vector */
+  PetscInt *gstarti; /* Starting location for the constraints for contingency i in the big G vector */
 
   PetscInt cstart;  /* Contingency list start index for this processor */
   PetscInt cend;    /* Contingency list end idx (cstart+nc) for this processor */
@@ -86,8 +111,6 @@ struct _p_SCOPFLOW{
   Mat *Jcoup;  /* Jacobian for the coupling constraints (one per scenario) */
   Mat *JcoupT; /* Transpose of the coupling Jacobian (one per scenario)*/
 
-  PetscInt mode; /* Preventive or corrective mode */
-
   PetscBool iscoupling; /* Is each scenario coupled with base scenario? */
   PetscBool replicate_basecase; /* Replicate base case for all scenarios */
 
@@ -95,6 +118,16 @@ struct _p_SCOPFLOW{
 				   0 - ref. bus generators only 
 				   1 - all generators (decided by optimization) 
 				   2 - all generators (agc based) - not implemented */
+
+  PetscInt mode; /* 0 - preventive, 1 - corrective */
+
+  void* model; /* Model object */
+  struct _p_SCOPFLOWModelOps modelops;
+  char modelname[64];
+
+  struct _p_SCOPFLOWModelList SCOPFLOWModelList[SCOPFLOWMODELSMAX];
+  PetscInt nmodelsregistered;
+  PetscBool SCOPFLOWModelRegisterAllCalled;
 
   void *solver; /* Solver object */
   struct _p_SCOPFLOWSolverOps solverops;
@@ -112,12 +145,10 @@ struct _p_SCOPFLOW{
   PetscBool       ctgcfileset;   /* Is the contingency file set ? */
   char            ctgcfile[100]; /* Contingency file */
 
-  PetscBool       solutiontops;
-
   ContingencyFileInputFormat ctgcfileformat;
 };
 
-/* Register all SCOPFLOW solvers */
+extern PetscErrorCode SCOPFLOWModelRegisterAll(SCOPFLOW);
 extern PetscErrorCode SCOPFLOWSolverRegisterAll(SCOPFLOW);
 extern PetscErrorCode SCOPFLOWGetConstraints(SCOPFLOW,PetscInt,Vec*);
 extern PetscErrorCode SCOPFLOWGetConstraintMultipliers(SCOPFLOW,PetscInt,Vec*);

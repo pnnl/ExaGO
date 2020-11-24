@@ -29,7 +29,6 @@ struct _p_TCOPFLOWModelOps {
   PetscErrorCode (*computeobjandgradient)(TCOPFLOW,Vec,PetscScalar*,Vec); /* Objective and gradient routine */
   PetscErrorCode (*computeobjective)(TCOPFLOW,Vec,PetscScalar*); /* Objective */
   PetscErrorCode (*computegradient)(TCOPFLOW,Vec,Vec); /* Gradient of the objective function */
-  PetscErrorCode (*solutiontops)(TCOPFLOW); /* Update PS struct from OPFLOW solution */
 };
 
 struct _p_TCOPFLOWModelList{
@@ -135,8 +134,7 @@ struct _p_TCOPFLOW{
   PetscBool qloadprofileset; /* Is the reactive load power profile set ? */
   char windgenprofile[100]; /* Wind generation profiles */
   PetscBool windgenprofileset; /* Is the wind generation profile set ? */
-  
-  PetscBool solutiontops;
+
 };
 
 /* Register all TCOPFLOW solvers */
