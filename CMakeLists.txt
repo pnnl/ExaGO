@@ -14,6 +14,9 @@ if (POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW) # CMake 3.12
 endif ()
 
+if (POLICY CMP0104)
+  cmake_policy(SET CMP0104 NEW) # CMake 3.18
+endif ()
 
 ## Configure
 
@@ -48,6 +51,9 @@ option(EXAGO_ENABLE_RAJA "Enables RAJA and Umpire libraries" OFF)
 
 # Enable tests
 option(EXAGO_RUN_TESTS "Enable tests" OFF)
+
+# For testing with BSUB on certain clusters
+option(EXAGO_TEST_WITH_BSUB "Use `jsrun` instead of `mpirun` commands when running tests" OFF)
 
 # Estimate number of flops per trig op
 set(EXAGO_FLOPS_SINOP 15 CACHE STRING "Estimated number of flops per sin op")
@@ -207,6 +213,17 @@ set(EXAGO_COMMON_INCLUDE
 # Install header files
 install(FILES ${EXAGO_COMMON_INCLUDE} DESTINATION include)
 
+if(EXAGO_TEST_WITH_BSUB)
+  set(MPICMD "jsrun" "-n" "1")
+  if(EXAGO_ENABLE_GPU)
+    set(MPICMD ${MPICMD} "-g" "1")
+  endif()
+else()
+  set(MPICMD "mpiexec")
+  set(MPI_OPTIONS "-n" "1")
+  set(MPI_OPTIONS ${MPI_OPTIONS} "-mca" "oob" "tcp") # -mca oob tcp suppresses output on pnnl cl
+endif()
+
 if(EXAGO_RUN_TESTS)
   # Test cases
   file(GLOB network_files
@@ -220,9 +237,8 @@ if(EXAGO_RUN_TESTS)
   foreach(test_net ${network_files})
     get_filename_component(input_file ${test_net} NAME)
     add_test(NAME UNIT_TESTS_OPFLOW_MODEL_${input_file}_TEST COMMAND
-        mpiexec -n 1 -mca oob tcp $<TARGET_FILE:testAcopf>
-        -netfile ${test_net} 
-        -gen_test_data)
+      ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:testAcopf>
+      -netfile ${test_net})
   endforeach()
 
 
@@ -231,7 +247,7 @@ if(EXAGO_RUN_TESTS)
     #  SCOPFLOW tests
     #  foreach(nc RANGE 1 9)
     #    add_test(NAME SCOPFLOW_9bus_${nc}cont COMMAND 
-    #             mpiexec -n 1 $<TARGET_FILE:app_scopflow> 
+    #             ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_scopflow> 
     #             -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9mod.m
     #             -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9.cont
     #             -scopflow_solver IPOPT
@@ -247,7 +263,7 @@ if(EXAGO_RUN_TESTS)
         foreach(opflow_init FROMFILE FLATSTART ACPF MIDPOINT)
           get_filename_component(input_file ${test_net} NAME)
           add_test(NAME OPFLOW_${opflow_model}_${opflow_init}_${input_file} COMMAND
-                   mpiexec -n 1 -mca oob tcp $<TARGET_FILE:app_opflow>
+                   ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_opflow>
                    -netfile ${test_net}
                    -opflow_model ${opflow_model}
                    -opflow_initialization ${opflow_init}
@@ -263,7 +279,7 @@ if(EXAGO_RUN_TESTS)
       foreach(opflow_init ACPF MIDPOINT)
         get_filename_component(input_file ${test_net} NAME)
         add_test(NAME OPFLOW_HIOP_CPU_${opflow_init}_${input_file} COMMAND
-                 mpiexec -n 1 -mca oob tcp $<TARGET_FILE:app_opflow>
+                 ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_opflow>
                  -netfile ${test_net}
                  -opflow_initialization ${opflow_init}
 		 -hiop_compute_mode CPU
@@ -277,7 +293,7 @@ if(EXAGO_RUN_TESTS)
       foreach(opflow_init ACPF MIDPOINT)
         get_filename_component(input_file ${test_net} NAME)
         add_test(NAME OPFLOW_HIOP_GPU_${opflow_init}_${input_file} COMMAND
-                 mpiexec -n 1 -mca oob tcp $<TARGET_FILE:app_opflow>
+                 ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_opflow>
                  -netfile ${test_net}
                  -opflow_initialization ${opflow_init}
 		 -hiop_compute_mode HYBRID
@@ -294,7 +310,7 @@ if(EXAGO_RUN_TESTS)
     foreach(test_net ${network_files})
       get_filename_component(input_file ${test_net} NAME)
       add_test(NAME OPFLOW_TAO_${input_file} COMMAND
-               mpiexec -n 1 -mca oob tcp $<TARGET_FILE:app_opflow>
+               ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_opflow>
                -netfile ${test_net}
                -opflow_solver TAO)
     endforeach(test_net)
@@ -306,7 +322,7 @@ if(EXAGO_RUN_TESTS)
     foreach(test_net ${network_files})
       get_filename_component(input_file ${test_net} NAME)
       add_test(NAME PFLOW_${input_file}_${np}proc COMMAND
-               mpiexec -n 1 -mca oob tcp $<TARGET_FILE:app_pflow>
+               ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_pflow>
                -netfile ${test_net})
     endforeach(test_net)
   endforeach(np)
