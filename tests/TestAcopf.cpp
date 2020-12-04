@@ -60,7 +60,7 @@ void spdensetonatural(const double *xin,double *xout,int *idxn2sd_map,int nx)
  *
  * You can pass several options to the TestAcopf executatable through the command line (implemented using PETSc options):
  *
- *    ~ -netfile <data_file> : Specifies the input data file to test against. Default value is `/<exago_dir>/datafiles/case9mod.m`.
+ *    ~ -netfile <data_file> : Specifies the input data file to test against. Default value is `/<exago_dir>/datafiles/case9/case9mod.m`.
  *                             See directory datafiles for other potential inputs.
  *
  *    ~ -gen_test_data       : If used, generates an answer key using IPOPT to test against.
@@ -106,7 +106,7 @@ int main(int argc, char** argv)
   ierr = PetscOptionsGetString(NULL,NULL,"-netfile",file_c_str,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
 
   if(!flg){
-    file = "../datafiles/case9mod.m";
+    file = "../datafiles/case9/case9mod.m";
   } 
   else{
     file = file_c_str;

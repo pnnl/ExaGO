@@ -172,6 +172,7 @@ set(EXAGO_OPTIONS_FILES
   options/pflowoptions
   options/opflowoptions
   options/scopflowoptions
+  options/sopflowoptions
   options/tcopflowoptions
   options/hiop.options
   options/ipopt.opt
@@ -182,12 +183,9 @@ install(FILES ${EXAGO_OPTIONS_FILES} DESTINATION options)
 
 # EXAGO datafiles to install
 set(EXAGO_DATA_FILES
-  datafiles/case9mod.m
   datafiles/case118.m
   datafiles/case118.cont
   datafiles/case_ACTIVSg200.m
-  datafiles/case9.cont
-  datafiles/case9.con
   datafiles/case_ACTIVSg200.cont
 )
 
@@ -195,6 +193,7 @@ set(EXAGO_DATA_FILES
 install(FILES ${EXAGO_DATA_FILES} DESTINATION bin/datafiles)
 install(FILES ${EXAGO_DATA_FILES} DESTINATION datafiles)
 install(FILES ${EXAGO_DATA_FILES} DESTINATION tests/datafiles)
+install(DIRECTORY datafiles/case9 DESTINATION bin/datafiles)
 install(DIRECTORY datafiles/TAMU200_scenarios DESTINATION bin/datafiles)
 install(DIRECTORY datafiles/TAMU200_scenarios DESTINATION datafiles)
 
@@ -227,7 +226,7 @@ endif()
 if(EXAGO_RUN_TESTS)
   # Test cases
   file(GLOB network_files
-    datafiles/case9mod.m
+    datafiles/case9/case9mod.m
     datafiles/case118.m
     datafiles/case_ACTIVSg200.m
   )
@@ -248,11 +247,32 @@ if(EXAGO_RUN_TESTS)
     #  foreach(nc RANGE 1 9)
     #    add_test(NAME SCOPFLOW_9bus_${nc}cont COMMAND 
     #             ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_scopflow> 
-    #             -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9mod.m
-    #             -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9.cont
+    #             -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9/case9mod.m
+    #             -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9/case9.cont
     #             -scopflow_solver IPOPT
     #             -scopflow_Nc ${nc})
     #  endforeach(nc)
+
+    #  SOPFLOW tests
+
+    # foreach(ns RANGE 1 3)
+    #  add_test(NAME SOPFLOW_200bus_IPOPT_${ns}scen COMMAND 
+    #           ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_sopflow>
+    #           -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case_ACTIVSg200.m
+    #           -scenfile ${EXAGO_SRC_DATAFILES_DIR}/TAMU200_scenarios/scenarios.csv
+    #           -sopflow_solver IPOPT
+    #           -sopflow_Ns ${ns})
+    # endforeach(ns)
+
+    # foreach(ns RANGE 1 3)
+    #  add_test(NAME SOPFLOW_200bus_EMPAR_${ns}scen COMMAND 
+    #           ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_sopflow>
+    #           -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case_ACTIVSg200.m
+    #           -scenfile ${EXAGO_SRC_DATAFILES_DIR}/TAMU200_scenarios/scenarios.csv
+    #           -sopflow_solver EMPAR
+    #           -sopflow_Ns ${ns})
+    # endforeach(ns)
+
 
     message(STATUS "Running OPFLOW model tests")
 

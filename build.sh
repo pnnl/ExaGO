@@ -162,6 +162,7 @@ cmake_args=" \
   -DCMAKE_BUILD_TYPE=Debug \
   -DEXAGO_ENABLE_GPU=ON \
   -DEXAGO_ENABLE_HIOP=ON \
+  -DEXAGO_ENABLE_IPOPT=ON \
   -DEXAGO_ENABLE_MPI=ON \
   -DEXAGO_ENABLE_PETSC=ON \
   -DEXAGO_RUN_TESTS=ON \
@@ -191,7 +192,7 @@ if [[ $BUILD -eq 1 ]]; then
   mkdir -p $installdir
 
   mkdir $builddir/datafiles
-  for f in case118.m case9mod.m case_ACTIVSg200.m
+  for f in case118.m case9/case9mod.m case_ACTIVSg200.m
   do
     [ -f ./datafiles/$f ] || {
       echo Could not find needed data files.

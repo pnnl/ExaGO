@@ -42,7 +42,7 @@ int main(int argc,char **argv)
   if(flg) {
     ierr = TCOPFLOWSetNetworkData(tcopflow,file);CHKERRQ(ierr);
   } else {
-    ierr = TCOPFLOWSetNetworkData(tcopflow,"datafiles/case9mod.m");CHKERRQ(ierr);
+    ierr = TCOPFLOWSetNetworkData(tcopflow,"datafiles/case9/case9mod.m");CHKERRQ(ierr);
   }
 
 

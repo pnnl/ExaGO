@@ -9,7 +9,10 @@
 
 typedef enum {CSV,MATPOWER}OutputFormat;
 
-typedef enum{NATIVE,PSSE}ContingencyFileInputFormat;
+typedef enum{NATIVE=0,PSSE=1}ContingencyFileInputFormat;
+
+typedef enum{SOPFLOW_NATIVE}ScenarioFileInputFormat;
+
 
 /** 
  * The communicator context 

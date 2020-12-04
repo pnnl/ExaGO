@@ -51,7 +51,7 @@ int main(int argc,char **argv)
   if(flg) {
     ierr = OPFLOWReadMatPowerData(opflow,file);CHKERRQ(ierr);
   } else {
-    ierr = OPFLOWReadMatPowerData(opflow,"datafiles/case9mod.m");CHKERRQ(ierr);
+    ierr = OPFLOWReadMatPowerData(opflow,"datafiles/case9/case9mod.m");CHKERRQ(ierr);
   }
 
   ierr = PetscLogStagePop();CHKERRQ(ierr);

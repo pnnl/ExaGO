@@ -1,13 +1,13 @@
--netfile datafiles/case_ACTIVSg200.m
+-netfile datafiles/case9/case9mod_gen3_wind.m
 
 # Active load power profile file
--tcopflow_ploadprofile datafiles/TAMU200_scenarios/load_P.csv
+-tcopflow_ploadprofile datafiles/case9/load_P.csv
 
 # Reactive load power profile file
--tcopflow_qloadprofile datafiles/TAMU200_scenarios/load_Q.csv
+-tcopflow_qloadprofile datafiles/case9/load_Q.csv
 
 # Wind generation profile file
--tcopflow_windgenprofile datafiles/TAMU200_scenarios/scenarios.csv
+-tcopflow_windgenprofile datafiles/case9/scenarios.csv
 
 # Coupling between time-steps? (Ramp constraints)
 -tcopflow_iscoupling 1
