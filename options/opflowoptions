@@ -1,5 +1,5 @@
 # Option for selecting data file
--netfile datafiles/case9mod.m
+-netfile datafiles/case9/case9mod.m
 #-netfile datafiles/case118.m
 #-netfile datafiles/case5.m
 

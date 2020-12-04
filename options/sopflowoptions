@@ -1,19 +1,19 @@
--netfile datafiles/case9/case9mod.m
+-netfile datafiles/case9/case9mod_gen3_wind.m
 
-# Contingency file
--ctgcfile datafiles/case9/case9.cont
+# Wind scenario profiles
+-scenfile datafiles/case9/scenarios.csv
 
 # Coupling between second stage and first stage?
--scopflow_iscoupling 1
+-sopflow_iscoupling 1
 
 # Operation mode (preventive (0) or corrective (1))
--scopflow_mode 1
+-sopflow_mode 1
 
 # Ignore line flow constraints
 -opflow_ignore_lineflow_constraints 0
 
 # Number of scenarios
--scopflow_Nc 1
+-sopflow_Ns -1
 
 # performance
 #-------------

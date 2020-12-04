@@ -5,6 +5,8 @@ ExaGO<sup>TM</sup> is a package for solving large-scale power grid optimization 
 - [ACPF or PFLOW](docs/web/pflow.md) solves an AC power flow
 - [SC-ACOPF or SCOPFLOW](docs/web/scopflow.md) solves a security-constrained (contingency) constrained optimal power
 - [TC-ACOPF or TCOPFLOW](docs/web/tcopflow.md) solves a multi-period optimal power flow
+- [S-ACOPF or SOPFLOW](docs/web/sopflow.md) solves a stochastic optimal power flow
+
 
 ExaGO<sup>TM</sup> applications can use the following solvers:
 
@@ -13,11 +15,11 @@ ExaGO<sup>TM</sup> applications can use the following solvers:
 - [PETSc/TAO](https://www.mcs.anl.gov/petsc/) is a high-performance library providing numerical solvers for linear, nonlinear, time-dependent, and optimizatin problems. The optimization package is PETSc, TAO, includes a parallel primal-dual interior method (TAOPDIPM) that can be used for solving OPFLOW.
 
 
-|  Solver | OPFLOW   | SCOPFLOW  | PFLOW  |
-|:----------:|:---:|:---:|:---:|
-| IPOPT      | Y   | Y   |     |
-| HIOP       | Y   |     |     |
-| PETSc/TAO  | Y   |     | Y   |
+|  Solver    | OPFLOW | SCOPFLOW  | PFLOW | TCOPLOW | SOPFLOW |
+|:----------:|:------:|:---------:|:-----:|:-------:|:-------:|
+| IPOPT      | Y      | Y         |       | Y       | Y       | 
+| HIOP       | Y      |           |       |         |         |
+| PETSc/TAO  | Y      |           | Y     |         |         |
 
 
 ## Prerequisites

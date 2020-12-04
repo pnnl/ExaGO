@@ -37,7 +37,7 @@ int main(int argc,char **argv)
       ierr = PFLOWReadMatPowerData(pflow,file);CHKERRQ(ierr);
     }
   } else {
-    ierr = PFLOWReadMatPowerData(pflow,"datafiles/case9mod.m");CHKERRQ(ierr);
+    ierr = PFLOWReadMatPowerData(pflow,"datafiles/case9/case9mod.m");CHKERRQ(ierr);
   }
   PetscLogStagePop();
 

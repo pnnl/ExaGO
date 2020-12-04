@@ -4,6 +4,9 @@ function mpc = case9mod
 %
 % Based on data from Sauer and Pai's book 'Power System Dynamics and
 % Stability' Chapter 7
+%
+% Modifications
+% Gen. 3 is modeled as a wind generator
 
 %% MATPOWER Case Format : Version 2
 mpc.version = '2';
@@ -31,7 +34,7 @@ mpc.bus = [
 mpc.gen = [
     1   71.6000  27.0000  300.0000  -300.0000  1.0400  100.0000  1   350.0000    10.0000 0	0	0	0	0	0	0	0	0	0	0;
     2  163.0000   6.7000  300.0000  -300.0000  1.0250  100.0000  1   300.0000    10.0000 0	0	0	0	0	0	0	0	0	0	0;
-    3   85.0000 -10.9000  300.0000  -300.0000  1.0250  100.0000  1   270.0000    10.0000 0	0	0	0	0	0	0	0	0	0	0;
+    3   85.0000 -10.9000  300.0000  -300.0000  1.0250  100.0000  1   85.0000      85.0000 0	0	0	0	0	0	0	0	0	0	0;
 ];
 
 %% branch data
@@ -62,7 +65,22 @@ mpc.areas = [
 mpc.gencost = [
 	2	1500.00	0.00	3	0.11	5	150;
 	2	2000.00	0.00	3	0.085	1.2	600;
-	2	3000.00	0.00	3	0.1225	1	335;
+	2	0000.00	0.00	3	0.000	0	0.0;
 ];
+
+%% generator unit type (see GENTYPES)
+mpc.gentype = {
+	'ST';
+	'ST';
+	'W2';
+};
+
+%% generator fuel type (see GENFUELS)
+mpc.genfuel = {
+	'coal';
+	'coal';
+        'wind';
+};
+
 
 return;

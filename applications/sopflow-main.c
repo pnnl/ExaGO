@@ -1,20 +1,21 @@
-static char help[] = "User example calling SCOPFLOW.\n\n";
+static char help[] = "User example calling stochastic optimal power flow SOPFLOW.\n\n";
 
 #include <exago_config.h>
-#include <scopflow.h>
+#include <sopflow.h>
 
 
 int main(int argc,char **argv)
 {
   PetscErrorCode    ierr;
-  SCOPFLOW          scopflow;
+  SOPFLOW           sopflow;
   char              file[PETSC_MAX_PATH_LEN];
-  char              ctgcfile[PETSC_MAX_PATH_LEN];
-  PetscBool         flg=PETSC_FALSE,flgctgc=PETSC_FALSE;
+  char              scenfile[PETSC_MAX_PATH_LEN];
+  PetscBool         flg=PETSC_FALSE,flgscen=PETSC_FALSE;
   PetscBool         print_output=PETSC_FALSE,save_output=PETSC_FALSE;
-  PetscLogStage stages[3];
+  PetscLogStage     stages[3];
+
   char options_pathname[200] = EXAGO_OPTIONS_DIR;
-  char filename[] = "/scopflowoptions";
+  char filename[] = "/sopflowoptions";
   printf("%s\n", options_pathname);
   printf("%s\n", filename);
   strcat(options_pathname, filename);
@@ -33,58 +34,58 @@ int main(int argc,char **argv)
   /* Get network data file from command line */
   ierr = PetscOptionsGetString(NULL,NULL,"-netfile",file,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
   
-  /* Get contingency data file from command line */
-  ierr = PetscOptionsGetString(NULL,NULL,"-ctgcfile",ctgcfile,PETSC_MAX_PATH_LEN,&flgctgc);CHKERRQ(ierr);
+  /* Get scenario data file from command line */
+  ierr = PetscOptionsGetString(NULL,NULL,"-scenfile",scenfile,PETSC_MAX_PATH_LEN,&flgscen);CHKERRQ(ierr);
 
   /* Stage 1 - Application creation and reading data */
   ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
   
-  /* Create SCOPFLOW object */
-  ierr = SCOPFLOWCreate(PETSC_COMM_WORLD,&scopflow);CHKERRQ(ierr);
+  /* Create SOPFLOW object */
+  ierr = SOPFLOWCreate(PETSC_COMM_WORLD,&sopflow);CHKERRQ(ierr);
   
     /* Set Network Data file */
   if(flg) {
-    ierr = SCOPFLOWSetNetworkData(scopflow,file);CHKERRQ(ierr);
+    ierr = SOPFLOWSetNetworkData(sopflow,file);CHKERRQ(ierr);
   } else {
-    ierr = SCOPFLOWSetNetworkData(scopflow,"datafiles/case9/case9mod.m");CHKERRQ(ierr);
+    ierr = SOPFLOWSetNetworkData(sopflow,"datafiles/case9/case9mod.m");CHKERRQ(ierr);
   }
   
-  /* Set Contingency Data file */
-  if(flgctgc) {
-    ierr = SCOPFLOWSetContingencyData(scopflow,NATIVE,ctgcfile);CHKERRQ(ierr);
+  /* Set Scenario Data file */
+  if(flgscen) {
+    ierr = SOPFLOWSetScenarioData(sopflow,SOPFLOW_NATIVE,WIND,scenfile);CHKERRQ(ierr);
   }
   
-  /* Set a subset of scenarios to be selected. Can use the option -scopflow_Nc instead */
-  /*   ierr = SCOPFLOWSetNumScenarios(scopflow,2);CHKERRQ(ierr); */
+  /* Set a subset of scenarios to be selected. Can use the option -sopflow_Ns instead */
+  /*   ierr = SOPFLOWSetNumScenarios(sopflow,2);CHKERRQ(ierr); */
 
   ierr = PetscLogStagePop();CHKERRQ(ierr);
   
-  /* Stage 2 - Set up SCOPFLOW application */
+  /* Stage 2 - Set up SOPFLOW application */
   ierr = PetscLogStagePush(stages[1]);CHKERRQ(ierr);
 
   /* Set up */
-  ierr = SCOPFLOWSetUp(scopflow);CHKERRQ(ierr);
+  ierr = SOPFLOWSetUp(sopflow);CHKERRQ(ierr);
 
   /* Stage 3 - Solve */
   ierr = PetscLogStagePush(stages[2]);CHKERRQ(ierr);
 
   /* Solve */
-  ierr = SCOPFLOWSolve(scopflow);CHKERRQ(ierr);
+  ierr = SOPFLOWSolve(sopflow);CHKERRQ(ierr);
 
   ierr = PetscLogStagePop();CHKERRQ(ierr);
   
   /* Print solution */
   if(print_output) {
-    ierr = SCOPFLOWPrintSolution(scopflow,0);CHKERRQ(ierr);
+    ierr = SOPFLOWPrintSolution(sopflow,0);CHKERRQ(ierr);
   }
 
   /* Save solution */
   if(save_output) {
-    ierr = SCOPFLOWSaveSolutionAll(scopflow,MATPOWER,"scopflowout");CHKERRQ(ierr);
+    ierr = SOPFLOWSaveSolutionAll(sopflow,MATPOWER,"sopflowout");CHKERRQ(ierr);
   }
 
-  /* Destroy SCOPFLOW object */
-  ierr = SCOPFLOWDestroy(&scopflow);CHKERRQ(ierr);
+  /* Destroy SOPFLOW object */
+  ierr = SOPFLOWDestroy(&sopflow);CHKERRQ(ierr);
 
   PetscFinalize();
   return 0;
