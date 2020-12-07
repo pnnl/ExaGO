@@ -1,6 +1,7 @@
 #include <exago_config.h>
 
 #include <private/opflowimpl.h>
+#include <private/tcopflowimpl.h>
 #include <private/scopflowimpl.h>
 #include "scopflow-empar.h"
 
@@ -8,15 +9,22 @@ PetscErrorCode SCOPFLOWSolverSolve_EMPAR(SCOPFLOW scopflow)
 {
   PetscErrorCode      ierr;
   PetscInt            c;
+  TCOPFLOW            tcopflow;
   OPFLOW              opflow;
 
   PetscFunctionBegin;
 
-
-  for(c=0; c < scopflow->nc; c++) {
-    opflow = scopflow->opflows[c];
-    ierr   = OPFLOWSolve(opflow);
-  }
+  if(!scopflow->ismultiperiod) {
+    for(c=0; c < scopflow->nc; c++) {
+      opflow = scopflow->opflows[c];
+      ierr   = OPFLOWSolve(opflow);
+    }
+  } else {
+    for(c=0; c < scopflow->nc; c++) {
+      tcopflow = scopflow->tcopflows[c];
+      ierr   = TCOPFLOWSolve(tcopflow);
+    }
+  }    
 
   PetscFunctionReturn(0);
 }
@@ -38,7 +46,11 @@ PetscErrorCode SCOPFLOWSolverGetObjective_EMPAR(SCOPFLOW scopflow,PetscReal *obj
   PetscReal      temp;
   PetscFunctionBegin;
   if(!scopflow->comm->rank) {
-    temp = scopflow->opflows[0]->obj;
+    if(!scopflow->ismultiperiod) {
+      temp = scopflow->opflows[0]->obj;
+    } else {
+      temp = scopflow->tcopflows[0]->obj;
+    }
   }
   ierr = MPI_Bcast(&temp,1,MPI_REAL,0,scopflow->comm->type);CHKERRQ(ierr);
   scopflow->obj = temp;
@@ -48,13 +60,19 @@ PetscErrorCode SCOPFLOWSolverGetObjective_EMPAR(SCOPFLOW scopflow,PetscReal *obj
 
 PetscErrorCode SCOPFLOWSolverGetSolution_EMPAR(SCOPFLOW scopflow,PetscInt cont_num,Vec *X)
 {
+  TCOPFLOW       tcopflow;
   OPFLOW         opflow;
 
   PetscFunctionBegin;
 
   if(scopflow->cstart <= cont_num && cont_num < scopflow->cend) {
-    opflow = scopflow->opflows[cont_num-scopflow->cstart];
-    *X = opflow->X; 
+    if(!scopflow->ismultiperiod) {
+      opflow = scopflow->opflows[cont_num-scopflow->cstart];
+      *X = opflow->X; 
+    } else {
+      tcopflow = scopflow->tcopflows[cont_num-scopflow->cstart];
+      *X = tcopflow->X; 
+    }
   } else {
     *X = NULL;
   }
@@ -63,13 +81,19 @@ PetscErrorCode SCOPFLOWSolverGetSolution_EMPAR(SCOPFLOW scopflow,PetscInt cont_n
 
 PetscErrorCode SCOPFLOWSolverGetConstraints_EMPAR(SCOPFLOW scopflow,PetscInt cont_num,Vec *G)
 {
+  TCOPFLOW            tcopflow;
   OPFLOW              opflow;
 
   PetscFunctionBegin;
 
   if(scopflow->cstart <= cont_num && cont_num < scopflow->cend) {
-    opflow = scopflow->opflows[cont_num-scopflow->cstart];
-    *G = opflow->G; 
+    if(!scopflow->ismultiperiod) {
+      opflow = scopflow->opflows[cont_num-scopflow->cstart];
+      *G = opflow->G; 
+    } else {
+      tcopflow = scopflow->tcopflows[cont_num-scopflow->cstart];
+      *G = tcopflow->G; 
+    }      
   } else {
     *G = NULL;
   }
@@ -79,12 +103,18 @@ PetscErrorCode SCOPFLOWSolverGetConstraints_EMPAR(SCOPFLOW scopflow,PetscInt con
 
 PetscErrorCode SCOPFLOWSolverGetConstraintMultipliers_EMPAR(SCOPFLOW scopflow,PetscInt cont_num,Vec *Lambda)
 {
+  TCOPFLOW            tcopflow;
   OPFLOW              opflow;
 
   PetscFunctionBegin;
   if(scopflow->cstart <= cont_num && cont_num < scopflow->cend) {
-    opflow = scopflow->opflows[cont_num-scopflow->cstart];
-    *Lambda = opflow->Lambda; 
+    if(!scopflow->ismultiperiod) {
+      opflow = scopflow->opflows[cont_num-scopflow->cstart];
+      *Lambda = opflow->Lambda; 
+    } else {
+      tcopflow = scopflow->tcopflows[cont_num-scopflow->cstart];
+      *Lambda = tcopflow->Lambda; 
+    }      
   } else {
     *Lambda = NULL;
   }

@@ -2,6 +2,7 @@
 #if defined(EXAGO_HAVE_IPOPT)
 
 #include <private/opflowimpl.h>
+#include <private/tcopflowimpl.h>
 #include <private/scopflowimpl.h>
 #include "scopflow-ipopt2.h"
 
@@ -277,13 +278,24 @@ PetscErrorCode SCOPFLOWSolverGetObjective_IPOPTNEW(SCOPFLOW scopflow,PetscReal *
 PetscErrorCode SCOPFLOWSolverGetSolution_IPOPTNEW(SCOPFLOW scopflow,PetscInt cont_num,Vec *X)
 {
   PetscErrorCode ierr;
-  OPFLOW         opflow=scopflow->opflows[cont_num];
-  Vec            Xi=opflow->X;
-  PetscInt       nxi=opflow->nx;
+  TCOPFLOW       tcopflow;
+  OPFLOW         opflow;
+  Vec            Xi;
+  PetscInt       nxi;
   PetscScalar    *xi,*x;
   PetscInt       ix=scopflow->xstarti[cont_num];
 
   PetscFunctionBegin;
+  if(!scopflow->ismultiperiod) {
+    opflow = scopflow->opflows[cont_num];
+    nxi = opflow->nx;
+    Xi  = opflow->X;
+  } else {
+    tcopflow = scopflow->tcopflows[cont_num];
+    nxi = tcopflow->Nx;
+    Xi  = tcopflow->X;
+  }
+    
   ierr = VecGetArray(Xi,&xi);CHKERRQ(ierr);
   ierr = VecGetArray(scopflow->X,&x);CHKERRQ(ierr);
 
@@ -299,13 +311,24 @@ PetscErrorCode SCOPFLOWSolverGetSolution_IPOPTNEW(SCOPFLOW scopflow,PetscInt con
 PetscErrorCode SCOPFLOWSolverGetConstraints_IPOPTNEW(SCOPFLOW scopflow,PetscInt cont_num,Vec *G)
 {
   PetscErrorCode ierr;
-  OPFLOW         opflow=scopflow->opflows[cont_num];
-  Vec            Gi=opflow->G;
-  PetscInt       ngi=opflow->ncon;
+  TCOPFLOW       tcopflow;
+  OPFLOW         opflow;
+  Vec            Gi;
+  PetscInt       ngi;
   PetscScalar    *gi,*g;
   PetscInt       ig=scopflow->gstarti[cont_num];
 
   PetscFunctionBegin;
+  if(!scopflow->ismultiperiod) {
+    opflow = scopflow->opflows[cont_num];
+    ngi    = opflow->ncon;
+    Gi = opflow->G;
+  } else {
+    tcopflow = scopflow->tcopflows[cont_num];
+    Gi  = tcopflow->G;
+    ngi      = tcopflow->Ncon;
+  }
+
   ierr = VecGetArray(Gi,&gi);CHKERRQ(ierr);
   ierr = VecGetArray(scopflow->G,&g);CHKERRQ(ierr);
 
@@ -322,13 +345,24 @@ PetscErrorCode SCOPFLOWSolverGetConstraints_IPOPTNEW(SCOPFLOW scopflow,PetscInt 
 PetscErrorCode SCOPFLOWSolverGetConstraintMultipliers_IPOPTNEW(SCOPFLOW scopflow,PetscInt cont_num,Vec *Lambda)
 {
   PetscErrorCode ierr;
-  OPFLOW         opflow=scopflow->opflows[cont_num];
-  Vec            Lambdai=opflow->Lambda;
-  PetscInt       ngi=opflow->ncon;
+  TCOPFLOW       tcopflow;
+  OPFLOW         opflow;
+  Vec            Lambdai;
+  PetscInt       ngi;
   PetscScalar    *lambdai,*lambda;
   PetscInt       ig=scopflow->gstarti[cont_num];
 
   PetscFunctionBegin;
+  if(!scopflow->ismultiperiod) {
+    opflow = scopflow->opflows[cont_num];
+    ngi    = opflow->ncon;
+    Lambdai = opflow->Lambda;
+  } else {
+    tcopflow = scopflow->tcopflows[cont_num];
+    Lambdai  = tcopflow->Lambda;
+    ngi      = tcopflow->Ncon;
+  }
+
   ierr = VecGetArray(Lambdai,&lambdai);CHKERRQ(ierr);
   ierr = VecGetArray(scopflow->Lambda,&lambda);CHKERRQ(ierr);
 

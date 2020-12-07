@@ -9,6 +9,7 @@
 #include <ps.h>
 #include <private/psimpl.h>
 #include <opflow.h>
+#include <tcopflow.h>
 #include <scopflow.h>
 #include <private/contingencylist.h>
 
@@ -74,8 +75,10 @@ struct _p_SCOPFLOW{
 		       
   COMM comm; /**< Communicator context */
   OPFLOW *opflows; /* Array of optimal power flow application objects.
-  		      Each processor creates ns objects, one for each 
-		      scenario */
+  		      Each processor creates nc objects, one for each 
+		      contingency */
+
+  TCOPFLOW *tcopflows; /* Array of multi-period optimal power flow application objects */
 
   PetscBool setupcalled; /* SCOPFLOWSetUp called? */
 
@@ -108,11 +111,11 @@ struct _p_SCOPFLOW{
   
   PetscScalar obj_factor; /* IPOPT scales the objective hessian part with this factor. For all other solvers, unless it is set, obj_factor = 1.0. */
 
-  Mat *Jcoup;  /* Jacobian for the coupling constraints (one per scenario) */
-  Mat *JcoupT; /* Transpose of the coupling Jacobian (one per scenario)*/
+  Mat *Jcoup;  /* Jacobian for the coupling constraints (one per contingency) */
+  Mat *JcoupT; /* Transpose of the coupling Jacobian (one per contingency)*/
 
-  PetscBool iscoupling; /* Is each scenario coupled with base scenario? */
-  PetscBool replicate_basecase; /* Replicate base case for all scenarios */
+  PetscBool iscoupling; /* Is each contingency coupled with base scenario? */
+  PetscBool replicate_basecase; /* Replicate base case for all contingencies */
 
   PetscInt makeup_power_source; /* Make up power is supplied by 
 				   0 - ref. bus generators only 
@@ -146,6 +149,9 @@ struct _p_SCOPFLOW{
   char            ctgcfile[100]; /* Contingency file */
 
   ContingencyFileInputFormat ctgcfileformat;
+
+  PetscBool ismultiperiod; /* Are we doing a multi-period OPF? */
+
 };
 
 extern PetscErrorCode SCOPFLOWModelRegisterAll(SCOPFLOW);

@@ -10,10 +10,10 @@ int main(int argc,char **argv)
   SCOPFLOW          scopflow;
   char              file[PETSC_MAX_PATH_LEN];
   char              ctgcfile[PETSC_MAX_PATH_LEN];
-  PetscBool         flg=PETSC_FALSE,flgctgc=PETSC_FALSE;
+  PetscBool         flg=PETSC_FALSE,flgctgc=PETSC_FALSE,ismultiperiod=PETSC_TRUE;
   PetscBool         print_output=PETSC_FALSE,save_output=PETSC_FALSE;
-  PetscLogStage stages[3];
-  char options_pathname[200] = EXAGO_OPTIONS_DIR;
+  PetscLogStage     stages[3];
+  char              options_pathname[200] = EXAGO_OPTIONS_DIR;
   char filename[] = "/scopflowoptions";
   printf("%s\n", options_pathname);
   printf("%s\n", filename);
@@ -24,6 +24,7 @@ int main(int argc,char **argv)
   
   ierr = PetscOptionsGetBool(NULL,NULL,"-print_output",&print_output,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-save_output",&save_output,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(NULL,NULL,"-ismultiperiod",&ismultiperiod,NULL);CHKERRQ(ierr);
 
   /* Register stages for profiling application code sections */
   ierr = PetscLogStageRegister("Reading Data",&stages[0]);CHKERRQ(ierr);
@@ -54,6 +55,8 @@ int main(int argc,char **argv)
     ierr = SCOPFLOWSetContingencyData(scopflow,NATIVE,ctgcfile);CHKERRQ(ierr);
   }
   
+  ierr = SCOPFLOWEnableMultiPeriod(scopflow,ismultiperiod);CHKERRQ(ierr);
+
   /* Set a subset of scenarios to be selected. Can use the option -scopflow_Nc instead */
   /*   ierr = SCOPFLOWSetNumScenarios(scopflow,2);CHKERRQ(ierr); */
 

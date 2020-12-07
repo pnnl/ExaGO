@@ -3,7 +3,7 @@ ExaGO<sup>TM</sup> is a package for solving large-scale power grid optimization 
 
 - [ACOPF or OPFLOW](docs/web/opflow.md) solves an AC optimal power flow either on CPU and GPU
 - [ACPF or PFLOW](docs/web/pflow.md) solves an AC power flow
-- [SC-ACOPF or SCOPFLOW](docs/web/scopflow.md) solves a security-constrained (contingency) constrained optimal power
+- [SC-ACOPF or SCOPFLOW](docs/web/scopflow.md) solves a multi-period security-constrained (contingency) constrained optimal power
 - [TC-ACOPF or TCOPFLOW](docs/web/tcopflow.md) solves a multi-period optimal power flow
 - [S-ACOPF or SOPFLOW](docs/web/sopflow.md) solves a stochastic optimal power flow
 

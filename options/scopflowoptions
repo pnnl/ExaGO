@@ -1,4 +1,4 @@
--netfile datafiles/case9/case9mod.m
+-netfile datafiles/case9/case9mod_gen3_wind.m
 
 # Contingency file
 -ctgcfile datafiles/case9/case9.cont
@@ -22,3 +22,24 @@
 #options
 # Display options left
 -options_left no
+
+## Options for multi-period SCOPFLOW
+
+# Active load power profile file
+-scopflow_ploadprofile datafiles/case9/load_P.csv
+
+# Reactive load power profile file
+-scopflow_qloadprofile datafiles/case9/load_Q.csv
+
+# Wind generation profile file
+-scopflow_windgenprofile datafiles/case9/scenarios.csv
+
+# Coupling between time-steps? (Ramp constraints)
+-tcopflow_iscoupling 1
+
+# Time-step (in minutes)
+-tcopflow_dT 5.0
+
+# Duration (in hours)
+-tcopflow_duration 0.1666667 # 10 minutes
+

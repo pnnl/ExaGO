@@ -6,6 +6,7 @@
 #define __PSIMPL_H
 
 #include <ps.h>
+#include <private/contingencylist.h>
 
 /**
  * @brief Maximum number of lines allowed to be connected to a bus
@@ -270,5 +271,6 @@ extern PetscErrorCode PSConnCompDestroy(PS);
 extern PetscErrorCode PSSetEdgeandBusStartLoc(PS);
 extern PetscErrorCode PSPrintSystemSummary(PS);
 extern PetscErrorCode PSSaveSolution(PS,OutputFormat,const char[]);
+extern PetscErrorCode PSApplyContingency(PS,Contingency);
 #endif
 

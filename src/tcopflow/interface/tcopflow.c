@@ -2,6 +2,22 @@
 #include <private/tcopflowimpl.h>
 
 /*
+  TCOPFLOWSetTimeStepandDuration - Sets the time-step and optimization horizon
+
+  Input Parameters:
++ tcopflow - the TCOPFLOW object
+. dT       - time step in minutes
+- duration - duration (horizon) in hours
+*/
+PetscErrorCode TCOPFLOWSetTimeStepandDuration(TCOPFLOW tcopflow,PetscReal dT,PetscReal duration)
+{
+  PetscFunctionBegin;
+  tcopflow->dT = dT;
+  tcopflow->duration = duration;
+  PetscFunctionReturn(0);
+}
+
+/*
   TCOPFLOWSetLoadProfiles - Sets the data files for time-varying load profiles
 
   Input Parameter
@@ -86,6 +102,8 @@ PetscErrorCode TCOPFLOWCreate(MPI_Comm mpicomm, TCOPFLOW *tcopflowout)
 
   tcopflow->solver   = NULL;
   tcopflow->model    = NULL;
+
+  tcopflow->ctgc     = NULL;
 
   tcopflow->nmodelsregistered = 0;
   tcopflow->TCOPFLOWModelRegisterAllCalled = PETSC_FALSE;
@@ -268,6 +286,12 @@ PetscErrorCode TCOPFLOWSetNetworkData(TCOPFLOW tcopflow,const char netfile[])
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode TCOPFLOWSetContingency(TCOPFLOW tcopflow,Contingency *ctgc)
+{
+  PetscFunctionBegin;
+  tcopflow->ctgc = ctgc;
+  PetscFunctionReturn(0);
+}
 /*
   TCOPFLOWSetUp - Sets up an multi-period optimal power flow application object
 
@@ -298,9 +322,9 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
   ierr = PetscOptionsReal("-tcopflow_duration","Time horizon (hours)","",tcopflow->duration,&tcopflow->duration,NULL);CHKERRQ(ierr);
   PetscOptionsEnd();
 
-  tcopflow->Nt = round(tcopflow->duration*60.0/tcopflow->dT);
+  tcopflow->Nt = round(tcopflow->duration*60.0/tcopflow->dT)+1;
 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"TCOPFLOW: Duration = %lf hours, timestep = %lf minutes, number of time-steps = %d\n",tcopflow->duration,tcopflow->dT,tcopflow->Nt);CHKERRQ(ierr);
+  ierr = PetscPrintf(tcopflow->comm->type,"TCOPFLOW: Duration = %lf hours, timestep = %lf minutes, number of time-steps = %d\n",tcopflow->duration,tcopflow->dT,tcopflow->Nt);CHKERRQ(ierr);
 
   /* Set Model */
   ierr = TCOPFLOWSetModel(tcopflow,modelname);CHKERRQ(ierr);
@@ -329,6 +353,10 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
     ps = tcopflow->opflows[i]->ps;
     ierr = PSSetUp(ps);CHKERRQ(ierr);
 
+    if(tcopflow->ctgc) {
+      // Contingency is set, apply it */
+      ierr = PSApplyContingency(ps,*tcopflow->ctgc);CHKERRQ(ierr);
+    }
     /* Set up OPFLOW object */
     ierr = OPFLOWSetUp(tcopflow->opflows[i]);CHKERRQ(ierr);
   }
