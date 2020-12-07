@@ -29,6 +29,7 @@ PetscErrorCode SCOPFLOWModelRegister(SCOPFLOW scopflow,const char sname[],PetscE
 }
 
 extern PetscErrorCode SCOPFLOWModelCreate_GENRAMP(SCOPFLOW);
+extern PetscErrorCode SCOPFLOWModelCreate_GENRAMPT(SCOPFLOW);
 
 /*
   SCOPFLOWModelRegisterAll - Registers all built-in SCOPFLOW models
@@ -40,6 +41,7 @@ PetscErrorCode SCOPFLOWModelRegisterAll(SCOPFLOW scopflow)
   if(scopflow->SCOPFLOWModelRegisterAllCalled) PetscFunctionReturn(0);
 
   ierr = SCOPFLOWModelRegister(scopflow,SCOPFLOWMODEL_GENRAMP,SCOPFLOWModelCreate_GENRAMP);CHKERRQ(ierr);
+  ierr = SCOPFLOWModelRegister(scopflow,SCOPFLOWMODEL_GENRAMPT,SCOPFLOWModelCreate_GENRAMPT);CHKERRQ(ierr);
 
   scopflow->SCOPFLOWModelRegisterAllCalled = PETSC_TRUE;
 
@@ -75,10 +77,6 @@ extern PetscErrorCode SCOPFLOWSolverCreate_IPOPT(SCOPFLOW);
 extern PetscErrorCode SCOPFLOWSolverCreate_IPOPTNEW(SCOPFLOW);
 #endif
 
-#if defined(EXAGO_HAVE_PIPS)
-extern PetscErrorCode SCOPFLOWSolverCreate_PIPS(SCOPFLOW);
-#endif
-
 extern PetscErrorCode SCOPFLOWSolverCreate_EMPAR(SCOPFLOW);
 
 /*
@@ -96,9 +94,6 @@ PetscErrorCode SCOPFLOWSolverRegisterAll(SCOPFLOW scopflow)
 
 #endif
 
-#if defined(EXAGO_HAVE_PIPS)
-  ierr = SCOPFLOWSolverRegister(scopflow,SCOPFLOWSOLVER_PIPS,SCOPFLOWSolverCreate_PIPS);CHKERRQ(ierr);
-#endif
   ierr = SCOPFLOWSolverRegister(scopflow,SCOPFLOWSOLVER_EMPAR,SCOPFLOWSolverCreate_EMPAR);CHKERRQ(ierr);
   scopflow->SCOPFLOWSolverRegisterAllCalled = PETSC_TRUE;
 

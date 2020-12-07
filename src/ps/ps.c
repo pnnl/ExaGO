@@ -1239,3 +1239,27 @@ PetscErrorCode PSSetEdgeandBusStartLoc(PS ps)
   }
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode PSApplyContingency(PS ps, Contingency ctgc)
+{
+  PetscInt       j;
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+
+  for(j=0; j < ctgc.noutages; j++) {
+    if(ctgc.outagelist[j].type == GEN_OUTAGE) {
+      PetscInt gbus=ctgc.outagelist[j].bus;
+      char     *gid = ctgc.outagelist[j].id;
+      PetscInt status = ctgc.outagelist[j].status;
+      ierr = PSSetGenStatus(ps,gbus,gid,status);CHKERRQ(ierr);
+    }
+    if(ctgc.outagelist[j].type == BR_OUTAGE) {
+      PetscInt fbus=ctgc.outagelist[j].fbus;
+      PetscInt tbus=ctgc.outagelist[j].tbus;
+      char     *brid = ctgc.outagelist[j].id;
+      PetscInt status = ctgc.outagelist[j].status;
+      ierr = PSSetLineStatus(ps,fbus,tbus,brid,status);CHKERRQ(ierr);
+    }
+  }
+  PetscFunctionReturn(0);
+}

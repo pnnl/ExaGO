@@ -135,6 +135,7 @@ struct _p_TCOPFLOW{
   char windgenprofile[100]; /* Wind generation profiles */
   PetscBool windgenprofileset; /* Is the wind generation profile set ? */
 
+  Contingency *ctgc;
 };
 
 /* Register all TCOPFLOW solvers */
@@ -146,6 +147,7 @@ extern PetscErrorCode TCOPFLOWReadQloadProfile(TCOPFLOW,char[]);
 extern PetscErrorCode TCOPFLOWReadWindGenProfile(TCOPFLOW,char[]);
 extern PetscErrorCode TCOPFLOWGetConstraints(TCOPFLOW,PetscInt,Vec*);
 extern PetscErrorCode TCOPFLOWGetConstraintMultipliers(TCOPFLOW,PetscInt,Vec*);
+extern PetscErrorCode TCOPFLOWSetContingency(TCOPFLOW,Contingency*);
 
 
 #endif

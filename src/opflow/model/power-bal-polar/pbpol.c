@@ -1740,7 +1740,10 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow)
 
     for(k=0; k < bus->ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      if(!gen->status) continue;
+      if(!gen->status) {
+	gen->pg = gen->qg = 0.0;
+	continue;
+      }
 
       loc += 2;
 

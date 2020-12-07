@@ -10,6 +10,7 @@
 
 /* Models */
 #define SCOPFLOWMODEL_GENRAMP "GENRAMP" 
+#define SCOPFLOWMODEL_GENRAMPT "GENRAMPT" /* Model for multi-period SCOPFLOW */
 
 /* Solvers */
 #define SCOPFLOWSOLVER_IPOPTNEW "IPOPTNEW"
@@ -20,6 +21,7 @@
 
 typedef struct _p_SCOPFLOW *SCOPFLOW;
 
+PETSC_EXTERN PetscErrorCode SCOPFLOWEnableMultiPeriod(SCOPFLOW,PetscBool);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetModel(SCOPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWModelRegister(SCOPFLOW,const char[],PetscErrorCode (*create)(SCOPFLOW));
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetSolver(SCOPFLOW,const char[]);

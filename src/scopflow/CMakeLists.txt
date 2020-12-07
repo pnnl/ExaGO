@@ -6,6 +6,7 @@ set(SCOPFLOW_SOLVER_SRC
 
 set(SCOPFLOW_MODEL_SRC
   model/genramp/genramp.c
+  model/genrampt/genrampt.c
 )
 
 set(SCOPFLOW_SRC
@@ -33,6 +34,7 @@ target_link_libraries(scopflow PRIVATE
 			     ${EXAGO_PS_LIBS}
 			     ${EXAGO_PFLOW_LIBS}
 			     ${EXAGO_OPFLOW_LIBS}
+			     ${EXAGO_TCOPFLOW_LIBS}
 )
 
 if(EXAGO_HAVE_IPOPT)
@@ -51,4 +53,4 @@ install(TARGETS scopflow DESTINATION lib)
 # Install header
 install(FILES ${SCOPFLOW_INCLUDE} DESTINATION include)
 
-set(SCOPFLOW_LIBS ${SCOPFLOW_LIBS} scopflow PARENT_SCOPE)
+set(EXAGO_SCOPFLOW_LIBS ${EXAGO_SCOPFLOW_LIBS} scopflow PARENT_SCOPE)

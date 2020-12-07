@@ -1,4 +1,5 @@
 #include <private/opflowimpl.h>
+#include <private/tcopflowimpl.h>
 #include <private/scopflowimpl.h>
 
 /*
@@ -31,6 +32,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
   scopflow->obj_factor = 1.0;
   scopflow->obj = 0.0;
 
+  scopflow->ismultiperiod = PETSC_FALSE;
 
   scopflow->makeup_power_source = 1;
 
@@ -104,7 +106,11 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
 
   /* Destroy OPFLOW objects */
   for(c=0; c < (*scopflow)->nc; c++) {
-    ierr = OPFLOWDestroy(&(*scopflow)->opflows[c]);CHKERRQ(ierr);
+    if(!(*scopflow)->ismultiperiod) {
+      ierr = OPFLOWDestroy(&(*scopflow)->opflows[c]);CHKERRQ(ierr);
+    } else {
+      ierr = TCOPFLOWDestroy(&(*scopflow)->tcopflows[c]);CHKERRQ(ierr);
+    }
   }
 
   ierr = PetscFree((*scopflow)->xstarti);CHKERRQ(ierr);
@@ -120,10 +126,24 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
 }
 
 /*
+  SCOPFLOWEnableMultiPeriod - Enable/Disable multi-period SCOPLOW
+
+  Input Parameters:
++ scopflow - scopflow application object
+- ismultperiod - PETSC_FALSE for single-period, PETSC_TRUE otherwise
+*/
+PetscErrorCode SCOPFLOWEnableMultiPeriod(SCOPFLOW scopflow,PetscBool ismultiperiod)
+{
+  PetscFunctionBegin;
+  scopflow->ismultiperiod = ismultiperiod;
+  PetscFunctionReturn(0);
+}
+
+/*
   SCOPFLOWSetModel - Sets the model for SCOPFLOW
 
   Input Parameters:
-+ scopflow - opflow application object
++ scopflow - scopflow application object
 - modelname - name of the model
 */
 PetscErrorCode SCOPFLOWSetModel(SCOPFLOW scopflow,const char* modelname)
@@ -234,11 +254,16 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   PetscErrorCode ierr;
   PetscBool      scopflowsolverset;
   char           opflowmodelname[32]="POWER_BALANCE_POLAR";
-  char           scopflowsolvername[32]="IPOPT";
+  char           scopflowsolvername[32]="IPOPTNEW";
   PetscInt       c,i,j;
   char           scopflowmodelname[32]="GENRAMP";
   PS             ps;
   OPFLOW         opflow;
+  char           ploadprofile[PETSC_MAX_PATH_LEN];
+  char           qloadprofile[PETSC_MAX_PATH_LEN];
+  char           windgenprofile[PETSC_MAX_PATH_LEN];
+  PetscBool      flg=PETSC_FALSE,flg1=PETSC_FALSE,flg2=PETSC_FALSE,flg3=PETSC_FALSE;
+  PetscReal      dT=5.0,duration=0.0; /* 5 minute time-step and single period */
 
   PetscFunctionBegin;
 
@@ -251,7 +276,17 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscOptionsBool("-scopflow_replicate_basecase","Only for debugging: Replicate first stage for all second stage scenarios","",scopflow->replicate_basecase,&scopflow->replicate_basecase,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-scopflow_mode","Operation mode:Preventive (0) or Corrective (1)","",scopflow->mode,&scopflow->mode,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-scopflow_makeup_power_source","Make-up power source for contingencies","",scopflow->makeup_power_source,&scopflow->makeup_power_source,NULL);CHKERRQ(ierr);
-  
+  ierr = PetscOptionsBool("-scopflow_enable_multiperiod","Multi-period SCOPFLOW?","",scopflow->ismultiperiod,&scopflow->ismultiperiod,NULL);CHKERRQ(ierr);
+  if(scopflow->ismultiperiod) {
+    /* Set loadp,loadq, and windgen files */
+    ierr = PetscOptionsString("-scopflow_ploadprofile","Active power load profile","",ploadprofile,ploadprofile,100,&flg1);CHKERRQ(ierr);
+    ierr = PetscOptionsString("-scopflow_qloadprofile","Reactive power load profile","",qloadprofile,qloadprofile,100,&flg2);CHKERRQ(ierr);
+    ierr = PetscOptionsString("-scopflow_windgenprofile","Wind generation profile","",windgenprofile,windgenprofile,100,&flg3);CHKERRQ(ierr);
+  ierr = PetscOptionsReal("-scopflow_dT","Length of time-step (minutes)","",dT,&dT,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsReal("-scopflow_duration","Time horizon (hours)","",duration,&duration,NULL);CHKERRQ(ierr);
+
+  }
+
   PetscOptionsEnd();
 
   if(scopflow->ctgcfileset && !scopflow->replicate_basecase) {
@@ -278,11 +313,15 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = MPI_Scan(&scopflow->nc,&scopflow->cend,1,MPIU_INT,MPI_SUM,scopflow->comm->type);CHKERRQ(ierr);
   scopflow->cstart = scopflow->cend - scopflow->nc;
 
-  ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW running with %d contingencies (base case + %d scenarios)\n",scopflow->Nc,scopflow->Nc-1);CHKERRQ(ierr);
+  ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW running with %d contingencies (base case + %d contingencies)\n",scopflow->Nc,scopflow->Nc-1);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d has %d contingencies, range [%d -- %d]\n",scopflow->comm->rank,scopflow->nc,scopflow->cstart,scopflow->cend);CHKERRQ(ierr);
 
   /* Set Model */
-  ierr = SCOPFLOWSetModel(scopflow,scopflowmodelname);CHKERRQ(ierr);
+  if(!scopflow->ismultiperiod) {
+    ierr = SCOPFLOWSetModel(scopflow,scopflowmodelname);CHKERRQ(ierr);
+  } else {
+    ierr = SCOPFLOWSetModel(scopflow,"GENRAMPT");CHKERRQ(ierr);
+  }
 
   /* Set solver */
   if(scopflowsolverset) {
@@ -291,48 +330,83 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
     ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW: Using %s solver\n",scopflowsolvername);CHKERRQ(ierr);
   } else {
     if(!scopflow->solver) {
-      ierr = SCOPFLOWSetSolver(scopflow,SCOPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
+      ierr = SCOPFLOWSetSolver(scopflow,SCOPFLOWSOLVER_IPOPTNEW);CHKERRQ(ierr);
       ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW: Using %s solver\n",SCOPFLOWSOLVER_IPOPT);CHKERRQ(ierr); 
     }
   }
-
-  /* Create OPFLOW objects */
-  ierr = PetscCalloc1(scopflow->nc,&scopflow->opflows);CHKERRQ(ierr);
-  for(c=0; c < scopflow->nc; c++) {
-    ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflows[c]);CHKERRQ(ierr);
-    ierr = OPFLOWSetModel(scopflow->opflows[c],OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
-    //    ierr = OPFLOWSetSolver(scopflow->opflows[c],opflowsolvername);CHKERRQ(ierr);
-
-    ierr = OPFLOWReadMatPowerData(scopflow->opflows[c],scopflow->netfile);CHKERRQ(ierr);
-    /* Set up the PS object for opflow */
-    ps = scopflow->opflows[c]->ps;
-    ierr = PSSetUp(ps);CHKERRQ(ierr);
-
-    /* Set contingencies */
-    if(scopflow->ctgcfileset && !scopflow->replicate_basecase) {
-      Contingency ctgc=scopflow->ctgclist.cont[scopflow->cstart+c];
-      for(j=0; j < ctgc.noutages; j++) {
-	if(ctgc.outagelist[j].type == GEN_OUTAGE) {
+  
+  if(!scopflow->ismultiperiod) {
+    /* Create OPFLOW objects */
+    ierr = PetscCalloc1(scopflow->nc,&scopflow->opflows);CHKERRQ(ierr);
+    for(c=0; c < scopflow->nc; c++) {
+      ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflows[c]);CHKERRQ(ierr);
+      ierr = OPFLOWSetModel(scopflow->opflows[c],OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
+      //    ierr = OPFLOWSetSolver(scopflow->opflows[c],opflowsolvername);CHKERRQ(ierr);
+      
+      ierr = OPFLOWReadMatPowerData(scopflow->opflows[c],scopflow->netfile);CHKERRQ(ierr);
+      /* Set up the PS object for opflow */
+      ps = scopflow->opflows[c]->ps;
+      ierr = PSSetUp(ps);CHKERRQ(ierr);
+      
+      /* Set contingencies */
+      if(scopflow->ctgcfileset && !scopflow->replicate_basecase) {
+	Contingency ctgc=scopflow->ctgclist.cont[scopflow->cstart+c];
+	for(j=0; j < ctgc.noutages; j++) {
+	  if(ctgc.outagelist[j].type == GEN_OUTAGE) {
 	  PetscInt gbus=ctgc.outagelist[j].bus;
 	  char     *gid = ctgc.outagelist[j].id;
 	  PetscInt status = ctgc.outagelist[j].status;
 	  ierr = PSSetGenStatus(ps,gbus,gid,status);CHKERRQ(ierr);
-	}
-	if(ctgc.outagelist[j].type == BR_OUTAGE) {
-	  PetscInt fbus=ctgc.outagelist[j].fbus;
-	  PetscInt tbus=ctgc.outagelist[j].tbus;
-	  char     *brid = ctgc.outagelist[j].id;
-	  PetscInt status = ctgc.outagelist[j].status;
-	  ierr = PSSetLineStatus(ps,fbus,tbus,brid,status);CHKERRQ(ierr);
+	  }
+	  if(ctgc.outagelist[j].type == BR_OUTAGE) {
+	    PetscInt fbus=ctgc.outagelist[j].fbus;
+	    PetscInt tbus=ctgc.outagelist[j].tbus;
+	    char     *brid = ctgc.outagelist[j].id;
+	    PetscInt status = ctgc.outagelist[j].status;
+	    ierr = PSSetLineStatus(ps,fbus,tbus,brid,status);CHKERRQ(ierr);
+	  }
 	}
       }
+      
+      /* Set up OPFLOW object */
+      //    ierr = OPFLOWGenbusVoltageFixed(scopflow->opflows[c],PETSC_TRUE);CHKERRQ(ierr);
+      //    if(scopflow->cstart+c > 0) scopflow->opflows[c]->obj_gencost = PETSC_FALSE; /* No gen. cost minimization for second stage */
+      ierr = OPFLOWSetUp(scopflow->opflows[c]);CHKERRQ(ierr);
     }
+  } else {
+    TCOPFLOW          tcopflow;
+    
+    /* Create TCOPFLOW objects */
+    ierr = PetscCalloc1(scopflow->nc,&scopflow->tcopflows);CHKERRQ(ierr);
+    for(c=0; c < scopflow->nc; c++) {
+      ierr = TCOPFLOWCreate(PETSC_COMM_SELF,&scopflow->tcopflows[c]);CHKERRQ(ierr);
+      tcopflow = scopflow->tcopflows[c];
 
-    /* Set up OPFLOW object */
-    //    ierr = OPFLOWGenbusVoltageFixed(scopflow->opflows[c],PETSC_TRUE);CHKERRQ(ierr);
-    //    if(scopflow->cstart+c > 0) scopflow->opflows[c]->obj_gencost = PETSC_FALSE; /* No gen. cost minimization for second stage */
-    ierr = OPFLOWSetUp(scopflow->opflows[c]);CHKERRQ(ierr);
-  }
+      ierr = TCOPFLOWSetNetworkData(tcopflow,scopflow->netfile);CHKERRQ(ierr);
+
+      if(flg1 && flg2) {
+	ierr = TCOPFLOWSetLoadProfiles(tcopflow,ploadprofile,qloadprofile);CHKERRQ(ierr);
+      } else if(flg1) {
+	ierr = TCOPFLOWSetLoadProfiles(tcopflow,ploadprofile,NULL);CHKERRQ(ierr);
+      } else if(flg2) {
+	ierr = TCOPFLOWSetLoadProfiles(tcopflow,NULL,qloadprofile);CHKERRQ(ierr);
+      }
+      if(flg3) {
+	ierr = TCOPFLOWSetWindGenProfiles(tcopflow,windgenprofile);CHKERRQ(ierr);
+      }
+
+      ierr = TCOPFLOWSetTimeStepandDuration(tcopflow,dT,duration);CHKERRQ(ierr);
+
+      /* Set contingencies */
+      if(scopflow->ctgcfileset && !scopflow->replicate_basecase) {
+	Contingency ctgc=scopflow->ctgclist.cont[scopflow->cstart+c];
+	// Set this contingency with TCOPFLOW
+	ierr = TCOPFLOWSetContingency(tcopflow,&ctgc);CHKERRQ(ierr);
+      }
+      
+      ierr = TCOPFLOWSetUp(tcopflow);CHKERRQ(ierr);
+    }
+  }    
   
   ierr = PetscCalloc1(scopflow->nc,&scopflow->nconineqcoup);CHKERRQ(ierr);
   ierr = PetscCalloc1(scopflow->nc,&scopflow->nxi);CHKERRQ(ierr);
@@ -343,22 +417,43 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   /* Set number of variables and constraints */
   ierr = (*scopflow->modelops.setnumvariablesandconstraints)(scopflow,scopflow->nxi,scopflow->ngi,scopflow->nconineqcoup);
 
-  scopflow->nx = scopflow->nxi[0];
-  scopflow->ncon = scopflow->ngi[0];
-  scopflow->nconcoup = scopflow->nconineqcoup[0];
-  opflow = scopflow->opflows[0];
-  scopflow->nconeq = opflow->nconeq;
-  scopflow->nconineq = opflow->nconineq;
-
-  for(i=1; i < scopflow->nc; i++) {
-    scopflow->xstarti[i] = scopflow->xstarti[i-1] + scopflow->nxi[i-1];
-    scopflow->gstarti[i] = scopflow->gstarti[i-1] + scopflow->ngi[i-1];
-    scopflow->nx += scopflow->nxi[i];
-    scopflow->ncon += scopflow->ngi[i];
-    scopflow->nconcoup += scopflow->nconineqcoup[i];
-    opflow = scopflow->opflows[i];
-    scopflow->nconeq   += opflow->nconeq;
-    scopflow->nconineq += opflow->nconineq;
+  if(!scopflow->ismultiperiod) {
+    scopflow->nx = scopflow->nxi[0];
+    scopflow->ncon = scopflow->ngi[0];
+    scopflow->nconcoup = scopflow->nconineqcoup[0];
+    opflow = scopflow->opflows[0];
+    scopflow->nconeq = opflow->nconeq;
+    scopflow->nconineq = opflow->nconineq;
+    
+    for(i=1; i < scopflow->nc; i++) {
+      scopflow->xstarti[i] = scopflow->xstarti[i-1] + scopflow->nxi[i-1];
+      scopflow->gstarti[i] = scopflow->gstarti[i-1] + scopflow->ngi[i-1];
+      scopflow->nx += scopflow->nxi[i];
+      scopflow->ncon += scopflow->ngi[i];
+      scopflow->nconcoup += scopflow->nconineqcoup[i];
+      opflow = scopflow->opflows[i];
+      scopflow->nconeq   += opflow->nconeq;
+      scopflow->nconineq += opflow->nconineq;
+    }
+  } else {
+    TCOPFLOW tcopflow;
+    scopflow->nx = scopflow->nxi[0];
+    scopflow->ncon = scopflow->ngi[0];
+    scopflow->nconcoup = scopflow->nconineqcoup[0];
+    tcopflow = scopflow->tcopflows[0];
+    scopflow->nconeq = tcopflow->Nconeq;
+    scopflow->nconineq = tcopflow->Nconineq + tcopflow->Nconcoup;
+    
+    for(i=1; i < scopflow->nc; i++) {
+      scopflow->xstarti[i] = scopflow->xstarti[i-1] + scopflow->nxi[i-1];
+      scopflow->gstarti[i] = scopflow->gstarti[i-1] + scopflow->ngi[i-1];
+      scopflow->nx += scopflow->nxi[i];
+      scopflow->ncon += scopflow->ngi[i];
+      scopflow->nconcoup += scopflow->nconineqcoup[i];
+      tcopflow = scopflow->tcopflows[i];
+      scopflow->nconeq   += tcopflow->Nconeq;
+      scopflow->nconineq += tcopflow->Nconineq + tcopflow->Nconcoup;
+    }
   }
 
   /* Create vector X */
@@ -413,6 +508,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
 {
   PetscErrorCode ierr;
+  PetscBool      issolver_empar;
 
   PetscFunctionBegin;
 
@@ -420,22 +516,27 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
     ierr = SCOPFLOWSetUp(scopflow);
   }
 
-  /* Set bounds on variables */
-  if(scopflow->modelops.setvariablebounds) {
-    ierr = (*scopflow->modelops.setvariablebounds)(scopflow,scopflow->Xl,scopflow->Xu);CHKERRQ(ierr);
-  }
-  
-  /* Set bounds on constraints */
-  if(scopflow->modelops.setconstraintbounds) {
-    ierr = (*scopflow->modelops.setconstraintbounds)(scopflow,scopflow->Gl,scopflow->Gu);CHKERRQ(ierr);
-  }
-  
-  /* Set initial guess */
-  if(scopflow->modelops.setinitialguess) {
-    ierr = (*scopflow->modelops.setinitialguess)(scopflow,scopflow->X);CHKERRQ(ierr);
-  }
+  ierr = PetscStrcmp(scopflow->solvername,"EMPAR",&issolver_empar);CHKERRQ(ierr);
 
-  ierr = VecSet(scopflow->Lambda,1.0);CHKERRQ(ierr);
+  if(!issolver_empar) { /* Don't need to do all this for embarassingly parallel solver */
+    /* Set bounds on variables */
+    if(scopflow->modelops.setvariablebounds) {
+      ierr = (*scopflow->modelops.setvariablebounds)(scopflow,scopflow->Xl,scopflow->Xu);CHKERRQ(ierr);
+    }
+    
+    
+    /* Set bounds on constraints */
+    if(scopflow->modelops.setconstraintbounds) {
+      ierr = (*scopflow->modelops.setconstraintbounds)(scopflow,scopflow->Gl,scopflow->Gu);CHKERRQ(ierr);
+    }
+    
+    /* Set initial guess */
+    if(scopflow->modelops.setinitialguess) {
+      ierr = (*scopflow->modelops.setinitialguess)(scopflow,scopflow->X);CHKERRQ(ierr);
+    }
+
+    ierr = VecSet(scopflow->Lambda,1.0);CHKERRQ(ierr);
+  }
 
   /* Solve */
   ierr = (*scopflow->solverops.solve)(scopflow);CHKERRQ(ierr);
