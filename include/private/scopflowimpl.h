@@ -115,7 +115,6 @@ struct _p_SCOPFLOW{
   Mat *JcoupT; /* Transpose of the coupling Jacobian (one per contingency)*/
 
   PetscBool iscoupling; /* Is each contingency coupled with base scenario? */
-  PetscBool replicate_basecase; /* Replicate base case for all contingencies */
 
   PetscInt makeup_power_source; /* Make up power is supplied by 
 				   0 - ref. bus generators only 
