@@ -38,11 +38,6 @@ if(EXAGO_HAVE_IPOPT)
 	target_include_directories(tcopflow PUBLIC ${IPOPT_INCLUDE_DIR})
 endif()
 
-if(EXAGO_HAVE_HIOP)
-	target_link_libraries(tcopflow PUBLIC INTERFACE HiOp)
-	target_include_directories(tcopflow PUBLIC ${HIOP_INCLUDE_DIR})
-endif()
-
 # Install library
 install(TARGETS tcopflow DESTINATION lib)
 

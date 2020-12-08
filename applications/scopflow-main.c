@@ -24,7 +24,6 @@ int main(int argc,char **argv)
   
   ierr = PetscOptionsGetBool(NULL,NULL,"-print_output",&print_output,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-save_output",&save_output,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsGetBool(NULL,NULL,"-ismultiperiod",&ismultiperiod,NULL);CHKERRQ(ierr);
 
   /* Register stages for profiling application code sections */
   ierr = PetscLogStageRegister("Reading Data",&stages[0]);CHKERRQ(ierr);
@@ -55,8 +54,6 @@ int main(int argc,char **argv)
     ierr = SCOPFLOWSetContingencyData(scopflow,NATIVE,ctgcfile);CHKERRQ(ierr);
   }
   
-  ierr = SCOPFLOWEnableMultiPeriod(scopflow,ismultiperiod);CHKERRQ(ierr);
-
   /* Set a subset of scenarios to be selected. Can use the option -scopflow_Nc instead */
   /*   ierr = SCOPFLOWSetNumScenarios(scopflow,2);CHKERRQ(ierr); */
 

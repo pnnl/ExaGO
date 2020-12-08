@@ -103,13 +103,17 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
     ierr = ((*scopflow)->modelops.destroy)(*scopflow);
   }
 
-  /* Destroy OPFLOW objects */
-  for(c=0; c < (*scopflow)->nc; c++) {
-    if(!(*scopflow)->ismultiperiod) {
+  /* Destroy TCOPFLOW or OPFLOW objects */
+  if(!(*scopflow)->ismultiperiod) {
+    for(c=0; c < (*scopflow)->nc; c++) {
       ierr = OPFLOWDestroy(&(*scopflow)->opflows[c]);CHKERRQ(ierr);
-    } else {
+    }
+    ierr = PetscFree((*scopflow)->tcopflows);CHKERRQ(ierr);
+  } else {
+    for(c=0; c < (*scopflow)->nc; c++) {
       ierr = TCOPFLOWDestroy(&(*scopflow)->tcopflows[c]);CHKERRQ(ierr);
     }
+    ierr = PetscFree((*scopflow)->opflows);CHKERRQ(ierr);
   }
 
   ierr = PetscFree((*scopflow)->xstarti);CHKERRQ(ierr);
@@ -118,7 +122,6 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
   ierr = PetscFree((*scopflow)->ngi);CHKERRQ(ierr);
   ierr = PetscFree((*scopflow)->nconineqcoup);CHKERRQ(ierr);
   ierr = PetscFree((*scopflow)->ctgclist.cont);CHKERRQ(ierr);
-  ierr = PetscFree((*scopflow)->opflows);CHKERRQ(ierr);
   ierr = PetscFree(*scopflow);CHKERRQ(ierr);
   //  *scopflow = 0;
   PetscFunctionReturn(0);
