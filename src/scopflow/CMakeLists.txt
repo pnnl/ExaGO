@@ -42,11 +42,6 @@ if(EXAGO_HAVE_IPOPT)
 	target_include_directories(scopflow PUBLIC ${IPOPT_INCLUDE_DIR})
 endif()
 
-if(EXAGO_HAVE_HIOP)
-	target_link_libraries(scopflow PUBLIC INTERFACE HiOp)
-	target_include_directories(scopflow PUBLIC ${HIOP_INCLUDE_DIR})
-endif()
-
 # Install library
 install(TARGETS scopflow DESTINATION lib)
 

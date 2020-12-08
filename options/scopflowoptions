@@ -34,12 +34,13 @@
 # Wind generation profile file
 -scopflow_windgenprofile datafiles/case9/scenarios.csv
 
+# Time-step (in minutes)
+-scopflow_dT 5.0
+
+# Duration (in hours)
+-scopflow_duration 0.1666667 # 10 minutes
+
 # Coupling between time-steps? (Ramp constraints)
 -tcopflow_iscoupling 1
 
-# Time-step (in minutes)
--tcopflow_dT 5.0
-
-# Duration (in hours)
--tcopflow_duration 0.1666667 # 10 minutes
 

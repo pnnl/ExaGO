@@ -616,7 +616,6 @@ PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLRAJAHIOP(OPFLOW opflow,double* x0
 PetscErrorCode OPFLOWSetConstraintBoundsArray_PBPOLRAJAHIOP(OPFLOW opflow,double *gl_dev,double *gu_dev)
 {
   PbpolModelRajaHiop* pbpolrajahiop = reinterpret_cast<PbpolModelRajaHiop*>(opflow->model);
-  BUSParamsRajaHiop      *busparams=&pbpolrajahiop->busparams;
   LINEParamsRajaHiop     *lineparams=&pbpolrajahiop->lineparams;
   PS             ps=opflow->ps;
   double         MVAbase = ps->MVAbase;
