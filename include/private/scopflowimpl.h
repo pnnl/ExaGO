@@ -116,12 +116,10 @@ struct _p_SCOPFLOW{
 
   PetscBool iscoupling; /* Is each contingency coupled with base scenario? */
 
-  PetscInt makeup_power_source; /* Make up power is supplied by 
-				   0 - ref. bus generators only 
-				   1 - all generators (decided by optimization) 
-				   2 - all generators (agc based) - not implemented */
-
-  PetscInt mode; /* 0 - preventive, 1 - corrective */
+  PetscInt mode; /* 0 - preventive: all generation at PV and PQ buses is fixed. Only ref. bus(es) are allowed
+		        to deviate from their base-case set points
+		    1 - corrective: all generators are allowed to deviate from their base-case set points
+		        limited by their 30. min ramp rates */
 
   void* model; /* Model object */
   struct _p_SCOPFLOWModelOps modelops;

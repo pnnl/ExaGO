@@ -762,7 +762,7 @@ PetscErrorCode SCOPFLOWSolverSetUp_IPOPT(SCOPFLOW scopflow)
 	  ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
 	  if(!gen->status || !gen0->status) continue;
 
-	  if(scopflow->makeup_power_source == 0) {
+	  if(scopflow->mode == 0) {
 	    /* Only ref. bus responsible for make-up power for contingencies */
 	    if(bus->ide == REF_BUS) {
 	      gli[opflow->ncon + ctr] = -10000;
@@ -772,8 +772,8 @@ PetscErrorCode SCOPFLOWSolverSetUp_IPOPT(SCOPFLOW scopflow)
 	      gui[opflow->ncon + ctr] = 0.0;
 	    }	    
 	  } else {
-	    gli[opflow->ncon + ctr] = -scopflow->mode*gen->ramp_rate_30min;
-	    gui[opflow->ncon + ctr] =  scopflow->mode*gen->ramp_rate_30min;
+	    gli[opflow->ncon + ctr] = -gen->ramp_rate_30min;
+	    gui[opflow->ncon + ctr] =  gen->ramp_rate_30min;
 	  }
 	  ctr++;
 	}

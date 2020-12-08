@@ -12,7 +12,7 @@ SOPFLOW solves a stochastic optimal power flow problem. The problem is set up as
 \end{aligned}
  ```
 
-where $N_s$ is the number of scenarios and $p_i$ is the probability of the scenario. Each scenario is implemented as an optimal power flow formulation. See [OPFLOW](opflow.md). The last equation is the coupling between the 2nd stage forecast deviationscenarios and the base case. Depending on the `mode`, SOPFLOW can either be `preventive` (mode = 0) or `corrective` (mode = 1). In the preventive, the PV and PQ generator real power is not allowed to deviate from its base-case solution. The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability.
+where $N_s$ is the number of scenarios and $p_i$ is the probability of the scenario. Each scenario is implemented as an optimal power flow formulation. See [OPFLOW](opflow.md). The last equation is the coupling between the 2nd stage forecast deviations and the base case. Depending on the `mode`, SOPFLOW can either be `preventive` (mode = 0) or `corrective` (mode = 1). In the preventive mode, generator real power output is fixed to the base-case values except for any renewable generation (wind, solar), and generators at reference bus(es).The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability.
 
 
 ### Usage
