@@ -53,7 +53,6 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
 
   /* Run-time options */
   scopflow->iscoupling = PETSC_FALSE;
-  scopflow->replicate_basecase = PETSC_FALSE;
 
   scopflow->ctgcfileset = PETSC_FALSE;
   scopflow->setupcalled = PETSC_FALSE;
@@ -273,7 +272,6 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 
   ierr = PetscOptionsBool("-scopflow_iscoupling","Include coupling between first stage and second stage","",scopflow->iscoupling,&scopflow->iscoupling,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-scopflow_Nc","Number of second stage scenarios","",scopflow->Nc,&scopflow->Nc,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsBool("-scopflow_replicate_basecase","Only for debugging: Replicate first stage for all second stage scenarios","",scopflow->replicate_basecase,&scopflow->replicate_basecase,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-scopflow_mode","Operation mode:Preventive (0) or Corrective (1)","",scopflow->mode,&scopflow->mode,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-scopflow_makeup_power_source","Make-up power source for contingencies","",scopflow->makeup_power_source,&scopflow->makeup_power_source,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-scopflow_enable_multiperiod","Multi-period SCOPFLOW?","",scopflow->ismultiperiod,&scopflow->ismultiperiod,NULL);CHKERRQ(ierr);
@@ -289,7 +287,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 
   PetscOptionsEnd();
 
-  if(scopflow->ctgcfileset && !scopflow->replicate_basecase) {
+  if(scopflow->ctgcfileset) {
     if(scopflow->Nc < 0) scopflow->Nc = MAX_CONTINGENCIES;
     else scopflow->Nc += 1; 
 
@@ -349,7 +347,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
       ierr = PSSetUp(ps);CHKERRQ(ierr);
       
       /* Set contingencies */
-      if(scopflow->ctgcfileset && !scopflow->replicate_basecase) {
+      if(scopflow->ctgcfileset) {
 	Contingency ctgc=scopflow->ctgclist.cont[scopflow->cstart+c];
 	for(j=0; j < ctgc.noutages; j++) {
 	  if(ctgc.outagelist[j].type == GEN_OUTAGE) {
@@ -398,7 +396,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
       ierr = TCOPFLOWSetTimeStepandDuration(tcopflow,dT,duration);CHKERRQ(ierr);
 
       /* Set contingencies */
-      if(scopflow->ctgcfileset && !scopflow->replicate_basecase) {
+      if(scopflow->ctgcfileset) {
 	Contingency ctgc=scopflow->ctgclist.cont[scopflow->cstart+c];
 	// Set this contingency with TCOPFLOW
 	ierr = TCOPFLOWSetContingency(tcopflow,&ctgc);CHKERRQ(ierr);
