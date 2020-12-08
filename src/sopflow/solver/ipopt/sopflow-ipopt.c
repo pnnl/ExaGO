@@ -762,9 +762,9 @@ PetscErrorCode SOPFLOWSolverSetUp_IPOPT(SOPFLOW sopflow)
 	  ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
 	  if(!gen->status || !gen0->status) continue;
 
-	  if(sopflow->makeup_power_source == 0) {
-	    /* Only ref. bus responsible for make-up power for scenarios */
-	    if(bus->ide == REF_BUS) {
+	  if(sopflow->mode == 0) {
+	    /* Only ref. bus and renewable generation can deviate from base-case set points */
+	    if(bus->ide == REF_BUS || gen->genfuel_type == GENFUEL_WIND) {
 	      gli[opflow->ncon + ctr] = -10000;
 	      gui[opflow->ncon + ctr] =  10000;
 	    } else {

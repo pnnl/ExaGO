@@ -12,9 +12,9 @@ SCOPFLOW solves a contingency-constrained optimal power flow problem. The proble
 \end{aligned}
  ```
 
-where $N_c$ is the number of contingency. Each scenario is an optimal power flow formulation. See [OPFLOW](opflow.md). The last equation is the coupling between the 2nd stage contingency scenarios and the first-stage. Each contingency scenario can either be single-period or multi-period. In the multi-period mode, additional data files for the load and wind generation profiles can be set via command line options. Multi-period SCOPFLOW is activated either by setting command line option `-scopflow_enable_multiperiod` OR calling `SCOPFLOWEnableMultiPeriod`.
+where $N_c$ is the number of contingencies. The total number of scenarios equals $N_c + 1$, i.e., base-case + $N_c$ contingencies. Each scenario is an optimal power flow formulation. See [OPFLOW](opflow.md). The last equation is the coupling between the 2nd stage contingency scenarios and the first-stage. Each contingency scenario can either be single-period or multi-period. In the multi-period mode, additional data files for the load and wind generation profiles can be set via command line options. Multi-period SCOPFLOW is activated either by setting command line option `-scopflow_enable_multiperiod` OR calling `SCOPFLOWEnableMultiPeriod`.
 
-Depending on the `mode`, SCOPFLOW can either be `preventive` (mode = 0) or `corrective` (mode = 1). In the preventive, the PV and PQ generator real power is not allowed to deviate from its base-case solution. The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability.
+Depending on the `mode`, SCOPFLOW can either be `preventive` (mode = 0) or `corrective` (mode = 1). In the preventive, the PV and PQ generator real power is fixed to its correspoinding base-case values. The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability.
 
 
 ### Usage

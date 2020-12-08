@@ -92,9 +92,21 @@ PetscErrorCode SOPFLOWSetConstraintBounds_GENRAMP(SOPFLOW sopflow,Vec Gl,Vec Gu)
 	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
 	  ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
 	  if(!gen->status || !gen0->status) continue;
-	  /* Ramp constraints */
-	  gli[opflow->ncon + ctr] = -gen->ramp_rate_30min;
-	  gui[opflow->ncon + ctr] =  gen->ramp_rate_30min;
+
+	  if(sopflow->mode == 0) {
+	    /* Only ref. bus and renewable generation can deviate from base-case set points */
+	    if(bus->ide == REF_BUS || gen->genfuel_type == GENFUEL_WIND) {
+	      gli[opflow->ncon + ctr] = -10000;
+	      gui[opflow->ncon + ctr] =  10000;
+	    } else {
+	      gli[opflow->ncon + ctr] = 0.0;
+	      gui[opflow->ncon + ctr] = 0.0;
+	    }	    
+	  } else {
+	    gli[opflow->ncon + ctr] = -gen->ramp_rate_30min;
+	    gui[opflow->ncon + ctr] =  gen->ramp_rate_30min;
+	  }
+
 	  ctr++;
 	}
       }

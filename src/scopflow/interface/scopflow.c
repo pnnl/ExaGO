@@ -32,9 +32,9 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
   scopflow->obj_factor = 1.0;
   scopflow->obj = 0.0;
 
-  scopflow->ismultiperiod = PETSC_FALSE;
+  scopflow->mode = 0;
 
-  scopflow->makeup_power_source = 1;
+  scopflow->ismultiperiod = PETSC_FALSE;
 
   scopflow->solver   = NULL;
   scopflow->model    = NULL;
@@ -273,7 +273,6 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscOptionsBool("-scopflow_iscoupling","Include coupling between first stage and second stage","",scopflow->iscoupling,&scopflow->iscoupling,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-scopflow_Nc","Number of second stage scenarios","",scopflow->Nc,&scopflow->Nc,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-scopflow_mode","Operation mode:Preventive (0) or Corrective (1)","",scopflow->mode,&scopflow->mode,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsInt("-scopflow_makeup_power_source","Make-up power source for contingencies","",scopflow->makeup_power_source,&scopflow->makeup_power_source,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-scopflow_enable_multiperiod","Multi-period SCOPFLOW?","",scopflow->ismultiperiod,&scopflow->ismultiperiod,NULL);CHKERRQ(ierr);
   if(scopflow->ismultiperiod) {
     /* Set loadp,loadq, and windgen files */

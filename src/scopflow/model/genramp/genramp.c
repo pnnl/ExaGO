@@ -92,9 +92,22 @@ PetscErrorCode SCOPFLOWSetConstraintBounds_GENRAMP(SCOPFLOW scopflow,Vec Gl,Vec 
 	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
 	  ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
 	  if(!gen->status || !gen0->status) continue;
+
 	  /* Ramp constraints */
-	  gli[opflow->ncon + ctr] = -gen->ramp_rate_30min;
-	  gui[opflow->ncon + ctr] =  gen->ramp_rate_30min;
+	  if(scopflow->mode == 0) {
+	    /* Only ref. bus responsible for make-up power for contingencies */
+	    if(bus->ide == REF_BUS) {
+	      gli[opflow->ncon + ctr] = -10000;
+	      gui[opflow->ncon + ctr] =  10000;
+	    } else {
+	      gli[opflow->ncon + ctr] = 0.0;
+	      gui[opflow->ncon + ctr] = 0.0;
+	    }	    
+	  } else {
+	    gli[opflow->ncon + ctr] = -gen->ramp_rate_30min;
+	    gui[opflow->ncon + ctr] =  gen->ramp_rate_30min;
+	  }
+
 	  ctr++;
 	}
       }

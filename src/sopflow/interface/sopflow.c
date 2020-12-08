@@ -31,11 +31,10 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout)
   sopflow->obj_factor = 1.0;
   sopflow->obj = 0.0;
 
-
-  sopflow->makeup_power_source = 1;
-
   sopflow->solver   = NULL;
   sopflow->model    = NULL;
+
+  sopflow->mode = 0;
 
   sopflow->nmodelsregistered = 0;
   sopflow->SOPFLOWModelRegisterAllCalled = PETSC_FALSE;
@@ -250,7 +249,6 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   ierr = PetscOptionsBool("-sopflow_iscoupling","Include coupling between first stage and second stage","",sopflow->iscoupling,&sopflow->iscoupling,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-sopflow_Ns","Number of second stage scenarios","",sopflow->Ns,&sopflow->Ns,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-sopflow_mode","Operation mode:Preventive (0) or Corrective (1)","",sopflow->mode,&sopflow->mode,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsInt("-sopflow_makeup_power_source","Make-up power source for scenarios","",sopflow->makeup_power_source,&sopflow->makeup_power_source,NULL);CHKERRQ(ierr);
   
   PetscOptionsEnd();
 
