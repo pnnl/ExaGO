@@ -1,4 +1,5 @@
 #include <private/opflowimpl.h>
+#include <private/scopflowimpl.h>
 #include <private/sopflowimpl.h>
 
 extern void clean2Char(char *);
@@ -27,7 +28,14 @@ PetscErrorCode SOPFLOWSetScenarioData(SOPFLOW sopflow,ScenarioFileInputFormat sc
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenprofile[])
+/*
+  SOPFLOWReadScenarioData_Wind - Reads the wind data 
+  Input Parameters
++ sopflow - SOPFLOW object
+. windgenprofile - wind generator profile file
+- c       - contingency number
+*/
+PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenprofile[],PetscInt c)
 {
   PetscErrorCode ierr;
   FILE           *fp;
@@ -35,7 +43,7 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
   char           *out;
   OPFLOW         opflow;
   PS             ps;
-  PetscInt       ngen=sopflow->opflows[0]->ps->ngen,*windgenbus,nw=0;
+  PetscInt       ngen,*windgenbus,nw=0;
   char           *tok,*tok2;
   char           sep[] = ",",sep2[] = "_";
   PSGEN          gen;
@@ -45,6 +53,9 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
   char           windgenid[100][3];
 
   PetscFunctionBegin;
+
+  if(!sopflow->ismulticontingency) ngen = sopflow->opflows[0]->ps->ngen;
+  else ngen = sopflow->scopflows[0]->opflows[c]->ps->ngen;
 
   fp = fopen(windgenprofile,"r");
   if (fp == NULL) {
@@ -82,7 +93,14 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
     tok = strtok(line,sep);
     tok = strtok(NULL,sep); /* Skip first token */
     sscanf(tok,"%d",&scen_num); /* Scenario number */
-    opflow = sopflow->opflows[scen_num]; // Only good for serial 
+    if(scen_num != 0 && sopflow->sstart <= scen_num && scen_num < sopflow->send) {
+      scen_num -= sopflow->sstart; /* converted to local scenario number */
+    } else {
+      continue;
+    }
+    
+    if(!sopflow->ismulticontingency) opflow = sopflow->opflows[scen_num];
+    else opflow = sopflow->scopflows[scen_num]->opflows[c];
     ps     = opflow->ps;
     tok = strtok(NULL,sep);
     nw = 0;
@@ -115,10 +133,17 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
 PetscErrorCode SOPFLOWReadScenarioData(SOPFLOW sopflow,ScenarioFileInputFormat scenfileformat,const char scenfile[])
 {
   PetscErrorCode ierr;
+  PetscInt       c;
 
   PetscFunctionBegin;
   if(sopflow->scenunctype == WIND) {
-    ierr = SOPFLOWReadScenarioData_Wind(sopflow,scenfile);CHKERRQ(ierr);
+    if(!sopflow->ismulticontingency) {
+      ierr = SOPFLOWReadScenarioData_Wind(sopflow,scenfile,0);CHKERRQ(ierr);
+    } else {
+      for(c=0; c < sopflow->scopflows[0]->nc; c++) {
+	ierr = SOPFLOWReadScenarioData_Wind(sopflow,scenfile,c);CHKERRQ(ierr);
+      }
+    } 
   }
 
   PetscFunctionReturn(0);

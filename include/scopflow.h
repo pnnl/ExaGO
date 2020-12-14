@@ -16,7 +16,6 @@
 #define SCOPFLOWSOLVER_IPOPTNEW "IPOPTNEW"
 #define SCOPFLOWSOLVER_IPOPT "IPOPT"
 #define SCOPFLOWSOLVER_TAO   "TAO"
-#define SCOPFLOWSOLVER_PIPS  "PIPS"
 #define SCOPFLOWSOLVER_EMPAR  "EMPAR" /* Embarassingly parallel solver - solves each OPFLOW independently */
 
 typedef struct _p_SCOPFLOW *SCOPFLOW;

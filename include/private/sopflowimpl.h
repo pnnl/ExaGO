@@ -10,6 +10,7 @@
 #include <private/psimpl.h>
 #include <opflow.h>
 #include <sopflow.h>
+#include <scopflow.h>
 
 #define SOPFLOWSOLVERSMAX 10
 #define SOPFLOWMODELSMAX  10
@@ -77,6 +78,10 @@ struct _p_SOPFLOW{
   		      Each processor creates ns objects, one for each 
 		      scenario */
 
+  SCOPFLOW *scopflows; /* Array of security-constrained optimal power flow application objects. */
+  PetscBool ismulticontingency; /* Is it a multi-contingency SOPFLOW? */
+
+
   PetscBool setupcalled; /* SOPFLOWSetUp called? */
 
   PetscBool converged; /* Convergence status */
@@ -141,6 +146,8 @@ struct _p_SOPFLOW{
   char            scenfile[100]; /* Scenario file */
   ScenarioFileInputFormat scenfileformat;
   ScenarioUncertaintyType scenunctype;
+
+  MPI_Comm subcomm; /* Sub-communicators on which SCOPFLOW run */
 };
 
 extern PetscErrorCode SOPFLOWModelRegisterAll(SOPFLOW);

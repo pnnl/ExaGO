@@ -7,13 +7,13 @@
 -sopflow_iscoupling 1
 
 # Operation mode (preventive (0) or corrective (1))
--sopflow_mode 1
+-sopflow_mode 0
 
 # Ignore line flow constraints
 -opflow_ignore_lineflow_constraints 0
 
 # Number of scenarios
--sopflow_Ns -1
+-sopflow_Ns 1
 
 # performance
 #-------------
@@ -22,3 +22,23 @@
 #options
 # Display options left
 -options_left no
+
+#Options for multi-contingency
+
+# Enable multi-contingency
+-sopflow_enable_multicontingency 1
+
+# Contingency file
+-scopflow_ctgcfile datafiles/case9/case9.cont
+
+# Coupling between second stage and first stage?
+-scopflow_iscoupling 1
+
+# Operation mode (preventive (0) or corrective (1))
+-scopflow_mode 0
+
+# Ignore line flow constraints
+-opflow_ignore_lineflow_constraints 0
+
+# Number of contingencies
+-scopflow_Nc 1

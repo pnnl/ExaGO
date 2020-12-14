@@ -1,4 +1,5 @@
 #include <private/opflowimpl.h>
+#include <private/scopflowimpl.h>
 #include <private/sopflowimpl.h>
 
 /*
@@ -35,6 +36,8 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout)
   sopflow->model    = NULL;
 
   sopflow->mode = 0;
+
+  sopflow->ismulticontingency = 0;
 
   sopflow->nmodelsregistered = 0;
   sopflow->SOPFLOWModelRegisterAllCalled = PETSC_FALSE;
@@ -101,9 +104,17 @@ PetscErrorCode SOPFLOWDestroy(SOPFLOW *sopflow)
     ierr = ((*sopflow)->modelops.destroy)(*sopflow);
   }
 
-  /* Destroy OPFLOW objects */
-  for(s=0; s < (*sopflow)->ns; s++) {
-    ierr = OPFLOWDestroy(&(*sopflow)->opflows[s]);CHKERRQ(ierr);
+  /* Destroy TCOPFLOW or OPFLOW objects */
+  if((*sopflow)->ismulticontingency) {
+    for(s=0; s < (*sopflow)->ns; s++) {
+      ierr = SCOPFLOWDestroy(&(*sopflow)->scopflows[s]);CHKERRQ(ierr);
+    }
+    ierr = PetscFree((*sopflow)->scopflows);CHKERRQ(ierr);
+  } else {
+    for(s=0; s < (*sopflow)->ns; s++) {
+      ierr = OPFLOWDestroy(&(*sopflow)->opflows[s]);CHKERRQ(ierr);
+    }
+    ierr = PetscFree((*sopflow)->opflows);CHKERRQ(ierr);
   }
 
   ierr = PetscFree((*sopflow)->xstarti);CHKERRQ(ierr);
@@ -111,9 +122,24 @@ PetscErrorCode SOPFLOWDestroy(SOPFLOW *sopflow)
   ierr = PetscFree((*sopflow)->nxi);CHKERRQ(ierr);
   ierr = PetscFree((*sopflow)->ngi);CHKERRQ(ierr);
   ierr = PetscFree((*sopflow)->nconineqcoup);CHKERRQ(ierr);
-  ierr = PetscFree((*sopflow)->opflows);CHKERRQ(ierr);
+
+  MPI_Comm_free(&(*sopflow)->subcomm);
   ierr = PetscFree(*sopflow);CHKERRQ(ierr);
   //  *sopflow = 0;
+  PetscFunctionReturn(0);
+}
+
+/*
+  SOPFLOWEnableMultiContingency - Enable/Disable multi-contingency SOPLOW
+
+  Input Parameters:
++ sopflow - sopflow application object
+- ismulticontingency - PETSC_FALSE for no contingencies, PETSC_TRUE otherwise
+*/
+PetscErrorCode SOPFLOWEnableMultiContingency(SOPFLOW sopflow,PetscBool ismulticontingency)
+{
+  PetscFunctionBegin;
+  sopflow->ismulticontingency = ismulticontingency;
   PetscFunctionReturn(0);
 }
 
@@ -234,11 +260,13 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   PetscErrorCode ierr;
   PetscBool      sopflowsolverset;
   char           opflowmodelname[32]="POWER_BALANCE_POLAR";
-  char           sopflowsolvername[32]="IPOPT";
-  PetscInt       c,i,j;
+  char           sopflowsolvername[32]="IPOPTNEW";
+  PetscInt       c,s,i,j;
   char           sopflowmodelname[32]="GENRAMP";
   PS             ps;
   OPFLOW         opflow;
+  char           ctgcfile[PETSC_MAX_PATH_LEN];
+  PetscBool      flgctgc=PETSC_FALSE;
 
   PetscFunctionBegin;
 
@@ -249,7 +277,9 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   ierr = PetscOptionsBool("-sopflow_iscoupling","Include coupling between first stage and second stage","",sopflow->iscoupling,&sopflow->iscoupling,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-sopflow_Ns","Number of second stage scenarios","",sopflow->Ns,&sopflow->Ns,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-sopflow_mode","Operation mode:Preventive (0) or Corrective (1)","",sopflow->mode,&sopflow->mode,NULL);CHKERRQ(ierr);
-  
+
+  ierr = PetscOptionsBool("-sopflow_enable_multicontingency","Multi-contingency SOPFLOW?","",sopflow->ismulticontingency,&sopflow->ismulticontingency,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsString("-scopflow_ctgcfile","Contingency file","",ctgcfile,ctgcfile,PETSC_MAX_PATH_LEN,&flgctgc);CHKERRQ(ierr);
   PetscOptionsEnd();
 
   if(sopflow->Ns >= 0) sopflow->Ns += 1;
@@ -262,21 +292,85 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
     if(sopflow->Ns == -1) sopflow->Ns = 1;
   }
 
-  int q = sopflow->Ns/sopflow->comm->size;
-  int d = sopflow->Ns%sopflow->comm->size;
-  if(d) {
-    sopflow->ns = q + ((sopflow->comm->rank < d)?1:0); 
-  } else {
-    sopflow->ns = q;
+  /* Calculate the sizes of the subcommunicator */
+  /* Here, we compute a group of ranks that will work on each
+     scenario. This grouping of ranks is useful so that the
+     underlying scopflow operates in parallel using the
+     rank group for its scenario. As an example, assume
+     there 4 ranks (sopflow->comm->size) with 2 scenaarios (sopflow->Ns)
+     then we create 2 subcommunicators (one for each scenario) withh
+     the first subcommunicator using ranks 0 and 1 and the second
+     one using ranks 2 and 3. We use MPI_Comm_split*() to split
+     the outer communicator (sopflow->comm->type) into subcommunicators
+     (sopflow->subcomm)
+  */
+  int* color,*ns,*sstart,*send;
+  color = (int*)malloc(sopflow->comm->size*sizeof(int));
+  ns    = (int*)malloc(sopflow->comm->size*sizeof(int));
+  sstart = (int*)malloc(sopflow->comm->size*sizeof(int));
+  send    = (int*)malloc(sopflow->comm->size*sizeof(int));
+
+  for(i=0; i < sopflow->comm->size; i++) {
+    if(sopflow->comm->size > sopflow->Ns) {
+      ns[i] = 1;
+      if(sopflow->comm->size%sopflow->Ns == 0) color[i] = i/(sopflow->comm->size/sopflow->Ns);
+      else {
+	color[i] = PetscMin(i/(sopflow->comm->size/sopflow->Ns),sopflow->Ns-1); /* This is not an optimal distribution. It can be further optimized */
+      }
+    } else {
+      ns[i] = sopflow->Ns/sopflow->comm->size;
+      if(i >= (sopflow->comm->size - sopflow->Ns%sopflow->comm->size)) ns[i] += 1;
+      color[i] = i;
+    }
   }
-  ierr = MPI_Scan(&sopflow->ns,&sopflow->send,1,MPIU_INT,MPI_SUM,sopflow->comm->type);CHKERRQ(ierr);
-  sopflow->sstart = sopflow->send - sopflow->ns;
+  sopflow->ns = ns[sopflow->comm->rank];
 
+  sstart[0] = 0;
+  send[0] = sstart[0] + ns[0];
+  int color_i = color[0];
+  i = 0;
+  
+  if(!sopflow->comm->rank) {
+    ierr = PetscPrintf(PETSC_COMM_SELF,"Rank[%d]: color = %d, ns = %d, sstart= %d, send=%d\n",i,color[i],ns[i],sstart[i],send[i]);CHKERRQ(ierr);
+  }
+  
+  for(i=1; i < sopflow->comm->size; i++) {
+    if(color[i] == color_i) { /* Same group - copy start and end */
+      sstart[i] = sstart[i-1];
+      send[i]   = send[i-1];
+    } else { /* New group - update sstart and send */
+      sstart[i] = send[i-1];
+      send[i]  = sstart[i] + ns[i];
+      color_i = color[i];
+    }
+    
+    if(!sopflow->comm->rank) {
+      ierr = PetscPrintf(PETSC_COMM_SELF,"Rank[%d]: color = %d, ns = %d, sstart= %d, send=%d\n",i,color[i],ns[i],sstart[i],send[i]);CHKERRQ(ierr);
+    }
+  }
+
+  sopflow->sstart = sstart[sopflow->comm->rank];
+  sopflow->send = send[sopflow->comm->rank];
+
+  MPI_Barrier(sopflow->comm->type);
   ierr = PetscPrintf(sopflow->comm->type,"SOPFLOW running with %d scenarios (base case + %d scenarios)\n",sopflow->Ns,sopflow->Ns-1);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d has %d scenarios, range [%d -- %d]\n",sopflow->comm->rank,sopflow->ns,sopflow->sstart,sopflow->send);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d scenario range [%d -- %d]\n",sopflow->comm->rank,sopflow->sstart,sopflow->send);CHKERRQ(ierr);
 
+			
+  /* Create subcommunicators to manage scopflows */
+  MPI_Comm_split(sopflow->comm->type,color[sopflow->comm->rank],sopflow->comm->rank,&sopflow->subcomm);
+
+  free(color);
+  free(sstart);
+  free(send);
+  free(ns);
+    
   /* Set Model */
-  ierr = SOPFLOWSetModel(sopflow,sopflowmodelname);CHKERRQ(ierr);
+  if(!sopflow->ismulticontingency) {
+    ierr = SOPFLOWSetModel(sopflow,sopflowmodelname);CHKERRQ(ierr);
+  } else {
+    ierr = SOPFLOWSetModel(sopflow,"GENRAMPC");CHKERRQ(ierr);
+  }
 
   /* Set solver */
   if(sopflowsolverset) {
@@ -285,31 +379,56 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
     ierr = PetscPrintf(sopflow->comm->type,"SOPFLOW: Using %s solver\n",sopflowsolvername);CHKERRQ(ierr);
   } else {
     if(!sopflow->solver) {
-      ierr = SOPFLOWSetSolver(sopflow,SOPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
-      ierr = PetscPrintf(sopflow->comm->type,"SOPFLOW: Using %s solver\n",SOPFLOWSOLVER_IPOPT);CHKERRQ(ierr); 
+      ierr = SOPFLOWSetSolver(sopflow,SOPFLOWSOLVER_IPOPTNEW);CHKERRQ(ierr);
+      ierr = PetscPrintf(sopflow->comm->type,"SOPFLOW: Using %s solver\n",SOPFLOWSOLVER_IPOPTNEW);CHKERRQ(ierr); 
     }
   }
 
-  /* Create OPFLOW objects */
-  ierr = PetscCalloc1(sopflow->ns,&sopflow->opflows);CHKERRQ(ierr);
-  for(c=0; c < sopflow->ns; c++) {
-    ierr = OPFLOWCreate(PETSC_COMM_SELF,&sopflow->opflows[c]);CHKERRQ(ierr);
-    ierr = OPFLOWSetModel(sopflow->opflows[c],OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
-    //    ierr = OPFLOWSetSolver(sopflow->opflows[c],opflowsolvername);CHKERRQ(ierr);
+  if(!sopflow->ismulticontingency) {
+    /* Create OPFLOW objects */
+    ierr = PetscCalloc1(sopflow->ns,&sopflow->opflows);CHKERRQ(ierr);
+    for(s=0; s < sopflow->ns; s++) {
+      ierr = OPFLOWCreate(PETSC_COMM_SELF,&sopflow->opflows[s]);CHKERRQ(ierr);
+      ierr = OPFLOWSetModel(sopflow->opflows[s],OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
+      //    ierr = OPFLOWSetSolver(sopflow->opflows[c],opflowsolvername);CHKERRQ(ierr);
+      
+      ierr = OPFLOWReadMatPowerData(sopflow->opflows[s],sopflow->netfile);CHKERRQ(ierr);
+      /* Set up the PS object for opflow */
+      ps = sopflow->opflows[s]->ps;
+      ierr = PSSetUp(ps);CHKERRQ(ierr);
+      
+      /* Set up OPFLOW object */
+      //    ierr = OPFLOWGenbusVoltageFixed(sopflow->opflows[c],PETSC_TRUE);CHKERRQ(ierr);
+      //    if(sopflow->sstart+c > 0) sopflow->opflows[c]->obj_gencost = PETSC_FALSE; /* No gen. cost minimization for second stage */
+      ierr = OPFLOWSetUp(sopflow->opflows[s]);CHKERRQ(ierr);
+    }
 
-    ierr = OPFLOWReadMatPowerData(sopflow->opflows[c],sopflow->netfile);CHKERRQ(ierr);
-    /* Set up the PS object for opflow */
-    ps = sopflow->opflows[c]->ps;
-    ierr = PSSetUp(ps);CHKERRQ(ierr);
+    if(sopflow->scenfileset) {
+      ierr = SOPFLOWReadScenarioData(sopflow,sopflow->scenfileformat,sopflow->scenfile);CHKERRQ(ierr);
+    }
+  } else {
+    /* Create SCOPFLOW objects */
+    ierr = PetscCalloc1(sopflow->ns,&sopflow->scopflows);CHKERRQ(ierr);
 
-    /* Set up OPFLOW object */
-    //    ierr = OPFLOWGenbusVoltageFixed(sopflow->opflows[c],PETSC_TRUE);CHKERRQ(ierr);
-    //    if(sopflow->sstart+c > 0) sopflow->opflows[c]->obj_gencost = PETSC_FALSE; /* No gen. cost minimization for second stage */
-    ierr = OPFLOWSetUp(sopflow->opflows[c]);CHKERRQ(ierr);
-  }
-  
-  if(sopflow->scenfileset) {
-    ierr = SOPFLOWReadScenarioData(sopflow,sopflow->scenfileformat,sopflow->scenfile);CHKERRQ(ierr);
+    for(s=0; s < sopflow->ns; s++) {
+
+      /* Using MPI_COMM_SELF for now, should actually MPI_COMM_Split and create
+	 a subcommunicator
+      */
+      /* Create SCOPFLOW object */
+      ierr = SCOPFLOWCreate(sopflow->subcomm,&sopflow->scopflows[s]);CHKERRQ(ierr);
+      /* Set Network data */
+      ierr = SCOPFLOWSetNetworkData(sopflow->scopflows[s],sopflow->netfile);CHKERRQ(ierr);
+      /* Set contingency data */
+      /* Should not set hard coded native format */
+      ierr = SCOPFLOWSetContingencyData(sopflow->scopflows[s],NATIVE,ctgcfile);CHKERRQ(ierr);
+      /* Set up */
+      ierr = SCOPFLOWSetUp(sopflow->scopflows[s]);CHKERRQ(ierr);
+    }
+
+    if(sopflow->scenfileset) {
+      ierr = SOPFLOWReadScenarioData(sopflow,sopflow->scenfileformat,sopflow->scenfile);CHKERRQ(ierr);
+    }
   }
 
   ierr = PetscCalloc1(sopflow->ns,&sopflow->nconineqcoup);CHKERRQ(ierr);
@@ -321,23 +440,46 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   /* Set number of variables and constraints */
   ierr = (*sopflow->modelops.setnumvariablesandconstraints)(sopflow,sopflow->nxi,sopflow->ngi,sopflow->nconineqcoup);
 
-  sopflow->nx = sopflow->nxi[0];
-  sopflow->ncon = sopflow->ngi[0];
-  sopflow->nconcoup = sopflow->nconineqcoup[0];
-  opflow = sopflow->opflows[0];
-  sopflow->nconeq = opflow->nconeq;
-  sopflow->nconineq = opflow->nconineq;
 
-  for(i=1; i < sopflow->ns; i++) {
-    sopflow->xstarti[i] = sopflow->xstarti[i-1] + sopflow->nxi[i-1];
-    sopflow->gstarti[i] = sopflow->gstarti[i-1] + sopflow->ngi[i-1];
-    sopflow->nx += sopflow->nxi[i];
-    sopflow->ncon += sopflow->ngi[i];
-    sopflow->nconcoup += sopflow->nconineqcoup[i];
-    opflow = sopflow->opflows[i];
-    sopflow->nconeq   += opflow->nconeq;
-    sopflow->nconineq += opflow->nconineq;
+  if(!sopflow->ismulticontingency) {
+    sopflow->nx = sopflow->nxi[0];
+    sopflow->ncon = sopflow->ngi[0];
+    sopflow->nconcoup = sopflow->nconineqcoup[0];
+    opflow = sopflow->opflows[0];
+    sopflow->nconeq = opflow->nconeq;
+    sopflow->nconineq = opflow->nconineq;
+    
+    for(i=1; i < sopflow->ns; i++) {
+      sopflow->xstarti[i] = sopflow->xstarti[i-1] + sopflow->nxi[i-1];
+      sopflow->gstarti[i] = sopflow->gstarti[i-1] + sopflow->ngi[i-1];
+      sopflow->nx += sopflow->nxi[i];
+      sopflow->ncon += sopflow->ngi[i];
+      sopflow->nconcoup += sopflow->nconineqcoup[i];
+      opflow = sopflow->opflows[i];
+      sopflow->nconeq   += opflow->nconeq;
+      sopflow->nconineq += opflow->nconineq;
+    }
+  } else {
+    SCOPFLOW scopflow;
+    sopflow->nx = sopflow->nxi[0];
+    sopflow->ncon = sopflow->ngi[0];
+    sopflow->nconcoup = sopflow->nconineqcoup[0];
+    scopflow = sopflow->scopflows[0];
+    sopflow->nconeq = scopflow->nconeq;
+    sopflow->nconineq = scopflow->nconineq + scopflow->nconcoup;
+    
+    for(i=1; i < sopflow->ns; i++) {
+      sopflow->xstarti[i] = sopflow->xstarti[i-1] + sopflow->nxi[i-1];
+      sopflow->gstarti[i] = sopflow->gstarti[i-1] + sopflow->ngi[i-1];
+      sopflow->nx += sopflow->nxi[i];
+      sopflow->ncon += sopflow->ngi[i];
+      sopflow->nconcoup += sopflow->nconineqcoup[i];
+      scopflow = sopflow->scopflows[i];
+      sopflow->nconeq   += scopflow->nconeq;
+      sopflow->nconineq += scopflow->nconineq + scopflow->nconcoup;
+    }
   }
+
 
   /* Create vector X */
   ierr = VecCreate(sopflow->comm->type,&sopflow->X);CHKERRQ(ierr);
@@ -391,6 +533,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
 PetscErrorCode SOPFLOWSolve(SOPFLOW sopflow)
 {
   PetscErrorCode ierr;
+  PetscBool      issolver_ipoptnew;
 
   PetscFunctionBegin;
 
@@ -398,22 +541,26 @@ PetscErrorCode SOPFLOWSolve(SOPFLOW sopflow)
     ierr = SOPFLOWSetUp(sopflow);
   }
 
-  /* Set bounds on variables */
-  if(sopflow->modelops.setvariablebounds) {
-    ierr = (*sopflow->modelops.setvariablebounds)(sopflow,sopflow->Xl,sopflow->Xu);CHKERRQ(ierr);
-  }
-  
-  /* Set bounds on constraints */
-  if(sopflow->modelops.setconstraintbounds) {
-    ierr = (*sopflow->modelops.setconstraintbounds)(sopflow,sopflow->Gl,sopflow->Gu);CHKERRQ(ierr);
-  }
-  
-  /* Set initial guess */
-  if(sopflow->modelops.setinitialguess) {
-    ierr = (*sopflow->modelops.setinitialguess)(sopflow,sopflow->X);CHKERRQ(ierr);
-  }
+  ierr = PetscStrcmp(sopflow->solvername,"IPOPTNEW",&issolver_ipoptnew);CHKERRQ(ierr);
 
-  ierr = VecSet(sopflow->Lambda,1.0);CHKERRQ(ierr);
+  if(issolver_ipoptnew) {
+    /* Set bounds on variables */
+    if(sopflow->modelops.setvariablebounds) {
+      ierr = (*sopflow->modelops.setvariablebounds)(sopflow,sopflow->Xl,sopflow->Xu);CHKERRQ(ierr);
+    }
+    
+    /* Set bounds on constraints */
+    if(sopflow->modelops.setconstraintbounds) {
+      ierr = (*sopflow->modelops.setconstraintbounds)(sopflow,sopflow->Gl,sopflow->Gu);CHKERRQ(ierr);
+    }
+    
+    /* Set initial guess */
+    if(sopflow->modelops.setinitialguess) {
+      ierr = (*sopflow->modelops.setinitialguess)(sopflow,sopflow->X);CHKERRQ(ierr);
+    }
+  
+    ierr = VecSet(sopflow->Lambda,1.0);CHKERRQ(ierr);
+  }
 
   /* Solve */
   ierr = (*sopflow->solverops.solve)(sopflow);CHKERRQ(ierr);

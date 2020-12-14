@@ -141,7 +141,10 @@ PetscErrorCode SCOPFLOWSaveSolutionAll(SCOPFLOW scopflow,OutputFormat format,con
 
   PetscFunctionBegin;
 
-  ierr = PetscMkdir(outdir);CHKERRQ(ierr);
+  if(!scopflow->comm->rank) {
+    ierr = PetscMkdir(outdir);CHKERRQ(ierr);
+  }
+  MPI_Barrier(scopflow->comm->type);
 
   for(c=0; c < scopflow->nc; c++) {
     if(scopflow->ismultiperiod) {

@@ -2,6 +2,7 @@
 #if defined(EXAGO_HAVE_IPOPT)
 
 #include <private/opflowimpl.h>
+#include <private/scopflowimpl.h>
 #include <private/sopflowimpl.h>
 #include "sopflow-ipopt2.h"
 
@@ -277,13 +278,24 @@ PetscErrorCode SOPFLOWSolverGetObjective_IPOPTNEW(SOPFLOW sopflow,PetscReal *obj
 PetscErrorCode SOPFLOWSolverGetSolution_IPOPTNEW(SOPFLOW sopflow,PetscInt scen_num,Vec *X)
 {
   PetscErrorCode ierr;
-  OPFLOW         opflow=sopflow->opflows[scen_num];
-  Vec            Xi=opflow->X;
-  PetscInt       nxi=opflow->nx;
+  SCOPFLOW       scopflow;
+  OPFLOW         opflow;
+  Vec            Xi;
+  PetscInt       nxi;
   PetscScalar    *xi,*x;
   PetscInt       ix=sopflow->xstarti[scen_num];
 
   PetscFunctionBegin;
+  if(!sopflow->ismulticontingency) {
+    opflow = sopflow->opflows[scen_num];
+    nxi = opflow->nx;
+    Xi  = opflow->X;
+  } else {
+    scopflow = sopflow->scopflows[scen_num];
+    nxi = scopflow->nx;
+    Xi  = scopflow->X;
+  }
+
   ierr = VecGetArray(Xi,&xi);CHKERRQ(ierr);
   ierr = VecGetArray(sopflow->X,&x);CHKERRQ(ierr);
 
@@ -299,13 +311,24 @@ PetscErrorCode SOPFLOWSolverGetSolution_IPOPTNEW(SOPFLOW sopflow,PetscInt scen_n
 PetscErrorCode SOPFLOWSolverGetConstraints_IPOPTNEW(SOPFLOW sopflow,PetscInt scen_num,Vec *G)
 {
   PetscErrorCode ierr;
-  OPFLOW         opflow=sopflow->opflows[scen_num];
-  Vec            Gi=opflow->G;
-  PetscInt       ngi=opflow->ncon;
+  SCOPFLOW       scopflow;
+  OPFLOW         opflow;
+  Vec            Gi;
+  PetscInt       ngi;
   PetscScalar    *gi,*g;
-  PetscInt       ig=sopflow->gstarti[scen_num];
+  PetscInt       ig=sopflow->gstarti[scen_num];;
 
   PetscFunctionBegin;
+  if(!sopflow->ismulticontingency) {
+    opflow = sopflow->opflows[scen_num];
+    ngi    = opflow->ncon;
+    Gi = opflow->G;
+  } else {
+    scopflow = sopflow->scopflows[scen_num];
+    Gi  = scopflow->G;
+    ngi      = scopflow->ncon;
+  }
+
   ierr = VecGetArray(Gi,&gi);CHKERRQ(ierr);
   ierr = VecGetArray(sopflow->G,&g);CHKERRQ(ierr);
 
@@ -322,13 +345,24 @@ PetscErrorCode SOPFLOWSolverGetConstraints_IPOPTNEW(SOPFLOW sopflow,PetscInt sce
 PetscErrorCode SOPFLOWSolverGetConstraintMultipliers_IPOPTNEW(SOPFLOW sopflow,PetscInt scen_num,Vec *Lambda)
 {
   PetscErrorCode ierr;
-  OPFLOW         opflow=sopflow->opflows[scen_num];
-  Vec            Lambdai=opflow->Lambda;
-  PetscInt       ngi=opflow->ncon;
+  SCOPFLOW       scopflow;
+  OPFLOW         opflow;
+  Vec            Lambdai;
+  PetscInt       ngi;
   PetscScalar    *lambdai,*lambda;
   PetscInt       ig=sopflow->gstarti[scen_num];
 
   PetscFunctionBegin;
+  if(!sopflow->ismulticontingency) {
+    opflow = sopflow->opflows[scen_num];
+    ngi    = opflow->ncon;
+    Lambdai = opflow->Lambda;
+  } else {
+    scopflow = sopflow->scopflows[scen_num];
+    Lambdai  = scopflow->Lambda;
+    ngi      = scopflow->ncon;
+  }
+
   ierr = VecGetArray(Lambdai,&lambdai);CHKERRQ(ierr);
   ierr = VecGetArray(sopflow->Lambda,&lambda);CHKERRQ(ierr);
 

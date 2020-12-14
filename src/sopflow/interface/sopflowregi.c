@@ -29,6 +29,8 @@ PetscErrorCode SOPFLOWModelRegister(SOPFLOW sopflow,const char sname[],PetscErro
 }
 
 extern PetscErrorCode SOPFLOWModelCreate_GENRAMP(SOPFLOW);
+extern PetscErrorCode SOPFLOWModelCreate_GENRAMPC(SOPFLOW);
+
 
 /*
   SOPFLOWModelRegisterAll - Registers all built-in SOPFLOW models
@@ -40,6 +42,7 @@ PetscErrorCode SOPFLOWModelRegisterAll(SOPFLOW sopflow)
   if(sopflow->SOPFLOWModelRegisterAllCalled) PetscFunctionReturn(0);
 
   ierr = SOPFLOWModelRegister(sopflow,SOPFLOWMODEL_GENRAMP,SOPFLOWModelCreate_GENRAMP);CHKERRQ(ierr);
+  ierr = SOPFLOWModelRegister(sopflow,SOPFLOWMODEL_GENRAMPC,SOPFLOWModelCreate_GENRAMPC);CHKERRQ(ierr);
 
   sopflow->SOPFLOWModelRegisterAllCalled = PETSC_TRUE;
 

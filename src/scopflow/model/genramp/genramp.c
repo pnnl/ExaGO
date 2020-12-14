@@ -24,7 +24,7 @@ PetscErrorCode SCOPFLOWSetVariableBounds_GENRAMP(SCOPFLOW scopflow,Vec Xl,Vec Xu
   ierr = VecGetArray(Xl,&xl);CHKERRQ(ierr);
   ierr = VecGetArray(Xu,&xu);CHKERRQ(ierr);
 
-  for(i=0; i < scopflow->Nc; i++) {
+  for(i=0; i < scopflow->nc; i++) {
     opflow = scopflow->opflows[i];
 
     /* Set bounds on variables */
@@ -60,11 +60,11 @@ PetscErrorCode SCOPFLOWSetConstraintBounds_GENRAMP(SCOPFLOW scopflow,Vec Gl,Vec 
   
   PetscFunctionBegin;
 
-  ierr = VecGetArray(scopflow->Gl,&gl);CHKERRQ(ierr);
-  ierr = VecGetArray(scopflow->Gu,&gu);CHKERRQ(ierr);
+  ierr = VecGetArray(Gl,&gl);CHKERRQ(ierr);
+  ierr = VecGetArray(Gu,&gu);CHKERRQ(ierr);
 
   opflow0 = scopflow->opflows[0];
-  for(i=0; i < scopflow->Nc; i++) {
+  for(i=0; i < scopflow->nc; i++) {
     opflow = scopflow->opflows[i];
 
     /* Set bounds on constraints */
@@ -114,8 +114,8 @@ PetscErrorCode SCOPFLOWSetConstraintBounds_GENRAMP(SCOPFLOW scopflow,Vec Gl,Vec 
     }
   }
   
-  ierr = VecRestoreArray(scopflow->Gl,&gl);CHKERRQ(ierr);
-  ierr = VecRestoreArray(scopflow->Gu,&gu);CHKERRQ(ierr);
+  ierr = VecRestoreArray(Gl,&gl);CHKERRQ(ierr);
+  ierr = VecRestoreArray(Gu,&gu);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -144,7 +144,7 @@ PetscErrorCode SCOPFLOWSetInitialGuess_GENRAMP(SCOPFLOW scopflow,Vec X)
   ierr = VecGetArray(scopflow->Xl,&xl);CHKERRQ(ierr);
   ierr = VecGetArray(scopflow->Xu,&xu);CHKERRQ(ierr);
 
-  for(i=0; i < scopflow->Nc; i++) {
+  for(i=0; i < scopflow->nc; i++) {
     opflow = scopflow->opflows[i];
     /* Set initial guess and bounds on variables */
     xi  = x  + scopflow->xstarti[i];
@@ -193,7 +193,7 @@ PetscErrorCode SCOPFLOWComputeJacobian_GENRAMP(SCOPFLOW scopflow,Vec X,Mat J)
   ierr = VecGetArray(X,&x);CHKERRQ(ierr);
 
   opflow0 = scopflow->opflows[0];
-  for(i=0; i < scopflow->Nc; i++) {
+  for(i=0; i < scopflow->nc; i++) {
     opflow = scopflow->opflows[i];
 
     roffset = scopflow->gstarti[i];
@@ -303,7 +303,7 @@ PetscErrorCode SCOPFLOWComputeConstraints_GENRAMP(SCOPFLOW scopflow,Vec X,Vec G)
   opflow0 = scopflow->opflows[0];
   x0 = x + scopflow->xstarti[0];
 
-  for(i=0; i < scopflow->Nc; i++) {
+  for(i=0; i < scopflow->nc; i++) {
     xi   = x + scopflow->xstarti[i];
     gi   = g + scopflow->gstarti[i];
 
@@ -376,7 +376,7 @@ PetscErrorCode SCOPFLOWComputeObjective_GENRAMP(SCOPFLOW scopflow,Vec X,PetscSca
   *obj = 0.0;
 
   ierr = VecGetArray(X,&x);CHKERRQ(ierr);
-  for(i=0; i < scopflow->Nc; i++) {
+  for(i=0; i < scopflow->nc; i++) {
     opflowobj = 0.0;
     xi = x + scopflow->xstarti[i];
     opflow = scopflow->opflows[i];
@@ -400,7 +400,7 @@ PetscErrorCode SCOPFLOWComputeGradient_GENRAMP(SCOPFLOW scopflow,Vec X,Vec Grad)
   ierr = VecGetArray(X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(Grad,&grad);CHKERRQ(ierr);
 
-  for(i=0; i < scopflow->Nc; i++) {
+  for(i=0; i < scopflow->nc; i++) {
     opflow = scopflow->opflows[i];
     xi    = x + scopflow->xstarti[i];
     gradi = grad + scopflow->xstarti[i];
@@ -441,7 +441,7 @@ PetscErrorCode SCOPFLOWModelSetNumVariablesandConstraints_GENRAMP(SCOPFLOW scopf
 
   PetscFunctionBegin;
 
-  for(i=0; i < scopflow->Nc; i++) {
+  for(i=0; i < scopflow->nc; i++) {
     opflow = scopflow->opflows[i];
     ierr = PSGetNumActiveGenerators(opflow->ps,&ngenON,NULL);CHKERRQ(ierr);
     nxi[i] = opflow->nx;
@@ -472,7 +472,7 @@ PetscErrorCode SCOPFLOWComputeHessian_GENRAMP(SCOPFLOW scopflow,Vec X,Vec Lambda
   
   ierr = VecGetArray(X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(Lambda,&lambda);CHKERRQ(ierr);
-  for(i=0; i < scopflow->Nc; i++) {
+  for(i=0; i < scopflow->nc; i++) {
     opflow = scopflow->opflows[i];
     opflow->obj_factor = scopflow->obj_factor;
 
