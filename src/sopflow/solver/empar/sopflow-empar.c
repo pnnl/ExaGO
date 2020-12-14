@@ -1,21 +1,29 @@
 #include <exago_config.h>
 
 #include <private/opflowimpl.h>
+#include <private/scopflowimpl.h>
 #include <private/sopflowimpl.h>
 #include "sopflow-empar.h"
 
 PetscErrorCode SOPFLOWSolverSolve_EMPAR(SOPFLOW sopflow)
 {
   PetscErrorCode      ierr;
-  PetscInt            c;
+  PetscInt            s;
+  SCOPFLOW            scopflow;
   OPFLOW              opflow;
 
   PetscFunctionBegin;
 
-
-  for(c=0; c < sopflow->ns; c++) {
-    opflow = sopflow->opflows[c];
-    ierr   = OPFLOWSolve(opflow);
+  if(!sopflow->ismulticontingency) {
+    for(s=0; s < sopflow->ns; s++) {
+      opflow = sopflow->opflows[s];
+      ierr   = OPFLOWSolve(opflow);
+    }
+  } else {
+    for(s=0; s < sopflow->ns; s++) {
+      scopflow = sopflow->scopflows[s];
+      ierr   = SCOPFLOWSolve(scopflow);
+    }
   }
 
   PetscFunctionReturn(0);
@@ -38,8 +46,13 @@ PetscErrorCode SOPFLOWSolverGetObjective_EMPAR(SOPFLOW sopflow,PetscReal *obj)
   PetscReal      temp;
   PetscFunctionBegin;
   if(!sopflow->comm->rank) {
-    temp = sopflow->opflows[0]->obj;
+    if(!sopflow->ismulticontingency) {
+      temp = sopflow->opflows[0]->obj;
+    } else {
+      temp = sopflow->scopflows[0]->obj;
+    }
   }
+
   ierr = MPI_Bcast(&temp,1,MPI_REAL,0,sopflow->comm->type);CHKERRQ(ierr);
   sopflow->obj = temp;
   *obj = sopflow->obj;
@@ -48,13 +61,19 @@ PetscErrorCode SOPFLOWSolverGetObjective_EMPAR(SOPFLOW sopflow,PetscReal *obj)
 
 PetscErrorCode SOPFLOWSolverGetSolution_EMPAR(SOPFLOW sopflow,PetscInt scen_num,Vec *X)
 {
+  SCOPFLOW       scopflow;
   OPFLOW         opflow;
 
   PetscFunctionBegin;
 
   if(sopflow->sstart <= scen_num && scen_num < sopflow->send) {
-    opflow = sopflow->opflows[scen_num-sopflow->sstart];
-    *X = opflow->X; 
+    if(!sopflow->ismulticontingency) {
+      opflow = sopflow->opflows[scen_num-sopflow->sstart];
+      *X = opflow->X; 
+    } else {
+      scopflow = sopflow->scopflows[scen_num-sopflow->sstart];
+      *X = scopflow->X; 
+    }
   } else {
     *X = NULL;
   }
@@ -63,13 +82,19 @@ PetscErrorCode SOPFLOWSolverGetSolution_EMPAR(SOPFLOW sopflow,PetscInt scen_num,
 
 PetscErrorCode SOPFLOWSolverGetConstraints_EMPAR(SOPFLOW sopflow,PetscInt scen_num,Vec *G)
 {
+  SCOPFLOW            scopflow;
   OPFLOW              opflow;
 
   PetscFunctionBegin;
 
   if(sopflow->sstart <= scen_num && scen_num < sopflow->send) {
-    opflow = sopflow->opflows[scen_num-sopflow->sstart];
-    *G = opflow->G; 
+    if(!sopflow->ismulticontingency) {
+      opflow = sopflow->opflows[scen_num-sopflow->sstart];
+      *G = opflow->G; 
+    } else {
+      scopflow = sopflow->scopflows[scen_num-sopflow->sstart];
+      *G = scopflow->G; 
+    }
   } else {
     *G = NULL;
   }
@@ -79,12 +104,18 @@ PetscErrorCode SOPFLOWSolverGetConstraints_EMPAR(SOPFLOW sopflow,PetscInt scen_n
 
 PetscErrorCode SOPFLOWSolverGetConstraintMultipliers_EMPAR(SOPFLOW sopflow,PetscInt scen_num,Vec *Lambda)
 {
+  SCOPFLOW            scopflow;
   OPFLOW              opflow;
 
   PetscFunctionBegin;
   if(sopflow->sstart <= scen_num && scen_num < sopflow->send) {
-    opflow = sopflow->opflows[scen_num-sopflow->sstart];
-    *Lambda = opflow->Lambda; 
+    if(!sopflow->ismulticontingency) {
+      opflow = sopflow->opflows[scen_num-sopflow->sstart];
+      *Lambda = opflow->Lambda; 
+    } else {
+      scopflow = sopflow->scopflows[scen_num-sopflow->sstart];
+      *Lambda = scopflow->Lambda; 
+    }
   } else {
     *Lambda = NULL;
   }

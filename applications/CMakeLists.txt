@@ -66,6 +66,8 @@ target_link_libraries(app_scopflow
 
 target_link_libraries(app_sopflow
 	${EXAGO_SOPFLOW_LIBS}
+	${EXAGO_SCOPFLOW_LIBS}
+	${EXAGO_TCOPFLOW_LIBS}
 	${EXAGO_OPFLOW_LIBS}
 	${EXAGO_PFLOW_APP_LIBS}
 )

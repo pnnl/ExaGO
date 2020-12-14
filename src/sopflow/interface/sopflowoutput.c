@@ -1,4 +1,5 @@
 #include <private/opflowimpl.h>
+#include <private/scopflowimpl.h>
 #include <private/sopflowimpl.h>
 
 /*
@@ -105,7 +106,7 @@ PetscErrorCode SOPFLOWSaveSolution(SOPFLOW sopflow,PetscInt scen_num,OutputForma
   SOPFLOWSaveSolutionAll - Saves all SOPFLOW solutions
 
   Input Parameters:
-+ sopflow - the OPFLOW object
++ sopflow - the SOPFLOW object
 . format - the output file format (csv, matpower)
 - outdir  - Name of output directory
 
@@ -115,30 +116,49 @@ PetscErrorCode SOPFLOWSaveSolution(SOPFLOW sopflow,PetscInt scen_num,OutputForma
 PetscErrorCode SOPFLOWSaveSolutionAll(SOPFLOW sopflow,OutputFormat format,const char outdir[])
 {
   PetscErrorCode ierr;
+  SCOPFLOW       scopflow;
   OPFLOW         opflow;
   PetscInt       s;
   char           filename[64];
   char           outfile[256];
+  char           scopflowdirname[64];
+  char           scopflowdir[256];
+  PetscScalar    *x,*lambda;
 
   PetscFunctionBegin;
 
   if(!sopflow->comm->rank) {
     ierr = PetscMkdir(outdir);CHKERRQ(ierr);
   }
+  MPI_Barrier(sopflow->comm->type);
   
   for(s=0; s < sopflow->ns; s++) {
-    opflow = sopflow->opflows[s];
-    if(!opflow->solutiontops) {
-      ierr = SOPFLOWGetSolution(sopflow,sopflow->sstart+s,&opflow->X);CHKERRQ(ierr);
-      ierr = SOPFLOWGetConstraintMultipliers(sopflow,sopflow->sstart+s,&opflow->Lambda);CHKERRQ(ierr);
-      ierr = OPFLOWSolutionToPS(opflow);CHKERRQ(ierr);
+    if(!sopflow->ismulticontingency) {
+      opflow = sopflow->opflows[s];
+      if(!opflow->solutiontops) {
+	ierr = SOPFLOWGetSolution(sopflow,sopflow->sstart+s,&opflow->X);CHKERRQ(ierr);
+	ierr = SOPFLOWGetConstraintMultipliers(sopflow,sopflow->sstart+s,&opflow->Lambda);CHKERRQ(ierr);
+	ierr = OPFLOWSolutionToPS(opflow);CHKERRQ(ierr);
+      }
+      ierr = PetscSNPrintf(filename,64,"scen_%d",sopflow->sstart+s);CHKERRQ(ierr);
+      ierr = PetscStrncpy(outfile,outdir,256);CHKERRQ(ierr);
+      ierr = PetscStrlcat(outfile,"/",256);CHKERRQ(ierr);
+      ierr = PetscStrlcat(outfile,filename,256);CHKERRQ(ierr);
+      
+      ierr = OPFLOWSaveSolution(opflow,format,outfile);CHKERRQ(ierr);
+    } else {
+      scopflow = sopflow->scopflows[s];
+      
+      ierr = PetscSNPrintf(scopflowdirname,64,"scen_%d",sopflow->sstart+s);CHKERRQ(ierr);
+      ierr = PetscStrncpy(scopflowdir,outdir,256);CHKERRQ(ierr);
+      ierr = PetscStrlcat(scopflowdir,"/",256);CHKERRQ(ierr);
+      ierr = PetscStrlcat(scopflowdir,scopflowdirname,256);CHKERRQ(ierr);
+    
+      ierr = SOPFLOWGetSolution(sopflow,sopflow->sstart+s,&scopflow->X);CHKERRQ(ierr);
+      ierr = SOPFLOWGetConstraintMultipliers(sopflow,sopflow->sstart+s,&scopflow->Lambda);CHKERRQ(ierr);
+      
+      ierr = SCOPFLOWSaveSolutionAll(scopflow,format,scopflowdir);CHKERRQ(ierr);
     }
-    ierr = PetscSNPrintf(filename,64,"scen_%d",sopflow->sstart+s);CHKERRQ(ierr);
-    ierr = PetscStrncpy(outfile,outdir,256);CHKERRQ(ierr);
-    ierr = PetscStrlcat(outfile,"/",256);CHKERRQ(ierr);
-    ierr = PetscStrlcat(outfile,filename,256);CHKERRQ(ierr);
-
-    ierr = OPFLOWSaveSolution(opflow,format,outfile);CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }

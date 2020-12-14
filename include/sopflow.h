@@ -10,6 +10,8 @@
 
 /* Models */
 #define SOPFLOWMODEL_GENRAMP "GENRAMP" 
+#define SOPFLOWMODEL_GENRAMPC "GENRAMPC" /* Model for multi-contingency SOPFLOW */
+
 
 /* Solvers */
 #define SOPFLOWSOLVER_IPOPTNEW "IPOPTNEW"
@@ -21,6 +23,7 @@ typedef enum {NONE,WIND,LOAD}ScenarioUncertaintyType;
 
 typedef struct _p_SOPFLOW *SOPFLOW;
 
+PETSC_EXTERN PetscErrorCode SOPFLOWEnableMultiContingency(SOPFLOW,PetscBool);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetModel(SOPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode SOPFLOWModelRegister(SOPFLOW,const char[],PetscErrorCode (*create)(SOPFLOW));
 PETSC_EXTERN PetscErrorCode SOPFLOWSetSolver(SOPFLOW,const char[]);

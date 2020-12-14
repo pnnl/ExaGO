@@ -108,12 +108,12 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
     for(c=0; c < (*scopflow)->nc; c++) {
       ierr = OPFLOWDestroy(&(*scopflow)->opflows[c]);CHKERRQ(ierr);
     }
-    ierr = PetscFree((*scopflow)->tcopflows);CHKERRQ(ierr);
+    ierr = PetscFree((*scopflow)->opflows);CHKERRQ(ierr);
   } else {
     for(c=0; c < (*scopflow)->nc; c++) {
       ierr = TCOPFLOWDestroy(&(*scopflow)->tcopflows[c]);CHKERRQ(ierr);
     }
-    ierr = PetscFree((*scopflow)->opflows);CHKERRQ(ierr);
+    ierr = PetscFree((*scopflow)->tcopflows);CHKERRQ(ierr);
   }
 
   ierr = PetscFree((*scopflow)->xstarti);CHKERRQ(ierr);
@@ -331,7 +331,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   } else {
     if(!scopflow->solver) {
       ierr = SCOPFLOWSetSolver(scopflow,SCOPFLOWSOLVER_IPOPTNEW);CHKERRQ(ierr);
-      ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW: Using %s solver\n",SCOPFLOWSOLVER_IPOPT);CHKERRQ(ierr); 
+      ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW: Using %s solver\n",SCOPFLOWSOLVER_IPOPTNEW);CHKERRQ(ierr); 
     }
   }
   
@@ -508,7 +508,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
 {
   PetscErrorCode ierr;
-  PetscBool      issolver_empar;
+  PetscBool      issolver_ipoptnew;
 
   PetscFunctionBegin;
 
@@ -516,9 +516,9 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
     ierr = SCOPFLOWSetUp(scopflow);
   }
 
-  ierr = PetscStrcmp(scopflow->solvername,"EMPAR",&issolver_empar);CHKERRQ(ierr);
+  ierr = PetscStrcmp(scopflow->solvername,"IPOPTNEW",&issolver_ipoptnew);CHKERRQ(ierr);
 
-  if(!issolver_empar) { /* Don't need to do all this for embarassingly parallel solver */
+  if(issolver_ipoptnew) { /* Don't need to do this if solver is not ipoptnew */
     /* Set bounds on variables */
     if(scopflow->modelops.setvariablebounds) {
       ierr = (*scopflow->modelops.setvariablebounds)(scopflow,scopflow->Xl,scopflow->Xu);CHKERRQ(ierr);
@@ -636,5 +636,25 @@ PetscErrorCode SCOPFLOWGetConvergenceStatus(SCOPFLOW scopflow,PetscBool *status)
 
   PetscFunctionBegin;
   ierr = (*scopflow->solverops.getconvergencestatus)(scopflow,status);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  SCOPFLOWGetNumVariablesAndConstraints - Gets the number of variables and constraints
+
+  Input Parameters:
++ scopflow - the scopflow object
+
+  Output Parameters:
++ nx - number of variables
+- ncon - number of constraints
+
+Notes: Must be called after SCOPFLOWSetUp
+*/
+PetscErrorCode SCOPFLOWGetNumVariablesandConstraints(SCOPFLOW scopflow,PetscInt *Nx,PetscInt *Ncon)
+{
+  PetscFunctionBegin;
+  *Nx = scopflow->nx;
+  *Ncon = scopflow->ncon;
   PetscFunctionReturn(0);
 }

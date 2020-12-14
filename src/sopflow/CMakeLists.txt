@@ -6,6 +6,7 @@ set(SOPFLOW_SOLVER_SRC
 
 set(SOPFLOW_MODEL_SRC
   model/genramp/sopflow-genramp.c
+  model/genrampc/sopflow-genrampc.c
 )
 
 set(SOPFLOW_SRC
@@ -33,6 +34,8 @@ target_link_libraries(sopflow PRIVATE
 			     ${EXAGO_PS_LIBS}
 			     ${EXAGO_PFLOW_LIBS}
 			     ${EXAGO_OPFLOW_LIBS}
+			     ${EXAGO_TCOPFLOW_LIBS}
+			     ${EXAGO_SCOPFLOW_LIBS}
 )
 
 if(EXAGO_HAVE_IPOPT)

@@ -156,6 +156,6 @@ extern PetscErrorCode SCOPFLOWSolverRegisterAll(SCOPFLOW);
 extern PetscErrorCode SCOPFLOWGetConstraints(SCOPFLOW,PetscInt,Vec*);
 extern PetscErrorCode SCOPFLOWGetConstraintMultipliers(SCOPFLOW,PetscInt,Vec*);
 extern PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW,ContingencyFileInputFormat,const char[]);
-
+extern PetscErrorCode SCOPFLOWGetNumVariablesandConstraints(SCOPFLOW,PetscInt*,PetscInt*);
 
 #endif

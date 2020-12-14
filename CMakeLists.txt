@@ -279,6 +279,7 @@ if(EXAGO_RUN_TESTS)
                  -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case_ACTIVSg200.m
                  -scenfile ${EXAGO_SRC_DATAFILES_DIR}/TAMU200_scenarios/scenarios.csv
                  -sopflow_solver IPOPT
+		 -sopflow_enable_multicontingency 0
                  -sopflow_Ns ${ns})
        endforeach(ns)
 
@@ -288,8 +289,21 @@ if(EXAGO_RUN_TESTS)
                  -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case_ACTIVSg200.m
                  -scenfile ${EXAGO_SRC_DATAFILES_DIR}/TAMU200_scenarios/scenarios.csv
                  -sopflow_solver EMPAR
+		 -sopflow_enable_multicontingency 0
                  -sopflow_Ns ${ns})
        endforeach(ns)
+
+       #Multicontingency
+
+       add_test(NAME SOPFLOW_9bus_3scen_9cont COMMAND 
+                 ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_sopflow>
+                 -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9/case9mod_gen3_wind.m
+                 -scenfile ${EXAGO_SRC_DATAFILES_DIR}/case9/scenarios.csv
+		 -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9/case9.con
+                 -sopflow_solver IPOPTNEW
+		 -sopflow_enable_multicontingency 1
+                 -sopflow_Ns -1
+		 -scopflow_Nc -1)
 
 
     message(STATUS "Running OPFLOW model tests")
