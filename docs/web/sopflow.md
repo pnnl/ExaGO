@@ -1,5 +1,5 @@
-## Stochastic optimal power flow (SOPFLOW) -- IN DEVELOPMENT
-SOPFLOW solves a stochastic optimal power flow problem. The problem is set up as a two-stage optimization problem where the first-stage (base-case) represents the normal operation of the grid (or the most likely forecast) and the second-stage comprises of $N_s$ scenarios of forecast deviation. Compactly, the problem can be set up in the following form:
+## Stochastic security-constrained multi-period optimal power flow (SOPFLOW)
+SOPFLOW solves a stochastic security-constrained multi-period optimal power flow problem. The problem is set up as a two-stage optimization problem where the first-stage (base-case) represents the normal operation of the grid (or the most likely forecast) and the second-stage comprises of $N_s$ scenarios of forecast deviation. Compactly, the problem can be set up in the following form:
 
 ```math
 \begin{aligned}
@@ -12,8 +12,12 @@ SOPFLOW solves a stochastic optimal power flow problem. The problem is set up as
 \end{aligned}
  ```
 
-where $N_s$ is the number of scenarios and $p_i$ is the probability of the scenario. Each scenario can either be an optimal power flow (see [OPFLOW](opflow.md)) or security-constrained optimal power flow (see [SCOPFLOW](scopflow.md). The last equation is the coupling between the 2nd stage forecast deviations and the base case. Depending on the `mode`, SOPFLOW can either be `preventive` (mode = 0) or `corrective` (mode = 1). In the preventive mode, generator real power output is fixed to the base-case values except for any renewable generation (wind, solar), and generators at reference bus(es).The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability.
+where $N_s$ is the number of scenarios and $p_i$ is the probability of the scenario. Each scenario can either be an optimal power flow (see [OPFLOW](opflow.md)) or security-constrained optimal power flow (see [SCOPFLOW](scopflow.md). Each security-constrained optimal power flow case can be single or multi-period. The last equation is the coupling between the 2nd stage forecast deviations and the base case. Depending on the `mode`, SOPFLOW can either be `preventive` (mode = 0) or `corrective` (mode = 1). In the preventive mode, generator real power output is fixed to the base-case values except for any renewable generation (wind, solar), and generators at reference bus(es).The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability.
 
+Depending on the options chosen, SOPFLOW can be run in three modes:
+1. Single-period no-contingency stochastic optimal power flow
+1. Single-period multi-contingency stochastic optimal power flow
+1. Multi-period multi-contingency stochastic optimal power flow
 
 ### Usage
 The SOPFLOW code is executed via
@@ -61,6 +65,9 @@ With this option set, SOPFLOW will only pick up the first Ns scenarios in the sc
 
 #### Enable multi-contingency [Only for multi-contingency SOPFLOW] (-sopflow_enable_multicontingency <0 or 1>)
 Disable/Enable multicontingency SOPFLOW (disabled by default). All SCOPFLOW options (see [SCOPFLOW](scopflow.md)) can be used when the multi-contingency option is enabled.
+
+#### Enable multi-period SCOPFLOW (-scopflow_enable_multiperiod <0 or 1>)
+Disable/Enable multi-period multicontingency SCOPFLOW (disabled by default). All SCOPFLOW options (see [SCOPFLOW](scopflow.md)) for multi-period can be used when the multi-period option is enabled.
 
 #### OPFLOW model (-opflow_model <modelname>)
 This is an option inherited from [OPFLOW](opflow.md). It sets the model (representation of variables and equations) to be used for SOPFLOW. The default formulation is power balance form with polar representation for voltages

@@ -1,11 +1,12 @@
 # <b>Exa</b>scale <b>G</b>rid <b>O</b>ptimization toolkit (ExaGO<sup>TM</sup>)
 ExaGO<sup>TM</sup> is a package for solving large-scale power grid optimization problems on parallel and distributed architectures, particularly targeted for exascale machines with heteregenous architectures (GPU). It is written in C/C++ using the [PETSc](https://www.mcs.anl.gov/petsc/) library. ExaGO<sup>TM</sup> includes the following power grid applications:
 
-- [ACOPF or OPFLOW](docs/web/opflow.md) solves an AC optimal power flow either on CPU and GPU
-- [ACPF or PFLOW](docs/web/pflow.md) solves an AC power flow
+- [S-ACOPF or SOPFLOW](docs/web/sopflow.md) solves a stochastic security-constrained multi-period optimal power flow
 - [SC-ACOPF or SCOPFLOW](docs/web/scopflow.md) solves a multi-period security-constrained (contingency) constrained optimal power
 - [TC-ACOPF or TCOPFLOW](docs/web/tcopflow.md) solves a multi-period optimal power flow
-- [S-ACOPF or SOPFLOW](docs/web/sopflow.md) solves a security-constrained stochastic optimal power flow
+- [ACOPF or OPFLOW](docs/web/opflow.md) solves an AC optimal power flow either on CPU and GPU
+- [ACPF or PFLOW](docs/web/pflow.md) solves an AC power flow
+
 
 
 ExaGO<sup>TM</sup> applications can use the following solvers:

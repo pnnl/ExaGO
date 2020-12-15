@@ -306,6 +306,23 @@ if(EXAGO_RUN_TESTS)
 		 -scopflow_Nc -1)
 
 
+       #Multicontingency-multiperiod
+
+       add_test(NAME SOPFLOW_9bus_3scen_9cont_3steps COMMAND 
+                 ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_sopflow>
+                 -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9/case9mod_gen3_wind.m
+                 -scenfile ${EXAGO_SRC_DATAFILES_DIR}/case9/scenarios.csv
+		 -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9/case9.con
+		 -scopflow_ploadprofile ${EXAGO_SRC_DATAFILES_DIR}/case9/load_P.csv
+		 -scopflow_qloadprofile ${EXAGO_SRC_DATAFILES_DIR}/case9/load_Q.csv
+                 -sopflow_solver IPOPTNEW
+		 -sopflow_enable_multicontingency 1
+		 -scopflow_enable_multiperiod 1
+		 -scopflow_dT 5.0
+		 -scopflow_duration 0.16666667
+                 -sopflow_Ns -1
+		 -scopflow_Nc -1)
+
     message(STATUS "Running OPFLOW model tests")
 
     # OPFLOW tests
