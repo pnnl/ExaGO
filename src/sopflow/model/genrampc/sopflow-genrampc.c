@@ -19,7 +19,6 @@ PetscErrorCode SOPFLOWSetVariableBounds_GENRAMPC(SOPFLOW sopflow,Vec Xl,Vec Xu)
 {
   PetscErrorCode ierr;
   SCOPFLOW       scopflow;
-  OPFLOW         opflow;
   PetscScalar    *xl,*xu,*xli,*xui;
   PetscInt       i;
   PetscFunctionBegin;
@@ -57,6 +56,7 @@ PetscErrorCode SOPFLOWSetConstraintBounds_GENRAMPC(SOPFLOW sopflow,Vec Gl,Vec Gu
   PetscErrorCode ierr;
   PetscScalar    *gl,*gu,*gli,*gui;
   SCOPFLOW       scopflow,scopflow0;
+  TCOPFLOW       tcopflow,tcopflow0;
   OPFLOW         opflow,opflow0;
   PS             ps,ps0;
   PSBUS          bus,bus0;
@@ -68,7 +68,11 @@ PetscErrorCode SOPFLOWSetConstraintBounds_GENRAMPC(SOPFLOW sopflow,Vec Gl,Vec Gu
   ierr = VecGetArray(Gu,&gu);CHKERRQ(ierr);
 
   scopflow0 = sopflow->scopflows[0];
-  opflow0   = scopflow0->opflows[0];
+  if(!scopflow0->ismultiperiod) opflow0   = scopflow0->opflows[0];
+  else {
+    tcopflow0 = scopflow0->tcopflows[0];
+    opflow0 = tcopflow0->opflows[0];
+  }
   ps0       = opflow0->ps;
   for(i=0; i < sopflow->ns; i++) {
     scopflow = sopflow->scopflows[i];
@@ -90,7 +94,12 @@ PetscErrorCode SOPFLOWSetConstraintBounds_GENRAMPC(SOPFLOW sopflow,Vec Gl,Vec Gu
 
     if(sopflow->nconineqcoup[i]) {
       ctr = 0;
-      opflow = scopflow->opflows[0];
+      if(!scopflow->ismultiperiod) opflow   = scopflow->opflows[0];
+      else {
+	tcopflow = scopflow->tcopflows[0];
+	opflow = tcopflow->opflows[0];
+      }
+
       ps    = opflow->ps;
       /* Bounds on coupling constraints */
       for(j=0; j < ps->nbus; j++) {
@@ -183,6 +192,7 @@ PetscErrorCode SOPFLOWComputeJacobian_GENRAMPC(SOPFLOW sopflow,Vec X,Mat J)
 {
   PetscErrorCode ierr;
   SCOPFLOW       scopflow,scopflow0;
+  TCOPFLOW       tcopflow,tcopflow0;
   OPFLOW         opflow,opflow0;
   PetscInt       roffset,coffset;
   PetscInt       nrow,ncol;
@@ -203,10 +213,19 @@ PetscErrorCode SOPFLOWComputeJacobian_GENRAMPC(SOPFLOW sopflow,Vec X,Mat J)
   ierr = VecGetArray(X,&x);CHKERRQ(ierr);
 
   scopflow0 = sopflow->scopflows[0];
-  opflow0   = scopflow0->opflows[0];
+  if(!scopflow0->ismultiperiod) opflow0   = scopflow0->opflows[0];
+  else {
+    tcopflow0 = scopflow0->tcopflows[0];
+    opflow0 = tcopflow0->opflows[0];
+  }
+
   for(i=0; i < sopflow->ns; i++) {
     scopflow = sopflow->scopflows[i];
-    opflow   = scopflow->opflows[0];
+    if(!scopflow->ismultiperiod) opflow   = scopflow->opflows[0];
+    else {
+      tcopflow = scopflow->tcopflows[0];
+      opflow = tcopflow->opflows[0];
+    }
 
     roffset = sopflow->gstarti[i];
     coffset = sopflow->xstarti[i];
@@ -283,6 +302,7 @@ PetscErrorCode SOPFLOWComputeConstraints_GENRAMPC(SOPFLOW sopflow,Vec X,Vec G)
 {
   PetscErrorCode ierr;
   SCOPFLOW  scopflow0,scopflow;
+  TCOPFLOW  tcopflow0,tcopflow;
   OPFLOW    opflow0,opflow;
   PetscInt  i,j,k,loc,loc0,ctr;
   PetscScalar *x0,*x,*xi,*g,*gi;
@@ -296,7 +316,12 @@ PetscErrorCode SOPFLOWComputeConstraints_GENRAMPC(SOPFLOW sopflow,Vec X,Vec G)
   ierr = VecGetArray(G,&g);CHKERRQ(ierr);
   
   scopflow0 = sopflow->scopflows[0];
-  opflow0   = scopflow0->opflows[0];
+  if(!scopflow0->ismultiperiod) opflow0   = scopflow0->opflows[0];
+  else {
+    tcopflow0 = scopflow0->tcopflows[0];
+    opflow0 = tcopflow0->opflows[0];
+  }
+
   x0        = x + sopflow->xstarti[0];
 
   for(i=0; i < sopflow->ns; i++) {
@@ -304,7 +329,11 @@ PetscErrorCode SOPFLOWComputeConstraints_GENRAMPC(SOPFLOW sopflow,Vec X,Vec G)
     gi   = g + sopflow->gstarti[i];
 
     scopflow = sopflow->scopflows[i]; 
-    opflow   = scopflow->opflows[0];
+    if(!scopflow->ismultiperiod) opflow   = scopflow->opflows[0];
+    else {
+      tcopflow = scopflow->tcopflows[0];
+      opflow = tcopflow->opflows[0];
+    }
 
     ierr = VecPlaceArray(scopflow->X,xi);CHKERRQ(ierr);
     ierr = VecPlaceArray(scopflow->G,gi);CHKERRQ(ierr);

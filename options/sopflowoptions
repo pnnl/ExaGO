@@ -42,3 +42,17 @@
 
 # Number of contingencies
 -scopflow_Nc 1
+
+# Options for multiperiod scopflow
+# Active load power profile file
+-scopflow_ploadprofile datafiles/case9/load_P.csv
+
+# Reactive load power profile file
+-scopflow_qloadprofile datafiles/case9/load_Q.csv
+
+# Time-step (in minutes)
+-scopflow_dT 5.0
+
+# Duration (in hours)
+-scopflow_duration 0.1666667 # 10 minutes
+

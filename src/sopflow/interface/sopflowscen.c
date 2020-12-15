@@ -1,4 +1,5 @@
 #include <private/opflowimpl.h>
+#include <private/tcopflowimpl.h>
 #include <private/scopflowimpl.h>
 #include <private/sopflowimpl.h>
 
@@ -33,9 +34,10 @@ PetscErrorCode SOPFLOWSetScenarioData(SOPFLOW sopflow,ScenarioFileInputFormat sc
   Input Parameters
 + sopflow - SOPFLOW object
 . windgenprofile - wind generator profile file
-- c       - contingency number
+. c       - contingency number
+. t - time step
 */
-PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenprofile[],PetscInt c)
+PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenprofile[],PetscInt c,PetscInt t)
 {
   PetscErrorCode ierr;
   FILE           *fp;
@@ -55,8 +57,10 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
   PetscFunctionBegin;
 
   if(!sopflow->ismulticontingency) ngen = sopflow->opflows[0]->ps->ngen;
-  else ngen = sopflow->scopflows[0]->opflows[c]->ps->ngen;
-
+  else {
+    if(!sopflow->scopflows[0]->ismultiperiod) ngen = sopflow->scopflows[0]->opflows[c]->ps->ngen;
+    else ngen = sopflow->scopflows[0]->tcopflows[c]->opflows[t]->ps->ngen;
+  }
   fp = fopen(windgenprofile,"r");
   if (fp == NULL) {
     SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_FILE_OPEN,"Cannot open wind generation profile file %s",windgenprofile);CHKERRQ(ierr);
@@ -100,7 +104,10 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
     }
     
     if(!sopflow->ismulticontingency) opflow = sopflow->opflows[scen_num];
-    else opflow = sopflow->scopflows[scen_num]->opflows[c];
+    else {
+      if(!sopflow->scopflows[scen_num]->ismultiperiod) opflow = sopflow->scopflows[scen_num]->opflows[c];
+      else opflow = sopflow->scopflows[scen_num]->tcopflows[c]->opflows[t];
+    }
     ps     = opflow->ps;
     tok = strtok(NULL,sep);
     nw = 0;
@@ -133,15 +140,25 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
 PetscErrorCode SOPFLOWReadScenarioData(SOPFLOW sopflow,ScenarioFileInputFormat scenfileformat,const char scenfile[])
 {
   PetscErrorCode ierr;
-  PetscInt       c;
+  SCOPFLOW       scopflow;
+  TCOPFLOW       tcopflow;
+  PetscInt       c,t;
 
   PetscFunctionBegin;
   if(sopflow->scenunctype == WIND) {
     if(!sopflow->ismulticontingency) {
-      ierr = SOPFLOWReadScenarioData_Wind(sopflow,scenfile,0);CHKERRQ(ierr);
+      ierr = SOPFLOWReadScenarioData_Wind(sopflow,scenfile,0,0);CHKERRQ(ierr);
     } else {
-      for(c=0; c < sopflow->scopflows[0]->nc; c++) {
-	ierr = SOPFLOWReadScenarioData_Wind(sopflow,scenfile,c);CHKERRQ(ierr);
+      scopflow = sopflow->scopflows[0];
+      for(c=0; c < scopflow->nc; c++) {
+	if(!scopflow->ismultiperiod) {
+	  ierr = SOPFLOWReadScenarioData_Wind(sopflow,scenfile,c,0);CHKERRQ(ierr);
+	} else {
+	  tcopflow = scopflow->tcopflows[0];
+	  for(t=0; t < tcopflow->Nt; t++) {
+	    ierr = SOPFLOWReadScenarioData_Wind(sopflow,scenfile,c,t);CHKERRQ(ierr);
+	  }
+	}
       }
     } 
   }

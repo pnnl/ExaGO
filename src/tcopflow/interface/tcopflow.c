@@ -118,7 +118,7 @@ PetscErrorCode TCOPFLOWCreate(MPI_Comm mpicomm, TCOPFLOW *tcopflowout)
   ierr = TCOPFLOWSolverRegisterAll(tcopflow);
 
   /* Run-time optiont */
-  tcopflow->iscoupling = PETSC_FALSE;
+  tcopflow->iscoupling = PETSC_TRUE;
 
   tcopflow->setupcalled = PETSC_FALSE;
   *tcopflowout = tcopflow;
