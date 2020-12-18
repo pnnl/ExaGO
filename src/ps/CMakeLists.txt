@@ -16,8 +16,11 @@ add_library(ps ${PS_SRC})
 
 target_link_libraries(ps PRIVATE
 			 PETSC::SNES 
-                         MPI::MPI_C
 			 ${EXAGO_UTIL_LIBS})
+
+if(EXAGO_HAVE_MPI)
+  target_link_libraries(ps PRIVATE MPI::MPI_C)
+endif()
 
 # Install library
 install(TARGETS ps DESTINATION lib)

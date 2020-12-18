@@ -53,7 +53,8 @@ PetscErrorCode SOPFLOWSolverGetObjective_EMPAR(SOPFLOW sopflow,PetscReal *obj)
     }
   }
 
-  ierr = MPI_Bcast(&temp,1,MPI_REAL,0,sopflow->comm->type);CHKERRQ(ierr);
+  // ierr = MPI_Bcast(&temp,1,MPI_REAL,0,sopflow->comm->type);CHKERRQ(ierr);
+  ierr = MPI_Bcast(&temp,1,MPI_DOUBLE,0,sopflow->comm->type);CHKERRQ(ierr);
   sopflow->obj = temp;
   *obj = sopflow->obj;
   PetscFunctionReturn(0);

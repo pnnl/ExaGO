@@ -49,6 +49,9 @@ Alternately, one can also download MPI and/or BLAS/LAPACK
 - MPI: `--download-mpich`
 - BLAS/LAPACK: `--download-fblaslapack` (when fortran compiler is present) or `--download-f2cblaslapack` (without a fortran compiler)
 
+#### Without MPI
+PETSc, by default, has dependency on MPI. If one wishes to build PETSc without MPI then `--with-mpi=0` option should be used when configuring PETSc.
+
 #### With third-party packages
 PETSc has interfaces to a variety of third party packages. These third party packages can be either downloaded and installed with PETSc installation, or if already installed can be linked to PETSc. We recommend downloading the packages to avoid any conflict or version incompatability issues. Below, we specify a few of these solver packages
 

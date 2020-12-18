@@ -13,9 +13,12 @@ add_library(pflow ${PFLOW_SRC})
 
 target_link_libraries(pflow PRIVATE
 			 PETSC::SNES 
-                         MPI::MPI_C
 			 ${EXAGO_UTIL_LIBS}
 			 ${EXAGO_PS_LIBS})
+
+if(EXAGO_HAVE_MPI)
+  target_link_libraries(pflow PRIVATE MPI::MPI_C)
+endif()
 
 # Install libraries
 install(TARGETS pflow DESTINATION lib)

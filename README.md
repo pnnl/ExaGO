@@ -69,6 +69,10 @@ you configure ExaGO not to use MPI:
 ```
 $ cmake -DEXAGO_ENABLE_MPI=Off ../exago
 ```
+
+To use ExaGO without MPI, you must also build PETSc without MPI. See [PETSc installation](docs/web/petsc_install.md) for instructions on how to build PETSc without MPI.
+
+
 In case PETSc dependency is not automatically found, you can specify it using
 `ccmake` interactive shell or add command line option like this:
 ```

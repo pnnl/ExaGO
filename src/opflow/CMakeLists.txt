@@ -48,12 +48,15 @@ add_library(opflow ${OPFLOW_SRC})
 # link libraries
 target_link_libraries(opflow PRIVATE
 			     PETSC::ALL
-			     MPI::MPI_C
 			     ${EXAGO_UTIL_LIBS}
 			     ${EXAGO_PS_LIBS}
 			     ${EXAGO_PFLOW_LIBS}
 			     ${LAPACK_LIBRARIES}
 )
+
+if(EXAGO_HAVE_MPI)
+  target_link_libraries(opflow PRIVATE MPI::MPI_C)
+endif()
 
 # If Ipopt interface is enabled, link to Ipopt libs
 if(EXAGO_HAVE_IPOPT)
