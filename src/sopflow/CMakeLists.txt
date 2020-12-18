@@ -29,7 +29,6 @@ add_library(sopflow ${SOPFLOW_SRC})
 # link libraries
 target_link_libraries(sopflow PRIVATE
 			     PETSC::SNES
-			     MPI::MPI_C
 			     ${EXAGO_UTIL_LIBS}
 			     ${EXAGO_PS_LIBS}
 			     ${EXAGO_PFLOW_LIBS}
@@ -37,6 +36,10 @@ target_link_libraries(sopflow PRIVATE
 			     ${EXAGO_TCOPFLOW_LIBS}
 			     ${EXAGO_SCOPFLOW_LIBS}
 )
+
+if(EXAGO_HAVE_MPI)
+  target_link_libraries(sopflow PRIVATE MPI::MPI_C)
+endif()
 
 if(EXAGO_HAVE_IPOPT)
 	target_link_libraries(sopflow PUBLIC INTERFACE Ipopt)

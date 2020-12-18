@@ -32,8 +32,11 @@ set(EXAGO_PFLOW_APP_LIBS
   ${EXAGO_PFLOW_LIBS}	 
   ${EXAGO_MATH_LIB}
   PETSC::SNES
-  MPI::MPI_C
 )
+
+if(EXAGO_HAVE_MPI)
+  list(APPEND EXAGO_PFLOW_APP_LIBS MPI::MPI_C)
+endif()
 
 # Add executables
 # PFLOW

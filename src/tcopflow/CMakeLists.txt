@@ -26,12 +26,15 @@ add_library(tcopflow ${TCOPFLOW_SRC})
 # link libraries
 target_link_libraries(tcopflow PRIVATE
 			     PETSC::SNES
-			     MPI::MPI_C
 			     ${EXAGO_UTIL_LIBS}
 			     ${EXAGO_PS_LIBS}
 			     ${EXAGO_PFLOW_LIBS}
 			     ${EXAGO_OPFLOW_LIBS}
 )
+
+if(EXAGO_HAVE_MPI)
+  target_link_libraries(tcopflow PRIVATE MPI::MPI_C)
+endif()
 
 if(EXAGO_HAVE_IPOPT)
 	target_link_libraries(tcopflow PUBLIC INTERFACE Ipopt)

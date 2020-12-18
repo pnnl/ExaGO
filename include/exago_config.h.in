@@ -16,4 +16,6 @@
 
 #cmakedefine EXAGO_HAVE_GPU @EXAGO_HAVE_GPU@
 
+#cmakedefine EXAGO_HAVE_MPI @EXAGO_HAVE_MPI@
+
 #endif /* _EXAGO_CONFIG_H_ */

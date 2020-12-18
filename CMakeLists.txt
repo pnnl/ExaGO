@@ -40,9 +40,6 @@ option(EXAGO_ENABLE_IPOPT "Enable Ipopt support" OFF)
 # HiOP support is disabled by default
 option(EXAGO_ENABLE_HIOP "Enable HiOP support" OFF)
 
-# MPI support is enabled by default
-option(EXAGO_ENABLE_MPI "Enable MPI support" ON)
-
 # GPU support is disabled by default
 option(EXAGO_ENABLE_GPU "Enable GPU support" OFF)
 
@@ -75,6 +72,7 @@ if(EXAGO_ENABLE_MPI)
     set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
   endif(NOT DEFINED MPI_CXX_COMPILER)
   include_directories(${MPI_CXX_ADDITIONAL_INCLUDE_DIRS} ${MPI_CXX_COMPILER_INCLUDE_DIRS})
+  set(EXAGO_HAVE_MPI 1)
 endif(EXAGO_ENABLE_MPI)
 
 # If GPU support is enabled, find CUDA
