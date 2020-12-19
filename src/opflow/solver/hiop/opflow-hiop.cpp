@@ -5,9 +5,9 @@
 #include "opflow-hiop.hpp"
 
 typedef enum {
-  AUTO = 0, CPU = 1,HYBRID = 2
+  AUTO = 0, CPU = 1,HYBRID = 2, GPU = 3
 }HIOPComputeMode;
-const char* HIOPComputeModeChoices[] = {"auto","cpu","hybrid","HIOPComputeModeChoices","",0};
+const char* HIOPComputeModeChoices[] = {"auto","cpu","hybrid","gpu","HIOPComputeModeChoices","",0};
 
 /* Converts an array xin in natural ordering to an array xout in sparse-dense
    ordering
