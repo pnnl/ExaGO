@@ -72,6 +72,14 @@ struct _p_PSBUS{
      the local vector, while startlocglob is used for setting the values in the matrix */
   
   PetscInt  startlocglob; /**< Starting location for the variables for this bus in the application "global" residual array */
+
+  PetscInt  nxV; /* Number of variables for bus voltage */
+  PetscInt  nxshunt; /* Number of variables for bus shunt */
+  PetscInt  nxpowerimbalance; /* Number of variables for power imbalance */
+
+  PetscInt  nconeq; /* Number of equality constraints */
+  PetscInt  nconineq; /* Number of inequality constraints */
+
 };
 
 /**
@@ -94,6 +102,12 @@ struct _p_PSLOAD{
   PetscInt      internal_i; /**< Internal Bus Number */
   PetscInt      scale;  /* Load scaling flag of one for a scalable load and zero for a fixed load */
   PetscInt      intrpt; /**< Interruptible load flag of one for an interruptible load for zero for a non interruptible load */
+
+  PetscInt      nxloadloss; /* Number of variables for load loss */
+
+  PetscInt  nconeq; /* Number of equality constraints */
+  PetscInt  nconineq; /* Number of inequality constraints */
+
 };
 
 /**
@@ -153,6 +167,12 @@ struct _p_PSGEN{
   PetscScalar   apf; /* area participation factor */
   /* genfuel type - See GENFUEL_TYPES defined in constants.h */
   PetscInt      genfuel_type;
+
+  PetscInt      nx; /* Number of generator variables */
+
+  PetscInt  nconeq; /* Number of equality constraints */
+  PetscInt  nconineq; /* Number of inequality constraints */
+
 };
 
 /**
@@ -199,6 +219,12 @@ struct _p_PSLINE{
 
   
   PetscInt startlocglob; /**< Starting location for the variables for this line in the global vector */
+
+  PetscInt nx; /* Number of variables for the line */
+
+  PetscInt  nconeq; /* Number of equality constraints */
+  PetscInt  nconineq; /* Number of inequality constraints */
+
 };
 
 extern const char *const PSGENFuelTypes[];
