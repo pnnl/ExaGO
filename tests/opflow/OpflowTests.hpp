@@ -472,12 +472,9 @@ public:
     fail += verifyAnswer(Jeqref_sparse, nxsparse,iRow, jCol, values);
 
     // Get the hiop dense matrix solution to test against
-    double **Jeq_dense;
+    double *Jeq_dense;
 
-    ierr = PetscMalloc1(nrow,&Jeq_dense);CHKERRQ(ierr);
-    for(int i = 0; i < nrow; i++) {
-      ierr = PetscMalloc1(nxdense,&Jeq_dense[i]);CHKERRQ(ierr);
-    }
+    ierr = PetscMalloc1(nrow*nxdense,&Jeq_dense);CHKERRQ(ierr);
 
     ierr = (*opflow->modelops.computedenseequalityconstraintjacobianhiop)(opflow, x, Jeq_dense);CHKERRQ(ierr);
 
@@ -505,13 +502,9 @@ public:
       ierr = MatCreateSubMatrix(Jineqref_spdn, ineq_row_map_IS, dncol_map_IS, MAT_INITIAL_MATRIX, &Jineqref_dense);CHKERRQ(ierr);
       
       // Get the hiop dense matrix solution
-      double **Jineq_dense;
+      double *Jineq_dense;
 
-      ierr = PetscMalloc1(nrow_ineq,&Jineq_dense);CHKERRQ(ierr);
-
-      for(int i = 0; i < nrow_ineq; i++) {
-	ierr = PetscMalloc1(nxdense,&Jineq_dense[i]);CHKERRQ(ierr);
-      }
+      ierr = PetscMalloc1(nrow_ineq*nxdense,&Jineq_dense);CHKERRQ(ierr);
 
       ierr = (*opflow->modelops.computedenseinequalityconstraintjacobianhiop)(opflow, x, Jineq_dense);CHKERRQ(ierr);
 
@@ -522,9 +515,6 @@ public:
       ierr = MatDestroy(&Jineqref_spdn);CHKERRQ(ierr);
       ierr = MatDestroy(&Jineqref_dense);CHKERRQ(ierr);
 
-      for(int i=0; i < nrow; i++) {
-	ierr = PetscFree(Jineq_dense[i]);CHKERRQ(ierr);
-      }
       ierr = PetscFree(Jineq_dense);CHKERRQ(ierr);
     }
 
@@ -548,9 +538,6 @@ public:
     ierr = PetscFree(jCol);CHKERRQ(ierr);
     ierr = PetscFree(values);CHKERRQ(ierr);
 
-    for(int i=0; i < nrow; i++) {
-      ierr = PetscFree(Jeq_dense[i]);
-    }
     ierr = PetscFree(Jeq_dense);CHKERRQ(ierr);
 
     cleanup(fail, opflow);
@@ -633,30 +620,15 @@ public:
     fail += verifyAnswer(Jeqref_sparse, nnz, iRow, jCol, values);
 
     // Get the hiop dense matrix solution to test against
-    double *data_jeq_dense_host, *data_jeq_dense_dev;
-    double **Jeq_dense_host,**Jeq_dense_dev;
+    double *Jeq_dense_host,*Jeq_dense_dev;
 
-    data_jeq_dense_host = static_cast<double*>(h_allocator.allocate(nrow*nxdense*sizeof(double)));
-    data_jeq_dense_dev  = static_cast<double*>(d_allocator.allocate(nrow*nxdense*sizeof(double)));
-
-    Jeq_dense_host = static_cast<double**>(h_allocator.allocate(nrow*sizeof(double*)));
-    Jeq_dense_dev  = static_cast<double**>(d_allocator.allocate(nrow*sizeof(double*))); // Note: The array pointers are allocated on host
-
-    for(int i=0; i < nrow; i++)
-    {
-      Jeq_dense_host[i] = data_jeq_dense_host + i * nxdense;
-    }
-
-    RAJA::forall<RAJA::cuda_exec<128>>(RAJA::RangeSegment(0, nrow),
-      [=] __device__ (RAJA::Index_type i)
-      {
-        Jeq_dense_dev[i] = data_jeq_dense_dev + i * nxdense;
-      }
-    );
+    Jeq_dense_host = static_cast<double*>(h_allocator.allocate(nrow*nxdense*sizeof(double*)));
+    Jeq_dense_dev  = static_cast<double*>(d_allocator.allocate(nrow*nxdense*sizeof(double*)));
 
     ierr = (*opflow->modelops.computedenseequalityconstraintjacobianhiop)(opflow, x_dev, Jeq_dense_dev);CHKERRQ(ierr);
 
-    resmgr.copy(data_jeq_dense_host,data_jeq_dense_dev);
+    // resmgr.copy(data_jeq_dense_host,data_jeq_dense_dev);
+    resmgr.copy(Jeq_dense_host, Jeq_dense_dev);
 
     fail += verifyAnswer(Jeqref_dense, Jeq_dense_host);
 
@@ -683,29 +655,15 @@ public:
       ierr = MatCreateSubMatrix(Jineqref_spdn, ineq_row_map_IS, dncol_map_IS, MAT_INITIAL_MATRIX, &Jineqref_dense);CHKERRQ(ierr);
       
       // Get the hiop dense matrix solution
-      double **Jineq_dense_host,**Jineq_dense_dev;
-      double *data_jineq_dense_host, *data_jineq_dense_dev;
+      double *Jineq_dense_host,*Jineq_dense_dev;
 
-      data_jineq_dense_host = static_cast<double*>(h_allocator.allocate(nrow_ineq*nxdense*sizeof(double)));
-      data_jineq_dense_dev  = static_cast<double*>(d_allocator.allocate(nrow_ineq*nxdense*sizeof(double)));
-
-      Jineq_dense_host = static_cast<double**>(h_allocator.allocate(nrow_ineq*sizeof(double*)));
-      Jineq_dense_dev  = static_cast<double**>(d_allocator.allocate(nrow_ineq*sizeof(double*)));
-
-      for(int i = 0; i < nrow_ineq; i++) {
-	      Jineq_dense_host[i] = data_jineq_dense_host + i * nxdense;
-      }
-
-      RAJA::forall<RAJA::cuda_exec<128>>(RAJA::RangeSegment(0, nrow_ineq),
-      [=] __device__ (RAJA::Index_type i)
-        {
-          Jineq_dense_dev[i] = data_jineq_dense_dev + i * nxdense;
-        }
-      );
+      Jineq_dense_host = static_cast<double*>(h_allocator.allocate(nxdense*nrow_ineq*sizeof(double*)));
+      Jineq_dense_dev  = static_cast<double*>(d_allocator.allocate(nxdense*nrow_ineq*sizeof(double*)));
 
       ierr = (*opflow->modelops.computedenseinequalityconstraintjacobianhiop)(opflow, x_dev, Jineq_dense_dev);CHKERRQ(ierr);
 
-	    resmgr.copy(data_jineq_dense_host,data_jineq_dense_dev);
+	    // resmgr.copy(data_jineq_dense_host,data_jineq_dense_dev);
+	    resmgr.copy(Jineq_dense_host, Jineq_dense_dev);
 
       fail += verifyAnswer(Jineqref_dense, Jineq_dense_host);
 
@@ -716,8 +674,6 @@ public:
 
 	    h_allocator.deallocate(Jineq_dense_host);
 	    d_allocator.deallocate(Jineq_dense_dev);
-      h_allocator.deallocate(data_jineq_dense_host);
-      d_allocator.deallocate(data_jineq_dense_dev);  
     }
 
     // Cleanup                    
@@ -743,8 +699,6 @@ public:
     
     h_allocator.deallocate(Jeq_dense_host);
     d_allocator.deallocate(Jeq_dense_dev);
-    h_allocator.deallocate(data_jeq_dense_host);
-    d_allocator.deallocate(data_jeq_dense_dev);
 
     cleanup(fail, opflow);
   }
@@ -826,11 +780,8 @@ public:
     ierr = MatCreateSubMatrix(Hessref_spdn, dncol_map_IS, dncol_map_IS, MAT_INITIAL_MATRIX, &Hessref_dense);CHKERRQ(ierr);
 
     // Test the dense component
-    double **hess_dense;
-    hess_dense = new double*[nxdense];
-    for(int i = 0; i < nxdense; i++) {
-      hess_dense[i] = new double[nxdense];
-    }
+    double *hess_dense;
+    hess_dense = new double[nxdense*nxdense];
     ierr = (*opflow->modelops.computedensehessianhiop)(opflow, x_ref, lambda_ref, hess_dense);CHKERRQ(ierr);
 
     fail += verifyAnswer(Hessref_dense, hess_dense);
@@ -865,7 +816,7 @@ public:
   }
 
 #if defined(EXAGO_HAVE_RAJA)
-  LocalOrdinalType computeHessian(OPFLOW opflow,double *x_ref_dev,double *lambda_ref_dev,PetscScalar obj_factor,Mat Hessref,umpire::ResourceManager& resmgr,double** hess_dense,double** hess_dense_dev,double *data_dense_host,double *data_dense_dev)
+  LocalOrdinalType computeHessian(OPFLOW opflow,double *x_ref_dev,double *lambda_ref_dev,PetscScalar obj_factor,Mat Hessref,umpire::ResourceManager& resmgr,double* hess_dense,double* hess_dense_dev)
   {
     PetscErrorCode   ierr;
     LocalOrdinalType fail = 0;
@@ -934,7 +885,7 @@ public:
     // Test dense Hessian
     ierr = (*opflow->modelops.computedensehessianhiop)(opflow, x_ref_dev, lambda_ref_dev, hess_dense_dev);CHKERRQ(ierr);
 
-    resmgr.copy(data_dense_host,data_dense_dev);
+    resmgr.copy(hess_dense,hess_dense_dev);
 
     fail += verifyAnswer(Hessref_dense, hess_dense);
 
@@ -1046,8 +997,39 @@ private:
   }
 
   /**
+   * @brief Compare two matrices. This overload verifies against a dense matrix
+   * with a contiguous layout.
+   */
+  virtual int verifyAnswer(Mat a, double* b, const RealType& tol=eps) const
+  {
+    int              ncols;
+    int              fail = 0;
+    const int        *cols;
+    const double     *vals;
+    int              count = 0;
+    PetscInt         nrow, ncol;
+    PetscErrorCode   ierr;
+    auto idx = [&ncol] (double* mat, int r, int c)
+      { return mat[(r*ncol)+c]; };
+
+    ierr = MatGetSize(a, &nrow, &ncol);CHKERRQ(ierr);
+    for(int i = 0; i < nrow; i++) {
+      ierr = MatGetRow(a, i, &ncols, &cols, &vals);CHKERRQ(ierr);
+      for(int j = 0; j < ncols; j++) {
+        if(!isEqual(vals[j], idx(b, i, cols[j]), tol)) {
+          std::cout << "Failed for index (" << i << ", " << cols[j] << ") : " << vals[j] << " != " << idx(b, i, cols[j]) << std::endl;
+          fail++;
+        }
+        count++;
+      }
+      ierr = MatRestoreRow(a, i, &ncols, &cols, &vals);CHKERRQ(ierr);
+    }
+    return fail;
+  }
+
+  /**
    * @brief Compare two matrices. Matrix a is in PETSc sparse matrix format and b is a dense matrix.
-   *
+   * @note @abhyshr will we still need this overload?
    */
   virtual int verifyAnswer(Mat a, double** b, const RealType& tol=eps) const
   {

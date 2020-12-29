@@ -85,7 +85,7 @@ int main(int argc, char** argv)
   bool           ineq_present = false;
   Vec            X, Xl, Xu, G, Gl, Gu, grad, Lambda;
   Mat            Jeq, Jineq, Hess;
-  int            fail;
+  int            fail=0;
   PetscLogStage  stages[2];
   double         obj_value, obj_factor;
   char           file_c_str[PETSC_MAX_PATH_LEN];
@@ -286,7 +286,6 @@ int main(int argc, char** argv)
     naturaltospdense(xu_vec,xu_ref,idxn2sd_map,nx);CHKERRQ(ierr);
     naturaltospdense(grad_vec,grad_ref,idxn2sd_map,nx);CHKERRQ(ierr);
     /* _ref pointers are now in sparse-dense ordering */
-    fail = 0;
     fail += test.computeVariableBounds(opflowtest,xl_ref,xu_ref);
     fail += test.computeObjective(opflowtest,x_ref,obj_value);
     fail += test.computeGradient(opflowtest,x_ref,grad_ref);
@@ -411,37 +410,18 @@ int main(int argc, char** argv)
     fail += test.computeConstraintJacobian(opflowtest,x_ref_dev,Jeq,Jineq,resmgr);
 
     int    nxdense = 2*opflowtest->ps->nbus;
-    double *data_hess_host,*data_hess_dev;
-    double **hess_dense,**hess_dense_dev;
+    double *hess_dense,*hess_dense_dev;
 
-    data_hess_host = static_cast<double*>(h_allocator.allocate(nxdense*nxdense*sizeof(double)));
-    data_hess_dev  = static_cast<double*>(d_allocator.allocate(nxdense*nxdense*sizeof(double)));
+    hess_dense     = static_cast<double*>(h_allocator.allocate(nxdense*nxdense*sizeof(double*)));
+    hess_dense_dev = static_cast<double*>(d_allocator.allocate(nxdense*nxdense*sizeof(double*)));
 
-    hess_dense     = static_cast<double**>(h_allocator.allocate(nxdense*sizeof(double*)));
-    hess_dense_dev = static_cast<double**>(d_allocator.allocate(nxdense*sizeof(double*)));
-
-    for(int i=0; i < nxdense; i++) {
-      hess_dense[i] = data_hess_host + i*nxdense;
-    }
-
-    RAJA::forall<exago_raja_exec>(RAJA::RangeSegment(0, nxdense),
-      RAJA_LAMBDA (RAJA::Index_type i)
-      {
-        hess_dense_dev[i] = data_hess_dev + i*nxdense;
-      }
-    );
-
-    fail += test.computeHessian(opflowtest,x_ref_dev,lambda_ref_dev,obj_factor,Hess,resmgr,hess_dense,hess_dense_dev,data_hess_host,data_hess_dev);
+    fail += test.computeHessian(opflowtest,x_ref_dev,lambda_ref_dev,obj_factor,Hess,resmgr,hess_dense,hess_dense_dev);
 
     d_allocator.deallocate(x_ref_dev);
     d_allocator.deallocate(lambda_ref_dev);
 
     h_allocator.deallocate(hess_dense);
     d_allocator.deallocate(hess_dense_dev);
-
-    h_allocator.deallocate(data_hess_host);
-    d_allocator.deallocate(data_hess_dev);
-
 
     ierr = PetscFree(x_ref);CHKERRQ(ierr);
     ierr = PetscFree(xl_ref);CHKERRQ(ierr);
@@ -457,7 +437,6 @@ int main(int argc, char** argv)
     ierr = VecRestoreArray(G,&g_ref);CHKERRQ(ierr);
     ierr = VecRestoreArray(Gl,&gl_ref);CHKERRQ(ierr);
     ierr = VecRestoreArray(Gu,&gu_ref);CHKERRQ(ierr);
-
 
     ierr = VecScale(Lambda,1/obj_factor);CHKERRQ(ierr);
     ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
@@ -505,4 +484,5 @@ int main(int argc, char** argv)
     ierr = MatDestroy(&Jineq);CHKERRQ(ierr);
   ierr = MatDestroy(&Hess);CHKERRQ(ierr);
   PetscFinalize();
+  return fail;
 }

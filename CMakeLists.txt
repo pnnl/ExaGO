@@ -40,6 +40,11 @@ option(EXAGO_ENABLE_IPOPT "Enable Ipopt support" OFF)
 # HiOP support is disabled by default
 option(EXAGO_ENABLE_HIOP "Enable HiOP support" OFF)
 
+option(EXAGO_ENABLE_HIOP_SPARSE "Enable HiOp's HIOP_SPARSE option" OFF)
+
+# MPI support is enabled by default
+option(EXAGO_ENABLE_MPI "Enable MPI support" ON)
+
 # GPU support is disabled by default
 option(EXAGO_ENABLE_GPU "Enable GPU support" OFF)
 
@@ -349,9 +354,9 @@ if(EXAGO_RUN_TESTS)
                  ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_opflow>
                  -netfile ${test_net}
                  -opflow_initialization ${opflow_init}
-		 -hiop_compute_mode CPU
+                 -hiop_compute_mode CPU
                  -opflow_solver HIOP
-		 -opflow_ignore_lineflow_constraints 1
+                 -opflow_ignore_lineflow_constraints 1
                  -opflow_model POWER_BALANCE_HIOP)
       endforeach()
     endforeach()
@@ -363,9 +368,9 @@ if(EXAGO_RUN_TESTS)
                  ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_opflow>
                  -netfile ${test_net}
                  -opflow_initialization ${opflow_init}
-		 -hiop_compute_mode HYBRID
+                 -hiop_compute_mode HYBRID
                  -opflow_solver HIOP
-		 -opflow_ignore_lineflow_constraints 1
+                 -opflow_ignore_lineflow_constraints 1
                  -opflow_model PBPOLRAJAHIOP)
       endforeach()
     endforeach()

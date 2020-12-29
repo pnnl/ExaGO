@@ -55,9 +55,9 @@ struct _p_OPFLOWModelOps {
   /* Following methods are only used with HIOP */
   PetscErrorCode (*computesparsejacobianhiop)(OPFLOW,int*,int*,double*); /* Sparse Jacobian */
   PetscErrorCode (*computesparsehessianhiop)(OPFLOW,const double*,int*,int*,double*); /* Sparse Hessian */
-  PetscErrorCode (*computedenseequalityconstraintjacobianhiop)(OPFLOW,const double*,double**); /* Dense Jacobian */
-  PetscErrorCode (*computedenseinequalityconstraintjacobianhiop)(OPFLOW,const double*,double**); /* Dense Jacobian */
-  PetscErrorCode (*computedensehessianhiop)(OPFLOW,const double*,const double*,double**); /* Dense Hessian */
+  PetscErrorCode (*computedenseequalityconstraintjacobianhiop)(OPFLOW,const double*,double*); /* Dense Jacobian */
+  PetscErrorCode (*computedenseinequalityconstraintjacobianhiop)(OPFLOW,const double*,double*); /* Dense Jacobian */
+  PetscErrorCode (*computedensehessianhiop)(OPFLOW,const double*,const double*,double*); /* Dense Hessian */
 
 };
 

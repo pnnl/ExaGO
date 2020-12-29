@@ -107,9 +107,9 @@ extern PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOLHIOP(OPFLOW,V
 extern PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOLHIOP(OPFLOW,Vec,Vec,Mat);
 extern PetscErrorCode OPFLOWComputeSparseJacobian_PBPOLHIOP(OPFLOW,int*,int*,double*);
 extern PetscErrorCode OPFLOWComputeSparseHessian_PBPOLHIOP(OPFLOW,const double*,int*,int*,double*);
-extern PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLHIOP(OPFLOW,const double*,double**);
-extern PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLHIOP(OPFLOW,const double*,double**);
-extern PetscErrorCode OPFLOWComputeDenseHessian_PBPOLHIOP(OPFLOW,const double*,const double*,double**);
+extern PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLHIOP(OPFLOW,const double*,double*);
+extern PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLHIOP(OPFLOW,const double*,double*);
+extern PetscErrorCode OPFLOWComputeDenseHessian_PBPOLHIOP(OPFLOW,const double*,const double*,double*);
 
 #endif
 #endif

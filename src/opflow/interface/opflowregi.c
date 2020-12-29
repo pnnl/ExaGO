@@ -101,7 +101,6 @@ extern PetscErrorCode OPFLOWSolverCreate_IPOPT(OPFLOW);
 #endif
 extern PetscErrorCode OPFLOWSolverCreate_TAO(OPFLOW);
 #if defined(EXAGO_HAVE_HIOP)
-extern PetscErrorCode OPFLOWSolverCreate_HIOPOLD(OPFLOW);
 extern PetscErrorCode OPFLOWSolverCreate_HIOP(OPFLOW);
 #endif
 
@@ -119,7 +118,6 @@ PetscErrorCode OPFLOWSolverRegisterAll(OPFLOW opflow)
 #endif
   ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_TAO,OPFLOWSolverCreate_TAO);CHKERRQ(ierr);
 #if defined(EXAGO_HAVE_HIOP)
-  ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_HIOPOLD,OPFLOWSolverCreate_HIOPOLD);CHKERRQ(ierr);
   ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_HIOP,OPFLOWSolverCreate_HIOP);CHKERRQ(ierr);
 #endif
   opflow->OPFLOWSolverRegisterAllCalled = PETSC_TRUE;
