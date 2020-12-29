@@ -1275,7 +1275,7 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLHIOP(OPFLOW opflow,const double *
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLHIOP(OPFLOW opflow,const double *x,double **JacD)
+PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLHIOP(OPFLOW opflow,const double *x,double *JacD)
 {
   int            i,j,row[2],col[4];
   PBPOLHIOP      pbpolhiop=(PBPOLHIOP)opflow->model;
@@ -1283,17 +1283,18 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLHIOP(OPFLOW opf
   LINEParams     *lineparams=&pbpolhiop->lineparams;
   double         val[8];
   int            nxsparse=2*opflow->ps->ngenON;
+  int            nxdense=opflow->nx-nxsparse;
+  const int      JacDnrows=2*busparams->nbus;
   double         flps = 0.0;
   PetscErrorCode ierr;
-
   PetscFunctionBegin;
 
   if(JacD == NULL) PetscFunctionReturn(0);
 
   /* Zero out JacD */
-  for(i=0; i < 2*busparams->nbus; i++) {
-    for(j=0; j < opflow->nx-nxsparse; j++) {
-      JacD[i][j] = 0.0;
+  for(i=0; i < JacDnrows; i++) {
+    for(j=0; j < nxdense; j++) {
+      JacD[(i*nxdense)+j] = 0.0;
     }
   }
   
@@ -1312,10 +1313,10 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLHIOP(OPFLOW opf
     val[2] = 0.0;
     val[3] = busparams->isisolated[i]*1.0 + busparams->ispvpq[i]*-2*Vm*busparams->bl[i];
 
-    JacD[row[0]][col[0]] += val[0];
-    JacD[row[0]][col[1]] += val[1];
-    JacD[row[1]][col[0]] += val[2];
-    JacD[row[1]][col[1]] += val[3];
+    JacD[(nxdense*row[0]) + col[0]] += val[0];
+    JacD[(nxdense*row[0]) + col[1]] += val[1];
+    JacD[(nxdense*row[1]) + col[0]] += val[2];
+    JacD[(nxdense*row[1]) + col[1]] += val[3];
   }
   flps += busparams->nbus*15.0;
 
@@ -1344,10 +1345,10 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLHIOP(OPFLOW opf
     /* dPf_dVmt */
     val[3] = Vmf*(lineparams->Gft[i]*cos(thetaft) + lineparams->Bft[i]*sin(thetaft));
 
-    JacD[row[0]][col[0]] += val[0];
-    JacD[row[0]][col[1]] += val[1];
-    JacD[row[0]][col[2]] += val[2];
-    JacD[row[0]][col[3]] += val[3];
+    JacD[(nxdense*row[0]) + col[0]] += val[0];
+    JacD[(nxdense*row[0]) + col[1]] += val[1];
+    JacD[(nxdense*row[0]) + col[2]] += val[2];
+    JacD[(nxdense*row[0]) + col[3]] += val[3];
 
     /* dQf_dthetaf */
     val[4] = Vmf*Vmt*(lineparams->Bft[i]*sin(thetaft) + lineparams->Gft[i]*cos(thetaft));
@@ -1358,10 +1359,10 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLHIOP(OPFLOW opf
     /* dQf_dVmt */
     val[7] = Vmf*(-lineparams->Bft[i]*cos(thetaft) + lineparams->Gft[i]*sin(thetaft));
 
-    JacD[row[1]][col[0]] += val[4];
-    JacD[row[1]][col[1]] += val[5];
-    JacD[row[1]][col[2]] += val[6];
-    JacD[row[1]][col[3]] += val[7];
+    JacD[(nxdense*row[1]) + col[0]] += val[4];
+    JacD[(nxdense*row[1]) + col[1]] += val[5];
+    JacD[(nxdense*row[1]) + col[2]] += val[6];
+    JacD[(nxdense*row[1]) + col[3]] += val[7];
 
     row[0] = lineparams->geqidxt[i];
     row[1] = lineparams->geqidxt[i]+1;
@@ -1380,10 +1381,10 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLHIOP(OPFLOW opf
     /* dPt_dVmf */
     val[3] = Vmt*(lineparams->Gtf[i]*cos(thetatf) + lineparams->Btf[i]*sin(thetatf));
 
-    JacD[row[0]][col[0]] += val[0];
-    JacD[row[0]][col[1]] += val[1];
-    JacD[row[0]][col[2]] += val[2];
-    JacD[row[0]][col[3]] += val[3];
+    JacD[(nxdense*row[0]) + col[0]] += val[0];
+    JacD[(nxdense*row[0]) + col[1]] += val[1];
+    JacD[(nxdense*row[0]) + col[2]] += val[2];
+    JacD[(nxdense*row[0]) + col[3]] += val[3];
     
     /* dQt_dthetat */
     val[4] = Vmt*Vmf*(lineparams->Btf[i]*sin(thetatf) + lineparams->Gtf[i]*cos(thetatf));
@@ -1394,11 +1395,10 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLHIOP(OPFLOW opf
     /* dQt_dVmf */
     val[7] = Vmt*(-lineparams->Btf[i]*cos(thetatf) + lineparams->Gtf[i]*sin(thetatf));
 
-    JacD[row[1]][col[0]] += val[4];
-    JacD[row[1]][col[1]] += val[5];
-    JacD[row[1]][col[2]] += val[6];
-    JacD[row[1]][col[3]] += val[7];
-
+    JacD[(nxdense*row[1]) + col[0]] += val[4];
+    JacD[(nxdense*row[1]) + col[1]] += val[5];
+    JacD[(nxdense*row[1]) + col[2]] += val[6];
+    JacD[(nxdense*row[1]) + col[3]] += val[7];
   }
   flps += (188+(16*EXAGO_FLOPS_COSOP)+(16*EXAGO_FLOPS_SINOP))*lineparams->nlineON;
   ierr = PetscLogFlops(flps);CHKERRQ(ierr);
@@ -1406,7 +1406,7 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLHIOP(OPFLOW opf
   PetscFunctionReturn(0);
 }
     
-PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLHIOP(OPFLOW opflow,const double *x,double **JacD)
+PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLHIOP(OPFLOW opflow,const double *x,double *JacD)
 {
   PetscErrorCode ierr;
   int          i,k;
@@ -1415,16 +1415,18 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLHIOP(OPFLOW o
   int       row[2],col[4];
   double    val[4];
   int       nxsparse=2*opflow->ps->ngenON;
+  int       nxdense=opflow->nx-nxsparse;
+  int       JacDnrows=2*lineparams->nlinelim;
   double    flps=0.0;
 
   PetscFunctionBegin;
   
   if(JacD == NULL) PetscFunctionReturn(0);
 
-  for(i=0; i < lineparams->nlinelim; i++) {
-    for(k=0; k < opflow->nx-nxsparse; k++) {
-      JacD[2*i][k] = 0.0;
-      JacD[2*i+1][k] = 0.0;
+  for(i=0; i < lineparams->nlinelim/**==JacDnrows/2*/; i++) {
+    for(k=0; k < nxdense; k++) {
+      JacD[((2*i)   * nxdense) + k] = 0.0;
+      JacD[((2*i+1) * nxdense) + k] = 0.0;
     }
   }
   
@@ -1496,10 +1498,10 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLHIOP(OPFLOW o
     val[2] = dSf2_dthetat;
     val[3] = dSf2_dVmt;
 
-    JacD[row[0]][col[0]] += val[0];
-    JacD[row[0]][col[1]] += val[1];
-    JacD[row[0]][col[2]] += val[2];
-    JacD[row[0]][col[3]] += val[3];
+    JacD[(nxdense*row[0]) + col[0]] += val[0];
+    JacD[(nxdense*row[0]) + col[1]] += val[1];
+    JacD[(nxdense*row[0]) + col[2]] += val[2];
+    JacD[(nxdense*row[0]) + col[3]] += val[3];
 
     dSt2_dthetaf = dSt2_dPt*dPt_dthetaf + dSt2_dQt*dQt_dthetaf;
     dSt2_dthetat = dSt2_dPt*dPt_dthetat + dSt2_dQt*dQt_dthetat;
@@ -1518,10 +1520,10 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLHIOP(OPFLOW o
     val[2] = dSt2_dthetaf;
     val[3] = dSt2_dVmf;
 
-    JacD[row[0]][col[0]] += val[0];
-    JacD[row[0]][col[1]] += val[1];
-    JacD[row[0]][col[2]] += val[2];
-    JacD[row[0]][col[3]] += val[3];
+    JacD[(nxdense*row[0]) + col[0]] += val[0];
+    JacD[(nxdense*row[0]) + col[1]] += val[1];
+    JacD[(nxdense*row[0]) + col[2]] += val[2];
+    JacD[(nxdense*row[0]) + col[3]] += val[3];
   }
 
   flps += (206+(20*EXAGO_FLOPS_COSOP)+(20*EXAGO_FLOPS_SINOP))*lineparams->nlinelim;
@@ -1530,7 +1532,7 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLHIOP(OPFLOW o
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLHIOP(OPFLOW opflow,const double *x,const double* lambda, double **HDD)
+PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLHIOP(OPFLOW opflow,const double *x,const double* lambda, double *HDD)
 {
   PetscErrorCode ierr;
   PBPOLHIOP      pbpolhiop=(PBPOLHIOP)opflow->model;
@@ -1540,6 +1542,7 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLHIOP(OPFLOW opfl
   int            row[16],col[16];
   double         val[16];
   int            nxsparse = 2*opflow->ps->ngenON;
+  int            nxdense=2*opflow->ps->nbus;
   double         flps=0.0;
 
   PetscFunctionBegin;
@@ -1549,7 +1552,7 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLHIOP(OPFLOW opfl
     row[0] = busparams->xidx[i] + 1 - nxsparse;
     col[0] = row[0];
     val[0] = busparams->ispvpq[i]*(lambda[busparams->gidx[i]]*2*busparams->gl[i] + lambda[busparams->gidx[i]+1]*(-2*busparams->bl[i]));
-    HDD[row[0]][col[0]] += val[0];
+    HDD[(nxdense*row[0]) + col[0]] += val[0];
     //    ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
   }
   flps += 10.0*busparams->nbus;
@@ -1646,20 +1649,20 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLHIOP(OPFLOW opfl
     val[2] = lambda[gloc]*dPf_dthetaf_dthetat + lambda[gloc+1]*dQf_dthetaf_dthetat;
     val[3] = lambda[gloc]*dPf_dthetaf_dVmt    + lambda[gloc+1]*dQf_dthetaf_dVmt;
 
-    HDD[row[0]][col[0]] += val[0];
-    HDD[row[0]][col[1]] += val[1];
-    HDD[row[0]][col[2]] += val[2];
-    HDD[row[0]][col[3]] += val[3];
+    HDD[(nxdense*row[0]) + col[0]] += val[0];
+    HDD[(nxdense*row[0]) + col[1]] += val[1];
+    HDD[(nxdense*row[0]) + col[2]] += val[2];
+    HDD[(nxdense*row[0]) + col[3]] += val[3];
 
     val[4] = lambda[gloc]*dPf_dVmf_dthetaf + lambda[gloc+1]*dQf_dVmf_dthetaf;
     val[5] = lambda[gloc]*dPf_dVmf_dVmf    + lambda[gloc+1]*dQf_dVmf_dVmf;
     val[6] = lambda[gloc]*dPf_dVmf_dthetat + lambda[gloc+1]*dQf_dVmf_dthetat;
     val[7] = lambda[gloc]*dPf_dVmf_dVmt    + lambda[gloc+1]*dQf_dVmf_dVmt;
 
-    HDD[row[1]][col[0]] += val[4];
-    HDD[row[1]][col[1]] += val[5];
-    HDD[row[1]][col[2]] += val[6];
-    HDD[row[1]][col[3]] += val[7];
+    HDD[(nxdense*row[1]) + col[0]] += val[4];
+    HDD[(nxdense*row[1]) + col[1]] += val[5];
+    HDD[(nxdense*row[1]) + col[2]] += val[6];
+    HDD[(nxdense*row[1]) + col[3]] += val[7];
     
     //    ierr = MatSetValues(H,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
     
@@ -1678,20 +1681,20 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLHIOP(OPFLOW opfl
     val[2] = lambda[gloc]*dPf_dthetat_dthetat + lambda[gloc+1]*dQf_dthetat_dthetat;
     val[3] = lambda[gloc]*dPf_dthetat_dVmt    + lambda[gloc+1]*dQf_dthetat_dVmt;
 
-    HDD[row[0]][col[0]] += val[0];
-    HDD[row[0]][col[1]] += val[1];
-    HDD[row[0]][col[2]] += val[2];
-    HDD[row[0]][col[3]] += val[3];
+    HDD[(nxdense*row[0]) + col[0]] += val[0];
+    HDD[(nxdense*row[0]) + col[1]] += val[1];
+    HDD[(nxdense*row[0]) + col[2]] += val[2];
+    HDD[(nxdense*row[0]) + col[3]] += val[3];
     
     val[4] = lambda[gloc]*dPf_dVmt_dthetaf + lambda[gloc+1]*dQf_dVmt_dthetaf;
     val[5] = lambda[gloc]*dPf_dVmt_dVmf    + lambda[gloc+1]*dQf_dVmt_dVmf;
     val[6] = lambda[gloc]*dPf_dVmt_dthetat + lambda[gloc+1]*dQf_dVmt_dthetat;
     val[7] = lambda[gloc]*dPf_dVmt_dVmt    + lambda[gloc+1]*dQf_dVmt_dVmt;
     
-    HDD[row[1]][col[0]] += val[4];
-    HDD[row[1]][col[1]] += val[5];
-    HDD[row[1]][col[2]] += val[6];
-    HDD[row[1]][col[3]] += val[7];
+    HDD[(nxdense*row[1]) + col[0]] += val[4];
+    HDD[(nxdense*row[1]) + col[1]] += val[5];
+    HDD[(nxdense*row[1]) + col[2]] += val[6];
+    HDD[(nxdense*row[1]) + col[3]] += val[7];
 
     //    ierr = MatSetValues(H,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
 	
@@ -1769,20 +1772,20 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLHIOP(OPFLOW opfl
     val[2] = lambda[gloc]*dPt_dthetat_dthetaf + lambda[gloc+1]*dQt_dthetat_dthetaf;
     val[3] = lambda[gloc]*dPt_dthetat_dVmf    + lambda[gloc+1]*dQt_dthetat_dVmf;
 
-    HDD[row[0]][col[0]] += val[0];
-    HDD[row[0]][col[1]] += val[1];
-    HDD[row[0]][col[2]] += val[2];
-    HDD[row[0]][col[3]] += val[3];
+    HDD[(nxdense*row[0]) + col[0]] += val[0];
+    HDD[(nxdense*row[0]) + col[1]] += val[1];
+    HDD[(nxdense*row[0]) + col[2]] += val[2];
+    HDD[(nxdense*row[0]) + col[3]] += val[3];
 
     val[4] = lambda[gloc]*dPt_dVmt_dthetat + lambda[gloc+1]*dQt_dVmt_dthetat;
     val[5] = lambda[gloc]*dPt_dVmt_dVmt    + lambda[gloc+1]*dQt_dVmt_dVmt;
     val[6] = lambda[gloc]*dPt_dVmt_dthetaf + lambda[gloc+1]*dQt_dVmt_dthetaf;
     val[7] = lambda[gloc]*dPt_dVmt_dVmf    + lambda[gloc+1]*dQt_dVmt_dVmf;
 
-    HDD[row[1]][col[0]] += val[4];
-    HDD[row[1]][col[1]] += val[5];
-    HDD[row[1]][col[2]] += val[6];
-    HDD[row[1]][col[3]] += val[7];
+    HDD[(nxdense*row[1]) + col[0]] += val[4];
+    HDD[(nxdense*row[1]) + col[1]] += val[5];
+    HDD[(nxdense*row[1]) + col[2]] += val[6];
+    HDD[(nxdense*row[1]) + col[3]] += val[7];
     
     //    ierr = MatSetValues(H,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
     
@@ -1800,20 +1803,20 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLHIOP(OPFLOW opfl
     val[2] = lambda[gloc]*dPt_dthetaf_dthetaf + lambda[gloc+1]*dQt_dthetaf_dthetaf;
     val[3] = lambda[gloc]*dPt_dthetaf_dVmf    + lambda[gloc+1]*dQt_dthetaf_dVmf;
     
-    HDD[row[0]][col[0]] += val[0];
-    HDD[row[0]][col[1]] += val[1];
-    HDD[row[0]][col[2]] += val[2];
-    HDD[row[0]][col[3]] += val[3];
+    HDD[(nxdense*row[0]) + col[0]] += val[0];
+    HDD[(nxdense*row[0]) + col[1]] += val[1];
+    HDD[(nxdense*row[0]) + col[2]] += val[2];
+    HDD[(nxdense*row[0]) + col[3]] += val[3];
 
     val[4] = lambda[gloc]*dPt_dVmf_dthetat + lambda[gloc+1]*dQt_dVmf_dthetat;
     val[5] = lambda[gloc]*dPt_dVmf_dVmt    + lambda[gloc+1]*dQt_dVmf_dVmt;
     val[6] = lambda[gloc]*dPt_dVmf_dthetaf + lambda[gloc+1]*dQt_dVmf_dthetaf;
     val[7] = lambda[gloc]*dPt_dVmf_dVmf    + lambda[gloc+1]*dQt_dVmf_dVmf;
     
-    HDD[row[1]][col[0]] += val[4];
-    HDD[row[1]][col[1]] += val[5];
-    HDD[row[1]][col[2]] += val[6];
-    HDD[row[1]][col[3]] += val[7];
+    HDD[(nxdense*row[1]) + col[0]] += val[4];
+    HDD[(nxdense*row[1]) + col[1]] += val[5];
+    HDD[(nxdense*row[1]) + col[2]] += val[6];
+    HDD[(nxdense*row[1]) + col[3]] += val[7];
 
     //    ierr = MatSetValues(H,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
   }
@@ -1823,7 +1826,7 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLHIOP(OPFLOW opfl
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLHIOP(OPFLOW opflow,const double *x,const double* lambda, double **HDD)
+PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLHIOP(OPFLOW opflow,const double *x,const double* lambda, double *HDD)
 {
   int            i;
   PBPOLHIOP      pbpolhiop=(PBPOLHIOP)opflow->model;
@@ -1831,6 +1834,7 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLHIOP(OPFLOW op
   int            row[12],col[12];
   double         val[12];
   int            nxsparse=2*opflow->ps->ngenON;
+  int            nxdense=2*opflow->ps->nbus;
   PetscErrorCode ierr;
   double         flps=0.0;
 
@@ -2033,10 +2037,10 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLHIOP(OPFLOW op
     val[2] = lambda[gloc]*d2Sf2_dthetaf_dthetat + lambda[gloc+1]*d2St2_dthetaf_dthetat;
     val[3] = lambda[gloc]*d2Sf2_dthetaf_dVmt + lambda[gloc+1]*d2St2_dthetaf_dVmt;
       
-    HDD[row[0]][col[0]] += val[0];
-    HDD[row[0]][col[1]] += val[1];
-    HDD[row[0]][col[2]] += val[2];
-    HDD[row[0]][col[3]] += val[3];
+    HDD[(nxdense*row[0]) + col[0]] += val[0];
+    HDD[(nxdense*row[0]) + col[1]] += val[1];
+    HDD[(nxdense*row[0]) + col[2]] += val[2];
+    HDD[(nxdense*row[0]) + col[3]] += val[3];
 
     //    ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
       
@@ -2066,10 +2070,10 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLHIOP(OPFLOW op
     val[2] = lambda[gloc]*d2Sf2_dVmf_dthetat + lambda[gloc+1]*d2St2_dVmf_dthetat;
     val[3] = lambda[gloc]*d2Sf2_dVmf_dVmt + lambda[gloc+1]*d2St2_dVmf_dVmt;
 
-    HDD[row[0]][col[0]] += val[0];
-    HDD[row[0]][col[1]] += val[1];
-    HDD[row[0]][col[2]] += val[2];
-    HDD[row[0]][col[3]] += val[3];
+    HDD[(nxdense*row[0]) + col[0]] += val[0];
+    HDD[(nxdense*row[0]) + col[1]] += val[1];
+    HDD[(nxdense*row[0]) + col[2]] += val[2];
+    HDD[(nxdense*row[0]) + col[3]] += val[3];
 
     //    ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
       
@@ -2100,10 +2104,10 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLHIOP(OPFLOW op
     val[2] = lambda[gloc]*d2Sf2_dthetat_dthetat + lambda[gloc+1]*d2St2_dthetat_dthetat;
     val[3] = lambda[gloc]*d2Sf2_dthetat_dVmt + lambda[gloc+1]*d2St2_dthetat_dVmt;
     
-    HDD[row[0]][col[0]] += val[0];
-    HDD[row[0]][col[1]] += val[1];
-    HDD[row[0]][col[2]] += val[2];
-    HDD[row[0]][col[3]] += val[3];
+    HDD[(nxdense*row[0]) + col[0]] += val[0];
+    HDD[(nxdense*row[0]) + col[1]] += val[1];
+    HDD[(nxdense*row[0]) + col[2]] += val[2];
+    HDD[(nxdense*row[0]) + col[3]] += val[3];
 
     //    ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
     
@@ -2133,10 +2137,10 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLHIOP(OPFLOW op
     val[2] = lambda[gloc]*d2Sf2_dVmt_dthetat + lambda[gloc+1]*d2St2_dVmt_dthetat;
     val[3] = lambda[gloc]*d2Sf2_dVmt_dVmt + lambda[gloc+1]*d2St2_dVmt_dVmt;
     
-    HDD[row[0]][col[0]] += val[0];
-    HDD[row[0]][col[1]] += val[1];
-    HDD[row[0]][col[2]] += val[2];
-    HDD[row[0]][col[3]] += val[3];
+    HDD[(nxdense*row[0]) + col[0]] += val[0];
+    HDD[(nxdense*row[0]) + col[1]] += val[1];
+    HDD[(nxdense*row[0]) + col[2]] += val[2];
+    HDD[(nxdense*row[0]) + col[3]] += val[3];
 
     //    ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
   }
@@ -2146,7 +2150,7 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLHIOP(OPFLOW op
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeDenseHessian_PBPOLHIOP(OPFLOW opflow,const double *x, const double *lambda,double **HDD)
+PetscErrorCode OPFLOWComputeDenseHessian_PBPOLHIOP(OPFLOW opflow,const double *x, const double *lambda,double *HDD)
 {
   PetscErrorCode ierr;
   int i,j;
@@ -2154,9 +2158,8 @@ PetscErrorCode OPFLOWComputeDenseHessian_PBPOLHIOP(OPFLOW opflow,const double *x
 
   if(!HDD) PetscFunctionReturn(0);
 
-  for(i=0; i < nxdense; i++) {
-    for(j=0; j < nxdense; j++) HDD[i][j] = 0.0;
-  }
+  for(i=0; i < nxdense*nxdense; i++)
+    HDD[i] = 0.0;
 
   /* Equality constraint Hessian */
   ierr = OPFLOWComputeDenseEqualityConstraintHessian_PBPOLHIOP(opflow,x,lambda,HDD);CHKERRQ(ierr);

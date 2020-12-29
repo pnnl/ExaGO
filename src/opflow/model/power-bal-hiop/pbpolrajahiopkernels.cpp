@@ -1046,13 +1046,17 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOP(OPFLOW opflow,const doub
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW opflow,const double *x_dev,double **JacD_dev)
+/**
+ * @param[inout] JacD_dev Jacobian matrix with size * 2*busparams->nbus by nxdense
+ */
+PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW opflow,const double *x_dev,double *JacD_dev)
 {
   PbpolModelRajaHiop* pbpolrajahiop = reinterpret_cast<PbpolModelRajaHiop*>(opflow->model);
   BUSParamsRajaHiop      *busparams=&pbpolrajahiop->busparams;
   LINEParamsRajaHiop     *lineparams=&pbpolrajahiop->lineparams;
   int            nxsparse=2*opflow->ps->ngenON;
   int            nx=opflow->nx;
+  const int      nxdense=nx-nxsparse;
   double         flps = 0.0;
   PetscErrorCode ierr;
 
@@ -1061,14 +1065,19 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW
 
   if(JacD_dev == NULL) PetscFunctionReturn(0);
 
+  /** Although we will perform atomic operations on this view, we do not want
+   * to use `RAJA::make_atomic_view` because explicit `RAJA::atomicAdd`s make
+   * the atomic requirement clearer in the code */
+  RAJA::View<double, RAJA::Layout<2>> JacD_view(JacD_dev, 2*busparams->nbus, nxdense);
+
   /* Zero out JacD */
   RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, busparams->nbus), 
     RAJA_LAMBDA (RAJA::Index_type i)
     {
       int j;
       for(j=0; j < nx-nxsparse; j++) {
-	JacD_dev[2*i][j] = 0.0;
-	JacD_dev[2*i+1][j] = 0.0;
+        JacD_view(2*i, j) = 0.0;
+        JacD_view(2*i+1, j) = 0.0;
       }
     }
   );
@@ -1098,10 +1107,10 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW
       val[2] = 0.0;
       val[3] = isisolated[i]*1.0 + ispvpq[i]*-2*Vm*bl[i];
 
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[0]],val[0]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[1]],val[1]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[1]][col[0]],val[2]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[1]][col[1]],val[3]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[0]), val[0]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[1]), val[1]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[1], col[0]), val[2]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[1], col[1]), val[3]);
     }
   );
   flps += 14.0*busparams->nbus;
@@ -1150,10 +1159,10 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW
       /* dPf_dVmt */
       val[3] = Vmf*(Gft[i]*cos(thetaft) + Bft[i]*sin(thetaft));
 
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[0]],val[0]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[1]],val[1]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[2]],val[2]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[3]],val[3]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[0]), val[0]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[1]), val[1]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[2]), val[2]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[3]), val[3]);
 
       /* dQf_dthetaf */
       val[4] = Vmf*Vmt*(Bft[i]*sin(thetaft) + Gft[i]*cos(thetaft));
@@ -1164,10 +1173,10 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW
       /* dQf_dVmt */
       val[7] = Vmf*(-Bft[i]*cos(thetaft) + Gft[i]*sin(thetaft));
 
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[1]][col[0]],val[4]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[1]][col[1]],val[5]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[1]][col[2]],val[6]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[1]][col[3]],val[7]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[1], col[0]), val[4]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[1], col[1]), val[5]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[1], col[2]), val[6]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[1], col[3]), val[7]);
 
       row[0] = geqidxt[i];
       row[1] = geqidxt[i]+1;
@@ -1186,10 +1195,10 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW
       /* dPt_dVmf */
       val[3] = Vmt*(Gtf[i]*cos(thetatf) + Btf[i]*sin(thetatf));
       
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[0]],val[0]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[1]],val[1]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[2]],val[2]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[3]],val[3]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[0]), val[0]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[1]), val[1]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[2]), val[2]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[3]), val[3]);
     
       /* dQt_dthetat */
       val[4] = Vmt*Vmf*(Btf[i]*sin(thetatf) + Gtf[i]*cos(thetatf));
@@ -1200,10 +1209,10 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW
       /* dQt_dVmf */
       val[7] = Vmt*(-Btf[i]*cos(thetatf) + Gtf[i]*sin(thetatf));
       
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[1]][col[0]],val[4]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[1]][col[1]],val[5]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[1]][col[2]],val[6]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[1]][col[3]],val[7]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[1], col[0]), val[4]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[1], col[1]), val[5]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[1], col[2]), val[6]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[1], col[3]), val[7]);
     }
   );
   flps += (188+(16*EXAGO_FLOPS_COSOP)+(16*EXAGO_FLOPS_SINOP))*lineparams->nlineON;
@@ -1215,7 +1224,10 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW
   PetscFunctionReturn(0);
 }
     
-PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW opflow,const double *x_dev,double **JacD_dev)
+/**
+ * @param[inout] JacD_dev Jacobian matrix with size * 2*lineparams->nlinelim by nxdense
+ */
+PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW opflow,const double *x_dev,double *JacD_dev)
 {
   PbpolModelRajaHiop* pbpolrajahiop = reinterpret_cast<PbpolModelRajaHiop*>(opflow->model);
   LINEParamsRajaHiop     *lineparams=&pbpolrajahiop->lineparams;
@@ -1233,15 +1245,21 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLRAJAHIOP(OPFL
   }
 
   if(JacD_dev == NULL) PetscFunctionReturn(0);
+
+  /** Although we will perform atomic operations on this view, we do not want
+   * to use `RAJA::make_atomic_view` because explicit `RAJA::atomicAdd`s make
+   * the atomic requirement clearer in the code */
+  RAJA::View<double, RAJA::Layout<2>> JacD_view(JacD_dev, 2*lineparams->nlinelim, nx-nxsparse);
   
   /* Zero out JacD */
-  RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, lineparams->nlinelim), 
+  RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, lineparams->nlinelim),
     RAJA_LAMBDA (RAJA::Index_type i)
     {
       int k;
-      for(k=0; k < nx-nxsparse; k++) {
-	JacD_dev[2*i][k] = 0.0;
-	JacD_dev[2*i+1][k] = 0.0;
+      for(k=0; k < nx-nxsparse; k++)
+      {
+        JacD_view(2*i, k) = 0.0;
+        JacD_view(2*i+1, k) = 0.0;
       }
     }
   );
@@ -1331,10 +1349,10 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLRAJAHIOP(OPFL
       val[2] = dSf2_dthetat;
       val[3] = dSf2_dVmt;
       
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[0]],val[0]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[1]],val[1]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[2]],val[2]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[3]],val[3]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[0]), val[0]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[1]), val[1]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[2]), val[2]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[3]), val[3]);
       
       dSt2_dthetaf = dSt2_dPt*dPt_dthetaf + dSt2_dQt*dQt_dthetaf;
       dSt2_dthetat = dSt2_dPt*dPt_dthetat + dSt2_dQt*dQt_dthetat;
@@ -1353,10 +1371,10 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLRAJAHIOP(OPFL
       val[2] = dSt2_dthetaf;
       val[3] = dSt2_dVmf;
 
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[0]],val[0]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[1]],val[1]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[2]],val[2]);
-      RAJA::atomicAdd<exago_raja_atomic>(&JacD_dev[row[0]][col[3]],val[3]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[0]), val[0]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[1]), val[1]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[2]), val[2]);
+      RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[0], col[3]), val[3]);
     }
   );
   //  PetscPrintf(MPI_COMM_SELF,"Exit inequality dense jacobian\n");
@@ -1366,12 +1384,16 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLRAJAHIOP(OPFL
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLRAJAHIOP(OPFLOW opflow,const double *x_dev,const double* lambda_dev, double **HDD_dev)
+/**
+ * @param[inout] HDD_dev Hessian matrix with size nxdense x nxdense
+ */
+PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLRAJAHIOP(OPFLOW opflow,const double *x_dev,const double* lambda_dev, double *HDD_dev)
 {
   PbpolModelRajaHiop* pbpolrajahiop = reinterpret_cast<PbpolModelRajaHiop*>(opflow->model);
   BUSParamsRajaHiop   *busparams=&pbpolrajahiop->busparams;
   LINEParamsRajaHiop  *lineparams=&pbpolrajahiop->lineparams;
   int                 nxsparse = 2*opflow->ps->ngenON;
+  const int           nxdense = 2*opflow->ps->nbus;
   PetscErrorCode      ierr;
   double              flps=0.0;
 
@@ -1385,6 +1407,11 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLRAJAHIOP(OPFLOW 
   double* gl = busparams->gl_dev_;
   double* bl = busparams->bl_dev_;
 
+  /** Although we will perform atomic operations on this view, we do not want
+   * to use `RAJA::make_atomic_view` because explicit `RAJA::atomicAdd`s make
+   * the atomic requirement clearer in the code */
+  RAJA::View<double, RAJA::Layout<2>> HDD_view(HDD_dev, nxdense, nxdense);
+
   RAJA::forall<exago_raja_exec>(RAJA::RangeSegment(0, busparams->nbus),
     RAJA_LAMBDA (RAJA::Index_type i)
     {
@@ -1393,7 +1420,7 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLRAJAHIOP(OPFLOW 
       row = b_xidx[i] + 1 - nxsparse;
       col = row;
       val = ispvpq[i]*(lambda_dev[b_gidx[i]]*2*gl[i] + lambda_dev[b_gidx[i]+1]*(-2*bl[i]));
-      RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row][col],val);
+      RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row, col),val);
     }
   );
   flps += 7.0*busparams->nbus;
@@ -1514,15 +1541,15 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLRAJAHIOP(OPFLOW 
     val[6] = lambda_dev[gloc]*dPf_dVmf_dthetat + lambda_dev[gloc+1]*dQf_dVmf_dthetat;
     val[7] = lambda_dev[gloc]*dPf_dVmf_dVmt    + lambda_dev[gloc+1]*dQf_dVmf_dVmt;
 
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[0]], val[0]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[1]], val[1]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[2]], val[2]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[3]], val[3]);
-
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[1]][col[0]], val[4]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[1]][col[1]], val[5]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[1]][col[2]], val[6]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[1]][col[3]], val[7]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[0]), val[0]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[1]), val[1]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[2]), val[2]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[3]), val[3]);
+                                                              
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[1], col[0]), val[4]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[1], col[1]), val[5]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[1], col[2]), val[6]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[1], col[3]), val[7]);
 
     row[0] = xidxt[i]     - nxsparse;
     row[1] = xidxt[i] + 1 - nxsparse;
@@ -1544,15 +1571,15 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLRAJAHIOP(OPFLOW 
     val[6] = lambda_dev[gloc]*dPf_dVmt_dthetat + lambda_dev[gloc+1]*dQf_dVmt_dthetat;
     val[7] = lambda_dev[gloc]*dPf_dVmt_dVmt    + lambda_dev[gloc+1]*dQf_dVmt_dVmt;
 
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[0]], val[0]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[1]], val[1]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[2]], val[2]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[3]], val[3]);
-
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[1]][col[0]], val[4]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[1]][col[1]], val[5]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[1]][col[2]], val[6]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[1]][col[3]], val[7]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[0]), val[0]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[1]), val[1]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[2]), val[2]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[3]), val[3]);
+                                                              
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[1], col[0]), val[4]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[1], col[1]), val[5]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[1], col[2]), val[6]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[1], col[3]), val[7]);
 
     //    ierr = MatSetValues(H,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
 	
@@ -1635,15 +1662,15 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLRAJAHIOP(OPFLOW 
     val[6] = lambda_dev[gloc]*dPt_dVmt_dthetaf + lambda_dev[gloc+1]*dQt_dVmt_dthetaf;
     val[7] = lambda_dev[gloc]*dPt_dVmt_dVmf    + lambda_dev[gloc+1]*dQt_dVmt_dVmf;
 
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[0]], val[0]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[1]], val[1]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[2]], val[2]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[3]], val[3]);
-
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[1]][col[0]], val[4]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[1]][col[1]], val[5]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[1]][col[2]], val[6]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[1]][col[3]], val[7]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[0]), val[0]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[1]), val[1]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[2]), val[2]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[3]), val[3]);
+                                                              
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[1], col[0]), val[4]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[1], col[1]), val[5]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[1], col[2]), val[6]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[1], col[3]), val[7]);
 
     row[0] = xidxf[i]     - nxsparse;
     row[1] = xidxf[i] + 1 - nxsparse;
@@ -1659,20 +1686,20 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLRAJAHIOP(OPFLOW 
     val[2] = lambda_dev[gloc]*dPt_dthetaf_dthetaf + lambda_dev[gloc+1]*dQt_dthetaf_dthetaf;
     val[3] = lambda_dev[gloc]*dPt_dthetaf_dVmf    + lambda_dev[gloc+1]*dQt_dthetaf_dVmf;
     
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[0]), val[0]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[1]), val[1]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[2]), val[2]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[3]), val[3]);
+    
     val[4] = lambda_dev[gloc]*dPt_dVmf_dthetat + lambda_dev[gloc+1]*dQt_dVmf_dthetat;
     val[5] = lambda_dev[gloc]*dPt_dVmf_dVmt    + lambda_dev[gloc+1]*dQt_dVmf_dVmt;
     val[6] = lambda_dev[gloc]*dPt_dVmf_dthetaf + lambda_dev[gloc+1]*dQt_dVmf_dthetaf;
     val[7] = lambda_dev[gloc]*dPt_dVmf_dVmf    + lambda_dev[gloc+1]*dQt_dVmf_dVmf;
-    
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[0]], val[0]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[1]], val[1]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[2]], val[2]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[3]], val[3]);
-
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[1]][col[0]], val[4]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[1]][col[1]], val[5]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[1]][col[2]], val[6]);
-    RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[1]][col[3]], val[7]);
+                                                              
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[1], col[0]), val[4]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[1], col[1]), val[5]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[1], col[2]), val[6]);
+    RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[1], col[3]), val[7]);
   });
 
   flps += ((56.0*EXAGO_FLOPS_SINOP) + (56.0*EXAGO_FLOPS_SINOP) + 462.0)*lineparams->nlineON;
@@ -1682,11 +1709,15 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLRAJAHIOP(OPFLOW 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLRAJAHIOP(OPFLOW opflow,const double *x_dev,const double* lambda_dev, double **HDD_dev)
+/**
+ * @param[inout] HDD_dev Hessian matrix with size nxdense x nxdense
+ */
+PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLRAJAHIOP(OPFLOW opflow,const double *x_dev,const double* lambda_dev, double *HDD_dev)
 {
   PbpolModelRajaHiop* pbpolrajahiop = reinterpret_cast<PbpolModelRajaHiop*>(opflow->model);
   LINEParamsRajaHiop  *lineparams=&pbpolrajahiop->lineparams;
   int                 nxsparse=2*opflow->ps->ngenON;
+  const int           nxdense = 2*opflow->ps->nbus;
   PetscErrorCode      ierr;
   double              flps=0.0;
 
@@ -1698,6 +1729,11 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLRAJAHIOP(OPFLO
     //    PetscPrintf(MPI_COMM_SELF,"No inequality constraints. Exit inequality dense hessian\n");
     PetscFunctionReturn(0);
   }
+
+  /** Although we will perform atomic operations on this view, we do not want
+   * to use `RAJA::make_atomic_view` because explicit `RAJA::atomicAdd`s make
+   * the atomic requirement clearer in the code */
+  RAJA::View<double, RAJA::Layout<2>> HDD_view(HDD_dev, nxdense, nxdense);
 
   // Hessian from line contributions 
   double* Gff_arr = lineparams->Gff_dev_;
@@ -1915,10 +1951,10 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLRAJAHIOP(OPFLO
       val[2] = lambda_dev[gloc]*d2Sf2_dthetaf_dthetat + lambda_dev[gloc+1]*d2St2_dthetaf_dthetat;
       val[3] = lambda_dev[gloc]*d2Sf2_dthetaf_dVmt + lambda_dev[gloc+1]*d2St2_dthetaf_dVmt;
       
-      RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[0]], val[0]);
-      RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[1]], val[1]);
-      RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[2]], val[2]);
-      RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[3]], val[3]);
+      RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[0]), val[0]);
+      RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[1]), val[1]);
+      RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[2]), val[2]);
+      RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[3]), val[3]);
 
       double d2Sf2_dVmf_dthetaf,d2Sf2_dVmf_dVmf,d2Sf2_dVmf_dthetat,d2Sf2_dVmf_dVmt;
       double d2St2_dVmf_dthetaf,d2St2_dVmf_dVmf,d2St2_dVmf_dthetat,d2St2_dVmf_dVmt;
@@ -1946,10 +1982,10 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLRAJAHIOP(OPFLO
       val[2] = lambda_dev[gloc]*d2Sf2_dVmf_dthetat + lambda_dev[gloc+1]*d2St2_dVmf_dthetat;
       val[3] = lambda_dev[gloc]*d2Sf2_dVmf_dVmt + lambda_dev[gloc+1]*d2St2_dVmf_dVmt;
 
-      RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[0]], val[0]);
-      RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[1]], val[1]);
-      RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[2]], val[2]);
-      RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[3]], val[3]);
+      RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[0]), val[0]);
+      RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[1]), val[1]);
+      RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[2]), val[2]);
+      RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[3]), val[3]);
 
       //    ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
       
@@ -1980,10 +2016,10 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLRAJAHIOP(OPFLO
       val[2] = lambda_dev[gloc]*d2Sf2_dthetat_dthetat + lambda_dev[gloc+1]*d2St2_dthetat_dthetat;
       val[3] = lambda_dev[gloc]*d2Sf2_dthetat_dVmt + lambda_dev[gloc+1]*d2St2_dthetat_dVmt;
       
-      RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[0]], val[0]);
-      RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[1]], val[1]);
-      RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[2]], val[2]);
-      RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[3]], val[3]);
+      RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[0]), val[0]);
+      RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[1]), val[1]);
+      RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[2]), val[2]);
+      RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[3]), val[3]);
 
       //    ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
       
@@ -2013,10 +2049,10 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLRAJAHIOP(OPFLO
       val[2] = lambda_dev[gloc]*d2Sf2_dVmt_dthetat + lambda_dev[gloc+1]*d2St2_dVmt_dthetat;
       val[3] = lambda_dev[gloc]*d2Sf2_dVmt_dVmt + lambda_dev[gloc+1]*d2St2_dVmt_dVmt;
     
-      RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[0]], val[0]);
-      RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[1]], val[1]);
-      RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[2]], val[2]);
-      RAJA::atomicAdd<exago_raja_atomic>(&HDD_dev[row[0]][col[3]], val[3]);
+      RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[0]), val[0]);
+      RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[1]), val[1]);
+      RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[2]), val[2]);
+      RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[0], col[3]), val[3]);
     }
   );
   //  PetscPrintf(MPI_COMM_SELF,"Exit inequality dense hessian\n");
@@ -2026,18 +2062,17 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLRAJAHIOP(OPFLO
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeDenseHessian_PBPOLRAJAHIOP(OPFLOW opflow,const double *x_dev, const double *lambda_dev,double **HDD_dev)
+PetscErrorCode OPFLOWComputeDenseHessian_PBPOLRAJAHIOP(OPFLOW opflow,const double *x_dev, const double *lambda_dev,double *HDD_dev)
 {
   PetscErrorCode ierr;
   int nxdense = 2*opflow->ps->nbus;
 
   if(!HDD_dev) PetscFunctionReturn(0);
 
-  RAJA::forall<exago_raja_exec>(RAJA::RangeSegment(0, nxdense),
+  RAJA::forall<exago_raja_exec>(RAJA::RangeSegment(0, nxdense*nxdense),
     RAJA_LAMBDA (RAJA::Index_type i)
     {
-      int j;
-      for(j=0; j < nxdense; j++) HDD_dev[i][j] = 0.0;
+      HDD_dev[i] = 0.0;
     }
   );
 

@@ -9,7 +9,8 @@ User may set:
 
 find_library(HIOP_LIBRARY
   NAMES
-  hiop
+  libhiop.so hiop # Prefer shared over static since static causes issues
+                  # linking with mpi on some platforms
   PATHS
   ${HIOP_DIR} $ENV{HIOP_DIR} ${HIOP_ROOT_DIR}
   ENV LD_LIBRARY_PATH ENV DYLD_LIBRARY_PATH
@@ -40,6 +41,14 @@ if(HIOP_LIBRARY AND HIOP_INCLUDE_DIR)
     include(FindMagma)
     target_link_libraries(HiOp INTERFACE Magma)
     target_include_directories(HiOp INTERFACE ${CUDA_TOOLKIT_INCLUDE})
+  endif()
+
+  if(EXAGO_ENABLE_HIOP_SPARSE)
+    include(FindExaGOCOINHSL)
+    if(NOT COINHSL_LIBRARY)
+      message(FATAL_ERROR "HIOP_SPARSE is enabled, but COINHSL could not be found.")
+    endif()
+    target_link_libraries(HiOp INTERFACE COINHSL)
   endif()
 else()
   if(NOT HIOP_LIB)

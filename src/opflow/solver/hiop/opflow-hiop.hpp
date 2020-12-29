@@ -52,14 +52,14 @@ public:
 		     const double* x, bool new_x,
 		     const long long& nsparse, const long long& ndense, 
 		     const int& nnzJacS, int* iJacS, int* jJacS, double* MJacS, 
-		     double** JacD);
+		     double* JacD);
 
   bool eval_Hess_Lagr(const long long& n, const long long& m, 
 		      const double* x, bool new_x, const double& obj_factor,
 		      const double* lambda, bool new_lambda,
 		      const long long& nsparse, const long long& ndense, 
 		      const int& nnzHSS, int* iHSS, int* jHSS, double* MHSS, 
-		      double** HDD,
+		      double* HDD,
 		      int& nnzHSD, int* iHSD, int* jHSD, double* MHSD);
 
   bool get_starting_point(const long long& global_n, double* x0);

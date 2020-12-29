@@ -19,6 +19,7 @@ trap 'cleanup $? $LINENO' EXIT
 set -xv
 make_args="-j 8"
 ctest_args=" -VV "
+extra_cmake_args=""
 export CXXFLAGS='-I/share/apps/magma/2.5.2/cuda10.2/include -I/share/apps/cuda/10.2/include/'
 export OMPI_MCA_btl="^vader,tcp,openib,uct"
 export BUILD=1
@@ -77,7 +78,7 @@ newell*)
   export MY_PETSC_DIR=$PROJ_DIR/$MY_CLUSTER/petsc
   export MY_UMPIRE_DIR=$PROJ_DIR/$MY_CLUSTER/umpire
   export MY_RAJA_DIR=$PROJ_DIR/$MY_CLUSTER/raja
-  export MY_HIOP_DIR=$PROJ_DIR/$MY_CLUSTER/hiop
+  export MY_HIOP_DIR=$PROJ_DIR/$MY_CLUSTER/hiop-gpu-new-interface
   export MY_UMPIRE_DIR=$PROJ_DIR/$MY_CLUSTER/umpire
   export MY_IPOPT_DIR=$PROJ_DIR/$MY_CLUSTER/ipopt
   export MY_MAGMA_DIR=$APPS_DIR/magma/2.5.2/cuda10.2
@@ -98,7 +99,7 @@ dl|shared|marianas)
   export MY_PETSC_DIR=$PROJ_DIR/$MY_CLUSTER/petsc
   export MY_UMPIRE_DIR=$PROJ_DIR/$MY_CLUSTER/umpire
   export MY_RAJA_DIR=$PROJ_DIR/$MY_CLUSTER/raja
-  export MY_HIOP_DIR=$PROJ_DIR/$MY_CLUSTER/hiop
+  export MY_HIOP_DIR=$PROJ_DIR/$MY_CLUSTER/hiop-gpu-new-interface
   export MY_UMPIRE_DIR=$PROJ_DIR/$MY_CLUSTER/umpire
   export MY_IPOPT_DIR=$PROJ_DIR/$MY_CLUSTER/ipopt
   export MY_MAGMA_DIR=$APPS_DIR/magma/2.5.2/cuda10.2
@@ -124,7 +125,7 @@ ascent)
   export MY_MAGMA_DIR=$MAGMA_ROOT
   export MY_PETSC_DIR=$PROJ_DIR/$MY_CLUSTER/petsc-3.13.5
   export MY_IPOPT_DIR=$PROJ_DIR/$MY_CLUSTER/ipopt
-  export MY_HIOP_DIR=$PROJ_DIR/installs/hiop
+  export MY_HIOP_DIR=$PROJ_DIR/installs/hiop-gpu-new-interface
   export MY_NVCC_ARCH="sm_70"
   extra_cmake_args="\
     $extra_cmake_args \

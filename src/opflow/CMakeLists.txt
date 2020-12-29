@@ -24,7 +24,6 @@ endif()
 set(OPFLOW_SOLVER_SRC
     solver/tao/opflow-tao.c
     solver/ipopt/opflow-ipopt.c
-    solver/hiop/opflow-hiopold.cpp
     solver/hiop/opflow-hiop.cpp
 )
 
