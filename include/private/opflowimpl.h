@@ -22,6 +22,12 @@ typedef enum {
 
 extern const char *const OPFLOWInitializationTypes[];
 
+typedef enum {
+  OPFLOWOBJ_MIN_GEN_COST, /* Generator cost minimization */
+  OPFLOWOBJ_MIN_GENSETPOINT_DEVIATION, /* Minimize generator set-point deviation */
+}OPFLOWObjectiveType;
+
+extern const char *const OPFLOWObjectiveTypes[];
 
 struct _p_OPFLOWModelOps {
   PetscErrorCode (*destroy)(OPFLOW);
@@ -113,11 +119,15 @@ struct _p_OPFLOW{
   
   PetscScalar obj_factor; /* IPOPT scales the objective hessian part with this factor. For all other solvers, unless it is set, obj_factor = 1.0. */
 
-  PetscBool   obj_gencost; /* Allows to conditionally include generator cost in the objective function */
+  PetscBool   obj_gencost; /* Objective is generator cost minimization */
+
+  PetscBool   has_gensetpoint; /* Has a set-point for the real power generation */
 
   PetscBool setupcalled; /* OPFLOWSetUp called? */
 
   OPFLOWInitializationType initializationtype; /* OPFLOW Initialization type */
+
+  OPFLOWObjectiveType objectivetype; /* OPFLOW objective */
 
   PetscInt nconeq, Nconeq;     /* Local and global number of equality constraints, excluding ghosts! */
   PetscInt nconineq, Nconineq; /* Local and global number of inequality constraints */
@@ -154,6 +164,8 @@ struct _p_OPFLOW{
 
   PetscBool include_powerimbalance_variables; /* Include variables for power imbalance */
   PetscReal powerimbalance_penalty;
+
+  PetscBool has_powersetpoint; /* Use real power set-point */
 
   /* Flag to denote if the OPFLOW solution has been transfered to PS struct via OPLOWSolutionToPS call */
   PetscBool solutiontops;

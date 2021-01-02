@@ -165,10 +165,14 @@ struct _p_PSGEN{
   PetscScalar   ramp_rate_30min; /* ramp rate for 30 minute reserves (pu) */
   PetscScalar   ramp_rate_min_mvar; /* ramp rate for reactive power (2 sec timescale) (pu) */
   PetscScalar   apf; /* area participation factor */
+
+  PetscScalar   pgs; /* Generator set-point power (used with scopflow, agc) */
+
   /* genfuel type - See GENFUEL_TYPES defined in constants.h */
   PetscInt      genfuel_type;
 
-  PetscInt      nx; /* Number of generator variables */
+  PetscInt      nxpow; /* Number of generator power variables (Pg, Qg)*/
+  PetscInt      nxpdev; /* Number of generator real power deviation (ramp up/down) variables */
 
   PetscInt  nconeq; /* Number of equality constraints */
   PetscInt  nconineq; /* Number of inequality constraints */

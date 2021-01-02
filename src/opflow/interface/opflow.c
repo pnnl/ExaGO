@@ -5,6 +5,8 @@
 
 const char *const OPFLOWInitializationTypes[] = {"MIDPOINT","FROMFILE","ACPF","FLATSTART","OPFLOWInitializationType","OPFLOWINIT_",NULL};
 
+const char *const OPFLOWObjectiveTypes[] = {"MIN_GEN_COST","MIN_GENSETPOINT_DEVIATION","OPFLOWObjectiveType","OPFLOWOBJ_",NULL};
+
 void swap_dm(DM *dm1, DM *dm2)
 {
   DM temp = *dm1;
@@ -246,10 +248,14 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   opflow->obj_gencost = PETSC_TRUE; /* Generation cost minimization ON by default */
   opflow->solutiontops = PETSC_FALSE;
 
+  opflow->has_gensetpoint = PETSC_FALSE;
+
   opflow->solver   = NULL;
   opflow->model = NULL;
 
   opflow->initializationtype = OPFLOWINIT_MIDPOINT;
+
+  opflow->objectivetype = OPFLOWOBJ_MIN_GEN_COST;
 
   opflow->nmodelsregistered = opflow->nsolversregistered = 0;
   opflow->OPFLOWModelRegisterAllCalled = opflow->OPFLOWSolverRegisterAllCalled = PETSC_FALSE;
@@ -669,12 +675,27 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 
   PetscFunctionBegin;
 
-  ierr =  PetscOptionsBegin(opflow->comm->type,NULL,"OPFLOW options",NULL);CHKERRQ(ierr);
+  /* Default model and solver */
   PetscStrcpy(modelname,"POWER_BALANCE_POLAR");
-  ierr = PetscOptionsString("-opflow_model","OPFLOW model type","",modelname,modelname,32,&modelset);CHKERRQ(ierr);
   PetscStrcpy(solvername,"IPOPT");
+
+  /* Read run-time options */
+  ierr =  PetscOptionsBegin(opflow->comm->type,NULL,"OPFLOW options",NULL);CHKERRQ(ierr);
+
+  ierr = PetscOptionsString("-opflow_model","OPFLOW model type","",modelname,modelname,32,&modelset);CHKERRQ(ierr);
+
   ierr = PetscOptionsString("-opflow_solver","OPFLOW solver type","",solvername,solvername,32,&solverset);CHKERRQ(ierr);
   ierr = PetscOptionsEnum("-opflow_initialization","Type of OPFLOW initialization","",OPFLOWInitializationTypes,(PetscEnum)opflow->initializationtype,(PetscEnum*)&opflow->initializationtype,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsEnum("-opflow_objective","Type of OPFLOW objective","",OPFLOWObjectiveTypes,(PetscEnum)opflow->objectivetype,(PetscEnum*)&opflow->objectivetype,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsBool("-opflow_has_gensetpoint","Use set-points for generator real power","",opflow->has_gensetpoint,&opflow->has_gensetpoint,NULL);CHKERRQ(ierr);
+
+  if(opflow->objectivetype == OPFLOWOBJ_MIN_GEN_COST) {
+    opflow->obj_gencost = PETSC_TRUE;
+  } else if(opflow->objectivetype == OPFLOWOBJ_MIN_GENSETPOINT_DEVIATION) {
+    opflow->obj_gencost = PETSC_FALSE;
+    opflow->has_gensetpoint = PETSC_TRUE;
+  }
+
   ierr = PetscOptionsBool("-opflow_ignore_lineflow_constraints","Ignore line flow constraints?","",opflow->ignore_lineflow_constraints,&opflow->ignore_lineflow_constraints,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-opflow_include_loadloss_variables","Include load loss?","",opflow->include_loadloss_variables,&opflow->include_loadloss_variables,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsReal("-opflow_loadloss_penalty","Penalty for load loss","",opflow->loadloss_penalty,&opflow->loadloss_penalty,NULL);CHKERRQ(ierr);
