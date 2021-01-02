@@ -302,7 +302,7 @@ if(EXAGO_RUN_TESTS)
                  ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_sopflow>
                  -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9/case9mod_gen3_wind.m
                  -scenfile ${EXAGO_SRC_DATAFILES_DIR}/case9/scenarios.csv
-		 -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9/case9.con
+		 -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9/case9.cont
                  -sopflow_solver IPOPTNEW
 		 -sopflow_enable_multicontingency 1
                  -sopflow_Ns -1
@@ -315,7 +315,7 @@ if(EXAGO_RUN_TESTS)
                  ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_sopflow>
                  -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9/case9mod_gen3_wind.m
                  -scenfile ${EXAGO_SRC_DATAFILES_DIR}/case9/scenarios.csv
-		 -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9/case9.con
+		 -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9/case9.cont
 		 -scopflow_ploadprofile ${EXAGO_SRC_DATAFILES_DIR}/case9/load_P.csv
 		 -scopflow_qloadprofile ${EXAGO_SRC_DATAFILES_DIR}/case9/load_Q.csv
                  -sopflow_solver IPOPTNEW
@@ -333,13 +333,16 @@ if(EXAGO_RUN_TESTS)
     foreach(test_net ${network_files})
       foreach(opflow_model POWER_BALANCE_POLAR)
         foreach(opflow_init FROMFILE FLATSTART ACPF MIDPOINT)
-          get_filename_component(input_file ${test_net} NAME)
-          add_test(NAME OPFLOW_${opflow_model}_${opflow_init}_${input_file} COMMAND
+	  foreach(opflow_obj MIN_GEN_COST MIN_GENSETPOINT_DEVIATION)
+            get_filename_component(input_file ${test_net} NAME)
+            add_test(NAME OPFLOW_${opflow_model}_${opflow_init}_${input_file}_${opflow_obj} COMMAND
                    ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_opflow>
                    -netfile ${test_net}
                    -opflow_model ${opflow_model}
                    -opflow_initialization ${opflow_init}
-                   -opflow_solver IPOPT)
+                   -opflow_solver IPOPT
+		   -opflow_objective ${opflow_obj})
+          endforeach()
         endforeach()
       endforeach()
     endforeach()

@@ -238,6 +238,7 @@ PetscErrorCode PSReadPSSERawData(PS ps,const char netfile[])
 	  Gen[geni].pt /= ps->MVAbase;
 	  Gen[geni].qt /= ps->MVAbase;
 	  Gen[geni].qb /= ps->MVAbase;
+	  Gen[geni].pgs = Gen[geni].pg;
 	  Bus[internalindex].qrange += (Gen[geni].qt - Gen[geni].qb);
 	  Bus[internalindex].qmintot += Gen[geni].qb;
 	  Bus[internalindex].Pgtot += PetscAbsScalar(Gen[geni].pg);
@@ -567,6 +568,7 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
       Gen[geni].pt  = Gen[geni].pt/ps->MVAbase;
       Gen[geni].qt  = Gen[geni].qt/ps->MVAbase;
       Gen[geni].qb  = Gen[geni].qb/ps->MVAbase;
+      Gen[geni].pgs = Gen[geni].pg;
       Gen[geni].pc1 = Gen[geni].pc1/ps->MVAbase;
       Gen[geni].pc2 = Gen[geni].pc2/ps->MVAbase;
       Gen[geni].qc1min = Gen[geni].qc1min/ps->MVAbase;

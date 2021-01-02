@@ -54,15 +54,26 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow,Vec Xl,Vec Xu)
     if(bus->ide == REF_BUS || bus->ide == ISOLATED_BUS) xl[loc] = xu[loc] = bus->va*PETSC_PI/180.0;
     if(bus->ide == ISOLATED_BUS) xl[loc+1] = xu[loc+1] = bus->vm;
     
+    loc += bus->nxV;
+
     for(k=0; k < bus->ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
-      loc += gen->nx;
       xl[loc] = gen->pb; /* PGmin */
       xu[loc] = gen->pt; /* PGmax */
       xl[loc+1] = gen->qb; /* QGmin */
       xu[loc+1] = gen->qt; /* QGmax */
       /* pb, pt, qb, qt are converted in p.u. in ps.c */
+      loc += gen->nxpow;
+      if(opflow->has_gensetpoint) {
+	/* Lower and upper bounds for ramp up and down set to the
+	   available headroom. This should be modified later on
+	*/
+	xl[loc] = xl[loc+1] = 0.0;
+	xu[loc]   = gen->pt - gen->pgs;
+	xu[loc+1] = gen->pgs - gen->pb; 
+	loc += gen->nxpdev;
+      }
     }
 
     if(opflow->include_loadloss_variables) {
@@ -99,9 +110,10 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBPOL(OPFLOW opflow,Vec Gl,Vec Gu)
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
   PetscScalar    *gl,*gu;
-  PetscInt       i;
+  PetscInt       i,k,ngen;
   PSBUS          bus;
   PSLINE         line;
+  PSGEN          gen;
   PetscInt       gloc=0;
 
   PetscFunctionBegin;
@@ -117,6 +129,16 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBPOL(OPFLOW opflow,Vec Gl,Vec Gu)
     gl[gloc+1] = 0.0; gu[gloc+1] = 0.0;
 
     gloc += bus->nconeq;
+
+    if(opflow->has_gensetpoint) {
+      ierr = PSBUSGetNGen(bus,&ngen);CHKERRQ(ierr);
+      for(k=0; k < ngen; k++) {
+	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	if(!gen->status) continue;
+	gl[gloc] = gu[gloc] = 0.0;
+	gloc += gen->nconeq;
+      }
+    }
   }
   
   if(!opflow->ignore_lineflow_constraints) {
@@ -197,7 +219,7 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow,Vec X)
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
 
-      loc += gen->nx;
+      loc += gen->nxpow;
 
       if(opflow->initializationtype == OPFLOWINIT_MIDPOINT || opflow->initializationtype == OPFLOWINIT_FLATSTART) {
 	x[loc]   = 0.5*(xl[loc] + xu[loc]);
@@ -205,6 +227,11 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow,Vec X)
       } else if(opflow->initializationtype == OPFLOWINIT_FROMFILE || opflow->initializationtype == OPFLOWINIT_ACPF) {
 	x[loc] = PetscMax(gen->pb,PetscMin(gen->pg,gen->pt));
 	x[loc+1] = PetscMax(gen->qb,PetscMin(gen->qg,gen->qt));
+      }
+
+      if(opflow->has_gensetpoint) {
+	x[loc] = x[loc+1] = 0.0;
+	loc += gen->nxpdev;
       }
     }
 
@@ -284,25 +311,30 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec Ge
 
     flps += 5.0;
 
+    xloc += bus->nxV;
+
     for (k=0; k < bus->ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
-      xloc += gen->nx;
+
       Pg = x[xloc];
       Qg = x[xloc+1];
 
       val[0] = -Pg;
       val[1] = -Qg;
       ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+
+      xloc += gen->nxpow;
+
       flps += 2.0;
     }
 
     for (k=0; k < bus->nload; k++) {
       ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
       if(opflow->include_loadloss_variables) {
-	xloc += load->nxloadloss;
 	Pd = load->pl - x[xloc];
 	Qd = load->ql - x[xloc+1];
+	xloc += load->nxloadloss;
       } else {
 	Pd = load->pl;
 	Qd = load->ql;
@@ -317,12 +349,14 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec Ge
     /* Power imbalance addition */
     if(opflow->include_powerimbalance_variables) {
       PetscScalar Pimb,Qimb;
-      xloc += bus->nxpowerimbalance;
       Pimb = x[xloc];
       Qimb = x[xloc+1];
       val[0] = Pimb;
       val[1] = Qimb;
       ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
+
+      xloc += bus->nxpowerimbalance;
+
       flps += 2.0;
     }
 
@@ -374,6 +408,33 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec Ge
       }
     }
     gloc += bus->nconeq;
+
+    if(opflow->has_gensetpoint) {
+      ierr = PSBUSGetVariableLocation(bus,&xloc);CHKERRQ(ierr);
+      xloc += bus->nxV;
+      for (k=0; k < bus->ngen; k++) {
+	PetscScalar delPgup,delPgdown; /* Ramp up and down */
+	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	if(!gen->status) continue;
+	
+	Pg = x[xloc];
+
+	xloc += gen->nxpow;
+
+	delPgup = x[xloc];
+	delPgdown = x[xloc+1];
+      
+	row[0] = gloc;
+	val[0] = gen->pgs + delPgup - delPgdown - Pg;
+
+	ierr = VecSetValues(Ge,1,row,val,ADD_VALUES);CHKERRQ(ierr);
+
+	xloc += gen->nxpdev;	
+	gloc += gen->nconeq;
+	flps += 3.0;
+      }
+    }
+
   }
   ierr = VecAssemblyBegin(Ge);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(Ge);CHKERRQ(ierr);
@@ -387,7 +448,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec Ge
 PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,Vec X,Mat Je)
 {
   PetscErrorCode ierr;
-  PetscInt       i,k,row[2],col[4],genctr,gidx,loadctr;
+  PetscInt       i,k,row[2],col[4],gidx;
   PetscInt       nconnlines,locglob,loc,locglobf,locglobt,locf,loct;
   PetscScalar    Vm,val[8],Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
   PetscScalar    thetaf,thetat,Vmf,Vmt,thetaft,thetatf;
@@ -430,41 +491,44 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,Vec X
     val[2] = 0.0; val[3]= -2*Vm*bus->bl; /* Partial derivative for shunt contribution */
     ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
     
-    genctr = 0;
+    locglob += bus->nxV;
+
     for (k=0; k < bus->ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
       val[0] = -1;
-      col[0] = locglob + 2 + genctr;
+      col[0] = locglob;
       ierr = MatSetValues(Je,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
       
-      col[0] = locglob + 2 + genctr+1;
+      col[0] = locglob + 1;
       ierr = MatSetValues(Je,1,row+1,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-      genctr += gen->nx;
+
+      locglob += gen->nxpow + gen->nxpdev;
     }
 
     if(opflow->include_loadloss_variables) {
-      loadctr = 0;
       for(k=0; k < bus->nload; k++) {
 	ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
 	val[0] = -1;
-	col[0] = locglob + 2 + 2*bus->ngenON + loadctr;
+	col[0] = locglob;
 	ierr = MatSetValues(Je,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
-	col[0] = locglob + 2 + 2*bus->ngenON + loadctr + 1;
+	col[0] = locglob + 1;
 	ierr = MatSetValues(Je,1,row+1,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-	loadctr += load->nxloadloss;
+	locglob += load->nxloadloss;
       }
     }
     
     /* Power imbalance Jacobian terms */
     if(opflow->include_powerimbalance_variables) {
       val[0] = 1;
-      col[0] = locglob + 2 + 2*bus->ngenON + opflow->include_loadloss_variables*2*bus->nload;
+      col[0] = locglob;
       ierr = MatSetValues(Je,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
-      col[0] = locglob + 2 + 2*bus->ngenON + opflow->include_loadloss_variables*2*bus->nload + 1;
+      col[0] = locglob + 1;
       ierr = MatSetValues(Je,1,row+1,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+
+      locglob += bus->nxpowerimbalance;
     }
 
     /* Partial derivatives of network equations */
@@ -542,6 +606,32 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,Vec X
       }
     }
     gidx += bus->nconeq;
+
+    if(opflow->has_gensetpoint) {
+      ierr = PSBUSGetVariableGlobalLocation(bus,&locglob);CHKERRQ(ierr);
+      locglob += bus->nxV;
+      for (k=0; k < bus->ngen; k++) {
+	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	if(!gen->status) continue;
+	
+	row[0] = gidx;
+
+	col[0] = locglob;
+	val[0] = -1.0;
+
+	locglob += gen->nxpow;
+
+	col[1] = locglob;
+	col[2] = locglob + 1;
+	val[1] = 1.0;
+	val[2] = -1.0;
+
+	locglob += gen->nxpdev;
+
+	ierr = MatSetValues(Je,1,row,3,col,val,ADD_VALUES);CHKERRQ(ierr);
+	gidx += gen->nconeq;
+      }
+    }
   }
   ierr = VecRestoreArrayRead(X,&xarr);CHKERRQ(ierr);
 
@@ -787,15 +877,24 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow,Vec X,PetscScalar *obj
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
     
+    loc += bus->nxV;
     for(k=0; k < bus->ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
-      loc += gen->nx;
-      if(opflow->obj_gencost) {
+
+      if(opflow->objectivetype == OPFLOWOBJ_MIN_GEN_COST) {
 	Pg = x[loc]*ps->MVAbase;
 	*obj += gen->cost_alpha*Pg*Pg + gen->cost_beta*Pg + gen->cost_gamma;
 	flps += 7.0;
+      } else if(opflow->objectivetype == OPFLOWOBJ_MIN_GENSETPOINT_DEVIATION) {
+	PetscScalar delPgup,delPgdown;
+	delPgup   = x[loc + gen->nxpow];
+	delPgdown = x[loc + gen->nxpow+1]; 
+
+	*obj += delPgup*delPgup + delPgdown*delPgdown;
+	flps += 3.0;
       }
+      loc += gen->nxpow + gen->nxpdev;
     }
 
     if(opflow->include_loadloss_variables) {
@@ -804,20 +903,20 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow,Vec X,PetscScalar *obj
       for(k=0; k < bus->nload; k++) {
 	ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
 	if(!load->status) continue;
-	loc += load->nxloadloss;
 	Pdloss = x[loc];
 	Qdloss = x[loc+1];
 	*obj += opflow->loadloss_penalty*ps->MVAbase*ps->MVAbase*(Pdloss*Pdloss + Qdloss*Qdloss);
+	loc += load->nxloadloss;
 	flps += 7.0;
       }
     }
 
     if(opflow->include_powerimbalance_variables) {
       PetscScalar Pimb,Qimb;
-      loc += bus->nxpowerimbalance;
       Pimb = x[loc];
       Qimb = x[loc+1];
       *obj += opflow->powerimbalance_penalty*ps->MVAbase*ps->MVAbase*(Pimb*Pimb + Qimb*Qimb);
+      loc += bus->nxpowerimbalance;
       flps += 7.0;
     }
   }
@@ -851,15 +950,25 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow,Vec X,Vec grad)
 
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
 
+    loc += bus->nxV;
     for(k=0; k < bus->ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
-      loc += gen->nx;
-      if(opflow->obj_gencost) {    
+
+      if(opflow->objectivetype == OPFLOWOBJ_MIN_GEN_COST) {
 	Pg = x[loc]*ps->MVAbase;
 	df[loc] = ps->MVAbase*(2*gen->cost_alpha*Pg + gen->cost_beta);
 	flps += 5.0;
+      } else if(opflow->objectivetype == OPFLOWOBJ_MIN_GENSETPOINT_DEVIATION) {
+	PetscScalar delPgup,delPgdown;
+	delPgup   = x[loc + gen->nxpow];
+	delPgdown = x[loc + gen->nxpow+1];
+
+	df[loc + gen->nxpow]     = 2*delPgup;
+	df[loc + gen->nxpow + 1] = 2*delPgdown; 
+	flps += 2.0;
       }
+      loc += gen->nxpow + gen->nxpdev;
     }
     
     if(opflow->include_loadloss_variables) {
@@ -868,22 +977,22 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow,Vec X,Vec grad)
       for(k=0; k < bus->nload; k++) {
 	ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
 	if(!load->status) continue;
-	loc += load->nxloadloss;
 	Pdloss = x[loc];
 	Qdloss = x[loc+1];
 	df[loc]   = opflow->loadloss_penalty*ps->MVAbase*ps->MVAbase*2*Pdloss;
 	df[loc+1] = opflow->loadloss_penalty*ps->MVAbase*ps->MVAbase*2*Qdloss; 
+	loc += load->nxloadloss;
 	flps += 8.0;
       }
     }
 
     if(opflow->include_powerimbalance_variables) {
       PetscScalar Pimb,Qimb;
-      loc += bus->nxpowerimbalance;
       Pimb = x[loc];
       Qimb = x[loc+1];
       df[loc] = opflow->powerimbalance_penalty*ps->MVAbase*ps->MVAbase*2*Pimb;
       df[loc+1] = opflow->powerimbalance_penalty*ps->MVAbase*ps->MVAbase*2*Qimb;
+      loc += bus->nxpowerimbalance;
       flps += 8.0;
     }
   }
@@ -939,7 +1048,11 @@ PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW opflow,PetscInt *busnvar,
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
       busnvar[i] += 2; /* (2 variables for voltage + Pg, Qg for each gen) */
-      gen->nx = 2;
+      gen->nxpow = 2;
+      if(opflow->has_gensetpoint) {
+	gen->nxpdev = 2;
+	busnvar[i] += 2;
+      }
     }
 
     if(opflow->include_loadloss_variables) {
@@ -962,13 +1075,14 @@ PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW opflow,PetscInt *busnvar,
   PetscFunctionReturn(0);
 }
 
-/* Note: This function also sets the number of variables for each component, i.e., bus, gen, load, and line */
+/* Note: This function also sets the number of constraints for each component, i.e., bus, gen, load, and line */
 PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW opflow,PetscInt *branchnconeq,PetscInt *busnconeq,PetscInt *nconeq,PetscInt *nconineq)
 {
-  PetscInt i;
+  PetscInt i,k,ngen;
   PS       ps=opflow->ps;
   PSBUS    bus;
   PSLINE   line;
+  PSGEN    gen;
   PetscErrorCode ierr;
   PetscBool isghost;
 
@@ -982,6 +1096,15 @@ PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW opflow,PetscInt *branch
     *nconeq += 2;
     bus->nconeq = 2;
     bus->nconineq = 0;
+    ierr = PSBUSGetNGen(bus,&ngen);CHKERRQ(ierr);
+    for(k=0; k < ngen; k++) {
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      if(!gen->status) continue;
+      if(opflow->has_gensetpoint) {
+	*nconeq += 1;
+	gen->nconeq = 1;
+      }
+    }
   }
 
   if(!opflow->ignore_lineflow_constraints) {
@@ -1027,6 +1150,8 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL(OPFLOW opflow,Vec X
   PetscInt       gloc;
   PetscInt       row[16],col[16];
   PetscScalar    val[16];
+  PSGEN          gen;
+  PetscInt       ngen;
 
   PetscFunctionBegin;
 
@@ -1267,6 +1392,14 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL(OPFLOW opflow,Vec X
      }
     }
     gloc += bus->nconeq;
+
+    if(opflow->has_gensetpoint) {
+      for (k=0; k < bus->ngen; k++) {
+	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	if(!gen->status) continue;
+	gloc += gen->nconeq;
+      }
+    }
   }
 
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
@@ -1651,22 +1784,34 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow,Vec X,Mat H)
 
     ierr = PSBUSGetVariableGlobalLocation(bus,&xlocglob);CHKERRQ(ierr);
    
+    xlocglob += bus->nxV;
     for(k=0; k < bus->ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
-      xlocglob += gen->nx;
-      row[0] = xlocglob;
-      col[0] = xlocglob;
-      if(opflow->obj_gencost) {
+
+      if(opflow->objectivetype == OPFLOWOBJ_MIN_GEN_COST) {
+	row[0] = xlocglob;
+	col[0] = xlocglob;
+
 	val[0] = obj_factor*2.0*gen->cost_alpha*ps->MVAbase*ps->MVAbase;
 	ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+      } else if(opflow->objectivetype == OPFLOWOBJ_MIN_GENSETPOINT_DEVIATION) {
+	row[0] = xlocglob + gen->nxpow;
+	col[0] = xlocglob + gen->nxpow;
+	val[0] = obj_factor*2.0;
+	ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+
+	row[0] = xlocglob + gen->nxpow + 1;
+	col[0] = xlocglob + gen->nxpow + 1;
+	val[0] = obj_factor*2.0;
+	ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
       }
+      xlocglob += gen->nxpow + gen->nxpdev;
     }
     
     if(opflow->include_loadloss_variables) {
       PSLOAD load;
       for(k=0; k < bus->nload; k++) {
-	xlocglob += load->nxloadloss;
 	ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
 	if(!load->status) continue;
 	row[0] = xlocglob;
@@ -1678,11 +1823,12 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow,Vec X,Mat H)
 	col[0] = xlocglob+1;
 	val[0] = obj_factor*2.0*opflow->loadloss_penalty*ps->MVAbase*ps->MVAbase;
 	ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);  
+
+	xlocglob += load->nxloadloss;
       }
     }
 
     if(opflow->include_powerimbalance_variables) {
-      xlocglob += bus->nxpowerimbalance;
       row[0] = xlocglob;
       col[0] = xlocglob;
       val[0] = obj_factor*2.0*opflow->powerimbalance_penalty*ps->MVAbase*ps->MVAbase;
@@ -1692,6 +1838,8 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow,Vec X,Mat H)
       col[0] = xlocglob+1;
       val[0] = obj_factor*2.0*opflow->powerimbalance_penalty*ps->MVAbase*ps->MVAbase;
       ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+
+      xlocglob += bus->nxpowerimbalance;
     }
   }
 
@@ -1764,7 +1912,9 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow)
 
     bus->mult_pmis = lambdae[gloc];
     bus->mult_qmis = lambdae[gloc+1];
-    gloc += 2;
+
+    loc  += bus->nxV;
+    gloc += bus->nconeq;
 
     for(k=0; k < bus->ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
@@ -1773,25 +1923,29 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow)
 	continue;
       }
 
-      loc += 2;
-
       gen->pg = x[loc];
       gen->qg = x[loc+1];
+
+      loc += gen->nxpow;
+      if(opflow->has_gensetpoint) {
+	loc += gen->nxpdev;
+	gloc += gen->nconeq;
+      }
     }
 
     if(opflow->include_loadloss_variables) {
       for(k=0; k < bus->nload; k++) {
 	ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
-	loc += 2;
 	load->pl = load->pl - x[loc];
 	load->ql = load->ql - x[loc+1];
+	loc += load->nxloadloss;
       }
     }
 
     if(opflow->include_powerimbalance_variables) {
-      loc += 2;
       bus->pimb = x[loc];
       bus->qimb = x[loc+1];
+      loc += bus->nxpowerimbalance;
     }
   }
 
@@ -1846,7 +2000,7 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow)
       } else {
 	line->mult_sf = lambdai[gloc];
 	line->mult_st = lambdai[gloc+1];
-	gloc += 2;
+	gloc += line->nconineq;
       }
     }
   }
