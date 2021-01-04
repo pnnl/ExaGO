@@ -347,6 +347,10 @@ public:
       gu[i] = 0.0;
     }
 
+    // Copy from host to device
+    resmgr.copy(gl_dev, gl);
+    resmgr.copy(gu_dev, gu);
+
     ierr = (*opflow->modelops.setconstraintboundsarray)(opflow,gl_dev,gu_dev);CHKERRQ(ierr);
 
     // Copy back from device to host
