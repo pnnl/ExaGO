@@ -66,20 +66,33 @@ struct _p_PSBUS{
 
   PetscScalar mult_pmis; /* Lagrange multiplier for Re(power/current balance) mismatch */
   PetscScalar mult_qmis; /* Lagrange multiplier for Im(power/current balance) mismatch */
-  
+
+
+  /* Variable, constraints sizes and locations */
   PetscInt  startloc; /**< Starting location for the variables for this bus in the application residual "local" array.
      The local array also contains ghosted values. startloc is typically used to access values in
      the local vector, while startlocglob is used for setting the values in the matrix */
-  
   PetscInt  startlocglob; /**< Starting location for the variables for this bus in the application "global" residual array */
 
   PetscInt  nxV; /* Number of variables for bus voltage */
   PetscInt  nxshunt; /* Number of variables for bus shunt */
-  PetscInt  nxpowerimbalance; /* Number of variables for power imbalance */
+  PetscInt  nxpimb; /* Number of variables for power imbalance */
+
+  PetscInt startxVloc;     /* Location for voltage variables */
+  PetscInt startxshuntloc; /* Location for bus shunt variables */
+  PetscInt startxpimbloc;  /* Location for power imbalance variables */
+
+  PetscInt startxVlocglob;     /* Location for voltage variables */
+  PetscInt startxshuntlocglob; /* Location for bus shunt variables */
+  PetscInt startxpimblocglob;  /* Location for power imbalance variables */
+
+  PetscInt  nx; /* Total number of variables for the bus */
 
   PetscInt  nconeq; /* Number of equality constraints */
   PetscInt  nconineq; /* Number of inequality constraints */
 
+  PetscInt  starteqloc; /* Starting location for equality constraints for this bus */
+  PetscInt  startineqloc; /* Starting location for inequality constraints for this bus */
 };
 
 /**
@@ -103,10 +116,24 @@ struct _p_PSLOAD{
   PetscInt      scale;  /* Load scaling flag of one for a scalable load and zero for a fixed load */
   PetscInt      intrpt; /**< Interruptible load flag of one for an interruptible load for zero for a non interruptible load */
 
-  PetscInt      nxloadloss; /* Number of variables for load loss */
+  /* Variable, constraint sizes and locations */
+
+  PetscInt  nxloadloss; /* Number of variables for load loss */
+
+  PetscInt  startxloadlossloc; /* Location of load loss variables */
+  PetscInt  startxloadlosslocglob; /* Global Location of load loss variables */
+
+
+  PetscInt  nx; /* Total number of variables for the load */
 
   PetscInt  nconeq; /* Number of equality constraints */
   PetscInt  nconineq; /* Number of inequality constraints */
+
+  PetscInt  startloc; /* Starting location for variables */
+  PetscInt  startlocglob; /* Starting global location for variables */
+
+  PetscInt  starteqloc; /* Starting location for equality constraints */
+  PetscInt  startineqloc; /* Starting location for inequality constraints */
 
 };
 
@@ -171,11 +198,24 @@ struct _p_PSGEN{
   /* genfuel type - See GENFUEL_TYPES defined in constants.h */
   PetscInt      genfuel_type;
 
+  /* Variable, constraint sizes and locations */
   PetscInt      nxpow; /* Number of generator power variables (Pg, Qg)*/
   PetscInt      nxpdev; /* Number of generator real power deviation (ramp up/down) variables */
 
+  PetscInt  startxpowloc; /* Starting location for power variables */
+  PetscInt  startxpdevloc; /* Starting location for power deviation variables */
+
+  PetscInt  startxpowlocglob; /* Starting global location for power variables */
+  PetscInt  startxpdevlocglob; /* Starting global location for power deviation variables */
+
+  PetscInt      nx; /* Total number of variables for the gen */
+
   PetscInt  nconeq; /* Number of equality constraints */
   PetscInt  nconineq; /* Number of inequality constraints */
+
+  PetscInt  startloc; /* Starting location for variables */
+  PetscInt  starteqloc; /* Starting location for equality constraints */
+  PetscInt  startineqloc; /* Starting location for inequality constraints */
 
 };
 
@@ -219,15 +259,17 @@ struct _p_PSLINE{
   PetscScalar   mult_sf; /* Lagrange multiplier for from bus injection (set by OPFLOW) */
   PetscScalar   mult_st; /* Lagrange multiplier for to bus injection (set by OPFLOW) */
   
-  PetscInt startloc; /**< Starting location for the variables for this line in the local vector */
-
-  
+  /* Variable and constraint sizes and locations */
+  PetscInt startloc; /**< Starting location for the variables for this line in the local vector */  
   PetscInt startlocglob; /**< Starting location for the variables for this line in the global vector */
 
   PetscInt nx; /* Number of variables for the line */
 
   PetscInt  nconeq; /* Number of equality constraints */
   PetscInt  nconineq; /* Number of inequality constraints */
+
+  PetscInt  starteqloc; /* Starting location for equality constraints */
+  PetscInt  startineqloc; /* Starting location for inequality constraints */
 
 };
 
