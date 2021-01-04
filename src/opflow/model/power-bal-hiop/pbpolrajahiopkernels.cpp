@@ -98,9 +98,13 @@ int BUSParamsRajaHiop::allocate(OPFLOW opflow)
   resmgr.memset(isref,0,nbus*sizeof(int));
   resmgr.memset(ispvpq,0,nbus*sizeof(int));
   resmgr.memset(isisolated,0,nbus*sizeof(int));
-  resmgr.memset(vmin,0.9,nbus*sizeof(double));
-  resmgr.memset(vmax,1.1,nbus*sizeof(double));
-
+  
+  for (int i = 0; i < nbus; i++)
+  {
+    vmin[i] = 0.9;
+    vmax[i] = 1.1;
+  }
+  
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
