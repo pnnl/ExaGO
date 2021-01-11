@@ -1,7 +1,9 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-project(ExaGO)
+project(ExaGO VERSION "0.0.1")
+
+string(TIMESTAMP EXAGO_RELEASE_DATE "%Y-%m-%d")
 
 ## Preamble
 
@@ -57,6 +59,8 @@ option(EXAGO_RUN_TESTS "Enable tests" OFF)
 # For testing with BSUB on certain clusters
 option(EXAGO_TEST_WITH_BSUB "Use `jsrun` instead of `mpirun` commands when running tests" OFF)
 
+option(EXAGO_DISABLE_LOGGING "Disable all internal logging" OFF)
+
 # Estimate number of flops per trig op
 set(EXAGO_FLOPS_SINOP 15 CACHE STRING "Estimated number of flops per sin op")
 set(EXAGO_FLOPS_COSOP 15 CACHE STRING "Estimated number of flops per cos op")
@@ -110,6 +114,7 @@ endif(EXAGO_ENABLE_GPU)
 if(EXAGO_ENABLE_PETSC)
   include(FindPETSC)
   include_directories(${PETSC_INCLUDE_CONF})
+  set(EXAGO_HAVE_PETSC 1)
 endif()
 
 # Set install rpath to the locations where EXAGO and PETSc libraries reside.
@@ -209,6 +214,7 @@ install(DIRECTORY datafiles/test_validation DESTINATION tests/datafiles)
 # EXAGO headers to install
 set(EXAGO_COMMON_INCLUDE
   include/constants.h
+  include/version.h
   ${PROJECT_BINARY_DIR}/exago_config.h
 )
  
