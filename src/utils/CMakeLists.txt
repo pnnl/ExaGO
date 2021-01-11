@@ -4,6 +4,8 @@
 # Specify sources for utility functions shared across libraries
 set(UTILS_SRC
   utils.c
+  version.c
+  driverutils.c
   scopflowutils.c
   comm.c
 )

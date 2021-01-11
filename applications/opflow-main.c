@@ -6,29 +6,22 @@ static char help[] = "User example calling OPFLOW.\n\n";
 
 int main(int argc,char **argv)
 {
-  PetscErrorCode     ierr;
-  OPFLOW             opflow;
-  OutputFormat       fmt=MATPOWER;
-  char               file[PETSC_MAX_PATH_LEN];
-  PetscBool          flg=PETSC_FALSE,print_output=PETSC_FALSE,save_output=PETSC_FALSE;
-  PetscLogStage    stages[3];
-  char options_pathname[200] = EXAGO_OPTIONS_DIR;
-  char filename[] = "/opflowoptions";
-  strcat(options_pathname, filename);
+  PetscErrorCode ierr;
+  OPFLOW         opflow;
+  OutputFormat   fmt=MATPOWER;
+  char           file[PETSC_MAX_PATH_LEN];
+  PetscBool      flg=PETSC_FALSE,print_output=PETSC_FALSE,save_output=PETSC_FALSE;
+  PetscLogStage  stages[3];
+  char           appname[]="opflow";
+  MPI_Comm       comm=MPI_COMM_WORLD;
 
-  const int npths = 3;
-  char** pths = malloc(PETSC_MAX_PATH_LEN * npths);
-  pths[0] = strdup(options_pathname);
-  pths[1] = strdup("./opflowoptions");
-  pths[2] = strdup("./options/opflowoptions");
-  const int idx = doFilesExist(pths, npths);
-  if (idx < 0)
+  /** Use `ExaGOLogSetLoggingFileName("opflow-logfile");` to log the output. */
+  ierr = ExaGOInitialize(comm,&argc,&argv,appname,help);
+  if (ierr)
   {
-    fputs("Could not options file", stderr);
-    return 1;
+    fprintf(stderr,"Could not initialize ExaGO application %s.\n",appname);
+    return ierr;
   }
-
-  PetscInitialize(&argc,&argv,pths[idx],help);
 
   ierr = PetscOptionsGetBool(NULL,NULL,"-print_output",&print_output,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-save_output",&save_output,NULL);CHKERRQ(ierr);
@@ -44,8 +37,9 @@ int main(int argc,char **argv)
   /* Stage 1 - Application creation and reading data */
   ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
 
+  ExaGOLog(EXAGO_LOG_INFO,"%s","Creating OPFlow\n");
   /* Create OPFLOW object */
-  ierr = OPFLOWCreate(PETSC_COMM_WORLD,&opflow);CHKERRQ(ierr);
+  ierr = OPFLOWCreate(comm,&opflow);CHKERRQ(ierr);
   
   /* Read Network Data file */
   if(flg) {
@@ -83,6 +77,7 @@ int main(int argc,char **argv)
   /* Destroy OPFLOW object */
   ierr = OPFLOWDestroy(&opflow);CHKERRQ(ierr);
 
-  PetscFinalize();
+  ExaGOFinalize();
+  // PetscFinalize();
   return 0;
 }
