@@ -32,10 +32,10 @@ static ExaGOVerbosityLevel ExaGOLogMinLogLevel = EXAGO_LOG_INFO;
 static MPI_Comm ExaGOLogComm=MPI_COMM_SELF;
 
 /** Rank from which logging statements will be written */
-static unsigned ExaGOLogLoggingRank=0;
+static int ExaGOLogLoggingRank=0;
 
 /** Current MPI rank */
-static unsigned ExaGOLogCurrentRank=0;
+static int ExaGOLogCurrentRank=0;
 
 PetscErrorCode ExaGOLogGetLoggingFileName(char** name)
 {
@@ -102,7 +102,10 @@ PetscErrorCode ExaGOLogInitialize()
 
   /** If we're not using a logfile, there's no additional setup to perform */
   if (!flg)
-    goto lbl_success; // so sue me
+  {
+    ExaGOLogIsLoggerInitialized = PETSC_TRUE;
+    return 0;
+  }
 
   char *filename;
   ierr=ExaGOLogGetLoggingFileName(&filename);
@@ -113,7 +116,6 @@ PetscErrorCode ExaGOLogInitialize()
   FILE *fp = fopen(ExaGOLogFileName, "w");
   ExaGOLogSetLoggingFilePointer(fp);
 
-lbl_success:
   ExaGOLogIsLoggerInitialized = PETSC_TRUE;
   return 0;
 }
@@ -154,7 +156,7 @@ PetscErrorCode ExaGOLogSetMinLogLevel(ExaGOVerbosityLevel l)
 }
 
 /** ExaGO logging function with format string */
-void ExaGOLogImpl(ExaGOVerbosityLevel verb, char *fmt, ...)
+void ExaGOLogImpl(ExaGOVerbosityLevel verb, const char *fmt, ...)
 {
   EXAGO_LOG_ENSURE_INITIALIZED();
   int ierr;

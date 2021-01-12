@@ -3,11 +3,11 @@
 
 # Specify sources for utility functions shared across libraries
 set(UTILS_SRC
-  utils.c
-  version.c
-  driverutils.c
-  scopflowutils.c
-  comm.c
+  utils.cpp
+  version.cpp
+  driverutils.cpp
+  scopflowutils.cpp
+  comm.cpp
 )
 
 # Headers

@@ -37,7 +37,7 @@ PETSC_EXTERN PetscErrorCode ExaGOLogSetMinLogLevel(ExaGOVerbosityLevel);
  * @note Users should use `ExaGOLog` instead, as this can be disabled for
  * optimization.
  */
-PETSC_EXTERN void ExaGOLogImpl(ExaGOVerbosityLevel,char*,...);
+PETSC_EXTERN void ExaGOLogImpl(ExaGOVerbosityLevel,const char*,...);
 
 /** `ExaGOLog` is the user-facing logging function */
 #define ExaGOLog(level,fmt,...) ExaGOLogImpl(level,fmt,__VA_ARGS__)

@@ -427,8 +427,6 @@ PetscErrorCode OPFLOWSolverDestroy_HIOP(OPFLOW opflow)
 }
 
 
-extern "C" {
-
 PetscErrorCode OPFLOWSolverCreate_HIOP(OPFLOW opflow)
 {
   PetscErrorCode ierr;
@@ -453,7 +451,5 @@ PetscErrorCode OPFLOWSolverCreate_HIOP(OPFLOW opflow)
 #endif
   PetscFunctionReturn(0);
 }
-
-} // End of extern "C"
 
 #endif

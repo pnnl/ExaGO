@@ -1,19 +1,19 @@
 set(SCOPFLOW_SOLVER_SRC
-    solver/ipopt/scopflow-ipopt.c
-    solver/ipopt/scopflow-ipopt2.c
-    solver/empar/scopflow-empar.c
+    solver/ipopt/scopflow-ipopt.cpp
+    solver/ipopt/scopflow-ipopt2.cpp
+    solver/empar/scopflow-empar.cpp
 )
 
 set(SCOPFLOW_MODEL_SRC
-  model/genramp/genramp.c
-  model/genrampt/genrampt.c
+  model/genramp/genramp.cpp
+  model/genrampt/genrampt.cpp
 )
 
 set(SCOPFLOW_SRC
-	interface/scopflow.c
-	interface/scopflowregi.c
-	interface/scopflowoutput.c
-	interface/scopflowctgc.c
+	interface/scopflow.cpp
+	interface/scopflowregi.cpp
+	interface/scopflowoutput.cpp
+	interface/scopflowctgc.cpp
 	${SCOPFLOW_MODEL_SRC}
 	${SCOPFLOW_SOLVER_SRC}
 )

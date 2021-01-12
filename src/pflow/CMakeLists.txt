@@ -1,6 +1,6 @@
 # Specify PowerSystem module sources (shared across libraries)
 set(PFLOW_SRC
-  pflow.c
+  pflow.cpp
 )
 
 # Header files for pflow

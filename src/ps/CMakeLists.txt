@@ -1,10 +1,10 @@
 
 # Specify PowerSystem module sources (shared across libraries)
 set(PS_SRC
-  ps.c
-  psreaddata.c
-  psoutput.c
-  psislanding.c
+  ps.cpp
+  psreaddata.cpp
+  psoutput.cpp
+  psislanding.cpp
 )
 
 set(PS_INCLUDE

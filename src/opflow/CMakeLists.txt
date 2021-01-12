@@ -1,11 +1,11 @@
 # Models
 set(OPFLOW_FORM_SRC
-    model/current-bal-cartesian/ibcar.c
-    model/current-bal-cartesian/ibcar2.c
-    model/power-bal-polar/pbpol.c
-    model/power-bal-cartesian/pbcar.c
-    model/power-bal-hiop/pbpolhiop.c
-    model/power-bal-hiop/pbpolhiopkernels.c
+    model/current-bal-cartesian/ibcar.cpp
+    model/current-bal-cartesian/ibcar2.cpp
+    model/power-bal-polar/pbpol.cpp
+    model/power-bal-cartesian/pbcar.cpp
+    model/power-bal-hiop/pbpolhiop.cpp
+    model/power-bal-hiop/pbpolhiopkernels.cpp
 )
 
 # Build RAJA/Umpire modules if RAJA and Umpire are enabled
@@ -22,15 +22,15 @@ endif()
 
 
 set(OPFLOW_SOLVER_SRC
-    solver/tao/opflow-tao.c
-    solver/ipopt/opflow-ipopt.c
+    solver/tao/opflow-tao.cpp
+    solver/ipopt/opflow-ipopt.cpp
     solver/hiop/opflow-hiop.cpp
 )
 
 set(OPFLOW_SRC
-	interface/opflow.c
-	interface/opflowregi.c
-	interface/opflowoutput.c
+	interface/opflow.cpp
+	interface/opflowregi.cpp
+	interface/opflowoutput.cpp
 	${OPFLOW_FORM_SRC}
 	${OPFLOW_SOLVER_SRC}
 )

@@ -1,0 +1,46 @@
+[1;33mdiff --git a/src/utils/utils.c b/src/utils/utils.c[m
+[1;33mindex 125a9bb..b56f155 100644[m
+[1;33m--- a/src/utils/utils.c[m
+[1;33m+++ b/src/utils/utils.c[m
+[1;35m@@ -32,10 +32,10 @@[m [mstatic ExaGOVerbosityLevel ExaGOLogMinLogLevel = EXAGO_LOG_INFO;[m
+ static MPI_Comm ExaGOLogComm=MPI_COMM_SELF;[m
+ [m
+ /** Rank from which logging statements will be written */[m
+[1;31m-static unsigned ExaGOLogLoggingRank=0;[m
+[1;32m+[m[1;32mstatic int ExaGOLogLoggingRank=0;[m
+ [m
+ /** Current MPI rank */[m
+[1;31m-static unsigned ExaGOLogCurrentRank=0;[m
+[1;32m+[m[1;32mstatic int ExaGOLogCurrentRank=0;[m
+ [m
+ PetscErrorCode ExaGOLogGetLoggingFileName(char** name)[m
+ {[m
+[1;35m@@ -102,7 +102,10 @@[m [mPetscErrorCode ExaGOLogInitialize()[m
+ [m
+   /** If we're not using a logfile, there's no additional setup to perform */[m
+   if (!flg)[m
+[1;31m-    goto lbl_success; // so sue me[m
+[1;32m+[m[1;32m  {[m
+[1;32m+[m[1;32m    ExaGOLogIsLoggerInitialized = PETSC_TRUE;[m
+[1;32m+[m[1;32m    return 0;[m
+[1;32m+[m[1;32m  }[m
+ [m
+   char *filename;[m
+   ierr=ExaGOLogGetLoggingFileName(&filename);[m
+[1;35m@@ -113,7 +116,6 @@[m [mPetscErrorCode ExaGOLogInitialize()[m
+   FILE *fp = fopen(ExaGOLogFileName, "w");[m
+   ExaGOLogSetLoggingFilePointer(fp);[m
+ [m
+[1;31m-lbl_success:[m
+   ExaGOLogIsLoggerInitialized = PETSC_TRUE;[m
+   return 0;[m
+ }[m
+[1;35m@@ -154,7 +156,7 @@[m [mPetscErrorCode ExaGOLogSetMinLogLevel(ExaGOVerbosityLevel l)[m
+ }[m
+ [m
+ /** ExaGO logging function with format string */[m
+[1;31m-void ExaGOLogImpl(ExaGOVerbosityLevel verb, char *fmt, ...)[m
+[1;32m+[m[1;32mvoid ExaGOLogImpl(ExaGOVerbosityLevel verb, const char *fmt, ...)[m
+ {[m
+   EXAGO_LOG_ENSURE_INITIALIZED();[m
+   int ierr;[m

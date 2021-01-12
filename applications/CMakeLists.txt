@@ -3,27 +3,27 @@
 # Define sources for applications
 # PFLOW
 set(PFLOW_SRC
-  pflow-main.c
+  pflow-main.cpp
 )
 
 # OPFLOW
 set(OPFLOW_SRC
-  opflow-main.c
+  opflow-main.cpp
 )
 
 #SCOPFLOW
 set(SCOPFLOW_SRC
-  scopflow-main.c
+  scopflow-main.cpp
 )
 
 #SOPFLOW
 set(SOPFLOW_SRC
-  sopflow-main.c
+  sopflow-main.cpp
 )
 
 #TCOPFLOW
 set(TCOPFLOW_SRC
-  tcopflow-main.c
+  tcopflow-main.cpp
 )
 
 set(EXAGO_PFLOW_APP_LIBS   

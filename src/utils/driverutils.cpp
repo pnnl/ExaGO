@@ -48,9 +48,9 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
   }
 
   const int noptfiles = 3;
-  char **optfiles = malloc(sizeof(char*)*noptfiles);
+  char **optfiles = static_cast<char**>(malloc(sizeof(char*)*noptfiles));
   for(i=0; i<noptfiles; i++)
-    optfiles[i] = malloc(PETSC_MAX_PATH_LEN);
+    optfiles[i] = static_cast<char*>(malloc(PETSC_MAX_PATH_LEN));
   sprintf(optfiles[0],"%s/%s",options_pathname,filename);
 
   ierr=sprintf(optfiles[1],"./%s",filename);
