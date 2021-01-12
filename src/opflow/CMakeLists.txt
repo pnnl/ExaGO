@@ -38,11 +38,13 @@ set(OPFLOW_SRC
 
 # Header files for opflow
 set(OPFLOW_INCLUDE
- ${CMAKE_SOURCE_DIR}/include/opflow.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/interface/opflow.h
 )
 
 #Compile library
 add_library(opflow ${OPFLOW_SRC})
+
+target_include_directories(opflow PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/interface)
 
 # link libraries
 target_link_libraries(opflow PRIVATE
