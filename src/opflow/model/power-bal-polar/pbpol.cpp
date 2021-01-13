@@ -9,11 +9,17 @@ PetscErrorCode OPFLOWModelDestroy_PBPOL(OPFLOW opflow)
 
   PetscFunctionBegin;
 
-  ierr = PetscFree(opflow->model);CHKERRQ(ierr);
+  // ierr = PetscFree(opflow->model);CHKERRQ(ierr);
+  delete static_cast<PBPOL>(opflow->model);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow,Vec Xl,Vec Xu)
+PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu)
+{
+  return static_cast<PBPOL>(opflow->model)->SetVariableBounds(opflow,Xl,Xu);
+}
+
+PetscErrorCode _p_FormPBPOL::SetVariableBounds(OPFLOW opflow,Vec Xl,Vec Xu)
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
@@ -112,6 +118,11 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow,Vec Xl,Vec Xu)
 
 PetscErrorCode OPFLOWSetConstraintBounds_PBPOL(OPFLOW opflow,Vec Gl,Vec Gu)
 {
+  return static_cast<PBPOL>(opflow->model)->SetConstraintBounds(opflow,Gl,Gu);
+}
+
+PetscErrorCode _p_FormPBPOL::SetConstraintBounds(OPFLOW opflow,Vec Gl,Vec Gu)
+{
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
   PetscScalar    *gl,*gu;
@@ -167,17 +178,27 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBPOL(OPFLOW opflow,Vec Gl,Vec Gu)
 
 PetscErrorCode OPFLOWSetVariableandConstraintBounds_PBPOL(OPFLOW opflow,Vec Xl,Vec Xu, Vec Gl, Vec Gu)
 {
+  return static_cast<PBPOL>(opflow->model)->SetVariableandConstraintBounds(opflow,Xl,Xu,Gl,Gu);
+}
+
+PetscErrorCode _p_FormPBPOL::SetVariableandConstraintBounds(OPFLOW opflow,Vec Xl,Vec Xu, Vec Gl, Vec Gu)
+{
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
 
-  ierr = OPFLOWSetVariableBounds_PBPOL(opflow,Xl,Xu);CHKERRQ(ierr);
-  ierr = OPFLOWSetConstraintBounds_PBPOL(opflow,Gl,Gu);CHKERRQ(ierr);
+  ierr = this->SetVariableBounds(opflow,Xl,Xu);CHKERRQ(ierr);
+  ierr = this->SetConstraintBounds(opflow,Gl,Gu);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow,Vec X)
+{
+  return static_cast<PBPOL>(opflow->model)->SetInitialGuess(opflow,X);
+}
+
+PetscErrorCode _p_FormPBPOL::SetInitialGuess(OPFLOW opflow,Vec X)
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
@@ -268,6 +289,11 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow,Vec X)
 }
 
 PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec Ge)
+{
+  return static_cast<PBPOL>(opflow->model)->ComputeEqualityConstraints(opflow,X,Ge);
+}
+
+PetscErrorCode _p_FormPBPOL::ComputeEqualityConstraints(OPFLOW opflow,Vec X,Vec Ge)
 {
   PetscErrorCode ierr;
   PetscInt       i,k,nconnlines;
@@ -449,6 +475,11 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec Ge
 }
 
 PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,Vec X,Mat Je)
+{
+  return static_cast<PBPOL>(opflow->model)->ComputeEqualityConstraintJacobian(opflow,X,Je);
+}
+
+PetscErrorCode _p_FormPBPOL::ComputeEqualityConstraintJacobian(OPFLOW opflow,Vec X,Mat Je)
 {
   PetscErrorCode ierr;
   PetscInt       i,k,row[2],col[4],gidx;
@@ -649,6 +680,11 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,Vec X
 
 PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec Gi)
 {
+  return static_cast<PBPOL>(opflow->model)->ComputeInequalityConstraints(opflow,X,Gi);
+}
+
+PetscErrorCode _p_FormPBPOL::ComputeInequalityConstraints(OPFLOW opflow,Vec X,Vec Gi)
+{
   PetscErrorCode ierr;
   PetscInt       i;
   PetscInt       gloc;
@@ -724,6 +760,11 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec 
 }
 
 PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,Vec X,Mat Ji)
+{
+  return static_cast<PBPOL>(opflow->model)->ComputeInequalityConstraintJacobian(opflow,X,Ji);
+}
+
+PetscErrorCode _p_FormPBPOL::ComputeInequalityConstraintJacobian(OPFLOW opflow,Vec X,Mat Ji)
 {
   PetscErrorCode ierr;
   PetscInt       i;
@@ -854,12 +895,22 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,Vec
 
 PetscErrorCode OPFLOWComputeConstraints_PBPOL(OPFLOW opflow,Vec X,Vec G)
 {
+  return static_cast<PBPOL>(opflow->model)->ComputeConstraints(opflow,X,G);
+}
+
+PetscErrorCode _p_FormPBPOL::ComputeConstraints(OPFLOW opflow,Vec X,Vec G)
+{
   PetscFunctionBegin;
 
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow,Vec X,PetscScalar *obj)
+{
+  return static_cast<PBPOL>(opflow->model)->ComputeObjective(opflow,X,obj);
+}
+
+PetscErrorCode _p_FormPBPOL::ComputeObjective(OPFLOW opflow,Vec X,PetscScalar *obj)
 {
   PetscErrorCode ierr;
   const PetscScalar *x;
@@ -930,6 +981,11 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow,Vec X,PetscScalar *obj
 }
 
 PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow,Vec X,Vec grad)
+{
+  return static_cast<PBPOL>(opflow->model)->ComputeGradient(opflow,X,grad);
+}
+
+PetscErrorCode _p_FormPBPOL::ComputeGradient(OPFLOW opflow,Vec X,Vec grad)
 {
   PetscErrorCode ierr;
   const PetscScalar *x;
@@ -1006,17 +1062,27 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow,Vec X,Vec grad)
 
 PetscErrorCode OPFLOWComputeObjandGradient_PBPOL(OPFLOW opflow,Vec X,PetscScalar *obj,Vec Grad)
 {
+  return static_cast<PBPOL>(opflow->model)->ComputeObjandGradient(opflow,X,obj,Grad);
+}
+
+PetscErrorCode _p_FormPBPOL::ComputeObjandGradient(OPFLOW opflow,Vec X,PetscScalar *obj,Vec Grad)
+{
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
-  ierr = OPFLOWComputeObjective_PBPOL(opflow,X,obj);CHKERRQ(ierr);
-  ierr = OPFLOWComputeGradient_PBPOL(opflow,X,Grad);CHKERRQ(ierr);
+  ierr = this->ComputeObjective(opflow,X,obj);CHKERRQ(ierr);
+  ierr = this->ComputeGradient(opflow,X,Grad);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
-/* Note: This function also sets the number of variables for each component, i.e., bus, gen, load, and line */
 PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW opflow,PetscInt *busnvar,PetscInt *branchnvar,PetscInt *nx)
+{
+  return static_cast<PBPOL>(opflow->model)->ModelSetNumVariables(opflow,busnvar,branchnvar,nx);
+}
+
+/* Note: This function also sets the number of variables for each component, i.e., bus, gen, load, and line */
+PetscErrorCode _p_FormPBPOL::ModelSetNumVariables(OPFLOW opflow,PetscInt *busnvar,PetscInt *branchnvar,PetscInt *nx)
 {
   PetscInt i,ngen,nload,k;
   PS       ps=opflow->ps;
@@ -1084,8 +1150,15 @@ PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW opflow,PetscInt *busnvar,
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW opflow,
+    PetscInt *branchnconeq,PetscInt *busnconeq,PetscInt *nconeq,
+    PetscInt *nconineq)
+{
+  return static_cast<PBPOL>(opflow->model)->ModelSetNumConstraints(opflow,branchnconeq,busnconeq,nconeq,nconineq);
+}
+
 /* Note: This function also sets the number of constraints for each component, i.e., bus, gen, load, and line */
-PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW opflow,PetscInt *branchnconeq,PetscInt *busnconeq,PetscInt *nconeq,PetscInt *nconineq)
+PetscErrorCode _p_FormPBPOL::ModelSetNumConstraints(OPFLOW opflow,PetscInt *branchnconeq,PetscInt *busnconeq,PetscInt *nconeq,PetscInt *nconineq)
 {
   PetscInt i,k,ngen;
   PS       ps=opflow->ps;
@@ -1130,6 +1203,11 @@ PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW opflow,PetscInt *branch
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL(OPFLOW opflow,Vec X,Vec Lambda,Mat H)
+{
+  return static_cast<PBPOL>(opflow->model)->ComputeEqualityConstraintsHessian(opflow,X,Lambda,H);
+}
+
 /*
   OPFLOWComputeEqualityConstraintsHessian - Computes the Hessian for the equality constraints function part
   
@@ -1142,7 +1220,7 @@ PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW opflow,PetscInt *branch
 . H - the Hessian part for the equality constraints
 
 */
-PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL(OPFLOW opflow,Vec X,Vec Lambda,Mat H) 
+PetscErrorCode _p_FormPBPOL::ComputeEqualityConstraintsHessian(OPFLOW opflow,Vec X,Vec Lambda,Mat H) 
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
@@ -1410,6 +1488,10 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL(OPFLOW opflow,Vec X
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow,Vec X,Vec Lambda,Mat H)
+{
+  return static_cast<PBPOL>(opflow->model)->ComputeInequalityConstraintsHessian(opflow,X,Lambda,H);
+}
 
 /*
   OPFLOWComputeInequalityConstraintsHessian - Computes the Inequality Constraints Hessian
@@ -1423,7 +1505,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL(OPFLOW opflow,Vec X
 + H   - the Hessian matrix
 
 */
-PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow, Vec X, Vec Lambda,Mat H)
+PetscErrorCode _p_FormPBPOL::ComputeInequalityConstraintsHessian(OPFLOW opflow, Vec X, Vec Lambda,Mat H)
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
@@ -1750,6 +1832,11 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow, Ve
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow,Vec X,Mat H)
+{
+  return static_cast<PBPOL>(opflow->model)->ComputeObjectiveHessian(opflow,X,H);
+}
+
 /*
   OPFLOWComputeObjectiveHessian - Computes the Hessian for the objective function part
   
@@ -1761,7 +1848,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow, Ve
 . H - the Hessian part for the objective function
 
 */
-PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow,Vec X,Mat H) 
+PetscErrorCode _p_FormPBPOL::ComputeObjectiveHessian(OPFLOW opflow,Vec X,Mat H) 
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
@@ -1852,19 +1939,24 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow,Vec X,Mat H)
 
 PetscErrorCode OPFLOWComputeHessian_PBPOL(OPFLOW opflow,Vec X,Vec Lambdae,Vec Lambdai,Mat H)
 {
+  return static_cast<PBPOL>(opflow->model)->ComputeHessian(opflow,X,Lambdae,Lambdai,H);
+}
+
+PetscErrorCode _p_FormPBPOL::ComputeHessian(OPFLOW opflow,Vec X,Vec Lambdae,Vec Lambdai,Mat H)
+{
   PetscErrorCode ierr;
   PetscFunctionBegin;
   ierr = MatZeroEntries(H);CHKERRQ(ierr);
 
   /* Objective function Hessian */
-  ierr = OPFLOWComputeObjectiveHessian_PBPOL(opflow,X,H);CHKERRQ(ierr);
+  ierr = this->ComputeObjectiveHessian(opflow,X,H);CHKERRQ(ierr);
 
   /* Equality constraints Hessian */
-  ierr = OPFLOWComputeEqualityConstraintsHessian_PBPOL(opflow,X,Lambdae,H);CHKERRQ(ierr);
+  ierr = this->ComputeEqualityConstraintsHessian(opflow,X,Lambdae,H);CHKERRQ(ierr);
   
   /* Inequality constraints Hessian */
   if(opflow->nconineq) {
-    ierr = OPFLOWComputeInequalityConstraintsHessian_PBPOL(opflow,X,Lambdai,H);CHKERRQ(ierr);
+    ierr = this->ComputeInequalityConstraintsHessian(opflow,X,Lambdai,H);CHKERRQ(ierr);
   }
 
   ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -1874,6 +1966,11 @@ PetscErrorCode OPFLOWComputeHessian_PBPOL(OPFLOW opflow,Vec X,Vec Lambdae,Vec La
 }
 
 PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow)
+{
+  return static_cast<PBPOL>(opflow->model)->SolutionToPS(opflow);
+}
+
+PetscErrorCode _p_FormPBPOL::SolutionToPS(OPFLOW opflow)
 {
   PetscErrorCode ierr;
   PS             ps=(PS)opflow->ps;
@@ -2011,6 +2108,11 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow)
 
 PetscErrorCode OPFLOWModelSetUp_PBPOL(OPFLOW opflow)
 {
+  return static_cast<PBPOL>(opflow->model)->ModelSetUp(opflow);
+}
+
+PetscErrorCode _p_FormPBPOL::ModelSetUp(OPFLOW opflow)
+{
   PetscErrorCode ierr;
   PS             ps=(PS)opflow->ps;
   PSBUS          bus;
@@ -2096,14 +2198,14 @@ PetscErrorCode OPFLOWModelSetUp_PBPOL(OPFLOW opflow)
 
 PetscErrorCode OPFLOWModelCreate_PBPOL(OPFLOW opflow)
 {
-  PBPOL pbpol;
+  // PBPOL pbpol;
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
   
-  ierr = PetscCalloc1(1,&pbpol);CHKERRQ(ierr);
+  // ierr = PetscCalloc1(1,&pbpol);CHKERRQ(ierr);
 
-  opflow->model = pbpol;
+  opflow->model = static_cast<void*>(new PBPOL());
 
   /* Inherit Ops */
   opflow->modelops.destroy = OPFLOWModelDestroy_PBPOL;
