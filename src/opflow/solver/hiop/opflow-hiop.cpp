@@ -346,10 +346,15 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
 
 #if defined(HIOP_USE_RAJA)
   if(ismodelpbpolrajahiop) {
-    hiop::LinearAlgebraFactory::set_mem_space("um");
+#ifndef EXAGO_HAVE_GPU
+    hiop->mds->options->SetStringValue("mem_space","host");
+#else
+    // TODO: replace this with "device" when supported by HiOp
     hiop->mds->options->SetStringValue("mem_space","um");
+#endif
   }
 #endif
+
   //  ierr = PetscPrintf(MPI_COMM_SELF,"Came in OPFLOWSetUp\n");CHKERRQ(ierr);
   hiop->solver = new hiop::hiopAlgFilterIPMNewton(hiop->mds);
 
@@ -419,7 +424,7 @@ PetscErrorCode OPFLOWSolverDestroy_HIOP(OPFLOW opflow)
 
   ierr = PetscFree(hiop);CHKERRQ(ierr);
 
-#ifdef HIOP_USE_MAGMA
+#ifdef EXAGO_HAVE_GPU
   magma_finalize();
 #endif
 
@@ -448,7 +453,7 @@ PetscErrorCode OPFLOWSolverCreate_HIOP(OPFLOW opflow)
   opflow->solverops.getconstraints = OPFLOWSolverGetConstraints_HIOP;
   opflow->solverops.getconstraintmultipliers = OPFLOWSolverGetConstraintMultipliers_HIOP;
 
-#ifdef HIOP_USE_MAGMA
+#ifdef EXAGO_HAVE_GPU
   magma_init();
 #endif
   PetscFunctionReturn(0);

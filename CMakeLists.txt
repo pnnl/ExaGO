@@ -373,11 +373,15 @@ if(EXAGO_RUN_TESTS)
     foreach(test_net ${network_files})
       foreach(opflow_init ACPF MIDPOINT)
         get_filename_component(input_file ${test_net} NAME)
+        set(hiop_compute_mode HYBRID)
+        if(EXAGO_ENABLE_GPU)
+          set(hiop_compute_mode GPU)
+        endif()
         add_test(NAME OPFLOW_HIOP_GPU_${opflow_init}_${input_file} COMMAND
                  ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_opflow>
                  -netfile ${test_net}
                  -opflow_initialization ${opflow_init}
-                 -hiop_compute_mode HYBRID
+                 -hiop_compute_mode ${hiop_compute_mode}
                  -opflow_solver HIOP
                  -opflow_ignore_lineflow_constraints 1
                  -opflow_model PBPOLRAJAHIOP)
