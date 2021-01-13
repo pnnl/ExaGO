@@ -3,7 +3,7 @@
 #if defined(EXAGO_HAVE_HIOP)
 
 #ifndef OPFLOWHIOP_HPP
-#define OPFFLOWHIOP_HPP
+#define OPFLOWHIOP_HPP
 #include <opflow.h>
 #include <hiopLinAlgFactory.hpp>
 #include <hiopInterface.hpp>

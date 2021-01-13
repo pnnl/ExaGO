@@ -90,16 +90,20 @@ public:
     double*          grad_dev;
     LocalOrdinalType fail = 0;
     int              nx,nconeq,nconineq;
-    umpire::Allocator h_allocator,d_allocator;
 
-    // Get allocators
-    h_allocator = resmgr.getAllocator("HOST");
-    d_allocator = resmgr.getAllocator("DEVICE");
-    
+    // Get allocator
+    umpire::Allocator h_allocator = resmgr.getAllocator("HOST");
+
     ierr = OPFLOWGetSizes(opflow,&nx,&nconeq,&nconineq);CHKERRQ(ierr);
 
     grad = static_cast<double*>(h_allocator.allocate(nx*sizeof(double)));
+
+#ifdef EXAGO_HAVE_GPU
+    umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
     grad_dev = static_cast<double*>(d_allocator.allocate(nx*sizeof(double)));
+#else
+    grad_dev = grad;
+#endif
 
     ierr = OPFLOWComputeGradientArray(opflow,xref_dev,grad_dev);CHKERRQ(ierr);
 
@@ -109,8 +113,9 @@ public:
     fail += verifyAnswer(grad_ref, grad, nx);
 
     h_allocator.deallocate(grad);
+#ifdef EXAGO_HAVE_GPU
     d_allocator.deallocate(grad_dev);
-
+#endif
     cleanup(fail, opflow);
   }
 #endif
@@ -165,20 +170,23 @@ public:
     double           *xl,*xu;
     double           *xu_dev,*xl_dev;
     int              nx,nconeq,nconineq;
-    umpire::Allocator h_allocator,d_allocator;
     
-    // Get allocators
-    h_allocator = resmgr.getAllocator("HOST");
-    d_allocator = resmgr.getAllocator("DEVICE");
+    // Get allocator
+    umpire::Allocator h_allocator = resmgr.getAllocator("HOST");
 
     ierr = OPFLOWGetSizes(opflow,&nx,&nconeq,&nconineq);CHKERRQ(ierr);
 
     // Create arrays on the device
     xl = static_cast<double*>(h_allocator.allocate(nx*sizeof(double)));
     xu = static_cast<double*>(h_allocator.allocate(nx*sizeof(double)));
+#ifdef EXAGO_HAVE_GPU
+    umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
     xl_dev = static_cast<double*>(d_allocator.allocate(nx*sizeof(double)));
     xu_dev = static_cast<double*>(d_allocator.allocate(nx*sizeof(double)));
-
+#else
+    xl_dev = xl;
+    xu_dev = xu;
+#endif
     ierr = (*opflow->modelops.setvariableboundsarray)(opflow,xl_dev,xu_dev);CHKERRQ(ierr);
 
     // Copy back from device to host
@@ -190,9 +198,10 @@ public:
 
     h_allocator.deallocate(xl);
     h_allocator.deallocate(xu);
+#ifdef EXAGO_HAVE_GPU
     d_allocator.deallocate(xl_dev);
     d_allocator.deallocate(xu_dev);
-
+#endif
     cleanup(fail,opflow);
   }
 #endif
@@ -246,16 +255,19 @@ public:
     double           *g;
     double           *g_dev,*ge_dev,*gi_dev;
     int              nx,nconeq,nconineq,i;
-    umpire::Allocator h_allocator,d_allocator;
 
-    // Get allocators
-    h_allocator = resmgr.getAllocator("HOST");
-    d_allocator = resmgr.getAllocator("DEVICE");
+    // Get allocator
+    umpire::Allocator h_allocator = resmgr.getAllocator("HOST");
     
     ierr = OPFLOWGetSizes(opflow,&nx,&nconeq,&nconineq);CHKERRQ(ierr);
 
     g     = static_cast<double*>(h_allocator.allocate(opflow->ncon*sizeof(double)));
+#ifdef EXAGO_HAVE_GPU
+    umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
     g_dev = static_cast<double*>(d_allocator.allocate(opflow->ncon*sizeof(double)));
+#else
+    g_dev = g;
+#endif
 
     for(i=0; i < opflow->ncon; i++) g[i] = 0.0;
 
@@ -276,8 +288,9 @@ public:
     fail += verifyAnswer(g, gref, nconeq + nconineq);
 
     h_allocator.deallocate(g);
+#ifdef EXAGO_HAVE_GPU
     d_allocator.deallocate(g_dev);
-
+#endif
     cleanup(fail, opflow);
   }
 #endif
@@ -329,18 +342,23 @@ public:
     double *gl, *gu;
     double *gl_dev,*gu_dev;
     int nx, nconeq, nconineq,i;
-    umpire::Allocator h_allocator,d_allocator;
 
-    // Get allocators
-    h_allocator = resmgr.getAllocator("HOST");
-    d_allocator = resmgr.getAllocator("DEVICE");
+    // Get allocator
+    umpire::Allocator h_allocator = resmgr.getAllocator("HOST");
 
     ierr = OPFLOWGetSizes(opflow, &nx, &nconeq, &nconineq);CHKERRQ(ierr);
 
     gl     = static_cast<double*>(h_allocator.allocate(opflow->ncon*sizeof(double)));
-    gl_dev = static_cast<double*>(d_allocator.allocate(opflow->ncon*sizeof(double)));
     gu     = static_cast<double*>(h_allocator.allocate(opflow->ncon*sizeof(double)));
+
+#ifdef EXAGO_HAVE_GPU
+    umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
+    gl_dev = static_cast<double*>(d_allocator.allocate(opflow->ncon*sizeof(double)));
     gu_dev = static_cast<double*>(d_allocator.allocate(opflow->ncon*sizeof(double)));
+#else
+    gl_dev = gl;
+    gu_dev = gu;
+#endif
 
     for(i=0; i < opflow->ncon; i++) {
       gl[i] = 0.0;
@@ -361,10 +379,11 @@ public:
     fail += verifyAnswer(gu, guref, nconeq + nconineq);
 
     h_allocator.deallocate(gl);
-    d_allocator.deallocate(gl_dev);
     h_allocator.deallocate(gu);
+#ifdef EXAGO_HAVE_GPU
+    d_allocator.deallocate(gl_dev);
     d_allocator.deallocate(gu_dev);
-
+#endif
     cleanup(fail, opflow);
   }
 #endif
@@ -568,11 +587,9 @@ public:
     int              *row_map, *col_map, *spcol_map, *dncol_map, *idxn2sd_map;
     int              nxsparse = 2*opflow->ps->ngenON;
     int              nxdense = 2*opflow->ps->nbus;
-    umpire::Allocator h_allocator,d_allocator;
 
     // Get allocators
-    h_allocator = resmgr.getAllocator("HOST");
-    d_allocator = resmgr.getAllocator("DEVICE");
+    umpire::Allocator h_allocator = resmgr.getAllocator("HOST");
 
     // Re-order the reference solution using IS (Index sets), and then slice for the sparse and dense components
     ierr = OPFLOWGetVariableOrdering(opflow,&idxn2sd_map);CHKERRQ(ierr);
@@ -609,11 +626,19 @@ public:
     int nnz = nxsparse;
 
     iRow = static_cast<int*>(h_allocator.allocate(nnz*sizeof(int)));
-    iRow_dev = static_cast<int*>(d_allocator.allocate(nnz*sizeof(int)));
     jCol = static_cast<int*>(h_allocator.allocate(nnz*sizeof(int)));
-    jCol_dev = static_cast<int*>(d_allocator.allocate(nnz*sizeof(int)));
     values = static_cast<double*>(h_allocator.allocate(nnz*sizeof(double)));
+
+#ifdef EXAGO_HAVE_GPU
+    umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
+    iRow_dev = static_cast<int*>(d_allocator.allocate(nnz*sizeof(int)));
+    jCol_dev = static_cast<int*>(d_allocator.allocate(nnz*sizeof(int)));
     values_dev = static_cast<double*>(d_allocator.allocate(nnz*sizeof(double)));
+#else
+    iRow_dev = iRow;
+    jCol_dev = jCol;
+    values_dev = values;
+#endif
 
     ierr = (*opflow->modelops.computesparsejacobianhiop)(opflow, iRow_dev, jCol_dev, values_dev);CHKERRQ(ierr);
 
@@ -624,17 +649,21 @@ public:
     fail += verifyAnswer(Jeqref_sparse, nnz, iRow, jCol, values);
 
     // Get the hiop dense matrix solution to test against
-    double *Jeq_dense_host,*Jeq_dense_dev;
+    double *Jeq_dense,*Jeq_dense_dev;
 
-    Jeq_dense_host = static_cast<double*>(h_allocator.allocate(nrow*nxdense*sizeof(double*)));
+    Jeq_dense = static_cast<double*>(h_allocator.allocate(nrow*nxdense*sizeof(double*)));
+#ifdef EXAGO_HAVE_GPU
     Jeq_dense_dev  = static_cast<double*>(d_allocator.allocate(nrow*nxdense*sizeof(double*)));
+#else
+    Jeq_dense_dev = Jeq_dense;
+#endif
 
     ierr = (*opflow->modelops.computedenseequalityconstraintjacobianhiop)(opflow, x_dev, Jeq_dense_dev);CHKERRQ(ierr);
 
-    // resmgr.copy(data_jeq_dense_host,data_jeq_dense_dev);
-    resmgr.copy(Jeq_dense_host, Jeq_dense_dev);
+    // Copy back from device
+    resmgr.copy(Jeq_dense, Jeq_dense_dev);
 
-    fail += verifyAnswer(Jeqref_dense, Jeq_dense_host);
+    fail += verifyAnswer(Jeqref_dense, Jeq_dense);
 
     // Checking for the presence of inequality constraints on the given problem
     if(opflow->Nconineq) {
@@ -659,25 +688,31 @@ public:
       ierr = MatCreateSubMatrix(Jineqref_spdn, ineq_row_map_IS, dncol_map_IS, MAT_INITIAL_MATRIX, &Jineqref_dense);CHKERRQ(ierr);
       
       // Get the hiop dense matrix solution
-      double *Jineq_dense_host,*Jineq_dense_dev;
+      double *Jineq_dense,*Jineq_dense_dev;
 
-      Jineq_dense_host = static_cast<double*>(h_allocator.allocate(nxdense*nrow_ineq*sizeof(double*)));
+      Jineq_dense = static_cast<double*>(h_allocator.allocate(nxdense*nrow_ineq*sizeof(double*)));
+#ifdef EXAGO_HAVE_GPU
       Jineq_dense_dev  = static_cast<double*>(d_allocator.allocate(nxdense*nrow_ineq*sizeof(double*)));
+#else
+      Jineq_dense_dev = Jineq_dense;
+#endif
 
       ierr = (*opflow->modelops.computedenseinequalityconstraintjacobianhiop)(opflow, x_dev, Jineq_dense_dev);CHKERRQ(ierr);
 
-	    // resmgr.copy(data_jineq_dense_host,data_jineq_dense_dev);
-	    resmgr.copy(Jineq_dense_host, Jineq_dense_dev);
+	    // Copy back from the device
+	    resmgr.copy(Jineq_dense, Jineq_dense_dev);
 
-      fail += verifyAnswer(Jineqref_dense, Jineq_dense_host);
+      fail += verifyAnswer(Jineqref_dense, Jineq_dense);
 
       //Cleanup                                                                                                         
       delete[] ineq_row_map;
       ierr = MatDestroy(&Jineqref_spdn);CHKERRQ(ierr);
       ierr = MatDestroy(&Jineqref_dense);CHKERRQ(ierr);
 
-	    h_allocator.deallocate(Jineq_dense_host);
+	    h_allocator.deallocate(Jineq_dense);
+#ifdef EXAGO_HAVE_GPU
 	    d_allocator.deallocate(Jineq_dense_dev);
+#endif
     }
 
     // Cleanup                    
@@ -697,13 +732,13 @@ public:
     h_allocator.deallocate(iRow);
     h_allocator.deallocate(jCol);
     h_allocator.deallocate(values);
+    h_allocator.deallocate(Jeq_dense);
+#ifdef EXAGO_HAVE_GPU
     d_allocator.deallocate(iRow_dev);
     d_allocator.deallocate(jCol_dev);
     d_allocator.deallocate(values_dev);
-    
-    h_allocator.deallocate(Jeq_dense_host);
     d_allocator.deallocate(Jeq_dense_dev);
-
+#endif
     cleanup(fail, opflow);
   }
 #endif
@@ -829,11 +864,9 @@ public:
     int              nxdense = 2*opflow->ps->nbus;
     int              *permutation_map, *spcol_map, *dncol_map, *idxn2sd_map;
     Mat              Hessref_spdn, Hessref_sparse, Hessref_dense;
-    umpire::Allocator h_allocator,d_allocator;
 
-    // Get allocators
-    h_allocator = resmgr.getAllocator("HOST");
-    d_allocator = resmgr.getAllocator("DEVICE");
+    // Get allocator
+    umpire::Allocator h_allocator = resmgr.getAllocator("HOST");
 
     // Re-order the reference solution using IS (Index sets), and then slice for the sparse and dense components
     ierr = OPFLOWGetVariableOrdering(opflow,&idxn2sd_map);CHKERRQ(ierr);
@@ -871,15 +904,23 @@ public:
     int nnz = nxsparse;
 
     iRow = static_cast<int*>(h_allocator.allocate(nnz*sizeof(int)));
-    iRow_dev = static_cast<int*>(d_allocator.allocate(nnz*sizeof(int)));
     jCol = static_cast<int*>(h_allocator.allocate(nnz*sizeof(int)));
-    jCol_dev = static_cast<int*>(d_allocator.allocate(nnz*sizeof(int)));
     values = static_cast<double*>(h_allocator.allocate(nnz*sizeof(double)));
+#ifdef EXAGO_HAVE_GPU
+    umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
+    iRow_dev = static_cast<int*>(d_allocator.allocate(nnz*sizeof(int)));
+    jCol_dev = static_cast<int*>(d_allocator.allocate(nnz*sizeof(int)));
     values_dev = static_cast<double*>(d_allocator.allocate(nnz*sizeof(double)));
+#else
+    iRow_dev = iRow;
+    jCol_dev = jCol;
+    values_dev = values;
+#endif
 
     opflow->obj_factor = obj_factor;
     ierr = (*opflow->modelops.computesparsehessianhiop)(opflow, x_ref_dev, iRow_dev, jCol_dev, values_dev);CHKERRQ(ierr);
 
+    // Copy back from the device
     resmgr.copy(iRow,iRow_dev);
     resmgr.copy(jCol,jCol_dev);
     resmgr.copy(values,values_dev);
@@ -906,10 +947,11 @@ public:
     h_allocator.deallocate(iRow);
     h_allocator.deallocate(jCol);
     h_allocator.deallocate(values);
+#ifdef EXAGO_HAVE_GPU
     d_allocator.deallocate(iRow_dev);
     d_allocator.deallocate(jCol_dev);
     d_allocator.deallocate(values_dev);
-
+#endif
     cleanup(fail, opflow);
   }
 #endif

@@ -46,6 +46,7 @@ int BUSParamsRajaHiop::destroy(OPFLOW opflow)
   h_allocator_.deallocate(xidx);
   h_allocator_.deallocate(gidx);
 
+#ifdef EXAGO_HAVE_GPU
   d_allocator_.deallocate(isref_dev_);
   d_allocator_.deallocate(isisolated_dev_);
   d_allocator_.deallocate(ispvpq_dev_);
@@ -57,6 +58,7 @@ int BUSParamsRajaHiop::destroy(OPFLOW opflow)
   d_allocator_.deallocate(bl_dev_);
   d_allocator_.deallocate(xidx_dev_);
   d_allocator_.deallocate(gidx_dev_);
+#endif
 
   return 0;
 }
@@ -77,7 +79,6 @@ int BUSParamsRajaHiop::allocate(OPFLOW opflow)
   /* Allocate the arrays */
   auto& resmgr = umpire::ResourceManager::getInstance();
   h_allocator_ = resmgr.getAllocator("HOST");
-  d_allocator_ = resmgr.getAllocator("DEVICE");
 
   // Allocate data on the host
   isref      = paramAlloc<int>(h_allocator_, nbus);
@@ -137,6 +138,8 @@ int BUSParamsRajaHiop::allocate(OPFLOW opflow)
     gloc += 2;
   }
 
+#ifdef EXAGO_HAVE_GPU
+  d_allocator_ = resmgr.getAllocator("DEVICE");
   // Allocate data on the device
   isref_dev_      = paramAlloc<int>(d_allocator_, nbus);
   isisolated_dev_ = paramAlloc<int>(d_allocator_, nbus);
@@ -144,7 +147,6 @@ int BUSParamsRajaHiop::allocate(OPFLOW opflow)
 
   vmin_dev_ = paramAlloc<double>(d_allocator_, nbus);
   vmax_dev_ = paramAlloc<double>(d_allocator_, nbus);
-  vmin_dev_ = paramAlloc<double>(d_allocator_, nbus);
   va_dev_   = paramAlloc<double>(d_allocator_, nbus);
   vm_dev_   = paramAlloc<double>(d_allocator_, nbus);
   gl_dev_   = paramAlloc<double>(d_allocator_, nbus);
@@ -160,7 +162,6 @@ int BUSParamsRajaHiop::allocate(OPFLOW opflow)
 
   resmgr.copy(vmin_dev_, vmin);
   resmgr.copy(vmax_dev_, vmax);
-  resmgr.copy(vmin_dev_, vmin);
   resmgr.copy(va_dev_  , va);
   resmgr.copy(vm_dev_  , vm);
   resmgr.copy(gl_dev_  , gl);
@@ -168,7 +169,19 @@ int BUSParamsRajaHiop::allocate(OPFLOW opflow)
 
   resmgr.copy(xidx_dev_, xidx);
   resmgr.copy(gidx_dev_, gidx);
-
+#else
+  isref_dev_ = isref;
+  isisolated_dev_ = isisolated;
+  ispvpq_dev_ = ispvpq;
+  vmin_dev_ = vmin;
+  vmax_dev_ = vmax;
+  va_dev_ = va;
+  vm_dev_ = vm;
+  gl_dev_ = gl;
+  bl_dev_ = bl;
+  xidx_dev_ = xidx;
+  gidx_dev_ = gidx;
+#endif
   PetscFunctionReturn(0);
 }
 
@@ -198,6 +211,7 @@ int LINEParamsRajaHiop::destroy(OPFLOW opflow)
     h_allocator_.deallocate(linelimidx);
   }
 
+#ifdef EXAGO_HAVE_GPU
   // Destroy parameter arrays on the device
   d_allocator_.deallocate(Gff_dev_);
   d_allocator_.deallocate(Bff_dev_);
@@ -219,6 +233,7 @@ int LINEParamsRajaHiop::destroy(OPFLOW opflow)
   if(opflow->nconineq) {
     d_allocator_.deallocate(linelimidx_dev_);
   }
+#endif
 
   return 0;
 }
@@ -260,7 +275,6 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow)
   /* Allocate data arrays */
   auto& resmgr = umpire::ResourceManager::getInstance();
   h_allocator_ = resmgr.getAllocator("HOST");
-  d_allocator_ = resmgr.getAllocator("DEVICE");
 
   // Allocate data on the host
   Gff = paramAlloc<double>(h_allocator_, nlineON);
@@ -332,6 +346,8 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow)
     linei++;
   }
 
+#ifdef EXAGO_HAVE_GPU
+  d_allocator_ = resmgr.getAllocator("DEVICE");
   // Allocate data on the device
   Gff_dev_ = paramAlloc<double>(d_allocator_, nlineON);
   Bff_dev_ = paramAlloc<double>(d_allocator_, nlineON);
@@ -377,7 +393,27 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow)
   if(opflow->nconineq) {
     resmgr.copy(linelimidx_dev_, linelimidx);
   }
-
+#else
+  Gff_dev_ = Gff;
+  Bff_dev_ = Bff;
+  Gft_dev_ = Gft;
+  Bft_dev_ = Bft;
+  Gtf_dev_ = Gtf;
+  Btf_dev_ = Btf;
+  Gtt_dev_ = Gtt;
+  Btt_dev_ = Btt;
+  rateA_dev_ = rateA;
+  xidxf_dev_ = xidxf;
+  xidxt_dev_ = xidxt;
+  geqidxf_dev_ = geqidxf;
+  geqidxt_dev_ = geqidxt;
+  gineqidx_dev_ = gineqidx;
+  gbineqidx_dev_ = gbineqidx;
+  if(opflow->nconineq)
+  {
+    linelimidx_dev_ = linelimidx;
+  }
+#endif
   return 0;
 }
 
@@ -387,12 +423,12 @@ int LOADParamsRajaHiop::destroy(OPFLOW opflow)
   h_allocator_.deallocate(ql);
   h_allocator_.deallocate(xidx);
   h_allocator_.deallocate(gidx);
-
+#ifdef EXAGO_HAVE_GPU
   d_allocator_.deallocate(pl_dev_);
   d_allocator_.deallocate(ql_dev_);
   d_allocator_.deallocate(xidx_dev_);
   d_allocator_.deallocate(gidx_dev_);
-
+#endif
   return 0;
 }
 
@@ -412,7 +448,6 @@ int LOADParamsRajaHiop::allocate(OPFLOW opflow)
   /* Allocate arrays */
   auto& resmgr = umpire::ResourceManager::getInstance();
   h_allocator_ = resmgr.getAllocator("HOST");
-  d_allocator_ = resmgr.getAllocator("DEVICE");
 
   // Allocate data on the host
   pl   = paramAlloc<double>(h_allocator_, nload);
@@ -439,6 +474,8 @@ int LOADParamsRajaHiop::allocate(OPFLOW opflow)
     gloc += 2;
   }
 
+#ifdef EXAGO_HAVE_GPU
+  d_allocator_ = resmgr.getAllocator("DEVICE");
   // Allocate data on the device
   pl_dev_   = paramAlloc<double>(d_allocator_, nload);
   ql_dev_   = paramAlloc<double>(d_allocator_, nload);
@@ -450,6 +487,12 @@ int LOADParamsRajaHiop::allocate(OPFLOW opflow)
   resmgr.copy(ql_dev_, ql);
   resmgr.copy(xidx_dev_, xidx);
   resmgr.copy(gidx_dev_, gidx);
+#else
+  pl_dev_ = pl;
+  ql_dev_ = ql;
+  xidx_dev_ = xidx;
+  gidx_dev_ = gidx;
+#endif
 
   return (0);
 }
@@ -469,7 +512,7 @@ int GENParamsRajaHiop::destroy(OPFLOW opflow)
   h_allocator_.deallocate(gidx);
   h_allocator_.deallocate(jacsp_idx);
   h_allocator_.deallocate(jacsq_idx);
-
+#ifdef EXAGO_HAVE_GPU
   // Free arrays on the device
   d_allocator_.deallocate(cost_alpha_dev_);
   d_allocator_.deallocate(cost_beta_dev_);
@@ -482,7 +525,7 @@ int GENParamsRajaHiop::destroy(OPFLOW opflow)
   d_allocator_.deallocate(gidx_dev_);
   d_allocator_.deallocate(jacsp_idx_dev_);
   d_allocator_.deallocate(jacsq_idx_dev_);
-
+#endif
   return 0;
 }
 
@@ -505,7 +548,6 @@ int GENParamsRajaHiop::allocate(OPFLOW opflow)
   /* Allocate arrays on the host */
   auto& resmgr = umpire::ResourceManager::getInstance();
   h_allocator_ = resmgr.getAllocator("HOST");
-  d_allocator_ = resmgr.getAllocator("DEVICE");
 
   cost_alpha = paramAlloc<double>(h_allocator_, ngenON);
   cost_beta  = paramAlloc<double>(h_allocator_, ngenON);
@@ -553,6 +595,8 @@ int GENParamsRajaHiop::allocate(OPFLOW opflow)
     gloc += 2;
   }
 
+#ifdef EXAGO_HAVE_GPU
+  d_allocator_ = resmgr.getAllocator("DEVICE");
   // Allocate arrays on the device
   cost_alpha_dev_ = paramAlloc<double>(d_allocator_, ngenON);
   cost_beta_dev_  = paramAlloc<double>(d_allocator_, ngenON);
@@ -584,7 +628,19 @@ int GENParamsRajaHiop::allocate(OPFLOW opflow)
 
   resmgr.copy(jacsp_idx_dev_,jacsp_idx);
   resmgr.copy(jacsq_idx_dev_,jacsq_idx);
-
+#else
+  cost_alpha_dev_ = cost_alpha;
+  cost_beta_dev_ = cost_beta;
+  cost_gamma_dev_ = cost_gamma;
+  pt_dev_ = pt;
+  pb_dev_ = pb;
+  qt_dev_ = qt;
+  qb_dev_ = qb;
+  xidx_dev_ = xidx;
+  gidx_dev_ = gidx;
+  jacsp_idx_dev_ = jacsp_idx;
+  jacsq_idx_dev_ = jacsq_idx;
+#endif
   return 0;
 }
 
@@ -594,8 +650,6 @@ PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLRAJAHIOP(OPFLOW opflow,double* x0
   PetscErrorCode ierr;
   double         *x;
   auto& resmgr = umpire::ResourceManager::getInstance();
-  umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
-  umpire::Allocator d_allocator_ = resmgr.getAllocator("DEVICE");
 
   PetscFunctionBegin;
   //  ierr = PetscPrintf(MPI_COMM_SELF,"Entered OPFLOWInitialization\n");CHKERRQ(ierr);
@@ -604,9 +658,9 @@ PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLRAJAHIOP(OPFLOW opflow,double* x0
   ierr = (*opflow->modelops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
   ierr = VecGetArray(opflow->X,&x);CHKERRQ(ierr);
 
-  registerWith(x,opflow->nx,resmgr,h_allocator_);
-
   // Copy from host to device
+  umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
+  registerWith(x,opflow->nx,resmgr,h_allocator_);
   resmgr.copy(x0_dev,x);
 
   ierr = VecRestoreArray(opflow->X,&x);CHKERRQ(ierr);
@@ -1075,16 +1129,15 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW
   RAJA::View<double, RAJA::Layout<2>> JacD_view(JacD_dev, 2*busparams->nbus, nxdense);
 
   /* Zero out JacD */
-  RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, busparams->nbus), 
-    RAJA_LAMBDA (RAJA::Index_type i)
-    {
-      int j;
-      for(j=0; j < nx-nxsparse; j++) {
-        JacD_view(2*i, j) = 0.0;
-        JacD_view(2*i+1, j) = 0.0;
-      }
-    }
-  );
+  auto& resmgr = umpire::ResourceManager::getInstance();
+  umpire::Allocator alloc;
+#ifdef EXAGO_HAVE_GPU
+  alloc = resmgr.getAllocator("DEVICE");
+#else
+  alloc = resmgr.getAllocator("HOST");
+#endif
+  registerWith(JacD_dev,2*busparams->nbus * nxdense,resmgr,alloc);
+  resmgr.memset(JacD_dev,0);
 
   /* Jacobian from bus contributions */
   int* isisolated = busparams->isisolated_dev_;
@@ -1256,17 +1309,15 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLRAJAHIOP(OPFL
   RAJA::View<double, RAJA::Layout<2>> JacD_view(JacD_dev, 2*lineparams->nlinelim, nx-nxsparse);
   
   /* Zero out JacD */
-  RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, lineparams->nlinelim),
-    RAJA_LAMBDA (RAJA::Index_type i)
-    {
-      int k;
-      for(k=0; k < nx-nxsparse; k++)
-      {
-        JacD_view(2*i, k) = 0.0;
-        JacD_view(2*i+1, k) = 0.0;
-      }
-    }
-  );
+  auto& resmgr = umpire::ResourceManager::getInstance();
+  umpire::Allocator alloc;
+#ifdef EXAGO_HAVE_GPU
+  alloc = resmgr.getAllocator("DEVICE");
+#else
+  alloc = resmgr.getAllocator("HOST");
+#endif
+  registerWith(JacD_dev, 2 * lineparams->nlinelim * (nx - nxsparse), resmgr, alloc);
+  resmgr.memset(JacD_dev,0);
 
   /* Line contributions */
   double* Gff_arr = lineparams->Gff_dev_;

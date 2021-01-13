@@ -382,9 +382,8 @@ int main(int argc, char** argv)
     // Get resource manager instance
     auto& resmgr = umpire::ResourceManager::getInstance();
 
-    // Get Allocators
+    // Get Allocator
     umpire::Allocator h_allocator = resmgr.getAllocator("HOST");
-    umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
 
     // Register array xref and lambdaref with umpire
     umpire::util::AllocationRecord record_x{x_ref,sizeof(double)*nx,h_allocator.getAllocationStrategy()};
@@ -393,12 +392,18 @@ int main(int argc, char** argv)
     umpire::util::AllocationRecord record_lam{lambda_ref,sizeof(double)*(nconeq+nconineq),h_allocator.getAllocationStrategy()};
     resmgr.registerAllocation(lambda_ref,record_lam);
 
-    // Allocate and copy xref to device
-    double *x_ref_dev = static_cast<double*>(d_allocator.allocate(nx*sizeof(double)));
-    resmgr.copy(x_ref_dev,x_ref);
+    // Allocate and copy xref and lambdaref to device
+    double *x_ref_dev, *lambda_ref_dev;
+#ifdef EXAGO_HAVE_GPU
+    umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
+    x_ref_dev = static_cast<double*>(d_allocator.allocate(nx*sizeof(double)));
+    lambda_ref_dev = static_cast<double*>(d_allocator.allocate((nconeq+nconineq)*sizeof(double)));
+#else
+    x_ref_dev = x_ref;
+    lambda_ref_dev = lambda_ref;
+#endif
 
-    // Allocate and copy xref to device
-    double *lambda_ref_dev = static_cast<double*>(d_allocator.allocate((nconeq+nconineq)*sizeof(double)));
+    resmgr.copy(x_ref_dev,x_ref);
     resmgr.copy(lambda_ref_dev,lambda_ref);
 					    
     // Tests
@@ -413,15 +418,21 @@ int main(int argc, char** argv)
     double *hess_dense,*hess_dense_dev;
 
     hess_dense     = static_cast<double*>(h_allocator.allocate(nxdense*nxdense*sizeof(double*)));
+#ifdef EXAGO_HAVE_GPU
     hess_dense_dev = static_cast<double*>(d_allocator.allocate(nxdense*nxdense*sizeof(double*)));
+#else
+    hess_dense_dev = hess_dense;
+#endif
 
     fail += test.computeHessian(opflowtest,x_ref_dev,lambda_ref_dev,obj_factor,Hess,resmgr,hess_dense,hess_dense_dev);
 
+    // Cleanup
+    h_allocator.deallocate(hess_dense);
+#ifdef EXAGO_HAVE_GPU
     d_allocator.deallocate(x_ref_dev);
     d_allocator.deallocate(lambda_ref_dev);
-
-    h_allocator.deallocate(hess_dense);
     d_allocator.deallocate(hess_dense_dev);
+#endif
 
     ierr = PetscFree(x_ref);CHKERRQ(ierr);
     ierr = PetscFree(xl_ref);CHKERRQ(ierr);
