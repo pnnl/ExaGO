@@ -35,16 +35,19 @@
       #  NOTES:  WORKDIR is on constance/marianas/newell
       #          ./      is only on the Kubernetes instance
       #
-      export WORKDIR="$HOME/gitlab/$CI_JOB_ID/"
-      mkdir -p "$WORKDIR"
-      cp -R ./* "$WORKDIR"
+      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${MY_CLUSTER}/"
+      if [[ ! -d "$WORKDIR" ]]; then
+        # if workdir already exists, we're in the testing job
+        mkdir -p "$WORKDIR"
+        cp -R ./* "$WORKDIR"
+      fi
       cd "$WORKDIR"
       # echo submitting batch job
       [ -f output ] && rm output
       touch output
       tail -f output &
       tailpid=$!
-      sbatch --export=MY_CLUSTER=$CLUSTER -A EXASGD --gres=gpu:1 -p $SLURM_Q -o output -e output -t 1:00:00 $WORKDIR/build.sh
+      sbatch --export=ALL -A EXASGD --gres=gpu:1 -p $SLURM_Q -o output -e output -t 1:00:00 $WORKDIR/build.sh $SCRIPT_ARGS
       res=1
       # Uncomment when we find nondeterministic CI issue.
       # set +xv
@@ -65,9 +68,6 @@
       # cd $WORKDIR
       # ./BUILD.sh
       #
-      rm -rf "$WORKDIR"
-      exit $res
-
 
 .pnnl_tags_template: &pnnl_tags_definition
   tags:
@@ -79,6 +79,7 @@
 stages:
   - build
   - test
+  - matrix
 
 # For Ascent CI
 build_on_login_node:
@@ -107,19 +108,87 @@ build_on_newell:
   stage: build
   variables:
     SLURM_Q: "newell_shared"
-    CLUSTER: "newell"
+    MY_CLUSTER: "newell"
+    SCRIPT_ARGS: " --build-only "
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   rules:
     - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"'
 
-build_on_marianas:
-  stage: build
+test_on_newell:
+  stage: test
+  dependencies:
+    - build_on_newell
   variables:
-    SLURM_Q: "shared"
-    CLUSTER: "marianas"
+    SLURM_Q: "newell_shared"
+    MY_CLUSTER: "newell"
+    SCRIPT_ARGS: " --test-only "
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   rules:
     - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"'
+  after_script:
+    - |
+      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${MY_CLUSTER}/"
+      rm -rf $WORKDIR
+
+build_on_marianas:
+  stage: build
+  variables:
+    SLURM_Q: "shared"
+    MY_CLUSTER: "marianas"
+    SCRIPT_ARGS: " --build-only "
+  <<: *pnnl_tags_definition
+  <<: *pnnl_script_definition
+  rules:
+    - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"'
+
+test_on_marianas:
+  stage: test
+  dependencies:
+    - build_on_marianas
+  variables:
+    SLURM_Q: "shared"
+    MY_CLUSTER: "marianas"
+    SCRIPT_ARGS: " --test-only "
+  <<: *pnnl_tags_definition
+  <<: *pnnl_script_definition
+  rules:
+    - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"'
+  after_script:
+    - |
+      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${MY_CLUSTER}/"
+      rm -rf $WORKDIR
+
+marianas_full_build_matrix:
+  stage: matrix
+  # We only want to make the build matrix available if the default builds have passed.
+  dependencies:
+    - test_on_marianas
+    - test_on_newell
+  variables:
+    SLURM_Q: "shared"
+    MY_CLUSTER: "marianas"
+    TIMELIMIT: '60:00'
+    SCRIPT_ARGS: " --ci "
+  <<: *pnnl_tags_definition
+  <<: *pnnl_script_definition
+  timeout: 65m
+  rules:
+    - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd" && $CI_PIPELINE_SOURCE == "schedule"'
+      when: always
+      allow_failure: false
+    - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"'
+      when: manual
+      allow_failure: true
+  parallel:
+    matrix:
+      # These variables represent the indices of cmake options arrays that
+      # will be used in a given build. See scripts/buildMatrix.sh for more
+      # details.
+      - CI_GPUOPT: [0, 1]
+        CI_IPOPTOPT: [0, 1]
+        CI_RAJAOPT: [0, 1]
+        CI_HIOPOPT: [0, 1]
+        CI_MPIOPT: [0, 1]
 # ---

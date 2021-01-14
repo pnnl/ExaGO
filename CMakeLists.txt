@@ -242,13 +242,19 @@ if(EXAGO_RUN_TESTS)
   message(STATUS "Starting tests")
 
   # Unit tests
-  foreach(test_net ${network_files})
-    get_filename_component(input_file ${test_net} NAME)
-    add_test(NAME UNIT_TESTS_OPFLOW_MODEL_${input_file}_TEST COMMAND
-      ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:testAcopf>
-      -netfile ${test_net})
-  endforeach()
-
+  if(EXAGO_HAVE_HIOP)
+    foreach(test_net ${network_files})
+      get_filename_component(input_file ${test_net} NAME)
+      add_test(NAME UNIT_TESTS_OPFLOW_MODEL_${input_file}_TEST COMMAND
+        ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:testAcopf>
+        -netfile ${test_net})
+    endforeach()
+  else()
+    add_test(NAME UNIT_TESTS_PLACEHOLDER_NOHIOP
+      COMMAND bash -c "
+      echo 'No unit tests exist without HIOP enabled.'
+      exit 1")
+  endif()
 
   # Tests with IPOPT
   if(EXAGO_HAVE_IPOPT)
