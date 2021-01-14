@@ -306,7 +306,6 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
   PetscErrorCode ierr;
   OPFLOWSolver_HIOP hiop=(OPFLOWSolver_HIOP)opflow->solver;
   PetscBool         ismodelpbpolhiop,ismodelpbpolrajahiop;
-  PetscReal         tol=1e-6;
   HIOPComputeMode   compute_mode=AUTO;
   int               verbose_level=0;
 
@@ -317,7 +316,6 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
 
   ierr = PetscOptionsBegin(opflow->comm->type,NULL,"HIOP options",NULL);CHKERRQ(ierr);
   ierr = PetscOptionsEnum("-hiop_compute_mode","Type of compute mode","",HIOPComputeModeChoices,(PetscEnum)compute_mode,(PetscEnum*)&compute_mode,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsReal("-hiop_tolerance","HIOP solver tolerance","",tol,&tol,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-hiop_verbosity_level","HIOP verbosity level (Integer 0 to 12)","",verbose_level,&verbose_level,NULL);CHKERRQ(ierr);
   PetscOptionsEnd();
 
@@ -331,7 +329,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
 
   hiop->mds->options->SetIntegerValue("verbosity_level", verbose_level);
   hiop->mds->options->SetNumericValue("mu0", 1e-1);
-  hiop->mds->options->SetNumericValue("tolerance", tol);
+  hiop->mds->options->SetNumericValue("tolerance", opflow->tolerance);
 
   /* Error if model is not power balance hiop or power balance raja hiop */
   ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBPOLHIOP,&ismodelpbpolhiop);CHKERRQ(ierr);

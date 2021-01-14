@@ -283,6 +283,9 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
   ierr = VecRestoreArray(opflow->Gl,&gl);CHKERRQ(ierr);
   ierr = VecRestoreArray(opflow->Gu,&gu);CHKERRQ(ierr);
 
+  /* IPOPT tolerance */
+  AddIpoptNumOption(ipopt->nlp, "tol", opflow->tolerance);
+
   ierr = VecGetArray(opflow->X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(opflow->G,&g);CHKERRQ(ierr);
   ierr = VecGetArray(opflow->Lambda,&lambda);CHKERRQ(ierr);
