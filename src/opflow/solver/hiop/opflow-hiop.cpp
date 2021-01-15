@@ -271,6 +271,7 @@ void OPFLOWHIOPInterface::solution_callback(hiop::hiopSolveStatus status,
   /* Copy over solution details */
   hiop->status = status;
   opflow->obj = obj_value;
+  opflow->numits = n;
 
   ierr = VecGetArray(opflow->X,&x);CHKERRV(ierr);
   spdensetonatural(xsol,x);

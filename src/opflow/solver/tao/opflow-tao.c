@@ -89,6 +89,9 @@ PetscErrorCode OPFLOWSolverSolve_TAO(OPFLOW opflow)
   ierr = TaoSetVariableBounds(tao->nlp,opflow->Xl,opflow->Xu);CHKERRQ(ierr);
 
   ierr = TaoSolve(tao->nlp);CHKERRQ(ierr);
+
+  /* Get the iteration count */
+  ierr = TaoGetTotalIterationNumber(tao->nlp,&opflow->numits);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
