@@ -247,6 +247,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   opflow->obj = 0.0;
   opflow->obj_gencost = PETSC_TRUE; /* Generation cost minimization ON by default */
   opflow->solutiontops = PETSC_FALSE;
+  opflow->tolerance = 1e-6;
 
   opflow->has_gensetpoint = PETSC_FALSE;
 
@@ -360,6 +361,33 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow)
 
   ierr = PetscFree(*opflow);CHKERRQ(ierr);
   *opflow = 0;
+  PetscFunctionReturn(0);
+}
+
+/* 
+   OPFLOWSetTolerance - Set the solver tolerance
+
+  Input Parameters:
++ opflow - opflow application object
+- tol    - solver tolerance
+*/
+PetscErrorCode OPFLOWSetTolerance(OPFLOW opflow,PetscReal tol)
+{
+  PetscFunctionBegin;
+  opflow->tolerance = tol;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * OPFLOWGetTolerance - Get the solver tolerance
+ * Input Parameters:
+ * opflow - opflow application object
+ * tol    - pointer to solver tolerance variable that will be set
+ */
+PetscErrorCode OPFLOWGetTolerance(OPFLOW opflow,PetscReal *tol)
+{
+  PetscFunctionBegin;
+  tol = opflow->tolerance;
   PetscFunctionReturn(0);
 }
 
@@ -688,6 +716,8 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PetscOptionsEnum("-opflow_initialization","Type of OPFLOW initialization","",OPFLOWInitializationTypes,(PetscEnum)opflow->initializationtype,(PetscEnum*)&opflow->initializationtype,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsEnum("-opflow_objective","Type of OPFLOW objective","",OPFLOWObjectiveTypes,(PetscEnum)opflow->objectivetype,(PetscEnum*)&opflow->objectivetype,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-opflow_has_gensetpoint","Use set-points for generator real power","",opflow->has_gensetpoint,&opflow->has_gensetpoint,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsReal("-opflow_tolerance","optimization tolerance","",opflow->tolerance,&opflow->tolerance,NULL);CHKERRQ(ierr);
+
 
   if(opflow->objectivetype == OPFLOWOBJ_MIN_GEN_COST) {
     opflow->obj_gencost = PETSC_TRUE;

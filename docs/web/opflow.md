@@ -108,3 +108,6 @@ Through this option, the penalty cost for power imbalance when `-opflow_include_
 ```
 ./opflow -netfile <netfilename> -opflow_include_powerimbalance_variables -opflow_powerimbalance_penalty <penalty_cost>
 ```
+
+#### Tolerance (-opflow_tolerance <tolerance>)
+This option sets the optimization tolerance. Default is 1e-6.

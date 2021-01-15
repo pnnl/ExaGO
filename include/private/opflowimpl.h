@@ -125,6 +125,8 @@ struct _p_OPFLOW{
 
   PetscBool setupcalled; /* OPFLOWSetUp called? */
 
+  PetscReal   tolerance; /* Tolerance for OPFLOW */
+
   OPFLOWInitializationType initializationtype; /* OPFLOW Initialization type */
 
   OPFLOWObjectiveType objectivetype; /* OPFLOW objective */

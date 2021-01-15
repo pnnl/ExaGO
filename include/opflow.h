@@ -34,7 +34,8 @@ PETSC_EXTERN PetscErrorCode OPFLOWCreateGlobalVector(OPFLOW,Vec*);
 PETSC_EXTERN PetscErrorCode OPFLOWCreateMatrix(OPFLOW,Mat*);
 PETSC_EXTERN PetscErrorCode OPFLOWSolve(OPFLOW);
 PETSC_EXTERN PetscErrorCode OPFLOWSetInitialGuess(OPFLOW,Vec);
-
+PETSC_EXTERN PetscErrorCode OPFLOWSetTolerance(OPFLOW,PetscReal);
+PETSC_EXTERN PetscErrorCode OPFLOWGetTolerance(OPFLOW,PetscReal*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetObjective(OPFLOW,PetscReal*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetVariableBounds(OPFLOW,Vec*,Vec*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetConstraintJacobian(OPFLOW,Mat*,Mat*);
