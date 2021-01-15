@@ -865,12 +865,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 
   /* Create Hessian */
   ierr = PSCreateMatrix(opflow->ps,&opflow->Hes);CHKERRQ(ierr);
-  /*
-  ierr = MatCreate(opflow->comm->type,&opflow->Hes);CHKERRQ(ierr);
-  ierr = MatSetSizes(opflow->Hes,opflow->nx,opflow->nx,opflow->Nx,opflow->Nx);CHKERRQ(ierr);
-  ierr = MatSetUp(opflow->Hes);CHKERRQ(ierr);
-  ierr = MatSetFromOptions(opflow->Hes);CHKERRQ(ierr);
-  */
+
 
   /* Create natural to sparse dense ordering mapping (needed for some models)
      Here, we create the mapping array and fill up natural ordering. The model
@@ -878,17 +873,37 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   */
   ierr = PetscMalloc1(opflow->nx,&opflow->idxn2sd_map);CHKERRQ(ierr);
   for(i=0; i < opflow->nx; i++) opflow->idxn2sd_map[i] = i;
-  
+
+  /* Model set up */
   if(opflow->modelops.setup) {
     ierr = (*opflow->modelops.setup)(opflow);CHKERRQ(ierr);
   }
 
-  ierr = (*opflow->solverops.setup)(opflow);CHKERRQ(ierr);
-  //  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Setup completed\n");CHKERRQ(ierr);
+  /* Set bounds on variables */
+  ierr = OPFLOWComputeVariableBounds(opflow,opflow->Xl,opflow->Xu);CHKERRQ(ierr);
 
+  /* Set bounds on constraints */
+  ierr = OPFLOWComputeConstraintBounds(opflow,opflow->Gl,opflow->Gu);CHKERRQ(ierr);
+
+  /* Set initial guess */
   if(opflow->initializationtype == OPFLOWINIT_ACPF) {
     ierr = OPFLOWSetUpInitPflow(opflow);CHKERRQ(ierr);
   }
+  ierr = OPFLOWSetInitialGuess(opflow,opflow->X);CHKERRQ(ierr);
+
+  /* Initial guess for multipliers */
+  ierr = VecSet(opflow->Lambda,1.0);CHKERRQ(ierr);
+  ierr = VecSet(opflow->Lambdae,1.0);CHKERRQ(ierr);
+  if(opflow->Nconineq) {
+    ierr = VecSet(opflow->Lambdai,1.0);CHKERRQ(ierr);
+  }
+
+  /* Solver set up */
+  if(opflow->solverops.setup) {
+    ierr = (*opflow->solverops.setup)(opflow);CHKERRQ(ierr);
+  }
+  //  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Setup completed\n");CHKERRQ(ierr);
+
 
   /* Register events for logging */
   ierr = PetscLogEventRegister("OPFLOWObj",0,&opflow->objlogger);CHKERRQ(ierr);
@@ -959,36 +974,6 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow)
   if(!opflow->setupcalled) {
     ierr = OPFLOWSetUp(opflow);
   }
-  /* Set bounds on variables */
-  if(opflow->modelops.setvariablebounds) {
-    ierr = (*opflow->modelops.setvariablebounds)(opflow,opflow->Xl,opflow->Xu);CHKERRQ(ierr);
-  }
-
-  /* Set bounds on constraints */
-  if(opflow->modelops.setconstraintbounds) {
-    ierr = (*opflow->modelops.setconstraintbounds)(opflow,opflow->Gl,opflow->Gu);CHKERRQ(ierr);
-  }
-
-  /* Set bounds on variables and constraints */
-  if(opflow->modelops.setvariableandconstraintbounds) {
-    ierr = (*opflow->modelops.setvariableandconstraintbounds)(opflow,opflow->Xl,opflow->Xu,opflow->Gl,opflow->Gu);CHKERRQ(ierr);
-  }
-
-  ierr = OPFLOWSetInitialGuess(opflow,opflow->X);CHKERRQ(ierr);
-
-  ierr = VecSet(opflow->Lambda,1.0);CHKERRQ(ierr);
-  ierr = VecSet(opflow->Lambdae,1.0);CHKERRQ(ierr);
-  if(opflow->Nconineq) {
-    ierr = VecSet(opflow->Lambdai,1.0);CHKERRQ(ierr);
-  }
-
-  /* Only for debugging */
-  /*
-  ierr = (*opflow->modelops.computeequalityconstraints)(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
-  ierr = (*opflow->modelops.computeinequalityconstraints)(opflow,opflow->X,opflow->Gi);CHKERRQ(ierr);
-  ierr = VecView(opflow->Gi,0);
-  exit(1);
-  */
 
   /* Solve */
   ierr = PetscLogEventBegin(opflow->solvelogger,0,0,0,0);CHKERRQ(ierr);
@@ -1103,7 +1088,9 @@ PetscErrorCode OPFLOWComputeVariableBounds(OPFLOW opflow,Vec Xl, Vec Xu)
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  ierr = (*opflow->modelops.setvariablebounds)(opflow,Xl,Xu);CHKERRQ(ierr);
+  if(opflow->modelops.setvariablebounds) {
+    ierr = (*opflow->modelops.setvariablebounds)(opflow,Xl,Xu);CHKERRQ(ierr);
+  }
   PetscFunctionReturn(0);
 }
 
@@ -1491,7 +1478,9 @@ PetscErrorCode OPFLOWComputeConstraintBounds(OPFLOW opflow,Vec Gl, Vec Gu)
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  ierr = (*opflow->modelops.setconstraintbounds)(opflow,Gl,Gu);CHKERRQ(ierr);
+  if(opflow->modelops.setconstraintbounds) {
+    ierr = (*opflow->modelops.setconstraintbounds)(opflow,Gl,Gu);CHKERRQ(ierr);
+  }
   PetscFunctionReturn(0);
 }
 
