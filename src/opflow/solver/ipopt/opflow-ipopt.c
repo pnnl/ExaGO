@@ -233,6 +233,16 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
   return 1;
 }
 
+Bool OPFLOWSolverMonitor_IPOPT(Index alg_mod,Index iter_count,Number obj_value,Number inf_pr,
+			       Number inf_du,Number mu,Number d_norm,Number regularization_size,
+			       Number alpha_du,Number alpha_pr,Index ls_trials,
+                               UserDataPtr user_data)
+{
+  OPFLOW  opflow=(OPFLOW)user_data;
+  opflow->numits = iter_count;
+  return 1;
+}
+
 PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
 {
   PetscErrorCode     ierr;
@@ -285,6 +295,11 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
 
   /* IPOPT tolerance */
   AddIpoptNumOption(ipopt->nlp, "tol", opflow->tolerance);
+
+  /* Add intermediate callback function to get the solver info
+     Note this is called by IPOPT at each iteration 
+  */
+  SetIntermediateCallback(ipopt->nlp,OPFLOWSolverMonitor_IPOPT);
 
   ierr = VecGetArray(opflow->X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(opflow->G,&g);CHKERRQ(ierr);

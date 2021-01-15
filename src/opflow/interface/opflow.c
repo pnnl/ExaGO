@@ -379,6 +379,19 @@ PetscErrorCode OPFLOWSetTolerance(OPFLOW opflow,PetscReal tol)
 }
 
 /**
+ * OPFLOWGetNumIterations - Get the solver iterations
+ * Input Parameters:
+ * opflow - opflow application object
+ * tol    - pointer to solver iterations variable that will be set
+ */
+PetscErrorCode OPFLOWGetNumIterations(OPFLOW opflow,PetscInt *its)
+{
+  PetscFunctionBegin;
+  *its = opflow->numits;
+  PetscFunctionReturn(0);
+}
+
+/**
  * OPFLOWGetTolerance - Get the solver tolerance
  * Input Parameters:
  * opflow - opflow application object
@@ -387,7 +400,7 @@ PetscErrorCode OPFLOWSetTolerance(OPFLOW opflow,PetscReal tol)
 PetscErrorCode OPFLOWGetTolerance(OPFLOW opflow,PetscReal *tol)
 {
   PetscFunctionBegin;
-  tol = opflow->tolerance;
+  *tol = opflow->tolerance;
   PetscFunctionReturn(0);
 }
 

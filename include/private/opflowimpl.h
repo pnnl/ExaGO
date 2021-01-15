@@ -169,6 +169,8 @@ struct _p_OPFLOW{
 
   PetscBool has_powersetpoint; /* Use real power set-point */
 
+  PetscInt  numits; /* Number of solver iterations */
+
   /* Flag to denote if the OPFLOW solution has been transfered to PS struct via OPLOWSolutionToPS call */
   PetscBool solutiontops;
 
