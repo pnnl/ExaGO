@@ -1,6 +1,7 @@
 
 
 #include <private/opflowimpl.h>
+#include "exago_config.h"
 #include "pbpol.h"
 
 PetscErrorCode OPFLOWModelDestroy_PBPOL(OPFLOW opflow)
@@ -451,7 +452,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec Ge
 PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,Vec X,Mat Je)
 {
   PetscErrorCode ierr;
-  PetscInt       i,k,row[2],col[4],gidx;
+  PetscInt       i,k,row[2],col[4],gidx,flps=0;
   PetscInt       nconnlines,locglob,loc,locglobf,locglobt,locf,loct;
   PetscScalar    Vm,val[8],Gff,Bff,Gft,Bft,Gtf,Btf,Gtt,Btt;
   PetscScalar    thetaf,thetat,Vmf,Vmt,thetaft,thetatf;
@@ -612,6 +613,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,Vec X
         ierr = MatSetValues(Je,2,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
       }
     }
+    flps += nconnlines * (185+(16*EXAGO_FLOPS_SINOP)+(16*EXAGO_FLOPS_COSOP));
 
     if(opflow->has_gensetpoint) {
       ierr = PSBUSGetVariableGlobalLocation(bus,&locglob);CHKERRQ(ierr);
@@ -644,6 +646,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,Vec X
   ierr = MatAssemblyBegin(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
+  PetscLogFlops(flps);
   PetscFunctionReturn(0);
 }
 
@@ -726,7 +729,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec 
 PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,Vec X,Mat Ji)
 {
   PetscErrorCode ierr;
-  PetscInt       i;
+  PetscInt       i,flps=0;
   PetscInt       row[2],col[4];
   PetscInt       rstart,rend;
   PetscInt       gloc,xlocf,xloct;
@@ -843,12 +846,14 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,Vec
       ierr = MatSetValues(Ji,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
       
     }
+    flps += ps->nline * (160+(20*EXAGO_FLOPS_SINOP)+(20*EXAGO_FLOPS_COSOP));
   }
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
+  PetscLogFlops(flps);
   PetscFunctionReturn(0);
 }
 
@@ -1146,7 +1151,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL(OPFLOW opflow,Vec X
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
-  PetscInt       i,k;
+  PetscInt       i,k,flps=0;
   PSLINE         line;
   PSBUS          bus;
   PetscInt       nconnlines;
@@ -1403,10 +1408,12 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL(OPFLOW opflow,Vec X
      }
     }
   }
+  flps += ps->nbus * (282+(36*EXAGO_FLOPS_SINOP)+(36*EXAGO_FLOPS_COSOP));
 
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(Lambda,&lambda);CHKERRQ(ierr);
   
+  PetscLogFlops(flps);
   PetscFunctionReturn(0);
 }
 
@@ -1427,7 +1434,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow, Ve
 {
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
-  PetscInt       i;
+  PetscInt       i,flps=0;
   PSLINE         line;
   const PSBUS    *connbuses;
   PetscInt       xlocf,xloct,xlocglobf,xlocglobt;
@@ -1741,12 +1748,15 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow, Ve
       val[3] = lambda[gloc]*d2Sf2_dVmt_dVmt + lambda[gloc+1]*d2St2_dVmt_dVmt;
       
       ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+      // Must be inside for loop since there's a continue condition
+      flps += (185+(16*EXAGO_FLOPS_SINOP)+(16*EXAGO_FLOPS_COSOP));
     }
   }
 
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(Lambda,&lambda);CHKERRQ(ierr);
 
+  PetscLogFlops(flps);
   PetscFunctionReturn(0);
 }
 
