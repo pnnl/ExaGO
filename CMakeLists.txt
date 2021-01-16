@@ -247,7 +247,8 @@ if(EXAGO_RUN_TESTS)
       get_filename_component(input_file ${test_net} NAME)
       add_test(NAME UNIT_TESTS_OPFLOW_MODEL_${input_file}_TEST COMMAND
         ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:testAcopf>
-        -netfile ${test_net})
+        -netfile ${test_net}
+	-opflow_genbusvoltage_fixed 0)
     endforeach()
   else()
     add_test(NAME UNIT_TESTS_PLACEHOLDER_NOHIOP

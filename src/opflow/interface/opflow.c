@@ -273,7 +273,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   opflow->include_powerimbalance_variables = PETSC_FALSE;
   opflow->loadloss_penalty = 1e1;
   opflow->powerimbalance_penalty = 1e2;
-  opflow->genbusVmfixed = PETSC_FALSE;
+  opflow->genbusVmfixed = PETSC_FALSE; /* no fixed generator voltage by default */
   opflow->spdnordering = PETSC_FALSE;
   opflow->setupcalled = PETSC_FALSE;
 
