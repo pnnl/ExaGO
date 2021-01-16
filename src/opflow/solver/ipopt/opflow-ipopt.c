@@ -247,59 +247,9 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
 {
   PetscErrorCode     ierr;
   OPFLOWSolver_IPOPT ipopt = (OPFLOWSolver_IPOPT)opflow->solver;
-  PetscScalar        *x,*xl,*xu,*g,*gl,*gu,*lambda;
-  MatInfo            info_eq,info_ineq,info_hes;
+  PetscScalar        *x,*g,*lambda;
 
   PetscFunctionBegin;
-
-  /* Compute nonzeros for the Jacobian */
-  /* Equality constraint Jacobian */
-  ierr = (*opflow->modelops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
-  ierr = MatSetOption(opflow->Jac_Ge,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
-
-  ierr = MatGetInfo(opflow->Jac_Ge,MAT_LOCAL,&info_eq);CHKERRQ(ierr);
-  ipopt->nnz_jac_ge = info_eq.nz_used;
-
-  ipopt->nnz_jac_gi = 0;
-  if(opflow->Nconineq) {
-    ierr = (*opflow->modelops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
-    ierr = MatSetOption(opflow->Jac_Gi,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
-
-    ierr = MatGetInfo(opflow->Jac_Gi,MAT_LOCAL,&info_ineq);CHKERRQ(ierr);
-    ipopt->nnz_jac_gi = info_ineq.nz_used;
-  }   
-  ipopt->nnz_jac_g = ipopt->nnz_jac_ge + ipopt->nnz_jac_gi;
-
-  /* Compute non-zeros for Hessian */
-  ierr = (*opflow->modelops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
-  ierr = MatSetOption(opflow->Hes,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
-
-  ierr  = MatGetInfo(opflow->Hes,MAT_LOCAL,&info_hes);CHKERRQ(ierr);
-  ipopt->nnz_hes = (info_hes.nz_used  -opflow->nx)/2 + opflow->nx;
-
-  /* Create IPOPT solver instance */
-  ierr = VecGetArray(opflow->Xl,&xl);CHKERRQ(ierr);
-  ierr = VecGetArray(opflow->Xu,&xu);CHKERRQ(ierr);
-  ierr = VecGetArray(opflow->Gl,&gl);CHKERRQ(ierr);
-  ierr = VecGetArray(opflow->Gu,&gu);CHKERRQ(ierr);
-
-  /* Create IPOPT problem */
-  ipopt->nlp = CreateIpoptProblem(opflow->nx,xl,xu,opflow->ncon,gl,gu,ipopt->nnz_jac_g,ipopt->nnz_hes,0,&eval_opflow_f,
-				   &eval_opflow_g,&eval_opflow_grad_f,
-				   &eval_opflow_jac_g,&eval_opflow_h);
-
-  ierr = VecRestoreArray(opflow->Xl,&xl);CHKERRQ(ierr);
-  ierr = VecRestoreArray(opflow->Xu,&xu);CHKERRQ(ierr);
-  ierr = VecRestoreArray(opflow->Gl,&gl);CHKERRQ(ierr);
-  ierr = VecRestoreArray(opflow->Gu,&gu);CHKERRQ(ierr);
-
-  /* IPOPT tolerance */
-  AddIpoptNumOption(ipopt->nlp, "tol", opflow->tolerance);
-
-  /* Add intermediate callback function to get the solver info
-     Note this is called by IPOPT at each iteration 
-  */
-  SetIntermediateCallback(ipopt->nlp,OPFLOWSolverMonitor_IPOPT);
 
   ierr = VecGetArray(opflow->X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(opflow->G,&g);CHKERRQ(ierr);
@@ -371,7 +321,61 @@ PetscErrorCode OPFLOWSolverGetConvergenceStatus_IPOPT(OPFLOW opflow,PetscBool *s
 
 PetscErrorCode OPFLOWSolverSetUp_IPOPT(OPFLOW opflow)
 {
+  PetscErrorCode     ierr;
+  OPFLOWSolver_IPOPT ipopt = (OPFLOWSolver_IPOPT)opflow->solver;
+  PetscScalar        *xl,*xu,*gl,*gu;
+  MatInfo            info_eq,info_ineq,info_hes;
+
   PetscFunctionBegin;
+
+  /* Compute nonzeros for the Jacobian */
+  /* Equality constraint Jacobian */
+  ierr = (*opflow->modelops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
+  ierr = MatSetOption(opflow->Jac_Ge,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
+
+  ierr = MatGetInfo(opflow->Jac_Ge,MAT_LOCAL,&info_eq);CHKERRQ(ierr);
+  ipopt->nnz_jac_ge = info_eq.nz_used;
+
+  ipopt->nnz_jac_gi = 0;
+  if(opflow->Nconineq) {
+    ierr = (*opflow->modelops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
+    ierr = MatSetOption(opflow->Jac_Gi,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
+
+    ierr = MatGetInfo(opflow->Jac_Gi,MAT_LOCAL,&info_ineq);CHKERRQ(ierr);
+    ipopt->nnz_jac_gi = info_ineq.nz_used;
+  }   
+  ipopt->nnz_jac_g = ipopt->nnz_jac_ge + ipopt->nnz_jac_gi;
+
+  /* Compute non-zeros for Hessian */
+  ierr = (*opflow->modelops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
+  ierr = MatSetOption(opflow->Hes,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
+
+  ierr  = MatGetInfo(opflow->Hes,MAT_LOCAL,&info_hes);CHKERRQ(ierr);
+  ipopt->nnz_hes = (info_hes.nz_used  -opflow->nx)/2 + opflow->nx;
+
+  /* Create IPOPT solver instance */
+  ierr = VecGetArray(opflow->Xl,&xl);CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->Xu,&xu);CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->Gl,&gl);CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->Gu,&gu);CHKERRQ(ierr);
+
+  /* Create IPOPT problem */
+  ipopt->nlp = CreateIpoptProblem(opflow->nx,xl,xu,opflow->ncon,gl,gu,ipopt->nnz_jac_g,ipopt->nnz_hes,0,&eval_opflow_f,
+				   &eval_opflow_g,&eval_opflow_grad_f,
+				   &eval_opflow_jac_g,&eval_opflow_h);
+
+  ierr = VecRestoreArray(opflow->Xl,&xl);CHKERRQ(ierr);
+  ierr = VecRestoreArray(opflow->Xu,&xu);CHKERRQ(ierr);
+  ierr = VecRestoreArray(opflow->Gl,&gl);CHKERRQ(ierr);
+  ierr = VecRestoreArray(opflow->Gu,&gu);CHKERRQ(ierr);
+
+  /* IPOPT tolerance */
+  AddIpoptNumOption(ipopt->nlp, "tol", opflow->tolerance);
+
+  /* Add intermediate callback function to get the solver info
+     Note this is called by IPOPT at each iteration 
+  */
+  SetIntermediateCallback(ipopt->nlp,OPFLOWSolverMonitor_IPOPT);
 
   PetscFunctionReturn(0);
 }
