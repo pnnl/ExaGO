@@ -1,112 +1,130 @@
 ## AC optimal power flow (OPFLOW)
-OPFLOW solves a nonlinear AC optimal power flow problem. The  objective of this OPFLOW problem is generator-cost minimization subject to network balance, line flow, capacity, and voltage constaints. Load-loss and nodal power-imbalance can be (optionally) activated. OPFLOW can be used with several different models i.e., representations of network balance equations and bus voltages.
-1. [**POWER_BALANCE_POLAR**](../opflow/pbpol.md): Power balance form with polar representation of voltages.
-1. [**POWER_BALANCE_CARTESIAN**](../opflow/pbcar.md): Power balance form with cartesian representation of voltages.
-1. [**CURRENT_BALANCE_CARTESIAN**]((../opflow/ibcar.md)): Current balance form with cartesian representation of voltages.
-1. **CURRENT_BALANCE_CARTESIAN2**: Modified current balance form with bounds on line currents instead of MVA flow.
-1. **POWER_BALANCE_HIOP**: An alternate version of power balance polar form used only with HIOP solver.
-1. **PBPOLRAJAHIOP**: An alternate version of power balance polar for GPU rewritten with RAJA library used only with HIOP solver.
-
-OPFLOW works with the following optimization solvers.
-1. [IPOPT](https://github.com/coin-or/Ipopt)
-1. [HiOp](https://github.com/LLNL/hiop) 
-1. [PETSc/TAO](https://www.mcs.anl.gov/petsc/)
-
-The compatibility of the different models and solvers is given in the table below:
-
-
-|  Model name /Solver name             | IPOPT | HIOP | TAO | 
-|:--------------------------:|:-----:|:----:|:---------:|
-| POWER_BALANCE_POLAR        | x     |      |           |
-| POWER_BALANCE_CARTESIAN    | x     |      | x         |
-| CURRENT_BALANCE_CARTESIAN  | x     |      |           |
-| CURRENT_BALANCE_CARTESIAN2 | x     |      |           |
-| POWER_BALANCE_HIOP         |       | x    |           |
-| PBPOLRAJAHIOP              |       | x    | x         |
-
-
+OPFLOW solves a nonlinear AC optimal power flow problem where the  objective is generator-cost minimization subject to network balance, line flow, capacity, and voltage constaints. Load-loss and nodal power-imbalance can be (optionally) activated. 
 
 ### Usage
+
 OPFLOW is executed via
 ```
 mpiexec -n <N> ./opflow <options>
 ```
-where \<options\> are the available command line options as given in the following sections. The opflow application is located in $EXAGO_INSTALL/bin where $EXAGO_INSTALL is the ExaGO install location.
+where \<options\> are the available command line options as given in the options section below. The opflow application is located in $EXAGO_INSTALL/bin where $EXAGO_INSTALL is the ExaGO install location. One can run OPFLOW from $EXAGO_INSTALL/bin or add $EXAGO_INSTALL/bin to the path for executing it from any other location.
 
-Note that only TAO supports parallel execution. For all other solvers, use N = 1. 
+*Note: If you are familiar with HPC tools, you may want to skip to the next section.*
 
-#### Using GPUs
+In order to run OPFLOW in an HPC environment (such as PNNL cluster Newell), you will have to request the requried resources. For example, if OPFLOW has been compiled with support for GPUs, the user will have to request a GPU from the host job scheduler. On the PNNL cluster Newell, slurm is the host job scheduler, so an example command would be:
+
+```console
+$ srun -A <account name> -p newell --gres=gpu:1 -N 1 -n <N> ./opflow <options>
+```
+
+In this environment, you will also have to enable modules, which provide access to installations of specific versions of software packages. For example, to run on Newell you would run the following to enable the needed packages for ExaGO:
+
+```console
+$ module load gcc/7.4.0
+$ module load cmake/3.16.4
+$ module load openmpi/3.1.5
+$ module load magma/2.5.2_cuda10.2
+$ module load metis/5.1.0
+$ module load cuda/10.2
+```
+
+Bringing all of this together, to run an ExaGO application on Newell, one would run the following commands:
+
+```console
+$ module load gcc/7.4.0
+$ module load cmake/3.16.4
+$ module load openmpi/3.1.5
+$ module load magma/2.5.2_cuda10.2
+$ module load metis/5.1.0
+p$ module load cuda/10.2
+$ srun -A <account name> -p newell --gres=gpu:1 -N 1 -n <N> ./opflow <options>
+```
+
+### Input
+
+OPFLOW currently only supports input in the MATPOWER format. See [MATPOWER case format](https://matpower.org/docs/ref/matpower5.0/caseformat.html) for a description of the various fields for the network data. The `-netfile` option is used for specifying the input file. If no network file is used an input then OPFLOW on the 9-bus case is run with the network file `datafiles/case9/case9mod.m`.
+
+```
+./opflow -netfile <netfilename>
+```
+
+### Output
+
+The output of OPFLOW can be either printed to screen (option `-print_output`) or saved to a file in MATPOWER format (option `-save_output`). With the `-save_output` option, the OPFLOW output is saved to a file named `opflowout.m` in the same directory from where the application is executed.
+
+#### Print output
+ ```
+./opflow -netfile <netfilename> -print_output
+```
+
+#### Save output
+ ```
+./opflow -netfile <netfilename> -save_output
+```
+
+### Options
+
+The behavior of OPFLOW is controlled through the different options given in the table below. If no options are provided, then the default options from [opflowoptions](../../options/opflowoptions) file are used. To see the available options, one can run OPFLOW with `-h` option and grep for opflow.
+```
+./opflow -h | grep opflow
+```
+
+
+|  Option Name | Description | Values |
+|:-----|:----|:-----|
+|-opflow_model | Representation of network balance equations and bus voltages| See the different options for models below
+|-opflow_solver | Optimization solver | See the different solver options below|
+|-opflow_initialization| Type of initialization| "MIDPOINT" (default)<br>"FROMFILE"<br>"ACPF"<br>"FLATSTART"|
+|-opflow_ignore_lineflow_constraints| Ignore line flow constraints| 0 (default) or 1|
+|-opflow_include_loadloss_variables| Include load loss| 0 (default) or 1|
+|-opflow_include_powerimbalance_variables| Allow power imbalance at buses| 0 (default) or 1|
+|-opflow_loadloss_penalty| Penalty ($) for loss of load per load| 10|
+|-opflow_powerimbalance_penalty| Penalty ($) for  power imbalance at bus| 100|
+|-opflow_genbusvoltage_fixed| Constant PV bus voltage? | 0 (default) or 1|
+|-hiop_compute_mode|Controls the `-compute_mode` option for HIOP solver, i.e., where the HIOP solver computations run|"auto" (default), "cpu","hybrid", "gpu"|
+|-hiop_verbosity_level|Controls the verbosity level for HIOP. 0 means no output is printed, 10 is max. output| 0 (default) to 10. See [HIOP verbosity levels](https://github.com/LLNL/hiop/blob/7e8adae9db757aed48e5c2bc448316307598258f/src/Utils/hiopLogger.hpp#L68)|
+|-hiop_tolerance| HIOP solver tolerance|1e-6 (default)|
+|-print_output| Print OPFLOW solution to screen| 0 (default) or 1|
+|-save_output| Save OPFLOW solution to file | 0 (default) or 1|
+|-netfile| Name of network file in MATPOWER format| \<networkfilename>|
+<br></br>
+
+#### OPFLOW models
+
+OPFLOW can be used with several different models i.e., representations of network balance equations and bus voltages. 
+
+|  Model Name | Description |
+|:-----|:----|
+|[POWER_BALANCE_POLAR](../opflow/pbpol.md)|Power balance form with polar representation of voltages|
+|[POWER_BALANCE_CARTESIAN](../opflow/pbcar.md)| Power balance form with cartesian representation of voltages|
+|POWER_BALANCE_HIOP| An alternate version of power balance polar form used only with HIOP solver|
+|PBPOLRAJAHIOP| An alternate version of power balance polar for GPU with HIOP solver|
+<br></br>
+#### OPFLOW optimization solvers
+
+OPFLOW works with the following optimization solvers.
+1. [IPOPT](https://github.com/coin-or/Ipopt)
+1. [HiOp](https://github.com/LLNL/hiop)
+1. [PETSc/TAO](https://www.mcs.anl.gov/petsc/)
+
+IPOPT is a serial solver, while PETSc/TAO can be used in parallel. HiOP supports both CPU (serial) and GPU-based solvers.
+
+#### Model-solver compatibility
+
+When selecting a solver or a model, the following table should be refered to as not all solvers are compatible with all models.
+
+
+|  Model name /Solver name             | IPOPT | HIOP | TAO | 
+|:--------------------------|:-----:|:----:|:---------:|
+| POWER_BALANCE_POLAR        | x     |      |           |
+| POWER_BALANCE_CARTESIAN    | x     |      | x         |
+| POWER_BALANCE_HIOP         |       | x    |           |
+| PBPOLRAJAHIOP              |       | x    |          |
+
+#### Running OPFLOW on GPU
 OPFLOW can execute on the GPU using the HIOP solver and PBPOLRAJAHIOP model. Note that both HIOP and ExaGO must be built with RAJA and UMPIRE libraries for executing on the GPU. The execution command for running OPFLOW on GPU is
 ```
 mpiexec -n 1 ./opflow -opflow_solver HIOP -opflow_model PBPOLRAJAHIOP -hiop_compute_mode HYBRID <otheroptions>
-```
-
-### Run-time options
-OPFLOW has several run-time options. These options can be either set through the options file `options/opflowoptions` or via the command line. To see the different options, run opflow with the help flag.
-```
-mpiexec -n <N> ./opflow -h | grep opflow
-```
-This will list the different options available.
-
-#### Network file (-netfile <netfilename>): 
-Set the name of the network file (MATPOWER format only currently). There is support for reading the PSSE format as well, but the PSSE raw data file does not contain the generator cost data. A separate file needs to be set for the generator cost which is not supported yet with OPFLOW.
-
-```
-mpiexec -n <N> ./opflow -netfile <netfilename>
-```
-
-#### Solver (-opflow_solver <IPOPT, TAO, HIOP>)
-Set the solver to be used for OPFLOW. OPFLOW currently supports three solvers - IPOPT, TAO, and HiOp. If IPOPT or HiOp is chosen then OPFLOW can be only run on one processor (N = 1) as both these solvers only support single process execution. TAO supports parallel execution. The above table should be refered when choosing the appropriate solver and model.
-```
-mpiexec -n <N> ./opflow -netfile <netfilename> -opflow_solver <IPOPT, TAO, HiOp>
-```
-The default solver is IPOPT. If IPOPT is not used then the solver defaults to TAO
-
-#### Set the model (-opflow_model <modelname>): 
-Sets the model (represent of network balance equations and voltages). See the above table for the different models available.
-```
-./opflow -netfile <netfilename> -opflow_model <modelname>
-```
-
-#### Set the initialization type (-opflow_initialization <initializationtype>)
-Sets the initialization (initial guess) for OPFLOW.
-```
-./opflow -netfile <netfilename> -opflow_initialization <initializationtype>
-```
-The initializations supported are
-- `MIDPOINT` - Uses mid-point of the bounds for voltages and generator powers
-- `FLATSTART` - Flat start (1.0) for voltages, mid-point for generator powers
-- `ACPF` - Initialization using AC power flow
-- `FROMFILE` - Uses values given in file
-
-#### Ignore line flow constraints (-opflow_ignore_lineflow_constraints <0,1>)
-With this option set, OPFLOW ignores all line flow constraints
-```
-./opflow -netfile <netfilename> -opflow_ignore_lineflow_constraints
-```
-
-#### Include load loss (-opflow_include_loadloss_variables <0,1>)
-With this option set, OPFLOW can also calculate the loss of load. Extra variables for calculating the load loss at each bus are inserted in OPFLOW and the objective function is modified to include the load loss.
-```
-./opflow -netfile <netfilename> -opflow_include_loadloss_variables
-```
-
-#### Load loss penalty parameter(-opflow_loadloss_penalty <penalty_cost>)
-Through this option, the penalty cost for load loss when `-opflow_include_loadloss_variables` can be set. The default is 1000. 
-```
-./opflow -netfile <netfilename> -opflow_include_loadloss_variables -opflow_loadlloss_penalty <penalty_cost>
-```
-
-#### Include power imbalance variables (-opflow_include_powerimbalance_variables <0,1>)
-With this option set, OPFLOW inserts extra variables for measuring the power imbalance (real and reactive power) at buses. For a feasible optimal power flow solution, the power imbalance at each bus is 0. In case there is infeasibity, the power imbalance variables measure the amount of infeasability at each bus. 
-```
-./opflow -netfile <netfilename> -opflow_include_powerimbalance_variables
-```
-
-#### Power imbalance penalty parameter(-opflow_powerimbalance_penalty <penalty_cost>)
-Through this option, the penalty cost for power imbalance when `-opflow_include_powerimbalance_variables` can be set. The default is 1000. 
-```
-./opflow -netfile <netfilename> -opflow_include_powerimbalance_variables -opflow_powerimbalance_penalty <penalty_cost>
 ```
 
 #### Tolerance (-opflow_tolerance <tolerance>)
