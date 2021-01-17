@@ -70,24 +70,24 @@ The behavior of OPFLOW is controlled through the different options given in the 
 ```
 
 
-|  Option Name | Description | Values |
+|  Option Name | Description | Values (Default value) |
 |:-----|:----|:-----|
-|-opflow_model | Representation of network balance equations and bus voltages| See the different options for models below
+|-opflow_model | Representation of network balance equations and bus voltages| See the different options for models below|
 |-opflow_solver | Optimization solver | See the different solver options below|
 |-opflow_initialization| Type of initialization| "MIDPOINT" (default)<br>"FROMFILE"<br>"ACPF"<br>"FLATSTART"|
-|-opflow_ignore_lineflow_constraints| Ignore line flow constraints| 0 (default) or 1|
-|-opflow_include_loadloss_variables| Include load loss| 0 (default) or 1|
-|-opflow_include_powerimbalance_variables| Allow power imbalance at buses| 0 (default) or 1|
-|-opflow_loadloss_penalty| Penalty ($) for loss of load per load| 10|
-|-opflow_powerimbalance_penalty| Penalty ($) for  power imbalance at bus| 100|
-|-opflow_genbusvoltage_fixed| Constant PV bus voltage? | 0 (default) or 1|
-|-hiop_compute_mode|Controls the `-compute_mode` option for HIOP solver, i.e., where the HIOP solver computations run|"auto" (default), "cpu","hybrid", "gpu"|
-|-hiop_verbosity_level|Controls the verbosity level for HIOP. 0 means no output is printed, 10 is max. output| 0 (default) to 10. See [HIOP verbosity levels](https://github.com/LLNL/hiop/blob/7e8adae9db757aed48e5c2bc448316307598258f/src/Utils/hiopLogger.hpp#L68)|
-|-hiop_tolerance| HIOP solver tolerance|1e-6 (default)|
-|-print_output| Print OPFLOW solution to screen| 0 (default) or 1|
-|-save_output| Save OPFLOW solution to file | 0 (default) or 1|
-|-netfile| Name of network file in MATPOWER format| \<networkfilename>|
-<br></br>
+|-opflow_ignore_lineflow_constraints| Ignore line flow constraints| 0 or 1 (0)|
+|-opflow_include_loadloss_variables| Include load loss| 0 or 1 (0)|
+|-opflow_include_powerimbalance_variables| Allow power imbalance at buses| 0 or 1 (0)|
+|-opflow_loadloss_penalty| Penalty ($) for loss of load per load| (1000)|
+|-opflow_powerimbalance_penalty| Penalty ($) for  power imbalance at bus| (1000)|
+|-opflow_genbusvoltage_fixed| Generator bus voltages fixed? | 0 or 1 (0)|
+|-opflow_tolerance|Optimization solver tolerance | (1e-6)
+|-hiop_compute_mode|Controls the `-compute_mode` option for HIOP solver, i.e., where the HIOP solver computations run|"auto" (default)<br> "cpu"<br>"hybrid"<br>"gpu"|
+|-hiop_verbosity_level|Controls the verbosity level for HIOP. 0 means no output is printed, 10 is max. output| 0 to 10 (0) See [HIOP verbosity levels](https://github.com/LLNL/hiop/blob/7e8adae9db757aed48e5c2bc448316307598258f/src/Utils/hiopLogger.hpp#L68)|
+|-hiop_tolerance| HIOP solver tolerance| (1e-6)|
+|-print_output| Print OPFLOW solution to screen| 0 or 1 (0)|
+|-save_output| Save OPFLOW solution to file | 0 or 1 (0)|
+|-netfile| Name of network file in MATPOWER format| ([case9mod.m](../../datafiles/case9/case9mod.m))|
 
 #### OPFLOW models
 
@@ -126,6 +126,3 @@ OPFLOW can execute on the GPU using the HIOP solver and PBPOLRAJAHIOP model. Not
 ```
 mpiexec -n 1 ./opflow -opflow_solver HIOP -opflow_model PBPOLRAJAHIOP -hiop_compute_mode HYBRID <otheroptions>
 ```
-
-#### Tolerance (-opflow_tolerance <tolerance>)
-This option sets the optimization tolerance. Default is 1e-6.
