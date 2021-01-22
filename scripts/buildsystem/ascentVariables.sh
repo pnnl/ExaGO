@@ -7,19 +7,18 @@ module use $PROJ_DIR/$MY_CLUSTER/Modulefiles/Core
 module load exasgd-base
 module load gcc-ext/7.4.0
 module load spectrum-mpi-ext
-module load magma/2.5.3-cuda11
-module load raja
-module load umpire
 module load openblas
-module load metis/5.1.0
 module load cmake/3.18.2
-export MY_RAJA_DIR=$RAJA_ROOT
-export MY_UMPIRE_DIR=`spack location -i umpire +cuda`
-export MY_UMPIRECPU_DIR=`spack location -i umpire -cuda`
-export MY_MAGMA_DIR=$MAGMA_ROOT
-export MY_PETSC_DIR=$PROJ_DIR/$MY_CLUSTER/petsc-3.13.5
-export MY_IPOPT_DIR=$PROJ_DIR/$MY_CLUSTER/ipopt
-export MY_HIOP_DIR=$PROJ_DIR/installs/hiop-gpu-new-interface
+
+spack env activate exago-ci --without-view
+spack load petsc umpire raja hiop ipopt magma metis parmetis camp
+
+export MY_RAJA_DIR=`spack location -i raja`
+export MY_UMPIRE_DIR=`spack location -i umpire`
+export MY_MAGMA_DIR=`spack location -i magma`
+export MY_PETSC_DIR=`spack location -i petsc`
+export MY_IPOPT_DIR=`spack location -i ipopt`
+export MY_HIOP_DIR=`spack location -i hiop`
 export MY_NVCC_ARCH="sm_70"
 extraCmakeArgs="\
   $extra_cmake_args \
@@ -29,10 +28,10 @@ extraCmakeArgs="\
 if [[ ! -f $builddir/nvblas.conf ]]; then
   cat > $builddir/nvblas.conf <<-EOD
 NVBLAS_LOGFILE  nvblas.log
-NVBLAS_CPU_BLAS_LIB  /gpfs/wolf/proj-shared/csc359/ascent/Compiler/gcc-7.4.0/openblas/0.3.10/lib/libopenblas.so
+NVBLAS_CPU_BLAS_LIB $(spack location -i openblas)/lib/libopenblas.so
 NVBLAS_GPU_LIST ALL
 NVBLAS_TILE_DIM 2048
 NVBLAS_AUTOPIN_MEM_ENABLED
 EOD
+  export NVBLAS_CONFIG_FILE=$builddir/nvblas.conf
 fi
-export NVBLAS_CONFIG_FILE=$builddir/nvblas.conf

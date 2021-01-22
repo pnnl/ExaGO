@@ -10,15 +10,19 @@ export APPS_DIR=/share/apps
 module load gcc/7.4.0
 module load cmake/3.16.4
 module load openmpi/3.1.5
-module load magma/2.5.2_cuda10.2
-module load metis/5.1.0
 module load cuda/10.2
-export MY_PETSC_DIR=$PROJ_DIR/$MY_CLUSTER/petsc
-export MY_UMPIRE_DIR=$PROJ_DIR/$MY_CLUSTER/umpire
-export MY_RAJA_DIR=$PROJ_DIR/$MY_CLUSTER/raja
-export MY_HIOP_DIR=$PROJ_DIR/$MY_CLUSTER/hiop-gpu-new-interface
-export MY_UMPIRE_DIR=$PROJ_DIR/$MY_CLUSTER/umpire
-export MY_UMPIRECPU_DIR=$PROJ_DIR/$MY_CLUSTER/umpire-cpu
-export MY_IPOPT_DIR=$PROJ_DIR/$MY_CLUSTER/ipopt
-export MY_MAGMA_DIR=$APPS_DIR/magma/2.5.2/cuda10.2
+
+# Configure spack
+source $PROJ_DIR/src/spack/share/spack/setup-env.sh
+spack env activate exago-ci-newell --without-view
+
+# When loading spack packages, use spack and not modulefiles directly
+spack load petsc umpire raja hiop ipopt magma openmpi metis parmetis camp
+
+export MY_PETSC_DIR=`spack location -i petsc+mpi`
+export MY_UMPIRE_DIR=`spack location -i umpire+cuda`
+export MY_RAJA_DIR=`spack location -i raja+cuda`
+export MY_HIOP_DIR=`spack location -i hiop+cuda+shared`
+export MY_IPOPT_DIR=`spack location -i ipopt`
+export MY_MAGMA_DIR=`spack location -i magma`
 export NVBLAS_CONFIG_FILE=$PROJ_DIR/$MY_CLUSTER/nvblas.conf

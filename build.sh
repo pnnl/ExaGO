@@ -18,7 +18,7 @@ trap 'cleanup $? $LINENO' EXIT
 
 set -xv
 makeArgs=${makeArgs:-"-j 8"}
-ctestArgs="-VV"
+ctestArgs=${ctestArgs:-"-VV"}
 extraCmakeArgs=${extraCmakeArgs:-""}
 export CXXFLAGS='-I/share/apps/magma/2.5.2/cuda10.2/include -I/share/apps/cuda/10.2/include/'
 export OMPI_MCA_btl="^vader,tcp,openib,uct"
