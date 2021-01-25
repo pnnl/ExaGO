@@ -1,0 +1,385 @@
+\newcommand{\notationtable}[4] {
+  {
+    \tabulinesep=3pt
+    \begin{center}
+      \begin{longtabu} to \linewidth {lX[L]}
+
+        % first page header
+        \caption[
+          %short caption for list of tables
+        ]{
+          #3 %long caption
+          #4 %label
+        } \\
+        \toprule
+        #2 %header
+        \midrule
+        \endfirsthead
+
+        % further pages header
+        \caption{Continued} \\
+        \toprule
+        #2 %header
+        \midrule
+        \endhead
+
+        % first pages footer
+        \bottomrule
+        \endfoot
+
+        % last page footer
+        \bottomrule
+        \endlastfoot
+        
+        #1 % main table content
+      \end{longtabu}
+    \end{center}
+  }
+}
+
+\chapter{Symbol reference}\label{chap:symbref}
+
+Units of measurement are given in Table (\ref{tbl:units}),
+indices and index sets in Table (\ref{tbl:index_sets}),
+subsets in Table (\ref{tbl:subsets}),
+special set elements in Table (\ref{tbl:elements}),
+real-valued parameters in Table (\ref{tbl:params}),
+functions in Table (\ref{tbl:fcns}),
+and optimization model variables in Table (\ref{tbl:vars}).
+
+\notationtable{
+  1 & dimensionless. Dimensionless real number quantities are indicated by a unit of 1. \\
+  %bin & binary. Binary quantities, i.e. taking values in $\{0,1\}$, are indicated by a unit of bin. \\
+  USD & US dollar. Cost, penalty, and objective values are expressed in USD. \\
+  h & hour. Time is expressed in h. \\
+  pu & per unit. Voltage magnitude is expressed in a per unit system under given
+  base values, and the unit is denoted by pu \\
+  %kV & kilovolt. In the physical unit convention,
+  %voltage magnitude is expressed in kV. \\
+  rad & radian. Voltage angles are expressed in rad. \\
+  MW & megawatt. Real power is expressed in MW. \\
+  MVar & megavolt-ampere-reactive. Reactive power is expressed in MVar. \\
+  MVA & megavolt-ampere. Apparent power is expressed in MVA. \\
+  MW at 1 pu & megawatt at unit voltage. Conductance is expressed in MW at 1 pu, meaning the conductance is such as to yield a real power flow equal to the indicated amount when the voltage is equal to 1 pu \\
+  MVar at 1 pu & megavolt-ampere-reactive at unit voltage. Susceptance is expressed in MVar at 1 pu, meaning the susceptance is such as to yield a reactive power flow equal to the indicated amount when the voltage is equal to 1 pu \\
+} {
+  Symbol & Description \\
+} {
+  Units of measurement
+} {
+  \label{tbl:units}
+}
+
+\notationtable{
+  $a \in A$ & areas \\
+  $i \in I$ & buses \\
+  $j \in J$ & bus-connected grid components, i.e. loads, shunts, generators, stochastic resources, branches \\
+  $k \in K$ & security contingencies, i.e. NERC $(n-1)$- or $(n-k)$-style contingencies,
+  different from the severe event we are modeling \\
+  %$n \in N$ & nodes in the multistage stochastic scenario tree induced by $S^{\text{equiv}}_{ts}$, $t \in T$, $s \in S$ \\
+  $s \in S$ & stochastic scenarios \\
+  $t \in T$ & time periods \\
+} {
+  Symbol & Description \\
+} {
+  Index sets
+} {
+  \label{tbl:index_sets}
+}
+
+\notationtable{
+  $I_{ts} \subset I$ & buses in the main connected component in time period $t$,
+  scenario $s$ \\
+  $I_{tsk} \subset I$ & buses in the main connected component in time period $t$,
+  scenario $s$, contingency $k$ \\
+  $J^{\text{gen}} \subset J$ & generators \\
+  $J^{\text{ld}} \subset J$ & loads \\
+  $J^{\text{fxld}} \subset J^{\text{ld}}$ & fixed loads \\
+  $J^{\text{cld}} \subset J^{\text{ld}}$ & curtailable loads \\
+  $J^{\text{dld}} \subset J^{\text{ld}}$ & delayable loads \\
+  $J^{\text{frld}} \subset J^{\text{ld}}$ & frequency-responsive loads \\
+  $J^{\text{br}} \subset J$ & branches, i.e. lines, transformers \\
+  $J^{\text{sh}} \subset J$ & shunts \\
+  $J^{\text{sr}} \subset J$ & stochastic resources \\
+  $J_i \subset J$ & 1-bus components (i.e. all except branches) connected to bus $i$ \\
+  $J^{\text{o}}_i \subset J$ & branches with origin bus at bus $i$ \\
+  $J^{\text{d}}_i \subset J$ & branches with destination bus at bus $i$ \\
+  $J_{ts} \subset J$ & components in service pre-contingency
+  in period $t$, scenario $s$ \\
+  $J_{tsk} \subset J$ & components in service post-contingency
+  in period $t$, scenario $s$,
+  contingency $k$ \\
+  $J^{\text{gen}}_{ts} \subset J$ & generators in service pre-contingency
+  in period $t$, scenario $s$ \\
+  $J^{\text{ld}}_{ts} \subset J$ & loads in service pre-contingency
+  in period $t$, scenario $s$ \\
+  $J^{\text{br}}_{ts} \subset J$ & branches in service pre-contingency
+  in period $t$, scenario $s$ \\
+  $J^{\text{sh}}_{ts} \subset J$ & shunts in service pre-contingency
+  in period $t$, scenario $s$ \\
+  $J^{\text{sr}}_{ts} \subset J$ & stochastic resources in service pre-contingency
+  in period $t$, scenario $s$ \\
+  $J^{\text{gen}}_{tsk} \subset J$ & generators in service post-contingency
+  in period $t$, scenario $s$, contingency $k$ \\
+  $J^{\text{ld}}_{tsk} \subset J$ & loads in service post-contingency
+  in period $t$, scenario $s$, contingency $k$ \\
+  $J^{\text{br}}_{tsk} \subset J$ & branches in service post-contingency
+  in period $t$, scenario $s$, contingency $k$ \\
+  $J^{\text{sh}}_{tsk} \subset J$ & shunts in service post-contingency
+  in period $t$, scenario $s$, contingency $k$ \\
+  $J^{\text{sr}}_{tsk} \subset J$ & stochastic resources in service post-contingency
+  in period $t$, scenario $s$, contingency $k$ \\
+  $J^{\text{gen}}_{its} \subset J$ & generators in service pre-contingency
+  in period $t$, scenario $s$, and connected to bus $i$ \\
+  $J^{\text{ld}}_{its} \subset J$ & loads in service pre-contingency
+  in period $t$, scenario $s$, and connected to bus $i$ \\
+  $J^{\text{o}}_{its} \subset J$ & branches in service pre-contingency
+  in period $t$, scenario $s$, with origin bus at bus $i$ \\
+  $J^{\text{d}}_{its} \subset J$ & branches in service pre-contingency
+  in period $t$, scenario $s$, with destination bus at bus $i$ \\
+  $J^{\text{sh}}_{its} \subset J$ & shunts in service pre-contingency
+  in period $t$, scenario $s$, and connected to bus $i$ \\
+  $J^{\text{sr}}_{its} \subset J$ & stochastic resources in service pre-contingency
+  in period $t$, scenario $s$, and connected to bus $i$ \\
+  $J^{\text{gen}}_{itsk} \subset J$ & generators in service post-contingency
+  in period $t$, scenario $s$, contingency $k$, and connected to bus $i$ \\
+  $J^{\text{ld}}_{itsk} \subset J$ & loads in service post-contingency
+  in period $t$, scenario $s$, contingency $k$, and connected to bus $i$ \\
+  $J^{\text{o}}_{itsk} \subset J$ & branches in service post-contingency
+  in period $t$, scenario $s$, contingency $k$, with origin bus at bus $i$ \\
+  $J^{\text{d}}_{itsk} \subset J$ & branches in service post-contingency
+  in period $t$, scenario $s$, contingency $k$, with destination bus at bus $i$ \\
+  $J^{\text{sh}}_{itsk} \subset J$ & shunts in service post-contingency
+  in period $t$, scenario $s$, contingency $k$, and connected to bus $i$ \\
+  $J^{\text{sr}}_{itsk} \subset J$ & stochastic resources in service post-contingency
+  in period $t$, scenario $s$, contingency $k$, and connected to bus $i$ \\
+  $K_{ts} \subset K$ & contingencies that are enforced in each time period $t$
+  and scenario $s$ \\
+  $S^{\text{equiv}}_{ts} \subset S$ & stochastic scenarios (including $s$ itself)
+  that are indistinguishable from scenario $s$ through period $t$ \\
+} {
+  Symbol & Description \\
+} {
+  Subsets
+} {
+  \label{tbl:subsets}
+}
+
+\notationtable{
+  $a_i \in A$ & area of bus $i$ \\
+  $a_j \in A$ & area of 1-bus component $j$ \\
+  $i_j \in I$ & connection bus of 1-bus component $j \in J \setminus J^{\text{br}}$ \\
+  $i^{\text{d}}_j \in I$ & destination bus of branch $j \in J^{\text{}}$ \\
+  $i^{\text{o}}_j \in I$ & origin bus of branch $j \in J^{\text{br}}$ \\
+} {
+  Symbol & Description \\
+} {
+  Special set elements
+} {
+  \label{tbl:elements}
+}
+
+\notationtable{
+  $b^{\text{max}}_j$ & maximum susceptance for shunt
+  $j \in J^{\text{sh}}$ (MVar at 1 pu) \\
+  $b^{\text{min}}_j$ & minimum susceptance for shunt
+  $j \in J^{\text{sh}}$ (MVar at 1 pu) \\
+  $b^{\text{ch}}_j$ & charging susceptance for branch
+  $j \in J^{\text{br}}$ (MVar at 1 pu) \\
+  $b^{\text{s}}_j$ & series susceptance for branch
+  $j \in J^{\text{br}}$ (MVar at 1 pu) \\
+  $c^{\text{fr}}$ & marginal cost of frequency deviation (USD/hz/h) \\
+  $c^{\text{fr}}_a$ & marginal cost of frequency deviation in area $a$ (USD/hz/h) \\
+  $c^{\text{gen}}_j$ & marginal cost of energy generation for generator $j$ (USD/MW/h) \\
+  $c^{\text{curt}}_j$ & marginal cost of load curtailment for curtailable load $j$ (USD/MW/h) \\
+  $c^{\text{del}}_j$ & marginal cost of load delay for delayable load $j$ (USD/MW/h) \\ % todo: further 1/h dimension?
+  $c^{\text{shed}}_j$ & marginal cost of load shedding for load $j$ (USD/MW/h) \\ %???? todo remove, and other references to coordinated load shedding
+  $c^{\text{s,viol}}_j$ & cost of flow limit violation for branch $j \in J^{\text{br}}$ (USD/MVA/h) \\
+  $d_t$ & duration of time period $t$ (h) \\
+  %$d^{\text{lead}}_j$ & planning lead time of generator $j$ (h) \\
+  $g^{\text{max}}_j$ & maximum conductance for shunt
+  $j \in J^{\text{sh}}$ (MW at 1 pu) \\
+  $g^{\text{min}}_j$ & minimum conductance for shunt
+  $j \in J^{\text{sh}}$ (MW at 1 pu) \\
+  $g^{\text{s}}_j$ & series conductance for branch $j \in J^{\text{br}}$
+  (MW at 1 pu) \\
+  $p^{\text{set,0}}_j$ & real power set point of generator $j \in J^{\text{gen}}$ in prior time period (MW) \\
+  $p^{\text{max}}_j$ & maximum real power output for generator
+  $j \in J^{\text{gen}}$ (MW) \\
+  $p^{\text{min}}_j$ & minimum real power output for generator
+  $j \in J^{\text{gen}}$ (MW) \\
+  $p^{\text{r}}_j$ & maximum ramp rate for generator $j \in J^{\text{gen}}$ (MW/h) \\
+  $p^{\text{sm}}$ & smoothing parameter for generator frequency response (MW) \\
+  $p^{\text{ld},0}_{jts}$ & nominal real power consumption of load $j$ in time period $t$,
+  scenario $s$ (MW) \\
+  $q^{\text{max}}_j$ & maximum reactive power output for generator
+  $j \in J^{\text{gen}}$ (MVar)\\
+  $q^{\text{min}}_j$ & minimum reactive power output for generator
+  $j \in J^{\text{gen}}$ (MVar) \\
+  $q^{\text{ld},0}_{jts}$ & nominal reactive power consumption of load $j$ in time period $t$,
+  scenario $s$ (MW) \\
+  $s^{\text{max}}_j$ & maximum apparent power flow for branch $j \in J^{\text{br}}$
+  (MVA) \\
+  $s^{\text{max,sc}}_j$ & maximum apparent power flow for branch $j \in J^{\text{br}}$
+  in security contingencies (MVA) \\
+  $v^{\text{max}}_i$ & maximum voltage magnitude for bus $i \in I$ (pu) \\
+  $v^{\text{min}}_i$ & minimum voltage magnitude for bus $i \in I$ (pu) \\
+  $v^{\text{max,sc}}_i$ & maximum voltage magnitude for bus $i \in I$
+  in security contingencies (pu) \\
+  $v^{\text{min,sc}}_i$ & minimum voltage magnitude for bus $i \in I$
+  in security contingencies (pu) \\
+  $\alpha^{\text{max}}_j$ & upper bound on $\alpha_j$ (1) \\
+  $\alpha^{\text{min}}_j$ & lower bound on $\alpha_j$ (1) \\
+  $\alpha^{\text{sc,max}}_j$ & upper bound on $\alpha^{\text{sc}}_j$ (1) \\
+  $\alpha^{\text{sc,min}}_j$ & lower bound on $\alpha^{\text{sc}}_j$ (1) \\
+  $\beta^{\text{max}}_j$ & upper bound on $\beta_j$ (1) \\
+  $\beta^{\text{min}}_j$ & lower bound on $\beta_j$ (1) \\
+  $\alpha_j$ & proportional frequency response coefficient of generator
+  $j \in J^{\text{gen}}$ or load $j \in J^{\text{ld}}$ (MW/hz) \\
+  $\alpha^{\text{sc}}_j$ & coefficient for post-contingency proportional frequency
+  response (i.e. droop coefficient) of generator
+  $j \in J^{\text{gen}}$ (MW/hz) \\
+  $\beta^{\text{ld}}_j$ & proportional frequency response coefficient of
+  load $j \in J^{\text{ld}}$ (1/hz) \\
+  $\delta^{\text{sm}}$ & smoothing parameter for load shedding frequency response (hz) \\
+  $\delta^{\text{tol}}$ & load shedding frequency deviation tolerance \\
+  $\gamma$ & general smoothing parameter (1) \\
+  %$f^{\text{nom}}$ & system nominal frequency (hz) \\
+  $\phi^{\text{max}}_j$ & maximum phase shift for branch
+  $j \in J^{\text{br}}$ (rad) \\
+  $\phi^{\text{min}}_j$ & minimum phase shift for branch
+  $j \in J^{\text{br}}$ (rad) \\
+  $\pi_s$ & probability of scenario $s$ (1) \\
+  $\tau^{\text{max}}_j$ & maximum tap ratio for branch $j \in J^{\text{br}}$ (1) \\
+  $\tau^{\text{min}}_j$ & minimum tap ratio for branch $j \in J^{\text{br}}$ (1) \\
+} {
+  Symbol & Description \\
+} {
+  Real-valued parameters
+} {
+  \label{tbl:params}
+}
+
+\notationtable{
+  $\psi(x_1, x_2)$ & a smooth approximation of $\max(x_1, x_2)$,
+  e.g. $\psi(x_1, x_2) = (x_1 + x_2 + (1 + (x_1 - x_2)^2)^{1/2})/2$
+  (input and output both have dimensions of 1, i.e. dimensionless) \\
+  $\psi_{\gamma}(x_1, x_2)$ & dilation of $\psi$ by smoothing parameter $\gamma > 0$
+  i.e. $\psi_{\gamma}(x_1, x_2) = \gamma \psi(x_1/\gamma, x_2/\gamma)$
+} {
+  Symbol & Description \\
+} {
+  Functions
+} {
+  \label{tbl:fcns}
+}
+
+\notationtable{
+  $b_{jts}$ & susceptance of shunt $j \in J^{\text{sh}}$ in time period $t$,
+  scenario $s$ (MVar at 1 pu) \\
+  $g_{jts}$ & conductance of shunt $j \in J^{\text{sh}}$ in time period $t$,
+  scenario $s$ (MW at 1 pu) \\
+  $p^{\text{d}}_{jts}$ & pre-contingency real power flow at the destination bus into
+  branch $j \in J^{\text{br}}$ in period $t$,
+  scenario $s$ (MW) \\
+  $p^{\text{d}}_{jtsk}$ & post-contingency real power flow at the destination bus into
+  branch $j \in J^{\text{br}}$ in period $t$,
+  scenario $s$, contingency $k$ (MW) \\
+  $p^{\text{gen}}_{jts}$ & pre-contingency real power output (reflecting frequency deviation)
+  of generator $j \in J^{\text{gen}}$ in time period $t$, scenario $s$ (MW) \\
+  $p^{\text{gen}}_{jtsk}$ & post-contingency real power output (reflecting frequency deviation
+  and droop control)
+  of generator $j \in J^{\text{gen}}$ in time period $t$, scenario $s$,
+  contingency $k$ (MW) \\
+  $p^{\text{ld}}_{jts}$ & real power consumption (reflecting pre-contingency
+  frequency deviation) of
+  load $j \in J^{\text{ld}}$ in time period $t$, scenario $s$ \\
+  $p^{\text{curt}}_{jts}$ & real power curtailment of curtailable
+  load $j \in J^{\text{cld}}$ in time period $t$, scenario $s$ \\
+  $p^{\text{del}}_{jts}$ & real power delay of delayable
+  load $j \in J^{\text{dld}}$ in time period $t$, scenario $s$ \\
+  $p^{\text{o}}_{jts}$ & pre-contingency real power flow at the origin bus into
+  branch $j \in J^{\text{br}}$ in period $t$,
+  scenario $s$ (MW) \\
+  $p^{\text{o}}_{jtsk}$ & post-contingency real power flow at the origin bus into
+  branch $j \in J^{\text{br}}$ in period $t$,
+  scenario $s$, contingency $k$ (MW) \\
+  %$p^{\text{set}}_{jt}$ & nonanticipative real power output setpoint (value not reflecting frequency deviation)
+  %of generator $j \in J^{\text{gen}}$ in period $t$, during generator dispatch lead time (MW) \\
+  $p^{\text{set}}_{jts}$ & real power output setpoint (value not reflecting frequency deviation)
+  of generator $j \in J^{\text{gen}}$ in period $t$, scenario $s$ (MW) \\
+  $p^{\text{sr}}_{jts}$ & real power output of stochastic resource $j$
+  in period $t$, scenario $s$ (MW) \\
+  $q^{\text{d}}_{jts}$ & pre-contingency reactive power flow at the destination bus into
+  branch $j \in J^{\text{br}}$ in period $t$,
+  scenario $s$ (MVar) \\
+  $q^{\text{d}}_{jtsk}$ & post-contingency reactive power flow at the destination bus into
+  branch $j \in J^{\text{br}}$ in period $t$,
+  scenario $s$, contingency $k$ (MVar) \\
+  $q^{\text{gen}}_{jts}$ & pre-contingency reactive power output
+  of generator $j \in J^{\text{gen}}$ in time period $t$, scenario $s$ \\
+  $q^{\text{gen}}_{jtsk}$ & post-contingency reactive power output
+  of generator $j \in J^{\text{gen}}$ in time period $t$, scenario $s$,
+  contingency $k$ (MVar) \\
+  $q^{\text{ld}}_{jts}$ & reactive power consumption (reflecting pre-contingency
+  frequency deviation) of
+  load $j \in J^{\text{ld}}$ in time period $t$, scenario $s$ (MVar) \\
+  $q^{\text{o}}_{jts}$ & pre-contingency reactive power flow at the origin bus into
+  branch $j \in J^{\text{br}}$ in period $t$,
+  scenario $s$ (MVar) \\
+  $q^{\text{o}}_{jtsk}$ & post-contingency reactive power flow at the origin bus into
+  branch $j \in J^{\text{br}}$ in period $t$,
+  scenario $s$, contingency $k$ (MVar) \\
+  $r^{\text{\text{shed}}}_{jts}$ & fraction
+  of the nominal value of load $j$ that is shed in time period $t$ and scenario $s$ (1) \\
+  $s^{\text{viol}}_{jts}$ & pre-contingency
+  violation of flow limit of branch $j \in j^{\text{br}}$
+  in time period $t$, scenario $s$, (MVA) \\
+  $s^{\text{viol}}_{jtsk}$ & post-contingency
+  violation of flow limit of branch $j \in j^{\text{br}}$
+  in time period $t$, scenario $s$,
+  contingency $k$ (MVA) \\
+  $v_{its}$ & pre-contingency voltage magnitude of bus $i$ in period $t$,
+  scenario $s$ (pu) \\
+  $v_{itsk}$ & post-contingency voltage magnitude of bus $i$ in period $t$,
+  scenario $s$, contingency $k$ (pu) \\
+  $w_{ts}$ & stochastic objective rate in period $t$, scenario $s$ (USD/h) \\
+  $w^{\text{fr}}_{ts}$ & stochastic objective rate, frequency term,
+  in period $t$, scenario $s$ (USD/h) \\
+  $w^{\text{\text{shed}}}_{ts}$ & stochastic obective rate, load shedding term, in period $t$, scenario $s$ (USD/h) \\
+  $w^{\text{viol}}_{ts}$ & stochastic objective rate, pre-contingency line and
+  transformer flow limit violation term,
+  in period $t$, scenario $s$ (USD/h) \\
+  $w^{\text{viol}}_{tsk}$ & stochastic objective rate, post-contingency line and
+  transformer flow limit violation term,
+  in period $t$, scenario $s$, contingency $k$ (USD/h) \\
+  $z$ & total minimization objective (expected value, time-integrated) (USD) \\
+  $z_s$ & stochastic objective in scenario $s$ (USD) \\
+  $\delta_{ats}$ & pre-contingency local frequency deviation
+  (i.e. nominal frequency minus actual frequency)
+  in area $a$, period $t$, scenario $s$ (hz) \\
+  $\delta_{atsk}$ & post-contingency local frequency deviation
+  (i.e. nominal minus actual)
+  in area $a$, period $t$, scenario $s$, contingency $k$ (hz) \\
+  $\delta_{ts}$ & pre-contingency system frequency deviation
+  (i.e. nominal frequency minus actual frequency)
+  in period $t$, scenario $s$ (hz) \\
+  $\delta_{tsk}$ & post-contingency system frequency deviation
+  (i.e. nominal minus actual)
+  in period $t$, scenario $s$, contingency $k$ (hz) \\
+  $\phi_{jts}$ & phase difference of branch $j \in J^{\text{br}}$ in time $t$,
+  scenario $s$ (rad) \\
+  $\tau_{jts}$ & tap ratio of branch $j \in J^{\text{br}}$ in time $t$,
+  scenario $s$ (1) \\
+  $\theta_{its}$ & pre-contingency
+  voltage angle of bus $i$ in period $t$, scenario $s$ (rad) \\
+  $\theta_{itsk}$ & post-contingency voltage angle of bus $i$ in period $t$, scenario $s$,
+  contingency $k$(rad) \\
+} {
+  Symbol & Description \\
+} {
+  Optimization model variables
+} {
+  \label{tbl:vars}
+}
+
