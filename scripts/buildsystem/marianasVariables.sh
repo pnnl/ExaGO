@@ -12,7 +12,7 @@ module load cmake/3.15.3
 
 # Configure spack
 source $PROJ_DIR/src/spack/share/spack/setup-env.sh
-spack env activate exago-ci --without-view
+spack env activate exago-v0-99-1-marianas --without-view
 
 # When loading spack packages, use spack and not modulefiles directly
 spack load petsc+mpi umpire+cuda raja+cuda hiop+cuda+mpi ipopt magma openmpi metis parmetis camp+cuda

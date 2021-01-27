@@ -114,6 +114,7 @@ PetscErrorCode ExaGOLogInitialize()
   ExaGOLogSetLoggingFilePointer(fp);
 
 lbl_success:
+  ExaGOLogSetLoggingFilePointer(stdout);
   ExaGOLogIsLoggerInitialized = PETSC_TRUE;
   return 0;
 }
