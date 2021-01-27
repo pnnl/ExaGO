@@ -10,7 +10,7 @@ module load spectrum-mpi-ext
 module load openblas
 module load cmake/3.18.2
 
-spack env activate exago-ci --without-view
+spack env activate exago-v0-99-1 --without-view
 spack load petsc umpire raja hiop ipopt magma metis parmetis camp
 
 export MY_RAJA_DIR=`spack location -i raja`

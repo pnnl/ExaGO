@@ -14,7 +14,7 @@ module load cuda/10.2
 
 # Configure spack
 source $PROJ_DIR/src/spack/share/spack/setup-env.sh
-spack env activate exago-ci-newell --without-view
+spack env activate exago-v0-99-1-newell --without-view
 
 # When loading spack packages, use spack and not modulefiles directly
 spack load petsc umpire raja hiop ipopt magma openmpi metis parmetis camp
