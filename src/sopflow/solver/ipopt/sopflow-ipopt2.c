@@ -192,6 +192,16 @@ Bool evalnew_sopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_f
   return TRUE;
 }
 
+Bool SOPFLOWSolverMonitor_IPOPTNEW(Index alg_mod,Index iter_count,Number obj_value,Number inf_pr,
+			       Number inf_du,Number mu,Number d_norm,Number regularization_size,
+			       Number alpha_du,Number alpha_pr,Index ls_trials,
+                               UserDataPtr user_data)
+{
+  SOPFLOW  sopflow=(SOPFLOW)user_data;
+  sopflow->numiter = iter_count;
+  return 1;
+}
+
 PetscErrorCode SOPFLOWSolverSolve_IPOPTNEW(SOPFLOW sopflow)
 {
   PetscErrorCode     ierr;
@@ -232,9 +242,17 @@ PetscErrorCode SOPFLOWSolverSolve_IPOPTNEW(SOPFLOW sopflow)
   ierr = VecRestoreArray(sopflow->Gl,&gl);CHKERRQ(ierr);
   ierr = VecRestoreArray(sopflow->Gu,&gu);CHKERRQ(ierr);
 
+  /* IPOPT tolerance */
+  AddIpoptNumOption(sopflowipoptnew->nlp,"tol",sopflow->tolerance);
+
   ierr = VecGetArray(sopflow->X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(sopflow->G,&g);CHKERRQ(ierr);
   ierr = VecGetArray(sopflow->Lambda,&lam);CHKERRQ(ierr);
+
+  /* Add intermediate callback to get solver info
+     This is called by IPOPT each iteration
+  */
+  SetIntermediateCallback(sopflowipoptnew->nlp,SOPFLOWSolverMonitor_IPOPTNEW);
 
   /* Solve */
   sopflowipoptnew->solve_status = IpoptSolve(sopflowipoptnew->nlp,x,g,&sopflow->obj,lam,NULL,NULL,sopflow);
