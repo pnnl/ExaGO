@@ -3,7 +3,7 @@
 \section{Input}
 \section{Output}
 \section{Formulation}
-Optimal is a general nonlinear programming problem with the following form
+Optimal power flow is a general nonlinear programming problem with the following form
 \begin{align}
 \text{min. }& f(x) \\
 &\text{s.t.} \nonumber \\
@@ -153,11 +153,11 @@ When using cartesian coordinates for voltages, inequality constraints (\ref{eq:o
     \hline
     Power balance with polar coordinates & \opflowoption{\opflowmodel}{\pbpol} & IPOPT & CPU\\
     \hline
-    Power balance with polar coordinates & \opflowoption{\opflowmodel}{\pbcar} & IPOPT, TAO & CPU\\
+    Power balance with cartesian coordinates & \opflowoption{\opflowmodel}{\pbcar} & IPOPT, TAO & CPU\\
     \hline
-    Power balance with polar coordinates & \opflowoption{\opflowmodel}{\pbcar} & \hiop & CPU\\
+    Power balance with polar coordinates used with HIOP & \opflowoption{\opflowmodel}{\pbpolhiop} & \hiop & CPU\\
     \hline
-    Power balance with polar coordinates & \opflowoption{\opflowmodel}{\pbcar} & IPOPT, TAO & GPU\\
+    Power balance with polar coordinates used with HIOP on GPU & \opflowoption{\opflowmodel}{\pbpolrajahiop} & IPOPT, TAO & GPU\\
     \hline
   \end{tabular}
   \label{tab:opflow_models}
