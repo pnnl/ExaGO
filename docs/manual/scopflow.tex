@@ -11,12 +11,12 @@ The contingency-constrained optimal power flow (popularly termed as security-con
 
 
 In general form, the equations for contingency-constrained optimal power flow are given by
-(\ref{eq:scopflow_start}) -- (\ref{eq:scopflow_end}). This is a two-stage stochastic optimization problem where the first stage is the base case $c_0$ and each of the contingency states $c_i, i \in [1,N_c-1]$ are second-stage subproblems. SCOPF aims to minimize the objective for the base case $f(x_0)$, while adhering to the equality ($g(x_c)$), inequality $h(x_c)$, and the lower/upper bound ($x^-$,$x^+$) constraints. Equation (\ref{eq:scopflow_end}) represents the coupling between the base-case and each of the contingency states $c_i$. Equation (\ref{eq:scopflow_end}) is the most typical form of coupling that limits the deviation of the contingency variables $x_c$ from the base $x_0$ to within $\delta_c{x}$. An example of this constraint could be the allowed real power output deviation for the generators constrained by their ramp limit.
+(\ref{eq:scopflow_start}) -- (\ref{eq:scopflow_end}). This is a two-stage stochastic optimization problem where the first stage is the base case $c_0$ and each of the contingency states $c_i, i \in [1,N_c-1]$ are second-stage subproblems. SCOPFLOW aims to minimize the objective $\sum_{c=0}^{N_c-1}f(x_c)$, while adhering to the equality ($g(x_c)$), inequality $h(x_c)$, and the lower/upper bound ($x^-$,$x^+$) constraints. Equation (\ref{eq:scopflow_end}) represents the coupling between the base-case and each of the contingency states $c_i$. Equation (\ref{eq:scopflow_end}) is the most typical form of coupling that limits the deviation of the contingency variables $x_c$ from the base $x_0$ to within $\delta_c{x}$. An example of this constraint could be the allowed real power output deviation for the generators constrained by their ramp limit.
 
 
 \begin{align}
 \centering
-\text{min}&~f(x_0)&  \label{eq:scopflow_start}\\
+\text{min}&~\sum_{c=0}^{N_c-1}f(x_c)&  \label{eq:scopflow_start}\\
 &\text{s.t.}& \nonumber \\
 &~g(x_c) = 0,                             &c \in \left[0,N_c-1\right]& \\
 &~h(x_c) \le 0,                           &c \in \left[0,N_c-1\right]& \\
@@ -35,7 +35,7 @@ The overall objective of this contingency-constrained multi-period optimal power
 
 \begin{align}
 \centering
-\text{min}&~\sum_{t=0}^{N_t-1}f(x_{0,t})&  \label{eq:ctopflow_start}\\
+\text{min}&~\sum_{c=0}^{N_c-1}\sum_{t=0}^{N_t-1}f(x_{c,t})& \label{eq:ctopflow_start}\\
 &\text{s.t.}& \nonumber \\
 &~g(x_{c,t}) = 0,                                        &c \in \left[0,N_c-1\right], t \in \left[0,N_t-1\right]& \\
 &~h(x_{c,t}) \le 0,                                      &c \in \left[0,N_c-1\right], t \in \left[0,N_t-1\right]& \\
@@ -69,11 +69,36 @@ If multi-period option is chosen then $N_c$ subdirectories are created (one for 
 
 \todo
 \section{Options}
-\todo
+See table \ref{tab:scopflow_options}
+\begin{table}[h]
+  \caption{SCOPFLOW options}
+  \small
+  \begin{tabular}{|p{0.4\textwidth}|p{0.3\textwidth}|p{0.3\textwidth}|}
+    \hline
+    \textbf{Option} & \textbf{Meaning} & \textbf{Values (Default value)} \\ \hline
+    -netfile & Network file name & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod_gen3_wind.m}{case9mod_gen3_wind.m}) \\ \hline
+    -ctgcfile & Contingency file name & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9.cont}{case9.cont}) \\ \hline
+    -save\_output & Save output to directory & 0 or 1 (0) \\ \hline
+    -scopflow\_Nc & Number of contingencies & int (0) \\ \hline
+    -scopflow\_mode & Operation mode: Preventive or corrective & 0 or 1 (0) \\ \hline
+    -scopflow\_enable\_multiperiod & Multi-period SCOPFLOW & TRUE or FALSE (FALSE) \\ \hline
+    -scopflow\_pload\_profile & Real power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_P.csv}{load_P.csv}) \\ \hline
+    -scopflow\_qload\_profile & Reactive power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_Q.csv}{load_Q.csv}) \\ \hline
+    -scopflow\_windgenprofile & Wind generation profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/scenarios.csv}{scenarios.csv}) \\ \hline
+    -scopflow\_dT & Length of time-step (minutes) & double (5.0) \\ \hline
+    -scopflow\_duration & Total duration (hours) & double (0.5) \\ \hline 
+  \end{tabular}
+  \label{tab:scopflow_options}
+\end{table}
+
+In addition, all \opflow options given in Table \ref{tab:opflow_options} can be used to tune the individual time-period.
+
 
 Depending on the \emph{mode}, SCOPFLOW can either be \emph{preventive} (mode = 0) or \emph{corrective} (mode = 1). In the preventive mode, the PV and PQ generator real power is fixed to its corresponding base-case values. The generators at the referencce bus pick up any make-up power required for the contingency. The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability.
 
 \section{Usage}
-\todo
+\begin{lstlisting}
+    ./scopflow -netfile <netfilename>  -ctgcfile <ctgcfilename> <scopflowoptions>
+\end{lstlisting}
 \section{Examples}
 \todo

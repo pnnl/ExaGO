@@ -27,7 +27,7 @@ x^- & \le x_t \le x^+,                               &t\in \left[0,N_t-1\right]&
     \item \textbf{Load data:} One file for load real power and one fo reactive power. The files need to be in CSV format. An example of the format for the 9-bus case is \href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/tree/master/datafiles/case9}{here}.
     \item \textbf{Wind generation:} The wind generation time-series described in CSV format. See an example of the format \href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/tree/master/datafiles/case9}{here}.
 \end{itemize}
-
+If the load data and/or wind generation profiles are not set then a flat profile is assumed, i.e., the load and wind generation for all hours is constant.
 
 The \tcopflow output is saved to a directory named \emph{tcopflowout}. This directory contains $N_t$ files, one for each time-step, in \matpower data file format.
 
@@ -35,6 +35,23 @@ The \tcopflow output is saved to a directory named \emph{tcopflowout}. This dire
 \section{Usage}
 \todo
 \section{Options}
-\todo
+See table \ref{tab:tcopflow_options}
+\begin{table}[h]
+  \caption{TCOPFLOW options}
+  \small
+  \begin{tabular}{|p{0.4\textwidth}|p{0.3\textwidth}|p{0.3\textwidth}|}
+    \hline
+    \textbf{Option} & \textbf{Meaning} & \textbf{Values (Default value)} \\ \hline
+    -netfile & Network file name & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod_gen3_wind.m}{case9mod_gen3_wind.m}) \\ \hline
+    -save\_output & Save output to file & 0 or 1 (0) \\ \hline
+    -tcopflow\_pload\_profile & Real power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_P.csv}{load_P.csv}) \\ \hline
+    -tcopflow\_qload\_profile & Reactive power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_Q.csv}{load_Q.csv}) \\ \hline
+    -tcopflow\_windgen\_profile & Wind generation profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/scenarios.csv}{scenarios.csv}) \\ \hline
+    -tcopflow\_dT & Length of time-step (minutes) & double (5.0) \\ \hline
+    -tcopflow\_duration & Total duration (hours) & double (0.5) \\ \hline 
+  \end{tabular}
+  \label{tab:tcopflow_options}
+\end{table}
+In addition, all \opflow options given in Table \ref{tab:opflow_options} can be used.
 \section{Examples}
 \todo

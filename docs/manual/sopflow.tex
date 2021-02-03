@@ -42,7 +42,7 @@ The following files are needed for executing a SOPFLOW.
 \begin{itemize}
     \item \textbf{Network file:} The network file describing the network details. Only \matpower format files are currently supported.
     \item \textbf{Scenario file:} \sopflow only supports reading wind generation scenarios in a CSV format. An example of this format for the 9-bus case is \href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/tree/master/datafiles/case9/scenarios.csv}{here}.
-    \item \textbf{Contingency file:} Contingencies can be specified via PTI format file as described in chapter \ref{chap:scopflow}.
+    \item \textbf{Contingency file:} Contingencies can be specified via PTI format file as described in chapter \ref{chap:scopflow}.The option \lstinline{-sopflow_enable_multicontingency} should be set for multi-contingency problems.
     \item \textbf{Load data:} One file for load real power and one fo reactive power. The files need to be in CSV format. An example of the format for the 9-bus case is \href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/tree/master/datafiles/case9}{here}.
 \end{itemize}
 
@@ -50,6 +50,29 @@ The \sopflow output is saved to a directory named \emph{sopflowout}. This direct
 
 \section{Solvers}
 \sopflow can be solved with \ipopt. If one wants to solve each scenario independently, i.e., without any coupling constraints then use \emph{EMPAR} solver. \emph{EMPAR} distributes the contingencies to different processes when executed in parallel.
-\section{Usage}
 \section{Options}
+See table \ref{tab:sopflow_options}
+
+\begin{table}[h]
+  \caption{SOPFLOW options}
+  \small
+  \begin{tabular}{|p{0.4\textwidth}|p{0.3\textwidth}|p{0.3\textwidth}|}
+    \hline
+    \textbf{Option} & \textbf{Meaning} & \textbf{Values (Default value)} \\ \hline
+    -netfile & Network file name & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod_gen3_wind.m}{case9mod_gen3_wind.m}) \\ \hline
+    -scenfile & Scenario file naame & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/scenarios.csv}{scenarios.csv}) \\ \hline
+    -sopflow\_mode & Operation mode: Preventive or corrective & 0 or 1 (0) \\ \hline
+    -sopflow\_enable\_multicontingency & Multi-contingency SOPFLOW & TRUE or FALSE (FALSE) \\ \hline 
+  \end{tabular}
+  \label{tab:sopflow_options}
+\end{table}
+
+With multi-contingency SOPFLOW, all \scopflow options given in Table \ref{tab:scopflow_options} can be used to tune the contingencies.
+
+Depending on the \emph{mode}, SOPFLOW can either be \emph{preventive} (mode = 0) or \emph{corrective} (mode = 1). In the preventive mode, the PV and PQ generator real power is fixed to its corresponding base-case values. The generators at the reference bus pick up any make-up power required for the contingency. The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability.
+
+\section{Usage}
+\begin{lstlisting}
+    ./sopflow -netfile <netfilename>  -scenfile <scenfilename> <sopflowoptions>
+\end{lstlisting}
 \section{Examples}
