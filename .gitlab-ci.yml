@@ -7,6 +7,8 @@
       cp -R ./* "$WORKDIR"
       cd "$WORKDIR"
       MY_CLUSTER=ascent ./build.sh --build-only || exit 1
+  except:
+    - scopflow/solver-primaldecomp
 
 .ornl_test_script_template: &ornl_test_script_definition
   script:
@@ -20,7 +22,8 @@
     - |
       cd "$WORKDIR/.."
       rm -rf "$WORKDIR"
-
+  except:
+    - scopflow/solver-primaldecomp
 
 .ornl_environment_template: &ornl_environment_variables
   variables:
@@ -36,6 +39,8 @@
         scancel $jobid
       fi
       rm -rf $WORKDIR
+  except:
+    - scopflow/solver-primaldecomp
 
 .pnnl_script_template: &pnnl_script_definition
   script:
@@ -74,6 +79,8 @@
       echo "Finished batch job with exit code: $res"
       rm "$WORKDIR/jobid"
       exit $res
+  except:
+    - scopflow/solver-primaldecomp
 
 .pnnl_tags_template: &pnnl_tags_definition
   tags:
@@ -107,6 +114,7 @@ test_on_compute_node:
     - if: '$CI_PROJECT_PATH == "ecpcitest/exasgd/exago"'
   <<: *ornl_test_script_definition
   <<: *ornl_environment_variables
+
 # ---
 
 # For PNNL CI

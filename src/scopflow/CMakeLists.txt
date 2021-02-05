@@ -2,6 +2,8 @@ set(SCOPFLOW_SOLVER_SRC
     solver/ipopt/scopflow-ipopt.c
     solver/ipopt/scopflow-ipopt2.c
     solver/empar/scopflow-empar.c
+    solver/hiop/scopflow-hiop.cpp
+    solver/dualdecomp/scopflow-dualdecomp.c
 )
 
 set(SCOPFLOW_MODEL_SRC

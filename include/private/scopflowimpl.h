@@ -74,6 +74,9 @@ struct _p_SCOPFLOW{
   PetscInt cend;    /* Contingency list end idx (cstart+nc) for this processor */
 		       
   COMM comm; /**< Communicator context */
+
+  OPFLOW opflow0;   /* Base-case OPFLOW..maintained on each process to ease the calculations */
+
   OPFLOW *opflows; /* Array of optimal power flow application objects.
   		      Each processor creates nc objects, one for each 
 		      contingency */

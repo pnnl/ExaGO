@@ -13,14 +13,16 @@ module load openmpi/3.1.5
 module load cuda/10.2
 
 # Configure spack
-source $PROJ_DIR/src/spack/share/spack/setup-env.sh
+source ~/software/ExaSGD_Spack/spack/share/spack/setup-env.sh
 
 # Dirty workaround to fix permissions errors
 # see https://github.com/spack/spack/issues/17407
-ls $PROJ_DIR/src/spack/var/spack/environments/*
+ls ~/software/ExaSGD_Spack/spack/var/spack/environments/*
 
-spack env activate exago-v0-99-2-hiop-v0-3-99-2-newell
+#spack env activate exago-v0-99-2-hiop-v0-3-99-2-newell
+spack env activate exago-hiop-pridecomp
 
 # Petsc is the only dependency that needs an explicit path
 export MY_PETSC_DIR=`spack location -i petsc`
+#export MY_HIOP_DIR=/people/abhy245/software/hiop-github/hiop/_dist-Debug/
 export NVBLAS_CONFIG_FILE=$PROJ_DIR/$MY_CLUSTER/nvblas.conf
