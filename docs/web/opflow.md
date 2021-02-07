@@ -91,10 +91,6 @@ The behavior of OPFLOW is controlled through the different options given in the 
 |-save_output| Save OPFLOW solution to file | 0 or 1 (0)|
 |-netfile| Name of network file in MATPOWER format| ([case9mod.m](../../datafiles/case9/case9mod.m))|
 
-`-opflow_has_gensetpoint` uses a real power output set-point for the generators. This set-point is read from the `Pg` column in the network file and is fixed during the optimization. Two extra variables $`\Delta{P_g^\text{up}}`$ and  $`\Delta{P_g^\text{down}}`$ are added for each generator for the up/down power deviation from the set-point. The real power output of the generator is given by $`P_g = P_g^{\text{set}} + \Delta{P_g^\text{up}} - \Delta{P_g^\text{down}}`$.
-
-While with the `-opflow_has_gensetpoint` the generator real power deviations are determined by the optimization, using `-opflow_use_agc` option uses the AGC ddispatch mechanism that forces these power deviations to be equal to the generator's participation in the redispatch, i.e., $`\Delta{P_g^\text{up}} - \Delta{P_g^\text{down}} = \alpha_g\Delta{P}`$. Here $`\alpha_g`$ is the generation participation factor and $`\Delta{P}`$ is the power excess/deficit that must be shared by the AGC participating generators.
-
 #### OPFLOW models
 
 OPFLOW can be used with several different models i.e., representations of network balance equations and bus voltages. 
