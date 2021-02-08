@@ -148,6 +148,10 @@ PetscErrorCode SCOPFLOWSolverCreate_DUALDECOMP(SCOPFLOW scopflow)
 
   ierr = PetscCalloc1(1,&dualdecomp);CHKERRQ(ierr);
 
+  dualdecomp->mu = 1000;
+  dualdecomp->maxits = 100;
+  dualdecomp->tol = 1e-3;
+
   scopflow->solver = dualdecomp;
 
   scopflow->solverops.setup = SCOPFLOWSolverSetUp_DUALDECOMP;
@@ -158,6 +162,8 @@ PetscErrorCode SCOPFLOWSolverCreate_DUALDECOMP(SCOPFLOW scopflow)
   scopflow->solverops.getconvergencestatus = SCOPFLOWSolverGetConvergenceStatus_DUALDECOMP;
   scopflow->solverops.getconstraints = SCOPFLOWSolverGetConstraints_DUALDECOMP;
   scopflow->solverops.getconstraintmultipliers = SCOPFLOWSolverGetConstraintMultipliers_DUALDECOMP;
+
+  
 
   PetscFunctionReturn(0);
 }

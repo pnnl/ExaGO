@@ -370,6 +370,11 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
       
       /* Set up OPFLOW object */
       //    ierr = OPFLOWGenbusVoltageFixed(scopflow->opflows[c],PETSC_TRUE);CHKERRQ(ierr);
+      if(scopflow->cstart+c ==  0) { /* First stage */
+	ierr = OPFLOWSetObjectiveType(scopflow->opflows[c],MIN_GEN_COST);CHKERRQ(ierr);
+      } else { /* Second stages */
+	ierr = OPFLOWSetObjectiveType(scopflow->opflows[c],(OPFLOWObjectiveType)MIN_GENSETPOINT_DEVIATION);CHKERRQ(ierr);
+      }
       //    if(scopflow->cstart+c > 0) scopflow->opflows[c]->obj_gencost = PETSC_FALSE; /* No gen. cost minimization for second stage */
       ierr = OPFLOWSetUp(scopflow->opflows[c]);CHKERRQ(ierr);
     }
