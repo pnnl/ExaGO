@@ -20,6 +20,12 @@
 #define OPFLOWSOLVER_TAO   "TAO"
 #define OPFLOWSOLVER_HIOP  "HIOP"
 
+typedef enum {
+  MIN_GEN_COST, /* Generator cost minimization */
+  MIN_GENSETPOINT_DEVIATION, /* Minimize generator set-point deviation */
+}OPFLOWObjectiveType;
+
+
 typedef struct _p_OPFLOW *OPFLOW;
 
 /* Generator bus voltage type */
@@ -44,6 +50,8 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetInitialGuess(OPFLOW,Vec);
 PETSC_EXTERN PetscErrorCode OPFLOWSetTolerance(OPFLOW,PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWGetTolerance(OPFLOW,PetscReal*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetNumIterations(OPFLOW,PetscInt*);
+PETSC_EXTERN PetscErrorCode OPFLOWGetObjectiveType(OPFLOW,OPFLOWObjectiveType*);
+PETSC_EXTERN PetscErrorCode OPFLOWSetObjectiveType(OPFLOW,OPFLOWObjectiveType);
 PETSC_EXTERN PetscErrorCode OPFLOWGetObjective(OPFLOW,PetscReal*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetVariableBounds(OPFLOW,Vec*,Vec*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetConstraintJacobian(OPFLOW,Mat*,Mat*);
