@@ -123,6 +123,8 @@ struct _p_OPFLOW{
 
   PetscBool   has_gensetpoint; /* Has a set-point for the real power generation */
 
+  PetscBool   use_agc; /* Uses AGC for generator dispatch */
+
   PetscBool setupcalled; /* OPFLOWSetUp called? */
 
   PetscReal   tolerance; /* Tolerance for OPFLOW */

@@ -1263,3 +1263,84 @@ PetscErrorCode PSApplyContingency(PS ps, Contingency ctgc)
   }
   PetscFunctionReturn(0);
 }
+
+/* 
+   PSGetTotalGeneration - Gets the total online generation and capacity
+
+  Input Parameters:
+. ps - power system object
+ 
+  Output Parameters:
++ pgentot - total online generation in pu on system MVAbase
+- pmaxtot - total online capacity in pu on system MVAbase
+*/
+PetscErrorCode PSGetTotalGeneration(PS ps,PetscScalar *pgtot,PetscScalar *pmaxtot)
+{
+  PetscErrorCode ierr;
+  PSBUS          bus;
+  PSGEN          gen;
+  PetscInt       i,j;
+  PetscScalar    pgtot_loc=0.,pmaxtot_loc=0.;
+  PetscBool      isghosted;
+  PetscScalar    in[2],out[2];
+
+  PetscFunctionBegin;
+
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    ierr = PSBUSIsGhosted(bus,&isghosted);
+    if(isghosted) continue;
+    for(j=0; j < bus->ngen; j++) {
+      ierr = PSBUSGetGen(bus,j,&gen);
+      if(gen->status) {
+	pgtot_loc   += gen->pg;
+	pmaxtot_loc += gen->pt;
+      }
+    } 
+  }
+
+  in[0] = pgtot_loc;
+  in[1] = pmaxtot_loc;
+  out[0] = out[1] = 0.0;
+  ierr = MPI_Allreduce(in,out,2,MPIU_SCALAR,MPI_SUM,ps->comm->type);CHKERRQ(ierr);
+
+  if(pgtot)   *pgtot   = out[0];
+  if(pmaxtot) *pmaxtot = out[1];
+
+  PetscFunctionReturn(0);
+}
+    
+/*
+  PSComputeParticipationFactors - Computes generation participation factor
+
+  Input Parameters:
++ ps - power system object
+- pmaxtot - total generation capacity
+
+  Notes: 
+  - Currenty, this function only computes the participation factors for the entire system, not by areas
+  - The participation factor for gen. j is p^{max}_j/pmaxtot
+  - pmaxtot can be obtained by PSGetTotalGeneration
+*/
+PetscErrorCode PSComputeParticipationFactors(PS ps)
+{
+  PetscErrorCode ierr;
+  PSBUS          bus;
+  PSGEN          gen;
+  PetscInt       i,j;
+  PetscScalar    pmaxtot;
+
+  PetscFunctionBegin;
+
+  ierr = PSGetTotalGeneration(ps,NULL,&pmaxtot);CHKERRQ(ierr);
+
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    for(j = 0; j < bus->ngen; j++) {
+      ierr = PSBUSGetGen(bus,j,&gen);CHKERRQ(ierr);
+      if(gen->status) gen->apf = gen->pt/pmaxtot;
+    }
+  }
+
+  PetscFunctionReturn(0);
+}
