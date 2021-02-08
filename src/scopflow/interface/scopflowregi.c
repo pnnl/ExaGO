@@ -78,6 +78,7 @@ extern PetscErrorCode SCOPFLOWSolverCreate_IPOPTNEW(SCOPFLOW);
 #endif
 
 extern PetscErrorCode SCOPFLOWSolverCreate_EMPAR(SCOPFLOW);
+extern PetscErrorCode SCOPFLOWSolverCreate_DUALDECOMP(SCOPFLOW);
 
 /*
   SCOPFLOWSolverRegisterAll - Registers all SCOPFLOW solvers
@@ -95,6 +96,8 @@ PetscErrorCode SCOPFLOWSolverRegisterAll(SCOPFLOW scopflow)
 #endif
 
   ierr = SCOPFLOWSolverRegister(scopflow,SCOPFLOWSOLVER_EMPAR,SCOPFLOWSolverCreate_EMPAR);CHKERRQ(ierr);
+  ierr = SCOPFLOWSolverRegister(scopflow,SCOPFLOWSOLVER_DUALDECOMP,SCOPFLOWSolverCreate_DUALDECOMP);CHKERRQ(ierr);
+
   scopflow->SCOPFLOWSolverRegisterAllCalled = PETSC_TRUE;
 
   PetscFunctionReturn(0);

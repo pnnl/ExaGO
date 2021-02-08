@@ -17,6 +17,7 @@
 #define SCOPFLOWSOLVER_IPOPT "IPOPT"
 #define SCOPFLOWSOLVER_TAO   "TAO"
 #define SCOPFLOWSOLVER_EMPAR  "EMPAR" /* Embarassingly parallel solver - solves each OPFLOW independently */
+#define SCOPFLOWSOLVER_DUALDECOMP "DUALDECOMP" /* Dual-decomposition based solver */
 
 typedef struct _p_SCOPFLOW *SCOPFLOW;
 
