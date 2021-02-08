@@ -15,6 +15,40 @@ void swap_dm(DM *dm1, DM *dm2)
 }
 
 /*
+  OPFLOWHasGenSetPoint - Use gen. set point in the OPFLOW formulation
+
+  Input Parameters:
++ opflow - OPFLOW object
+- hassetpoint - Use set-point?
+
+  Notes: Should be called before OPFLOWSetUp
+*/
+PetscErrorCode OPFLOWHasGenSetPoint(OPFLOW opflow,PetscBool hassetpoint)
+{
+  PetscFunctionBegin;
+  opflow->has_gensetpoint = hassetpoint;
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWUseAGC - Uses AGC to proportionally redispatch the generators
+
+  Input Parameters:
++ opflow - OPFLOW object
+- useagc - Use AGC?
+
+  Notes: Should be called before OPFLOWSetUp
+*/
+PetscErrorCode OPFLOWUseAGC(OPFLOW opflow,PetscBool useagc)
+{
+  PetscFunctionBegin;
+  opflow->use_agc = useagc;
+  if(useagc) opflow->has_gensetpoint = PETSC_TRUE;
+  PetscFunctionReturn(0);
+}
+
+
+/*
   OPFLOWGetSizes - Returns the size of solution vector, and constraints
 
   Input Parameters:
@@ -250,6 +284,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   opflow->tolerance = 1e-6;
 
   opflow->has_gensetpoint = PETSC_FALSE;
+  opflow->use_agc = PETSC_FALSE;
 
   opflow->solver   = NULL;
   opflow->model = NULL;
@@ -729,6 +764,8 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PetscOptionsEnum("-opflow_initialization","Type of OPFLOW initialization","",OPFLOWInitializationTypes,(PetscEnum)opflow->initializationtype,(PetscEnum*)&opflow->initializationtype,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsEnum("-opflow_objective","Type of OPFLOW objective","",OPFLOWObjectiveTypes,(PetscEnum)opflow->objectivetype,(PetscEnum*)&opflow->objectivetype,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-opflow_has_gensetpoint","Use set-points for generator real power","",opflow->has_gensetpoint,&opflow->has_gensetpoint,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsBool("-opflow_use_agc","Use automatic generation control (AGC)","",opflow->use_agc,&opflow->use_agc,NULL);CHKERRQ(ierr);
+  if(opflow->use_agc) opflow->has_gensetpoint = PETSC_TRUE;
   ierr = PetscOptionsReal("-opflow_tolerance","optimization tolerance","",opflow->tolerance,&opflow->tolerance,NULL);CHKERRQ(ierr);
 
 
@@ -915,6 +952,8 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PetscLogEventRegister("OPFLOWHess",0,&opflow->hesslogger);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("OPFLOWSolve",0,&opflow->solvelogger);CHKERRQ(ierr);
 
+  /* Compute area participation factors */
+  ierr = PSComputeParticipationFactors(ps);CHKERRQ(ierr);
   opflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);
 }

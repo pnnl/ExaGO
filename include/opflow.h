@@ -68,6 +68,9 @@ PETSC_EXTERN PetscErrorCode OPFLOWGenbusVoltageFixed(OPFLOW,PetscBool);
 
 PETSC_EXTERN PetscErrorCode OPFLOWGetVariableOrdering(OPFLOW,int**);
 PETSC_EXTERN PetscErrorCode OPFLOWGetSizes(OPFLOW,int*,int*,int*);
+
+PETSC_EXTERN PetscErrorCode OPFLOWHasGenSetPoint(OPFLOW,PetscBool);
+PETSC_EXTERN PetscErrorCode OPFLOWUseAGC(OPFLOW,PetscBool);
 #endif
 
 

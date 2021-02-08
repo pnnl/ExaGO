@@ -81,6 +81,8 @@ The behavior of OPFLOW is controlled through the different options given in the 
 |-opflow_loadloss_penalty| Penalty ($) for loss of load per load| (1000)|
 |-opflow_powerimbalance_penalty| Penalty ($) for  power imbalance at bus| (1000)|
 |-opflow_genbusvoltage_fixed| Generator bus voltages fixed? | 0 or 1 (0)|
+|-opflow_has_gensetpoint| Real power set point set? | 0 or 1 (0)|
+|-opflow_use_agc| Use AGC for generator real power redispatch?| 0 or 1 (0)|
 |-opflow_tolerance|Optimization solver tolerance | (1e-6)
 |-hiop_compute_mode|Controls the `-compute_mode` option for HIOP solver, i.e., where the HIOP solver computations run|"auto" (default)<br> "cpu"<br>"hybrid"<br>"gpu"|
 |-hiop_verbosity_level|Controls the verbosity level for HIOP. 0 means no output is printed, 10 is max. output| 0 to 10 (0) See [HIOP verbosity levels](https://github.com/LLNL/hiop/blob/7e8adae9db757aed48e5c2bc448316307598258f/src/Utils/hiopLogger.hpp#L68)|

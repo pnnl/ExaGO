@@ -200,12 +200,15 @@ struct _p_PSGEN{
 
   /* Variable, constraint sizes and locations */
   PetscInt      nxpow; /* Number of generator power variables (Pg, Qg)*/
+  PetscInt      nxpset; /* Number of generator set point variables (Pgset) */
   PetscInt      nxpdev; /* Number of generator real power deviation (ramp up/down) variables */
 
   PetscInt  startxpowloc; /* Starting location for power variables */
+  PetscInt  startxpsetloc; /* Starting location of generator set-point variable */
   PetscInt  startxpdevloc; /* Starting location for power deviation variables */
 
   PetscInt  startxpowlocglob; /* Starting global location for power variables */
+  PetscInt  startxpsetlocglob; /* Starting location of generator set-point variable */
   PetscInt  startxpdevlocglob; /* Starting global location for power deviation variables */
 
   PetscInt      nx; /* Total number of variables for the gen */
@@ -328,6 +331,19 @@ struct _p_PS {
   char        net_file_name[1024]; /* Network file name */
   PetscInt    nconncomp;           /* Number of connected components */
   PSConnComp  conncomp[MAXCONNECTEDCOMPS]; /* List of connected components */
+
+  /* Used by OPFLOW */
+  /* System-level variables,constraints, and their location */
+  PetscInt  nx; /* Total number of variables for the bus */
+
+  PetscInt  nconeq; /* Number of equality constraints */
+  PetscInt  nconineq; /* Number of inequality constraints */
+
+  PetscInt  startxloc; /* Starting location for variables */
+  PetscInt  startxlocglob; /* Starting global location for variables */
+
+  PetscInt  starteqloc; /* Starting location for equality constraints for this bus */
+  PetscInt  startineqloc; /* Starting location for inequality constraints for this bus */
 
   PetscBool setupcalled; /* Is setup called on PS? */
 };
