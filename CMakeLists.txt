@@ -25,7 +25,7 @@ endif ()
 #set(MPI_ASSUME_NO_BUILTIN_MPI On)
 
 # Specify where CMake modules are to be found
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Set the path to options file in EXAGO installation
 set(EXAGO_OPTIONS_DIR "${CMAKE_INSTALL_PREFIX}/options")
@@ -170,7 +170,7 @@ add_subdirectory(src)
 # Build applications (specified in applications/CMakeLists.txt)
 add_subdirectory(applications)
 
-# Build unit tests
+# Build tests
 add_subdirectory(tests)
 
 ## Install
@@ -191,10 +191,10 @@ install(FILES ${EXAGO_OPTIONS_FILES} DESTINATION options)
 
 # EXAGO datafiles to install
 set(EXAGO_DATA_FILES
-  datafiles/case118.m
-  datafiles/case118.cont
-  datafiles/case_ACTIVSg200.m
-  datafiles/case_ACTIVSg200.cont
+  ${PROJECT_SOURCE_DIR}/datafiles/case118.m
+  ${PROJECT_SOURCE_DIR}/datafiles/case118.cont
+  ${PROJECT_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+  ${PROJECT_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
 )
 
 # Install data files
@@ -233,12 +233,13 @@ else()
 endif()
 
 if(EXAGO_RUN_TESTS)
+
   # Test cases
   file(GLOB network_files
     datafiles/case9/case9mod.m
     datafiles/case118.m
     datafiles/case_ACTIVSg200.m
-  )
+    )
   message(STATUS "Starting tests")
 
   # Unit tests
@@ -251,6 +252,9 @@ if(EXAGO_RUN_TESTS)
 	-opflow_genbusvoltage_fixed 0)
     endforeach()
   else()
+    #[[ Some of our automated tests only run unit tests with ctest arguments
+    `-R UNIT_TESTS`. We have this placeholder such that our ctest invokation
+    will fail if only unit tests are ran and no unit tests were available. #]]
     add_test(NAME UNIT_TESTS_PLACEHOLDER_NOHIOP
       COMMAND bash -c "
       echo 'No unit tests exist without HIOP enabled.'
@@ -346,7 +350,7 @@ if(EXAGO_RUN_TESTS)
     foreach(test_net ${network_files})
       foreach(opflow_model POWER_BALANCE_POLAR)
         foreach(opflow_init FROMFILE FLATSTART ACPF MIDPOINT)
-	  foreach(opflow_obj MIN_GEN_COST MIN_GENSETPOINT_DEVIATION)
+          foreach(opflow_obj MIN_GEN_COST MIN_GENSETPOINT_DEVIATION)
             get_filename_component(input_file ${test_net} NAME)
             add_test(NAME OPFLOW_${opflow_model}_${opflow_init}_${input_file}_${opflow_obj} COMMAND
                    ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_opflow>
@@ -407,6 +411,56 @@ if(EXAGO_RUN_TESTS)
                -opflow_solver TAO)
     endforeach(test_net)
   endforeach(np)
+
+  message(STATUS "Configuring OPFLOW functionality tests.")
+  foreach(test_net ${network_files})
+    get_filename_component(test_net_name ${test_net} NAME)
+    string(REPLACE ";" " " MPI_OPTIONS_STR "${MPI_OPTIONS}")
+    string(REPLACE ";" " " MPICMD_STR "${MPICMD}")
+    set(tolerance "1e-3")
+
+    set(solver HIOP)
+    foreach(model POWER_BALANCE_HIOP PBPOLRAJAHIOP)
+      if("OPFLOW_${solver}_${model}_${test_net_name}_FUNCTIONALITY_TEST"
+          STREQUAL
+          "OPFLOW_HIOP_POWER_BALANCE_HIOP_case_ACTIVSg200.m_FUNCTIONALITY_TEST")
+        message(STATUS "Skipping test `OPFLOW_HIOP_POWER_BALANCE_HIOP_case_ACTI"
+          "VSg200.m_FUNCTIONALITY_TEST`.")
+        message(STATUS "See issue https://gitlab.pnnl.gov/exasgd/frameworks/exa"
+          "go/-/issues/157 for more information.")
+        continue()
+      endif()
+      add_test(NAME OPFLOW_${solver}_${model}_${test_net_name}_FUNCTIONALITY_TEST
+        COMMAND ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:testOpflowFunctionality>
+          -opflow_solver ${solver}
+          -opflow_model ${model}
+          -netfile ${test_net}
+          -opflow_tolerance ${tolerance}
+        )
+    endforeach()
+
+    set(solver TAO)
+    foreach(model POWER_BALANCE_HIOP POWER_BALANCE_CARTESIAN)
+      add_test(NAME OPFLOW_${solver}_${model}_${test_net_name}_FUNCTIONALITY_TEST
+        COMMAND ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:testOpflowFunctionality>
+          -opflow_solver ${solver}
+          -opflow_model ${model}
+          -netfile ${test_net}
+          -opflow_tolerance ${tolerance}
+        )
+    endforeach()
+
+    set(solver IPOPT)
+    foreach(model POWER_BALANCE_POLAR POWER_BALANCE_CARTESIAN CURRENT_BALANCE_CARTESIAN CURRENT_BALANCE_CARTESIAN2)
+      add_test(NAME OPFLOW_${solver}_${model}_${test_net_name}_FUNCTIONALITY_TEST
+        COMMAND ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:testOpflowFunctionality>
+          -opflow_solver ${solver}
+          -opflow_model ${model}
+          -netfile ${test_net}
+          -opflow_tolerance ${tolerance}
+        )
+    endforeach()
+  endforeach()
 
   message(STATUS "Running PFLOW tests")
   # PFLOW tests

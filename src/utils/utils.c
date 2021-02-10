@@ -258,4 +258,16 @@ int anyFileExist(char** pths, int npths)
   return -1;
 }
 
+int isEqual(double value,double reference,double tol,double*err)
+{
+  *err = fabs(value-reference)/(1. + fabs(reference));
+  return (*err < tol);
+}
+
+int isEqualInt(int a,int b,int tol,int*err)
+{
+  *err = abs(a-b);
+  return (*err < tol);
+}
+
 #undef EXAGO_LOG_ENSURE_INITIALIZED

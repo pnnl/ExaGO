@@ -10,15 +10,13 @@ module load spectrum-mpi-ext
 module load openblas
 module load cmake/3.18.2
 
-spack env activate exago-v0-99-1 --without-view
-spack load petsc umpire raja hiop ipopt magma metis parmetis camp
+# Dirty workaround to fix permissions errors
+# see https://github.com/spack/spack/issues/17407
+ls $PROJ_DIR/src/spack/var/spack/environments/*
 
-export MY_RAJA_DIR=`spack location -i raja`
-export MY_UMPIRE_DIR=`spack location -i umpire`
-export MY_MAGMA_DIR=`spack location -i magma`
+spack env activate exago-v0-99-1-hiop-v0-3-99-0
+
 export MY_PETSC_DIR=`spack location -i petsc`
-export MY_IPOPT_DIR=`spack location -i ipopt`
-export MY_HIOP_DIR=`spack location -i hiop`
 export MY_NVCC_ARCH="sm_70"
 extraCmakeArgs="\
   $extra_cmake_args \
