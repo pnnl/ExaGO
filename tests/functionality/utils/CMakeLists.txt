@@ -1,0 +1,3 @@
+add_library(testFunctionality selfcheckopflow.c)
+target_link_libraries(testFunctionality opflow)
+target_include_directories(testFunctionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

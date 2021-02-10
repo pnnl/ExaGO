@@ -20,7 +20,6 @@ set -xv
 makeArgs=${makeArgs:-"-j 8"}
 ctestArgs=${ctestArgs:-"-VV"}
 extraCmakeArgs=${extraCmakeArgs:-""}
-export CXXFLAGS='-I/share/apps/magma/2.5.2/cuda10.2/include -I/share/apps/cuda/10.2/include/'
 export OMPI_MCA_btl="^vader,tcp,openib,uct"
 export BUILD=${BUILD:-1}
 export TEST=${TEST:-1}
@@ -88,7 +87,10 @@ ulimit -l unlimited || echo 'Could not set max locked memory to unlimited.'
 module purge
 
 if [[ -f "scripts/buildsystem/$(echo $MY_CLUSTER)Variables.sh" ]]; then
+  # We don't want all the shell functions we bring into scope to be printed out
+  set -x
   source "scripts/buildsystem/$(echo $MY_CLUSTER)Variables.sh"
+  set +x
   echo Sourced system-specific variables for $MY_CLUSTER
 fi
 

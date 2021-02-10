@@ -14,15 +14,13 @@ module load cuda/10.2
 
 # Configure spack
 source $PROJ_DIR/src/spack/share/spack/setup-env.sh
-spack env activate exago-v0-99-1-newell --without-view
 
-# When loading spack packages, use spack and not modulefiles directly
-spack load petsc umpire raja hiop ipopt magma openmpi metis parmetis camp
+# Dirty workaround to fix permissions errors
+# see https://github.com/spack/spack/issues/17407
+ls $PROJ_DIR/src/spack/var/spack/environments/*
 
-export MY_PETSC_DIR=`spack location -i petsc+mpi`
-export MY_UMPIRE_DIR=`spack location -i umpire+cuda`
-export MY_RAJA_DIR=`spack location -i raja+cuda`
-export MY_HIOP_DIR=`spack location -i hiop+cuda+shared`
-export MY_IPOPT_DIR=`spack location -i ipopt`
-export MY_MAGMA_DIR=`spack location -i magma`
+spack env activate exago-v0-99-1-hiop-v0-3-99-0-newell
+
+# Petsc is the only dependency that needs an explicit path
+export MY_PETSC_DIR=`spack location -i petsc`
 export NVBLAS_CONFIG_FILE=$PROJ_DIR/$MY_CLUSTER/nvblas.conf

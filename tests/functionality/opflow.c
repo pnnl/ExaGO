@@ -1,7 +1,8 @@
-static char help[] = "User example calling OPFLOW.\n\n";
+static char help[] = "OPFLOW Functionality Tests.\n\n";
 
 #include <opflow.h>
 #include <exago_config.h>
+#include <selfcheck.h>
 #include <utils.h>
 
 int main(int argc,char **argv)
@@ -74,9 +75,11 @@ int main(int argc,char **argv)
     ierr = OPFLOWSaveSolution(opflow,fmt,"opflowout");CHKERRQ(ierr);
   }
 
+  int ret = ExaGOSelfcheckOPFLOW(opflow);
+
   /* Destroy OPFLOW object */
   ierr = OPFLOWDestroy(&opflow);CHKERRQ(ierr);
 
   ExaGOFinalize();
-  return 0;
+  return ret;
 }

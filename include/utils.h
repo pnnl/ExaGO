@@ -77,4 +77,10 @@ PETSC_EXTERN int doesDirExist(char*);
 /** first i in [0, npths) such that pths[i] is statable as a regular file */
 PETSC_EXTERN int anyFileExist(char**, int);
 
+/** Determines if scaled difference between two reals is within tolerance */
+PETSC_EXTERN int isEqual(double,double,double tol,double*err);
+
+/** Determines if difference between two ints is within tolerance */
+PETSC_EXTERN int isEqualInt(int value,int reference,int tol,int*err);
+
 #endif
