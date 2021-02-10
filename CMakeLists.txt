@@ -82,6 +82,7 @@ if(EXAGO_ENABLE_MPI)
   endif(NOT DEFINED MPI_CXX_COMPILER)
   include_directories(${MPI_CXX_ADDITIONAL_INCLUDE_DIRS} ${MPI_CXX_COMPILER_INCLUDE_DIRS})
   set(EXAGO_HAVE_MPI 1)
+  set(EXAGO_EXTRA_MPI_FLAGS "" CACHE STRING "Extra args to mpiexec when running tests")
 endif(EXAGO_ENABLE_MPI)
 
 # If GPU support is enabled, find CUDA
@@ -221,15 +222,29 @@ set(EXAGO_COMMON_INCLUDE
 # Install header files
 install(FILES ${EXAGO_COMMON_INCLUDE} DESTINATION include)
 
+# If running with BSUB, we should use jsrun commands
+# Use in CMake as:
+#   - ${MPICMD} "-n" "<num_proc>" ${EXAGO_EXTRA_MPI_FLAGS}
+#     for running with more than one process.
+#       OR
+#   - ${RUNCMD} when running with only one.
+#
+# Note : ${EXAGO_EXTRA_MPI_FLAGS} should be passed as a ';' delimited string
+# e.g. export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DEXAGO_EXTRA_MPI_FLAGS=-mca;oob;tcp"
+#      will result in "-mca" "oob" "tcp" being passed to mpiexec/jsrun
 if(EXAGO_TEST_WITH_BSUB)
-  set(MPICMD "jsrun" "-n" "1")
+  set(MPICMD "jsrun")
+  set(RUNCMD "jsrun" "-n" "1")
   if(EXAGO_ENABLE_GPU)
-    set(MPICMD ${MPICMD} "-g" "1")
+    set(MPICMD ${MPICMD} "-g" "1") 
+    set(RUNCMD ${RUNCMD} "-g" "1" ${EXAGO_EXTRA_MPI_FLAGS})
   endif()
+# Otherwise, set mpi command + extra flags
 else()
   set(MPICMD "mpiexec")
-  set(MPI_OPTIONS "-n" "1")
-  set(MPI_OPTIONS ${MPI_OPTIONS} "-mca" "oob" "tcp") # -mca oob tcp suppresses output on pnnl cl
+  set(RUNCMD "mpiexec" "-n" "1")
+  set(MPICMD ${MPICMD})
+  set(RUNCMD ${RUNCMD} ${EXAGO_EXTRA_MPI_FLAGS})
 endif()
 
 if(EXAGO_RUN_TESTS)
@@ -247,9 +262,8 @@ if(EXAGO_RUN_TESTS)
     foreach(test_net ${network_files})
       get_filename_component(input_file ${test_net} NAME)
       add_test(NAME UNIT_TESTS_OPFLOW_MODEL_${input_file}_TEST COMMAND
-        ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:testAcopf>
-        -netfile ${test_net}
-	-opflow_genbusvoltage_fixed 0)
+        ${RUNCMD} $<TARGET_FILE:testAcopf>
+        -netfile ${test_net})
     endforeach()
   else()
     #[[ Some of our automated tests only run unit tests with ctest arguments
@@ -268,7 +282,7 @@ if(EXAGO_RUN_TESTS)
 
        foreach(nc RANGE 1 9)
          add_test(NAME SCOPFLOW_9bus_${nc}cont COMMAND 
-                  ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_scopflow> 
+                  ${RUNCMD} $<TARGET_FILE:app_scopflow> 
                   -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9/case9mod.m
                   -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9/case9.cont
                   -scopflow_solver IPOPTNEW
@@ -279,7 +293,7 @@ if(EXAGO_RUN_TESTS)
 
        foreach(nc RANGE 1 9)
          add_test(NAME SCOPFLOW_9bus_multiperiod_${nc}cont COMMAND 
-                  ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_scopflow> 
+                  ${RUNCMD} $<TARGET_FILE:app_scopflow> 
                   -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9/case9mod_gen3_wind.m
                   -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9/case9.cont
 		  -scopflow_enable_multiperiod 1
@@ -295,7 +309,7 @@ if(EXAGO_RUN_TESTS)
 
        foreach(ns RANGE 1 3)
          add_test(NAME SOPFLOW_200bus_IPOPT_${ns}scen COMMAND 
-                  ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_sopflow>
+                  ${RUNCMD} $<TARGET_FILE:app_sopflow>
                  -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case_ACTIVSg200.m
                  -scenfile ${EXAGO_SRC_DATAFILES_DIR}/TAMU200_scenarios/scenarios.csv
                  -sopflow_solver IPOPT
@@ -305,7 +319,7 @@ if(EXAGO_RUN_TESTS)
 
        foreach(ns RANGE 1 3)
          add_test(NAME SOPFLOW_200bus_EMPAR_${ns}scen COMMAND 
-                 ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_sopflow>
+                 ${RUNCMD} $<TARGET_FILE:app_sopflow>
                  -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case_ACTIVSg200.m
                  -scenfile ${EXAGO_SRC_DATAFILES_DIR}/TAMU200_scenarios/scenarios.csv
                  -sopflow_solver EMPAR
@@ -316,7 +330,7 @@ if(EXAGO_RUN_TESTS)
        #Multicontingency
 
        add_test(NAME SOPFLOW_9bus_3scen_9cont COMMAND 
-                 ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_sopflow>
+                 ${RUNCMD} $<TARGET_FILE:app_sopflow>
                  -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9/case9mod_gen3_wind.m
                  -scenfile ${EXAGO_SRC_DATAFILES_DIR}/case9/scenarios.csv
 		 -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9/case9.cont
@@ -329,7 +343,7 @@ if(EXAGO_RUN_TESTS)
        #Multicontingency-multiperiod
 
        add_test(NAME SOPFLOW_9bus_3scen_9cont_3steps COMMAND 
-                 ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_sopflow>
+                 ${RUNCMD} $<TARGET_FILE:app_sopflow>
                  -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9/case9mod_gen3_wind.m
                  -scenfile ${EXAGO_SRC_DATAFILES_DIR}/case9/scenarios.csv
 		 -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9/case9.cont
@@ -353,7 +367,7 @@ if(EXAGO_RUN_TESTS)
           foreach(opflow_obj MIN_GEN_COST MIN_GENSETPOINT_DEVIATION)
             get_filename_component(input_file ${test_net} NAME)
             add_test(NAME OPFLOW_${opflow_model}_${opflow_init}_${input_file}_${opflow_obj} COMMAND
-                   ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_opflow>
+                   ${RUNCMD} $<TARGET_FILE:app_opflow>
                    -netfile ${test_net}
                    -opflow_model ${opflow_model}
                    -opflow_initialization ${opflow_init}
@@ -371,7 +385,7 @@ if(EXAGO_RUN_TESTS)
       foreach(opflow_init ACPF MIDPOINT)
         get_filename_component(input_file ${test_net} NAME)
         add_test(NAME OPFLOW_HIOP_CPU_${opflow_init}_${input_file} COMMAND
-                 ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_opflow>
+                 ${RUNCMD} $<TARGET_FILE:app_opflow>
                  -netfile ${test_net}
                  -opflow_initialization ${opflow_init}
                  -hiop_compute_mode CPU
@@ -389,7 +403,7 @@ if(EXAGO_RUN_TESTS)
           set(hiop_compute_mode GPU)
         endif()
         add_test(NAME OPFLOW_HIOP_GPU_${opflow_init}_${input_file} COMMAND
-                 ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_opflow>
+                 ${RUNCMD} $<TARGET_FILE:app_opflow>
                  -netfile ${test_net}
                  -opflow_initialization ${opflow_init}
                  -hiop_compute_mode ${hiop_compute_mode}
@@ -406,7 +420,7 @@ if(EXAGO_RUN_TESTS)
     foreach(test_net ${network_files})
       get_filename_component(input_file ${test_net} NAME)
       add_test(NAME OPFLOW_TAO_${input_file} COMMAND
-               ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_opflow>
+               ${RUNCMD} $<TARGET_FILE:app_opflow>
                -netfile ${test_net}
                -opflow_solver TAO)
     endforeach(test_net)
@@ -415,8 +429,6 @@ if(EXAGO_RUN_TESTS)
   message(STATUS "Configuring OPFLOW functionality tests.")
   foreach(test_net ${network_files})
     get_filename_component(test_net_name ${test_net} NAME)
-    string(REPLACE ";" " " MPI_OPTIONS_STR "${MPI_OPTIONS}")
-    string(REPLACE ";" " " MPICMD_STR "${MPICMD}")
     set(tolerance "1e-3")
 
     set(solver HIOP)
@@ -431,7 +443,7 @@ if(EXAGO_RUN_TESTS)
         continue()
       endif()
       add_test(NAME OPFLOW_${solver}_${model}_${test_net_name}_FUNCTIONALITY_TEST
-        COMMAND ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:testOpflowFunctionality>
+        COMMAND ${RUNCMD} $<TARGET_FILE:testOpflowFunctionality>
           -opflow_solver ${solver}
           -opflow_model ${model}
           -netfile ${test_net}
@@ -442,7 +454,7 @@ if(EXAGO_RUN_TESTS)
     set(solver TAO)
     foreach(model POWER_BALANCE_HIOP POWER_BALANCE_CARTESIAN)
       add_test(NAME OPFLOW_${solver}_${model}_${test_net_name}_FUNCTIONALITY_TEST
-        COMMAND ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:testOpflowFunctionality>
+        COMMAND ${RUNCMD} $<TARGET_FILE:testOpflowFunctionality>
           -opflow_solver ${solver}
           -opflow_model ${model}
           -netfile ${test_net}
@@ -453,7 +465,7 @@ if(EXAGO_RUN_TESTS)
     set(solver IPOPT)
     foreach(model POWER_BALANCE_POLAR POWER_BALANCE_CARTESIAN CURRENT_BALANCE_CARTESIAN CURRENT_BALANCE_CARTESIAN2)
       add_test(NAME OPFLOW_${solver}_${model}_${test_net_name}_FUNCTIONALITY_TEST
-        COMMAND ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:testOpflowFunctionality>
+        COMMAND ${RUNCMD} $<TARGET_FILE:testOpflowFunctionality>
           -opflow_solver ${solver}
           -opflow_model ${model}
           -netfile ${test_net}
@@ -462,13 +474,13 @@ if(EXAGO_RUN_TESTS)
     endforeach()
   endforeach()
 
-  message(STATUS "Running PFLOW tests")
-  # PFLOW tests
+  message(STATUS "Configuring PFLOW functionality tests")
   foreach(np RANGE 1 2)
     foreach(test_net ${network_files})
       get_filename_component(input_file ${test_net} NAME)
-      add_test(NAME PFLOW_${input_file}_${np}proc COMMAND
-               ${MPICMD} ${MPI_OPTIONS} $<TARGET_FILE:app_pflow>
+      add_test(NAME PFLOW_${input_file}_${np}proc_FUNCTIONALITY_TEST COMMAND
+              ${MPICMD} "-n" ${np} ${EXAGO_EXTRA_MPI_FLAGS}
+              $<TARGET_FILE:testPflowFunctionality>
                -netfile ${test_net})
     endforeach(test_net)
   endforeach(np)

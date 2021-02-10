@@ -1250,3 +1250,13 @@ PetscErrorCode PFLOWAddBusShunt(PFLOW pflow, PetscInt busnum, PetscScalar Gs, Pe
   
   PetscFunctionReturn(0);
 }
+
+/*
+  PFLOWGetNumIterations - Returns the number of iterations for given solver
+*/
+PetscErrorCode PFLOWGetNumIterations(PFLOW pflow, PetscInt *numiter)
+{
+  PetscErrorCode ierr;
+  ierr = SNESGetIterationNumber(pflow->snes,numiter);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}

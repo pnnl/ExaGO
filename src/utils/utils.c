@@ -92,7 +92,10 @@ PetscErrorCode ExaGOLogInitialize()
   /** If we're not on the logging rank, there's no setup to perform */
   ierr=MPI_Comm_rank(ExaGOLogComm,&ExaGOLogCurrentRank);CHKERRQ(ierr);
   if (ExaGOLogCurrentRank!=ExaGOLogLoggingRank)
+  {
+    ExaGOLogIsLoggerInitialized = PETSC_TRUE;
     return 0;
+  }
 
   ierr=ExaGOLogIsUsingLogFile(&flg);
   /** Normally we would check the error, but in here we don't even have logging
@@ -132,7 +135,11 @@ PetscErrorCode ExaGOLogFinalize()
 
   /** If we're not on the logging rank, there's no teardown to perform */
   if (ExaGOLogCurrentRank!=ExaGOLogLoggingRank)
+  {
+    ExaGOLogIsLoggerInitialized = PETSC_FALSE;
     return 0;
+  }
+ 
 
   FILE *fp;
   ExaGOLogGetLoggingFilePointer(&fp);

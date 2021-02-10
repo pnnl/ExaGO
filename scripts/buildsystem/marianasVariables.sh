@@ -17,4 +17,5 @@ spack env activate exago-v0-99-1-hiop-v0-3-99-0-marianas
 
 export MY_PETSC_DIR=`spack location -i petsc`
 export NVBLAS_CONFIG_FILE=$PROJ_DIR/$MY_CLUSTER/nvblas.conf
-export extraCmakeArgs="$extraCmakeArgs -DHIOP_NVCC_ARCH=sm_60 -DLAPACK_LIBRARIES=$(spack location -i openblas)"
+export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DHIOP_NVCC_ARCH=sm_60"
+export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DLAPACK_LIBRARIES=$(spack location -i openblas)"
