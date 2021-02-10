@@ -18,11 +18,9 @@ spack env activate exago-v0-99-1-hiop-v0-3-99-0
 
 export MY_PETSC_DIR=`spack location -i petsc`
 export MY_NVCC_ARCH="sm_70"
-extraCmakeArgs="\
-  $extra_cmake_args \
-  -DHIOP_NVCC_ARCH=$MY_NVCC_ARCH \
-  -DEXAGO_TEST_WITH_BSUB=ON \
-  "
+export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DHIOP_NVCC_ARCH=$MY_NVCC_ARCH"
+export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DEXAGO_TEST_WITH_BSUB=ON"
+
 if [[ ! -f $builddir/nvblas.conf ]]; then
   cat > $builddir/nvblas.conf <<-EOD
 NVBLAS_LOGFILE  nvblas.log

@@ -27,7 +27,7 @@ cmakeArgs=" \
   -DHIOP_DIR=$MY_HIOP_DIR \
   -DMAGMA_DIR=$MY_MAGMA_DIR \
   -DPETSC_DIR=$MY_PETSC_DIR \
-  $extraCmakeArgs"
+  $EXTRA_CMAKE_ARGS"
 
 for requiredVar in builddir installdir makeArgs ctestArgs
 do
