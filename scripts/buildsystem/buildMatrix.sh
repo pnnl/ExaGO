@@ -49,27 +49,27 @@ function buildMatrix {
     -DCMAKE_INSTALL_PREFIX=$installdir/ \
     -DCMAKE_BUILD_TYPE=Debug \
     -DEXAGO_RUN_TESTS=ON \
-    -DEXAGO_ENABLE_PETSC=ON \
+    -DEXAGO_HAVE_PETSC=ON \
     $extra_cmake_args"
 
   # Setting Umpire dir will not be a problem if umpire is not enabled.
   # We just need to enable the correct umpire installation.
-  gpuOptions=("-DEXAGO_ENABLE_GPU=ON -DMAGMA_DIR=$MY_MAGMA_DIR -Dumpire_DIR=$MY_UMPIRE_DIR"
-              "-DEXAGO_ENABLE_GPU=OFF -Dumpire_DIR=$MY_UMPIRECPU_DIR")
+  gpuOptions=("-DEXAGO_HAVE_GPU=ON -DMAGMA_DIR=$MY_MAGMA_DIR -Dumpire_DIR=$MY_UMPIRE_DIR"
+              "-DEXAGO_HAVE_GPU=OFF -Dumpire_DIR=$MY_UMPIRECPU_DIR")
   
-  ipoptOptions=("-DEXAGO_ENABLE_IPOPT=ON -DIPOPT_DIR=$MY_IPOPT_DIR"
-                "-DEXAGO_ENABLE_IPOPT=OFF")
+  ipoptOptions=("-DEXAGO_HAVE_IPOPT=ON -DIPOPT_DIR=$MY_IPOPT_DIR"
+                "-DEXAGO_HAVE_IPOPT=OFF")
 
-  rajaOptions=("-DEXAGO_ENABLE_RAJA=ON -DRAJA_DIR=$MY_RAJA_DIR"
-               "-DEXAGO_ENABLE_RAJA=OFF")
+  rajaOptions=("-DEXAGO_HAVE_RAJA=ON -DRAJA_DIR=$MY_RAJA_DIR"
+               "-DEXAGO_HAVE_RAJA=OFF")
 
-  hiopOptions=("-DEXAGO_ENABLE_HIOP=ON -DHIOP_DIR=$MY_HIOP_DIR"
-               "-DEXAGO_ENABLE_HIOP=OFF")
+  hiopOptions=("-DEXAGO_HAVE_HIOP=ON -DHIOP_DIR=$MY_HIOP_DIR"
+               "-DEXAGO_HAVE_HIOP=OFF")
 
-  # We have MPI and PETSc variables in this array, but their ENABLE_ cmake
+  # We have MPI and PETSc variables in this array, but their HAVE_ cmake
   # variables are toggled elsewhere, so this should not be a problem.
-  mpiOptions=("-DEXAGO_ENABLE_MPI=ON -DHIOP_DIR=$MY_HIOP_DIR -DPETSC_DIR=$MY_PETSC_DIR" 
-              "-DEXAGO_ENABLE_MPI=OFF -DHIOP_DIR=$MY_HIOP_NOMPI_DIR -DPETSC_DIR=$MY_PETSC_NOMPI_DIR")
+  mpiOptions=("-DEXAGO_HAVE_MPI=ON -DHIOP_DIR=$MY_HIOP_DIR -DPETSC_DIR=$MY_PETSC_DIR" 
+              "-DEXAGO_HAVE_MPI=OFF -DHIOP_DIR=$MY_HIOP_NOMPI_DIR -DPETSC_DIR=$MY_PETSC_NOMPI_DIR")
 
   if [[ $BUILD_MATRIX_PARALLEL -eq 1 ]]
   then

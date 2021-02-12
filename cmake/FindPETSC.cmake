@@ -223,7 +223,7 @@ set (PETSC_VALID_COMPONENTS C CXX)
 
 if (NOT PETSC_FIND_COMPONENTS)
 
-  get_property (_enabled_langs GLOBAL PROPERTY ENABLED_LANGUAGES)
+  get_property (_enabled_langs GLOBAL PROPERTY HAVED_LANGUAGES)
   list(FIND _enabled_langs "C" _c_index)
   if (${_c_index} GREATER -1)
     set (PETSC_LANGUAGE_BINDINGS "C")
