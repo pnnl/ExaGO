@@ -31,6 +31,7 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout)
   
   sopflow->obj_factor = 1.0;
   sopflow->obj = 0.0;
+  sopflow->tolerance = 1e-6;
 
   sopflow->solver   = NULL;
   sopflow->model    = NULL;
@@ -188,6 +189,34 @@ PetscErrorCode SOPFLOWSetModel(SOPFLOW sopflow,const char* modelname)
   PetscFunctionReturn(0);
 }
 
+/* 
+   SOPFLOWSetTolerance - Set the solver tolerance
+
+  Input Parameters:
++ sopflow - sopflow application object
+- tol    - solver tolerance
+*/
+PetscErrorCode SOPFLOWSetTolerance(SOPFLOW sopflow,PetscReal tol)
+{
+  PetscFunctionBegin;
+  sopflow->tolerance = tol;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * SOPFLOWGetTolerance - Get the solver tolerance
+ * Input Parameters:
+ * sopflow - sopflow application object
+ * tol    - pointer to solver tolerance variable that will be set
+ */
+PetscErrorCode SOPFLOWGetTolerance(SOPFLOW sopflow,PetscReal *tol)
+{
+  PetscFunctionBegin;
+  *tol = sopflow->tolerance;
+  PetscFunctionReturn(0);
+}
+
+
 /*
   SOPFLOWSetSolver - Sets the solver for SOPFLOW
 
@@ -280,6 +309,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
 
   ierr = PetscOptionsBool("-sopflow_enable_multicontingency","Multi-contingency SOPFLOW?","",sopflow->ismulticontingency,&sopflow->ismulticontingency,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsString("-ctgcfile","Contingency file","",ctgcfile,ctgcfile,PETSC_MAX_PATH_LEN,&flgctgc);CHKERRQ(ierr);
+  ierr = PetscOptionsReal("-sopflow_tolerance","optimization tolerance","",sopflow->tolerance,&sopflow->tolerance,NULL);CHKERRQ(ierr);
   PetscOptionsEnd();
 
   if(sopflow->Ns >= 0) sopflow->Ns += 1;
@@ -660,5 +690,15 @@ PetscErrorCode SOPFLOWGetConvergenceStatus(SOPFLOW sopflow,PetscBool *status)
 
   PetscFunctionBegin;
   ierr = (*sopflow->solverops.getconvergencestatus)(sopflow,status);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  SOPFLOWGetNumIterations - Returns the number of iterations for given solver
+*/
+PetscErrorCode SOPFLOWGetNumIterations(SOPFLOW sopflow,PetscInt *iter)
+{
+  PetscErrorCode ierr;
+  *iter = sopflow->numiter;
   PetscFunctionReturn(0);
 }
