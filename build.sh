@@ -1,5 +1,64 @@
 #!/bin/bash
 
+usage() {
+  echo "Usage: ./build.sh [options]
+
+--------------------------------------------------------------------------------
+
+Long Description:
+
+  This script is the entry point for ExaGO's continuous integration and default
+  build configuration. The --build-only and --test-only options below build and
+  test ExaGO with every option enabled. If you would like to build a smaller
+  configuration, you will have to create a build directory and use the usual
+  cmake workflow (eg edit variables in ccmake or pass command line arguments to
+  cmake).
+
+Clusters:
+
+  By default, this script will attempt to determine the cluster it is being ran 
+  on using the hostname command. If a known cluster is found, it's respective 
+  script in the directory ./scripts/buildsystem will be sourced and the 
+  variable MY_CLUSTER will be set. For example, on PNNL cluster Marianas, 
+  hostname marianas.pnl.gov will be matched and 
+  ./scripts/buildsystem/marianasVariables.sh will be sourced. If you would like 
+  to add a cluster, create a script
+  ./scripts/buildsystem/<my cluster>Variables.sh and specify the relevant
+  environment variables. If the hostname is not correctly finding your cluster,
+  you may specify MY_CLUSTER environment variable before running this script
+  and the script will respect the environment variable. For example, on ORNL
+  Ascent cluster, the hostname does not find the cluster, so we must specify
+  MY_CLUSTER when running:
+
+    $ MY_CLUSTER=ascent ./build.sh --build-only
+
+Spack:
+
+  Each supported variables script in ./scripts/buildsystem activates a spack
+  environment with all dependencies configured. If you have built dependencies
+  for ExaGO in a spack environment, you may simply activate the environment
+  and run the build script specifying that you don't want to source any
+  variables scripts, eg:
+
+    $ MY_CLUSTER=none ./build.sh
+
+--------------------------------------------------------------------------------
+
+Options:
+
+  --build-only    Only run the build stage of the script. This is useful for
+                  local development.
+
+  --test-only     Only run the test stage of the script. This should be ran
+                  before every push to the repository or pull/merge request.
+                  This run takes a significant amound of time.
+
+--------------------------------------------------------------------------------
+
+"
+}
+
+# This will be the catch-all trap handler after arguments are parsed.
 cleanup() {
   echo
   echo Exit code $1 caught in build script.
@@ -14,9 +73,6 @@ cleanup() {
   fi
 }
 
-trap 'cleanup $? $LINENO' EXIT
-
-set -xv
 makeArgs=${makeArgs:-"-j 8"}
 ctestArgs=${ctestArgs:-"-VV"}
 extraCmakeArgs=${extraCmakeArgs:-""}
@@ -55,12 +111,20 @@ while [[ $# -gt 0 ]]; do
     export BUILD_MATRIX_PARALLEL=1
     shift
     ;;
+  --help|-h)
+    usage
+    exit 0
+    ;;
   *)
     echo "Argument $1 not recognized."
+    usage
     exit 1
     ;;
   esac
 done
+
+set -xv
+trap 'cleanup $? $LINENO' EXIT
 
 if [[ ! -v MY_CLUSTER ]]
 then

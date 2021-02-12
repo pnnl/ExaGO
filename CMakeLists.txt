@@ -31,27 +31,27 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(EXAGO_OPTIONS_DIR "${CMAKE_INSTALL_PREFIX}/options")
 
 # Enable PETSc by default
-option(EXAGO_ENABLE_PETSC "Enable PETSc support" ON)
+option(EXAGO_HAVE_PETSC "Enable PETSc support" ON)
 
 # Enable MPI
-option(EXAGO_ENABLE_MPI "Enable MPI support" ON)
+option(EXAGO_HAVE_MPI "Enable MPI support" ON)
 
 # Ipopt support is disabled by default
-option(EXAGO_ENABLE_IPOPT "Enable Ipopt support" OFF)
+option(EXAGO_HAVE_IPOPT "Enable Ipopt support" OFF)
 
 # HiOP support is disabled by default
-option(EXAGO_ENABLE_HIOP "Enable HiOP support" OFF)
+option(EXAGO_HAVE_HIOP "Enable HiOP support" OFF)
 
-option(EXAGO_ENABLE_HIOP_SPARSE "Enable HiOp's HIOP_SPARSE option" OFF)
+option(EXAGO_HAVE_HIOP_SPARSE "Enable HiOp's HIOP_SPARSE option" OFF)
 
 # MPI support is enabled by default
-option(EXAGO_ENABLE_MPI "Enable MPI support" ON)
+option(EXAGO_HAVE_MPI "Enable MPI support" ON)
 
 # GPU support is disabled by default
-option(EXAGO_ENABLE_GPU "Enable GPU support" OFF)
+option(EXAGO_HAVE_GPU "Enable GPU support" OFF)
 
 # Enable RAJA support
-option(EXAGO_ENABLE_RAJA "Enables RAJA and Umpire libraries" OFF)
+option(EXAGO_HAVE_RAJA "Enables RAJA and Umpire libraries" OFF)
 
 # Enable tests
 option(EXAGO_RUN_TESTS "Enable tests" OFF)
@@ -74,7 +74,7 @@ if(UNIX)
 endif()
 
 # If MPI support is enabled, find MPI includes and libraries
-if(EXAGO_ENABLE_MPI)
+if(EXAGO_HAVE_MPI)
   find_package(MPI REQUIRED COMPONENTS C CXX)
   if(NOT DEFINED MPI_CXX_COMPILER)
     set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
@@ -83,10 +83,10 @@ if(EXAGO_ENABLE_MPI)
   include_directories(${MPI_CXX_ADDITIONAL_INCLUDE_DIRS} ${MPI_CXX_COMPILER_INCLUDE_DIRS})
   set(EXAGO_HAVE_MPI 1)
   set(EXAGO_EXTRA_MPI_FLAGS "" CACHE STRING "Extra args to mpiexec when running tests")
-endif(EXAGO_ENABLE_MPI)
+endif(EXAGO_HAVE_MPI)
 
 # If GPU support is enabled, find CUDA
-if(EXAGO_ENABLE_GPU)
+if(EXAGO_HAVE_GPU)
   include(CheckLanguage)
   enable_language(CUDA)
   check_language(CUDA)
@@ -108,11 +108,11 @@ if(EXAGO_ENABLE_GPU)
     message(STATUS "Using CUDA arch sm_35")
   endif()
   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda")
-endif(EXAGO_ENABLE_GPU)
+endif(EXAGO_HAVE_GPU)
 
 
 # Find PETSc and configure related variables
-if(EXAGO_ENABLE_PETSC)
+if(EXAGO_HAVE_PETSC)
   include(FindPETSC)
   include_directories(${PETSC_INCLUDE_CONF})
   set(EXAGO_HAVE_PETSC 1)
@@ -122,21 +122,21 @@ endif()
 # TODO: Automatically skip if PETSc and EXAGO are already on system lib path.
 set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib ${PETSC_DIR}/lib)
 
-if(EXAGO_ENABLE_IPOPT)
+if(EXAGO_HAVE_IPOPT)
   set(IPOPT_ROOT_DIR CACHE PATH "Path to Ipopt installation root.")
   include(FindIpopt)
   set(CMAKE_INSTALL_RPATH  ${IPOPT_LIBRARY_DIR} ${CMAKE_INSTALL_RPATH})
   set(EXAGO_HAVE_IPOPT 1)
-endif(EXAGO_ENABLE_IPOPT)
+endif(EXAGO_HAVE_IPOPT)
 
-if(EXAGO_ENABLE_HIOP)
+if(EXAGO_HAVE_HIOP)
   set(HIOP_ROOT_DIR CACHE PATH "Path to Ipopt installation root.")
   include(FindHiop)
   set(CMAKE_INSTALL_RPATH  ${HIOP_LIBRARY_DIR} ${CMAKE_INSTALL_RPATH})
   set(EXAGO_HAVE_HIOP 1)
-endif(EXAGO_ENABLE_HIOP)
+endif(EXAGO_HAVE_HIOP)
 
-if(EXAGO_ENABLE_RAJA)
+if(EXAGO_HAVE_RAJA)
   # Find OpenMP -- this is a temporary fix
   find_package(OpenMP)
   # Look for CMake configuration file in RAJA installation
@@ -148,7 +148,7 @@ if(EXAGO_ENABLE_RAJA)
     PATHS ${umpire_DIR} ${umpire_DIR}/share/umpire/cmake
     REQUIRED)
   set(EXAGO_HAVE_RAJA 1)
-endif(EXAGO_ENABLE_RAJA)
+endif(EXAGO_HAVE_RAJA)
 
 if(NOT DEFINED LAPACK_LIBRARIES)
   # in case the toolchain defines them
@@ -235,7 +235,7 @@ install(FILES ${EXAGO_COMMON_INCLUDE} DESTINATION include)
 if(EXAGO_TEST_WITH_BSUB)
   set(MPICMD "jsrun")
   set(RUNCMD "jsrun" "-n" "1")
-  if(EXAGO_ENABLE_GPU)
+  if(EXAGO_HAVE_GPU)
     set(MPICMD ${MPICMD} "-g" "1") 
     set(RUNCMD ${RUNCMD} "-g" "1" ${EXAGO_EXTRA_MPI_FLAGS})
   endif()
@@ -399,7 +399,7 @@ if(EXAGO_RUN_TESTS)
       foreach(opflow_init ACPF MIDPOINT)
         get_filename_component(input_file ${test_net} NAME)
         set(hiop_compute_mode HYBRID)
-        if(EXAGO_ENABLE_GPU)
+        if(EXAGO_HAVE_GPU)
           set(hiop_compute_mode GPU)
         endif()
         add_test(NAME OPFLOW_HIOP_GPU_${opflow_init}_${input_file} COMMAND

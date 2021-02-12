@@ -16,7 +16,7 @@ if(EXAGO_HAVE_RAJA)
   )
 endif()
 
-if(EXAGO_HAVE_RAJA AND EXAGO_ENABLE_GPU)
+if(EXAGO_HAVE_RAJA AND EXAGO_HAVE_GPU)
   set_source_files_properties(model/power-bal-hiop/pbpolrajahiopkernels.cpp PROPERTIES LANGUAGE CUDA)
 endif()
 
@@ -68,7 +68,7 @@ if(EXAGO_HAVE_HIOP)
 	target_link_libraries(opflow PUBLIC INTERFACE HiOp)
   target_include_directories(opflow PUBLIC ${HIOP_INCLUDE_DIR})
   # If HiOp is using GPU add CUDA includes
-  if(EXAGO_ENABLE_GPU)
+  if(EXAGO_HAVE_GPU)
     target_include_directories(opflow PUBLIC ${CUDA_TOOLKIT_INCLUDE})
   endif()
 endif()
