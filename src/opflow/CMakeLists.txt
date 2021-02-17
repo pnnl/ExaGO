@@ -9,14 +9,14 @@ set(OPFLOW_FORM_SRC
 )
 
 # Build RAJA/Umpire modules if RAJA and Umpire are enabled
-if(EXAGO_HAVE_RAJA)
+if(EXAGO_ENABLE_RAJA)
   set(OPFLOW_FORM_SRC ${OPFLOW_FORM_SRC} 
     model/power-bal-hiop/pbpolrajahiop.cpp
     model/power-bal-hiop/pbpolrajahiopkernels.cpp
   )
 endif()
 
-if(EXAGO_HAVE_RAJA AND EXAGO_HAVE_GPU)
+if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_GPU)
   set_source_files_properties(model/power-bal-hiop/pbpolrajahiopkernels.cpp PROPERTIES LANGUAGE CUDA)
 endif()
 
@@ -53,27 +53,27 @@ target_link_libraries(opflow PRIVATE
 			     ${LAPACK_LIBRARIES}
 )
 
-if(EXAGO_HAVE_MPI)
+if(EXAGO_ENABLE_MPI)
   target_link_libraries(opflow PRIVATE MPI::MPI_C)
 endif()
 
 # If Ipopt interface is enabled, link to Ipopt libs
-if(EXAGO_HAVE_IPOPT)
+if(EXAGO_ENABLE_IPOPT)
 	target_link_libraries(opflow PUBLIC INTERFACE Ipopt)
 	target_include_directories(opflow PUBLIC ${IPOPT_INCLUDE_DIR})
 endif()
 
 # If HiOp interface is enabled, link to HiOp libs
-if(EXAGO_HAVE_HIOP)
+if(EXAGO_ENABLE_HIOP)
 	target_link_libraries(opflow PUBLIC INTERFACE HiOp)
   target_include_directories(opflow PUBLIC ${HIOP_INCLUDE_DIR})
   # If HiOp is using GPU add CUDA includes
-  if(EXAGO_HAVE_GPU)
+  if(EXAGO_ENABLE_GPU)
     target_include_directories(opflow PUBLIC ${CUDA_TOOLKIT_INCLUDE})
   endif()
 endif()
 
-if(EXAGO_HAVE_RAJA)
+if(EXAGO_ENABLE_RAJA)
   target_link_libraries(opflow PUBLIC umpire RAJA OpenMP::OpenMP_CXX)
   target_include_directories(opflow PUBLIC ${UMPIRE_INCLUDE_DIRS} ${camp_INSTALL_PREFIX}/include)
 endif()

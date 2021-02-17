@@ -1,6 +1,6 @@
 #include <exago_config.h>
 
-#if defined(EXAGO_HAVE_RAJA)
+#if defined(EXAGO_ENABLE_RAJA)
 
 #include <private/opflowimpl.h>
 #include "pbpolrajahiopkernels.hpp"

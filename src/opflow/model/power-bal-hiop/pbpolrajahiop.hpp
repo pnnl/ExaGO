@@ -1,6 +1,6 @@
 #include <exago_config.h>
 
-#if defined(EXAGO_HAVE_RAJA)
+#if defined(EXAGO_ENABLE_RAJA)
 
 #ifndef _PBPOLRAJAHIOP_H
 #define _PBPOLRAJAHIOP_H

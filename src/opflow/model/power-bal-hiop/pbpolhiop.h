@@ -1,7 +1,7 @@
 
 #include <exago_config.h>
 
-#if defined(EXAGO_HAVE_HIOP)
+#if defined(EXAGO_ENABLE_HIOP)
 
 #ifndef _PBPOLHIOP_H
 #define _PBPOLHIOP_H

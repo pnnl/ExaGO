@@ -1,6 +1,6 @@
 #include <exago_config.h>
 
-#if defined(EXAGO_HAVE_RAJA)
+#if defined(EXAGO_ENABLE_RAJA)
 
 #pragma once
 
@@ -213,4 +213,4 @@ struct PbpolModelRajaHiop : public _p_FormPBPOLRAJAHIOP
   BUSParamsRajaHiop  busparams;
 };
 
-#endif // EXAGO_HAVE_HIOP
+#endif // EXAGO_ENABLE_HIOP

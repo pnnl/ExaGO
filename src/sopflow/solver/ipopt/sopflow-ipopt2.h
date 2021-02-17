@@ -1,5 +1,5 @@
 #include <exago_config.h>
-#if defined(EXAGO_HAVE_IPOPT)
+#if defined(EXAGO_ENABLE_IPOPT)
 
 #ifndef SOPFLOWIPOPTNEW_H
 #define SOPFLOWIPOPTNEW_H

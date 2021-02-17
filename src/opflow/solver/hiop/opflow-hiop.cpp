@@ -1,6 +1,6 @@
 
 #include <exago_config.h>
-#if defined(EXAGO_HAVE_HIOP)
+#if defined(EXAGO_ENABLE_HIOP)
 #include <private/opflowimpl.h>
 #include "opflow-hiop.hpp"
 
@@ -334,7 +334,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
 
   /* Error if model is not power balance hiop or power balance raja hiop */
   ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBPOLHIOP,&ismodelpbpolhiop);CHKERRQ(ierr);
-#if defined(EXAGO_HAVE_RAJA)
+#if defined(EXAGO_ENABLE_RAJA)
   ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBPOLRAJAHIOP,&ismodelpbpolrajahiop);CHKERRQ(ierr);
 #endif
   if(!ismodelpbpolhiop && !ismodelpbpolrajahiop) {
@@ -345,7 +345,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
 
 #if defined(HIOP_USE_RAJA)
   if(ismodelpbpolrajahiop) {
-#ifndef EXAGO_HAVE_GPU
+#ifndef EXAGO_ENABLE_GPU
     hiop->mds->options->SetStringValue("mem_space","host");
 #else
     // TODO: replace this with "device" when supported by HiOp
@@ -423,7 +423,7 @@ PetscErrorCode OPFLOWSolverDestroy_HIOP(OPFLOW opflow)
 
   ierr = PetscFree(hiop);CHKERRQ(ierr);
 
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
   magma_finalize();
 #endif
 
@@ -452,7 +452,7 @@ PetscErrorCode OPFLOWSolverCreate_HIOP(OPFLOW opflow)
   opflow->solverops.getconstraints = OPFLOWSolverGetConstraints_HIOP;
   opflow->solverops.getconstraintmultipliers = OPFLOWSolverGetConstraintMultipliers_HIOP;
 
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
   magma_init();
 #endif
   PetscFunctionReturn(0);

@@ -803,7 +803,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
     //    ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s solver\n",solvername);CHKERRQ(ierr);
   } else {
     if(!opflow->solver) {
-#if defined(EXAGO_HAVE_IPOPT)
+#if defined(EXAGO_ENABLE_IPOPT)
       ierr = OPFLOWSetSolver(opflow,OPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
 #else
       ierr = OPFLOWSetSolver(opflow,OPFLOWSOLVER_TAO);CHKERRQ(ierr);

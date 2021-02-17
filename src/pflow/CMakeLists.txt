@@ -16,7 +16,7 @@ target_link_libraries(pflow PRIVATE
 			 ${EXAGO_UTIL_LIBS}
 			 ${EXAGO_PS_LIBS})
 
-if(EXAGO_HAVE_MPI)
+if(EXAGO_ENABLE_MPI)
   target_link_libraries(pflow PRIVATE MPI::MPI_C)
 endif()
 

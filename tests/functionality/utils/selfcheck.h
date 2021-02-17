@@ -3,6 +3,7 @@
 
 #include <opflow.h>
 #include <pflow.h>
+#include <sopflow.h>
 
 #define SELFCHECK_NETWORK_CASE9 "case9mod.m"
 #define SELFCHECK_NETWORK_CASE118 "case118.m"

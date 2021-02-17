@@ -22,7 +22,7 @@ add_library(psutil ${UTILS_SRC})
 # Link libraries
 target_link_libraries(psutil PRIVATE PETSC::SNES)
 
-if(EXAGO_HAVE_MPI)
+if(EXAGO_ENABLE_MPI)
   target_link_libraries(psutil PRIVATE MPI::MPI_C)
 endif()
 
