@@ -9,12 +9,12 @@
 #include "TestAcopfUtils.hpp"
 
 
-#if defined(EXAGO_HAVE_RAJA)
+#if defined(EXAGO_ENABLE_RAJA)
 #include <umpire/Allocator.hpp>
 #include <umpire/ResourceManager.hpp>
 #include <RAJA/RAJA.hpp>
 
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
   using exago_raja_exec = RAJA::cuda_exec<128>;
   using exago_raja_reduce = RAJA::cuda_reduce;
   using exago_raja_atomic = RAJA::cuda_atomic;
@@ -73,7 +73,7 @@ void spdensetonatural(const double *xin,double *xout,int *idxn2sd_map,int nx)
 int main(int argc, char** argv)
 {
   const bool     isTestOpflowModelPBPOL     = false;
-#if defined(EXAGO_HAVE_RAJA)
+#if defined(EXAGO_ENABLE_RAJA)
   const bool     isTestOpflowModelPBPOLRAJAHIOP = true;
   const bool     isTestOpflowModelPBPOLHIOP = false;
 #else
@@ -312,7 +312,7 @@ int main(int argc, char** argv)
     ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
   }
 
-#if defined(EXAGO_HAVE_RAJA)
+#if defined(EXAGO_ENABLE_RAJA)
   if(isTestOpflowModelPBPOLRAJAHIOP)
   {
     OPFLOW opflowtest;
@@ -394,7 +394,7 @@ int main(int argc, char** argv)
 
     // Allocate and copy xref and lambdaref to device
     double *x_ref_dev, *lambda_ref_dev;
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
     umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
     x_ref_dev = static_cast<double*>(d_allocator.allocate(nx*sizeof(double)));
     lambda_ref_dev = static_cast<double*>(d_allocator.allocate((nconeq+nconineq)*sizeof(double)));
@@ -418,7 +418,7 @@ int main(int argc, char** argv)
     double *hess_dense,*hess_dense_dev;
 
     hess_dense     = static_cast<double*>(h_allocator.allocate(nxdense*nxdense*sizeof(double*)));
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
     hess_dense_dev = static_cast<double*>(d_allocator.allocate(nxdense*nxdense*sizeof(double*)));
 #else
     hess_dense_dev = hess_dense;
@@ -428,7 +428,7 @@ int main(int argc, char** argv)
 
     // Cleanup
     h_allocator.deallocate(hess_dense);
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
     d_allocator.deallocate(x_ref_dev);
     d_allocator.deallocate(lambda_ref_dev);
     d_allocator.deallocate(hess_dense_dev);

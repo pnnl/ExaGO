@@ -36,11 +36,11 @@ target_link_libraries(scopflow PRIVATE
 			     ${EXAGO_TCOPFLOW_LIBS}
 )
 
-if(EXAGO_HAVE_MPI)
+if(EXAGO_ENABLE_MPI)
   target_link_libraries(scopflow PRIVATE MPI::MPI_C)
 endif()
 
-if(EXAGO_HAVE_IPOPT)
+if(EXAGO_ENABLE_IPOPT)
 	target_link_libraries(scopflow PUBLIC INTERFACE Ipopt)
 	target_include_directories(scopflow PUBLIC ${IPOPT_INCLUDE_DIR})
 endif()

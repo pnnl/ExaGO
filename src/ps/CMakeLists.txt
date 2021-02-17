@@ -18,7 +18,7 @@ target_link_libraries(ps PRIVATE
 			 PETSC::SNES 
 			 ${EXAGO_UTIL_LIBS})
 
-if(EXAGO_HAVE_MPI)
+if(EXAGO_ENABLE_MPI)
   target_link_libraries(ps PRIVATE MPI::MPI_C)
 endif()
 

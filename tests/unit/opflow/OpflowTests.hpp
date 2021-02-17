@@ -9,7 +9,7 @@
 #include <private/opflowimpl.h>
 #include <exago_config.h>
 
-#if defined(EXAGO_HAVE_RAJA)
+#if defined(EXAGO_ENABLE_RAJA)
 #include <umpire/Allocator.hpp>
 #include <umpire/ResourceManager.hpp>
 #include <RAJA/RAJA.hpp>
@@ -82,7 +82,7 @@ public:
     cleanup(fail, opflow);
   }
 
-#if defined(EXAGO_HAVE_RAJA)
+#if defined(EXAGO_ENABLE_RAJA)
   LocalOrdinalType computeGradient(OPFLOW opflow, double *xref_dev, double *grad_ref,umpire::ResourceManager& resmgr)
   {
     PetscErrorCode   ierr;
@@ -98,7 +98,7 @@ public:
 
     grad = static_cast<double*>(h_allocator.allocate(nx*sizeof(double)));
 
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
     umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
     grad_dev = static_cast<double*>(d_allocator.allocate(nx*sizeof(double)));
 #else
@@ -113,7 +113,7 @@ public:
     fail += verifyAnswer(grad_ref, grad, nx);
 
     h_allocator.deallocate(grad);
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
     d_allocator.deallocate(grad_dev);
 #endif
     cleanup(fail, opflow);
@@ -162,7 +162,7 @@ public:
     cleanup(fail,opflow);
   }
 
-#if defined(EXAGO_HAVE_RAJA) 
+#if defined(EXAGO_ENABLE_RAJA) 
   LocalOrdinalType computeVariableBounds(OPFLOW opflow,double *xlref,double *xuref,umpire::ResourceManager& resmgr)
   {
     PetscErrorCode   ierr;
@@ -179,7 +179,7 @@ public:
     // Create arrays on the device
     xl = static_cast<double*>(h_allocator.allocate(nx*sizeof(double)));
     xu = static_cast<double*>(h_allocator.allocate(nx*sizeof(double)));
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
     umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
     xl_dev = static_cast<double*>(d_allocator.allocate(nx*sizeof(double)));
     xu_dev = static_cast<double*>(d_allocator.allocate(nx*sizeof(double)));
@@ -198,7 +198,7 @@ public:
 
     h_allocator.deallocate(xl);
     h_allocator.deallocate(xu);
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
     d_allocator.deallocate(xl_dev);
     d_allocator.deallocate(xu_dev);
 #endif
@@ -247,7 +247,7 @@ public:
     cleanup(fail, opflow);
   }
 
-#if defined(EXAGO_HAVE_RAJA)
+#if defined(EXAGO_ENABLE_RAJA)
   LocalOrdinalType computeConstraints(OPFLOW opflow, double *xref_dev, double *gref,umpire::ResourceManager& resmgr)
   {
     PetscErrorCode   ierr;
@@ -262,7 +262,7 @@ public:
     ierr = OPFLOWGetSizes(opflow,&nx,&nconeq,&nconineq);CHKERRQ(ierr);
 
     g     = static_cast<double*>(h_allocator.allocate(opflow->ncon*sizeof(double)));
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
     umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
     g_dev = static_cast<double*>(d_allocator.allocate(opflow->ncon*sizeof(double)));
 #else
@@ -288,7 +288,7 @@ public:
     fail += verifyAnswer(g, gref, nconeq + nconineq);
 
     h_allocator.deallocate(g);
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
     d_allocator.deallocate(g_dev);
 #endif
     cleanup(fail, opflow);
@@ -334,7 +334,7 @@ public:
     cleanup(fail, opflow);
   }
 
-#if defined(EXAGO_HAVE_RAJA)
+#if defined(EXAGO_ENABLE_RAJA)
   LocalOrdinalType computeConstraintBounds(OPFLOW opflow,double *glref,double *guref,umpire::ResourceManager& resmgr)
   {
     PetscErrorCode ierr;
@@ -351,7 +351,7 @@ public:
     gl     = static_cast<double*>(h_allocator.allocate(opflow->ncon*sizeof(double)));
     gu     = static_cast<double*>(h_allocator.allocate(opflow->ncon*sizeof(double)));
 
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
     umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
     gl_dev = static_cast<double*>(d_allocator.allocate(opflow->ncon*sizeof(double)));
     gu_dev = static_cast<double*>(d_allocator.allocate(opflow->ncon*sizeof(double)));
@@ -380,7 +380,7 @@ public:
 
     h_allocator.deallocate(gl);
     h_allocator.deallocate(gu);
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
     d_allocator.deallocate(gl_dev);
     d_allocator.deallocate(gu_dev);
 #endif
@@ -566,7 +566,7 @@ public:
     cleanup(fail, opflow);
   }
 
-#if defined(EXAGO_HAVE_RAJA)
+#if defined(EXAGO_ENABLE_RAJA)
   /**
    * @brief Specific test for computing the constraint Jacobian using HiOp
    * 
@@ -629,7 +629,7 @@ public:
     jCol = static_cast<int*>(h_allocator.allocate(nnz*sizeof(int)));
     values = static_cast<double*>(h_allocator.allocate(nnz*sizeof(double)));
 
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
     umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
     iRow_dev = static_cast<int*>(d_allocator.allocate(nnz*sizeof(int)));
     jCol_dev = static_cast<int*>(d_allocator.allocate(nnz*sizeof(int)));
@@ -652,7 +652,7 @@ public:
     double *Jeq_dense,*Jeq_dense_dev;
 
     Jeq_dense = static_cast<double*>(h_allocator.allocate(nrow*nxdense*sizeof(double*)));
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
     Jeq_dense_dev  = static_cast<double*>(d_allocator.allocate(nrow*nxdense*sizeof(double*)));
 #else
     Jeq_dense_dev = Jeq_dense;
@@ -691,7 +691,7 @@ public:
       double *Jineq_dense,*Jineq_dense_dev;
 
       Jineq_dense = static_cast<double*>(h_allocator.allocate(nxdense*nrow_ineq*sizeof(double*)));
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
       Jineq_dense_dev  = static_cast<double*>(d_allocator.allocate(nxdense*nrow_ineq*sizeof(double*)));
 #else
       Jineq_dense_dev = Jineq_dense;
@@ -710,7 +710,7 @@ public:
       ierr = MatDestroy(&Jineqref_dense);CHKERRQ(ierr);
 
 	    h_allocator.deallocate(Jineq_dense);
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
 	    d_allocator.deallocate(Jineq_dense_dev);
 #endif
     }
@@ -733,7 +733,7 @@ public:
     h_allocator.deallocate(jCol);
     h_allocator.deallocate(values);
     h_allocator.deallocate(Jeq_dense);
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
     d_allocator.deallocate(iRow_dev);
     d_allocator.deallocate(jCol_dev);
     d_allocator.deallocate(values_dev);
@@ -854,7 +854,7 @@ public:
     cleanup(fail, opflow);
   }
 
-#if defined(EXAGO_HAVE_RAJA)
+#if defined(EXAGO_ENABLE_RAJA)
   LocalOrdinalType computeHessian(OPFLOW opflow,double *x_ref_dev,double *lambda_ref_dev,PetscScalar obj_factor,Mat Hessref,umpire::ResourceManager& resmgr,double* hess_dense,double* hess_dense_dev)
   {
     PetscErrorCode   ierr;
@@ -906,7 +906,7 @@ public:
     iRow = static_cast<int*>(h_allocator.allocate(nnz*sizeof(int)));
     jCol = static_cast<int*>(h_allocator.allocate(nnz*sizeof(int)));
     values = static_cast<double*>(h_allocator.allocate(nnz*sizeof(double)));
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
     umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
     iRow_dev = static_cast<int*>(d_allocator.allocate(nnz*sizeof(int)));
     jCol_dev = static_cast<int*>(d_allocator.allocate(nnz*sizeof(int)));
@@ -947,7 +947,7 @@ public:
     h_allocator.deallocate(iRow);
     h_allocator.deallocate(jCol);
     h_allocator.deallocate(values);
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
     d_allocator.deallocate(iRow_dev);
     d_allocator.deallocate(jCol_dev);
     d_allocator.deallocate(values_dev);

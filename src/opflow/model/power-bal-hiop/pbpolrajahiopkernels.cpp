@@ -1,7 +1,7 @@
 
 #include <exago_config.h>
 
-#if defined(EXAGO_HAVE_RAJA) 
+#if defined(EXAGO_ENABLE_RAJA) 
 
 #include <umpire/Allocator.hpp>
 #include <umpire/ResourceManager.hpp>
@@ -13,7 +13,7 @@
 #include "pbpolrajahiopkernels.hpp"
 #include "pbpolrajahiop.hpp"
 
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
   using exago_raja_exec = RAJA::cuda_exec<128>;
   using exago_raja_reduce = RAJA::cuda_reduce;
   using exago_raja_atomic = RAJA::cuda_atomic;
@@ -46,7 +46,7 @@ int BUSParamsRajaHiop::destroy(OPFLOW opflow)
   h_allocator_.deallocate(xidx);
   h_allocator_.deallocate(gidx);
 
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
   d_allocator_.deallocate(isref_dev_);
   d_allocator_.deallocate(isisolated_dev_);
   d_allocator_.deallocate(ispvpq_dev_);
@@ -138,7 +138,7 @@ int BUSParamsRajaHiop::allocate(OPFLOW opflow)
     gloc += 2;
   }
 
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
   d_allocator_ = resmgr.getAllocator("DEVICE");
   // Allocate data on the device
   isref_dev_      = paramAlloc<int>(d_allocator_, nbus);
@@ -211,7 +211,7 @@ int LINEParamsRajaHiop::destroy(OPFLOW opflow)
     h_allocator_.deallocate(linelimidx);
   }
 
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
   // Destroy parameter arrays on the device
   d_allocator_.deallocate(Gff_dev_);
   d_allocator_.deallocate(Bff_dev_);
@@ -346,7 +346,7 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow)
     linei++;
   }
 
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
   d_allocator_ = resmgr.getAllocator("DEVICE");
   // Allocate data on the device
   Gff_dev_ = paramAlloc<double>(d_allocator_, nlineON);
@@ -423,7 +423,7 @@ int LOADParamsRajaHiop::destroy(OPFLOW opflow)
   h_allocator_.deallocate(ql);
   h_allocator_.deallocate(xidx);
   h_allocator_.deallocate(gidx);
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
   d_allocator_.deallocate(pl_dev_);
   d_allocator_.deallocate(ql_dev_);
   d_allocator_.deallocate(xidx_dev_);
@@ -474,7 +474,7 @@ int LOADParamsRajaHiop::allocate(OPFLOW opflow)
     gloc += 2;
   }
 
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
   d_allocator_ = resmgr.getAllocator("DEVICE");
   // Allocate data on the device
   pl_dev_   = paramAlloc<double>(d_allocator_, nload);
@@ -512,7 +512,7 @@ int GENParamsRajaHiop::destroy(OPFLOW opflow)
   h_allocator_.deallocate(gidx);
   h_allocator_.deallocate(jacsp_idx);
   h_allocator_.deallocate(jacsq_idx);
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
   // Free arrays on the device
   d_allocator_.deallocate(cost_alpha_dev_);
   d_allocator_.deallocate(cost_beta_dev_);
@@ -595,7 +595,7 @@ int GENParamsRajaHiop::allocate(OPFLOW opflow)
     gloc += 2;
   }
 
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
   d_allocator_ = resmgr.getAllocator("DEVICE");
   // Allocate arrays on the device
   cost_alpha_dev_ = paramAlloc<double>(d_allocator_, ngenON);
@@ -1131,7 +1131,7 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW
   /* Zero out JacD */
   auto& resmgr = umpire::ResourceManager::getInstance();
   umpire::Allocator alloc;
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
   alloc = resmgr.getAllocator("DEVICE");
 #else
   alloc = resmgr.getAllocator("HOST");
@@ -1311,7 +1311,7 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLRAJAHIOP(OPFL
   /* Zero out JacD */
   auto& resmgr = umpire::ResourceManager::getInstance();
   umpire::Allocator alloc;
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
   alloc = resmgr.getAllocator("DEVICE");
 #else
   alloc = resmgr.getAllocator("HOST");

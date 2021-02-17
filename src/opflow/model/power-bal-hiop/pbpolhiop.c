@@ -1,6 +1,6 @@
 #include <exago_config.h>
 
-#if defined(EXAGO_HAVE_HIOP)
+#if defined(EXAGO_ENABLE_HIOP)
 
 #include <private/psimpl.h>
 #include <private/opflowimpl.h>

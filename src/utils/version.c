@@ -8,37 +8,37 @@ const char* ExaGODependencyNames[ExaGONumDependencies]
 
 const PetscBool ExaGOIsDependencyEnabled[ExaGONumDependencies] =
 {
-#ifdef EXAGO_HAVE_PETSC
+#ifdef EXAGO_ENABLE_PETSC
     PETSC_TRUE,
 #else
     PETSC_FALSE,
 #endif
 
-#ifdef EXAGO_HAVE_MPI
+#ifdef EXAGO_ENABLE_MPI
     PETSC_TRUE,
 #else
     PETSC_FALSE,
 #endif
 
-#ifdef EXAGO_HAVE_IPOPT
+#ifdef EXAGO_ENABLE_IPOPT
     PETSC_TRUE,
 #else
     PETSC_FALSE,
 #endif
 
-#ifdef EXAGO_HAVE_HIOP
+#ifdef EXAGO_ENABLE_HIOP
     PETSC_TRUE,
 #else
     PETSC_FALSE,
 #endif
 
-#ifdef EXAGO_HAVE_GPU
+#ifdef EXAGO_ENABLE_GPU
     PETSC_TRUE,
 #else
     PETSC_FALSE,
 #endif
 
-#ifdef EXAGO_HAVE_RAJA
+#ifdef EXAGO_ENABLE_RAJA
     PETSC_TRUE,
 #else
     PETSC_FALSE,

@@ -61,11 +61,11 @@ extern PetscErrorCode OPFLOWModelCreate_PBCAR(OPFLOW);
 extern PetscErrorCode OPFLOWModelCreate_IBCAR(OPFLOW);
 extern PetscErrorCode OPFLOWModelCreate_IBCAR2(OPFLOW);
 
-#if defined(EXAGO_HAVE_HIOP)
+#if defined(EXAGO_ENABLE_HIOP)
 extern PetscErrorCode OPFLOWModelCreate_PBPOLHIOP(OPFLOW);
 #endif
 
-#if defined(EXAGO_HAVE_RAJA)
+#if defined(EXAGO_ENABLE_RAJA)
 extern PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOP(OPFLOW);
 #endif
 
@@ -83,11 +83,11 @@ PetscErrorCode OPFLOWModelRegisterAll(OPFLOW opflow)
   ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_IBCAR,OPFLOWModelCreate_IBCAR);CHKERRQ(ierr);
   ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_IBCAR2,OPFLOWModelCreate_IBCAR2);CHKERRQ(ierr);
 
-#if defined(EXAGO_HAVE_HIOP)
+#if defined(EXAGO_ENABLE_HIOP)
   ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_PBPOLHIOP,OPFLOWModelCreate_PBPOLHIOP);CHKERRQ(ierr);
 #endif
 
-#if defined(EXAGO_HAVE_RAJA)
+#if defined(EXAGO_ENABLE_RAJA)
   ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_PBPOLRAJAHIOP,OPFLOWModelCreate_PBPOLRAJAHIOP);CHKERRQ(ierr);
 #endif
 
@@ -96,11 +96,11 @@ PetscErrorCode OPFLOWModelRegisterAll(OPFLOW opflow)
   PetscFunctionReturn(0);
 }
 
-#if defined(EXAGO_HAVE_IPOPT)
+#if defined(EXAGO_ENABLE_IPOPT)
 extern PetscErrorCode OPFLOWSolverCreate_IPOPT(OPFLOW);
 #endif
 extern PetscErrorCode OPFLOWSolverCreate_TAO(OPFLOW);
-#if defined(EXAGO_HAVE_HIOP)
+#if defined(EXAGO_ENABLE_HIOP)
 extern PetscErrorCode OPFLOWSolverCreate_HIOP(OPFLOW);
 #endif
 
@@ -113,11 +113,11 @@ PetscErrorCode OPFLOWSolverRegisterAll(OPFLOW opflow)
   PetscFunctionBegin;
   if(opflow->OPFLOWSolverRegisterAllCalled) PetscFunctionReturn(0);
 
-#if defined(EXAGO_HAVE_IPOPT)
+#if defined(EXAGO_ENABLE_IPOPT)
   ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_IPOPT,OPFLOWSolverCreate_IPOPT);CHKERRQ(ierr);
 #endif
   ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_TAO,OPFLOWSolverCreate_TAO);CHKERRQ(ierr);
-#if defined(EXAGO_HAVE_HIOP)
+#if defined(EXAGO_ENABLE_HIOP)
   ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_HIOP,OPFLOWSolverCreate_HIOP);CHKERRQ(ierr);
 #endif
   opflow->OPFLOWSolverRegisterAllCalled = PETSC_TRUE;

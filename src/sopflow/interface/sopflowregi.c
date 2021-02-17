@@ -73,7 +73,7 @@ PetscErrorCode SOPFLOWSolverRegister(SOPFLOW sopflow,const char sname[],PetscErr
   PetscFunctionReturn(0);
 }
 
-#if defined(EXAGO_HAVE_IPOPT)
+#if defined(EXAGO_ENABLE_IPOPT)
 extern PetscErrorCode SOPFLOWSolverCreate_IPOPT(SOPFLOW);
 extern PetscErrorCode SOPFLOWSolverCreate_IPOPTNEW(SOPFLOW);
 #endif
@@ -89,7 +89,7 @@ PetscErrorCode SOPFLOWSolverRegisterAll(SOPFLOW sopflow)
   PetscFunctionBegin;
   if(sopflow->SOPFLOWSolverRegisterAllCalled) PetscFunctionReturn(0);
 
-#if defined(EXAGO_HAVE_IPOPT)
+#if defined(EXAGO_ENABLE_IPOPT)
   ierr = SOPFLOWSolverRegister(sopflow,SOPFLOWSOLVER_IPOPT,SOPFLOWSolverCreate_IPOPT);CHKERRQ(ierr);
   ierr = SOPFLOWSolverRegister(sopflow,SOPFLOWSOLVER_IPOPTNEW,SOPFLOWSolverCreate_IPOPTNEW);CHKERRQ(ierr);
 

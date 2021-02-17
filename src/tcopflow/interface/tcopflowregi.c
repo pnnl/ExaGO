@@ -70,7 +70,7 @@ PetscErrorCode TCOPFLOWSolverRegister(TCOPFLOW tcopflow,const char sname[],Petsc
   PetscFunctionReturn(0);
 }
 
-#if defined(EXAGO_HAVE_IPOPT)
+#if defined(EXAGO_ENABLE_IPOPT)
 extern PetscErrorCode TCOPFLOWSolverCreate_IPOPT(TCOPFLOW);
 #endif
 
@@ -83,7 +83,7 @@ PetscErrorCode TCOPFLOWSolverRegisterAll(TCOPFLOW tcopflow)
   PetscFunctionBegin;
   if(tcopflow->TCOPFLOWSolverRegisterAllCalled) PetscFunctionReturn(0);
 
-#if defined(EXAGO_HAVE_IPOPT)
+#if defined(EXAGO_ENABLE_IPOPT)
   ierr = TCOPFLOWSolverRegister(tcopflow,TCOPFLOWSOLVER_IPOPT,TCOPFLOWSolverCreate_IPOPT);CHKERRQ(ierr);
 #endif
 
