@@ -320,8 +320,8 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
   ierr = PetscOptionsInt("-hiop_verbosity_level","HIOP verbosity level (Integer 0 to 12)","",verbose_level,&verbose_level,NULL);CHKERRQ(ierr);
   PetscOptionsEnd();
 
-  hiop->mds->options->SetStringValue("dualsUpdateType", "linear");
-  hiop->mds->options->SetStringValue("dualsInitialization", "zero");
+  hiop->mds->options->SetStringValue("duals_update_type", "linear");
+  hiop->mds->options->SetStringValue("duals_init", "zero");
   hiop->mds->options->SetStringValue("fixed_var", "relax");
 
   hiop->mds->options->SetStringValue("Hessian", "analytical_exact");
