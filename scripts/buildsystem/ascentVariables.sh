@@ -14,7 +14,7 @@ module load cmake/3.18.2
 # see https://github.com/spack/spack/issues/17407
 ls $PROJ_DIR/src/spack/var/spack/environments/*
 
-spack env activate exago-v0-99-1-hiop-v0-3-99-0
+spack env activate exago-v0-99-2-hiop-v0-3-99-2
 
 export MY_PETSC_DIR=`spack location -i petsc`
 export MY_NVCC_ARCH="sm_70"
