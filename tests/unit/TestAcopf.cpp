@@ -4,6 +4,7 @@
 
 #include <private/opflowimpl.h>
 #include <exago_config.h>
+#include <utils.h>
 
 #include "opflow/OpflowTests.hpp"
 #include "TestAcopfUtils.hpp"
@@ -89,18 +90,20 @@ int main(int argc, char** argv)
   PetscLogStage  stages[2];
   double         obj_value, obj_factor;
   char           file_c_str[PETSC_MAX_PATH_LEN];
-  char           gen_test_data_c_str[PETSC_MAX_PATH_LEN];
-  char           write_test_data_c_str[PETSC_MAX_PATH_LEN];
-  std::string file;
-  std::string options_pathname(EXAGO_OPTIONS_DIR);
-  std::string filename("/opflowoptions");
-  std::cout << options_pathname << "\n";
-  std::cout << filename << "\n";
-  options_pathname += filename;
-  std::cout << options_pathname << "\n";
+  char           validation_dir_c_str[PETSC_MAX_PATH_LEN];
+  std::string    file, validation_path;
+  char           appname[]="opflow";
+  MPI_Comm       comm=MPI_COMM_WORLD;
 
   char help[] = "Unit tests for ACOPF\n";
-  PetscInitialize(&argc, &argv, options_pathname.c_str(), help);
+  
+  /** Use `ExaGOLogSetLoggingFileName("opflow-logfile");` to log the output. */
+  ierr = ExaGOInitialize(comm,&argc,&argv,appname,help);
+  if (ierr)
+  {
+    fprintf(stderr,"Could not initialize ExaGO application %s.\n",appname);
+    return ierr;
+  }
 
   /* Get network data file from command line */
   ierr = PetscOptionsGetString(NULL,NULL,"-netfile",file_c_str,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
@@ -109,18 +112,29 @@ int main(int argc, char** argv)
     file = "../datafiles/case9/case9mod.m";
   } 
   else{
-    file = file_c_str;
+    file.assign(file_c_str);
   }
 
   std::cout << file << std::endl;
 
   /* Place to store/read reference solutions */
-  std::string file_path = std::string(EXAGO_OPTIONS_DIR) +
-                          std::string("/../tests/datafiles/test_validation/") +
-                          getFileName(file) + "/";
+  ierr = PetscOptionsGetString(NULL,NULL,"-validation_dir",validation_dir_c_str,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetString(NULL, NULL, "-gen_test_data", gen_test_data_c_str,PETSC_MAX_PATH_LEN,&gen_test_data);CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(NULL, NULL, "-write_test_data", write_test_data_c_str,PETSC_MAX_PATH_LEN,&write_test_data);CHKERRQ(ierr);
+  /* This defaults to within the install directory */
+  if(!flg)
+  {
+    validation_path = std::string(EXAGO_OPTIONS_DIR) +
+                      std::string("/../tests/datafiles/test_validation/") +
+                      getFileName(file) + "/";
+  }
+  else
+  {
+    validation_path = std::string(validation_dir_c_str) +
+                      "/" + getFileName(file) + "/";
+  }
+
+  ierr = PetscOptionsGetBool(NULL, NULL, "-gen_test_data", NULL,&gen_test_data);CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(NULL, NULL, "-write_test_data",NULL,&write_test_data);CHKERRQ(ierr);
 
   ierr = PetscLogStageRegister("Solution key",&stages[0]);CHKERRQ(ierr);
   ierr = PetscLogStageRegister("Test stage",&stages[1]);CHKERRQ(ierr);
@@ -181,43 +195,43 @@ int main(int argc, char** argv)
 
     if(write_test_data)
     {
-      std::cout << "Writing answer keys to " << file_path << std::endl;
+      std::cout << "Writing answer keys to " << validation_path << std::endl;
 
-      validate_directory(file_path);
-      saveToFile(X, file_path + "X_valid.txt");
-      saveToFile(Xl, file_path + "Xl_valid.txt");
-      saveToFile(Xu, file_path + "Xu_valid.txt");
-      saveToFile(obj_value, file_path + "obj_value_valid.txt");
-      saveToFile(grad, file_path + "grad_valid.txt");
-      saveToFile(G, file_path + "G_valid.txt");
-      saveToFile(Gl, file_path + "Gl_valid.txt");
-      saveToFile(Gu, file_path + "Gu_valid.txt");
-      saveToFile(Jeq, file_path + "Jeq_valid.bin");
+      validate_directory(validation_path);
+      saveToFile(X, validation_path + "X_valid.txt");
+      saveToFile(Xl, validation_path + "Xl_valid.txt");
+      saveToFile(Xu, validation_path + "Xu_valid.txt");
+      saveToFile(obj_value, validation_path + "obj_value_valid.txt");
+      saveToFile(grad, validation_path + "grad_valid.txt");
+      saveToFile(G, validation_path + "G_valid.txt");
+      saveToFile(Gl, validation_path + "Gl_valid.txt");
+      saveToFile(Gu, validation_path + "Gu_valid.txt");
+      saveToFile(Jeq, validation_path + "Jeq_valid.bin");
       if (opflow->nconineq)
       {
         ineq_present = true;
-        saveToFile(Jineq, file_path + "Jineq_valid.bin");
+        saveToFile(Jineq, validation_path + "Jineq_valid.bin");
       }
-      saveToFile(Lambda, file_path + "Lambda_valid.txt");
-      saveToFile(Hess, file_path + "Hess_valid.bin");
-      saveToFile(obj_factor, file_path + "obj_factor_valid.txt");
+      saveToFile(Lambda, validation_path + "Lambda_valid.txt");
+      saveToFile(Hess, validation_path + "Hess_valid.bin");
+      saveToFile(obj_factor, validation_path + "obj_factor_valid.txt");
     }
   }
   else
   {
-    readFromFile(&Xl, file_path + "Xl_valid.txt");
-    readFromFile(&Xu, file_path + "Xu_valid.txt");
-    readFromFile(&X, file_path + "X_valid.txt");
-    readFromFile(&Gl, file_path + "Gl_valid.txt");
-    readFromFile(&Gu, file_path + "Gu_valid.txt");
-    readFromFile(&G, file_path + "G_valid.txt");
-    readFromFile(&grad, file_path + "grad_valid.txt");
-    readFromFile(&obj_value, file_path + "obj_value_valid.txt");
-    readFromFile(&Lambda, file_path + "Lambda_valid.txt");
-    readFromFile(&Jeq, file_path + "Jeq_valid.bin");
-    ineq_present = readFromFile(&Jineq, file_path + "Jineq_valid.bin");
-    readFromFile(&Hess, file_path + "Hess_valid.bin");
-    readFromFile(&obj_factor, file_path + "obj_factor_valid.txt");
+    readFromFile(&Xl, validation_path + "Xl_valid.txt");
+    readFromFile(&Xu, validation_path + "Xu_valid.txt");
+    readFromFile(&X, validation_path + "X_valid.txt");
+    readFromFile(&Gl, validation_path + "Gl_valid.txt");
+    readFromFile(&Gu, validation_path + "Gu_valid.txt");
+    readFromFile(&G, validation_path + "G_valid.txt");
+    readFromFile(&grad, validation_path + "grad_valid.txt");
+    readFromFile(&obj_value, validation_path + "obj_value_valid.txt");
+    readFromFile(&Lambda, validation_path + "Lambda_valid.txt");
+    readFromFile(&Jeq, validation_path + "Jeq_valid.bin");
+    ineq_present = readFromFile(&Jineq, validation_path + "Jineq_valid.bin");
+    readFromFile(&Hess, validation_path + "Hess_valid.bin");
+    readFromFile(&obj_factor, validation_path + "obj_factor_valid.txt");
   }
 
   ierr = PetscLogStagePop();CHKERRQ(ierr);
@@ -494,6 +508,7 @@ int main(int argc, char** argv)
   if (ineq_present)
     ierr = MatDestroy(&Jineq);CHKERRQ(ierr);
   ierr = MatDestroy(&Hess);CHKERRQ(ierr);
-  PetscFinalize();
+  ExaGOFinalize();
+  // PetscFinalize();
   return fail;
 }

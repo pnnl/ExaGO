@@ -116,6 +116,21 @@ Instructions for executing the different ExaGO applications is given below.
 - [SCOPFLOW](docs/web/scopflow.md)
 - [PFLOW](docs/web/pflow.md)
 
+### Options
+
+Each application has a different set of options that are described in depth in the usage notes. These options can be passed through an options file (`-options_file <option_file>`), or directly on the command line.
+
+Since options may be specified in more than one location (on the command line, and through an options file), it is worth noting that the option specified **last** is used. For example, if `opflowoptions` specified `-netfile case9mod.m`, the following behavior occurs:
+
+```bash
+# This uses case118.m
+./opflow -options_file opflowoptions -netfile case118.m
+
+# This uses case9mod.m
+./opflow -netfile case118.m -options_file opflowoptions
+```
+Note that all ExaGO applications must run with an options file passed, and so if none is specified on the command line, ExaGO attempts to use the default application options in `options`. 
+
 ## Authors
 - Shrirang Abhyankar
 - Slaven Peles

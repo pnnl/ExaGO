@@ -22,4 +22,7 @@ target_link_libraries(testAcopf
 )
 target_include_directories(testAcopf PRIVATE ./utils)
 
-install(TARGETS testAcopf DESTINATION tests)
+if(EXAGO_INSTALL_TESTS)
+  install(TARGETS testAcopf DESTINATION bin/tests/unit)
+endif()
+

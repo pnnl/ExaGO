@@ -193,3 +193,10 @@ For instance,
 \end{lstlisting}
 will execute \opflow application using \lstinline{case9mod.m} input file with the model \lstinline{POWER_BALANCE_POLAR} and \ipopt solver.
 
+Options can also be passed to each application through \lstinline{-options_file}, or through a combination of the command line and options file. The configuration specified last on the command line overrides any previous options. For example, if \lstinline{-options_file opflowoptions} specified \lstinline{-netfile case9mod.m} within it's settings:
+\begin{lstlisting}[language=bash]
+  ./opflow -netfile case118.m -options_file opflowoptions # Uses case9mod.m
+  ./opflow -options_file opflowoptoins -netfile case118.m # Uses case118.m
+\end{lstlisting}
+If no options file is specified through the command line, ExaGO applications will attempt to locate the default options file for a given application in \lstinline{.,./options,<install_dir>/options}.
+

@@ -2,7 +2,7 @@ static char help[] = "User example calling SCOPFLOW.\n\n";
 
 #include <exago_config.h>
 #include <scopflow.h>
-
+#include <utils.h>
 
 int main(int argc,char **argv)
 {
@@ -13,14 +13,16 @@ int main(int argc,char **argv)
   PetscBool         flg=PETSC_FALSE,flgctgc=PETSC_FALSE,ismultiperiod=PETSC_TRUE;
   PetscBool         print_output=PETSC_FALSE,save_output=PETSC_FALSE;
   PetscLogStage     stages[3];
-  char              options_pathname[200] = EXAGO_OPTIONS_DIR;
-  char filename[] = "/scopflowoptions";
-  printf("%s\n", options_pathname);
-  printf("%s\n", filename);
-  strcat(options_pathname, filename);
-  printf("%s\n", options_pathname);
-  
-  PetscInitialize(&argc,&argv,options_pathname,help);
+  char              appname[]="scopflow";
+  MPI_Comm          comm=MPI_COMM_WORLD;
+
+  /** Use `ExaGOLogSetLoggingFileName("opflow-logfile");` to log the output. */
+  ierr = ExaGOInitialize(comm,&argc,&argv,appname,help);
+  if (ierr)
+  {
+    fprintf(stderr,"Could not initialize ExaGO application %s.\n",appname);
+    return ierr;
+  }
   
   ierr = PetscOptionsGetBool(NULL,NULL,"-print_output",&print_output,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-save_output",&save_output,NULL);CHKERRQ(ierr);
@@ -86,6 +88,7 @@ int main(int argc,char **argv)
   /* Destroy SCOPFLOW object */
   ierr = SCOPFLOWDestroy(&scopflow);CHKERRQ(ierr);
 
-  PetscFinalize();
+  ExaGOFinalize();
+  // PetscFinalize();
   return 0;
 }

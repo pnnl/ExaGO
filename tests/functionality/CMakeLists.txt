@@ -32,5 +32,7 @@ foreach(target testPflowFunctionality
     testSopflowFunctionality 
     testTcopflowFunctionality)
   target_link_libraries(${target} ${EXAGO_APP_LIBS})
-  install(TARGETS ${target} RUNTIME DESTINATION bin)
+  if(EXAGO_INSTALL_TESTS) 
+    install(TARGETS ${target} RUNTIME DESTINATION bin/tests/functionality)
+  endif()
 endforeach()
