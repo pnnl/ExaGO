@@ -61,6 +61,9 @@ option(EXAGO_ENABLE_RAJA "Enables RAJA and Umpire libraries" OFF)
 # Enable tests
 option(EXAGO_RUN_TESTS "Enable tests" ON)
 
+# If tests are enables, decides if tests are installed
+option(EXAGO_INSTALL_TESTS "Install testing binaries" OFF)
+
 # For testing with BSUB on certain clusters
 option(EXAGO_TEST_WITH_BSUB "Use `jsrun` instead of `mpirun` commands when running tests" OFF)
 
@@ -196,6 +199,8 @@ set(EXAGO_OPTIONS_FILES
 
 # Install options files
 install(FILES ${EXAGO_OPTIONS_FILES} DESTINATION options)
+# Install options file to binary dir for testing
+file(INSTALL ${EXAGO_OPTIONS_FILES} DESTINATION options)
 
 # EXAGO datafiles to install
 set(EXAGO_DATA_FILES
@@ -210,11 +215,12 @@ install(FILES ${EXAGO_DATA_FILES} DESTINATION datafiles)
 install(DIRECTORY datafiles/case9 DESTINATION datafiles)
 install(DIRECTORY datafiles/TAMU200_scenarios DESTINATION datafiles)
 
-set(EXAGO_SRC_DATAFILES_DIR ${PROJECT_SOURCE_DIR}/datafiles)
-set(EXAGO_SRC_OPTIONS_DIR   ${PROJECT_SOURCE_DIR}/options)
-
+# Install data files in build directory for testing
+file(INSTALL ${EXAGO_DATA_FILES} DESTINATION datafiles)
+file(INSTALL datafiles/case9 DESTINATION datafiles)
+file(INSTALL datafiles/TAMU200_scenarios DESTINATION datafiles)
 # Custom testing data files
-install(DIRECTORY datafiles/test_validation DESTINATION tests/datafiles)
+file(INSTALL datafiles/test_validation DESTINATION datafiles)
 
 # EXAGO headers to install
 set(EXAGO_COMMON_INCLUDE
@@ -264,13 +270,13 @@ if(EXAGO_RUN_TESTS)
 
   # Test cases
   set(network_files
-    ${CMAKE_INSTALL_PREFIX}/datafiles/case9/case9mod.m
-    ${CMAKE_INSTALL_PREFIX}/datafiles/case118.m
-    ${CMAKE_INSTALL_PREFIX}/datafiles/case_ACTIVSg200.m
+    datafiles/case9/case9mod.m
+    datafiles/case118.m
+    datafiles/case_ACTIVSg200.m
     )
   set(network_files_no200
-    ${CMAKE_INSTALL_PREFIX}/datafiles/case9/case9mod.m
-    ${CMAKE_INSTALL_PREFIX}/datafiles/case118.m
+    datafiles/case9/case9mod.m
+    datafiles/case118.m
     )
 
   message(STATUS "Configuring tests")
@@ -280,6 +286,7 @@ if(EXAGO_RUN_TESTS)
     NAME "UNIT_TESTS_OPFLOW"
     DEPENDS HIOP
     COMMAND ${RUNCMD} $<TARGET_FILE:testAcopf>
+    -validation_dir datafiles/test_validation 
     NETFILES ${network_files}
     )
 
@@ -287,8 +294,8 @@ if(EXAGO_RUN_TESTS)
     # SCOPFLOW single-period tests
     exago_add_test(NAME SCOPFLOW_9bus_${nc}cont
       COMMAND ${RUNCMD} $<TARGET_FILE:app_scopflow>
-      -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9/case9mod.m
-      -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9/case9.cont
+      -netfile  datafiles/case9/case9mod.m
+      -ctgcfile datafiles/case9/case9.cont
       -scopflow_solver IPOPTNEW
       -scopflow_Nc ${nc}
       DEPENDS IPOPT
@@ -296,12 +303,12 @@ if(EXAGO_RUN_TESTS)
     # SCOPFLOW multi-period tests
     exago_add_test(NAME SCOPFLOW_9bus_multiperiod_${nc}cont COMMAND
       ${RUNCMD} $<TARGET_FILE:app_scopflow>
-      -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9/case9mod_gen3_wind.m
-      -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9/case9.cont
+      -netfile  datafiles/case9/case9mod_gen3_wind.m
+      -ctgcfile datafiles/case9/case9.cont
       -scopflow_enable_multiperiod 1
-      -scopflow_ploadprofile  ${EXAGO_SRC_DATAFILES_DIR}/case9/load_P.csv
-      -scopflow_qloadprofile  ${EXAGO_SRC_DATAFILES_DIR}/case9/load_Q.csv
-      -scopflow_windgenprofile  ${EXAGO_SRC_DATAFILES_DIR}/case9/scenarios_9bus.csv
+      -scopflow_ploadprofile  datafiles/case9/load_P.csv
+      -scopflow_qloadprofile  datafiles/case9/load_Q.csv
+      -scopflow_windgenprofile  datafiles/case9/scenarios_9bus.csv
       -scopflow_solver IPOPTNEW
       -scopflow_Nc ${nc}
       DEPENDS IPOPT
@@ -312,8 +319,8 @@ if(EXAGO_RUN_TESTS)
   foreach(ns RANGE 1 3)
     exago_add_test(NAME SOPFLOW_200bus_IPOPT_${ns}scen COMMAND
       ${RUNCMD} $<TARGET_FILE:app_sopflow>
-      -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case_ACTIVSg200.m
-      -scenfile ${EXAGO_SRC_DATAFILES_DIR}/TAMU200_scenarios/scenarios_200bus.csv
+      -netfile  datafiles/case_ACTIVSg200.m
+      -scenfile datafiles/TAMU200_scenarios/scenarios_200bus.csv
       -sopflow_solver IPOPT
       -sopflow_enable_multicontingency 0
       -sopflow_Ns ${ns}
@@ -321,8 +328,8 @@ if(EXAGO_RUN_TESTS)
       )
     exago_add_test(NAME SOPFLOW_200bus_EMPAR_${ns}scen COMMAND
       ${RUNCMD} $<TARGET_FILE:app_sopflow>
-      -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case_ACTIVSg200.m
-      -scenfile ${EXAGO_SRC_DATAFILES_DIR}/TAMU200_scenarios/scenarios_200bus.csv
+      -netfile  datafiles/case_ACTIVSg200.m
+      -scenfile datafiles/TAMU200_scenarios/scenarios_200bus.csv
       -sopflow_solver EMPAR
       -sopflow_enable_multicontingency 0
       -sopflow_Ns ${ns}
@@ -333,9 +340,9 @@ if(EXAGO_RUN_TESTS)
   # Multicontingency
   exago_add_test(NAME SOPFLOW_9bus_3scen_9cont COMMAND
     ${RUNCMD} $<TARGET_FILE:app_sopflow>
-    -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9/case9mod_gen3_wind.m
-    -scenfile ${EXAGO_SRC_DATAFILES_DIR}/case9/scenarios_9bus.csv
-    -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9/case9.cont
+    -netfile  datafiles/case9/case9mod_gen3_wind.m
+    -scenfile datafiles/case9/scenarios_9bus.csv
+    -ctgcfile datafiles/case9/case9.cont
     -sopflow_solver IPOPTNEW
     -sopflow_enable_multicontingency 1
     -sopflow_Ns -1
@@ -346,11 +353,11 @@ if(EXAGO_RUN_TESTS)
   # Multicontingency-multiperiod
   exago_add_test(NAME SOPFLOW_9bus_3scen_9cont_3steps COMMAND
     ${RUNCMD} $<TARGET_FILE:app_sopflow>
-    -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9/case9mod_gen3_wind.m
-    -scenfile ${EXAGO_SRC_DATAFILES_DIR}/case9/scenarios_9bus.csv
-    -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9/case9.cont
-    -scopflow_ploadprofile ${EXAGO_SRC_DATAFILES_DIR}/case9/load_P.csv
-    -scopflow_qloadprofile ${EXAGO_SRC_DATAFILES_DIR}/case9/load_Q.csv
+    -netfile  datafiles/case9/case9mod_gen3_wind.m
+    -scenfile datafiles/case9/scenarios_9bus.csv
+    -ctgcfile datafiles/case9/case9.cont
+    -scopflow_ploadprofile datafiles/case9/load_P.csv
+    -scopflow_qloadprofile datafiles/case9/load_Q.csv
     -sopflow_solver IPOPTNEW
     -sopflow_enable_multicontingency 1
     -scopflow_enable_multiperiod 1
@@ -408,7 +415,8 @@ if(EXAGO_RUN_TESTS)
 
   exago_add_test(
     NAME OPFLOW_TAO
-    COMMAND ${RUNCMD} $<TARGET_FILE:app_opflow> -opflow_solver TAO
+    COMMAND ${RUNCMD} $<TARGET_FILE:app_opflow> 
+    -opflow_solver TAO
     NETFILES ${network_files}
     )
 
@@ -461,7 +469,7 @@ if(EXAGO_RUN_TESTS)
       NAME FUNCTIONALITY_TEST_PFLOW_${np}proc
       COMMAND ${MPICMD} "-n" ${np} ${EXAGO_EXTRA_MPI_FLAGS}
       $<TARGET_FILE:testPflowFunctionality>
-      NETFILES ${CMAKE_INSTALL_PREFIX}/datafiles/case9/case9mod.m
+      NETFILES datafiles/case9/case9mod.m
       )
   endforeach(np)
 
@@ -470,9 +478,9 @@ if(EXAGO_RUN_TESTS)
     exago_add_test(
       NAME FUNCTIONALITY_TEST_SOPFLOW_200bus_IPOPT_${ns}scen
       DEPENDS IPOPT
-      NETFILES ${CMAKE_INSTALL_PREFIX}/datafiles/case_ACTIVSg200.m
+      NETFILES datafiles/case_ACTIVSg200.m
       COMMAND ${RUNCMD} $<TARGET_FILE:testSopflowFunctionality>
-      -scenfile ${EXAGO_SRC_DATAFILES_DIR}/TAMU200_scenarios/scenarios_200bus.csv
+      -scenfile datafiles/TAMU200_scenarios/scenarios_200bus.csv
       -sopflow_solver IPOPT
       -sopflow_enable_multicontingency 0
       -sopflow_Ns ${ns}
@@ -482,9 +490,9 @@ if(EXAGO_RUN_TESTS)
 
   exago_add_test(NAME SOPFLOW_9bus_3scen_9cont_FUNCTIONALITY_TEST COMMAND
            ${RUNCMD} $<TARGET_FILE:testSopflowFunctionality>
-           -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9/case9mod_gen3_wind.m
-           -scenfile ${EXAGO_SRC_DATAFILES_DIR}/case9/scenarios_9bus.csv
-           -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9/case9.cont
+           -netfile  datafiles/case9/case9mod_gen3_wind.m
+           -scenfile datafiles/case9/scenarios_9bus.csv
+           -ctgcfile datafiles/case9/case9.cont
            -sopflow_solver IPOPTNEW
 	   -sopflow_enable_multicontingency 1
            -sopflow_tolerance ${tolerance}
@@ -494,11 +502,11 @@ if(EXAGO_RUN_TESTS)
 
   exago_add_test(NAME SOPFLOW_9bus_3scen_9cont_3steps_FUNCTIONALITY_TEST COMMAND
            ${RUNCMD} $<TARGET_FILE:testSopflowFunctionality>
-           -netfile  ${EXAGO_SRC_DATAFILES_DIR}/case9/case9mod_gen3_wind.m
-           -scenfile ${EXAGO_SRC_DATAFILES_DIR}/case9/scenarios_9bus.csv
-           -ctgcfile ${EXAGO_SRC_DATAFILES_DIR}/case9/case9.cont
-	   -scopflow_ploadprofile ${EXAGO_SRC_DATAFILES_DIR}/case9/load_P.csv
-	   -scopflow_qloadprofile ${EXAGO_SRC_DATAFILES_DIR}/case9/load_Q.csv
+           -netfile  datafiles/case9/case9mod_gen3_wind.m
+           -scenfile datafiles/case9/scenarios_9bus.csv
+           -ctgcfile datafiles/case9/case9.cont
+	   -scopflow_ploadprofile datafiles/case9/load_P.csv
+	   -scopflow_qloadprofile datafiles/case9/load_Q.csv
            -sopflow_solver IPOPTNEW
 	   -sopflow_enable_multicontingency 1
            -sopflow_tolerance ${tolerance}
@@ -508,6 +516,5 @@ if(EXAGO_RUN_TESTS)
            -sopflow_Ns -1
 	   -scopflow_Nc -1
      DEPENDS IPOPT)
-
 
 endif(EXAGO_RUN_TESTS)

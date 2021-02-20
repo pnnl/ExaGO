@@ -54,7 +54,7 @@ Set SOPFLOW to either run in `preventive` (0) or `corrective` (1) mode. In preve
 mpiexec -n <N> ./sopflow -netfile <netfilename> -scenfile <scenfilename> -sopflow_mode <0 or 1>
 ```
 
-#### Number of contingencies (-sopflow_Ns <Ns>): 
+#### Number of scenarios (-sopflow_Ns <Ns>): 
 Sets the number of scenarios. This should be less than or equal to the number of scenarios set in the scenario file.
 
 ```

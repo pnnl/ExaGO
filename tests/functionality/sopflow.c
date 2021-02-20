@@ -2,6 +2,8 @@ static char help[] = "User example calling stochastic optimal power flow SOPFLOW
 
 #include <exago_config.h>
 #include <sopflow.h>
+#include <selfcheck.h>
+#include <utils.h>
 
 int main(int argc,char **argv)
 {
@@ -12,16 +14,20 @@ int main(int argc,char **argv)
   PetscBool         flg=PETSC_FALSE,flgscen=PETSC_FALSE;
   PetscBool         print_output=PETSC_FALSE,save_output=PETSC_FALSE;
   PetscLogStage     stages[3];
+  char              appname[]="sopflow";
+  MPI_Comm          comm=MPI_COMM_WORLD;
+  PetscBool         selfcheck=PETSC_FALSE;
 
-  char options_pathname[200] = EXAGO_OPTIONS_DIR;
-  char filename[] = "/sopflowoptions";
-  printf("%s\n", options_pathname);
-  printf("%s\n", filename);
-  strcat(options_pathname, filename);
-  printf("%s\n", options_pathname);
-  
-  PetscInitialize(&argc,&argv,options_pathname,help);
-  
+  /**
+   *  Use `ExaGOLogSetLoggingFileName("sopflow-logfile");` to log the output. */
+
+  ierr = ExaGOInitialize(comm,&argc,&argv,appname,help);
+  if (ierr)
+  {
+    fprintf(stderr,"Could not initialize ExaGO application %s.\n",appname);
+    return ierr;
+  }
+ 
   ierr = PetscOptionsGetBool(NULL,NULL,"-print_output",&print_output,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-save_output",&save_output,NULL);CHKERRQ(ierr);
 
@@ -86,6 +92,7 @@ int main(int argc,char **argv)
   /* Destroy SOPFLOW object */
   ierr = SOPFLOWDestroy(&sopflow);CHKERRQ(ierr);
 
-  PetscFinalize();
+  // PetscFinalize();
+  ExaGOFinalize(); 
   return 0;
 }

@@ -35,7 +35,6 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
     ExaGOLogSetLoggingFilePointer(stderr);
 
   int i;
-  PetscBool flg=PETSC_FALSE;
   char options_pathname[200] = EXAGO_OPTIONS_DIR;
   char filename[64];
   ierr=sprintf(filename,"%soptions",ExaGOCurrentAppName);
@@ -47,13 +46,32 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
     return 1;
   }
 
-  const int noptfiles = 3;
+  const int noptfiles = 4;
   char **optfiles = malloc(sizeof(char*)*noptfiles);
   for(i=0; i<noptfiles; i++)
     optfiles[i] = malloc(PETSC_MAX_PATH_LEN);
-  sprintf(optfiles[0],"%s/%s",options_pathname,filename);
 
-  ierr=sprintf(optfiles[1],"./%s",filename);
+
+  // Get -option_file option from command line
+  char options_file[PETSC_MAX_PATH_LEN];
+  PetscBool flg = PETSC_FALSE;
+  for(i=1; i<*argc; i++)
+  {
+    // Added null terminator here as this would cause errors with
+    if (0==strncmp((*argv)[i],"-options_file\0",13))
+    {
+      strcpy(optfiles[0],(*argv)[i + 1]);
+      flg = PETSC_TRUE;
+    }
+  } 
+  if (!flg)
+  {
+    strcpy(optfiles[0],"... -options_file not passed");
+  }
+
+  sprintf(optfiles[1],"%s/%s",options_pathname,filename);
+
+  ierr=sprintf(optfiles[2],"./%s",filename);
   if(ierr<0)
   {
     fprintf(stderr,
@@ -62,7 +80,7 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
     return 1;
   }
 
-  ierr=sprintf(optfiles[2],"./options/%s",filename);
+  ierr=sprintf(optfiles[3],"./options/%s",filename);
   if(ierr<0)
   {
     fprintf(stderr,
@@ -73,14 +91,18 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
 
   for(i=1; i<*argc; i++)
   {
-    if (0==strncmp((*argv)[i],"-v",2) || 
-        0==strncmp((*argv)[i],"-version",8))
+    // Added null terminator here as this would cause errors with
+    if (0==strncmp((*argv)[i],"-v\0",3) || 
+        0==strncmp((*argv)[i],"-version\0",4))
     {
       char* versionstr;
       ierr=ExaGOVersionGetFullVersionInfo(&versionstr);CHKERRQ(ierr);
       ExaGOLog(EXAGO_LOG_INFO, "ExaGO Version Info:\n\n%s", versionstr);
       ExaGOLog(EXAGO_LOG_INFO, "ExaGO Help Message:\n%s", help);
       free(versionstr);
+      for(i=0; i<noptfiles; i++)
+        free(optfiles[i]);
+      MPI_Finalize();
       exit(0);
     }
   }
@@ -96,8 +118,9 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
     free(optfiles);
     return 1;
   }
-
+  
   PetscInitialize(argc,argv,optfiles[idx],help);
+  
   for(i=0; i<noptfiles; i++)
     free(optfiles[i]);
   free(optfiles);
