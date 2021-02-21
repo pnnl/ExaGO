@@ -7,11 +7,30 @@ const char *const OPFLOWInitializationTypes[] = {"MIDPOINT","FROMFILE","ACPF","F
 
 const char *const OPFLOWObjectiveTypes[] = {"MIN_GEN_COST","MIN_GENSETPOINT_DEVIATION","OPFLOWObjectiveType","OPFLOWOBJ_",NULL};
 
+const char *const OPFLOWGenBusVoltageTypes[] = {"VARIABLE_WITHIN_BOUNDS","FIXED_WITHIN_QBOUNDS","FIXED_AT_SETPOINT","OPFLOWGenBusVoltageType","",NULL};
+
 void swap_dm(DM *dm1, DM *dm2)
 {
   DM temp = *dm1;
   *dm1 = *dm2;
   *dm2 = temp;
+}
+
+/* 
+   OPFLOWSetGenBusVoltageType - Sets the voltage control mode for generator buses
+   
+   Input Parameters:
++  opflow - the opflow object
+-  vtype  - voltage control type
+
+   Command-line option: -opflow_genbusvoltage
+   Notes: Must be called before OPFLOWSetUp()
+*/
+PetscErrorCode OPFLOWSetGenBusVoltageType(OPFLOW opflow,OPFLOWGenBusVoltageType vtype)
+{
+  PetscFunctionBegin;
+  opflow->genbusvoltagetype = vtype;
+  PetscFunctionReturn(0);
 }
 
 /*
@@ -229,24 +248,6 @@ PetscErrorCode OPFLOWComputePrePflow(OPFLOW opflow,PetscBool *converged)
 }
 
 /*
-  OPFLOWGenbusVoltageFixed - Treat gen. bus voltage magnitude fixed ?
-
-  Input Parameters:
-+ opflow - the OPFLOW object
-- isfixed - TRUE if gen. bus voltage is fixed, 0 otherwise
-
-  Notes:
-  If TRUE, the generator bus voltage is fixed at the generator set point voltage
-  given in the generator data
-*/
-PetscErrorCode OPFLOWGenbusVoltageFixed(OPFLOW opflow,PetscBool isfixed)
-{
-  PetscFunctionBegin;
-  opflow->genbusVmfixed = isfixed;
-  PetscFunctionReturn(0);
-}
-
-/*
   OPFLOWCreate - Creates an optimal power flow application object
 
   Input Parameters
@@ -293,6 +294,8 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
 
   opflow->objectivetype = OPFLOWOBJ_MIN_GEN_COST;
 
+  opflow->genbusvoltagetype = FIXED_WITHIN_QBOUNDS;
+
   opflow->nmodelsregistered = opflow->nsolversregistered = 0;
   opflow->OPFLOWModelRegisterAllCalled = opflow->OPFLOWSolverRegisterAllCalled = PETSC_FALSE;
 
@@ -308,7 +311,6 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   opflow->include_powerimbalance_variables = PETSC_FALSE;
   opflow->loadloss_penalty = 1e1;
   opflow->powerimbalance_penalty = 1e2;
-  opflow->genbusVmfixed = PETSC_FALSE; /* no fixed generator voltage by default */
   opflow->spdnordering = PETSC_FALSE;
   opflow->setupcalled = PETSC_FALSE;
 
@@ -763,6 +765,8 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PetscOptionsString("-opflow_solver","OPFLOW solver type","",solvername,solvername,32,&solverset);CHKERRQ(ierr);
   ierr = PetscOptionsEnum("-opflow_initialization","Type of OPFLOW initialization","",OPFLOWInitializationTypes,(PetscEnum)opflow->initializationtype,(PetscEnum*)&opflow->initializationtype,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsEnum("-opflow_objective","Type of OPFLOW objective","",OPFLOWObjectiveTypes,(PetscEnum)opflow->objectivetype,(PetscEnum*)&opflow->objectivetype,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsEnum("-opflow_genbusvoltage","Type of OPFLOW gen bus voltage control","",OPFLOWGenBusVoltageTypes,(PetscEnum)opflow->genbusvoltagetype,(PetscEnum*)&opflow->genbusvoltagetype,NULL);CHKERRQ(ierr);
+
   ierr = PetscOptionsBool("-opflow_has_gensetpoint","Use set-points for generator real power","",opflow->has_gensetpoint,&opflow->has_gensetpoint,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-opflow_use_agc","Use automatic generation control (AGC)","",opflow->use_agc,&opflow->use_agc,NULL);CHKERRQ(ierr);
   if(opflow->use_agc) opflow->has_gensetpoint = PETSC_TRUE;
@@ -781,7 +785,6 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PetscOptionsReal("-opflow_loadloss_penalty","Penalty for load loss","",opflow->loadloss_penalty,&opflow->loadloss_penalty,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-opflow_include_powerimbalance_variables","Allow power imbalance?","",opflow->include_powerimbalance_variables,&opflow->include_powerimbalance_variables,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsReal("-opflow_powerimbalance_penalty","Power imbalance penalty","",opflow->powerimbalance_penalty,&opflow->powerimbalance_penalty,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsBool("-opflow_genbusvoltage_fixed","Treat gen. bus voltage fixed?","",opflow->genbusVmfixed,&opflow->genbusVmfixed,NULL);CHKERRQ(ierr);
   PetscOptionsEnd();
 
   /* Set model */
