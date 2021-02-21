@@ -117,7 +117,7 @@ int BUSParamsRajaHiop::allocate(OPFLOW opflow)
     else if(bus->ide == ISOLATED_BUS) isisolated[i] = 1;
     else ispvpq[i] = 1;
 
-    if(opflow->genbusVmfixed) {
+    if(opflow->genbusvoltagetype == FIXED_AT_SETPOINT) {
       if(bus->ide == REF_BUS || bus->ide == PV_BUS) {
 	/* Hold voltage at reference and PV buses */
 	vmin[i] = bus->vm;

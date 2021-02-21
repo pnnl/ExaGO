@@ -157,6 +157,17 @@ With \option{\opflowuseagc}, two additional constraints are added for each parti
 \end{equation}
 Eq. \ref{eq:opflow_agc} enforces the generator set-point deviation to be equal to the generation participation when the generator has head-room available $\pminj \le \pgj \le \pmaxj$. Here, $\alpha^{\text{g}}_j$ is the generator participation factor which is the proportion of the power deficit/excess $\Delta{P}$ that the generator provides.
 
+\subsubsection{Generator bus voltage control}
+When the option \opflowoption{\opflowgenbusvoltage \fixedwithinqbounds} is used, the generator bus voltage is fixed when the total reactive power generation available at the bus is within bounds. When it reaches its bounds, the voltage varies with the generator reactive power fixed at its bound. To implement this behavior, two inequality constraints are added for each generator bus
+\begin{equation}
+\begin{aligned}
+(v^{\text{set}}_i - \vi)(q_i - q^{\text{max}_i}) \ge 0 \\
+(\vi - v^{\text{set}}_i)(q^{\text{min}_i} - q_i) \ge 0
+\end{aligned}
+\label{eq:opflow_genbusvoltage}
+\end{equation}
+Here, $q_i$, $q^{\text{max}_i}$, and $q^{\text{min}_i}$ are the generated, maximum, and minimum reactive power at the bus, respectively.
+
 \begin{comment}
 \subssubection{Voltage magnitude for cartesian coordinates}
 When using cartesian coordinates for voltages, inequality constraints (\ref{eq:opflow_ineq_vmag}) need to introduced to constraining the voltage magnitude within its bounds
@@ -261,12 +272,12 @@ See table \ref{tab:opflow_options}
     -opflow\_model & Representation of network balance equations and bus voltages & See Table \ref{sec:opflow_model} (POWER\_BALANCE\_POLAR) \\ \hline
     -opflow\_solver & Optimization solver & See section \ref{sec:opflow_solvers} \\ \hline
     -opflow\_initialization & Type of initialization & See Table \ref{tab:opflow_initializations} (MIDPOINT) \\ \hline
+    -opflow\_genbusvoltage & Type of generator bus voltage control & See Table \ref{tab:opflow_genbusvoltage} (FIXED\_WITHIN\_QBOUNDS) \\ \hline
     -opflow\_ignore\_lineflow\_constraints & Ignore line flow constraints & 0 or 1 (0) \\ \hline
     -opflow\_include\_loadloss\_variables & Include load loss & 0 or 1 (0) \\ \hline
     -opflow\_include\_powerimbalance\_variables & Include power imbalance & 0 or 1 (0) \\ \hline
     -opflow\_loadloss\_penality & \$ penalty for load loss & real (1000) \\ \hline
     -opflow\_powerimbalance\_penalty & \$ penalty for power imbalance & real (10000) \\ \hline
-    -opflow\_genbusvoltage\_fixed & Keep generator bus voltage fixed at set-point & 0 or 1 (0) \\ \hline
     -opflow\_tolerance & Optimization solver tolerance & real (1e-6) \\ \hline 
   \end{tabular}
   \label{tab:opflow_options}
@@ -284,6 +295,19 @@ See table \ref{tab:opflow_options}
     FLATSTART & Flat-start \\ \hline
   \end{tabular}
 \label{tab:opflow_initializations}
+\end{table}
+
+\begin{table}[h]
+  \centering
+  \caption{OPFLOW generator bus voltage control modes}
+  \begin{tabular}{|c|c|}
+    \hline
+    \textbf{Voltage control type} & \textbf{Meaning} \\ \hline
+    FIXED\_AT\_SETPOINT & Fixed at given set-point. Reactive power limits are ignored \\ \hline
+    FIXED\_WITHIN\_QBOUNDS & Fixed within reactive power bounds \\ \hline
+    VARIABLE\_WITHIN\_BOUNDS & Variable within voltage bounds
+  \end{tabular}
+\label{tab:opflow_genbusvoltage}
 \end{table}
 
 \section{Examples}

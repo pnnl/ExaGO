@@ -40,17 +40,24 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow,Vec Xl,Vec Xu)
 
     xl[loc] = PETSC_NINFINITY; xu[loc] = PETSC_INFINITY;
 
-    if(!opflow->genbusVmfixed) {
+    if(opflow->genbusvoltagetype == VARIABLE_WITHIN_BOUNDS) {
       xl[loc+1] = bus->Vmin; xu[loc+1] = bus->Vmax;
-    } else {
+    } else if(opflow->genbusvoltagetype == FIXED_WITHIN_QBOUNDS) {
       if(bus->ide == REF_BUS || bus->ide == PV_BUS) {
-	/* Hold bus voltage at generator set point voltage */
-	xl[loc+1] = xu[loc+1] = bus->vm; /* Note: For pv buses bus->vm is already set to generator set point voltage when the data is read */
+	xl[loc+1] = 0.0;
+	xu[loc+1] = 2.0;
+      } else {
+	xl[loc+1] = bus->Vmin; xu[loc+1] = bus->Vmax; /* PQ buses */
+      }
+    } else if(opflow->genbusvoltagetype == FIXED_AT_SETPOINT) {
+      if(bus->ide == REF_BUS || bus->ide == PV_BUS) {
+	xl[loc+1] = bus->vm;
+	xu[loc+1] = bus->vm;
       } else {
 	xl[loc+1] = bus->Vmin; xu[loc+1] = bus->Vmax; /* PQ buses */
       }
     }
-
+    
     if(bus->ide == REF_BUS || bus->ide == ISOLATED_BUS) xl[loc] = xu[loc] = bus->va*PETSC_PI/180.0;
     if(bus->ide == ISOLATED_BUS) xl[loc+1] = xu[loc+1] = bus->vm;
 
@@ -138,6 +145,7 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBPOL(OPFLOW opflow,Vec Gl,Vec Gu)
   ierr = VecGetArray(Gl,&gl);CHKERRQ(ierr);
   ierr = VecGetArray(Gu,&gu);CHKERRQ(ierr);
 
+  /** EQUALITY CONSTRAINTS **/
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
 
@@ -158,8 +166,22 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBPOL(OPFLOW opflow,Vec Gl,Vec Gu)
     }
   }
   
+  /** INEQUALITY CONSTRAINTS **/
   gl += opflow->nconeq;
   gu += opflow->nconeq;
+
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+
+    if(opflow->genbusvoltagetype == FIXED_WITHIN_QBOUNDS) {
+      /* Inequality constraint bounds for voltages */
+      if(bus->ide == PV_BUS || bus->ide == REF_BUS) {
+	gloc = bus->startineqloc;
+	gl[gloc] = gl[gloc+1] = 0;
+	gu[gloc] = gu[gloc+1] = PETSC_INFINITY;
+      }
+    }
+  }
 
   if(opflow->has_gensetpoint) {
     for(i=0; i < ps->nbus; i++) {
@@ -714,7 +736,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,Vec X
 }
 
 PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec Gi)
-{
+  {
   PetscErrorCode ierr;
   PetscInt       i,k;
   PetscInt       gloc;
@@ -732,6 +754,8 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec 
   const PetscScalar *x;
   double         flps=0.0;
   PetscScalar    Pg,delPgup,delPgdown,delP,delPg,Pgs;
+  PetscInt       xloc;
+  PetscScalar    V,Vset,Q,Qmax,Qmin, Qg;
 
   PetscFunctionBegin;
   ierr = VecSet(Gi,0.0);CHKERRQ(ierr);
@@ -771,7 +795,37 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec 
       }
     }
   }
+  
+  if(opflow->genbusvoltagetype == FIXED_WITHIN_QBOUNDS) {
+    for(i=0; i < ps->nbus; i++) {
+      bus = &ps->bus[i];
+      if (bus->ide == PV_BUS || bus->ide == REF_BUS) {
+	gloc = bus->startineqloc;
+	xloc = bus->startxVloc;
+	V    = x[xloc+1];
+      
+	/*to get the correct reserves and condition when PV should become PQ we need to loop through all gen connected to a bus and sum reactive reserves and limits*/
+	Q = 0;
+	Qmax = 0;
+	Qmin = 0;
+	for (k=0; k < bus->ngen; k++){
+	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	  if(!gen->status) continue;
+	  xloc = gen->startxpowloc;
+	  Qg = x[xloc+1];
+	  Q = Q + Qg;
+	  Qmax = Qmax + gen->qt;
+	  Qmin = Qmin + gen->qb;
+	  Vset = gen->vs;
+	}
 
+	/* Inequality constraints */
+	g[gloc]   = (Q - Qmax)*(Vset-V);
+	g[gloc+1] = (Qmin - Q)*(V-Vset);
+      }
+    }
+  }
+    
   if(!opflow->ignore_lineflow_constraints) {
     for(i=0; i<ps->nline; i++) {
       line = &ps->line[i];
@@ -852,6 +906,10 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,Vec
   PSGEN          gen;
   const PetscScalar *x;
   PetscScalar    Pg,delPgup,delPgdown,delPg,delP;
+  PetscInt       xloc,loc;
+  PetscScalar    V,Vset,Q,Qmax,Qmin,Qg;
+
+
 
   PetscFunctionBegin;
   ierr = MatZeroEntries(Ji);CHKERRQ(ierr);
@@ -940,6 +998,46 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,Vec
     }
   }
 
+  if(opflow->genbusvoltagetype == FIXED_WITHIN_QBOUNDS) {
+    /*adding inequality Constraint Jacobian calc */
+    
+    for(i=0; i < ps->nbus; i++) {
+      bus = &ps->bus[i];
+      if (bus->ide == PV_BUS || bus->ide == REF_BUS){
+	gloc = bus->startineqloc;
+	xloc = bus->startxVloc;
+	V    = x[xloc+1];
+	
+	Q = 0;
+	Qmax = 0;
+	Qmin = 0;
+	for (k=0; k < bus->ngen; k++){
+	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	  if(!gen->status) continue;
+	  loc = gen->startxpowloc;
+	  Qg = x[loc+1];
+	  Q = Q + Qg;
+	  Qmax = Qmax + gen->qt;
+	  Qmin = Qmin + gen->qb;
+	  Vset = gen->vs;
+	  /* Partial derivative of eq1 and eq2 w.r.t. Qg */
+	  row[0] = gloc;
+	  row[1] = gloc+1;
+	  col[0] = loc+1;
+	  val[0] = Vset - V; // deq1_dQg
+	  val[1] = Vset - V; // deq2_dQg
+	  ierr = MatSetValues(Ji,2,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+	}
+	
+	val[0]  = Qmax - Q; // deq1_dV
+	val[1]  = Qmin - Q; // deq2_dV
+	row[0] = gloc;
+	row[1] = gloc+1;
+	col[0] = xloc+1;
+	ierr = MatSetValues(Ji,2,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+      }
+    }
+  }
 
   if(!opflow->ignore_lineflow_constraints) {
     for (i=0; i < ps->nline; i++) {
@@ -1308,6 +1406,13 @@ PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW opflow,PetscInt *branch
       }
     }
 
+    if(opflow->genbusvoltagetype == FIXED_WITHIN_QBOUNDS) {
+      if(bus->ide == PV_BUS || bus->ide == REF_BUS) {
+	*nconineq += 2;
+	bus->nconineq = 2;
+      }
+    }
+
     ierr = PSBUSGetNGen(bus,&ngen);CHKERRQ(ierr);
     for(k=0; k < ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
@@ -1652,6 +1757,8 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow, Ve
   PSBUS          bus;
   PSGEN          gen;
   PetscScalar    Pg,delPgup,delPgdown,delPg,delP;
+  PetscInt       xlocglob,loc;
+  PetscScalar    V,Vset,Q,Qmax,Qmin,Qg;
 
   PetscFunctionBegin;
       
@@ -1737,6 +1844,40 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow, Ve
     }
   }
 
+  if(opflow->genbusvoltagetype == FIXED_WITHIN_QBOUNDS) {
+    for(i=0; i < ps->nbus; i++) {
+      bus = &ps->bus[i];
+      if (bus->ide == PV_BUS || bus->ide == REF_BUS){
+	gloc = bus->startineqloc;
+	xloc = bus->startxVloc;
+	xlocglob = bus->startxVlocglob;
+	V    = x[xloc+1];
+	
+	Q = 0;
+	Qmax = 0;
+	Qmin = 0;
+	for (k=0; k < bus->ngen; k++){
+	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	  if(!gen->status) continue;
+	  loc = gen->startxpowloc;
+	  Qg = x[loc+1];
+	  Q = Q + Qg;
+	  Qmax = Qmax + gen->qt;
+	  Qmin = Qmin + gen->qb;
+	  Vset = gen->vs;
+	  
+	  row[0] = loc + 1;
+	  col[0] = xloc + 1;
+	  val[0] = -(lambda[gloc] + lambda[gloc+1]); // lam_eq1*d2eq1_dQg_dV + lam_eq2*d2eq2_dQg_dV
+	  ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+	  row[0] = xloc + 1;
+	  col[0] = loc + 1;
+	  val[0] =  -(lambda[gloc] + lambda[gloc+1]); //lam_eq1* d2eq1_dQg_dV + lam_eq2*d2eq2_dV_dQg
+	  ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+	}
+      }
+    }
+  }
 
   // for the part of line constraints
   if(!opflow->ignore_lineflow_constraints) {
@@ -2342,6 +2483,15 @@ PetscErrorCode OPFLOWModelSetUp_PBPOL(OPFLOW opflow)
 
     bus->starteqloc = eqloc;
     eqloc += bus->nconeq;
+
+
+    if(opflow->genbusvoltagetype == FIXED_WITHIN_QBOUNDS) {
+      /* Inequality constraints */
+      if (bus->ide == PV_BUS || bus->ide == REF_BUS){
+        bus->startineqloc = ineqloc;
+        ineqloc += bus->nconineq;
+      }
+    }
  
     /* gen */
     for(k=0; k < bus->ngen; k++) {

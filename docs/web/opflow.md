@@ -80,7 +80,7 @@ The behavior of OPFLOW is controlled through the different options given in the 
 |-opflow_include_powerimbalance_variables| Allow power imbalance at buses| 0 or 1 (0)|
 |-opflow_loadloss_penalty| Penalty ($) for loss of load per load| (1000)|
 |-opflow_powerimbalance_penalty| Penalty ($) for  power imbalance at bus| (1000)|
-|-opflow_genbusvoltage_fixed| Generator bus voltages fixed? | 0 or 1 (0)|
+|-opflow_genbusvoltage| Control mode for generator bus voltage| "VARIABLE_WITHIN_BOUNDS"<br>"FIXED_WITHIN_QBOUNDS" (default)<br>"FIXED_AT_SETPOINT"|
 |-opflow_has_gensetpoint| Real power set point set? | 0 or 1 (0)|
 |-opflow_use_agc| Use AGC for generator real power redispatch?| 0 or 1 (0)|
 |-opflow_tolerance|Optimization solver tolerance | (1e-6)

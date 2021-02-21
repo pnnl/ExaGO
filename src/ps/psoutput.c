@@ -244,7 +244,7 @@ PetscErrorCode PSPrintSystemSummary(PS ps)
       Pd += load->pl*ps->MVAbase;
       Qd += load->ql*ps->MVAbase;
     }
-    ierr = PetscPrintf(ps->comm->type,"%-6d %7.2f %7.2f %7.2f %7.2f %12.2f %12.2f\n",bus->bus_i,Pd,Qd,bus->vm,bus->va*180.0/PETSC_PI,bus->mult_pmis,bus->mult_qmis);CHKERRQ(ierr);
+    ierr = PetscPrintf(ps->comm->type,"%-6d %7.2f %7.2f %7.3f %7.3f %12.2f %12.2f\n",bus->bus_i,Pd,Qd,bus->vm,bus->va*180.0/PETSC_PI,bus->mult_pmis,bus->mult_qmis);CHKERRQ(ierr);
   }
   ierr = PetscPrintf(ps->comm->type,"\n");CHKERRQ(ierr);
   MPI_Barrier(ps->comm->type);

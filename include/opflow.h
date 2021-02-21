@@ -22,6 +22,13 @@
 
 typedef struct _p_OPFLOW *OPFLOW;
 
+/* Generator bus voltage type */
+typedef enum {
+  VARIABLE_WITHIN_BOUNDS, /* Voltage can vary with voltage bounds */
+  FIXED_WITHIN_QBOUNDS,  /* Voltage is fixed within reactive power bounds */
+  FIXED_AT_SETPOINT, /* Voltage is fixed to the set-point voltage */
+}OPFLOWGenBusVoltageType;
+
 PETSC_EXTERN PetscErrorCode OPFLOWSetModel(OPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode OPFLOWSetSolver(OPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode OPFLOWModelRegister(OPFLOW,const char[],PetscErrorCode (*create)(OPFLOW));
@@ -64,13 +71,15 @@ PETSC_EXTERN PetscErrorCode OPFLOWComputeHessian(OPFLOW,Vec,Vec,PetscScalar,Mat)
 
 PETSC_EXTERN PetscErrorCode OPFLOWPrintSolution(OPFLOW);
 PETSC_EXTERN PetscErrorCode OPFLOWSaveSolution(OPFLOW,OutputFormat,const char[]);
-PETSC_EXTERN PetscErrorCode OPFLOWGenbusVoltageFixed(OPFLOW,PetscBool);
 
 PETSC_EXTERN PetscErrorCode OPFLOWGetVariableOrdering(OPFLOW,int**);
 PETSC_EXTERN PetscErrorCode OPFLOWGetSizes(OPFLOW,int*,int*,int*);
 
 PETSC_EXTERN PetscErrorCode OPFLOWHasGenSetPoint(OPFLOW,PetscBool);
 PETSC_EXTERN PetscErrorCode OPFLOWUseAGC(OPFLOW,PetscBool);
+
+PETSC_EXTERN PetscErrorCode OPFLOWSetGenBusVoltageType(OPFLOW,OPFLOWGenBusVoltageType);
+
 #endif
 
 

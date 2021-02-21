@@ -29,6 +29,8 @@ typedef enum {
 
 extern const char *const OPFLOWObjectiveTypes[];
 
+extern const char *const OPFLOWGenBusVoltageTypes[];
+
 struct _p_OPFLOWModelOps {
   PetscErrorCode (*destroy)(OPFLOW);
   PetscErrorCode (*setup)(OPFLOW);
@@ -133,6 +135,8 @@ struct _p_OPFLOW{
 
   OPFLOWObjectiveType objectivetype; /* OPFLOW objective */
 
+  OPFLOWGenBusVoltageType genbusvoltagetype; /* OPFLOW Genbus voltage type */
+
   PetscInt nconeq, Nconeq;     /* Local and global number of equality constraints, excluding ghosts! */
   PetscInt nconineq, Nconineq; /* Local and global number of inequality constraints */
   PetscInt Ncon,ncon;               /* Total number of constraints (equality + inequality) */
@@ -194,8 +198,6 @@ struct _p_OPFLOW{
   DM           initpflowdm; /* DM used with initial power flow */
   
   PetscInt *busnvararray,*branchnvararray; /* Number of variables at buses and branches */
-
-  PetscBool genbusVmfixed; /* TRUE if gen. bus is fixed at set point */
 
   PetscBool spdnordering; /* TRUE if model uses sparse dense ordering */
   PetscInt  *idxn2sd_map; /* Mapping from natural to sparse-dense ordering */
