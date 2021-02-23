@@ -417,6 +417,7 @@ if(EXAGO_RUN_TESTS)
     NAME OPFLOW_TAO
     COMMAND ${RUNCMD} $<TARGET_FILE:app_opflow> 
     -opflow_solver TAO
+    -opflow_model POWER_BALANCE_CARTESIAN
     NETFILES ${network_files}
     )
 
