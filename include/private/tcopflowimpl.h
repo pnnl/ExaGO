@@ -78,6 +78,8 @@ struct _p_TCOPFLOW{
   PetscBool setupcalled; /* TCOPFLOWSetUp called? */
 
   PetscBool converged; /* Convergence status */
+  PetscInt  numiter; /* Number of iterations */
+  PetscReal tolerance; /* Tolerance for TCOPFLOW */
 
   char netfile[100]; /* Network data file */
 

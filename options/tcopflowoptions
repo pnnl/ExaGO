@@ -7,7 +7,7 @@
 -tcopflow_qloadprofile datafiles/case9/load_Q.csv
 
 # Wind generation profile file
--tcopflow_windgenprofile datafiles/case9/scenarios.csv
+-tcopflow_windgenprofile datafiles/case9/scenarios_9bus.csv
 
 # Coupling between time-steps? (Ramp constraints)
 -tcopflow_iscoupling 1

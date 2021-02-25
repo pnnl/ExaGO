@@ -320,6 +320,7 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
   ierr = PetscOptionsBool("-tcopflow_iscoupling","Include coupling between first stage and second stage","",tcopflow->iscoupling,&tcopflow->iscoupling,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsReal("-tcopflow_dT","Length of time-step (minutes)","",tcopflow->dT,&tcopflow->dT,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsReal("-tcopflow_duration","Time horizon (hours)","",tcopflow->duration,&tcopflow->duration,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsReal("-tcopflow_tolerance","optimization tolerance","",tcopflow->tolerance,&tcopflow->tolerance,NULL);CHKERRQ(ierr);
   PetscOptionsEnd();
 
   tcopflow->Nt = round(tcopflow->duration*60.0/tcopflow->dT)+1;
@@ -577,5 +578,47 @@ PetscErrorCode TCOPFLOWGetConvergenceStatus(TCOPFLOW tcopflow,PetscBool *status)
 
   PetscFunctionBegin;
   ierr = (*tcopflow->solverops.getconvergencestatus)(tcopflow,status);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Sets the solver tolerance
+ *
+ * @param[out] tcopflow TCOPFLOW application object
+ * @param[in]  tol      Solver tolerance
+ *
+ * Tolerance is specified during solve stage for each individual solver.
+ *
+ */
+PetscErrorCode TCOPFLOWSetTolerance(TCOPFLOW tcopflow,PetscReal tol)
+{
+  PetscFunctionBegin;
+  tcopflow->tolerance = tol;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Get the solver tolerance
+ *
+ * @param[out] tcopflow TCOPFLOW application object
+ * @param[in]  tol      Solver tolerance
+ */
+PetscErrorCode TCOPFLOWGetTolerance(TCOPFLOW tcopflow,PetscReal *tol)
+{
+  PetscFunctionBegin;
+  *tol = tcopflow->tolerance;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Returns the number of iterations for a given solver
+ *
+ * @param[in]  tcopflow TCOPFLOW application object
+ * @param[out] iter     Number of iterations
+ */
+PetscErrorCode TCOPFLOWGetNumIterations(TCOPFLOW tcopflow,PetscInt *iter)
+{
+  PetscErrorCode ierr;
+  *iter = tcopflow->numiter;
   PetscFunctionReturn(0);
 }

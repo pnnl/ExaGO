@@ -191,6 +191,17 @@ Bool eval_tcopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
   return TRUE;
 }
 
+Bool TCOPFLOWSolverMonitor_IPOPT(Index alg_mod,Index iter_count,Number obj_value,Number inf_pr,
+			       Number inf_du,Number mu,Number d_norm,Number regularization_size,
+			       Number alpha_du,Number alpha_pr,Index ls_trials,
+                               UserDataPtr user_data)
+{
+  TCOPFLOW  tcopflow=(TCOPFLOW)user_data;
+  tcopflow->numiter = iter_count;
+  return 1;
+}
+
+
 PetscErrorCode TCOPFLOWSolverSolve_IPOPT(TCOPFLOW tcopflow)
 {
   PetscErrorCode     ierr;
@@ -231,9 +242,18 @@ PetscErrorCode TCOPFLOWSolverSolve_IPOPT(TCOPFLOW tcopflow)
   ierr = VecRestoreArray(tcopflow->Gl,&gl);CHKERRQ(ierr);
   ierr = VecRestoreArray(tcopflow->Gu,&gu);CHKERRQ(ierr);
 
+  /* IPOPT tolerance */
+  AddIpoptNumOption(tcopflowipopt->nlp,"tol",tcopflow->tolerance);
+
   ierr = VecGetArray(tcopflow->X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(tcopflow->G,&g);CHKERRQ(ierr);
   ierr = VecGetArray(tcopflow->Lambda,&lam);CHKERRQ(ierr);
+
+  /* Add intermediate callback to get solver info
+     This is called by IPOPT each iteration
+  */
+  SetIntermediateCallback(tcopflowipopt->nlp,TCOPFLOWSolverMonitor_IPOPT);
+
 
   /* Solve */
   tcopflowipopt->solve_status = IpoptSolve(tcopflowipopt->nlp,x,g,&tcopflow->obj,lam,NULL,NULL,tcopflow);

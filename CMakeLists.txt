@@ -517,5 +517,19 @@ if(EXAGO_RUN_TESTS)
            -sopflow_Ns -1
 	   -scopflow_Nc -1
      DEPENDS IPOPT)
-
+  
+  message(STATUS "Configuring TCOPFLOW functionality tests")
+  exago_add_test(NAME TCOPFLOW_FUNCTIONALITY_TEST COMMAND
+           ${RUNCMD} $<TARGET_FILE:testTcopflowFunctionality>
+           -options_file options/tcopflowoptions
+           -netfile datafiles/case9/case9mod_gen3_wind.m
+           -tcopflow_windgenprofile datafiles/case9/scenarios_9bus.csv
+           -tcopflow_qloadprofile datafiles/case9/load_Q.csv
+           -tcopflow_ploadprofile datafiles/case9/load_P.csv
+           -tcopflow_iscoupling 0
+           -tcopflow_dT 5.0
+           -tcopflow_duration 0.5
+           -tcopflow_tolerance ${tolerance}
+           -opflow_ignore_lineflow_constraints 0
+           DEPENDS IPOPT)
 endif(EXAGO_RUN_TESTS)
