@@ -4,6 +4,7 @@
 #include <opflow.h>
 #include <pflow.h>
 #include <sopflow.h>
+#include <tcopflow.h>
 
 #define SELFCHECK_NETWORK_CASE9 "case9mod.m"
 #define SELFCHECK_NETWORK_CASE118 "case118.m"
@@ -77,7 +78,28 @@ typedef struct
   PetscReal objective;
 } ExaGOSelfcheckSOPFLOWAnswer;
 
-/** Returns 0 if pflow conforms to the answer, >0 otherwise. */
+/** Returns 0 if sopflow conforms to the answer, >0 otherwise. */
 extern PetscBool ExaGOSelfcheckSOPFLOW(SOPFLOW);
 
+// -- TCOPFLOW Selfcheck --
+
+typedef struct
+{
+  /// Options passed to the TCOPFLOW driver
+  char networkname[PETSC_MAX_PATH_LEN];
+  char windgenname[PETSC_MAX_PATH_LEN];
+  char qloadprofile[PETSC_MAX_PATH_LEN];
+  char ploadprofile[PETSC_MAX_PATH_LEN];
+  PetscBool iscoupling;
+  PetscReal dt;
+  PetscReal duration;
+  PetscBool lineflow_constraints;
+
+  /// Attributes of tcopflow solution checked
+  PetscInt numiter;
+  PetscReal objective;
+} ExaGOSelfcheckTCOPFLOWAnswer;
+
+/** Returns 0 if tcopflow conforms to the answer, >0 otherwise. */
+extern PetscBool ExaGOSelfcheckTCOPFLOW(TCOPFLOW);
 #endif

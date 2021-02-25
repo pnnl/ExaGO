@@ -5,7 +5,9 @@
 
 #define ExaGOSelfcheckPFLOWNumAnswers 3
 
-/** Array of available reference solutions for PFLOW selfcheck */
+/** Array of available reference solutions for PFLOW selfcheck
+ * See test/functionality/utils/selfcheck.h for selcheck solution structure
+ */
 static const ExaGOSelfcheckPFLOWAnswer ExaGOSelfcheckPFLOWAnswers[ExaGOSelfcheckPFLOWNumAnswers] =
 {
   /* Network, number of iterations */
@@ -56,7 +58,10 @@ PetscBool ExaGOSelfcheckPFLOW(PFLOW pflow)
 
   ierr = ExaGOSelfcheckPFLOWFindAnswer(pflow, ans);
   if (ierr)
+  {
+    free(ans);
     return ierr;
+  }
     
   /* Get the current number of iterations */
   ierr = PFLOWGetNumIterations(pflow, &numiter);CHKERRQ(ierr);

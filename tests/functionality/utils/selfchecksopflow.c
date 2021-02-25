@@ -5,7 +5,9 @@
 
 #define ExaGOSelfcheckSOPFLOWNumAnswers 5
 
-/** Array of available reference solutions for PFLOW selfcheck */
+/** Array of available reference solutions for PFLOW selfcheck
+ * See test/functionality/utils/selfcheck.h for selcheck solution structure
+ */
 static const ExaGOSelfcheckSOPFLOWAnswer ExaGOSelfcheckSOPFLOWAnswers[ExaGOSelfcheckSOPFLOWNumAnswers] =
 {
   /* Network, number of iterations */
@@ -31,10 +33,6 @@ PetscBool ExaGOSelfcheckSOPFLOWFindAnswer(SOPFLOW sopflow,ExaGOSelfcheckSOPFLOWA
   char ctgcfile[PETSC_MAX_PATH_LEN];
   char ploadprofile[PETSC_MAX_PATH_LEN];
   char qloadprofile[PETSC_MAX_PATH_LEN];
-  PetscBool multicontingency;
-  PetscBool multiperiod;
-  PetscReal dt;
-  PetscReal duration;
 
   // Verify all necessary options are being passed
 
@@ -209,7 +207,10 @@ PetscBool ExaGOSelfcheckSOPFLOW(SOPFLOW sopflow)
 
   ierr = ExaGOSelfcheckSOPFLOWFindAnswer(sopflow, ans);CHKERRQ(ierr);
   if (ierr)
+  {
+    free(ans);
     return ierr;
+  }
 
   // Printing config makes greping for solutions/results easier
   char config[PETSC_MAX_PATH_LEN];

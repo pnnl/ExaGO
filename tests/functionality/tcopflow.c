@@ -2,7 +2,8 @@ static char help[] = "User example calling TCOPFLOW.\n\n";
 
 #include <exago_config.h>
 #include <tcopflow.h>
-
+#include <selfcheck.h>
+#include <utils.h>
 
 int main(int argc,char **argv)
 {
@@ -13,17 +14,28 @@ int main(int argc,char **argv)
   char              qloadprofile[PETSC_MAX_PATH_LEN];
   char              windgenprofile[PETSC_MAX_PATH_LEN];
   PetscBool         flg=PETSC_FALSE,flg1=PETSC_FALSE,flg2=PETSC_FALSE,flg3=PETSC_FALSE;
+  PetscBool         print_output=PETSC_FALSE,save_output=PETSC_FALSE;
   #if defined(PETSC_USE_LOG)
     PetscLogStage stages[2];
   #endif
   char options_pathname[200] = EXAGO_OPTIONS_DIR;
   char filename[] = "/tcopflowoptions";
-  printf("%s\n", options_pathname);
-  printf("%s\n", filename);
-  strcat(options_pathname, filename);
-  printf("%s\n", options_pathname);
+  MPI_Comm          comm=MPI_COMM_WORLD;
+  char              appname[]="tcopflow";
+
+  /** Use `ExaGOLogSetLoggingFileName("opflow-logfile");` to log the output. */
+  ierr = ExaGOInitialize(comm,&argc,&argv,appname,help);
+  if (ierr)
+  {
+    fprintf(stderr,"Could not initialize ExaGO application %s.\n",appname);
+    return ierr;
+  }
+
 
   PetscInitialize(&argc,&argv,options_pathname,help);
+
+  ierr = PetscOptionsGetBool(NULL,NULL,"-print_output",&print_output,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(NULL,NULL,"-save_output",&save_output,NULL);CHKERRQ(ierr);
 
   /* PetscLogStageRegister */
   ierr = PetscLogStageRegister("Reading Data",&stages[0]);CHKERRQ(ierr);
@@ -72,13 +84,20 @@ int main(int argc,char **argv)
   ierr = PetscLogStagePop();CHKERRQ(ierr);
 
   /* Print solution */
-  ierr = TCOPFLOWPrintSolution(tcopflow,0);CHKERRQ(ierr);
+  if(print_output) {
+    ierr = TCOPFLOWPrintSolution(tcopflow,0);CHKERRQ(ierr);
+  }
 
-  ierr = TCOPFLOWSaveSolutionAll(tcopflow,MATPOWER,"tcopflowout");CHKERRQ(ierr);
+  /* Save solution */
+  if(save_output) {
+    ierr = TCOPFLOWSaveSolutionAll(tcopflow,MATPOWER,"tcopflowout");CHKERRQ(ierr);
+  }
+
+  int ret = ExaGOSelfcheckTCOPFLOW(tcopflow);
 
   /* Destroy OPFLOW object */
   ierr = TCOPFLOWDestroy(&tcopflow);CHKERRQ(ierr);
 
-  PetscFinalize();
-  return 0;
+  ExaGOFinalize();
+  return ret;
 }

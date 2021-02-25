@@ -35,7 +35,9 @@ PETSC_EXTERN PetscErrorCode TCOPFLOWPrintSolution(TCOPFLOW,PetscInt);
 PETSC_EXTERN PetscErrorCode TCOPFLOWSaveSolution(TCOPFLOW,PetscInt,OutputFormat,const char[]);
 PETSC_EXTERN PetscErrorCode TCOPFLOWSaveSolutionAll(TCOPFLOW,OutputFormat,const char[]);
 PETSC_EXTERN PetscErrorCode TCOPFLOWGetConvergenceStatus(TCOPFLOW,PetscBool*);
-
+PETSC_EXTERN PetscErrorCode TCOPFLOWGetNumIterations(TCOPFLOW,PetscInt*);
+PETSC_EXTERN PetscErrorCode TCOPFLOWSetTolerance(TCOPFLOW,PetscReal);
+PETSC_EXTERN PetscErrorCode TCOPFLOWGetTolerance(TCOPFLOW,PetscReal*);
 
 #endif
 

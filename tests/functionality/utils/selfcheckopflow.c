@@ -8,6 +8,7 @@
 /**
  * Array of available reference solutions for OPFLOW selfcheck.
  * See docs/web/opflow.md for more information on solver/model combinations.
+ * See test/functionality/utils/selfcheck.h for selcheck solution structure
  */
 static const ExaGOSelfcheckOPFLOWAnswer ExaGOSelfcheckOPFLOWAnswers[ExaGOSelfcheckOPFLOWNumAnswers] =
 {
@@ -123,8 +124,11 @@ PetscBool ExaGOSelfcheckOPFLOW(OPFLOW opflow)
   /** Ensure answer for given opflow configuration exists */
   ierr = ExaGOSelfcheckOPFLOWFindAnswer(opflow,ans);
   if (ierr)
+  {
+    free(ans);
     return ierr;
-
+  }
+  
   /** Printing config makes greping for solutions/results easier */
   char config[PETSC_MAX_PATH_LEN];
   sprintf(config,"%s+%s+%s",ans->solver,ans->model,ans->networkname);
