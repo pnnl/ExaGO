@@ -1,5 +1,5 @@
 ## AC optimal power flow (OPFLOW)
-OPFLOW solves a nonlinear AC optimal power flow problem where the  objective is generator-cost minimization subject to network balance, line flow, capacity, and voltage constaints. Load-loss and nodal power-imbalance can be (optionally) activated. 
+OPFLOW solves a nonlinear AC optimal power flow problem where the  (default) objective is generator-cost minimization subject to network balance, line flow, capacity, and voltage constaints. Load-loss and nodal power-imbalance can be (optionally) activated. 
 
 ### Usage
 
@@ -82,6 +82,7 @@ The behavior of OPFLOW is controlled through the different options given in the 
 |-opflow_powerimbalance_penalty| Penalty ($) for  power imbalance at bus| (1000)|
 |-opflow_genbusvoltage| Control mode for generator bus voltage| "VARIABLE_WITHIN_BOUNDS"<br>"FIXED_WITHIN_QBOUNDS" (default)<br>"FIXED_AT_SETPOINT"|
 |-opflow_has_gensetpoint| Real power set point set? | 0 or 1 (0)|
+|-opflow_objective| Objective function| "MIN_GEN_COST" (default)<br>"MIN_GENSETPOINT_DEVIATION"<br>"NO_OBJ"|
 |-opflow_use_agc| Use AGC for generator real power redispatch?| 0 or 1 (0)|
 |-opflow_tolerance|Optimization solver tolerance | (1e-6)
 |-hiop_compute_mode|Controls the `-compute_mode` option for HIOP solver, i.e., where the HIOP solver computations run|"auto" (default)<br> "cpu"<br>"hybrid"<br>"gpu"|

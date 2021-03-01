@@ -272,6 +272,9 @@ See table \ref{tab:opflow_options}
     -opflow\_model & Representation of network balance equations and bus voltages & See Table \ref{sec:opflow_model} (POWER\_BALANCE\_POLAR) \\ \hline
     -opflow\_solver & Optimization solver & See section \ref{sec:opflow_solvers} \\ \hline
     -opflow\_initialization & Type of initialization & See Table \ref{tab:opflow_initializations} (MIDPOINT) \\ \hline
+    -opflow\_has\_gensetpoint & Uses generation set point and activates ramping variables & 0 or 1 (0) \\ \hline
+    -opflow\_use\_agc & Uses AGC formulation in OPF & 0 or 1 (0) \\
+    -opflow\_objective & type of objective function & See table \ref{sec:opflow_objtypes} (MIN\_GEN\_COST) \\ \hline
     -opflow\_genbusvoltage & Type of generator bus voltage control & See Table \ref{tab:opflow_genbusvoltage} (FIXED\_WITHIN\_QBOUNDS) \\ \hline
     -opflow\_ignore\_lineflow\_constraints & Ignore line flow constraints & 0 or 1 (0) \\ \hline
     -opflow\_include\_loadloss\_variables & Include load loss & 0 or 1 (0) \\ \hline
@@ -309,6 +312,20 @@ See table \ref{tab:opflow_options}
   \end{tabular}
 \label{tab:opflow_genbusvoltage}
 \end{table}
+
+\begin{table}[h]
+  \centering
+  \caption{OPFLOW objective function types}
+  \begin{tabular}{|c|c|}
+    \hline
+    \textbf{Objective function} & \textbf{Meaning} \\ \hline
+    MIN\_GEN\_COST & Minimize generation cost \\ \hline
+    MIN\_GENSETPOINT\_DEVIATION & Minimize deviation (ramp up-down) from generataor set-point \\ \hline
+    NO\_OBJ & No objecive function
+  \end{tabular}
+\label{tab:opflow_objtypes}
+\end{table}
+
 
 \section{Examples}
 \todo
