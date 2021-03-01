@@ -1,5 +1,3 @@
-
-
 #include <private/opflowimpl.h>
 #include "exago_config.h"
 #include "pbpol.h"
@@ -1179,12 +1177,12 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow,Vec X,PetscScalar *obj
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
 
-      if(opflow->objectivetype == OPFLOWOBJ_MIN_GEN_COST) {
+      if(opflow->objectivetype == MIN_GEN_COST) {
 	loc = gen->startxpowloc;
 	Pg = x[loc]*ps->MVAbase;
 	*obj += gen->cost_alpha*Pg*Pg + gen->cost_beta*Pg + gen->cost_gamma;
 	flps += 7.0;
-      } else if(opflow->objectivetype == OPFLOWOBJ_MIN_GENSETPOINT_DEVIATION) {
+      } else if(opflow->objectivetype == MIN_GENSETPOINT_DEVIATION) {
 	loc = gen->startxpdevloc;
 	PetscScalar delPgup,delPgdown;
 	delPgup   = x[loc];
@@ -1251,12 +1249,12 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow,Vec X,Vec grad)
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
 
-      if(opflow->objectivetype == OPFLOWOBJ_MIN_GEN_COST) {
+      if(opflow->objectivetype == MIN_GEN_COST) {
 	loc = gen->startxpowloc;
 	Pg = x[loc]*ps->MVAbase;
 	df[loc] = ps->MVAbase*(2*gen->cost_alpha*Pg + gen->cost_beta);
 	flps += 5.0;
-      } else if(opflow->objectivetype == OPFLOWOBJ_MIN_GENSETPOINT_DEVIATION) {
+      } else if(opflow->objectivetype == MIN_GENSETPOINT_DEVIATION) {
 	PetscScalar delPgup,delPgdown;
 	loc = gen->startxpdevloc;
 	delPgup   = x[loc];
@@ -2243,7 +2241,7 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow,Vec X,Mat H)
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
 
-      if(opflow->objectivetype == OPFLOWOBJ_MIN_GEN_COST) {
+      if(opflow->objectivetype == MIN_GEN_COST) {
 	xlocglob = gen->startxpowlocglob;
 
 	row[0] = xlocglob;
@@ -2251,7 +2249,7 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow,Vec X,Mat H)
 
 	val[0] = obj_factor*2.0*gen->cost_alpha*ps->MVAbase*ps->MVAbase;
 	ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-      } else if(opflow->objectivetype == OPFLOWOBJ_MIN_GENSETPOINT_DEVIATION) {
+      } else if(opflow->objectivetype == MIN_GENSETPOINT_DEVIATION) {
 	xlocglob = gen->startxpdevlocglob;
 	row[0] = xlocglob;
 	col[0] = xlocglob;

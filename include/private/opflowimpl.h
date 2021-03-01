@@ -22,11 +22,6 @@ typedef enum {
 
 extern const char *const OPFLOWInitializationTypes[];
 
-typedef enum {
-  OPFLOWOBJ_MIN_GEN_COST, /* Generator cost minimization */
-  OPFLOWOBJ_MIN_GENSETPOINT_DEVIATION, /* Minimize generator set-point deviation */
-}OPFLOWObjectiveType;
-
 extern const char *const OPFLOWObjectiveTypes[];
 
 extern const char *const OPFLOWGenBusVoltageTypes[];

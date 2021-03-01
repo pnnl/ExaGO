@@ -22,6 +22,11 @@
 
 typedef struct _p_OPFLOW *OPFLOW;
 
+typedef enum {
+  MIN_GEN_COST, /* Generator cost minimization */
+  MIN_GENSETPOINT_DEVIATION, /* Minimize generator set-point deviation */
+}OPFLOWObjectiveType;
+
 /* Generator bus voltage type */
 typedef enum {
   VARIABLE_WITHIN_BOUNDS, /* Voltage can vary with voltage bounds */
@@ -44,6 +49,8 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetInitialGuess(OPFLOW,Vec);
 PETSC_EXTERN PetscErrorCode OPFLOWSetTolerance(OPFLOW,PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWGetTolerance(OPFLOW,PetscReal*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetNumIterations(OPFLOW,PetscInt*);
+PETSC_EXTERN PetscErrorCode OPFLOWGetObjectiveType(OPFLOW,OPFLOWObjectiveType*);
+PETSC_EXTERN PetscErrorCode OPFLOWSetObjectiveType(OPFLOW,OPFLOWObjectiveType);
 PETSC_EXTERN PetscErrorCode OPFLOWGetObjective(OPFLOW,PetscReal*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetVariableBounds(OPFLOW,Vec*,Vec*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetConstraintJacobian(OPFLOW,Mat*,Mat*);
@@ -79,6 +86,9 @@ PETSC_EXTERN PetscErrorCode OPFLOWHasGenSetPoint(OPFLOW,PetscBool);
 PETSC_EXTERN PetscErrorCode OPFLOWUseAGC(OPFLOW,PetscBool);
 
 PETSC_EXTERN PetscErrorCode OPFLOWSetGenBusVoltageType(OPFLOW,OPFLOWGenBusVoltageType);
+
+PETSC_EXTERN PetscErrorCode OPFLOWGetObjectiveType(OPFLOW,OPFLOWObjectiveType*);
+PETSC_EXTERN PetscErrorCode OPFLOWSetObjectiveType(OPFLOW,OPFLOWObjectiveType);
 
 #endif
 
