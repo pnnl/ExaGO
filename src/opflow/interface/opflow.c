@@ -5,7 +5,7 @@
 
 const char *const OPFLOWInitializationTypes[] = {"MIDPOINT","FROMFILE","ACPF","FLATSTART","OPFLOWInitializationType","OPFLOWINIT_",NULL};
 
-const char *const OPFLOWObjectiveTypes[] = {"MIN_GEN_COST","MIN_GENSETPOINT_DEVIATION","OPFLOWObjectiveType","OPFLOWOBJ_",NULL};
+const char *const OPFLOWObjectiveTypes[] = {"MIN_GEN_COST","MIN_GENSETPOINT_DEVIATION","OPFLOWObjectiveType","",NULL};
 
 const char *const OPFLOWGenBusVoltageTypes[] = {"VARIABLE_WITHIN_BOUNDS","FIXED_WITHIN_QBOUNDS","FIXED_AT_SETPOINT","OPFLOWGenBusVoltageType","",NULL};
 
@@ -292,7 +292,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
 
   opflow->initializationtype = OPFLOWINIT_MIDPOINT;
 
-  opflow->objectivetype = OPFLOWOBJ_MIN_GEN_COST;
+  opflow->objectivetype = MIN_GEN_COST;
 
   opflow->genbusvoltagetype = FIXED_WITHIN_QBOUNDS;
 
@@ -773,9 +773,9 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PetscOptionsReal("-opflow_tolerance","optimization tolerance","",opflow->tolerance,&opflow->tolerance,NULL);CHKERRQ(ierr);
 
 
-  if(opflow->objectivetype == OPFLOWOBJ_MIN_GEN_COST) {
+  if(opflow->objectivetype == MIN_GEN_COST) {
     opflow->obj_gencost = PETSC_TRUE;
-  } else if(opflow->objectivetype == OPFLOWOBJ_MIN_GENSETPOINT_DEVIATION) {
+  } else if(opflow->objectivetype == MIN_GENSETPOINT_DEVIATION) {
     opflow->obj_gencost = PETSC_FALSE;
     opflow->has_gensetpoint = PETSC_TRUE;
   }
@@ -1582,5 +1582,39 @@ PetscErrorCode OPFLOWSolutionToPS(OPFLOW opflow)
   ierr = (*opflow->modelops.solutiontops)(opflow);
 
   opflow->solutiontops = PETSC_TRUE;
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWSetObjectiveType - Sets the objective function for OPFLOW
+
+  Input Parameters
++ opflow - the opflow object
+- objtype - type of objective function
+
+  Command-line option: -opflow_objective <obj_type>
+
+  Notes: Must be called before OPFLOWSetUp
+*/
+PetscErrorCode OPFLOWSetObjectiveType(OPFLOW opflow,OPFLOWObjectiveType objtype)
+{
+  PetscFunctionBegin;
+  opflow->objectivetype = objtype;
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWGetObjectiveType - Gets the objective function for OPFLOW
+
+  Input Parameters
++ opflow - the opflow object
+- objtype - type of objective function
+
+  Notes: Must be called after OPFLOWSetUp
+*/
+PetscErrorCode OPFLOWGetObjectiveType(OPFLOW opflow,OPFLOWObjectiveType *objtype)
+{
+  PetscFunctionBegin;
+  *objtype = opflow->objectivetype;
   PetscFunctionReturn(0);
 }
