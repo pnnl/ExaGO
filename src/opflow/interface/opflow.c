@@ -5,7 +5,7 @@
 
 const char *const OPFLOWInitializationTypes[] = {"MIDPOINT","FROMFILE","ACPF","FLATSTART","OPFLOWInitializationType","OPFLOWINIT_",NULL};
 
-const char *const OPFLOWObjectiveTypes[] = {"MIN_GEN_COST","MIN_GENSETPOINT_DEVIATION","OPFLOWObjectiveType","",NULL};
+const char *const OPFLOWObjectiveTypes[] = {"MIN_GEN_COST","MIN_GENSETPOINT_DEVIATION","NO_OBJ","OPFLOWObjectiveType","",NULL};
 
 const char *const OPFLOWGenBusVoltageTypes[] = {"VARIABLE_WITHIN_BOUNDS","FIXED_WITHIN_QBOUNDS","FIXED_AT_SETPOINT","OPFLOWGenBusVoltageType","",NULL};
 

@@ -25,6 +25,7 @@ typedef struct _p_OPFLOW *OPFLOW;
 typedef enum {
   MIN_GEN_COST, /* Generator cost minimization */
   MIN_GENSETPOINT_DEVIATION, /* Minimize generator set-point deviation */
+  NO_OBJ, /* No objective function */
 }OPFLOWObjectiveType;
 
 /* Generator bus voltage type */
