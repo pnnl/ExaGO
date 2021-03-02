@@ -15,7 +15,7 @@ classDiagram
 %% Inheritance Chain
 
 OPFLOWDriver o-- OPFLOW
-OPFLOWDriver *-- OPFLOWOptions
+OPFLOWDriver .. OPFLOWOptions : Command Line Options
 
 OPFLOW *-- OPFLOWModel
 OPFLOW *-- OPFLOWSolver
@@ -26,6 +26,11 @@ OPFLOW *-- OPFLOWObjectiveType
 OPFLOW *-- OPFLOWGenBusVoltageType
 
 PS *-- PSApp
+PS *-- PSBUS
+PS *-- PSLOAD
+PS *-- PSGEN
+PS *-- PSLINE
+PS *-- DM
 
 OPFLOWModel <|-- POWER_BALANCE_POLAR
 OPFLOWModel <|-- POWER_BALANCE_HIOP
@@ -44,7 +49,7 @@ class OPFLOWDriver {
 }
 
 class OPFLOWOptions {
-  +string "-netfile"
+  +path "-netfile"
   +bool "-print_output"
   +bool "-save_output"
   +OPFLOWModel "-opflow_model"
@@ -131,6 +136,23 @@ class OPFLOW {
 
 class PS {
   -PSApp app
+  -PSBUS bus
+  -PSLOAD load
+  -PSGEN gen
+  -PSLINE line
+  -DM networkdm
+  -PSCheckTopology(PS)
+  -PSGetLine(PS,PetscInt,PetscInt,const char*,PSLINE*)
+  -PSGetGen(PS,PetscInt,const char*,PSGEN*)
+  -PSGetLoad(PS,PetscInt,const char*,PSLOAD*)
+  -PSSetGenStatus(PS,PetscInt,const char*,PetscInt)
+  -PSSetLineStatus(PS,PetscInt,PetscInt,const char*,PetscInt)
+  -PSIslandCheckandSetRefBus(PS,PetscInt)
+  -PSConnCompDestroy(PS)
+  -PSSetEdgeandBusStartLoc(PS)
+  -PSPrintSystemSummary(PS)
+  -PSSaveSolution(PS,OutputFormat,const char[])
+  -PSApplyContingency(PS,Contingency)
   +PSReadMatPowerData(PS,const char[])
   +PSReadPSSERawData(PS,const char[])
   +PSCreate(MPI_Comm,PS*)
@@ -167,6 +189,11 @@ class PS {
   +PSCheckandSetRefBus(PS)
   +PSGetTotalGeneration(PS,PetscScalar*,PetscScalar*)
   +PSComputeParticipationFactors(PS)
+}
+
+class PSBUS {
+  +PSGEN[] gens
+  +PSLOAD[] loads
 }
 
 class PSApp {
@@ -228,7 +255,6 @@ class OPFLOWSolver {
 %% Models
 
 class POWER_BALANCE_POLAR {
-  +PetscInt Nx
   +OPFLOWModelDestroy_PBPOL()
   +OPFLOWSetVariableBounds_PBPOL()
   +OPFLOWSetConstraintBounds_PBPOL()
@@ -255,18 +281,8 @@ class POWER_BALANCE_POLAR {
 }
 
 class POWER_BALANCE_HIOP {
-  +GENParams genparams
-  +LOADParams loadparams
-  +LINEParams lineparams
-  +BUSParams  busparams
-  +CreateBusParams()
-  +CreateLineParams()
-  +CreateLoadParams()
-  +CreateGenParams()
-  +DestroyBusParams()
-  +DestroyLineParams()
-  +DestroyLoadParams()
-  +DestroyGenParams()
+  +OPFLOWModelDestroy_PBPOLHIOP()
+  +OPFLOWModelCreate_PBPOLHIOP()
   +OPFLOWSetVariableBounds_PBPOLHIOP()
   +OPFLOWSetVariableBoundsArray_PBPOLHIOP()
   +OPFLOWSetConstraintBounds_PBPOLHIOP()
@@ -307,7 +323,6 @@ class PBPOLRAJAHIOP {
 }
 
 class POWER_BALANCE_CARTESIAN {
-  +PetscInt Nx
   +OPFLOWModelDestroy_PBCAR()
   +OPFLOWSetVariableBounds_PBCAR()
   +OPFLOWSetConstraintBounds_PBCAR()
