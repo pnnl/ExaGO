@@ -1,0 +1,400 @@
+
+%%------------------------------------------------------------------------------
+%% UML Diagrams for OPFLOW
+%%
+%% Command to build this document:
+%%
+%% mmdc -i opflow.mermaid -o opflow.png -w 3200 -H 2400
+%%
+%% See https://mermaid-js.github.io/mermaid/ for mermaid installation guide.
+%%
+%%------------------------------------------------------------------------------
+
+classDiagram
+
+%% Inheritance Chain
+
+OPFLOWDriver o-- OPFLOW
+OPFLOWDriver *-- OPFLOWOptions
+
+OPFLOW *-- OPFLOWModel
+OPFLOW *-- OPFLOWSolver
+OPFLOW *-- PS
+
+OPFLOW *-- OPFLOWInitializationType
+OPFLOW *-- OPFLOWObjectiveType
+OPFLOW *-- OPFLOWGenBusVoltageType
+
+PS *-- PSApp
+
+OPFLOWModel <|-- POWER_BALANCE_POLAR
+OPFLOWModel <|-- POWER_BALANCE_HIOP
+OPFLOWModel <|-- PBPOLRAJAHIOP
+OPFLOWModel <|-- POWER_BALANCE_CARTESIAN
+
+OPFLOWSolver <|-- HIOP
+OPFLOWSolver <|-- IPOPT
+OPFLOWSolver <|-- TAO
+HIOP *-- HIOPComputeMode
+
+%% Class Definitions
+
+class OPFLOWDriver {
+  <<executable>>
+}
+
+class OPFLOWOptions {
+  +string "-netfile"
+  +bool "-print_output"
+  +bool "-save_output"
+  +OPFLOWModel "-opflow_model"
+  +OPFLOWSolver "-opflow_solver"
+  +OPFLOWInitializationType "-opflow_initialization"
+  +bool "-opflow_has_gensetpoint"
+  +bool "-opflow_use_agc"
+  +OPFLOWObjectiveType "-opflow_objective"
+  +OPFLOWGenBusVoltageType "-opflow_genbusvoltage"
+  +bool "-opflow_ignore_lineflow_constraints"
+  +bool "-opflow_include_loadloss_variables"
+  +bool "-opflow_include_powerimbalance_variables"
+  +float "-opflow_loadloss_penality"
+  +float "-opflow_powerimbalance_penalty"
+  +float "-opflow_tolerance"
+}
+
+class OPFLOW {
+  -OPFLOWInitializationType initializationtype
+  -OPFLOWObjectiveType objectivetype
+  -OPFLOWGenBusVoltageType genbusvoltagetype
+  -OPFLOWModel* model
+  -OPFLOWSolver* solver
+  -PS ps
+  -OPFLOWModelRegisterAll(OPFLOW)
+  -OPFLOWSolverRegisterAll(OPFLOW)
+  -OPFLOWSolutionToPS(OPFLOW)
+  +OPFLOWSetModel(OPFLOW,const char[])
+  +OPFLOWSetSolver(OPFLOW,const char[])
+  +OPFLOWModelRegister(OPFLOW,const char[],PetscErrorCode (*create)(OPFLOW))
+  +OPFLOWSolverRegister(OPFLOW,const char[],PetscErrorCode (*create)(OPFLOW))
+  +OPFLOWCreate(MPI_Comm,OPFLOW*)
+  +OPFLOWDestroy(OPFLOW*)
+  +OPFLOWReadMatPowerData(OPFLOW,const char[])
+  +OPFLOWSetUp(OPFLOW)
+  +OPFLOWCreateGlobalVector(OPFLOW,Vec*)
+  +OPFLOWCreateMatrix(OPFLOW,Mat*)
+  +OPFLOWSolve(OPFLOW)
+  +OPFLOWSetInitialGuess(OPFLOW,Vec)
+  +OPFLOWSetTolerance(OPFLOW,PetscReal)
+  +OPFLOWGetTolerance(OPFLOW,PetscReal*)
+  +OPFLOWGetNumIterations(OPFLOW,PetscInt*)
+  +OPFLOWGetObjectiveType(OPFLOW,OPFLOWObjectiveType*)
+  +OPFLOWSetObjectiveType(OPFLOW,OPFLOWObjectiveType)
+  +OPFLOWGetObjective(OPFLOW,PetscReal*)
+  +OPFLOWGetVariableBounds(OPFLOW,Vec*,Vec*)
+  +OPFLOWGetConstraintJacobian(OPFLOW,Mat*,Mat*)
+  +OPFLOWGetHessian(OPFLOW,Mat*,PetscScalar*)
+  +OPFLOWGetSolution(OPFLOW,Vec*)
+  +OPFLOWGetConvergenceStatus(OPFLOW,PetscBool*)
+  +OPFLOWGetConstraints(OPFLOW,Vec*)
+  +OPFLOWGetConstraintMultipliers(OPFLOW,Vec*)
+  
+  +OPFLOWComputeVariableBounds(OPFLOW,Vec,Vec)
+  +OPFLOWComputeGradient(OPFLOW,Vec,Vec)
+  +OPFLOWComputeGradientArray(OPFLOW,const double*,double*)
+  +OPFLOWComputeObjective(OPFLOW,Vec,PetscReal*)
+  +OPFLOWComputeObjectiveArray(OPFLOW,const double*,double*)
+  +OPFLOWComputeConstraints(OPFLOW,Vec,Vec)
+  +OPFLOWComputeEqualityConstraints(OPFLOW,Vec,Vec)
+  +OPFLOWComputeInequalityConstraints(OPFLOW,Vec,Vec)
+  +OPFLOWComputeEqualityConstraintsArray(OPFLOW,const double*,double*)
+  +OPFLOWComputeInequalityConstraintsArray(OPFLOW,const double*,double*)
+  
+  +OPFLOWGetConstraintBounds(OPFLOW,Vec*,Vec*)
+  +OPFLOWComputeConstraintBounds(OPFLOW,Vec,Vec)
+  +OPFLOWComputeConstraintJacobian(OPFLOW,Vec,Mat,Mat)
+  +OPFLOWComputeHessian(OPFLOW,Vec,Vec,PetscScalar,Mat)
+  
+  +OPFLOWPrintSolution(OPFLOW)
+  +OPFLOWSaveSolution(OPFLOW,OutputFormat,const char[])
+  
+  +OPFLOWGetVariableOrdering(OPFLOW,int**)
+  +OPFLOWGetSizes(OPFLOW,int*,int*,int*)
+  
+  +OPFLOWHasGenSetPoint(OPFLOW,PetscBool)
+  +OPFLOWUseAGC(OPFLOW,PetscBool)
+  
+  +OPFLOWSetGenBusVoltageType(OPFLOW,OPFLOWGenBusVoltageType)
+  
+  +OPFLOWGetObjectiveType(OPFLOW,OPFLOWObjectiveType*)
+  +OPFLOWSetObjectiveType(OPFLOW,OPFLOWObjectiveType)
+}
+
+class PS {
+  -PSApp app
+  +PSReadMatPowerData(PS,const char[])
+  +PSReadPSSERawData(PS,const char[])
+  +PSCreate(MPI_Comm,PS*)
+  +PSDestroy(PS*)
+  +PSGENDestroy(PS)
+  +PSIncreaseReferenceCount(PS)
+  +PSDescreaseReferenceCount(PS)
+  +PSSetApplication(PS,void*,PSApp)
+  +PSSetUp(PS)
+  +PSCreateGlobalVector(PS, Vec*)
+  +PSCreateMatrix(PS,Mat*)
+  +PSBUSIsGhosted(PSBUS,PetscBool*)
+  +PSBUSGetNGen(PSBUS,PetscInt*)
+  +PSBUSGetNLoad(PSBUS,PetscInt*)
+  +PSBUSGetGen(PSBUS,PetscInt,PSGEN*)
+  +PSBUSSetGenStatus(PSBUS,char[],PetscInt)
+  +PSBUSGetLoad(PSBUS,PetscInt,PSLOAD*)
+  +PSBUSGetVariableLocation(PSBUS,PetscInt*)
+  +PSBUSGetVariableGlobalLocation(PSBUS,PetscInt*)
+  +PSBUSGetSupportingLines(PSBUS,PetscInt*,const PSLINE**)
+  +PSBUSAddShunt(PSBUS,PetscScalar,PetscScalar)
+  +PSLINEGetConnectedBuses(PSLINE,const PSBUS**)
+  +PSLINESetStatus(PSLINE,PetscInt)
+  +PSLINEGetVariableLocation(PSLINE,PetscInt*)
+  +PSLINEGetVariableGlobalLocation(PSLINE,PetscInt*)
+  +PSGetNumActiveLines(PS,PetscInt*,PetscInt*)
+  +PSGetNumGenerators(PS,PetscInt*,PetscInt*)
+  +PSGetNumLoads(PS,PetscInt*,PetscInt*)
+  +PSGetNumActiveGenerators(PS,PetscInt*,PetscInt*)
+  +PSGetNumGlobalBuses(PS,PetscInt*)
+  +PSGENSetStatus(PSGEN,PetscInt)
+  +PSLOADSetStatus(PSLOAD,PetscInt)
+  +PSSetGenDispatchandStatus(PS,PetscInt,PetscInt,PetscInt,PetscScalar,PetscScalar)
+  +PSCheckandSetRefBus(PS)
+  +PSGetTotalGeneration(PS,PetscScalar*,PetscScalar*)
+  +PSComputeParticipationFactors(PS)
+}
+
+class PSApp {
+  <<enumeration>>
+  APP_NONE
+  APP_ACPF
+  APP_ACOPF
+}
+
+class OPFLOWModel {
+  <<interface>>
+  +destroy(OPFLOW)
+  +setup(OPFLOW)
+  +setnumvariables(OPFLOW,PetscInt*,PetscInt*,PetscInt*)
+  +setnumconstraints(OPFLOW,PetscInt*,PetscInt*,PetscInt*,PetscInt*)
+  +setvariablebounds(OPFLOW,Vec,Vec)
+  +setvariableboundsarray(OPFLOW,double*,double*)
+  +setconstraintbounds(OPFLOW,Vec,Vec)
+  +setconstraintboundsarray(OPFLOW,double*,double*)
+  +setvariableandconstraintbounds(OPFLOW,Vec,Vec,Vec,Vec)
+  +setvariableandconstraintboundsarray(OPFLOW,double*,double*,double*,double*)
+  +setinitialguess(OPFLOW,Vec)
+  +setinitialguessarray(OPFLOW,double*)
+  +computeequalityconstraints(OPFLOW,Vec,Vec)
+  +computeequalityconstraintsarray(OPFLOW,const double*,double*)
+  +computeinequalityconstraints(OPFLOW,Vec,Vec)
+  +computeinequalityconstraintsarray(OPFLOW,const double*,double*)
+  +computeconstraints(OPFLOW,Vec,Vec)
+  +computeconstraintsarray(OPFLOW,double*,double*)
+  +computeequalityconstraintjacobian(OPFLOW,Vec,Mat)
+  +computeinequalityconstraintjacobian(OPFLOW,Vec,Mat)
+  +computehessian(OPFLOW,Vec,Vec,Vec,Mat)
+  +computeobjandgradient(OPFLOW,Vec,PetscScalar*,Vec)
+  +computeobjective(OPFLOW,Vec,PetscScalar*)
+  +computeobjectivearray(OPFLOW,const double*,double*)
+  +computegradient(OPFLOW,Vec,Vec)
+  +computegradientarray(OPFLOW,const double*,double*)
+  +computejacobian(OPFLOW,Vec,Mat)
+  +solutiontops(OPFLOW)
+  +computesparsejacobianhiop(OPFLOW,int*,int*,double*)
+  +computesparsehessianhiop(OPFLOW,const double*,int*,int*,double*)
+  +computedenseequalityconstraintjacobianhiop(OPFLOW,const double*,double*)
+  +computedenseinequalityconstraintjacobianhiop(OPFLOW,const double*,double*)
+  +computedensehessianhiop(OPFLOW,const double*,const double*,double*)
+}
+
+class OPFLOWSolver {
+  <<interface>>
+  +destroy(OPFLOW)
+  +setup(OPFLOW)
+  +solve(OPFLOW)
+  +getobjective(OPFLOW,PetscReal*)
+  +getsolution(OPFLOW,Vec*)
+  +getconvergencestatus(OPFLOW,PetscBool*)
+  +getconstraints(OPFLOW,Vec*)
+  +getconstraintmultipliers(OPFLOW,Vec*)
+}
+
+%% Models
+
+class POWER_BALANCE_POLAR {
+  +PetscInt Nx
+  +OPFLOWModelDestroy_PBPOL()
+  +OPFLOWSetVariableBounds_PBPOL()
+  +OPFLOWSetConstraintBounds_PBPOL()
+  +OPFLOWSetVariableandConstraintBounds_PBPOL()
+  +OPFLOWSetInitialGuess_PBPOL()
+  +OPFLOWComputeEqualityConstraints_PBPOL()
+  +OPFLOWComputeEqualityConstraintJacobian_PBPOL()
+  +OPFLOWComputeInequalityConstraints_PBPOL()
+  +OPFLOWComputeInequalityConstraintJacobian_PBPOL()
+  +OPFLOWComputeConstraints_PBPOL()
+  +OPFLOWComputeObjective_PBPOL()
+  +OPFLOWComputeGradient_PBPOL()
+  +OPFLOWComputeObjandGradient_PBPOL()
+  +OPFLOWModelSetNumVariables_PBPOL()
+  +OPFLOWModelSetNumConstraints_PBPOL()
+  +OPFLOWComputeEqualityConstraintsHessian_PBPOL()
+  +OPFLOWComputeInequalityConstraintsHessian_PBPOL()
+  +OPFLOWComputeObjectiveHessian_PBPOL()
+  +OPFLOWComputeHessian_PBPOL()
+  +ComputeObjectiveHessian_PBPOL()
+  +OPFLOWSolutionToPS_PBPOL()
+  +OPFLOWModelSetUp_PBPOL()
+  +OPFLOWModelCreate_PBPOL()
+}
+
+class POWER_BALANCE_HIOP {
+  +GENParams genparams
+  +LOADParams loadparams
+  +LINEParams lineparams
+  +BUSParams  busparams
+  +CreateBusParams()
+  +CreateLineParams()
+  +CreateLoadParams()
+  +CreateGenParams()
+  +DestroyBusParams()
+  +DestroyLineParams()
+  +DestroyLoadParams()
+  +DestroyGenParams()
+  +OPFLOWSetVariableBounds_PBPOLHIOP()
+  +OPFLOWSetVariableBoundsArray_PBPOLHIOP()
+  +OPFLOWSetConstraintBounds_PBPOLHIOP()
+  +OPFLOWSetConstraintBoundsArray_PBPOLHIOP()
+  +OPFLOWComputeEqualityConstraints_PBPOLHIOP()
+  +OPFLOWComputeInequalityConstraints_PBPOLHIOP()
+  +OPFLOWComputeEqualityConstraintsArray_PBPOLHIOP()
+  +OPFLOWComputeInequalityConstraintsArray_PBPOLHIOP()
+  +OPFLOWComputeObjective_PBPOLHIOP()
+  +OPFLOWComputeGradient_PBPOLHIOP()
+  +OPFLOWComputeObjectiveArray_PBPOLHIOP()
+  +OPFLOWComputeGradientArray_PBPOLHIOP()
+  +OPFLOWComputeEqualityConstraintJacobian_PBPOLHIOP()
+  +OPFLOWComputeInequalityConstraintJacobian_PBPOLHIOP()
+  +OPFLOWComputeObjectiveHessian_PBPOLHIOP()
+  +OPFLOWComputeEqualityConstraintsHessian_PBPOLHIOP()
+  +OPFLOWComputeInequalityConstraintsHessian_PBPOLHIOP()
+  +OPFLOWComputeSparseJacobian_PBPOLHIOP()
+  +OPFLOWComputeSparseHessian_PBPOLHIOP()
+  +OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLHIOP()
+  +OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLHIOP()
+  +OPFLOWComputeDenseHessian_PBPOLHIOP()
+}
+
+class PBPOLRAJAHIOP {
+  +OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP()
+  +OPFLOWSetConstraintBoundsArray_PBPOLRAJAHIOP()
+  +OPFLOWSetInitialGuessArray_PBPOLRAJAHIOP()
+  +OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP()
+  +OPFLOWComputeInequalityConstraintsArray_PBPOLRAJAHIOP()
+  +OPFLOWComputeObjectiveArray_PBPOLRAJAHIOP()
+  +OPFLOWComputeGradientArray_PBPOLRAJAHIOP()
+  +OPFLOWComputeSparseJacobian_PBPOLRAJAHIOP()
+  +OPFLOWComputeSparseHessian_PBPOLRAJAHIOP()
+  +OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP()
+  +OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLRAJAHIOP()
+  +OPFLOWComputeDenseHessian_PBPOLRAJAHIOP()
+}
+
+class POWER_BALANCE_CARTESIAN {
+  +PetscInt Nx
+  +OPFLOWModelDestroy_PBCAR()
+  +OPFLOWSetVariableBounds_PBCAR()
+  +OPFLOWSetConstraintBounds_PBCAR()
+  +OPFLOWSetVariableandConstraintBounds_PBCAR()
+  +OPFLOWSetInitialGuess_PBCAR()
+  +OPFLOWComputeEqualityConstraints_PBCAR()
+  +OPFLOWComputeEqualityConstraintJacobian_PBCAR()
+  +OPFLOWComputeInequalityConstraints_PBCAR()
+  +OPFLOWComputeInequalityConstraintJacobian_PBCAR()
+  +OPFLOWComputeConstraints_PBCAR()
+  +OPFLOWComputeObjective_PBCAR()
+  +OPFLOWComputeGradient_PBCAR()
+  +OPFLOWComputeObjandGradient_PBCAR()
+  +OPFLOWModelSetNumVariables_PBCAR()
+  +OPFLOWModelSetNumConstraints_PBCAR()
+  +OPFLOWComputeEqualityConstraintsHessian_PBCAR()
+  +OPFLOWComputeInequalityConstraintsHessian_PBCAR()
+  +OPFLOWComputeObjectiveHessian_PBCAR()
+  +OPFLOWComputeHessian_PBCAR()
+  +OPFLOWSolutionToPS_PBCAR()
+  +OPFLOWModelCreate_PBCAR()
+}
+
+%% Solvers
+
+class HIOP {
+  -HIOPComputeMode computeMode
+  +OPFLOWSolverSetUp_HIOP()
+  +OPFLOWSolverSolve_HIOP()
+  +OPFLOWSolverDestroy_HIOP()
+  +OPFLOWSolverGetObjective_HIOP()
+  +OPFLOWSolverGetConvergenceStatus_HIOP()
+  +OPFLOWSolverGetSolution_HIOP()
+  +OPFLOWSolverGetConstraints_HIOP()
+  +OPFLOWSolverGetConstraintMultipliers_HIOP()
+}
+
+class HIOPComputeMode {
+  <<enumeration>>
+  AUTO
+  CPU
+  HYBRID
+  GPU
+}
+
+class IPOPT {
+  +OPFLOWSolverSetUp_IPOPT()
+  +OPFLOWSolverSolve_IPOPT()
+  +OPFLOWSolverDestroy_IPOPT()
+  +OPFLOWSolverGetObjective_IPOPT()
+  +OPFLOWSolverGetConvergenceStatus_IPOPT()
+  +OPFLOWSolverGetSolution_IPOPT()
+  +OPFLOWSolverGetConstraints_IPOPT()
+  +OPFLOWSolverGetConstraintMultipliers_IPOPT()
+}
+
+class TAO {
+  +OPFLOWSolverSetUp_TAO()
+  +OPFLOWSolverSolve_TAO()
+  +OPFLOWSolverDestroy_TAO()
+  +OPFLOWSolverGetObjective_TAO()
+  +OPFLOWSolverGetConvergenceStatus_TAO()
+  +OPFLOWSolverGetSolution_TAO()
+  +OPFLOWSolverGetConstraints_TAO()
+  +OPFLOWSolverGetConstraintMultipliers_TAO()
+}
+
+%% Member Enums
+
+class OPFLOWInitializationType {
+  <<enumeration>>
+  MIDPOINT
+  FROMFILE
+  ACPF
+  FLATSTART
+}
+
+class OPFLOWObjectiveType {
+  <<enumeration>>
+  MIN_GEN_COST
+  MIN_GENSETPOINT_DEVIATION
+  NO_OBJ
+}
+
+class OPFLOWGenBusVoltageType {
+  <<enumeration>>
+  VARIABLE_WITHIN_BOUNDS
+  FIXED_WITHIN_QBOUNDS
+  FIXED_AT_SETPOINT
+}
