@@ -120,6 +120,7 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
   ierr = PetscFree((*scopflow)->gstarti);CHKERRQ(ierr);
   ierr = PetscFree((*scopflow)->nxi);CHKERRQ(ierr);
   ierr = PetscFree((*scopflow)->ngi);CHKERRQ(ierr);
+  ierr = PetscFree((*scopflow)->nconeqcoup);CHKERRQ(ierr);
   ierr = PetscFree((*scopflow)->nconineqcoup);CHKERRQ(ierr);
   ierr = PetscFree((*scopflow)->ctgclist.cont);CHKERRQ(ierr);
   ierr = PetscFree(*scopflow);CHKERRQ(ierr);
@@ -282,8 +283,8 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
     ierr = PetscOptionsString("-scopflow_ploadprofile","Active power load profile","",ploadprofile,ploadprofile,100,&flg1);CHKERRQ(ierr);
     ierr = PetscOptionsString("-scopflow_qloadprofile","Reactive power load profile","",qloadprofile,qloadprofile,100,&flg2);CHKERRQ(ierr);
     ierr = PetscOptionsString("-scopflow_windgenprofile","Wind generation profile","",windgenprofile,windgenprofile,100,&flg3);CHKERRQ(ierr);
-  ierr = PetscOptionsReal("-scopflow_dT","Length of time-step (minutes)","",dT,&dT,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsReal("-scopflow_duration","Time horizon (hours)","",duration,&duration,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-scopflow_dT","Length of time-step (minutes)","",dT,&dT,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-scopflow_duration","Time horizon (hours)","",duration,&duration,NULL);CHKERRQ(ierr);
 
   }
 
@@ -368,9 +369,13 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 	}
       }
       
-      /* Set up OPFLOW object */
-      //    ierr = OPFLOWGenbusVoltageFixed(scopflow->opflows[c],PETSC_TRUE);CHKERRQ(ierr);
-      //    if(scopflow->cstart+c > 0) scopflow->opflows[c]->obj_gencost = PETSC_FALSE; /* No gen. cost minimization for second stage */
+      if(scopflow->cstart+c ==  0) { /* First stage */
+	ierr = OPFLOWSetObjectiveType(scopflow->opflows[c],MIN_GEN_COST);CHKERRQ(ierr);
+      } else { /* Second stages */
+	ierr = OPFLOWHasGenSetPoint(scopflow->opflows[c],PETSC_TRUE);CHKERRQ(ierr); /* Activates ramping variables */
+	ierr = OPFLOWSetObjectiveType(scopflow->opflows[c],NO_OBJ);CHKERRQ(ierr);
+      }
+
       ierr = OPFLOWSetUp(scopflow->opflows[c]);CHKERRQ(ierr);
     }
   } else {
@@ -407,7 +412,8 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
       ierr = TCOPFLOWSetUp(tcopflow);CHKERRQ(ierr);
     }
   }    
-  
+
+  ierr = PetscCalloc1(scopflow->nc,&scopflow->nconeqcoup);CHKERRQ(ierr);  
   ierr = PetscCalloc1(scopflow->nc,&scopflow->nconineqcoup);CHKERRQ(ierr);
   ierr = PetscCalloc1(scopflow->nc,&scopflow->nxi);CHKERRQ(ierr);
   ierr = PetscCalloc1(scopflow->nc,&scopflow->ngi);CHKERRQ(ierr);
@@ -415,12 +421,12 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscCalloc1(scopflow->nc,&scopflow->gstarti);CHKERRQ(ierr);
 
   /* Set number of variables and constraints */
-  ierr = (*scopflow->modelops.setnumvariablesandconstraints)(scopflow,scopflow->nxi,scopflow->ngi,scopflow->nconineqcoup);
+  ierr = (*scopflow->modelops.setnumvariablesandconstraints)(scopflow,scopflow->nxi,scopflow->ngi,scopflow->nconeqcoup,scopflow->nconineqcoup);
 
   if(!scopflow->ismultiperiod) {
     scopflow->nx = scopflow->nxi[0];
     scopflow->ncon = scopflow->ngi[0];
-    scopflow->nconcoup = scopflow->nconineqcoup[0];
+    scopflow->nconcoup = scopflow->nconeqcoup[0] + scopflow->nconineqcoup[0];
     opflow = scopflow->opflows[0];
     scopflow->nconeq = opflow->nconeq;
     scopflow->nconineq = opflow->nconineq;
@@ -430,7 +436,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
       scopflow->gstarti[i] = scopflow->gstarti[i-1] + scopflow->ngi[i-1];
       scopflow->nx += scopflow->nxi[i];
       scopflow->ncon += scopflow->ngi[i];
-      scopflow->nconcoup += scopflow->nconineqcoup[i];
+      scopflow->nconcoup += scopflow->nconeqcoup[i] + scopflow->nconineqcoup[i];
       opflow = scopflow->opflows[i];
       scopflow->nconeq   += opflow->nconeq;
       scopflow->nconineq += opflow->nconineq;
