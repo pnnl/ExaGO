@@ -19,7 +19,7 @@
 struct _p_SCOPFLOWModelOps {
   PetscErrorCode (*destroy)(SCOPFLOW);
   PetscErrorCode (*setup)(SCOPFLOW);
-  PetscErrorCode (*setnumvariablesandconstraints)(SCOPFLOW,PetscInt*,PetscInt*,PetscInt*); /* Set number of variables for buses and branches, and total number of variables */
+  PetscErrorCode (*setnumvariablesandconstraints)(SCOPFLOW,PetscInt*,PetscInt*,PetscInt*,PetscInt*); /* Set number of variables and constraints for each contingency, and the number of equality/inequality coupling constraints */
   PetscErrorCode (*setvariablebounds)(SCOPFLOW,Vec,Vec); /* Upper and lower bounds on the vector */
   PetscErrorCode (*setconstraintbounds)(SCOPFLOW,Vec,Vec); /* Lower and upper bounds on constraints */
   PetscErrorCode (*setvariableandconstraintbounds)(SCOPFLOW,Vec,Vec,Vec,Vec); /* Lower and upper bounds on variables and constraints */
@@ -63,7 +63,7 @@ struct _p_SCOPFLOW{
   PetscInt ncon,Ncon; /* Number of constraints */
   PetscInt nconeq,Nconeq; /* Local and global number of equality constraints */
   PetscInt nconineq, Nconineq; /* Local and global number of inequality constraints */
-  PetscInt *nconineqcoup;     /* Number of inequality coupling constraints for each contingency */
+  PetscInt *nconeqcoup,*nconineqcoup;     /* Number of equality and inequality coupling constraints for each contingency */
   PetscInt nconcoup,Nconcoup; /* Number of coupling constraints */
   PetscInt *nxi; /* Number of variables for each contingency */
   PetscInt *ngi; /* Number of constraints for each contingency (includes coupling constraints) */

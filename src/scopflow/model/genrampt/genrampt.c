@@ -419,7 +419,7 @@ PetscErrorCode SCOPFLOWComputeObjandGradient_GENRAMPT(SCOPFLOW scopflow,Vec X,Pe
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SCOPFLOWModelSetNumVariablesandConstraints_GENRAMPT(SCOPFLOW scopflow,PetscInt *nxi,PetscInt *ngi,PetscInt *nconineqcoup)
+PetscErrorCode SCOPFLOWModelSetNumVariablesandConstraints_GENRAMPT(SCOPFLOW scopflow,PetscInt *nxi,PetscInt *ngi,PetscInt *nconeqcoup,PetscInt *nconineqcoup)
 {
   PetscInt c,ngenON;
   TCOPFLOW  tcopflow;
