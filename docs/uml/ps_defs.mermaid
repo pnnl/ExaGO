@@ -1,0 +1,68 @@
+class PS {
+  -PSApp app
+  -PSBUS bus
+  -PSLOAD load
+  -PSGEN gen
+  -PSLINE line
+  -DM networkdm
+  -PSCheckTopology(PS)
+  -PSGetLine(PS,PetscInt,PetscInt,const char*,PSLINE*)
+  -PSGetGen(PS,PetscInt,const char*,PSGEN*)
+  -PSGetLoad(PS,PetscInt,const char*,PSLOAD*)
+  -PSSetGenStatus(PS,PetscInt,const char*,PetscInt)
+  -PSSetLineStatus(PS,PetscInt,PetscInt,const char*,PetscInt)
+  -PSIslandCheckandSetRefBus(PS,PetscInt)
+  -PSConnCompDestroy(PS)
+  -PSSetEdgeandBusStartLoc(PS)
+  -PSPrintSystemSummary(PS)
+  -PSSaveSolution(PS,OutputFormat,const char[])
+  -PSApplyContingency(PS,Contingency)
+  +PSReadMatPowerData(PS,const char[])
+  +PSReadPSSERawData(PS,const char[])
+  +PSCreate(MPI_Comm,PS*)
+  +PSDestroy(PS*)
+  +PSGENDestroy(PS)
+  +PSIncreaseReferenceCount(PS)
+  +PSDescreaseReferenceCount(PS)
+  +PSSetApplication(PS,void*,PSApp)
+  +PSSetUp(PS)
+  +PSCreateGlobalVector(PS, Vec*)
+  +PSCreateMatrix(PS,Mat*)
+  +PSBUSIsGhosted(PSBUS,PetscBool*)
+  +PSBUSGetNGen(PSBUS,PetscInt*)
+  +PSBUSGetNLoad(PSBUS,PetscInt*)
+  +PSBUSGetGen(PSBUS,PetscInt,PSGEN*)
+  +PSBUSSetGenStatus(PSBUS,char[],PetscInt)
+  +PSBUSGetLoad(PSBUS,PetscInt,PSLOAD*)
+  +PSBUSGetVariableLocation(PSBUS,PetscInt*)
+  +PSBUSGetVariableGlobalLocation(PSBUS,PetscInt*)
+  +PSBUSGetSupportingLines(PSBUS,PetscInt*,const PSLINE**)
+  +PSBUSAddShunt(PSBUS,PetscScalar,PetscScalar)
+  +PSLINEGetConnectedBuses(PSLINE,const PSBUS**)
+  +PSLINESetStatus(PSLINE,PetscInt)
+  +PSLINEGetVariableLocation(PSLINE,PetscInt*)
+  +PSLINEGetVariableGlobalLocation(PSLINE,PetscInt*)
+  +PSGetNumActiveLines(PS,PetscInt*,PetscInt*)
+  +PSGetNumGenerators(PS,PetscInt*,PetscInt*)
+  +PSGetNumLoads(PS,PetscInt*,PetscInt*)
+  +PSGetNumActiveGenerators(PS,PetscInt*,PetscInt*)
+  +PSGetNumGlobalBuses(PS,PetscInt*)
+  +PSGENSetStatus(PSGEN,PetscInt)
+  +PSLOADSetStatus(PSLOAD,PetscInt)
+  +PSSetGenDispatchandStatus(PS,PetscInt,PetscInt,PetscInt,PetscScalar,PetscScalar)
+  +PSCheckandSetRefBus(PS)
+  +PSGetTotalGeneration(PS,PetscScalar*,PetscScalar*)
+  +PSComputeParticipationFactors(PS)
+}
+
+class PSBUS {
+  +PSGEN[] gens
+  +PSLOAD[] loads
+}
+
+class PSApp {
+  <<enumeration>>
+  APP_NONE
+  APP_ACPF
+  APP_ACOPF
+}

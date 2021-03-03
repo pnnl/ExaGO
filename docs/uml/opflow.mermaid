@@ -1,0 +1,66 @@
+
+%%------------------------------------------------------------------------------
+%% UML Diagrams for OPFLOW
+%%
+%% Command to build this document:
+%%
+%% cat opflow.mermaid opflow_defs.mermaid ps_defs.mermaid | mmdc -o opflow.png -w 3200 -H 2400
+%%
+%% See https://mermaid-js.github.io/mermaid/ for mermaid installation guide.
+%%
+%%------------------------------------------------------------------------------
+
+classDiagram
+
+%% Inheritance Chain
+
+OPFLOWDriver o-- OPFLOW
+OPFLOWDriver .. OPFLOWOptions : Command Line Options
+
+OPFLOW *-- OPFLOWModel
+OPFLOW *-- OPFLOWSolver
+OPFLOW o-- PS
+
+OPFLOW *-- OPFLOWInitializationType
+OPFLOW *-- OPFLOWObjectiveType
+OPFLOW *-- OPFLOWGenBusVoltageType
+
+PS *-- PSApp
+PS *-- PSBUS
+PS *-- PSLOAD
+PS *-- PSGEN
+PS *-- PSLINE
+PS *-- DM
+
+OPFLOWModel <|-- POWER_BALANCE_POLAR
+OPFLOWModel <|-- POWER_BALANCE_HIOP
+OPFLOWModel <|-- PBPOLRAJAHIOP
+OPFLOWModel <|-- POWER_BALANCE_CARTESIAN
+
+OPFLOWSolver <|-- HIOP
+OPFLOWSolver <|-- IPOPT
+OPFLOWSolver <|-- TAO
+HIOP *-- HIOPComputeMode
+
+class OPFLOWDriver {
+  <<executable>>
+}
+
+class OPFLOWOptions {
+  +path "-netfile"
+  +bool "-print_output"
+  +bool "-save_output"
+  +OPFLOWModel "-opflow_model"
+  +OPFLOWSolver "-opflow_solver"
+  +OPFLOWInitializationType "-opflow_initialization"
+  +bool "-opflow_has_gensetpoint"
+  +bool "-opflow_use_agc"
+  +OPFLOWObjectiveType "-opflow_objective"
+  +OPFLOWGenBusVoltageType "-opflow_genbusvoltage"
+  +bool "-opflow_ignore_lineflow_constraints"
+  +bool "-opflow_include_loadloss_variables"
+  +bool "-opflow_include_powerimbalance_variables"
+  +float "-opflow_loadloss_penality"
+  +float "-opflow_powerimbalance_penalty"
+  +float "-opflow_tolerance"
+}

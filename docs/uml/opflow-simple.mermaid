@@ -1,0 +1,20 @@
+classDiagram
+
+OPFLOW o-- Model
+OPFLOW o-- Solver
+
+Model <|-- POWER_BALANCE_POLAR
+Model <|-- POWER_BALANCE_HIOP
+Model <|-- PBPOLRAJAHIOP
+
+Solver <|-- HIOP
+Solver <|-- IPOPT
+Solver <|-- TAO
+
+class Model {
+  <<interface>>
+}
+
+class Solver {
+  <<interface>>
+}
