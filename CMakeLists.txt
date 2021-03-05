@@ -464,6 +464,17 @@ if(EXAGO_RUN_TESTS)
       )
   endforeach()
 
+  # Functionality test using IPOPT Adapter for 2nd order derivative test
+  exago_add_test(
+    NAME FUNCTIONALITY_TEST_OPFLOW_IPOPT_DEBUG
+    DEPENDS IPOPT HIOP RAJA
+    NETFILES datafiles/case9/case9mod.m
+    COMMAND ${RUNCMD} $<TARGET_FILE:app_opflow>
+    -opflow_solver HIOP
+    -opflow_model POWER_BALANCE_HIOP
+    -hiop_compute_mode CPU
+    -hiop_ipopt_debug)
+
   message(STATUS "Configuring PFLOW functionality tests")
   foreach(np RANGE 1 2)
     exago_add_test(

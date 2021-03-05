@@ -10,6 +10,12 @@
 #include <hiopMatrix.hpp>
 #include <hiopNlpFormulation.hpp>
 #include <hiopAlgFilterIPM.hpp>
+
+#if defined(EXAGO_ENABLE_IPOPT)
+#include <IpoptAdapter.hpp>
+#include <IpIpoptApplication.hpp>
+#endif
+
 #include <cstdlib>
 #include <string>
 #include <cstring>
@@ -100,6 +106,12 @@ struct _p_OPFLOWSolver_HIOP {
   hiop::hiopNlpMDS              *mds;
   hiop::hiopAlgFilterIPMNewton  *solver;
 
+#if defined(EXAGO_ENABLE_IPOPT)
+  // Ipopt Adapter structs
+  SmartPtr<hiop::hiopMDS2IpoptTNLP>       ipoptTNLP;
+  SmartPtr<Ipopt::IpoptApplication>       ipoptApp;
+  PetscBool                               ipopt_debug;
+#endif
 };
 
 #endif

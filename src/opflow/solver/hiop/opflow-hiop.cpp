@@ -233,6 +233,8 @@ bool OPFLOWHIOPInterface::eval_Hess_Lagr(const long long& n, const long long& m,
   PetscErrorCode ierr;
   //  PetscPrintf(MPI_COMM_SELF,"Enter eval_Hess_Lagr \n");
 
+  opflow->obj_factor = obj_factor;
+
   /* Compute sparse hessian */    
   ierr = (*opflow->modelops.computesparsehessianhiop)(opflow,x,iHSS,jHSS,MHSS);CHKERRQ(ierr);
 
@@ -318,6 +320,9 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
   ierr = PetscOptionsBegin(opflow->comm->type,NULL,"HIOP options",NULL);CHKERRQ(ierr);
   ierr = PetscOptionsEnum("-hiop_compute_mode","Type of compute mode","",HIOPComputeModeChoices,(PetscEnum)compute_mode,(PetscEnum*)&compute_mode,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-hiop_verbosity_level","HIOP verbosity level (Integer 0 to 12)","",verbose_level,&verbose_level,NULL);CHKERRQ(ierr);
+#if defined(EXAGO_ENABLE_IPOPT)
+  ierr = PetscOptionsBool("-hiop_ipopt_debug","Flag enabling debugging HIOP code with IPOPT","",hiop->ipopt_debug,&hiop->ipopt_debug,NULL);CHKERRQ(ierr);
+#endif
   PetscOptionsEnd();
 
   hiop->mds->options->SetStringValue("duals_update_type", "linear");
@@ -357,6 +362,31 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
   //  ierr = PetscPrintf(MPI_COMM_SELF,"Came in OPFLOWSetUp\n");CHKERRQ(ierr);
   hiop->solver = new hiop::hiopAlgFilterIPMNewton(hiop->mds);
 
+#if defined(EXAGO_ENABLE_IPOPT)
+  // IPOPT Adapter
+  if(hiop->ipopt_debug)
+  {
+    std::cout << "using IPOPT adapter...\n\n";
+    hiop->ipoptTNLP = new hiop::hiopMDS2IpoptTNLP(hiop->nlp);
+    hiop->ipoptApp = new Ipopt::IpoptApplication();
+
+    // Using options included in HiOp's IpoptAdapter_driver.cpp
+    hiop->ipoptApp->Options()->SetStringValue("recalc_y", "no");
+    hiop->ipoptApp->Options()->SetStringValue("mu_strategy", "monotone");
+    hiop->ipoptApp->Options()->SetNumericValue("bound_frac", 1e-8);
+    hiop->ipoptApp->Options()->SetNumericValue("bound_push", 1e-8);
+    hiop->ipoptApp->Options()->SetNumericValue("bound_relax_factor", 0.);
+    hiop->ipoptApp->Options()->SetNumericValue("constr_mult_init_max", 0.001);
+    hiop->ipoptApp->Options()->SetStringValue("derivative_test", "second-order");
+
+    Ipopt::ApplicationReturnStatus status = hiop->ipoptApp->Initialize();
+
+    if( status != Solve_Succeeded ) {
+      std::cout << std::endl << std::endl << "*** Error during initialization!" << std::endl;
+      return (int) status;
+    }
+  }
+#endif
   //  ierr = PetscPrintf(MPI_COMM_SELF,"Exit OPFLOWSetUp\n");CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
@@ -368,7 +398,24 @@ PetscErrorCode OPFLOWSolverSolve_HIOP(OPFLOW opflow)
 
   PetscFunctionBegin;
 
-  hiop->status = hiop->solver->run();
+#if defined(EXAGO_ENABLE_IPOPT)
+  if(!hiop->ipopt_debug) {
+    hiop->status = hiop->solver->run();
+  } else {// Ipopt Adapter
+    std::cout << "Solving with IPOPT adapter...\n\n";
+    ApplicationReturnStatus status = hiop->ipoptApp->OptimizeTNLP(hiop->ipoptTNLP);
+      
+    if( status == Solve_Succeeded ) {
+      std::cout << std::endl << std::endl << "*** The problem solved!" << std::endl;
+    } else  {
+      std::cout << std::endl << std::endl << "*** The problem FAILED!" << std::endl;
+      PetscFunctionReturn(1);
+    }
+  }
+#else
+    hiop->status = hiop->solver->run();
+#endif
+
   PetscFunctionReturn(0);
 }
 
