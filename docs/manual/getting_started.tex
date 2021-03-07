@@ -163,26 +163,9 @@ Environment modules specific to Newell are provided to make the example thorough
 > $INSTALLDIR/bin/opflow
 \end{lstlisting}
 
-\section{Applications}
-\exago consists of applications for optimization. The different applications available with \exago are listed in Table \ref{tab:exago_apps}
+\section{Usage}
 
-\begin{table}[h]
-  \caption{\exago applications}
-  \begin{tabular}{|l|p{0.6\textwidth}|l|}
-    \hline
-    \textbf{Name} & \textbf{Description} & \textbf{Solvers} \\
-    \hline
-    \opflow & AC optimal power flow & \ipopt,\tao,\hiop\\ \hline
-    \scopflow & Multi-period security-constrained AC optimal power flow & \ipopt \\ \hline
-    \tcopflow & Multi-period AC optimal power flow & \ipopt \\ \hline
-    \sopflow & Stochastic security-constrained multi-period AC optimal power flow & \ipopt \\
-    \hline
-    \pflow & AC power flow & \petsc \\ \hline
-  \end{tabular}
-  \label{tab:exago_apps}
-\end{table}
-
-Each application has the following format for execution
+Each \exago application has the following format for execution
 \begin{lstlisting}[language=bash]
   ./app <app_options>
 \end{lstlisting}
