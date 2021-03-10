@@ -1,5 +1,6 @@
 \chapter{Multi-period optimal power flow (TCOPFLOW)}\label{chap:tcopflow}
-\todo
+
+TCOPFLOW solves a full AC multi-period optimal power flow problem with the objective of minimizing the total cost over the given time horizon while adhering to intra-time and inter-temporal constraints. 
 
 \section{Formulation}
 The multi-period optimal power flow problem is a series of optimal power flow problems coupled via temporal constraints. The generator real power deviation ($p_{jt}^{\text{g}} - p_{jt-\Delta{t}}^{\text{g}}$) constrained within the ramp limits form the temporal constraints. An illustration of the temporal constraints is shown in Fig. \ref{fig:tcopflow} with four time steps. Each time-step $t$ is coupled with its preceding time $t-\Delta{t}$, where $\Delta{t}$ is the time-step where the objective is to find a least cost dispatch for the given time horizon.
@@ -21,6 +22,9 @@ x^- & \le x_t \le x^+,                               &t\in \left[0,N_t-1\right]&
 \label{eq:tcopflow_end}
 \end{align}
 
+\section{Solvers}\label{sec:tcopflow_solvers}%
+\tcopflow solves the coupled multi-period using the solver \ipopt. Currently, \exago only supports solving \tcopflow using \ipopt~, which is also the default solver. Solving TCOPFLOW is supported only on single process. %Option:\\ %\opflowoption{-tcopflow_solver IPOPT}
+
 \section{Input and Output}
 \begin{itemize}
     \item \textbf{Network file:} The network file describing the network details. Only \matpower format files are currently supported.
@@ -31,7 +35,6 @@ If the load data and/or wind generation profiles are not set then a flat profile
 
 The \tcopflow output is saved to a directory named \emph{tcopflowout}. This directory contains $N_t$ files, one for each time-step, in \matpower data file format.
 
-\section{Solvers}
 \section{Usage}
 \todo
 \section{Options}
