@@ -2210,6 +2210,7 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow,Vec X,Mat H)
   PetscInt       row[2],col[2];
   PetscScalar    val[2];
   PetscScalar    obj_factor = opflow->obj_factor;
+  PetscInt       flps=0;
 
 
   PetscFunctionBegin;
@@ -2234,7 +2235,7 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow,Vec X,Mat H)
       col[0] = xlocglob+1;
       val[0] = obj_factor*2.0*opflow->powerimbalance_penalty*ps->MVAbase*ps->MVAbase;
       ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-
+      flps += 8;
     }
 
     for(k=0; k < bus->ngen; k++) {
@@ -2249,6 +2250,7 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow,Vec X,Mat H)
 
 	val[0] = obj_factor*2.0*gen->cost_alpha*ps->MVAbase*ps->MVAbase;
 	ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+  flps += 4;
       } else if(opflow->objectivetype == MIN_GENSETPOINT_DEVIATION) {
 	xlocglob = gen->startxpdevlocglob;
 	row[0] = xlocglob;
@@ -2260,6 +2262,7 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow,Vec X,Mat H)
 	col[0] = xlocglob + 1;
 	val[0] = obj_factor*2.0;
 	ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+  flps += 2;
       }
     }
     
@@ -2279,11 +2282,12 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow,Vec X,Mat H)
 	val[0] = obj_factor*2.0*opflow->loadloss_penalty*ps->MVAbase*ps->MVAbase;
 	ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
       }
+      flps += 8*bus->nload;
     }
   }
 
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
-
+  PetscLogFlops(flps);
   PetscFunctionReturn(0);
 }
 

@@ -497,9 +497,13 @@ PetscErrorCode OPFLOWComputeObjandGradient_PBPOLHIOP(OPFLOW opflow,Vec X,PetscSc
 {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-
+  ierr = PetscLogEventBegin(opflow->objlogger,0,0,0,0);CHKERRQ(ierr);
   ierr = OPFLOWComputeObjective_PBPOLHIOP(opflow,X,obj);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->objlogger,0,0,0,0);CHKERRQ(ierr);
+
+  ierr = PetscLogEventBegin(opflow->gradlogger,0,0,0,0);CHKERRQ(ierr);
   ierr = OPFLOWComputeGradient_PBPOLHIOP(opflow,X,Grad);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->gradlogger,0,0,0,0);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

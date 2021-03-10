@@ -721,7 +721,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP(OPFLOW opflow
   LOADParamsRajaHiop     *loadparams=&pbpolrajahiop->loadparams;
   LINEParamsRajaHiop     *lineparams=&pbpolrajahiop->lineparams;
   PetscErrorCode ierr;
-  double                 flps=0.0;
+  PetscInt               flps=0;
   PetscFunctionBegin;
   //  PetscPrintf(MPI_COMM_SELF,"Entered Equality constraints\n");
 
@@ -739,7 +739,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP(OPFLOW opflow
       RAJA::atomicSub<exago_raja_atomic>(&ge_dev[g_gidx[i]+1],x_dev[g_xidx[i]+1]);
     }
   );
-  flps += genparams->ngenON*2.0;
+  flps += genparams->ngenON*2;
 
   /* Load contributions */
   double* pl = loadparams->pl_dev_;
@@ -752,7 +752,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP(OPFLOW opflow
       RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[l_gidx[i]+1],ql[i]);
     }
   );
-  flps += loadparams->nload*2.0;
+  flps += loadparams->nload*2;
 
   /* Bus contributions */
   int* isisolated = busparams->isisolated_dev_;
@@ -775,7 +775,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP(OPFLOW opflow
 				       isisolated[i]*(Vm    - vm[i]) - ispvpq[i]*Vm*Vm*bl[i]);
     }
   );
-  flps += busparams->nbus*14.0;
+  flps += busparams->nbus*14;
 
   /* Line contributions */
   double* Gff = lineparams->Gff_dev_;
@@ -825,7 +825,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsArray_PBPOLRAJAHIOP(OPFLOW opfl
 {
   PbpolModelRajaHiop* pbpolrajahiop = reinterpret_cast<PbpolModelRajaHiop*>(opflow->model);
   LINEParamsRajaHiop     *lineparams=&pbpolrajahiop->lineparams;
-  double                 flps=0.0;
+  PetscInt               flps=0;
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
@@ -1061,7 +1061,7 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOP(OPFLOW opflow,const doub
   double         obj_factor = opflow->obj_factor;
   int            isobj_gencost=opflow->obj_gencost;
   double         MVAbase=ps->MVAbase;
-  double         flps=0.0;
+  PetscInt       flps=0;
 
   //  PetscPrintf(MPI_COMM_SELF,"Entered sparse Hessian\n");
 
@@ -1080,7 +1080,7 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOP(OPFLOW opflow,const doub
 	jHSS_dev[jacsq_idx[i]] = g_xidx[i]+1;
       }
     );
-    flps += 2.0*genparams->ngenON;
+    flps += 2*genparams->ngenON;
   }
 
   if(MHSS_dev != NULL) {
@@ -1096,7 +1096,7 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOP(OPFLOW opflow,const doub
 	MHSS_dev[jacsq_idx[i]]  = 0.0;
       }
     );
-    flps += 5.0*genparams->ngenON;
+    flps += 5*genparams->ngenON;
   }    
   //  PetscPrintf(MPI_COMM_SELF,"Exit sparse hessian\n");
 
@@ -1170,7 +1170,7 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW
       RAJA::atomicAdd<exago_raja_atomic>(&JacD_view(row[1], col[1]), val[3]);
     }
   );
-  flps += 14.0*busparams->nbus;
+  flps += 14*busparams->nbus;
 
 
   /* Jacobian from line contributions */
@@ -1450,7 +1450,7 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLRAJAHIOP(OPFLOW 
   int                 nxsparse = 2*opflow->ps->ngenON;
   const int           nxdense = 2*opflow->ps->nbus;
   PetscErrorCode      ierr;
-  double              flps=0.0;
+  PetscInt            flps=0;
 
   PetscFunctionBegin;
   //  PetscPrintf(MPI_COMM_SELF,"Enter equality dense hessian\n");
@@ -1478,7 +1478,7 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLRAJAHIOP(OPFLOW 
       RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row, col),val);
     }
   );
-  flps += 7.0*busparams->nbus;
+  flps += 7*busparams->nbus;
 
   /* Hessian from line contributions */
   double* Gff_arr = lineparams->Gff_dev_;
@@ -1757,7 +1757,7 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLRAJAHIOP(OPFLOW 
     RAJA::atomicAdd<exago_raja_atomic>(&HDD_view(row[1], col[3]), val[7]);
   });
 
-  flps += ((56.0*EXAGO_FLOPS_SINOP) + (56.0*EXAGO_FLOPS_SINOP) + 462.0)*lineparams->nlineON;
+  flps += (56*(EXAGO_FLOPS_SINOP + EXAGO_FLOPS_SINOP) + 462.0)*lineparams->nlineON;
   ierr = PetscLogFlops(flps);CHKERRQ(ierr);
   //  PetscPrintf(MPI_COMM_SELF,"Exit equality dense hessian\n");
 
@@ -1774,7 +1774,7 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLRAJAHIOP(OPFLO
   int                 nxsparse=2*opflow->ps->ngenON;
   const int           nxdense = 2*opflow->ps->nbus;
   PetscErrorCode      ierr;
-  double              flps=0.0;
+  PetscInt            flps=0;
 
   PetscFunctionBegin;
   //  PetscPrintf(MPI_COMM_SELF,"Enter inequality dense hessian\n");

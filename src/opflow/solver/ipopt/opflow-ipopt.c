@@ -45,13 +45,17 @@ Bool eval_opflow_g(PetscInt n, PetscScalar* x, Bool new_x,
 
   /* Equality constraints */
   ierr = VecPlaceArray(opflow->Ge,g);CHKERRQ(ierr);
+  ierr = PetscLogEventBegin(opflow->eqconslogger,0,0,0,0);CHKERRQ(ierr);
   ierr = OPFLOWComputeEqualityConstraints(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->eqconslogger,0,0,0,0);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
 
   if(opflow->Nconineq) {
     /* Inequality constraints */
     ierr = VecPlaceArray(opflow->Gi,g+opflow->nconeq);CHKERRQ(ierr);
+    ierr = PetscLogEventBegin(opflow->ineqconslogger,0,0,0,0);CHKERRQ(ierr);
     ierr = OPFLOWComputeInequalityConstraints(opflow,opflow->X,opflow->Gi);CHKERRQ(ierr);
+    ierr = PetscLogEventEnd(opflow->ineqconslogger,0,0,0,0);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->Gi);CHKERRQ(ierr);
   }
 
@@ -83,8 +87,9 @@ Bool eval_opflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
     coffset = 0;
 
     /* Equality constrained Jacobian */
+    ierr = PetscLogEventBegin(opflow->eqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
     ierr = (*opflow->modelops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
-
+    ierr = PetscLogEventEnd(opflow->eqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
     ierr = MatGetSize(opflow->Jac_Ge,&nrow,&ncol);CHKERRQ(ierr);
     
     /* Copy over locations to triplet format */
@@ -103,8 +108,9 @@ Bool eval_opflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
     if(opflow->Nconineq) {
       /* Inequality constrained Jacobian */
       roffset = opflow->nconeq;
-
+      ierr = PetscLogEventBegin(opflow->ineqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
       ierr = (*opflow->modelops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
+      ierr = PetscLogEventEnd(opflow->ineqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
 												       
       ierr = MatGetSize(opflow->Jac_Gi,&nrow,&ncol);CHKERRQ(ierr);
       /* Copy over locations to triplet format */
@@ -122,7 +128,9 @@ Bool eval_opflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
   } else {
     ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
     /* Compute equality constraint jacobian */
+    ierr = PetscLogEventBegin(opflow->eqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
     ierr = (*opflow->modelops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
+    ierr = PetscLogEventEnd(opflow->eqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
 
     ierr = MatGetSize(opflow->Jac_Ge,&nrow,&ncol);CHKERRQ(ierr);
     /* Copy over values */
@@ -136,8 +144,10 @@ Bool eval_opflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x,
     }
 
     if(opflow->Nconineq) {
+      ierr = PetscLogEventBegin(opflow->ineqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
       /* Compute inequality constraint jacobian */
       ierr = (*opflow->modelops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
+      ierr = PetscLogEventEnd(opflow->ineqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
 
       ierr = MatGetSize(opflow->Jac_Gi,&nrow,&ncol);CHKERRQ(ierr);
 
@@ -174,7 +184,9 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
   opflow->obj_factor = obj_factor;
 
   if(values == NULL) {
+    ierr = PetscLogEventBegin(opflow->hesslogger,0,0,0,0);CHKERRQ(ierr);
     ierr = (*opflow->modelops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
+    ierr = PetscLogEventEnd(opflow->hesslogger,0,0,0,0);CHKERRQ(ierr);
     ierr = MatGetSize(opflow->Hes,&nrow,&nrow);CHKERRQ(ierr);
 
     /* Copy over locations to triplet format */
@@ -205,8 +217,10 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
       ierr = VecPlaceArray(opflow->Lambdai,lambda+opflow->nconeq);CHKERRQ(ierr);
     }
 
+    ierr = PetscLogEventBegin(opflow->hesslogger,0,0,0,0);CHKERRQ(ierr);
     /* Compute Hessian */
     ierr = (*opflow->modelops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
+    ierr = PetscLogEventEnd(opflow->hesslogger,0,0,0,0);CHKERRQ(ierr);
 
     /* Copy over values */
     ierr = MatGetSize(opflow->Hes,&nrow,&nrow);CHKERRQ(ierr);
@@ -255,7 +269,9 @@ PetscErrorCode OPFLOWSolverSolve_IPOPT(OPFLOW opflow)
   ierr = VecGetArray(opflow->G,&g);CHKERRQ(ierr);
   ierr = VecGetArray(opflow->Lambda,&lambda);CHKERRQ(ierr);
   /* Solve */
+  ierr = PetscLogEventBegin(opflow->solvelogger,0,0,0,0);CHKERRQ(ierr);
   ipopt->solve_status = IpoptSolve(ipopt->nlp,x,g,&opflow->obj,lambda,NULL,NULL,opflow);
+  ierr = PetscLogEventEnd(opflow->solvelogger,0,0,0,0);CHKERRQ(ierr);
 
   ierr = VecRestoreArray(opflow->X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArray(opflow->G,&g);CHKERRQ(ierr);
@@ -330,7 +346,9 @@ PetscErrorCode OPFLOWSolverSetUp_IPOPT(OPFLOW opflow)
 
   /* Compute nonzeros for the Jacobian */
   /* Equality constraint Jacobian */
+  ierr = PetscLogEventBegin(opflow->eqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
   ierr = (*opflow->modelops.computeequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Ge);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->eqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
   ierr = MatSetOption(opflow->Jac_Ge,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
 
   ierr = MatGetInfo(opflow->Jac_Ge,MAT_LOCAL,&info_eq);CHKERRQ(ierr);
@@ -338,7 +356,9 @@ PetscErrorCode OPFLOWSolverSetUp_IPOPT(OPFLOW opflow)
 
   ipopt->nnz_jac_gi = 0;
   if(opflow->Nconineq) {
+    ierr = PetscLogEventBegin(opflow->ineqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
     ierr = (*opflow->modelops.computeinequalityconstraintjacobian)(opflow,opflow->X,opflow->Jac_Gi);CHKERRQ(ierr);
+    ierr = PetscLogEventEnd(opflow->ineqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
     ierr = MatSetOption(opflow->Jac_Gi,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
 
     ierr = MatGetInfo(opflow->Jac_Gi,MAT_LOCAL,&info_ineq);CHKERRQ(ierr);
@@ -347,7 +367,9 @@ PetscErrorCode OPFLOWSolverSetUp_IPOPT(OPFLOW opflow)
   ipopt->nnz_jac_g = ipopt->nnz_jac_ge + ipopt->nnz_jac_gi;
 
   /* Compute non-zeros for Hessian */
+  ierr = PetscLogEventBegin(opflow->hesslogger,0,0,0,0);CHKERRQ(ierr);
   ierr = (*opflow->modelops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->hesslogger,0,0,0,0);CHKERRQ(ierr);
   ierr = MatSetOption(opflow->Hes,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
 
   ierr  = MatGetInfo(opflow->Hes,MAT_LOCAL,&info_hes);CHKERRQ(ierr);
