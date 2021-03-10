@@ -62,42 +62,367 @@ If the multi-period option is chosen, then additional files describing the load 
     \item \textbf{Wind generation:} The wind generation time-series described in CSV format. See an example of the format \href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/tree/master/datafiles/case9}{here}.
 \end{itemize}
 
-The \scopflow output is saved to a directory named \emph{scopflowout}. This directory contains $N_c$ files to save the solution for each contingency in MATPOWER datafile format. Each file has the name \emph{cont_xx} where \emph{xx} is the contingency number. 
+The \scopflow output is saved to a directory named \emph{scopflowout}. This directory contains $N_c$ files to save the solution for each contingency in MATPOWER datafile format. Each file has the name \emph{cont\_xx} where \emph{xx} is the contingency number. 
 
-If multi-period option is chosen then $N_c$ subdirectories are created (one for each contingency), and each subdirectory contains $N_t$ output files, one for each time-period. The subdirectories have the naming convention \emph{cont_xx} and the output file are named as \emph{t_yy} where \emph{yy} is the time-step number.
+If multi-period option is chosen then $N_c$ subdirectories are created (one for each contingency), and each subdirectory contains $N_t$ output files, one for each time-period. The subdirectories have the naming convention \emph{cont\_xx} and the output file are named as \emph{t\_yy} where \emph{yy} is the time-step number.
 
 \section{Usage}
-\todo
+
 \begin{lstlisting}
-  ./scopflow -netfile <netfilename>  -ctgcfile <ctgcfilename> <scopflowoptions>
+  ./scopflow -netfile <netfilename> -ctgcfile <ctgcfilename> \
+  <scopflowoptions> [-scopflow_enable_multiperiod 1]
 \end{lstlisting}
 
 \section{Options}
-See table \ref{tab:scopflow_options}
+See table \ref{tab:scopflow_options}. In addition, all \opflow options in Table \ref{tab:opflow_options} and \tcopflow options in Table \ref{tab:tcopflow_options} can be used.
 \begin{table}[!htbp]
   \caption{SCOPFLOW options}
   \small
   \begin{tabular}{|p{0.4\textwidth}|p{0.3\textwidth}|p{0.3\textwidth}|}
     \hline
     \textbf{Option} & \textbf{Meaning} & \textbf{Values (Default value)} \\ \hline
-    -netfile & Network file name & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod_gen3_wind.m}{case9mod_gen3_wind.m}) \\ \hline
+    -netfile & Network file name & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod_gen3_wind.m}{case9mod\_gen3\_wind.m}) \\ \hline
     -ctgcfile & Contingency file name & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9.cont}{case9.cont}) \\ \hline
     -save\_output & Save output to directory & 0 or 1 (0) \\ \hline
-    -scopflow\_Nc & Number of contingencies & int (0) \\ \hline
+    -scopflow\_solver & Set solver for scopflow & IPOPT or EMPAR \\ \hline
+    -scopflow\_Nc & Number of contingencies & int (0. Passing -1 results in all contingencies in the file used) \\ \hline
     -scopflow\_mode & Operation mode: Preventive or corrective & 0 or 1 (0) \\ \hline
-    -scopflow\_enable\_multiperiod & Multi-period SCOPFLOW & TRUE or FALSE (FALSE) \\ \hline
-    -scopflow\_pload\_profile & Real power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_P.csv}{load_P.csv}) \\ \hline
-    -scopflow\_qload\_profile & Reactive power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_Q.csv}{load_Q.csv}) \\ \hline
-    -scopflow\_windgenprofile & Wind generation profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/scenarios.csv}{scenarios.csv}) \\ \hline
+    -scopflow\_iscoupling & Coupling between first and second stage & 0 or 1 (0) \\ \hline
+    -scopflow\_enable\_multiperiod & Multi-period SCOPFLOW & 0 or 1 (0) \\ \hline \hline
+    -scopflow\_pload\_profile & Real power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_P.csv}{load\_P.csv}) \\ \hline
+    -scopflow\_qload\_profile & Reactive power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_Q.csv}{load\_Q.csv}) \\ \hline
+    -scopflow\_windgenprofile & Wind generation profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/scenarios_9bus.csv}{case9/scenarios\_9bus.csv}) \\ \hline
     -scopflow\_dT & Length of time-step (minutes) & double (5.0) \\ \hline
     -scopflow\_duration & Total duration (hours) & double (0.5) \\ \hline 
   \end{tabular}
   \label{tab:scopflow_options}
 \end{table}
 
-In addition, all \opflow options given in Table \ref{tab:opflow_options} can be used to tune the individual time-period.
-
 Depending on the \emph{mode}, SCOPFLOW can either be \emph{preventive} (mode = 0) or \emph{corrective} (mode = 1). In the preventive mode, the PV and PQ generator real power is fixed to its corresponding base-case values. The generators at the referencce bus pick up any make-up power required for the contingency. The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability.
 
+-scopflow\_enable\_multiperiod 1 must be used in order to enable any of the options listed in table \ref{tab:scopflow_options} that are below -scopflow\_enable\_multiperiod.
+
 \section{Examples}
-\todo
+
+Some \scopflow example runs are provided with some sample output. Options are the default options given in table \ref{tab:opflow_options}, \ref{tab:tcopflow_options} and \ref{tab:scopflow_options} unless otherwise specified. Sample output is generated from running examples in the installation directory.
+
+Example using the \ipopt solver:
+
+\begin{lstlisting}
+$ ./bin/scopflow -scopflow_solver IPOPT -tcopflow_iscoupling 1 \
+-scopflow_iscoupling 1 -print_output
+[ExaGO INFO]: -- Checking ... -options_file not passed        exists: no
+SCOPFLOW: Application created
+SCOPFLOW running with 2 contingencies (base case + 1 contingencies)
+Rank 0 has 2 contingencies, range [0 -- 2]
+SCOPFLOW: Using IPOPT solver
+SCOPFLOW: Setup completed
+
+*************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear 
+optimization. Ipopt is released as open source code under the Eclipse 
+Public License (EPL).
+*************************************************************************
+
+This is Ipopt version 3.12.10, running with linear solver ma27.
+
+Number of nonzeros in equality constraint Jacobian...:      231
+Number of nonzeros in inequality constraint Jacobian.:      182
+Number of nonzeros in Lagrangian Hessian.............:      249
+
+Total number of variables............................:       55
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:       39
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:       44
+Total number of inequality constraints...............:       59
+        inequality constraints with only lower bounds:       21
+   inequality constraints with lower and upper bounds:       38
+        inequality constraints with only upper bounds:        0
+
+iter  objective  inf_pr  inf_du lg(mu) ||d|| lg(rg) alpha_du alpha_pr  ls
+0  7.4421250e+03 1.80e+00 1.69e+01  -1.0 0.00e+00 - 0.00e+00 0.00e+00   0
+1  6.9108233e+03 1.65e+00 1.56e+01  -1.0 1.24e+00 - 4.46e-02 8.38e-02f  1
+2  5.9991119e+03 1.30e+00 5.10e+01  -1.0 7.41e-01 - 7.07e-02 2.08e-01f  1
+...
+43 3.0556401e+03 1.07e-14 3.95e-10  -8.6 2.79e-09 - 1.00e+00 1.00e+00f  1
+
+Number of Iterations....: 43
+
+                                   (scaled)                 (unscaled)
+Objective...........:   6.8512110967619464e+01    3.0556401491558281e+03
+Dual infeasibility..:   3.9453703519053556e-10    1.7596351769497887e-08
+Constraint violation:   1.0658141036401503e-14    1.0658141036401503e-14
+Complementarity.....:   5.0027986112663857e-09    2.2312481806248081e-07
+Overall NLP error...:   5.0027986112663857e-09    2.2312481806248081e-07
+
+
+Number of objective function evaluations             = 59
+Number of objective gradient evaluations             = 44
+Number of equality constraint evaluations            = 59
+Number of inequality constraint evaluations          = 59
+Number of equality constraint Jacobian evaluations   = 44
+Number of inequality constraint Jacobian evaluations = 44
+Number of Lagrangian Hessian evaluations             = 43
+Total CPU secs in IPOPT (w/o function evaluations)   =      0.019
+Total CPU secs in NLP function evaluations           =      0.009
+
+EXIT: Optimal Solution Found.
+=============================================================
+        Security-Constrained Optimal Power Flow
+=============================================================
+OPFLOW Formulation                  POWER_BALANCE_POLAR
+Solver                              IPOPT
+Initialization                      MIDPOINT
+Number of contingencies             1
+Load loss allowed                   NO
+Power imbalance allowed             NO
+Ignore line flow constraints        NO
+
+Number of variables                 57
+Number of equality constraints      42
+Number of inequality constraints    58
+Number of coupling constraints      3
+
+Convergence status                  CONVERGED
+Objective value                     3055.64
+
+----------------------------------------------------------------------
+Bus        Pd      Qd      Vm      Va      mult_Pmis      mult_Qmis
+----------------------------------------------------------------------
+1         0.00    0.00   1.040   0.000      2158.80        -0.00
+2         0.00    0.00   1.025   4.572      2108.44         0.00
+3         0.00    0.00   1.025   1.912      2118.81         0.00
+4         0.00    0.00   1.038  -2.306      2159.07        -0.61
+5        75.00   30.00   1.026  -3.550      2170.87         2.93
+6        90.00   30.00   1.023  -4.551      2191.34         4.30
+7         0.00    0.00   1.033   0.613      2109.20         4.12
+8       100.00   35.00   1.022  -2.070      2133.92         7.92
+9         0.00    0.00   1.036  -0.462      2119.23         2.84
+
+-------------------------------------------------------------------------
+From       To       Status     Sft      Stf     Slim     mult_Sf  mult_St
+-------------------------------------------------------------------------
+1          4          1       75.61    75.44   380.00    -0.00    -0.00
+2          7          1      117.34   118.26   250.00    -0.00    -0.00
+3          9          1       76.90    77.68   300.00    -0.00    -0.00
+4          5          1       28.64    34.88   250.00    -0.00    -0.00
+4          6          1       46.84    48.91   250.00    -0.00    -0.00
+5          7          1       47.56    50.96   250.00    -0.00    -0.00
+6          9          1       45.96    48.57   150.00    -0.00    -0.00
+7          8          1       69.77    70.78   250.00    -0.00    -0.00
+8          9          1       37.09    30.76   150.00    -0.00    -0.00
+
+-------------------------------------------------------------------------
+Gen   Status  Fuel     Pg       Qg       Pmin     Pmax     Qmin     Qmax
+-------------------------------------------------------------------------
+1       1     COAL    75.40     5.62    10.00   350.00  -300.00   300.00
+2       1     COAL   116.97    -9.31    10.00   300.00  -300.00   300.00
+3       1     WIND    75.00   -16.97     0.00    75.00  -300.00   300.00
+[ExaGO INFO]: Finalizing scopflow application
+\end{lstlisting}
+
+Example using the IPOPT solver with multiperiod enabled:
+
+\begin{lstlisting}
+$./bin/scopflow -scopflow_solver IPOPT -scopflow_enable_multiperiod 1 \
+-tcopflow_iscoupling 1 -scopflow_iscoupling 1
+[ExaGO INFO]: -- Checking ... -options_file not passed         exists: no
+SCOPFLOW: Application created
+SCOPFLOW running with 2 contingencies (base case + 1 contingencies)
+Rank 0 has 2 contingencies, range [0 -- 2]
+SCOPFLOW: Using IPOPT solver
+TCOPFLOW: Application created
+TCOPFLOW: Duration = 0.166667 hours, timestep = 5.000000 minutes, \
+          number of time-steps = 3
+TCOPFLOW: Using IPOPT solver
+TCOPFLOW: Setup completed
+TCOPFLOW: Application created
+TCOPFLOW: Duration = 0.166667 hours, timestep = 5.000000 minutes, \
+          number of time-steps = 3
+TCOPFLOW: Using IPOPT solver
+TCOPFLOW: Setup completed
+SCOPFLOW: Setup completed
+
+*************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear 
+optimization. Ipopt is released as open source code under the 
+Eclipse Public License (EPL).
+*************************************************************************
+
+This is Ipopt version 3.12.10, running with linear solver ma27.
+
+Number of nonzeros in equality constraint Jacobian...:      640
+Number of nonzeros in inequality constraint Jacobian.:      494
+Number of nonzeros in Lagrangian Hessian.............:      540
+
+Total number of variables............................:      138
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:       90
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:      110
+Total number of inequality constraints...............:      151
+        inequality constraints with only lower bounds:       36
+   inequality constraints with lower and upper bounds:      115
+        inequality constraints with only upper bounds:        0
+
+iter objective inf_pr  inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+0  4.4652750e+04 1.80e+00 5.01e+01 -1.0 0.00e+00 - 0.00e+00 0.00e+00   0
+1  3.1127309e+04 1.41e+00 1.01e+02 -1.0 1.97e+00 - 1.87e-01 2.18e-01f  1
+...
+55  1.7423413e+04 9.91e-15 8.48e-10 -8.6 9.66e-09 - 1.00e+00 1.00e+00h  1
+
+Number of Iterations....: 55
+
+                                   (scaled)                 (unscaled)
+Objective...........:   3.9065947675497836e+02    1.7423412663272036e+04
+Dual infeasibility..:   8.4833681960093011e-10    3.7835822154201486e-08
+Constraint violation:   9.9087404947795221e-15    9.9087404947795221e-15
+Complementarity.....:   3.3875752035319637e-09    1.5108585407752560e-07
+Overall NLP error...:   3.3875752035319637e-09    1.5108585407752560e-07
+
+
+Number of objective function evaluations             = 91
+Number of objective gradient evaluations             = 56
+Number of equality constraint evaluations            = 91
+Number of inequality constraint evaluations          = 91
+Number of equality constraint Jacobian evaluations   = 56
+Number of inequality constraint Jacobian evaluations = 56
+Number of Lagrangian Hessian evaluations             = 55
+Total CPU secs in IPOPT (w/o function evaluations)   =      0.045
+Total CPU secs in NLP function evaluations           =      0.052
+
+EXIT: Optimal Solution Found.
+[ExaGO INFO]: Finalizing scopflow application.
+\end{lstlisting}
+
+Example using the \emph{EMPAR} solver with multiperiod enabled:
+
+\begin{lstlisting}
+$ ./bin/scopflow -scopflow_solver EMPAR -scopflow_enable_multiperiod 1 \
+-tcopflow_iscoupling 1 -scopflow_iscoupling 1
+[ExaGO INFO]: -- Checking ... -options_file not passed       exists: no
+SCOPFLOW: Application created
+SCOPFLOW running with 2 contingencies (base case + 1 contingencies)
+Rank 0 has 2 contingencies, range [0 -- 2]
+SCOPFLOW: Using EMPAR solver
+TCOPFLOW: Application created
+TCOPFLOW: Duration = 0.166667 hours, timestep = 5.000000 minutes, 
+          number of time-steps = 3
+TCOPFLOW: Using IPOPT solver
+TCOPFLOW: Setup completed
+TCOPFLOW: Application created
+TCOPFLOW: Duration = 0.166667 hours, timestep = 5.000000 minutes, 
+          number of time-steps = 3
+TCOPFLOW: Using IPOPT solver
+TCOPFLOW: Setup completed
+SCOPFLOW: Setup completed
+Setting: "0" is not a valid setting for Option: tol. 
+Check the option documentation.
+
+### tol (Real Number) ###
+Category: Convergence
+Description: Desired convergence tolerance (relative).
+0 < (1e-08) <= +inf
+
+********************************************************************
+This program contains Ipopt, a library for large-scale nonlinear 
+optimization. Ipopt is released as open source code under 
+the Eclipse Public License (EPL).
+********************************************************************
+
+This is Ipopt version 3.12.10, running with linear solver ma27.
+
+Number of nonzeros in equality constraint Jacobian...:      330
+Number of nonzeros in inequality constraint Jacobian.:      258
+Number of nonzeros in Lagrangian Hessian.............:      270
+
+Total number of variables............................:       69
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:       45
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:       54
+Total number of inequality constraints...............:       78
+        inequality constraints with only lower bounds:       18
+   inequality constraints with lower and upper bounds:       60
+        inequality constraints with only upper bounds:        0
+
+iter  objective  inf_pr  inf_du lg(mu) ||d|| lg(rg) alpha_du alpha_pr  ls
+0  2.2326375e+04 1.80e+00 5.02e+01  -1.0 0.00e+00 - 0.00e+00 0.00e+00   0
+1  1.5533385e+04 1.40e+00 1.02e+02  -1.0 1.95e+00 - 1.88e-01 2.20e-01f  1
+...
+32  8.6735595e+03 7.99e-15 3.70e-09  -8.6 1.93e-08 - 1.00e+00 1.00e+00h 1
+
+Number of Iterations....: 32
+
+                                   (scaled)                 (unscaled)
+Objective...........:   1.9447442817603635e+02    8.6735594966512217e+03
+Dual infeasibility..:   3.6983296779767669e-09    1.6494550363776382e-07
+Constraint violation:   7.9936057773011271e-15    7.9936057773011271e-15
+Complementarity.....:   4.9913149587308981e-09    2.2261264715939807e-07
+Overall NLP error...:   4.9913149587308981e-09    2.2261264715939807e-07
+
+
+Number of objective function evaluations             = 40
+Number of objective gradient evaluations             = 33
+Number of equality constraint evaluations            = 40
+Number of inequality constraint evaluations          = 40
+Number of equality constraint Jacobian evaluations   = 33
+Number of inequality constraint Jacobian evaluations = 33
+Number of Lagrangian Hessian evaluations             = 32
+Total CPU secs in IPOPT (w/o function evaluations)   =      0.019
+Total CPU secs in NLP function evaluations           =      0.014
+
+EXIT: Optimal Solution Found.
+Setting: "0" is not a valid setting for Option: tol. 
+Check the option documentation.
+
+### tol (Real Number) ###
+Category: Convergence
+Description: Desired convergence tolerance (relative).
+0 < (1e-08) <= +inf
+This is Ipopt version 3.12.10, running with linear solver ma27.
+
+Number of nonzeros in equality constraint Jacobian...:      306
+Number of nonzeros in inequality constraint Jacobian.:      234
+Number of nonzeros in Lagrangian Hessian.............:      270
+
+Total number of variables............................:       69
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:       45
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:       54
+Total number of inequality constraints...............:       72
+        inequality constraints with only lower bounds:       18
+   inequality constraints with lower and upper bounds:       54
+        inequality constraints with only upper bounds:        0
+
+iter objective  inf_pr   inf_du lg(mu) ||d|| lg(rg) alpha_du alpha_pr  ls
+0  2.2326375e+04 1.80e+00 4.89e+01  -1.0 0.00e+00 - 0.00e+00 0.00e+00   0
+1  1.5535979e+04 1.41e+00 1.01e+02  -1.0 1.97e+00 - 1.87e-01 2.18e-01f  1
+...
+51  8.7491131e+03 8.88e-15 4.80e-09  -8.6 1.07e-08 - 1.00e+00 1.00e+00h  1
+
+Number of Iterations....: 51
+
+                                (scaled)               (unscaled)
+Objective...........:   1.9616845456090007e+02    8.7491130734161434e+03
+Dual infeasibility..:   4.8019002633480731e-09    2.1416475174532407e-07
+Constraint violation:   8.8817841970012523e-15    8.8817841970012523e-15
+Complementarity.....:   4.9761717933322852e-09    2.2193726198261992e-07
+Overall NLP error...:   4.9761717933322852e-09    2.2193726198261992e-07
+
+
+Number of objective function evaluations             = 54
+Number of objective gradient evaluations             = 52
+Number of equality constraint evaluations            = 54
+Number of inequality constraint evaluations          = 54
+Number of equality constraint Jacobian evaluations   = 52
+Number of inequality constraint Jacobian evaluations = 52
+Number of Lagrangian Hessian evaluations             = 51
+Total CPU secs in IPOPT (w/o function evaluations)   =      0.024
+Total CPU secs in NLP function evaluations           =      0.016
+
+EXIT: Optimal Solution Found.
+[ExaGO INFO]: Finalizing scopflow application.
+\end{lstlisting}
