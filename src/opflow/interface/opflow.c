@@ -309,8 +309,10 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   opflow->ignore_lineflow_constraints = PETSC_FALSE;
   opflow->include_loadloss_variables = PETSC_FALSE;
   opflow->include_powerimbalance_variables = PETSC_FALSE;
-  opflow->loadloss_penalty = 1e1;
-  opflow->powerimbalance_penalty = 1e2;
+
+  opflow->loadloss_penalty = 1e3;
+  opflow->powerimbalance_penalty = 1e4;
+
   opflow->spdnordering = PETSC_FALSE;
   opflow->setupcalled = PETSC_FALSE;
 
@@ -1584,6 +1586,9 @@ PetscErrorCode OPFLOWSolutionToPS(OPFLOW opflow)
   PetscFunctionBegin;
 
   ierr = (*opflow->modelops.solutiontops)(opflow);
+
+  /* Save the objective to PS */
+  ierr = OPFLOWComputeObjective(opflow,opflow->X,&opflow->ps->opflowobj);CHKERRQ(ierr);
 
   opflow->solutiontops = PETSC_TRUE;
   PetscFunctionReturn(0);
