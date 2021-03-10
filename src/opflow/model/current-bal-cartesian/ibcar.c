@@ -1,4 +1,4 @@
-
+#include "exago_config.h"
 #include <private/opflowimpl.h>
 #include "ibcar.h"
 
@@ -258,6 +258,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Ge
   const PSLINE   *connlines;
   const PetscScalar *x;
   PetscInt       rstart;
+  PetscInt       flps = 0;
 
   PetscFunctionBegin;
   ierr = VecSet(Ge,0.0);CHKERRQ(ierr);
@@ -284,12 +285,14 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Ge
   
       ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
       gloc += 2;
+      flps += 8 + EXAGO_FLOPS_SINOP + EXAGO_FLOPS_COSOP;
       continue;
     }
 
     /* Shunt current injections */
     val[0] = bus->gl*Vr - bus->bl*Vi;
     val[1] = bus->bl*Vr + bus->gl*Vi;
+    flps += 6;
     ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
 
     /* Generation current injection */
@@ -304,6 +307,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Ge
       val[1] = -(-Qg*Vr + Pg*Vi)/Vm2;
       ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);      
     }
+    flps += 8*bus->ngen;
 
     /* Load current injection */
     for (k=0; k < bus->nload; k++) {
@@ -312,13 +316,14 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Ge
 	xloc += 2;
 	Pd = load->pl - x[xloc];
 	Qd = load->ql - x[xloc+1];
+  flps += 2;
       } else {
 	Pd = load->pl;
 	Qd = load->ql;
       }
       val[0] = (Pd*Vr + Qd*Vi)/Vm2;
       val[1] = (-Qd*Vr + Pd*Vi)/Vm2;
-
+      flps += 8;
       ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
     }
 
@@ -330,6 +335,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Ge
       Qimb = x[xloc+1];
       val[0] = (Pimb*Vr + Qimb*Vi)/Vm2;
       val[1] = (-Qimb*Vr + Pimb*Vi)/Vm2;
+      flps += 8;
       ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
     }
 
@@ -375,6 +381,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Ge
         val[1] = Iit;
         ierr = VecSetValues(Ge,2,row,val,ADD_VALUES);CHKERRQ(ierr);
       }
+      flps += 14;
     }
     gloc += 2;
     if(bus->ide == REF_BUS) {
@@ -383,12 +390,14 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec Ge
       val[2] = Vi - Vr*PetscTanScalar(bus->va*PETSC_PI/180.0); 
       ierr = VecSetValues(Ge,1,&row[2],&val[2],ADD_VALUES);CHKERRQ(ierr);
       gloc += 1;
+      flps += 4 +EXAGO_FLOPS_TANOP;
     }
   }
   ierr = VecAssemblyBegin(Ge);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(Ge);CHKERRQ(ierr);
 
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -408,6 +417,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR(OPFLOW opflow,Vec X
   const PSBUS    *connbuses;
   const PetscScalar *x;
   PetscInt       rstart;
+  PetscInt       flps = 0; 
 
   PetscFunctionBegin;
   ierr = MatZeroEntries(Je);CHKERRQ(ierr);
@@ -428,6 +438,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR(OPFLOW opflow,Vec X
     Vm = PetscSqrtScalar(Vr*Vr + Vi*Vi);
     Vm2 = Vm*Vm;
     Vm4 = Vm2*Vm2;
+    flps += 5+EXAGO_FLOPS_SQRTOP;
 
     col[0] = locglob; col[1] = locglob+1;
     /* Isolated and reference bus */
@@ -482,6 +493,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR(OPFLOW opflow,Vec X
 
       genctr += 2;      
     }
+    flps += 44*bus->ngen;
 
     loadctr = 0;
     for(k=0; k < bus->nload; k++) {
@@ -495,6 +507,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR(OPFLOW opflow,Vec X
 	
 	Pd = load->pl - Pdloss;
 	Qd = load->ql - Qdloss;
+  flps += 2;
       } else {
 	Pd = load->pl;
 	Qd = load->ql;
@@ -510,6 +523,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR(OPFLOW opflow,Vec X
       val[2] = (Qd*Vr*Vr - 2*Pd*Vr*Vi - Qd*Vi*Vi)/Vm4;
       /* dIid_dVi */
       val[3] = (-Pd*Vi*Vi + 2*Qd*Vr*Vi + Pd*Vr*Vr)/Vm4;
+      flps += 40;
 
       ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
 
@@ -526,6 +540,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR(OPFLOW opflow,Vec X
 	val[2] = -Vi/Vm2;
 	/* dIid_dQdloss */
 	val[3] = Vr/Vm2;
+  flps += 4;
 
 	ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
 	loadctr += 2;
@@ -564,6 +579,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR(OPFLOW opflow,Vec X
       val[2] = Vi/Vm2;
       /* dIiimb_dQimb */
       val[3] = -Vr/Vm2;
+      flps += 44;
 
       ierr = MatSetValues(Je,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
     }
@@ -645,12 +661,14 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR(OPFLOW opflow,Vec X
       val[1] = 1.0;
       ierr = MatSetValues(Je,1,row+2,2,col,val,ADD_VALUES);CHKERRQ(ierr);
       gloc += 1;
+      flps += 2 + EXAGO_FLOPS_TANOP;
     }
   }
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Je,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -671,6 +689,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec 
   PSBUS          busf,bust;
   const PSBUS    *connbuses;
   const PetscScalar *x;
+  PetscInt       flps = 0;
 
   PetscFunctionBegin;
   ierr = VecSet(Gi,0.0);CHKERRQ(ierr);
@@ -688,6 +707,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec 
     g[gloc] = Vr*Vr + Vi*Vi;
     gloc++;
   }
+  flps += 3*ps->nbus;
 
   if(opflow->ignore_lineflow_constraints) {
     ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
@@ -735,9 +755,11 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_IBCAR(OPFLOW opflow,Vec X,Vec 
 
     gloc = gloc + 2;
   }
+  flps += 62*ps->nline;
   
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArray(Gi,&g);CHKERRQ(ierr);
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -766,6 +788,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,Vec
   PSBUS          bus,busf,bust;
   const PSBUS    *connbuses;
   const PetscScalar *x;
+  PetscInt       flps =0;
 
   PetscFunctionBegin;
   ierr = MatZeroEntries(Ji);CHKERRQ(ierr);
@@ -793,6 +816,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,Vec
 
     gloc += 1;
   }
+  flps += 2* ps->nbus;
 
   if(opflow->ignore_lineflow_constraints) {
     ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
@@ -888,11 +912,13 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,Vec
 
     gloc += 2;
   }
+  flps += 156 * ps->nline;
 
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Ji,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -915,6 +941,7 @@ PetscErrorCode OPFLOWComputeObjective_IBCAR(OPFLOW opflow,Vec X,PetscScalar *obj
   PetscInt       loc;
   PetscInt       k;
   PetscScalar    Pg;
+  PetscInt       flps = 0;
 
   PetscFunctionBegin;
 
@@ -933,6 +960,7 @@ PetscErrorCode OPFLOWComputeObjective_IBCAR(OPFLOW opflow,Vec X,PetscScalar *obj
       if(opflow->obj_gencost) {
 	Pg = x[loc]*ps->MVAbase;
 	*obj += gen->cost_alpha*Pg*Pg + gen->cost_beta*Pg + gen->cost_gamma;
+  flps += 7;
       }
     }
 
@@ -947,6 +975,7 @@ PetscErrorCode OPFLOWComputeObjective_IBCAR(OPFLOW opflow,Vec X,PetscScalar *obj
 	Qdloss = x[loc+1];
 	*obj += opflow->loadloss_penalty*ps->MVAbase*ps->MVAbase*(Pdloss*Pdloss + Qdloss*Qdloss);
       }
+      flps += 7*bus->nload;
     }
 
     if(opflow->include_powerimbalance_variables) {
@@ -955,6 +984,7 @@ PetscErrorCode OPFLOWComputeObjective_IBCAR(OPFLOW opflow,Vec X,PetscScalar *obj
       Pimb = x[loc];
       Qimb = x[loc+1];
       *obj += opflow->powerimbalance_penalty*ps->MVAbase*ps->MVAbase*(Pimb*Pimb + Qimb*Qimb);
+      flps += 7;
     }
   }
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
@@ -974,6 +1004,7 @@ PetscErrorCode OPFLOWComputeGradient_IBCAR(OPFLOW opflow,Vec X,Vec grad)
   PetscInt       loc;
   PetscInt       k;
   PetscScalar    Pg;
+  PetscInt       flps = 0;
 
 
   PetscFunctionBegin;
@@ -992,6 +1023,7 @@ PetscErrorCode OPFLOWComputeGradient_IBCAR(OPFLOW opflow,Vec X,Vec grad)
       if(opflow->obj_gencost) {
 	Pg = x[loc]*ps->MVAbase;
 	df[loc] = ps->MVAbase*(2*gen->cost_alpha*Pg + gen->cost_beta);
+  flps += 5;
       }
     }
 
@@ -1007,6 +1039,7 @@ PetscErrorCode OPFLOWComputeGradient_IBCAR(OPFLOW opflow,Vec X,Vec grad)
 	df[loc]   = opflow->loadloss_penalty*ps->MVAbase*ps->MVAbase*2*Pdloss;
 	df[loc+1] = opflow->loadloss_penalty*ps->MVAbase*ps->MVAbase*2*Qdloss; 
       }
+      flps += 8*bus->nload;
     }
 
     if(opflow->include_powerimbalance_variables) {
@@ -1016,10 +1049,12 @@ PetscErrorCode OPFLOWComputeGradient_IBCAR(OPFLOW opflow,Vec X,Vec grad)
       Qimb = x[loc+1];
       df[loc] = opflow->powerimbalance_penalty*ps->MVAbase*ps->MVAbase*2*Pimb;
       df[loc+1] = opflow->powerimbalance_penalty*ps->MVAbase*ps->MVAbase*2*Qimb;
+      flps += 8;
     }
   }
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArray(grad,&df);CHKERRQ(ierr);
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -1139,6 +1174,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,Vec X
   PetscInt       row[12],col[12];
   PetscScalar    val[12];
   PetscScalar    Vr,Vi,Vm2,Vm4,Vm6;
+  PetscInt       flps = 0;
 
   PetscFunctionBegin;
 
@@ -1157,6 +1193,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,Vec X
     Vm2 = Vr*Vr + Vi*Vi;
     Vm4 = Vm2*Vm2;
     Vm6 = Vm2*Vm2*Vm2;
+    flps += 6;
     
     PetscInt genctr = 0;
     for(k=0; k < bus->ngen; k++) {
@@ -1239,6 +1276,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,Vec X
 
       genctr += 2;
     }
+    flps += 246*bus->ngen;
 
     PetscInt loadctr = 0;
     for(k=0; k < bus->nload; k++) {
@@ -1256,6 +1294,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,Vec X
 	Qdloss = x[xloc+1];
 	Pd = load->pl - Pdloss;
 	Qd = load->ql - Qdloss;
+  flps += 2;
       } else {
 	Pd = load->pl;
 	Qd = load->ql;
@@ -1294,6 +1333,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,Vec X
       val[1] = lambda[gloc]*d2Ird_dVr_dVi + lambda[gloc+1]*d2Iid_dVr_dVi;
       val[2] = lambda[gloc]*d2Ird_dVi_dVr + lambda[gloc+1]*d2Iid_dVi_dVr;
       val[3] = lambda[gloc]*d2Ird_dVi2    + lambda[gloc+1]*d2Iid_dVi2;
+      flps += 192;
 
       ierr = MatSetValues(H,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
 
@@ -1334,6 +1374,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,Vec X
 	val[1]  = lambda[gloc]*d2Ird_dPdloss_dVi + lambda[gloc+1]*d2Iid_dPdloss_dVi;
 	val[2]  = lambda[gloc]*d2Ird_dQdloss_dVr + lambda[gloc+1]*d2Iid_dQdloss_dVr;
 	val[3]  = lambda[gloc]*d2Ird_dQdloss_dVi + lambda[gloc+1]*d2Iid_dQdloss_dVi;
+  flps += 53;
 	
 	ierr = MatSetValues(H,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
 	
@@ -1416,6 +1457,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,Vec X
       val[1]  = lambda[gloc]*d2Irimb_dPimb_dVi + lambda[gloc+1]*d2Iiimb_dPimb_dVi;
       val[2]  = lambda[gloc]*d2Irimb_dQimb_dVr + lambda[gloc+1]*d2Iiimb_dQimb_dVr;
       val[3]  = lambda[gloc]*d2Irimb_dQimb_dVi + lambda[gloc+1]*d2Iiimb_dQimb_dVi;
+      flps += 244;
       
       ierr = MatSetValues(H,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
     }
@@ -1461,6 +1503,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR(OPFLOW opflow, Ve
   PetscScalar    Vrf,Vif,Vrt,Vit;
   PetscScalar    dVm2_dVr2,dVm2_dVi2;
   PetscScalar    Pf,Qf,Pt,Qt;
+  PetscInt       flps = 0;
 
   PetscFunctionBegin;
 
@@ -1484,6 +1527,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR(OPFLOW opflow, Ve
     ierr = MatSetValues(H,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
     gloc++;
   }
+  flps += 2*ps->nbus;
 
   if(opflow->ignore_lineflow_constraints) {
     ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
@@ -1797,9 +1841,11 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_IBCAR(OPFLOW opflow, Ve
 
     gloc +=  2;
   }
+  flps += 594*ps->Nline;
 
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(Lambda,&lambda);CHKERRQ(ierr);
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -1827,7 +1873,7 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_IBCAR(OPFLOW opflow,Vec X,Mat H)
   PetscInt       row[2],col[2];
   PetscScalar    val[2];
   PetscScalar    obj_factor = opflow->obj_factor;
-
+  PetscInt       flps = 0;
 
   PetscFunctionBegin;
 
@@ -1849,6 +1895,7 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_IBCAR(OPFLOW opflow,Vec X,Mat H)
       if(opflow->obj_gencost) {
 	val[0] = obj_factor*2.0*gen->cost_alpha*ps->MVAbase*ps->MVAbase;
 	ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+  flps += 4;
       }
     }
 
@@ -1868,6 +1915,7 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_IBCAR(OPFLOW opflow,Vec X,Mat H)
 	val[0] = obj_factor*2.0*opflow->loadloss_penalty*ps->MVAbase*ps->MVAbase;
 	ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);  
       }
+      flps += 8*bus->nload;
     }
 
     if(opflow->include_powerimbalance_variables) {
@@ -1881,10 +1929,12 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_IBCAR(OPFLOW opflow,Vec X,Mat H)
       col[0] = xlocglob+1;
       val[0] = obj_factor*2.0*opflow->powerimbalance_penalty*ps->MVAbase*ps->MVAbase;
       ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
+      flps +=8; 
     }
   }
 
   ierr = VecRestoreArrayRead(X,&x);CHKERRQ(ierr);
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

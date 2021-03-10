@@ -198,7 +198,7 @@ struct _p_OPFLOW{
   PetscInt  *idxn2sd_map; /* Mapping from natural to sparse-dense ordering */
 
   /** @brief Logging events that apply to interface */
-  PetscLogEvent objlogger,gradlogger,eqconslogger,ineqconslogger,eqconsjaclogger,ineqconsjaclogger,hesslogger,solvelogger;
+  PetscLogEvent objlogger,gradlogger,eqconslogger,ineqconslogger,eqconsjaclogger,ineqconsjaclogger,hesslogger,solvelogger,densehesslogger,sparsehesslogger,denseineqconsjaclogger,denseeqconsjaclogger;
 };
 
 /* Registers all the OPFLOW models */

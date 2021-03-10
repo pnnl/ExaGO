@@ -72,6 +72,8 @@ option(EXAGO_DISABLE_LOGGING "Disable all internal logging" OFF)
 # Estimate number of flops per trig op
 set(EXAGO_FLOPS_SINOP 15 CACHE STRING "Estimated number of flops per sin op")
 set(EXAGO_FLOPS_COSOP 15 CACHE STRING "Estimated number of flops per cos op")
+set(EXAGO_FLOPS_TANOP 18 CACHE STRING "Estimated number of flops per tan op")
+set(EXAGO_FLOPS_SQRTOP 6 CACHE STRING "Estimated number of flops per sqrt op")
 
 # Set default include path for the project
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR})

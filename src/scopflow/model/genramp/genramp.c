@@ -1,4 +1,4 @@
-
+#include <exago_config.h>
 #include <private/scopflowimpl.h>
 #include <private/opflowimpl.h>
 #include "genramp.h"
@@ -82,7 +82,7 @@ PetscErrorCode SCOPFLOWSetConstraintBounds_GENRAMP(SCOPFLOW scopflow,Vec Gl,Vec 
   PS             ps,ps0;
   PSBUS          bus,bus0;
   PSGEN          gen,gen0;
-  
+
   PetscFunctionBegin;
 
   ierr = VecGetArray(Gl,&gl);CHKERRQ(ierr);
@@ -95,7 +95,7 @@ PetscErrorCode SCOPFLOWSetConstraintBounds_GENRAMP(SCOPFLOW scopflow,Vec Gl,Vec 
     /* Set bounds on constraints */
     gli = gl + scopflow->gstarti[i];
     gui = gu + scopflow->gstarti[i];
-    
+
     ierr = VecPlaceArray(opflow->Gl,gli);CHKERRQ(ierr);
     ierr = VecPlaceArray(opflow->Gu,gui);CHKERRQ(ierr);
 
@@ -127,7 +127,7 @@ PetscErrorCode SCOPFLOWSetConstraintBounds_GENRAMP(SCOPFLOW scopflow,Vec Gl,Vec 
 	    } else {
 	      gli[opflow->ncon + ctr] = 0.0;
 	      gui[opflow->ncon + ctr] = 0.0;
-	    }	    
+	    }
 	  } else {
 	    gli[opflow->ncon + ctr] = -gen->ramp_rate_30min;
 	    gui[opflow->ncon + ctr] =  gen->ramp_rate_30min;
@@ -138,7 +138,7 @@ PetscErrorCode SCOPFLOWSetConstraintBounds_GENRAMP(SCOPFLOW scopflow,Vec Gl,Vec 
       }
     }
   }
-  
+
   ierr = VecRestoreArray(Gl,&gl);CHKERRQ(ierr);
   ierr = VecRestoreArray(Gu,&gu);CHKERRQ(ierr);
 
@@ -211,7 +211,7 @@ PetscErrorCode SCOPFLOWComputeJacobian_GENRAMP(SCOPFLOW scopflow,Vec X,Mat J)
   const PetscScalar *vals;
   PetscInt       row,col,gloc;
   PetscScalar    val;
-
+	PetscInt			 flps=0;
 
   PetscFunctionBegin;
 
@@ -300,7 +300,7 @@ PetscErrorCode SCOPFLOWComputeJacobian_GENRAMP(SCOPFLOW scopflow,Vec X,Mat J)
 	for(k=0; k < bus->ngen; k++) {
 	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
 	  ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
-	  
+
 	  if(!gen->status) {
 	    if(gen0->status) loc0 = gen0->startxpowloc;
 	    continue;
@@ -309,7 +309,7 @@ PetscErrorCode SCOPFLOWComputeJacobian_GENRAMP(SCOPFLOW scopflow,Vec X,Mat J)
 	    if(!gen0->status) continue;
 	    loc0 = gen0->startxpowloc;
 	  }
-	  
+
 	  x0loc = scopflow->xstarti[0] + loc0;
 	  xiloc = scopflow->xstarti[i] + loc;
 	  row = roffset;
@@ -319,7 +319,7 @@ PetscErrorCode SCOPFLOWComputeJacobian_GENRAMP(SCOPFLOW scopflow,Vec X,Mat J)
 	  col = xiloc;
 	  val = 1.;
 	  ierr = MatSetValues(J,1,&row,1,&col,&val,INSERT_VALUES);CHKERRQ(ierr);
-	  
+
 	  roffset += 1;
 	}
       }
@@ -348,7 +348,7 @@ PetscErrorCode SCOPFLOWComputeConstraints_GENRAMP(SCOPFLOW scopflow,Vec X,Vec G)
 
   ierr = VecGetArray(X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(G,&g);CHKERRQ(ierr);
-  
+
   opflow0 = scopflow->opflows[0];
   ps0 = opflow0->ps;
   x0 = x + scopflow->xstarti[0];
@@ -382,7 +382,7 @@ PetscErrorCode SCOPFLOWComputeConstraints_GENRAMP(SCOPFLOW scopflow,Vec X,Vec G)
     ierr = (*opflow->modelops.computeequalityconstraints)(opflow,opflow->X,opflow->Ge);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->Ge);CHKERRQ(ierr);
     gi = gi + opflow->nconeq;
-      
+
     if(opflow->Nconineq) {
       /* Inequality constraints */
       ierr = VecPlaceArray(opflow->Gi,gi);CHKERRQ(ierr);
@@ -417,7 +417,7 @@ PetscErrorCode SCOPFLOWComputeConstraints_GENRAMP(SCOPFLOW scopflow,Vec X,Vec G)
 	}
       }
     }
-    
+
     ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
   }
 
@@ -450,7 +450,7 @@ PetscErrorCode SCOPFLOWComputeObjective_GENRAMP(SCOPFLOW scopflow,Vec X,PetscSca
     ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
   }
   ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
-				
+
   PetscFunctionReturn(0);
 }
 
@@ -469,13 +469,12 @@ PetscErrorCode SCOPFLOWComputeGradient_GENRAMP(SCOPFLOW scopflow,Vec X,Vec Grad)
     xi    = x + scopflow->xstarti[i];
     gradi = grad + scopflow->xstarti[i];
 
-
     ierr = VecPlaceArray(opflow->X,xi);CHKERRQ(ierr);
     ierr = VecPlaceArray(opflow->gradobj,gradi);CHKERRQ(ierr);
     ierr = VecSet(opflow->gradobj,0.0);CHKERRQ(ierr);
 
     ierr = (*opflow->modelops.computegradient)(opflow,opflow->X,opflow->gradobj);CHKERRQ(ierr);
-    
+
     ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->gradobj);CHKERRQ(ierr);
   }
@@ -536,7 +535,7 @@ PetscErrorCode SCOPFLOWComputeHessian_GENRAMP(SCOPFLOW scopflow,Vec X,Vec Lambda
   PetscFunctionBegin;
 
   ierr = MatZeroEntries(H);CHKERRQ(ierr);
-  
+
   ierr = VecGetArray(X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(Lambda,&lambda);CHKERRQ(ierr);
   for(i=0; i < scopflow->nc; i++) {
@@ -589,7 +588,7 @@ PetscErrorCode SCOPFLOWModelCreate_GENRAMP(SCOPFLOW scopflow)
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  
+
   ierr = PetscCalloc1(1,&genramp);CHKERRQ(ierr);
 
   scopflow->model = genramp;
@@ -607,6 +606,6 @@ PetscErrorCode SCOPFLOWModelCreate_GENRAMP(SCOPFLOW scopflow)
   scopflow->modelops.computeobjandgradient = SCOPFLOWComputeObjandGradient_GENRAMP;
   scopflow->modelops.computeobjective = SCOPFLOWComputeObjective_GENRAMP;
   scopflow->modelops.computegradient  = SCOPFLOWComputeGradient_GENRAMP;
-  
+
   PetscFunctionReturn(0);
 }

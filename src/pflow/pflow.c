@@ -1,3 +1,4 @@
+#include "exago_config.h"
 #include <private/psimpl.h>
 #include <private/pflowimpl.h>
 
@@ -161,6 +162,7 @@ PetscErrorCode PFLOWJacobian(SNES snes,Vec X,Mat J, Mat Jpre, void *ctx)
   const PetscScalar *xarr;
   PetscBool      ghostbus;
   PetscInt       i,k;
+  PetscInt       flps = 0;
 
   PetscFunctionBegin;
   ierr = MatZeroEntries(J);CHKERRQ(ierr);
@@ -201,8 +203,12 @@ PetscErrorCode PFLOWJacobian(SNES snes,Vec X,Mat J, Mat Jpre, void *ctx)
       
       /* Shunt injections and PV_BUS voltage magnitude constraint */
       val[0] = 0.0; val[1] = 2*Vm*bus->gl;
-      val[2] = 0.0; 
-      if(bus->ide != PV_BUS) val[3]= -2*Vm*bus->bl; /* Partial derivative for shunt contribution */
+      val[2] = 0.0;
+      flps += 2; 
+      if(bus->ide != PV_BUS) {
+        val[3]= -2*Vm*bus->bl; /* Partial derivative for shunt contribution */
+        flps += 2;
+      }
       else val[3] = 1.0; /* Partial derivative of voltage magnitude constraint */
       ierr = MatSetValues(J,2,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);      
     }
@@ -248,6 +254,7 @@ PetscErrorCode PFLOWJacobian(SNES snes,Vec X,Mat J, Mat Jpre, void *ctx)
       thetat = xarr[loct];  Vmt = xarr[loct+1];
       thetaft = thetaf - thetat;
       thetatf = thetat - thetaf;
+      flps += 2;
 
       if(bus == busf) {
 	if(bus->ide != REF_BUS) {
@@ -257,6 +264,7 @@ PetscErrorCode PFLOWJacobian(SNES snes,Vec X,Mat J, Mat Jpre, void *ctx)
 	  val[1] = 2*Gff*Vmf + Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
 	  val[2] = Vmf*Vmt*(Gft*sin(thetaft) - Bft*cos(thetaft));
 	  val[3] = Vmf*(Gft*cos(thetaft) + Bft*sin(thetaft));
+    flps += 21 + (4*EXAGO_FLOPS_SINOP) + (4*EXAGO_FLOPS_COSOP);
 	  ierr = MatSetValues(J,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
 
 	  if(bus->ide != PV_BUS) {
@@ -265,6 +273,7 @@ PetscErrorCode PFLOWJacobian(SNES snes,Vec X,Mat J, Mat Jpre, void *ctx)
 	    val[1] = -2*Bff*Vmf + Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
 	    val[2] = Vmf*Vmt*(-Bft*sin(thetaft) - Gft*cos(thetaft));
 	    val[3] = Vmf*(-Bft*cos(thetaft) + Gft*sin(thetaft));
+      flps += 21 + (4*EXAGO_FLOPS_SINOP) + (4*EXAGO_FLOPS_COSOP);
 	    ierr = MatSetValues(J,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
 	  }
 	}
@@ -276,6 +285,7 @@ PetscErrorCode PFLOWJacobian(SNES snes,Vec X,Mat J, Mat Jpre, void *ctx)
 	  val[1] = 2*Gtt*Vmt + Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
 	  val[2] = Vmt*Vmf*(Gtf*sin(thetatf) - Btf*cos(thetatf));
 	  val[3] = Vmt*(Gtf*cos(thetatf) + Btf*sin(thetatf));
+    flps += 21 + (4*EXAGO_FLOPS_SINOP) + (4*EXAGO_FLOPS_COSOP);
 	  ierr = MatSetValues(J,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
 	  
 	  if(bus->ide != PV_BUS) {
@@ -284,6 +294,7 @@ PetscErrorCode PFLOWJacobian(SNES snes,Vec X,Mat J, Mat Jpre, void *ctx)
 	    val[1] = -2*Btt*Vmt + Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
 	    val[2] = Vmt*Vmf*(-Btf*sin(thetatf) - Gtf*cos(thetatf));
 	    val[3] = Vmt*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
+      flps += 21 + (4*EXAGO_FLOPS_SINOP) + (4*EXAGO_FLOPS_COSOP);
 	    ierr = MatSetValues(J,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
 	  }
 	}
@@ -296,6 +307,7 @@ PetscErrorCode PFLOWJacobian(SNES snes,Vec X,Mat J, Mat Jpre, void *ctx)
 
   ierr = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
     
   //  ierr = MatView(J,0);
   //  exit(1);
@@ -322,6 +334,7 @@ PetscErrorCode PFLOWFunction(SNES snes,Vec X,Vec F,void *ctx)
   PetscScalar     *farr;
   PetscBool      ghostbus;
   PetscInt       i;
+  PetscInt       flps = 0;
 
   PetscFunctionBegin;
   ierr = VecSet(F,0.0);CHKERRQ(ierr);
@@ -353,12 +366,17 @@ PetscErrorCode PFLOWFunction(SNES snes,Vec X,Vec F,void *ctx)
       if(bus->ide == REF_BUS || bus->ide == ISOLATED_BUS) {
 	farr[loc]   = theta - bus->va*PETSC_PI/180.0;
 	farr[loc+1] = Vm - bus->vm;
+  flps += 3;
 	continue;
       }
   
       /* Shunt injections */
       farr[loc] += Vm*Vm*bus->gl;
-      if(bus->ide != PV_BUS) farr[loc+1] += -Vm*Vm*bus->bl;
+      flps += 3;
+      if(bus->ide != PV_BUS) {
+        farr[loc+1] += -Vm*Vm*bus->bl;
+        flps += 3;
+      }
 
       /* Gen. injections */
       for(j=0; j < bus->ngen; j++) {
@@ -367,8 +385,15 @@ PetscErrorCode PFLOWFunction(SNES snes,Vec X,Vec F,void *ctx)
 	ierr = PSBUSGetGen(bus,j,&gen);CHKERRQ(ierr);
 	if(!gen->status) continue;
 	farr[loc]  -= gen->pg;
-	if(bus->ide == PV_BUS) farr[loc+1] = Vm - gen->vs;
-	else farr[loc+1] -= gen->qg;
+  flps += 1;
+	if(bus->ide == PV_BUS) {
+    farr[loc+1] = Vm - gen->vs;
+    flps += 1;
+  }
+	else {
+    farr[loc+1] -= gen->qg;
+    flps += 1;
+  }
       }
 
       /* Load injections */
@@ -378,7 +403,11 @@ PetscErrorCode PFLOWFunction(SNES snes,Vec X,Vec F,void *ctx)
 	ierr = PSBUSGetLoad(bus,j,&load);CHKERRQ(ierr);
 	if(!load->status) continue;
 	farr[loc]  += load->pl;
-	if(bus->ide != PV_BUS) farr[loc+1] += load->ql;
+  flps += 1;
+	if(bus->ide != PV_BUS) {
+    farr[loc+1] += load->ql;
+    flps += 1;
+  }
       }
     }
 
@@ -419,13 +448,26 @@ PetscErrorCode PFLOWFunction(SNES snes,Vec X,Vec F,void *ctx)
       thetatf = thetat - thetaf;
       
       if (bus == busf) {
-	if(busf->ide != REF_BUS) farr[locf]   += Gff*Vmf*Vmf + Vmf*Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
-	if(busf->ide != PV_BUS && busf->ide != REF_BUS) farr[locf+1] += -Bff*Vmf*Vmf + Vmf*Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
+	if(busf->ide != REF_BUS) {
+    farr[locf]   += Gff*Vmf*Vmf + Vmf*Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft));
+    flps += 9 + EXAGO_FLOPS_SINOP + EXAGO_FLOPS_COSOP;
+  }
+	if(busf->ide != PV_BUS && busf->ide != REF_BUS) {
+    farr[locf+1] += -Bff*Vmf*Vmf + Vmf*Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft));
+    flps += 9 + EXAGO_FLOPS_SINOP + EXAGO_FLOPS_COSOP;
+  }
       } else {
-	if(bust->ide != REF_BUS) farr[loct]   += Gtt*Vmt*Vmt + Vmt*Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
-	if(bust->ide != PV_BUS && bust->ide != REF_BUS) farr[loct+1] += -Btt*Vmt*Vmt + Vmt*Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
+	if(bust->ide != REF_BUS) {
+    farr[loct]   += Gtt*Vmt*Vmt + Vmt*Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf));
+    flps += 9 + EXAGO_FLOPS_SINOP + EXAGO_FLOPS_COSOP;
+  }
+	if(bust->ide != PV_BUS && bust->ide != REF_BUS) {
+    farr[loct+1] += -Btt*Vmt*Vmt + Vmt*Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf));
+    flps += 9 + EXAGO_FLOPS_SINOP + EXAGO_FLOPS_COSOP;
+  }
       }
-    } 
+    }
+    flps += 2*nconnlines; // for the two flops line: 447,448
   }
 
   ierr = VecRestoreArrayRead(localX,&xarr);CHKERRQ(ierr);
@@ -436,6 +478,7 @@ PetscErrorCode PFLOWFunction(SNES snes,Vec X,Vec F,void *ctx)
 
   ierr = DMRestoreLocalVector(ps->networkdm,&localX);CHKERRQ(ierr);
   ierr = DMRestoreLocalVector(ps->networkdm,&localF);CHKERRQ(ierr);
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
 
   /* Only activate for debugging
   ierr = DMGetLocalVector(ps->networkdm,&localF);CHKERRQ(ierr);
@@ -597,6 +640,7 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow)
   Vec                PQgen;
   PetscScalar        Pnet,Qnet,*pqgenarr;
   PSLINE             line;
+  PetscInt           flps = 0;
 
   PetscFunctionBegin;
 
@@ -635,6 +679,7 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow)
 
     bus->va = theta*180.0/PETSC_PI;
     bus->vm = Vm;
+    flps += 2;
     if(!ghostbus) {
       //      ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d Bus %d Type %d Vm %4.3f Va %4.3f\n",pflow->comm->rank,bus->bus_i,bus->ide,bus->vm,bus->va);CHKERRQ(ierr);
     }
@@ -648,14 +693,17 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow)
       Pload  += load->pl;
       Qload  += load->ql;
     }
+    flps += 2*bus->nload;
     
     /* Shunt injections */
     Pshunt = Vm*Vm*bus->gl;
     Qshunt = -Vm*Vm*bus->bl;
+    flps += 4;
 
     if(!ghostbus) {
       pqgenarr[loc]   = Pload + Pshunt;
       pqgenarr[loc+1] = Qload + Qshunt;
+      flps += 2;
     }
 
     PetscInt nconnlines,k;
@@ -705,10 +753,13 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow)
 	Pnet += line->pt;
 	Qnet += line->qt;
       }
+      flps += 18 + 2*(EXAGO_FLOPS_SINOP + EXAGO_FLOPS_COSOP);
     }
+    flps += 2*nconnlines;
 
     pqgenarr[loc]   += Pnet;
     pqgenarr[loc+1] += Qnet;
+    flps += 2;
   }
 
   ierr = VecRestoreArrayRead(localX,&xarr);CHKERRQ(ierr);
@@ -740,9 +791,11 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow)
 	  ierr = PSBUSGetGen(bus,k,&gen);
 	  if(bus->ide == REF_BUS) {
 	    gen->pg = pqgenarr[loc]*gen->mbase/bus->MVAbasetot;
+      flps += 2;
 	  }
 	  gen->qg = pqgenarr[loc+1]*gen->mbase/bus->MVAbasetot;
 	}
+  flps += 2*bus->ngen; // line 796
       }
     } else {
       /* Split powers adhering to real and reactive power limits */
@@ -760,6 +813,7 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow)
 	  }
 	  gen->qg = pqgenarr[loc+1];
 	  temptotal += gen->qg;
+    flps += 1;
 	} else {
 	  for(k=0; k < bus->ngen; k++) {
 	    PSGEN gen;
@@ -770,29 +824,34 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow)
 		  gen->pg = pqgenarr[loc]*PetscAbsScalar(gen->pg)/bus->Pgtot;
 		}
 		else{gen->pg = pqgenarr[loc]*gen->mbase/bus->MVAbasetot;}
+    flps += 2;
 	      }
 	      if(PetscAbsScalar(gen->qt - gen->qb) < PETSC_SMALL) gen->qg = gen->qt; /* Fixed VAR generator */
 	      else {
 		if(bus->Pgtot!=0){gen->qg = pqgenarr[loc+1]*PetscAbsScalar(gen->pg)/bus->Pgtot; /* Proportional distribution */}
 		else {
 		  gen->qg = pqgenarr[loc+1]*gen->mbase/bus->MVAbasetot;
-		}	 
+		}
+    flps += 2;	 
 		if (gen->qg > gen->qt) { // In PSSE while splitting the VARS on the generators, VAR limits are respected.
 		  gen->qg = gen->qt;
 		  pgtotalnonlt -= PetscAbsScalar(gen->pg); //Substract this PG from net PG not on limit
 		  qgtotalonlt += gen->qg;    // Add this Qg to net Qg on limit
 		  MVAbasenonlt -= gen->mbase; // Substract this MVAbase from net MVAbase not on limit
+      flps += 3;
 		}    
 		else if (gen->qg<gen->qb) {
 		  gen->qg = gen->qb;
 		  pgtotalnonlt -= PetscAbsScalar(gen->pg);
 		  qgtotalonlt += gen->qg;
 		  MVAbasenonlt -= gen->mbase;
+      flps += 3;
 		}   
 	      }
 	    }
 	    temptotal += gen->qg; // Calculate the total Qg on the bus, since some of the generators might be VAR limited, need to check if the total Qg is still the same as the total QG before splitting.
 	  }
+    flps += bus->ngen; // for l852
 	}
 	diffqg=pqgenarr[loc+1]-temptotal;  // Calculate the difference between net QG before and after splitting. 
 	if (PetscAbsScalar(diffqg)>0.0001){ // If there is a difference between the net Qg before and after splitting, distribute the difference on generators  which are not on VAR limits proportional to their PG output (or MVAbase if net PG output of generators not on VAR limits is zero.)
@@ -806,6 +865,7 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow)
 	      else {
 		gen->qg = (pqgenarr[loc+1]-qgtotalonlt)*gen->mbase/MVAbasenonlt;
 	      }
+        flps += 3;
 	    }
 	  }
 	}
@@ -892,6 +952,7 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow)
   ierr = DMRestoreLocalVector(ps->networkdm,&localPQgen);CHKERRQ(ierr);
 
   ierr = VecDestroy(&PQgen);CHKERRQ(ierr);
+  ierr = PetscLogFlops(flps);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

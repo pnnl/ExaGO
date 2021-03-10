@@ -954,6 +954,10 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PetscLogEventRegister("OPFLOWIneqConsJac",0,&opflow->ineqconsjaclogger);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("OPFLOWHess",0,&opflow->hesslogger);CHKERRQ(ierr);
   ierr = PetscLogEventRegister("OPFLOWSolve",0,&opflow->solvelogger);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWDenseHess",0,&opflow->densehesslogger);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWSparseHess",0,&opflow->sparsehesslogger);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWDenseIneqConsJac",0,&opflow->denseineqconsjaclogger);CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWDenseEqConsJac",0,&opflow->denseeqconsjaclogger);CHKERRQ(ierr);
 
   /* Compute area participation factors */
   ierr = PSComputeParticipationFactors(ps);CHKERRQ(ierr);

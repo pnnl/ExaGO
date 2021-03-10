@@ -163,13 +163,17 @@ bool OPFLOWHIOPInterface::eval_cons(const long long& n, const long long& m,
   if(!num_cons) return true;
 
   if(idx_cons[0] == 0) {
+    ierr = PetscLogEventBegin(opflow->eqconslogger,0,0,0,0);CHKERRQ(ierr);
     /* Equality constaints */
     ierr = (*opflow->modelops.computeequalityconstraintsarray)(opflow,x,cons);CHKERRQ(ierr);
+    ierr = PetscLogEventEnd(opflow->eqconslogger,0,0,0,0);CHKERRQ(ierr);
   }
 
   if(idx_cons[0] == opflow->nconeq && opflow->nconineq) {
+    ierr = PetscLogEventBegin(opflow->ineqconslogger,0,0,0,0);CHKERRQ(ierr);
     /* Inequality constraints */
     ierr = (*opflow->modelops.computeinequalityconstraintsarray)(opflow,x,cons);CHKERRQ(ierr);
+    ierr = PetscLogEventEnd(opflow->ineqconslogger,0,0,0,0);CHKERRQ(ierr);
   }
 
   //  PetscPrintf(MPI_COMM_SELF,"Exit eval_cons \n");
@@ -180,8 +184,9 @@ bool OPFLOWHIOPInterface::eval_grad_f(const long long& n, const double* x, bool 
 {
   PetscErrorCode ierr;
   //  PetscPrintf(MPI_COMM_SELF,"Enter eval_grad_f \n");
-
+  ierr = PetscLogEventBegin(opflow->gradlogger,0,0,0,0);CHKERRQ(ierr);
   ierr = (*opflow->modelops.computegradientarray)(opflow,x,gradf);CHKERRQ(ierr);
+   ierr = PetscLogEventEnd(opflow->gradlogger,0,0,0,0);CHKERRQ(ierr);
 
   //  PetscPrintf(MPI_COMM_SELF,"Exit eval_grad_f \n");
 
@@ -207,14 +212,18 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
     /* Sparse Jacobian */
     ierr = (*opflow->modelops.computesparsejacobianhiop)(opflow,iJacS,jJacS,MJacS);CHKERRQ(ierr);
 
+    ierr = PetscLogEventBegin(opflow->denseeqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
     /* Dense equality constraint Jacobian */
     ierr = (*opflow->modelops.computedenseequalityconstraintjacobianhiop)(opflow,x,JacD);CHKERRQ(ierr);
+    ierr = PetscLogEventEnd(opflow->denseeqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
   } else {
     /* Dense inequality constraint Jacobian */
     //    PetscPrintf(MPI_COMM_SELF,"Came here ineq. \n");
 
     if(opflow->nconineq) {
+      ierr = PetscLogEventBegin(opflow->denseineqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
       ierr = (*opflow->modelops.computedenseinequalityconstraintjacobianhiop)(opflow,x,JacD);CHKERRQ(ierr);
+      ierr = PetscLogEventEnd(opflow->denseineqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
     }
   }
   //  PetscPrintf(MPI_COMM_SELF,"Exit eval_Jac_cons \n");
@@ -235,12 +244,15 @@ bool OPFLOWHIOPInterface::eval_Hess_Lagr(const long long& n, const long long& m,
 
   opflow->obj_factor = obj_factor;
 
-  /* Compute sparse hessian */    
+  /* Compute sparse hessian */
+  ierr = PetscLogEventBegin(opflow->sparsehesslogger,0,0,0,0);CHKERRQ(ierr);
   ierr = (*opflow->modelops.computesparsehessianhiop)(opflow,x,iHSS,jHSS,MHSS);CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->sparsehesslogger,0,0,0,0);CHKERRQ(ierr);
 
+  ierr = PetscLogEventBegin(opflow->densehesslogger,0,0,0,0);CHKERRQ(ierr);
   /* Compute dense hessian */
   ierr = (*opflow->modelops.computedensehessianhiop)(opflow,x,lambda,HDD);CHKERRQ(ierr);
-
+  ierr = PetscLogEventEnd(opflow->densehesslogger,0,0,0,0);CHKERRQ(ierr);
   //  PetscPrintf(MPI_COMM_SELF,"Exit eval_Hess_Lagr \n");
 
   return true;
