@@ -1,7 +1,7 @@
 \chapter{Optimal power flow (OPFLOW)}\label{chap:opflow}
 
-\section{Input}
-\section{Output}
+OPFLOW solves the full AC optimal power flow problem and provides various flexible features that can be toggled via run-time options. It has interfaces to different optimization solvers and includes different representations of the underlying equations (power-balance-polar and power-balance-cartesian) that can be used. By selecting the appropriate solver, OPFLOW can be executed on CPU (in serial or parallel) or on GPUs.
+
 \section{Formulation}
 Optimal power flow is a general nonlinear programming problem with the following form
 \begin{align}
@@ -28,11 +28,11 @@ The different variables used in \opflow formulation are described in Table \ref{
     \hline
     Generator reactive power dispatch & $\qgj$ & $\qminj \le \qgj \le \qmaxj$ & ~ \\
     \hline
-    Generator real power upward deviation & $\Deltapupj$ & $0 \le \Deltapupj \le \pmaxj - \psetj$ & \begin{itemize} \item Only used when \option{\opflowgensetpoint} or \option{\opflowuseagc} option is active \item $\Deltapupj$ is the upward deviation from real power generation setpoint $\psetj$. ($\pgj \ge \psetj$) \end{itemize} \\
+    Generator real power upward deviation & $\Deltapupj$ & $0 \le \Deltapupj \le p^{\text{r}}_j$ & \begin{itemize} \item Only used when \option{\opflowgensetpoint} or \option{\opflowuseagc} option is active \item $\Deltapupj$ is the upward deviation from real power generation setpoint $\psetj$. ($\pgj \ge \psetj$) \end{itemize} \\
+    \hline
+    Generator real power downward deviation & $\Deltapdownj$ & $0 \le \Deltapdownj \le p^{\text{r}}_j$ & \begin{itemize} \item Only used when \option{\opflowgensetpoint} or \option{\opflowuseagc} option is active \item $\Deltapdownj$ is the downward deviation from real power generation setpoint $\psetj$. ($\pgj \le \psetj$)\end{itemize} \\
     \hline
     Generator real power set-point & $\pgjset$ & $\pminj \le \pgjset \le \pmaxj$ & \begin{itemize} \item Only used when \option{\opflowgensetpoint} or \option{\opflowuseagc} option is active. \end{itemize} \\
-    \hline
-    Generator real power downward deviation & $\Deltapdownj$ & $0 \le \Deltapdownj \le \psetj- \pminj$ & \begin{itemize} \item Only used when \option{\opflowgensetpoint} or \option{\opflowuseagc} option is active \item $\Deltapdownj$ is the downward deviation from real power generation setpoint $\psetj$. ($\pgj \le \psetj$)\end{itemize} \\
     \hline
     System power excess/deficit & $\Delta{P}$ & Unbounded & Only used when \option{\opflowuseagc} is active \\
     \hline
@@ -89,7 +89,7 @@ C(\Delta p^{\text{gu}},\Delta p^{\text{gd}}) = \sum_{\jinJgen} ({\Deltapupj}^2 +
 \subsubsection{Load loss $C(\Delta p^{\text{l}},\Delta q^{\text{l}})$}
 This term gets added to the objective when  \option{\opflowincludeloadloss} option is active. 
 \begin{equation}
-C(\Delta p^{\text{l}},\Delta q^{\text{l}}) = \sigmalj \sum_{\jinJload} ({\Deltaplj}^2 + {\Deltaqlj}^2)
+C(\Delta p^{\text{l}},\Delta q^{\text{l}}) =  \sum_{\jinJload} \sigmalj({\Deltaplj}^2 + {\Deltaqlj}^2)
 \label{eq:opf_obj_minloadloss}
 \end{equation}
 The load loss penalty $\sigmalj$ can be set via the option \option{-opflow\_loadloss\_penalty}. The default is \$100/MW for all loads.
@@ -97,7 +97,7 @@ The load loss penalty $\sigmalj$ can be set via the option \option{-opflow\_load
 \subsubsection{Power imbalance $C(\Delta p,\Delta q)$}
 This term gets added to the objective when  \option{-opflow\_include_powerimbalance_variables} option is active. 
 \begin{equation}
-C(\Delta p,\Delta q) = \sigmai \sum_{i \in J^{bus}} ({\Delta p_i}^2 + {\Delta q_i}^2)
+C(\Delta p,\Delta q) =  \sum_{i \in J^{bus}} \sigmai({\Delta p_i}^2 + {\Delta q_i}^2)
 \label{eq:opf_obj_minpowerimbalance}
 \end{equation}
 The power imbalance cost $\sigmai$ can be set via the option \option{-opflow\_powerimbalance\_penalty}. The default is \$1000/MW for all buses.
@@ -234,12 +234,14 @@ Power balance formulation with polar coordinates used with \hiop \cite{hiop-manu
 Power balance formulation with polar coordinates used with \hiop and \raja. This model uses \raja~\cite{beckingsale2019raja} and Umpire \cite{beckingsale2019umpire} libraries to run \opflow calculations (objective, constraints, etc.) on the GPU. 
 
 \section{Solvers}\label{sec:opflow_solvers}
-\opflow can be used with a few different solvers. 
+\opflow can be used with a few different solvers. All the three solvers solve the optimization problem via a nonlinear interior-point algorithm.
 \begin{enumerate}
-  \item \ipopt
-  \item \tao
-  \item \hiop
+  \item \ipopt~is a popular open-source package for solving nonlinear optimization problems. It is the most robust of the solvers implemented for solving \opflow. However, it can be run only on a single process and does not have GPU support. Option: \\
+  \opflowoption{-opflow\_solver IPOPT}
+  \item The Toolkit for Applied Optimization (\tao) is a toolkit available through \petsc for solving optimization problems. TAO includes a interior-point algorithm that is used by OPFLOW. The TAO algorithm is fully parallel, but is less robust compared to IPOPT. Currently, the TAO solver can only used with the power balance cartesian model. Option:\\ \opflowoption{-opflow\_solver TAO} \opflowoption{POWER\_BALANCE\_CARTESIAN}
+  \item \hiop~ is a high-performance optimization library that implements an interior-point algorithm for solving nonlinear optimization problems. The library supports execution both on the CPU and the GPU. Options: \\ CPU: \opflowoption{-opflow\_solver HIOP} \opflowoption{-opflow\_model POWER\_BALANCE\_HIOP} \\ GPU: \opflowoption{-opflow\_solver HIOP} \opflowoption{-opflow\_model PBPOLRAJAHIOP}
 \end{enumerate}
+
 \begin{table}
   \centering
   \caption{OPFLOW Model-solver compatibility}
@@ -254,10 +256,14 @@ Power balance formulation with polar coordinates used with \hiop and \raja. This
 \label{tab:opflow_model_solver_compatibility}
 \end{table}
 
+\section{Input and Output}
+The current \exago version only supports reading network file in \matpower format and can (optionally) write the output back in \matpower data file format.
+
 \section{Usage}
 \begin{lstlisting}
   ./opflow -netfile <netfilename>  <opflowoptions>
 \end{lstlisting}
+
 \section{Options}
 See table \ref{tab:opflow_options}
 \begin{table}[!htbp]
@@ -308,7 +314,7 @@ See table \ref{tab:opflow_options}
     \textbf{Voltage control type} & \textbf{Meaning} \\ \hline
     FIXED\_AT\_SETPOINT & Fixed at given set-point. Reactive power limits are ignored \\ \hline
     FIXED\_WITHIN\_QBOUNDS & Fixed within reactive power bounds \\ \hline
-    VARIABLE\_WITHIN\_BOUNDS & Variable within voltage bounds
+    VARIABLE\_WITHIN\_BOUNDS & Variable within voltage bounds \\ \hline
   \end{tabular}
 \label{tab:opflow_genbusvoltage}
 \end{table}
@@ -321,7 +327,7 @@ See table \ref{tab:opflow_options}
     \textbf{Objective function} & \textbf{Meaning} \\ \hline
     MIN\_GEN\_COST & Minimize generation cost \\ \hline
     MIN\_GENSETPOINT\_DEVIATION & Minimize deviation (ramp up-down) from generataor set-point \\ \hline
-    NO\_OBJ & No objecive function
+    NO\_OBJ & No objecive function \\ \hline
   \end{tabular}
 \label{tab:opflow_objtypes}
 \end{table}

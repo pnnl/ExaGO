@@ -15,7 +15,7 @@ The formulation for the stochastic security-constrained multi-period optimal pow
 
 \begin{align}
 \centering
-\text{min}&~\sum_{s=1}^{N_s-1}\rho_s\sum_{c=0}^{N_c-1}\sum_{t=0}^{N_t-1}f(x_{s,c,t})&  \label{eq:sctopflow_start}\\
+\text{min}&~\sum_{s=1}^{N_s-1}\pi_s\sum_{c=0}^{N_c-1}\sum_{t=0}^{N_t-1}f(x_{s,c,t})&  \label{eq:sctopflow_start}\\
 &\text{s.t.}& \nonumber \\
 &~g(x_{s,c,t}) = 0,                                        &s \in \left[1,N_s-1\right],c \in \left[0,N_c-1\right], t \in \left[0,N_t-1\right]& \\
 &~h(x_{s,c,t}) \le 0,                                      &s \in \left[1,N_s-1\right],c \in \left[0,N_c-1\right], t \in \left[0,N_t-1\right]& \\
@@ -27,7 +27,7 @@ x^- & \le x_{s,c,t} \le x^+,                               &s \in \left[1,N_s-1\
 \label{eq:sctopflow_end}
 \end{align}
 
-{\sopflow} uses all the modeling details used for modeling an optimal power flow problem, i.e., each of the circles shown in Fig. \ref{fig:sctopflow} has the modeling details of an optimal power flow problem (\opflow). Incorporating the probabilities into the objective is one of the future action items. 
+{\sopflow} uses all the modeling details used for modeling an optimal power flow problem, i.e., each of the circles shown in Fig. \ref{fig:sctopflow} has the modeling details of an optimal power flow problem (\opflow). Incorporating the probabilities $\pi_s$ for each scenario is not implemented yet which leads to each scenario having an equal probability. 
 
 Currently, \sopflow uses wind power generation as the stochastic variables and each scenario is a realization of the power output from wind generators. A zero fuel cost is used for wind power generation to ensure wind generation would be the dispatched to the given target level (upper limit). 
 
@@ -36,6 +36,9 @@ For contingencies, \sopflow supports generation and/or transmission outages. A c
 For multi time-period, we use ramping constraints on the generator real power output between successive time steps.
 
 \sopflow can be run in two modes: preventive and corrective. In the preventive mode, generator real power output is fixed to the base-case values for generators at PV bus(es). In this mode, the generators at the reference bus provide/absorb any deficit/surplus power. The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability. Note that the preventive/corrective mode is only applied at the first step $t_0$. In the successive time-steps, the generator dispatch is dictated by the previous step dispatch and the ramp limits.
+
+\section{Solvers}
+\sopflow can be solved with \ipopt. If one wants to solve each scenario independently, i.e., without any coupling constraints then use \emph{EMPAR} solver. \emph{EMPAR} distributes the contingencies to different processes when executed in parallel.
 
 \section{Input and Output}
 The following files are needed for executing a SOPFLOW.
@@ -48,8 +51,12 @@ The following files are needed for executing a SOPFLOW.
 
 The \sopflow output is saved to a directory named \emph{sopflowout}. This directory contains $N_s$ subdirectories to save the solution for each scenario. Each of these subdirectories contain $N_c$ subdirectories, one for each contingency. Each contingency subdirectory has $N_t$ MATPOWER format files to store the output for each time-period for the given contingency and scenario. The subdirectories have the directory name format \emph{scen\_x} where x is the scenario number,  \emph{cont\_y} where y is the contingency number, and the output files have the file name format \emph{t\_z} where z is the time-step number.
 
-\section{Solvers}
-\sopflow can be solved with \ipopt. If one wants to solve each scenario independently, i.e., without any coupling constraints then use \emph{EMPAR} solver. \emph{EMPAR} distributes the contingencies to different processes when executed in parallel.
+\section{Usage}
+\begin{lstlisting}
+    ./sopflow -netfile <netfilename>  -scenfile <scenfilename> <sopflowoptions>
+\end{lstlisting}
+\todo
+
 \section{Options}
 See table \ref{tab:sopflow_options}
 
@@ -71,8 +78,5 @@ With multi-contingency SOPFLOW, all \scopflow options given in Table \ref{tab:sc
 
 Depending on the \emph{mode}, SOPFLOW can either be \emph{preventive} (mode = 0) or \emph{corrective} (mode = 1). In the preventive mode, the PV and PQ generator real power is fixed to its corresponding base-case values. The generators at the reference bus pick up any make-up power required for the contingency. The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability.
 
-\section{Usage}
-\begin{lstlisting}
-    ./sopflow -netfile <netfilename>  -scenfile <scenfilename> <sopflowoptions>
-\end{lstlisting}
 \section{Examples}
+\todo

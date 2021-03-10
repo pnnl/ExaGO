@@ -47,6 +47,9 @@ x^- & \le x_{c,t} \le x^+,                               &c \in \left[0,N_c-1\ri
 
 In this formulation, the objective is to reduce the cost for the base-case time horizon, where $f(x_{0,t})$ is the objective cost for contingency $c_0$ at time $t$. Equation (\ref{eq:ctopflow_end}) represents the coupling between the base case $c_0$ and each contingency $c_i$ at time-step $t_0$. We use a simple box constraint $\delta_c{x}$ to restrict the  deviation of decision variables $x_{c,0}$ from the base-case $x_{0,0}$. The bound $\delta_c{x}$ could represent here, for example, the allowable reserve for each generator.
 
+\section{Solvers}
+\scopflow can be solved with \ipopt. If one wants to solve each contingency independently, i.e., without any coupling constraints then use \emph{EMPAR} solver. \emph{EMPAR} distributes the contingencies to different processes when executed in parallel.
+
 \section{Input and Output}
 To execute SCOPFLOW, the following files are required:
 \begin{itemize}
@@ -63,11 +66,12 @@ The \scopflow output is saved to a directory named \emph{scopflowout}. This dire
 
 If multi-period option is chosen then $N_c$ subdirectories are created (one for each contingency), and each subdirectory contains $N_t$ output files, one for each time-period. The subdirectories have the naming convention \emph{cont_xx} and the output file are named as \emph{t_yy} where \emph{yy} is the time-step number.
 
-
-\section{Solvers}
-\scopflow can be solved with \ipopt. If one wants to solve each contingency independently, i.e., without any coupling constraints then use \emph{EMPAR} solver. \emph{EMPAR} distributes the contingencies to different processes when executed in parallel.
-
+\section{Usage}
 \todo
+\begin{lstlisting}
+  ./scopflow -netfile <netfilename>  -ctgcfile <ctgcfilename> <scopflowoptions>
+\end{lstlisting}
+
 \section{Options}
 See table \ref{tab:scopflow_options}
 \begin{table}[!htbp]
@@ -93,12 +97,7 @@ See table \ref{tab:scopflow_options}
 
 In addition, all \opflow options given in Table \ref{tab:opflow_options} can be used to tune the individual time-period.
 
-
 Depending on the \emph{mode}, SCOPFLOW can either be \emph{preventive} (mode = 0) or \emph{corrective} (mode = 1). In the preventive mode, the PV and PQ generator real power is fixed to its corresponding base-case values. The generators at the referencce bus pick up any make-up power required for the contingency. The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability.
 
-\section{Usage}
-\begin{lstlisting}
-    ./scopflow -netfile <netfilename>  -ctgcfile <ctgcfilename> <scopflowoptions>
-\end{lstlisting}
 \section{Examples}
 \todo
