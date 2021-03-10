@@ -332,6 +332,8 @@ struct _p_PS {
   PetscInt    nconncomp;           /* Number of connected components */
   PSConnComp  conncomp[MAXCONNECTEDCOMPS]; /* List of connected components */
 
+  PetscReal   opflowobj; /* OPFLOW objective value used when printing to file */
+
   /* Used by OPFLOW */
   /* System-level variables,constraints, and their location */
   PetscInt  nx; /* Total number of variables for the bus */

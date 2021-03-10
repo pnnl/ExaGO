@@ -49,6 +49,11 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps,const char outfile[])
   fprintf(fd, "%%%% system MVA base\n");
   fprintf(fd, "%sbaseMVA = %.9g;\n",prefix, ps->MVAbase);
 
+  /* Write OPFLOW objective function value */
+  /* Note: MATPOWER data files do not store objective function values.*/
+  fprintf(fd, "\n%%%% OPF objective\n");
+  fprintf(fd, "%sobj = %.9g;\n",prefix,ps->opflowobj);
+
   /* Write bus data */
   fprintf(fd, "\n%%%% bus data\n");
   fprintf(fd, "%%\tbus_i\ttype\tPd\tQd\tGs\tBs\tarea\tVm\tVa\tbaseKV\tzone\tVmax\tVmin");

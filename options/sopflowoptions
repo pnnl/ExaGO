@@ -26,10 +26,10 @@
 #Options for multi-contingency
 
 # Enable multi-contingency
--sopflow_enable_multicontingency 1
+-sopflow_enable_multicontingency 0
 
 # Contingency file
--scopflow_ctgcfile datafiles/case9/case9.cont
+-ctgcfile datafiles/case9/case9.cont
 
 # Coupling between second stage and first stage?
 -scopflow_iscoupling 1
