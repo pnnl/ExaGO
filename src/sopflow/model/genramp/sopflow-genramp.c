@@ -440,7 +440,7 @@ PetscErrorCode SOPFLOWModelSetNumVariablesandConstraints_GENRAMP(SOPFLOW sopflow
 
   PetscFunctionBegin;
 
-  for(i=0; i < sopflow->Ns; i++) {
+  for(i=0; i < sopflow->ns; i++) {
     opflow = sopflow->opflows[i];
     ierr = PSGetNumActiveGenerators(opflow->ps,&ngenON,NULL);CHKERRQ(ierr);
     nxi[i] = opflow->nx;

@@ -70,7 +70,6 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
 
   /* First line -- has the bus numbers */
   out = fgets(line,MAXLINE,fp);
-
   /* Parse wind generator numbers */
   tok = strtok(line,sep);
   tok = strtok(NULL,sep); /* Skip first token */
@@ -97,12 +96,23 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
     tok = strtok(line,sep);
     tok = strtok(NULL,sep); /* Skip first token */
     sscanf(tok,"%d",&scen_num); /* Scenario number */
-    if(scen_num != 0 && sopflow->sstart <= scen_num && scen_num < sopflow->send) {
-      scen_num -= sopflow->sstart; /* converted to local scenario number */
-    } else {
-      continue;
+
+    if(scen_num == sopflow->Ns-1) {
+      ierr = PetscFree(windgenbus);CHKERRQ(ierr);
+      fclose(fp);
+      PetscFunctionReturn(0);
     }
-    
+
+    if(scen_num < sopflow->sstart) { /* Haven't yet reached scenarios for this rank */
+      continue;
+    } else if(sopflow->sstart <= scen_num && scen_num < sopflow->send) { /* This is my range */
+      scen_num -= sopflow->sstart; /* convert to local scenario number */
+    } else { /* Beyond range, we can exit */
+      ierr = PetscFree(windgenbus);CHKERRQ(ierr);
+      fclose(fp);
+      PetscFunctionReturn(0);
+    }
+
     if(!sopflow->ismulticontingency) opflow = sopflow->opflows[scen_num];
     else {
       if(!sopflow->scopflows[scen_num]->ismultiperiod) opflow = sopflow->scopflows[scen_num]->opflows[c];
@@ -118,13 +128,7 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
       nw++;
       tok = strtok(NULL,sep);
     }
-
-    if(scen_num == sopflow->Ns-1) break;
   }
-
-  ierr = PetscFree(windgenbus);CHKERRQ(ierr);
-
-  fclose(fp);
   PetscFunctionReturn(0);
 }
   
