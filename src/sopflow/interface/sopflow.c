@@ -359,10 +359,12 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   send[0] = sstart[0] + ns[0];
   int color_i = color[0];
   i = 0;
-  
+
+  /*  
   if(!sopflow->comm->rank) {
     ierr = PetscPrintf(PETSC_COMM_SELF,"Rank[%d]: color = %d, ns = %d, sstart= %d, send=%d\n",i,color[i],ns[i],sstart[i],send[i]);CHKERRQ(ierr);
   }
+  */
   
   for(i=1; i < sopflow->comm->size; i++) {
     if(color[i] == color_i) { /* Same group - copy start and end */
@@ -374,9 +376,11 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
       color_i = color[i];
     }
     
+    /*
     if(!sopflow->comm->rank) {
       ierr = PetscPrintf(PETSC_COMM_SELF,"Rank[%d]: color = %d, ns = %d, sstart= %d, send=%d\n",i,color[i],ns[i],sstart[i],send[i]);CHKERRQ(ierr);
     }
+    */
   }
 
   sopflow->sstart = sstart[sopflow->comm->rank];
@@ -469,7 +473,6 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
 
   /* Set number of variables and constraints */
   ierr = (*sopflow->modelops.setnumvariablesandconstraints)(sopflow,sopflow->nxi,sopflow->ngi,sopflow->nconineqcoup);
-
 
   if(!sopflow->ismulticontingency) {
     sopflow->nx = sopflow->nxi[0];
