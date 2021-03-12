@@ -430,25 +430,27 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
       /* Set up the PS object for opflow */
       ps = sopflow->opflows[s]->ps;
       ierr = PSSetUp(ps);CHKERRQ(ierr);
-      
-      /* Set up OPFLOW object */
-      //    ierr = OPFLOWGenbusVoltageFixed(sopflow->opflows[c],PETSC_TRUE);CHKERRQ(ierr);
-      //    if(sopflow->sstart+c > 0) sopflow->opflows[c]->obj_gencost = PETSC_FALSE; /* No gen. cost minimization for second stage */
-      ierr = OPFLOWSetUp(sopflow->opflows[s]);CHKERRQ(ierr);
     }
+
+    /* Read scenario data */
+    /* This is called before OPFLOWSetUp because ReadScenarioData also sets the upper bounds for
+       generator real power output. OPFLOWSetUp creates the optimization solver object which in turn
+       sets the bounds and does not allow changing the bounds once they are set
+    */
 
     if(sopflow->scenfileset) {
       ierr = SOPFLOWReadScenarioData(sopflow,sopflow->scenfileformat,sopflow->scenfile);CHKERRQ(ierr);
     }
+
+    for(s=0; s < sopflow->ns; s++) {
+      ierr = OPFLOWSetUp(sopflow->opflows[s]);CHKERRQ(ierr);
+    }
+
   } else {
     /* Create SCOPFLOW objects */
     ierr = PetscCalloc1(sopflow->ns,&sopflow->scopflows);CHKERRQ(ierr);
 
     for(s=0; s < sopflow->ns; s++) {
-
-      /* Using MPI_COMM_SELF for now, should actually MPI_COMM_Split and create
-	 a subcommunicator
-      */
       /* Create SCOPFLOW object */
       ierr = SCOPFLOWCreate(sopflow->subcomm,&sopflow->scopflows[s]);CHKERRQ(ierr);
       /* Set Network data */
@@ -456,12 +458,15 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
       /* Set contingency data */
       /* Should not set hard coded native format */
       ierr = SCOPFLOWSetContingencyData(sopflow->scopflows[s],NATIVE,ctgcfile);CHKERRQ(ierr);
-      /* Set up */
-      ierr = SCOPFLOWSetUp(sopflow->scopflows[s]);CHKERRQ(ierr);
     }
 
     if(sopflow->scenfileset) {
       ierr = SOPFLOWReadScenarioData(sopflow,sopflow->scenfileformat,sopflow->scenfile);CHKERRQ(ierr);
+    }
+
+    for(s=0; s < sopflow->ns; s++) {
+      /* Set up */
+      ierr = SCOPFLOWSetUp(sopflow->scopflows[s]);CHKERRQ(ierr);
     }
   }
 
