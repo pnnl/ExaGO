@@ -53,6 +53,8 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
   int            scen_num=0;
   int            genid;
   char           windgenid[100][3];
+  int            scensread=0;
+  int            nscens;
 
   PetscFunctionBegin;
 
@@ -67,6 +69,9 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
   }
 
   ierr = PetscMalloc1(ngen,&windgenbus);CHKERRQ(ierr);
+
+  /* scenarios on this rank excluding base */
+  nscens=sopflow->comm->rank?sopflow->ns:sopflow->ns-1;
 
   /* First line -- has the bus numbers */
   out = fgets(line,MAXLINE,fp);
@@ -97,7 +102,7 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
     tok = strtok(NULL,sep); /* Skip first token */
     sscanf(tok,"%d",&scen_num); /* Scenario number */
 
-    if(scen_num == sopflow->Ns-1) {
+    if(scensread == nscens) {
       ierr = PetscFree(windgenbus);CHKERRQ(ierr);
       fclose(fp);
       PetscFunctionReturn(0);
@@ -107,6 +112,7 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
       continue;
     } else if(sopflow->sstart <= scen_num && scen_num < sopflow->send) { /* This is my range */
       scen_num -= sopflow->sstart; /* convert to local scenario number */
+      scensread++;
     } else { /* Beyond range, we can exit */
       ierr = PetscFree(windgenbus);CHKERRQ(ierr);
       fclose(fp);
