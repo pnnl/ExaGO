@@ -28,9 +28,7 @@ The different variables used in \opflow formulation are described in Table \ref{
     \hline
     Generator reactive power dispatch & $\qgj$ & $\qminj \le \qgj \le \qmaxj$ & ~ \\
     \hline
-    Generator real power upward deviation & $\Deltapupj$ & $0 \le \Deltapupj \le p^{\text{r}}_j$ & \begin{itemize} \item Only used when \option{\opflowgensetpoint} or \option{\opflowuseagc} option is active \item $\Deltapupj$ is the upward deviation from real power generation setpoint $\psetj$. ($\pgj \ge \psetj$) \end{itemize} \\
-    \hline
-    Generator real power downward deviation & $\Deltapdownj$ & $0 \le \Deltapdownj \le p^{\text{r}}_j$ & \begin{itemize} \item Only used when \option{\opflowgensetpoint} or \option{\opflowuseagc} option is active \item $\Deltapdownj$ is the downward deviation from real power generation setpoint $\psetj$. ($\pgj \le \psetj$)\end{itemize} \\
+    Generator real power deviation & $\Deltapj$ & $-p^{\text{r}}_j \le \Deltapj \le p^{\text{r}}_j$ & \begin{itemize} \item Only used when \option{\opflowgensetpoint} or \option{\opflowuseagc} option is active \item $\Deltapj$ is the deviation from real power generation setpoint $\psetj$.\end{itemize} \\
     \hline
     Generator real power set-point & $\pgjset$ & $\pminj \le \pgjset \le \pmaxj$ & \begin{itemize} \item Only used when \option{\opflowgensetpoint} or \option{\opflowuseagc} option is active. \end{itemize} \\
     \hline
@@ -67,7 +65,7 @@ Power imbalance variables are non-physical (slack) variables that measure the vi
 
 The objective function for OPFLOW is given in (\ref{eq:opflow_obj})
 \begin{equation}
-\text{min.} ~ C(p^{\text{g}}) + C(\Delta p^{\text{gu}},\Delta p^{\text{gd}}) + C(\Delta p^{\text{l}},\Delta q^{\text{l}}) + C(\Delta p,\Delta q)
+\text{min.} ~ C(p^{\text{g}}) + C(\Delta p^{\text{g}}) + C(\Delta p^{\text{l}},\Delta q^{\text{l}}) + C(\Delta p,\Delta q)
 \label{eq:opflow_obj}
 \end{equation}
  
@@ -79,10 +77,10 @@ C(p^{\text{g}}) = \sum_{\jinJgen} \costgj(\pgj)
 \end{equation}
 Here, $\costgj$ is a quadratic function of the form $\costgj = \agj{\pgj}^2 + \bgj\pgj + \cgj$.
 
-\subsubsection{Total generation setpoint deviation $C(\Delta p^{\text{gu}},\Delta p^{\text{gd}})$}
+\subsubsection{Total generation setpoint deviation $C(\Delta p^{\text{g}})$}
 Needs \opflowoption{\opflowobjective}{\mingensetpointdeviation} option
 \begin{equation}
-C(\Delta p^{\text{gu}},\Delta p^{\text{gd}}) = \sum_{\jinJgen} ({\Deltapupj}^2 + {\Deltapdownj}^2)
+C(\Delta p^{\text{g}}) = \sum_{\jinJgen} ({\Deltapupj}^2)
 \label{eq:opf_obj_mingensetpointdev}
 \end{equation}
 
@@ -120,9 +118,9 @@ and from destination bus $d$ to origin bus $o$ is given by (\ref{eq:opflow_br_pd
 
 \subsubsection{Generator real power output}
 
-When using \option{\opflowgensetpoint}, three extra variables $\pgjset$, $\Deltapupj$ and $\Deltapdownj$ are added for each generator. The generator real power output $\pgj$ is related to the power deviations $\Deltapupj$ and $\Deltapdownj$ by the following relations
+When using \option{\opflowgensetpoint}, two extra variables $\pgjset$ and $\Deltapj$ are added for each generator. The generator real power output $\pgj$ is related to the power deviation $\Deltapj$ by the following relations
 \begin{align}
-  \pgjset + \Deltapupj - \Deltapdownj - \pgj = 0 \\
+  \pgjset + \Deltapj - \pgj = 0 \\
   \pgjset - p^{\text{g*}}_j = 0
 \end{align}
 Here, $p^{\text{g*}}_j$ is the set-point for the generator real power output, which can be thought of as an operator set or contractual agreement set-point.
@@ -137,21 +135,12 @@ MVA flow limits at origin and destination buses for each line.
 \end{align}
 To reduce the size of inequality constraints, only lines that are in service and having MVA A rating $\srateAj$ less than 10000 MVA are considered.
 
-\subsubsection{Generator real power output}
-When using \option{\opflowgensetpoint}, the following constraints are added to the formulation
-\begin{align}
-  0 \le \pgjset + \Deltapupj \le \pmaxj \\
-\pminj \le \pgjset - \Deltapdownj \\
-0 \le \Deltapupj(\Deltapupj - \Deltapdownj) \\
-0 \le \Deltapdownj(\Deltapdownj - \Deltapupj)
-\end{align}
-
 \subsubsection{Automatic generation control (AGC)}
 With \option{\opflowuseagc}, two additional constraints are added for each participating generator to enforce the proportional generator redispatch participation as done in automatic generation control (AGC). These two equations are 
 \begin{equation}
 \begin{aligned}
-  \left(\alpha^{\text{g}}_j\Delta{P} - (\Deltapupj - \Deltapdownj)\right)\left(\pgj - \pmaxj\right) \ge 0 \\
-  \left((\Deltapupj - \Deltapdownj) - \alpha_j\Delta{P}\right)\left(\pminj - \pgj\right) \ge 0
+  \left(\alpha^{\text{g}}_j\Delta{P} - \Deltapj)\right)\left(\pgj - \pmaxj\right) \ge 0 \\
+  \left((\Deltapj - \alpha_j\Delta{P}\right)\left(\pminj - \pgj\right) \ge 0
 \end{aligned}
 \label{eq:opflow_agc}
 \end{equation}
