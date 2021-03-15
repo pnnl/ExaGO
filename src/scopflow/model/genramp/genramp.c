@@ -56,10 +56,10 @@ PetscErrorCode SCOPFLOWSetVariableBounds_GENRAMP(SCOPFLOW scopflow,Vec Xl,Vec Xu
 	    /* Only ref. bus responsible for make-up power for contingencies */
 	    if(bus->ide != REF_BUS) {
 	      xli[gen->startxpdevloc]   = xui[gen->startxpdevloc] = 0.0;
-	      xli[gen->startxpdevloc+1] = xui[gen->startxpdevloc+1] = 0.0;
 	    }
 	  } else {
-	    xui[gen->startxpdevloc] = xui[gen->startxpdevloc+1] = gen->ramp_rate_30min;
+	    xli[gen->startxpdevloc] = -gen->ramp_rate_30min;
+	    xui[gen->startxpdevloc] =  gen->ramp_rate_30min;
 	  }
 	}
       }

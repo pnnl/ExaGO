@@ -84,9 +84,8 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow,Vec Xl,Vec Xu)
       if(opflow->has_gensetpoint) {
 	loc = gen->startxpdevloc;
 
-	xl[loc] = xl[loc+1] = 0.0;
-	xu[loc]   = gen->pt - gen->pb;
-	xu[loc+1] = gen->pt - gen->pb;
+	xl[loc] = gen->pb - gen->pt;
+	xu[loc] = gen->pt - gen->pb;
 
 	loc = gen->startxpsetloc;
 	xl[loc] = gen->pb;
@@ -188,17 +187,9 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBPOL(OPFLOW opflow,Vec Gl,Vec Gu)
 	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
 	if(!gen->status) continue;
 	gloc = gen->startineqloc;
-	gl[gloc] = 0.0;
-	gu[gloc]  = gen->pt;
-	gl[gloc+1] = gen->pb;
-	gu[gloc+1] = PETSC_INFINITY;
-
-	gl[gloc+2] = gl[gloc+3] = 0.0;
-	gu[gloc+2] = gu[gloc+3] = PETSC_INFINITY;
-
 	if(opflow->use_agc) {
-	  gl[gloc+4] = gl[gloc+5] = 0.0;
-	  gu[gloc+4] = gu[gloc+5] = PETSC_INFINITY;
+	  gl[gloc] = gl[gloc+1] = 0.0;
+	  gu[gloc] = gu[gloc+1] = PETSC_INFINITY;
 	}
       }
     }
@@ -300,7 +291,7 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow,Vec X)
 
       if(opflow->has_gensetpoint) {
 	loc = gen->startxpdevloc;
-	x[loc] = x[loc+1] = 0.0;
+	x[loc] = 0.0;
 	loc = gen->startxpsetloc;
 	x[loc] = gen->pgs;
       }
@@ -484,20 +475,19 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec Ge
 
     if(opflow->has_gensetpoint) {
       for (k=0; k < bus->ngen; k++) {
-	PetscScalar delPgup,delPgdown; /* Ramp up and down */
+	PetscScalar delPg; /* Ramp */
 	PetscScalar Pgset;
 	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
 	if(!gen->status) continue;
 	
 	Pg = x[gen->startxpowloc];
 
-	delPgup = x[gen->startxpdevloc];
-	delPgdown = x[gen->startxpdevloc + 1];
-	Pgset     = x[gen->startxpsetloc];
-	gloc = gen->starteqloc;
+	delPg = x[gen->startxpdevloc];
+	Pgset = x[gen->startxpsetloc];
+	gloc  = gen->starteqloc;
 
 	row[0] = gloc;
-	val[0] = Pgset + delPgup - delPgdown - Pg;
+	val[0] = Pgset + delPg - Pg;
 
 	ierr = VecSetValues(Ge,1,row,val,ADD_VALUES);CHKERRQ(ierr);
 
@@ -703,15 +693,13 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,Vec X
 	locglob = gen->startxpdevlocglob;
 
 	col[1] = locglob;
-	col[2] = locglob + 1;
 	val[1] = 1.0;
-	val[2] = -1.0;
 
 	locglob = gen->startxpsetlocglob;
-	col[3] = locglob;
-	val[3] = 1.0;
+	col[2] = locglob;
+	val[2] = 1.0;
 
-	ierr = MatSetValues(Je,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+	ierr = MatSetValues(Je,1,row,3,col,val,ADD_VALUES);CHKERRQ(ierr);
 
 	gidx = gen->starteqloc+1;
 	locglob = gen->startxpsetlocglob;
@@ -751,7 +739,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec 
   PSGEN          gen;
   const PetscScalar *x;
   double         flps=0.0;
-  PetscScalar    Pg,delPgup,delPgdown,delP,delPg,Pgs;
+  PetscScalar    Pg,delP,delPg,Pgs;
   PetscInt       xloc;
   PetscScalar    V,Vset,Q,Qmax,Qmin, Qg;
 
@@ -767,25 +755,16 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow,Vec X,Vec 
       for(k=0; k < bus->ngen; k++) {
 	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
 	if(!gen->status) continue;
-	delPgup = x[gen->startxpdevloc];
-	delPgdown = x[gen->startxpdevloc+1];
-	Pgs      = x[gen->startxpsetloc];
 
 	gloc = gen->startineqloc;
-	g[gloc]   = Pgs + delPgup;
-	g[gloc+1] = Pgs - delPgdown;
-
-	g[gloc+2] = delPgup*(delPgup - delPgdown);
-	g[gloc+3] = delPgdown*(delPgdown - delPgup);
 
 	if(opflow->use_agc) {
-	  Pg = x[gen->startxpowloc];
-	  delP = x[ps->startxloc];
+	  Pg      = x[gen->startxpowloc];
+	  delPg   = x[gen->startxpdevloc];
+	  delP    = x[ps->startxloc];
 
-	  delPg = delPgup - delPgdown;
-
-	  g[gloc+4] = (gen->apf*delP - delPg)*(Pg - gen->pt);
-	  g[gloc+5] = (delPg - gen->apf*delP)*(gen->pb - Pg);
+	  g[gloc] = (gen->apf*delP - delPg)*(Pg - gen->pt);
+	  g[gloc+1] = (delPg - gen->apf*delP)*(gen->pb - Pg);
 
 	  flps += 8.0;
 	}
@@ -903,11 +882,9 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,Vec
   PSBUS          bus;
   PSGEN          gen;
   const PetscScalar *x;
-  PetscScalar    Pg,delPgup,delPgdown,delPg,delP;
+  PetscScalar    Pg,delPg,delP;
   PetscInt       xloc,loc;
   PetscScalar    V,Vset,Q,Qmax,Qmin,Qg;
-
-
 
   PetscFunctionBegin;
   ierr = MatZeroEntries(Ji);CHKERRQ(ierr);
@@ -925,73 +902,33 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,Vec
 	
 	gloc = gen->startineqloc;
 
-	//Partial derivaties of	g[gloc]   = Pgs + delPgup;
-	row[0] = gloc;
-	col[0] = gen->startxpsetloc;
-	val[0] = 1.0;
-	col[1] = gen->startxpdevloc;
-	val[1] = 1.0;
-	ierr = MatSetValues(Ji,1,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-
-	//Partial derivatives of g[gloc+1] = Pgs - delPgdown;
-	row[0] = gloc+1;
-	col[0] = gen->startxpsetloc;
-	val[0] = 1.0;
-	col[1] = gen->startxpdevloc+1;
-	val[1] = -1.0;
-	ierr = MatSetValues(Ji,1,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-
-	delPgup = x[gen->startxpdevloc];
-	delPgdown = x[gen->startxpdevloc+1];
-
-	// Partial derivatives of g[gloc+2] = delPgup*(delPgup - delPgdown);
-	row[0] = gloc+2;
-	col[0] = gen->startxpdevloc;
-	col[1] = gen->startxpdevloc+1;
-	val[0] = 2*delPgup - delPgdown;
-	val[1] = -delPgup;
-	ierr = MatSetValues(Ji,1,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
-
-	// Partial derivatives of g[gloc+3] = delPgdown*(delPgdown - delPgup);
-	row[0] = gloc+3;
-	col[0] = gen->startxpdevloc;
-	col[1] = gen->startxpdevloc+1;
-	val[0] = -delPgdown;
-	val[1] = 2*delPgdown - delPgup;
-	ierr = MatSetValues(Ji,1,row,2,col,val,ADD_VALUES);CHKERRQ(ierr);
+	Pg      = x[gen->startxpowloc];
 
 	if(opflow->use_agc) {
 	  Pg = x[gen->startxpowloc];
 	  delP = x[ps->startxloc];
-
-	  delPg = delPgup - delPgdown;
+	  delPg = x[gen->startxpdevloc];
 	  
-	  //	  g[gloc+4] = (gen->apf*delP - delPg)*(Pg - gen->pt);
-	  row[0] = gloc+4;
+	  //	  g[gloc] = (gen->apf*delP - delPg)*(Pg - gen->pt);
+	  row[0] = gloc;
 	  col[0] = gen->startxpowloc;
 	  col[1] = gen->startxpdevloc;
-	  col[2] = col[1]+1;
-	  col[3] = ps->startxloc;
+	  col[2] = ps->startxloc;
 	  val[0] = gen->apf*delP - delPg;
 	  val[1] = -(Pg - gen->pt);
-	  val[2] = Pg - gen->pt;
-	  val[3] = gen->apf*(Pg - gen->pt);
-	  ierr = MatSetValues(Ji,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
+	  val[2] = gen->apf*(Pg - gen->pt);
+	  ierr = MatSetValues(Ji,1,row,3,col,val,ADD_VALUES);CHKERRQ(ierr);
 
-	  // g[gloc+5] = (delPg - gen->apf*delP)*(gen->pb - Pg);
-	  row[0] = gloc+5;
+	  // g[gloc+1] = (delPg - gen->apf*delP)*(gen->pb - Pg);
+	  row[0] = gloc+1;
 	  col[0] = gen->startxpowloc;
 	  col[1] = gen->startxpdevloc;
-	  col[2] = col[1]+1;
-	  col[3] = ps->startxloc;
+	  col[2] = ps->startxloc;
 	  val[0] = gen->apf*delP - delPg;
 	  val[1] = gen->pb - Pg;
-	  val[2] = Pg - gen->pb;
-	  val[3] = -gen->apf*(gen->pb - Pg);
-	  ierr = MatSetValues(Ji,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
-
+	  val[2] = -gen->apf*(gen->pb - Pg);
+	  ierr = MatSetValues(Ji,1,row,3,col,val,ADD_VALUES);CHKERRQ(ierr);
 	}
-
       }
     }
   }
@@ -1184,11 +1121,10 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow,Vec X,PetscScalar *obj
 	flps += 7.0;
       } else if(opflow->objectivetype == MIN_GENSETPOINT_DEVIATION) {
 	loc = gen->startxpdevloc;
-	PetscScalar delPgup,delPgdown;
-	delPgup   = x[loc];
-	delPgdown = x[loc+1];
+	PetscScalar delPg;
+	delPg   = x[loc];
 
-	*obj += delPgup*delPgup + delPgdown*delPgdown;
+	*obj += delPg*delPg;
 	flps += 3.0;
       }
     }
@@ -1255,14 +1191,12 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow,Vec X,Vec grad)
 	df[loc] = ps->MVAbase*(2*gen->cost_alpha*Pg + gen->cost_beta);
 	flps += 5.0;
       } else if(opflow->objectivetype == MIN_GENSETPOINT_DEVIATION) {
-	PetscScalar delPgup,delPgdown;
+	PetscScalar delPg;
 	loc = gen->startxpdevloc;
-	delPgup   = x[loc];
-	delPgdown = x[loc+1];
+	delPg   = x[loc];
 
-	df[loc]     = 2*delPgup;
-	df[loc + 1] = 2*delPgdown; 
-	flps += 2.0;
+	df[loc]     = 2*delPg;
+	flps += 1.0;
       }
     }
     
@@ -1353,8 +1287,8 @@ PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW opflow,PetscInt *busnvar,
       gen->nxpow = 2;
       if(opflow->has_gensetpoint) {
 	gen->nxpset = 1;
-	gen->nxpdev = 2;
-	busnvar[i] += 3;
+	gen->nxpdev = 1;
+	busnvar[i] += 2;
       }
       gen->nx = gen->nxpow + gen->nxpdev;
     }
@@ -1418,8 +1352,8 @@ PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW opflow,PetscInt *branch
       if(opflow->has_gensetpoint) {
 	*nconeq += 2;
 	gen->nconeq = 2;
-	*nconineq += 4;
-	gen->nconineq = 4;
+	*nconineq += 0;
+	gen->nconineq = 0;
 	if(opflow->use_agc) {
 	  *nconineq += 2;
 	  gen->nconineq += 2;
@@ -1754,7 +1688,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow, Ve
   PetscScalar    val[12];
   PSBUS          bus;
   PSGEN          gen;
-  PetscScalar    Pg,delPgup,delPgdown,delPg,delP;
+  PetscScalar    Pg,delPg,delP;
   PetscInt       xlocglob,loc;
   PetscScalar    V,Vset,Q,Qmax,Qmin,Qg;
 
@@ -1772,37 +1706,11 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow, Ve
 	
 	gloc = gen->startineqloc;
 
-	delPgup = x[gen->startxpdevloc];
-	delPgdown = x[gen->startxpdevloc+1];
-
-	// df1_ddelPgup = 2*delPgup - delPgdown;
-	// df2_ddelPgup = -delPgdown
-	row[0] = gen->startxpdevloc;
-	col[0] = gen->startxpdevloc;
-	col[1] = col[0]+1;
-	val[0] = 2*lambda[gloc+2];
-	val[1] = -lambda[gloc+2] - lambda[gloc+3];
-
-	ierr = MatSetValues(H,1,row,2,col,val,ADD_VALUES);
-
-	//df1_ddelPgdown = -delPgup;
-	//df2_ddelPgdown = 2*delPgdown - delPgup
-	row[0] = gen->startxpdevloc+1;
-	col[0] = gen->startxpdevloc;
-	col[1] = col[0]+1;
-	val[0] = -lambda[gloc+2] - lambda[gloc+3];
-	val[1] = 2*lambda[gloc+3];
-
-	ierr = MatSetValues(H,1,row,2,col,val,ADD_VALUES);
-
 	if(opflow->use_agc) {
 	  Pg = x[gen->startxpowloc];
-	  delPgup = x[gen->startxpdevloc];
-	  delPgdown = x[gen->startxpdevloc+1];
+	  delPg = x[gen->startxpdevloc];
 	  delP = x[ps->startxloc];
 
-	  delPg = delPgup - delPgdown;
-	  
 	  //	  df1_dPg = gen->apf*delP - delPg;
 	  // 	  df2_dPg = gen->apf*delP - delPg;
 
@@ -1810,32 +1718,25 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow, Ve
 
 	  col[0] = gen->startxpowloc;
 	  col[1] = gen->startxpdevloc;
-	  col[2] = col[1]+1;
-	  col[3] = ps->startxloc;
+	  col[2] = ps->startxloc;
 
 	  val[0] = 0.0;
-	  val[1] = -lambda[gloc+4] - lambda[gloc+5];
-	  val[2] = -val[1];
-	  val[3] = gen->apf*(lambda[gloc+4] + lambda[gloc+5]);
+	  val[1] = -lambda[gloc] - lambda[gloc+1];
+	  val[2] = gen->apf*(lambda[gloc] + lambda[gloc+1]);
 	  
-	  ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);
+	  ierr = MatSetValues(H,1,row,3,col,val,ADD_VALUES);
 
-	  //	  df1_dPgup = -(Pg - gen->pt);
-	  //	  df2_dPgup = gen->pb - Pg;
+	  //	  df1_ddelPg = -(Pg - gen->pt);
+	  //	  df2_ddelPg = gen->pb - Pg;
 	  row[0] = gen->startxpdevloc;
-	  val[0] = -lambda[gloc+4] - lambda[gloc+5];
+	  val[0] = -lambda[gloc] - lambda[gloc+1];
 	  ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
-	  //	  df1_dPgdown = Pg - gen->pt;
-	  //	  df2_dPgdown = Pg - gen->pt;
-	  row[0] = gen->startxpdevloc+1;
-	  val[0] = lambda[gloc+4] + lambda[gloc+5];
-	  ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
 	  //	  df1_ddelP = gen->apf*(Pg - gen->pt);
 	  //	  df2_ddelP = -gen->apf*(gen->pb - Pg);
 	  row[0] = ps->startxloc;
-	  val[0] = gen->apf*(lambda[gloc+4] + lambda[gloc+5]);
+	  val[0] = gen->apf*(lambda[gloc] + lambda[gloc+1]);
 	  ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 	}
       }
@@ -2250,7 +2151,7 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow,Vec X,Mat H)
 
 	val[0] = obj_factor*2.0*gen->cost_alpha*ps->MVAbase*ps->MVAbase;
 	ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-  flps += 4;
+	flps += 4;
       } else if(opflow->objectivetype == MIN_GENSETPOINT_DEVIATION) {
 	xlocglob = gen->startxpdevlocglob;
 	row[0] = xlocglob;
@@ -2258,11 +2159,7 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow,Vec X,Mat H)
 	val[0] = obj_factor*2.0;
 	ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
 
-	row[0] = xlocglob + 1;
-	col[0] = xlocglob + 1;
-	val[0] = obj_factor*2.0;
-	ierr = MatSetValues(H,1,row,1,col,val,ADD_VALUES);CHKERRQ(ierr);
-  flps += 2;
+	flps += 1;
       }
     }
     
@@ -2374,10 +2271,6 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow)
 
       gen->pg = x[loc];
       gen->qg = x[loc+1];
-
-      if(opflow->has_gensetpoint) {
-	gloc += gen->nconeq;
-      }
     }
 
     if(opflow->include_loadloss_variables) {
