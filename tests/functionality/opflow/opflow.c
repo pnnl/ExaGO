@@ -2,7 +2,7 @@ static char help[] = "OPFLOW Functionality Tests.\n\n";
 
 #include <opflow.h>
 #include <exago_config.h>
-#include <selfcheck.h>
+#include <opflowselfcheck.h>
 #include <utils.h>
 
 int main(int argc,char **argv)

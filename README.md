@@ -133,6 +133,10 @@ Since options may be specified in more than one location (on the command line, a
 ```
 Note that all ExaGO applications must run with an options file passed, and so if none is specified on the command line, ExaGO attempts to use the default application options in `options`. 
 
+### Adding tests
+Additional information on adding tests to the CMake build system can be found
+[here](docs/web/test_add.md). 
+
 ## Authors
 - Shrirang Abhyankar
 - Slaven Peles

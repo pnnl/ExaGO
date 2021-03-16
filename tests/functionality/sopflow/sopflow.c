@@ -2,7 +2,7 @@ static char help[] = "User example calling stochastic optimal power flow SOPFLOW
 
 #include <exago_config.h>
 #include <sopflow.h>
-#include <selfcheck.h>
+#include <sopflowselfcheck.h>
 #include <utils.h>
 
 int main(int argc,char **argv)
