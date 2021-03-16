@@ -1,5 +1,5 @@
 #include <tcopflow.h>
-#include <selfcheck.h>
+#include <tcopflowselfcheck.h>
 #include <utils.h>
 #include <libgen.h>
 

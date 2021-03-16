@@ -1,5 +1,5 @@
 #include <sopflow.h>
-#include <selfcheck.h>
+#include <sopflowselfcheck.h>
 #include <utils.h>
 #include <libgen.h>
 

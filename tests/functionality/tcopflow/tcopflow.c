@@ -2,7 +2,7 @@ static char help[] = "User example calling TCOPFLOW.\n\n";
 
 #include <exago_config.h>
 #include <tcopflow.h>
-#include <selfcheck.h>
+#include <tcopflowselfcheck.h>
 #include <utils.h>
 
 int main(int argc,char **argv)
