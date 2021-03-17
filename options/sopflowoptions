@@ -1,7 +1,7 @@
 -netfile datafiles/case9/case9mod_gen3_wind.m
 
 # Wind scenario profiles
--scenfile datafiles/case9/scenarios.csv
+-scenfile datafiles/case9/scenarios_9bus.csv
 
 # Coupling between second stage and first stage?
 -sopflow_iscoupling 1
