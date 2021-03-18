@@ -1,3 +1,13 @@
+
+# CI constraints for every branch
+workflow:
+  rules:
+      # Only run if source is an open merge request or a branch push
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+      when: never
+    - if: '$CI_COMMIT_BRANCH'
+
 .ornl_script_template: &ornl_script_definition
   script:
     - |
@@ -20,7 +30,6 @@
     - |
       cd "$WORKDIR/.."
       rm -rf "$WORKDIR"
-
 
 .ornl_environment_template: &ornl_environment_variables
   variables:
@@ -82,6 +91,10 @@
     - exasgd
     - marianas
 
+.pnnl_rules_template: &pnnl_rules_definition
+  rules:
+    - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"' # Will only apply to PNNL
+
 stages:
   - build
   - test
@@ -118,8 +131,7 @@ build_on_newell:
     SCRIPT_ARGS: " --build-only "
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
-  rules:
-    - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"'
+  <<: *pnnl_rules_definition
 
 test_on_newell:
   stage: test
@@ -132,8 +144,7 @@ test_on_newell:
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   <<: *pnnl_after_script_definition
-  rules:
-    - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"'
+  <<: *pnnl_rules_definition
 
 build_on_marianas:
   stage: build
@@ -143,8 +154,7 @@ build_on_marianas:
     SCRIPT_ARGS: " --build-only "
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
-  rules:
-    - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"'
+  <<: *pnnl_rules_definition
 
 test_on_marianas:
   stage: test
@@ -157,8 +167,7 @@ test_on_marianas:
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   <<: *pnnl_after_script_definition
-  rules:
-    - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"'
+  <<: *pnnl_rules_definition
 
 marianas_full_build_matrix:
   stage: matrix
