@@ -52,11 +52,11 @@ function defaultBuild {
     mkdir $builddir/datafiles
     for f in case118.m case9/case9mod.m case_ACTIVSg200.m
     do
-      [ -f ./datafiles/$f ] || {
+      [ -f $srcdir/datafiles/$f ] || {
         echo Could not find needed data files.
         return 1
       }
-      cp ./datafiles/$f $builddir/datafiles/$f
+      cp $srcdir/datafiles/$f $builddir/datafiles/$f
     done
   
     pushd $builddir
