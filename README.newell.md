@@ -19,6 +19,62 @@ Specs:
 More information is available at Research Computing
 [confluence page](https://confluence.pnnl.gov/confluence/display/RC/Newell).
 
+## Quick start using Spack
+
+More details on setting up your environment to run on the Newell cluster are
+available below, but the current spack packages can be used to build ExaGO and run
+the ExaGO test suite by typing just a few lines.
+
+The build scripts currently only work in the bash shell. If you are not using
+bash, type
+
+```
+bash
+```
+immediately after logging into newell. Then cd down into the build system
+directory, located at
+```
+$EXAGO_DIR/scripts/buildsystem
+```
+and source the <code>newellVariables.sh</code> file
+```
+source newellVariables.sh
+```
+This will set all environment variables needed by ExaGO.
+
+Return to the top-level ExaGO directory and get an interactive session on one of
+the compute nodes
+```
+srun -A exasgd -t 20 --gres=gpu:1 -p newell -n 2 --pty bash
+```
+The <code>-A exasgd</code> indicates you are using the ExaSGD allocation, <code>-t
+20</code> specifies that you are requesting 20 minutes for your interactive
+session, <code>--gres=gpu:1</code> configures the GPUs, <code>-p newell</code> means
+that you are using the newell partition on SLURM, <code>-n 2</code> specifies the
+number of MPI tasks for this session that you are requesting and
+<code>--pty bash</code> means your interactive session will be using the bash shell.
+One or two tests are using two MPI task, so you sould select at least two tasks
+in the interactive shell.  Using the newell partition guarantees that all your
+environment variables and binary files match up with the hardware you are running on.
+
+To build ExaGO, just type
+```
+./build.sh
+```
+in the top level directory while in the interactive session. This will create a
+<code>build</code> directory underneath the ExaGO directory. This directory contains
+all program executables, makefiles and test directories. In addition to
+building ExaGO, the script will also run the test suite. If you wish to rerun
+the test suite after running the <code>build.sh</code> script you can do so by going
+into the <code>build</code> directory and typing either
+```
+ctest
+```
+or
+```
+make test
+```
+
 ## Environment variables
 
 Currently, runing OpenMPI on Newell requires some nonstandard flags to be
