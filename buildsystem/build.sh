@@ -73,6 +73,11 @@ cleanup() {
   fi
 }
 
+if [[ ! -f $PWD/buildsystem/build.sh ]]; then
+  echo 'Please run this script from the top-level ExaGO source directory.'
+  exit 1
+fi
+
 makeArgs=${makeArgs:-"-j 8"}
 ctestArgs=${ctestArgs:-"-VV"}
 extraCmakeArgs=${extraCmakeArgs:-""}
@@ -80,9 +85,16 @@ export OMPI_MCA_btl="^vader,tcp,openib,uct"
 export BUILD=${BUILD:-1}
 export TEST=${TEST:-1}
 export srcdir=${srcdir:-$PWD}
-export builddir=${builddir:-$(pwd)/build}
-export installdir=${installdir:-$(pwd)/install}
+export builddir=${builddir:-$PWD/build}
+export installdir=${installdir:-$PWD/install}
 export BUILD_MATRIX=${BUILD_MATRIX:-0}
+
+echo "Paths:"
+echo "Source dir: $srcdir"
+echo "Build dir: $builddir"
+echo "Install dir: $installdir"
+echo "Path to buildsystem script: $buildsystemDir/build.sh"
+cd $srcdir
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -150,10 +162,10 @@ ulimit -l unlimited || echo 'Could not set max locked memory to unlimited.'
 . /etc/profile.d/modules.sh
 module purge
 
-if [[ -f "scripts/buildsystem/$(echo $MY_CLUSTER)Variables.sh" ]]; then
+if [[ -f "$srcdir/buildsystem/$(echo $MY_CLUSTER)Variables.sh" ]]; then
   # We don't want all the shell functions we bring into scope to be printed out
   set -x
-  source "scripts/buildsystem/$(echo $MY_CLUSTER)Variables.sh"
+  source "$srcdir/buildsystem/$(echo $MY_CLUSTER)Variables.sh"
   set +x
   echo Sourced system-specific variables for $MY_CLUSTER
 fi
@@ -171,12 +183,12 @@ fi
 
 if [[ $BUILD_MATRIX -eq 1 ]]; then
   echo Running build matrix
-  source scripts/buildsystem/buildMatrix.sh
+  source $srcdir/buildsystem/buildMatrix.sh
   buildMatrix
   exit $?
 else
   echo Running defualt build
-  source scripts/buildsystem/defaultBuild.sh
+  source $srcdir/buildsystem/defaultBuild.sh
   defaultBuild
   exit $?
 fi

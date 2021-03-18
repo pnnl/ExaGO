@@ -6,14 +6,16 @@
       mkdir -p "$WORKDIR"
       cp -R ./* "$WORKDIR"
       cd "$WORKDIR"
-      MY_CLUSTER=ascent ./build.sh --build-only || exit 1
+      export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+      MY_CLUSTER=ascent ./buildsystem/build.sh --build-only || exit 1
 
 .ornl_test_script_template: &ornl_test_script_definition
   script:
     - |
       set -xv
       cd "$WORKDIR"
-      MY_CLUSTER="ascent" ./build.sh --test-only
+      export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+      MY_CLUSTER="ascent" ./buildsystem/build.sh --test-only
       res=$?
       exit $res
   after_script:
@@ -56,9 +58,14 @@
       touch output
       tail -f output &
       tailpid=$!
+
+      # Set some directories used in the build script manually, as they
+      # can be inconsistent in gitlab pipelines
+      export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+
       # jobid used in pnnl_after_script_template to cancel job if cancelled or
       # timed out by gitlab through the UI
-      jobid=$(sbatch --export=ALL -A EXASGD --gres=gpu:1 --ntasks=2 -p $SLURM_Q -o output -e output -t 1:00:00 $WORKDIR/build.sh $SCRIPT_ARGS)
+      jobid=$(sbatch --export=ALL -A EXASGD --gres=gpu:1 --ntasks=2 -p $SLURM_Q -o output -e output -t 1:00:00 $WORKDIR/buildsystem/build.sh $SCRIPT_ARGS)
       export jobid=$(echo $jobid | cut -f4 -d' ')
       echo $jobid > "$WORKDIR/jobid"
       res=1

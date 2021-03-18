@@ -30,7 +30,7 @@ Configuration and library discovery.
 #]]#############################################################################
 
 # Specify where CMake modules are to be found
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/buildsystem/cmake)
 
 # Set the path to options file in EXAGO installation
 set(EXAGO_OPTIONS_DIR "${CMAKE_INSTALL_PREFIX}/options")
