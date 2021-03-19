@@ -156,7 +156,7 @@ test_on_newell:
 build_on_marianas:
   stage: build
   variables:
-    SLURM_Q: "shared"
+    SLURM_Q: "dl_shared"
     MY_CLUSTER: "marianas"
     SCRIPT_ARGS: " --build-only "
   <<: *pnnl_tags_definition
@@ -168,7 +168,7 @@ test_on_marianas:
   dependencies:
     - build_on_marianas
   variables:
-    SLURM_Q: "shared"
+    SLURM_Q: "dl_shared"
     MY_CLUSTER: "marianas"
     SCRIPT_ARGS: " --test-only "
   <<: *pnnl_tags_definition
@@ -183,7 +183,7 @@ marianas_full_build_matrix:
     - test_on_marianas
     - test_on_newell
   variables:
-    SLURM_Q: "shared"
+    SLURM_Q: "dl_shared"
     MY_CLUSTER: "marianas"
     TIMELIMIT: '60:00'
     SCRIPT_ARGS: " --ci "
