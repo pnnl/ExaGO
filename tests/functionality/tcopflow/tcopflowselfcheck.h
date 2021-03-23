@@ -20,6 +20,8 @@ typedef struct
 {
   /// Options passed to the TCOPFLOW driver
   char networkname[PETSC_MAX_PATH_LEN];
+  char modelinit[PETSC_MAX_PATH_LEN];
+  char genbusvoltage[PETSC_MAX_PATH_LEN];
   char windgenname[PETSC_MAX_PATH_LEN];
   char qloadprofile[PETSC_MAX_PATH_LEN];
   char ploadprofile[PETSC_MAX_PATH_LEN];

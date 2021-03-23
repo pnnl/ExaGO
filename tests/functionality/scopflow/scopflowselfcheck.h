@@ -1,13 +1,13 @@
-#ifndef _SOPFLOWSELFCHECK_H
-#define _SOPFLOWSELFCHECK_H
+#ifndef _SCOPFLOWSELFCHECK_H
+#define _SCOPFLOWSELFCHECK_H
 
-#include <sopflow.h>
+#include <scopflow.h>
 
 #define SELFCHECK_NETWORK_CASE9 "case9mod.m"
 #define SELFCHECK_NETWORK_CASE118 "case118.m"
 #define SELFCHECK_NETWORK_CASE200 "case_ACTIVSg200.m"
 
-// -- SOPFLOW Selfcheck --
+// -- SCOPFLOW Selfcheck --
 
 #define SELFCHECK_CONTINGENCY_CASE9 "case9.cont"
 #define SELFCHECK_CONTINGENCY_CASE200 "case_ACTIVSg200.cont"
@@ -19,19 +19,16 @@
 
 typedef struct
 {
-  /// Options passed to sopflow driver that are:
-  ///  - applicable to all sopflow runs
+  /// Options passed to scopflow driver that are:
+  ///  - applicable to all scopflow runs
   char solver[PETSC_MAX_PATH_LEN];
   char networkname[PETSC_MAX_PATH_LEN];
   char scenarioname[PETSC_MAX_PATH_LEN];
   char modelinit[PETSC_MAX_PATH_LEN];
   char genbusvoltage[PETSC_MAX_PATH_LEN];
-  PetscInt numscenarios;
-
-  PetscBool multicontingency;
-  ///  - applicable to muti-contingency
   PetscInt numcontingencies;
   char contingencyname[PETSC_MAX_PATH_LEN];
+  PetscInt mode; /** preventive(0) -default ; and corrective(1) */
 
   PetscBool multiperiod;
   ///  - applicable to multi-period
@@ -40,11 +37,11 @@ typedef struct
   PetscReal dt;
   PetscReal duration;
 
-  /// Attributes of sopflow solution checked
+  /// Attributes of scopflow solution checked
   PetscInt numiter;
   PetscReal objective;
-} ExaGOSelfcheckSOPFLOWAnswer;
+} ExaGOSelfcheckSCOPFLOWAnswer;
 
-/** Returns 0 if sopflow conforms to the answer, >0 otherwise. */
-extern PetscBool ExaGOSelfcheckSOPFLOW(SOPFLOW);
+/** Returns 0 if scopflow conforms to the answer, >0 otherwise. */
+extern PetscBool ExaGOSelfcheckSCOPFLOW(SCOPFLOW);
 #endif

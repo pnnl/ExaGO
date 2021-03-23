@@ -11,11 +11,11 @@
 static const ExaGOSelfcheckSOPFLOWAnswer ExaGOSelfcheckSOPFLOWAnswers[ExaGOSelfcheckSOPFLOWNumAnswers] =
 {
   /* Network, number of iterations */
-  {SOPFLOWSOLVER_IPOPT   , SELFCHECK_NETWORK_CASE200   , SELFCHECK_SCENARIO_CASE200,  1, PETSC_FALSE,  0,                          "", PETSC_FALSE, "", "", 0.0, 0.0, 278, 5.421745579792e+04},
-  {SOPFLOWSOLVER_IPOPT   , SELFCHECK_NETWORK_CASE200   , SELFCHECK_SCENARIO_CASE200,  2, PETSC_FALSE,  0,                          "", PETSC_FALSE, "", "", 0.0, 0.0, 182, 8.094270966745e+04},
-  {SOPFLOWSOLVER_IPOPT   , SELFCHECK_NETWORK_CASE200   , SELFCHECK_SCENARIO_CASE200,  3, PETSC_FALSE,  0,                          "", PETSC_FALSE, "", "", 0.0, 0.0, 348, 1.078552870160e+05},
-  {SOPFLOWSOLVER_IPOPTNEW, SELFCHECK_NETWORK_CASE9_WIND, SELFCHECK_SCENARIO_CASE9  , -1,  PETSC_TRUE, -1, SELFCHECK_CONTINGENCY_CASE9, PETSC_FALSE, "", "", 0.0, 0.0, 132, 1.389005750576e+05},
-  {SOPFLOWSOLVER_IPOPTNEW, SELFCHECK_NETWORK_CASE9_WIND, SELFCHECK_SCENARIO_CASE9  , -1,  PETSC_TRUE, -1, SELFCHECK_CONTINGENCY_CASE9, PETSC_TRUE, SELFCHECK_PLOAD, SELFCHECK_QLOAD, 5.0, 0.16666667, 203, 4.231365446348e+05}
+  {SOPFLOWSOLVER_IPOPT   , SELFCHECK_NETWORK_CASE200   , SELFCHECK_SCENARIO_CASE200, SOPFLOW_INITIALIZATION, SOPFLOW_GENBUSVOLTAGE, 1, PETSC_FALSE,  0,                          "", PETSC_FALSE, "", "", 0.0, 0.0, 37, 5.4217451548917030e+04},
+  {SOPFLOWSOLVER_IPOPT   , SELFCHECK_NETWORK_CASE200   , SELFCHECK_SCENARIO_CASE200, SOPFLOW_INITIALIZATION, SOPFLOW_GENBUSVOLTAGE, 2, PETSC_FALSE,  0,                          "", PETSC_FALSE, "", "", 0.0, 0.0, 35, 8.0942703311315316e+04},
+  {SOPFLOWSOLVER_IPOPT   , SELFCHECK_NETWORK_CASE200   , SELFCHECK_SCENARIO_CASE200, SOPFLOW_INITIALIZATION, SOPFLOW_GENBUSVOLTAGE, 3, PETSC_FALSE,  0,                          "", PETSC_FALSE, "", "", 0.0, 0.0, 50, 1.0785527851682018e+05},
+  {SOPFLOWSOLVER_IPOPTNEW, SELFCHECK_NETWORK_CASE9_WIND, SELFCHECK_SCENARIO_CASE9, SOPFLOW_INITIALIZATION, SOPFLOW_GENBUSVOLTAGE, -1,  PETSC_TRUE, -1, SELFCHECK_CONTINGENCY_CASE9, PETSC_FALSE, "", "", 0.0, 0.0, 15, 1.2196984710420136e+04},
+  {SOPFLOWSOLVER_IPOPTNEW, SELFCHECK_NETWORK_CASE9_WIND, SELFCHECK_SCENARIO_CASE9, SOPFLOW_INITIALIZATION, SOPFLOW_GENBUSVOLTAGE, -1,  PETSC_TRUE, -1, SELFCHECK_CONTINGENCY_CASE9, PETSC_TRUE, SELFCHECK_PLOAD, SELFCHECK_QLOAD, 5.0, 0.16666667, 35,  4.4167081067087827e+05}
 };
 
 /** Temporary tolerance for error for number of iterations */
@@ -53,6 +53,22 @@ PetscBool ExaGOSelfcheckSOPFLOWFindAnswer(SOPFLOW sopflow,ExaGOSelfcheckSOPFLOWA
     return PETSC_TRUE;
   }
 
+  // Check that a model initialization parameter is being passed
+  ierr = PetscOptionsGetString(NULL,NULL,"-opflow_initialization",ans->modelinit,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
+  if (!flg)
+  {
+    ExaGOLog(EXAGO_LOG_WARN,"%s needs option -opflow_initialization.",__func__);
+    return PETSC_TRUE;
+  }
+
+  // Check that a model parameter is being passed
+  ierr = PetscOptionsGetString(NULL,NULL,"-opflow_genbusvoltage",ans->genbusvoltage,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
+  if (!flg)
+  {
+    ExaGOLog(EXAGO_LOG_WARN,"%s needs option -opflow_genbusvoltage.",__func__);
+    return PETSC_TRUE;
+  }
+
   // Check that a number of scenarios is being passed
   ierr = PetscOptionsGetInt(NULL,NULL,"-sopflow_Ns",&ans->numscenarios,&flg);CHKERRQ(ierr);
   if (!flg)
@@ -72,7 +88,7 @@ PetscBool ExaGOSelfcheckSOPFLOWFindAnswer(SOPFLOW sopflow,ExaGOSelfcheckSOPFLOWA
 
   // Check for multi-contingency
   ierr = PetscOptionsGetBool(NULL,NULL,"-sopflow_enable_multicontingency",&ans->multicontingency,&flg);CHKERRQ(ierr);
-
+  fprintf(stderr," -- !\n");
   // Options only applicable for multicontingency...
   if(ans->multicontingency)
   {
@@ -146,6 +162,8 @@ PetscBool ExaGOSelfcheckSOPFLOWFindAnswer(SOPFLOW sopflow,ExaGOSelfcheckSOPFLOWA
     const ExaGOSelfcheckSOPFLOWAnswer *ians = &ExaGOSelfcheckSOPFLOWAnswers[i];
     if (strcmp(ans->networkname,ians->networkname)==0 &&
         strcmp(ans->solver,ians->solver) == 0 &&
+        strcmp(ans->modelinit,ians->modelinit) == 0 &&
+        strcmp(ans->genbusvoltage,ians->genbusvoltage) == 0 &&
         ans->numscenarios == ians->numscenarios &&
         strcmp(ans->scenarioname,ians->scenarioname) == 0 &&
         ans->multicontingency == ians->multicontingency)
@@ -186,10 +204,12 @@ PetscBool ExaGOSelfcheckSOPFLOWFindAnswer(SOPFLOW sopflow,ExaGOSelfcheckSOPFLOWA
     }
   }
   ExaGOLog(EXAGO_LOG_WARN,"%s could not find answer for option:"
-      "\n\tnetwork:%s\n\tsolver:%s\n\tscenario:%s\n\tnum_scenarios:%d\n\tmulticontingency:%d\
+      "\n\tnetwork:%s\n\tsolver:%s\n\tscenario:%s\n\tinitialization:%s\
+      \n\tgenbusvoltage:%s\n\tnum_scenarios:%d\n\tmulticontingency:%d\
        \n\tnum_cont:%d\n\tcontingency:%s\n\tmultiperiod:%d\
        \n\tpload:%s\n\tqload:%s\n\tdT:%f\n\tduration:%f\n",
-      __func__,ans->networkname,ans->solver,ans->scenarioname,ans->numscenarios,ans->multicontingency,\
+      __func__,ans->networkname,ans->solver,ans->scenarioname,ans->modelinit,\
+               ans->genbusvoltage,ans->numscenarios,ans->multicontingency,\
                ans->numcontingencies, ans->contingencyname, ans->multiperiod,\
                ans->ploadprofile, ans->qloadprofile, ans->dt, ans->duration);
   return PETSC_TRUE;
@@ -204,6 +224,22 @@ PetscBool ExaGOSelfcheckSOPFLOW(SOPFLOW sopflow)
 
   ExaGOSelfcheckSOPFLOWAnswer *ans;
   ans = (ExaGOSelfcheckSOPFLOWAnswer*)malloc(sizeof(ExaGOSelfcheckSOPFLOWAnswer));
+  memset( ans->solver, '\0', sizeof(char)* PETSC_MAX_PATH_LEN);
+  memset( ans->networkname, '\0', sizeof(char)* PETSC_MAX_PATH_LEN);
+  memset( ans->scenarioname, '\0', sizeof(char)* PETSC_MAX_PATH_LEN);
+  memset( ans->modelinit, '\0', sizeof(char)* PETSC_MAX_PATH_LEN);
+  memset( ans->genbusvoltage, '\0', sizeof(char)* PETSC_MAX_PATH_LEN);
+  memset( ans->contingencyname, '\0', sizeof(char)* PETSC_MAX_PATH_LEN);
+  memset( ans->ploadprofile, '\0', sizeof(char)* PETSC_MAX_PATH_LEN);
+  memset( ans->qloadprofile, '\0', sizeof(char)* PETSC_MAX_PATH_LEN);
+  ans->numscenarios = 0;
+  ans->multicontingency = PETSC_FALSE;
+  ans->numcontingencies=0;
+  ans->multiperiod=PETSC_FALSE;
+  ans->dt=0.0;
+  ans->duration=0.0;
+  ans->numiter=0;
+  ans->objective=0.0;
 
   ierr = ExaGOSelfcheckSOPFLOWFindAnswer(sopflow, ans);CHKERRQ(ierr);
   if (ierr)
@@ -214,8 +250,9 @@ PetscBool ExaGOSelfcheckSOPFLOW(SOPFLOW sopflow)
 
   // Printing config makes greping for solutions/results easier
   char config[PETSC_MAX_PATH_LEN];
-  sprintf(config,"%s+%s+%s+%d+%d+%d+%s+%d+%s+%s+%d+%d",\
-          ans->networkname,ans->solver,ans->scenarioname,ans->numscenarios,ans->multicontingency,\
+  sprintf(config,"%s+%s+%s+%s+%s+%d+%d+%d+%s+%d+%s+%s+%d+%d",\
+          ans->networkname,ans->solver,ans->scenarioname,ans->modelinit,\
+          ans->genbusvoltage,ans->numscenarios,ans->multicontingency,\
           ans->numcontingencies, ans->contingencyname, ans->multiperiod,\
           ans->ploadprofile, ans->qloadprofile, ans->dt, ans->duration);
 
