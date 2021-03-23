@@ -422,6 +422,16 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
   return 1;
 }
 
+Bool SCOPFLOWSolverMonitor_IPOPT(Index alg_mod,Index iter_count,Number obj_value,Number inf_pr,
+			       Number inf_du,Number mu,Number d_norm,Number regularization_size,
+			       Number alpha_du,Number alpha_pr,Index ls_trials,
+                               UserDataPtr user_data)
+{
+  SCOPFLOW  scopflow=(SCOPFLOW)user_data;
+  scopflow->numiter = iter_count;
+  return 1;
+}
+
 PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
 {
   PetscErrorCode     ierr;
@@ -518,6 +528,14 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
   ierr = VecGetArray(scopflow->X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(scopflow->G,&g);CHKERRQ(ierr);
   ierr = VecGetArray(scopflow->Lambda,&lam);CHKERRQ(ierr);
+
+  /* IPOPT tolerance */
+  AddIpoptNumOption(scopflowipopt->nlp,"tol", scopflow->tolerance);
+  
+  /** Add intermediate callback to get solver info. 
+   * This is called by IPOPT each iteration. 
+  */
+  SetIntermediateCallback(scopflowipopt->nlp,SCOPFLOWSolverMonitor_IPOPT);
 
   /* Solve */
   scopflowipopt->solve_status = IpoptSolve(scopflowipopt->nlp,x,g,&scopflow->obj,lam,NULL,NULL,scopflow);

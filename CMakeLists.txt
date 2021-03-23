@@ -283,7 +283,7 @@ if(EXAGO_RUN_TESTS)
 
   message(STATUS "Configuring tests")
 
-  # Unit tests
+  # # Unit tests
   exago_add_test(
     NAME "UNIT_TESTS_OPFLOW"
     DEPENDS HIOP
@@ -499,10 +499,12 @@ if(EXAGO_RUN_TESTS)
       -sopflow_enable_multicontingency 0
       -sopflow_Ns ${ns}
       -sopflow_tolerance ${tolerance}
+      -opflow_initialization ACPF
+      -opflow_genbusvoltage VARIABLE_WITHIN_BOUNDS
       )
   endforeach(ns)
 
-  exago_add_test(NAME SOPFLOW_9bus_3scen_9cont_FUNCTIONALITY_TEST COMMAND
+  exago_add_test(NAME FUNCTIONALITY_TEST_SOPFLOW_9bus_3scen_9cont COMMAND
            ${RUNCMD} $<TARGET_FILE:testSopflowFunctionality>
            -netfile  datafiles/case9/case9mod_gen3_wind.m
            -scenfile datafiles/case9/scenarios_9bus.csv
@@ -512,9 +514,11 @@ if(EXAGO_RUN_TESTS)
            -sopflow_tolerance ${tolerance}
            -sopflow_Ns -1
 	   -scopflow_Nc -1
+     -opflow_initialization ACPF
+     -opflow_genbusvoltage VARIABLE_WITHIN_BOUNDS
      DEPENDS IPOPT)
 
-  exago_add_test(NAME SOPFLOW_9bus_3scen_9cont_3steps_FUNCTIONALITY_TEST COMMAND
+  exago_add_test(NAME FUNCTIONALITY_TEST_SOPFLOW_9bus_3scen_9cont_3steps COMMAND
            ${RUNCMD} $<TARGET_FILE:testSopflowFunctionality>
            -netfile  datafiles/case9/case9mod_gen3_wind.m
            -scenfile datafiles/case9/scenarios_9bus.csv
@@ -529,20 +533,120 @@ if(EXAGO_RUN_TESTS)
 	   -scopflow_duration 0.16666667
            -sopflow_Ns -1
 	   -scopflow_Nc -1
+     -opflow_initialization ACPF
+     -opflow_genbusvoltage VARIABLE_WITHIN_BOUNDS
      DEPENDS IPOPT)
   
+  # SCOPFLOW Functionality Tests
+  message(STATUS "Configuring SCOPFLOW Functionality Tests.")
+  file(GLOB network_file datafiles/case_ACTIVSg200.m)
+  get_filename_component(input_file ${network_file} NAME)
+
+  exago_add_test(
+        NAME FUNCTIONALITY_TEST_SCOPFLOW_200bus_IPOPT 
+        COMMAND ${RUNCMD} $<TARGET_FILE:testScopflowFunctionality>
+        -netfile datafiles/case_ACTIVSg200.m
+        -ctgcfile datafiles/case_ACTIVSg200.cont
+        -scopflow_solver IPOPT
+        -scopflow_Nc 0
+        -scopflow_enable_multiperiod 0
+        -scopflow_tolerance ${tolerance}
+        -opflow_initialization ACPF
+        -opflow_genbusvoltage VARIABLE_WITHIN_BOUNDS
+        DEPENDS IPOPT)
+  
+  exago_add_test(
+        NAME FUNCTIONALITY_TEST_SCOPFLOW_200bus_IPOPT_15nCont 
+        COMMAND ${RUNCMD} $<TARGET_FILE:testScopflowFunctionality>
+        -netfile datafiles/case_ACTIVSg200.m
+        -ctgcfile datafiles/case_ACTIVSg200.cont
+        -scopflow_solver IPOPT
+        -scopflow_Nc 15
+        -scopflow_enable_multiperiod 0
+        -scopflow_tolerance ${tolerance}
+        -opflow_initialization ACPF
+        -opflow_genbusvoltage VARIABLE_WITHIN_BOUNDS
+        DEPENDS IPOPT)
+
+  exago_add_test(
+        NAME FUNCTIONALITY_TEST_SCOPFLOW_200bus_IPOPT_mode_Corrective 
+        COMMAND ${RUNCMD} $<TARGET_FILE:testScopflowFunctionality>
+        -netfile datafiles/case_ACTIVSg200.m
+        -ctgcfile datafiles/case_ACTIVSg200.cont
+        -scopflow_solver IPOPT
+        -scopflow_Nc 15
+        -scopflow_enable_multiperiod 0
+        -scopflow_mode 1
+        -scopflow_tolerance ${tolerance}
+        -opflow_initialization ACPF
+        -opflow_genbusvoltage VARIABLE_WITHIN_BOUNDS
+        DEPENDS IPOPT)
+
+  exago_add_test(
+        NAME FUNCTIONALITY_TEST_SCOPFLOW_9bus_IPOPT_9contingencies 
+        COMMAND ${RUNCMD} $<TARGET_FILE:testScopflowFunctionality>
+        -netfile datafiles/case9/case9mod_gen3_wind.m
+        -ctgcfile datafiles/case9/case9.cont
+        -scopflow_solver IPOPT
+        -scopflow_Nc 9
+        -scopflow_enable_multiperiod 0
+        -scopflow_tolerance ${tolerance}
+        -opflow_initialization ACPF
+        -opflow_genbusvoltage VARIABLE_WITHIN_BOUNDS
+        DEPENDS IPOPT)
+  
+  exago_add_test(
+        NAME FUNCTIONALITY_TEST_SCOPFLOW_9bus_IPOPTNEW_9contingencies_load_pq_scene_wind 
+        COMMAND ${RUNCMD} $<TARGET_FILE:testScopflowFunctionality>
+        -netfile datafiles/case9/case9mod_gen3_wind.m
+        -ctgcfile datafiles/case9/case9.cont
+        -scopflow_ploadprofile datafiles/case9/load_P.csv
+	      -scopflow_qloadprofile datafiles/case9/load_Q.csv
+        -scopflow_windgenprofile datafiles/case9/scenarios_9bus.csv
+        -scopflow_solver IPOPTNEW
+        -scopflow_Nc 9
+        -scopflow_mode 1
+        -scopflow_enable_multiperiod 1
+        -scopflow_dT 5.0
+	      -scopflow_duration 0.16666667
+        -scopflow_tolerance ${tolerance}
+        -opflow_initialization ACPF
+        -opflow_genbusvoltage VARIABLE_WITHIN_BOUNDS
+        DEPENDS IPOPT)
+
+  exago_add_test(
+        NAME FUNCTIONALITY_TEST_SCOPFLOW_200bus_IPOPTNEW_10contingencies_load_pq_scene_wind 
+        COMMAND ${RUNCMD} $<TARGET_FILE:testScopflowFunctionality>
+        -netfile datafiles/case_ACTIVSg200.m
+        -ctgcfile datafiles/case_ACTIVSg200.cont
+        -scopflow_ploadprofile datafiles/TAMU200_scenarios/load_P.csv
+	      -scopflow_qloadprofile datafiles/TAMU200_scenarios/load_Q.csv
+        -scopflow_windgenprofile datafiles/TAMU200_scenarios/scenarios_200bus.csv
+        -scopflow_solver IPOPTNEW
+        -scopflow_Nc 10
+        -scopflow_enable_multiperiod 1
+        -scopflow_dT 5.0
+	      -scopflow_duration 0.16666667
+        -scopflow_tolerance ${tolerance}
+        -opflow_initialization ACPF
+        -opflow_genbusvoltage VARIABLE_WITHIN_BOUNDS
+        DEPENDS IPOPT)
+  
   message(STATUS "Configuring TCOPFLOW functionality tests")
-  exago_add_test(NAME TCOPFLOW_FUNCTIONALITY_TEST COMMAND
-           ${RUNCMD} $<TARGET_FILE:testTcopflowFunctionality>
-           -options_file options/tcopflowoptions
-           -netfile datafiles/case9/case9mod_gen3_wind.m
-           -tcopflow_windgenprofile datafiles/case9/scenarios_9bus.csv
-           -tcopflow_qloadprofile datafiles/case9/load_Q.csv
-           -tcopflow_ploadprofile datafiles/case9/load_P.csv
-           -tcopflow_iscoupling 0
-           -tcopflow_dT 5.0
-           -tcopflow_duration 0.5
-           -tcopflow_tolerance ${tolerance}
-           -opflow_ignore_lineflow_constraints 0
-           DEPENDS IPOPT)
+  exago_add_test(
+        NAME FUNCTIONALITY_TEST_TCOPFLOW 
+        COMMAND ${RUNCMD} $<TARGET_FILE:testTcopflowFunctionality>
+        -options_file options/tcopflowoptions
+        -netfile datafiles/case9/case9mod_gen3_wind.m
+        -tcopflow_windgenprofile datafiles/case9/scenarios_9bus.csv
+        -tcopflow_qloadprofile datafiles/case9/load_Q.csv
+        -tcopflow_ploadprofile datafiles/case9/load_P.csv
+        -tcopflow_iscoupling 0
+        -tcopflow_dT 5.0
+        -tcopflow_duration 0.5
+        -tcopflow_tolerance ${tolerance}
+        -opflow_ignore_lineflow_constraints 0
+        -opflow_initialization ACPF
+        -opflow_genbusvoltage VARIABLE_WITHIN_BOUNDS
+        DEPENDS IPOPT)
 endif(EXAGO_RUN_TESTS)

@@ -31,9 +31,6 @@ int main(int argc,char **argv)
     return ierr;
   }
 
-
-  PetscInitialize(&argc,&argv,options_pathname,help);
-
   ierr = PetscOptionsGetBool(NULL,NULL,"-print_output",&print_output,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL,NULL,"-save_output",&save_output,NULL);CHKERRQ(ierr);
 

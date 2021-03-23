@@ -18,6 +18,10 @@
 #define SOPFLOWSOLVER_IPOPT "IPOPT"
 #define SOPFLOWSOLVER_EMPAR  "EMPAR" /* Embarassingly parallel solver - solves each OPFLOW independently */
 
+/* Initialization and Parameters*/
+#define SOPFLOW_INITIALIZATION "ACPF"
+#define SOPFLOW_GENBUSVOLTAGE "VARIABLE_WITHIN_BOUNDS"
+
 /* Type of uncertainty */
 typedef enum {NONE,WIND,LOAD}ScenarioUncertaintyType;
 

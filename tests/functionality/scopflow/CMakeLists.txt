@@ -1,6 +1,6 @@
 #[[ Functionality tests for ExaGO SCOPFLOW applications ]]
 
-add_executable(testScopflowFunctionality scopflow.c)
+add_executable(testScopflowFunctionality scopflow.c scopflowselfcheck.c)
 target_include_directories(testScopflowFunctionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 #[[ Configure SCOPFLOW functionality tests ]]

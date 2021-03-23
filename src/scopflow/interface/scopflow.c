@@ -2,14 +2,11 @@
 #include <private/tcopflowimpl.h>
 #include <private/scopflowimpl.h>
 
-/*
-  SCOPFLOWCreate - Creates a security constrained optimal power flow application object
-
-  Input Parameters
-. mpicomm - The MPI communicator
-
-  Output Parameters
-. scopflowout - The security constrained optimal power flow application object
+/**
+ * @brief Creates a security constrained optimal power flow application object
+ * 
+ * @param[in] mpicomm the MPI communicator
+ * @param[in] scopflowout pointer to the security constrained optimal power flow application object
 */
 PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
 {
@@ -33,6 +30,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
   scopflow->obj = 0.0;
 
   scopflow->mode = 0;
+  scopflow->tolerance = 1e-6;
 
   scopflow->ismultiperiod = PETSC_FALSE;
 
@@ -62,11 +60,9 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
   PetscFunctionReturn(0);
 }
 
-/*
-  SCOPFLOWDestroy - Destroys the security constrained optimal power flow application object
-
-  Input Parameter
-. scopflow - The SCOPFLOW object to destroy
+/**
+ * @brief Destroys the security constrained optimal power flow application object
+ * @param[in] scopflow the scopflow object to destroy
 */
 PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
 {
@@ -128,12 +124,11 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
   PetscFunctionReturn(0);
 }
 
-/*
-  SCOPFLOWEnableMultiPeriod - Enable/Disable multi-period SCOPLOW
-
-  Input Parameters:
-+ scopflow - scopflow application object
-- ismultperiod - PETSC_FALSE for single-period, PETSC_TRUE otherwise
+/**
+ * @brief Enable/Disable multi-period SCOPLOW
+ * 
+ * @param[in] scopflow the scopflow application object
+ * @param[in] ismultperiod PETSC_FALSE for single-period, PETSC_TRUE otherwise
 */
 PetscErrorCode SCOPFLOWEnableMultiPeriod(SCOPFLOW scopflow,PetscBool ismultiperiod)
 {
@@ -142,12 +137,11 @@ PetscErrorCode SCOPFLOWEnableMultiPeriod(SCOPFLOW scopflow,PetscBool ismultiperi
   PetscFunctionReturn(0);
 }
 
-/*
-  SCOPFLOWSetModel - Sets the model for SCOPFLOW
-
-  Input Parameters:
-+ scopflow - scopflow application object
-- modelname - name of the model
+/**
+ * @brief Sets the model for SCOPFLOW
+ * 
+ * @param[in] scopflow scopflow application object
+ * @param[in] modelname name of the model
 */
 PetscErrorCode SCOPFLOWSetModel(SCOPFLOW scopflow,const char* modelname)
 {
@@ -187,12 +181,11 @@ PetscErrorCode SCOPFLOWSetModel(SCOPFLOW scopflow,const char* modelname)
   PetscFunctionReturn(0);
 }
 
-/*
-  SCOPFLOWSetSolver - Sets the solver for SCOPFLOW
-
-  Input Parameters:
-+ scopflow - scopflow application object
-- solvername - name of the solver
+/**
+ * @brief Sets the solver for SCOPFLOW
+ * 
+ * @param[in] scopflow the scopflow application object
+ * @param[in] solvername name of the solver
 */
 PetscErrorCode SCOPFLOWSetSolver(SCOPFLOW scopflow,const char* solvername)
 {
@@ -222,14 +215,13 @@ PetscErrorCode SCOPFLOWSetSolver(SCOPFLOW scopflow,const char* solvername)
   PetscFunctionReturn(0);
 }
 
-/*
-  SCOPFLOWSetNetworkData - Sets and reads the network data
-
-  Input Parameter
-+  scopflow - The SCOPFLOW object
--  netfile - The name of the network file
-
-  Notes: The input data must be in MATPOWER data format
+/**
+ * @brief Sets and reads the network data
+ * 
+ * @param[in] scopflow the scopflow object
+ * @param[in] netfile the name of the network file
+ * 
+ * @note The input data must be in MATPOWER data format
 */
 PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW scopflow,const char netfile[])
 {
@@ -242,15 +234,13 @@ PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW scopflow,const char netfile[])
   PetscFunctionReturn(0);
 }
 
-/*
-  SCOPFLOWSetUp - Sets up an security constrained optimal power flow application object
-
-  Input Parameters:
-. scopflow - the SCOPFLOW object
-
-  Notes:
-  This routine sets up the SCOPFLOW object and the underlying PS object. It
-  also distributes the PS object when used in parallel.
+/**
+ * @brief Sets up an security constrained optimal power flow application object
+ * 
+ * @param[in] scopflow the scopflow object
+ * 
+ * @note This routine sets up the SCOPFLOW object and the underlying PS object. 
+ *     It also distributes the PS object when used in parallel.
 */
 PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 {
@@ -287,7 +277,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
     ierr = PetscOptionsReal("-scopflow_duration","Time horizon (hours)","",duration,&duration,NULL);CHKERRQ(ierr);
 
   }
-
+  ierr = PetscOptionsReal("-scopflow_tolerance", "optimization tolerance", "", scopflow->tolerance,&scopflow->tolerance, NULL); CHKERRQ(ierr);
   PetscOptionsEnd();
 
   if(scopflow->ctgcfileset) {
@@ -317,7 +307,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW running with %d contingencies (base case + %d contingencies)\n",scopflow->Nc,scopflow->Nc-1);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d has %d contingencies, range [%d -- %d]\n",scopflow->comm->rank,scopflow->nc,scopflow->cstart,scopflow->cend);CHKERRQ(ierr);
 
-  /* Set Model */
+  /* Set model */
   if(!scopflow->ismultiperiod) {
     ierr = SCOPFLOWSetModel(scopflow,scopflowmodelname);CHKERRQ(ierr);
   } else {
@@ -472,7 +462,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = VecDuplicate(scopflow->X,&scopflow->Xu);CHKERRQ(ierr);
   ierr = VecDuplicate(scopflow->X,&scopflow->gradobj);CHKERRQ(ierr);
 
-  /* vector for constraints */
+  /* Vector for constraints */
   ierr = VecCreate(scopflow->comm->type,&scopflow->G);CHKERRQ(ierr);
   ierr = VecSetSizes(scopflow->G,scopflow->ncon,PETSC_DECIDE);CHKERRQ(ierr);
   ierr = VecSetFromOptions(scopflow->G);CHKERRQ(ierr);
@@ -504,12 +494,10 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   PetscFunctionReturn(0);
 }
 
-
-/*
-  SCOPFLOWSolve - Solves the AC security constrained optimal power flow
-
-  Input Parameters:
-. scopflow - the security constrained optimal power flow application object
+/**
+ * @brief Solves the AC security constrained optimal power flow
+ *
+ * @param[in] scopflow the security constrained optimal power flow application object
 */
 PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
 {
@@ -550,14 +538,13 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
   PetscFunctionReturn(0);
 }
 
-/*
-  SCOPFLOWGetObjective - Returns the objective function value
-
-  Input Parameters:
-+ SCOPFLOW - the SCOPFLOW object
-- obj    - the objective function value
-
-  Notes: Should be called after the optimization finishes
+/**
+ * @brief Returns the objective function value
+ * 
+ * @param[in] scopflow the scopflow object
+ * @param[in] obj the objective function value
+ * 
+ * @note Should be called after the optimization finishes
 */
 PetscErrorCode SCOPFLOWGetObjective(SCOPFLOW scopflow,PetscReal *obj)
 {
@@ -568,15 +555,14 @@ PetscErrorCode SCOPFLOWGetObjective(SCOPFLOW scopflow,PetscReal *obj)
   PetscFunctionReturn(0);
 }
 
-/*
-  SCOPFLOWGetBaseSolution - Returns the SCOPFLOW solution for a given contingency
-
-  Input Parameters:
-+ SCOPFLOW - the SCOPFLOW object
-. contnum  - Contingency number (0 for base/no-contingency)
-- X        - the scopflow solution for the given contingency
-
-  Notes: Should be called after the optimization finishes
+/**
+ * @brief Returns the SCOPFLOW solution for a given contingency
+ * 
+ * @param[in] scopflow the scopflow object
+ * @param[in] contnum Contingency number (0 for base/no-contingency)
+ * @param[in] X the scopflow solution for the given contingency
+ * 
+ * @note Should be called after the optimization finishes
 */
 PetscErrorCode SCOPFLOWGetSolution(SCOPFLOW scopflow,PetscInt contnum,Vec *X)
 {
@@ -587,16 +573,15 @@ PetscErrorCode SCOPFLOWGetSolution(SCOPFLOW scopflow,PetscInt contnum,Vec *X)
   PetscFunctionReturn(0);
 }
 
-/*
-  SCOPFLOWGetConstraints - Returns the SCOPFLOW constraints for a given contingency
-
-  Input Parameters:
-+ SCOPFLOW - the SCOPFLOW object
-. contnum  - Contingency number (0 for base/no-contingency)
-- G    - the scopflow constraints
-
-  Notes: Should be called after the optimization finishes.
-         Equality constraints first followed by inequality constraints
+/**
+ * @brief Returns the SCOPFLOW constraints for a given contingency
+ * 
+ * @param[in] scopflow the scopflow object
+ * @param[in] contnum contingency number (0 for base/no-contingency)
+ * @param[in] G the scopflow constraints
+ * 
+ * @note Should be called after the optimization finishes.
+ * Equality constraints first followed by inequality constraints
 */
 PetscErrorCode SCOPFLOWGetConstraints(SCOPFLOW scopflow,PetscInt contnum,Vec *G)
 {
@@ -607,16 +592,15 @@ PetscErrorCode SCOPFLOWGetConstraints(SCOPFLOW scopflow,PetscInt contnum,Vec *G)
   PetscFunctionReturn(0);
 }
 
-/*
-  SCOPFLOWGetConstraintMultipliers - Returns the SCOPFLOW constraint multipliers for a given contingency
-
-  Input Parameters:
-+ SCOPFLOW - the SCOPFLOW object
-. contnum  - Contingency number (0 for base/no-contingency)
-- G    - the scopflow constraint lagrange multipliers
-
-  Notes: Should be called after the optimization finishes.
-    Equality constraint multipliers first followed by inequality constraint multipliers
+/**
+ * @brief Returns the SCOPFLOW constraint multipliers for a given contingency
+ * 
+ * @param[in] scopflow the scopflow object
+ * @param[in] contnum  Contingency number (0 for base/no-contingency)
+ * @param[in] Lambda pointer to vector object
+ * 
+ * @note Should be called after the optimization finishes. 
+ * Equality constraint multipliers first followed by inequality constraint multipliers
 */
 PetscErrorCode SCOPFLOWGetConstraintMultipliers(SCOPFLOW scopflow,PetscInt contnum,Vec *Lambda)
 {
@@ -627,14 +611,13 @@ PetscErrorCode SCOPFLOWGetConstraintMultipliers(SCOPFLOW scopflow,PetscInt contn
   PetscFunctionReturn(0);
 }
 
-/*
-  SCOPFLOWGetConvergenceStatus - Did SCOPFLOW converge?
-
-  Input Parameters:
-+ SCOPFLOW - the SCOPFLOW object
-- status - PETSC_TRUE if converged, PETSC_FALSE otherwise
-
-  Notes: Should be called after the optimization finishes
+/**
+ * @brief Check SCOPFLOW convergence
+ * 
+ * @param[in] scopflow the scopflow object
+ * @param[in] status PETSC_TRUE if converged, PETSC_FALSE otherwise
+ * 
+ * @note Should be called after the optimization finishes
 */
 PetscErrorCode SCOPFLOWGetConvergenceStatus(SCOPFLOW scopflow,PetscBool *status)
 {
@@ -645,22 +628,58 @@ PetscErrorCode SCOPFLOWGetConvergenceStatus(SCOPFLOW scopflow,PetscBool *status)
   PetscFunctionReturn(0);
 }
 
-/*
-  SCOPFLOWGetNumVariablesAndConstraints - Gets the number of variables and constraints
-
-  Input Parameters:
-+ scopflow - the scopflow object
-
-  Output Parameters:
-+ nx - number of variables
-- ncon - number of constraints
-
-Notes: Must be called after SCOPFLOWSetUp
+/**
+ * @brief Gets the number of variables and constraints
+ *
+ * @param[in] scopflow the scopflow object
+ * @param[in] nx number of variables
+ * @param[in] ncon number of constraints
+ *
+ * @note Must be called after SCOPFLOWSetUp
 */
 PetscErrorCode SCOPFLOWGetNumVariablesandConstraints(SCOPFLOW scopflow,PetscInt *Nx,PetscInt *Ncon)
 {
   PetscFunctionBegin;
   *Nx = scopflow->nx;
   *Ncon = scopflow->ncon;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Get the number of iterations for a given solver
+ * 
+ * @param[in] scopflow application object 
+ * @param [in] iter pointer to solver iteration variable
+*/
+PetscErrorCode SCOPFLOWGetNumIterations(SCOPFLOW scopflow,PetscInt *iter)
+{
+  PetscErrorCode ierr;
+  *iter = scopflow->numiter;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Set the solver tolerance for SCOPFLOW
+ * 
+ * @param[in] scopflow application object 
+ * @param[in] tol solver tolerance
+*/
+PetscErrorCode SCOPFLOWSetTolerance(SCOPFLOW scopflow,PetscReal tol)
+{
+  PetscFunctionBegin;
+  scopflow->tolerance = tol;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Get the solver tolerance for SCOPFLOW
+ * 
+ * @param[in] scopflow application object 
+ * @param[in] tol pointer to solver tolerance variable
+*/
+PetscErrorCode SCOPFLOWGetTolerance(SCOPFLOW scopflow,PetscReal *tol)
+{
+  PetscFunctionBegin;
+  *tol = scopflow->tolerance;
   PetscFunctionReturn(0);
 }

@@ -18,6 +18,10 @@
 #define SCOPFLOWSOLVER_TAO   "TAO"
 #define SCOPFLOWSOLVER_EMPAR  "EMPAR" /* Embarassingly parallel solver - solves each OPFLOW independently */
 
+/* Initialization and Parameters*/
+#define SCOPFLOW_INITIALIZATION "ACPF"
+#define SCOPFLOW_GENBUSVOLTAGE "VARIABLE_WITHIN_BOUNDS"
+
 typedef struct _p_SCOPFLOW *SCOPFLOW;
 
 PETSC_EXTERN PetscErrorCode SCOPFLOWEnableMultiPeriod(SCOPFLOW,PetscBool);
@@ -65,7 +69,9 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWSaveSolution(SCOPFLOW,PetscInt,OutputFormat,
 PETSC_EXTERN PetscErrorCode SCOPFLOWSaveSolutionAll(SCOPFLOW,OutputFormat,const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetConvergenceStatus(SCOPFLOW,PetscBool*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetMode(SCOPFLOW,PetscInt*);
-
+PETSC_EXTERN PetscErrorCode SCOPFLOWGetNumIterations(SCOPFLOW,PetscInt*);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetTolerance(SCOPFLOW,PetscReal);
+PETSC_EXTERN PetscErrorCode SCOPFLOWGetTolerance(SCOPFLOW,PetscReal*);
 #endif
 
 

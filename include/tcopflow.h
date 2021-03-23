@@ -14,6 +14,10 @@
 /* Models */
 #define TCOPFLOWMODEL_GENRAMP "GENRAMP"
 
+/* Initialization and Parameters*/
+#define TCOPFLOW_INITIALIZATION "ACPF"
+#define TCOPFLOW_GENBUSVOLTAGE "VARIABLE_WITHIN_BOUNDS"
+
 typedef struct _p_TCOPFLOW *TCOPFLOW;
 
 PETSC_EXTERN PetscErrorCode TCOPFLOWSetModel(TCOPFLOW,const char[]);

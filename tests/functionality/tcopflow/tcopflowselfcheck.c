@@ -10,7 +10,7 @@
  */
 static const ExaGOSelfcheckTCOPFLOWAnswer ExaGOSelfcheckTCOPFLOWAnswers[EXAGOSelfcheckTCOPFLOWNumAnswers] = 
 {
-  {SELFCHECK_NETWORK_CASE9_WIND, SELFCHECK_SCENARIO_CASE9, SELFCHECK_QLOAD, SELFCHECK_PLOAD, PETSC_FALSE, 5.0, 0.5, PETSC_FALSE, 31, 2.084367578790e+04}
+  {SELFCHECK_NETWORK_CASE9_WIND, TCOPFLOW_INITIALIZATION, TCOPFLOW_GENBUSVOLTAGE, SELFCHECK_SCENARIO_CASE9, SELFCHECK_QLOAD, SELFCHECK_PLOAD, PETSC_FALSE, 5.0, 0.5, PETSC_FALSE, 18, 2.0792822464162207e+04}
 };
 
 PetscBool ExaGOSelfcheckTCOPFLOWFindAnswer(TCOPFLOW tcopflow, ExaGOSelfcheckTCOPFLOWAnswer *ans)
@@ -33,6 +33,22 @@ PetscBool ExaGOSelfcheckTCOPFLOWFindAnswer(TCOPFLOW tcopflow, ExaGOSelfcheckTCOP
     return PETSC_TRUE;
   }
   strcpy(ans->networkname,basename(netfile));
+
+  // Check that a model initialization parameter is being passed
+  ierr = PetscOptionsGetString(NULL,NULL,"-opflow_initialization",ans->modelinit,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
+  if (!flg)
+  {
+    ExaGOLog(EXAGO_LOG_WARN,"%s needs option -opflow_initialization.",__func__);
+    return PETSC_TRUE;
+  }
+
+  // Check that a model parameter is being passed
+  ierr = PetscOptionsGetString(NULL,NULL,"-opflow_genbusvoltage",ans->genbusvoltage,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
+  if (!flg)
+  {
+    ExaGOLog(EXAGO_LOG_WARN,"%s needs option -opflow_genbusvoltage.",__func__);
+    return PETSC_TRUE;
+  }
 
   // Check for windfile
   ierr = PetscOptionsGetString(NULL,NULL,"-tcopflow_windgenprofile",windfile,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
@@ -98,6 +114,8 @@ PetscBool ExaGOSelfcheckTCOPFLOWFindAnswer(TCOPFLOW tcopflow, ExaGOSelfcheckTCOP
   {
     const ExaGOSelfcheckTCOPFLOWAnswer *ians = &ExaGOSelfcheckTCOPFLOWAnswers[i];
     if (strcmp(ans->networkname,ians->networkname)==0 &&
+        strcmp(ans->modelinit,ians->modelinit) == 0 &&
+        strcmp(ans->genbusvoltage,ians->genbusvoltage) == 0 &&
         strcmp(ans->windgenname,ians->windgenname)==0 &&
         strcmp(ans->qloadprofile,ians->qloadprofile)==0 &&
         strcmp(ans->ploadprofile,ians->ploadprofile)==0 &&
@@ -113,10 +131,10 @@ PetscBool ExaGOSelfcheckTCOPFLOWFindAnswer(TCOPFLOW tcopflow, ExaGOSelfcheckTCOP
   }
 
   ExaGOLog(EXAGO_LOG_WARN,"%s could not find answer for option:"
-      "\n\tnetwork:%s\n\twindgen:%s\
+      "\n\tnetwork:%s\n\twindgen:%s\n\tinitialization:%s\n\tgenbusvoltage:%s\
        \n\tiscoupling:%d\n\tlineflow_constraints:%d\
        \n\tpload:%s\n\tqload:%s\n\tdT:%f\n\tduration:%f\n",
-      __func__,ans->networkname,ans->windgenname,\
+      __func__,ans->networkname,ans->modelinit,ans->genbusvoltage,ans->windgenname,\
                ans->iscoupling, ans->lineflow_constraints,\
                ans->ploadprofile, ans->qloadprofile, ans->dt, ans->duration);
   return PETSC_TRUE;
@@ -142,8 +160,9 @@ PetscBool ExaGOSelfcheckTCOPFLOW(TCOPFLOW tcopflow)
 
   // Printing config makes greping for solutions/results easier
   char config[PETSC_MAX_PATH_LEN];
-  sprintf(config,"%s+%s+%s+%s+%d+%d+%d+%d",\
-          ans->networkname,ans->windgenname,ans->qloadprofile,ans->ploadprofile,\
+  sprintf(config,"%s+%s+%s+%s+%s+%s+%d+%d+%d+%d",\
+          ans->networkname,ans->modelinit,ans->genbusvoltage,ans->windgenname,\
+          ans->qloadprofile,ans->ploadprofile,\
           ans->iscoupling,ans->dt,ans->duration,ans->lineflow_constraints);
 
   // Check for convergence

@@ -89,10 +89,12 @@ int main(int argc,char **argv)
     ierr = SOPFLOWSaveSolutionAll(sopflow,MATPOWER,"sopflowout");CHKERRQ(ierr);
   }
 
+  int ret = ExaGOSelfcheckSOPFLOW(sopflow);
+
   /* Destroy SOPFLOW object */
   ierr = SOPFLOWDestroy(&sopflow);CHKERRQ(ierr);
 
   // PetscFinalize();
   ExaGOFinalize(); 
-  return 0;
+  return ret;
 }

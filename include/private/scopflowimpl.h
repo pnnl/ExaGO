@@ -83,6 +83,8 @@ struct _p_SCOPFLOW{
   PetscBool setupcalled; /* SCOPFLOWSetUp called? */
 
   PetscBool converged; /* Convergence status */
+  PetscInt  numiter; /* Number of iterations */
+  PetscReal tolerance; /* Tolerance for SCOPFLOW */
 
   char netfile[100]; /* Network data file */
 
