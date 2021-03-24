@@ -20,6 +20,7 @@ PetscErrorCode SCOPFLOWPrintSolution(SCOPFLOW scopflow,PetscInt cont_num)
   PetscInt       c;
   TCOPFLOW       tcopflow;
   OPFLOW         opflow;
+  const PetscScalar *x,*lambda;
 
   PetscFunctionBegin;
   MPI_Barrier(scopflow->comm->type);
@@ -27,16 +28,37 @@ PetscErrorCode SCOPFLOWPrintSolution(SCOPFLOW scopflow,PetscInt cont_num)
   if(cont_num >= scopflow->cstart && cont_num < scopflow->cend) {
     if(!scopflow->ismultiperiod) {
       opflow = scopflow->opflows[c];
+
+      if(!opflow->solutiontops) {
+	ierr = SCOPFLOWGetSolution(scopflow,cont_num,&opflow->X);CHKERRQ(ierr);
+	ierr = SCOPFLOWGetConstraintMultipliers(scopflow,cont_num,&opflow->Lambda);CHKERRQ(ierr);
+	ierr = OPFLOWSolutionToPS(opflow);CHKERRQ(ierr);
+      }
     } else {
       tcopflow = scopflow->tcopflows[c];
+
+      ierr = SCOPFLOWGetSolution(scopflow,cont_num,&tcopflow->X);CHKERRQ(ierr);
+      ierr = SCOPFLOWGetConstraintMultipliers(scopflow,cont_num,&tcopflow->Lambda);CHKERRQ(ierr);
+
+      ierr = VecGetArrayRead(tcopflow->X,&x);CHKERRQ(ierr);
+      ierr = VecGetArrayRead(tcopflow->Lambda,&lambda);CHKERRQ(ierr);
+
       opflow   = tcopflow->opflows[0];
+
+      ierr = VecPlaceArray(opflow->X,x+tcopflow->xstarti[0]);
+      ierr = VecPlaceArray(opflow->Lambda,x+tcopflow->gstarti[0]);
+      
+      if(!opflow->solutiontops) {
+	ierr = OPFLOWSolutionToPS(opflow);CHKERRQ(ierr);
+      }
+
+      ierr = VecResetArray(opflow->X);
+      ierr = VecResetArray(opflow->Lambda);
+
+      ierr = VecRestoreArrayRead(tcopflow->X,&x);CHKERRQ(ierr);
+      ierr = VecRestoreArrayRead(tcopflow->Lambda,&lambda);CHKERRQ(ierr);
     }
 
-    if(!opflow->solutiontops) {
-      ierr = SCOPFLOWGetSolution(scopflow,cont_num,&opflow->X);CHKERRQ(ierr);
-      ierr = SCOPFLOWGetConstraintMultipliers(scopflow,cont_num,&opflow->Lambda);CHKERRQ(ierr);
-      ierr = OPFLOWSolutionToPS(opflow);CHKERRQ(ierr);
-    }
 
     /* Print to stdout */
     ierr = PetscPrintf(scopflow->comm->type,"=============================================================\n");CHKERRQ(ierr);
@@ -137,7 +159,7 @@ PetscErrorCode SCOPFLOWSaveSolutionAll(SCOPFLOW scopflow,OutputFormat format,con
   char           outfile[256];
   char           tcopflowdirname[64];
   char           tcopflowdir[256];
-  PetscScalar    *x,*lambda;
+  const PetscScalar    *x,*lambda;
 
   PetscFunctionBegin;
 
@@ -158,8 +180,8 @@ PetscErrorCode SCOPFLOWSaveSolutionAll(SCOPFLOW scopflow,OutputFormat format,con
       ierr = SCOPFLOWGetSolution(scopflow,scopflow->cstart+c,&tcopflow->X);CHKERRQ(ierr);
       ierr = SCOPFLOWGetConstraintMultipliers(scopflow,scopflow->cstart+c,&tcopflow->Lambda);CHKERRQ(ierr);
 
-      ierr = VecGetArray(tcopflow->X,&x);CHKERRQ(ierr);
-      ierr = VecGetArray(tcopflow->Lambda,&lambda);CHKERRQ(ierr);
+      ierr = VecGetArrayRead(tcopflow->X,&x);CHKERRQ(ierr);
+      ierr = VecGetArrayRead(tcopflow->Lambda,&lambda);CHKERRQ(ierr);
 
       for(t=0; t < tcopflow->Nt; t++) {
 	opflow = tcopflow->opflows[t];
@@ -181,8 +203,9 @@ PetscErrorCode SCOPFLOWSaveSolutionAll(SCOPFLOW scopflow,OutputFormat format,con
 
 	ierr = VecResetArray(opflow->X);
 	ierr = VecResetArray(opflow->Lambda);
-
       }
+      ierr = VecRestoreArrayRead(tcopflow->X,&x);CHKERRQ(ierr);
+      ierr = VecRestoreArrayRead(tcopflow->Lambda,&lambda);CHKERRQ(ierr);
     } else {
       opflow = scopflow->opflows[c];
       if(!opflow->solutiontops) {
