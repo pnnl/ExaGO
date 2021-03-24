@@ -55,7 +55,7 @@ PetscBool ExaGOSelfcheckSCOPFLOWFindAnswer(SCOPFLOW scopflow, ExaGOSelfcheckSCOP
   strcpy(ans->networkname,basename(netfile));
 
   /** check for "solver model" argument */
-  ierr = PetscOptionsGetString(NULL,NULL,"-scopflow_solver",&ans->solver,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL,NULL,"-scopflow_solver",ans->solver,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
   if (!flg)
   {
     ExaGOLog(EXAGO_LOG_WARN,"%s needs option -scopflow_solver.",__func__);
@@ -63,7 +63,7 @@ PetscBool ExaGOSelfcheckSCOPFLOWFindAnswer(SCOPFLOW scopflow, ExaGOSelfcheckSCOP
   }
   
   // Check that a model initialization parameter is being passed
-  ierr = PetscOptionsGetString(NULL,NULL,"-opflow_initialization",&ans->modelinit,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL,NULL,"-opflow_initialization",ans->modelinit,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
   if (!flg)
   {
     ExaGOLog(EXAGO_LOG_WARN,"%s needs option -opflow_initialization.",__func__);
@@ -71,7 +71,7 @@ PetscBool ExaGOSelfcheckSCOPFLOWFindAnswer(SCOPFLOW scopflow, ExaGOSelfcheckSCOP
   }
 
   // Check that a model parameter is being passed
-  ierr = PetscOptionsGetString(NULL,NULL,"-opflow_genbusvoltage",&ans->genbusvoltage,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL,NULL,"-opflow_genbusvoltage",ans->genbusvoltage,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
   if (!flg)
   {
     ExaGOLog(EXAGO_LOG_WARN,"%s needs option -opflow_genbusvoltage.",__func__);
