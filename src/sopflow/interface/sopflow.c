@@ -267,7 +267,7 @@ PetscErrorCode SOPFLOWSetNetworkData(SOPFLOW sopflow,const char netfile[])
 
   PetscFunctionBegin;
 
-  ierr = PetscMemcpy(sopflow->netfile,netfile,100*sizeof(char));CHKERRQ(ierr);
+  ierr = PetscMemcpy(sopflow->netfile,netfile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

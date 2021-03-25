@@ -21,7 +21,7 @@ PetscErrorCode SOPFLOWSetScenarioData(SOPFLOW sopflow,ScenarioFileInputFormat sc
 
   PetscFunctionBegin;
 
-  ierr = PetscMemcpy(sopflow->scenfile,scenfile,100*sizeof(char));CHKERRQ(ierr);
+  ierr = PetscMemcpy(sopflow->scenfile,scenfile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
 
   sopflow->scenfileformat = scenfileformat;
   sopflow->scenfileset = PETSC_TRUE;

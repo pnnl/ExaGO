@@ -229,7 +229,7 @@ PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW scopflow,const char netfile[])
 
   PetscFunctionBegin;
 
-  ierr = PetscMemcpy(scopflow->netfile,netfile,100*sizeof(char));CHKERRQ(ierr);
+  ierr = PetscMemcpy(scopflow->netfile,netfile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

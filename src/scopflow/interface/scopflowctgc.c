@@ -18,7 +18,7 @@ PetscErrorCode SCOPFLOWSetContingencyData(SCOPFLOW scopflow,ContingencyFileInput
 
   PetscFunctionBegin;
 
-  ierr = PetscMemcpy(scopflow->ctgcfile,ctgcfile,100*sizeof(char));CHKERRQ(ierr);
+  ierr = PetscMemcpy(scopflow->ctgcfile,ctgcfile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
 
   scopflow->ctgcfileformat = ctgcfileformat;
   scopflow->ctgcfileset = PETSC_TRUE;

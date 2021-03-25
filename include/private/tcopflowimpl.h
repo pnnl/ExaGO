@@ -81,7 +81,7 @@ struct _p_TCOPFLOW{
   PetscInt  numiter; /* Number of iterations */
   PetscReal tolerance; /* Tolerance for TCOPFLOW */
 
-  char netfile[100]; /* Network data file */
+  char netfile[PETSC_MAX_PATH_LEN]; /* Network data file */
 
   Vec  X,localX;    /* Global and local solution vector */
   Vec  G; /**< Inequality and equality constraint function */
@@ -130,11 +130,11 @@ struct _p_TCOPFLOW{
   PetscReal  duration; /* Time horizon (in hours) */
 
   /* Data for time-periods */
-  char ploadprofile[100]; /* Active load profile */
+  char ploadprofile[PETSC_MAX_PATH_LEN]; /* Active load profile */
   PetscBool ploadprofileset; /* Is the active load power profile set? */
-  char qloadprofile[100]; /* Reactive load profile */
+  char qloadprofile[PETSC_MAX_PATH_LEN]; /* Reactive load profile */
   PetscBool qloadprofileset; /* Is the reactive load power profile set ? */
-  char windgenprofile[100]; /* Wind generation profiles */
+  char windgenprofile[PETSC_MAX_PATH_LEN]; /* Wind generation profiles */
   PetscBool windgenprofileset; /* Is the wind generation profile set ? */
 
   Contingency *ctgc;
