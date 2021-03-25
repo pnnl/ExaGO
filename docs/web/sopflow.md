@@ -30,14 +30,14 @@ where \<options\> are the available command line options as given in the next se
 The current version has several options available for SOPFLOW. These options can be either set through the options file `options/sopflowoptions` or via the command line.
 
 #### Network file (-netfile <netfilename>): 
-Set the name of the network file. Only MATPOWER format is currently supported.
+Set the name of the network file. Only MATPOWER format is currently supported. 4096 characters max.
 
 ```
 mpiexec -n <N> ./sopflow -netfile <netfilename>
 ```
 
 #### Scenario file (-scenfile <scenfilename>): 
-Set the name of the file that describes the uncertainty scenarios. There are two types of uncertainties supported: Wind generation and load (currently not implemented). 
+Set the name of the file that describes the uncertainty scenarios. There are two types of uncertainties supported: Wind generation and load (currently not implemented). 4096 characters max.
 ```
 mpiexec -n <N> ./sopflow -netfile <netfilename> -scenfile <ctgcfilename>
 ```

@@ -32,12 +32,12 @@ PetscErrorCode TCOPFLOWSetLoadProfiles(TCOPFLOW tcopflow,const char ploadprofile
   PetscFunctionBegin;
   
   if(ploadprofile) {
-    ierr = PetscMemcpy(tcopflow->ploadprofile,ploadprofile,100*sizeof(char));CHKERRQ(ierr);
+    ierr = PetscMemcpy(tcopflow->ploadprofile,ploadprofile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
     tcopflow->ploadprofileset = PETSC_TRUE;
   }
 
   if(qloadprofile) {
-    ierr = PetscMemcpy(tcopflow->qloadprofile,qloadprofile,100*sizeof(char));CHKERRQ(ierr);
+    ierr = PetscMemcpy(tcopflow->qloadprofile,qloadprofile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
     tcopflow->qloadprofileset = PETSC_TRUE;
   }
 
@@ -58,7 +58,7 @@ PetscErrorCode TCOPFLOWSetWindGenProfiles(TCOPFLOW tcopflow,const char windgenpr
   PetscFunctionBegin;
   
   if(windgenprofile) {
-    ierr = PetscMemcpy(tcopflow->windgenprofile,windgenprofile,100*sizeof(char));CHKERRQ(ierr);
+    ierr = PetscMemcpy(tcopflow->windgenprofile,windgenprofile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
     tcopflow->windgenprofileset = PETSC_TRUE;
   }
 
@@ -281,7 +281,7 @@ PetscErrorCode TCOPFLOWSetNetworkData(TCOPFLOW tcopflow,const char netfile[])
 
   PetscFunctionBegin;
 
-  ierr = PetscMemcpy(tcopflow->netfile,netfile,100*sizeof(char));CHKERRQ(ierr);
+  ierr = PetscMemcpy(tcopflow->netfile,netfile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

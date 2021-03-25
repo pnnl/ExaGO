@@ -49,11 +49,11 @@ See table \ref{tab:tcopflow_options}. In addition, all \opflow options given in 
   \begin{tabular}{|p{0.4\textwidth}|p{0.3\textwidth}|p{0.3\textwidth}|}
     \hline
     \textbf{Option} & \textbf{Meaning} & \textbf{Values (Default value)} \\ \hline
-    -netfile & Network file name & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod_gen3_wind.m}{case9mod\_gen3\_wind.m}) \\ \hline
+    -netfile & Network file name & string < 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod_gen3_wind.m}{case9mod\_gen3\_wind.m}) \\ \hline
     -save\_output & Save output to file & 0 or 1 (0) \\ \hline
-    -tcopflow\_pload\_profile & Real power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_P.csv}{load\_P.csv}) \\ \hline
-    -tcopflow\_qload\_profile & Reactive power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_Q.csv}{load\_Q.csv}) \\ \hline
-    -tcopflow\_windgen\_profile & Wind generation profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/scenarios_9bus.csv}{case9/scenarios\_9bus.csv}) \\ \hline
+    -tcopflow\_pload\_profile & Real power load profile & string < 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_P.csv}{load\_P.csv}) \\ \hline
+    -tcopflow\_qload\_profile & Reactive power load profile & string < 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_Q.csv}{load\_Q.csv}) \\ \hline
+    -tcopflow\_windgen\_profile & Wind generation profile & string < 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/scenarios_9bus.csv}{case9/scenarios\_9bus.csv}) \\ \hline
     -tcopflow\_dT & Length of time-step (minutes) & double (5.0) \\ \hline
     -tcopflow\_duration & Total duration (hours) & double (0.5) \\ \hline 
     -tcopflow\_iscoupling & Coupling between time steps (ramp constraints) & 0 or 1 (0) \\ \hline

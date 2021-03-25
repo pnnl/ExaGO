@@ -88,7 +88,7 @@ struct _p_SOPFLOW{
   PetscInt  numiter; /* Number of iterations */
   PetscReal tolerance; /* Tolerance for SOPFLOW */
 
-  char netfile[100]; /* Network data file */
+  char netfile[PETSC_MAX_PATH_LEN]; /* Network data file */
 
   Vec  X,localX;    /* Global and local solution vector */
   Vec  G; /**< Inequality and equality constraint function */
@@ -145,7 +145,7 @@ struct _p_SOPFLOW{
 
   /* Data for scenarios */
   PetscBool       scenfileset;   /* Is the scenario file set ? */
-  char            scenfile[100]; /* Scenario file */
+  char            scenfile[PETSC_MAX_PATH_LEN]; /* Scenario file */
   ScenarioFileInputFormat scenfileformat;
   ScenarioUncertaintyType scenunctype;
 

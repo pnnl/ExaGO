@@ -28,14 +28,14 @@ where \<options\> are the available command line options as given in the next se
 The current version has several options available for SCOPFLOW. These options can be either set through the options file `options/scopflowoptions` or via the command line.
 
 #### Network file (-netfile <netfilename>): 
-Set the name of the network file. Only MATPOWER format is currently supported.
+Set the name of the network file. Only MATPOWER format is currently supported. 4096 characters max.
 
 ```
 mpiexec -n <N> ./scopflow -netfile <netfilename>
 ```
 
 #### Contingency file (-ctgcfile <ctgcfilename>): 
-Set the name of the contingency data file. The contingency scenarios are set through this file.
+Set the name of the contingency data file. The contingency scenarios are set through this file. 4096 characters max.
 ```
 mpiexec -n <N> ./scopflow -netfile <netfilename> -ctgcfile <ctgcfilename>
 ```

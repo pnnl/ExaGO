@@ -90,7 +90,7 @@ The behavior of OPFLOW is controlled through the different options given in the 
 |-hiop_tolerance| HIOP solver tolerance| (1e-6)|
 |-print_output| Print OPFLOW solution to screen| 0 or 1 (0)|
 |-save_output| Save OPFLOW solution to file | 0 or 1 (0)|
-|-netfile| Name of network file in MATPOWER format| ([case9mod.m](../../datafiles/case9/case9mod.m))|
+|-netfile| Name of network file in MATPOWER format|4096 characters max. ([case9mod.m](../../datafiles/case9/case9mod.m))|
 
 #### OPFLOW models
 

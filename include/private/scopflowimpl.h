@@ -86,7 +86,7 @@ struct _p_SCOPFLOW{
   PetscInt  numiter; /* Number of iterations */
   PetscReal tolerance; /* Tolerance for SCOPFLOW */
 
-  char netfile[100]; /* Network data file */
+  char netfile[PETSC_MAX_PATH_LEN]; /* Network data file */
 
   Vec  X,localX;    /* Global and local solution vector */
   Vec  G; /**< Inequality and equality constraint function */
@@ -145,7 +145,7 @@ struct _p_SCOPFLOW{
   /* Data for contingencies */
   ContingencyList ctgclist;      /* List of contingencies */
   PetscBool       ctgcfileset;   /* Is the contingency file set ? */
-  char            ctgcfile[100]; /* Contingency file */
+  char            ctgcfile[PETSC_MAX_PATH_LEN]; /* Contingency file */
 
   ContingencyFileInputFormat ctgcfileformat;
 
