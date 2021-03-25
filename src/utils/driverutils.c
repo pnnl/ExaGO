@@ -9,7 +9,7 @@ const char* ExaGOVerbosityNames[] = {"INFO","WARNING","ERROR"};
 
 static char ExaGOCurrentAppName[128];
 
-PetscErrorCode ExagoHelpPrintf(MPI_Comm comm, const char appname[])
+PetscErrorCode ExagoHelpPrintf(MPI_Comm comm, const char appname[],...)
 {
   PetscErrorCode ierr;
 
@@ -122,7 +122,8 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
     if ((strncmp((*argv)[i],"-help\0",5)==0) || 
         (strncmp((*argv)[i],"-h\0",3)==0))
     {
-      PetscHelpPrintf = ExagoHelpPrintf(MPI_COMM_NULL, appname);
+      PetscHelpPrintf = &ExagoHelpPrintf;
+      (*PetscHelpPrintf)(MPI_COMM_NULL, appname);
     }
   }
 
