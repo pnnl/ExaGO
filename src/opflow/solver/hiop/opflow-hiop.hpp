@@ -78,6 +78,17 @@ public:
                                  const double* lambda,
 			         double obj_value);
 
+  bool iterate_callback(int iter, double obj_value,
+			int n, const double* x,
+			const double* z_L,
+			const double* z_U,
+			int m, const double* g,
+			const double* lambda,
+			double inf_pr, double inf_du,
+			double mu,
+			double alpha_du, double alpha_pr,
+			int ls_trials);
+
   bool get_MPI_comm(MPI_Comm& comm_out) {comm_out = MPI_COMM_SELF; return true;}
 
   void naturaltospdense(const double*,double*);
