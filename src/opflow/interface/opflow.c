@@ -1588,7 +1588,7 @@ PetscErrorCode OPFLOWSolutionToPS(OPFLOW opflow)
   ierr = (*opflow->modelops.solutiontops)(opflow);
 
   /* Save the objective to PS */
-  ierr = OPFLOWComputeObjective(opflow,opflow->X,&opflow->ps->opflowobj);CHKERRQ(ierr);
+  opflow->ps->opflowobj = opflow->obj;
 
   opflow->solutiontops = PETSC_TRUE;
   PetscFunctionReturn(0);

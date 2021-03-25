@@ -18,22 +18,52 @@ PetscErrorCode SOPFLOWPrintSolution(SOPFLOW sopflow,PetscInt scen_num)
   PetscBool      conv_status;
   PetscReal      cost;
   PetscInt       c;
+  SCOPFLOW       scopflow;
   OPFLOW         opflow;
+  const PetscScalar *x,*lambda;
 
   PetscFunctionBegin;
   MPI_Barrier(sopflow->comm->type);
   c = scen_num - sopflow->sstart;
   if(scen_num >= sopflow->sstart && scen_num < sopflow->send) {
-    opflow = sopflow->opflows[c];
-    if(!opflow->solutiontops) {
-      ierr = SOPFLOWGetSolution(sopflow,scen_num,&opflow->X);CHKERRQ(ierr);
-      ierr = SOPFLOWGetConstraintMultipliers(sopflow,scen_num,&opflow->Lambda);CHKERRQ(ierr);
-      ierr = OPFLOWSolutionToPS(opflow);CHKERRQ(ierr);
+    if(!sopflow->ismulticontingency) {
+      opflow = sopflow->opflows[c];
+      if(!opflow->solutiontops) {
+	ierr = SOPFLOWGetSolution(sopflow,scen_num,&opflow->X);CHKERRQ(ierr);
+	ierr = SOPFLOWGetConstraintMultipliers(sopflow,scen_num,&opflow->Lambda);CHKERRQ(ierr);
+	ierr = OPFLOWSolutionToPS(opflow);CHKERRQ(ierr);
+      }
+    } else {
+      scopflow = sopflow->scopflows[c];
+      if(!scopflow->ismultiperiod) {
+	ierr = SOPFLOWGetSolution(sopflow,scen_num,&scopflow->X);CHKERRQ(ierr);
+	ierr = SOPFLOWGetConstraintMultipliers(sopflow,scen_num,&scopflow->Lambda);CHKERRQ(ierr);
+	
+	ierr = VecGetArrayRead(scopflow->X,&x);CHKERRQ(ierr);
+	ierr = VecGetArrayRead(scopflow->Lambda,&lambda);CHKERRQ(ierr);
+
+	opflow = scopflow->opflows[0];
+
+	ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
+	ierr = VecPlaceArray(opflow->Lambda,lambda);CHKERRQ(ierr);
+
+	if(!opflow->solutiontops) {
+	  ierr = OPFLOWSolutionToPS(opflow);
+	}
+
+	ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+	ierr = VecResetArray(opflow->Lambda);CHKERRQ(ierr);
+	
+	ierr = VecRestoreArrayRead(scopflow->X,&x);CHKERRQ(ierr);
+	ierr = VecRestoreArrayRead(scopflow->Lambda,&lambda);CHKERRQ(ierr);
+      } else {
+	SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"SOPFLOWPrintOutput: multiperiod scopf case not implemented yet\n");
+      }
     }
 
     /* Print to stdout */
     ierr = PetscPrintf(sopflow->comm->type,"=============================================================\n");CHKERRQ(ierr);
-    ierr = PetscPrintf(sopflow->comm->type,"\tSecurity-Constrained Optimal Power Flow\n");CHKERRQ(ierr);
+    ierr = PetscPrintf(sopflow->comm->type,"\tStochastic Optimal Power Flow\n");CHKERRQ(ierr);
     ierr = PetscPrintf(sopflow->comm->type,"=============================================================\n");CHKERRQ(ierr);
 
     ierr = PetscPrintf(sopflow->comm->type,"%-35s %s\n","OPFLOW Formulation",opflow->modelname);CHKERRQ(ierr);

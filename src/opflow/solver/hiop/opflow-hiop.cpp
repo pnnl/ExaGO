@@ -270,6 +270,21 @@ bool OPFLOWHIOPInterface::get_starting_point(const long long& global_n, double* 
   return true;
 }
 
+bool OPFLOWHIOPInterface::iterate_callback(int iter, double obj_value,
+					   int n, const double* x,
+					   const double* z_L,
+					   const double* z_U,
+					   int m, const double* g,
+					   const double* lambda,
+					   double inf_pr, double inf_du,
+					   double mu,
+					   double alpha_du, double alpha_pr,
+					   int ls_trials)
+{
+  opflow->numits = iter;
+  return true;
+}
+
 void OPFLOWHIOPInterface::solution_callback(hiop::hiopSolveStatus status,
 							 int n, const double* xsol,
 							 const double* z_L,
@@ -285,7 +300,6 @@ void OPFLOWHIOPInterface::solution_callback(hiop::hiopSolveStatus status,
   /* Copy over solution details */
   hiop->status = status;
   opflow->obj = obj_value;
-  opflow->numits = n;
 
   ierr = VecGetArray(opflow->X,&x);CHKERRV(ierr);
   spdensetonatural(xsol,x);
@@ -296,9 +310,9 @@ void OPFLOWHIOPInterface::solution_callback(hiop::hiopSolveStatus status,
      remove this condition once it is fixed 
     */
     ierr = VecGetArray(opflow->Lambda,&lam);CHKERRV(ierr);
-    ierr = PetscMemcpy((double*)lamsol,lam,opflow->nconeq*sizeof(PetscScalar));CHKERRV(ierr);
+    ierr = PetscMemcpy(lam,(double*)lamsol,opflow->nconeq*sizeof(PetscScalar));CHKERRV(ierr);
     if(opflow->Nconineq) {
-      ierr = PetscMemcpy((double*)(lamsol+opflow->nconeq),lam+opflow->nconeq,opflow->nconineq*sizeof(PetscScalar));CHKERRV(ierr);
+      ierr = PetscMemcpy((double*)(lam+opflow->nconeq),lamsol+opflow->nconeq,opflow->nconineq*sizeof(PetscScalar));CHKERRV(ierr);
     }
     ierr = VecRestoreArray(opflow->Lambda,&lam);CHKERRV(ierr);
   } else {
@@ -308,9 +322,9 @@ void OPFLOWHIOPInterface::solution_callback(hiop::hiopSolveStatus status,
   if(gsol) {
     /* Same situation as lamsol - gsol is NULL */
     ierr = VecGetArray(opflow->G,&g);CHKERRV(ierr);
-    ierr = PetscMemcpy((double*)gsol,g,opflow->nconeq*sizeof(PetscScalar));CHKERRV(ierr);
+    ierr = PetscMemcpy(g,(double*)gsol,opflow->nconeq*sizeof(PetscScalar));CHKERRV(ierr);
     if(opflow->Nconineq) {
-      ierr = PetscMemcpy((double*)(gsol+opflow->nconeq),g+opflow->nconeq,opflow->nconineq*sizeof(PetscScalar));CHKERRV(ierr);
+      ierr = PetscMemcpy((double*)(g+opflow->nconeq),gsol+opflow->nconeq,opflow->nconineq*sizeof(PetscScalar));CHKERRV(ierr);
     }
     ierr = VecRestoreArray(opflow->G,&g);CHKERRV(ierr);
   }
