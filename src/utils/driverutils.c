@@ -165,6 +165,7 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
   // Get -option_file option from command line
   char options_file[PETSC_MAX_PATH_LEN];
   PetscBool flg = PETSC_FALSE;
+  optfiles[0] = NULL;
   for(i=1; i<*argc; i++)
   {
     // Added null terminator here as this would cause errors with
@@ -172,11 +173,12 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
     {
       strcpy(optfiles[0],(*argv)[i + 1]);
       flg = PETSC_TRUE;
+      break;
     }
   } 
   if (!flg)
   {
-    strcpy(optfiles[0],"... -options_file not passed");
+    ExaGOLog(EXAGO_LOG_INFO, "%s", "-options_file not passed.");
   }
 
   sprintf(optfiles[1],"%s/%s",options_pathname,filename);
