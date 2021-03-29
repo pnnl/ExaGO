@@ -6,5 +6,5 @@ target_include_directories(testTcopflowFunctionality PUBLIC ${CMAKE_CURRENT_SOUR
 #[[ Configure TCOPFLOW functionality tests ]]
 target_link_libraries(testTcopflowFunctionality ${EXAGO_APP_LIBS})
 if(EXAGO_INSTALL_TESTS) 
-  install(TARGETS testTcopflowFunctionality RUNTIME DESTINATION bin/tests/functionality)
+  install(TARGETS testTcopflowFunctionality RUNTIME DESTINATION tests/functionality)
 endif()

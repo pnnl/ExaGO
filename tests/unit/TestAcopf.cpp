@@ -124,7 +124,7 @@ int main(int argc, char** argv)
   if(!flg)
   {
     validation_path = std::string(EXAGO_OPTIONS_DIR) +
-                      std::string("/../tests/datafiles/test_validation/") +
+                      std::string("/../datafiles/test_validation/") +
                       getFileName(file) + "/";
   }
   else

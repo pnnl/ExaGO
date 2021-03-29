@@ -33,7 +33,8 @@ Configuration and library discovery.
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/buildsystem/cmake)
 
 # Set the path to options file in EXAGO installation
-set(EXAGO_OPTIONS_DIR "${CMAKE_INSTALL_PREFIX}/options")
+set(EXAGO_OPTIONS_DIR "${CMAKE_INSTALL_PREFIX}/share/exago/options")
+set(EXAGO_DATAFILES_DIR "${CMAKE_INSTALL_PREFIX}/share/exago/datafiles")
 
 # Enable PETSc by default
 option(EXAGO_ENABLE_PETSC "Enable PETSc support" ON)
@@ -61,8 +62,8 @@ option(EXAGO_ENABLE_RAJA "Enables RAJA and Umpire libraries" OFF)
 # Enable tests
 option(EXAGO_RUN_TESTS "Enable tests" ON)
 
-# If tests are enables, decides if tests are installed
-option(EXAGO_INSTALL_TESTS "Install testing binaries" OFF)
+# If tests are enabled, decides if tests are installed
+option(EXAGO_INSTALL_TESTS "Install testing binaries" ON)
 
 # For testing with BSUB on certain clusters
 option(EXAGO_TEST_WITH_BSUB "Use `jsrun` instead of `mpirun` commands when running tests" OFF)
@@ -200,7 +201,7 @@ set(EXAGO_OPTIONS_FILES
 )
 
 # Install options files
-install(FILES ${EXAGO_OPTIONS_FILES} DESTINATION options)
+install(FILES ${EXAGO_OPTIONS_FILES} DESTINATION ${EXAGO_OPTIONS_DIR})
 # Install options file to binary dir for testing
 file(INSTALL ${EXAGO_OPTIONS_FILES} DESTINATION options)
 
@@ -213,9 +214,10 @@ set(EXAGO_DATA_FILES
 )
 
 # Install data files
-install(FILES ${EXAGO_DATA_FILES} DESTINATION datafiles)
-install(DIRECTORY datafiles/case9 DESTINATION datafiles)
-install(DIRECTORY datafiles/TAMU200_scenarios DESTINATION datafiles)
+install(FILES ${EXAGO_DATA_FILES} DESTINATION ${EXAGO_DATAFILES_DIR})
+install(DIRECTORY datafiles/case9 DESTINATION ${EXAGO_DATAFILES_DIR})
+install(DIRECTORY datafiles/TAMU200_scenarios DESTINATION ${EXAGO_DATAFILES_DIR})
+install(DIRECTORY datafiles/test_validation DESTINATION ${EXAGO_DATAFILES_DIR})
 
 # Install data files in build directory for testing
 file(INSTALL ${EXAGO_DATA_FILES} DESTINATION datafiles)
@@ -636,7 +638,6 @@ if(EXAGO_RUN_TESTS)
   exago_add_test(
         NAME FUNCTIONALITY_TEST_TCOPFLOW 
         COMMAND ${RUNCMD} $<TARGET_FILE:testTcopflowFunctionality>
-        -options_file options/tcopflowoptions
         -netfile datafiles/case9/case9mod_gen3_wind.m
         -tcopflow_windgenprofile datafiles/case9/scenarios_9bus.csv
         -tcopflow_qloadprofile datafiles/case9/load_Q.csv
