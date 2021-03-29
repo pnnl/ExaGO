@@ -1,5 +1,5 @@
-#-netfile datafiles/case_ACTIVSg10k.m
-# -netfile datafiles/case9/case9mod.m
+#-netfile share/exago/datafiles/case_ACTIVSg10k.m
+# -netfile share/exago/datafiles/case9/case9mod.m
 
 # Power flow SNES options
 -pflow_snes_linesearch_type basic

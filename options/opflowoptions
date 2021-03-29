@@ -1,7 +1,7 @@
 # Option for selecting data file
--netfile datafiles/case9/case9mod.m
-#-netfile datafiles/case118.m
-#-netfile datafiles/case5.m
+-netfile share/exago/datafiles/case9/case9mod.m
+#-netfile share/exago/datafiles/case118.m
+#-netfile share/exago/datafiles/case5.m
 
 # Select Solver (IPOPT,TAO, HIOP)
 #-opflow_solver IPOPT
