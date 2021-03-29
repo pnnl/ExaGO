@@ -246,18 +246,10 @@ int anyFileExist(char** pths, int npths)
   {
     if (pths[i]==NULL)
     {
-      ExaGOLog(EXAGO_LOG_INFO,"Function `%s` was called with argument"
-          " pths[%d]==NULL.\n",__func__,i);
-      return -2;
+      continue;
     }
     sprintf(buf,"-- Checking %-70s exists: ",pths[i]);
-    // This is hard coded due to indeterministic bug in CI
-    if (strcmp(pths[i], "... -options_file not passed") == 0)
-    {
-      strcat(buf, "no");
-      ExaGOLog(EXAGO_LOG_INFO, "%s", buf);
-    }
-    else if (doesFileExist(pths[i]))
+    if (doesFileExist(pths[i]))
     {
       strcat(buf,"yes");
       ExaGOLog(EXAGO_LOG_INFO,"%s",buf);
