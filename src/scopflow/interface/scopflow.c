@@ -247,7 +247,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   PetscErrorCode ierr;
   PetscBool      scopflowsolverset;
   char           opflowmodelname[32]="POWER_BALANCE_POLAR";
-  char           scopflowsolvername[32]="IPOPTNEW";
+  char           scopflowsolvername[32]="IPOPT";
   PetscInt       c,i,j;
   char           scopflowmodelname[32]="GENRAMP";
   PS             ps;
@@ -321,8 +321,8 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
     ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW: Using %s solver\n",scopflowsolvername);CHKERRQ(ierr);
   } else {
     if(!scopflow->solver) {
-      ierr = SCOPFLOWSetSolver(scopflow,SCOPFLOWSOLVER_IPOPTNEW);CHKERRQ(ierr);
-      ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW: Using %s solver\n",SCOPFLOWSOLVER_IPOPTNEW);CHKERRQ(ierr); 
+      ierr = SCOPFLOWSetSolver(scopflow,SCOPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
+      ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW: Using %s solver\n",SCOPFLOWSOLVER_IPOPT);CHKERRQ(ierr); 
     }
   }
   
@@ -502,7 +502,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
 {
   PetscErrorCode ierr;
-  PetscBool      issolver_ipoptnew;
+  PetscBool      issolver_ipopt;
 
   PetscFunctionBegin;
 
@@ -510,9 +510,9 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow)
     ierr = SCOPFLOWSetUp(scopflow);
   }
 
-  ierr = PetscStrcmp(scopflow->solvername,"IPOPTNEW",&issolver_ipoptnew);CHKERRQ(ierr);
+  ierr = PetscStrcmp(scopflow->solvername,"IPOPT",&issolver_ipopt);CHKERRQ(ierr);
 
-  if(issolver_ipoptnew) { /* Don't need to do this if solver is not ipoptnew */
+  if(issolver_ipopt) { /* Don't need to do this if solver is not ipopt */
     /* Set bounds on variables */
     if(scopflow->modelops.setvariablebounds) {
       ierr = (*scopflow->modelops.setvariablebounds)(scopflow,scopflow->Xl,scopflow->Xu);CHKERRQ(ierr);

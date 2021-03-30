@@ -13,9 +13,7 @@
 #define SCOPFLOWMODEL_GENRAMPT "GENRAMPT" /* Model for multi-period SCOPFLOW */
 
 /* Solvers */
-#define SCOPFLOWSOLVER_IPOPTNEW "IPOPTNEW"
 #define SCOPFLOWSOLVER_IPOPT "IPOPT"
-#define SCOPFLOWSOLVER_TAO   "TAO"
 #define SCOPFLOWSOLVER_EMPAR  "EMPAR" /* Embarassingly parallel solver - solves each OPFLOW independently */
 
 /* Initialization and Parameters*/

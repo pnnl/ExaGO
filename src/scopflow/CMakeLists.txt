@@ -1,6 +1,5 @@
 set(SCOPFLOW_SOLVER_SRC
     solver/ipopt/scopflow-ipopt.c
-    solver/ipopt/scopflow-ipopt2.c
     solver/empar/scopflow-empar.c
 )
 
