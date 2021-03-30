@@ -103,6 +103,7 @@ workflow:
     - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"' # Will only apply to PNNL
 
 stages:
+  - lint
   - build
   - test
   - matrix
@@ -130,8 +131,21 @@ test_on_compute_node:
 # ---
 
 # For PNNL CI
+cmake_check_on_newell:
+  stage: lint
+  allow_failure: true
+  variables:
+    SLURM_Q: "newell_shared"
+    MY_CLUSTER: "newell"
+    SCRIPT_ARGS: " --check-cmake "
+  <<: *pnnl_tags_definition
+  <<: *pnnl_script_definition
+  <<: *pnnl_rules_definition
+
 build_on_newell:
   stage: build
+  dependencies:
+    - cmake_check_on_newell
   variables:
     SLURM_Q: "newell_shared"
     MY_CLUSTER: "newell"

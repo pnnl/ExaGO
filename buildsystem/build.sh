@@ -1,7 +1,7 @@
 #!/bin/bash
 
 usage() {
-  echo "Usage: ./build.sh [options]
+  echo "Usage: ./buildsystem/build.sh [options]
 
 --------------------------------------------------------------------------------
 
@@ -53,6 +53,9 @@ Options:
                   before every push to the repository or pull/merge request.
                   This run takes a significant amound of time.
 
+  --check-cmake   Ensure all cmake files in the project conform to .cmake-format
+                  in top-level source directory.
+
 --------------------------------------------------------------------------------
 
 "
@@ -84,6 +87,7 @@ extraCmakeArgs=${extraCmakeArgs:-""}
 export OMPI_MCA_btl="^vader,tcp,openib,uct"
 export BUILD=${BUILD:-1}
 export TEST=${TEST:-1}
+export CHECK_CMAKE=${CHECK_CMAKE:-0}
 export srcdir=${srcdir:-$PWD}
 export builddir=${builddir:-$PWD/build}
 export installdir=${installdir:-$PWD/install}
@@ -93,7 +97,7 @@ echo "Paths:"
 echo "Source dir: $srcdir"
 echo "Build dir: $builddir"
 echo "Install dir: $installdir"
-echo "Path to buildsystem script: $buildsystemDir/build.sh"
+echo "Path to buildsystem script: $srcdir/buildsystem/build.sh"
 cd $srcdir
 
 while [[ $# -gt 0 ]]; do
@@ -109,6 +113,11 @@ while [[ $# -gt 0 ]]; do
     ;;
   --test-only)
     export TEST=1 BUILD=0
+    shift
+    ;;
+  --check-cmake)
+    export CHECK_CMAKE=1
+    export TEST=0 BUILD=0
     shift
     ;;
   --matrix)
@@ -186,8 +195,13 @@ if [[ $BUILD_MATRIX -eq 1 ]]; then
   source $srcdir/buildsystem/buildMatrix.sh
   buildMatrix
   exit $?
+elif [[ $CHECK_CMAKE -eq 1 ]]; then
+  echo Checking cmake format
+  source $srcdir/buildsystem/cmakeFormat.sh
+  checkCmakeFormat
+  exit $?
 else
-  echo Running defualt build
+  echo Running default build
   source $srcdir/buildsystem/defaultBuild.sh
   defaultBuild
   exit $?
