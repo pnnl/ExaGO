@@ -9,7 +9,7 @@ ExaGOTestingUtilities.cmake
   described here should allow all tests in top-level CMakeLists to be written
   declaratively.
 
-#]]#############################################################################
+#]]
 
 #[[
 
@@ -28,8 +28,9 @@ function(exago_add_test)
   set(one_value_args NAME)
   set(multi_value_args DEPENDS COMMAND NETFILES)
 
-  cmake_parse_arguments("EXAGO" "${flags}" "${one_value_args}"
-    "${multi_value_args}" ${ARGN})
+  cmake_parse_arguments(
+    "EXAGO" "${flags}" "${one_value_args}" "${multi_value_args}" ${ARGN}
+  )
 
   set(has_all_dependencies ON)
 
@@ -49,25 +50,19 @@ function(exago_add_test)
     # about netfiles.
     list(LENGTH EXAGO_NETFILES len)
     if(${len} EQUAL 0)
-      add_test(
-        NAME ${EXAGO_NAME}
-        COMMAND ${EXAGO_COMMAND}
-        )
+      add_test(NAME ${EXAGO_NAME} COMMAND ${EXAGO_COMMAND})
       return()
     endif()
 
     # Otherwise, add the -netfile command and generate len(EXAGO_NETFILES) tests
     foreach(netfile ${EXAGO_NETFILES})
-      # Add -netfile <path> to test command 
+      # Add -netfile <path> to test command
       set(command ${EXAGO_COMMAND})
       list(APPEND command -netfile ${netfile})
 
       # Create name unique to input name and datafile
       get_filename_component(netfile_name ${netfile} NAME)
-      add_test(
-        NAME "${EXAGO_NAME}_${netfile_name}"
-        COMMAND ${command}
-        )
+      add_test(NAME "${EXAGO_NAME}_${netfile_name}" COMMAND ${command})
     endforeach()
   endif()
 

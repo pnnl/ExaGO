@@ -7,27 +7,30 @@ User may set:
 
 ]]
 
-find_library(HIOP_LIBRARY
-  NAMES
-  libhiop.so hiop # Prefer shared over static since static causes issues
-                  # linking with mpi on some platforms
-  PATHS
-  ${HIOP_DIR} $ENV{HIOP_DIR} ${HIOP_ROOT_DIR}
-  ENV LD_LIBRARY_PATH ENV DYLD_LIBRARY_PATH
-  PATH_SUFFIXES
-  lib64 lib)
+find_library(
+  HIOP_LIBRARY
+  NAMES libhiop.so hiop # Prefer shared over static since static causes issues
+                        # linking with mpi on some platforms
+  PATHS ${HIOP_DIR}
+        $ENV{HIOP_DIR}
+        ${HIOP_ROOT_DIR}
+        ENV
+        LD_LIBRARY_PATH
+        ENV
+        DYLD_LIBRARY_PATH
+  PATH_SUFFIXES lib64 lib
+)
 
 if(HIOP_LIBRARY)
   get_filename_component(HIOP_LIBRARY_DIR ${HIOP_LIBRARY} DIRECTORY)
 endif()
 
-find_path(HIOP_INCLUDE_DIR
-  NAMES
-  hiopInterface.hpp
-  PATHS
-  ${HIOP_DIR} ${HIOP_ROOT_DIR} $ENV{HIOP_DIR} ${HIOP_LIBRARY_DIR}/..
-  PATH_SUFFIXES
-  include)
+find_path(
+  HIOP_INCLUDE_DIR
+  NAMES hiopInterface.hpp
+  PATHS ${HIOP_DIR} ${HIOP_ROOT_DIR} $ENV{HIOP_DIR} ${HIOP_LIBRARY_DIR}/..
+  PATH_SUFFIXES include
+)
 
 if(HIOP_LIBRARY AND HIOP_INCLUDE_DIR)
   message(STATUS "Found HiOp library: " ${HIOP_LIBRARY})
@@ -46,7 +49,9 @@ if(HIOP_LIBRARY AND HIOP_INCLUDE_DIR)
   if(EXAGO_ENABLE_HIOP_SPARSE)
     include(FindExaGOCOINHSL)
     if(NOT COINHSL_LIBRARY)
-      message(FATAL_ERROR "HIOP_SPARSE is enabled, but COINHSL could not be found.")
+      message(
+        FATAL_ERROR "HIOP_SPARSE is enabled, but COINHSL could not be found."
+      )
     endif()
     target_link_libraries(HiOp INTERFACE COINHSL)
   endif()
@@ -55,7 +60,9 @@ else()
     message(STATUS "HiOp library not found! Please provide correct filepath.")
   endif()
   if(NOT HIOP_INCLUDE_DIR)
-    message(STATUS "HiOp include directory  not found! Please provide correct path.")
+    message(
+      STATUS "HiOp include directory  not found! Please provide correct path."
+    )
   endif()
 endif()
 

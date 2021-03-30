@@ -1,4 +1,3 @@
-
 #[[
 
 Exports target `COINHSL`
@@ -9,28 +8,30 @@ Users may set the following variables:
 
 ]]
 
-find_library(COINHSL_LIBRARY
-  NAMES
-  coinhsl
-  PATHS
-  ${COINHSL_DIR} $ENV{COINHSL_DIR} ${EXAGO_COINHSL_DIR}
-  ENV LD_LIBRARY_PATH ENV DYLD_LIBRARY_PATH
-  PATH_SUFFIXES
-  lib64 lib)
+find_library(
+  COINHSL_LIBRARY
+  NAMES coinhsl
+  PATHS ${COINHSL_DIR}
+        $ENV{COINHSL_DIR}
+        ${EXAGO_COINHSL_DIR}
+        ENV
+        LD_LIBRARY_PATH
+        ENV
+        DYLD_LIBRARY_PATH
+  PATH_SUFFIXES lib64 lib
+)
 
 if(COINHSL_LIBRARY)
   get_filename_component(COINHSL_LIBRARY_DIR ${COINHSL_LIBRARY} DIRECTORY)
 endif()
 
-find_path(COINHSL_INCLUDE_DIR
-  NAMES
-  CoinHslConfig.h
-  PATHS
-  ${COINHSL_DIR} $ENV{COINHSL_DIR} ${EXAGO_COINHSL_DIR} ${COINHSL_LIBRARY_DIR}/..
-  PATH_SUFFIXES
-  include/coin-or
-  include/coin-or/hsl
-  include)
+find_path(
+  COINHSL_INCLUDE_DIR
+  NAMES CoinHslConfig.h
+  PATHS ${COINHSL_DIR} $ENV{COINHSL_DIR} ${EXAGO_COINHSL_DIR}
+        ${COINHSL_LIBRARY_DIR}/..
+  PATH_SUFFIXES include/coin-or include/coin-or/hsl include
+)
 
 if(COINHSL_LIBRARY)
   message(STATUS "Found coinhsl include: ${COINHSL_INCLUDE_DIR}")

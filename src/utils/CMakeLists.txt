@@ -1,19 +1,11 @@
-
 # Sources for utility functions shared across libraries
 
 # Specify sources for utility functions shared across libraries
-set(UTILS_SRC
-  utils.c
-  version.c
-  driverutils.c
-  scopflowutils.c
-  comm.c
-)
+set(UTILS_SRC utils.c version.c driverutils.c scopflowutils.c comm.c)
 
 # Headers
-set(UTILS_INCLUDE
-  ${CMAKE_SOURCE_DIR}/include/common.h
-  ${CMAKE_SOURCE_DIR}/include/utils.h
+set(UTILS_INCLUDE ${CMAKE_SOURCE_DIR}/include/common.h
+                  ${CMAKE_SOURCE_DIR}/include/utils.h
 )
 
 # Add library
@@ -31,5 +23,8 @@ install(TARGETS psutil DESTINATION lib)
 
 # Install header
 install(FILES ${UTILS_INCLUDE} DESTINATION include)
-#EXAGO_EXAGO_
-set(EXAGO_UTIL_LIBS ${EXAGO_UTIL_LIBS} psutil PARENT_SCOPE)
+# EXAGO_EXAGO_
+set(EXAGO_UTIL_LIBS
+    ${EXAGO_UTIL_LIBS} psutil
+    PARENT_SCOPE
+)

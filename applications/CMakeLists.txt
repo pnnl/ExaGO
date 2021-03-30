@@ -1,83 +1,54 @@
-
-
-# Define sources for applications
-# PFLOW
-set(PFLOW_SRC
-  pflow-main.c
-)
+# Define sources for applications PFLOW
+set(PFLOW_SRC pflow-main.c)
 
 # OPFLOW
-set(OPFLOW_SRC
-  opflow-main.c
-)
+set(OPFLOW_SRC opflow-main.c)
 
-#SCOPFLOW
-set(SCOPFLOW_SRC
-  scopflow-main.c
-)
+# SCOPFLOW
+set(SCOPFLOW_SRC scopflow-main.c)
 
-#SOPFLOW
-set(SOPFLOW_SRC
-  sopflow-main.c
-)
+# SOPFLOW
+set(SOPFLOW_SRC sopflow-main.c)
 
-#TCOPFLOW
-set(TCOPFLOW_SRC
-  tcopflow-main.c
-)
+# TCOPFLOW
+set(TCOPFLOW_SRC tcopflow-main.c)
 
-set(EXAGO_PFLOW_APP_LIBS   
-  ${EXAGO_UTIL_LIBS}	
-  ${EXAGO_PS_LIBS}
-  ${EXAGO_PFLOW_LIBS}	 
-  ${EXAGO_MATH_LIB}
-  PETSC::SNES
+set(EXAGO_PFLOW_APP_LIBS ${EXAGO_UTIL_LIBS} ${EXAGO_PS_LIBS}
+                         ${EXAGO_PFLOW_LIBS} ${EXAGO_MATH_LIB} PETSC::SNES
 )
 
 if(EXAGO_ENABLE_MPI)
   list(APPEND EXAGO_PFLOW_APP_LIBS MPI::MPI_C)
 endif()
 
-# Add executables
-# PFLOW
+# Add executables PFLOW
 add_executable(app_pflow ${PFLOW_SRC})
 # OPFLOW
 add_executable(app_opflow ${OPFLOW_SRC})
-#SCOPFLOW
+# SCOPFLOW
 add_executable(app_scopflow ${SCOPFLOW_SRC})
-#SOPFLOW
+# SOPFLOW
 add_executable(app_sopflow ${SOPFLOW_SRC})
-#TCOPFLOW
+# TCOPFLOW
 add_executable(app_tcopflow ${TCOPFLOW_SRC})
 
 # Link libraries
-target_link_libraries(app_pflow 
-	${EXAGO_PFLOW_APP_LIBS}
+target_link_libraries(app_pflow ${EXAGO_PFLOW_APP_LIBS})
+
+target_link_libraries(app_opflow ${EXAGO_OPFLOW_LIBS} ${EXAGO_PFLOW_APP_LIBS})
+
+target_link_libraries(
+  app_scopflow ${EXAGO_SCOPFLOW_LIBS} ${EXAGO_TCOPFLOW_LIBS}
+  ${EXAGO_OPFLOW_LIBS} ${EXAGO_PFLOW_APP_LIBS}
 )
 
-target_link_libraries(app_opflow
-	${EXAGO_OPFLOW_LIBS} 
-	${EXAGO_PFLOW_APP_LIBS}
+target_link_libraries(
+  app_sopflow ${EXAGO_SOPFLOW_LIBS} ${EXAGO_SCOPFLOW_LIBS}
+  ${EXAGO_TCOPFLOW_LIBS} ${EXAGO_OPFLOW_LIBS} ${EXAGO_PFLOW_APP_LIBS}
 )
 
-target_link_libraries(app_scopflow
-	${EXAGO_SCOPFLOW_LIBS}
-	${EXAGO_TCOPFLOW_LIBS}
-	${EXAGO_OPFLOW_LIBS}
-	${EXAGO_PFLOW_APP_LIBS}
-)
-
-target_link_libraries(app_sopflow
-	${EXAGO_SOPFLOW_LIBS}
-	${EXAGO_SCOPFLOW_LIBS}
-	${EXAGO_TCOPFLOW_LIBS}
-	${EXAGO_OPFLOW_LIBS}
-	${EXAGO_PFLOW_APP_LIBS}
-)
-
-target_link_libraries(app_tcopflow
-	${EXAGO_TCOPFLOW_LIBS}
-	${EXAGO_PFLOW_APP_LIBS}
+target_link_libraries(
+  app_tcopflow ${EXAGO_TCOPFLOW_LIBS} ${EXAGO_PFLOW_APP_LIBS}
 )
 
 set_target_properties(app_pflow PROPERTIES OUTPUT_NAME pflow)

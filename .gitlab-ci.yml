@@ -61,6 +61,7 @@ workflow:
         # if workdir already exists, we're in the testing job
         mkdir -p "$WORKDIR"
         cp -R ./* "$WORKDIR"
+        cp ./.cmake-format.py "$WORKDIR"
       fi
       cd "$WORKDIR"
       [ -f output ] && rm output
