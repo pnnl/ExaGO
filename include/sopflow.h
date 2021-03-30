@@ -14,7 +14,6 @@
 
 
 /* Solvers */
-#define SOPFLOWSOLVER_IPOPTNEW "IPOPTNEW"
 #define SOPFLOWSOLVER_IPOPT "IPOPT"
 #define SOPFLOWSOLVER_EMPAR  "EMPAR" /* Embarassingly parallel solver - solves each OPFLOW independently */
 

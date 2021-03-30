@@ -74,7 +74,6 @@ PetscErrorCode SCOPFLOWSolverRegister(SCOPFLOW scopflow,const char sname[],Petsc
 
 #if defined(EXAGO_ENABLE_IPOPT)
 extern PetscErrorCode SCOPFLOWSolverCreate_IPOPT(SCOPFLOW);
-extern PetscErrorCode SCOPFLOWSolverCreate_IPOPTNEW(SCOPFLOW);
 #endif
 
 extern PetscErrorCode SCOPFLOWSolverCreate_EMPAR(SCOPFLOW);
@@ -90,8 +89,6 @@ PetscErrorCode SCOPFLOWSolverRegisterAll(SCOPFLOW scopflow)
 
 #if defined(EXAGO_ENABLE_IPOPT)
   ierr = SCOPFLOWSolverRegister(scopflow,SCOPFLOWSOLVER_IPOPT,SCOPFLOWSolverCreate_IPOPT);CHKERRQ(ierr);
-  ierr = SCOPFLOWSolverRegister(scopflow,SCOPFLOWSOLVER_IPOPTNEW,SCOPFLOWSolverCreate_IPOPTNEW);CHKERRQ(ierr);
-
 #endif
 
   ierr = SCOPFLOWSolverRegister(scopflow,SCOPFLOWSOLVER_EMPAR,SCOPFLOWSolverCreate_EMPAR);CHKERRQ(ierr);
