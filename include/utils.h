@@ -39,7 +39,12 @@ PETSC_EXTERN PetscErrorCode ExaGOLogSetMinLogLevel(ExaGOVerbosityLevel);
  */
 PETSC_EXTERN void ExaGOLogImpl(ExaGOVerbosityLevel,char*,...);
 
-/** `ExaGOLog` is the user-facing logging function */
+/**
+ * @brief `ExaGOLog` is the user-facing logging function.
+ * @warning Cannot take only two arguments - must provide a format and
+ * parameters. For example, if you only need to log a single string, prefer:
+ * `ExaGOLog(EXAGO_LOG_INFO,"%s","My interesting log message");`.
+ */
 #define ExaGOLog(level,fmt,...) ExaGOLogImpl(level,fmt,__VA_ARGS__)
 
 #else
