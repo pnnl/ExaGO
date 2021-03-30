@@ -11,11 +11,11 @@ An illustration of \sopflow in Fig. \ref{fig:sctopflow} for a case with two scen
 
 \input{figures/sctopflow_fig.tex}
 
-The formulation for the stochastic security-constrained multi-period optimal power flow is given in (\ref{eq:sctopflow_start}) -- (\ref{eq:sctopflow_end}). In this formulation, the objective is to reduce the expected cost, where $f(x_{s,0,0})$ is the cost for scenario $s$ with no contingencies (hence 0 for the contingency index). $\rho_s$ is the probability of scenario $s$.
+The formulation for the stochastic security-constrained multi-period optimal power flow is given in (\ref{eq:sctopflow_start}) -- (\ref{eq:sctopflow_end}). In this formulation, the objective is to reduce the expected cost, where $f(x_{s,c,t})$ is the cost for scenario $s$ with contingency $c$ at time $t$. $\pi_s$ is the probability of scenario $s$.
 
 \begin{align}
 \centering
-\text{min}&~\sum_{s=1}^{N_s-1}\pi_s\sum_{c=0}^{N_c-1}\sum_{t=0}^{N_t-1}f(x_{s,c,t})&  \label{eq:sctopflow_start}\\
+\text{min}&~\sum_{s=0}^{N_s-1}\pi_s\sum_{c=0}^{N_c-1}\sum_{t=0}^{N_t-1}f(x_{s,c,t})&  \label{eq:sctopflow_start}\\
 &\text{s.t.}& \nonumber \\
 &~g(x_{s,c,t}) = 0,                                        &s \in \left[1,N_s-1\right],c \in \left[0,N_c-1\right], t \in \left[0,N_t-1\right]& \\
 &~h(x_{s,c,t}) \le 0,                                      &s \in \left[1,N_s-1\right],c \in \left[0,N_c-1\right], t \in \left[0,N_t-1\right]& \\
@@ -146,7 +146,7 @@ Total CPU secs in NLP function evaluations           =      0.003
 
 EXIT: Optimal Solution Found.
 =============================================================
-        Security-Constrained Optimal Power Flow
+        Stochastic Optimal Power Flow
 =============================================================
 OPFLOW Formulation                  POWER_BALANCE_POLAR
 Solver                              IPOPT
