@@ -70,7 +70,7 @@ The objective function for OPFLOW is given in (\ref{eq:opflow_obj})
 \end{equation}
  
 \subsubsection{Total generation cost $C(p^{\text{g}})$}
-Needs \opflowoption{\opflowobjective}{\mingencost}
+Needs option \opflowoption{\opflowobjective}{\mingencost}
 \begin{equation}
 C(p^{\text{g}}) = \sum_{\jinJgen} \costgj(\pgj)
 \label{eq:opf_obj_mingencost}
@@ -78,7 +78,7 @@ C(p^{\text{g}}) = \sum_{\jinJgen} \costgj(\pgj)
 Here, $\costgj$ is a quadratic function of the form $\costgj = \agj{\pgj}^2 + \bgj\pgj + \cgj$.
 
 \subsubsection{Total generation setpoint deviation $C(\Delta p^{\text{g}})$}
-Needs \opflowoption{\opflowobjective}{\mingensetpointdeviation} option
+Needs option \opflowoption{\opflowobjective}{\mingensetpointdeviation} option
 \begin{equation}
 C(\Delta p^{\text{g}}) = \sum_{\jinJgen} ({\Deltapupj}^2)
 \label{eq:opf_obj_mingensetpointdev}
@@ -90,7 +90,7 @@ This term gets added to the objective when  \option{\opflowincludeloadloss} opti
 C(\Delta p^{\text{l}},\Delta q^{\text{l}}) =  \sum_{\jinJload} \sigmalj({\Deltaplj}^2 + {\Deltaqlj}^2)
 \label{eq:opf_obj_minloadloss}
 \end{equation}
-The load loss penalty $\sigmalj$ can be set via the option \option{-opflow\_loadloss\_penalty}. The default is \$100/MW for all loads.
+The load loss penalty $\sigmalj$ can be set via the option \option{-opflow\_loadloss\_penalty}. The default is \$1000/MW for all loads.
 
 \subsubsection{Power imbalance $C(\Delta p,\Delta q)$}
 This term gets added to the objective when  \option{-opflow\_include_powerimbalance_variables} option is active. 
@@ -98,7 +98,7 @@ This term gets added to the objective when  \option{-opflow\_include_powerimbala
 C(\Delta p,\Delta q) =  \sum_{i \in J^{bus}} \sigmai({\Delta p_i}^2 + {\Delta q_i}^2)
 \label{eq:opf_obj_minpowerimbalance}
 \end{equation}
-The power imbalance cost $\sigmai$ can be set via the option \option{-opflow\_powerimbalance\_penalty}. The default is \$1000/MW for all buses.
+The power imbalance cost $\sigmai$ can be set via the option \option{-opflow\_powerimbalance\_penalty}. The default is \$10,000/MW for all buses. Though the power imbalance variables $\Delta p_i,\Delta q_i$ are slack or non-physical, they can help in solving infeasible cases and provide a meaasure of the infeasibility. 
 
 \subsection{Equality constraints}\label{sec:opflow_eq}
 
@@ -139,7 +139,7 @@ To reduce the size of inequality constraints, only lines that are in service and
 With \option{\opflowuseagc}, two additional constraints are added for each participating generator to enforce the proportional generator redispatch participation as done in automatic generation control (AGC). These two equations are 
 \begin{equation}
 \begin{aligned}
-  \left(\alpha^{\text{g}}_j\Delta{P} - \Deltapj)\right)\left(\pgj - \pmaxj\right) \ge 0 \\
+  \left(\alpha^{\text{g}}_j\Delta{P} - \Deltapj\right)\left(\pgj - \pmaxj\right) \ge 0 \\
   \left((\Deltapj - \alpha_j\Delta{P}\right)\left(\pminj - \pgj\right) \ge 0
 \end{aligned}
 \label{eq:opflow_agc}
@@ -147,7 +147,7 @@ With \option{\opflowuseagc}, two additional constraints are added for each parti
 Eq. \ref{eq:opflow_agc} enforces the generator set-point deviation to be equal to the generation participation when the generator has head-room available $\pminj \le \pgj \le \pmaxj$. Here, $\alpha^{\text{g}}_j$ is the generator participation factor which is the proportion of the power deficit/excess $\Delta{P}$ that the generator provides.
 
 \subsubsection{Generator bus voltage control}
-When the option \opflowoption{\opflowgenbusvoltage \fixedwithinqbounds} is used, the generator bus voltage is fixed when the total reactive power generation available at the bus is within bounds. When it reaches its bounds, the voltage varies with the generator reactive power fixed at its bound. To implement this behavior, two inequality constraints are added for each generator bus
+When the option \opflowoption{\opflowgenbusvoltage~\fixedwithinqbounds} is used, the generator bus voltage is fixed when the total reactive power generation available at the bus is within bounds. When it reaches its bounds, the voltage varies with the generator reactive power fixed at its bound. To implement this behavior, two inequality constraints are added for each generator bus
 \begin{equation}
 \begin{aligned}
 (v^{\text{set}}_i - \vi)(q_i - q^{\text{max}_i}) \ge 0 \\
@@ -179,7 +179,7 @@ When using cartesian coordinates for voltages, inequality constraints (\ref{eq:o
     \hline
     Power balance with cartesian coordinates & \opflowoption{\opflowmodel}{\pbcar} & IPOPT, TAO & CPU\\
     \hline
-    Power balance with polar coordinates used with HIOP & \opflowoption{\opflowmodel}{\pbpolhiop} & \hiop & CPU\\
+    Power balance with polar coordinates used with HIOP & \opflowoption{\opflowmodel}{\pbpolhiop} & \hiop & CPU/GPU\\
     \hline
     Power balance with polar coordinates used with HIOP on GPU & \opflowoption{\opflowmodel}{\pbpolrajahiop} & IPOPT, TAO & GPU\\
     \hline
