@@ -45,7 +45,7 @@ See table \ref{tab:tcopflow_options}. In addition, all \opflow options given in 
 \begin{table}[!htbp]
   \caption{TCOPFLOW options}
   \small
-  \begin{tabular}{|p{0.4\textwidth}|p{0.3\textwidth}|p{0.3\textwidth}|}
+  \begin{tabular}{|p{0.4\textwidth}|p{0.25\textwidth}|p{0.25\textwidth}|}
     \hline
     \textbf{Option} & \textbf{Meaning} & \textbf{Values (Default value)} \\ \hline
     -netfile & Network file name & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod_gen3_wind.m}{case9mod\_gen3\_wind.m}) \\ \hline
@@ -66,7 +66,7 @@ Example using \ipopt solver:
 
 \begin{lstlisting}
 $ ./bin/tcopflow -tcopflow_iscoupling 1 -print_output
-[ExaGO INFO]: -- Checking ... -options_file not passed             exists: no
+[ExaGO INFO]: -- Checking ... -options_file not passed exists: no
 TCOPFLOW: Application created
 TCOPFLOW: Duration = 0.500000 hours, timestep = 5.000000 minutes, \
                                      number of time-steps = 7
@@ -81,9 +81,7 @@ Description: Desired convergence tolerance (relative).
 0 < (1e-08) <= +inf
 
 *************************************************************************
-This program contains Ipopt, a library for large-scale nonlinear 
-optimization. Ipopt is released as open source code under the Eclipse 
-Public License (EPL).
+This program contains Ipopt...
 *************************************************************************
 
 This is Ipopt version 3.12.10, running with linear solver ma27.
