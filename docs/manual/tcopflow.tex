@@ -1,14 +1,13 @@
 \chapter{Multi-period optimal power flow (TCOPFLOW)}\label{chap:tcopflow}
 
-TCOPFLOW solves a full AC multi-period optimal power flow problem with the objective of minimizing the total cost over the given time horizon while adhering to intra-time and inter-temporal constraints. 
+TCOPFLOW solves a full AC multi-period optimal power flow problem with the objective of minimizing the total cost over the given time horizon while adhering to constraints for each period and between consecutive time-periods (ramping constraints). 
 
 \section{Formulation}
 The multi-period optimal power flow problem is a series of optimal power flow problems coupled via temporal constraints. The generator real power deviation ($p_{jt}^{\text{g}} - p_{jt-\Delta{t}}^{\text{g}}$) constrained within the ramp limits form the temporal constraints. An illustration of the temporal constraints is shown in Fig. \ref{fig:tcopflow} with four time steps. Each time-step $t$ is coupled with its preceding time $t-\Delta{t}$, where $\Delta{t}$ is the time-step where the objective is to find a least cost dispatch for the given time horizon.
 
 \input{figures/tcopflow_fig}
 
-In general form, the equations for multi-period optimal power flow are given by
-(\ref{eq:tcopflow_start}) -- (\ref{eq:tcopflow_end}). TCOPFLOW solves to minimize the total generation cost $\sum_{t=0}^{N_t-1}f(x_t)$ over the time horizon, where $N_t$ is the number of time-steps. At each time-step, the equality constraints ($g(x_t)$), inequality $h(x_t)$, and the lower/upper limit ($x^-$,$x^+$) constraints need to be satisfied. Equation (\ref{eq:tcopflow_end}) represents the coupling between the consecutive time-steps. It is a most common form of coupling that limits the deviation of the real power generation at time $t$ from its preceding time-step $t-\Delta{t}$ to within its ramping capability $\delta_t{x}$.
+In general form, the equations for multi-period optimal power flow are given by (\ref{eq:tcopflow_start}) -- (\ref{eq:tcopflow_end}). TCOPFLOW solves to minimize the total generation cost $\sum_{t=0}^{N_t-1}f(x_t)$ over the time horizon, where $N_t$ is the number of time-steps. At each time-step, the equality constraints ($g(x_t)$), inequality $h(x_t)$, and the lower/upper limit ($x^-$,$x^+$) constraints need to be satisfied. Equation (\ref{eq:tcopflow_end}) represents the coupling between the consecutive time-steps. It is the most common form of coupling that limits the deviation of the real power generation at time $t$ from its preceding time-step $t-\Delta{t}$ to within its ramping capability $\delta_t{x}$.
 
 
 \begin{align}
@@ -23,12 +22,12 @@ x^- & \le x_t \le x^+,                               &t\in \left[0,N_t-1\right]&
 \end{align}
 
 \section{Solvers}\label{sec:tcopflow_solvers}%
-\tcopflow solves the coupled multi-period using the solver \ipopt. Currently, \exago only supports solving \tcopflow using \ipopt~, which is also the default solver. Solving TCOPFLOW is supported only on single process. %Option:\\ %\opflowoption{-tcopflow_solver IPOPT}
+\tcopflow solves the coupled multi-period using the solver \ipopt. Currently, \exago only supports solving \tcopflow using \ipopt~, which is also the default solver. Solving TCOPFLOW is supported only on a single process. %Option:\\ %\opflowoption{-tcopflow_solver IPOPT}
 
 \section{Input and Output}
 \begin{itemize}
     \item \textbf{Network file:} The network file describing the network details. Only \matpower format files are currently supported.
-    \item \textbf{Load data:} One file for load real power and one fo reactive power. The files need to be in CSV format. An example of the format for the 9-bus case is \href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/tree/master/datafiles/case9}{here}.
+    \item \textbf{Load data:} One file for load real power and one for reactive power. The files need to be in CSV format. An example of the format for the 9-bus case is \href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/tree/master/datafiles/case9}{here}.
     \item \textbf{Wind generation:} The wind generation time-series described in CSV format. See an example of the format \href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/tree/master/datafiles/case9}{here}.
 \end{itemize}
 If the load data and/or wind generation profiles are not set then a flat profile is assumed, i.e., the load and wind generation for all hours is constant.
@@ -49,11 +48,11 @@ See table \ref{tab:tcopflow_options}. In addition, all \opflow options given in 
   \begin{tabular}{|p{0.4\textwidth}|p{0.3\textwidth}|p{0.3\textwidth}|}
     \hline
     \textbf{Option} & \textbf{Meaning} & \textbf{Values (Default value)} \\ \hline
-    -netfile & Network file name & string < 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod_gen3_wind.m}{case9mod\_gen3\_wind.m}) \\ \hline
+    -netfile & Network file name & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod_gen3_wind.m}{case9mod\_gen3\_wind.m}) \\ \hline
     -save\_output & Save output to file & 0 or 1 (0) \\ \hline
-    -tcopflow\_pload\_profile & Real power load profile & string < 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_P.csv}{load\_P.csv}) \\ \hline
-    -tcopflow\_qload\_profile & Reactive power load profile & string < 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_Q.csv}{load\_Q.csv}) \\ \hline
-    -tcopflow\_windgen\_profile & Wind generation profile & string < 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/scenarios_9bus.csv}{case9/scenarios\_9bus.csv}) \\ \hline
+    -tcopflow\_pload\_profile & Real power load profile & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_P.csv}{load\_P.csv}) \\ \hline
+    -tcopflow\_qload\_profile & Reactive power load profile & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_Q.csv}{load\_Q.csv}) \\ \hline
+    -tcopflow\_windgen\_profile & Wind generation profile & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/scenarios_9bus.csv}{case9/scenarios\_9bus.csv}) \\ \hline
     -tcopflow\_dT & Length of time-step (minutes) & double (5.0) \\ \hline
     -tcopflow\_duration & Total duration (hours) & double (0.5) \\ \hline 
     -tcopflow\_iscoupling & Coupling between time steps (ramp constraints) & 0 or 1 (0) \\ \hline
@@ -61,7 +60,7 @@ See table \ref{tab:tcopflow_options}. In addition, all \opflow options given in 
   \label{tab:tcopflow_options}
 \end{table}
 \section{Examples}
-Some \tcopflow example runs are provided with some sample output. Options are the default options provided in table \ref{tab:opflow_options} and \ref{tab:tcopflow_options} unless otherwise specified. Sample output is generated from running examples from the installation directory.
+Some \tcopflow example runs are provided with some sample output. Options are the default options provided in table \ref{tab:opflow_options} and \ref{tab:tcopflow_options} unless otherwise specified. Sample output is generated by running examples from the installation directory.
 
 Example using \ipopt solver:
 
