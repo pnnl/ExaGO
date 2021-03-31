@@ -1,13 +1,13 @@
 \chapter{Stochastic optimal power flow (SOPFLOW)}\label{chap:sopflow}
-SOPFLOW solves a stochastic security-constrained multi-period optimal power flow problem. The problem is set up as a two-stage optimization problem where the first-stage (base-case) represents the normal operation of the grid (or the most likely forecast) and the second-stage comprises of $N_s$ scenarios of forecast deviation. Each scenario can have multiple contingencies and each contingency can be multi-period. Thus, depending on the options selected, each stochastic scenario can be
+SOPFLOW solves a stochastic security-constrained multi-period optimal power flow problem. The problem is set up as a two-stage optimization problem where the first-stage (base-case) represents the normal operation of the grid (or the most likely forecast) and the second-stage comprises $N_s$ scenarios of forecast deviation. Each scenario can have multiple contingencies and each contingency can be multi-period. Thus, depending on the options selected, each stochastic scenario can be
 \begin{itemize}
-    \item Single-period, no contingency
-    \item Single-period contingencies
-    \item Multi-period contingencies
+    \item Single-period, no contingencies
+    \item Single-period, with contingencies
+    \item Multi-period, with contingencies
 \end{itemize}
 
 \section{Formulation}
-An illustration of \sopflow in Fig. \ref{fig:sctopflow} for a case with two scenarios $s_0$ and $s_1$. Each scenario has two contingencies $c_0$, $c_1$, and each contingency has four time-periods.
+An illustration of \sopflow is shown in Fig. \ref{fig:sctopflow} for a case with two scenarios $s_0$ and $s_1$. Each scenario has two contingencies $c_0$, $c_1$, and each contingency has four time-periods.
 
 \input{figures/sctopflow_fig.tex}
 
@@ -27,7 +27,7 @@ x^- & \le x_{s,c,t} \le x^+,                               &s \in \left[1,N_s-1\
 \label{eq:sctopflow_end}
 \end{align}
 
-{\sopflow} uses all the modeling details used for modeling an optimal power flow problem, i.e., each of the circles shown in Fig. \ref{fig:sctopflow} has the modeling details of an optimal power flow problem (\opflow). Incorporating the probabilities $\pi_s$ for each scenario is not implemented yet which leads to each scenario having an equal probability. 
+The modeling details used for an optimial power flow problem are also used for a {\sopflow} problem, i.e., each of the circles shown in Fig. \ref{fig:sctopflow} has the modeling details of an optimal power flow problem (\opflow). Incorporating the probabilities $\pi_s$ for each scenario is not implemented yet which leads to each scenario having an equal probability. 
 
 Currently, \sopflow uses wind power generation as the stochastic variables and each scenario is a realization of the power output from wind generators. A zero fuel cost is used for wind power generation to ensure wind generation would be the dispatched to the given target level (upper limit). 
 
@@ -38,15 +38,15 @@ For multi time-period, we use ramping constraints on the generator real power ou
 \sopflow can be run in two modes: preventive and corrective. In the preventive mode, generator real power output is fixed to the base-case values for generators at PV bus(es). In this mode, the generators at the reference bus provide/absorb any deficit/surplus power. The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability. Note that the preventive/corrective mode is only applied at the first step $t_0$. In the successive time-steps, the generator dispatch is dictated by the previous step dispatch and the ramp limits.
 
 \section{Solvers}
-\sopflow can be solved with \ipopt. If one wants to solve each scenario independently, i.e., without any coupling constraints then use \emph{EMPAR} solver. \emph{EMPAR} distributes the contingencies to different processes when executed in parallel.
+\sopflow can be solved with \ipopt. If one wants to solve each scenario independently, i.e., without any coupling constraints then use the \emph{EMPAR} solver. \emph{EMPAR} distributes the contingencies to different processes when executed in parallel.
 
 \section{Input and Output}
-The following files are needed for executing a SOPFLOW.
+The following files are needed for executing SOPFLOW.
 \begin{itemize}
     \item \textbf{Network file:} The network file describing the network details. Only \matpower format files are currently supported.
     \item \textbf{Scenario file:} \sopflow only supports reading wind generation scenarios in a CSV format. An example of this format for the 9-bus case is \href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/tree/master/datafiles/case9/scenarios_9bus.csv}{here}.
-    \item \textbf{Contingency file:} Contingencies can be specified via PTI format file as described in chapter \ref{chap:scopflow}.The option \lstinline{-sopflow_enable_multicontingency} should be set for multi-contingency problems.
-    \item \textbf{Load data:} One file for load real power and one fo reactive power. The files need to be in CSV format. An example of the format for the 9-bus case is \href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/tree/master/datafiles/case9}{here}.
+    \item \textbf{Contingency file:} Contingencies can be specified via PTI format file as described in chapter \ref{chap:scopflow}. The option \lstinline{-sopflow_enable_multicontingency} should be set for multi-contingency problems.
+    \item \textbf{Load data:} One file for load real power and one for reactive power. The files need to be in CSV format. An example of the format for the 9-bus case is \href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/tree/master/datafiles/case9}{here}.
 \end{itemize}
 
 The \sopflow output is saved to a directory named \emph{sopflowout}. This directory contains $N_s$ subdirectories to save the solution for each scenario. Each of these subdirectories contain $N_c$ subdirectories, one for each contingency. Each contingency subdirectory has $N_t$ MATPOWER format files to store the output for each time-period for the given contingency and scenario. The subdirectories have the directory name format \emph{scen\_x} where x is the scenario number,  \emph{cont\_y} where y is the contingency number, and the output files have the file name format \emph{t\_z} where z is the time-step number.
@@ -65,13 +65,13 @@ The \sopflow output is saved to a directory named \emph{sopflowout}. This direct
   \begin{tabular}{|p{0.4\textwidth}|p{0.3\textwidth}|p{0.3\textwidth}|}
     \hline
     \textbf{Option} & \textbf{Meaning} & \textbf{Values (Default value)} \\ \hline
-    -netfile & Network file name & string < 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod_gen3_wind.m}{case9mod\_gen3\_wind.m}) \\ \hline
-    -scenfile & Scenario file name & string < 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/scenarios_9bus.csv}{case9/scenarios\_9bus.csv}) \\ \hline
+    -netfile & Network file name & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod_gen3_wind.m}{case9mod\_gen3\_wind.m}) \\ \hline
+    -scenfile & Scenario file name & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/scenarios_9bus.csv}{case9/scenarios\_9bus.csv}) \\ \hline
     -sopflow\_mode & Operation mode: Preventive or corrective & 0 or 1 (0) \\ \hline
     -sopflow\_solver & Set solver for sopflow & IPOPT or  EMPAR \\ \hline
     -sopflow\_enable\_multicontingency & Multi-contingency SOPFLOW & 0 or 1 (0) \\ \hline \hline
     -ctgcfile & Contingency file name & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9.cont}{case9.cont}) \\ \hline
-    -sopflow\_Ns & Number of scenarios & int (0. Passing -1 results in all scenarios in the file being used) \\ \hline
+    -sopflow\_Ns & Number of scenarios & int (Default 0. Passing -1 results in all scenarios in the file being used) \\ \hline
   \end{tabular}
   \label{tab:sopflow_options}
 \end{table}
@@ -81,7 +81,7 @@ See table \ref{tab:sopflow_options}. With multi-contingency SOPFLOW, all \scopfl
 Depending on the \emph{mode}, SOPFLOW can either be \emph{preventive} (mode = 0) or \emph{corrective} (mode = 1). In the preventive mode, the PV and PQ generator real power is fixed to its corresponding base-case values. The generators at the reference bus pick up any make-up power required for the contingency. The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability.
 
 \section{Examples}
-Some \sopflow example runs are provided with some sample output. Options are the default options given in Tables \ref{tab:opflow_options}, \ref{tab:tcopflow_options}, \ref{tab:scopflow_options} and \ref{tab:sopflow_options} unless otherwise specified. Sample output is generated from running examples in the installation directory.
+Some \sopflow example runs are provided with some sample output. Options are the default options given in Tables \ref{tab:opflow_options}, \ref{tab:tcopflow_options}, \ref{tab:scopflow_options} and \ref{tab:sopflow_options} unless otherwise specified. Sample output is generated by running examples in the installation directory.
 
 Example using the \ipopt solver:
 

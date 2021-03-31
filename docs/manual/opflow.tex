@@ -1,6 +1,6 @@
 \chapter{Optimal power flow (OPFLOW)}\label{chap:opflow}
 
-OPFLOW solves the full AC optimal power flow problem and provides various flexible features that can be toggled via run-time options. It has interfaces to different optimization solvers and includes different representations of the underlying equations (power-balance-polar and power-balance-cartesian) that can be used. By selecting the appropriate solver, OPFLOW can be executed on CPU (in serial or parallel) or on GPUs.
+OPFLOW solves the full AC optimal power flow problem and provides various flexible features that can be toggled via run-time options. It has interfaces to different optimization solvers and includes different representations of the underlying equations (power-balance-polar and power-balance-cartesian) that can be used. By selecting the appropriate solver, OPFLOW can be executed on CPUs (in serial or parallel) or on GPUs.
 
 \section{Formulation}
 Optimal power flow is a general nonlinear programming problem with the following form
@@ -36,7 +36,7 @@ The different variables used in \opflow formulation are described in Table \ref{
     \hline
     Bus voltage angle & $\thetai$ & -$\pi \le \thetai \le \pi$ & 
     \begin{itemize}[noitemsep,topsep=0pt,leftmargin=*] 
-    	\item Used with power balance polar model (\option{\opflowmodel~\pbcar}) 
+    	\item Used with power balance polar model (\option{\opflowmodel~\pbpol}) 
 	\item $\thetai$ is unbounded, except reference bus angle $\thetarefi$ which is fixed to 0 
     \end{itemize} \\
     \hline
@@ -80,7 +80,7 @@ Here, $\costgj$ is a quadratic function of the form $\costgj = \agj{\pgj}^2 + \b
 \subsubsection{Total generation setpoint deviation $C(\Delta p^{\text{g}})$}
 Needs option \opflowoption{\opflowobjective}{\mingensetpointdeviation} option
 \begin{equation}
-C(\Delta p^{\text{g}}) = \sum_{\jinJgen} ({\Deltapupj}^2)
+C(\Delta p^{\text{g}}) = \sum_{\jinJgen} ({\Deltapj}^2)
 \label{eq:opf_obj_mingensetpointdev}
 \end{equation}
 
@@ -111,7 +111,7 @@ The power imbalance cost $\sigmai$ can be set via the option \option{-opflow\_po
 where, the real and reactive power shunt consumption is given by (\ref{eq:opflow_sh_p}) and (\ref{eq:opflow_sh_q})
 
 
-The real and reactive power flow $\pbrjod$, $\qbrjod$ for line $j$ from the origin bus $o$ to bus $d$ is given by (\ref{eq:opflow_br_podflow}) -- 
+The real and reactive power flow $\pbrjod$, $\qbrjod$ for line $j$ from the origin bus $o$ to destination bus $d$ is given by (\ref{eq:opflow_br_podflow}) -- 
  (\ref{eq:opflow_br_qodflow})
 and from destination bus $d$ to origin bus $o$ is given by (\ref{eq:opflow_br_pdoflow}) -- 
  (\ref{eq:opflow_br_qdoflow})
@@ -123,7 +123,7 @@ When using \option{\opflowgensetpoint}, two extra variables $\pgjset$ and $\Delt
   \pgjset + \Deltapj - \pgj = 0 \\
   \pgjset - p^{\text{g*}}_j = 0
 \end{align}
-Here, $p^{\text{g*}}_j$ is the set-point for the generator real power output, which can be thought of as an operator set or contractual agreement set-point.
+The second equation here allows to fix the generator set point $\pgjset$ to a fixed value $p^{\text{g*}}_j$. Here, $p^{\text{g*}}_j$ is the set-point for the generator real power output, which can be thought of as an operator set or contractual agreement set-point.
 
 \subsection{Inequality constraints}
 
@@ -133,7 +133,7 @@ MVA flow limits at origin and destination buses for each line.
   {\pbrjod}^2 + {\qbrjod}^2 \le {\srateAj}^2,~~\jinJbr\\
   {\pbrjdo}^2 + {\qbrjdo}^2 \le {\srateAj}^2,~~\jinJbr
 \end{align}
-To reduce the size of inequality constraints, only lines that are in service and having MVA A rating $\srateAj$ less than 10000 MVA are considered.
+To reduce the number of inequality constraints, only lines that are in service and having MVA A rating $\srateAj$ less than 10000 MVA are considered.
 
 \subsubsection{Automatic generation control (AGC)}
 With \option{\opflowuseagc}, two additional constraints are added for each participating generator to enforce the proportional generator redispatch participation as done in automatic generation control (AGC). These two equations are 
@@ -205,7 +205,7 @@ The real and reactive power flow $\pbrjod$, $\qbrjod$  from bus $o$ to bus $d$ o
 \qbrjod &= -b_{oo}{v^2_o} + v_ov_d(-b_{od}\cos(\theta_o - \theta_d) + g_{od}\sin(\theta_o - \theta_d)) \label{eq:opflow_br_qodflow}
 \end{align}
 
-and from bus $i$ to bus $d$ is given by (\ref{eq:opflow_br_pdoflow}) -- (\ref{eq:opflow_br_qdoflow})
+and from bus $d$ to bus $o$ is given by (\ref{eq:opflow_br_pdoflow}) -- (\ref{eq:opflow_br_qdoflow})
 
 \begin{align}
 \pbrjdo &= g_{dd}{v^2_d} + v_dv_o(g_{do}\cos(\theta_d - \theta_o) + b_{do}\sin(\theta_d - \theta_o))  \label{eq:opflow_br_pdoflow} \\
@@ -227,8 +227,8 @@ Power balance formulation with polar coordinates used with \hiop and \raja. This
 \begin{enumerate}
   \item \ipopt~is a popular open-source package for solving nonlinear optimization problems. It is the most robust of the solvers implemented for solving \opflow. However, it can be run only on a single process and does not have GPU support. Option: \\
   \opflowoption{-opflow\_solver IPOPT}
-  \item The Toolkit for Applied Optimization (\tao) is a toolkit available through \petsc for solving optimization problems. TAO includes a interior-point algorithm that is used by OPFLOW. The TAO algorithm is fully parallel, but is less robust compared to IPOPT. Currently, the TAO solver can only used with the power balance cartesian model. Option:\\ \opflowoption{-opflow\_solver TAO} \opflowoption{-opflow\_model POWER\_BALANCE\_CARTESIAN}
-  \item \hiop~ is a high-performance optimization library that implements an interior-point algorithm for solving nonlinear optimization problems. The library supports execution both on the CPU and the GPU. Options: \\ CPU: \opflowoption{-opflow\_solver HIOP} \opflowoption{-opflow\_model POWER\_BALANCE\_HIOP} \\ GPU: \opflowoption{-opflow\_solver HIOP} \opflowoption{-opflow\_model PBPOLRAJAHIOP} \\ The option \opflowoption{-hiop\_ipopt\_debug} can be used with the CPU option in order to use an adapter that verifies the correctness of the first and second order derivates when compared to \ipopt. This may be useful when debugging experimental changes.
+  \item The Toolkit for Applied Optimization (\tao) is a toolkit available through \petsc for solving optimization problems. TAO includes a interior-point algorithm that is used by OPFLOW. The TAO algorithm is fully parallel, but is less robust compared to IPOPT. Currently, the TAO solver can only be used with the power balance cartesian model. Option:\\ \opflowoption{-opflow\_solver TAO} \opflowoption{-opflow\_model POWER\_BALANCE\_CARTESIAN}
+  \item \hiop~ is a high-performance optimization library that implements an interior-point algorithm for solving nonlinear optimization problems. The library supports execution both on the CPU and the GPU. Options: \\ CPU: \opflowoption{-opflow\_solver HIOP} {\opflowoption{-opflow\_model POWER\_BALANCE\_HIOP}} \\ GPU: \opflowoption{-opflow\_solver HIOP} {\opflowoption{-opflow\_model PBPOLRAJAHIOP}} \\ The option \opflowoption{-hiop\_ipopt\_debug} can be used with the CPU option in order to use an adapter that verifies the correctness of the first and second order derivates when compared to \ipopt. This may be useful when debugging experimental changes.
 \end{enumerate}
 
 \begin{table}
@@ -261,7 +261,7 @@ See table \ref{tab:opflow_options}
   \begin{tabular}{|p{0.4\textwidth}|p{0.3\textwidth}|p{0.3\textwidth}|}
     \hline
     \textbf{Option} & \textbf{Meaning} & \textbf{Values (Default value)} \\ \hline
-    -netfile & Network file name & string < 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod.m}{case9mod.m}) \\ \hline
+    -netfile & Network file name & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod.m}{case9mod.m}) \\ \hline
     -print\_output & Print output to screen & 0 or 1 (0) \\ \hline
     -save\_output & Save output to file & 0 or 1 (0) \\ \hline
     -opflow\_model & Representation of network balance equations and bus voltages & See Table \ref{sec:opflow_model} (POWER\_BALANCE\_POLAR) \\ \hline
@@ -316,7 +316,7 @@ See table \ref{tab:opflow_options}
     \textbf{Objective function} & \textbf{Meaning} \\ \hline
     MIN\_GEN\_COST & Minimize generation cost \\ \hline
     MIN\_GENSETPOINT\_DEVIATION & Minimize deviation (ramp up-down) from generataor set-point \\ \hline
-    NO\_OBJ & No objecive function \\ \hline
+    NO\_OBJ & No objective function \\ \hline
   \end{tabular}
 \label{tab:opflow_objtypes}
 \end{table}
@@ -324,7 +324,7 @@ See table \ref{tab:opflow_options}
 
 \section{Examples}
 
-Some \opflow example runs are provided with some sample output. Options values are the default values in table \ref{tab:opflow_options} unless otherwise specified. \opflowoption{-print_output} is only used in the first example to save space. Sample output is generated from running examples from the installation directory.
+Some \opflow example runs are provided with some sample output. Options values are the default values in table \ref{tab:opflow_options} unless otherwise specified. \opflowoption{-print_output} is only used in the first example to save space. Sample output is generated by running examples from the installation directory.
 
 Example using the \tao solver:
 
