@@ -20,7 +20,7 @@ The different variables used in \opflow formulation are described in Table \ref{
 \begin{table}[!htbp]
 \caption{Optimal power flow (OPFLOW) variables}
 \small
-  \begin{tabular}{|p{0.20\textwidth}|p{0.1\textwidth}|p{0.2\textwidth}|p{0.50\textwidth}|}
+  \begin{tabular}{|p{0.1\textwidth}|p{0.1\textwidth}|p{0.2\textwidth}|p{0.50\textwidth}|}
    \hline
     \textbf{Variable} & \textbf{Symbol} & \textbf{Bounds} & \textbf{Notes} \\
     \hline
@@ -171,17 +171,17 @@ When using cartesian coordinates for voltages, inequality constraints (\ref{eq:o
 \begin{table}[!h]
   \caption{OPFLOW models}
   \small
-  \begin{tabular}{|p{0.25\textwidth}|p{0.4\textwidth}|p{0.2\textwidth}|p{0.15\textwidth}|}
+  \begin{tabular}{|p{0.2\textwidth}|p{0.4\textwidth}|p{0.2\textwidth}|p{0.15\textwidth}|}
     \hline
-    \textbf{Model type} & \textbf{OPFLOW option} & \textbf{Compatible solvers} & \textbf{CPU-GPU}\\
+    \textbf{Model type} & \textbf{OPFLOW option (\opflowoption{\opflowmodel}{})} & \textbf{Compatible solvers} & \textbf{CPU-GPU}\\
     \hline
-    Power balance with polar coordinates & \opflowoption{\opflowmodel}{\pbpol} & IPOPT & CPU\\
+    Power balance with polar coordinates & \pbpol & IPOPT & CPU\\
     \hline
-    Power balance with cartesian coordinates & \opflowoption{\opflowmodel}{\pbcar} & IPOPT, TAO & CPU\\
+    Power balance with cartesian coordinates & \pbcar & IPOPT, TAO & CPU\\
     \hline
-    Power balance with polar coordinates used with HIOP & \opflowoption{\opflowmodel}{\pbpolhiop} & \hiop & CPU/GPU\\
+    Power balance with polar coordinates used with HIOP & {\pbpolhiop} & \hiop & CPU/GPU\\
     \hline
-    Power balance with polar coordinates used with HIOP on GPU & \opflowoption{\opflowmodel}{\pbpolrajahiop} & IPOPT, TAO & GPU\\
+    Power balance with polar coordinates used with HIOP on GPU & {\pbpolrajahiop} & \hiop & GPU\\
     \hline
   \end{tabular}
   \label{tab:opflow_models}
