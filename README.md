@@ -118,6 +118,11 @@ Instructions for executing the different ExaGO applications is given below.
 - [SCOPFLOW](docs/web/scopflow.md)
 - [PFLOW](docs/web/pflow.md)
 
+## Contributing
+
+Please see [the developer guidelines](docs/DeveloperGuidelines.md) before attempting to contribute.
+Feel free to raise an issue or contact the team if the guidelines are ambiguous or you have a particular question.
+
 ### Options
 
 Each application has a different set of options that are described in depth in the usage notes. These options can be passed through an options file (`-options_file <option_file>`), or directly on the command line.
