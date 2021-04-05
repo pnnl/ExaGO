@@ -5,7 +5,7 @@ set(PFLOW_SRC pflow.c)
 set(PFLOW_INCLUDE ${CMAKE_SOURCE_DIR}/include/pflow.h)
 
 # Compile library
-add_library(pflow ${PFLOW_SRC})
+add_library(pflow SHARED ${PFLOW_SRC})
 
 target_link_libraries(pflow PRIVATE PETSC::SNES ExaGO::UTILS ExaGO::PS)
 

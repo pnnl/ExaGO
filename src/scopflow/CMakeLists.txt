@@ -13,7 +13,7 @@ set(SCOPFLOW_SRC
 set(SCOPFLOW_INCLUDE ${CMAKE_SOURCE_DIR}/include/scopflow.h)
 
 # Compile library
-add_library(scopflow ${SCOPFLOW_SRC})
+add_library(scopflow SHARED ${SCOPFLOW_SRC})
 
 # link libraries
 target_link_libraries(

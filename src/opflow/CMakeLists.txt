@@ -30,7 +30,7 @@ set(OPFLOW_SRC interface/opflow.c interface/opflowregi.c
 set(OPFLOW_INCLUDE ${CMAKE_SOURCE_DIR}/include/opflow.h)
 
 # Compile library
-add_library(opflow ${OPFLOW_SRC})
+add_library(opflow SHARED ${OPFLOW_SRC})
 
 # link libraries
 target_link_libraries(

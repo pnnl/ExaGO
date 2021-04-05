@@ -12,7 +12,7 @@ set(TCOPFLOW_SRC
 set(TCOPFLOW_INCLUDE ${CMAKE_SOURCE_DIR}/include/tcopflow.h)
 
 # Compile library
-add_library(tcopflow ${TCOPFLOW_SRC})
+add_library(tcopflow SHARED ${TCOPFLOW_SRC})
 
 # link libraries
 target_link_libraries(
