@@ -16,8 +16,8 @@ add_library(tcopflow ${TCOPFLOW_SRC})
 
 # link libraries
 target_link_libraries(
-  tcopflow PRIVATE PETSC::SNES ${EXAGO_UTIL_LIBS} ${EXAGO_PS_LIBS}
-                   ${EXAGO_PFLOW_LIBS} ${EXAGO_OPFLOW_LIBS}
+  tcopflow PRIVATE PETSC::SNES ExaGO::UTILS ExaGO::PS ${EXAGO_PFLOW_LIBS}
+                   ${EXAGO_OPFLOW_LIBS}
 )
 
 if(EXAGO_ENABLE_MPI)

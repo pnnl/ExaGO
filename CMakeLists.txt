@@ -36,6 +36,11 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/buildsystem/cmake)
 set(EXAGO_OPTIONS_DIR "${CMAKE_INSTALL_PREFIX}/share/exago/options")
 set(EXAGO_DATAFILES_DIR "${CMAKE_INSTALL_PREFIX}/share/exago/datafiles")
 
+# Specify whether to build shared libraries, static libraries, or both
+option(EXAGO_BUILD_SHARED "Build shared libraries" ON)
+option(EXAGO_BUILD_STATIC "Build static libraries" OFF)
+include(ExaGOAddLibrary)
+
 # Enable PETSc by default
 option(EXAGO_ENABLE_PETSC "Enable PETSc support" ON)
 
