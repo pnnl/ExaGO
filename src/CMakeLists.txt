@@ -7,14 +7,6 @@ add_subdirectory(sopflow)
 add_subdirectory(tcopflow)
 
 # Add variables in the parent scope
-set(EXAGO_UTIL_LIBS
-    ${EXAGO_UTIL_LIBS}
-    PARENT_SCOPE
-)
-set(EXAGO_PS_LIBS
-    ${EXAGO_PS_LIBS}
-    PARENT_SCOPE
-)
 set(EXAGO_PFLOW_LIBS
     ${EXAGO_PFLOW_LIBS} pflow
     PARENT_SCOPE

@@ -13,8 +13,8 @@ set(SOPFLOW_SRC sopflow-main.c)
 # TCOPFLOW
 set(TCOPFLOW_SRC tcopflow-main.c)
 
-set(EXAGO_PFLOW_APP_LIBS ${EXAGO_UTIL_LIBS} ${EXAGO_PS_LIBS}
-                         ${EXAGO_PFLOW_LIBS} ${EXAGO_MATH_LIB} PETSC::SNES
+set(EXAGO_PFLOW_APP_LIBS ExaGO::UTILS ExaGO::PS ${EXAGO_PFLOW_LIBS}
+                         ${EXAGO_MATH_LIB} PETSC::SNES
 )
 
 if(EXAGO_ENABLE_MPI)

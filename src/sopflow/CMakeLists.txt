@@ -21,8 +21,8 @@ add_library(sopflow ${SOPFLOW_SRC})
 target_link_libraries(
   sopflow
   PRIVATE PETSC::SNES
-          ${EXAGO_UTIL_LIBS}
-          ${EXAGO_PS_LIBS}
+          ExaGO::UTILS
+          ExaGO::PS
           ${EXAGO_PFLOW_LIBS}
           ${EXAGO_OPFLOW_LIBS}
           ${EXAGO_TCOPFLOW_LIBS}

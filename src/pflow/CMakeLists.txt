@@ -7,9 +7,7 @@ set(PFLOW_INCLUDE ${CMAKE_SOURCE_DIR}/include/pflow.h)
 # Compile library
 add_library(pflow ${PFLOW_SRC})
 
-target_link_libraries(
-  pflow PRIVATE PETSC::SNES ${EXAGO_UTIL_LIBS} ${EXAGO_PS_LIBS}
-)
+target_link_libraries(pflow PRIVATE PETSC::SNES ExaGO::UTILS ExaGO::PS)
 
 if(EXAGO_ENABLE_MPI)
   target_link_libraries(pflow PRIVATE MPI::MPI_C)
