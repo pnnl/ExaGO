@@ -15,7 +15,7 @@ set(SOPFLOW_SRC
 set(SOPFLOW_INCLUDE ${CMAKE_SOURCE_DIR}/include/sopflow.h)
 
 # Compile library
-add_library(sopflow ${SOPFLOW_SRC})
+add_library(sopflow SHARED ${SOPFLOW_SRC})
 
 # link libraries
 target_link_libraries(
