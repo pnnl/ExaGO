@@ -32,10 +32,10 @@ static ExaGOVerbosityLevel ExaGOLogMinLogLevel = EXAGO_LOG_INFO;
 static MPI_Comm ExaGOLogComm=MPI_COMM_SELF;
 
 /** Rank from which logging statements will be written */
-static unsigned ExaGOLogLoggingRank=0;
+static int ExaGOLogLoggingRank=0;
 
 /** Current MPI rank */
-static unsigned ExaGOLogCurrentRank=0;
+static int ExaGOLogCurrentRank=0;
 
 PetscErrorCode ExaGOLogGetLoggingFileName(char** name)
 {
@@ -161,12 +161,18 @@ PetscErrorCode ExaGOLogSetMinLogLevel(ExaGOVerbosityLevel l)
   return 0;
 }
 
+PetscErrorCode ExaGOLogUseEveryRank(PetscBool use)
+{
+  ExaGOLogLoggingRank = use ? -1 : 0;
+  return 0;
+}
+
 /** ExaGO logging function with format string */
 void ExaGOLogImpl(ExaGOVerbosityLevel verb, char *fmt, ...)
 {
   EXAGO_LOG_ENSURE_INITIALIZED();
   int ierr;
-  if (ExaGOLogCurrentRank!=ExaGOLogLoggingRank)
+  if (ExaGOLogLoggingRank>=0 && ExaGOLogCurrentRank!=ExaGOLogLoggingRank)
     return;
 
   if(verb<ExaGOLogMinLogLevel)

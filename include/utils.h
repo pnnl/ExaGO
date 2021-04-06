@@ -30,6 +30,11 @@ PETSC_EXTERN PetscErrorCode ExaGOLogGetMinLogLevel(ExaGOVerbosityLevel*);
 /** Set minimum loglevel for a log to be printed */
 PETSC_EXTERN PetscErrorCode ExaGOLogSetMinLogLevel(ExaGOVerbosityLevel);
 
+/** Parameter indicates whether each MPI rank should print out each log
+ * message. ExaGOLog is not currently able to log to every rank
+ * /and/ log to a file. */
+PETSC_EXTERN PetscErrorCode ExaGOLogUseEveryRank(PetscBool);
+
 #if !defined(EXAGO_DISABLE_LOGGING)
 
 /** 
