@@ -56,7 +56,7 @@ workflow:
       #  NOTES:  WORKDIR is on constance/marianas/newell
       #          ./      is only on the Kubernetes instance
       #
-      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${CI_JOB_ID}/${MY_CLUSTER}/"
+      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}/"
       if [[ ! -d "$WORKDIR" ]]; then
         # if workdir already exists, we're in the testing job
         mkdir -p "$WORKDIR"
@@ -138,6 +138,7 @@ cmake_check_on_newell:
     SLURM_Q: "newell_shared"
     MY_CLUSTER: "newell"
     SCRIPT_ARGS: " --check-cmake "
+    WORKDIR_SUFFIX: "newell-cmake-lint-directory"
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   <<: *pnnl_rules_definition
@@ -148,6 +149,7 @@ build_on_newell:
     SLURM_Q: "newell_shared"
     MY_CLUSTER: "newell"
     SCRIPT_ARGS: " --build-only "
+    WORKDIR_SUFFIX: "newell-build-directory"
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   <<: *pnnl_rules_definition
@@ -160,6 +162,7 @@ test_on_newell:
     SLURM_Q: "newell_shared"
     MY_CLUSTER: "newell"
     SCRIPT_ARGS: " --test-only "
+    WORKDIR_SUFFIX: "newell-build-directory"
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   <<: *pnnl_after_script_definition
@@ -171,6 +174,7 @@ build_on_marianas:
     SLURM_Q: "dl_shared"
     MY_CLUSTER: "marianas"
     SCRIPT_ARGS: " --build-only "
+    WORKDIR_SUFFIX: "marianas-build-directory"
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   <<: *pnnl_rules_definition
@@ -183,6 +187,7 @@ test_on_marianas:
     SLURM_Q: "dl_shared"
     MY_CLUSTER: "marianas"
     SCRIPT_ARGS: " --test-only "
+    WORKDIR_SUFFIX: "marianas-build-directory"
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   <<: *pnnl_after_script_definition
@@ -197,6 +202,7 @@ marianas_full_build_matrix:
   variables:
     SLURM_Q: "dl_shared"
     MY_CLUSTER: "marianas"
+    WORKDIR_SUFFIX: "marianas-buildmatrix-directory"
     TIMELIMIT: '60:00'
     SCRIPT_ARGS: " --ci "
   <<: *pnnl_tags_definition
