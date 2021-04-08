@@ -1,6 +1,7 @@
 static char help[] = "User example calling PFLOW. Reads data in PSSE raw format\n\n";
 
 #include <pflow.h>
+#include <utils.h>
 #include <exago_config.h>
 
 int main(int argc,char **argv)
@@ -10,15 +11,16 @@ int main(int argc,char **argv)
   char              file[PETSC_MAX_PATH_LEN];
   PetscBool         flg;
   PetscLogStage     read,setup,solve;
-  char options_pathname[200] = EXAGO_OPTIONS_DIR;
-  char filename[] = "/pflowoptions";
-  printf("%s\n", options_pathname);
-  printf("%s\n", filename);
-  strcat(options_pathname, filename);
-  printf("%s\n", options_pathname);
+  MPI_Comm          comm=MPI_COMM_WORLD;
+  char              appname[]="pflow";
 
-  PetscInitialize(&argc,&argv,options_pathname,help);
-  
+  ierr = ExaGOInitialize(comm,&argc,&argv,appname,help);
+  if (ierr)
+  {
+    fprintf(stderr,"Could not initialize ExaGO application %s\n",appname);
+    return ierr;
+  }
+
   ierr = PetscLogStageRegister("ReadData",&read);CHKERRQ(ierr);
   ierr = PetscLogStageRegister("SetUp",&setup);CHKERRQ(ierr);
   ierr = PetscLogStageRegister("Solve",&solve);CHKERRQ(ierr);
@@ -57,6 +59,6 @@ int main(int argc,char **argv)
   /* Destroy PFLOW object */
   ierr = PFLOWDestroy(&pflow);CHKERRQ(ierr);
 
-  PetscFinalize();
+  ExaGOFinalize();
   return 0;
 }

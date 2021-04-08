@@ -1,5 +1,6 @@
 #include <private/opflowimpl.h>
 #include <private/tcopflowimpl.h>
+#include "utils.h"
 
 /*
   TCOPFLOWSetTimeStepandDuration - Sets the time-step and optimization horizon
@@ -123,7 +124,7 @@ PetscErrorCode TCOPFLOWCreate(MPI_Comm mpicomm, TCOPFLOW *tcopflowout)
   tcopflow->setupcalled = PETSC_FALSE;
   *tcopflowout = tcopflow;
 
-  ierr = PetscPrintf(tcopflow->comm->type,"TCOPFLOW: Application created\n");
+  ExaGOLog(EXAGO_LOG_INFO,"%s","TCOPFLOW: Application created\n");
   PetscFunctionReturn(0);
 }
 
@@ -325,7 +326,7 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
 
   tcopflow->Nt = round(tcopflow->duration*60.0/tcopflow->dT)+1;
 
-  ierr = PetscPrintf(tcopflow->comm->type,"TCOPFLOW: Duration = %lf hours, timestep = %lf minutes, number of time-steps = %d\n",tcopflow->duration,tcopflow->dT,tcopflow->Nt);CHKERRQ(ierr);
+  ExaGOLog(EXAGO_LOG_INFO,"TCOPFLOW: Duration = %lf hours, timestep = %lf minutes, number of time-steps = %d\n",tcopflow->duration,tcopflow->dT,tcopflow->Nt);
 
   /* Set Model */
   ierr = TCOPFLOWSetModel(tcopflow,modelname);CHKERRQ(ierr);
@@ -334,11 +335,11 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
   if(solverset) {
     if(tcopflow->solver) ierr = (*tcopflow->solverops.destroy)(tcopflow);
     ierr = TCOPFLOWSetSolver(tcopflow,solvername);CHKERRQ(ierr);
-    ierr = PetscPrintf(tcopflow->comm->type,"TCOPFLOW: Using %s solver\n",solvername);CHKERRQ(ierr);
+    ExaGOLog(EXAGO_LOG_INFO,"TCOPFLOW: Using %s solver\n",solvername);
   } else {
     if(!tcopflow->solver) {
       ierr = TCOPFLOWSetSolver(tcopflow,TCOPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
-      ierr = PetscPrintf(tcopflow->comm->type,"TCOPFLOW: Using %s solver\n",TCOPFLOWSOLVER_IPOPT);CHKERRQ(ierr); 
+      ExaGOLog(EXAGO_LOG_INFO,"TCOPFLOW: Using %s solver\n",TCOPFLOWSOLVER_IPOPT);
     }
   }
 
@@ -440,7 +441,7 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
 
   ierr = (*tcopflow->solverops.setup)(tcopflow);CHKERRQ(ierr);
 
-  ierr = PetscPrintf(tcopflow->comm->type,"TCOPFLOW: Setup completed\n");CHKERRQ(ierr);
+  ExaGOLog(EXAGO_LOG_INFO,"%s","TCOPFLOW: Setup completed\n");
   
   tcopflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);
