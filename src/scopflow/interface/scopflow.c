@@ -1,6 +1,7 @@
 #include <private/opflowimpl.h>
 #include <private/tcopflowimpl.h>
 #include <private/scopflowimpl.h>
+#include "utils.h"
 
 /**
  * @brief Creates a security constrained optimal power flow application object
@@ -56,7 +57,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
   scopflow->setupcalled = PETSC_FALSE;
   *scopflowout = scopflow;
 
-  ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW: Application created\n");
+  ExaGOLog(EXAGO_LOG_INFO,"%s","SCOPFLOW: Application created\n");
   PetscFunctionReturn(0);
 }
 
@@ -304,8 +305,10 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = MPI_Scan(&scopflow->nc,&scopflow->cend,1,MPIU_INT,MPI_SUM,scopflow->comm->type);CHKERRQ(ierr);
   scopflow->cstart = scopflow->cend - scopflow->nc;
 
-  ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW running with %d contingencies (base case + %d contingencies)\n",scopflow->Nc,scopflow->Nc-1);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d has %d contingencies, range [%d -- %d]\n",scopflow->comm->rank,scopflow->nc,scopflow->cstart,scopflow->cend);CHKERRQ(ierr);
+  ExaGOLog(EXAGO_LOG_INFO,"SCOPFLOW running with %d contingencies (base case + %d contingencies)\n",scopflow->Nc,scopflow->Nc-1);
+  ExaGOLogUseEveryRank(PETSC_TRUE);
+  ExaGOLog(EXAGO_LOG_INFO,"Rank %d has %d contingencies, range [%d -- %d]\n",scopflow->comm->rank,scopflow->nc,scopflow->cstart,scopflow->cend);
+  ExaGOLogUseEveryRank(PETSC_FALSE);
 
   /* Set model */
   if(!scopflow->ismultiperiod) {
@@ -318,11 +321,11 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   if(scopflowsolverset) {
     if(scopflow->solver) ierr = (*scopflow->solverops.destroy)(scopflow);
     ierr = SCOPFLOWSetSolver(scopflow,scopflowsolvername);CHKERRQ(ierr);
-    ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW: Using %s solver\n",scopflowsolvername);CHKERRQ(ierr);
+    ExaGOLog(EXAGO_LOG_INFO,"SCOPFLOW: Using %s solver\n",scopflowsolvername);
   } else {
     if(!scopflow->solver) {
       ierr = SCOPFLOWSetSolver(scopflow,SCOPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
-      ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW: Using %s solver\n",SCOPFLOWSOLVER_IPOPT);CHKERRQ(ierr); 
+      ExaGOLog(EXAGO_LOG_INFO,"SCOPFLOW: Using %s solver\n",SCOPFLOWSOLVER_IPOPT);
     }
   }
   
@@ -488,7 +491,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = VecDuplicate(scopflow->G,&scopflow->Lambda);CHKERRQ(ierr);
 
   ierr = (*scopflow->solverops.setup)(scopflow);CHKERRQ(ierr);
-  ierr = PetscPrintf(scopflow->comm->type,"SCOPFLOW: Setup completed\n");CHKERRQ(ierr);
+  ExaGOLog(EXAGO_LOG_INFO,"%s","SCOPFLOW: Setup completed\n");
   
   scopflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);

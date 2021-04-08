@@ -1,6 +1,7 @@
 #include <private/opflowimpl.h>
 #include <private/scopflowimpl.h>
 #include <private/sopflowimpl.h>
+#include "utils.h"
 
 /*
   SOPFLOWCreate - Creates a stochastic optimal power flow application object
@@ -60,7 +61,7 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout)
   sopflow->setupcalled = PETSC_FALSE;
   *sopflowout = sopflow;
 
-  ierr = PetscPrintf(sopflow->comm->type,"SOPFLOW: Application created\n");
+  ExaGOLog(EXAGO_LOG_INFO,"%s","SOPFLOW: Application created\n");
   PetscFunctionReturn(0);
 }
 
@@ -387,9 +388,10 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   sopflow->send = send[sopflow->comm->rank];
 
   MPI_Barrier(sopflow->comm->type);
-  ierr = PetscPrintf(sopflow->comm->type,"SOPFLOW running with %d scenarios (base case + %d scenarios)\n",sopflow->Ns,sopflow->Ns-1);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d scenario range [%d -- %d]\n",sopflow->comm->rank,sopflow->sstart,sopflow->send);CHKERRQ(ierr);
-
+  ExaGOLog(EXAGO_LOG_INFO,"SOPFLOW running with %d scenarios (base case + %d scenarios)\n",sopflow->Ns,sopflow->Ns-1);
+  ExaGOLogUseEveryRank(PETSC_TRUE);
+  ExaGOLog(EXAGO_LOG_INFO,"Rank %d scenario range [%d -- %d]\n",sopflow->comm->rank,sopflow->sstart,sopflow->send);
+  ExaGOLogUseEveryRank(PETSC_FALSE);
 			
   /* Create subcommunicators to manage scopflows */
   MPI_Comm_split(sopflow->comm->type,color[sopflow->comm->rank],sopflow->comm->rank,&sopflow->subcomm);
@@ -410,11 +412,11 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   if(sopflowsolverset) {
     if(sopflow->solver) ierr = (*sopflow->solverops.destroy)(sopflow);
     ierr = SOPFLOWSetSolver(sopflow,sopflowsolvername);CHKERRQ(ierr);
-    ierr = PetscPrintf(sopflow->comm->type,"SOPFLOW: Using %s solver\n",sopflowsolvername);CHKERRQ(ierr);
+    ExaGOLog(EXAGO_LOG_INFO,"SOPFLOW: Using %s solver\n",sopflowsolvername);
   } else {
     if(!sopflow->solver) {
       ierr = SOPFLOWSetSolver(sopflow,SOPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
-      ierr = PetscPrintf(sopflow->comm->type,"SOPFLOW: Using %s solver\n",SOPFLOWSOLVER_IPOPT);CHKERRQ(ierr); 
+      ExaGOLog(EXAGO_LOG_INFO,"SOPFLOW: Using %s solver\n",SOPFLOWSOLVER_IPOPT);
     }
   }
 
@@ -555,7 +557,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   ierr = VecDuplicate(sopflow->G,&sopflow->Lambda);CHKERRQ(ierr);
 
   ierr = (*sopflow->solverops.setup)(sopflow);CHKERRQ(ierr);
-  ierr = PetscPrintf(sopflow->comm->type,"SOPFLOW: Setup completed\n");CHKERRQ(ierr);
+  ExaGOLog(EXAGO_LOG_INFO,"%s","SOPFLOW: Setup completed\n");
   
   sopflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);

@@ -1,6 +1,7 @@
 #ifndef EXAGO_UTILS_H
 #define EXAGO_UTILS_H
 #include <petsc.h>
+#include "exago_config.h"
 
 typedef enum {
   EXAGO_LOG_INFO=0,
