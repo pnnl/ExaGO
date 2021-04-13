@@ -538,6 +538,7 @@ if(EXAGO_RUN_TESTS)
       -opflow_model
       PBPOLRAJAHIOP
       DEPENDS
+      GPU
       HIOP
       RAJA
       NETFILES

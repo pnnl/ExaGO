@@ -63,6 +63,13 @@ workflow:
         cp -R ./* "$WORKDIR"
         cp ./.cmake-format.py "$WORKDIR"
       fi
+
+      if [[ $MY_CLUSTER = "marianas" ]]; then
+        export SLURM_Q=`perl ./buildsystem/pnnl/findIdleDLNodes.pl`
+      else
+        export SLURM_Q=`perl ./buildsystem/pnnl/findIdleNewellNodes.pl`
+      fi
+
       cd "$WORKDIR"
       [ -f output ] && rm output
       touch output
@@ -83,6 +90,8 @@ workflow:
       do
         if [[ "$(awk 'BEGIN{i=0}/BUILD_STATUS/{i++}END{print i}' output)" != "0" ]]; then
           kill $tailpid
+          echo 'Last tail of build output:'
+          tail -n 50 output
           res=$(grep BUILD_STATUS output | tail -n 1 | cut -f2 -d':')
           break
         fi
@@ -106,7 +115,6 @@ workflow:
 stages:
   - build
   - test
-  - matrix
 
 # For Ascent CI
 build_on_login_node:
@@ -131,99 +139,65 @@ test_on_compute_node:
 # ---
 
 # For PNNL CI
-cmake_check_on_newell:
+cmake-lint:
   stage: build
   allow_failure: true
   variables:
     SLURM_Q: "newell_shared"
     MY_CLUSTER: "newell"
-    SCRIPT_ARGS: " --check-cmake "
-    WORKDIR_SUFFIX: "newell-cmake-lint-directory"
+    SCRIPT_ARGS: " --job=cmake-lint "
+    WORKDIR_SUFFIX: "cmake-lint"
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   <<: *pnnl_rules_definition
 
-build_on_newell:
+ppc64le-gcc-cuda-build:
   stage: build
   variables:
     SLURM_Q: "newell_shared"
     MY_CLUSTER: "newell"
-    SCRIPT_ARGS: " --build-only "
-    WORKDIR_SUFFIX: "newell-build-directory"
+    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   <<: *pnnl_rules_definition
 
-test_on_newell:
+ppc64le-gcc-cuda-test:
   stage: test
   dependencies:
-    - build_on_newell
+    - ppc64le-gcc-cuda-build
   variables:
     SLURM_Q: "newell_shared"
     MY_CLUSTER: "newell"
-    SCRIPT_ARGS: " --test-only "
-    WORKDIR_SUFFIX: "newell-build-directory"
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   <<: *pnnl_after_script_definition
   <<: *pnnl_rules_definition
 
-build_on_marianas:
+x86_64-gcc-cuda-build:
   stage: build
   variables:
     SLURM_Q: "dl_shared"
     MY_CLUSTER: "marianas"
-    SCRIPT_ARGS: " --build-only "
-    WORKDIR_SUFFIX: "marianas-build-directory"
+    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   <<: *pnnl_rules_definition
 
-test_on_marianas:
+x86_64-gcc-cuda-test:
   stage: test
   dependencies:
-    - build_on_marianas
+    - x86_64-gcc-cuda-build
   variables:
     SLURM_Q: "dl_shared"
     MY_CLUSTER: "marianas"
-    SCRIPT_ARGS: " --test-only "
-    WORKDIR_SUFFIX: "marianas-build-directory"
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   <<: *pnnl_after_script_definition
   <<: *pnnl_rules_definition
-
-marianas_full_build_matrix:
-  stage: matrix
-  # We only want to make the build matrix available if the default builds have passed.
-  dependencies:
-    - test_on_marianas
-    - test_on_newell
-  variables:
-    SLURM_Q: "dl_shared"
-    MY_CLUSTER: "marianas"
-    WORKDIR_SUFFIX: "marianas-buildmatrix-directory"
-    TIMELIMIT: '60:00'
-    SCRIPT_ARGS: " --ci "
-  <<: *pnnl_tags_definition
-  <<: *pnnl_script_definition
-  <<: *pnnl_after_script_definition
-  timeout: 65m
-  rules:
-    - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd" && $CI_PIPELINE_SOURCE == "schedule"'
-      when: always
-      allow_failure: false
-    - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"'
-      when: manual
-      allow_failure: true
-  parallel:
-    matrix:
-      # These variables represent the indices of cmake options arrays that
-      # will be used in a given build. See scripts/buildMatrix.sh for more
-      # details.
-      - CI_GPUOPT: [0, 1]
-        CI_IPOPTOPT: [0, 1]
-        CI_RAJAOPT: [0, 1]
-        CI_HIOPOPT: [0, 1]
-        CI_MPIOPT: [0, 1]
 # ---
