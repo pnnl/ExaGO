@@ -1,5 +1,46 @@
 #!/bin/bash
 
+# This will be the catch-all trap handler after arguments are parsed.
+cleanup() {
+  echo
+  echo Exit code $1 caught in build script.
+  echo
+  if [[ "$1" == "0" ]]; then
+    echo BUILD_STATUS:0
+  else
+    echo
+    echo Failure found on line $2 in build script.
+    echo
+    echo BUILD_STATUS:1
+  fi
+}
+
+if [[ ! -f $PWD/buildsystem/build.sh ]]; then
+  echo 'Please run this script from the top-level ExaGO source directory.'
+  exit 1
+fi
+
+makeArgs=${makeArgs:-"-j 8"}
+ctestArgs=${ctestArgs:-"-VV"}
+extraCmakeArgs=${extraCmakeArgs:-""}
+export OMPI_MCA_btl="^vader,tcp,openib,uct"
+export BUILD=${BUILD:-1}
+export TEST=${TEST:-1}
+export CHECK_CMAKE=${CHECK_CMAKE:-0}
+export srcdir=${srcdir:-$PWD}
+export builddir=${builddir:-$PWD/build}
+export installdir=${installdir:-$PWD/install}
+export BUILD_MATRIX=${BUILD_MATRIX:-0}
+export JOB=default
+export VALID_JOBS=(gcc-cuda clang-omp cmake-lint)
+
+echo "Paths:"
+echo "Source dir: $srcdir"
+echo "Build dir: $builddir"
+echo "Install dir: $installdir"
+echo "Path to buildsystem script: $srcdir/buildsystem/build.sh"
+cd $srcdir
+
 usage() {
   echo "Usage: ./buildsystem/build.sh [options]
 
@@ -46,65 +87,39 @@ Spack:
 
 Options:
 
-  --build-only    Only run the build stage of the script. This is useful for
-                  local development.
+  --build-only      Only run the build stage of the script. This is useful for
+                    local development.
 
-  --test-only     Only run the test stage of the script. This should be ran
-                  before every push to the repository or pull/merge request.
-                  This run takes a significant amound of time.
+  --test-only       Only run the test stage of the script. This should be ran
+                    before every push to the repository or pull/merge request.
+                    This run takes a significant amound of time.
 
-  --check-cmake   Ensure all cmake files in the project conform to .cmake-format
-                  in top-level source directory.
+  --job=<job name>  Run job indicated by job name. Available jobs are as
+                    follows: ${VALID_JOBS[@]}
 
 --------------------------------------------------------------------------------
 
 "
 }
 
-# This will be the catch-all trap handler after arguments are parsed.
-cleanup() {
-  echo
-  echo Exit code $1 caught in build script.
-  echo
-  if [[ "$1" == "0" ]]; then
-    echo BUILD_STATUS:0
-  else
-    echo
-    echo Failure found on line $2 in build script.
-    echo
-    echo BUILD_STATUS:1
-  fi
-}
-
-if [[ ! -f $PWD/buildsystem/build.sh ]]; then
-  echo 'Please run this script from the top-level ExaGO source directory.'
-  exit 1
-fi
-
-makeArgs=${makeArgs:-"-j 8"}
-ctestArgs=${ctestArgs:-"-VV"}
-extraCmakeArgs=${extraCmakeArgs:-""}
-export OMPI_MCA_btl="^vader,tcp,openib,uct"
-export BUILD=${BUILD:-1}
-export TEST=${TEST:-1}
-export CHECK_CMAKE=${CHECK_CMAKE:-0}
-export srcdir=${srcdir:-$PWD}
-export builddir=${builddir:-$PWD/build}
-export installdir=${installdir:-$PWD/install}
-export BUILD_MATRIX=${BUILD_MATRIX:-0}
-
-echo "Paths:"
-echo "Source dir: $srcdir"
-echo "Build dir: $builddir"
-echo "Install dir: $installdir"
-echo "Path to buildsystem script: $srcdir/buildsystem/build.sh"
-cd $srcdir
-
 while [[ $# -gt 0 ]]; do
   case $1 in
-  --short)
-    echo "Only running representative subset of unit tests."
-    ctestArgs="$ctestArgs -R UNIT_TEST"
+  --job=*)
+    export JOB=$(echo $1 | cut -f2 -d'=')
+    found=0
+    for j in ${VALID_JOBS[@]}; do
+      if [[ $JOB = $j ]]; then
+        found=1
+      fi
+    done
+
+    if [[ $found -eq 0 ]]; then
+      echo
+      echo "Job '$JOB' not available!"
+      echo
+      usage
+      exit 1
+    fi
     shift
     ;;
   --build-only)
@@ -113,23 +128,6 @@ while [[ $# -gt 0 ]]; do
     ;;
   --test-only)
     export TEST=1 BUILD=0
-    shift
-    ;;
-  --check-cmake)
-    export CHECK_CMAKE=1
-    export TEST=0 BUILD=0
-    shift
-    ;;
-  --matrix)
-    export BUILD_MATRIX=1
-    shift
-    ;;
-  --ci)
-    # This option is only useful if you specify all indices for the build
-    # matrix options, such as CI_RAJAOPT. See
-    # $EXAGODIR/scripts/buildsystem/buildMatrix.sh for more details.
-    export BUILD_MATRIX=1
-    export BUILD_MATRIX_PARALLEL=1
     shift
     ;;
   --help|-h)
@@ -171,16 +169,15 @@ ulimit -l unlimited || echo 'Could not set max locked memory to unlimited.'
 . /etc/profile.d/modules.sh
 module purge
 
-if [[ -f "$srcdir/buildsystem/$(echo $MY_CLUSTER)Variables.sh" ]]; then
+varfile="$srcdir/buildsystem/$JOB/$(echo $MY_CLUSTER)Variables.sh"
+
+if [[ -f "$varfile" ]]; then
   # We don't want all the shell functions we bring into scope to be printed out
   set -x
-  source "$srcdir/buildsystem/$(echo $MY_CLUSTER)Variables.sh"
+  source "$varfile"
   set +x
   echo Sourced system-specific variables for $MY_CLUSTER
 fi
-
-export LD_LIBRARY_PATH="$magma_dir/lib:$hiop_dir/lib:$LD_LIBRARY_PATH"
-export CTEST_OUTPUT_ON_FAILURE=1
 
 module list
 
@@ -190,19 +187,12 @@ if [ -z "$SLURM_SUBMIT_DIR" ]; then
   cd $base_path          || exit 1
 fi
 
-if [[ $BUILD_MATRIX -eq 1 ]]; then
-  echo Running build matrix
-  source $srcdir/buildsystem/buildMatrix.sh
-  buildMatrix
-  exit $?
-elif [[ $CHECK_CMAKE -eq 1 ]]; then
-  echo Checking cmake format
-  source $srcdir/buildsystem/cmakeFormat.sh
-  checkCmakeFormat
-  exit $?
-else
-  echo Running default build
-  source $srcdir/buildsystem/defaultBuild.sh
-  defaultBuild
-  exit $?
+if [[ ! -f "$srcdir/buildsystem/$JOB/build.sh" ]]; then
+  echo "Job $JOB not found!"
+  usage
+  exit 1
 fi
+
+source $srcdir/buildsystem/$JOB/build.sh
+doBuild
+exit $?
