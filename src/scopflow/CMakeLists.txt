@@ -18,7 +18,7 @@ add_library(scopflow SHARED ${SCOPFLOW_SRC})
 # link libraries
 target_link_libraries(
   scopflow PRIVATE PETSC::SNES ExaGO::UTILS ExaGO::PS ${EXAGO_PFLOW_LIBS}
-                   ${EXAGO_OPFLOW_LIBS} ${EXAGO_TCOPFLOW_LIBS}
+                   ExaGO::OPFLOW ${EXAGO_TCOPFLOW_LIBS}
 )
 
 if(EXAGO_ENABLE_MPI)

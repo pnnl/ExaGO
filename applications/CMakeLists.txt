@@ -35,16 +35,16 @@ add_executable(app_tcopflow ${TCOPFLOW_SRC})
 # Link libraries
 target_link_libraries(app_pflow ${EXAGO_PFLOW_APP_LIBS})
 
-target_link_libraries(app_opflow ${EXAGO_OPFLOW_LIBS} ${EXAGO_PFLOW_APP_LIBS})
+target_link_libraries(app_opflow ExaGO::OPFLOW ${EXAGO_PFLOW_APP_LIBS})
 
 target_link_libraries(
-  app_scopflow ${EXAGO_SCOPFLOW_LIBS} ${EXAGO_TCOPFLOW_LIBS}
-  ${EXAGO_OPFLOW_LIBS} ${EXAGO_PFLOW_APP_LIBS}
+  app_scopflow ${EXAGO_SCOPFLOW_LIBS} ${EXAGO_TCOPFLOW_LIBS} ExaGO::OPFLOW
+  ${EXAGO_PFLOW_APP_LIBS}
 )
 
 target_link_libraries(
   app_sopflow ${EXAGO_SOPFLOW_LIBS} ${EXAGO_SCOPFLOW_LIBS}
-  ${EXAGO_TCOPFLOW_LIBS} ${EXAGO_OPFLOW_LIBS} ${EXAGO_PFLOW_APP_LIBS}
+  ${EXAGO_TCOPFLOW_LIBS} ExaGO::OPFLOW ${EXAGO_PFLOW_APP_LIBS}
 )
 
 target_link_libraries(

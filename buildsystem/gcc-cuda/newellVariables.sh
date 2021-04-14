@@ -8,7 +8,7 @@ export MY_CLUSTER=newell
 export PROJ_DIR=/qfs/projects/exasgd
 export APPS_DIR=/share/apps
 module load gcc/7.4.0
-module load cmake/3.16.4
+module load cmake/3.19.6
 module load openmpi/3.1.5
 module load cuda/10.2
 

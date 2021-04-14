@@ -24,7 +24,7 @@ target_link_libraries(
           ExaGO::UTILS
           ExaGO::PS
           ${EXAGO_PFLOW_LIBS}
-          ${EXAGO_OPFLOW_LIBS}
+          ExaGO::OPFLOW
           ${EXAGO_TCOPFLOW_LIBS}
           ${EXAGO_SCOPFLOW_LIBS}
 )
