@@ -29,57 +29,25 @@ set(OPFLOW_SRC interface/opflow.c interface/opflowregi.c
 # Header files for opflow
 set(OPFLOW_INCLUDE ${CMAKE_SOURCE_DIR}/include/opflow.h)
 
-# Compile library
-add_library(opflow SHARED ${OPFLOW_SRC})
-
-# link libraries
-target_link_libraries(
-  opflow PRIVATE PETSC::ALL ExaGO::UTILS ExaGO::PS ${EXAGO_PFLOW_LIBS}
-                 ${LAPACK_LIBRARIES}
-)
-
-if(EXAGO_ENABLE_MPI)
-  target_link_libraries(opflow PRIVATE MPI::MPI_C)
-endif()
-
-# If Ipopt interface is enabled, link to Ipopt libs
-if(EXAGO_ENABLE_IPOPT)
-  target_link_libraries(
-    opflow
-    PUBLIC
-    INTERFACE Ipopt
-  )
-  target_include_directories(opflow PUBLIC ${IPOPT_INCLUDE_DIR})
-endif()
-
-# If HiOp interface is enabled, link to HiOp libs
-if(EXAGO_ENABLE_HIOP)
-  target_link_libraries(
-    opflow
-    PUBLIC
-    INTERFACE HiOp
-  )
-  target_include_directories(opflow PUBLIC ${HIOP_INCLUDE_DIR})
-  # If HiOp is using GPU add CUDA includes
-  if(EXAGO_ENABLE_GPU)
-    target_include_directories(opflow PUBLIC ${CUDA_TOOLKIT_INCLUDE})
-  endif()
-endif()
-
-if(EXAGO_ENABLE_RAJA)
-  target_link_libraries(opflow PUBLIC umpire RAJA OpenMP::OpenMP_CXX)
-  target_include_directories(
-    opflow PUBLIC ${UMPIRE_INCLUDE_DIRS} ${camp_INSTALL_PREFIX}/include
-  )
-endif()
-
-# Install shared object
-install(TARGETS opflow DESTINATION lib)
-
-# Install header
-install(FILES ${OPFLOW_INCLUDE} DESTINATION include)
-
-set(EXAGO_OPFLOW_LIBS
-    ${EXAGO_OPFLOW_LIBS} opflow
-    PARENT_SCOPE
+exago_add_library(
+  OPFLOW
+  SOURCES
+  ${OPFLOW_SRC}
+  HEADERS
+  ${OPFLOW_INCLUDE}
+  LINK_LIBRARIES
+  PUBLIC
+  $<$<BOOL:${EXAGO_ENABLE_RAJA}>:umpire>
+  $<$<BOOL:${EXAGO_ENABLE_RAJA}>:RAJA>
+  $<$<BOOL:${EXAGO_ENABLE_RAJA}>:OpenMP::OpenMP_CXX>
+  $<$<BOOL:${EXAGO_ENABLE_RAJA}>:HiOp>
+  $<$<BOOL:${EXAGO_ENABLE_IPOPT}>:Ipopt>
+  PRIVATE
+  $<$<BOOL:EXAGO_ENABLE_MPI>:MPI::MPI_C>
+  PETSC::ALL
+  ExaGO::UTILS
+  ${EXAGO_PS_LIBS}
+  ${LAPACK_LIRBARIES}
+  OUTPUT_NAME
+  exago_opflow
 )

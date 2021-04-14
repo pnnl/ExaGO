@@ -176,6 +176,7 @@ if(EXAGO_ENABLE_RAJA)
   find_package(
     umpire CONFIG PATHS ${umpire_DIR} ${umpire_DIR}/share/umpire/cmake REQUIRED
   )
+  target_include_directories(umpire INTERFACE ${camp_INSTALL_PREFIX}/include)
 endif(EXAGO_ENABLE_RAJA)
 
 if(NOT DEFINED LAPACK_LIBRARIES)
