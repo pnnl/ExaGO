@@ -73,8 +73,7 @@ release.
 ### CMake
 
 - Use target-oriented cmake.
-- Hesitate to use lists when defining targets.
-- A `.cmake-format` file exists in the top-level directory - if you change any cmake code, please run `cmake-format -i <file name>` before pushing your changes.
+- A `.cmake-format` file exists in the top-level directory - if you change any cmake code, please run `cmake-format -i <file name>` before pushing your changes. The build script may also apply these changes for you by using the job specified by `./buildsystem/build.sh --job=cmake-lint-apply`.
 
 ## References
 
