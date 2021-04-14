@@ -32,7 +32,7 @@ export builddir=${builddir:-$PWD/build}
 export installdir=${installdir:-$PWD/install}
 export BUILD_MATRIX=${BUILD_MATRIX:-0}
 export JOB=default
-export VALID_JOBS=(gcc-cuda clang-omp cmake-lint)
+export VALID_JOBS=(gcc-cuda clang-omp cmake-lint cmake-lint-apply)
 
 echo "Paths:"
 echo "Source dir: $srcdir"
@@ -71,7 +71,7 @@ Clusters:
   Ascent cluster, the hostname does not find the cluster, so we must specify
   MY_CLUSTER when running:
 
-    $ MY_CLUSTER=ascent ./build.sh --build-only
+    $ MY_CLUSTER=ascent ./buildsystem/build.sh --build-only
 
 Spack:
 
@@ -81,21 +81,24 @@ Spack:
   and run the build script specifying that you don't want to source any
   variables scripts, eg:
 
-    $ MY_CLUSTER=none ./build.sh
+    $ MY_CLUSTER=none ./buildsystem/build.sh
 
 --------------------------------------------------------------------------------
 
 Options:
+
+  --job=<job name>  Run job indicated by job name. Available jobs are as
+                    follows: ${VALID_JOBS[@]}.
+                    Job --job=cmake-lint-apply should be ran before every push.
 
   --build-only      Only run the build stage of the script. This is useful for
                     local development.
 
   --test-only       Only run the test stage of the script. This should be ran
                     before every push to the repository or pull/merge request.
-                    This run takes a significant amound of time.
-
-  --job=<job name>  Run job indicated by job name. Available jobs are as
-                    follows: ${VALID_JOBS[@]}
+                    This run takes a significant amound of time. If you omit
+                    the --*-only options and just run a particular job, tests
+                    will also be ran.
 
 --------------------------------------------------------------------------------
 

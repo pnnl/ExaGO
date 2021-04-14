@@ -17,7 +17,7 @@ workflow:
       cp -R ./* "$WORKDIR"
       cd "$WORKDIR"
       export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
-      MY_CLUSTER=ascent ./buildsystem/build.sh --build-only || exit 1
+      MY_CLUSTER=ascent ./buildsystem/build.sh --build-only --job=gcc-cuda || exit 1
 
 .ornl_test_script_template: &ornl_test_script_definition
   script:
@@ -25,7 +25,7 @@ workflow:
       set -xv
       cd "$WORKDIR"
       export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
-      MY_CLUSTER="ascent" ./buildsystem/build.sh --test-only
+      MY_CLUSTER="ascent" ./buildsystem/build.sh --test-only --job=gcc-cuda
       res=$?
       exit $res
   after_script:
