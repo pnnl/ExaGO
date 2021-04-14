@@ -51,7 +51,7 @@ modified so that the library <code>EXAGO_MYAPP_LIBS</code> is included in the
 ```
 set(EXAGO_APP_LIBS
   ${EXAGO_MYAPP_LIBS}
-  ${EXAGO_SOPFLOW_LIBS}
+  ExaGO::SOPFLOW
   ${EXAGO_SCOPFLOW_LIBS}
   ${EXAGO_TCOPFLOW_LIBS}
   ExaGO::OPFLOW
