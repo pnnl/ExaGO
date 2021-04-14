@@ -14,41 +14,22 @@ set(SOPFLOW_SRC
 # Header files for sopflow
 set(SOPFLOW_INCLUDE ${CMAKE_SOURCE_DIR}/include/sopflow.h)
 
-# Compile library
-add_library(sopflow SHARED ${SOPFLOW_SRC})
-
-# link libraries
-target_link_libraries(
-  sopflow
-  PRIVATE PETSC::SNES
-          ExaGO::UTILS
-          ExaGO::PS
-          ${EXAGO_PFLOW_LIBS}
-          ExaGO::OPFLOW
-          ${EXAGO_TCOPFLOW_LIBS}
-          ${EXAGO_SCOPFLOW_LIBS}
-)
-
-if(EXAGO_ENABLE_MPI)
-  target_link_libraries(sopflow PRIVATE MPI::MPI_C)
-endif()
-
-if(EXAGO_ENABLE_IPOPT)
-  target_link_libraries(
-    sopflow
-    PUBLIC
-    INTERFACE Ipopt
-  )
-  target_include_directories(sopflow PUBLIC ${IPOPT_INCLUDE_DIR})
-endif()
-
-# Install library
-install(TARGETS sopflow DESTINATION lib)
-
-# Install header
-install(FILES ${SOPFLOW_INCLUDE} DESTINATION include)
-
-set(EXAGO_SOPFLOW_LIBS
-    ${EXAGO_SOPFLOW_LIBS} sopflow
-    PARENT_SCOPE
+exago_add_library(
+  SOPFLOW
+  SOURCES
+  ${SOPFLOW_SRC}
+  HEADERS
+  ${SOPFLOW_INCLUDE}
+  LINK_LIBRARIES
+  PRIVATE
+  PETSC::SNES
+  ExaGO::UTILS
+  ExaGO::PS
+  ${EXAGO_PFLOW_LIBS}
+  ExaGO::OPFLOW
+  ${EXAGO_TCOPFLOW_LIBS}
+  ${EXAGO_SCOPFLOW_LIBS}
+  $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_C>
+  PUBLIC
+  $<$<BOOL:${EXAGO_ENABLE_IPOPT}>:Ipopt>
 )

@@ -1,7 +1,7 @@
 #[[ Functionality tests for ExaGO applications ]]
 
 set(EXAGO_APP_LIBS
-    ${EXAGO_SOPFLOW_LIBS}
+    ExaGO::SOPFLOW
     ${EXAGO_SCOPFLOW_LIBS}
     ${EXAGO_TCOPFLOW_LIBS}
     ExaGO::OPFLOW
