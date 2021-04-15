@@ -38,18 +38,16 @@ target_link_libraries(app_pflow ${EXAGO_PFLOW_APP_LIBS})
 target_link_libraries(app_opflow ExaGO::OPFLOW ${EXAGO_PFLOW_APP_LIBS})
 
 target_link_libraries(
-  app_scopflow ExaGO::SCOPFLOW ${EXAGO_TCOPFLOW_LIBS} ExaGO::OPFLOW
+  app_scopflow ExaGO::SCOPFLOW ExaGO::TCOPFLOW ExaGO::OPFLOW
   ${EXAGO_PFLOW_APP_LIBS}
 )
 
 target_link_libraries(
-  app_sopflow ExaGO::SOPFLOW ExaGO::SCOPFLOW ${EXAGO_TCOPFLOW_LIBS}
-  ExaGO::OPFLOW ${EXAGO_PFLOW_APP_LIBS}
+  app_sopflow ExaGO::SOPFLOW ExaGO::SCOPFLOW ExaGO::TCOPFLOW ExaGO::OPFLOW
+  ${EXAGO_PFLOW_APP_LIBS}
 )
 
-target_link_libraries(
-  app_tcopflow ${EXAGO_TCOPFLOW_LIBS} ${EXAGO_PFLOW_APP_LIBS}
-)
+target_link_libraries(app_tcopflow ExaGO::TCOPFLOW ${EXAGO_PFLOW_APP_LIBS})
 
 set_target_properties(app_pflow PROPERTIES OUTPUT_NAME pflow)
 set_target_properties(app_opflow PROPERTIES OUTPUT_NAME opflow)

@@ -25,7 +25,6 @@ exago_add_library(
   ExaGO::PS
   ${EXAGO_PFLOW_LIBS}
   ExaGO::OPFLOW
-  ${EXAGO_TCOPFLOW_LIBS}
   $<$<BOOL:${EXAGO_ENABLE_IPOPT}>:Ipopt>
   PRIVATE
   $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_C>
