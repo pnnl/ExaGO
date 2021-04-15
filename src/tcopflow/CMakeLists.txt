@@ -11,35 +11,23 @@ set(TCOPFLOW_SRC
 # Header files for tcopflow
 set(TCOPFLOW_INCLUDE ${CMAKE_SOURCE_DIR}/include/tcopflow.h)
 
-# Compile library
-add_library(tcopflow SHARED ${TCOPFLOW_SRC})
-
-# link libraries
-target_link_libraries(
-  tcopflow PRIVATE PETSC::SNES ExaGO::UTILS ExaGO::PS ${EXAGO_PFLOW_LIBS}
-                   ExaGO::OPFLOW
-)
-
-if(EXAGO_ENABLE_MPI)
-  target_link_libraries(tcopflow PRIVATE MPI::MPI_C)
-endif()
-
-if(EXAGO_ENABLE_IPOPT)
-  target_link_libraries(
-    tcopflow
-    PUBLIC
-    INTERFACE Ipopt
-  )
-  target_include_directories(tcopflow PUBLIC ${IPOPT_INCLUDE_DIR})
-endif()
-
-# Install library
-install(TARGETS tcopflow DESTINATION lib)
-
-# Install header
-install(FILES ${TCOPFLOW_INCLUDE} DESTINATION include)
-
-set(EXAGO_TCOPFLOW_LIBS
-    ${EXAGO_TCOPFLOW_LIBS} tcopflow
-    PARENT_SCOPE
+exago_add_library(
+  TCOPFLOW
+  SOURCES
+  ${TCOPFLOW_SRC}
+  HEADERS
+  ${TCOPFLOW_INCLUDE}
+  LINK_LIBRARIES
+  PRIVATE
+  PETSC::ALL
+  ExaGO::UTILS
+  ExaGO::PS
+  ${EXAGO_PFLOW_LIBS}
+  ExaGO::OPFLOW
+  ExaGO::SCOPFLOW
+  $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_C>
+  PUBLIC
+  $<$<BOOL:${EXAGO_ENABLE_IPOPT}>:Ipopt>
+  OUTPUT_NAME
+  exago_tcopflow
 )

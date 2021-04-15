@@ -14,6 +14,8 @@ function doBuild {
 
   cmakeArgs=" \
     -DCMAKE_INSTALL_PREFIX=$installdir/ \
+    -DEXAGO_BUILD_SHARED=ON \
+    -DEXAGO_BUILD_STATIC=ON \
     -DCMAKE_BUILD_TYPE=Debug \
     -DEXAGO_ENABLE_GPU=ON \
     -DEXAGO_ENABLE_HIOP=ON \
