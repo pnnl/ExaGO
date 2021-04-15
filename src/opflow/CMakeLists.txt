@@ -43,10 +43,10 @@ exago_add_library(
   $<$<BOOL:${EXAGO_ENABLE_RAJA}>:HiOp>
   $<$<BOOL:${EXAGO_ENABLE_IPOPT}>:Ipopt>
   PRIVATE
-  $<$<BOOL:EXAGO_ENABLE_MPI>:MPI::MPI_C>
+  $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_C>
   PETSC::ALL
   ExaGO::UTILS
-  ${EXAGO_PS_LIBS}
+  ExaGO::PS
   ${LAPACK_LIRBARIES}
   OUTPUT_NAME
   exago_opflow
