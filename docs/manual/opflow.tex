@@ -20,39 +20,39 @@ The different variables used in \opflow formulation are described in Table \ref{
 \begin{table}[!htbp]
 \caption{Optimal power flow (OPFLOW) variables}
 \small
-  \begin{tabular}{|p{0.1\textwidth}|p{0.1\textwidth}|p{0.2\textwidth}|p{0.50\textwidth}|}
+  \begin{tabular}{|p{0.1\textwidth}|p{0.2\textwidth}|p{0.2\textwidth}|p{0.5\textwidth}|}
    \hline
-    \textbf{Variable} & \textbf{Symbol} & \textbf{Bounds} & \textbf{Notes} \\
+    \textbf{Symbol} & \textbf{Variable} & \textbf{Bounds} & \textbf{Notes} \\
     \hline
-    Generator real power dispatch & $\pgj$ & $\pminj \le \pgj \le \pmaxj$ & ~\\
+    $\pgj$ & Generator real power dispatch & $\pminj \le \pgj \le \pmaxj$ & ~\\
     \hline
-    Generator reactive power dispatch & $\qgj$ & $\qminj \le \qgj \le \qmaxj$ & ~ \\
+    $\qgj$ & Generator reactive power dispatch & $\qminj \le \qgj \le \qmaxj$ & ~ \\
     \hline
-    Generator real power deviation & $\Deltapj$ & $-p^{\text{r}}_j \le \Deltapj \le p^{\text{r}}_j$ & \begin{itemize}[noitemsep,topsep=0pt,leftmargin=*]  \item Only used when \option{\opflowgensetpoint} or \option{\opflowuseagc} option is active \item $\Deltapj$ is the deviation from real power generation setpoint $\psetj$.\end{itemize} \\
+    $\Deltapj$ & Generator real power deviation & $-p^{\text{r}}_j \le \Deltapj \le p^{\text{r}}_j$ & \begin{itemize}[noitemsep,topsep=0pt,leftmargin=*]  \item Only used when \option{\opflowgensetpoint} or \option{\opflowuseagc} option is active \item $\Deltapj$ is the deviation from real power generation setpoint $\psetj$.\end{itemize} \\
     \hline
-    Generator real power set-point & $\pgjset$ & $\pminj \le \pgjset \le \pmaxj$ & \begin{itemize}[noitemsep,topsep=0pt,leftmargin=*] \item Only used when \option{\opflowgensetpoint} or \option{\opflowuseagc} option is active. \end{itemize} \\
+    $\pgjset$ & Generator real power set-point & $\pminj \le \pgjset \le \pmaxj$ & \begin{itemize}[noitemsep,topsep=0pt,leftmargin=*] \item Only used when \option{\opflowgensetpoint} or \option{\opflowuseagc} option is active. \end{itemize} \\
     \hline
-    System power excess/deficit & $\Delta{P}$ & Unbounded & Only used when \option{\opflowuseagc} is active \\
+    $\Delta{P}$ & System power excess/deficit & Unbounded & Only used when \option{\opflowuseagc} is active \\
     \hline
-    Bus voltage angle & $\thetai$ & -$\pi \le \thetai \le \pi$ & 
+    $\thetai$ & Bus voltage angle & -$\pi \le \thetai \le \pi$ & 
     \begin{itemize}[noitemsep,topsep=0pt,leftmargin=*] 
     	\item Used with power balance polar model (\option{\opflowmodel~\pbpol}) 
 	\item $\thetai$ is unbounded, except reference bus angle $\thetarefi$ which is fixed to 0 
     \end{itemize} \\
     \hline
-    Bus voltage magnitude & $\vi$ & $\vmini \le \vi \le \vmaxi$ & \begin{itemize}[noitemsep,topsep=0pt,leftmargin=*] \item Used with power balance polar model (\option{\opflowmodel~\pbpol})\item $\vmini = \vmaxi = \vseti$ if fixed generator set point voltage option is active (\option{\opflowgensetpoint}) \end{itemize} \\
+    $\vi$ & Bus voltage magnitude & $\vmini \le \vi \le \vmaxi$ & \begin{itemize}[noitemsep,topsep=0pt,leftmargin=*] \item Used with power balance polar model (\option{\opflowmodel~\pbpol})\item $\vmini = \vmaxi = \vseti$ if fixed generator set point voltage option is active (\option{\opflowgensetpoint}) \end{itemize} \\
     \hline
   %  Bus voltage real part & $\vreali$ & $-\vmaxi \le \vreali \le \vmaxi$ & Used with power balance cartesian model (\option{\opflowmodel~ \pbcar})\\
   %  \hline
   %  Bus voltage imaginary part & $\vimagi$ & $-\vmaxi \le \vimagi \le \vmaxi$ & Used with power balance cartesian model (\option{\opflowmodel~\pbcar})\\
   %  \hline
-    Bus real power mismatch & $\pmisi$ & Unbounded & Used when power mismatch variable option is active (\option{\opflowincludepowerimbalance 1}) \\
+    $\pmisi$ & Bus real power mismatch & Unbounded & Used when power mismatch variable option is active (\option{\opflowincludepowerimbalance 1}) \\
     \hline
-    Bus reactive power mismatch & $\qmisi$ & Unbounded & Used when power mismatch variable option is active (\option{\opflowincludepowerimbalance 1}) \\
+    $\qmisi$ & Bus reactive power mismatch & Unbounded & Used when power mismatch variable option is active (\option{\opflowincludepowerimbalance 1}) \\
     \hline
-    Real power load loss & $\Deltaplj$ & $0 \le \Deltaplj \le \plj $ & Used when load loss variable option is active (\option{\opflowincludeloadloss 1}) \\
+    $\Deltaplj$ & Real power load loss & $0 \le \Deltaplj \le \plj $ & Used when load loss variable option is active (\option{\opflowincludeloadloss 1}) \\
     \hline
-    Reactive power load loss & $\Deltaqlj$ & $0 \le \Deltaqlj \le \qlj$ & Used when load loss variable option is active (\option{\opflowincludeloadloss 1}) \\
+    $\Deltaqlj$ & Reactive power load loss & $0 \le \Deltaqlj \le \qlj$ & Used when load loss variable option is active (\option{\opflowincludeloadloss 1}) \\
     \hline
   %  Bus reactive power mismatch & $q^{mis}_i$ & Unbounded & Used when power mismatch variable option is active (\text{-opflow_include_powerimbalance_variables 1})
   %  \hline
@@ -458,8 +458,8 @@ Number of inequality constraint evaluations          = 120
 Number of equality constraint Jacobian evaluations   = 88
 Number of inequality constraint Jacobian evaluations = 88
 Number of Lagrangian Hessian evaluations             = 87
-Total CPU secs in IPOPT (w/o function evaluations)   =      0.039
-Total CPU secs in NLP function evaluations           =      0.011
+Total CPU secs in IPOPT (w/o function evaluations)   = 0.039
+Total CPU secs in NLP function evaluations           = 0.011
 
 EXIT: Optimal Solution Found.
 [ExaGO INFO]: Finalizing opflow application.

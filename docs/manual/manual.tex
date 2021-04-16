@@ -39,10 +39,12 @@
 
 \usepackage{tikz}
 
-%\hypersetup{
-  %colorlinks=false,
-  %linktoc=all
-%}
+\hypersetup{
+  colorlinks   = true, %Colours links instead of ugly boxes
+  urlcolor     = red, %Colour for external hyperlinks
+  linkcolor    = blue, %Colour of internal links
+  citecolor   = blue %Colour of citations, could be ``red''
+}
 
 %\restylefloat{table}
 %\setlength{\parskip}{1ex}
@@ -188,15 +190,34 @@
 
 \begin{document}
 
-\title{\textbf{ExaGO\texttrademark~Users Manual} \\ \textit{Version 1.1}}
-\date{}
-\maketitle
+\pagestyle{empty}
+\noindent {\includegraphics[scale=0.3]{figures/PNNL_logo.eps}}
+\hfill{\large{\bf PNNL-31126}}
+
+
+\vspace*{2in}
+{\center{\LARGE{\bf ExaGO\texttrademark~Users Manual}}}
+
+\vspace*{8pt}
+\hrule
+\vspace*{8pt}
+\noindent {\Large{\it Version 1.1}}
+
+%\vspace*{0.5in}
+%\noindent {\bf Shrirang Abhyankar, Asher Mancinelli, Bruce Palmer, Slaven Peles, Cameron Rutherford}
+
+%\vspace*{4in}
+%\noindent {\includegraphics[scale=0.3]{figures/DOE_logo.eps}}
+
+\newpage
+\input{license.tex}
+
+\newpage
 
 % Table of contents.
 \tableofcontents
 
-\newpage
-\input{license.tex}
+
 
 % Start of the Users Manual
 

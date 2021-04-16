@@ -29,7 +29,7 @@ Note: The support for solving SCOPFLOW and SOPFLOW in parallel using the HiOP pa
 See [INSTALL.md](./INSTALL.md) for information on acquiring, building and installing ExaGO.
 
 ## Usage
-Instructions for executing the different ExaGO applications is given below.
+Instructions for executing the different ExaGO<sup>TM</sup> applications is given below.
 - [OPFLOW](docs/web/opflow.md)
 - [TCOPFLOW](docs/web/tcopflow.md)
 - [SOPFLOW](docs/web/sopflow.md)
@@ -49,10 +49,10 @@ Since options may be specified in more than one location (on the command line, a
 # This uses case9mod.m
 ./opflow -netfile case118.m -options_file opflowoptions
 ```
+
 Note that all ExaGO applications must run with an options file passed, and so if none is specified on the command line, ExaGO attempts to use the default application options in the `options` directory. 
 
 ## Contributing
-
 Please see [the developer guidelines](docs/DeveloperGuidelines.md) before attempting to contribute.
 Feel free to raise an issue or contact the team if the guidelines are ambiguous or you have a particular question.
 
@@ -64,12 +64,12 @@ Feel free to raise an issue or contact the team if the guidelines are ambiguous 
 - Bruce Palmer
 
 ## Acknowledgement
-This package is being developed as a part of [ExaSGD](https://www.exascaleproject.org/wp-content/uploads/2019/10/ExaSGD.pdf) project under the [Exascale computing project](https://www.exascaleproject.org/).
+This package is developed as a part of [ExaSGD](https://www.exascaleproject.org/research-project/exasgd/) project under the [Exascale computing project](https://www.exascaleproject.org/).
 
 ## Copyright
 Copyright &copy; 2020, Battelle Memorial Institute.
 
-ExaGO is a free software distributed under a BSD 2-clause license. You may reuse, modify, and redistribute the software. See the [license](LICENSE) file for details.
+ExaGO<sup>TM</sup> is a free software distributed under a BSD 2-clause license. You may reuse, modify, and redistribute the software. See the [license](LICENSE) file for details.
 
 
 ## Disclaimer
