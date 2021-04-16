@@ -5,7 +5,7 @@ set(EXAGO_APP_LIBS
     ExaGO::SCOPFLOW
     ExaGO::TCOPFLOW
     ExaGO::OPFLOW
-    ${EXAGO_PFLOW_LIBS}
+    ExaGO::PFLOW
     ExaGO::PS
     ExaGO::UTILS
     ${EXAGO_MATH_LIB}

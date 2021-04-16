@@ -1,5 +1,5 @@
-set(EXAGO_PFLOW_APP_LIBS ExaGO::UTILS ExaGO::PS ${EXAGO_PFLOW_LIBS}
-                         ${EXAGO_MATH_LIB} PETSC::SNES
+set(EXAGO_PFLOW_APP_LIBS ExaGO::UTILS ExaGO::PS ExaGO::PFLOW ${EXAGO_MATH_LIB}
+                         PETSC::SNES
 )
 
 if(EXAGO_ENABLE_MPI)
