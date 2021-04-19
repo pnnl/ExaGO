@@ -31,7 +31,7 @@ export srcdir=${srcdir:-$PWD}
 export builddir=${builddir:-$PWD/build}
 export installdir=${installdir:-$PWD/install}
 export BUILD_MATRIX=${BUILD_MATRIX:-0}
-export JOB=default
+export JOB=gcc-cuda
 export VALID_JOBS=(gcc-cuda clang-omp cmake-lint cmake-lint-apply)
 
 echo "Paths:"
@@ -99,6 +99,11 @@ Options:
                     This run takes a significant amound of time. If you omit
                     the --*-only options and just run a particular job, tests
                     will also be ran.
+
+--------------------------------------------------------------------------------
+
+See ExaGO's latest developer guidelines for more information on developing
+ExaGO: https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/develop/docs/DeveloperGuidelines.md
 
 --------------------------------------------------------------------------------
 

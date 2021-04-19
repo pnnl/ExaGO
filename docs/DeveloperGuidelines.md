@@ -37,6 +37,27 @@ error-prone.
 If your commit only touches comments and/or documentation, please add `[skip ci]` to your commit message.
 This reduces unneeded burden on our CI system.
 
+### Coding Conventions
+
+- Use `PascalCase` for functions/classes, and `snake_case` for variables.
+- Use underscores (`_`) and all lowercase characters for filenames.
+- Prefer `enum class` over a bare `enum`.
+- Use `constexpr`, `static`, and `const` wherever appropriate. It is good practice to make all variables and functions `static`, `const`, and/or `constexpr` by default, and only remove these qualifiers when you have good reason to do so.
+- Use `auto` to declare a variable when the type is obvious. For example, when dynamic casting from a pointer, there is no need to specify the type twice:
+```cpp
+auto *my_var = dynamic_cast<MyType*>(my_other_var);
+```
+- Functions should usually be less than 50 lines of code. If they are longer, consider breaking the function down into smaller functions.
+- All C++ APIs should be wrapped in the `ExaGO::` namespace, followed by the module name. For example, the `ExaGO::OPFLOW::` namespaces should wrap any public APIs in the `src/opflow` directory.
+- Use anonymous namespaces for functions and variables which should have internal linkage.
+- Don't use dynamic solutions to solve problems that can be solved at build time; don't solve build time problems by writing programs that produce source code when macros and templates suffice; don't write macros when templates suffice.
+- Indent with two spaces.
+- Don't indent `public:`, `protected:`, and `private:` accessibility labels.
+- Never use more than 80 characters per source line, unless you're editing documentation.
+- Don't use tabs.
+- Don't indent the bodies of namespaces, even when nested.
+- Function result types go on the same line as the function and argument names.
+
 ### Commit Messages
 
 Commit messages should use the imperative mood.
@@ -58,22 +79,12 @@ release.
 
 ### Files
 
-- Header files should be idempotent.
-
-### Coding Conventions
-
-- Don't use dynamic solutions to solve problems that can be solved at build time; don't solve build time problems by writing programs that produce source code when macros and templates suffice; don't write macros when templates suffice.
-- Indent with two spaces.
-- Don't indent `public:`, `protected:`, and `private:` accessibility labels.
-- Never use more than 80 characters per source line.
-- Don't use tabs.
-- Don't indent the bodies of namespaces, even when nested.
-- Function result types go on the same line as the function and argument names.
+- Header files should be idempotent and use header guards.
 
 ### CMake
 
 - Use target-oriented cmake.
-- A `.cmake-format` file exists in the top-level directory - if you change any cmake code, please run `cmake-format -i <file name>` before pushing your changes. The build script may also apply these changes for you by using the job specified by `./buildsystem/build.sh --job=cmake-lint-apply`.
+- A `.cmake-format` file exists in the top-level directory - if you change any cmake code, please run `cmake-format -i <file name>` before pushing your changes. The build script may also apply these changes for you by using the job specified by `./buildsystem/build.sh --job=cmake-lint-apply`. See the build script's help message (`./buildsystem/build.sh --help`) for more information on this.
 
 ## References
 
