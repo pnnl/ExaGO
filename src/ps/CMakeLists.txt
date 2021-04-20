@@ -3,6 +3,8 @@ set(PS_SRC ps.c psreaddata.c psoutput.c psislanding.c)
 
 set(PS_HEADERS ${CMAKE_SOURCE_DIR}/include/ps.h)
 
+set_source_files_properties(${PS_SRC} PROPERTIES LANGUAGE CXX)
+
 exago_add_library(
   PS
   SOURCES

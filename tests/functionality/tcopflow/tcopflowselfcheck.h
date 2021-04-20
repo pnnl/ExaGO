@@ -36,5 +36,5 @@ typedef struct
 } ExaGOSelfcheckTCOPFLOWAnswer;
 
 /** Returns 0 if tcopflow conforms to the answer, >0 otherwise. */
-extern PetscBool ExaGOSelfcheckTCOPFLOW(TCOPFLOW);
+extern PetscErrorCode ExaGOSelfcheckTCOPFLOW(TCOPFLOW);
 #endif

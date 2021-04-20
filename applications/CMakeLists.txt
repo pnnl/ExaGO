@@ -1,3 +1,8 @@
+set_source_files_properties(
+  pflow-main.c opflow-main.c scopflow-main.c sopflow-main.c tcopflow-main.c
+  PROPERTIES LANGUAGE CXX
+)
+
 # Define sources for applications PFLOW
 set(PFLOW_SRC pflow-main.c)
 

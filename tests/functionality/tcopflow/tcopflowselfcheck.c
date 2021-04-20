@@ -13,7 +13,7 @@ static const ExaGOSelfcheckTCOPFLOWAnswer ExaGOSelfcheckTCOPFLOWAnswers[EXAGOSel
   {SELFCHECK_NETWORK_CASE9_WIND, TCOPFLOW_INITIALIZATION, TCOPFLOW_GENBUSVOLTAGE, SELFCHECK_SCENARIO_CASE9, SELFCHECK_QLOAD, SELFCHECK_PLOAD, PETSC_FALSE, 5.0, 0.5, PETSC_FALSE, 18, 2.0792822464162207e+04}
 };
 
-PetscBool ExaGOSelfcheckTCOPFLOWFindAnswer(TCOPFLOW tcopflow, ExaGOSelfcheckTCOPFLOWAnswer *ans)
+PetscErrorCode ExaGOSelfcheckTCOPFLOWFindAnswer(TCOPFLOW tcopflow, ExaGOSelfcheckTCOPFLOWAnswer *ans)
 {
   PetscErrorCode ierr;
   PetscBool flg;
@@ -141,7 +141,7 @@ PetscBool ExaGOSelfcheckTCOPFLOWFindAnswer(TCOPFLOW tcopflow, ExaGOSelfcheckTCOP
 
 }
 
-PetscBool ExaGOSelfcheckTCOPFLOW(TCOPFLOW tcopflow)
+PetscErrorCode ExaGOSelfcheckTCOPFLOW(TCOPFLOW tcopflow)
 {
   PetscErrorCode ierr;
   PetscInt numiter;

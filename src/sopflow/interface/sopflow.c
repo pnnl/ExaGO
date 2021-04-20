@@ -39,7 +39,7 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout)
 
   sopflow->mode = 0;
 
-  sopflow->ismulticontingency = 0;
+  sopflow->ismulticontingency = PETSC_FALSE;
 
   sopflow->nmodelsregistered = 0;
   sopflow->SOPFLOWModelRegisterAllCalled = PETSC_FALSE;

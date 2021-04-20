@@ -14,6 +14,8 @@ set(SOPFLOW_SRC
 # Header files for sopflow
 set(SOPFLOW_INCLUDE ${CMAKE_SOURCE_DIR}/include/sopflow.h)
 
+set_source_files_properties(${SOPFLOW_SRC} PROPERTIES LANGUAGE CXX)
+
 exago_add_library(
   SOPFLOW
   SOURCES

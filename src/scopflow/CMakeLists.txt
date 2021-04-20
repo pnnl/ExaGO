@@ -12,6 +12,8 @@ set(SCOPFLOW_SRC
 # Header files for scopflow
 set(SCOPFLOW_INCLUDE ${CMAKE_SOURCE_DIR}/include/scopflow.h)
 
+set_source_files_properties(${SCOPFLOW_SRC} PROPERTIES LANGUAGE CXX)
+
 exago_add_library(
   SCOPFLOW
   SOURCES

@@ -11,6 +11,8 @@ set(TCOPFLOW_SRC
 # Header files for tcopflow
 set(TCOPFLOW_INCLUDE ${CMAKE_SOURCE_DIR}/include/tcopflow.h)
 
+set_source_files_properties(${TCOPFLOW_SRC} PROPERTIES LANGUAGE CXX)
+
 exago_add_library(
   TCOPFLOW
   SOURCES

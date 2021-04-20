@@ -367,7 +367,6 @@ PetscErrorCode OPFLOWModelDestroy_PBPOLRAJAHIOP(OPFLOW opflow)
   PetscFunctionReturn(0);
 }
 
-extern "C" {
 PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOP(OPFLOW opflow)
 {
   PetscErrorCode ierr;
@@ -403,7 +402,5 @@ PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOP(OPFLOW opflow)
   
   PetscFunctionReturn(0);
 }
-
-} // End of extern "C"
 
 #endif

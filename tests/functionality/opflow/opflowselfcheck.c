@@ -59,7 +59,7 @@ static const ExaGOSelfcheckOPFLOWAnswer ExaGOSelfcheckOPFLOWAnswers[ExaGOSelfche
 /** Temporary tolerance for error for number of iterations */
 static int itertol = 2;
 
-PetscBool ExaGOSelfcheckOPFLOWFindAnswer(OPFLOW opflow,ExaGOSelfcheckOPFLOWAnswer *ans)
+PetscErrorCode ExaGOSelfcheckOPFLOWFindAnswer(OPFLOW opflow,ExaGOSelfcheckOPFLOWAnswer *ans)
 {
   PetscErrorCode ierr;
   PetscBool flg=PETSC_FALSE;
@@ -110,7 +110,7 @@ PetscBool ExaGOSelfcheckOPFLOWFindAnswer(OPFLOW opflow,ExaGOSelfcheckOPFLOWAnswe
   return PETSC_TRUE;
 }
 
-PetscBool ExaGOSelfcheckOPFLOW(OPFLOW opflow)
+PetscErrorCode ExaGOSelfcheckOPFLOW(OPFLOW opflow)
 {
   PetscErrorCode ierr;
   Vec X;

@@ -33,7 +33,7 @@ static int itertol = 0;
  * @param[in] ans the answer obtained by running the scopflow driver 
  * @return True if runtime answer matches reference solution, else False 
 */
-PetscBool ExaGOSelfcheckSCOPFLOWFindAnswer(SCOPFLOW scopflow, ExaGOSelfcheckSCOPFLOWAnswer *ans)
+PetscErrorCode ExaGOSelfcheckSCOPFLOWFindAnswer(SCOPFLOW scopflow, ExaGOSelfcheckSCOPFLOWAnswer *ans)
 {
   int i; 
   PetscErrorCode ierr; 
@@ -197,7 +197,7 @@ PetscBool ExaGOSelfcheckSCOPFLOWFindAnswer(SCOPFLOW scopflow, ExaGOSelfcheckSCOP
   return PETSC_TRUE;
 }
 
-PetscBool ExaGOSelfcheckSCOPFLOW(SCOPFLOW scopflow)
+PetscErrorCode ExaGOSelfcheckSCOPFLOW(SCOPFLOW scopflow)
 {
   PetscErrorCode ierr; 
   PetscInt numiter; 

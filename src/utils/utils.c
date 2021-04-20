@@ -89,6 +89,9 @@ PetscErrorCode ExaGOLogInitialize()
 {
   PetscBool flg=PETSC_FALSE;
   PetscErrorCode ierr=0;
+  char* filename;
+  FILE* fp;
+
   /** If we're not on the logging rank, there's no setup to perform */
   ierr=MPI_Comm_rank(ExaGOLogComm,&ExaGOLogCurrentRank);CHKERRQ(ierr);
   if (ExaGOLogCurrentRank!=ExaGOLogLoggingRank)
@@ -107,13 +110,12 @@ PetscErrorCode ExaGOLogInitialize()
   if (!flg)
     goto lbl_success; // so sue me
 
-  char *filename;
   ierr=ExaGOLogGetLoggingFileName(&filename);
   /** We still don't have proper logging set up, so just return the error */
   if(ierr != 0)
     return 1;
 
-  FILE *fp = fopen(ExaGOLogFileName, "w");
+  fp = fopen(ExaGOLogFileName, "w");
   ExaGOLogSetLoggingFilePointer(fp);
 
 lbl_success:

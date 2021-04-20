@@ -1,5 +1,9 @@
 #[[ Functionality tests for ExaGO SOPFLOW applications ]]
 
+set_source_files_properties(
+  sopflow.c sopflowselfcheck.c PROPERTIES LANGUAGE CXX
+)
+
 add_executable(testSopflowFunctionality sopflow.c sopflowselfcheck.c)
 target_include_directories(
   testSopflowFunctionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
