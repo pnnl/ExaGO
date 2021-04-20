@@ -8,6 +8,8 @@ set(UTILS_HEADERS ${CMAKE_SOURCE_DIR}/include/common.h
                   ${CMAKE_SOURCE_DIR}/include/utils.h
 )
 
+set_source_files_properties(${UTILS_SRC} PROPERTIES LANGUAGE CXX)
+
 exago_add_library(
   UTILS
   SOURCES

@@ -157,9 +157,9 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
   }
 
   const int noptfiles = 4;
-  char **optfiles = malloc(sizeof(char*)*noptfiles);
+  char **optfiles = (char**)malloc(sizeof(char*)*noptfiles);
   for(i=0; i<noptfiles; i++)
-    optfiles[i] = malloc(PETSC_MAX_PATH_LEN);
+    optfiles[i] = (char*)malloc(PETSC_MAX_PATH_LEN);
 
 
   // Get -option_file option from command line

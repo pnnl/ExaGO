@@ -20,7 +20,7 @@ if [[ ! -f $PWD/buildsystem/build.sh ]]; then
   exit 1
 fi
 
-makeArgs=${makeArgs:-"-j 8"}
+makeArgs=${makeArgs:-"-j"}
 ctestArgs=${ctestArgs:-"-VV"}
 extraCmakeArgs=${extraCmakeArgs:-""}
 export OMPI_MCA_btl="^vader,tcp,openib,uct"

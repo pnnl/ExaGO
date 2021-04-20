@@ -12,12 +12,6 @@ if(EXAGO_ENABLE_RAJA)
   )
 endif()
 
-if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_GPU)
-  set_source_files_properties(
-    model/power-bal-hiop/pbpolrajahiopkernels.cpp PROPERTIES LANGUAGE CUDA
-  )
-endif()
-
 set(OPFLOW_SOLVER_SRC solver/tao/opflow-tao.c solver/ipopt/opflow-ipopt.c
                       solver/hiop/opflow-hiop.cpp
 )
@@ -25,6 +19,14 @@ set(OPFLOW_SOLVER_SRC solver/tao/opflow-tao.c solver/ipopt/opflow-ipopt.c
 set(OPFLOW_SRC interface/opflow.c interface/opflowregi.c
                interface/opflowoutput.c ${OPFLOW_FORM_SRC} ${OPFLOW_SOLVER_SRC}
 )
+
+set_source_files_properties(${OPFLOW_SRC} PROPERTIES LANGUAGE CXX)
+
+if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_GPU)
+  set_source_files_properties(
+    model/power-bal-hiop/pbpolrajahiopkernels.cpp PROPERTIES LANGUAGE CUDA
+  )
+endif()
 
 # Header files for opflow
 set(OPFLOW_INCLUDE ${CMAKE_SOURCE_DIR}/include/opflow.h)

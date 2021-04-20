@@ -46,5 +46,5 @@ typedef struct
 } ExaGOSelfcheckSOPFLOWAnswer;
 
 /** Returns 0 if sopflow conforms to the answer, >0 otherwise. */
-extern PetscBool ExaGOSelfcheckSOPFLOW(SOPFLOW);
+extern PetscErrorCode ExaGOSelfcheckSOPFLOW(SOPFLOW);
 #endif

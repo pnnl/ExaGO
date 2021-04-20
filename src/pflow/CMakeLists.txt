@@ -6,6 +6,8 @@ set(PFLOW_SRC pflow.c)
 # Header files for pflow
 set(PFLOW_INCLUDE ${CMAKE_SOURCE_DIR}/include/pflow.h)
 
+set_source_files_properties(${PFLOW_SRC} PROPERTIES LANGUAGE CXX)
+
 exago_add_library(
   PFLOW
   SOURCES

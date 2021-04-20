@@ -1,5 +1,7 @@
 #[[ Functionality tests for ExaGO OPFLOW applications ]]
 
+set_source_files_properties(opflow.c opflowselfcheck.c PROPERTIES LANGUAGE CXX)
+
 add_executable(testOpflowFunctionality opflow.c opflowselfcheck.c)
 target_include_directories(
   testOpflowFunctionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}

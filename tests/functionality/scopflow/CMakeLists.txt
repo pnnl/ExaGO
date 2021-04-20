@@ -1,5 +1,9 @@
 #[[ Functionality tests for ExaGO SCOPFLOW applications ]]
 
+set_source_files_properties(
+  scopflow.c scopflowselfcheck.c PROPERTIES LANGUAGE CXX
+)
+
 add_executable(testScopflowFunctionality scopflow.c scopflowselfcheck.c)
 target_include_directories(
   testScopflowFunctionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}

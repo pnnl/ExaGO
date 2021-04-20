@@ -43,5 +43,5 @@ typedef struct
 } ExaGOSelfcheckSCOPFLOWAnswer;
 
 /** Returns 0 if scopflow conforms to the answer, >0 otherwise. */
-extern PetscBool ExaGOSelfcheckSCOPFLOW(SCOPFLOW);
+extern PetscErrorCode ExaGOSelfcheckSCOPFLOW(SCOPFLOW);
 #endif

@@ -16,7 +16,7 @@ static const ExaGOSelfcheckPFLOWAnswer ExaGOSelfcheckPFLOWAnswers[ExaGOSelfcheck
   {SELFCHECK_NETWORK_CASE200, 2}
 };
 
-PetscBool ExaGOSelfcheckPFLOWFindAnswer(PFLOW pflow,ExaGOSelfcheckPFLOWAnswer *ans)
+PetscErrorCode ExaGOSelfcheckPFLOWFindAnswer(PFLOW pflow,ExaGOSelfcheckPFLOWAnswer *ans)
 {
   PetscErrorCode ierr;
   PetscBool flg;
@@ -47,7 +47,7 @@ PetscBool ExaGOSelfcheckPFLOWFindAnswer(PFLOW pflow,ExaGOSelfcheckPFLOWAnswer *a
   return PETSC_FALSE;
 }
 
-PetscBool ExaGOSelfcheckPFLOW(PFLOW pflow)
+PetscErrorCode ExaGOSelfcheckPFLOW(PFLOW pflow)
 {
   PetscErrorCode ierr;
   PetscInt numiter;

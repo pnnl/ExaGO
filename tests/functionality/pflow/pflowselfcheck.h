@@ -20,6 +20,6 @@ typedef struct
 } ExaGOSelfcheckPFLOWAnswer;
 
 /** Returns 0 if opflow conforms to the answer, >0 otherwise. */
-extern PetscBool ExaGOSelfcheckPFLOW(PFLOW);
+extern PetscErrorCode ExaGOSelfcheckPFLOW(PFLOW);
 
 #endif

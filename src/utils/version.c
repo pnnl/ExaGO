@@ -47,7 +47,7 @@ const PetscBool ExaGOIsDependencyEnabled[ExaGONumDependencies] =
 
 PetscErrorCode ExaGOVersionGetFullVersionInfo(char** str)
 {
-  *str = malloc(2048);
+  *str = (char*)malloc(2048);
   strcat(*str, "ExaGO version ");
   strcat(*str, EXAGO_VERSION);
   strcat(*str, " released on ");

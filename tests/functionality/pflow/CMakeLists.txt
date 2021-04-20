@@ -1,5 +1,7 @@
 #[[ Functionality tests for ExaGO PFLOW applications ]]
 
+set_source_files_properties(pflow.c pflowselfcheck.c PROPERTIES LANGUAGE CXX)
+
 add_executable(testPflowFunctionality pflow.c pflowselfcheck.c)
 target_include_directories(
   testPflowFunctionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}

@@ -21,7 +21,7 @@ static const ExaGOSelfcheckSOPFLOWAnswer ExaGOSelfcheckSOPFLOWAnswers[ExaGOSelfc
 /** Temporary tolerance for error for number of iterations */
 static int itertol = 0;
 
-PetscBool ExaGOSelfcheckSOPFLOWFindAnswer(SOPFLOW sopflow,ExaGOSelfcheckSOPFLOWAnswer *ans)
+PetscErrorCode ExaGOSelfcheckSOPFLOWFindAnswer(SOPFLOW sopflow,ExaGOSelfcheckSOPFLOWAnswer *ans)
 {
   PetscErrorCode ierr;
   PetscBool flg;
@@ -215,7 +215,7 @@ PetscBool ExaGOSelfcheckSOPFLOWFindAnswer(SOPFLOW sopflow,ExaGOSelfcheckSOPFLOWA
   return PETSC_TRUE;
 }
 
-PetscBool ExaGOSelfcheckSOPFLOW(SOPFLOW sopflow)
+PetscErrorCode ExaGOSelfcheckSOPFLOW(SOPFLOW sopflow)
 {
   PetscErrorCode ierr;
   PetscInt numiter;
