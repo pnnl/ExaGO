@@ -43,7 +43,7 @@ PETSC_EXTERN PetscErrorCode ExaGOLogUseEveryRank(PetscBool);
  * @note Users should use `ExaGOLog` instead, as this can be disabled for
  * optimization.
  */
-PETSC_EXTERN void ExaGOLogImpl(ExaGOVerbosityLevel,char*,...);
+PETSC_EXTERN void ExaGOLogImpl(ExaGOVerbosityLevel,const char*,...);
 
 /**
  * @brief `ExaGOLog` is the user-facing logging function.

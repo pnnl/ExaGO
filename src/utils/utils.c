@@ -170,7 +170,7 @@ PetscErrorCode ExaGOLogUseEveryRank(PetscBool use)
 }
 
 /** ExaGO logging function with format string */
-void ExaGOLogImpl(ExaGOVerbosityLevel verb, char *fmt, ...)
+void ExaGOLogImpl(ExaGOVerbosityLevel verb, const char *fmt, ...)
 {
   EXAGO_LOG_ENSURE_INITIALIZED();
   int ierr;
