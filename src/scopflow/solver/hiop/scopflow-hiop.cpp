@@ -155,7 +155,6 @@ bool SCOPFLOWHIOPInterface::set_recourse_approx_evaluator(const int n,hiopInterf
 bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double* x, double& rval)
 {
   PetscErrorCode ierr;
-  OPFLOW opflow;
   OPFLOW opflow0; /* base case OPFLOW */
   PS     ps,ps0;
   PSBUS  bus,bus0;
@@ -165,28 +164,55 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double*
   
   //  printf("[Rank %d] contingency %d Came in recourse objective function\n",scopflow->comm->rank,cont_num);
 
-  if(scopflow->cstart <= cont_num && cont_num < scopflow->cend) {
-    opflow0 = scopflow->opflow0;
-    opflow = scopflow->opflows[cont_num-scopflow->cstart];
+  opflow0 = scopflow->opflow0;
 
-    /* Update generator set-points */
-    ps = opflow->ps;
-    ps0 = opflow0->ps; /* ps0 is only used for accessing locations */ 
-    for(i=0; i < ps->nbus; i++) {
-      bus = &ps->bus[i];
-      bus0 = &ps0->bus[i];
-      for(k=0; k < bus->ngen; k++) {
-	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-	ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
-	if(gen0->status) {
-	  gen->pgs = x[j++];
-	}
+  ierr = OPFLOWCreate(PETSC_COMM_SELF,&opflowctgc);CHKERRQ(ierr);
+  ierr = OPFLOWSetModel(opflowctgc,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
+  //    ierr = OPFLOWSetSolver(opflowctgc,opflowsolvername);CHKERRQ(ierr);
+      
+  ierr = OPFLOWReadMatPowerData(opflowctgc,scopflow->netfile);CHKERRQ(ierr);
+  /* Set up the PS object for opflow */
+  ps = opflowctgc->ps;
+  ierr = PSSetUp(ps);CHKERRQ(ierr);
+      
+  /* Set contingencies */
+  if(scopflow->ctgcfileset) {
+    Contingency ctgc=scopflow->ctgclist.cont[cont_num];
+    for(j=0; j < ctgc.noutages; j++) {
+      if(ctgc.outagelist[j].type == GEN_OUTAGE) {
+	PetscInt gbus=ctgc.outagelist[j].bus;
+	char     *gid = ctgc.outagelist[j].id;
+	PetscInt status = ctgc.outagelist[j].status;
+	ierr = PSSetGenStatus(ps,gbus,gid,status);CHKERRQ(ierr);
+      }
+      if(ctgc.outagelist[j].type == BR_OUTAGE) {
+	PetscInt fbus=ctgc.outagelist[j].fbus;
+	PetscInt tbus=ctgc.outagelist[j].tbus;
+	char     *brid = ctgc.outagelist[j].id;
+	PetscInt status = ctgc.outagelist[j].status;
+	ierr = PSSetLineStatus(ps,fbus,tbus,brid,status);CHKERRQ(ierr);
       }
     }
-    assert(j == n);
-    /* Solve */
-    ierr = OPFLOWSolve(opflow);
-    ierr = OPFLOWGetObjective(opflow,&rval);
+  }
+  
+  /* Update generator set-points */
+  ps = opflowctgc->ps;
+  ps0 = opflow0->ps; /* ps0 is only used for accessing locations */ 
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    bus0 = &ps0->bus[i];
+    for(k=0; k < bus->ngen; k++) {
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
+      if(gen0->status) {
+	gen->pgs = x[j++];
+      }
+    }
+  }
+  assert(j == n);
+  /* Solve */
+  ierr = OPFLOWSolve(opflowctgc);
+  ierr = OPFLOWGetObjective(opflowctgc,&rval);
   }
   return true;
 }
@@ -206,34 +232,34 @@ bool SCOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int& n, double* x,
   PetscInt cont_num=idx+1;
   
   //  printf("[Rank %d] contingency %d Came in recourse gradient function\n",scopflow->comm->rank,cont_num);
-  if(scopflow->cstart <= cont_num && cont_num < scopflow->cend) {
-    opflow0 = scopflow->opflow0;
-    opflow = scopflow->opflows[cont_num-scopflow->cstart];
+  opflow0 = scopflow->opflow0;
+  opflow = opflowctgc;
 
-    ierr = OPFLOWGetConstraintMultipliers(opflow,&Lambda);
-    ierr = VecGetArrayRead(Lambda,&lam);
-    lameq = lam;
-    /* Update generator set-points */
-    ps = opflow->ps;
-    ps0 = opflow0->ps; 
-    for(i=0; i < ps->nbus; i++) {
-      bus = &ps->bus[i];
-      bus0 = &ps0->bus[i];
-      for(k=0; k < bus->ngen; k++) {
-	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-	ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
-	if(gen0->status && gen->status) {
-	  /* Get the lagrange multiplier for the generator set-point equality constraint x_i - x_0 
+  ierr = OPFLOWGetConstraintMultipliers(opflow,&Lambda);
+  ierr = VecGetArrayRead(Lambda,&lam);
+  lameq = lam;
+  /* Update generator set-points */
+  ps = opflow->ps;
+  ps0 = opflow0->ps; 
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    bus0 = &ps0->bus[i];
+    for(k=0; k < bus->ngen; k++) {
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
+      if(gen0->status && gen->status) {
+	/* Get the lagrange multiplier for the generator set-point equality constraint x_i - x_0 
 	   gradient is the partial derivative for it (note that it is negative) */
-	  if(opflow->has_gensetpoint) {
-	    grad[j++] = -lameq[gen->starteqloc+1];
-	  }
+	if(opflow->has_gensetpoint) {
+	  grad[j++] = -lameq[gen->starteqloc+1];
 	}
       }
     }
-    ierr = VecRestoreArrayRead(Lambda,&lam);
-    return true;
   }
+  ierr = VecRestoreArrayRead(Lambda,&lam);
+
+  ierr = OPFLOWDestroy(&opflow);CHKERRQ(ierr);
+  return true;
 }
 
 size_t SCOPFLOWHIOPInterface::get_num_rterms() const

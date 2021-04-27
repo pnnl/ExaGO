@@ -47,6 +47,7 @@ public:
   hiopInterfacePriDecProblem::RecourseApproxEvaluator* rec_evaluator;
 private:
   SCOPFLOW scopflow;
+  OPFLOW   opflowctgc;
 
 };
 
