@@ -3,14 +3,6 @@
 #
 
 function doBuild {
-  
-  for requiredVar in MY_IPOPT_DIR MY_RAJA_DIR MY_UMPIRE_DIR MY_HIOP_DIR MY_MAGMA_DIR MY_PETSC_DIR
-  do
-    if [[ ! -v $requiredVar ]]; then
-      echo "Required CMake variable $requiredVar was not set!"
-      echo "script defaultBuild.sh may not function as you intend."
-    fi
-  done
 
   cmakeArgs=" \
     -DCMAKE_INSTALL_PREFIX=$installdir/ \
