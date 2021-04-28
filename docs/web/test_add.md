@@ -70,13 +70,11 @@ CMakeLists.txt file using the command
 add_subdirectory(myapp)
 ```
 
-Finally, the CMakeLists.txt file in the top level ExaGO directory must by
-modified to actually specify which tests of myapp are to be run. All tests are
-included in the
-```
-if(RUN_EXAGO_TESTS)
-```
-block, which is located at the bottom of the file. These tests assume that it is
+Finally, the CMakeLists.txt file in the application test directory must by
+modified to actually specify which tests of myapp are to be run. Examples of
+these tests can be found in existing CMakeLists.txt files.
+New tests are added using the exago_add_test function defined in
+the ExaGOTestingUtilities.cmake file. The current tests assume that it is
 possible to completely specify all parameters needed to run the application
 using runtime arguments. These include network configuration files, contingency
 files and scenario files. Note that some network files have already been
@@ -104,7 +102,7 @@ CMakeLists.txt file. A relatively simple example is the SOPFLOW application test
       )
   endforeach(ns)
 ```
-This tests SOPFLOW on 1 to 3 scenarios using <code>case_ACTIVSg200.m</code>
+This tests SOPFLOW on 3 scenarios using the <code>case_ACTIVSg200.m</code>
 network configuration file and the corresponding
 <code>scenarios_200bus.csv</code> scenario file. The <code>DEPENDS IPOPT</code>
 line means that this test requires that ExaGO is configured with the IPOPT

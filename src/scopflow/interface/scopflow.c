@@ -271,9 +271,9 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = PetscOptionsBool("-scopflow_enable_multiperiod","Multi-period SCOPFLOW?","",scopflow->ismultiperiod,&scopflow->ismultiperiod,NULL);CHKERRQ(ierr);
   if(scopflow->ismultiperiod) {
     /* Set loadp,loadq, and windgen files */
-    ierr = PetscOptionsString("-scopflow_ploadprofile","Active power load profile","",ploadprofile,ploadprofile,100,&flg1);CHKERRQ(ierr);
-    ierr = PetscOptionsString("-scopflow_qloadprofile","Reactive power load profile","",qloadprofile,qloadprofile,100,&flg2);CHKERRQ(ierr);
-    ierr = PetscOptionsString("-scopflow_windgenprofile","Wind generation profile","",windgenprofile,windgenprofile,100,&flg3);CHKERRQ(ierr);
+    ierr = PetscOptionsString("-scopflow_ploadprofile","Active power load profile","",ploadprofile,ploadprofile,200,&flg1);CHKERRQ(ierr);
+    ierr = PetscOptionsString("-scopflow_qloadprofile","Reactive power load profile","",qloadprofile,qloadprofile,200,&flg2);CHKERRQ(ierr);
+    ierr = PetscOptionsString("-scopflow_windgenprofile","Wind generation profile","",windgenprofile,windgenprofile,200,&flg3);CHKERRQ(ierr);
     ierr = PetscOptionsReal("-scopflow_dT","Length of time-step (minutes)","",dT,&dT,NULL);CHKERRQ(ierr);
     ierr = PetscOptionsReal("-scopflow_duration","Time horizon (hours)","",duration,&duration,NULL);CHKERRQ(ierr);
 
