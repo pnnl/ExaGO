@@ -15,5 +15,20 @@ target_link_libraries(testAcopf ExaGO::OPFLOW ${EXAGO_PFLOW_APP_LIBS})
 target_include_directories(testAcopf PRIVATE ./utils)
 
 if(EXAGO_INSTALL_TESTS)
-  install(TARGETS testAcopf DESTINATION tests/unit)
+  install(TARGETS testAcopf DESTINATION ./)
+
+  # Unit tests
+  exago_add_test(
+    NAME
+    "UNIT_TESTS_OPFLOW"
+    DEPENDS
+    HIOP
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:testAcopf>
+    -validation_dir
+    ${CMAKE_SOURCE_DIR}/datafiles/test_validation
+    NETFILES
+    ${network_files}
+  )
 endif()
