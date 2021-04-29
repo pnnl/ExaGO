@@ -354,8 +354,6 @@ extern PetscErrorCode PSCheckTopology(PS);
 extern PetscErrorCode PSGetLine(PS,PetscInt,PetscInt,const char*,PSLINE*);
 extern PetscErrorCode PSGetGen(PS,PetscInt,const char*,PSGEN*);
 extern PetscErrorCode PSGetLoad(PS,PetscInt,const char*,PSLOAD*);
-extern PetscErrorCode PSSetGenStatus(PS,PetscInt,const char*,PetscInt);
-extern PetscErrorCode PSSetLineStatus(PS,PetscInt,PetscInt,const char*,PetscInt);
 extern PetscErrorCode PSIslandCheckandSetRefBus(PS,PetscInt);
 extern PetscErrorCode PSConnCompDestroy(PS);
 extern PetscErrorCode PSSetEdgeandBusStartLoc(PS);

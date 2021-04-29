@@ -387,6 +387,9 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
     ierr = OPFLOWReadMatPowerData(scopflow->opflow0,scopflow->netfile);CHKERRQ(ierr);
     ierr = OPFLOWSetUp(scopflow->opflow0);CHKERRQ(ierr);
 
+    ierr = OPFLOWSetObjectiveType(scopflow->opflow0,MIN_GEN_COST);CHKERRQ(ierr);
+
+
     for(c=0; c < scopflow->nc; c++) {
       ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflows[c]);CHKERRQ(ierr);
       ierr = OPFLOWSetModel(scopflow->opflows[c],OPFLOWMODEL_PBPOL);CHKERRQ(ierr);

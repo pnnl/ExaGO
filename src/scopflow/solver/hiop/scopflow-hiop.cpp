@@ -115,7 +115,7 @@ hiop::hiopSolveStatus SCOPFLOWHIOPInterface::solve_master(double* x,
   const PetscScalar *xsol;
   include_r_ = include_r;
 
-  opflow = scopflow->opflows[0];
+  opflow = scopflow->opflow0;
 
   //  printf("Rank[%d]:Enter solve_master\n",scopflow->comm->rank);
   ierr = OPFLOWSolve(opflow);
@@ -125,7 +125,7 @@ hiop::hiopSolveStatus SCOPFLOWHIOPInterface::solve_master(double* x,
   ierr = PetscMemcpy(x,xsol,opflow->nx*sizeof(double));
   ierr = VecRestoreArrayRead(X,&xsol);
 
-  printf("Rank[%d]:Exit solve_master\n",scopflow->comm->rank);
+  //  printf("Rank[%d]:Exit solve_master\n",scopflow->comm->rank);
   
   return hiop::Solve_Success;
 }
@@ -149,6 +149,8 @@ bool SCOPFLOWHIOPInterface::set_recourse_approx_evaluator(const int n,hiopInterf
   return true;
 }
 
+extern "C" PetscErrorCode SCOPFLOWUpdateOPFLOWVariableBounds(OPFLOW,Vec,Vec,void*);
+
 /* Note: x only holds the coupled variables which, in this case, are the generator real power variables
    for the base-case
 */
@@ -159,7 +161,7 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double*
   PS     ps,ps0;
   PSBUS  bus,bus0;
   PSGEN  gen,gen0;
-  PetscInt i,k,j=0;
+  PetscInt i,k,j,g=0;
   PetscInt cont_num=idx+1;
   
   //  printf("[Rank %d] contingency %d Came in recourse objective function\n",scopflow->comm->rank,cont_num);
@@ -167,7 +169,7 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double*
   opflow0 = scopflow->opflow0;
 
   ierr = OPFLOWCreate(PETSC_COMM_SELF,&opflowctgc);CHKERRQ(ierr);
-  ierr = OPFLOWSetModel(opflowctgc,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
+  //  ierr = OPFLOWSetModel(opflowctgc,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
   //    ierr = OPFLOWSetSolver(opflowctgc,opflowsolvername);CHKERRQ(ierr);
       
   ierr = OPFLOWReadMatPowerData(opflowctgc,scopflow->netfile);CHKERRQ(ierr);
@@ -194,6 +196,12 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double*
       }
     }
   }
+
+  ierr = OPFLOWHasGenSetPoint(opflowctgc,PETSC_TRUE);CHKERRQ(ierr); /* Activates ramping variables */
+  //  ierr = OPFLOWSetObjectiveType(opflowctgc,NO_OBJ);CHKERRQ(ierr);
+  ierr = OPFLOWSetUpdateVariableBoundsFunction(opflowctgc,SCOPFLOWUpdateOPFLOWVariableBounds,(void*)scopflow);
+
+  ierr = OPFLOWSetUp(opflowctgc);CHKERRQ(ierr);
   
   /* Update generator set-points */
   ps = opflowctgc->ps;
@@ -205,18 +213,17 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double*
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
       if(gen0->status) {
-	gen->pgs = x[j++];
+	gen->pgs = x[g++];
       }
     }
   }
-  assert(j == n);
+  assert(g == n);
   /* Solve */
   ierr = OPFLOWSolve(opflowctgc);
   ierr = OPFLOWGetObjective(opflowctgc,&rval);
-  }
+  
   return true;
 }
-
 
 bool SCOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int& n, double* x, double* grad)
 {
@@ -226,12 +233,12 @@ bool SCOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int& n, double* x,
   PS     ps,ps0;
   PSBUS  bus,bus0;
   PSGEN  gen,gen0;
-  PetscInt i,k,j=0;
+  PetscInt i,k,j,g=0;
   const PetscScalar *lam,*lameq;
   Vec    Lambda;
   PetscInt cont_num=idx+1;
   
-  //  printf("[Rank %d] contingency %d Came in recourse gradient function\n",scopflow->comm->rank,cont_num);
+  // printf("[Rank %d] contingency %d Came in recourse gradient function\n",scopflow->comm->rank,cont_num);
   opflow0 = scopflow->opflow0;
   opflow = opflowctgc;
 
@@ -251,7 +258,7 @@ bool SCOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int& n, double* x,
 	/* Get the lagrange multiplier for the generator set-point equality constraint x_i - x_0 
 	   gradient is the partial derivative for it (note that it is negative) */
 	if(opflow->has_gensetpoint) {
-	  grad[j++] = -lameq[gen->starteqloc+1];
+	  grad[g++] = -lameq[gen->starteqloc+1];
 	}
       }
     }
@@ -280,7 +287,7 @@ void SCOPFLOWHIOPInterface::get_solution(double* x) const
   PetscInt i;
 
   if(scopflow->cstart == 0) {
-    opflow = scopflow->opflows[0];
+    opflow = scopflow->opflow0;
     OPFLOWGetSolution(opflow,&X);
     VecGetArrayRead(X,&xarr);
     for(i=0; i < opflow->nx; i++) x[i] = xarr[i];
@@ -295,7 +302,7 @@ double SCOPFLOWHIOPInterface::get_objective()
   PetscErrorCode ierr;
 
   if(scopflow->cstart == 0) {
-    opflow = scopflow->opflows[0];
+    opflow = scopflow->opflow0;
     ierr = OPFLOWGetObjective(opflow,&obj);CHKERRQ(ierr);
     return obj;
   }
