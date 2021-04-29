@@ -56,6 +56,7 @@ typedef struct _p_SCOPFLOWSolver_HIOP *SCOPFLOWSolver_HIOP;
 struct _p_SCOPFLOWSolver_HIOP {
   SCOPFLOWHIOPInterface  *pridecompprob;
   hiop::hiopAlgPrimalDecomposition *pridecsolver;
+  hiop::hiopSolveStatus status;
 };
 
 #endif

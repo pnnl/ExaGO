@@ -205,7 +205,7 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double*
   
   /* Update generator set-points */
   ps = opflowctgc->ps;
-  ps0 = opflow0->ps; /* ps0 is only used for accessing locations */ 
+  ps0 = opflow0->ps; 
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
     bus0 = &ps0->bus[i];
@@ -213,7 +213,7 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double*
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
       if(gen0->status) {
-	gen->pgs = x[g++];
+	gen0->pgs = gen->pgs = x[g++];
       }
     }
   }
@@ -316,14 +316,8 @@ PetscErrorCode SCOPFLOWSolverSolve_HIOP(SCOPFLOW scopflow)
 
   PetscFunctionBegin;
 
-  auto status = hiop->pridecsolver->run();
-  /*  if(!scopflow->comm->rank) {
-    ierr = VecCopy(scopflow->opflow0->X,scopflow->opflows[0]->X);CHKERRQ(ierr);
-    ierr = VecCopy(scopflow->opflow0->G,scopflow->opflows[0]->G);CHKERRQ(ierr);
-    ierr = VecCopy(scopflow->opflow0->Lambda,scopflow->opflows[0]->Lambda);CHKERRQ(ierr);
-    scopflow->opflows[0]->obj = scopflow->opflow0->obj;
-  }
-  */
+  hiop->status = hiop->pridecsolver->run();
+
   PetscFunctionReturn(0);
 }
 
@@ -428,9 +422,11 @@ PetscErrorCode SCOPFLOWSolverGetConstraintMultipliers_HIOP(SCOPFLOW scopflow,Pet
 
 PetscErrorCode SCOPFLOWSolverGetConvergenceStatus_HIOP(SCOPFLOW scopflow,PetscBool *status)
 {
+  SCOPFLOWSolver_HIOP hiop=(SCOPFLOWSolver_HIOP)scopflow->solver;
   PetscFunctionBegin;
 
-  *status = PETSC_TRUE;
+  if(hiop->status == hiop::Solve_Success) *status = PETSC_TRUE;
+  else *status = PETSC_FALSE;
 
   PetscFunctionReturn(0);
 }
