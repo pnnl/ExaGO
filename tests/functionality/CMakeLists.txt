@@ -16,8 +16,6 @@ if(EXAGO_ENABLE_MPI)
   list(APPEND EXAGO_APP_LIBS MPI::MPI_C)
 endif()
 
-set(tolerance "1e-3")
-
 add_subdirectory(opflow)
 add_subdirectory(pflow)
 add_subdirectory(tcopflow)

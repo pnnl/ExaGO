@@ -7,6 +7,8 @@ target_include_directories(
   testOpflowFunctionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+set(tolerance "1e-3")
+
 #[[ Configure OPFLOW functionality tests ]]
 target_link_libraries(testOpflowFunctionality ${EXAGO_APP_LIBS})
 if(EXAGO_INSTALL_TESTS)
