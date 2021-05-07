@@ -42,7 +42,7 @@ exago_add_library(
   $<$<BOOL:${EXAGO_ENABLE_RAJA}>:umpire>
   $<$<BOOL:${EXAGO_ENABLE_RAJA}>:RAJA>
   $<$<BOOL:${EXAGO_ENABLE_RAJA}>:OpenMP::OpenMP_CXX>
-  $<$<BOOL:${EXAGO_ENABLE_RAJA}>:HiOp>
+  $<$<BOOL:${EXAGO_ENABLE_HIOP}>:HiOp>
   $<$<BOOL:${EXAGO_ENABLE_IPOPT}>:Ipopt>
   PRIVATE
   $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_C>
