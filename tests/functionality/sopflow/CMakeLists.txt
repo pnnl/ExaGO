@@ -9,6 +9,8 @@ target_include_directories(
   testSopflowFunctionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+set(tolerance "1e-3")
+
 #[[ Configure SOPFLOW functionality tests ]]
 target_link_libraries(testSopflowFunctionality ${EXAGO_APP_LIBS})
 if(EXAGO_INSTALL_TESTS)

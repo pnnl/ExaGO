@@ -9,6 +9,8 @@ target_include_directories(
   testTcopflowFunctionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+set(tolerance "1e-3")
+
 #[[ Configure TCOPFLOW functionality tests ]]
 target_link_libraries(testTcopflowFunctionality ${EXAGO_APP_LIBS})
 if(EXAGO_INSTALL_TESTS)
