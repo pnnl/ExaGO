@@ -5,7 +5,6 @@
 #ifndef OPFLOWHIOP_HPP
 #define OPFLOWHIOP_HPP
 #include <opflow.h>
-#include <hiopLinAlgFactory.hpp>
 #include <hiopInterface.hpp>
 #include <hiopMatrix.hpp>
 #include <hiopNlpFormulation.hpp>
