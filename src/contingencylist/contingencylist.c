@@ -1,31 +1,66 @@
-#include <private/opflowimpl.h>
-#include <private/scopflowimpl.h>
+#include <private/contingencylist.h>
 
 extern void clean2Char(char *);
 extern char** blankTokenizer(const char *str, int *numtok, int maxtokens, int maxchar);
-/*
-  SCOPFLOWSetContingencyData - Sets the contingency data
 
-  Input Parameter
-+  scopflow - The SCOPFLOW object
-.  ctgcfileformat - the contingency file format
--  ctgcfile - The name of the contingency list file
+/**
+ * @brief Create contingency list object
+ *
+ * @param[in]  Number of contingencies
+ * @param[out] contingency list object
+ */
+PetscErrorCode ContingencyListCreate(PetscInt Nc,ContingencyList *ctgclist)
+{
+  PetscErrorCode ierr;
+  PetscInt       c;
+  ContingencyList ctgclistout;
+  PetscFunctionBegin;
+  ierr = PetscCalloc1(1,&ctgclistout);CHKERRQ(ierr);
+  ierr = PetscCalloc1(Nc,&ctgclistout->cont);CHKERRQ(ierr);
+  for(c=0; c < Nc; c++) ctgclistout->cont->noutages = 0;
+  ctgclistout->Ncontinit = Nc;
+  *ctgclist = ctgclistout;
+  PetscFunctionReturn(0);
+}
 
+/**
+ * @brief Destroy contingency list object
+ *
+ * @param[in] contingency list object
+ */
+PetscErrorCode ContingencyListDestroy(ContingencyList *ctgclist)
+{
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = PetscFree((*ctgclist)->cont);CHKERRQ(ierr);
+  ierr = PetscFree(*ctgclist);CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+
+
+/**
+ * @brief Sets contingency data
+ *
+ * @param[in] contingency list object
+ * @param[in] input file format
+ * @param[in] contingency file name
 */
-PetscErrorCode SCOPFLOWSetContingencyData(SCOPFLOW scopflow,ContingencyFileInputFormat ctgcfileformat,const char ctgcfile[])
+PetscErrorCode ContingencyListSetData(ContingencyList ctgclist,ContingencyFileInputFormat ctgcfileformat,const char ctgcfile[])
 {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
 
-  ierr = PetscMemcpy(scopflow->ctgcfile,ctgcfile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
+  ierr = PetscMemcpy(ctgclist->inputfile,ctgcfile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
 
-  scopflow->ctgcfileformat = ctgcfileformat;
-  scopflow->ctgcfileset = PETSC_TRUE;
+  ctgclist->inputfileformat = ctgcfileformat;
   PetscFunctionReturn(0);
 }
 
-/*
+/**
+ *
   SCOPFLOWReadContingencyData_Native - Reads the contingency list data file in the native format
 
   Input Parameters
@@ -56,11 +91,10 @@ PetscErrorCode SCOPFLOWSetContingencyData(SCOPFLOW scopflow,ContingencyFileInput
     3,0,1,0,0,1 ,0,0.1  
     3,1,0,8,9,1 ,0,0.1
 */
-PetscErrorCode SCOPFLOWReadContingencyData_Native(SCOPFLOW scopflow,const char ctgcfile[])
+PetscErrorCode ContingencyListReadData_Native(ContingencyList ctgclist)
 {
   PetscErrorCode ierr;
   FILE           *fp;
-  ContingencyList *ctgclist=&scopflow->ctgclist;
   Contingency    *cont;
   Outage         *outage;
   char           line[MAXLINE];
@@ -72,9 +106,9 @@ PetscErrorCode SCOPFLOWReadContingencyData_Native(SCOPFLOW scopflow,const char c
 
   PetscFunctionBegin;
 
-  fp = fopen(ctgcfile,"r");
+  fp = fopen(ctgclist->inputfile,"r");
   if (fp == NULL) {
-    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_FILE_OPEN,"Cannot open file %s",ctgcfile);CHKERRQ(ierr);
+    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_FILE_OPEN,"Cannot open file %s",ctgclist->inputfile);CHKERRQ(ierr);
   }
 
   ctgclist->Ncont = -1;
@@ -85,9 +119,9 @@ PetscErrorCode SCOPFLOWReadContingencyData_Native(SCOPFLOW scopflow,const char c
     }
     sscanf(line,"%d,%d,%d,%d,%d,'%[^\t\']',%d,%lf",&num,&type,&bus,&fbus,&tbus,equipid,&status,&prob);
 
-    if(num == scopflow->Nc) break;
+    if(num == ctgclist->Ncontinit) break;
 
-    if(num == PetscMax(scopflow->Nc,MAX_CONTINGENCIES)) {
+    if(num == PetscMax(ctgclist->Ncontinit,MAX_CONTINGENCIES)) {
       SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Exceeding max. allowed contingencies = %d\n",num,MAX_CONTINGENCIES);
     }
     cont   = &ctgclist->cont[num];
@@ -110,19 +144,16 @@ PetscErrorCode SCOPFLOWReadContingencyData_Native(SCOPFLOW scopflow,const char c
   PetscFunctionReturn(0);
 }
 
-/*
-  SCOPFLOWReadContingencyData_PSSE - Reads the contingency list data file in the PSSE format (.con file
-
-  Input Parameters
-+ scopflow - the scopflow object
-- ctgcfile - the contingency file name
-
-*/
-PetscErrorCode SCOPFLOWReadContingencyData_PSSE(SCOPFLOW scopflow,const char ctgcfile[])
+/**
+ *
+ * @brief Reads the contingency list data file in the PSSE format (.con) file
+ *
+ * @param[in] ContingencyList object
+ */
+PetscErrorCode ContingencyListReadData_PSSE(ContingencyList ctgclist)
 {
   PetscErrorCode ierr;
   FILE           *fp;
-  ContingencyList *ctgclist=&scopflow->ctgclist;
   Contingency    *cont;
   Outage         *outage;
   char           *out;
@@ -137,15 +168,15 @@ PetscErrorCode SCOPFLOWReadContingencyData_PSSE(SCOPFLOW scopflow,const char ctg
 
   PetscFunctionBegin;
 
-  fp = fopen(ctgcfile,"r");
+  fp = fopen(ctgclist->inputfile,"r");
   if (fp == NULL) {
-    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_FILE_OPEN,"Cannot open file %s",ctgcfile);CHKERRQ(ierr);
+    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_FILE_OPEN,"Cannot open file %s",ctgclist->inputfile);CHKERRQ(ierr);
   }
 
   ctgclist->Ncont = -1;
   one = 1;
   two = 2;
-  while((out = fgets(line,MAXLINE,fp)) != NULL && numCont < scopflow->Nc-1) {
+  while((out = fgets(line,MAXLINE,fp)) != NULL && numCont < ctgclist->Ncontinit-1) {
     if(strcmp(line,"\r\n") == 0 || strcmp(line,"\n") == 0) {
       continue; /* Skip blank lines */
     }
@@ -213,27 +244,27 @@ PetscErrorCode SCOPFLOWReadContingencyData_PSSE(SCOPFLOW scopflow,const char ctg
   PetscFunctionReturn(0);
 }
 
-/*
-  SCOPFLOWReadContingencyData - Reads the contingency list data file
-
-  Input Parameters
-+ scopflow - the scopflow object
-. ctgcfileformat - the contingency file format (NATIVE or PSSE)
-- ctgcfile - the contingency file name
-
-*/
-PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW scopflow,ContingencyFileInputFormat ctgcfileformat,const char ctgcfile[])
+/**
+ *
+ * @brief Reads the contingency data file
+ *
+ * @param[in] contingency list object
+ * @param[out] number of contingencies read
+ */
+PetscErrorCode ContingencyListReadData(ContingencyList ctgclist,PetscInt *Nc)
 {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  if(ctgcfileformat == NATIVE) {
-    ierr = SCOPFLOWReadContingencyData_Native(scopflow,ctgcfile);
-  } else if(ctgcfileformat == PSSE) {
-    ierr = SCOPFLOWReadContingencyData_PSSE(scopflow,ctgcfile);
+  if(ctgclist->inputfileformat == NATIVE) {
+    ierr = ContingencyListReadData_Native(ctgclist);
+  } else if(ctgclist->inputfileformat == PSSE) {
+    ierr = ContingencyListReadData_PSSE(ctgclist);
   } else {
     SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Unknown contingency input file format %s\n");
   }
+  *Nc = ctgclist->Ncont;
 
   PetscFunctionReturn(0);
 }
+

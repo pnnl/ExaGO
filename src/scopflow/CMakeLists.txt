@@ -7,7 +7,7 @@ set(SCOPFLOW_MODEL_SRC model/genramp/genramp.c model/genrampt/genrampt.c)
 
 set(SCOPFLOW_SRC
     interface/scopflow.c interface/scopflowregi.c interface/scopflowoutput.c
-    interface/scopflowctgc.c ${SCOPFLOW_MODEL_SRC} ${SCOPFLOW_SOLVER_SRC}
+    ${SCOPFLOW_MODEL_SRC} ${SCOPFLOW_SOLVER_SRC}
 )
 
 # Header files for scopflow
@@ -22,6 +22,8 @@ exago_add_library(
   HEADERS
   ${SCOPFLOW_INCLUDE}
   LINK_LIBRARIES
+  PRIVATE
+  ExaGO::CTGCLIST
   PUBLIC
   ExaGO::TCOPFLOW
   PRIVATE

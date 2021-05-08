@@ -31,6 +31,7 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWSetSolver(SCOPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWCreate(MPI_Comm,SCOPFLOW*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWDestroy(SCOPFLOW*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW,const char[]);
+
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetInitilizationType(SCOPFLOW, OPFLOWInitializationType type);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetGenBusVoltageType(SCOPFLOW, OPFLOWGenBusVoltageType);
 
