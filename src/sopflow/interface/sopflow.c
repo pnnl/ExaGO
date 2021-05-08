@@ -26,7 +26,7 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout)
   sopflow->Nconineq = sopflow->nconineq = 0;
   sopflow->Ncon     = sopflow->ncon     = 0;
   sopflow->Nx       = sopflow->nx       = 0;
-  sopflow->Ns       = sopflow->ns       = 0;
+  sopflow->Ns       = sopflow->ns       = 1;
   sopflow->Gi       = NULL;
   sopflow->Lambdai  = NULL;
   
@@ -305,7 +305,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   ierr = PetscOptionsString("-sopflow_solver","SOPFLOW solver type","",sopflowsolvername,sopflowsolvername,32,&sopflowsolverset);CHKERRQ(ierr);
 
   ierr = PetscOptionsBool("-sopflow_iscoupling","Include coupling between first stage and second stage","",sopflow->iscoupling,&sopflow->iscoupling,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsInt("-sopflow_Ns","Number of second stage scenarios","",sopflow->Ns,&sopflow->Ns,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsInt("-sopflow_Ns","Number of scenarios","",sopflow->Ns,&sopflow->Ns,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-sopflow_mode","Operation mode:Preventive (0) or Corrective (1)","",sopflow->mode,&sopflow->mode,NULL);CHKERRQ(ierr);
 
   ierr = PetscOptionsBool("-sopflow_enable_multicontingency","Multi-contingency SOPFLOW?","",sopflow->ismulticontingency,&sopflow->ismulticontingency,NULL);CHKERRQ(ierr);
@@ -313,11 +313,10 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   ierr = PetscOptionsReal("-sopflow_tolerance","optimization tolerance","",sopflow->tolerance,&sopflow->tolerance,NULL);CHKERRQ(ierr);
   PetscOptionsEnd();
 
-  if(sopflow->Ns >= 0) sopflow->Ns += 1;
+  if(sopflow->Ns == 0) SETERRQ(PETSC_COMM_SELF,0,"Number of scenarios should be greater than 0");
   if(sopflow->scenfileset) {
     if(sopflow->Ns == -1) { 
       ierr = SOPFLOWGetNumScenarios(sopflow,sopflow->scenfileformat,sopflow->scenfile,&sopflow->Ns);CHKERRQ(ierr);
-      sopflow->Ns += 1;
     }
   } else {
     if(sopflow->Ns == -1) sopflow->Ns = 1;
@@ -346,7 +345,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
       ns[i] = 1;
       if(sopflow->comm->size%sopflow->Ns == 0) color[i] = i/(sopflow->comm->size/sopflow->Ns);
       else {
-	color[i] = PetscMin(i/(sopflow->comm->size/sopflow->Ns),sopflow->Ns-1); /* This is not an optimal distribution. It can be further optimized */
+	color[i] = PetscMin(i/(sopflow->comm->size/sopflow->Ns),sopflow->Ns); /* This is not an optimal distribution. It can be further optimized */
       }
     } else {
       ns[i] = sopflow->Ns/sopflow->comm->size;
@@ -388,7 +387,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   sopflow->send = send[sopflow->comm->rank];
 
   MPI_Barrier(sopflow->comm->type);
-  ExaGOLog(EXAGO_LOG_INFO,"SOPFLOW running with %d scenarios (base case + %d scenarios)\n",sopflow->Ns,sopflow->Ns-1);
+  ExaGOLog(EXAGO_LOG_INFO,"SOPFLOW running with %d scenarios\n",sopflow->Ns);
   ExaGOLogUseEveryRank(PETSC_TRUE);
   ExaGOLog(EXAGO_LOG_INFO,"Rank %d scenario range [%d -- %d]\n",sopflow->comm->rank,sopflow->sstart,sopflow->send);
   ExaGOLogUseEveryRank(PETSC_FALSE);
