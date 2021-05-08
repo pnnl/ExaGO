@@ -7,6 +7,7 @@
 #define COMMON_H
 
 #include <petsc.h>
+#include <exago_config.h>
 
 typedef enum { MATPOWER, CSV, JSON, MINIMAL } OutputFormat;
 
