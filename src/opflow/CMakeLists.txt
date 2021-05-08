@@ -14,6 +14,12 @@ if(EXAGO_ENABLE_RAJA)
   set(OPFLOW_FORM_SRC ${OPFLOW_FORM_SRC} model/power_bal_hiop/pbpolrajahiop.cpp
                       model/power_bal_hiop/pbpolrajahiopkernels.cpp
   )
+  if(EXAGO_ENABLE_HIOP_SPARSE)
+    set(OPFLOW_FORM_SRC
+        ${OPFLOW_FORM_SRC} model/power-bal-hiop/pbpolrajahiopsparse.cpp
+        model/power-bal-hiop/pbpolrajahiopsparsekernels.cpp
+    )
+  endif()
 endif()
 
 set(OPFLOW_SOLVER_SRC solver/ipopt/opflow_ipopt.cpp solver/hiop/opflow_hiop.cpp
@@ -30,6 +36,7 @@ set_source_files_properties(${OPFLOW_SRC} PROPERTIES LANGUAGE CXX)
 if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_CUDA)
   set_source_files_properties(
     model/power_bal_hiop/pbpolrajahiopkernels.cpp PROPERTIES LANGUAGE CUDA
+    model/power_bal_hiop/pbpolrajahiopsparsekernels.cpp PROPERTIES LANGUAGE
   )
 endif()
 
