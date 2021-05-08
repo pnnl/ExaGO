@@ -76,6 +76,7 @@ extern PetscErrorCode OPFLOWModelCreate_PBPOLHIOP(OPFLOW);
 
 #if defined(EXAGO_ENABLE_RAJA)
 extern PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOP(OPFLOW);
+extern PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOPSPARSE(OPFLOW);
 #endif
 
 /*
@@ -114,6 +115,9 @@ PetscErrorCode OPFLOWModelRegisterAll(OPFLOW opflow) {
   ierr = OPFLOWModelRegister(opflow, OPFLOWMODEL_PBPOLRAJAHIOP,
                              OPFLOWModelCreate_PBPOLRAJAHIOP);
   CHKERRQ(ierr);
+  ierr = OPFLOWModelRegister(opflow, OPFLOWMODEL_PBPOLRAJAHIOPSPARSE,
+                             OPFLOWModelCreate_PBPOLRAJAHIOPSPARSE);
+  CHKERRQ(ierr);
 #endif
 
   opflow->OPFLOWModelRegisterAllCalled = PETSC_TRUE;
@@ -128,6 +132,9 @@ extern PetscErrorCode OPFLOWSolverCreate_IPOPT(OPFLOW);
 extern PetscErrorCode OPFLOWSolverCreate_HIOP(OPFLOW);
 #if defined(EXAGO_ENABLE_HIOP_SPARSE)
 extern PetscErrorCode OPFLOWSolverCreate_HIOPSPARSE(OPFLOW);
+#if defined(EXAGO_ENABLE_RAJA)
+extern PetscErrorCode OPFLOWSolverCreate_HIOPSPARSEGPU(OPFLOW);
+#endif
 #endif
 #endif
 
@@ -153,6 +160,11 @@ PetscErrorCode OPFLOWSolverRegisterAll(OPFLOW opflow) {
   ierr = OPFLOWSolverRegister(opflow, OPFLOWSOLVER_HIOPSPARSE,
                               OPFLOWSolverCreate_HIOPSPARSE);
   CHKERRQ(ierr);
+#if defined(EXAGO_ENABLE_RAJA)
+  ierr = OPFLOWSolverRegister(opflow, OPFLOWSOLVER_HIOPSPARSEGPU,
+                              OPFLOWSolverCreate_HIOPSPARSEGPU);
+  CHKERRQ(ierr);
+#endif
 #endif
 #endif
   opflow->OPFLOWSolverRegisterAllCalled = PETSC_TRUE;

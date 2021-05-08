@@ -3008,6 +3008,11 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
 #else
   PetscBool rajahiop_pbpol = PETSC_FALSE;
 #endif // RAJA
+  if (hiop && !(hiop_pbpol || rajahiop_pbpol)) {
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
+            "OPFLOW solver HIOP incompatible with model %s",
+            (opflow->modelname).c_str());
+  }
 #if defined(EXAGO_ENABLE_HIOP_SPARSE)
   PetscBool hiop_sparse;
   PetscBool hiop_sparse_pbpol;
@@ -3022,14 +3027,22 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
             "OPFLOW solver HIOPSPARSE incompatible with model %s",
             (opflow->modelname).c_str());
   }
-#else
-  PetscBool hiop_sparse = PETSC_FALSE;
-#endif // HIOP_SPARSE
-  if ((hiop && !hiop_sparse) && !(hiop_pbpol || rajahiop_pbpol)) {
+#if defined(EXAGO_ENABLE_RAJA)
+  PetscBool hiop_sparsegpu;
+  PetscBool pbpolrajahiopsparse;
+
+  hiop_sparsegpu =
+      static_cast<PetscBool>(opflow->solvername == OPFLOWSOLVER_HIOPSPARSEGPU);
+  pbpolrajahiopsparse = static_cast<PetscBool>(opflow->modelname ==
+                                               OPFLOWMODEL_PBPOLRAJAHIOPSPARSE);
+
+  if (hiop_sparsegpu && !pbpolrajahiopsparse) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-            "OPFLOW solver HIOP incompatible with model %s",
+            "OPFLOW solver HIOPSPARSE incompatible with model %s",
             (opflow->modelname).c_str());
   }
+#endif // EXAGO_ENABLE_RAJA
+#endif // HIOP_SPARSE
   /* FIXME: The PBPOLRAJAHIOP has trouble with individual load
      shedding, so avoid using when load shedding is enabled */
   if (opflow->include_loadloss_variables) {
