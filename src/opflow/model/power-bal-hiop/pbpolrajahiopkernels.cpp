@@ -947,6 +947,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP(OPFLOW opflow
 
       RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[b_gidx[i]+1],
 				       isisolated[i]*(Vm    - vm[i]) - ispvpq[i]*Vm*Vm*bl[i]);
+
       if(include_powerimbalance_variables) {
         double Pimb = x_dev[b_xidxpimb[i]];
         double Qimb = x_dev[b_xidxpimb[i]+1];
@@ -1299,6 +1300,7 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP_old(OPFLOW opflow,doub
     int* l_xidx = loadparams->xidx_dev_;
     double *pl = loadparams->pl_dev_;
     double *ql = loadparams->ql_dev_;
+
     RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, loadparams->nload), 
       RAJA_LAMBDA (RAJA::Index_type i)
       {

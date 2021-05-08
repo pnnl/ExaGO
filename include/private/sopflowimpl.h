@@ -11,10 +11,10 @@
 #include <opflow.h>
 #include <sopflow.h>
 #include <scopflow.h>
+#include <private/scenariolist.h>
 
 #define SOPFLOWSOLVERSMAX 10
 #define SOPFLOWMODELSMAX  10
-#define MAX_SCENARIOS     1000
 
 struct _p_SOPFLOWModelOps {
   PetscErrorCode (*destroy)(SOPFLOW);
@@ -80,7 +80,7 @@ struct _p_SOPFLOW{
 
   SCOPFLOW *scopflows; /* Array of security-constrained optimal power flow application objects. */
   PetscBool ismulticontingency; /* Is it a multi-contingency SOPFLOW? */
-
+  PetscBool flatten_contingencies; /* Flattens the contingencies to fuse the scenarios and contingencies */
 
   PetscBool setupcalled; /* SOPFLOWSetUp called? */
 
@@ -144,12 +144,22 @@ struct _p_SOPFLOW{
   void    *solverdata;
 
   /* Data for scenarios */
+  ScenarioList    scenlist;
   PetscBool       scenfileset;   /* Is the scenario file set ? */
   char            scenfile[PETSC_MAX_PATH_LEN]; /* Scenario file */
   ScenarioFileInputFormat scenfileformat;
   ScenarioUncertaintyType scenunctype;
 
   MPI_Comm subcomm; /* Sub-communicators on which SCOPFLOW run */
+
+  OPFLOW opflow0; /* Base scenario, each rank has this information */
+
+  /* Used when flatten contingency option is chosen */
+  /* These are arrays of size ns on each rank where ns is the number of local cases
+     A case is a scenario-contingency combination
+  */
+  PetscInt *scen_num; /* scenario number */
+  PetscInt *cont_num; /* contingency number */
 };
 
 extern PetscErrorCode SOPFLOWModelRegisterAll(SOPFLOW);

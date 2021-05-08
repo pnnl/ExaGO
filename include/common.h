@@ -13,6 +13,7 @@ typedef enum{NATIVE=0,PSSE=1}ContingencyFileInputFormat;
 
 typedef enum{SOPFLOW_NATIVE}ScenarioFileInputFormat;
 
+typedef enum {FORECAST_WIND=1, FORECAST_LOAD_P=2,FORECAST_LOAD_Q=3} ForecastType;
 
 /** 
  * The communicator context 

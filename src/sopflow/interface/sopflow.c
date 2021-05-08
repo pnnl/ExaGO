@@ -41,6 +41,8 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout)
 
   sopflow->ismulticontingency = PETSC_FALSE;
 
+  sopflow->flatten_contingencies = PETSC_FALSE;
+
   sopflow->nmodelsregistered = 0;
   sopflow->SOPFLOWModelRegisterAllCalled = PETSC_FALSE;
 
@@ -74,7 +76,7 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout)
 PetscErrorCode SOPFLOWDestroy(SOPFLOW *sopflow)
 {
   PetscErrorCode ierr;
-  PetscInt       s;
+  PetscInt       s,i;
 
   PetscFunctionBegin;
   ierr = COMMDestroy(&(*sopflow)->comm);CHKERRQ(ierr);
@@ -106,13 +108,14 @@ PetscErrorCode SOPFLOWDestroy(SOPFLOW *sopflow)
     ierr = ((*sopflow)->modelops.destroy)(*sopflow);
   }
 
-  /* Destroy TCOPFLOW or OPFLOW objects */
+  /* Destroy SCOPFLOW or OPFLOW objects */
   if((*sopflow)->ismulticontingency) {
     for(s=0; s < (*sopflow)->ns; s++) {
       ierr = SCOPFLOWDestroy(&(*sopflow)->scopflows[s]);CHKERRQ(ierr);
     }
     ierr = PetscFree((*sopflow)->scopflows);CHKERRQ(ierr);
   } else {
+    ierr = OPFLOWDestroy(&(*sopflow)->opflow0);CHKERRQ(ierr);
     for(s=0; s < (*sopflow)->ns; s++) {
       ierr = OPFLOWDestroy(&(*sopflow)->opflows[s]);CHKERRQ(ierr);
     }
@@ -125,6 +128,20 @@ PetscErrorCode SOPFLOWDestroy(SOPFLOW *sopflow)
   ierr = PetscFree((*sopflow)->ngi);CHKERRQ(ierr);
   ierr = PetscFree((*sopflow)->nconeqcoup);CHKERRQ(ierr);
   ierr = PetscFree((*sopflow)->nconineqcoup);CHKERRQ(ierr);
+
+  /* Destroy scenario list */
+  for(s=0; s < (*sopflow)->Ns; s++) {
+    for(i=0; i < (*sopflow)->scenlist.scen[s].nforecast; i++) {
+      ierr = PetscFree((*sopflow)->scenlist.scen[s].forecastlist[i].buses);CHKERRQ(ierr);
+      for(int j=0; j < (*sopflow)->scenlist.scen[s].forecastlist[i].nele; j++) {
+	ierr = PetscFree((*sopflow)->scenlist.scen[s].forecastlist[i].id[j]);CHKERRQ(ierr);
+      }
+      ierr = PetscFree((*sopflow)->scenlist.scen[s].forecastlist[i].id);CHKERRQ(ierr);
+      ierr = PetscFree((*sopflow)->scenlist.scen[s].forecastlist[i].val);CHKERRQ(ierr);
+    }
+  }
+
+  ierr = PetscFree((*sopflow)->scenlist.scen);CHKERRQ(ierr);
 
   MPI_Comm_free(&(*sopflow)->subcomm);
   ierr = PetscFree(*sopflow);CHKERRQ(ierr);
@@ -274,6 +291,42 @@ PetscErrorCode SOPFLOWSetNetworkData(SOPFLOW sopflow,const char netfile[])
   PetscFunctionReturn(0);
 }
 
+/* This is kind of a hack to update the variable bounds for OPFLOW based on the mode SOPFLOW uses
+ */
+PetscErrorCode SOPFLOWUpdateOPFLOWVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu,void* ctx)
+{
+  PetscErrorCode ierr;
+  SOPFLOW       sopflow=(SOPFLOW)ctx;
+
+  PetscFunctionBegin;
+  if(opflow->has_gensetpoint) {
+    /* Modify the bounds on ramping variables */
+    PetscInt       j,k;
+    PS             ps = opflow->ps;
+    PSBUS          bus;
+    PSGEN          gen;
+    PetscScalar    *xl,*xu;
+    
+    ierr = VecGetArray(Xl,&xl);CHKERRQ(ierr);
+    ierr = VecGetArray(Xu,&xu);CHKERRQ(ierr);
+    for(j = 0; j < ps->nbus; j++) {
+      bus = &ps->bus[j];
+      for(k=0; k < bus->ngen; k++) {
+	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	if(!gen->status) continue;
+	if(sopflow->mode == 0) continue;
+	else {
+	  xl[gen->startxpdevloc] = -gen->ramp_rate_30min;
+	  xu[gen->startxpdevloc] =  gen->ramp_rate_30min;
+	}
+      }
+    }
+    ierr = VecRestoreArray(Xl,&xl);CHKERRQ(ierr);
+    ierr = VecRestoreArray(Xu,&xu);CHKERRQ(ierr);
+  } 
+  PetscFunctionReturn(0);
+}
+
 extern PetscErrorCode SOPFLOWGetNumScenarios(SOPFLOW,ScenarioFileInputFormat,const char scenfile[],PetscInt*);
 
 /*
@@ -298,6 +351,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   OPFLOW         opflow;
   char           ctgcfile[PETSC_MAX_PATH_LEN];
   PetscBool      flgctgc=PETSC_FALSE;
+  PetscBool      issopflowsolverhiop;
 
   PetscFunctionBegin;
 
@@ -310,15 +364,22 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   ierr = PetscOptionsInt("-sopflow_mode","Operation mode:Preventive (0) or Corrective (1)","",sopflow->mode,&sopflow->mode,NULL);CHKERRQ(ierr);
 
   ierr = PetscOptionsBool("-sopflow_enable_multicontingency","Multi-contingency SOPFLOW?","",sopflow->ismulticontingency,&sopflow->ismulticontingency,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsBool("-sopflow_flatten_contingencies","Flatten contingencies for SOPFLOW?","",sopflow->flatten_contingencies,&sopflow->flatten_contingencies,NULL);CHKERRQ(ierr);
+
   ierr = PetscOptionsString("-ctgcfile","Contingency file","",ctgcfile,ctgcfile,PETSC_MAX_PATH_LEN,&flgctgc);CHKERRQ(ierr);
   ierr = PetscOptionsReal("-sopflow_tolerance","optimization tolerance","",sopflow->tolerance,&sopflow->tolerance,NULL);CHKERRQ(ierr);
   PetscOptionsEnd();
 
   if(sopflow->Ns == 0) SETERRQ(PETSC_COMM_SELF,0,"Number of scenarios should be greater than 0");
+
   if(sopflow->scenfileset) {
-    if(sopflow->Ns == -1) { 
-      ierr = SOPFLOWGetNumScenarios(sopflow,sopflow->scenfileformat,sopflow->scenfile,&sopflow->Ns);CHKERRQ(ierr);
-    }
+    if(sopflow->Ns == -1) sopflow->Ns = MAX_SCENARIOS;
+
+    ierr = PetscCalloc1(sopflow->Ns,&sopflow->scenlist.scen);CHKERRQ(ierr);
+
+    for(s=0; s < sopflow->Ns; s++) sopflow->scenlist.scen->nforecast = 0;
+    ierr = SOPFLOWReadScenarioData(sopflow,sopflow->scenfileformat,sopflow->scenfile);CHKERRQ(ierr);
+    sopflow->Ns = sopflow->scenlist.Nscen;
   } else {
     if(sopflow->Ns == -1) sopflow->Ns = 1;
   }
@@ -420,7 +481,21 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
     }
   }
 
+  ierr = PetscStrcmp(sopflow->solvername,"HIOP",&issopflowsolverhiop);CHKERRQ(ierr);
+
   if(!sopflow->ismulticontingency) {
+
+    /* Create base-case OPFLOW, only used when solver is HIOP */
+    ierr = OPFLOWCreate(PETSC_COMM_SELF,&sopflow->opflow0);CHKERRQ(ierr);
+    ierr = OPFLOWSetModel(sopflow->opflow0,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
+    ierr = OPFLOWReadMatPowerData(sopflow->opflow0,sopflow->netfile);CHKERRQ(ierr);
+    ierr = PSSetUp(sopflow->opflow0->ps);CHKERRQ(ierr);
+    if(sopflow->scenfileset) {
+      ierr = PSApplyScenario(sopflow->opflow0->ps,sopflow->scenlist.scen[0]);CHKERRQ(ierr);
+    }
+    ierr = OPFLOWHasGenSetPoint(sopflow->opflow0,PETSC_TRUE);CHKERRQ(ierr);
+    ierr = OPFLOWSetUp(sopflow->opflow0);CHKERRQ(ierr);
+
     /* Create OPFLOW objects */
     ierr = PetscCalloc1(sopflow->ns,&sopflow->opflows);CHKERRQ(ierr);
     for(s=0; s < sopflow->ns; s++) {
@@ -432,24 +507,21 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
       /* Set up the PS object for opflow */
       ps = sopflow->opflows[s]->ps;
       ierr = PSSetUp(ps);CHKERRQ(ierr);
-    }
 
-    /* Read scenario data */
-    /* This is called before OPFLOWSetUp because ReadScenarioData also sets the upper bounds for
-       generator real power output. OPFLOWSetUp creates the optimization solver object which in turn
-       sets the bounds and does not allow changing the bounds once they are set
-    */
+      if(sopflow->scenfileset) {
+	/* Apply scenario */
+	ierr = PSApplyScenario(ps,sopflow->scenlist.scen[sopflow->sstart+s]);CHKERRQ(ierr);
+      }
 
-    if(sopflow->scenfileset) {
-      ierr = SOPFLOWReadScenarioData(sopflow,sopflow->scenfileformat,sopflow->scenfile);CHKERRQ(ierr);
-    }
-
-    for(s=0; s < sopflow->ns; s++) {
       ierr = OPFLOWHasGenSetPoint(sopflow->opflows[s],PETSC_TRUE);CHKERRQ(ierr);
+      if(issopflowsolverhiop && sopflow->sstart+s != 0) {
+	ierr = OPFLOWSetUpdateVariableBoundsFunction(sopflow->opflows[s],SOPFLOWUpdateOPFLOWVariableBounds,(void*)sopflow);
+      }
       ierr = OPFLOWSetUp(sopflow->opflows[s]);CHKERRQ(ierr);
     }
     
   } else {
+
     /* Create SCOPFLOW objects */
     ierr = PetscCalloc1(sopflow->ns,&sopflow->scopflows);CHKERRQ(ierr);
 
@@ -461,13 +533,11 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
       /* Set contingency data */
       /* Should not set hard coded native format */
       ierr = SCOPFLOWSetContingencyData(sopflow->scopflows[s],NATIVE,ctgcfile);CHKERRQ(ierr);
-    }
 
-    if(sopflow->scenfileset) {
-      ierr = SOPFLOWReadScenarioData(sopflow,sopflow->scenfileformat,sopflow->scenfile);CHKERRQ(ierr);
-    }
+      if(sopflow->scenfileset) {
+	ierr = SCOPFLOWSetScenario(sopflow->scopflows[s],&sopflow->scenlist.scen[s]);CHKERRQ(ierr);
+      }
 
-    for(s=0; s < sopflow->ns; s++) {
       /* Set up */
       ierr = SCOPFLOWSetUp(sopflow->scopflows[s]);CHKERRQ(ierr);
     }

@@ -6,6 +6,7 @@
 #define __PSIMPL_H
 
 #include <ps.h>
+#include <private/scenariolist.h>
 #include <private/contingencylist.h>
 
 /**
@@ -310,6 +311,8 @@ struct _p_PS {
   PetscInt    NlineON,nlineON;       /* Number of active lines */
   PetscInt    NgenON,ngenON;           /* Number of active generators */
   PetscInt    Nref,nref;               /* Number of reference buses */
+  /* Number of generator types */
+  PetscInt ngencoal,ngenwind,ngensolar,ngenng,ngennuclear,ngenhydro,ngenundefined;
   PSBUS       bus;
   PSLOAD      load;
   PSGEN       gen;
@@ -359,10 +362,10 @@ extern PetscErrorCode PSConnCompDestroy(PS);
 extern PetscErrorCode PSSetEdgeandBusStartLoc(PS);
 extern PetscErrorCode PSPrintSystemSummary(PS);
 extern PetscErrorCode PSSaveSolution(PS,OutputFormat,const char[]);
-extern PetscErrorCode PSApplyContingency(PS,Contingency);
+extern PetscErrorCode PSApplyContingency(PS,struct _p_Contingency);
 extern PetscErrorCode PSIncreaseReferenceCount(PS);
 extern PetscErrorCode PSDescreaseReferenceCount(PS);
 extern PetscErrorCode PSSetGenDispatchandStatus(PS,PetscInt,PetscInt,PetscInt,PetscScalar,PetscScalar);
-
+extern PetscErrorCode PSApplyScenario(PS,Scenario);
 #endif
 

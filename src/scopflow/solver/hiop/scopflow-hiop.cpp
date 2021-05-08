@@ -180,7 +180,7 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double*
       
   /* Set contingencies */
   if(scopflow->ctgcfileset) {
-    Contingency ctgc=scopflow->ctgclist.cont[cont_num];
+    Contingency ctgc=scopflow->ctgclist->cont[cont_num];
     for(j=0; j < ctgc.noutages; j++) {
       if(ctgc.outagelist[j].type == GEN_OUTAGE) {
 	PetscInt gbus=ctgc.outagelist[j].bus;
