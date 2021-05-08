@@ -2379,7 +2379,6 @@ PetscErrorCode OPFLOWModelSetUp_PBPOL(OPFLOW opflow)
     bus->starteqloc = eqloc;
     eqloc += bus->nconeq;
 
-
     if(opflow->genbusvoltagetype == FIXED_WITHIN_QBOUNDS) {
       /* Inequality constraints */
       if (bus->ide == PV_BUS || bus->ide == REF_BUS){
@@ -2410,7 +2409,6 @@ PetscErrorCode OPFLOWModelSetUp_PBPOL(OPFLOW opflow)
       }
 
       gen->nx = gen->nxpow + gen->nxpdev + gen->nxpset;
-
       loc += gen->nx;
       locglob += gen->nx;
     }

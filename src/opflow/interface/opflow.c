@@ -34,6 +34,77 @@ PetscErrorCode OPFLOWSetGenBusVoltageType(OPFLOW opflow,OPFLOWGenBusVoltageType 
 }
 
 /*
+  OPFLOWHasLoadLoss - Use load loss in the OPFLOW formulation
+
+  Input Parameters:
++ opflow - OPFLOW object
+- hasloadloss - Use load loss?
+
+  Command-line option: -opflow_include_loadloss_variables
+  Notes: Should be called before OPFLOWSetUp
+*/
+PetscErrorCode OPFLOWHasLoadLoss(OPFLOW opflow,PetscBool hasloadloss)
+{
+  PetscFunctionBegin;
+  opflow->include_loadloss_variables = hasloadloss;
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWHasBusPowerImbalance - Use bus power imbalance in the OPFLOW formulation
+
+  Input Parameters:
++ opflow - OPFLOW object
+- hasbuspowerimbalance - Use power imbalance?
+
+  Command-line option: -opflow_include_powerimbalance_variables
+  Notes: Should be called before OPFLOWSetUp
+         
+*/
+PetscErrorCode OPFLOWHasBusPowerImbalance(OPFLOW opflow,PetscBool hasbuspowerimbalance)
+{
+  PetscFunctionBegin;
+  opflow->include_powerimbalance_variables = hasbuspowerimbalance;
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWSetLoadLossPenalty - Set load loss penalty
+
+  Input Parameters:
++ opflow - OPFLOW object
+- penalty - penalty for load loss (for each load)
+
+  Command-line option: -opflow_loadloss_penalty
+  Notes: Should be called before OPFLOWSetUp
+         
+*/
+PetscErrorCode OPFLOWSetLoadLossPenalty(OPFLOW opflow,PetscReal penalty)
+{
+  PetscFunctionBegin;
+  opflow->loadloss_penalty = penalty;
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWSetBusPowerImbalancePenalty - Set bus power imbalance penalty
+
+  Input Parameters:
++ opflow - OPFLOW object
+- penalty - penalty for power imbalance (at each bus)
+
+  Command-line option: -opflow_powerimbalance_penalty
+  Notes: Should be called before OPFLOWSetUp
+         
+*/
+PetscErrorCode OPFLOWSetBusPowerImbalancePenalty(OPFLOW opflow,PetscReal penalty)
+{
+  PetscFunctionBegin;
+  opflow->powerimbalance_penalty = penalty;
+  PetscFunctionReturn(0);
+}
+
+/*
   OPFLOWHasGenSetPoint - Use gen. set point in the OPFLOW formulation
 
   Input Parameters:
@@ -530,6 +601,13 @@ PetscErrorCode OPFLOWSetModel(OPFLOW opflow,const char* modelname)
   opflow->modelops.computegradientarray           = 0;
   opflow->modelops.computejacobian                = 0;
   opflow->modelops.solutiontops                   = 0;
+  opflow->modelops.computesparseequalityconstraintjacobianhiop      = 0;
+  opflow->modelops.computesparseinequalityconstraintjacobianhiop      = 0;
+  opflow->modelops.computesparsehessianhiop       = 0;
+  opflow->modelops.computedenseequalityconstraintjacobianhiop = 0;
+  opflow->modelops.computedenseinequalityconstraintjacobianhiop = 0;
+  opflow->modelops.computedensehessianhiop        = 0;
+
 
   ierr = PetscStrcpy(opflow->modelname,modelname);CHKERRQ(ierr);
   /* Call the underlying implementation constructor */
@@ -927,10 +1005,12 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   /* Set bounds on constraints */
   ierr = OPFLOWComputeConstraintBounds(opflow,opflow->Gl,opflow->Gu);CHKERRQ(ierr);
 
-  /* Set initial guess */
+  /* Set up power flow initialization */
   if(opflow->initializationtype == OPFLOWINIT_ACPF) {
     ierr = OPFLOWSetUpInitPflow(opflow);CHKERRQ(ierr);
   }
+
+  /* Set initial guess */
   ierr = OPFLOWSetInitialGuess(opflow,opflow->X);CHKERRQ(ierr);
 
   /* Initial guess for multipliers */
@@ -990,6 +1070,11 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
     case OPFLOWINIT_FLATSTART:
       if(opflow->modelops.setinitialguess) {
 	ierr = (*opflow->modelops.setinitialguess)(opflow,X);CHKERRQ(ierr);
+      } else if(opflow->modelops.setinitialguessarray) {
+	PetscScalar *x0;
+	ierr = VecGetArray(X,&x0);CHKERRQ(ierr);
+	ierr = (*opflow->modelops.setinitialguessarray)(opflow,x0);CHKERRQ(ierr);
+	ierr = VecRestoreArray(X,&x0);CHKERRQ(ierr);
       }
       break;
     case OPFLOWINIT_ACPF:
@@ -997,8 +1082,14 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X)
       if(!pflowconverged) {
 	SETERRQ(PETSC_COMM_SELF,0,"AC power flow initialization did not converged\n");
       }
-      ierr = (*opflow->modelops.setinitialguess)(opflow,X);CHKERRQ(ierr);
-
+      if(opflow->modelops.setinitialguess) {
+	ierr = (*opflow->modelops.setinitialguess)(opflow,X);CHKERRQ(ierr);
+      } else if(opflow->modelops.setinitialguessarray) {
+	PetscScalar *x0;
+	ierr = VecGetArray(X,&x0);CHKERRQ(ierr);
+	ierr = (*opflow->modelops.setinitialguessarray)(opflow,x0);CHKERRQ(ierr);
+	ierr = VecRestoreArray(X,&x0);CHKERRQ(ierr);
+      }
       break;
     default:
       SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Unknown OPFLOW initialization type\n");
@@ -1138,6 +1229,13 @@ PetscErrorCode OPFLOWComputeVariableBounds(OPFLOW opflow,Vec Xl, Vec Xu)
   PetscFunctionBegin;
   if(opflow->modelops.setvariablebounds) {
     ierr = (*opflow->modelops.setvariablebounds)(opflow,Xl,Xu);CHKERRQ(ierr);
+  } else if(opflow->modelops.setvariableboundsarray) {
+    PetscScalar *xl,*xu;
+    ierr = VecGetArray(Xl,&xl);CHKERRQ(ierr);
+    ierr = VecGetArray(Xu,&xu);CHKERRQ(ierr);
+    ierr = (*opflow->modelops.setvariableboundsarray)(opflow,xl,xu);CHKERRQ(ierr);
+    ierr = VecRestoreArray(Xl,&xl);CHKERRQ(ierr);
+    ierr = VecRestoreArray(Xu,&xu);CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }
@@ -1528,6 +1626,13 @@ PetscErrorCode OPFLOWComputeConstraintBounds(OPFLOW opflow,Vec Gl, Vec Gu)
   PetscFunctionBegin;
   if(opflow->modelops.setconstraintbounds) {
     ierr = (*opflow->modelops.setconstraintbounds)(opflow,Gl,Gu);CHKERRQ(ierr);
+  } else if(opflow->modelops.setconstraintboundsarray) {
+    PetscScalar *gl,*gu;
+    ierr = VecGetArray(Gl,&gl);CHKERRQ(ierr);
+    ierr = VecGetArray(Gu,&gu);CHKERRQ(ierr);
+    ierr = (*opflow->modelops.setconstraintboundsarray)(opflow,gl,gu);CHKERRQ(ierr);
+    ierr = VecRestoreArray(Gl,&gl);CHKERRQ(ierr);
+    ierr = VecRestoreArray(Gu,&gu);CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }

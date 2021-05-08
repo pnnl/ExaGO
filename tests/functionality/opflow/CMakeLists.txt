@@ -58,6 +58,8 @@ if(EXAGO_INSTALL_TESTS)
       1
       -opflow_model
       POWER_BALANCE_HIOP
+      -opflow_genbusvoltage
+      VARIABLE_WITHIN_BOUNDS
       DEPENDS
       HIOP
       NETFILES
@@ -85,6 +87,8 @@ if(EXAGO_INSTALL_TESTS)
       1
       -opflow_model
       PBPOLRAJAHIOP
+      -opflow_genbusvoltage
+      VARIABLE_WITHIN_BOUNDS
       DEPENDS
       GPU
       HIOP
@@ -134,6 +138,8 @@ if(EXAGO_INSTALL_TESTS)
       ${model}
       -opflow_tolerance
       ${tolerance}
+      -opflow_genbusvoltage
+      VARIABLE_WITHIN_BOUNDS
     )
   endforeach()
 
@@ -200,6 +206,8 @@ if(EXAGO_INSTALL_TESTS)
     -hiop_compute_mode
     CPU
     -hiop_ipopt_debug
+    -opflow_genbusvoltage
+    VARIABLE_WITHIN_BOUNDS
   )
 
 endif()

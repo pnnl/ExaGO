@@ -56,8 +56,10 @@ struct _p_OPFLOWModelOps {
   PetscErrorCode (*computejacobian)(OPFLOW,Vec,Mat); /* Jacobian of the constraints */
   PetscErrorCode (*solutiontops)(OPFLOW); /* Update PS struct from OPFLOW solution */
   /* Following methods are only used with HIOP */
-  PetscErrorCode (*computesparsejacobianhiop)(OPFLOW,int*,int*,double*); /* Sparse Jacobian */
-  PetscErrorCode (*computesparsehessianhiop)(OPFLOW,const double*,int*,int*,double*); /* Sparse Hessian */
+  PetscErrorCode (*computesparseequalityconstraintjacobianhiop)(OPFLOW,const double*,int*,int*,double*); /* Sparse Equality Constraints Jacobian */
+  PetscErrorCode (*computesparseinequalityconstraintjacobianhiop)(OPFLOW,const double*,int*,int*,double*); /* Sparse Inequality Constraints Jacobian */
+
+  PetscErrorCode (*computesparsehessianhiop)(OPFLOW,const double*,const double*,int*,int*,double*); /* Sparse Hessian */
   PetscErrorCode (*computedenseequalityconstraintjacobianhiop)(OPFLOW,const double*,double*); /* Dense Jacobian */
   PetscErrorCode (*computedenseinequalityconstraintjacobianhiop)(OPFLOW,const double*,double*); /* Dense Jacobian */
   PetscErrorCode (*computedensehessianhiop)(OPFLOW,const double*,const double*,double*); /* Dense Hessian */
@@ -137,6 +139,8 @@ struct _p_OPFLOW{
   PetscInt Ncon,ncon;               /* Total number of constraints (equality + inequality) */
   PetscInt nx,Nx;          /* Total number of local and global variables, excluding ghosts! */
 
+  PetscInt nxsparse,nxdense; /* Only used by HIOP MDS */
+
   //  Mat Jac_GeT; /* Transpose of equality constraint Jacobian */
   //  Mat Jac_GiT; /* Transpose of inequality constraint Jacobian */
 
@@ -199,6 +203,9 @@ struct _p_OPFLOW{
 
   /** @brief Logging events that apply to interface */
   PetscLogEvent objlogger,gradlogger,eqconslogger,ineqconslogger,eqconsjaclogger,ineqconsjaclogger,hesslogger,solvelogger,densehesslogger,sparsehesslogger,denseineqconsjaclogger,denseeqconsjaclogger;
+
+  /** @brief number of nonzeros used with HiOP MDS */
+  PetscInt nnz_eqjacsp,nnz_ineqjacsp,nnz_hesssp;
 };
 
 /* Registers all the OPFLOW models */

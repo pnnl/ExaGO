@@ -84,6 +84,8 @@ PETSC_EXTERN PetscErrorCode OPFLOWGetVariableOrdering(OPFLOW,int**);
 PETSC_EXTERN PetscErrorCode OPFLOWGetSizes(OPFLOW,int*,int*,int*);
 
 PETSC_EXTERN PetscErrorCode OPFLOWHasGenSetPoint(OPFLOW,PetscBool);
+PETSC_EXTERN PetscErrorCode OPFLOWHasLoadLoss(OPFLOW,PetscBool);
+PETSC_EXTERN PetscErrorCode OPFLOWHasBusPowerImbalance(OPFLOW,PetscBool);
 PETSC_EXTERN PetscErrorCode OPFLOWUseAGC(OPFLOW,PetscBool);
 
 PETSC_EXTERN PetscErrorCode OPFLOWSetGenBusVoltageType(OPFLOW,OPFLOWGenBusVoltageType);

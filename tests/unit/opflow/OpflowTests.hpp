@@ -490,7 +490,7 @@ public:
     ierr   = PetscMalloc1(nnz,&jCol);CHKERRQ(ierr);
     ierr = PetscMalloc1(nnz,&values);CHKERRQ(ierr);
 
-    ierr = (*opflow->modelops.computesparsejacobianhiop)(opflow, iRow, jCol, values);CHKERRQ(ierr);
+    ierr = (*opflow->modelops.computesparseequalityconstraintjacobianhiop)(opflow,x, iRow, jCol, values);CHKERRQ(ierr);
 
     fail += verifyAnswer(Jeqref_sparse, nxsparse,iRow, jCol, values);
 
@@ -640,7 +640,7 @@ public:
     values_dev = values;
 #endif
 
-    ierr = (*opflow->modelops.computesparsejacobianhiop)(opflow, iRow_dev, jCol_dev, values_dev);CHKERRQ(ierr);
+    ierr = (*opflow->modelops.computesparseequalityconstraintjacobianhiop)(opflow, x_dev, iRow_dev, jCol_dev, values_dev);CHKERRQ(ierr);
 
     resmgr.copy(iRow,iRow_dev);
     resmgr.copy(jCol,jCol_dev);
@@ -834,7 +834,7 @@ public:
     values = new double[nnz]();
 
     opflow->obj_factor = obj_factor;
-    ierr = (*opflow->modelops.computesparsehessianhiop)(opflow, x_ref, iRow, jCol, values);CHKERRQ(ierr);
+    ierr = (*opflow->modelops.computesparsehessianhiop)(opflow, x_ref, lambda_ref,iRow, jCol, values);CHKERRQ(ierr);
 
     fail += verifyAnswer(Hessref_sparse, nnz, iRow, jCol, values);
 
@@ -918,7 +918,7 @@ public:
 #endif
 
     opflow->obj_factor = obj_factor;
-    ierr = (*opflow->modelops.computesparsehessianhiop)(opflow, x_ref_dev, iRow_dev, jCol_dev, values_dev);CHKERRQ(ierr);
+    ierr = (*opflow->modelops.computesparsehessianhiop)(opflow, x_ref_dev, lambda_ref_dev,iRow_dev, jCol_dev, values_dev);CHKERRQ(ierr);
 
     // Copy back from the device
     resmgr.copy(iRow,iRow_dev);

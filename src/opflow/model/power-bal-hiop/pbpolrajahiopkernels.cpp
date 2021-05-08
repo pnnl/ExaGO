@@ -25,10 +25,6 @@
   #define RAJA_LAMBDA [=]
 #endif
 
-/************* NOTE ***********************/
-/* No Load loss or power imbalance variables considered yet */
-/********************************************/
-
 /* Functions to create and destroy data arrays for different
    component classes
 */
@@ -45,6 +41,13 @@ int BUSParamsRajaHiop::destroy(OPFLOW opflow)
   h_allocator_.deallocate(bl);
   h_allocator_.deallocate(xidx);
   h_allocator_.deallocate(gidx);
+  if(opflow->include_powerimbalance_variables) {
+    h_allocator_.deallocate(xidxpimb);
+    h_allocator_.deallocate(powerimbalance_penalty);
+    h_allocator_.deallocate(jacsp_idx);
+    h_allocator_.deallocate(jacsq_idx);
+    h_allocator_.deallocate(hesssp_idx);
+  }
 
 #ifdef EXAGO_ENABLE_GPU
   d_allocator_.deallocate(isref_dev_);
@@ -58,8 +61,67 @@ int BUSParamsRajaHiop::destroy(OPFLOW opflow)
   d_allocator_.deallocate(bl_dev_);
   d_allocator_.deallocate(xidx_dev_);
   d_allocator_.deallocate(gidx_dev_);
+  if(opflow->include_powerimbalance_variables) {
+    d_allocator_.deallocate(xidxpimb_dev_);
+    d_allocator_.deallocate(powerimbalance_penalty_dev_);
+    d_allocator_.deallocate(jacsp_idx_dev_);
+    d_allocator_.deallocate(jacsq_idx_dev_);
+    d_allocator_.deallocate(hesssp_idx_dev_);
+  }
 #endif
 
+  return 0;
+}
+
+/* Copy data from host to device */
+int BUSParamsRajaHiop::copy(OPFLOW opflow)
+{
+  /* Allocate the arrays */
+  auto& resmgr = umpire::ResourceManager::getInstance();
+  h_allocator_ = resmgr.getAllocator("HOST");
+
+#ifdef EXAGO_ENABLE_GPU
+  d_allocator_ = resmgr.getAllocator("DEVICE");
+
+  // Copy host data from the host to the device
+  resmgr.copy(isref_dev_, isref);
+  resmgr.copy(isisolated_dev_, isisolated);
+  resmgr.copy(ispvpq_dev_, ispvpq);
+
+  resmgr.copy(vmin_dev_, vmin);
+  resmgr.copy(vmax_dev_, vmax);
+  resmgr.copy(va_dev_  , va);
+  resmgr.copy(vm_dev_  , vm);
+  resmgr.copy(gl_dev_  , gl);
+  resmgr.copy(bl_dev_  , bl);
+
+  resmgr.copy(xidx_dev_, xidx);
+  resmgr.copy(gidx_dev_, gidx);
+  if(opflow->include_powerimbalance_variables){
+    resmgr.copy(xidxpimb_dev_, xidxpimb);
+    resmgr.copy(jacsp_idx_dev_,jacsp_idx);
+    resmgr.copy(jacsq_idx_dev_,jacsq_idx);
+    resmgr.copy(hesssp_idx_dev_,hesssp_idx);
+    resmgr.copy(powerimbalance_penalty_dev_,powerimbalance_penalty);
+  }
+#else
+  isref_dev_ = isref;
+  isisolated_dev_ = isisolated;
+  ispvpq_dev_ = ispvpq;
+  vmin_dev_ = vmin;
+  vmax_dev_ = vmax;
+  va_dev_ = va;
+  vm_dev_ = vm;
+  gl_dev_ = gl;
+  bl_dev_ = bl;
+  xidx_dev_ = xidx;
+  xidxpimb_dev_ = xidxpimb;
+  gidx_dev_ = gidx;
+  jacsp_idx_dev_ = jacsp_idx;
+  jacsq_idx_dev_ = jacsq_idx;
+  hesssp_idx_dev_ = hesssp_idx;
+  powerimbalance_penalty_dev_ = powerimbalance_penalty;
+#endif
   return 0;
 }
 
@@ -67,15 +129,10 @@ int BUSParamsRajaHiop::destroy(OPFLOW opflow)
 int BUSParamsRajaHiop::allocate(OPFLOW opflow)
 {
   PS             ps=opflow->ps;
-  PetscInt       loc,gloc=0;
+  PetscInt       loc;
   PSBUS          bus;
-  PetscInt       i;
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
   
   nbus = ps->nbus;
-
   /* Allocate the arrays */
   auto& resmgr = umpire::ResourceManager::getInstance();
   h_allocator_ = resmgr.getAllocator("HOST");
@@ -95,23 +152,25 @@ int BUSParamsRajaHiop::allocate(OPFLOW opflow)
   xidx = paramAlloc<int>(h_allocator_, nbus);
   gidx = paramAlloc<int>(h_allocator_, nbus);
 
+  if(opflow->include_powerimbalance_variables) {
+    xidxpimb = paramAlloc<int>(h_allocator_, nbus);
+    powerimbalance_penalty = paramAlloc<double>(h_allocator_, nbus);
+    jacsp_idx = paramAlloc<int>(h_allocator_, nbus);
+    jacsq_idx = paramAlloc<int>(h_allocator_, nbus);
+    hesssp_idx = paramAlloc<int>(h_allocator_, nbus);
+  }
+
   /* Memzero arrays */
   resmgr.memset(isref,0,nbus*sizeof(int));
   resmgr.memset(ispvpq,0,nbus*sizeof(int));
   resmgr.memset(isisolated,0,nbus*sizeof(int));
   
-  for (int i = 0; i < nbus; i++)
-  {
-    vmin[i] = 0.9;
-    vmax[i] = 1.1;
-  }
-  
-  for(i=0; i < ps->nbus; i++) {
+  for (int i = 0; i < nbus; i++) {
     bus = &ps->bus[i];
-    ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
+    loc = bus->startxVloc;
     
     xidx[i] = opflow->idxn2sd_map[loc];
-    gidx[i] = gloc;
+    gidx[i] = bus->starteqloc;
 
     if(bus->ide == REF_BUS) isref[i] = 1;
     else if(bus->ide == ISOLATED_BUS) isisolated[i] = 1;
@@ -121,22 +180,26 @@ int BUSParamsRajaHiop::allocate(OPFLOW opflow)
       if(bus->ide == REF_BUS || bus->ide == PV_BUS) {
 	/* Hold voltage at reference and PV buses */
 	vmin[i] = bus->vm;
-	vmax[i] = bus->vm;
+        vmax[i] = bus->vm;
       } else {
 	vmin[i] = bus->Vmin;
 	vmax[i] = bus->Vmax;
       }
     } else {
-	vmin[i] = bus->Vmin;
-	vmax[i] = bus->Vmax;
+      vmin[i] = bus->Vmin;
+      vmax[i] = bus->Vmax;
     }      
     vm[i]   = bus->vm;
     va[i]   = bus->va;
     gl[i]   = bus->gl;
     bl[i]   = bus->bl;
 
-    gloc += 2;
-  }
+    if(opflow->include_powerimbalance_variables) {
+      loc = bus->startxpimbloc;
+      xidxpimb[i] = opflow->idxn2sd_map[loc];
+      powerimbalance_penalty[i] = opflow->powerimbalance_penalty;
+    }
+  }  
 
 #ifdef EXAGO_ENABLE_GPU
   d_allocator_ = resmgr.getAllocator("DEVICE");
@@ -155,37 +218,70 @@ int BUSParamsRajaHiop::allocate(OPFLOW opflow)
   xidx_dev_ = paramAlloc<int>(d_allocator_, nbus);
   gidx_dev_ = paramAlloc<int>(d_allocator_, nbus);
 
-  // Copy host data from the host to the device
-  resmgr.copy(isref_dev_, isref);
-  resmgr.copy(isisolated_dev_, isisolated);
-  resmgr.copy(ispvpq_dev_, ispvpq);
-
-  resmgr.copy(vmin_dev_, vmin);
-  resmgr.copy(vmax_dev_, vmax);
-  resmgr.copy(va_dev_  , va);
-  resmgr.copy(vm_dev_  , vm);
-  resmgr.copy(gl_dev_  , gl);
-  resmgr.copy(bl_dev_  , bl);
-
-  resmgr.copy(xidx_dev_, xidx);
-  resmgr.copy(gidx_dev_, gidx);
-#else
-  isref_dev_ = isref;
-  isisolated_dev_ = isisolated;
-  ispvpq_dev_ = ispvpq;
-  vmin_dev_ = vmin;
-  vmax_dev_ = vmax;
-  va_dev_ = va;
-  vm_dev_ = vm;
-  gl_dev_ = gl;
-  bl_dev_ = bl;
-  xidx_dev_ = xidx;
-  gidx_dev_ = gidx;
+  if(opflow->include_powerimbalance_variables) {
+    xidxpimb_dev_ = paramAlloc<int>(d_allocator_, nbus);
+    powerimbalance_penalty_dev_ = paramAlloc<double>(d_allocator_, nbus);
+    jacsp_idx_dev_ = paramAlloc<int>(d_allocator_, nbus);
+    jacsq_idx_dev_ = paramAlloc<int>(d_allocator_, nbus);
+    hesssp_idx_dev_ = paramAlloc<int>(d_allocator_, nbus);
+  }
 #endif
-  PetscFunctionReturn(0);
+  return 0;
 }
 
+int LINEParamsRajaHiop::copy(OPFLOW opflow)
+{
+  /* Allocate the arrays */
+  auto& resmgr = umpire::ResourceManager::getInstance();
+  h_allocator_ = resmgr.getAllocator("HOST");
 
+#ifdef EXAGO_ENABLE_GPU
+  // Copy data from the host to the device
+  resmgr.copy(Gff_dev_, Gff);
+  resmgr.copy(Bff_dev_, Bff);
+  resmgr.copy(Gft_dev_, Gft);
+  resmgr.copy(Bft_dev_, Bft);
+  resmgr.copy(Gtf_dev_, Gtf);
+  resmgr.copy(Btf_dev_, Btf);
+  resmgr.copy(Gtt_dev_, Gtt);
+  resmgr.copy(Btt_dev_, Btt);
+  resmgr.copy(rateA_dev_, rateA);
+
+  resmgr.copy(xidxf_dev_, xidxf);
+  resmgr.copy(xidxt_dev_, xidxt);
+
+  resmgr.copy(geqidxf_dev_, geqidxf);
+  resmgr.copy(geqidxt_dev_, geqidxt);
+  resmgr.copy(gineqidx_dev_, gineqidx);
+  resmgr.copy(gbineqidx_dev_, gbineqidx);
+
+  if(opflow->nconineq) {
+    resmgr.copy(linelimidx_dev_, linelimidx);
+  }
+#else
+  Gff_dev_ = Gff;
+  Bff_dev_ = Bff;
+  Gft_dev_ = Gft;
+  Bft_dev_ = Bft;
+  Gtf_dev_ = Gtf;
+  Btf_dev_ = Btf;
+  Gtt_dev_ = Gtt;
+  Btt_dev_ = Btt;
+  rateA_dev_ = rateA;
+  xidxf_dev_ = xidxf;
+  xidxt_dev_ = xidxt;
+  geqidxf_dev_ = geqidxf;
+  geqidxt_dev_ = geqidxt;
+  gineqidx_dev_ = gineqidx;
+  gbineqidx_dev_ = gbineqidx;
+  if(opflow->nconineq)
+  {
+    linelimidx_dev_ = linelimidx;
+  }
+#endif
+  return 0;
+}
+  
 int LINEParamsRajaHiop::destroy(OPFLOW opflow)
 {
   // Destroy parameter arrays on the host
@@ -249,15 +345,8 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow)
   PetscErrorCode ierr;
   const PSBUS    *connbuses;
   PSBUS          busf,bust;
-  PetscInt       gloc=0; /* offset for inequality constraint contributions */
-  PetscInt       gbloc=opflow->nconeq; /* starting offset for inequality constraint bound */
-  /* the above gloc, gbloc is needed because for the constraint bound calculation,
-     the entire G vector is passed in, while for inequality constraints calulation only
-     the inequality constraint vector is passed in 
-  */
 
   PetscFunctionBegin;
-
   ierr = PSGetNumActiveLines(ps, &nlineON, NULL); CHKERRQ(ierr);
 
   nlinelim = 0;
@@ -320,8 +409,8 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow)
     bust = connbuses[1];
 
     int xidxfi,xidxti;
-    ierr = PSBUSGetVariableLocation(busf,&xidxfi);CHKERRQ(ierr);
-    ierr = PSBUSGetVariableLocation(bust,&xidxti);CHKERRQ(ierr);
+    xidxfi = busf->startxVloc;
+    xidxti = bust->startxVloc;
 
     xidxf[linei] = opflow->idxn2sd_map[xidxfi];
     xidxt[linei] = opflow->idxn2sd_map[xidxti];
@@ -330,17 +419,15 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow)
        Each bus has two equality (balance) constraints, hence the use of coefficient 2
        to map the location of the equality constraint for the bus
     */
-    geqidxf[linei] = 2*busf->internal_i;
-    geqidxt[linei] = 2*bust->internal_i;
+    geqidxf[linei] = busf->starteqloc;
+    geqidxt[linei] = bust->starteqloc;
     
     if(opflow->nconineq) {
-      if(line->status && line->rateA < 1e5) {
-	gbineqidx[linelimi] = gbloc;
-	gineqidx[linelimi] = gloc;
+      if(line->rateA < 1e5) {
+	gbineqidx[linelimi] = opflow->nconeq + line->startineqloc;
+	gineqidx[linelimi] = line->startineqloc;
 	linelimidx[linelimi] = linei;
 	linelimi++;
-	gbloc += 2;
-	gloc += 2;
       }
     }
     linei++;
@@ -370,50 +457,39 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow)
   if(opflow->nconineq) {
     linelimidx_dev_ = paramAlloc<int>(d_allocator_, nlinelim);
   }
+#endif
+  return 0;
+}
 
-  // Copy data from the host to the device
-  resmgr.copy(Gff_dev_, Gff);
-  resmgr.copy(Bff_dev_, Bff);
-  resmgr.copy(Gft_dev_, Gft);
-  resmgr.copy(Bft_dev_, Bft);
-  resmgr.copy(Gtf_dev_, Gtf);
-  resmgr.copy(Btf_dev_, Btf);
-  resmgr.copy(Gtt_dev_, Gtt);
-  resmgr.copy(Btt_dev_, Btt);
-  resmgr.copy(rateA_dev_, rateA);
+int LOADParamsRajaHiop::copy(OPFLOW opflow)
+{
+  /* Allocate the arrays */
+  auto& resmgr = umpire::ResourceManager::getInstance();
+  h_allocator_ = resmgr.getAllocator("HOST");
 
-  resmgr.copy(xidxf_dev_, xidxf);
-  resmgr.copy(xidxt_dev_, xidxt);
-
-  resmgr.copy(geqidxf_dev_, geqidxf);
-  resmgr.copy(geqidxt_dev_, geqidxt);
-  resmgr.copy(gineqidx_dev_, gineqidx);
-  resmgr.copy(gbineqidx_dev_, gbineqidx);
-
-  if(opflow->nconineq) {
-    resmgr.copy(linelimidx_dev_, linelimidx);
+#ifdef EXAGO_ENABLE_GPU
+  // Copy data from host to device
+  resmgr.copy(pl_dev_, pl);
+  resmgr.copy(ql_dev_, ql);
+  resmgr.copy(xidx_dev_, xidx);
+  resmgr.copy(gidx_dev_, gidx);
+  if(opflow->include_loadloss_variables) {
+    resmgr.copy(jacsp_idx_dev_,jacsp_idx);
+    resmgr.copy(jacsq_idx_dev_,jacsq_idx);
+    resmgr.copy(hesssp_idx_dev_,hesssp_idx);
+    resmgr.copy(loadloss_penalty_dev_,loadloss_penalty);
   }
 #else
-  Gff_dev_ = Gff;
-  Bff_dev_ = Bff;
-  Gft_dev_ = Gft;
-  Bft_dev_ = Bft;
-  Gtf_dev_ = Gtf;
-  Btf_dev_ = Btf;
-  Gtt_dev_ = Gtt;
-  Btt_dev_ = Btt;
-  rateA_dev_ = rateA;
-  xidxf_dev_ = xidxf;
-  xidxt_dev_ = xidxt;
-  geqidxf_dev_ = geqidxf;
-  geqidxt_dev_ = geqidxt;
-  gineqidx_dev_ = gineqidx;
-  gbineqidx_dev_ = gbineqidx;
-  if(opflow->nconineq)
-  {
-    linelimidx_dev_ = linelimidx;
-  }
+  pl_dev_ = pl;
+  ql_dev_ = ql;
+  xidx_dev_ = xidx;
+  gidx_dev_ = gidx;
+  jacsp_idx_dev_ = jacsp_idx;
+  jacsq_idx_dev_ = jacsq_idx;
+  hesssp_idx_dev_ = hesssp_idx;
+  loadloss_penalty_dev_ = loadloss_penalty;
 #endif
+
   return 0;
 }
 
@@ -423,11 +499,23 @@ int LOADParamsRajaHiop::destroy(OPFLOW opflow)
   h_allocator_.deallocate(ql);
   h_allocator_.deallocate(xidx);
   h_allocator_.deallocate(gidx);
+  if(opflow->include_loadloss_variables) {
+    h_allocator_.deallocate(loadloss_penalty);
+    h_allocator_.deallocate(jacsp_idx);
+    h_allocator_.deallocate(jacsq_idx);
+    h_allocator_.deallocate(hesssp_idx);
+  }
 #ifdef EXAGO_ENABLE_GPU
   d_allocator_.deallocate(pl_dev_);
   d_allocator_.deallocate(ql_dev_);
   d_allocator_.deallocate(xidx_dev_);
   d_allocator_.deallocate(gidx_dev_);
+  if(opflow->include_loadloss_variables) {
+    d_allocator_.deallocate(loadloss_penalty_dev_);
+    d_allocator_.deallocate(jacsp_idx_dev_);
+    d_allocator_.deallocate(jacsq_idx_dev_);
+    d_allocator_.deallocate(hesssp_idx_dev_);
+  }
 #endif
   return 0;
 }
@@ -454,26 +542,29 @@ int LOADParamsRajaHiop::allocate(OPFLOW opflow)
   ql   = paramAlloc<double>(h_allocator_, nload);
   xidx = paramAlloc<int>(h_allocator_, nload);
   gidx = paramAlloc<int>(h_allocator_, nload);
-
+  if(opflow->include_loadloss_variables) {
+    loadloss_penalty = paramAlloc<double>(h_allocator_, nload);
+    jacsp_idx = paramAlloc<int>(h_allocator_, nload);
+    jacsq_idx = paramAlloc<int>(h_allocator_, nload);
+    hesssp_idx = paramAlloc<int>(h_allocator_, nload);
+  }
   /* Insert data in loadparams */
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
     ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
     for(j=0; j < bus->nload; j++) {
       ierr = PSBUSGetLoad(bus,j,&load);CHKERRQ(ierr);
-      
-      loc += 2;
-
       pl[loadi] = load->pl;
       ql[loadi] = load->ql;
-      xidx[loadi] = loc;
-      gidx[loadi] = gloc;
-
+      if(opflow->include_loadloss_variables) {
+        loc = load->startxloadlossloc;
+        loadloss_penalty[loadi] = opflow->loadloss_penalty;
+	xidx[loadi] = opflow->idxn2sd_map[loc];
+      }
+      gidx[loadi] = bus->starteqloc;
       loadi++;
     }
-    gloc += 2;
   }
-
 #ifdef EXAGO_ENABLE_GPU
   d_allocator_ = resmgr.getAllocator("DEVICE");
   // Allocate data on the device
@@ -481,17 +572,13 @@ int LOADParamsRajaHiop::allocate(OPFLOW opflow)
   ql_dev_   = paramAlloc<double>(d_allocator_, nload);
   xidx_dev_ = paramAlloc<int>(d_allocator_, nload);
   gidx_dev_ = paramAlloc<int>(d_allocator_, nload);
+  if(opflow->include_loadloss_variables) {
+    loadloss_penalty_dev_ = paramAlloc<double>(d_allocator_, nload);
+    jacsp_idx_dev_ = paramAlloc<int>(d_allocator_, nload);
+    jacsq_idx_dev_ = paramAlloc<int>(d_allocator_, nload);
+    hesssp_idx_dev_ = paramAlloc<int>(d_allocator_, nload);
+  }
 
-  // Copy data from host to device
-  resmgr.copy(pl_dev_, pl);
-  resmgr.copy(ql_dev_, ql);
-  resmgr.copy(xidx_dev_, xidx);
-  resmgr.copy(gidx_dev_, gidx);
-#else
-  pl_dev_ = pl;
-  ql_dev_ = ql;
-  xidx_dev_ = xidx;
-  gidx_dev_ = gidx;
 #endif
 
   return (0);
@@ -509,9 +596,18 @@ int GENParamsRajaHiop::destroy(OPFLOW opflow)
   h_allocator_.deallocate(qt);
   h_allocator_.deallocate(qb);
   h_allocator_.deallocate(xidx);
-  h_allocator_.deallocate(gidx);
-  h_allocator_.deallocate(jacsp_idx);
-  h_allocator_.deallocate(jacsq_idx);
+  h_allocator_.deallocate(gidxbus);
+  h_allocator_.deallocate(eqjacspbus_idx);
+  h_allocator_.deallocate(eqjacsqbus_idx);
+  h_allocator_.deallocate(hesssp_idx);
+  if(opflow->has_gensetpoint) {
+    h_allocator_.deallocate(geqidxgen);
+    h_allocator_.deallocate(gineqidxgen);
+    h_allocator_.deallocate(gbineqidxgen);
+    h_allocator_.deallocate(pgs);
+    h_allocator_.deallocate(eqjacspgen_idx);
+    h_allocator_.deallocate(ineqjacspgen_idx);
+  }
 #ifdef EXAGO_ENABLE_GPU
   // Free arrays on the device
   d_allocator_.deallocate(cost_alpha_dev_);
@@ -522,19 +618,82 @@ int GENParamsRajaHiop::destroy(OPFLOW opflow)
   d_allocator_.deallocate(qt_dev_);
   d_allocator_.deallocate(qb_dev_);
   d_allocator_.deallocate(xidx_dev_);
-  d_allocator_.deallocate(gidx_dev_);
-  d_allocator_.deallocate(jacsp_idx_dev_);
-  d_allocator_.deallocate(jacsq_idx_dev_);
+  d_allocator_.deallocate(gidxbus_dev_);
+  d_allocator_.deallocate(eqjacspbus_idx_dev_);
+  d_allocator_.deallocate(eqjacsqbus_idx_dev_);
+  d_allocator_.deallocate(hesssp_idx_dev_);
+  if(opflow->has_gensetpoint) {
+    d_allocator_.deallocate(geqidxgen_dev_);
+    d_allocator_.deallocate(gineqidxgen_dev_);
+    d_allocator_.deallocate(gbineqidxgen_dev_);
+    d_allocator_.deallocate(pgs_dev_);
+    d_allocator_.deallocate(eqjacspgen_idx_dev_);
+    d_allocator_.deallocate(ineqjacspgen_idx_dev_);
+  }
+
 #endif
   return 0;
 }
 
+int GENParamsRajaHiop::copy(OPFLOW opflow)
+{
+  /* Allocate arrays on the host */
+  auto& resmgr = umpire::ResourceManager::getInstance();
+  h_allocator_ = resmgr.getAllocator("HOST");
+
+#ifdef EXAGO_ENABLE_GPU
+  // Copy host data to the device
+  resmgr.copy(cost_alpha_dev_, cost_alpha);
+  resmgr.copy(cost_beta_dev_ , cost_beta );
+  resmgr.copy(cost_gamma_dev_, cost_gamma);
+
+  resmgr.copy(pt_dev_, pt);
+  resmgr.copy(pb_dev_, pb);
+  resmgr.copy(qt_dev_, qt);
+  resmgr.copy(qb_dev_, qb);
+
+  resmgr.copy(xidx_dev_, xidx);
+  resmgr.copy(gidxbus_dev_, gidxbus);
+
+  resmgr.copy(eqjacspbus_idx_dev_,eqjacspbus_idx);
+  resmgr.copy(eqjacsqbus_idx_dev_,eqjacsqbus_idx);
+  resmgr.copy(hesssp_idx_dev_,hesssp_idx);
+  if(opflow->has_gensetpoint) {
+    resmgr.copy(geqidxgen_dev_,geqidxgen);
+    resmgr.copy(gineqidxgen_dev_,gineqidxgen);
+    resmgr.copy(gbineqidxgen_dev_,gbineqidxgen);
+    resmgr.copy(eqjacspgen_idx_dev_,eqjacspgen_idx);
+    resmgr.copy(ineqjacspgen_idx_dev_,ineqjacspgen_idx);
+    resmgr.copy(pgs_dev_,pgs);
+  }
+#else
+  cost_alpha_dev_ = cost_alpha;
+  cost_beta_dev_ = cost_beta;
+  cost_gamma_dev_ = cost_gamma;
+  pt_dev_ = pt;
+  pb_dev_ = pb;
+  qt_dev_ = qt;
+  qb_dev_ = qb;
+  xidx_dev_ = xidx;
+  gidxbus_dev_ = gidxbus;
+  eqjacspbus_idx_dev_ = eqjacspbus_idx;
+  eqjacsqbus_idx_dev_ = eqjacsqbus_idx;
+  hesssp_idx_dev_ = hesssp_idx;
+  geqidxgen_dev_ = geqidxgen;
+  gineqidxgen_dev_ = gineqidxgen;
+  gbineqidxgen_dev_ = gbineqidxgen;
+  eqjacspgen_idx_dev_ = eqjacspgen_idx;
+  ineqjacspgen_idx_dev_ = ineqjacspgen_idx;
+  pgs_dev_ = pgs;
+#endif
+  return 0;
+}
 
 /* Create data for generators that is used in different computations */
 int GENParamsRajaHiop::allocate(OPFLOW opflow)
 {
   PS             ps=opflow->ps;
-  PetscInt       loc,gloc=0,geni=0,nnzs=0,gi;
+  PetscInt       loc,gloc=0,geni=0;
   PSGEN          gen;
   PSBUS          bus;
   PetscInt       i,j;
@@ -559,21 +718,31 @@ int GENParamsRajaHiop::allocate(OPFLOW opflow)
   qb = paramAlloc<double>(h_allocator_, ngenON);
 
   xidx = paramAlloc<int>(h_allocator_, ngenON);
-  gidx = paramAlloc<int>(h_allocator_, ngenON);
+  gidxbus = paramAlloc<int>(h_allocator_, ngenON);
 
-  jacsp_idx = paramAlloc<int>(h_allocator_,ngenON);
-  jacsq_idx = paramAlloc<int>(h_allocator_,ngenON);
+  eqjacspbus_idx = paramAlloc<int>(h_allocator_,ngenON);
+  eqjacsqbus_idx = paramAlloc<int>(h_allocator_,ngenON);
+  hesssp_idx     = paramAlloc<int>(h_allocator_,ngenON);
 
-  /* Populate data on the host */
+  if(opflow->has_gensetpoint) {
+    geqidxgen = paramAlloc<int>(h_allocator_,ngenON);
+    gineqidxgen = paramAlloc<int>(h_allocator_,ngenON);
+    gbineqidxgen = paramAlloc<int>(h_allocator_,ngenON);
+    eqjacspgen_idx = paramAlloc<int>(h_allocator_,ngenON);
+    ineqjacspgen_idx = paramAlloc<int>(h_allocator_,ngenON);
+    pgs = paramAlloc<double>(h_allocator_,ngenON);
+  }
+
+  /* Insert data in genparams */
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
-    ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
-    gi = 0;
+    gloc = bus->starteqloc;
+
     for(j=0; j < bus->ngen; j++) {
       ierr = PSBUSGetGen(bus,j,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
       
-      loc += 2;
+      loc = gen->startxpowloc;
 
       cost_alpha[geni] = gen->cost_alpha;
       cost_beta[geni]  = gen->cost_beta;
@@ -582,17 +751,20 @@ int GENParamsRajaHiop::allocate(OPFLOW opflow)
       pb[geni]         = gen->pb;
       qt[geni]         = gen->qt;
       qb[geni]         = gen->qb;
+      if(opflow->has_gensetpoint) {
+	pgs[geni]      = gen->pgs;
+      }
 
       xidx[geni]       = opflow->idxn2sd_map[loc];
-      gidx[geni]       = gloc;
-      jacsp_idx[geni]  = nnzs + gi;
-      jacsq_idx[geni]  = nnzs + bus->ngenON + gi;
+      gidxbus[geni]    = gloc;
+      if(opflow->has_gensetpoint) {
+	geqidxgen[geni]   = gen->starteqloc;
+	gineqidxgen[geni] = gen->startineqloc; 
+	gbineqidxgen[geni] = opflow->nconeq + gen->startineqloc; 
+      }
 
       geni++;
-      gi++;
     }
-    nnzs += 2*bus->ngenON;
-    gloc += 2;
   }
 
 #ifdef EXAGO_ENABLE_GPU
@@ -608,38 +780,19 @@ int GENParamsRajaHiop::allocate(OPFLOW opflow)
   qb_dev_ = paramAlloc<double>(d_allocator_, ngenON);
 
   xidx_dev_ = paramAlloc<int>(d_allocator_, ngenON);
-  gidx_dev_ = paramAlloc<int>(d_allocator_, ngenON);
+  gidxbus_dev_ = paramAlloc<int>(d_allocator_, ngenON);
 
-  jacsp_idx_dev_ = paramAlloc<int>(d_allocator_,ngenON);
-  jacsq_idx_dev_ = paramAlloc<int>(d_allocator_,ngenON);
-
-  // Copy host data to the device
-  resmgr.copy(cost_alpha_dev_, cost_alpha);
-  resmgr.copy(cost_beta_dev_ , cost_beta );
-  resmgr.copy(cost_gamma_dev_, cost_gamma);
-
-  resmgr.copy(pt_dev_, pt);
-  resmgr.copy(pb_dev_, pb);
-  resmgr.copy(qt_dev_, qt);
-  resmgr.copy(qb_dev_, qb);
-
-  resmgr.copy(xidx_dev_, xidx);
-  resmgr.copy(gidx_dev_, gidx);
-
-  resmgr.copy(jacsp_idx_dev_,jacsp_idx);
-  resmgr.copy(jacsq_idx_dev_,jacsq_idx);
-#else
-  cost_alpha_dev_ = cost_alpha;
-  cost_beta_dev_ = cost_beta;
-  cost_gamma_dev_ = cost_gamma;
-  pt_dev_ = pt;
-  pb_dev_ = pb;
-  qt_dev_ = qt;
-  qb_dev_ = qb;
-  xidx_dev_ = xidx;
-  gidx_dev_ = gidx;
-  jacsp_idx_dev_ = jacsp_idx;
-  jacsq_idx_dev_ = jacsq_idx;
+  eqjacspbus_idx_dev_ = paramAlloc<int>(d_allocator_,ngenON);
+  eqjacsqbus_idx_dev_ = paramAlloc<int>(d_allocator_,ngenON);
+  hesssp_idx_dev_ = paramAlloc<int>(d_allocator_,ngenON);
+  if(opflow->has_gensetpoint) {
+    geqidxgen_dev_ = paramAlloc<int>(d_allocator_,ngenON);
+    gineqidxgen_dev_ = paramAlloc<int>(d_allocator_,ngenON);
+    gbineqidxgen_dev_ = paramAlloc<int>(d_allocator_,ngenON);
+    eqjacspgen_idx_dev_ = paramAlloc<int>(d_allocator_,ngenON);
+    ineqjacspgen_idx_dev_ = paramAlloc<int>(d_allocator_,ngenON);
+    pgs_dev_ = paramAlloc<double>(d_allocator_,ngenON);
+  }
 #endif
   return 0;
 }
@@ -653,7 +806,6 @@ PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLRAJAHIOP(OPFLOW opflow,double* x0
 
   PetscFunctionBegin;
   //  ierr = PetscPrintf(MPI_COMM_SELF,"Entered OPFLOWInitialization\n");CHKERRQ(ierr);
-
   // Do initialization on Host
   ierr = (*opflow->modelops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
   ierr = VecGetArray(opflow->X,&x);CHKERRQ(ierr);
@@ -682,7 +834,7 @@ PetscErrorCode OPFLOWSetConstraintBoundsArray_PBPOLRAJAHIOP(OPFLOW opflow,double
 
   //  PetscPrintf(MPI_COMM_SELF,"Entered Constraint Bounds\n");
 
-  /* Equallity constraints (all zeros) */
+  /* Equality constraints (all zeros) */
   auto& resmgr = umpire::ResourceManager::getInstance();
   resmgr.memset(gl_dev, 0);
   resmgr.memset(gu_dev, 0);
@@ -714,7 +866,6 @@ PetscErrorCode OPFLOWSetConstraintBoundsArray_PBPOLRAJAHIOP(OPFLOW opflow,double
 /** EQUALITY CONSTRAINTS */
 PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP(OPFLOW opflow,const double *x_dev, double *ge_dev)
 {
-  //  PBPOLRAJAHIOP       pbpolrajahiop=(PBPOLRAJAHIOP)opflow->model;
   PbpolModelRajaHiop* pbpolrajahiop = reinterpret_cast<PbpolModelRajaHiop*>(opflow->model);
   BUSParamsRajaHiop      *busparams=&pbpolrajahiop->busparams;
   GENParamsRajaHiop      *genparams=&pbpolrajahiop->genparams;
@@ -724,32 +875,57 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP(OPFLOW opflow
   PetscInt               flps=0;
   PetscFunctionBegin;
   //  PetscPrintf(MPI_COMM_SELF,"Entered Equality constraints\n");
-
+  
   // Zero out array
   auto& resmgr = umpire::ResourceManager::getInstance();
   resmgr.memset(ge_dev, 0);
 
   /* Generator contributions */
-  int* g_gidx = genparams->gidx_dev_;
+  int* g_gidxbus = genparams->gidxbus_dev_;
   int* g_xidx = genparams->xidx_dev_;
   RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, genparams->ngenON),
     RAJA_LAMBDA (RAJA::Index_type i) 
     {
-      RAJA::atomicSub<exago_raja_atomic>(&ge_dev[g_gidx[i]],x_dev[g_xidx[i]]);
-      RAJA::atomicSub<exago_raja_atomic>(&ge_dev[g_gidx[i]+1],x_dev[g_xidx[i]+1]);
+      RAJA::atomicSub<exago_raja_atomic>(&ge_dev[g_gidxbus[i]],x_dev[g_xidx[i]]);
+      RAJA::atomicSub<exago_raja_atomic>(&ge_dev[g_gidxbus[i]+1],x_dev[g_xidx[i]+1]);
     }
   );
   flps += genparams->ngenON*2;
+
+  if(opflow->has_gensetpoint) {
+    int* g_geqidxgen = genparams->geqidxgen_dev_;
+    double* g_pgs = genparams->pgs_dev_;
+    RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, genparams->ngenON),
+      RAJA_LAMBDA (RAJA::Index_type i) 
+      {
+        double Pg, delPg, Pgset;
+        Pg    = x_dev[g_xidx[i]];
+	delPg = x_dev[g_xidx[i]+2];
+	Pgset = x_dev[g_xidx[i]+3];
+
+	ge_dev[g_geqidxgen[i]]   = Pgset + delPg - Pg;
+	ge_dev[g_geqidxgen[i]+1] = Pgset - g_pgs[i]; 
+      }
+    );
+  }
 
   /* Load contributions */
   double* pl = loadparams->pl_dev_;
   double* ql = loadparams->ql_dev_;
   int*    l_gidx = loadparams->gidx_dev_;
+  int*    l_xidx = loadparams->xidx_dev_;
   RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, loadparams->nload),
     RAJA_LAMBDA (RAJA::Index_type i) 
     {
-      RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[l_gidx[i]],pl[i]);
-      RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[l_gidx[i]+1],ql[i]);
+      if (opflow->include_loadloss_variables) {
+        RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[l_gidx[i]],pl[i]);
+        RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[l_gidx[i]+1],ql[i]);
+        RAJA::atomicSub<exago_raja_atomic>(&ge_dev[l_gidx[i]],x_dev[l_xidx[i]]);
+        RAJA::atomicSub<exago_raja_atomic>(&ge_dev[l_gidx[i]+1],x_dev[l_xidx[i]+1]);
+      } else {
+        RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[l_gidx[i]],pl[i]);
+        RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[l_gidx[i]+1],ql[i]);
+      }
     }
   );
   flps += loadparams->nload*2;
@@ -763,6 +939,8 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP(OPFLOW opflow
   double* va = busparams->va_dev_;
   int* b_xidx = busparams->xidx_dev_;
   int* b_gidx = busparams->gidx_dev_;
+  int* b_xidxpimb = busparams->xidxpimb_dev_;
+
   RAJA::forall<exago_raja_exec>(RAJA::RangeSegment(0, busparams->nbus),
     RAJA_LAMBDA (RAJA::Index_type i)
     {
@@ -773,6 +951,12 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP(OPFLOW opflow
 
       RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[b_gidx[i]+1],
 				       isisolated[i]*(Vm    - vm[i]) - ispvpq[i]*Vm*Vm*bl[i]);
+      if(opflow->include_powerimbalance_variables) {
+        double Pimb = x_dev[b_xidxpimb[i]];
+        double Qimb = x_dev[b_xidxpimb[i]+1];
+        RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[b_gidx[i]], Pimb);
+        RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[b_gidx[i]+1], Qimb);
+      }
     }
   );
   flps += busparams->nbus*14;
@@ -885,16 +1069,16 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsArray_PBPOLRAJAHIOP(OPFLOW opfl
 // allocated on the device. x_dev is pointer to array on the GPU
 PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLRAJAHIOP(OPFLOW opflow,const double *x_dev,double *obj)
 {
-  //  PBPOLRAJAHIOP      pbpolrajahiop=(PBPOLRAJAHIOP)opflow->model;
   PbpolModelRajaHiop* pbpolrajahiop = reinterpret_cast<PbpolModelRajaHiop*>(opflow->model);
   GENParamsRajaHiop     *genparams=&pbpolrajahiop->genparams;
+  LOADParamsRajaHiop     *loadparams=&pbpolrajahiop->loadparams;
+  BUSParamsRajaHiop     *busparams=&pbpolrajahiop->busparams;
   PetscErrorCode ierr;
   PS             ps=opflow->ps;
   int            isobj_gencost=opflow->obj_gencost;
   double         MVAbase=ps->MVAbase;
 
   PetscFunctionBegin;
-
   //  PetscPrintf(MPI_COMM_SELF,"Entered objective function\n");
 
   // You need local copies of device pointers so that lambda can capture them
@@ -902,6 +1086,8 @@ PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLRAJAHIOP(OPFLOW opflow,const dou
   double* cost_beta  = genparams->cost_beta_dev_;
   double* cost_gamma = genparams->cost_gamma_dev_;
   int*    xidx = genparams->xidx_dev_;
+  int*    l_xidx = loadparams->xidx_dev_;
+  int*    b_xidxpimb = busparams->xidxpimb_dev_;
 
   /* Generator objective function contributions */
   // Set up reduce sum object
@@ -915,6 +1101,29 @@ PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLRAJAHIOP(OPFLOW opflow,const dou
     }
   );
 
+  if(opflow->include_loadloss_variables) {
+    RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, loadparams->nload), 
+      RAJA_LAMBDA (RAJA::Index_type i)
+      {
+        double Pdloss = x_dev[l_xidx[i]];
+        double Qdloss = x_dev[l_xidx[i]+1];
+        obj_val_sum += loadparams->loadloss_penalty_dev_[i]*ps->MVAbase*ps->MVAbase*(Pdloss*Pdloss + Qdloss*Qdloss);
+      }
+    );
+  }
+
+  /* Powerimbalance contributions */
+  if(opflow->include_powerimbalance_variables) {
+    RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, busparams->nbus), 
+      RAJA_LAMBDA (RAJA::Index_type i)
+      {
+        double Pimb = x_dev[b_xidxpimb[i]];
+        double Qimb = x_dev[b_xidxpimb[i]+1];
+        obj_val_sum += busparams->powerimbalance_penalty_dev_[i]*ps->MVAbase*ps->MVAbase*(Pimb*Pimb + Qimb*Qimb);
+      }
+    );
+  }
+
   *obj = static_cast<double>(obj_val_sum.get());
   ierr = PetscLogFlops(genparams->ngenON*8.0);CHKERRQ(ierr);
 
@@ -927,6 +1136,8 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOP(OPFLOW opflow,const doub
 {
   PbpolModelRajaHiop* pbpolrajahiop = reinterpret_cast<PbpolModelRajaHiop*>(opflow->model);
   GENParamsRajaHiop   *genparams=&pbpolrajahiop->genparams;
+  LOADParamsRajaHiop     *loadparams=&pbpolrajahiop->loadparams;
+  BUSParamsRajaHiop     *busparams=&pbpolrajahiop->busparams;
   PS                  ps=opflow->ps;
   int                 isobj_gencost=opflow->obj_gencost;
   double              MVAbase=ps->MVAbase;
@@ -934,7 +1145,6 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOP(OPFLOW opflow,const doub
 
   PetscFunctionBegin;
   //  PetscPrintf(MPI_COMM_SELF,"Entered gradient function\n");
-
   // Zero out array
   auto& resmgr = umpire::ResourceManager::getInstance();
   resmgr.memset(grad_dev, 0);
@@ -943,6 +1153,9 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOP(OPFLOW opflow,const doub
   double* cost_alpha = genparams->cost_alpha_dev_;
   double* cost_beta  = genparams->cost_beta_dev_;
   int*    xidx       = genparams->xidx_dev_;
+  int*    l_xidx       = loadparams->xidx_dev_;
+  int*    b_xidxpimb   = busparams->xidxpimb_dev_;
+ 
   RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, genparams->ngenON), 
     RAJA_LAMBDA (RAJA::Index_type i)
     {
@@ -950,6 +1163,30 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOP(OPFLOW opflow,const doub
       grad_dev[xidx[i]] = isobj_gencost*MVAbase*(2.0*cost_alpha[i]*Pg + cost_beta[i]);
     }
   );
+
+  if(opflow->include_loadloss_variables) {
+    RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, loadparams->nload), 
+      RAJA_LAMBDA (RAJA::Index_type i)
+      {
+        double Pdloss = x_dev[l_xidx[i]];
+        double Qdloss = x_dev[l_xidx[i]+1];
+        grad_dev[l_xidx[i]] = loadparams->loadloss_penalty_dev_[i]*ps->MVAbase*ps->MVAbase*2*Pdloss;
+        grad_dev[l_xidx[i]+1] = loadparams->loadloss_penalty_dev_[i]*ps->MVAbase*ps->MVAbase*2*Qdloss;
+      }
+    );
+  }
+
+  if(opflow->include_powerimbalance_variables) {
+    RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, busparams->nbus), 
+      RAJA_LAMBDA (RAJA::Index_type i)
+      {
+        double Pimb = x_dev[b_xidxpimb[i]];
+        double Qimb = x_dev[b_xidxpimb[i]+1];
+        grad_dev[b_xidxpimb[i]] = busparams->powerimbalance_penalty_dev_[i]*ps->MVAbase*ps->MVAbase*2*Pimb;
+        grad_dev[b_xidxpimb[i]+1] = busparams->powerimbalance_penalty_dev_[i]*ps->MVAbase*ps->MVAbase*2*Qimb;
+      }
+    );
+  }
 
   ierr = PetscLogFlops(genparams->ngenON*6.0);CHKERRQ(ierr);
   //  PetscPrintf(MPI_COMM_SELF,"Exit gradient function\n");
@@ -961,14 +1198,13 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOP(OPFLOW opflow,const doub
 // allocated on the device. xl_dev and xu_dev are pointers to arrays on the GPU
 PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP(OPFLOW opflow,double *xl_dev,double *xu_dev)
 {
-  //  PBPOLRAJAHIOP      pbpolrajahiop=(PBPOLRAJAHIOP)opflow->model;
   PbpolModelRajaHiop* pbpolrajahiop = reinterpret_cast<PbpolModelRajaHiop*>(opflow->model);
   BUSParamsRajaHiop      *busparams=&pbpolrajahiop->busparams;
   GENParamsRajaHiop      *genparams=&pbpolrajahiop->genparams;
+  LOADParamsRajaHiop     *loadparams=&pbpolrajahiop->loadparams;
 
   PetscFunctionBegin;
   //  PetscPrintf(MPI_COMM_SELF,"Entered variable bounds\n");
-
   int* xidx = busparams->xidx_dev_;
   int* ispvpq = busparams->ispvpq_dev_;
   int* isref = busparams->isref_dev_;
@@ -977,6 +1213,7 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP(OPFLOW opflow,double *
   double* vm = busparams->vm_dev_;
   double* vmin = busparams->vmin_dev_;
   double* vmax = busparams->vmax_dev_;
+  int* b_xidxpimb = busparams->xidxpimb_dev_;
 
   /* Bounds for bus voltages */
   RAJA::forall<exago_raja_exec>(RAJA::RangeSegment(0, busparams->nbus)/* index set here */,
@@ -987,6 +1224,11 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP(OPFLOW opflow,double *
     
       xl_dev[xidx[i]+1] = isref[i]*vmin[i]  + ispvpq[i]*vmin[i] + isisolated[i]*vm[i];
       xu_dev[xidx[i]+1] = isref[i]*vmax[i]  + ispvpq[i]*vmax[i] + isisolated[i]*vm[i];
+      /* Bounds for Power Imbalance Variables (second bus variables) */
+      if(opflow->include_powerimbalance_variables) {
+        xl_dev[b_xidxpimb[i]] = xl_dev[b_xidxpimb[i]+1] = PETSC_NINFINITY;
+        xu_dev[b_xidxpimb[i]] = xu_dev[b_xidxpimb[i]+1] = PETSC_INFINITY;
+      }
     }
   );
 
@@ -1006,97 +1248,283 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP(OPFLOW opflow,double *
       xu_dev[idx[i]+1] = qt[i];
     }
   );
+
+  if(opflow->has_gensetpoint) {
+    /* Bounds on power deviation and set-point */
+    RAJA::forall< exago_raja_exec >(RAJA::RangeSegment(0, genparams->ngenON),
+      RAJA_LAMBDA (RAJA::Index_type i)
+      {
+        xl_dev[idx[i]+2]   = pb[i] - pt[i];
+	xu_dev[idx[i]+2]   = pt[i] - pb[i];
+	xl_dev[idx[i]+3]   = pb[i];
+	xu_dev[idx[i]+3]   = pt[i];
+      }
+   );
+  }
+
+  
+  /* Load loss lower and upper bounds */
+  if(opflow->include_loadloss_variables) {
+    int* l_xidx = loadparams->xidx_dev_; // Min/Max;
+    RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, loadparams->nload), 
+      RAJA_LAMBDA (RAJA::Index_type i)
+      {
+        xl_dev[l_xidx[i]] = 0;
+        xu_dev[l_xidx[i]] = 0;
+        xl_dev[l_xidx[i]+1] = 0;
+        xu_dev[l_xidx[i]+1] = 0;
+        RAJA::atomicMin<exago_raja_atomic>(&xl_dev[l_xidx[i]],loadparams->pl_dev_[i]);
+        RAJA::atomicMax<exago_raja_atomic>(&xu_dev[l_xidx[i]],loadparams->pl_dev_[i]);
+        RAJA::atomicMin<exago_raja_atomic>(&xl_dev[l_xidx[i]+1],loadparams->ql_dev_[i]);
+        RAJA::atomicMax<exago_raja_atomic>(&xu_dev[l_xidx[i]+1],loadparams->ql_dev_[i]);
+      }
+   );
+  }
+
   //  PetscPrintf(MPI_COMM_SELF,"Exit variable bounds\n");
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeSparseJacobian_PBPOLRAJAHIOP(OPFLOW opflow,int *iJacS_dev, int *jJacS_dev,double *MJacS_dev)
+PetscErrorCode OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW opflow,const double* x_dev,int *iJacS_dev, int *jJacS_dev,double *MJacS_dev)
+{
+  PetscFunctionBegin;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW opflow,const double* x_dev,int *iJacS_dev, int *jJacS_dev,double *MJacS_dev)
 {
   PbpolModelRajaHiop* pbpolrajahiop = reinterpret_cast<PbpolModelRajaHiop*>(opflow->model);
   GENParamsRajaHiop     *genparams=&pbpolrajahiop->genparams;
+  LOADParamsRajaHiop     *loadparams=&pbpolrajahiop->loadparams;
+  BUSParamsRajaHiop     *busparams=&pbpolrajahiop->busparams;
   //  PetscPrintf(MPI_COMM_SELF,"Entered sparse jacobian\n");
-
   if(iJacS_dev != NULL && jJacS_dev != NULL) {
+
+    /* Bus power imbalance contribution */
+    int* b_xidxpimb = busparams->xidxpimb_dev_;
+    int* b_gidx = busparams->gidx_dev_;
+    int* b_jacsp_idx = busparams->jacsp_idx_dev_;
+    int* b_jacsq_idx = busparams->jacsq_idx_dev_;
+    if(opflow->include_powerimbalance_variables) {
+      RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, busparams->nbus), 
+        RAJA_LAMBDA (RAJA::Index_type i)
+        {
+          iJacS_dev[b_jacsp_idx[i]] = b_gidx[i];
+          jJacS_dev[b_jacsp_idx[i]] = b_xidxpimb[i];
+          iJacS_dev[b_jacsq_idx[i]] = b_gidx[i]+1;
+          jJacS_dev[b_jacsq_idx[i]] = b_xidxpimb[i]+1;
+        }
+      );
+    }
+
     /* Generator contributions for row, col entries */
-    int* g_gidx = genparams->gidx_dev_;
+    int* g_gidxbus = genparams->gidxbus_dev_;
     int* g_xidx = genparams->xidx_dev_;
-    int* jacsp_idx = genparams->jacsp_idx_dev_;
-    int* jacsq_idx = genparams->jacsq_idx_dev_;
+    int* eqjacspbus_idx = genparams->eqjacspbus_idx_dev_;
+    int* eqjacsqbus_idx = genparams->eqjacsqbus_idx_dev_;
     RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, genparams->ngenON),
       RAJA_LAMBDA (RAJA::Index_type i) 
       {
-	iJacS_dev[jacsp_idx[i]] = g_gidx[i];
-	jJacS_dev[jacsp_idx[i]] = g_xidx[i];
+	iJacS_dev[eqjacspbus_idx[i]] = g_gidxbus[i];
+	jJacS_dev[eqjacspbus_idx[i]] = g_xidx[i];
 	
-	iJacS_dev[jacsq_idx[i]] = g_gidx[i]+1;
-	jJacS_dev[jacsq_idx[i]] = g_xidx[i]+1;
+	iJacS_dev[eqjacsqbus_idx[i]] = g_gidxbus[i]+1;
+	jJacS_dev[eqjacsqbus_idx[i]] = g_xidx[i]+1;
 	
       }
     );
+
+    if(opflow->has_gensetpoint) {
+      int* eqjacspgen_idx = genparams->eqjacspgen_idx_dev_;
+      int* g_geqidxgen = genparams->geqidxgen_dev_;
+      int* g_xidx = genparams->xidx_dev_;
+
+      RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, genparams->ngenON),
+	RAJA_LAMBDA (RAJA::Index_type i)
+        {
+          iJacS_dev[eqjacspgen_idx[i]]   = g_geqidxgen[i];
+	  jJacS_dev[eqjacspgen_idx[i]]   = g_xidx[i];
+
+          iJacS_dev[eqjacspgen_idx[i]+1] = g_geqidxgen[i];
+	  jJacS_dev[eqjacspgen_idx[i]+1] = g_xidx[i]+2;
+
+          iJacS_dev[eqjacspgen_idx[i]+2] = g_geqidxgen[i];
+	  jJacS_dev[eqjacspgen_idx[i]+2] = g_xidx[i]+3;
+
+          iJacS_dev[eqjacspgen_idx[i]+3] = g_geqidxgen[i]+1;
+	  jJacS_dev[eqjacspgen_idx[i]+3] = g_xidx[i]+3;
+	}
+      );
+    }
+
+    /* Loadloss contributions */
+    if(opflow->include_loadloss_variables) {
+      int* l_gidx = loadparams->gidx_dev_;
+      int* l_xidx = loadparams->xidx_dev_;
+      int* l_jacsp_idx = loadparams->jacsp_idx_dev_;
+
+      RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, loadparams->nload),
+      RAJA_LAMBDA (RAJA::Index_type i)
+      {
+        iJacS_dev[l_jacsp_idx[i]] = l_gidx[i];
+        jJacS_dev[l_jacsp_idx[i]] = l_xidx[i];
+        iJacS_dev[l_jacsp_idx[i]+1] = l_gidx[i]+1;
+        jJacS_dev[l_jacsp_idx[i]+1] = l_xidx[i]+1;
+      }
+      );
+    }
   }
 
   if(MJacS_dev != NULL) {
+    /* Bus Contribution - Power imbalance */
+    if(opflow->include_powerimbalance_variables) {
+      int* b_jacsp_idx = busparams->jacsp_idx_dev_;
+      int* b_jacsq_idx = busparams->jacsq_idx_dev_;
+      RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, busparams->nbus), 
+        RAJA_LAMBDA (RAJA::Index_type i)
+        {
+          MJacS_dev[b_jacsp_idx[i]] = 1; 
+          MJacS_dev[b_jacsq_idx[i]] = 1; 
+        }
+      );
+    }
+
     /* Generator contributions */
-    int* jacsp_idx = genparams->jacsp_idx_dev_;
-    int* jacsq_idx = genparams->jacsq_idx_dev_;
+    int* eqjacspbus_idx = genparams->eqjacspbus_idx_dev_;
+    int* eqjacsqbus_idx = genparams->eqjacsqbus_idx_dev_;
     RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, genparams->ngenON),
       RAJA_LAMBDA (RAJA::Index_type i) 
       {
-        MJacS_dev[jacsp_idx[i]] = -1.0;
-        MJacS_dev[jacsq_idx[i]] = -1.0;
+        MJacS_dev[eqjacspbus_idx[i]] = -1.0;
+        MJacS_dev[eqjacsqbus_idx[i]] = -1.0;
       }
     );
+
+    if(opflow->has_gensetpoint) {
+      int* eqjacspgen_idx = genparams->eqjacspgen_idx_dev_;
+
+      RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, genparams->ngenON),
+	RAJA_LAMBDA (RAJA::Index_type i)
+        {
+	  MJacS_dev[eqjacspgen_idx[i]]   = -1.0;
+	  MJacS_dev[eqjacspgen_idx[i]+1] = 1.0;
+	  MJacS_dev[eqjacspgen_idx[i]+2] = 1.0;
+	  MJacS_dev[eqjacspgen_idx[i]+3] = 1.0;
+	}
+      );
+    }
+    
+    /* Loadloss contributions - 2 contributions expected */
+    if(opflow->include_loadloss_variables) {
+      int* l_jacsp_idx = loadparams->jacsp_idx_dev_;
+      RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, loadparams->nload), 
+        RAJA_LAMBDA (RAJA::Index_type i)
+        {
+          MJacS_dev[l_jacsp_idx[i]] = -1; 
+          MJacS_dev[l_jacsp_idx[i]+ 1] = -1;
+        }
+      );
+    }
+
   }    
   //  PetscPrintf(MPI_COMM_SELF,"Exit sparse jacobian\n");
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOP(OPFLOW opflow,const double *x_dev,int *iHSS_dev, int *jHSS_dev,double *MHSS_dev)
+PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOP(OPFLOW opflow,const double *x_dev,const double *lambda_dev,int *iHSS_dev, int *jHSS_dev,double *MHSS_dev)
 {
   PbpolModelRajaHiop* pbpolrajahiop = reinterpret_cast<PbpolModelRajaHiop*>(opflow->model);
   PetscErrorCode ierr;
   GENParamsRajaHiop     *genparams=&pbpolrajahiop->genparams;
+  LOADParamsRajaHiop     *loadparams=&pbpolrajahiop->loadparams;
+  BUSParamsRajaHiop     *busparams=&pbpolrajahiop->busparams;
   PS             ps=opflow->ps;
   double         obj_factor = opflow->obj_factor;
   int            isobj_gencost=opflow->obj_gencost;
   double         MVAbase=ps->MVAbase;
   PetscInt       flps=0;
-
   //  PetscPrintf(MPI_COMM_SELF,"Entered sparse Hessian\n");
 
   if(iHSS_dev != NULL && jHSS_dev != NULL) {
+    /* Bus contribution - powerimbalance */
+    int* b_xidxpimb = busparams->xidxpimb_dev_;
+    int* b_hesssp_idx = busparams->hesssp_idx_dev_;
+    if(opflow->include_powerimbalance_variables) {
+      RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, busparams->nbus), 
+        RAJA_LAMBDA (RAJA::Index_type i)
+        {
+          iHSS_dev[b_hesssp_idx[i]] = b_xidxpimb[i];
+          jHSS_dev[b_hesssp_idx[i]] = b_xidxpimb[i];
+          iHSS_dev[b_hesssp_idx[i]+1] = b_xidxpimb[i]+1;
+          jHSS_dev[b_hesssp_idx[i]+1] = b_xidxpimb[i]+1;
+        }
+      );
+    }
+
     /* Generator contributions for row,col numbers */
     int* g_xidx = genparams->xidx_dev_;
-    int* jacsp_idx = genparams->jacsp_idx_dev_;
-    int* jacsq_idx = genparams->jacsq_idx_dev_;
+    int* hesssp_idx = genparams->hesssp_idx_dev_;
     RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, genparams->ngenON),
       RAJA_LAMBDA (RAJA::Index_type i) 
       {
-        iHSS_dev[jacsp_idx[i]] = g_xidx[i];
-        jHSS_dev[jacsp_idx[i]] = g_xidx[i];
-      
-	iHSS_dev[jacsq_idx[i]] = g_xidx[i]+1;
-	jHSS_dev[jacsq_idx[i]] = g_xidx[i]+1;
+        iHSS_dev[hesssp_idx[i]] = g_xidx[i];
+        jHSS_dev[hesssp_idx[i]] = g_xidx[i];
       }
     );
-    flps += 2*genparams->ngenON;
+
+    /* Loadloss contributions - two contributions*/
+    if(opflow->include_loadloss_variables) {
+      int* l_xidx = loadparams->xidx_dev_;
+      int* l_hesssp_idx = loadparams->hesssp_idx_dev_;
+      RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, genparams->ngenON),
+      RAJA_LAMBDA (RAJA::Index_type i) 
+      {
+        iHSS_dev[l_hesssp_idx[i]] = l_xidx[i];
+        jHSS_dev[l_hesssp_idx[i]] = l_xidx[i];
+        iHSS_dev[l_hesssp_idx[i]+1] = l_xidx[i]+1;
+        jHSS_dev[l_hesssp_idx[i]+1] = l_xidx[i]+1;
+      }
+      );
+    }
   }
 
   if(MHSS_dev != NULL) {
+    /* Bus contributions - power imbalance */ 
+    int* b_hesssp_idx = busparams->hesssp_idx_dev_;
+    if(opflow->include_powerimbalance_variables) {
+      RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, busparams->nbus), 
+        RAJA_LAMBDA (RAJA::Index_type i)
+        {
+          MHSS_dev[b_hesssp_idx[i]] = obj_factor*2.0*busparams->powerimbalance_penalty_dev_[i]*ps->MVAbase*ps->MVAbase; 
+          MHSS_dev[b_hesssp_idx[i]+1] = obj_factor*2.0*busparams->powerimbalance_penalty_dev_[i]*ps->MVAbase*ps->MVAbase; 
+        }
+      );
+    }
+
     /* Generator contributions */
-    int* jacsp_idx = genparams->jacsp_idx_dev_;
-    int* jacsq_idx = genparams->jacsq_idx_dev_;
+    int* hesssp_idx = genparams->hesssp_idx_dev_;
     double* cost_alpha = genparams->cost_alpha_dev_;
 
     RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, genparams->ngenON),
       RAJA_LAMBDA (RAJA::Index_type i) 
       {
-        MHSS_dev[jacsp_idx[i]] = isobj_gencost*obj_factor*2.0*cost_alpha[i]*MVAbase*MVAbase;
-	MHSS_dev[jacsq_idx[i]]  = 0.0;
+        MHSS_dev[hesssp_idx[i]] = isobj_gencost*obj_factor*2.0*cost_alpha[i]*MVAbase*MVAbase;
       }
     );
     flps += 5*genparams->ngenON;
+
+    /* Loadloss contributions - 2 contributions expected */
+    if(opflow->include_loadloss_variables) {
+      int* l_hesssp_idx = loadparams->hesssp_idx_dev_;
+      RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, loadparams->nload), 
+        RAJA_LAMBDA (RAJA::Index_type i)
+        {
+          MHSS_dev[l_hesssp_idx[i]] = obj_factor*2.0*loadparams->loadloss_penalty_dev_[i]*ps->MVAbase*ps->MVAbase;
+          MHSS_dev[l_hesssp_idx[i]+1] = obj_factor*2.0*loadparams->loadloss_penalty_dev_[i]*ps->MVAbase*ps->MVAbase;
+        }
+      );
+    }
   }    
   //  PetscPrintf(MPI_COMM_SELF,"Exit sparse hessian\n");
 
@@ -1112,9 +1540,9 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW
   PbpolModelRajaHiop* pbpolrajahiop = reinterpret_cast<PbpolModelRajaHiop*>(opflow->model);
   BUSParamsRajaHiop      *busparams=&pbpolrajahiop->busparams;
   LINEParamsRajaHiop     *lineparams=&pbpolrajahiop->lineparams;
-  int            nxsparse=2*opflow->ps->ngenON;
-  int            nx=opflow->nx;
-  const int      nxdense=nx-nxsparse;
+  // LOADParamsRajaHiop     *loadparams=&pbpolrajahiop->loadparams;
+  int            nxsparse=opflow->nxsparse;
+  const int      nxdense=opflow->nxdense;
   double         flps = 0.0;
   PetscErrorCode ierr;
 
@@ -1126,7 +1554,7 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW
   /** Although we will perform atomic operations on this view, we do not want
    * to use `RAJA::make_atomic_view` because explicit `RAJA::atomicAdd`s make
    * the atomic requirement clearer in the code */
-  RAJA::View<double, RAJA::Layout<2>> JacD_view(JacD_dev, 2*busparams->nbus, nxdense);
+  RAJA::View<double, RAJA::Layout<2>> JacD_view(JacD_dev, opflow->nconeq, nxdense);
 
   /* Zero out JacD */
   auto& resmgr = umpire::ResourceManager::getInstance();
@@ -1136,7 +1564,7 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW
 #else
   alloc = resmgr.getAllocator("HOST");
 #endif
-  registerWith(JacD_dev,2*busparams->nbus * nxdense,resmgr,alloc);
+  registerWith(JacD_dev,opflow->nconeq * nxdense,resmgr,alloc);
   resmgr.memset(JacD_dev,0);
 
   /* Jacobian from bus contributions */
@@ -1290,7 +1718,8 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLRAJAHIOP(OPFL
   LINEParamsRajaHiop     *lineparams=&pbpolrajahiop->lineparams;
   PetscErrorCode      ierr;
   double              flps=0.0;
-  int       nxsparse=2*opflow->ps->ngenON;
+  int       nxsparse=opflow->nxsparse;
+  int       nxdense=opflow->nxdense;
   int       nx=opflow->nx;
 
   PetscFunctionBegin;
@@ -1316,7 +1745,7 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLRAJAHIOP(OPFL
 #else
   alloc = resmgr.getAllocator("HOST");
 #endif
-  registerWith(JacD_dev, 2 * lineparams->nlinelim * (nx - nxsparse), resmgr, alloc);
+  registerWith(JacD_dev, 2 * lineparams->nlinelim * nxdense, resmgr, alloc);
   resmgr.memset(JacD_dev,0);
 
   /* Line contributions */
@@ -1447,8 +1876,8 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLRAJAHIOP(OPFLOW 
   PbpolModelRajaHiop* pbpolrajahiop = reinterpret_cast<PbpolModelRajaHiop*>(opflow->model);
   BUSParamsRajaHiop   *busparams=&pbpolrajahiop->busparams;
   LINEParamsRajaHiop  *lineparams=&pbpolrajahiop->lineparams;
-  int                 nxsparse = 2*opflow->ps->ngenON;
-  const int           nxdense = 2*opflow->ps->nbus;
+  int                 nxsparse = opflow->nxsparse;
+  const int           nxdense = opflow->nxdense;
   PetscErrorCode      ierr;
   PetscInt            flps=0;
 
@@ -1771,8 +2200,8 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLRAJAHIOP(OPFLO
 {
   PbpolModelRajaHiop* pbpolrajahiop = reinterpret_cast<PbpolModelRajaHiop*>(opflow->model);
   LINEParamsRajaHiop  *lineparams=&pbpolrajahiop->lineparams;
-  int                 nxsparse=2*opflow->ps->ngenON;
-  const int           nxdense = 2*opflow->ps->nbus;
+  int                 nxsparse=opflow->nxsparse;
+  const int           nxdense = opflow->nxdense;
   PetscErrorCode      ierr;
   PetscInt            flps=0;
 
@@ -2120,7 +2549,7 @@ PetscErrorCode OPFLOWComputeDenseInequalityConstraintHessian_PBPOLRAJAHIOP(OPFLO
 PetscErrorCode OPFLOWComputeDenseHessian_PBPOLRAJAHIOP(OPFLOW opflow,const double *x_dev, const double *lambda_dev,double *HDD_dev)
 {
   PetscErrorCode ierr;
-  int nxdense = 2*opflow->ps->nbus;
+  int nxdense = opflow->nxdense;
 
   if(!HDD_dev) PetscFunctionReturn(0);
 

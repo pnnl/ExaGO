@@ -31,7 +31,6 @@ public:
 
 
   ~OPFLOWHIOPInterface() {
-    PetscFree(idxn2sd_map);
   }
 
   bool get_prob_sizes(long long& n, long long& m);
@@ -95,16 +94,6 @@ public:
   void spdensetonatural(const double*,double*);
 private:
   OPFLOW   opflow;
-  PetscInt nxsparse,nxdense;
-  /* HIOP uses an ordering of variables where the sparse variablesd
-     are ordered first followed by the dense variables. OPFLOW uses
-     a different (natural) ordering where variables are ordered by
-     buses. idxn2sd_map is an index mapping to go back and forth between the sparse-dense ordering to natural ordering. 
-     
-     We assume that all generator powers (active and reactive power)
-     are sparse variables and all voltage variables are dense variables
-  */
-  PetscInt *idxn2sd_map;
 };
 
 typedef struct _p_OPFLOWSolver_HIOP *OPFLOWSolver_HIOP;
