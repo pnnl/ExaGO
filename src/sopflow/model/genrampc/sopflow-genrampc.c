@@ -451,7 +451,7 @@ PetscErrorCode SOPFLOWComputeObjandGradient_GENRAMPC(SOPFLOW sopflow,Vec X,Petsc
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SOPFLOWModelSetNumVariablesandConstraints_GENRAMPC(SOPFLOW sopflow,PetscInt *nxi,PetscInt *ngi,PetscInt *nconineqcoup)
+PetscErrorCode SOPFLOWModelSetNumVariablesandConstraints_GENRAMPC(SOPFLOW sopflow,PetscInt *nxi,PetscInt *ngi,PetscInt *nconeqcoup,PetscInt *nconineqcoup)
 {
   PetscInt s,ngenON;
   SCOPFLOW scopflow;

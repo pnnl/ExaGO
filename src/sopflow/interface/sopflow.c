@@ -37,7 +37,7 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout)
   sopflow->solver   = NULL;
   sopflow->model    = NULL;
 
-  sopflow->mode = 0;
+  sopflow->mode = 1;
 
   sopflow->ismulticontingency = PETSC_FALSE;
 
@@ -123,6 +123,7 @@ PetscErrorCode SOPFLOWDestroy(SOPFLOW *sopflow)
   ierr = PetscFree((*sopflow)->gstarti);CHKERRQ(ierr);
   ierr = PetscFree((*sopflow)->nxi);CHKERRQ(ierr);
   ierr = PetscFree((*sopflow)->ngi);CHKERRQ(ierr);
+  ierr = PetscFree((*sopflow)->nconeqcoup);CHKERRQ(ierr);
   ierr = PetscFree((*sopflow)->nconineqcoup);CHKERRQ(ierr);
 
   MPI_Comm_free(&(*sopflow)->subcomm);
@@ -444,9 +445,10 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
     }
 
     for(s=0; s < sopflow->ns; s++) {
+      ierr = OPFLOWHasGenSetPoint(sopflow->opflows[s],PETSC_TRUE);CHKERRQ(ierr);
       ierr = OPFLOWSetUp(sopflow->opflows[s]);CHKERRQ(ierr);
     }
-
+    
   } else {
     /* Create SCOPFLOW objects */
     ierr = PetscCalloc1(sopflow->ns,&sopflow->scopflows);CHKERRQ(ierr);
@@ -471,6 +473,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
     }
   }
 
+  ierr = PetscCalloc1(sopflow->ns,&sopflow->nconeqcoup);CHKERRQ(ierr);
   ierr = PetscCalloc1(sopflow->ns,&sopflow->nconineqcoup);CHKERRQ(ierr);
   ierr = PetscCalloc1(sopflow->ns,&sopflow->nxi);CHKERRQ(ierr);
   ierr = PetscCalloc1(sopflow->ns,&sopflow->ngi);CHKERRQ(ierr);
@@ -478,12 +481,12 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   ierr = PetscCalloc1(sopflow->ns,&sopflow->gstarti);CHKERRQ(ierr);
 
   /* Set number of variables and constraints */
-  ierr = (*sopflow->modelops.setnumvariablesandconstraints)(sopflow,sopflow->nxi,sopflow->ngi,sopflow->nconineqcoup);
+  ierr = (*sopflow->modelops.setnumvariablesandconstraints)(sopflow,sopflow->nxi,sopflow->ngi,sopflow->nconeqcoup,sopflow->nconineqcoup);
 
   if(!sopflow->ismulticontingency) {
     sopflow->nx = sopflow->nxi[0];
     sopflow->ncon = sopflow->ngi[0];
-    sopflow->nconcoup = sopflow->nconineqcoup[0];
+    sopflow->nconcoup = sopflow->nconeqcoup[0] + sopflow->nconineqcoup[0];
     opflow = sopflow->opflows[0];
     sopflow->nconeq = opflow->nconeq;
     sopflow->nconineq = opflow->nconineq;
@@ -493,7 +496,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
       sopflow->gstarti[i] = sopflow->gstarti[i-1] + sopflow->ngi[i-1];
       sopflow->nx += sopflow->nxi[i];
       sopflow->ncon += sopflow->ngi[i];
-      sopflow->nconcoup += sopflow->nconineqcoup[i];
+      sopflow->nconcoup += sopflow->nconeqcoup[i] + sopflow->nconineqcoup[i];
       opflow = sopflow->opflows[i];
       sopflow->nconeq   += opflow->nconeq;
       sopflow->nconineq += opflow->nconineq;

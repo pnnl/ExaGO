@@ -19,7 +19,7 @@
 struct _p_SOPFLOWModelOps {
   PetscErrorCode (*destroy)(SOPFLOW);
   PetscErrorCode (*setup)(SOPFLOW);
-  PetscErrorCode (*setnumvariablesandconstraints)(SOPFLOW,PetscInt*,PetscInt*,PetscInt*); /* Set number of variables for buses and branches, and total number of variables */
+  PetscErrorCode (*setnumvariablesandconstraints)(SOPFLOW,PetscInt*,PetscInt*,PetscInt*,PetscInt*); /* Set number of variables and the equality/inequality coupling constraints for each scenario */
   PetscErrorCode (*setvariablebounds)(SOPFLOW,Vec,Vec); /* Upper and lower bounds on the vector */
   PetscErrorCode (*setconstraintbounds)(SOPFLOW,Vec,Vec); /* Lower and upper bounds on constraints */
   PetscErrorCode (*setvariableandconstraintbounds)(SOPFLOW,Vec,Vec,Vec,Vec); /* Lower and upper bounds on variables and constraints */
@@ -63,7 +63,7 @@ struct _p_SOPFLOW{
   PetscInt ncon,Ncon; /* Number of constraints */
   PetscInt nconeq,Nconeq; /* Local and global number of equality constraints */
   PetscInt nconineq, Nconineq; /* Local and global number of inequality constraints */
-  PetscInt *nconineqcoup;     /* Number of inequality coupling constraints for each scenario */
+  PetscInt *nconeqcoup, *nconineqcoup;     /* Number of equality/inequality coupling constraints for each scenario */
   PetscInt nconcoup,Nconcoup; /* Number of coupling constraints */
   PetscInt *nxi; /* Number of variables for each scenario */
   PetscInt *ngi; /* Number of constraints for each scenario (includes coupling constraints) */
