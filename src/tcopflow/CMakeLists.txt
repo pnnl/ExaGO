@@ -24,7 +24,7 @@ exago_add_library(
   PETSC::ALL
   ExaGO::UTILS
   ExaGO::PS
-  ${EXAGO_PFLOW_LIBS}
+  ExaGO::PFLOW
   ExaGO::OPFLOW
   ExaGO::SCOPFLOW
   $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_C>
