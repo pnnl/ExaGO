@@ -48,6 +48,7 @@ exago_add_library(
   $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_C>
   PETSC::ALL
   ExaGO::UTILS
+  ExaGO::PFLOW
   ExaGO::PS
   ${LAPACK_LIRBARIES}
   OUTPUT_NAME
