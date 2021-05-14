@@ -1,6 +1,6 @@
 #include <version.h>
 #include <common.h>
-#include <utils.h>
+#include <utils.hpp>
 #include <exago_config.h>
 
 const char* ExaGODependencyNames[ExaGONumDependencies]

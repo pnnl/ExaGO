@@ -1,6 +1,6 @@
 #ifndef EXAGO_UTILSIMPL_H
 #define EXAGO_UTILSIMPL_H
-#include <utils.h>
+#include <utils.hpp>
 
 /** Get file pointer for ExaGO logging */
 PETSC_EXTERN PetscErrorCode ExaGOLogGetLoggingFilePointer(FILE**);

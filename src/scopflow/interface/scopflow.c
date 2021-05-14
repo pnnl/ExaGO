@@ -1,7 +1,7 @@
 #include <private/opflowimpl.h>
 #include <private/tcopflowimpl.h>
 #include <private/scopflowimpl.h>
-#include "utils.h"
+#include <utils.hpp>
 
 /**
  * @brief Creates a security constrained optimal power flow application object

@@ -2,16 +2,40 @@
 #define EXAGO_UTILS_H
 #include <petsc.h>
 #include "exago_config.h"
+#include <string>
+#include <stdexcept>
 
-typedef enum {
+enum ExaGOVerbosityLevel {
   EXAGO_LOG_INFO=0,
   EXAGO_LOG_WARN,
   EXAGO_LOG_ERROR,
   EXAGO_LOG_DISABLE,
   EXAGO_LOG_NUM_LOG_LEVELS,
-} ExaGOVerbosityLevel;
+};
 
 PETSC_EXTERN const char* ExaGOVerbosityNames[EXAGO_LOG_NUM_LOG_LEVELS];
+
+/**
+ * @brief ExaGO Error interfaces between error codes encountered in ExaGO
+ * proper as well as error codes recieved from PETSc.
+ */
+struct ExaGOError : public std::exception {
+  ExaGOError() : message{"ExaGO Error"} {}
+  ExaGOError(const char* message) : message{message} {}
+  ExaGOError(PetscErrorCode);
+
+  /* The name _what_ is not in PascalCase like the rest of ExaGO because
+   * ExaGOError inherits from the standard library exception which defines
+   * _what_. */
+  virtual const char* what() const noexcept { return message.c_str(); };
+  virtual bool IsPetscError() const noexcept { return is_petsc_error; }
+protected:
+  std::string message;
+  bool is_petsc_error = false;
+};
+
+/* Used to interface Petsc error return codes with ExaGO errors */
+extern void ExaGOCheckError(int e);
 
 /**
  * Set the name for the logfile to be used; must be set before

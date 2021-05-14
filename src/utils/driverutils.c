@@ -1,5 +1,5 @@
 #include <common.h>
-#include <utils.h>
+#include <utils.hpp>
 #include <petscsys.h>
 #include <private/utilsimpl.h>
 #include <exago_config.h>

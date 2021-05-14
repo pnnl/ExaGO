@@ -1,11 +1,11 @@
 # Sources for utility functions shared across libraries
 
 # Specify sources for utility functions shared across libraries
-set(UTILS_SRC utils.c version.c driverutils.c scopflowutils.c comm.c)
+set(UTILS_SRC utils.cpp version.c driverutils.c scopflowutils.c comm.c)
 
 # Headers
 set(UTILS_HEADERS ${CMAKE_SOURCE_DIR}/include/common.h
-                  ${CMAKE_SOURCE_DIR}/include/utils.h
+                  ${CMAKE_SOURCE_DIR}/include/utils.hpp
 )
 
 set_source_files_properties(${UTILS_SRC} PROPERTIES LANGUAGE CXX)

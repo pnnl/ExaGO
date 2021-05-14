@@ -1,7 +1,7 @@
 static char help[] = "User example calling PFLOW. Reads data in PSSE raw format\n\n";
 
 #include <pflow.h>
-#include <utils.h>
+#include <utils.hpp>
 #include <exago_config.h>
 
 int main(int argc,char **argv)

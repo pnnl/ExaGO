@@ -6,6 +6,21 @@
 #include <dirent.h>
 #include <exago_config.h>
 
+ExaGOError::ExaGOError(PetscErrorCode ierr) : is_petsc_error{true} {
+  const char *error_message;
+  char *specific_error_message;
+  PetscErrorMessage(ierr, &error_message, &specific_error_message);
+  message = error_message;
+  message += specific_error_message;
+}
+
+void ExaGOCheckError(int e)
+{
+  if (static_cast<int>(e) > PETSC_ERR_MIN_VALUE
+      && static_cast<int>(e) < PETSC_ERR_MAX_VALUE)
+    throw ExaGOError(e);
+}
+
 static PetscBool ExaGOLogIsLoggerInitialized=PETSC_FALSE;
 
 /** This macro is undef'ed at the end of this header, don't use elsewhere.

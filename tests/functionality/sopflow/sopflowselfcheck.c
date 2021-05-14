@@ -1,6 +1,6 @@
 #include <sopflow.h>
 #include <sopflowselfcheck.h>
-#include <utils.h>
+#include <utils.hpp>
 #include <libgen.h>
 
 #define ExaGOSelfcheckSOPFLOWNumAnswers 5

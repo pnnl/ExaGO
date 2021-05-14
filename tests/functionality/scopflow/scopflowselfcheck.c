@@ -1,6 +1,6 @@
 #include <scopflowselfcheck.h>
 #include <scopflow.h>
-#include <utils.h>
+#include <utils.hpp>
 #include <libgen.h>
 
 #define ExaGOSelfcheckSCOPFLOWNumAnswers 6 
