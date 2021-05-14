@@ -1,6 +1,6 @@
 #include <opflow.h>
 #include <opflowselfcheck.h>
-#include <utils.h>
+#include <utils.hpp>
 #include <libgen.h>
 
 #define ExaGOSelfcheckOPFLOWNumAnswers 54

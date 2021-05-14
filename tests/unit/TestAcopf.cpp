@@ -4,7 +4,7 @@
 
 #include <private/opflowimpl.h>
 #include <exago_config.h>
-#include <utils.h>
+#include <utils.hpp>
 
 #include "opflow/OpflowTests.hpp"
 #include "TestAcopfUtils.hpp"

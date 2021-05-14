@@ -3,7 +3,7 @@ static char help[] = "User example calling SCOPFLOW.\n\n";
 #include <exago_config.h>
 #include <scopflow.h>
 #include <scopflowselfcheck.h>
-#include <utils.h>
+#include <utils.hpp>
 
 
 int main(int argc,char **argv)

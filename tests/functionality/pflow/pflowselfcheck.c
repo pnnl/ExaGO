@@ -1,6 +1,6 @@
 #include<pflowselfcheck.h>
 #include<pflow.h>
-#include<utils.h>
+#include<utils.hpp>
 #include<libgen.h>
 
 #define ExaGOSelfcheckPFLOWNumAnswers 3

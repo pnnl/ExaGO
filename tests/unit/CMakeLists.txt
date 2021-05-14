@@ -14,8 +14,11 @@ add_executable(testAcopf TestAcopf.cpp utils/TestAcopfUtils.cpp)
 target_link_libraries(testAcopf ExaGO::OPFLOW ${EXAGO_PFLOW_APP_LIBS})
 target_include_directories(testAcopf PRIVATE ./utils)
 
+add_executable(testErrorHandler TestErrorHandler.cpp)
+target_link_libraries(testErrorHandler ExaGO::UTILS)
+
 if(EXAGO_INSTALL_TESTS)
-  install(TARGETS testAcopf DESTINATION ./)
+  install(TARGETS testAcopf testErrorHandler DESTINATION ./)
 
   # Unit tests
   exago_add_test(
@@ -31,4 +34,6 @@ if(EXAGO_INSTALL_TESTS)
     NETFILES
     ${network_files}
   )
+
+  exago_add_test(NAME UNIT_TESTS_UTILS COMMAND $<TARGET_FILE:testErrorHandler>)
 endif()

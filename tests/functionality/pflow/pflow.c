@@ -3,7 +3,7 @@ static char help[] = "PFLOW Functionality Tests.\n\n";
 #include <pflow.h>
 #include <exago_config.h>
 #include <pflowselfcheck.h>
-#include <utils.h>
+#include <utils.hpp>
 
 int main(int argc,char **argv)
 {

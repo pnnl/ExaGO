@@ -1,6 +1,6 @@
 #include <tcopflow.h>
 #include <tcopflowselfcheck.h>
-#include <utils.h>
+#include <utils.hpp>
 #include <libgen.h>
 
 #define EXAGOSelfcheckTCOPFLOWNumAnswers 1
