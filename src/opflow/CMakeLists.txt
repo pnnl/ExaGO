@@ -12,8 +12,11 @@ if(EXAGO_ENABLE_RAJA)
   )
 endif()
 
-set(OPFLOW_SOLVER_SRC solver/tao/opflow-tao.c solver/ipopt/opflow-ipopt.c
-                      solver/hiop/opflow-hiop.cpp
+set(OPFLOW_SOLVER_SRC
+    solver/tao/opflow-tao.c
+    solver/ipopt/opflow-ipopt.c
+    solver/hiop/opflow-hiop.cpp
+    solver/hiop/opflow-hiopsparse.cpp
 )
 
 set(OPFLOW_SRC interface/opflow.c interface/opflowregi.c

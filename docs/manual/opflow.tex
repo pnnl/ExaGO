@@ -228,19 +228,19 @@ Power balance formulation with polar coordinates used with \hiop and \raja. This
   \item \ipopt~is a popular open-source package for solving nonlinear optimization problems. It is the most robust of the solvers implemented for solving \opflow. However, it can be run only on a single process and does not have GPU support. Option: \\
   \opflowoption{-opflow\_solver IPOPT}
   \item The Toolkit for Applied Optimization (\tao) is a toolkit available through \petsc for solving optimization problems. TAO includes a interior-point algorithm that is used by OPFLOW. The TAO algorithm is fully parallel, but is less robust compared to IPOPT. Currently, the TAO solver can only be used with the power balance cartesian model. Option:\\ \opflowoption{-opflow\_solver TAO} \opflowoption{-opflow\_model POWER\_BALANCE\_CARTESIAN}
-  \item \hiop~ is a high-performance optimization library that implements an interior-point algorithm for solving nonlinear optimization problems. The library supports execution both on the CPU and the GPU. Options: \\ CPU: \opflowoption{-opflow\_solver HIOP} {\opflowoption{-opflow\_model POWER\_BALANCE\_HIOP}} \\ GPU: \opflowoption{-opflow\_solver HIOP} {\opflowoption{-opflow\_model PBPOLRAJAHIOP}} \\ The option \opflowoption{-hiop\_ipopt\_debug} can be used with the CPU option in order to use an adapter that verifies the correctness of the first and second order derivates when compared to \ipopt. This may be useful when debugging experimental changes.
+  \item \hiop~ is a high-performance optimization library that implements an interior-point algorithm for solving nonlinear optimization problems. There are two solvers available from the \hiop library: Mixed sparse-dense formulation {\opflowoption{-opflow\_solver HIOP}}, and sparse formulation {\opflowoption{-opflow\_solver HIOPSPARSE}}The library supports execution both on the CPU and the GPU. Options: \\ CPU: \opflowoption{-opflow\_solver HIOP} {\opflowoption{-opflow\_model POWER\_BALANCE\_HIOP}} \\ GPU: \opflowoption{-opflow\_solver HIOP} {\opflowoption{-opflow\_model PBPOLRAJAHIOP}} \\ The option \opflowoption{-hiop\_ipopt\_debug} can be used with the CPU option in order to use an adapter that verifies the correctness of the first and second order derivates when compared to \ipopt. This may be useful when debugging experimental changes.
 \end{enumerate}
 
 \begin{table}
   \centering
   \caption{OPFLOW Model-solver compatibility}
-  \begin{tabular}{|c|c|c|c|}
+  \begin{tabular}{|c|c|c|c|c|}
     \hline
-    Model & \ipopt & \hiop & \tao \\ \hline
-    POWER\_BALANCE\_POLAR & \checkmark & & \\ \hline
-    POWER\_BALANCE\_CARTESIAN & \checkmark &  & \checkmark \\ \hline
-    POWER\_BALANCE\_HIOP & & \checkmark & \\ \hline
-    PBPOLRAJAHIOP & & \checkmark & \\ \hline
+    Model & \ipopt & \hiop & \tao \\ HIOPSPARSE \hline
+    POWER\_BALANCE\_POLAR & \checkmark & & \checkmark \\ \hline
+    POWER\_BALANCE\_CARTESIAN & \checkmark &  & \checkmark & \\ \hline
+    POWER\_BALANCE\_HIOP & & \checkmark & & \\ \hline
+    PBPOLRAJAHIOP & & \checkmark & & \\ \hline
   \end{tabular}
 \label{tab:opflow_model_solver_compatibility}
 \end{table}

@@ -339,8 +339,9 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
   }
 #endif
 
-  hiop->mds->options->SetStringValue("duals_update_type", "linear");
-  hiop->mds->options->SetStringValue("duals_init", "zero");
+  //  hiop->mds->options->SetStringValue("duals_update_type", "linear");
+  //  hiop->mds->options->SetStringValue("duals_init", "zero");
+
   hiop->mds->options->SetStringValue("fixed_var", "relax");
 
   hiop->mds->options->SetStringValue("Hessian", "analytical_exact");
@@ -350,6 +351,10 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
   hiop->mds->options->SetIntegerValue("verbosity_level", verbose_level);
   hiop->mds->options->SetNumericValue("mu0", 1e-1);
   hiop->mds->options->SetNumericValue("tolerance", opflow->tolerance);
+
+  hiop->mds->options->SetNumericValue("bound_relax_perturb",1e-4);
+  hiop->mds->options->SetStringValue("scaling_type","none");
+
 
   /* Error if model is not power balance hiop or power balance raja hiop */
   ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBPOLHIOP,&ismodelpbpolhiop);CHKERRQ(ierr);

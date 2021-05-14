@@ -107,7 +107,7 @@ OPFLOW can be used with several different models i.e., representations of networ
 
 OPFLOW works with the following optimization solvers.
 1. [IPOPT](https://github.com/coin-or/Ipopt)
-1. [HiOp](https://github.com/LLNL/hiop)
+1. [HiOp](https://github.com/LLNL/hiop) - sparse and mixed sparse-dense formulations
 1. [PETSc/TAO](https://www.mcs.anl.gov/petsc/)
 
 IPOPT is a serial solver, while PETSc/TAO can be used in parallel. HiOP supports both CPU (serial) and GPU-based solvers.
@@ -116,13 +116,12 @@ IPOPT is a serial solver, while PETSc/TAO can be used in parallel. HiOP supports
 
 When selecting a solver or a model, the following table should be refered to as not all solvers are compatible with all models.
 
-
-|  Model name /Solver name             | IPOPT | HIOP | TAO | 
-|:--------------------------|:-----:|:----:|:---------:|
-| POWER_BALANCE_POLAR        | x     |      |           |
-| POWER_BALANCE_CARTESIAN    | x     |      | x         |
-| POWER_BALANCE_HIOP         |       | x    |           |
-| PBPOLRAJAHIOP              |       | x    |          |
+|  Model name /Solver name             | IPOPT | HIOP | TAO | HIOPSPARSE |
+|:--------------------------|:-----:|:----:|:---------:|:-----:|
+| POWER_BALANCE_POLAR        | x     |      |           | x |
+| POWER_BALANCE_CARTESIAN    | x     |      | x         |   |
+| POWER_BALANCE_HIOP         |       | x    |           |   |
+| PBPOLRAJAHIOP              |       | x    |           |   |
 
 #### Running OPFLOW on GPU
 OPFLOW can execute on the GPU using the HIOP solver and PBPOLRAJAHIOP model. Note that both HIOP and ExaGO must be built with RAJA and UMPIRE libraries for executing on the GPU. The execution command for running OPFLOW on GPU is

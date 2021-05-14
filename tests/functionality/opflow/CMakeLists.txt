@@ -66,6 +66,30 @@ if(EXAGO_INSTALL_TESTS)
       ${network_files}
     )
 
+    exago_add_test(
+      NAME
+      OPFLOW_HIOP_SPARSE_${opflow_init}
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:app_opflow>
+      -opflow_initialization
+      ${opflow_init}
+      -hiop_compute_mode
+      CPU
+      -opflow_solver
+      HIOPSPARSE
+      -opflow_ignore_lineflow_constraints
+      0
+      -opflow_model
+      POWER_BALANCE_POLAR
+      -opflow_genbusvoltage
+      VARIABLE_WITHIN_BOUNDS
+      DEPENDS
+      HIOP
+      NETFILES
+      ${network_files}
+    )
+
     if(EXAGO_ENABLE_GPU)
       set(hiop_compute_mode GPU)
     else()

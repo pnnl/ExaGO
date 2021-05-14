@@ -53,8 +53,6 @@ option(EXAGO_ENABLE_IPOPT "Enable Ipopt support" OFF)
 # HiOP support is disabled by default
 option(EXAGO_ENABLE_HIOP "Enable HiOP support" OFF)
 
-option(EXAGO_ENABLE_HIOP_SPARSE "Enable HiOp's HIOP_SPARSE option" OFF)
-
 # MPI support is enabled by default
 option(EXAGO_ENABLE_MPI "Enable MPI support" ON)
 
