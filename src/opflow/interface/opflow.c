@@ -577,6 +577,7 @@ PetscErrorCode OPFLOWSetModel(OPFLOW opflow,const char* modelname)
   opflow->modelops.setup                          = 0;
   opflow->modelops.setnumvariables                = 0;
   opflow->modelops.setnumconstraints              = 0;
+  opflow->modelops.updatevariablebounds           = 0;
   opflow->modelops.setvariablebounds              = 0;
   opflow->modelops.setvariableboundsarray         = 0;
   opflow->modelops.setconstraintbounds            = 0;
@@ -607,7 +608,9 @@ PetscErrorCode OPFLOWSetModel(OPFLOW opflow,const char* modelname)
   opflow->modelops.computedenseequalityconstraintjacobianhiop = 0;
   opflow->modelops.computedenseinequalityconstraintjacobianhiop = 0;
   opflow->modelops.computedensehessianhiop        = 0;
-
+  opflow->modelops.computeauxobjective            = 0;
+  opflow->modelops.computeauxgradient             = 0;
+  opflow->modelops.computeauxhessian              = 0;
 
   ierr = PetscStrcpy(opflow->modelname,modelname);CHKERRQ(ierr);
   /* Call the underlying implementation constructor */
@@ -1237,6 +1240,10 @@ PetscErrorCode OPFLOWComputeVariableBounds(OPFLOW opflow,Vec Xl, Vec Xu)
     ierr = VecRestoreArray(Xl,&xl);CHKERRQ(ierr);
     ierr = VecRestoreArray(Xu,&xu);CHKERRQ(ierr);
   }
+
+  if(opflow->modelops.updatevariablebounds) {
+    ierr = (*opflow->modelops.updatevariablebounds)(opflow,Xl,Xu,opflow->userctx);CHKERRQ(ierr);
+  }
   PetscFunctionReturn(0);
 }
 
@@ -1732,3 +1739,46 @@ PetscErrorCode OPFLOWGetObjectiveType(OPFLOW opflow,OPFLOWObjectiveType *objtype
   *objtype = opflow->objectivetype;
   PetscFunctionReturn(0);
 }
+
+/*
+  OPFLOWSetAuxillaryObjective - Set additional objective and gradient functions
+
+  Input Parameters:
++ opflow - opflow object
+. objfunc - objective function
+. gradfunc - associated function
+- userctx - user struct to pass data needed for objective and gradient calculation
+
+  Notes:
+    objfunc and gradfunc are called at every iteration of the optimization
+
+    objfunc and should have the following signatures:
+        PetscErrorCode MyObjectiveFunction(OPFLOW opflow,const double *x, double *obj, void* userctx)
+        PetscErrorCode MyGradientFunction(OPFLOW opflow,const double *x, double *grad, void* userctx)
+*/
+
+PetscErrorCode OPFLOWSetAuxillaryObjective(OPFLOW opflow,OPFLOWAuxObjectiveFunction objfunc,OPFLOWAuxGradientFunction gradfunc,OPFLOWAuxHessianFunction hessfunc,void* userctx)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  opflow->modelops.computeauxobjective = objfunc;
+  opflow->modelops.computeauxgradient  = gradfunc;
+  opflow->modelops.computeauxhessian   = hessfunc;
+  opflow->userctx = userctx;
+  PetscFunctionReturn(0);
+}
+
+/* Sets a user-defined function to update/change the vaariable bounds.
+   Called in ComputeVariableBounds after OPFLOW computes its variable bounds
+*/
+PetscErrorCode OPFLOWSetUpdateVariableBoundsFunction(OPFLOW opflow,PetscErrorCode (*updatefunc)(OPFLOW,Vec,Vec,void*),void *ctx)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  opflow->modelops.updatevariablebounds = updatefunc;
+  opflow->userctx = ctx;
+  PetscFunctionReturn(0);
+}
+

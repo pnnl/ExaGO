@@ -32,6 +32,7 @@ struct _p_OPFLOWModelOps {
   PetscErrorCode (*setnumvariables)(OPFLOW,PetscInt*,PetscInt*,PetscInt*); /* Set number of variables for buses and branches, and total number of variables */
   PetscErrorCode (*setnumconstraints)(OPFLOW,PetscInt*,PetscInt*,PetscInt*,PetscInt*); /* Set number of equality and inequality constraints */
   PetscErrorCode (*setvariablebounds)(OPFLOW,Vec,Vec); /* Upper and lower bounds on the vector */
+  PetscErrorCode (*updatevariablebounds)(OPFLOW,Vec,Vec,void*); /* Upper and lower bounds on the vector */
   PetscErrorCode (*setvariableboundsarray)(OPFLOW,double*,double*); /* Array version of set variable bounds */
   PetscErrorCode (*setconstraintbounds)(OPFLOW,Vec,Vec); /* Lower and upper bounds on constraints */
   PetscErrorCode (*setconstraintboundsarray)(OPFLOW,double*,double*); /* Array version of constraint bounds */
@@ -64,6 +65,14 @@ struct _p_OPFLOWModelOps {
   PetscErrorCode (*computedenseinequalityconstraintjacobianhiop)(OPFLOW,const double*,double*); /* Dense Jacobian */
   PetscErrorCode (*computedensehessianhiop)(OPFLOW,const double*,const double*,double*); /* Dense Hessian */
 
+  /* Auxillary objective,gradient and hessian functions */
+  /* Some applications may require to add custom objective function values in addition to what
+     is being availble in OPFLOW. These auxillary functions provide setting custom objective,
+     gradient, and hessian
+  */
+  PetscErrorCode (*computeauxobjective)(OPFLOW,const double*,double*,void*); /* Auxillary objective function */
+  PetscErrorCode (*computeauxgradient)(OPFLOW,const double*,double*,void*); /* Auxillary gradient */
+  PetscErrorCode (*computeauxhessian)(OPFLOW,const double*,Mat,void*); /* Auxillary hessian */
 };
 
 struct _p_OPFLOWSolverOps {
@@ -206,6 +215,10 @@ struct _p_OPFLOW{
 
   /** @brief number of nonzeros used with HiOP MDS */
   PetscInt nnz_eqjacsp,nnz_ineqjacsp,nnz_hesssp;
+
+  /** @brief user provided data struct for auxillary objective */
+  void *userctx;
+
 };
 
 /* Registers all the OPFLOW models */

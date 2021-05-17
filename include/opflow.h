@@ -94,6 +94,14 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetGenBusVoltageType(OPFLOW,OPFLOWGenBusVoltag
 PETSC_EXTERN PetscErrorCode OPFLOWGetObjectiveType(OPFLOW,OPFLOWObjectiveType*);
 PETSC_EXTERN PetscErrorCode OPFLOWSetObjectiveType(OPFLOW,OPFLOWObjectiveType);
 
+typedef PetscErrorCode (*OPFLOWAuxObjectiveFunction)(OPFLOW,const double*,double*,void*);
+typedef PetscErrorCode (*OPFLOWAuxGradientFunction)(OPFLOW,const double*,double*,void*);
+typedef PetscErrorCode (*OPFLOWAuxHessianFunction)(OPFLOW,const double*,Mat,void*);
+
+PETSC_EXTERN PetscErrorCode OPFLOWSetAuxillaryObjective(OPFLOW,OPFLOWAuxObjectiveFunction,OPFLOWAuxGradientFunction,OPFLOWAuxHessianFunction,void*);
+
+PETSC_EXTERN PetscErrorCode OPFLOWSetUpdateVariableBoundsFunction(OPFLOW,PetscErrorCode (*)(OPFLOW,Vec,Vec,void*),void*);
+
 #endif
 
 

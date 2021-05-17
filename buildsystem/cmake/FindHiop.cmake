@@ -9,15 +9,19 @@ User may set:
 
 include(CheckCXXSymbolExists)
 
-find_library(HIOP_LIBRARY
-  NAMES
-  libhiop.so hiop # Prefer shared over static since static causes issues
-                  # linking with mpi on some platforms
-  PATHS
-  ${HIOP_DIR} $ENV{HIOP_DIR} ${HIOP_ROOT_DIR}
-  ENV LD_LIBRARY_PATH ENV DYLD_LIBRARY_PATH
-  PATH_SUFFIXES
-  lib64 lib)
+find_library(
+  HIOP_LIBRARY
+  NAMES libhiop.so hiop # Prefer shared over static since static causes issues
+                        # linking with mpi on some platforms
+  PATHS ${HIOP_DIR}
+        $ENV{HIOP_DIR}
+        ${HIOP_ROOT_DIR}
+        ENV
+        LD_LIBRARY_PATH
+        ENV
+        DYLD_LIBRARY_PATH
+  PATH_SUFFIXES lib64 lib
+)
 
 if(HIOP_LIBRARY)
   get_filename_component(HIOP_LIBRARY_DIR ${HIOP_LIBRARY} DIRECTORY)
@@ -44,8 +48,12 @@ if(HIOP_LIBRARY AND HIOP_INCLUDE_DIR)
     target_include_directories(HiOp INTERFACE ${CUDA_TOOLKIT_INCLUDE})
   endif()
 
-  check_cxx_symbol_exists(HIOP_SPARSE ${HIOP_INCLUDE_DIR}/hiop_defs.hpp EXAGO_ENABLE_HIOP_SPARSE)
-  check_cxx_symbol_exists(HIOP_USE_COINHSL ${HIOP_INCLUDE_DIR}/hiop_defs.hpp EXAGO_HIOP_USE_COINHSL)  
+  check_cxx_symbol_exists(
+    HIOP_SPARSE ${HIOP_INCLUDE_DIR}/hiop_defs.hpp EXAGO_ENABLE_HIOP_SPARSE
+  )
+  check_cxx_symbol_exists(
+    HIOP_USE_COINHSL ${HIOP_INCLUDE_DIR}/hiop_defs.hpp EXAGO_HIOP_USE_COINHSL
+  )
 
   if(EXAGO_ENABLE_HIOP_SPARSE AND EXAGO_HIOP_USE_COINHSL)
     include(FindExaGOCOINHSL)

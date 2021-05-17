@@ -65,6 +65,9 @@ PETSC_EXTERN PetscErrorCode PSSetGenDispatchandStatus(PS,PetscInt,PetscInt,Petsc
 PETSC_EXTERN PetscErrorCode PSCheckandSetRefBus(PS);
 PETSC_EXTERN PetscErrorCode PSGetTotalGeneration(PS,PetscScalar*,PetscScalar*);
 PETSC_EXTERN PetscErrorCode PSComputeParticipationFactors(PS);
+PETSC_EXTERN PetscErrorCode PSSetGenStatus(PS,PetscInt,const char*,PetscInt);
+PETSC_EXTERN PetscErrorCode PSSetLineStatus(PS,PetscInt,PetscInt,const char*,PetscInt);
+
 
 #endif
 
