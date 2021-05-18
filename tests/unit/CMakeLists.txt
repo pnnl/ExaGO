@@ -35,6 +35,8 @@ if(EXAGO_INSTALL_TESTS)
     ${CMAKE_SOURCE_DIR}/datafiles/test_validation
     NETFILES
     ${network_files}
+    -opflow_genbusvoltage
+    VARIABLE_WITHIN_BOUNDS
   )
 
   exago_add_test(NAME UNIT_TESTS_UTILS COMMAND $<TARGET_FILE:testErrorHandler>)
