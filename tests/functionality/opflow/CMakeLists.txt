@@ -196,27 +196,6 @@ if(EXAGO_INSTALL_TESTS)
 
   exago_add_test(
     NAME
-    FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_${model}
-    DEPENDS
-    HIOP
-    RAJA
-    NETFILES
-    ${network_files_no200}
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:testOpflowFunctionality>
-    -opflow_solver
-    HIOPSPARSE
-    -opflow_model
-    POWER_BALANCE_POLAR
-    -opflow_tolerance
-    ${tolerance}
-    -opflow_genbusvoltage
-    VARIABLE_WITHIN_BOUNDS
-  )
-
-  exago_add_test(
-    NAME
     FUNCTIONALITY_TEST_OPFLOW_TAO_POWER_BALANCE_CARTESIAN
     NETFILES
     ${network_files}
