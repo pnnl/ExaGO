@@ -297,3 +297,6 @@ else()
   set(MPICMD ${MPICMD})
   set(RUNCMD ${RUNCMD} ${EXAGO_EXTRA_MPI_FLAGS})
 endif()
+
+# Build tests
+add_subdirectory(tests)
