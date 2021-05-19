@@ -73,6 +73,7 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOLRAJAHIOP(OPFLOW opflow,Vec Xl,Vec Xu
 
   ierr = VecDestroy(&Xlt);CHKERRQ(ierr);
   ierr = VecDestroy(&Xut);CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
