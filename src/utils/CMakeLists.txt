@@ -1,7 +1,7 @@
 # Sources for utility functions shared across libraries
 
 # Specify sources for utility functions shared across libraries
-set(UTILS_SRC utils.cpp version.c driverutils.c scopflowutils.c comm.c)
+set(UTILS_SRC utils.cpp version.c scopflowutils.c comm.c)
 
 # Headers
 set(UTILS_HEADERS ${CMAKE_SOURCE_DIR}/include/common.h

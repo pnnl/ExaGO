@@ -3,6 +3,8 @@ static char help[] = "User example calling OPFLOW.\n\n";
 #include <opflow.h>
 #include <exago_config.h>
 #include <utils.hpp>
+#include <string>
+#include <vector>
 
 int main(int argc,char **argv)
 {

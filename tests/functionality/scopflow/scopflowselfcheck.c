@@ -247,7 +247,7 @@ PetscErrorCode ExaGOSelfcheckSCOPFLOW(SCOPFLOW scopflow)
   /** Compare objective value with reference */
   ierr = SCOPFLOWGetObjective(scopflow, &obj_value);CHKERRQ(ierr);
   ierr = SCOPFLOWGetTolerance(scopflow, &tolerance);CHKERRQ(ierr);
-  if (!isEqual(obj_value,ans->objective,tolerance,&error))
+  if (!IsEqual(obj_value,ans->objective,tolerance,error))
   {
     fail++;
     ExaGOLog(EXAGO_LOG_ERROR,

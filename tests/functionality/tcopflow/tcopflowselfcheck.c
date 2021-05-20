@@ -177,7 +177,7 @@ PetscErrorCode ExaGOSelfcheckTCOPFLOW(TCOPFLOW tcopflow)
   // Compare objective value
   ierr = TCOPFLOWGetObjective(tcopflow,&obj_value);CHKERRQ(ierr);
   ierr = TCOPFLOWGetTolerance(tcopflow, &tolerance);CHKERRQ(ierr);
-  if (!isEqual(obj_value,ans->objective,tolerance,&error))
+  if (!IsEqual(obj_value,ans->objective,tolerance,error))
   {
     fail++;
     ExaGOLog(EXAGO_LOG_ERROR,

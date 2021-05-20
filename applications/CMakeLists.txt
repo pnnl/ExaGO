@@ -7,7 +7,7 @@ set_source_files_properties(
 set(PFLOW_SRC pflow-main.c)
 
 # OPFLOW
-set(OPFLOW_SRC opflow-main.c)
+set(OPFLOW_SRC opflow-main.cpp)
 
 # SCOPFLOW
 set(SCOPFLOW_SRC scopflow-main.c)

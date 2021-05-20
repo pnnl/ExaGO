@@ -1,6 +1,8 @@
 #ifndef EXAGO_UTILS_H
 #define EXAGO_UTILS_H
 #include <petsc.h>
+#include <string>
+#include <vector>
 #include "exago_config.h"
 #include <string>
 #include <stdexcept>
@@ -13,7 +15,7 @@ enum ExaGOVerbosityLevel {
   EXAGO_LOG_NUM_LOG_LEVELS,
 };
 
-PETSC_EXTERN const char* ExaGOVerbosityNames[EXAGO_LOG_NUM_LOG_LEVELS];
+extern const char* ExaGOVerbosityNames[EXAGO_LOG_NUM_LOG_LEVELS];
 
 /**
  * @brief ExaGO Error interfaces between error codes encountered in ExaGO
@@ -41,24 +43,24 @@ extern void ExaGOCheckError(int e);
  * Set the name for the logfile to be used; must be set before
  * `ExaGOInitialize` is called.
  */
-PETSC_EXTERN PetscErrorCode ExaGOLogSetLoggingFileName(char*);
+extern PetscErrorCode ExaGOLogSetLoggingFileName(char*);
 
 /** Retrieve the filename being used for the logfile */
-PETSC_EXTERN PetscErrorCode ExaGOLogGetLoggingFileName(char**);
+extern PetscErrorCode ExaGOLogGetLoggingFileName(char**);
 
 /** Indicates whether a logfile is being used or stdout/stderr */
-PETSC_EXTERN PetscErrorCode ExaGOLogIsUsingLogFile(PetscBool*);
+extern PetscErrorCode ExaGOLogIsUsingLogFile(PetscBool*);
 
 /** Get minimum loglevel for a log to be printed */
-PETSC_EXTERN PetscErrorCode ExaGOLogGetMinLogLevel(ExaGOVerbosityLevel*);
+extern PetscErrorCode ExaGOLogGetMinLogLevel(ExaGOVerbosityLevel*);
 
 /** Set minimum loglevel for a log to be printed */
-PETSC_EXTERN PetscErrorCode ExaGOLogSetMinLogLevel(ExaGOVerbosityLevel);
+extern PetscErrorCode ExaGOLogSetMinLogLevel(ExaGOVerbosityLevel);
 
 /** Parameter indicates whether each MPI rank should print out each log
  * message. ExaGOLog is not currently able to log to every rank
  * /and/ log to a file. */
-PETSC_EXTERN PetscErrorCode ExaGOLogUseEveryRank(PetscBool);
+extern PetscErrorCode ExaGOLogUseEveryRank(PetscBool);
 
 #if !defined(EXAGO_DISABLE_LOGGING)
 
@@ -67,7 +69,7 @@ PETSC_EXTERN PetscErrorCode ExaGOLogUseEveryRank(PetscBool);
  * @note Users should use `ExaGOLog` instead, as this can be disabled for
  * optimization.
  */
-PETSC_EXTERN void ExaGOLogImpl(ExaGOVerbosityLevel,const char*,...);
+extern void ExaGOLogImpl(ExaGOVerbosityLevel,const char*,...);
 
 /**
  * @brief `ExaGOLog` is the user-facing logging function.
@@ -84,7 +86,7 @@ PETSC_EXTERN void ExaGOLogImpl(ExaGOVerbosityLevel,const char*,...);
 
 #endif
 
-PETSC_EXTERN PetscErrorCode ExaGOLogIsInitialized(PetscBool*);
+extern PetscErrorCode ExaGOLogIsInitialized(PetscBool*);
 
 /**
  * Initialize an ExaGO application.
@@ -92,7 +94,7 @@ PETSC_EXTERN PetscErrorCode ExaGOLogIsInitialized(PetscBool*);
  * @note this takes care of Petsc initialization, so don't this function in
  * conjunction with `PetscInitialize.`
  */
-PETSC_EXTERN PetscErrorCode ExaGOInitialize(MPI_Comm,int*argc,char***argv,
+extern PetscErrorCode ExaGOInitialize(MPI_Comm,int*argc,char***argv,
     char*appname,char*help);
 
 /**
@@ -101,21 +103,28 @@ PETSC_EXTERN PetscErrorCode ExaGOInitialize(MPI_Comm,int*argc,char***argv,
  * @note this takes care of Petsc finalization, so don't this function in
  * conjunction with `PetscFinalize`.
  */
-PETSC_EXTERN PetscErrorCode ExaGOFinalize();
+extern PetscErrorCode ExaGOFinalize();
 
 /** Returns 1 if files exists, else 0 */
-PETSC_EXTERN int doesFileExist(char*);
+bool DoesFileExist(const char*);
 
 /** Returns 1 if directory exists, else 0 */
-PETSC_EXTERN int doesDirExist(char*);
+bool DoesDirExist(const char*);
 
-/** first i in [0, npths) such that pths[i] is statable as a regular file */
-PETSC_EXTERN int anyFileExist(char**, int);
+/** First path in _files_ to be statable as a regular file */
+std::vector<std::string>::const_iterator FirstExistingFile(
+    const std::vector<std::string> &files);
 
-/** Determines if scaled difference between two reals is within tolerance */
-PETSC_EXTERN int isEqual(double,double,double tol,double*err);
+inline bool IsEqual(double value, double ref, double tolerance, double& error)
+{
+  error = std::fabs(value-ref)/(1. + std::fabs(ref));
+  return (error < tolerance);
+}
 
-/** Determines if difference between two ints is within tolerance */
-PETSC_EXTERN int isEqualInt(int value,int reference,int tol,int*err);
+inline bool IsEqual(int value, int ref, int tolerance, int& error)
+{
+  error = std::abs(value - ref);
+  return (error < tolerance);
+}
 
 #endif

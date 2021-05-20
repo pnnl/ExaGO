@@ -1,10 +1,16 @@
+#include <iostream>
 #include <common.h>
-#include <private/utilsimpl.h>
 #include <sys/utsname.h>
 #include <sys/stat.h>
+#include <version.h>
 #include <stdarg.h>
 #include <dirent.h>
 #include <exago_config.h>
+#include <utils.hpp>
+
+const char* ExaGOVerbosityNames[] = {"INFO","WARNING","ERROR"};
+
+static char ExaGOCurrentAppName[128];
 
 ExaGOError::ExaGOError(PetscErrorCode ierr) : is_petsc_error{true} {
   const char *error_message;
@@ -218,7 +224,7 @@ void ExaGOLogImpl(ExaGOVerbosityLevel verb, const char *fmt, ...)
  * @param[in] pth filepath to stat
  * @see stat
  **/
-int doesFileExist(char* pth)
+bool DoesFileExist(const char* pth)
 {
   struct stat path_stat;
   stat(pth, &path_stat);
@@ -235,68 +241,256 @@ int doesFileExist(char* pth)
  *
  * @see opendir
  **/
-int doesDirExist(char* pth)
+bool DoesDirExist(const char* pth)
 {
-  if (pth==NULL) return 0;
+  if (pth==NULL) return false;
   DIR *dp;
   dp = opendir(pth);
-  if (dp == NULL) return 0;
-  return 1;
+  if (dp == NULL) return false;
+  return true;
 }
 
 /**
- * @brief Verifies that all paths passed are statable as regular files
+ * @brief Finds first path to be statable as a regular file.
  *
- * @param[in] pths  array of paths to check exist
- * @param[in] npths number of paths to check
- * @return first i in [0, npths) such that pths[i] is statable as a regular file
- *         -2 if pths==NULL or pths[i]==NULL for any i in [0, npths),
- *         -1 if !doesFileExist(pths[i]) for i in [0, npths)
+ * @param[in] files Iterable collection of files to be searched
+ * @return first iterator _it_ to point to an element of _files_ such that _it_
+ * is statable as a regular file.
  * 
- * @see doesFileExist
+ * @see DoesFileExist
  **/
-int anyFileExist(char** pths, int npths)
+std::vector<std::string>::const_iterator FirstExistingFile(
+    const std::vector<std::string> &files)
 {
-  char buf[1024];
-  if (pths==NULL)
+  auto it = files.begin();
+  for (; it != files.end(); it++)
   {
-    ExaGOLog(EXAGO_LOG_INFO,"Function `%s` was called with argument"
-        " pths==NULL.\n",__func__);
-    return -2;
+    auto message = std::string{"-- Checking "} + *it + " exists: ";
+    if (DoesFileExist(it->c_str()))
+    {
+      message += "yes";
+      ExaGOLog(EXAGO_LOG_INFO, "%s", message.c_str());
+      return it;
+    }
+    message += "no";
+    ExaGOLog(EXAGO_LOG_INFO, "%s", message.c_str());
   }
 
-  for (int i=0; i<npths; i++)
-  {
-    if (pths[i]==NULL)
-    {
-      continue;
-    }
-    sprintf(buf,"-- Checking %-70s exists: ",pths[i]);
-    if (doesFileExist(pths[i]))
-    {
-      strcat(buf,"yes");
-      ExaGOLog(EXAGO_LOG_INFO,"%s",buf);
-      return i;
-    }
-    else
-    {
-      strcat(buf,"no");
-      ExaGOLog(EXAGO_LOG_INFO,"%s",buf);
-    }
-  }
-  return -1;
-}
-
-int isEqual(double value,double reference,double tol,double*err)
-{
-  *err = fabs(value-reference)/(1. + fabs(reference));
-  return (*err < tol);
-}
-
-int isEqualInt(int a,int b,int tol,int*err)
-{
-  *err = abs(a-b);
-  return (*err < tol);
+  /* No files were found to exist! Just return iterator to files.end() to follow
+   * conventions in the STL. */
+  return it;
 }
 
 #undef EXAGO_LOG_ENSURE_INITIALIZED
+
+/**
+ * @brief Print ExaGO command-line options.
+ *
+ * @pre Any explicitly managed resources are cleaned up before this is called -
+ * this function will std::exit for you.
+ */
+PetscErrorCode ExagoHelpPrintf(MPI_Comm comm, const char appname[],...)
+{
+  PetscErrorCode ierr;
+
+  char* versionstr;
+  ierr=ExaGOVersionGetFullVersionInfo(&versionstr);CHKERRQ(ierr);
+  fprintf(stderr, "===================================================================\n");
+  fprintf(stderr, "ExaGO Version Info:\n\n%s", versionstr); 
+  if (strcmp(appname,"opflow") == 0)
+  {
+    fprintf(stderr, "============== Help Options for application %s ==============\n\n", appname); 
+    fprintf(stderr, " General usage: mpiexec -n <N> ./%s <options>\n", appname);
+    fprintf(stderr, " Options:\n");
+    fprintf(stderr, "\t -netfile <netfilename>\n");
+    fprintf(stderr, "\t -opflow_model <POWER_BALANCE_POLAR|...>\n");
+    fprintf(stderr, "\t -opflow_solver <IPOPT|...>\n");
+    fprintf(stderr, "\t -opflow_initialization <MIDPOINT|...>\n");
+    fprintf(stderr, "\t -opflow_ignore_lineflow_constraints <0|1>\n");
+    fprintf(stderr, "\t -opflow_include_loadloss_variables <0|1>\n");
+    fprintf(stderr, "\t -opflow_include_powerimbalance_variables <0|1>\n");
+    fprintf(stderr, "\t -opflow_loadloss_penalty <Penalty ($)>\n");
+    fprintf(stderr, "\t -opflow_powerimbalance_penalty <Penalty ($)>\n");
+    fprintf(stderr, "\t -opflow_genbusvoltage <FIXED_WITHIN_QBOUNDS|...>\n");
+    fprintf(stderr, "\t -opflow_has_gensetpoint <0|1>\n");
+    fprintf(stderr, "\t -opflow_objective <MIN_GEN_COST|...>\n");
+    fprintf(stderr, "\t -opflow_use_agc <0|1>\n");
+    fprintf(stderr, "\t -opflow_tolerance <1e-6|...>\n");
+    fprintf(stderr, "\t -hiop_compute_mode <hybrid|...>\n");
+    fprintf(stderr, "\t -hiop_verbosity_level <0-10>\n");
+    fprintf(stderr, "\t -hiop_tolerance <1e-6|...>\n");
+    fprintf(stderr, "\t -print_output <0|1>\n");
+    fprintf(stderr, "\t -save_output <0|1>\n");
+    fprintf(stderr, "\n");
+  } 
+  else if (strcmp(appname,"pflow")==0) 
+  {
+    fprintf(stderr, "============== Help Options for application %s ==============\n", appname);
+  } 
+  else if (strcmp(appname,"sopflow") == 0) 
+  {
+    fprintf(stderr, "============== Help Options for application %s ==============\n", appname);
+    fprintf(stderr, " General usage: mpiexec -n <N> ./%s <options>\n", appname);
+    fprintf(stderr, " Options:\n");
+    fprintf(stderr, "\t -netfile <netfilename>\n");
+    fprintf(stderr, "\t -ctgcfile <ctgcfilename>\n");
+    fprintf(stderr, "\t -scenfile <scenfilename>\n");
+    fprintf(stderr, "\t -opflow_model <POWER_BALANCE_POLAR|...>\n");
+    fprintf(stderr, "\t -sopflow_solver <IPOPT|...>\n");
+    fprintf(stderr, "\t -sopflow_mode <0|1>\n");
+    fprintf(stderr, "\t -sopflow_Ns <Ns>\n");
+    fprintf(stderr, "\t -sopflow_enable_multicontingency <0|1>\n");
+    fprintf(stderr, "\t -scopflow_enable_multiperiod <0|1>\n");
+    fprintf(stderr, "\t -sopflow_tolerance <1e-6|...>\n");
+    fprintf(stderr, "\n");
+  }
+  else if (strcmp(appname,"scopflow") == 0) 
+  {
+    fprintf(stderr, "============== Help Options for application %s ==============\n", appname);
+    fprintf(stderr, " General usage: mpiexec -n <N> ./%s <options>\n", appname);
+    fprintf(stderr, " Options:\n");
+    fprintf(stderr, "\t -netfile <netfilename>\n");
+    fprintf(stderr, "\t -ctgcfile <ctgcfilename>\n");
+    fprintf(stderr, "\t -scopflow_windgenprofile <windgenproffilename>\n");
+    fprintf(stderr, "\t -scopflow_ploadprofile <ploadprofile_filename>\n");
+    fprintf(stderr, "\t -scopflow_qloadprofile <qloadprofile_filename>\n");
+    fprintf(stderr, "\t -opflow_model <POWER_BALANCE_POLAR|...>\n");
+    fprintf(stderr, "\t -scopflow_solver <IPOPT|...>\n");
+    fprintf(stderr, "\t -scopflow_mode <0|1>\n");
+    fprintf(stderr, "\t -sopflow_Nc <Nc>\n");
+    fprintf(stderr, "\t -scopflow_enable_multiperiod <0|1>\n");
+    fprintf(stderr, "\t -scopflow_duration <Hours>\n");
+    fprintf(stderr, "\t -scopflow_dT <Minutes>\n");
+    fprintf(stderr, "\t -scopflow_tolerance <1e-6|...>\n");
+    fprintf(stderr, "\n");
+
+  }
+  else if (strcmp(appname,"tcopflow") == 0) 
+  {
+    fprintf(stderr, "============== Help Options for application %s ==============\n", appname);
+    fprintf(stderr, " General usage: mpiexec -n <N> ./%s <options>\n", appname);
+    fprintf(stderr, " Options:\n");
+    fprintf(stderr, "\t -netfile <netfilename>\n");
+    fprintf(stderr, "\t -options_file <tcopflowoptionsfilename>\n");
+    fprintf(stderr, "\t -tcopflow_windgenprofile <windgenproffilename>\n");
+    fprintf(stderr, "\t -tcopflow_ploadprofile <ploadprofile_filename>\n");
+    fprintf(stderr, "\t -tcopflow_qloadprofile <qloadprofile_filename>\n");
+    fprintf(stderr, "\t -tcopflow_iscoupling <0|1>\n");
+    fprintf(stderr, "\t -opflow_ignore_lineflow_constraints <0|1>\n");
+    fprintf(stderr, "\t -tcopflow_duration <Hours>\n");
+    fprintf(stderr, "\t -tcopflow_dT <Minutes>\n");
+    fprintf(stderr, "\t -tcopflow_tolerance <1e-6|...>\n");
+    fprintf(stderr, "\n");
+  }
+  else 
+  {
+    fprintf(stderr, "Please enter a valid application name.\n");
+  }
+  std::exit(EXIT_SUCCESS);
+}
+
+PetscErrorCode ExaGOInitialize(MPI_Comm comm, int* argc, char*** argv,
+    char* appname, char *help)
+{
+  int i;
+  PetscErrorCode ierr;
+  strcpy(ExaGOCurrentAppName,appname);
+  PetscHelpPrintf = &ExagoHelpPrintf;
+
+  std::vector<std::string> args(*argv, *argv + *argc);
+  auto args_it = args.begin();
+  args_it++; /* Skip first argument, eg binary name */
+
+  for(; args_it != args.end(); args_it++)
+  {
+    if (*args_it == "-help" or *args_it == "-h")
+      (*PetscHelpPrintf)(MPI_COMM_NULL, appname);
+
+    if (*args_it == "-v" or *args_it == "-version")
+    {
+      char* versionstr;
+      ierr=ExaGOVersionGetFullVersionInfo(&versionstr);CHKERRQ(ierr);
+      std::cerr << "ExaGO Version Info:\n\n" << versionstr
+        << "ExaGO Help Message:\n" << help;
+      free(versionstr);
+      MPI_Finalize();
+      std::exit(EXIT_SUCCESS);
+    }
+  }
+
+  int initialized;
+  MPI_Initialized(&initialized);
+  if(!initialized)
+    MPI_Init(argc,argv);
+
+  ExaGOLogSetComm(comm);
+  ierr = ExaGOLogInitialize();
+  if(ierr)
+  {
+    fprintf(stderr, "Could not initialize ExaGO logger.\n");
+    return ierr;
+  }
+
+  FILE *fp;
+  ExaGOLogGetLoggingFilePointer(&fp);
+  if(fp==NULL)
+    ExaGOLogSetLoggingFilePointer(stderr);
+
+  std::string options_pathname = EXAGO_OPTIONS_DIR;
+  std::string filename = std::string{ExaGOCurrentAppName} + "options";
+
+  std::vector<std::string> optfiles;
+  bool flg{false};
+
+  /* Iterate over all arguments to find '-options_file' flag */
+  for(auto arg = args.begin(); arg != args.end(); arg++)
+  {
+    if (*arg == "-options_file")
+    {
+      /* Ensure the '-options_file' flag was not the last flag! */
+      if (arg + 1 == args.end())
+        (*PetscHelpPrintf)(MPI_COMM_NULL, appname);
+
+      arg++;
+      optfiles.push_back(*arg);
+      flg = true;
+    }
+  }
+  if (!flg)
+  {
+    ExaGOLog(EXAGO_LOG_INFO, "%s", "-options_file not passed.");
+  }
+
+  optfiles.push_back(std::string{options_pathname} + "/" + filename);
+  optfiles.push_back("./" + std::string{filename});
+  optfiles.push_back("./options/" + std::string{filename});
+
+  auto file_it = FirstExistingFile(optfiles);
+  if (file_it == optfiles.end())
+  {
+    ExaGOLog(EXAGO_LOG_ERROR,
+        "Could not find options file for application %s.\n",
+        ExaGOCurrentAppName);
+    throw std::runtime_error{"No options files were found"};
+  }
+  
+  PetscInitialize(argc,argv,file_it->c_str(),help);
+  return 0;
+}
+
+
+PetscErrorCode ExaGOFinalize()
+{
+  ExaGOLog(EXAGO_LOG_INFO,"Finalizing %s application.\n",ExaGOCurrentAppName);
+  PetscBool flg;
+  ExaGOLogIsUsingLogFile(&flg);
+  if (flg)
+  {
+    char* filename;
+    ExaGOLogGetLoggingFileName(&filename);
+    ExaGOLog(EXAGO_LOG_INFO,"See logfile %s for output.\n",filename);
+  }
+  ExaGOLogFinalize();
+  PetscFinalize();
+  MPI_Finalize();
+}
