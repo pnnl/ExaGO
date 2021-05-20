@@ -151,6 +151,8 @@ struct _p_SOPFLOW{
   ScenarioUncertaintyType scenunctype;
 
   MPI_Comm subcomm; /* Sub-communicators on which SCOPFLOW run */
+
+  OPFLOW opflow0; /* Base scenario, each rank has this information */
 };
 
 extern PetscErrorCode SOPFLOWModelRegisterAll(SOPFLOW);
