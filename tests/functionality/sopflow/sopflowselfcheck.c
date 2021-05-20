@@ -270,7 +270,7 @@ PetscErrorCode ExaGOSelfcheckSOPFLOW(SOPFLOW sopflow)
   // Compare objective value
   ierr = SOPFLOWGetObjective(sopflow, &obj_value);CHKERRQ(ierr);
   ierr = SOPFLOWGetTolerance(sopflow, &tolerance);CHKERRQ(ierr);
-  if (!isEqual(obj_value,ans->objective,tolerance,&error))
+  if (!IsEqual(obj_value,ans->objective,tolerance,error))
   {
     fail++;
     ExaGOLog(EXAGO_LOG_ERROR,
