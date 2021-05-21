@@ -29,6 +29,8 @@ if(EXAGO_INSTALL_TESTS)
     COMMAND
     ${RUNCMD}
     $<TARGET_FILE:testAcopf>
+    -opflow_genbusvoltage
+    VARIABLE_WITHIN_BOUNDS
     -validation_dir
     ${CMAKE_SOURCE_DIR}/datafiles/test_validation
     NETFILES

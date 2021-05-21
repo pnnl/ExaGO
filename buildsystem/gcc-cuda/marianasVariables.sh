@@ -13,7 +13,8 @@ module load cmake/3.15.3
 # Configure spack
 source $PROJ_DIR/src/spack/share/spack/setup-env.sh
 ls $PROJ_DIR/src/spack/var/spack/*
-spack env activate exago-v0-99-2-hiop-v0-3-99-2-marianas
+#spack env activate exago-v0-99-2-hiop-v0-3-99-2-marianas
+spack env activate exago-v1-0-0-deps-marianas
 
 export MY_PETSC_DIR=`spack location -i petsc`
 export NVBLAS_CONFIG_FILE=$PROJ_DIR/$MY_CLUSTER/nvblas.conf

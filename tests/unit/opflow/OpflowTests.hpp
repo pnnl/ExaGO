@@ -860,8 +860,8 @@ public:
     PetscErrorCode   ierr;
     LocalOrdinalType fail = 0;
     PetscInt         nrow, ncol;
-    int              nxsparse = 2*opflow->ps->ngenON;
-    int              nxdense = 2*opflow->ps->nbus;
+    int              nxsparse = opflow->nxsparse;
+    int              nxdense  = opflow->nxdense;
     int              *permutation_map, *spcol_map, *dncol_map, *idxn2sd_map;
     Mat              Hessref_spdn, Hessref_sparse, Hessref_dense;
 
@@ -901,7 +901,7 @@ public:
     // Test sparse Hessian
     int *iRow, *jCol,*iRow_dev,*jCol_dev;
     double *values,*values_dev;
-    int nnz = nxsparse;
+    int nnz = opflow->nnz_hesssp;
 
     iRow = static_cast<int*>(h_allocator.allocate(nnz*sizeof(int)));
     jCol = static_cast<int*>(h_allocator.allocate(nnz*sizeof(int)));

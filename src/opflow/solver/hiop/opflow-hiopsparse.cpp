@@ -392,12 +392,26 @@ void OPFLOWHIOPSPARSEInterface::solution_callback(hiop::hiopSolveStatus status,
   }
 }
 
+bool OPFLOWHIOPSPARSEInterface::iterate_callback(int iter, double obj_value,
+		      int n, const double* x,
+		      const double* z_L,
+		      const double* z_U,
+		      int m, const double* g,
+		      const double* lambda,
+		      double inf_pr, double inf_du,
+		      double mu,
+		      double alpha_du, double alpha_pr,
+		      int ls_trials)
+{
+  opflow->numits = iter;
+  return true;
+}
+
 PetscErrorCode OPFLOWSolverSetUp_HIOPSPARSE(OPFLOW opflow)
 {
   PetscErrorCode ierr;
   OPFLOWSolver_HIOPSPARSE hiop=(OPFLOWSolver_HIOPSPARSE)opflow->solver;
   PetscBool         flg1;
-  PetscReal         tol=1e-6;
   int               verbose_level=3;
 
   PetscFunctionBegin;
@@ -408,7 +422,6 @@ PetscErrorCode OPFLOWSolverSetUp_HIOPSPARSE(OPFLOW opflow)
   hiop->ipopt_debug = PETSC_FALSE;
 
   ierr = PetscOptionsBegin(opflow->comm->type,NULL,"HIOP options",NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsReal("-hiop_tolerance","HIOP solver tolerance","",tol,&tol,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-hiop_verbosity_level","HIOP verbosity level (Integer 0 to 12)","",verbose_level,&verbose_level,NULL);CHKERRQ(ierr);
 #if defined(EXAGO_ENABLE_IPOPT)
   ierr = PetscOptionsBool("-hiop_ipopt_debug","Flag enabling debugging HIOP code with IPOPT","",hiop->ipopt_debug,&hiop->ipopt_debug,NULL);CHKERRQ(ierr);
@@ -442,20 +455,18 @@ PetscErrorCode OPFLOWSolverSetUp_HIOPSPARSE(OPFLOW opflow)
   }
 #endif
 
-  // hiop->sp->options->SetStringValue("dualsUpdateType", "linear");
-  //  hiop->sp->options->SetStringValue("dualsInitialization", "zero");
-  hiop->sp->options->SetStringValue("fixed_var", "relax");
   //hiop->sp->options->SetNumericValue("fixed_var_perturb",1.0e-6);
+  //hiop->sp->options->SetStringValue("mem_space","host");
 
-  //hiop->sp->options->SetStringValue("Hessian", "analytical_exact");
-  //  hiop->sp->options->SetStringValue("KKTLinsys", "xdycyd");
+  hiop->sp->options->SetStringValue("dualsUpdateType", "linear");
+  hiop->sp->options->SetStringValue("dualsInitialization", "zero");
+  hiop->sp->options->SetStringValue("fixed_var", "relax");
+  hiop->sp->options->SetStringValue("Hessian", "analytical_exact");
+  hiop->sp->options->SetStringValue("KKTLinsys", "xdycyd");
   hiop->sp->options->SetStringValue("compute_mode", "cpu");
-
-  //  hiop->sp->options->SetStringValue("scaling_type","none");
   hiop->sp->options->SetIntegerValue("verbosity_level", verbose_level);
   hiop->sp->options->SetNumericValue("mu0", 1e-1);
-  //  hiop->sp->options->SetNumericValue("tolerance", tol);
-  //hiop->sp->options->SetStringValue("mem_space","host");
+  hiop->sp->options->SetNumericValue("tolerance", opflow->tolerance);
   hiop->sp->options->SetNumericValue("bound_relax_perturb",1e-4);
   hiop->sp->options->SetStringValue("scaling_type","none");
 

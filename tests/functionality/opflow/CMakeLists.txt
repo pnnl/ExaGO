@@ -33,6 +33,8 @@ if(EXAGO_INSTALL_TESTS)
         IPOPT
         -opflow_objective
         ${opflow_obj}
+        -opflow_genbusvoltage
+        VARIABLE_WITHIN_BOUNDS
         DEPENDS
         IPOPT
         NETFILES
@@ -55,7 +57,7 @@ if(EXAGO_INSTALL_TESTS)
       -opflow_solver
       HIOP
       -opflow_ignore_lineflow_constraints
-      1
+      0
       -opflow_model
       POWER_BALANCE_HIOP
       -opflow_genbusvoltage
@@ -66,29 +68,31 @@ if(EXAGO_INSTALL_TESTS)
       ${network_files}
     )
 
-    exago_add_test(
-      NAME
-      OPFLOW_HIOP_SPARSE_${opflow_init}
-      COMMAND
-      ${RUNCMD}
-      $<TARGET_FILE:app_opflow>
-      -opflow_initialization
-      ${opflow_init}
-      -hiop_compute_mode
-      CPU
-      -opflow_solver
-      HIOPSPARSE
-      -opflow_ignore_lineflow_constraints
-      0
-      -opflow_model
-      POWER_BALANCE_POLAR
-      -opflow_genbusvoltage
-      VARIABLE_WITHIN_BOUNDS
-      DEPENDS
-      HIOP
-      NETFILES
-      ${network_files}
-    )
+    if(EXAGO_ENABLE_HIOP_SPARSE)
+      exago_add_test(
+        NAME
+        OPFLOW_HIOP_SPARSE_${opflow_init}
+        COMMAND
+        ${RUNCMD}
+        $<TARGET_FILE:app_opflow>
+        -opflow_initialization
+        ${opflow_init}
+        -hiop_compute_mode
+        CPU
+        -opflow_solver
+        HIOPSPARSE
+        -opflow_ignore_lineflow_constraints
+        0
+        -opflow_model
+        POWER_BALANCE_POLAR
+        -opflow_genbusvoltage
+        VARIABLE_WITHIN_BOUNDS
+        DEPENDS
+        HIOP
+        NETFILES
+        ${network_files}
+      )
+    endif()
 
     if(EXAGO_ENABLE_GPU)
       set(hiop_compute_mode GPU)
@@ -108,7 +112,7 @@ if(EXAGO_INSTALL_TESTS)
       -opflow_solver
       HIOP
       -opflow_ignore_lineflow_constraints
-      1
+      0
       -opflow_model
       PBPOLRAJAHIOP
       -opflow_genbusvoltage
@@ -166,6 +170,29 @@ if(EXAGO_INSTALL_TESTS)
       VARIABLE_WITHIN_BOUNDS
     )
   endforeach()
+
+  if(EXAGO_ENABLE_HIOP_SPARSE)
+    exago_add_test(
+      NAME
+      FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_${model}
+      DEPENDS
+      HIOP
+      RAJA
+      NETFILES
+      ${network_files_no200}
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:testOpflowFunctionality>
+      -opflow_solver
+      HIOPSPARSE
+      -opflow_model
+      POWER_BALANCE_POLAR
+      -opflow_tolerance
+      ${tolerance}
+      -opflow_genbusvoltage
+      VARIABLE_WITHIN_BOUNDS
+    )
+  endif()
 
   exago_add_test(
     NAME

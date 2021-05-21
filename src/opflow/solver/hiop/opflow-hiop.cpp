@@ -339,19 +339,16 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
   }
 #endif
 
-  //  hiop->mds->options->SetStringValue("duals_update_type", "linear");
-  //  hiop->mds->options->SetStringValue("duals_init", "zero");
+  hiop->mds->options->SetStringValue("duals_update_type", "linear");
+  hiop->mds->options->SetStringValue("duals_init", "zero");
 
   hiop->mds->options->SetStringValue("fixed_var", "relax");
-
   hiop->mds->options->SetStringValue("Hessian", "analytical_exact");
   hiop->mds->options->SetStringValue("KKTLinsys", "xdycyd");
   hiop->mds->options->SetStringValue("compute_mode", HIOPComputeModeChoices[compute_mode]);
-
   hiop->mds->options->SetIntegerValue("verbosity_level", verbose_level);
   hiop->mds->options->SetNumericValue("mu0", 1e-1);
   hiop->mds->options->SetNumericValue("tolerance", opflow->tolerance);
-
   hiop->mds->options->SetNumericValue("bound_relax_perturb",1e-4);
   hiop->mds->options->SetStringValue("scaling_type","none");
 

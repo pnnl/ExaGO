@@ -133,6 +133,7 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
       ierr = PSGetGen(ps,windgenbus[nw],windgenid[nw],&gen);CHKERRQ(ierr);
       sscanf(tok,"%lf",&pg);
       gen->pg = gen->pt = pg/ps->MVAbase; /* Set real power generation. Note that Pg upper limit is also set to Pg */
+      gen->pgs = gen->pb;
       nw++;
       tok = strtok(NULL,sep);
     }

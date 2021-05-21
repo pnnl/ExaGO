@@ -42,18 +42,19 @@ if(HIOP_LIBRARY AND HIOP_INCLUDE_DIR)
   target_link_libraries(HiOp INTERFACE ${HIOP_LIBRARY})
   target_include_directories(HiOp INTERFACE ${HIOP_INCLUDE_DIR})
 
+  check_cxx_symbol_exists(
+    HIOP_SPARSE ${HIOP_INCLUDE_DIR}/hiop_defs.hpp EXAGO_ENABLE_HIOP_SPARSE
+  )
+
+  check_cxx_symbol_exists(
+    HIOP_USE_COINHSL ${HIOP_INCLUDE_DIR}/hiop_defs.hpp EXAGO_HIOP_USE_COINHSL
+  )
+
   if(EXAGO_ENABLE_GPU)
     include(FindMagma)
     target_link_libraries(HiOp INTERFACE Magma)
     target_include_directories(HiOp INTERFACE ${CUDA_TOOLKIT_INCLUDE})
   endif()
-
-  check_cxx_symbol_exists(
-    HIOP_SPARSE ${HIOP_INCLUDE_DIR}/hiop_defs.hpp EXAGO_ENABLE_HIOP_SPARSE
-  )
-  check_cxx_symbol_exists(
-    HIOP_USE_COINHSL ${HIOP_INCLUDE_DIR}/hiop_defs.hpp EXAGO_HIOP_USE_COINHSL
-  )
 
   if(EXAGO_ENABLE_HIOP_SPARSE AND EXAGO_HIOP_USE_COINHSL)
     include(FindExaGOCOINHSL)

@@ -873,6 +873,9 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP(OPFLOW opflow
   LINEParamsRajaHiop     *lineparams=&pbpolrajahiop->lineparams;
   PetscErrorCode ierr;
   PetscInt               flps=0;
+  int                include_loadloss_variables = opflow->include_loadloss_variables;
+  int                include_powerimbalance_variables = opflow->include_powerimbalance_variables;
+
   PetscFunctionBegin;
   //  PetscPrintf(MPI_COMM_SELF,"Entered Equality constraints\n");
   
@@ -917,7 +920,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP(OPFLOW opflow
   RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, loadparams->nload),
     RAJA_LAMBDA (RAJA::Index_type i) 
     {
-      if (opflow->include_loadloss_variables) {
+      if (include_loadloss_variables) {
         RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[l_gidx[i]],pl[i]);
         RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[l_gidx[i]+1],ql[i]);
         RAJA::atomicSub<exago_raja_atomic>(&ge_dev[l_gidx[i]],x_dev[l_xidx[i]]);
@@ -951,7 +954,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP(OPFLOW opflow
 
       RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[b_gidx[i]+1],
 				       isisolated[i]*(Vm    - vm[i]) - ispvpq[i]*Vm*Vm*bl[i]);
-      if(opflow->include_powerimbalance_variables) {
+      if(include_powerimbalance_variables) {
         double Pimb = x_dev[b_xidxpimb[i]];
         double Qimb = x_dev[b_xidxpimb[i]+1];
         RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[b_gidx[i]], Pimb);
@@ -1194,6 +1197,31 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOP(OPFLOW opflow,const doub
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode OPFLOWSetVariableBoundsArray_old_PBPOLRAJAHIOP(OPFLOW opflow,double *xl_dev,double *xu_dev)
+{
+  PetscErrorCode ierr;
+  double         *xl,*xu;
+  auto& resmgr = umpire::ResourceManager::getInstance();
+
+  PetscFunctionBegin;
+
+  // The bounds have been already computed on the host, get their pointers
+  ierr = VecGetArray(opflow->Xl,&xl);CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->Xu,&xu);CHKERRQ(ierr);
+
+  // Copy host to device
+  umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
+  registerWith(xl,opflow->nx,resmgr,h_allocator_);
+  registerWith(xu,opflow->nx,resmgr,h_allocator_);
+  resmgr.copy(xl_dev,xl);
+  resmgr.copy(xu_dev,xu);
+
+  ierr = VecRestoreArray(opflow->Xl,&xl);CHKERRQ(ierr);
+  ierr = VecRestoreArray(opflow->Xu,&xu);CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
 // Note: This kernel (and all the kernels for this model assume that the data has been already
 // allocated on the device. xl_dev and xu_dev are pointers to arrays on the GPU
 PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP(OPFLOW opflow,double *xl_dev,double *xu_dev)
@@ -1214,6 +1242,7 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP(OPFLOW opflow,double *
   double* vmin = busparams->vmin_dev_;
   double* vmax = busparams->vmax_dev_;
   int* b_xidxpimb = busparams->xidxpimb_dev_;
+  int  include_powerimbalance_variables = opflow->include_powerimbalance_variables;
 
   /* Bounds for bus voltages */
   RAJA::forall<exago_raja_exec>(RAJA::RangeSegment(0, busparams->nbus)/* index set here */,
@@ -1225,9 +1254,9 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP(OPFLOW opflow,double *
       xl_dev[xidx[i]+1] = isref[i]*vmin[i]  + ispvpq[i]*vmin[i] + isisolated[i]*vm[i];
       xu_dev[xidx[i]+1] = isref[i]*vmax[i]  + ispvpq[i]*vmax[i] + isisolated[i]*vm[i];
       /* Bounds for Power Imbalance Variables (second bus variables) */
-      if(opflow->include_powerimbalance_variables) {
-        xl_dev[b_xidxpimb[i]] = xl_dev[b_xidxpimb[i]+1] = PETSC_NINFINITY;
-        xu_dev[b_xidxpimb[i]] = xu_dev[b_xidxpimb[i]+1] = PETSC_INFINITY;
+      if(include_powerimbalance_variables) {
+	xl_dev[b_xidxpimb[i]] = xl_dev[b_xidxpimb[i]+1] = PETSC_NINFINITY;
+	xu_dev[b_xidxpimb[i]] = xu_dev[b_xidxpimb[i]+1] = PETSC_INFINITY;
       }
     }
   );
@@ -1298,6 +1327,7 @@ PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLO
   GENParamsRajaHiop     *genparams=&pbpolrajahiop->genparams;
   LOADParamsRajaHiop     *loadparams=&pbpolrajahiop->loadparams;
   BUSParamsRajaHiop     *busparams=&pbpolrajahiop->busparams;
+
   //  PetscPrintf(MPI_COMM_SELF,"Entered sparse jacobian\n");
   if(iJacS_dev != NULL && jJacS_dev != NULL) {
 
