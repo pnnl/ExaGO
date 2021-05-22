@@ -1266,6 +1266,30 @@ PetscErrorCode PSApplyContingency(PS ps, Contingency ctgc)
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode PSApplyScenario(PS ps, Scenario scenario)
+{
+  PetscInt i,j,k;
+  Forecast *forecast;
+  PSGEN    gen;
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  for(i=0; i < scenario.nforecast; i++) {
+    forecast = &scenario.forecastlist[i];
+    if(forecast->type == FORECAST_WIND) {
+      /* Wind forecast */
+      for(j=0; j < forecast->nele; j++) {
+	ierr = PSGetGen(ps,forecast->buses[j],forecast->id[j],&gen);CHKERRQ(ierr);
+	gen->pg = gen->pt = forecast->val[j]/ps->MVAbase; /* Set real power generation. Note that
+					       Pg upper limit is also set to the forecast value. This allows the wind generator to be dispatched at its limit */
+	gen->pgs = gen->pb; /* Set-point set to lower bound. This is good for optimization */
+      }
+    }
+  }
+  
+  PetscFunctionReturn(0);
+}
+
 /* 
    PSGetTotalGeneration - Gets the total online generation and capacity
 

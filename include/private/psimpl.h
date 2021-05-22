@@ -7,6 +7,7 @@
 
 #include <ps.h>
 #include <private/contingencylist.h>
+#include <private/scenariolist.h>
 
 /**
  * @brief Maximum number of lines allowed to be connected to a bus
@@ -362,5 +363,6 @@ extern PetscErrorCode PSSetEdgeandBusStartLoc(PS);
 extern PetscErrorCode PSPrintSystemSummary(PS);
 extern PetscErrorCode PSSaveSolution(PS,OutputFormat,const char[]);
 extern PetscErrorCode PSApplyContingency(PS,Contingency);
+extern PetscErrorCode PSApplyScenario(PS,Scenario);
 #endif
 

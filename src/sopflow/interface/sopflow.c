@@ -275,8 +275,6 @@ PetscErrorCode SOPFLOWSetNetworkData(SOPFLOW sopflow,const char netfile[])
   PetscFunctionReturn(0);
 }
 
-extern PetscErrorCode SOPFLOWGetNumScenarios(SOPFLOW,ScenarioFileInputFormat,const char scenfile[],PetscInt*);
-
 /*
   SOPFLOWSetUp - Sets up an stochastic optimal power flow application object
 
@@ -316,16 +314,6 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   PetscOptionsEnd();
 
   if(sopflow->Ns == 0) SETERRQ(PETSC_COMM_SELF,0,"Number of scenarios should be greater than 0");
-  /*
-  if(sopflow->Ns >= 0) sopflow->Ns += 1;
-  if(sopflow->scenfileset) {
-    if(sopflow->Ns == -1) { 
-      ierr = SOPFLOWGetNumScenarios(sopflow,sopflow->scenfileformat,sopflow->scenfile,&sopflow->Ns);CHKERRQ(ierr);
-    }
-  } else {
-    if(sopflow->Ns == -1) sopflow->Ns = 1;
-  }
-  */
 
   if(sopflow->scenfileset) {
     if(sopflow->Ns == -1) sopflow->Ns = MAX_SCENARIOS;
@@ -335,7 +323,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
     for(s=0; s < sopflow->Ns; s++) sopflow->scenlist.scen->nforecast = 0;
     if(sopflow->Ns > 1) {
       ierr = SOPFLOWReadScenarioData(sopflow,sopflow->scenfileformat,sopflow->scenfile);CHKERRQ(ierr);
-      sopflow->Ns = sopflow->scenlist.Nscen + 1;
+      sopflow->Ns = sopflow->scenlist.Nscen;
     }
   } else {
     if(sopflow->Ns == -1) sopflow->Ns = 1;
@@ -408,7 +396,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   MPI_Barrier(sopflow->comm->type);
   ExaGOLog(EXAGO_LOG_INFO,"SOPFLOW running with %d scenarios\n",sopflow->Ns);
   ExaGOLogUseEveryRank(PETSC_TRUE);
-  ExaGOLog(EXAGO_LOG_INFO,"Rank %d scenario range [%d -- %d]\n",sopflow->comm->rank,sopflow->sstart,sopflow->send);
+  PetscPrintf(PETSC_COMM_SELF,"Rank %d scenario range [%d -- %d]\n",sopflow->comm->rank,sopflow->sstart,sopflow->send);
   ExaGOLogUseEveryRank(PETSC_FALSE);
 			
   /* Create subcommunicators to manage scopflows */
@@ -450,19 +438,12 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
       /* Set up the PS object for opflow */
       ps = sopflow->opflows[s]->ps;
       ierr = PSSetUp(ps);CHKERRQ(ierr);
-    }
 
-    /* Read scenario data */
-    /* This is called before OPFLOWSetUp because ReadScenarioData also sets the upper bounds for
-       generator real power output. OPFLOWSetUp creates the optimization solver object which in turn
-       sets the bounds and does not allow changing the bounds once they are set
-    */
+      if(sopflow->scenfileset) {
+	/* Apply scenario */
+	ierr = PSApplyScenario(ps,sopflow->scenlist.scen[s]);CHKERRQ(ierr);
+      }
 
-    if(sopflow->scenfileset) {
-      ierr = SOPFLOWReadScenarioData(sopflow,sopflow->scenfileformat,sopflow->scenfile);CHKERRQ(ierr);
-    }
-
-    for(s=0; s < sopflow->ns; s++) {
       ierr = OPFLOWHasGenSetPoint(sopflow->opflows[s],PETSC_TRUE);CHKERRQ(ierr);
       ierr = OPFLOWSetUp(sopflow->opflows[s]);CHKERRQ(ierr);
     }
@@ -479,13 +460,11 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
       /* Set contingency data */
       /* Should not set hard coded native format */
       ierr = SCOPFLOWSetContingencyData(sopflow->scopflows[s],NATIVE,ctgcfile);CHKERRQ(ierr);
-    }
 
-    if(sopflow->scenfileset) {
-      ierr = SOPFLOWReadScenarioData(sopflow,sopflow->scenfileformat,sopflow->scenfile);CHKERRQ(ierr);
-    }
+      if(sopflow->scenfileset) {
+	ierr = SCOPFLOWSetScenario(sopflow->scopflows[s],&sopflow->scenlist.scen[s]);CHKERRQ(ierr);
+      }
 
-    for(s=0; s < sopflow->ns; s++) {
       /* Set up */
       ierr = SCOPFLOWSetUp(sopflow->scopflows[s]);CHKERRQ(ierr);
     }

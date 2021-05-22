@@ -33,6 +33,8 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
   scopflow->mode = 0;
   scopflow->tolerance = 1e-6;
 
+  scopflow->scen = NULL;
+
   scopflow->ismultiperiod = PETSC_FALSE;
 
   scopflow->solver   = NULL;
@@ -379,6 +381,11 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
     ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflow0);CHKERRQ(ierr);
     ierr = OPFLOWSetModel(scopflow->opflow0,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
     ierr = OPFLOWReadMatPowerData(scopflow->opflow0,scopflow->netfile);CHKERRQ(ierr);
+    ierr = PSSetUp(scopflow->opflow0->ps);CHKERRQ(ierr);
+    if(scopflow->scen) {
+      // Scenario set by SOPFLOW, apply it */
+      ierr = PSApplyScenario(ps,*scopflow->scen);CHKERRQ(ierr);
+    }
     ierr = OPFLOWSetUp(scopflow->opflow0);CHKERRQ(ierr);
 
     ierr = OPFLOWSetObjectiveType(scopflow->opflow0,MIN_GEN_COST);CHKERRQ(ierr);
@@ -393,6 +400,11 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
       /* Set up the PS object for opflow */
       ps = scopflow->opflows[c]->ps;
       ierr = PSSetUp(ps);CHKERRQ(ierr);
+
+      if(scopflow->scen) {
+	// Scenario set by SOPFLOW, apply it */
+	ierr = PSApplyScenario(ps,*scopflow->scen);CHKERRQ(ierr);
+      }
       
       /* Set contingencies */
       if(scopflow->ctgcfileset) {
@@ -737,5 +749,12 @@ PetscErrorCode SCOPFLOWGetTolerance(SCOPFLOW scopflow,PetscReal *tol)
 {
   PetscFunctionBegin;
   *tol = scopflow->tolerance;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SCOPFLOWSetScenario(SCOPFLOW scopflow,Scenario *scen)
+{
+  PetscFunctionBegin;
+  scopflow->scen = scen;
   PetscFunctionReturn(0);
 }

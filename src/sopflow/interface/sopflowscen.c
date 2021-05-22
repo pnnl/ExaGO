@@ -2,6 +2,7 @@
 #include <private/tcopflowimpl.h>
 #include <private/scopflowimpl.h>
 #include <private/sopflowimpl.h>
+#include <private/scenariolist.h>
 
 extern void clean2Char(char *);
 extern char** blankTokenizer(const char *str, int *numtok, int maxtokens, int maxchar);
@@ -28,6 +29,11 @@ PetscErrorCode SOPFLOWSetScenarioData(SOPFLOW sopflow,ScenarioFileInputFormat sc
   sopflow->scenunctype = scenunctype;
   PetscFunctionReturn(0);
 }
+
+#if 0
+/* This version will be removed in the future release. It used to read the scenario
+   data and update the PS objects. This was a cumbersome way to manipulate the data, hence its being obsoleted.
+*/
 
 /*
   SOPFLOWReadScenarioData_Wind - Reads the wind data 
@@ -140,6 +146,105 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
   }
   PetscFunctionReturn(0);
 }
+#endif
+
+/*
+  SOPFLOWReadScenarioData_Wind - Reads the wind data and populates the scenario list
+  Input Parameters
++ sopflow - SOPFLOW object
+. windgenprofile - wind generator profile file
+. c       - contingency number
+. t - time step
+*/
+PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenprofile[],PetscInt c,PetscInt t)
+{
+  PetscErrorCode ierr;
+  FILE           *fp;
+  char           line[MAXLINE];
+  char           *out;
+  PetscInt       ngenwind,nw=0;
+  char           *tok,*tok2;
+  char           sep[] = ",",sep2[] = "_";
+  PetscReal      pg;
+  int            scen_num=0;
+  int            genid;
+  int            windgenbus[100];
+  char           windgenid[100][3];
+  int            i;
+  ScenarioList   *scenlist=&sopflow->scenlist;
+  Scenario       *scenario;
+  Forecast       *forecast;
+
+  PetscFunctionBegin;
+
+  ngenwind = 100; // This should be increased for larger cases (?)
+  fp = fopen(windgenprofile,"r");
+  if (fp == NULL) {
+    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_FILE_OPEN,"Cannot open wind generation profile file %s",windgenprofile);CHKERRQ(ierr);
+  }
+
+  /* First line -- has the bus numbers */
+  out = fgets(line,MAXLINE,fp);
+  /* Parse wind generator numbers */
+  tok = strtok(line,sep);
+  tok = strtok(NULL,sep); /* Skip first token */
+  tok = strtok(NULL,sep); /* Skip second token */
+  while(tok != NULL) {
+    /* Parse generator info */
+    tok2 = strsep(&tok,sep2);
+    sscanf(tok2,"%d",&windgenbus[nw]);
+    tok2 = strsep(&tok,sep2);
+    tok2 = strsep(&tok,sep2); /* Skip string "Wind" */
+    sscanf(tok2,"%d",&genid);
+    if(nw == ngenwind) SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_SUP,"Exceeded max. number of wind generators=%d\n",ngenwind);
+    snprintf(windgenid[nw],3,"%-2d",genid);
+
+    nw++;
+    tok = strtok(NULL,sep);
+  }
+
+  while((out = fgets(line,MAXLINE,fp)) != NULL) {
+    if(strcmp(line,"\r\n") == 0 || strcmp(line,"\n") == 0) {
+      continue; /* Skip blank lines */
+    }
+
+    tok = strtok(line,sep);
+    tok = strtok(NULL,sep); /* Skip first token */
+    sscanf(tok,"%d",&scen_num); /* Scenario number */
+    scen_num -= 1; /* Scenario numbers start with 1 in the file, convert to zero-based start */
+
+    if(scen_num < scenlist->Nscen || scen_num == sopflow->Ns) {
+      fclose(fp);
+      PetscFunctionReturn(0);
+    }
+
+    scenario = &scenlist->scen[scen_num];
+    forecast = &scenario->forecastlist[scenario->nforecast];
+    forecast->num = scen_num;
+    forecast->type = FORECAST_WIND;
+    forecast->nele = nw;
+    ierr = PetscCalloc1(forecast->nele,&forecast->buses);CHKERRQ(ierr);
+    ierr = PetscCalloc1(forecast->nele,&forecast->id);CHKERRQ(ierr);
+    ierr = PetscCalloc1(forecast->nele,&forecast->val);CHKERRQ(ierr);
+    
+    for(i=0; i < nw; i++) {
+      forecast->buses[i] = windgenbus[i];
+      ierr = PetscStrcpy(forecast->id[i],windgenid[i]);CHKERRQ(ierr);
+    }
+
+    tok = strtok(NULL,sep);
+    nw = 0;
+    while(tok != NULL) {
+      sscanf(tok,"%lf",&pg);
+      forecast->val[nw] = pg;
+      nw++;
+      tok = strtok(NULL,sep);
+    }
+    scenario->nforecast++;
+    scenlist->Nscen++;
+  }
+  PetscFunctionReturn(0);
+}
   
 /*
   SOPFLOWReadScenarioData - Reads the scenario data file
@@ -153,27 +258,10 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
 PetscErrorCode SOPFLOWReadScenarioData(SOPFLOW sopflow,ScenarioFileInputFormat scenfileformat,const char scenfile[])
 {
   PetscErrorCode ierr;
-  SCOPFLOW       scopflow;
-  TCOPFLOW       tcopflow;
-  PetscInt       c,t;
 
   PetscFunctionBegin;
   if(sopflow->scenunctype == WIND) {
-    if(!sopflow->ismulticontingency) {
-      ierr = SOPFLOWReadScenarioData_Wind(sopflow,scenfile,0,0);CHKERRQ(ierr);
-    } else {
-      scopflow = sopflow->scopflows[0];
-      for(c=0; c < scopflow->nc; c++) {
-	if(!scopflow->ismultiperiod) {
-	  ierr = SOPFLOWReadScenarioData_Wind(sopflow,scenfile,c,0);CHKERRQ(ierr);
-	} else {
-	  tcopflow = scopflow->tcopflows[0];
-	  for(t=0; t < tcopflow->Nt; t++) {
-	    ierr = SOPFLOWReadScenarioData_Wind(sopflow,scenfile,c,t);CHKERRQ(ierr);
-	  }
-	}
-      }
-    } 
+    ierr = SOPFLOWReadScenarioData_Wind(sopflow,scenfile,0,0);CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);
