@@ -15,7 +15,6 @@
 
 #define SOPFLOWSOLVERSMAX 10
 #define SOPFLOWMODELSMAX  10
-#define MAX_SCENARIOS     1000
 
 struct _p_SOPFLOWModelOps {
   PetscErrorCode (*destroy)(SOPFLOW);
