@@ -310,6 +310,8 @@ struct _p_PS {
   PetscInt    NlineON,nlineON;       /* Number of active lines */
   PetscInt    NgenON,ngenON;           /* Number of active generators */
   PetscInt    Nref,nref;               /* Number of reference buses */
+  /* Number of generator types */
+  PetscInt ngencoal,ngenwind,ngensolar,ngenng,ngennuclear,ngenhydro,ngenundefined;
   PSBUS       bus;
   PSLOAD      load;
   PSGEN       gen;

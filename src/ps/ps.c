@@ -721,6 +721,8 @@ PetscErrorCode PSCreate(MPI_Comm mpicomm,PS *psout)
   ps->ndiff   = 0;
   ps->nconncomp = 0;
   ps->nref = ps->Nref = 0;
+  ps->ngencoal = ps->ngenwind = ps->ngensolar = 0;
+  ps->ngenng = ps->ngennuclear = ps->ngenundefined = 0;
  
   ierr = PSIncreaseReferenceCount(ps);CHKERRQ(ierr);
 
