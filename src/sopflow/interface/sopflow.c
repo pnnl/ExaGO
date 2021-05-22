@@ -125,6 +125,7 @@ PetscErrorCode SOPFLOWDestroy(SOPFLOW *sopflow)
   ierr = PetscFree((*sopflow)->ngi);CHKERRQ(ierr);
   ierr = PetscFree((*sopflow)->nconeqcoup);CHKERRQ(ierr);
   ierr = PetscFree((*sopflow)->nconineqcoup);CHKERRQ(ierr);
+  ierr = PetscFree((*sopflow)->scenlist.scen);CHKERRQ(ierr);
 
   MPI_Comm_free(&(*sopflow)->subcomm);
   ierr = PetscFree(*sopflow);CHKERRQ(ierr);
@@ -315,9 +316,26 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   PetscOptionsEnd();
 
   if(sopflow->Ns == 0) SETERRQ(PETSC_COMM_SELF,0,"Number of scenarios should be greater than 0");
+  /*
+  if(sopflow->Ns >= 0) sopflow->Ns += 1;
   if(sopflow->scenfileset) {
     if(sopflow->Ns == -1) { 
       ierr = SOPFLOWGetNumScenarios(sopflow,sopflow->scenfileformat,sopflow->scenfile,&sopflow->Ns);CHKERRQ(ierr);
+    }
+  } else {
+    if(sopflow->Ns == -1) sopflow->Ns = 1;
+  }
+  */
+
+  if(sopflow->scenfileset) {
+    if(sopflow->Ns == -1) sopflow->Ns = MAX_SCENARIOS;
+
+    ierr = PetscCalloc1(sopflow->Ns,&sopflow->scenlist.scen);CHKERRQ(ierr);
+
+    for(s=0; s < sopflow->Ns; s++) sopflow->scenlist.scen->nforecast = 0;
+    if(sopflow->Ns > 1) {
+      ierr = SOPFLOWReadScenarioData(sopflow,sopflow->scenfileformat,sopflow->scenfile);CHKERRQ(ierr);
+      sopflow->Ns = sopflow->scenlist.Nscen + 1;
     }
   } else {
     if(sopflow->Ns == -1) sopflow->Ns = 1;

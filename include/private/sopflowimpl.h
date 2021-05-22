@@ -11,6 +11,7 @@
 #include <opflow.h>
 #include <sopflow.h>
 #include <scopflow.h>
+#include <private/scenariolist.h>
 
 #define SOPFLOWSOLVERSMAX 10
 #define SOPFLOWMODELSMAX  10
@@ -144,6 +145,7 @@ struct _p_SOPFLOW{
   void    *solverdata;
 
   /* Data for scenarios */
+  ScenarioList    scenlist;
   PetscBool       scenfileset;   /* Is the scenario file set ? */
   char            scenfile[PETSC_MAX_PATH_LEN]; /* Scenario file */
   ScenarioFileInputFormat scenfileformat;
