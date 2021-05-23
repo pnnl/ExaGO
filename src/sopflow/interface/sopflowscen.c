@@ -225,6 +225,9 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
     forecast->nele = nw;
     ierr = PetscCalloc1(forecast->nele,&forecast->buses);CHKERRQ(ierr);
     ierr = PetscCalloc1(forecast->nele,&forecast->id);CHKERRQ(ierr);
+    for(i=0; i < forecast->nele; i++) {
+      ierr = PetscCalloc1(3,&forecast->id[i]);
+    }
     ierr = PetscCalloc1(forecast->nele,&forecast->val);CHKERRQ(ierr);
     
     for(i=0; i < nw; i++) {

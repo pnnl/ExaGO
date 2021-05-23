@@ -74,7 +74,7 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout)
 PetscErrorCode SOPFLOWDestroy(SOPFLOW *sopflow)
 {
   PetscErrorCode ierr;
-  PetscInt       s;
+  PetscInt       s,i;
 
   PetscFunctionBegin;
   ierr = COMMDestroy(&(*sopflow)->comm);CHKERRQ(ierr);
@@ -125,6 +125,19 @@ PetscErrorCode SOPFLOWDestroy(SOPFLOW *sopflow)
   ierr = PetscFree((*sopflow)->ngi);CHKERRQ(ierr);
   ierr = PetscFree((*sopflow)->nconeqcoup);CHKERRQ(ierr);
   ierr = PetscFree((*sopflow)->nconineqcoup);CHKERRQ(ierr);
+
+  /* Destroy scenario list */
+  for(s=0; s < (*sopflow)->Ns; s++) {
+    for(i=0; i < (*sopflow)->scenlist.scen[s].nforecast; i++) {
+      ierr = PetscFree((*sopflow)->scenlist.scen[s].forecastlist[i].buses);CHKERRQ(ierr);
+      for(int j=0; j < (*sopflow)->scenlist.scen[s].forecastlist[i].nele; j++) {
+	ierr = PetscFree((*sopflow)->scenlist.scen[s].forecastlist[i].id[j]);CHKERRQ(ierr);
+      }
+      ierr = PetscFree((*sopflow)->scenlist.scen[s].forecastlist[i].id);CHKERRQ(ierr);
+      ierr = PetscFree((*sopflow)->scenlist.scen[s].forecastlist[i].val);CHKERRQ(ierr);
+    }
+  }
+
   ierr = PetscFree((*sopflow)->scenlist.scen);CHKERRQ(ierr);
 
   MPI_Comm_free(&(*sopflow)->subcomm);

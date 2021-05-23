@@ -17,7 +17,7 @@ struct _p_Forecast {
   ForecastType type; /* Forecast type */
   PetscInt   nele; /* Number of devices/elements involved in this forecast */
   PetscInt   *buses;  /* Bus numbers */
-  char       *id[3];  /* Device ids */
+  char       **id;  /* Device ids */
   PetscScalar *val;   /* forecast values */
 };
 
