@@ -334,10 +334,8 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
     ierr = PetscCalloc1(sopflow->Ns,&sopflow->scenlist.scen);CHKERRQ(ierr);
 
     for(s=0; s < sopflow->Ns; s++) sopflow->scenlist.scen->nforecast = 0;
-    if(sopflow->Ns > 1) {
-      ierr = SOPFLOWReadScenarioData(sopflow,sopflow->scenfileformat,sopflow->scenfile);CHKERRQ(ierr);
-      sopflow->Ns = sopflow->scenlist.Nscen;
-    }
+    ierr = SOPFLOWReadScenarioData(sopflow,sopflow->scenfileformat,sopflow->scenfile);CHKERRQ(ierr);
+    sopflow->Ns = sopflow->scenlist.Nscen;
   } else {
     if(sopflow->Ns == -1) sopflow->Ns = 1;
   }
