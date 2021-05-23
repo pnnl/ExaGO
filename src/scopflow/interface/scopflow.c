@@ -384,7 +384,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
     ierr = PSSetUp(scopflow->opflow0->ps);CHKERRQ(ierr);
     if(scopflow->scen) {
       // Scenario set by SOPFLOW, apply it */
-      ierr = PSApplyScenario(ps,*scopflow->scen);CHKERRQ(ierr);
+      ierr = PSApplyScenario(scopflow->opflow0->ps,*scopflow->scen);CHKERRQ(ierr);
     }
     ierr = OPFLOWSetUp(scopflow->opflow0);CHKERRQ(ierr);
 
@@ -459,6 +459,11 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
       }
 
       ierr = TCOPFLOWSetTimeStepandDuration(tcopflow,dT,duration);CHKERRQ(ierr);
+
+      if(scopflow->scen) {
+	/* SOPFLOW has set scenario, pass it to TCOPFLOW */
+	ierr = TCOPFLOWSetScenario(tcopflow,scopflow->scen);CHKERRQ(ierr);
+      }
 
       /* Set contingencies */
       if(scopflow->ctgcfileset) {
