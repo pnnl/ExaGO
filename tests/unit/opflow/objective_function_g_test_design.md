@@ -43,7 +43,7 @@ Following are the value of parameters of interest for this test:
 - $`P_{Gk}=10`$
 
 
-With this, value of the objective function's gradient is equal to 1. 
+With this, **the value of the objective function's gradient is equal to 1 for N=1**. 
 
 ## Scaling
 Idea is to be able to "multiply" the network, and at the same time being able to **easily** evaluate the objective function's gradient. Network shown before is considered as a base segment (N=1).
@@ -72,4 +72,6 @@ Algorithm for the .m file generation with N segments of the base network is:
 #### Generator fuel types data:
 - Copy generator fuel types data N times.
 
-With this, objective function on N segments is equal to vector with length of N where all values are equal to 1.
+With this, **the value of the objective function's gradient of the network with N segments is equal to vector with length of N where all values are equal to 1**.
+
+
