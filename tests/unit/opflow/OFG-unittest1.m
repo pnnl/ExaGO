@@ -1,5 +1,5 @@
 % Case saved by PowerWorld Simulator, version 22, build date March 15, 2021
-function mpc = OFG_unittest1
+function mpc = OFG-unittest1
 mpc.version = '2';
 mpc.baseMVA =  100.00;
 
