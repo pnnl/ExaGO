@@ -93,7 +93,7 @@ SOPFLOWHIOPInterface::SOPFLOWHIOPInterface(SOPFLOW sopflowin)
     for(k=0; k < bus->ngen; k++) {
       PSBUSGetGen(bus,k,&gen);
       if(gen->status) {
-	loc_xcoup.push_back(gen->startxpowloc); /* Location for Pg */
+	loc_xcoup.push_back(gen->startxpsetloc); /* Location for Pgset */
 	j++;
       }
     }
@@ -162,32 +162,32 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double* 
   PSBUS  bus,bus0;
   PSGEN  gen,gen0;
   PetscInt i,k,j,g=0;
-  PetscInt cont_num=idx+1;
+  PetscInt scen_num=idx+1;
   
-  //  printf("[Rank %d] contingency %d Came in recourse objective function\n",sopflow->comm->rank,cont_num);
+  //  printf("[Rank %d] contingency %d Came in recourse objective function\n",sopflow->comm->rank,scen_num);
 
   opflow0 = sopflow->opflow0;
 
-  ierr = OPFLOWCreate(PETSC_COMM_SELF,&opflowctgc);CHKERRQ(ierr);
-  ierr = OPFLOWSetModel(opflowctgc,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
+  ierr = OPFLOWCreate(PETSC_COMM_SELF,&opflowscen);CHKERRQ(ierr);
+  ierr = OPFLOWSetModel(opflowscen,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
       
-  ierr = OPFLOWReadMatPowerData(opflowctgc,sopflow->netfile);CHKERRQ(ierr);
+  ierr = OPFLOWReadMatPowerData(opflowscen,sopflow->netfile);CHKERRQ(ierr);
   /* Set up the PS object for opflow */
-  ps = opflowctgc->ps;
+  ps = opflowscen->ps;
   ierr = PSSetUp(ps);CHKERRQ(ierr);
       
-  /* Read and set scenario */
-  /*************************/
-  /* TO BE DONE */
+  if(sopflow->scenfileset) {
+    ierr = PSApplyScenario(ps,sopflow->scenlist.scen[scen_num]);
+  }
 
-  ierr = OPFLOWHasGenSetPoint(opflowctgc,PETSC_TRUE);CHKERRQ(ierr); /* Activates ramping variables */
-  ierr = OPFLOWSetObjectiveType(opflowctgc,NO_OBJ);CHKERRQ(ierr);
-  ierr = OPFLOWSetUpdateVariableBoundsFunction(opflowctgc,SOPFLOWUpdateOPFLOWVariableBounds,(void*)sopflow);
+  ierr = OPFLOWHasGenSetPoint(opflowscen,PETSC_TRUE);CHKERRQ(ierr); /* Activates ramping variables */
+  //  ierr = OPFLOWSetObjectiveType(opflowscen,NO_OBJ);CHKERRQ(ierr);
+  ierr = OPFLOWSetUpdateVariableBoundsFunction(opflowscen,SOPFLOWUpdateOPFLOWVariableBounds,(void*)sopflow);
 
-  ierr = OPFLOWSetUp(opflowctgc);CHKERRQ(ierr);
+  ierr = OPFLOWSetUp(opflowscen);CHKERRQ(ierr);
   
   /* Update generator set-points */
-  ps = opflowctgc->ps;
+  ps = opflowscen->ps;
   ps0 = opflow0->ps; 
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
@@ -202,8 +202,8 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double* 
   }
   assert(g == n);
   /* Solve */
-  ierr = OPFLOWSolve(opflowctgc);
-  ierr = OPFLOWGetObjective(opflowctgc,&rval);
+  ierr = OPFLOWSolve(opflowscen);
+  ierr = OPFLOWGetObjective(opflowscen,&rval);
   
   return true;
 }
@@ -219,16 +219,16 @@ bool SOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int& n, double* x, 
   PetscInt i,k,j,g=0;
   const PetscScalar *lam,*lameq;
   Vec    Lambda;
-  PetscInt cont_num=idx+1;
+  PetscInt scen_num=idx+1;
   
-  // printf("[Rank %d] contingency %d Came in recourse gradient function\n",sopflow->comm->rank,cont_num);
+  // printf("[Rank %d] contingency %d Came in recourse gradient function\n",sopflow->comm->rank,scen_num);
   opflow0 = sopflow->opflow0;
-  opflow = opflowctgc;
+  opflow = opflowscen;
 
   ierr = OPFLOWGetConstraintMultipliers(opflow,&Lambda);
   ierr = VecGetArrayRead(Lambda,&lam);
   lameq = lam;
-  /* Update generator set-points */
+
   ps = opflow->ps;
   ps0 = opflow0->ps; 
   for(i=0; i < ps->nbus; i++) {
@@ -342,7 +342,7 @@ PetscErrorCode SOPFLOWSolverGetObjective_HIOP(SOPFLOW sopflow,PetscReal *obj)
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SOPFLOWSolverGetSolution_HIOP(SOPFLOW sopflow,PetscInt cont_num,Vec *X)
+PetscErrorCode SOPFLOWSolverGetSolution_HIOP(SOPFLOW sopflow,PetscInt scen_num,Vec *X)
 {
   OPFLOW         opflow,opflow0;
   PS             ps,ps0;
@@ -353,9 +353,9 @@ PetscErrorCode SOPFLOWSolverGetSolution_HIOP(SOPFLOW sopflow,PetscInt cont_num,V
 
   PetscFunctionBegin;
 
-  if(sopflow->sstart <= cont_num && cont_num < sopflow->send) {
+  if(sopflow->sstart <= scen_num && scen_num < sopflow->send) {
     if(!sopflow->ismulticontingency) {
-      opflow = sopflow->opflows[cont_num-sopflow->sstart];
+      opflow = sopflow->opflows[scen_num-sopflow->sstart];
       opflow0 = sopflow->opflow0;
 
       /* Update generator set-points */
@@ -383,15 +383,15 @@ PetscErrorCode SOPFLOWSolverGetSolution_HIOP(SOPFLOW sopflow,PetscInt cont_num,V
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SOPFLOWSolverGetConstraints_HIOP(SOPFLOW sopflow,PetscInt cont_num,Vec *G)
+PetscErrorCode SOPFLOWSolverGetConstraints_HIOP(SOPFLOW sopflow,PetscInt scen_num,Vec *G)
 {
   OPFLOW              opflow;
 
   PetscFunctionBegin;
 
-  if(sopflow->sstart <= cont_num && cont_num < sopflow->send) {
+  if(sopflow->sstart <= scen_num && scen_num < sopflow->send) {
     if(!sopflow->ismulticontingency) {
-      opflow = sopflow->opflows[cont_num-sopflow->sstart];
+      opflow = sopflow->opflows[scen_num-sopflow->sstart];
       *G = opflow->G;
     } 
    } else {
@@ -401,14 +401,14 @@ PetscErrorCode SOPFLOWSolverGetConstraints_HIOP(SOPFLOW sopflow,PetscInt cont_nu
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SOPFLOWSolverGetConstraintMultipliers_HIOP(SOPFLOW sopflow,PetscInt cont_num,Vec *Lambda)
+PetscErrorCode SOPFLOWSolverGetConstraintMultipliers_HIOP(SOPFLOW sopflow,PetscInt scen_num,Vec *Lambda)
 {
   OPFLOW              opflow;
 
   PetscFunctionBegin;
-  if(sopflow->sstart <= cont_num && cont_num < sopflow->send) {
+  if(sopflow->sstart <= scen_num && scen_num < sopflow->send) {
     if(!sopflow->ismulticontingency) {
-      opflow = sopflow->opflows[cont_num-sopflow->sstart];
+      opflow = sopflow->opflows[scen_num-sopflow->sstart];
       *Lambda = opflow->Lambda; 
     }
   } else {

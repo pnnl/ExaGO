@@ -311,12 +311,8 @@ PetscErrorCode SOPFLOWUpdateOPFLOWVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu,v
       for(k=0; k < bus->ngen; k++) {
 	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
 	if(!gen->status) continue;
-	if(sopflow->mode == 0) {
-	  /* Only ref. bus responsible for make-up power for contingencies */
-	  if(bus->ide != REF_BUS) {
-	    xl[gen->startxpdevloc]   = xu[gen->startxpdevloc] = 0.0;
-	  }
-	} else {
+	if(sopflow->mode == 0) continue;
+	else {
 	  xl[gen->startxpdevloc] = -gen->ramp_rate_30min;
 	  xu[gen->startxpdevloc] =  gen->ramp_rate_30min;
 	}
@@ -485,6 +481,10 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
     ierr = OPFLOWCreate(PETSC_COMM_SELF,&sopflow->opflow0);CHKERRQ(ierr);
     ierr = OPFLOWSetModel(sopflow->opflow0,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
     ierr = OPFLOWReadMatPowerData(sopflow->opflow0,sopflow->netfile);CHKERRQ(ierr);
+    ierr = PSSetUp(sopflow->opflow0->ps);CHKERRQ(ierr);
+    if(sopflow->scenfileset) {
+      ierr = PSApplyScenario(sopflow->opflow0->ps,sopflow->scenlist.scen[0]);CHKERRQ(ierr);
+    }
     ierr = OPFLOWHasGenSetPoint(sopflow->opflow0,PETSC_TRUE);CHKERRQ(ierr);
     ierr = OPFLOWSetUp(sopflow->opflow0);CHKERRQ(ierr);
 
@@ -506,7 +506,11 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
       }
 
       ierr = OPFLOWHasGenSetPoint(sopflow->opflows[s],PETSC_TRUE);CHKERRQ(ierr);
-      ierr = OPFLOWSetUpdateVariableBoundsFunction(sopflow->opflows[s],SOPFLOWUpdateOPFLOWVariableBounds,(void*)sopflow);
+      PetscBool issolverhiop;
+      ierr = PetscStrcmp(sopflow->solvername,"HIOP",&issolverhiop);CHKERRQ(ierr);
+      if(issolverhiop && sopflow->sstart+s != 0) {
+	ierr = OPFLOWSetUpdateVariableBoundsFunction(sopflow->opflows[s],SOPFLOWUpdateOPFLOWVariableBounds,(void*)sopflow);
+      }
       ierr = OPFLOWSetUp(sopflow->opflows[s]);CHKERRQ(ierr);
     }
     
