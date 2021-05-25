@@ -36,7 +36,7 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout)
 
   sopflow->solver   = NULL;
   sopflow->model    = NULL;
-
+  sopflow->opflow0  = NULL;
   sopflow->mode = 1;
 
   sopflow->ismulticontingency = PETSC_FALSE;
@@ -108,7 +108,9 @@ PetscErrorCode SOPFLOWDestroy(SOPFLOW *sopflow)
 
   /* Destroy SCOPFLOW or OPFLOW objects */
   if((*sopflow)->ismulticontingency) {
-    ierr = OPFLOWDestroy((*sopflow)->opflow0);CHKERRQ(ierr);
+    if((*sopflow)->opflow0) {
+      ierr = OPFLOWDestroy(&(*sopflow)->opflow0);CHKERRQ(ierr);
+    }
     for(s=0; s < (*sopflow)->ns; s++) {
       ierr = SCOPFLOWDestroy(&(*sopflow)->scopflows[s]);CHKERRQ(ierr);
     }
@@ -507,6 +509,8 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
       }
 
       ierr = OPFLOWHasGenSetPoint(sopflow->opflows[s],PETSC_TRUE);CHKERRQ(ierr);
+      
+      PetscBool issolverhiop;
       if(issolverhiop && sopflow->sstart+s != 0) {
 	ierr = OPFLOWSetUpdateVariableBoundsFunction(sopflow->opflows[s],SOPFLOWUpdateOPFLOWVariableBounds,(void*)sopflow);
       }

@@ -177,6 +177,10 @@ PetscErrorCode SCOPFLOWSetModel(SCOPFLOW scopflow,const char* modelname)
   scopflow->modelops.computeobjandgradient          = 0;
   scopflow->modelops.computeobjective               = 0;
   scopflow->modelops.computegradient                = 0;
+  scopflow->modelops.computeauxobjective            = 0;
+  scopflow->modelops.computeauxgradient             = 0;
+  scopflow->modelops.computeauxhessian              = 0;
+
 
   ierr = PetscStrcpy(scopflow->modelname,modelname);CHKERRQ(ierr);
   /* Call the underlying implementation constructor */
@@ -235,6 +239,34 @@ PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW scopflow,const char netfile[])
 
   ierr = PetscMemcpy(scopflow->netfile,netfile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
 
+  PetscFunctionReturn(0);
+}
+
+/*
+  SCOPFLOWSetAuxillaryObjective - Set additional objective and gradient functions
+
+  Input Parameters:
++ opflow   - scopflow object
+. objfunc  - objective function
+. gradfunc - associated function
+- userctx  - user struct to pass data needed for objective and gradient calculation
+
+  Notes:
+    objfunc and gradfunc are called at every iteration of the optimization
+
+    objfunc and should have the following signatures:
+        PetscErrorCode MyObjectiveFunction(SCOPFLOW scopflow,const double *x, double *obj, void* userctx)
+        PetscErrorCode MyGradientFunction(SCOPFLOW scopflow,const double *x, double *grad, void* userctx)
+*/
+PetscErrorCode SCOPFLOWSetAuxillaryObjective(SCOPFLOW scopflow,SCOPFLOWAuxObjectiveFunction objfunc,SCOPFLOWAuxGradientFunction gradfunc,SCOPFLOWAuxHessianFunction hessfunc,void* userctx)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  scopflow->modelops.computeauxobjective = objfunc;
+  scopflow->modelops.computeauxgradient  = gradfunc;
+  scopflow->modelops.computeauxhessian   = hessfunc;
+  scopflow->userctx = userctx;
   PetscFunctionReturn(0);
 }
 
@@ -426,10 +458,10 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 	}
       }
       
+      ierr = OPFLOWHasGenSetPoint(scopflow->opflows[c],PETSC_TRUE);CHKERRQ(ierr); /* Activates ramping variables */
       if(scopflow->cstart+c ==  0) { /* First stage */
 	ierr = OPFLOWSetObjectiveType(scopflow->opflows[c],MIN_GEN_COST);CHKERRQ(ierr);
       } else { /* Second stages */
-	ierr = OPFLOWHasGenSetPoint(scopflow->opflows[c],PETSC_TRUE);CHKERRQ(ierr); /* Activates ramping variables */
 	ierr = OPFLOWSetObjectiveType(scopflow->opflows[c],NO_OBJ);CHKERRQ(ierr);
 	ierr = OPFLOWSetUpdateVariableBoundsFunction(scopflow->opflows[c],SCOPFLOWUpdateOPFLOWVariableBounds,(void*)scopflow);
       }

@@ -71,6 +71,13 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWGetMode(SCOPFLOW,PetscInt*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetNumIterations(SCOPFLOW,PetscInt*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetTolerance(SCOPFLOW,PetscReal);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetTolerance(SCOPFLOW,PetscReal*);
+
+typedef PetscErrorCode (*SCOPFLOWAuxObjectiveFunction)(SCOPFLOW,const double*,double*,void*);
+typedef PetscErrorCode (*SCOPFLOWAuxGradientFunction)(SCOPFLOW,const double*,double*,void*);
+typedef PetscErrorCode (*SCOPFLOWAuxHessianFunction)(SCOPFLOW,const double*,Mat,void*);
+
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetAuxillaryObjective(SCOPFLOW,SCOPFLOWAuxObjectiveFunction,SCOPFLOWAuxGradientFunction,SCOPFLOWAuxHessianFunction,void*);
+
 #endif
 
 

@@ -40,7 +40,7 @@ PetscErrorCode SCOPFLOWSetVariableBounds_GENRAMP(SCOPFLOW scopflow,Vec Xl,Vec Xu
     ierr = VecResetArray(opflow->Xl);CHKERRQ(ierr);
     ierr = VecResetArray(opflow->Xu);CHKERRQ(ierr);
 
-    if(opflow->has_gensetpoint) {
+    if(i > 0 && opflow->has_gensetpoint) {
       /* Modify the bounds on ramping variables */
       PetscInt       j,k;
       PS             ps = opflow->ps;
@@ -242,7 +242,7 @@ PetscErrorCode SCOPFLOWComputeJacobian_GENRAMP(SCOPFLOW scopflow,Vec X,Mat J)
       ierr = MatRestoreRow(opflow->Jac_Ge,j,&nvals,&cols,&vals);CHKERRQ(ierr);
     }
 
-    if(opflow->has_gensetpoint) {
+    if(i > 0 && opflow->has_gensetpoint) {
       ps  = opflow->ps;
       ps0 = opflow0->ps;
       for(j=0; j < ps->nbus; j++) {
@@ -359,7 +359,7 @@ PetscErrorCode SCOPFLOWComputeConstraints_GENRAMP(SCOPFLOW scopflow,Vec X,Vec G)
 
     opflow = scopflow->opflows[i];
 
-    if(opflow->has_gensetpoint) {
+    if(i > 0 && opflow->has_gensetpoint) {
       ps = opflow->ps;
       for(j=0; j < ps->nbus; j++) {
 	bus  = &ps->bus[j];

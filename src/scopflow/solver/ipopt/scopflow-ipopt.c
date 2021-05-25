@@ -1,3 +1,5 @@
+
+
 #include <exago_config.h>
 #if defined(EXAGO_ENABLE_IPOPT)
 
@@ -18,6 +20,10 @@ Bool eval_scopflow_f(PetscInt n, PetscScalar* x, Bool new_x,
   ierr = VecPlaceArray(scopflow->X,x);CHKERRQ(ierr);
   ierr = (*scopflow->modelops.computeobjective)(scopflow,scopflow->X,obj_value);CHKERRQ(ierr);
   ierr = VecResetArray(scopflow->X);CHKERRQ(ierr);
+
+  if(scopflow->modelops.computeauxobjective) {
+    ierr = (*scopflow->modelops.computeauxobjective)(scopflow,(const double*)x,obj_value,scopflow->userctx);CHKERRQ(ierr);
+  }
   
   return TRUE;
 }
@@ -35,6 +41,10 @@ Bool eval_scopflow_grad_f(PetscInt n, PetscScalar* x, Bool new_x,
   ierr = VecResetArray(scopflow->X);CHKERRQ(ierr);
   ierr = VecResetArray(scopflow->gradobj);CHKERRQ(ierr);
   
+  if(scopflow->modelops.computeauxgradient) {
+    ierr = (*scopflow->modelops.computeauxgradient)(scopflow,(const double*)x,grad_f,scopflow->userctx);CHKERRQ(ierr);
+  }
+
   return TRUE;
 }
 
@@ -165,6 +175,13 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_fac
 
     /* Compute Hessian */
     ierr = (*scopflow->modelops.computehessian)(scopflow,scopflow->X,scopflow->Lambda,scopflow->Hes);CHKERRQ(ierr);
+
+    /* Auxillary hessian */
+    if(scopflow->modelops.computeauxhessian) {
+      ierr = (*scopflow->modelops.computeauxhessian)(scopflow,x,scopflow->Hes,scopflow->userctx);CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(scopflow->Hes,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(scopflow->Hes,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+    }
 
     /* Copy over values to triplet format */
     /* Note that IPOPT

@@ -4,6 +4,7 @@
 #if defined(EXAGO_ENABLE_HIOP_DISTRIBUTED)
 
 #include <private/opflowimpl.h>
+#include <private/scopflowimpl.h>
 #include <private/sopflowimpl.h>
 #include "sopflow-hiop.hpp"
 
@@ -57,6 +58,57 @@ PetscErrorCode SOPFLOWBaseAuxHessianFunction(OPFLOW opflow,const double* x,Mat H
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode SOPFLOWBaseAuxSCOPFLOWObjectiveFunction(SCOPFLOW scopflow,const double* x,double* obj,void* ctx)
+{
+  PetscErrorCode      ierr;
+  SOPFLOW            sopflow=(SOPFLOW)ctx;
+  SOPFLOWSolver_HIOP hiop = (SOPFLOWSolver_HIOP)sopflow->solver;
+
+  PetscFunctionBegin;
+
+  if(hiop->pridecompprob->include_r_) {
+    hiop->pridecompprob->rec_evaluator->eval_f(scopflow->opflows[0]->nx,x,false,*obj);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SOPFLOWBaseAuxSCOPFLOWGradientFunction(SCOPFLOW scopflow,const double* x,double* grad,void* ctx)
+{
+  PetscErrorCode ierr;
+  SOPFLOW       sopflow=(SOPFLOW)ctx;
+  SOPFLOWSolver_HIOP hiop = (SOPFLOWSolver_HIOP)sopflow->solver;
+
+  PetscFunctionBegin;
+
+  if(hiop->pridecompprob->include_r_) {
+    hiop->pridecompprob->rec_evaluator->eval_grad(scopflow->opflows[0]->nx,x,false,grad);
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SOPFLOWBaseAuxSCOPFLOWHessianFunction(SCOPFLOW scopflow,const double* x,Mat Hess,void* ctx)
+{
+  PetscErrorCode      ierr;
+  SOPFLOW            sopflow=(SOPFLOW)ctx;
+  SOPFLOWSolver_HIOP hiop = (SOPFLOWSolver_HIOP)sopflow->solver;
+  OPFLOW              opflow=scopflow->opflows[0];
+  PetscInt            row,col;
+  PetscScalar         val;
+  PetscInt            i;
+
+  PetscFunctionBegin;
+  if(hiop->pridecompprob->include_r_) {
+    for(i=0; i < hiop->pridecompprob->nxcoup; i++) {
+      row = col = hiop->pridecompprob->loc_xcoup[i];
+      val = hiop->pridecompprob->rec_evaluator->get_rhess()[i];
+      val *= scopflow->obj_factor;
+      ierr = MatSetValues(Hess,1,&row,1,&col,&val,ADD_VALUES);CHKERRQ(ierr);
+    }
+  }
+  PetscFunctionReturn(0);
+}
+
 SOPFLOWHIOPInterface::~SOPFLOWHIOPInterface()
 {
   //    printf("Exiting application\n");
@@ -74,8 +126,13 @@ SOPFLOWHIOPInterface::SOPFLOWHIOPInterface(SOPFLOW sopflowin)
 
   rec_evaluator = NULL;
 
-  opflowbase = sopflow->opflow0;
-  ps = opflowbase->ps;
+  if(!sopflow->ismulticontingency) {
+    opflowbase = sopflow->opflow0;
+    ps = opflowbase->ps;
+  } else {
+    opflowbase = sopflow->scopflows[0]->opflows[0];
+    ps = opflowbase->ps;
+  }
 
   /* Get the number of coupling variables */
   nxcoup = 0;
@@ -115,16 +172,25 @@ hiop::hiopSolveStatus SOPFLOWHIOPInterface::solve_master(double* x,
   const PetscScalar *xsol;
   include_r_ = include_r;
 
-  opflow = sopflow->opflow0;
-
-  //  printf("Rank[%d]:Enter solve_master\n",sopflow->comm->rank);
-  ierr = OPFLOWSolve(opflow);
-  ierr = OPFLOWGetObjective(opflow,&obj);
-  ierr = OPFLOWGetSolution(opflow,&X);
-  ierr = VecGetArrayRead(X,&xsol);
-  ierr = PetscMemcpy(x,xsol,opflow->nx*sizeof(double));
-  ierr = VecRestoreArrayRead(X,&xsol);
-
+  if(!sopflow->ismulticontingency) {
+    opflow = sopflow->opflow0;
+    
+    //  printf("Rank[%d]:Enter solve_master\n",sopflow->comm->rank);
+    ierr = OPFLOWSolve(opflow);
+    ierr = OPFLOWGetObjective(opflow,&obj);
+    ierr = OPFLOWGetSolution(opflow,&X);
+    ierr = VecGetArrayRead(X,&xsol);
+    ierr = PetscMemcpy(x,xsol,opflow->nx*sizeof(double));
+    ierr = VecRestoreArrayRead(X,&xsol);
+  } else {
+    SCOPFLOW scopflow = sopflow->scopflows[0];
+    ierr = SCOPFLOWSolve(scopflow);
+    ierr = SCOPFLOWGetObjective(scopflow,&obj);
+    ierr = SCOPFLOWGetSolution(scopflow,0,&X);
+    ierr = VecGetArrayRead(X,&xsol);
+    ierr = PetscMemcpy(x,xsol,scopflow->opflows[0]->nx*sizeof(double));
+    ierr = VecRestoreArrayRead(X,&xsol);
+  }
   //  printf("Rank[%d]:Exit solve_master\n",sopflow->comm->rank);
   
   return hiop::Solve_Success;
@@ -166,45 +232,75 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double* 
   
   //  printf("[Rank %d] contingency %d Came in recourse objective function\n",sopflow->comm->rank,scen_num);
 
-  opflow0 = sopflow->opflow0;
-
-  ierr = OPFLOWCreate(PETSC_COMM_SELF,&opflowscen);CHKERRQ(ierr);
-  ierr = OPFLOWSetModel(opflowscen,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
-      
-  ierr = OPFLOWReadMatPowerData(opflowscen,sopflow->netfile);CHKERRQ(ierr);
-  /* Set up the PS object for opflow */
-  ps = opflowscen->ps;
-  ierr = PSSetUp(ps);CHKERRQ(ierr);
-      
-  if(sopflow->scenfileset) {
-    ierr = PSApplyScenario(ps,sopflow->scenlist.scen[scen_num]);
-  }
-
-  ierr = OPFLOWHasGenSetPoint(opflowscen,PETSC_TRUE);CHKERRQ(ierr); /* Activates ramping variables */
-  //  ierr = OPFLOWSetObjectiveType(opflowscen,NO_OBJ);CHKERRQ(ierr);
-  ierr = OPFLOWSetUpdateVariableBoundsFunction(opflowscen,SOPFLOWUpdateOPFLOWVariableBounds,(void*)sopflow);
-
-  ierr = OPFLOWSetUp(opflowscen);CHKERRQ(ierr);
-  
-  /* Update generator set-points */
-  ps = opflowscen->ps;
-  ps0 = opflow0->ps; 
-  for(i=0; i < ps->nbus; i++) {
-    bus = &ps->bus[i];
-    bus0 = &ps0->bus[i];
-    for(k=0; k < bus->ngen; k++) {
-      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
-      if(gen0->status) {
-	gen0->pgs = gen->pgs = x[g++];
+  if(!sopflow->ismulticontingency) {
+    opflow0 = sopflow->opflow0;
+    
+    ierr = OPFLOWCreate(PETSC_COMM_SELF,&opflowscen);CHKERRQ(ierr);
+    ierr = OPFLOWSetModel(opflowscen,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
+    
+    ierr = OPFLOWReadMatPowerData(opflowscen,sopflow->netfile);CHKERRQ(ierr);
+    /* Set up the PS object for opflow */
+    ps = opflowscen->ps;
+    ierr = PSSetUp(ps);CHKERRQ(ierr);
+    
+    if(sopflow->scenfileset) {
+      ierr = PSApplyScenario(ps,sopflow->scenlist.scen[scen_num]);
+    }
+    
+    ierr = OPFLOWHasGenSetPoint(opflowscen,PETSC_TRUE);CHKERRQ(ierr); /* Activates ramping variables */
+    //  ierr = OPFLOWSetObjectiveType(opflowscen,NO_OBJ);CHKERRQ(ierr);
+    ierr = OPFLOWSetUpdateVariableBoundsFunction(opflowscen,SOPFLOWUpdateOPFLOWVariableBounds,(void*)sopflow);
+    
+    ierr = OPFLOWSetUp(opflowscen);CHKERRQ(ierr);
+    
+    /* Update generator set-points */
+    ps = opflowscen->ps;
+    ps0 = opflow0->ps; 
+    for(i=0; i < ps->nbus; i++) {
+      bus = &ps->bus[i];
+      bus0 = &ps0->bus[i];
+      for(k=0; k < bus->ngen; k++) {
+	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
+	if(gen0->status) {
+	  gen0->pgs = gen->pgs = x[g++];
+	}
       }
     }
+    assert(g == n);
+    /* Solve */
+    ierr = OPFLOWSolve(opflowscen);
+    ierr = OPFLOWGetObjective(opflowscen,&rval);
+  } else {
+
+    ierr = SCOPFLOWCreate(PETSC_COMM_SELF,&scopflowscen);CHKERRQ(ierr);
+    ierr = SCOPFLOWSetNetworkData(scopflowscen,sopflow->netfile);CHKERRQ(ierr);
+    ierr = SCOPFLOWSetContingencyData(scopflowscen,NATIVE,sopflow->scopflows[0]->ctgcfile);CHKERRQ(ierr);
+
+    if(sopflow->scenfileset) {
+      ierr = SCOPFLOWSetScenario(scopflowscen,&sopflow->scenlist.scen[scen_num]);CHKERRQ(ierr);
+    }
+
+    ierr = SCOPFLOWSetUp(scopflowscen);CHKERRQ(ierr);
+
+    /* Update generator set-points */
+    ps = scopflowscen->opflows[0]->ps;
+    for(i=0; i < ps->nbus; i++) {
+      bus = &ps->bus[i];
+      for(k=0; k < bus->ngen; k++) {
+	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	if(gen->status) {
+	  gen->pgs = x[g++];
+	}
+      }
+    }
+
+    assert(g == n);
+    /* Solve */
+    ierr = SCOPFLOWSolve(scopflowscen);
+    ierr = SCOPFLOWGetObjective(scopflowscen,&rval);
   }
-  assert(g == n);
-  /* Solve */
-  ierr = OPFLOWSolve(opflowscen);
-  ierr = OPFLOWGetObjective(opflowscen,&rval);
-  
+
   return true;
 }
 
@@ -222,33 +318,61 @@ bool SOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int& n, double* x, 
   PetscInt scen_num=idx+1;
   
   // printf("[Rank %d] contingency %d Came in recourse gradient function\n",sopflow->comm->rank,scen_num);
-  opflow0 = sopflow->opflow0;
-  opflow = opflowscen;
 
-  ierr = OPFLOWGetConstraintMultipliers(opflow,&Lambda);
-  ierr = VecGetArrayRead(Lambda,&lam);
-  lameq = lam;
+  if(!sopflow->ismulticontingency) {
+    opflow0 = sopflow->opflow0;
+    opflow = opflowscen;
+    ierr = OPFLOWGetConstraintMultipliers(opflow,&Lambda);
 
-  ps = opflow->ps;
-  ps0 = opflow0->ps; 
-  for(i=0; i < ps->nbus; i++) {
-    bus = &ps->bus[i];
-    bus0 = &ps0->bus[i];
-    for(k=0; k < bus->ngen; k++) {
-      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
-      if(gen0->status && gen->status) {
-	/* Get the lagrange multiplier for the generator set-point equality constraint x_i - x_0 
-	   gradient is the partial derivative for it (note that it is negative) */
-	if(opflow->has_gensetpoint) {
-	  grad[g++] = -lameq[gen->starteqloc+1];
+    ierr = VecGetArrayRead(Lambda,&lam);
+    lameq = lam;
+
+    ps = opflow->ps;
+    ps0 = opflow0->ps; 
+    for(i=0; i < ps->nbus; i++) {
+      bus = &ps->bus[i];
+      bus0 = &ps0->bus[i];
+      for(k=0; k < bus->ngen; k++) {
+	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
+	if(gen0->status && gen->status) {
+	  /* Get the lagrange multiplier for the generator set-point equality constraint x_i - x_0 
+	     gradient is the partial derivative for it (note that it is negative) */
+	  if(opflow->has_gensetpoint) {
+	    grad[g++] = -lameq[gen->starteqloc+1];
+	  }
 	}
       }
     }
-  }
-  ierr = VecRestoreArrayRead(Lambda,&lam);
+    ierr = VecRestoreArrayRead(Lambda,&lam);
 
-  ierr = OPFLOWDestroy(&opflow);CHKERRQ(ierr);
+    ierr = OPFLOWDestroy(&opflow);CHKERRQ(ierr);
+
+  } else {
+    opflow = scopflowscen->opflows[0];
+    ierr = SCOPFLOWGetConstraintMultipliers(scopflowscen,0,&Lambda);
+    ierr = VecGetArrayRead(Lambda,&lam);
+    lameq = lam;
+
+    ps = opflow->ps;
+    for(i=0; i < ps->nbus; i++) {
+      bus = &ps->bus[i];
+      for(k=0; k < bus->ngen; k++) {
+	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	if(gen->status) {
+	  /* Get the lagrange multiplier for the generator set-point equality constraint x_i - x_0 
+	     gradient is the partial derivative for it (note that it is negative) */
+	  if(opflow->has_gensetpoint) {
+	    grad[g++] = -lameq[gen->starteqloc+1];
+	  }
+	}
+      }
+    }
+    ierr = VecRestoreArrayRead(Lambda,&lam);
+
+    ierr = SCOPFLOWDestroy(&scopflowscen);CHKERRQ(ierr);
+  }
+
   return true;
 }
 
@@ -259,7 +383,8 @@ size_t SOPFLOWHIOPInterface::get_num_rterms() const
 
 size_t SOPFLOWHIOPInterface::get_num_vars() const
 {
-  return sopflow->opflow0->nx;
+  if(!sopflow->ismulticontingency) return sopflow->opflow0->nx;
+  else return sopflow->scopflows[0]->opflows[0]->nx;
 }
 
 void SOPFLOWHIOPInterface::get_solution(double* x) const
@@ -270,11 +395,19 @@ void SOPFLOWHIOPInterface::get_solution(double* x) const
   PetscInt i;
 
   if(sopflow->sstart == 0) {
-    opflow = sopflow->opflow0;
-    OPFLOWGetSolution(opflow,&X);
-    VecGetArrayRead(X,&xarr);
-    for(i=0; i < opflow->nx; i++) x[i] = xarr[i];
-    VecRestoreArrayRead(X,&xarr);
+    if(!sopflow->ismulticontingency) {
+      opflow = sopflow->opflow0;
+      OPFLOWGetSolution(opflow,&X);
+      VecGetArrayRead(X,&xarr);
+      for(i=0; i < opflow->nx; i++) x[i] = xarr[i];
+      VecRestoreArrayRead(X,&xarr);
+    } else {
+      SCOPFLOW scopflow=sopflow->scopflows[0];
+      SCOPFLOWGetSolution(scopflow,0,&X);
+      VecGetArrayRead(X,&xarr);
+      for(i=0; i < scopflow->opflows[0]->nx; i++) x[i] = xarr[i];
+      VecRestoreArrayRead(X,&xarr);
+    }
   }
 }
  
@@ -285,8 +418,12 @@ double SOPFLOWHIOPInterface::get_objective()
   PetscErrorCode ierr;
 
   if(sopflow->sstart == 0) {
-    opflow = sopflow->opflow0;
-    ierr = OPFLOWGetObjective(opflow,&obj);CHKERRQ(ierr);
+    if(!sopflow->ismulticontingency) {
+      opflow = sopflow->opflow0;
+      ierr = OPFLOWGetObjective(opflow,&obj);CHKERRQ(ierr);
+    } else {
+      ierr = SCOPFLOWGetObjective(sopflow->scopflows[0],&obj);CHKERRQ(ierr);
+    }
     return obj;
   }
 }
@@ -302,7 +439,11 @@ PetscErrorCode SOPFLOWSolverSolve_HIOP(SOPFLOW sopflow)
   hiop->status = hiop->pridecsolver->run();
 
   /* Reset callbacks */
-  ierr = OPFLOWSetAuxillaryObjective(sopflow->opflow0,NULL,NULL,NULL,sopflow);CHKERRQ(ierr);
+  if(!sopflow->ismulticontingency) {
+    ierr = OPFLOWSetAuxillaryObjective(sopflow->opflow0,NULL,NULL,NULL,sopflow);CHKERRQ(ierr);
+  } else {
+    ierr = SCOPFLOWSetAuxillaryObjective(sopflow->scopflows[0],NULL,NULL,NULL,sopflow);CHKERRQ(ierr);
+  }
 
   PetscFunctionReturn(0);
 }
@@ -332,7 +473,9 @@ PetscErrorCode SOPFLOWSolverGetObjective_HIOP(SOPFLOW sopflow,PetscReal *obj)
 	temp += sopflow->opflows[i]->obj;
       }
     } else {
-      //      temp = sopflow->tcopflows[0]->obj;
+      for(int i=0; i < sopflow->ns; i++) {
+	temp += sopflow->scopflows[i]->obj;
+      }
     }
   }
   // ierr = MPI_Bcast(&temp,1,MPI_REAL,0,sopflow->comm->type);CHKERRQ(ierr);
@@ -376,6 +519,29 @@ PetscErrorCode SOPFLOWSolverGetSolution_HIOP(SOPFLOW sopflow,PetscInt scen_num,V
       /* Solve */
       ierr = OPFLOWSolve(opflow);
       *X = opflow->X; 
+    } else {
+      SCOPFLOW scopflow = sopflow->scopflows[scen_num-sopflow->sstart];
+      OPFLOW   opflow0 = sopflow->scopflows[0]->opflow0;
+      OPFLOW   opflow = scopflow->opflows[0];
+
+      /* Update generator set-points */
+      ps = opflow->ps;
+      ps0 = opflow0->ps; 
+      for(i=0; i < ps->nbus; i++) {
+	bus = &ps->bus[i];
+	bus0 = &ps0->bus[i];
+	for(k=0; k < bus->ngen; k++) {
+	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	  ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
+	  if(gen0->status) {
+	    gen->pgs = gen0->pgs;
+	  }
+	}
+      }
+      
+      /* Solve */
+      ierr = SCOPFLOWSolve(scopflow);
+      *X = scopflow->X;
     }
   } else {
     *X = NULL;
@@ -442,7 +608,11 @@ PetscErrorCode SOPFLOWSolverSetUp_HIOP(SOPFLOW sopflow)
 
   /* Add auxillary functions to base case */
   if(sopflow->sstart == 0) {
-    ierr = OPFLOWSetAuxillaryObjective(sopflow->opflow0,SOPFLOWBaseAuxObjectiveFunction,SOPFLOWBaseAuxGradientFunction,SOPFLOWBaseAuxHessianFunction,sopflow);CHKERRQ(ierr);
+    if(!sopflow->ismulticontingency) {
+      ierr = OPFLOWSetAuxillaryObjective(sopflow->opflow0,SOPFLOWBaseAuxObjectiveFunction,SOPFLOWBaseAuxGradientFunction,SOPFLOWBaseAuxHessianFunction,sopflow);CHKERRQ(ierr);
+    } else {
+      ierr = SCOPFLOWSetAuxillaryObjective(sopflow->scopflows[0],SOPFLOWBaseAuxSCOPFLOWObjectiveFunction,SOPFLOWBaseAuxSCOPFLOWGradientFunction,SOPFLOWBaseAuxSCOPFLOWHessianFunction,sopflow);CHKERRQ(ierr);
+    }
   }
 
   PetscFunctionReturn(0);

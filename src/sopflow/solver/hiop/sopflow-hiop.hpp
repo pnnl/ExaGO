@@ -15,6 +15,7 @@
 
 #include <hiopInterfacePrimalDecomp.hpp>
 #include <hiopAlgPrimalDecomp.hpp>
+#include <sopflow.h>
 
 class SOPFLOWHIOPInterface : public hiop::hiopInterfacePriDecProblem
 {
@@ -49,6 +50,7 @@ public:
 private:
   SOPFLOW sopflow;
   OPFLOW   opflowscen;
+  SCOPFLOW scopflowscen;
 
 };
 

@@ -31,6 +31,16 @@ struct _p_SCOPFLOWModelOps {
   PetscErrorCode (*computeobjandgradient)(SCOPFLOW,Vec,PetscScalar*,Vec); /* Objective and gradient routine */
   PetscErrorCode (*computeobjective)(SCOPFLOW,Vec,PetscScalar*); /* Objective */
   PetscErrorCode (*computegradient)(SCOPFLOW,Vec,Vec); /* Gradient of the objective function */
+
+  /* Auxillary objective,gradient and hessian functions */
+  /* Some applications may require to add custom objective function values in addition to what
+     is being availble in OPFLOW. These auxillary functions provide setting custom objective,
+     gradient, and hessian
+  */
+  PetscErrorCode (*computeauxobjective)(SCOPFLOW,const double*,double*,void*); /* Auxillary objective function */
+  PetscErrorCode (*computeauxgradient)(SCOPFLOW,const double*,double*,void*); /* Auxillary gradient */
+  PetscErrorCode (*computeauxhessian)(SCOPFLOW,const double*,Mat,void*); /* Auxillary hessian */
+
 };
 
 struct _p_SCOPFLOWModelList{
@@ -156,6 +166,8 @@ struct _p_SCOPFLOW{
   PetscBool ismultiperiod; /* Are we doing a multi-period OPF? */
 
   Scenario *scen; /* Used by SOPFLOW to pass the scenario information */
+
+  void *userctx;
 };
 
 extern PetscErrorCode SCOPFLOWModelRegisterAll(SCOPFLOW);
