@@ -106,8 +106,9 @@ PetscErrorCode SOPFLOWDestroy(SOPFLOW *sopflow)
     ierr = ((*sopflow)->modelops.destroy)(*sopflow);
   }
 
-  /* Destroy TCOPFLOW or OPFLOW objects */
+  /* Destroy SCOPFLOW or OPFLOW objects */
   if((*sopflow)->ismulticontingency) {
+    ierr = OPFLOWDestroy((*sopflow)->opflow0);CHKERRQ(ierr);
     for(s=0; s < (*sopflow)->ns; s++) {
       ierr = SCOPFLOWDestroy(&(*sopflow)->scopflows[s]);CHKERRQ(ierr);
     }
@@ -477,7 +478,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
 
   if(!sopflow->ismulticontingency) {
 
-    /* Create base-case OPFLOW */
+    /* Create base-case OPFLOW, only used when solver is HIOP */
     ierr = OPFLOWCreate(PETSC_COMM_SELF,&sopflow->opflow0);CHKERRQ(ierr);
     ierr = OPFLOWSetModel(sopflow->opflow0,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
     ierr = OPFLOWReadMatPowerData(sopflow->opflow0,sopflow->netfile);CHKERRQ(ierr);
@@ -506,8 +507,6 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
       }
 
       ierr = OPFLOWHasGenSetPoint(sopflow->opflows[s],PETSC_TRUE);CHKERRQ(ierr);
-      PetscBool issolverhiop;
-      ierr = PetscStrcmp(sopflow->solvername,"HIOP",&issolverhiop);CHKERRQ(ierr);
       if(issolverhiop && sopflow->sstart+s != 0) {
 	ierr = OPFLOWSetUpdateVariableBoundsFunction(sopflow->opflows[s],SOPFLOWUpdateOPFLOWVariableBounds,(void*)sopflow);
       }
@@ -515,6 +514,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
     }
     
   } else {
+
     /* Create SCOPFLOW objects */
     ierr = PetscCalloc1(sopflow->ns,&sopflow->scopflows);CHKERRQ(ierr);
 
