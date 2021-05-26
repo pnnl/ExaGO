@@ -1,6 +1,7 @@
 
 set -x
-which cmake-format
+cmakeFormat=${CMAKEFORMAT_EXECUTABLE:-'cmake-format'}
+which $cmakeFormat
 if [[ $? -eq 1 ]]; then
   echo
   echo No cmake-format script was found!
@@ -11,12 +12,22 @@ if [[ $? -eq 1 ]]; then
   exit 1
 fi
 
-export cmakeFormat="cmake-format --log-level info"
-export srcdir=${srcdir:-$PWD}
-export findCmakeFiles=`find $srcdir -name '*.cmake' -or -name CMakeLists.txt`
+export cmakeFormat="$cmakeFormat --log-level info"
+export srcdir=${CMAKE_SOURCE_DIR:-$PWD}
 
 function doBuild {
-  for f in $findCmakeFiles; do
-    $cmakeFormat --in-place $f
+  files="$srcdir/CMakeLists.txt"
+  for d in buildsystem/cmake src tests applications; do
+    files="$files
+$(find $srcdir/$d -name '*.cmake' -or -name CMakeLists.txt)"
   done
+
+  local ret=0
+  while read f; do
+    $cmakeFormat --in-place $f
+  done <<< "$files"
 }
+
+if [ $1 = "--run" ]; then
+  doBuild
+fi

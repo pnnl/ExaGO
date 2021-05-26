@@ -64,6 +64,16 @@ option(EXAGO_ENABLE_GPU "Enable GPU support" OFF)
 # Enable RAJA support
 option(EXAGO_ENABLE_RAJA "Enables RAJA and Umpire libraries" OFF)
 
+# Enable clang-format targets 'lint' and 'lint-apply'
+option(EXAGO_ENABLE_CLANGFORMAT
+       "Enables linting C/C++ sources with clang-format" OFF
+)
+
+# Enable clang-format target
+option(EXAGO_ENABLE_CMAKEFORMAT
+       "Enables linting CMake sources with cmake-format" OFF
+)
+
 # Enable tests
 option(EXAGO_RUN_TESTS "Enable tests" ON)
 
@@ -101,6 +111,14 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR})
 # Create alias for -lm which is needed when linking math on UNIX
 if(UNIX)
   set(EXAGO_MATH_LIB m)
+endif()
+
+if(EXAGO_ENABLE_CLANGFORMAT)
+  include(FindClangFormat)
+endif()
+
+if(EXAGO_ENABLE_CMAKEFORMAT)
+  include(FindCmakeFormat)
 endif()
 
 # If MPI support is enabled, find MPI includes and libraries
