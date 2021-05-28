@@ -819,7 +819,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 
 
   /* Set up underlying PS object */
-  ierr = PSSetUp(ps);CHKERRQ(ierr);
+  ierr = OPFLOWSetUpPS(opflow);CHKERRQ(ierr);
 
   ierr = PetscCalloc1(ps->nbus,&opflow->busnvararray);CHKERRQ(ierr);
   ierr = PetscCalloc1(ps->nline,&opflow->branchnvararray);CHKERRQ(ierr);
@@ -1627,3 +1627,53 @@ PetscErrorCode OPFLOWGetObjectiveType(OPFLOW opflow,OPFLOWObjectiveType *objtype
   *objtype = opflow->objectivetype;
   PetscFunctionReturn(0);
 }
+
+/* OPFLOWGetPS - Gets the underlying PS object
+
+  Input Parameters
+. opflow - the OPFLOW object
+
+  Output Parameters
+. ps - the ps object
+
+  Notes: This function returns the PS object that holds the network data. Using the PS object
+         one can make changes to the network parameters. A typical case is
+         changing some network parameters before solving opflow.
+
+         OPFLOWSetUpPS() must be called before OPFLOWGetPS()
+*/
+PetscErrorCode OPFLOWGetPS(OPFLOW opflow,PS *ps)
+{
+  PetscFunctionBegin;
+  if(!opflow->ps->setupcalled) SETERRQ(PETSC_COMM_SELF,0,"OPFLOWSetUpPS() must be called before calling OPFLOWGetPS()\n");
+  if(ps) *ps = opflow->ps;
+  PetscFunctionReturn(0);
+}
+
+/* OPFLOWSetUpPS - Sets the underlying PS network object to be used by OPFLOW
+
+  Input Parameters
+. opflow - the OPFLOW object
+
+  Notes: This function is an intermediate function that can be called for setting up
+         the PS network object prior to solving OPFLOW. A typical use-case is some
+         network parameter needs changing before solving opflow. In such case,
+         the work flow would be
+
+  1. OPFLOWCreate();
+  2. OPFLOWReadMatPowerData();
+  3. OPFLOWSetUpPS();
+  4. OPFLOWGetPS();
+  ... change the network data by the PS object retrieved via OPFLOWGetPS().
+  5. OPFLOWSolve();
+
+ Skip steps 3 and 4 if no network changes are needed to be done.
+*/
+PetscErrorCode OPFLOWSetUpPS(OPFLOW opflow)
+{
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = PSSetUp(opflow->ps);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+

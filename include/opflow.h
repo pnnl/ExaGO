@@ -91,6 +91,52 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetGenBusVoltageType(OPFLOW,OPFLOWGenBusVoltag
 PETSC_EXTERN PetscErrorCode OPFLOWGetObjectiveType(OPFLOW,OPFLOWObjectiveType*);
 PETSC_EXTERN PetscErrorCode OPFLOWSetObjectiveType(OPFLOW,OPFLOWObjectiveType);
 
+/* OPFLOWGetPS - Gets the underlying PS object
+
+  Input Parameters                                                            
+. opflow - the OPFLOW object                  
+
+  Output Parameters             
+. ps - the ps object       
+
+  Notes: This function returns the PS object that holds the network data. Using the PS object            
+         one can make changes to the network parameters. A typical case is
+         changing some network parameters before solving opflow.                      
+         OPFLOWSetUpPS() must be called before OPFLOWGetPS()
+*/
+PETSC_EXTERN PetscErrorCode OPFLOWGetPS(OPFLOW,PS*);
+
+/* OPFLOWSetUpPS - Sets the underlying PS network object to be used by OPFLOW
+
+  Input Parameters                                                             
+. opflow - the OPFLOW object                                                                        
+ 
+  Notes: This function is an intermediate function that can be called for setting up
+         the PS network object prior to solving OPFLOW. A typical use-case is some
+         network parameter needs changing before solving opflow. In such case,
+         the work flow would be                                                                                
+  1. OPFLOWCreate();                                                                                                 
+  2. OPFLOWReadMatPowerData();
+  3. OPFLOWSetUpPS();           
+  4. OPFLOWGetPS();             
+  ... change the network data by the PS object retrieved via OPFLOWGetPS().
+  5. OPFLOWSolve();                                                                                   
+ Skip steps 3 and 4 if no network changes are needed to be done.             
+*/
+PETSC_EXTERN PetscErrorCode OPFLOWSetUpPS(OPFLOW);
+
+/*
+  OPFLOWSolutionToPS - Updates the PS struct from OPFLOW solution
+
+  Input Parameters:
+. opflow - the OPFLOW object
+
+  Notes: Updates the different fields in the PS struct from the OPFLOW solution.
+         This function should be called after OPFLOWSolve() before retrieving
+	 values from the PS struct.
+*/
+PETSC_EXTERN PetscErrorCode OPFLOWSolutionToPS(OPFLOW);
+
 #endif
 
 

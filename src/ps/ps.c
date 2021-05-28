@@ -1,5 +1,3 @@
-
-
 #include <private/psimpl.h>
 
 const char *const PSGENFuelTypes[] = {"COAL","WIND","SOLAR","NG","NUCLEAR","HYDRO","UNDEFINED","GENFUELTYPE_",NULL};
@@ -1149,6 +1147,14 @@ PetscErrorCode PSCreateMatrix(PS ps,Mat *mat)
 
 /*
   PSSetGenStatus - Sets generator status given the bus name and id
+
+  Input Parameters
++ ps     - the PS objec
+. gbus   - generator bus
+. gid    - generator id
+- status - Generator status (1 = ON, 0 = OFF)
+
+  Notes: PSSetUp() must be called before calling PSSetGenStatus()  
 */
 PetscErrorCode PSSetGenStatus(PS ps,PetscInt gbus,const char* gid,PetscInt status)
 {
@@ -1158,7 +1164,7 @@ PetscErrorCode PSSetGenStatus(PS ps,PetscInt gbus,const char* gid,PetscInt statu
   PetscBool       statusupdate=PETSC_FALSE;
 
   PetscFunctionBegin;
-  if(!ps->setupcalled) SETERRQ(PETSC_COMM_SELF,0,"PSSetUp() must be called before calling PFLOWGetGen()\n");
+  if(!ps->setupcalled) SETERRQ(PETSC_COMM_SELF,0,"PSSetUp() must be called before calling PSSetGenStatus()\n");
 
   ierr = PSGetGen(ps,gbus,gid,&gen);CHKERRQ(ierr);
   
@@ -1183,10 +1189,43 @@ PetscErrorCode PSSetGenStatus(PS ps,PetscInt gbus,const char* gid,PetscInt statu
 	gen->pg = gen->qg = 0.0;
       }
     }
+  } else {     
+    SETERRQ2(PETSC_COMM_SELF,0,"No generator found on bus %d with %s id\n",gbus,gid);
   }
+
 
   /* Update reference bus if needed */
   ierr = PSCheckandSetRefBus(ps);CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+/*
+  PSSetGenStatus - Gets generator status given the bus name and id
+
+  Input Parameters
++ ps     - the PS object
+. gbus   - generator bus
+. gid    - generator id
+- status - Generator status
+
+  Notes: PSSetUp() must be called before calling PSSetGenStatus()  
+*/
+PetscErrorCode PSGetGenStatus(PS ps,PetscInt gbus,const char* gid,PetscInt* status)
+{
+  PetscErrorCode ierr;
+  PSGEN          gen;
+
+  PetscFunctionBegin;
+  if(!ps->setupcalled) SETERRQ(PETSC_COMM_SELF,0,"PSSetUp() must be called before calling PSSetGenStatus()\n");
+
+  ierr = PSGetGen(ps,gbus,gid,&gen);CHKERRQ(ierr);
+  
+  if(gen) {
+    if(status) *status = gen->status;
+  } else {     
+    SETERRQ2(PETSC_COMM_SELF,0,"No generator found on bus %d with %s id\n",gbus,gid);
+  }
 
   PetscFunctionReturn(0);
 }
@@ -1340,6 +1379,115 @@ PetscErrorCode PSComputeParticipationFactors(PS ps)
       ierr = PSBUSGetGen(bus,j,&gen);CHKERRQ(ierr);
       if(gen->status) gen->apf = gen->pt/pmaxtot;
     }
+  }
+
+  PetscFunctionReturn(0);
+}
+
+
+/*
+  PSSetGenPowerLimits - Sets generator real and reactive power limits given a bus number and generator id
+
+  Input Parameters
++ ps   - the PS object
+. gbus - bus number for the generaor
+. id   - generator id
+. pt   - Max. generator real power capacity (MW)
+. pb   - Min. generator real power capacity (MW)
+. qt   - Max. generator reactive power capacity (MVAr)
+- qb   - Min. generator reactive power capacity (MVAr)
+
+  Notes: Use EXAGO_IGNORE to not set the value 
+*/
+PetscErrorCode PSSetGenPowerLimits(PS ps,PetscInt gbus,const char* gid,PetscScalar pt, PetscScalar pb, PetscScalar qt, PetscScalar qb)
+{
+  PetscErrorCode ierr;
+  PSGEN          gen;
+  PSBUS          bus;
+
+  PetscFunctionBegin;
+  if(!ps->setupcalled) SETERRQ(PETSC_COMM_SELF,0,"PSSetUp() or OPFLOWSetUpPS() must be called before calling PSSetGenStatus()\n");
+
+  ierr = PSGetGen(ps,gbus,gid,&gen);CHKERRQ(ierr);
+  
+  if(gen) {
+    if(pt != EXAGO_IGNORE) gen->pt = pt/ps->MVAbase;
+    if(pb != EXAGO_IGNORE) gen->pb = pb/ps->MVAbase;
+    if(qt != EXAGO_IGNORE) gen->qt = qt/ps->MVAbase;
+    if(qb != EXAGO_IGNORE) gen->qb = qb/ps->MVAbase;
+  } else {
+    SETERRQ2(PETSC_COMM_SELF,0,"No generator found on bus %d with %s id\n",gbus,gid);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+/*
+  PSGetGenPowerLimits - Returns generator real and reactive power limits given a bus number and generator id
+
+  Input Parameters
++ ps   - the PS object
+. gbus - bus number for the generaor
+. gid  - generator id
+. pt   - Max. generator real power capacity
+. pb   - Min. generator real power capacity
+. qt   - Max. generator reactive power capacity
+- qb   - Min. generator reactive power capacity
+
+  Notes: Use NULL to ignore retrieving value
+*/
+PetscErrorCode PSSetGenPowerLimits(PS ps,PetscInt gbus,const char* gid,PetscScalar *pt, PetscScalar *pb, PetscScalar *qt, PetscScalar *qb)
+{
+  PetscErrorCode ierr;
+  PSGEN          gen;
+  PSBUS          bus;
+
+  PetscFunctionBegin;
+  if(!ps->setupcalled) SETERRQ(PETSC_COMM_SELF,0,"PSSetUp() or OPFLOWSetUpPS() must be called before calling PSSetGenStatus()\n");
+
+  ierr = PSGetGen(ps,gbus,gid,&gen);CHKERRQ(ierr);
+  
+  if(gen) {
+    if(pt) *pt = gen->pt;
+    if(pb) *pb = gen->pb;
+    if(qt) *qt = gen->qt;
+    if(qb) *qb = gen->qb;
+  } else {
+    SETERRQ2(PETSC_COMM_SELF,0,"No generator found on bus %d with %s id\n",gbus,gid);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+/*                                 
+  PSGetGenDispatch - Returns generator real (MW) and reactive power (MVAR) dispatch given a bus number and generator id
+
+  Input Parameters
++ ps   - the PS object                                                             
+. gbus - bus number for the generator                                                        
+- id   - generator id
+
+  Output Paramters                                                                                                  
++ pg   - Real power dispatch (MW)
+- qg   - Reactive power dispatch (MVAr)                                                         
+
+  Notes: This function should be called after OPFLOWSolutionToPS()
+*/
+PetscErrorCode PSGetGenDispatch(PS ps,PetscInt gbus, const char* gid,PetscScalar* pg,PetscScalar* qg)
+{
+  PetscErrorCode ierr;
+  PSGEN          gen;
+  PSBUS          bus;
+
+  PetscFunctionBegin;
+
+  ierr = PSGetGen(ps,gbus,gid,&gen);CHKERRQ(ierr);
+  
+  if(gen) {
+    if(pg) *pg = gen->pg*ps->MVAbase;
+    if(qg) *qg = gen->qg*ps->MVAbase;
+  } else {
+    SETERRQ2(PETSC_COMM_SELF,0,"No generator found on bus %d with %s id\n",gbus,gid);
   }
 
   PetscFunctionReturn(0);

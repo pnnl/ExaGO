@@ -36,4 +36,6 @@
 #define GENRAMPRATE_HYDRO     150 /* Hydro */
 #define GENRAMPRATE_UNDEFINED 3 /* All other sources (same as coal) */
 
+#define EXAGO_IGNORE         -1000000 /* Ignore value */
+
 #endif

@@ -354,13 +354,15 @@ extern PetscErrorCode PSCheckTopology(PS);
 extern PetscErrorCode PSGetLine(PS,PetscInt,PetscInt,const char*,PSLINE*);
 extern PetscErrorCode PSGetGen(PS,PetscInt,const char*,PSGEN*);
 extern PetscErrorCode PSGetLoad(PS,PetscInt,const char*,PSLOAD*);
-extern PetscErrorCode PSSetGenStatus(PS,PetscInt,const char*,PetscInt);
-extern PetscErrorCode PSSetLineStatus(PS,PetscInt,PetscInt,const char*,PetscInt);
 extern PetscErrorCode PSIslandCheckandSetRefBus(PS,PetscInt);
 extern PetscErrorCode PSConnCompDestroy(PS);
 extern PetscErrorCode PSSetEdgeandBusStartLoc(PS);
 extern PetscErrorCode PSPrintSystemSummary(PS);
 extern PetscErrorCode PSSaveSolution(PS,OutputFormat,const char[]);
 extern PetscErrorCode PSApplyContingency(PS,Contingency);
+extern PetscErrorCode PSIncreaseReferenceCount(PS);
+extern PetscErrorCode PSDescreaseReferenceCount(PS);
+extern PetscErrorCode PSSetGenDispatchandStatus(PS,PetscInt,PetscInt,PetscInt,PetscScalar,PetscScalar);
+
 #endif
 
