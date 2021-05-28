@@ -1,18 +1,32 @@
 #[[ Functionality tests for ExaGO OPFLOW applications ]]
 
-set_source_files_properties(opflow.c opflowselfcheck.c PROPERTIES LANGUAGE CXX)
+set_source_files_properties(
+  opflow.c opflow2.c opflowselfcheck.c PROPERTIES LANGUAGE CXX
+)
 
 add_executable(testOpflowFunctionality opflow.c opflowselfcheck.c)
+add_executable(testOpflowFunctionality2 opflow2.c opflowselfcheck.c)
+
 target_include_directories(
   testOpflowFunctionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_include_directories(
+  testOpflowFunctionality2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 set(tolerance "1e-3")
 
 #[[ Configure OPFLOW functionality tests ]]
 target_link_libraries(testOpflowFunctionality ${EXAGO_APP_LIBS})
+target_link_libraries(testOpflowFunctionality2 ${EXAGO_APP_LIBS})
+
 if(EXAGO_INSTALL_TESTS)
   install(TARGETS testOpflowFunctionality
+          RUNTIME DESTINATION tests/functionality
+  )
+
+  install(TARGETS testOpflowFunctionality2
           RUNTIME DESTINATION tests/functionality
   )
 
@@ -200,6 +214,21 @@ if(EXAGO_INSTALL_TESTS)
     -hiop_compute_mode
     CPU
     -hiop_ipopt_debug
+  )
+
+  # Functionality test for OPFLOW with PS modifications
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_OPFLOW_PS_MODIFY
+    DEPENDS
+    IPOPT
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:testOpflowFunctionality2>
+    -opflow_solver
+    IPOPT
+    -opflow_model
+    POWER_BALANCE_POLAR
   )
 
 endif()

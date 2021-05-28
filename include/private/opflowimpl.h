@@ -207,6 +207,4 @@ extern PetscErrorCode OPFLOWModelRegisterAll(OPFLOW);
 /* Register all OPFLOW solvers */
 extern PetscErrorCode OPFLOWSolverRegisterAll(OPFLOW);
 
-/* Update PS struct from OPFLOW solution */
-extern PetscErrorCode OPFLOWSolutionToPS(OPFLOW);
 #endif
