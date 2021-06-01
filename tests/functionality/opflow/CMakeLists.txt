@@ -231,4 +231,20 @@ if(EXAGO_INSTALL_TESTS)
     POWER_BALANCE_POLAR
   )
 
+  # Test for bus slack variables
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_OPFLOW_IPOPT_SLACK_VAR
+    DEPENDS
+    IPOPT
+    NETFILES
+    ${network_files}
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:app_opflow>
+    -opflow_include_powerimbalance_variables
+    -print_output
+    -save_output
+  )
+
 endif()
