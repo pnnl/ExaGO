@@ -56,7 +56,7 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps,const char outfile[])
 
   /* Write bus data */
   fprintf(fd, "\n%%%% bus data\n");
-  fprintf(fd, "%%\tbus_i\ttype\tPd\tQd\tGs\tBs\tarea\tVm\tVa\tbaseKV\tzone\tVmax\tVmin");
+  fprintf(fd, "%%\tbus_i\ttype\tPd\tQd\tGs\tBs\tarea\tVm\tVa\tbaseKV\tzone\tVmax\tVmin\tmult_Pmis\tmult_Qmis\tPslack\tQslack");
   fprintf(fd, "\n%sbus = [\n", prefix);
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
@@ -67,9 +67,9 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps,const char outfile[])
       Pd += load->pl*ps->MVAbase;
       Qd += load->ql*ps->MVAbase;
     }
-    fprintf(fd, "\t%d\t%d\t%.9g\t%.9g\t%.9g\t%.9g\t%d\t%.9g\t%.9g\t%.9g\t%d\t%.9g\t%.9g;\n", \
+    fprintf(fd, "\t%d\t%d\t%.9g\t%.9g\t%.9g\t%.9g\t%d\t%.9g\t%.9g\t%.9g\t%d\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g;\n", \
 	    bus->bus_i,bus->ide,Pd,Qd,bus->gl*MVAbase,bus->bl*MVAbase,	\
-	    bus->area,bus->vm,bus->va*180.0/PETSC_PI,bus->basekV,bus->zone,bus->Vmax,bus->Vmin);
+	    bus->area,bus->vm,bus->va*180.0/PETSC_PI,bus->basekV,bus->zone,bus->Vmax,bus->Vmin,bus->mult_pmis,bus->mult_qmis,bus->pimb*ps->MVAbase,bus->qimb*ps->MVAbase);
   }
   fprintf(fd, "];\n");
 
@@ -232,7 +232,7 @@ PetscErrorCode PSPrintSystemSummary(PS ps)
   PetscFunctionBegin;
 
   ierr = PetscPrintf(ps->comm->type,"----------------------------------------------------------------------\n");CHKERRQ(ierr);
-  ierr = PetscPrintf(ps->comm->type,"%-10s %-7s %-7s %-7s %-7s %-14s %-14s\n","Bus","Pd","Qd","Vm","Va","mult_Pmis","mult_Qmis");CHKERRQ(ierr);
+  ierr = PetscPrintf(ps->comm->type,"%-10s %-7s %-7s %-7s %-7s %-14s %-14s %-14s %-14s\n","Bus","Pd","Qd","Vm","Va","mult_Pmis","mult_Qmis","Pslack","Qslack");CHKERRQ(ierr);
   ierr = PetscPrintf(ps->comm->type,"----------------------------------------------------------------------\n");CHKERRQ(ierr);
 
   MPI_Barrier(ps->comm->type);
@@ -249,7 +249,7 @@ PetscErrorCode PSPrintSystemSummary(PS ps)
       Pd += load->pl*ps->MVAbase;
       Qd += load->ql*ps->MVAbase;
     }
-    ierr = PetscPrintf(ps->comm->type,"%-6d %7.2f %7.2f %7.3f %7.3f %12.2f %12.2f\n",bus->bus_i,Pd,Qd,bus->vm,bus->va*180.0/PETSC_PI,bus->mult_pmis,bus->mult_qmis);CHKERRQ(ierr);
+    ierr = PetscPrintf(ps->comm->type,"%-6d %7.2f %7.2f %7.3f %7.3f %12.2f %12.2f %12.2f %12.2f\n",bus->bus_i,Pd,Qd,bus->vm,bus->va*180.0/PETSC_PI,bus->mult_pmis,bus->mult_qmis,bus->pimb*ps->MVAbase,bus->qimb*ps->MVAbase);CHKERRQ(ierr);
   }
   ierr = PetscPrintf(ps->comm->type,"\n");CHKERRQ(ierr);
   MPI_Barrier(ps->comm->type);
