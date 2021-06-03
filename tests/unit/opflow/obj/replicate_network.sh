@@ -9,7 +9,19 @@ if [ $# -eq 0 ]; then
   exit 1
 fi
 
+# Initial Network
+initial_net=OF-unittest1.m
 network_size=$1
+output_net=OF-unittestx$network_size\_temp.m
 
-#   Replicate the network in this dir, and output file
+# Patch of replicating the network once
+diff OF-unittest1.m OF-unittestx2.m -ed > patch.txt
+
+# Replicate the patch to be of desired size
+
+
+# Apply the patch after modification
+patch --ed --output=$output_net OF-unittest1.m patch.txt
+
+# rm patch.txt
 
