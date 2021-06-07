@@ -1,0 +1,65 @@
+spack:
+  specs:
+  - exago+hiop+ipopt+petsc+raja
+  view: true
+  definitions:
+  - compilers: [gcc@8.4.1]
+  compilers:
+  - compiler:
+      spec: gcc@8.4.1
+      paths:
+        cc: gcc
+        cxx: g++
+        f77: gfortran
+        fc: gfortran
+      flags: {}
+      operating_system: centos8
+      target: any
+      modules: []
+      environment: {}
+      extra_rpaths: []
+  packages:
+    ipopt:
+      variants: ~mumps+metis
+    umpire:
+      version: [4.1.2]
+    cmake:
+      externals:
+      - spec: cmake
+        prefix: /usr
+      buildable: false
+    openblas:
+      externals:
+      - spec: openblas
+        prefix: /usr
+      buildable: false
+    openmpi:
+      externals:
+      - spec: openmpi
+        modules: [mpi/openmpi-x86_64]
+      buildable: false
+    python:
+      externals:
+      - spec: python@3.6.8
+        prefix: /usr
+      buildable: false
+    openssl:
+      externals:
+      - spec: openssl
+        prefix: /usr
+      buildable: false
+    diffutils:
+      externals:
+      - spec: diffutils
+        prefix: /usr
+      buildable: false
+    pkgconf:
+      externals:
+      - spec: pkgconf
+        prefix: /usr
+      buildable: false
+    make:
+      externals:
+      - spec: make
+        prefix: /usr
+      buildable: false
