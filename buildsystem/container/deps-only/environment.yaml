@@ -1,6 +1,11 @@
 spack:
   specs:
-  - exago+hiop+ipopt+petsc+raja
+  - openmpi
+  - petsc
+  - ipopt
+  - suite-sparse
+  - umpire
+  - raja
   view: true
   definitions:
   - compilers: [gcc@8.4.1]
@@ -19,8 +24,19 @@ spack:
       environment: {}
       extra_rpaths: []
   packages:
+    umpire:
+      variants: ~examples+openmp
+    raja:
+      variants: ~examples~exercises
     ipopt:
-      variants: ~mumps+metis
+      variants: ~mumps+metis+coinhsl
+    coinhsl:
+      variants: +blas
+    petsc:
+      variants: +mpi~mumps+shared
+      version: [3.14.1]
+    suite-sparse:
+      version: [5.8.1]
     umpire:
       version: [4.1.2]
     cmake:
@@ -36,7 +52,7 @@ spack:
     openmpi:
       externals:
       - spec: openmpi
-        modules: [mpi/openmpi-x86_64]
+        prefix: /usr/lib64/openmpi
       buildable: false
     python:
       externals:
@@ -56,6 +72,41 @@ spack:
     pkgconf:
       externals:
       - spec: pkgconf
+        prefix: /usr
+      buildable: false
+    perl:
+      externals:
+      - spec: perl
+        prefix: /usr
+      buildable: false
+    mpfr:
+      externals:
+      - spec: mpfr
+        prefix: /usr
+      buildable: false
+    hdf5:
+      externals:
+      - spec: hdf5
+        prefix: /usr/lib64/openmpi
+      buildable: false
+    zlib:
+      externals:
+      - spec: zlib
+        prefix: /usr
+      buildable: false
+    m4:
+      externals:
+      - spec: m4
+        prefix: /usr
+      buildable: false
+    gmp:
+      externals:
+      - spec: gmp
+        prefix: /usr
+      buildable: false
+    suite-sparse:
+      externals:
+      - spec: suite-sparse
         prefix: /usr
       buildable: false
     make:

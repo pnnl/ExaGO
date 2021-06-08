@@ -18,7 +18,7 @@ add_executable(testErrorHandler TestErrorHandler.cpp)
 target_link_libraries(testErrorHandler ExaGO::UTILS)
 
 if(EXAGO_INSTALL_TESTS)
-  install(TARGETS testAcopf testErrorHandler DESTINATION ./)
+  install(TARGETS testAcopf testErrorHandler DESTINATION tests/unit)
 
   # Unit tests
   exago_add_test(
