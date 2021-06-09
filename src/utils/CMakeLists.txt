@@ -17,9 +17,9 @@ exago_add_library(
   HEADERS
   ${UTILS_HEADERS}
   LINK_LIBRARIES
-  PRIVATE
+  PUBLIC
   PETSC::SNES
-  PRIVATE
+  PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_C>
   OUTPUT_NAME
   exago_utils
