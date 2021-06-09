@@ -20,15 +20,9 @@ exago_add_library(
   HEADERS
   ${TCOPFLOW_INCLUDE}
   LINK_LIBRARIES
-  PRIVATE
-  PETSC::ALL
-  ExaGO::UTILS
-  ExaGO::PS
-  ExaGO::PFLOW
-  ExaGO::OPFLOW
-  ExaGO::SCOPFLOW
-  $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_C>
   PUBLIC
+  ExaGO::OPFLOW
+  PRIVATE
   $<$<BOOL:${EXAGO_ENABLE_IPOPT}>:Ipopt>
   OUTPUT_NAME
   exago_tcopflow

@@ -45,6 +45,7 @@ struct BUSParamsRajaHiop
   int    *isref;  /* isref[i] = 1 if bus is reference bus */
   int    *isisolated; /* isisolated[i] = 1 if bus is isolated bus */
   int    *ispvpq; /* For all other buses */
+  double *powerimbalance_penalty; /* Penalty for power imbalance */
   double *vmin; /* min. voltage magnitude limit */
   double *vmax; /* max. voltage magnitude limit */
   double *va;   /* bus angle (from file only used in bounds) */
@@ -52,12 +53,17 @@ struct BUSParamsRajaHiop
   double *gl;  /* bus shunt (conductance) */
   double *bl;  /* bus shunt (suspectance) */
   int    *xidx; /* starting locations for bus variables in X vector */
+  int    *xidxpimb; /* starting locations for power imbalance bus variables in X vector */
   int    *gidx;  /* starting locations for bus balance equations in constraint vector */
+  int   *jacsp_idx; /* Location number in the sparse Jacobian for Pimb */
+  int   *jacsq_idx; /* Location number in the sparse Jacobian for Qimb */
+  int   *hesssp_idx;       /* Location number in the Hessian */
 
   // Device data
   int    *isref_dev_;  /* isref[i] = 1 if bus is reference bus */
   int    *isisolated_dev_; /* isisolated[i] = 1 if bus is isolated bus */
   int    *ispvpq_dev_; /* For all other buses */
+  double *powerimbalance_penalty_dev_; /* Penalty for power imbalance */
   double *vmin_dev_; /* min. voltage magnitude limit */
   double *vmax_dev_; /* max. voltage magnitude limit */
   double *va_dev_;   /* bus angle (from file only used in bounds) */
@@ -65,10 +71,15 @@ struct BUSParamsRajaHiop
   double *gl_dev_;  /* bus shunt (conductance) */
   double *bl_dev_;  /* bus shunt (suspectance) */
   int    *xidx_dev_; /* starting locations for bus variables in X vector */
+  int    *xidxpimb_dev_; /* starting locations for power imbalance bus variables in X vector */
   int    *gidx_dev_;  /* starting locations for bus balance equations in constraint vector */
+  int   *jacsp_idx_dev_; /* Location number in the sparse Jacobian for Pimb */
+  int   *jacsq_idx_dev_; /* Location number in the sparse Jacobian for Qimb */
+  int   *hesssp_idx_dev_;       /* Location number in the Hessian */
 
   int allocate(OPFLOW);
   int destroy(OPFLOW);
+  int copy(OPFLOW);
 
 private:
   // Umpire memory allocators
@@ -88,11 +99,19 @@ public:
   double *pb;          /* max. active power gen. limits */
   double *qt;          /* min. reactive power gen. limits */
   double *qb;          /* max. reactive power gen. limits */
+  double *pgs;         /* real power output setpoint */
   int    *xidx;        /* starting locations in X vector */
-  int    *gidx;        /* starting locations in constraint vector */
+  int    *gidxbus;         /* starting locations in constraint vector for bus constraints */
+  int    *geqidxgen;    /* starting locations in equality constraint vector for gen constraints */
+  int    *gineqidxgen;    /* starting locations in inequality constraint vector for gen constraints */
+  int    *gbineqidxgen; /* Starting location to insert contribution to inequality constraint bound */
+
   /* The following members are only used with HIOP */
-  int   *jacsp_idx; /* Location number in the sparse Jacobian for Pg */
-  int   *jacsq_idx; /* Location number in the sparse Jacobian for Qg */
+  int   *eqjacspbus_idx; /* Location number in the bus equality constraints sparse Jacobian for Pg */
+  int   *eqjacsqbus_idx; /* Location number in the bus equality constraints sparse Jacobian for Qg */
+  int   *eqjacspgen_idx; /* Location number in the gen equality constraints sparse Jacobian for Pg */
+  int   *ineqjacspgen_idx; /* Location number in the bus equality constraints sparse Jacobian for Pg */
+  int   *hesssp_idx;       /* Location number in the Hessian */
 
   // Device data
   double *cost_alpha_dev_;  /* generator cost coefficients */
@@ -102,14 +121,23 @@ public:
   double *pb_dev_;          /* max. active power gen. limits */
   double *qt_dev_;          /* min. reactive power gen. limits */
   double *qb_dev_;          /* max. reactive power gen. limits */
+  double *pgs_dev_;         /* real power output setpoint */
   int    *xidx_dev_;        /* starting locations in X vector */
-  int    *gidx_dev_;        /* starting locations in constraint vector */
-  int    *jacsp_idx_dev_;   /* Location number in the sparse Jacobian for Pg */
-  int    *jacsq_idx_dev_;   /* Locatin number in the sparse Jacobian for Qg */
+  int    *gidxbus_dev_;         /* starting locations in constraint vector for bus constraints */
+  int    *geqidxgen_dev_;    /* starting locations in equality constraint vector for gen constraints */
+  int    *gineqidxgen_dev_;    /* starting locations in inequality constraint vector for gen constraints */
+  int    *gbineqidxgen_dev_; /* Starting location to insert contribution to inequality constraint bound */
+
+  /* The following members are only used with HIOP */
+  int   *eqjacspbus_idx_dev_; /* Location number in the bus equality constraints sparse Jacobian for Pg */
+  int   *eqjacsqbus_idx_dev_; /* Location number in the bus equality constraints sparse Jacobian for Qg */
+  int   *eqjacspgen_idx_dev_; /* Location number in the gen equality constraints sparse Jacobian for Pg */
+  int   *ineqjacspgen_idx_dev_; /* Location number in the bus equality constraints sparse Jacobian for Pg */
+  int   *hesssp_idx_dev_;       /* Location number in the Hessian */
 
   int allocate(OPFLOW);
   int destroy(OPFLOW);
-
+  int copy(OPFLOW);
 private:
   // Umpire memory allocators
   umpire::Allocator h_allocator_;
@@ -122,17 +150,28 @@ struct LOADParamsRajaHiop
   int    nload; /* Number of loads */
   double *pl;   /* active power demand */
   double *ql;   /* reactive power demand */
+  double *loadloss_penalty; /* Penalty for load loss */
   int    *xidx; /* starting location in X vector */
   int    *gidx;  /* starting location in constraint vector */
 
-  // Device data
+  /* The following members are only used with HIOP */
+  int   *jacsp_idx; /* Location number in the sparse Jacobian for delPload */
+  int   *jacsq_idx; /* Location number in the sparse Jacobian for delQload */
+  int   *hesssp_idx;       /* Location number in the Hessian */
+
   double *pl_dev_;   /* active power demand */
   double *ql_dev_;   /* reactive power demand */
+  double *loadloss_penalty_dev_; /* Penalty for load loss */
   int    *xidx_dev_; /* starting location in X vector */
   int    *gidx_dev_;  /* starting location in constraint vector */
 
+  int   *jacsp_idx_dev_; /* Location number in the sparse Jacobian for delPload */
+  int   *jacsq_idx_dev_; /* Location number in the sparse Jacobian for delQload */
+  int   *hesssp_idx_dev_;       /* Location number in the Hessian */
+
   int allocate(OPFLOW);
   int destroy(OPFLOW);
+  int copy(OPFLOW);
 
 private:
   // Umpire memory allocators
@@ -182,6 +221,7 @@ struct LINEParamsRajaHiop
 
   int allocate(OPFLOW);
   int destroy(OPFLOW);
+  int copy(OPFLOW);
 
 private:
   // Umpire memory allocators

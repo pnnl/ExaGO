@@ -32,6 +32,7 @@ struct _p_OPFLOWModelOps {
   PetscErrorCode (*setnumvariables)(OPFLOW,PetscInt*,PetscInt*,PetscInt*); /* Set number of variables for buses and branches, and total number of variables */
   PetscErrorCode (*setnumconstraints)(OPFLOW,PetscInt*,PetscInt*,PetscInt*,PetscInt*); /* Set number of equality and inequality constraints */
   PetscErrorCode (*setvariablebounds)(OPFLOW,Vec,Vec); /* Upper and lower bounds on the vector */
+  PetscErrorCode (*updatevariablebounds)(OPFLOW,Vec,Vec,void*); /* Upper and lower bounds on the vector */
   PetscErrorCode (*setvariableboundsarray)(OPFLOW,double*,double*); /* Array version of set variable bounds */
   PetscErrorCode (*setconstraintbounds)(OPFLOW,Vec,Vec); /* Lower and upper bounds on constraints */
   PetscErrorCode (*setconstraintboundsarray)(OPFLOW,double*,double*); /* Array version of constraint bounds */
@@ -56,12 +57,22 @@ struct _p_OPFLOWModelOps {
   PetscErrorCode (*computejacobian)(OPFLOW,Vec,Mat); /* Jacobian of the constraints */
   PetscErrorCode (*solutiontops)(OPFLOW); /* Update PS struct from OPFLOW solution */
   /* Following methods are only used with HIOP */
-  PetscErrorCode (*computesparsejacobianhiop)(OPFLOW,int*,int*,double*); /* Sparse Jacobian */
-  PetscErrorCode (*computesparsehessianhiop)(OPFLOW,const double*,int*,int*,double*); /* Sparse Hessian */
+  PetscErrorCode (*computesparseequalityconstraintjacobianhiop)(OPFLOW,const double*,int*,int*,double*); /* Sparse Equality Constraints Jacobian */
+  PetscErrorCode (*computesparseinequalityconstraintjacobianhiop)(OPFLOW,const double*,int*,int*,double*); /* Sparse Inequality Constraints Jacobian */
+
+  PetscErrorCode (*computesparsehessianhiop)(OPFLOW,const double*,const double*,int*,int*,double*); /* Sparse Hessian */
   PetscErrorCode (*computedenseequalityconstraintjacobianhiop)(OPFLOW,const double*,double*); /* Dense Jacobian */
   PetscErrorCode (*computedenseinequalityconstraintjacobianhiop)(OPFLOW,const double*,double*); /* Dense Jacobian */
   PetscErrorCode (*computedensehessianhiop)(OPFLOW,const double*,const double*,double*); /* Dense Hessian */
 
+  /* Auxillary objective,gradient and hessian functions */
+  /* Some applications may require to add custom objective function values in addition to what
+     is being availble in OPFLOW. These auxillary functions provide setting custom objective,
+     gradient, and hessian
+  */
+  PetscErrorCode (*computeauxobjective)(OPFLOW,const double*,double*,void*); /* Auxillary objective function */
+  PetscErrorCode (*computeauxgradient)(OPFLOW,const double*,double*,void*); /* Auxillary gradient */
+  PetscErrorCode (*computeauxhessian)(OPFLOW,const double*,Mat,void*); /* Auxillary hessian */
 };
 
 struct _p_OPFLOWSolverOps {
@@ -137,6 +148,8 @@ struct _p_OPFLOW{
   PetscInt Ncon,ncon;               /* Total number of constraints (equality + inequality) */
   PetscInt nx,Nx;          /* Total number of local and global variables, excluding ghosts! */
 
+  PetscInt nxsparse,nxdense; /* Only used by HIOP MDS */
+
   //  Mat Jac_GeT; /* Transpose of equality constraint Jacobian */
   //  Mat Jac_GiT; /* Transpose of inequality constraint Jacobian */
 
@@ -199,6 +212,13 @@ struct _p_OPFLOW{
 
   /** @brief Logging events that apply to interface */
   PetscLogEvent objlogger,gradlogger,eqconslogger,ineqconslogger,eqconsjaclogger,ineqconsjaclogger,hesslogger,solvelogger,densehesslogger,sparsehesslogger,denseineqconsjaclogger,denseeqconsjaclogger;
+
+  /** @brief number of nonzeros used with HiOP MDS */
+  PetscInt nnz_eqjacsp,nnz_ineqjacsp,nnz_hesssp;
+
+  /** @brief user provided data struct for auxillary objective */
+  void *userctx;
+
 };
 
 /* Registers all the OPFLOW models */

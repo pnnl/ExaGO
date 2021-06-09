@@ -12,7 +12,7 @@ target_include_directories(
 set(tolerance "1e-3")
 
 #[[ Configure SOPFLOW functionality tests ]]
-target_link_libraries(testSopflowFunctionality ${EXAGO_APP_LIBS})
+target_link_libraries(testSopflowFunctionality ExaGO::SOPFLOW)
 if(EXAGO_INSTALL_TESTS)
   install(TARGETS testSopflowFunctionality
           RUNTIME DESTINATION tests/functionality

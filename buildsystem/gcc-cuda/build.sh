@@ -24,7 +24,7 @@ function doBuild {
     -DMAGMA_DIR=$MY_MAGMA_DIR \
     -DPETSC_DIR=$MY_PETSC_DIR \
     $EXTRA_CMAKE_ARGS"
-
+		
   for requiredVar in builddir installdir makeArgs ctestArgs
   do
     if [[ ! -v $requiredVar ]]

@@ -14,11 +14,10 @@ module load cmake/3.18.2
 # see https://github.com/spack/spack/issues/17407
 ls $PROJ_DIR/src/spack/var/spack/environments/*
 
-spack env activate exago-v0-99-2-hiop-v0-3-99-2
+spack env activate exago-v1-0-0-deps
 
 export MY_PETSC_DIR=`spack location -i petsc`
-export MY_NVCC_ARCH="sm_70"
-export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DHIOP_NVCC_ARCH=$MY_NVCC_ARCH"
+export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DCMAKE_CUDA_ARCHITECTURES=70"
 export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DEXAGO_TEST_WITH_BSUB=ON"
 
 if [[ ! -f $builddir/nvblas.conf ]]; then

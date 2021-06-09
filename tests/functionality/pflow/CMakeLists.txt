@@ -8,7 +8,7 @@ target_include_directories(
 )
 
 #[[ Configure PFLOW functionality tests ]]
-target_link_libraries(testPflowFunctionality ${EXAGO_APP_LIBS})
+target_link_libraries(testPflowFunctionality ExaGO::PFLOW)
 if(EXAGO_INSTALL_TESTS)
   install(TARGETS testPflowFunctionality
           RUNTIME DESTINATION tests/functionality

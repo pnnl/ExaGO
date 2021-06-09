@@ -17,8 +17,9 @@ extern PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP(OPFLOW
 extern PetscErrorCode OPFLOWComputeInequalityConstraintsArray_PBPOLRAJAHIOP(OPFLOW,const double*,double*);
 extern PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLRAJAHIOP(OPFLOW,const double*,double*);
 extern PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOP(OPFLOW,const double*,double*);
-extern PetscErrorCode OPFLOWComputeSparseJacobian_PBPOLRAJAHIOP(OPFLOW,int*,int*,double*);
-extern PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOP(OPFLOW,const double*,int*,int*,double*);
+extern PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW,const double*,int*,int*,double*);
+extern PetscErrorCode OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW,const double*,int*,int*,double*);
+extern PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOP(OPFLOW,const double*,const double*,int*,int*,double*);
 extern PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW,const double*,double*);
 extern PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLRAJAHIOP(OPFLOW,const double*,double*);
 extern PetscErrorCode OPFLOWComputeDenseHessian_PBPOLRAJAHIOP(OPFLOW,const double*,const double*,double*);

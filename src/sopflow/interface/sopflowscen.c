@@ -71,7 +71,8 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
   ierr = PetscMalloc1(ngen,&windgenbus);CHKERRQ(ierr);
 
   /* scenarios on this rank excluding base */
-  nscens=sopflow->comm->rank?sopflow->ns:sopflow->ns-1;
+  //  nscens=sopflow->comm->rank?sopflow->ns:sopflow->ns-1;
+  nscens = sopflow->ns;
 
   /* First line -- has the bus numbers */
   out = fgets(line,MAXLINE,fp);
@@ -101,6 +102,7 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
     tok = strtok(line,sep);
     tok = strtok(NULL,sep); /* Skip first token */
     sscanf(tok,"%d",&scen_num); /* Scenario number */
+    scen_num -= 1; /* Scenario numbers start with 1 in the file, convert to zero-based start */
 
     if(scensread == nscens) {
       ierr = PetscFree(windgenbus);CHKERRQ(ierr);
@@ -131,6 +133,7 @@ PetscErrorCode SOPFLOWReadScenarioData_Wind(SOPFLOW sopflow,const char windgenpr
       ierr = PSGetGen(ps,windgenbus[nw],windgenid[nw],&gen);CHKERRQ(ierr);
       sscanf(tok,"%lf",&pg);
       gen->pg = gen->pt = pg/ps->MVAbase; /* Set real power generation. Note that Pg upper limit is also set to Pg */
+      gen->pgs = gen->pb;
       nw++;
       tok = strtok(NULL,sep);
     }

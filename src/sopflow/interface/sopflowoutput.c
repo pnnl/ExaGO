@@ -69,7 +69,7 @@ PetscErrorCode SOPFLOWPrintSolution(SOPFLOW sopflow,PetscInt scen_num)
     ierr = PetscPrintf(sopflow->comm->type,"%-35s %s\n","OPFLOW Formulation",opflow->modelname);CHKERRQ(ierr);
     ierr = PetscPrintf(sopflow->comm->type,"%-35s %s\n","Solver",sopflow->solvername);CHKERRQ(ierr);
     ierr = PetscPrintf(sopflow->comm->type,"%-35s %s\n","Initialization",OPFLOWInitializationTypes[opflow->initializationtype]);CHKERRQ(ierr);
-    ierr = PetscPrintf(sopflow->comm->type,"%-35s %d\n","Number of scenarios",sopflow->Ns-1);CHKERRQ(ierr);
+    ierr = PetscPrintf(sopflow->comm->type,"%-35s %d\n","Number of scenarios",sopflow->Ns);CHKERRQ(ierr);
     
     ierr = PetscPrintf(sopflow->comm->type,"%-35s %s\n","Load loss allowed",opflow->include_loadloss_variables?"YES":"NO");CHKERRQ(ierr);
     if(opflow->include_loadloss_variables) {

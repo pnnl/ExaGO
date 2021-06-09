@@ -17,7 +17,7 @@ void OPFLOWHIOPInterface::naturaltospdense(const double *xin,double *xout)
   int i;
 
   for(i=0; i < opflow->nx; i++) {
-    xout[idxn2sd_map[i]] = xin[i];
+    xout[opflow->idxn2sd_map[i]] = xin[i];
   }
 }
 
@@ -29,56 +29,13 @@ void OPFLOWHIOPInterface::spdensetonatural(const double *xin,double *xout)
   int i;
 
   for(i=0; i < opflow->nx; i++) {
-    xout[i] = xin[idxn2sd_map[i]];
+    xout[i] = xin[opflow->idxn2sd_map[i]];
   }
 }
 
 OPFLOWHIOPInterface::OPFLOWHIOPInterface(OPFLOW opflowin) 
 {
-  PS ps;
-  PSBUS bus;
-  int   ngen;
-  PSGEN gen;
-  
   opflow   = opflowin;
-  
-  ps = opflow->ps;
-  nxsparse = 2*ps->ngenON;
-  nxdense  = 2*ps->nbus;
-  
-  PetscMalloc1(opflow->nx,&idxn2sd_map);
-  
-  int i,k;
-  int spct=0,dnct=0;
-  int loc;
-  for(i=0; i < ps->nbus; i++) {
-    bus = &ps->bus[i];
-    PSBUSGetVariableLocation(bus,&loc);
-
-    idxn2sd_map[loc] = nxsparse + dnct;
-    idxn2sd_map[loc+1] = nxsparse + dnct+1;
-
-    dnct += 2;
-    loc += 2;
-    PSBUSGetNGen(bus,&ngen);
-    for(k=0; k < ngen; k++) {
-      PSBUSGetGen(bus,k,&gen);
-      if(!gen->status) continue;
-
-      idxn2sd_map[loc] = spct;
-      idxn2sd_map[loc+1] = spct + 1;
-
-      spct += 2;
-      loc += 2;
-    }
-  }
-  
-  /*  
-  for(i=0; i < opflow->nx; i++) {
-    PetscPrintf(PETSC_COMM_SELF,"Variable[%d]: natural =%d\tn2sd=%d\n",i,i,idxn2sd_map[i]);
-  }
-  */
-  
 }
 
 bool OPFLOWHIOPInterface::get_prob_sizes(long long& n, long long& m)
@@ -124,11 +81,12 @@ bool OPFLOWHIOPInterface::get_sparse_dense_blocks_info(int& nx_sparse, int& nx_d
 {
   //  PetscPrintf(MPI_COMM_SELF,"Enter sparse_dense_blocks_info \n");
 
-  nx_sparse = nxsparse;
-  nx_dense  = nxdense;
+  nx_sparse = opflow->nxsparse;
+  nx_dense  = opflow->nxdense;
 
-  nnz_sparse_Jace = nnz_sparse_Hess_Lagr_SS = nxsparse;
-  nnz_sparse_Jaci = 0; 
+  nnz_sparse_Jace = opflow->nnz_eqjacsp;
+  nnz_sparse_Jaci = opflow->nnz_ineqjacsp;
+  nnz_sparse_Hess_Lagr_SS = opflow->nnz_hesssp;
   nnz_sparse_Hess_Lagr_SD = 0;
 
   //  PetscPrintf(MPI_COMM_SELF,"Enter sparse_dense_blocks_info \n");
@@ -210,7 +168,7 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
     //    PetscPrintf(MPI_COMM_SELF,"Came here eq. \n");
 
     /* Sparse Jacobian */
-    ierr = (*opflow->modelops.computesparsejacobianhiop)(opflow,iJacS,jJacS,MJacS);CHKERRQ(ierr);
+    ierr = (*opflow->modelops.computesparseequalityconstraintjacobianhiop)(opflow,x,iJacS,jJacS,MJacS);CHKERRQ(ierr);
 
     ierr = PetscLogEventBegin(opflow->denseeqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
     /* Dense equality constraint Jacobian */
@@ -221,6 +179,9 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
     //    PetscPrintf(MPI_COMM_SELF,"Came here ineq. \n");
 
     if(opflow->nconineq) {
+      /* Sparse Inequality constraint Jacobian */
+      ierr = (*opflow->modelops.computesparseinequalityconstraintjacobianhiop)(opflow,x,iJacS,jJacS,MJacS);CHKERRQ(ierr);
+
       ierr = PetscLogEventBegin(opflow->denseineqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
       ierr = (*opflow->modelops.computedenseinequalityconstraintjacobianhiop)(opflow,x,JacD);CHKERRQ(ierr);
       ierr = PetscLogEventEnd(opflow->denseineqconsjaclogger,0,0,0,0);CHKERRQ(ierr);
@@ -246,7 +207,7 @@ bool OPFLOWHIOPInterface::eval_Hess_Lagr(const long long& n, const long long& m,
 
   /* Compute sparse hessian */
   ierr = PetscLogEventBegin(opflow->sparsehesslogger,0,0,0,0);CHKERRQ(ierr);
-  ierr = (*opflow->modelops.computesparsehessianhiop)(opflow,x,iHSS,jHSS,MHSS);CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computesparsehessianhiop)(opflow,x,lambda,iHSS,jHSS,MHSS);CHKERRQ(ierr);
   ierr = PetscLogEventEnd(opflow->sparsehesslogger,0,0,0,0);CHKERRQ(ierr);
 
   ierr = PetscLogEventBegin(opflow->densehesslogger,0,0,0,0);CHKERRQ(ierr);
@@ -271,15 +232,15 @@ bool OPFLOWHIOPInterface::get_starting_point(const long long& global_n, double* 
 }
 
 bool OPFLOWHIOPInterface::iterate_callback(int iter, double obj_value,
-					   int n, const double* x,
-					   const double* z_L,
-					   const double* z_U,
-					   int m, const double* g,
-					   const double* lambda,
-					   double inf_pr, double inf_du,
-					   double mu,
-					   double alpha_du, double alpha_pr,
-					   int ls_trials)
+		      int n, const double* x,
+		      const double* z_L,
+		      const double* z_U,
+		      int m, const double* g,
+		      const double* lambda,
+		      double inf_pr, double inf_du,
+		      double mu,
+		      double alpha_du, double alpha_pr,
+		      int ls_trials)
 {
   opflow->numits = iter;
   return true;
@@ -312,7 +273,7 @@ void OPFLOWHIOPInterface::solution_callback(hiop::hiopSolveStatus status,
     ierr = VecGetArray(opflow->Lambda,&lam);CHKERRV(ierr);
     ierr = PetscMemcpy(lam,(double*)lamsol,opflow->nconeq*sizeof(PetscScalar));CHKERRV(ierr);
     if(opflow->Nconineq) {
-      ierr = PetscMemcpy((double*)(lam+opflow->nconeq),lamsol+opflow->nconeq,opflow->nconineq*sizeof(PetscScalar));CHKERRV(ierr);
+      ierr = PetscMemcpy(lam+opflow->nconeq,(double*)(lamsol+opflow->nconeq),opflow->nconineq*sizeof(PetscScalar));CHKERRV(ierr);
     }
     ierr = VecRestoreArray(opflow->Lambda,&lam);CHKERRV(ierr);
   } else {
@@ -324,7 +285,7 @@ void OPFLOWHIOPInterface::solution_callback(hiop::hiopSolveStatus status,
     ierr = VecGetArray(opflow->G,&g);CHKERRV(ierr);
     ierr = PetscMemcpy(g,(double*)gsol,opflow->nconeq*sizeof(PetscScalar));CHKERRV(ierr);
     if(opflow->Nconineq) {
-      ierr = PetscMemcpy((double*)(g+opflow->nconeq),gsol+opflow->nconeq,opflow->nconineq*sizeof(PetscScalar));CHKERRV(ierr);
+      ierr = PetscMemcpy(g+opflow->nconeq,(double*)(gsol+opflow->nconeq),opflow->nconineq*sizeof(PetscScalar));CHKERRV(ierr);
     }
     ierr = VecRestoreArray(opflow->G,&g);CHKERRV(ierr);
   }
@@ -346,22 +307,51 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
   ierr = PetscOptionsBegin(opflow->comm->type,NULL,"HIOP options",NULL);CHKERRQ(ierr);
   ierr = PetscOptionsEnum("-hiop_compute_mode","Type of compute mode","",HIOPComputeModeChoices,(PetscEnum)compute_mode,(PetscEnum*)&compute_mode,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-hiop_verbosity_level","HIOP verbosity level (Integer 0 to 12)","",verbose_level,&verbose_level,NULL);CHKERRQ(ierr);
+
 #if defined(EXAGO_ENABLE_IPOPT)
   ierr = PetscOptionsBool("-hiop_ipopt_debug","Flag enabling debugging HIOP code with IPOPT","",hiop->ipopt_debug,&hiop->ipopt_debug,NULL);CHKERRQ(ierr);
 #endif
   PetscOptionsEnd();
 
+#if defined(EXAGO_ENABLE_IPOPT)
+  // IPOPT Adapter
+  if(hiop->ipopt_debug) {
+    std::cout << "using IPOPT adapter...\n\n";
+    hiop->ipoptTNLP = new hiop::hiopMDS2IpoptTNLP(hiop->nlp);
+    hiop->ipoptApp = new Ipopt::IpoptApplication();
+
+    // Using options included in HiOp's IpoptAdapter_driver.cpp
+    hiop->ipoptApp->Options()->SetStringValue("recalc_y", "no");
+    hiop->ipoptApp->Options()->SetStringValue("mu_strategy", "monotone");
+    hiop->ipoptApp->Options()->SetNumericValue("bound_frac", 1e-8);
+    hiop->ipoptApp->Options()->SetNumericValue("bound_push", 1e-8);
+    hiop->ipoptApp->Options()->SetNumericValue("bound_relax_factor", 0.);
+    hiop->ipoptApp->Options()->SetNumericValue("constr_mult_init_max", 0.001);
+    hiop->ipoptApp->Options()->SetStringValue("derivative_test", "second-order");
+
+    Ipopt::ApplicationReturnStatus status = hiop->ipoptApp->Initialize();
+
+    if( status != Solve_Succeeded ) {
+      std::cout << std::endl << std::endl << "*** Error during initialization!" << std::endl;
+      return (int) status;
+    }
+    PetscFunctionReturn(0);
+  }
+#endif
+
   hiop->mds->options->SetStringValue("duals_update_type", "linear");
   hiop->mds->options->SetStringValue("duals_init", "zero");
-  hiop->mds->options->SetStringValue("fixed_var", "relax");
 
+  hiop->mds->options->SetStringValue("fixed_var", "relax");
   hiop->mds->options->SetStringValue("Hessian", "analytical_exact");
   hiop->mds->options->SetStringValue("KKTLinsys", "xdycyd");
   hiop->mds->options->SetStringValue("compute_mode", HIOPComputeModeChoices[compute_mode]);
-
   hiop->mds->options->SetIntegerValue("verbosity_level", verbose_level);
   hiop->mds->options->SetNumericValue("mu0", 1e-1);
   hiop->mds->options->SetNumericValue("tolerance", opflow->tolerance);
+  hiop->mds->options->SetNumericValue("bound_relax_perturb",1e-4);
+  hiop->mds->options->SetStringValue("scaling_type","none");
+
 
   /* Error if model is not power balance hiop or power balance raja hiop */
   ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBPOLHIOP,&ismodelpbpolhiop);CHKERRQ(ierr);
@@ -388,31 +378,6 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
   //  ierr = PetscPrintf(MPI_COMM_SELF,"Came in OPFLOWSetUp\n");CHKERRQ(ierr);
   hiop->solver = new hiop::hiopAlgFilterIPMNewton(hiop->mds);
 
-#if defined(EXAGO_ENABLE_IPOPT)
-  // IPOPT Adapter
-  if(hiop->ipopt_debug)
-  {
-    std::cout << "using IPOPT adapter...\n\n";
-    hiop->ipoptTNLP = new hiop::hiopMDS2IpoptTNLP(hiop->nlp);
-    hiop->ipoptApp = new Ipopt::IpoptApplication();
-
-    // Using options included in HiOp's IpoptAdapter_driver.cpp
-    hiop->ipoptApp->Options()->SetStringValue("recalc_y", "no");
-    hiop->ipoptApp->Options()->SetStringValue("mu_strategy", "monotone");
-    hiop->ipoptApp->Options()->SetNumericValue("bound_frac", 1e-8);
-    hiop->ipoptApp->Options()->SetNumericValue("bound_push", 1e-8);
-    hiop->ipoptApp->Options()->SetNumericValue("bound_relax_factor", 0.);
-    hiop->ipoptApp->Options()->SetNumericValue("constr_mult_init_max", 0.001);
-    hiop->ipoptApp->Options()->SetStringValue("derivative_test", "second-order");
-
-    Ipopt::ApplicationReturnStatus status = hiop->ipoptApp->Initialize();
-
-    if( status != Solve_Succeeded ) {
-      std::cout << std::endl << std::endl << "*** Error during initialization!" << std::endl;
-      return (int) status;
-    }
-  }
-#endif
   //  ierr = PetscPrintf(MPI_COMM_SELF,"Exit OPFLOWSetUp\n");CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
@@ -435,7 +400,6 @@ PetscErrorCode OPFLOWSolverSolve_HIOP(OPFLOW opflow)
       std::cout << std::endl << std::endl << "*** The problem solved!" << std::endl;
     } else  {
       std::cout << std::endl << std::endl << "*** The problem FAILED!" << std::endl;
-      PetscFunctionReturn(1);
     }
   }
 #else
@@ -491,8 +455,11 @@ PetscErrorCode OPFLOWSolverDestroy_HIOP(OPFLOW opflow)
 
   PetscFunctionBegin;
 
-  delete hiop->mds;
-  delete hiop->nlp;
+
+  if(!hiop->ipopt_debug) {
+    delete hiop->mds;
+    delete hiop->nlp;
+  }
 
   ierr = PetscFree(hiop);CHKERRQ(ierr);
 

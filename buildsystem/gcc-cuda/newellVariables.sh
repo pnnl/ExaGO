@@ -17,10 +17,12 @@ source $PROJ_DIR/src/spack/share/spack/setup-env.sh
 
 # Dirty workaround to fix permissions errors
 # see https://github.com/spack/spack/issues/17407
+
 ls $PROJ_DIR/src/spack/var/spack/environments/*
 
-spack env activate exago-v0-99-2-hiop-v0-3-99-2-newell
+spack env activate exago-v1-0-0-deps-newell
 
 # Petsc is the only dependency that needs an explicit path
 export MY_PETSC_DIR=`spack location -i petsc`
+export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DCMAKE_CUDA_ARCHITECTURES=70"
 export NVBLAS_CONFIG_FILE=$PROJ_DIR/$MY_CLUSTER/nvblas.conf

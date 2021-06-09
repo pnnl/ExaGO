@@ -12,8 +12,9 @@ if(EXAGO_ENABLE_RAJA)
   )
 endif()
 
-set(OPFLOW_SOLVER_SRC solver/tao/opflow-tao.c solver/ipopt/opflow-ipopt.c
-                      solver/hiop/opflow-hiop.cpp
+set(OPFLOW_SOLVER_SRC
+    solver/tao/opflow-tao.c solver/ipopt/opflow-ipopt.c
+    solver/hiop/opflow-hiop.cpp solver/hiop/opflow-hiopsparse.cpp
 )
 
 set(OPFLOW_SRC interface/opflow.c interface/opflowregi.c
@@ -40,16 +41,18 @@ exago_add_library(
   LINK_LIBRARIES
   PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_RAJA}>:umpire>
+  PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_RAJA}>:RAJA>
+  PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_RAJA}>:OpenMP::OpenMP_CXX>
+  PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_HIOP}>:HiOp>
+  PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_IPOPT}>:Ipopt>
-  PRIVATE
-  $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_C>
-  PETSC::ALL
-  ExaGO::UTILS
+  PUBLIC
   ExaGO::PFLOW
-  ExaGO::PS
+  PUBLIC
+  PETSC::ALL
   ${LAPACK_LIRBARIES}
   OUTPUT_NAME
   exago_opflow
