@@ -19,10 +19,6 @@ exago_add_library(
   ExaGO::UTILS
   PUBLIC
   ExaGO::PS
-  PUBLIC
-  PETSC::ALL
-  INTERFACE
-  $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_C>
   OUTPUT_NAME
   exago_pflow
 )
