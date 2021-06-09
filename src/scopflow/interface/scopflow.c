@@ -102,6 +102,7 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow)
 
   /* Destroy TCOPFLOW or OPFLOW objects */
   if(!(*scopflow)->ismultiperiod) {
+    ierr = OPFLOWDestroy(&(*scopflow)->opflow0);CHKERRQ(ierr);
     for(c=0; c < (*scopflow)->nc; c++) {
       ierr = OPFLOWDestroy(&(*scopflow)->opflows[c]);CHKERRQ(ierr);
     }
@@ -235,13 +236,54 @@ PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW scopflow,const char netfile[])
   PetscFunctionReturn(0);
 }
 
-/**
- * @brief Sets up an security constrained optimal power flow application object
- * 
- * @param[in] scopflow the scopflow object
- * 
- * @note This routine sets up the SCOPFLOW object and the underlying PS object. 
- *     It also distributes the PS object when used in parallel.
+/* This is kind of a hack to update the variable bounds for OPFLOW based on the mode SCOPFLOW uses
+*/
+PetscErrorCode SCOPFLOWUpdateOPFLOWVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu,void* ctx)
+{
+  PetscErrorCode ierr;
+  SCOPFLOW       scopflow=(SCOPFLOW)ctx;
+
+  PetscFunctionBegin;
+  if(opflow->has_gensetpoint) {
+    /* Modify the bounds on ramping variables */
+    PetscInt       j,k;
+    PS             ps = opflow->ps;
+    PSBUS          bus;
+    PSGEN          gen;
+    PetscScalar    *xl,*xu;
+    
+    ierr = VecGetArray(Xl,&xl);CHKERRQ(ierr);
+    ierr = VecGetArray(Xu,&xu);CHKERRQ(ierr);
+    for(j = 0; j < ps->nbus; j++) {
+      bus = &ps->bus[j];
+      for(k=0; k < bus->ngen; k++) {
+	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	if(!gen->status) continue;
+	if(scopflow->mode == 0) {
+	  /* Only ref. bus responsible for make-up power for contingencies */
+	  if(bus->ide != REF_BUS) {
+	    xl[gen->startxpdevloc]   = xu[gen->startxpdevloc] = 0.0;
+	  }
+	} else {
+	    xl[gen->startxpdevloc] = -gen->ramp_rate_30min;
+	    xu[gen->startxpdevloc] =  gen->ramp_rate_30min;
+	}
+      }
+    }
+    ierr = VecRestoreArray(Xl,&xl);CHKERRQ(ierr);
+    ierr = VecRestoreArray(Xu,&xu);CHKERRQ(ierr);
+  } 
+  PetscFunctionReturn(0);
+}
+/*
+  SCOPFLOWSetUp - Sets up an security constrained optimal power flow application object
+
+  Input Parameters:
+. scopflow - the SCOPFLOW object
+
+  Notes:
+  This routine sets up the SCOPFLOW object and the underlying PS object. It
+  also distributes the PS object when used in parallel.
 */
 PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 {
@@ -332,6 +374,16 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   if(!scopflow->ismultiperiod) {
     /* Create OPFLOW objects */
     ierr = PetscCalloc1(scopflow->nc,&scopflow->opflows);CHKERRQ(ierr);
+
+    /* Create base-case OPFLOW */
+    ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflow0);CHKERRQ(ierr);
+    ierr = OPFLOWSetModel(scopflow->opflow0,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
+    ierr = OPFLOWReadMatPowerData(scopflow->opflow0,scopflow->netfile);CHKERRQ(ierr);
+    ierr = OPFLOWSetUp(scopflow->opflow0);CHKERRQ(ierr);
+
+    ierr = OPFLOWSetObjectiveType(scopflow->opflow0,MIN_GEN_COST);CHKERRQ(ierr);
+
+
     for(c=0; c < scopflow->nc; c++) {
       ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflows[c]);CHKERRQ(ierr);
       ierr = OPFLOWSetModel(scopflow->opflows[c],OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
@@ -367,6 +419,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
       } else { /* Second stages */
 	ierr = OPFLOWHasGenSetPoint(scopflow->opflows[c],PETSC_TRUE);CHKERRQ(ierr); /* Activates ramping variables */
 	ierr = OPFLOWSetObjectiveType(scopflow->opflows[c],NO_OBJ);CHKERRQ(ierr);
+	ierr = OPFLOWSetUpdateVariableBoundsFunction(scopflow->opflows[c],SCOPFLOWUpdateOPFLOWVariableBounds,(void*)scopflow);
       }
 
       ierr = OPFLOWSetUp(scopflow->opflows[c]);CHKERRQ(ierr);

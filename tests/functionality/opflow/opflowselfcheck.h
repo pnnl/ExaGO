@@ -16,6 +16,8 @@ typedef struct
   char solver[PETSC_MAX_PATH_LEN];
   char model[PETSC_MAX_PATH_LEN];
   char networkname[PETSC_MAX_PATH_LEN];
+  bool  isloadloss_active; // Are load loss variables active?
+  bool  ispowerimb_active; // Are power imbalance variables active?
 
   /// Attributes of opflow solution checked
   PetscInt numiter;

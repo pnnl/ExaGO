@@ -15,6 +15,7 @@
 /* Solvers */
 #define SCOPFLOWSOLVER_IPOPT "IPOPT"
 #define SCOPFLOWSOLVER_EMPAR  "EMPAR" /* Embarassingly parallel solver - solves each OPFLOW independently */
+#define SCOPFLOWSOLVER_HIOP "HIOP" /* Primal decomposition-based HiOp solver */
 
 /* Initialization and Parameters*/
 #define SCOPFLOW_INITIALIZATION "ACPF"

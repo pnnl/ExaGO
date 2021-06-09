@@ -1,5 +1,6 @@
-set(SCOPFLOW_SOLVER_SRC solver/ipopt/scopflow-ipopt.c
-                        solver/empar/scopflow-empar.c
+set(SCOPFLOW_SOLVER_SRC
+    solver/ipopt/scopflow-ipopt.c solver/empar/scopflow-empar.c
+    solver/hiop/scopflow-hiop.cpp
 )
 
 set(SCOPFLOW_MODEL_SRC model/genramp/genramp.c model/genrampt/genrampt.c)
@@ -22,14 +23,9 @@ exago_add_library(
   ${SCOPFLOW_INCLUDE}
   LINK_LIBRARIES
   PUBLIC
-  PETSC::SNES
-  ExaGO::UTILS
-  ExaGO::PS
-  ${EXAGO_PFLOW_LIBS}
-  ExaGO::OPFLOW
-  $<$<BOOL:${EXAGO_ENABLE_IPOPT}>:Ipopt>
+  ExaGO::TCOPFLOW
   PRIVATE
-  $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_C>
+  $<$<BOOL:${EXAGO_ENABLE_IPOPT}>:Ipopt>
   OUTPUT_NAME
   exago_scopflow
 )

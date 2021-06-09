@@ -78,6 +78,12 @@ extern PetscErrorCode SCOPFLOWSolverCreate_IPOPT(SCOPFLOW);
 
 extern PetscErrorCode SCOPFLOWSolverCreate_EMPAR(SCOPFLOW);
 
+#if defined(EXAGO_ENABLE_HIOP)
+#if defined(EXAGO_ENABLE_HIOP_DISTRIBUTED)
+extern PetscErrorCode SCOPFLOWSolverCreate_HIOP(SCOPFLOW);
+#endif
+#endif
+
 /*
   SCOPFLOWSolverRegisterAll - Registers all SCOPFLOW solvers
 */
@@ -92,6 +98,12 @@ PetscErrorCode SCOPFLOWSolverRegisterAll(SCOPFLOW scopflow)
 #endif
 
   ierr = SCOPFLOWSolverRegister(scopflow,SCOPFLOWSOLVER_EMPAR,SCOPFLOWSolverCreate_EMPAR);CHKERRQ(ierr);
+#if defined(EXAGO_ENABLE_HIOP)
+#if defined(EXAGO_ENABLE_HIOP_DISTRIBUTED)
+  ierr = SCOPFLOWSolverRegister(scopflow,SCOPFLOWSOLVER_HIOP,SCOPFLOWSolverCreate_HIOP);CHKERRQ(ierr);
+#endif
+#endif
+  
   scopflow->SCOPFLOWSolverRegisterAllCalled = PETSC_TRUE;
 
   PetscFunctionReturn(0);

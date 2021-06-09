@@ -3,10 +3,10 @@ SCOPFLOW solves a contingency-constrained optimal power flow problem. The proble
 
 ```math
 \begin{aligned}
-\text{min}&~f(x_0)& \\
+\text{min}&~\sum_{i \in \{0,N_c\}}f_i(x_i)& \\
 &\text{s.t.}& \\
-&~g(x_i) = 0~~~i \in \{0,N_c\}& \\
-&~h(x_i) \le 0~~i \in \{0,N_c\}& \\
+&~g_i(x_i) = 0~~~i \in \{0,N_c\}& \\
+&~h_i(x_i) \le 0~~i \in \{0,N_c\}& \\
 &x^- \le x_i \le x^+~~i\in \{0,N_c\}& \\
 -\delta{x} & \le x_i - x_0 \le \delta{x}~~i \in \{1,N_c\}&
 \end{aligned}
@@ -14,7 +14,7 @@ SCOPFLOW solves a contingency-constrained optimal power flow problem. The proble
 
 where $N_c$ is the number of contingencies. The total number of scenarios equals $N_c + 1$, i.e., base-case + $N_c$ contingencies. Each scenario is an optimal power flow formulation. See [OPFLOW](opflow.md). The last equation is the coupling between the 2nd stage contingency scenarios and the first-stage. Each contingency scenario can either be single-period or multi-period. In the multi-period mode, additional data files for the load and wind generation profiles can be set via command line options. Multi-period SCOPFLOW is activated either by setting command line option `-scopflow_enable_multiperiod` OR calling `SCOPFLOWEnableMultiPeriod`.
 
-Depending on the `mode`, SCOPFLOW can either be `preventive` (mode = 0) or `corrective` (mode = 1). In the preventive, the PV and PQ generator real power is fixed to its correspoinding base-case values. The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability.
+Depending on the `mode`, SCOPFLOW can either be `preventive` (mode = 0) or `corrective` (mode = 1). In the preventive, the PV and PQ generator real power is fixed to its correspoinding base-case values. Any power offset/make-up is done by the swing bus generators. The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability.
 
 
 ### Usage
@@ -41,8 +41,8 @@ mpiexec -n <N> ./scopflow -netfile <netfilename> -ctgcfile <ctgcfilename>
 ```
 Contingencies can either be specified in PTI format (.con file) or a native format. The description of the native format is given in the header file `include/scopflow.h`. SCOPFLOW supports single/multiple generator and line/transformer outage contingencies.
 
-#### Solver (-scopflow_solver <IPOPT>)
-Set the solver to be used for SCOPFLOW. Currently, only IPOPT is supported. With IPOPT, SCOPFLOW can be only run on one processor (N = 1) as IPOPT only supports single process execution.
+#### Solver (-scopflow_solver <IPOPT,HIOP,EMPAR>)
+Set the solver to be used for SCOPFLOW. With IPOPT, SCOPFLOW can be only run on one processor (N = 1) as IPOPT only supports single process execution. HIOP supports a distributed solution allowing SCOPFLOW to be solved in parallel. In addition, one can solve SCOPFLOW in an embarrasingly parallel model with the EMPAR solver. With EMPAR, the base case and the contingencies are solved independently, i.e, there is no coupling.
 ```
 mpiexec -n <N> ./scopflow -netfile <netfilename> -ctgcfile <ctgcfilename> -scopflow_solver <IPOPT>
 ```

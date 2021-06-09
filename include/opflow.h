@@ -19,6 +19,7 @@
 #define OPFLOWSOLVER_IPOPT "IPOPT"
 #define OPFLOWSOLVER_TAO   "TAO"
 #define OPFLOWSOLVER_HIOP  "HIOP"
+#define OPFLOWSOLVER_HIOPSPARSE "HIOPSPARSE"
 
 typedef struct _p_OPFLOW *OPFLOW;
 
@@ -84,6 +85,8 @@ PETSC_EXTERN PetscErrorCode OPFLOWGetVariableOrdering(OPFLOW,int**);
 PETSC_EXTERN PetscErrorCode OPFLOWGetSizes(OPFLOW,int*,int*,int*);
 
 PETSC_EXTERN PetscErrorCode OPFLOWHasGenSetPoint(OPFLOW,PetscBool);
+PETSC_EXTERN PetscErrorCode OPFLOWHasLoadLoss(OPFLOW,PetscBool);
+PETSC_EXTERN PetscErrorCode OPFLOWHasBusPowerImbalance(OPFLOW,PetscBool);
 PETSC_EXTERN PetscErrorCode OPFLOWUseAGC(OPFLOW,PetscBool);
 
 PETSC_EXTERN PetscErrorCode OPFLOWSetGenBusVoltageType(OPFLOW,OPFLOWGenBusVoltageType);
@@ -136,6 +139,14 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetUpPS(OPFLOW);
 	 values from the PS struct.
 */
 PETSC_EXTERN PetscErrorCode OPFLOWSolutionToPS(OPFLOW);
+
+typedef PetscErrorCode (*OPFLOWAuxObjectiveFunction)(OPFLOW,const double*,double*,void*);
+typedef PetscErrorCode (*OPFLOWAuxGradientFunction)(OPFLOW,const double*,double*,void*);
+typedef PetscErrorCode (*OPFLOWAuxHessianFunction)(OPFLOW,const double*,Mat,void*);
+
+PETSC_EXTERN PetscErrorCode OPFLOWSetAuxillaryObjective(OPFLOW,OPFLOWAuxObjectiveFunction,OPFLOWAuxGradientFunction,OPFLOWAuxHessianFunction,void*);
+
+PETSC_EXTERN PetscErrorCode OPFLOWSetUpdateVariableBoundsFunction(OPFLOW,PetscErrorCode (*)(OPFLOW,Vec,Vec,void*),void*);
 
 #endif
 

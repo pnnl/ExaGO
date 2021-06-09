@@ -18,9 +18,8 @@ target_include_directories(
 set(tolerance "1e-3")
 
 #[[ Configure OPFLOW functionality tests ]]
-target_link_libraries(testOpflowFunctionality ${EXAGO_APP_LIBS})
-target_link_libraries(testOpflowFunctionality2 ${EXAGO_APP_LIBS})
-
+target_link_libraries(testOpflowFunctionality ExaGO::OPFLOW)
+target_link_libraries(testOpflowFunctionality2 ExaGO::OPFLOW)
 if(EXAGO_INSTALL_TESTS)
   install(TARGETS testOpflowFunctionality
           RUNTIME DESTINATION tests/functionality
@@ -47,6 +46,8 @@ if(EXAGO_INSTALL_TESTS)
         IPOPT
         -opflow_objective
         ${opflow_obj}
+        -opflow_genbusvoltage
+        VARIABLE_WITHIN_BOUNDS
         DEPENDS
         IPOPT
         NETFILES
@@ -69,14 +70,42 @@ if(EXAGO_INSTALL_TESTS)
       -opflow_solver
       HIOP
       -opflow_ignore_lineflow_constraints
-      1
+      0
       -opflow_model
       POWER_BALANCE_HIOP
+      -opflow_genbusvoltage
+      VARIABLE_WITHIN_BOUNDS
       DEPENDS
       HIOP
       NETFILES
       ${network_files}
     )
+
+    if(EXAGO_ENABLE_HIOP_SPARSE)
+      exago_add_test(
+        NAME
+        OPFLOW_HIOP_SPARSE_${opflow_init}
+        COMMAND
+        ${RUNCMD}
+        $<TARGET_FILE:app_opflow>
+        -opflow_initialization
+        ${opflow_init}
+        -hiop_compute_mode
+        CPU
+        -opflow_solver
+        HIOPSPARSE
+        -opflow_ignore_lineflow_constraints
+        0
+        -opflow_model
+        POWER_BALANCE_POLAR
+        -opflow_genbusvoltage
+        VARIABLE_WITHIN_BOUNDS
+        DEPENDS
+        HIOP
+        NETFILES
+        ${network_files}
+      )
+    endif()
 
     if(EXAGO_ENABLE_GPU)
       set(hiop_compute_mode GPU)
@@ -96,9 +125,11 @@ if(EXAGO_INSTALL_TESTS)
       -opflow_solver
       HIOP
       -opflow_ignore_lineflow_constraints
-      1
+      0
       -opflow_model
       PBPOLRAJAHIOP
+      -opflow_genbusvoltage
+      VARIABLE_WITHIN_BOUNDS
       DEPENDS
       GPU
       HIOP
@@ -148,8 +179,41 @@ if(EXAGO_INSTALL_TESTS)
       ${model}
       -opflow_tolerance
       ${tolerance}
+      -opflow_genbusvoltage
+      VARIABLE_WITHIN_BOUNDS
+      -opflow_include_loadloss_variables
+      0
+      -opflow_include_powerimbalance_variables
+      0
     )
   endforeach()
+
+  if(EXAGO_ENABLE_HIOP_SPARSE)
+    exago_add_test(
+      NAME
+      FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_${model}
+      DEPENDS
+      HIOP
+      RAJA
+      NETFILES
+      ${network_files_no200}
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:testOpflowFunctionality>
+      -opflow_solver
+      HIOPSPARSE
+      -opflow_model
+      POWER_BALANCE_POLAR
+      -opflow_tolerance
+      ${tolerance}
+      -opflow_genbusvoltage
+      VARIABLE_WITHIN_BOUNDS
+      -opflow_include_loadloss_variables
+      0
+      -opflow_include_powerimbalance_variables
+      0
+    )
+  endif()
 
   exago_add_test(
     NAME
@@ -168,6 +232,10 @@ if(EXAGO_INSTALL_TESTS)
     POWER_BALANCE_CARTESIAN
     -opflow_tolerance
     ${tolerance}
+    -opflow_include_loadloss_variables
+    0
+    -opflow_include_powerimbalance_variables
+    0
   )
 
   foreach(model POWER_BALANCE_POLAR POWER_BALANCE_CARTESIAN
@@ -191,6 +259,10 @@ if(EXAGO_INSTALL_TESTS)
       ${test_net}
       -opflow_tolerance
       ${tolerance}
+      -opflow_include_loadloss_variables
+      0
+      -opflow_include_powerimbalance_variables
+      0
     )
   endforeach()
 
@@ -214,6 +286,12 @@ if(EXAGO_INSTALL_TESTS)
     -hiop_compute_mode
     CPU
     -hiop_ipopt_debug
+    -opflow_genbusvoltage
+    VARIABLE_WITHIN_BOUNDS
+    -opflow_include_loadloss_variables
+    0
+    -opflow_include_powerimbalance_variables
+    0
   )
 
   # Functionality test for OPFLOW with PS modifications
@@ -229,22 +307,109 @@ if(EXAGO_INSTALL_TESTS)
     IPOPT
     -opflow_model
     POWER_BALANCE_POLAR
+    -opflow_include_loadloss_variables
+    0
+    -opflow_include_powerimbalance_variables
+    0
   )
 
-  # Test for bus slack variables
   exago_add_test(
     NAME
-    FUNCTIONALITY_TEST_OPFLOW_IPOPT_SLACK_VAR
-    DEPENDS
-    IPOPT
+    FUNCTIONALITY_TEST_OPFLOW_IPOPT_POWER_BALANCE_LOADLOSS
     NETFILES
     ${network_files}
+    DEPENDS
+    IPOPT
+    HIOP
     COMMAND
     ${RUNCMD}
-    $<TARGET_FILE:app_opflow>
+    $<TARGET_FILE:testOpflowFunctionality>
+    -opflow_solver
+    IPOPT
+    -opflow_model
+    POWER_BALANCE_POLAR
+    -opflow_tolerance
+    ${tolerance}
+    -opflow_include_loadloss_variables
+    1
     -opflow_include_powerimbalance_variables
-    -print_output
-    -save_output
+    0
   )
 
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_OPFLOW_IPOPT_POWER_BALANCE_POWERIMBALANCE
+    NETFILES
+    ${network_files}
+    DEPENDS
+    IPOPT
+    HIOP
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:testOpflowFunctionality>
+    -opflow_solver
+    IPOPT
+    -opflow_model
+    POWER_BALANCE_POLAR
+    -opflow_tolerance
+    ${tolerance}
+    -opflow_include_loadloss_variables
+    0
+    -opflow_include_powerimbalance_variables
+    1
+  )
+
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_OPFLOW_IPOPT_POWER_BALANCE_LOADLOSS_POWERIMBALANCE
+    NETFILES
+    ${network_files}
+    DEPENDS
+    IPOPT
+    HIOP
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:testOpflowFunctionality>
+    -opflow_solver
+    IPOPT
+    -opflow_model
+    POWER_BALANCE_POLAR
+    -opflow_tolerance
+    ${tolerance}
+    -opflow_include_loadloss_variables
+    1
+    -opflow_include_powerimbalance_variables
+    1
+  )
+
+  foreach(model POWER_BALANCE_HIOP PBPOLRAJAHIOP)
+    foreach(loadloss 0 1)
+      foreach(powerimb 0 1)
+        exago_add_test(
+          NAME
+          FUNCTIONALITY_TEST_OPFLOW_HIOP_${model}_loadloss=${loadloss}_powerimb=${powerimb}
+          DEPENDS
+          HIOP
+          RAJA
+          NETFILES
+          ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod.m
+          COMMAND
+          ${RUNCMD}
+          $<TARGET_FILE:testOpflowFunctionality>
+          -opflow_solver
+          HIOP
+          -opflow_model
+          ${model}
+          -opflow_tolerance
+          ${tolerance}
+          -opflow_genbusvoltage
+          VARIABLE_WITHIN_BOUNDS
+          -opflow_include_loadloss_variables
+          ${loadloss}
+          -opflow_include_powerimbalance_variables
+          ${powerimb}
+        )
+      endforeach()
+    endforeach()
+  endforeach()
 endif()

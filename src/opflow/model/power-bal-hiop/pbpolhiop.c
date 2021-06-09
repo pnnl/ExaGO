@@ -6,14 +6,10 @@
 #include <private/opflowimpl.h>
 #include "pbpolhiop.h"
 
-/************* NOTE ***********************/
-/* No Load loss or power imbalance variables considered yet */
-/********************************************/
-
 /* Functions to create and destroy data arrays for different
    component classes
 */
-PetscErrorCode DestroyBusParams(BUSParams *busparams)
+PetscErrorCode DestroyBusParams(OPFLOW opflow,BUSParams *busparams)
 {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -28,6 +24,13 @@ PetscErrorCode DestroyBusParams(BUSParams *busparams)
   ierr = PetscFree(busparams->bl);CHKERRQ(ierr);
   ierr = PetscFree(busparams->xidx);CHKERRQ(ierr);
   ierr = PetscFree(busparams->gidx);CHKERRQ(ierr);
+  if(opflow->include_powerimbalance_variables) {
+    ierr = PetscFree(busparams->xidxpimb);CHKERRQ(ierr);
+    ierr = PetscFree(busparams->jacsp_idx);CHKERRQ(ierr);
+    ierr = PetscFree(busparams->jacsq_idx);CHKERRQ(ierr);
+    ierr = PetscFree(busparams->hesssp_idx);CHKERRQ(ierr);
+    ierr = PetscFree(busparams->powerimbalance_penalty);CHKERRQ(ierr);
+  }
 
   PetscFunctionReturn(0);
 }
@@ -57,14 +60,22 @@ PetscErrorCode CreateBusParams(OPFLOW opflow,BUSParams *busparams)
   ierr = PetscCalloc1(busparams->nbus,&busparams->bl);CHKERRQ(ierr);
   ierr = PetscCalloc1(busparams->nbus,&busparams->xidx);CHKERRQ(ierr);
   ierr = PetscCalloc1(busparams->nbus,&busparams->gidx);CHKERRQ(ierr);
+  if(opflow->include_powerimbalance_variables) {
+    ierr = PetscCalloc1(busparams->nbus,&busparams->powerimbalance_penalty);CHKERRQ(ierr);
+    ierr = PetscCalloc1(busparams->nbus,&busparams->xidxpimb);CHKERRQ(ierr);
+    ierr = PetscCalloc1(busparams->nbus,&busparams->jacsp_idx);CHKERRQ(ierr);
+    ierr = PetscCalloc1(busparams->nbus,&busparams->jacsq_idx);CHKERRQ(ierr);
+    ierr = PetscCalloc1(busparams->nbus,&busparams->hesssp_idx);CHKERRQ(ierr);
+  }
+
 
   /* Populate the arrays */
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
-    ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
+    loc = bus->startxVloc;
     
     busparams->xidx[i] = opflow->idxn2sd_map[loc];
-    busparams->gidx[i] = gloc;
+    busparams->gidx[i] = bus->starteqloc;
 
     if(bus->ide == REF_BUS) busparams->isref[i] = 1;
     else if(bus->ide == ISOLATED_BUS) busparams->isisolated[i] = 1;
@@ -88,13 +99,18 @@ PetscErrorCode CreateBusParams(OPFLOW opflow,BUSParams *busparams)
     busparams->gl[i]   = bus->gl;
     busparams->bl[i]   = bus->bl;
 
-    gloc += 2;
+    if(opflow->include_powerimbalance_variables) {
+      busparams->powerimbalance_penalty[i] = opflow->powerimbalance_penalty;
+      loc = bus->startxpimbloc;
+      busparams->xidxpimb[i] = opflow->idxn2sd_map[loc];
+      // busparams->xidxpimb[i+1] = opflow->idxn2sd_map[loc+1];
+    }
   }
     
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DestroyLineParams(LINEParams *lineparams)
+PetscErrorCode DestroyLineParams(OPFLOW opflow,LINEParams *lineparams)
 {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -131,12 +147,6 @@ PetscErrorCode CreateLineParams(OPFLOW opflow,LINEParams *lineparams)
   PetscErrorCode ierr;
   const PSBUS    *connbuses;
   PSBUS          busf,bust;
-  PetscInt       gloc=0; /* offset for inequality constraint contributions */
-  PetscInt       gbloc=opflow->nconeq; /* starting offset for inequality constraint bound */
-  /* the above gloc, gbloc is needed because for the constraint bound calculation,
-     the entire G vector is passed in, while for inequality constraints calulation only
-     the inequality constraint vector is passed in 
-  */
 
   PetscFunctionBegin;
 
@@ -197,8 +207,9 @@ PetscErrorCode CreateLineParams(OPFLOW opflow,LINEParams *lineparams)
     bust = connbuses[1];
 
     int xidxf,xidxt;
-    ierr = PSBUSGetVariableLocation(busf,&xidxf);CHKERRQ(ierr);
-    ierr = PSBUSGetVariableLocation(bust,&xidxt);CHKERRQ(ierr);
+
+    xidxf = busf->startxVloc;
+    xidxt = bust->startxVloc;
 
     lineparams->xidxf[linei] = opflow->idxn2sd_map[xidxf];
     lineparams->xidxt[linei] = opflow->idxn2sd_map[xidxt];
@@ -207,17 +218,15 @@ PetscErrorCode CreateLineParams(OPFLOW opflow,LINEParams *lineparams)
        Each bus has two equality (balance) constraints, hence the use of coefficient 2
        to map the location of the equality constraint for the bus
     */
-    lineparams->geqidxf[linei] = 2*busf->internal_i;
-    lineparams->geqidxt[linei] = 2*bust->internal_i;
+    lineparams->geqidxf[linei] = busf->starteqloc;
+    lineparams->geqidxt[linei] = bust->starteqloc;
     
     if(opflow->nconineq) {
       if(line->rateA < 1e5) {
-	lineparams->gbineqidx[linelimi] = gbloc;
-	lineparams->gineqidx[linelimi] = gloc;
+	lineparams->gbineqidx[linelimi] = opflow->nconeq + line->startineqloc;
+	lineparams->gineqidx[linelimi] = line->startineqloc;
 	lineparams->linelimidx[linelimi] = linei;
 	linelimi++;
-	gbloc += 2;
-	gloc += 2;
       }
     }
     linei++;
@@ -225,15 +234,22 @@ PetscErrorCode CreateLineParams(OPFLOW opflow,LINEParams *lineparams)
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DestroyLoadParams(LOADParams *loadparams)
+PetscErrorCode DestroyLoadParams(OPFLOW opflow,LOADParams *loadparams)
 {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
   ierr = PetscFree(loadparams->pl);CHKERRQ(ierr);
   ierr = PetscFree(loadparams->ql);CHKERRQ(ierr);
+  ierr = PetscFree(loadparams->loadloss_penalty);CHKERRQ(ierr);
   ierr = PetscFree(loadparams->xidx);CHKERRQ(ierr);
   ierr = PetscFree(loadparams->gidx);CHKERRQ(ierr);
+  if(opflow->include_loadloss_variables) {
+    ierr = PetscFree(loadparams->jacsp_idx);CHKERRQ(ierr);
+    ierr = PetscFree(loadparams->jacsq_idx);CHKERRQ(ierr);
+    ierr = PetscFree(loadparams->hesssp_idx);CHKERRQ(ierr);
+  }
+
   PetscFunctionReturn(0);
 }
 
@@ -241,7 +257,7 @@ PetscErrorCode DestroyLoadParams(LOADParams *loadparams)
 PetscErrorCode CreateLoadParams(OPFLOW opflow,LOADParams *loadparams)
 {
   PS             ps=opflow->ps;
-  PetscInt       loc,gloc=0,loadi=0;
+  PetscInt       loc,loadi=0;
   PSLOAD         load;
   PSBUS          bus;
   PetscInt       i,j;
@@ -255,8 +271,14 @@ PetscErrorCode CreateLoadParams(OPFLOW opflow,LOADParams *loadparams)
   /* Allocate arrays */
   ierr = PetscCalloc1(loadparams->nload,&loadparams->pl);CHKERRQ(ierr);
   ierr = PetscCalloc1(loadparams->nload,&loadparams->ql);CHKERRQ(ierr);
+  ierr = PetscCalloc1(loadparams->nload,&loadparams->loadloss_penalty);CHKERRQ(ierr);
   ierr = PetscCalloc1(loadparams->nload,&loadparams->xidx);CHKERRQ(ierr);
   ierr = PetscCalloc1(loadparams->nload,&loadparams->gidx);CHKERRQ(ierr);
+  if(opflow->include_loadloss_variables) {
+    ierr = PetscCalloc1(loadparams->nload,&loadparams->jacsp_idx);CHKERRQ(ierr);
+    ierr = PetscCalloc1(loadparams->nload,&loadparams->jacsq_idx);CHKERRQ(ierr);
+    ierr = PetscCalloc1(loadparams->nload,&loadparams->hesssp_idx);CHKERRQ(ierr);
+  }
 
   /* Insert data in loadparams */
   for(i=0; i < ps->nbus; i++) {
@@ -265,23 +287,22 @@ PetscErrorCode CreateLoadParams(OPFLOW opflow,LOADParams *loadparams)
     for(j=0; j < bus->nload; j++) {
       ierr = PSBUSGetLoad(bus,j,&load);CHKERRQ(ierr);
       
-      loc += 2;
+      loc = load->startxloadlossloc;
 
       loadparams->pl[loadi] = load->pl;
       loadparams->ql[loadi] = load->ql;
+      loadparams->loadloss_penalty[loadi] = opflow->loadloss_penalty;
 
       loadparams->xidx[loadi] = opflow->idxn2sd_map[loc];
-      loadparams->gidx[loadi] = gloc;
-
+      loadparams->gidx[loadi] = bus->starteqloc;
       loadi++;
     }
-    gloc += 2;
   }
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DestroyGenParams(GENParams *genparams)
+PetscErrorCode DestroyGenParams(OPFLOW opflow,GENParams *genparams)
 {
   PetscErrorCode ierr;
 
@@ -296,19 +317,28 @@ PetscErrorCode DestroyGenParams(GENParams *genparams)
   ierr = PetscFree(genparams->qt);CHKERRQ(ierr);
   ierr = PetscFree(genparams->qb);CHKERRQ(ierr);
 
+  if(opflow->has_gensetpoint) {
+    ierr = PetscFree(genparams->geqidxgen);CHKERRQ(ierr);
+    ierr = PetscFree(genparams->gineqidxgen);CHKERRQ(ierr);
+    ierr = PetscFree(genparams->gbineqidxgen);CHKERRQ(ierr);
+    ierr = PetscFree(genparams->pgs);CHKERRQ(ierr);
+    ierr = PetscFree(genparams->eqjacspgen_idx);CHKERRQ(ierr);
+    ierr = PetscFree(genparams->ineqjacspgen_idx);CHKERRQ(ierr);
+  }
+
   ierr = PetscFree(genparams->xidx);CHKERRQ(ierr);
-  ierr = PetscFree(genparams->gidx);CHKERRQ(ierr);
+  ierr = PetscFree(genparams->gidxbus);CHKERRQ(ierr);
 
-  ierr = PetscFree(genparams->jacsp_idx);CHKERRQ(ierr);
-  ierr = PetscFree(genparams->jacsq_idx);CHKERRQ(ierr);
-
+  ierr = PetscFree(genparams->eqjacspbus_idx);CHKERRQ(ierr);
+  ierr = PetscFree(genparams->eqjacsqbus_idx);CHKERRQ(ierr);
+  ierr = PetscFree(genparams->hesssp_idx);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 /* Create data for generators that is used in different computations */
 PetscErrorCode CreateGenParams(OPFLOW opflow,GENParams *genparams)
 {
   PS             ps=opflow->ps;
-  PetscInt       loc,gloc=0,geni=0,nnzs=0,gi;
+  PetscInt       loc,gloc=0,geni=0;
   PSGEN          gen;
   PSBUS          bus;
   PetscInt       i,j;
@@ -329,23 +359,34 @@ PetscErrorCode CreateGenParams(OPFLOW opflow,GENParams *genparams)
   ierr = PetscCalloc1(genparams->ngenON,&genparams->qt);CHKERRQ(ierr);
   ierr = PetscCalloc1(genparams->ngenON,&genparams->qb);CHKERRQ(ierr);
 
+  ierr = PetscCalloc1(genparams->ngenON,&genparams->hesssp_idx);CHKERRQ(ierr);
+
+  if(opflow->has_gensetpoint) {
+    ierr = PetscCalloc1(genparams->ngenON,&genparams->geqidxgen);CHKERRQ(ierr);
+    ierr = PetscCalloc1(genparams->ngenON,&genparams->gineqidxgen);CHKERRQ(ierr);
+    ierr = PetscCalloc1(genparams->ngenON,&genparams->gbineqidxgen);CHKERRQ(ierr);
+    ierr = PetscCalloc1(genparams->ngenON,&genparams->pgs);CHKERRQ(ierr);
+
+    ierr = PetscCalloc1(genparams->ngenON,&genparams->eqjacspgen_idx);CHKERRQ(ierr);
+    ierr = PetscCalloc1(genparams->ngenON,&genparams->ineqjacspgen_idx);CHKERRQ(ierr);
+  }
+
   ierr = PetscCalloc1(genparams->ngenON,&genparams->xidx);CHKERRQ(ierr);
-  ierr = PetscCalloc1(genparams->ngenON,&genparams->gidx);CHKERRQ(ierr);
+  ierr = PetscCalloc1(genparams->ngenON,&genparams->gidxbus);CHKERRQ(ierr);
 
-  ierr = PetscCalloc1(genparams->ngenON,&genparams->jacsp_idx);CHKERRQ(ierr);
-  ierr = PetscCalloc1(genparams->ngenON,&genparams->jacsq_idx);CHKERRQ(ierr);
-
+  ierr = PetscCalloc1(genparams->ngenON,&genparams->eqjacspbus_idx);CHKERRQ(ierr);
+  ierr = PetscCalloc1(genparams->ngenON,&genparams->eqjacsqbus_idx);CHKERRQ(ierr);
 
   /* Insert data in genparams */
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
-    ierr = PSBUSGetVariableLocation(bus,&loc);CHKERRQ(ierr);
-    gi = 0;
+    gloc = bus->starteqloc;
+
     for(j=0; j < bus->ngen; j++) {
       ierr = PSBUSGetGen(bus,j,&gen);CHKERRQ(ierr);
       if(!gen->status) continue;
       
-      loc += 2;
+      loc = gen->startxpowloc;
 
       genparams->cost_alpha[geni] = gen->cost_alpha;
       genparams->cost_beta[geni]  = gen->cost_beta;
@@ -354,252 +395,21 @@ PetscErrorCode CreateGenParams(OPFLOW opflow,GENParams *genparams)
       genparams->pb[geni]         = gen->pb;
       genparams->qt[geni]         = gen->qt;
       genparams->qb[geni]         = gen->qb;
+      if(opflow->has_gensetpoint) {
+	genparams->pgs[geni]      = gen->pgs;
+      }
 
       genparams->xidx[geni]       = opflow->idxn2sd_map[loc];
-      genparams->gidx[geni]       = gloc;
-      genparams->jacsp_idx[geni]  = nnzs + gi;
-      genparams->jacsq_idx[geni]  = nnzs + bus->ngenON + gi;
+      genparams->gidxbus[geni]    = gloc;
+      if(opflow->has_gensetpoint) {
+	genparams->geqidxgen[geni]   = gen->starteqloc;
+	genparams->gineqidxgen[geni] = gen->startineqloc; 
+	genparams->gbineqidxgen[geni] = opflow->nconeq + gen->startineqloc; 
+      }
 
       geni++;
-      gi++;
-    }
-    nnzs += 2*bus->ngenON;
-    gloc += 2;
-  }
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode OPFLOWSetVariableandConstraintBounds_PBPOLHIOP(OPFLOW opflow,Vec Xl,Vec Xu, Vec Gl, Vec Gu)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-
-  ierr = OPFLOWSetVariableBounds_PBPOLHIOP(opflow,Xl,Xu);CHKERRQ(ierr);
-  ierr = OPFLOWSetConstraintBounds_PBPOLHIOP(opflow,Gl,Gu);CHKERRQ(ierr);
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode OPFLOWSetInitialGuess_PBPOLHIOP(OPFLOW opflow,Vec X)
-{
-  PetscErrorCode ierr;
-  PS             ps=opflow->ps;
-  const PetscScalar    *xl,*xu;
-  PetscScalar    *x;
-  PetscInt       i;
-  PSBUS          bus;
-  PetscInt       loc,loc_nat;
-  int            *idxn2sd_map = opflow->idxn2sd_map;
-
-  PetscFunctionBegin;
-
-  /* Get array pointers */
-  ierr = VecGetArray(X,&x);CHKERRQ(ierr);
-  ierr = VecGetArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
-  ierr = VecGetArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
-  
-  for(i=0; i < ps->nbus; i++) {
-    PetscInt k;
-
-    bus = &ps->bus[i];
-
-    ierr = PSBUSGetVariableLocation(bus,&loc_nat);CHKERRQ(ierr);
-
-    loc = idxn2sd_map[loc_nat];
-
-    if(bus->ide == ISOLATED_BUS) {
-      x[loc] = bus->va*PETSC_PI/180.0;
-      x[loc+1] = bus->vm;
-    } else {
-      if(opflow->initializationtype == OPFLOWINIT_MIDPOINT) {
-	/* Initial guess for voltage angles and bounds on voltage magnitudes */
-	x[loc]   = (xl[loc] + xu[loc])/2.0;
-	x[loc+1] = (xl[loc+1] + xu[loc+1])/2.0;
-      } else if(opflow->initializationtype == OPFLOWINIT_FROMFILE || opflow->initializationtype == OPFLOWINIT_ACPF) {
-	x[loc] = bus->va*PETSC_PI/180.0;
-	x[loc+1]   = PetscMax(bus->Vmin,PetscMin(bus->vm,bus->Vmax));
-      } else if(opflow->initializationtype == OPFLOWINIT_FLATSTART) {
-	x[loc] = 0.0;
-	x[loc+1] = 1.0;
-      }
-    }
-
-    for(k=0; k < bus->ngen; k++) {
-      PSGEN gen;
-
-      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      if(!gen->status) continue;
-
-      loc_nat = loc_nat+2;
-
-      loc = idxn2sd_map[loc_nat];
-
-      if(opflow->initializationtype == OPFLOWINIT_MIDPOINT || opflow->initializationtype == OPFLOWINIT_FLATSTART) {
-	x[loc]   = 0.5*(xl[loc] + xu[loc]);
-	x[loc+1] = 0.5*(xl[loc+1] + xu[loc+1]);
-      } else if(opflow->initializationtype == OPFLOWINIT_FROMFILE || opflow->initializationtype == OPFLOWINIT_ACPF) {
-	x[loc] = PetscMax(gen->pb,PetscMin(gen->pg,gen->pt));
-	x[loc+1] = PetscMax(gen->qb,PetscMin(gen->qg,gen->qt));
-      }
-    }
-
-    if(opflow->include_loadloss_variables) {
-      for(k=0; k < bus->nload; k++) {
-	PSLOAD load;
-	ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
-	loc_nat += 2;
-
-	loc = idxn2sd_map[loc_nat];
-
-	/* Initial value for real and reactive power load loss */
-	x[loc] = 0.0;
-	x[loc+1] = 0.0;
-      }
-    } 
-
-    if(opflow->include_powerimbalance_variables) {
-      loc_nat += 2;
-
-      loc = idxn2sd_map[loc_nat];
-
-      x[loc] = x[loc+1] = 0.0;
     }
   }
-
-  ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
-  ierr = VecRestoreArrayRead(opflow->Xl,&xl);CHKERRQ(ierr);
-  ierr = VecRestoreArrayRead(opflow->Xu,&xu);CHKERRQ(ierr);
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLHIOP(OPFLOW opflow,double *x0)
-{
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-  ierr = VecPlaceArray(opflow->X,x0);CHKERRQ(ierr);
-  ierr = (*opflow->modelops.setinitialguess)(opflow,opflow->X);CHKERRQ(ierr);
-  ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode OPFLOWComputeConstraints_PBPOLHIOP(OPFLOW opflow,Vec X,Vec G)
-{
-  PetscFunctionBegin;
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode OPFLOWComputeObjandGradient_PBPOLHIOP(OPFLOW opflow,Vec X,PetscScalar *obj,Vec Grad)
-{
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-  ierr = PetscLogEventBegin(opflow->objlogger,0,0,0,0);CHKERRQ(ierr);
-  ierr = OPFLOWComputeObjective_PBPOLHIOP(opflow,X,obj);CHKERRQ(ierr);
-  ierr = PetscLogEventEnd(opflow->objlogger,0,0,0,0);CHKERRQ(ierr);
-
-  ierr = PetscLogEventBegin(opflow->gradlogger,0,0,0,0);CHKERRQ(ierr);
-  ierr = OPFLOWComputeGradient_PBPOLHIOP(opflow,X,Grad);CHKERRQ(ierr);
-  ierr = PetscLogEventEnd(opflow->gradlogger,0,0,0,0);CHKERRQ(ierr);
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode OPFLOWModelSetNumVariables_PBPOLHIOP(OPFLOW opflow,PetscInt *busnvar,PetscInt *branchnvar,PetscInt *nx)
-{
-  PetscInt i,ngen,nload,k;
-  PS       ps=opflow->ps;
-  PSBUS    bus;
-  PSGEN    gen;
-  PetscErrorCode ierr;
-  PetscBool isghost;
-
-  PetscFunctionBegin;
-  
-  *nx = 0;
-  /* No variables for the branches */
-  for(i=0; i < ps->nline; i++) {
-    branchnvar[i] = 0;
-    *nx += branchnvar[i];
-  }
-
-  /* Variables for the buses */
-  for(i=0; i < ps->nbus; i++) {
-    bus = &ps->bus[i];
-    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
-    //    if(isghost) continue;
-    busnvar[i] = 2; /* 2 variables for the bus */
-    ierr = PSBUSGetNGen(bus,&ngen);CHKERRQ(ierr);
-    for(k=0; k < ngen; k++) {
-      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      if(!gen->status) continue;
-      busnvar[i] += 2; /* (2 variables for voltage + Pg, Qg for each gen) */
-    }
-
-    if(opflow->include_loadloss_variables) {
-      ierr = PSBUSGetNLoad(bus,&nload);CHKERRQ(ierr);
-      /* Load loss variables..Real and imaginary part of the load loss */
-      busnvar[i] += 2*nload;
-    }
-
-    if(opflow->include_powerimbalance_variables) busnvar[i] += 2;
-    if(!isghost) *nx += busnvar[i];
-  }
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode OPFLOWModelSetNumConstraints_PBPOLHIOP(OPFLOW opflow,PetscInt *branchnconeq,PetscInt *busnconeq,PetscInt *nconeq,PetscInt *nconineq)
-{
-  PetscInt i;
-  PS       ps=opflow->ps;
-  PSBUS    bus;
-  PSLINE   line;
-  PetscErrorCode ierr;
-  PetscBool isghost;
-
-  PetscFunctionBegin;
-  *nconeq = *nconineq = 0;
-
-  for(i=0; i < ps->nbus; i++) {
-    bus = &ps->bus[i];
-    ierr = PSBUSIsGhosted(bus,&isghost);CHKERRQ(ierr);
-    if(isghost) continue;
-    *nconeq += 2;
-  }
-
-  if(!opflow->ignore_lineflow_constraints) {
-    for(i=0; i < ps->nline; i++) {
-      line = &ps->line[i];
-      if(line->status && line->rateA < 1e5) *nconineq += 2; /* Line flow constraints */
-    }
-  }
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode OPFLOWComputeHessian_PBPOLHIOP(OPFLOW opflow,Vec X,Vec Lambdae,Vec Lambdai,Mat H)
-{
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-  ierr = MatZeroEntries(H);CHKERRQ(ierr);
-
-  /* Objective function Hessian */
-  ierr = OPFLOWComputeObjectiveHessian_PBPOLHIOP(opflow,X,H);CHKERRQ(ierr);
-
-  /* Equality constraints Hessian */
-  ierr = OPFLOWComputeEqualityConstraintsHessian_PBPOLHIOP(opflow,X,Lambdae,H);CHKERRQ(ierr);
-  
-  /* Inequality constraints Hessian */
-  if(opflow->nconineq) {
-    ierr = OPFLOWComputeInequalityConstraintsHessian_PBPOLHIOP(opflow,X,Lambdai,H);CHKERRQ(ierr);
-  }
-
-  ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -638,42 +448,47 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOLHIOP(OPFLOW opflow)
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
 
-    ierr = PSBUSGetVariableLocation(bus,&loc);
+    loc = bus->startxVloc;
 
     bus->va = x[loc];
     bus->vm = x[loc+1];
 
+    gloc = bus->starteqloc;
     bus->mult_pmis = lambdae[gloc];
     bus->mult_qmis = lambdae[gloc+1];
-    gloc += 2;
+
+    if(opflow->include_powerimbalance_variables) {
+      loc = bus->startxpimbloc;
+      bus->pimb = x[loc];
+      bus->qimb = x[loc+1];
+    }
+
 
     for(k=0; k < bus->ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      if(!gen->status) continue;
-
-      loc += 2;
+      if(!gen->status) {
+	gen->pg = gen->qg = 0.0;
+	continue;
+      }
+      loc = gen->startxpowloc;
 
       gen->pg = x[loc];
       gen->qg = x[loc+1];
+
+      if(opflow->has_gensetpoint) {
+	gloc += gen->nconeq;
+      }
     }
 
     if(opflow->include_loadloss_variables) {
       for(k=0; k < bus->nload; k++) {
 	ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
-	loc += 2;
+	loc = load->startxloadlossloc;
 	load->pl = load->pl - x[loc];
 	load->ql = load->ql - x[loc+1];
       }
     }
-
-    if(opflow->include_powerimbalance_variables) {
-      loc += 2;
-      bus->pimb = x[loc];
-      bus->qimb = x[loc+1];
-    }
   }
-
-  gloc = 0;
 
   if(!opflow->ignore_lineflow_constraints) {
     for(i=0; i<ps->nline; i++) {
@@ -696,9 +511,9 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOLHIOP(OPFLOW opflow)
       busf = connbuses[0];
       bust = connbuses[1];
       
-      ierr = PSBUSGetVariableLocation(busf,&xlocf);CHKERRQ(ierr);
-      ierr = PSBUSGetVariableLocation(bust,&xloct);CHKERRQ(ierr);
-      
+      xlocf = busf->startxVloc;
+      xloct = bust->startxVloc;
+
       thetaf  = x[xlocf];
       Vmf     = x[xlocf+1];
       thetat  = x[xloct];
@@ -722,9 +537,9 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOLHIOP(OPFLOW opflow)
       if(line->rateA > 1e5) {
 	line->mult_sf = line->mult_st = 0.0;
       } else {
+	gloc = line->startineqloc;
 	line->mult_sf = lambdai[gloc];
 	line->mult_st = lambdai[gloc+1];
-	gloc += 2;
       }
     }
   }
@@ -735,48 +550,124 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOLHIOP(OPFLOW opflow)
   PetscFunctionReturn(0);
 }
 
+/* Reuse PBPOL model set up for obtaining locations */
+extern PetscErrorCode OPFLOWModelSetUp_PBPOL(OPFLOW);
+
 PetscErrorCode OPFLOWModelSetUp_PBPOLHIOP(OPFLOW opflow)
 {
   PetscErrorCode ierr;
   PBPOLHIOP      pbpolhiop=(PBPOLHIOP)opflow->model;
   PetscInt       *idxn2sd_map;
-  PS             ps;
+  int            ngen,nxsparse=0,nxdense=0;
+  PS             ps=(PS)opflow->ps;
   PSBUS          bus;
-  int            ngen,nxsparse,nxdense;
   PSGEN          gen;
-  
+  PSLOAD         load;
+  PSLINE         line;
+  PetscInt       i,k;
+  PetscInt       loc,locglob;
+  PetscInt       eqloc=0,ineqloc=0;
+
   PetscFunctionBegin;
 
+  ierr = OPFLOWModelSetUp_PBPOL(opflow);CHKERRQ(ierr);
+
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    nxsparse += bus->nxshunt + bus->nxpimb;
+    nxdense += bus->nxV;
+ 
+    /* gen */
+    for(k=0; k < bus->ngen; k++) {
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      if(!gen->status) continue;
+      nxsparse += gen->nx;
+    }
+
+    if(opflow->include_loadloss_variables) {
+      for(k=0; k < bus->nload; k++) {
+	ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
+	if(!load->status) continue;
+	nxsparse += load->nx;
+      }
+    }
+
+    if(opflow->use_agc) {
+      if(bus->ide == REF_BUS) {
+	nxdense += ps->nx;
+      }
+    }
+  }
+
+  opflow->nxsparse = nxsparse;
+  opflow->nxdense  = nxdense;
   /* Create natural to sparse dense variable mapping */
   
   idxn2sd_map = opflow->idxn2sd_map;
   
   ps = opflow->ps;
-  nxsparse = 2*ps->ngenON;
-  nxdense  = 2*ps->nbus;
   
-  int i,k;
   int spct=0,dnct=0;
-  int loc;
+
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
-    PSBUSGetVariableLocation(bus,&loc);
+    loc = bus->startxVloc;
 
     idxn2sd_map[loc] = nxsparse + dnct;
     idxn2sd_map[loc+1] = nxsparse + dnct+1;
 
-    dnct += 2;
-    loc += 2;
+    dnct += bus->nxV;
+
+    if(opflow->include_powerimbalance_variables) { /* Power imbalance variables */
+      loc = bus->startxpimbloc;
+      idxn2sd_map[loc]   = spct;
+      idxn2sd_map[loc+1] = spct + 1;
+      spct += bus->nxpimb;
+    }
+      
     PSBUSGetNGen(bus,&ngen);
     for(k=0; k < ngen; k++) {
       PSBUSGetGen(bus,k,&gen);
       if(!gen->status) continue;
 
+      loc = gen->startxpowloc; 
       idxn2sd_map[loc] = spct;
       idxn2sd_map[loc+1] = spct + 1;
 
-      spct += 2;
-      loc += 2;
+      spct += gen->nxpow;
+
+      if(opflow->has_gensetpoint) {
+        loc = gen->startxpdevloc;
+	idxn2sd_map[loc] = spct;
+
+	spct += gen->nxpdev;
+	loc = gen->startxpsetloc;
+	idxn2sd_map[loc] = spct;
+	
+	spct += gen->nxpset;
+      }
+    }
+
+    if(opflow->include_loadloss_variables) {
+      for(k=0; k < bus->nload; k++) {
+	ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
+	if(!load->status) continue;
+	
+	loc = load->startxloadlossloc;
+	idxn2sd_map[loc]   = spct;
+	idxn2sd_map[loc+1] = spct+1;
+	
+	spct += load->nxloadloss;
+      }
+    }
+
+    if(opflow->use_agc) {
+      if(bus->ide == REF_BUS) {
+	idxn2sd_map[loc] = spct;
+	
+	spct += ps->nx;
+	loc  += ps->nx;
+      }
     }
   }
 
@@ -784,6 +675,98 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLHIOP(OPFLOW opflow)
   ierr = CreateGenParams(opflow,&pbpolhiop->genparams);
   ierr = CreateLineParams(opflow,&pbpolhiop->lineparams);
   ierr = CreateLoadParams(opflow,&pbpolhiop->loadparams);
+
+  BUSParams  *busparams=&pbpolhiop->busparams;
+  GENParams  *genparams=&pbpolhiop->genparams;
+  LOADParams *loadparams=&pbpolhiop->loadparams;
+  LINEParams *lineparams=&pbpolhiop->lineparams;
+
+  int geni=0,loadi=0,gi;
+  int nnz_eqjacsp = 0;
+  int nnz_ineqjacsp = 0;
+  int nnz_hesssp = 0;
+  for(i=0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+
+    /* We need to go over each row since HiOp sparse Jacobian needs the values
+     to be inserted row-wise (!)
+     So we first go over the partial derivatives w.r.t. real power balance equations and then over the second one for reactive power balance equations.
+    */
+
+    if(opflow->include_powerimbalance_variables) {
+      busparams->jacsp_idx[i] = nnz_eqjacsp;
+      busparams->hesssp_idx[i] = nnz_hesssp;
+      nnz_eqjacsp += 1;
+      nnz_hesssp += 2; /* Includes contributions for real and imaginary part */
+    }
+
+    gi = 0;
+    for(k=0; k < bus->ngen; k++) {
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      if(!gen->status) continue;
+      genparams->eqjacspbus_idx[geni+gi] = nnz_eqjacsp;
+      genparams->hesssp_idx[geni+gi] = nnz_hesssp;
+      nnz_eqjacsp += 1;
+      nnz_hesssp += 1;
+      gi++;
+    }
+
+    if(opflow->include_loadloss_variables) {
+      for(k=0; k < bus->nload; k++) {
+	ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
+	loadparams->jacsp_idx[loadi+k] = nnz_eqjacsp; 
+	loadparams->hesssp_idx[loadi+k] = nnz_hesssp;
+	nnz_eqjacsp += 1;
+	nnz_hesssp += 2;
+      }
+    }
+
+    /* Jacobian elements for reactive power contributions */
+    if(opflow->include_powerimbalance_variables) {
+      busparams->jacsq_idx[i] = nnz_eqjacsp;
+      nnz_eqjacsp += 1;
+    }
+
+    gi = 0;
+    for(k=0; k < bus->ngen; k++) {
+      ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+      if(!gen->status) continue;
+      genparams->eqjacsqbus_idx[geni+gi] = nnz_eqjacsp;
+      nnz_eqjacsp += 1;
+      gi++;
+    }
+
+    if(opflow->include_loadloss_variables) {
+      for(k=0; k < bus->nload; k++) {
+	ierr = PSBUSGetLoad(bus,k,&load);CHKERRQ(ierr);
+	loadparams->jacsq_idx[loadi+k] = nnz_eqjacsp; 
+	nnz_eqjacsp += 1;
+      }
+    }
+
+    gi = 0;
+    if(opflow->has_gensetpoint) {
+      /* Jacobian contributions for generator set-point formulation */
+      for(k=0; k < bus->ngen; k++) {
+	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
+	if(!gen->status) continue;
+	genparams->eqjacspgen_idx[geni+gi] = nnz_eqjacsp;
+	nnz_eqjacsp += 4; /* 4 Jacobian elements contributed to equality constrained Jacobian */
+	genparams->ineqjacspgen_idx[geni+gi] = nnz_ineqjacsp;
+	nnz_ineqjacsp += 0; /* 0 Jacobian elements contributed to inequality constrained Jacobian */
+	gi++;
+	nnz_hesssp += 0; /* 3 Hessian elements from inequality constraints */
+      }
+    }
+
+    geni += bus->ngenON;
+    loadi += bus->nload;
+  }
+
+  /* Save the number of nonzeros so we can use it for HIOP blocks info */
+  opflow->nnz_eqjacsp = nnz_eqjacsp;
+  opflow->nnz_ineqjacsp = nnz_ineqjacsp;
+  opflow->nnz_hesssp = nnz_hesssp;
 
   PetscFunctionReturn(0);
 }
@@ -795,14 +778,18 @@ PetscErrorCode OPFLOWModelDestroy_PBPOLHIOP(OPFLOW opflow)
 
   PetscFunctionBegin;
 
-  ierr = DestroyBusParams(&pbpolhiop->busparams);
-  ierr = DestroyGenParams(&pbpolhiop->genparams);
-  ierr = DestroyLineParams(&pbpolhiop->lineparams);
-  ierr = DestroyLoadParams(&pbpolhiop->loadparams);
+  ierr = DestroyBusParams(opflow,&pbpolhiop->busparams);
+  ierr = DestroyGenParams(opflow,&pbpolhiop->genparams);
+  ierr = DestroyLineParams(opflow,&pbpolhiop->lineparams);
+  ierr = DestroyLoadParams(opflow,&pbpolhiop->loadparams);
 
   ierr = PetscFree(opflow->model);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+
+/* reuse numvariables and numconstraints functions from PBPOL model */
+extern PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW,PetscInt*,PetscInt*,PetscInt*);
+extern PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW,PetscInt*,PetscInt*,PetscInt*,PetscInt*);
 
 PetscErrorCode OPFLOWModelCreate_PBPOLHIOP(OPFLOW opflow)
 {
@@ -819,35 +806,24 @@ PetscErrorCode OPFLOWModelCreate_PBPOLHIOP(OPFLOW opflow)
 
   /* Inherit Ops */
   opflow->modelops.destroy                              = OPFLOWModelDestroy_PBPOLHIOP;
-  opflow->modelops.setnumvariables                      = OPFLOWModelSetNumVariables_PBPOLHIOP;
-  opflow->modelops.setnumconstraints                    = OPFLOWModelSetNumConstraints_PBPOLHIOP;
-  opflow->modelops.setvariablebounds                    = OPFLOWSetVariableBounds_PBPOLHIOP;
+  opflow->modelops.setnumvariables                      = OPFLOWModelSetNumVariables_PBPOL;
+  opflow->modelops.setnumconstraints                    = OPFLOWModelSetNumConstraints_PBPOL;
   opflow->modelops.setvariableboundsarray               = OPFLOWSetVariableBoundsArray_PBPOLHIOP;
-  opflow->modelops.setconstraintbounds                  = OPFLOWSetConstraintBounds_PBPOLHIOP;
   opflow->modelops.setconstraintboundsarray             = OPFLOWSetConstraintBoundsArray_PBPOLHIOP;
-  opflow->modelops.setvariableandconstraintbounds       = OPFLOWSetVariableandConstraintBounds_PBPOLHIOP;
-  opflow->modelops.setinitialguess                      = OPFLOWSetInitialGuess_PBPOLHIOP;
   opflow->modelops.setinitialguessarray                 = OPFLOWSetInitialGuessArray_PBPOLHIOP;
-  opflow->modelops.computeequalityconstraints           = OPFLOWComputeEqualityConstraints_PBPOLHIOP;
-  opflow->modelops.computeinequalityconstraints         = OPFLOWComputeInequalityConstraints_PBPOLHIOP;
   opflow->modelops.computeequalityconstraintsarray      = OPFLOWComputeEqualityConstraintsArray_PBPOLHIOP;
   opflow->modelops.computeinequalityconstraintsarray    = OPFLOWComputeInequalityConstraintsArray_PBPOLHIOP;
-  opflow->modelops.computeequalityconstraintjacobian    = OPFLOWComputeEqualityConstraintJacobian_PBPOLHIOP;
-  opflow->modelops.computeinequalityconstraintjacobian  = OPFLOWComputeInequalityConstraintJacobian_PBPOLHIOP;
-  opflow->modelops.computehessian                       = OPFLOWComputeHessian_PBPOLHIOP;
-  opflow->modelops.computeobjandgradient                = OPFLOWComputeObjandGradient_PBPOLHIOP;
-  opflow->modelops.computeobjective                     = OPFLOWComputeObjective_PBPOLHIOP;
-  opflow->modelops.computegradient                      = OPFLOWComputeGradient_PBPOLHIOP;
   opflow->modelops.computeobjectivearray                = OPFLOWComputeObjectiveArray_PBPOLHIOP;
   opflow->modelops.computegradientarray                 = OPFLOWComputeGradientArray_PBPOLHIOP;
   opflow->modelops.solutiontops                         = OPFLOWSolutionToPS_PBPOLHIOP;
   opflow->modelops.setup                                = OPFLOWModelSetUp_PBPOLHIOP;
-  opflow->modelops.computesparsejacobianhiop            = OPFLOWComputeSparseJacobian_PBPOLHIOP;
+  opflow->modelops.computesparseequalityconstraintjacobianhiop            = OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLHIOP;
+  opflow->modelops.computesparseinequalityconstraintjacobianhiop            = OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLHIOP;
   opflow->modelops.computesparsehessianhiop             = OPFLOWComputeSparseHessian_PBPOLHIOP;
   opflow->modelops.computedenseequalityconstraintjacobianhiop = OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLHIOP;
   opflow->modelops.computedenseinequalityconstraintjacobianhiop = OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLHIOP;
   opflow->modelops.computedensehessianhiop    = OPFLOWComputeDenseHessian_PBPOLHIOP;
-  
+
   PetscFunctionReturn(0);
 }
 

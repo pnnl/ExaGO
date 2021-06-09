@@ -12,7 +12,7 @@ target_include_directories(
 set(tolerance "1e-3")
 
 #[[ Configure TCOPFLOW functionality tests ]]
-target_link_libraries(testTcopflowFunctionality ${EXAGO_APP_LIBS})
+target_link_libraries(testTcopflowFunctionality ExaGO::TCOPFLOW)
 if(EXAGO_INSTALL_TESTS)
   install(TARGETS testTcopflowFunctionality
           RUNTIME DESTINATION tests/functionality

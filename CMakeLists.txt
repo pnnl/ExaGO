@@ -53,7 +53,10 @@ option(EXAGO_ENABLE_IPOPT "Enable Ipopt support" OFF)
 # HiOP support is disabled by default
 option(EXAGO_ENABLE_HIOP "Enable HiOP support" OFF)
 
-option(EXAGO_ENABLE_HIOP_SPARSE "Enable HiOp's HIOP_SPARSE option" OFF)
+# HIOP distributed engine
+option(EXAGO_ENABLE_HIOP_DISTRIBUTED
+       "Enable HiOP distributed MPI engine support" OFF
+)
 
 # MPI support is enabled by default
 option(EXAGO_ENABLE_MPI "Enable MPI support" ON)
@@ -133,14 +136,12 @@ if(EXAGO_ENABLE_GPU)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
   endif()
 
-  if(HIOP_NVCC_ARCH)
-    set(CMAKE_CUDA_FLAGS "-arch=${HIOP_NVCC_ARCH}")
-    message(STATUS "Using CUDA arch ${HIOP_NVCC_ARCH}")
-  else()
-    set(CMAKE_CUDA_FLAGS "-arch=sm_35")
-    message(STATUS "Using CUDA arch sm_35")
+  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES 35)
   endif()
-  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda")
+
+  message(STATUS "Using CUDA arch ${CMAKE_CUDA_ARCHITECTURES}")
+  set(CMAKE_CUDA_FLAGS "--expt-extended-lambda")
 endif(EXAGO_ENABLE_GPU)
 
 # Find PETSc and configure related variables

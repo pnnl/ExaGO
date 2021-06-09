@@ -19,8 +19,15 @@ typedef struct {
   double *vm;   /* bus voltage magnitude (from file only used in bounds) */
   double *gl;  /* bus shunt (conductance) */
   double *bl;  /* bus shunt (suspectance) */
+  double *powerimbalance_penalty; /* Penalty for power imbalance */
   int    *xidx; /* starting locations for bus variables in X vector */
   int    *gidx;  /* starting locations for bus balance equations in constraint vector */
+  int    *xidxpimb; /* starting locations for power imbalance bus variables */ 
+
+  /* The following members are only used with HIOP */
+  int   *jacsp_idx; /* Location number in the sparse Jacobian for Pimb */
+  int   *jacsq_idx; /* Location number in the sparse Jacobian for Qimb */
+  int   *hesssp_idx;       /* Location number in the Hessian */
 }BUSParams;
 
 typedef struct {
@@ -32,20 +39,32 @@ typedef struct {
   double *pb;          /* max. active power gen. limits */
   double *qt;          /* min. reactive power gen. limits */
   double *qb;          /* max. reactive power gen. limits */
+  double *pgs;         /* real power output setpoint */
   int    *xidx;        /* starting locations in X vector */
-  int    *gidx;         /* starting locations in constraint vector */
-
+  int    *gidxbus;         /* starting locations in constraint vector for bus constraints */
+  int    *geqidxgen;    /* starting locations in equality constraint vector for gen constraints */
+  int    *gineqidxgen;    /* starting locations in inequality constraint vector for gen constraints */
+  int    *gbineqidxgen; /* Starting location to insert contribution to inequality constraint bound */
   /* The following members are only used with HIOP */
-  int   *jacsp_idx; /* Location number in the sparse Jacobian for Pg */
-  int   *jacsq_idx; /* Location number in the sparse Jacobian for Qg */
+  int   *eqjacspbus_idx; /* Location number in the bus equality constraints sparse Jacobian for Pg */
+  int   *eqjacsqbus_idx; /* Location number in the bus equality constraints sparse Jacobian for Qg */
+  int   *eqjacspgen_idx; /* Location number in the gen equality constraints sparse Jacobian for Pg */
+  int   *ineqjacspgen_idx; /* Location number in the bus equality constraints sparse Jacobian for Pg */
+  int   *hesssp_idx;       /* Location number in the Hessian */
 }GENParams;
 
 typedef struct{
   int    nload; /* Number of loads */
   double *pl;   /* active power demand */
   double *ql;   /* reactive power demand */
+  double *loadloss_penalty; /* Penalty for load loss */
   int    *xidx; /* starting location in X vector */
   int    *gidx;  /* starting location in constraint vector */
+
+  /* The following members are only used with HIOP */
+  int   *jacsp_idx; /* Location number in the sparse Jacobian for delPload */
+  int   *jacsq_idx; /* Location number in the sparse Jacobian for delQload */
+  int   *hesssp_idx;       /* Location number in the Hessian */
 }LOADParams;
 
 typedef struct{
@@ -83,30 +102,23 @@ extern PetscErrorCode CreateLineParams(OPFLOW,LINEParams*);
 extern PetscErrorCode CreateLoadParams(OPFLOW,LOADParams*);
 extern PetscErrorCode CreateGenParams(OPFLOW,GENParams*);
 
-extern PetscErrorCode DestroyBusParams(BUSParams*);
-extern PetscErrorCode DestroyLineParams(LINEParams*);
-extern PetscErrorCode DestroyLoadParams(LOADParams*);
-extern PetscErrorCode DestroyGenParams(GENParams*);
+extern PetscErrorCode DestroyBusParams(OPFLOW,BUSParams*);
+extern PetscErrorCode DestroyLineParams(OPFLOW,LINEParams*);
+extern PetscErrorCode DestroyLoadParams(OPFLOW,LOADParams*);
+extern PetscErrorCode DestroyGenParams(OPFLOW,GENParams*);
 
-extern PetscErrorCode OPFLOWSetVariableBounds_PBPOLHIOP(OPFLOW,Vec,Vec);
+extern PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLHIOP(OPFLOW,double*);
 extern PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLHIOP(OPFLOW,double*,double*);
-extern PetscErrorCode OPFLOWSetConstraintBounds_PBPOLHIOP(OPFLOW,Vec,Vec);
 extern PetscErrorCode OPFLOWSetConstraintBoundsArray_PBPOLHIOP(OPFLOW,double*,double*);
-extern PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOLHIOP(OPFLOW,Vec,Vec);
-extern PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOLHIOP(OPFLOW,Vec,Vec);
+
 extern PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLHIOP(OPFLOW,const double*,double*);
 extern PetscErrorCode OPFLOWComputeInequalityConstraintsArray_PBPOLHIOP(OPFLOW,const double*,double*);
-extern PetscErrorCode OPFLOWComputeObjective_PBPOLHIOP(OPFLOW,Vec,PetscScalar*);
-extern PetscErrorCode OPFLOWComputeGradient_PBPOLHIOP(OPFLOW,Vec,Vec);
+
 extern PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLHIOP(OPFLOW,const double*,double*);
 extern PetscErrorCode OPFLOWComputeGradientArray_PBPOLHIOP(OPFLOW,const double*,double*);
-extern PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOLHIOP(OPFLOW,Vec,Mat);
-extern PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOLHIOP(OPFLOW,Vec,Mat);
-extern PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOLHIOP(OPFLOW,Vec,Mat);
-extern PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOLHIOP(OPFLOW,Vec,Vec,Mat);
-extern PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOLHIOP(OPFLOW,Vec,Vec,Mat);
-extern PetscErrorCode OPFLOWComputeSparseJacobian_PBPOLHIOP(OPFLOW,int*,int*,double*);
-extern PetscErrorCode OPFLOWComputeSparseHessian_PBPOLHIOP(OPFLOW,const double*,int*,int*,double*);
+extern PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLHIOP(OPFLOW,const double*,int*,int*,double*);
+extern PetscErrorCode OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLHIOP(OPFLOW,const double*,int*,int*,double*);
+extern PetscErrorCode OPFLOWComputeSparseHessian_PBPOLHIOP(OPFLOW,const double*,const double*,int*,int*,double*);
 extern PetscErrorCode OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLHIOP(OPFLOW,const double*,double*);
 extern PetscErrorCode OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLHIOP(OPFLOW,const double*,double*);
 extern PetscErrorCode OPFLOWComputeDenseHessian_PBPOLHIOP(OPFLOW,const double*,const double*,double*);

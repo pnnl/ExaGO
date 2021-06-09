@@ -15,7 +15,10 @@ Bool eval_opflow_f(PetscInt n, PetscScalar* x, Bool new_x,
   ierr = VecPlaceArray(opflow->X,x);CHKERRQ(ierr);
   ierr = OPFLOWComputeObjective(opflow,opflow->X,obj_value);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
-				
+
+  if(opflow->modelops.computeauxobjective) {
+    ierr = (*opflow->modelops.computeauxobjective)(opflow,(const double*)x,obj_value,opflow->userctx);CHKERRQ(ierr);
+  }
   return TRUE;
 }
 
@@ -31,6 +34,10 @@ Bool eval_opflow_grad_f(PetscInt n, PetscScalar* x, Bool new_x,
   ierr = OPFLOWComputeGradient(opflow,opflow->X,opflow->gradobj);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
   ierr = VecResetArray(opflow->gradobj);CHKERRQ(ierr);
+
+  if(opflow->modelops.computeauxgradient) {
+    ierr = (*opflow->modelops.computeauxgradient)(opflow,(const double*)x,grad_f,opflow->userctx);CHKERRQ(ierr);
+  }
 
   return TRUE;
 }
@@ -222,6 +229,19 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
     ierr = (*opflow->modelops.computehessian)(opflow,opflow->X,opflow->Lambdae,opflow->Lambdai,opflow->Hes);CHKERRQ(ierr);
     ierr = PetscLogEventEnd(opflow->hesslogger,0,0,0,0);CHKERRQ(ierr);
 
+    /* Auxillary hessian */
+    if(opflow->modelops.computeauxhessian) {
+      ierr = (*opflow->modelops.computeauxhessian)(opflow,x,opflow->Hes,opflow->userctx);CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(opflow->Hes,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(opflow->Hes,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+    }
+
+    ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
+    ierr = VecResetArray(opflow->Lambdae);CHKERRQ(ierr);
+    if(opflow->Nconineq) {
+      ierr = VecResetArray(opflow->Lambdai);CHKERRQ(ierr);
+    }
+
     /* Copy over values */
     ierr = MatGetSize(opflow->Hes,&nrow,&nrow);CHKERRQ(ierr);
     for(i=0; i < nrow; i++) {
@@ -235,12 +255,6 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x, PetscScalar obj_facto
       }
       values += ctr;
       ierr = MatRestoreRow(opflow->Hes,i,&nvals,&cols,&vals);CHKERRQ(ierr);
-    }
-
-    ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
-    ierr = VecResetArray(opflow->Lambdae);CHKERRQ(ierr);
-    if(opflow->Nconineq) {
-      ierr = VecResetArray(opflow->Lambdai);CHKERRQ(ierr);
     }
   }
 

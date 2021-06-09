@@ -1,17 +1,9 @@
-set(EXAGO_PFLOW_APP_LIBS ExaGO::UTILS ExaGO::PS ExaGO::PFLOW ${EXAGO_MATH_LIB}
-                         PETSC::SNES
-)
-
-if(EXAGO_ENABLE_MPI)
-  list(APPEND EXAGO_PFLOW_APP_LIBS MPI::MPI_CXX)
-endif()
-
 if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_GPU)
   set_source_files_properties(TestAcopf.cpp PROPERTIES LANGUAGE CUDA)
 endif()
 
 add_executable(testAcopf TestAcopf.cpp utils/TestAcopfUtils.cpp)
-target_link_libraries(testAcopf ExaGO::OPFLOW ${EXAGO_PFLOW_APP_LIBS})
+target_link_libraries(testAcopf ExaGO::OPFLOW)
 target_include_directories(testAcopf PRIVATE ./utils)
 
 add_executable(testErrorHandler TestErrorHandler.cpp)
@@ -29,6 +21,8 @@ if(EXAGO_INSTALL_TESTS)
     COMMAND
     ${RUNCMD}
     $<TARGET_FILE:testAcopf>
+    -opflow_genbusvoltage
+    VARIABLE_WITHIN_BOUNDS
     -validation_dir
     ${CMAKE_SOURCE_DIR}/datafiles/test_validation
     NETFILES

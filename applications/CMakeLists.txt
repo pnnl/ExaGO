@@ -18,14 +18,6 @@ set(SOPFLOW_SRC sopflow-main.c)
 # TCOPFLOW
 set(TCOPFLOW_SRC tcopflow-main.c)
 
-set(EXAGO_PFLOW_APP_LIBS ExaGO::UTILS ExaGO::PS ExaGO::PFLOW ${EXAGO_MATH_LIB}
-                         PETSC::SNES
-)
-
-if(EXAGO_ENABLE_MPI)
-  list(APPEND EXAGO_PFLOW_APP_LIBS MPI::MPI_C)
-endif()
-
 # Add executables PFLOW
 add_executable(app_pflow ${PFLOW_SRC})
 # OPFLOW
@@ -38,21 +30,11 @@ add_executable(app_sopflow ${SOPFLOW_SRC})
 add_executable(app_tcopflow ${TCOPFLOW_SRC})
 
 # Link libraries
-target_link_libraries(app_pflow ${EXAGO_PFLOW_APP_LIBS})
-
-target_link_libraries(app_opflow ExaGO::OPFLOW ${EXAGO_PFLOW_APP_LIBS})
-
-target_link_libraries(
-  app_scopflow ExaGO::SCOPFLOW ExaGO::TCOPFLOW ExaGO::OPFLOW
-  ${EXAGO_PFLOW_APP_LIBS}
-)
-
-target_link_libraries(
-  app_sopflow ExaGO::SOPFLOW ExaGO::SCOPFLOW ExaGO::TCOPFLOW ExaGO::OPFLOW
-  ${EXAGO_PFLOW_APP_LIBS}
-)
-
-target_link_libraries(app_tcopflow ExaGO::TCOPFLOW ${EXAGO_PFLOW_APP_LIBS})
+target_link_libraries(app_pflow ExaGO::PFLOW)
+target_link_libraries(app_opflow ExaGO::OPFLOW)
+target_link_libraries(app_scopflow ExaGO::SCOPFLOW)
+target_link_libraries(app_sopflow ExaGO::SOPFLOW)
+target_link_libraries(app_tcopflow ExaGO::TCOPFLOW)
 
 set_target_properties(app_pflow PROPERTIES OUTPUT_NAME pflow)
 set_target_properties(app_opflow PROPERTIES OUTPUT_NAME opflow)
