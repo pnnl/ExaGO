@@ -419,7 +419,6 @@ PetscErrorCode SOPFLOWComputeObjective_GENRAMP(SOPFLOW sopflow,Vec X,PetscScalar
   OPFLOW         opflow;
   PetscInt       i;
   PetscScalar    *xi;
-  PetscScalar    opflowobj=0.0;
   PetscScalar    *x;
 
   PetscFunctionBegin;
@@ -427,12 +426,13 @@ PetscErrorCode SOPFLOWComputeObjective_GENRAMP(SOPFLOW sopflow,Vec X,PetscScalar
 
   ierr = VecGetArray(X,&x);CHKERRQ(ierr);
   for(i=0; i < sopflow->Ns; i++) {
-    opflowobj = 0.0;
     xi = x + sopflow->xstarti[i];
     opflow = sopflow->opflows[i];
+    opflow->obj = 0.0;
+    
     ierr = VecPlaceArray(opflow->X,xi);CHKERRQ(ierr);
-    ierr = (*opflow->modelops.computeobjective)(opflow,opflow->X,&opflowobj);CHKERRQ(ierr);
-    *obj += opflowobj;
+    ierr = (*opflow->modelops.computeobjective)(opflow,opflow->X,&opflow->obj);CHKERRQ(ierr);
+    *obj += opflow->obj;
     ierr = VecResetArray(opflow->X);CHKERRQ(ierr);
   }
   ierr = VecRestoreArray(X,&x);CHKERRQ(ierr);
