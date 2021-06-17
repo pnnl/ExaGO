@@ -1088,14 +1088,17 @@ PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLRAJAHIOP(OPFLOW opflow,const dou
   /* Generator objective function contributions */
   // Set up reduce sum object
   RAJA::ReduceSum< exago_raja_reduce, double> obj_val_sum(0.0);
-  // Compute reduction on CUDA device
-  RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, genparams->ngenON), 
-    RAJA_LAMBDA (RAJA::Index_type i)
-    {
-      double Pg = x_dev[xidx[i]]*MVAbase;
-      obj_val_sum += isobj_gencost*(cost_alpha[i]*Pg*Pg + cost_beta[i]*Pg + cost_gamma[i]);
-    }
-  );
+
+  if(opflow->objectivetype == MIN_GEN_COST) {
+    // Compute reduction on CUDA device
+    RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, genparams->ngenON), 
+      RAJA_LAMBDA (RAJA::Index_type i)
+      {
+	double Pg = x_dev[xidx[i]]*MVAbase;
+	obj_val_sum += isobj_gencost*(cost_alpha[i]*Pg*Pg + cost_beta[i]*Pg + cost_gamma[i]);
+      }
+    );
+  }
 
   if(opflow->include_loadloss_variables) {
     double *loadloss_penalty_dev_ = loadparams->loadloss_penalty_dev_;
@@ -1154,13 +1157,15 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOP(OPFLOW opflow,const doub
   int*    l_xidx       = loadparams->xidx_dev_;
   int*    b_xidxpimb   = busparams->xidxpimb_dev_;
  
-  RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, genparams->ngenON), 
-    RAJA_LAMBDA (RAJA::Index_type i)
-    {
-      double Pg = x_dev[xidx[i]]*MVAbase;
-      grad_dev[xidx[i]] = isobj_gencost*MVAbase*(2.0*cost_alpha[i]*Pg + cost_beta[i]);
-    }
-  );
+  if(opflow->objectivetype == MIN_GEN_COST) {
+    RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, genparams->ngenON), 
+      RAJA_LAMBDA (RAJA::Index_type i)
+      {
+        double Pg = x_dev[xidx[i]]*MVAbase;
+	grad_dev[xidx[i]] = isobj_gencost*MVAbase*(2.0*cost_alpha[i]*Pg + cost_beta[i]);
+      }
+    );
+  }
 
   if(opflow->include_loadloss_variables) {
     double *loadloss_penalty_dev_ = loadparams->loadloss_penalty_dev_;
@@ -1194,7 +1199,7 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOP(OPFLOW opflow,const doub
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSetVariableBoundsArray_old_PBPOLRAJAHIOP(OPFLOW opflow,double *xl_dev,double *xu_dev)
+PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP(OPFLOW opflow,double *xl_dev,double *xu_dev)
 {
   PetscErrorCode ierr;
   double         *xl,*xu;
@@ -1221,7 +1226,7 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_old_PBPOLRAJAHIOP(OPFLOW opflow,doub
 
 // Note: This kernel (and all the kernels for this model assume that the data has been already
 // allocated on the device. xl_dev and xu_dev are pointers to arrays on the GPU
-PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP(OPFLOW opflow,double *xl_dev,double *xu_dev)
+PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP_old(OPFLOW opflow,double *xl_dev,double *xu_dev)
 {
   PbpolModelRajaHiop* pbpolrajahiop = reinterpret_cast<PbpolModelRajaHiop*>(opflow->model);
   BUSParamsRajaHiop      *busparams=&pbpolrajahiop->busparams;
@@ -1533,16 +1538,26 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOP(OPFLOW opflow,const doub
     }
 
     /* Generator contributions */
-    int* hesssp_idx = genparams->hesssp_idx_dev_;
-    double* cost_alpha = genparams->cost_alpha_dev_;
-
-    RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, genparams->ngenON),
-      RAJA_LAMBDA (RAJA::Index_type i) 
-      {
-        MHSS_dev[hesssp_idx[i]] = isobj_gencost*obj_factor*2.0*cost_alpha[i]*MVAbase*MVAbase;
-      }
-    );
-    flps += 5*genparams->ngenON;
+    if(opflow->objectivetype == MIN_GEN_COST) {
+      int* hesssp_idx = genparams->hesssp_idx_dev_;
+      double* cost_alpha = genparams->cost_alpha_dev_;
+      
+      RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, genparams->ngenON),
+        RAJA_LAMBDA (RAJA::Index_type i) 
+        {
+	  MHSS_dev[hesssp_idx[i]] = isobj_gencost*obj_factor*2.0*cost_alpha[i]*MVAbase*MVAbase;
+        }
+      );
+      flps += 5*genparams->ngenON;
+    } else if(opflow->objectivetype == NO_OBJ) {
+      int* hesssp_idx = genparams->hesssp_idx_dev_;
+      RAJA::forall< exago_raja_exec >( RAJA::RangeSegment(0, genparams->ngenON),
+        RAJA_LAMBDA (RAJA::Index_type i) 
+        {
+	  MHSS_dev[hesssp_idx[i]] = 0.0;
+        }
+      );
+    }
 
     /* Loadloss contributions - 2 contributions expected */
     if(opflow->include_loadloss_variables) {

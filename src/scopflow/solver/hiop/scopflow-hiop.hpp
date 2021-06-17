@@ -23,7 +23,7 @@ public:
 
   ~SCOPFLOWHIOPInterface();
 
-  hiop::hiopSolveStatus solve_master(double* x,
+  hiop::hiopSolveStatus solve_master(hiop::hiopVector& x,
                                      const bool& include_r,
                                      const double& rval, 
                                      const double* grad,
@@ -31,19 +31,20 @@ public:
 
 
   bool eval_f_rterm(size_t idx, const int& n, const double* x, double& rval);
-  bool eval_grad_rterm(size_t idx, const int& n, double* x, double* grad);
+  bool eval_grad_rterm(size_t idx, const int& n, double* x, hiop::hiopVector& grad);
 
   size_t get_num_rterms() const;
 
   size_t get_num_vars() const;
 
   void get_solution(double* x) const;
+
   double get_objective();
 
   bool set_recourse_approx_evaluator(const int n,hiopInterfacePriDecProblem::RecourseApproxEvaluator* evaluator);
 
   int      nxcoup;    /* Number of coupling variables */
-  std::vector<int> loc_xcoup; /* Indices for the coupling variables in the base problem */
+  int    *loc_xcoup; /* Indices for the coupling variables in the base problem */
   bool     include_r_;
   hiopInterfacePriDecProblem::RecourseApproxEvaluator* rec_evaluator;
 private:
