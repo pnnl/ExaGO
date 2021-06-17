@@ -1,7 +1,7 @@
 # Unit Test Design for ExaGO OPFLOW's Objective Function's Gradient
 
 ## Goal
-Design the scalable unit test for the OPFLOW gradient of the optimization function.
+Design the scalable unit test for the OPFLOW function **OPFLOWComputeGradient_PBPOL**.
 
 ## Objective function's gradient
 
@@ -20,58 +20,36 @@ where, $`\alpha_k`$, and $`\beta_k`$, are the generator $`k`$ cost-cofficients. 
 For the purpose of this unit test, focus is only on the first gradient, because the other four are not calculated by default and are also zero if included. Those elements are include if following flags are enabled:
 - include_loadloss_variables
 - include_powerimbalance_variables
+
 ## Input file
-### Format
 ExaGO OPFLOW reads .m file, thus the input file for unit test is in this format.
-### Topology
-A network, that consist of:
-- 5 buses (1-5)
-- 1 generator unit (at bus 3)
-- 1 transformer (between buses 2 and 3)
-- 3 lines (1-2, 2-4, 4-5)
-- 1 switched shunt (at bus 2), and 
-- 1 load (at bus 4) is being created.
-Figure below shows the oneline diagram of the test network:
-![img1.png](one_oneline.jpg)
+A 5-bus system **OFG-unittestx1.m** will be used as a basis for this test.
 
+### Parameter values
 
-### Values
 Following are the value of parameters of interest for this test:
 
 - $`\alpha_{k}=0.045`$
 - $`\beta_{k}=0.1`$
 - $`P_{Gk}=10`$
 
+### Solution for N=1
 
-With this, **the value of the objective function's gradient is equal to 1 for N=1**. 
+With the parameters of the example network, value of the objective function is equal **1**. 
 
 ## Scaling
-Idea is to be able to "multiply" the network, and at the same time being able to **easily** evaluate the objective function's gradient. Network shown before is considered as a base segment (N=1).
 
-Figure 2 shows the proposed multiplication of the grid with two segments connected (N=2):
+To build a solution when the network is being multiplied folowing needs to be done:
 
-![img2.png](two_oneline.jpg)
-### Algorithm
-Algorithm for the .m file generation with N segments of the base network is:
-#### Bus data:
-- Copy all but first bus data (column) N times and increment the numbering (First value in the column): (N-1)*4+First.
-- Set all Second values in columns of elements with First number euqual to N*4-1 for N>1 (e.g., 7, 11, 15) to 2. This steps ensure that all buses with generator unit are marked as PV buses, and the first one with the generator is SLACK (Secund=3 instead of 2).
-- Total number of buses for N segments is N*4+1.
-#### Generator data:
-- Copy generator data N times.
-- ONLY the first value in the generator field (bus number) needs to be updated for each copy = 3+(N-1)*4.
-#### Generator cost data:
-- Copy generator cost data N times.
-#### Branch data:
-- Copy all four branches N times.
-- First two values in each columns are changing as follows: (N-1)*4+First and (N-1)*4+Second.
-#### Bus name data:
-- Copy all but first bus name data N times and increment the numbering: (N-1)*4+First. 
-#### Generator unit types data:
-- Copy generator unit types data N times.
-#### Generator fuel types data:
-- Copy generator fuel types data N times.
+Create the vector with lenght(vector)=N.
 
-With this, **the value of the objective function's gradient of the network with N segments is equal to vector with length of N where all values are equal to 1**.
+### Solution for N=3
 
+For N=3 the value of the objective function's gradient is equal to vector with length of 3 where all values are equal to 1:
+
+<table>
+<tr>
+<td>1 1 1 </td>
+</tr>
+</table> 
 
