@@ -21,6 +21,7 @@ A simple 5-bus network is used as a basis for the unit tests. A network consist 
 - 1 load (at bus 4).
 
 Figure below shows the oneline diagram of the test network:
+
 ![img1.png](one_oneline.jpg)
 
 ## Scaling
@@ -31,7 +32,7 @@ Figure 2 shows the proposed multiplication of the grid with two segments connect
 ![img2.png](two_oneline.jpg)
 
 ### Algorithm
-To be able to run teh unit tests with the larger network, a new input file needs to be generated. Algorithm for the .m file generation with N segments of the base network is:
+To be able to run the unit tests with the larger network, a new input file needs to be generated. Algorithm for the .m file generation with N segments of the base network is:
 #### Bus data:
 - Copy all but first bus data (column) N times and increment the numbering (First value in the column): (N-1)*4+First.
 - Set all Second values in columns of elements with First number euqual to N*4-1 for N>1 (e.g., 7, 11, 15) to 2. This steps ensure that all buses with generator unit are marked as PV buses, and the first one with the generator is SLACK (Second=3 instead of 2).
@@ -55,10 +56,10 @@ To be able to run teh unit tests with the larger network, a new input file needs
 
 Scripts are wrriten is python are are based on the previously given algorithm.
 
-##Funtions to be tested
-- OPFLOWComputeObjective_PBPOL (done)
-- OPFLOWComputeGradient_PBPOL (done)
-- OPFLOWComputeEqualityConstraints_PBPOL (done)
+## Functions to be tested
+- **OPFLOWComputeObjective_PBPOL (done)**
+- **OPFLOWComputeGradient_PBPOL (done)**
+- **OPFLOWComputeEqualityConstraints_PBPOL (done)**
 - OPFLOWComputeInequalityConstraints_PBPOL
 - OPFLOWComputeEqualityConstraintJacobian_PBPOL
 - OPFLOWComputeInequalityConstraintJacobian_PBPOL
