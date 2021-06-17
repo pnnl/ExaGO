@@ -50,7 +50,7 @@ PetscErrorCode SCOPFLOWBaseAuxHessianFunction(OPFLOW opflow,const double* x,Mat 
   if(hiop->pridecompprob->include_r_) {
     for(i=0; i < hiop->pridecompprob->nxcoup; i++) {
       row = col = hiop->pridecompprob->loc_xcoup[i];
-      val = hiop->pridecompprob->rec_evaluator->get_rhess()[i];
+      val = hiop->pridecompprob->rec_evaluator->get_rhess()->local_data_const()[i];
       val *= opflow->obj_factor;
       ierr = MatSetValues(Hess,1,&row,1,&col,&val,ADD_VALUES);CHKERRQ(ierr);
     }
@@ -88,13 +88,15 @@ SCOPFLOWHIOPInterface::SCOPFLOWHIOPInterface(SCOPFLOW scopflowin)
       if(gen->status) nxcoup++;  
     }
   }
+
+  PetscCalloc1(nxcoup,&loc_xcoup);
   /* Set the coupling indices */
   for(i = 0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
     for(k=0; k < bus->ngen; k++) {
       PSBUSGetGen(bus,k,&gen);
       if(gen->status) {
-	loc_xcoup.push_back(gen->startxpowloc); /* Location for Pg */
+	loc_xcoup[j] = gen->startxpowloc; /* Location for Pg */
 	j++;
       }
     }
@@ -102,13 +104,13 @@ SCOPFLOWHIOPInterface::SCOPFLOWHIOPInterface(SCOPFLOW scopflowin)
   assert(j == nxcoup);
 }
 
-hiop::hiopSolveStatus SCOPFLOWHIOPInterface::solve_master(double* x,
+hiop::hiopSolveStatus SCOPFLOWHIOPInterface::solve_master(hiop::hiopVector& xvec,
                                      const bool& include_r,
                                      const double& rval, 
                                      const double* grad,
                                      const double*hess)
 {
-
+  double         *x = xvec.local_data();
   PetscErrorCode ierr;
   double         obj;
   OPFLOW         opflow;
@@ -134,19 +136,8 @@ hiop::hiopSolveStatus SCOPFLOWHIOPInterface::solve_master(double* x,
 bool SCOPFLOWHIOPInterface::set_recourse_approx_evaluator(const int n,hiopInterfacePriDecProblem::RecourseApproxEvaluator* evaluator)
 {
   assert(n == nxcoup);
-  if(rec_evaluator == NULL) {
-    rec_evaluator = new hiopInterfacePriDecProblem::
-      RecourseApproxEvaluator(n, evaluator->get_S(), loc_xcoup,
-			      evaluator->get_rval(), evaluator->get_rgrad(),
-			      evaluator->get_rhess(), evaluator->get_x0());
-  }
+  rec_evaluator = evaluator;
   
-  assert(rec_evaluator->get_rgrad() != NULL);
-  rec_evaluator->set_rval(evaluator->get_rval());
-  rec_evaluator->set_rgrad(n,evaluator->get_rgrad());
-  rec_evaluator->set_rhess(n,evaluator->get_rhess());
-  rec_evaluator->set_x0(n,evaluator->get_x0());
-
   return true;
 }
 
@@ -164,13 +155,23 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double*
   PSGEN  gen,gen0;
   PetscInt i,k,j,g=0;
   PetscInt cont_num=idx+1;
+  char     modelname[32],solvername[32];
+
+
+  /* Default model and solver */
+  PetscStrcpy(modelname,"PBPOLRAJAHIOP");
+  PetscStrcpy(solvername,"HIOP");
   
+  ierr = PetscOptionsGetString(NULL,NULL,"-scopflow_subproblem_model",modelname,32,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL,NULL,"-scopflow_subproblem_solver",solvername,32,NULL);CHKERRQ(ierr);
+
   //  printf("[Rank %d] contingency %d Came in recourse objective function\n",scopflow->comm->rank,cont_num);
 
   opflow0 = scopflow->opflow0;
 
   ierr = OPFLOWCreate(PETSC_COMM_SELF,&opflowctgc);CHKERRQ(ierr);
-  ierr = OPFLOWSetModel(opflowctgc,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
+  ierr = OPFLOWSetModel(opflowctgc,modelname);CHKERRQ(ierr);
+  ierr = OPFLOWSetSolver(opflowctgc,solvername);CHKERRQ(ierr);
       
   ierr = OPFLOWReadMatPowerData(opflowctgc,scopflow->netfile);CHKERRQ(ierr);
   /* Set up the PS object for opflow */
@@ -197,12 +198,6 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double*
     }
   }
 
-  ierr = OPFLOWHasGenSetPoint(opflowctgc,PETSC_TRUE);CHKERRQ(ierr); /* Activates ramping variables */
-  ierr = OPFLOWSetObjectiveType(opflowctgc,NO_OBJ);CHKERRQ(ierr);
-  ierr = OPFLOWSetUpdateVariableBoundsFunction(opflowctgc,SCOPFLOWUpdateOPFLOWVariableBounds,(void*)scopflow);
-
-  ierr = OPFLOWSetUp(opflowctgc);CHKERRQ(ierr);
-  
   /* Update generator set-points */
   ps = opflowctgc->ps;
   ps0 = opflow0->ps; 
@@ -218,6 +213,13 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double*
     }
   }
   assert(g == n);
+
+  ierr = OPFLOWHasGenSetPoint(opflowctgc,PETSC_TRUE);CHKERRQ(ierr); /* Activates ramping variables */
+  ierr = OPFLOWSetObjectiveType(opflowctgc,NO_OBJ);CHKERRQ(ierr);
+  ierr = OPFLOWSetUpdateVariableBoundsFunction(opflowctgc,SCOPFLOWUpdateOPFLOWVariableBounds,(void*)scopflow);
+
+  ierr = OPFLOWSetUp(opflowctgc);CHKERRQ(ierr);
+  
   /* Solve */
   ierr = OPFLOWSolve(opflowctgc);
   ierr = OPFLOWGetObjective(opflowctgc,&rval);
@@ -225,9 +227,10 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double*
   return true;
 }
 
-bool SCOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int& n, double* x, double* grad)
+bool SCOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int& n, double* x, hiop::hiopVector& gradvec)
 {
   PetscErrorCode ierr;
+  double *grad = gradvec.local_data();
   OPFLOW opflow;
   OPFLOW opflow0; /* base case OPFLOW */
   PS     ps,ps0;
@@ -331,6 +334,7 @@ PetscErrorCode SCOPFLOWSolverDestroy_HIOP(SCOPFLOW scopflow)
 
   PetscFunctionBegin;
 
+  ierr = PetscFree(hiop->pridecompprob->loc_xcoup);CHKERRQ(ierr);
   delete hiop->pridecompprob;
   delete hiop->pridecsolver;
 

@@ -306,10 +306,11 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOP(OPFLOW opflow)
 
 	spct += gen->nxpdev;
 	
+	loc = gen->startxpsetloc;
+
 	idxn2sd_map[loc] = spct;
 	
 	spct += gen->nxpset;
-	loc  += gen->nxpset;      
       }
     }
 

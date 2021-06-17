@@ -319,11 +319,11 @@ PetscErrorCode SCOPFLOWUpdateOPFLOWVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu,
 	if(scopflow->mode == 0) {
 	  /* Only ref. bus responsible for make-up power for contingencies */
 	  if(bus->ide != REF_BUS) {
-	    xl[gen->startxpdevloc]   = xu[gen->startxpdevloc] = 0.0;
+	    xl[opflow->idxn2sd_map[gen->startxpdevloc]]   = xu[opflow->idxn2sd_map[gen->startxpdevloc]] = 0.0;
 	  }
 	} else {
-	    xl[gen->startxpdevloc] = -gen->ramp_rate_30min;
-	    xu[gen->startxpdevloc] =  gen->ramp_rate_30min;
+	  xl[opflow->idxn2sd_map[gen->startxpdevloc]] = -gen->ramp_rate_30min;
+	  xu[opflow->idxn2sd_map[gen->startxpdevloc]] =  gen->ramp_rate_30min;
 	}
       }
     }
@@ -403,6 +403,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = MPI_Scan(&scopflow->nc,&scopflow->cend,1,MPIU_INT,MPI_SUM,scopflow->comm->type);CHKERRQ(ierr);
   scopflow->cstart = scopflow->cend - scopflow->nc;
 
+  
   ExaGOLog(EXAGO_LOG_INFO,"SCOPFLOW running with %d contingencies (base case + %d contingencies)\n",scopflow->Nc,scopflow->Nc-1);
   //  ExaGOLogUseEveryRank(PETSC_TRUE);
   //  ExaGOLog(EXAGO_LOG_INFO,"Rank %d has %d contingencies, range [%d -- %d]\n",scopflow->comm->rank,scopflow->nc,scopflow->cstart,scopflow->cend);
@@ -444,7 +445,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 
     for(c=0; c < scopflow->nc; c++) {
       ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflows[c]);CHKERRQ(ierr);
-      ierr = OPFLOWSetModel(scopflow->opflows[c],OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
+      //      ierr = OPFLOWSetModel(scopflow->opflows[c],OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
       //    ierr = OPFLOWSetSolver(scopflow->opflows[c],opflowsolvername);CHKERRQ(ierr);
       ierr = OPFLOWSetInitializationType(scopflow->opflows[c], scopflow->type);CHKERRQ(ierr);
       ierr = OPFLOWSetGenBusVoltageType(scopflow->opflows[c], scopflow->genbusvoltagetype);CHKERRQ(ierr);
@@ -478,6 +479,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 	ierr = OPFLOWSetObjectiveType(scopflow->opflows[c],MIN_GEN_COST);CHKERRQ(ierr);
       } else { /* Second stages */
 	ierr = OPFLOWHasGenSetPoint(scopflow->opflows[c],PETSC_TRUE);CHKERRQ(ierr); /* Activates ramping variables */
+	ierr = OPFLOWSetModel(scopflow->opflows[c],OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
 	ierr = OPFLOWSetObjectiveType(scopflow->opflows[c],NO_OBJ);CHKERRQ(ierr);
 	ierr = OPFLOWSetUpdateVariableBoundsFunction(scopflow->opflows[c],SCOPFLOWUpdateOPFLOWVariableBounds,(void*)scopflow);
       }

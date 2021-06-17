@@ -309,11 +309,13 @@ PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLHIOP(OPFLOW opflow,const double 
     }
   }
 
-  /* Generator objective function contributions */
-  for(i=0; i < genparams->ngenON; i++) {
-    double Pg = x[genparams->xidx[i]]*MVAbase;
-    obj_val += isobj_gencost*(genparams->cost_alpha[i]*Pg*Pg + genparams->cost_beta[i]*Pg + genparams->cost_gamma[i]);
-  }
+  if(opflow->objectivetype == MIN_GEN_COST) {
+    /* Generator objective function contributions */
+    for(i=0; i < genparams->ngenON; i++) {
+      double Pg = x[genparams->xidx[i]]*MVAbase;
+      obj_val += isobj_gencost*(genparams->cost_alpha[i]*Pg*Pg + genparams->cost_beta[i]*Pg + genparams->cost_gamma[i]);
+    }
+  } 
 
   /* LoadLoss objective function contribution if present */
   if(opflow->include_loadloss_variables) {
@@ -359,10 +361,12 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLHIOP(OPFLOW opflow,const double *
     }
   }
 
-  /* Generator gradient contributions */
-  for(i=0; i < genparams->ngenON; i++) {
-    double Pg = x[genparams->xidx[i]]*MVAbase;
-    grad[genparams->xidx[i]] = isobj_gencost*MVAbase*(2.0*genparams->cost_alpha[i]*Pg + genparams->cost_beta[i]);
+  if(opflow->objectivetype == MIN_GEN_COST) {
+    /* Generator gradient contributions */
+    for(i=0; i < genparams->ngenON; i++) {
+      double Pg = x[genparams->xidx[i]]*MVAbase;
+      grad[genparams->xidx[i]] = isobj_gencost*MVAbase*(2.0*genparams->cost_alpha[i]*Pg + genparams->cost_beta[i]);
+    }
   }
 
   /* Loadloss gradient contributions */
@@ -600,10 +604,17 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLHIOP(OPFLOW opflow,const double *
       }
     }
 
-    /* Generator contributions */
-    for(i=0; i < genparams->ngenON; i++) {
-      loc = genparams->hesssp_idx[i];
-      MHSS[loc] = isobj_gencost*obj_factor*2.0*genparams->cost_alpha[i]*MVAbase*MVAbase;
+    if(opflow->objectivetype == MIN_GEN_COST) {
+      /* Generator contributions */
+      for(i=0; i < genparams->ngenON; i++) {
+	loc = genparams->hesssp_idx[i];
+	MHSS[loc] = isobj_gencost*obj_factor*2.0*genparams->cost_alpha[i]*MVAbase*MVAbase;
+      }
+    } else if(opflow->objectivetype == NO_OBJ) {
+      for(i=0; i < genparams->ngenON; i++) {
+	loc = genparams->hesssp_idx[i];
+	MHSS[loc] = 0.0;
+      }
     }
 
     /* Loadloss contributions */
