@@ -389,9 +389,9 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
 
   MPI_Barrier(sopflow->comm->type);
   ExaGOLog(EXAGO_LOG_INFO,"SOPFLOW running with %d scenarios\n",sopflow->Ns);
-  ExaGOLogUseEveryRank(PETSC_TRUE);
-  ExaGOLog(EXAGO_LOG_INFO,"Rank %d scenario range [%d -- %d]\n",sopflow->comm->rank,sopflow->sstart,sopflow->send);
-  ExaGOLogUseEveryRank(PETSC_FALSE);
+  //  ExaGOLogUseEveryRank(PETSC_TRUE);
+  //  ExaGOLog(EXAGO_LOG_INFO,"Rank %d scenario range [%d -- %d]\n",sopflow->comm->rank,sopflow->sstart,sopflow->send);
+  //  ExaGOLogUseEveryRank(PETSC_FALSE);
 			
   /* Create subcommunicators to manage scopflows */
   MPI_Comm_split(sopflow->comm->type,color[sopflow->comm->rank],sopflow->comm->rank,&sopflow->subcomm);

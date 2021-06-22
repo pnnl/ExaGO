@@ -348,9 +348,9 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   scopflow->cstart = scopflow->cend - scopflow->nc;
 
   ExaGOLog(EXAGO_LOG_INFO,"SCOPFLOW running with %d contingencies (base case + %d contingencies)\n",scopflow->Nc,scopflow->Nc-1);
-  ExaGOLogUseEveryRank(PETSC_TRUE);
-  ExaGOLog(EXAGO_LOG_INFO,"Rank %d has %d contingencies, range [%d -- %d]\n",scopflow->comm->rank,scopflow->nc,scopflow->cstart,scopflow->cend);
-  ExaGOLogUseEveryRank(PETSC_FALSE);
+  //  ExaGOLogUseEveryRank(PETSC_TRUE);
+  //  ExaGOLog(EXAGO_LOG_INFO,"Rank %d has %d contingencies, range [%d -- %d]\n",scopflow->comm->rank,scopflow->nc,scopflow->cstart,scopflow->cend);
+  //  ExaGOLogUseEveryRank(PETSC_FALSE);
 
   /* Set model */
   if(!scopflow->ismultiperiod) {
