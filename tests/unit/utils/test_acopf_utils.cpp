@@ -145,3 +145,4 @@ void validate_directory(std::string pth) {
   // std::cout << "Existing dir found" << std::endl;
   return;
 }
+
