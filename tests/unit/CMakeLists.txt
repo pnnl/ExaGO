@@ -1,3 +1,5 @@
+add_subdirectory(opflow)
+
 if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_GPU)
   set_source_files_properties(TestAcopf.cpp PROPERTIES LANGUAGE CUDA)
 endif()
