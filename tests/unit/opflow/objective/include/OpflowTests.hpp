@@ -33,6 +33,7 @@ public:
     RealType         obj_val;
     ierr = OPFLOWComputeObjective(opflow,X,&obj_val);CHKERRQ(ierr);
     fail += !isEqual(obj_val, obj_ref);
+    PetscPrintf(PETSC_COMM_WORLD, "obj_val = %f \n \n obj_ref = %f \n \n", obj_val, obj_ref);
     cleanup(fail, opflow);
   }
 
@@ -44,6 +45,7 @@ public:
     RealType         obj_val=0.0;
     ierr = OPFLOWComputeObjectiveArray(opflow, xref, &obj_val);CHKERRQ(ierr);
     fail += !isEqual(obj_val, obj_ref);
+    PetscPrintf(PETSC_COMM_WORLD, "obj_val = %f \n \n obj_ref = %f \n \n", obj_val, obj_ref);
     cleanup(fail, opflow);
   }
 

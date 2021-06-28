@@ -74,7 +74,7 @@ void spdensetonatural(const double *xin,double *xout,int *idxn2sd_map,int nx)
 int main(int argc, char** argv)
 {
   const bool     isTestOpflowModelPBPOL     = false;
-#if defined(EXAGO_ENABLE_RAJA)
+#if not defined(EXAGO_ENABLE_RAJA)
   const bool     isTestOpflowModelPBPOLRAJAHIOP = true;
   const bool     isTestOpflowModelPBPOLHIOP = false;
 #else
@@ -84,8 +84,11 @@ int main(int argc, char** argv)
   PetscErrorCode ierr;
   PetscBool      flg, gen_test_data, write_test_data;
   bool           ineq_present = false;
+  /*
   Vec            X, Xl, Xu, G, Gl, Gu, grad, Lambda;
-  Mat            Jeq, Jineq, Hess;
+  */
+  Vec            X, Lambda;
+  // Mat            Jeq, Jineq, Hess;
   int            fail=0;
   PetscLogStage  stages[0];
   double         obj_value, obj_factor;
@@ -123,6 +126,9 @@ int main(int argc, char** argv)
   // Set obj_value as reference solution, and run as usual
   obj_value = 10.0;
 
+  // Vec X = -
+  // x_ref = -
+
   ierr = PetscLogStagePop();CHKERRQ(ierr);
 
   ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
@@ -149,20 +155,26 @@ int main(int argc, char** argv)
 
     /* Set up */
     ierr = OPFLOWSetUp(opflowtest);CHKERRQ(ierr);
+    ierr = OPFLOWGetSolution(opflowtest, &X);CHKERRQ(ierr);
+    ierr = VecView(X, 0);CHKERRQ(ierr);
+    ierr = OPFLOWGetConstraintMultipliers(opflowtest,&Lambda);CHKERRQ(ierr);
 
     int nx,nconeq,nconineq,*idxn2sd_map;
     ierr = OPFLOWGetSizes(opflowtest,&nx,&nconeq,&nconineq);CHKERRQ(ierr);
     ierr = OPFLOWGetVariableOrdering(opflowtest,&idxn2sd_map);CHKERRQ(ierr);
 
+    /*
     double *x_vec, *xl_vec, *xu_vec, *grad_vec, \
            *x_ref, *xl_ref, *xu_ref, *grad_ref, *g_ref, *gl_ref, *gu_ref, *lambda_ref;
+           */
+    double *x_vec, *x_ref, *lambda_ref;
 
     ierr = PetscMalloc1(nx,&x_ref);CHKERRQ(ierr);
     // ierr = PetscMalloc1(nx,&xl_ref);CHKERRQ(ierr);
     // ierr = PetscMalloc1(nx,&xu_ref);CHKERRQ(ierr);
     // ierr = PetscMalloc1(nx,&grad_ref);CHKERRQ(ierr);
 
-    // ierr = VecGetArray(X,&x_vec);CHKERRQ(ierr);
+    ierr = VecGetArray(X,&x_vec);CHKERRQ(ierr);
     // ierr = VecGetArray(Xl,&xl_vec);CHKERRQ(ierr);
     // ierr = VecGetArray(Xu,&xu_vec);CHKERRQ(ierr);
     // ierr = VecGetArray(grad,&grad_vec);CHKERRQ(ierr);
@@ -190,6 +202,7 @@ int main(int argc, char** argv)
     // naturaltospdense(grad_vec,grad_ref,idxn2sd_map,nx);CHKERRQ(ierr);
     /* _ref pointers are now in sparse-dense ordering */
     // fail += test.computeVariableBounds(opflowtest,xl_ref,xu_ref);
+    //
     fail += test.computeObjective(opflowtest,x_ref,obj_value);
     // fail += test.computeGradient(opflowtest,x_ref,grad_ref);
     // fail += test.computeConstraints(opflowtest,x_ref,g_ref);
@@ -238,6 +251,8 @@ int main(int argc, char** argv)
 
     /* Set up */
     ierr = OPFLOWSetUp(opflowtest);CHKERRQ(ierr);
+    ierr = OPFLOWGetSolution(opflowtest, &X);CHKERRQ(ierr);
+    ierr = OPFLOWGetConstraintMultipliers(opflowtest,&Lambda);CHKERRQ(ierr);
 
     int nx,nconeq,nconineq,*idxn2sd_map;
     ierr = OPFLOWGetSizes(opflowtest,&nx,&nconeq,&nconineq);CHKERRQ(ierr);
@@ -246,8 +261,9 @@ int main(int argc, char** argv)
     std::cout << "nx = " << nx << std::endl  << "nconeq = " << nconeq << std::endl
               << "nconineq = " << nconineq << std::endl;
 
-    double *x_vec, *xl_vec, *xu_vec, *grad_vec, \
+    //double *x_vec, *xl_vec, *xu_vec, *grad_vec, \
       *x_ref, *xl_ref, *xu_ref, *grad_ref, *g_ref, *gl_ref, *gu_ref,*lambda_ref;
+   double *x_vec, *x_ref, *lambda_ref;
 
     ierr = PetscMalloc1(nx,&x_ref);CHKERRQ(ierr);
     // ierr = PetscMalloc1(nx,&xl_ref);CHKERRQ(ierr);
@@ -384,6 +400,12 @@ int main(int argc, char** argv)
     ierr = OPFLOWSetSolver(opflowtest,OPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
     ierr = OPFLOWSetModel(opflowtest,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
     ierr = OPFLOWSetUp(opflowtest);CHKERRQ(ierr);
+    ierr = OPFLOWGetSolution(opflowtest, &X);CHKERRQ(ierr);
+    // VecView:
+    //    See the value of Lambda
+    //    See the value of X
+    //    Exit after
+    ierr = OPFLOWGetConstraintMultipliers(opflowtest,&Lambda);CHKERRQ(ierr);
 
     // fail += test.computeVariableBounds(opflowtest,Xl,Xu);
     fail += test.computeObjective(opflowtest,X,obj_value);
@@ -402,13 +424,13 @@ int main(int argc, char** argv)
   ierr = VecDestroy(&Gl);CHKERRQ(ierr);
   ierr = VecDestroy(&Gu);CHKERRQ(ierr);
   */
-  ierr = VecDestroy(&X);CHKERRQ(ierr);
+  // ierr = VecDestroy(&X);CHKERRQ(ierr);
   /*
   ierr = VecDestroy(&Xl);CHKERRQ(ierr);
   ierr = VecDestroy(&Xu);CHKERRQ(ierr);
   ierr = VecDestroy(&grad);CHKERRQ(ierr);
   */
-  ierr = VecDestroy(&Lambda);CHKERRQ(ierr);
+  // ierr = VecDestroy(&Lambda);CHKERRQ(ierr);
   /*
   ierr = MatDestroy(&Jeq);CHKERRQ(ierr);
   if (ineq_present)

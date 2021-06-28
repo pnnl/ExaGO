@@ -29,6 +29,8 @@ if(EXAGO_INSTALL_TESTS)
     $<TARGET_FILE:objectiveAcopf>
     -opflow_genbusvoltage
     VARIABLE_WITHIN_BOUNDS
+    -opflow_initialization 
+    FROMFILE
     NETFILES
     ${obj_network_files}
   )
