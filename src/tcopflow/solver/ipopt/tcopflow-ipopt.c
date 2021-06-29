@@ -243,7 +243,10 @@ PetscErrorCode TCOPFLOWSolverSolve_IPOPT(TCOPFLOW tcopflow)
   ierr = VecRestoreArray(tcopflow->Gu,&gu);CHKERRQ(ierr);
 
   /* IPOPT tolerance */
-  AddIpoptNumOption(tcopflowipopt->nlp,"tol",tcopflow->tolerance);
+  {
+    static char tol[] = "tol";
+    AddIpoptNumOption(tcopflowipopt->nlp,tol,tcopflow->tolerance);
+  }
 
   ierr = VecGetArray(tcopflow->X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(tcopflow->G,&g);CHKERRQ(ierr);

@@ -247,7 +247,10 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
   ierr = VecGetArray(scopflow->Lambda,&lam);CHKERRQ(ierr);
 
   /** IPOPT tolerance */
-  AddIpoptNumOption(scopflowipopt->nlp,"tol",scopflow->tolerance);
+  {
+    static char tol[] = "tol";
+    AddIpoptNumOption(scopflowipopt->nlp,tol,scopflow->tolerance);
+  }
 
   /** Add intermediate callback to get solver info.
    * Called by IPOPT each iteration. 

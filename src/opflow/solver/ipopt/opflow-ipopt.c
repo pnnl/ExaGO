@@ -406,7 +406,10 @@ PetscErrorCode OPFLOWSolverSetUp_IPOPT(OPFLOW opflow)
   ierr = VecRestoreArray(opflow->Gu,&gu);CHKERRQ(ierr);
 
   /* IPOPT tolerance */
-  AddIpoptNumOption(ipopt->nlp, "tol", opflow->tolerance);
+  {
+    static char tol[] = "tol";
+    AddIpoptNumOption(ipopt->nlp, tol, opflow->tolerance);
+  }
 
   /* Add intermediate callback function to get the solver info
      Note this is called by IPOPT at each iteration 

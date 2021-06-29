@@ -20,26 +20,26 @@ if [[ ! -f $PWD/buildsystem/build.sh ]]; then
   exit 1
 fi
 
-makeArgs=${makeArgs:-"-j"}
-ctestArgs=${ctestArgs:-"-VV"}
-extraCmakeArgs=${extraCmakeArgs:-""}
+MAKEARGS=${MAKEARGS:-"-j"}
+CTESTARGS=${CTESTARGS:-"-VV"}
+EXTRA_CMAKE_ARGS=${EXTRA_CMAKE_ARGS:-""}
 export OMPI_MCA_btl="^vader,tcp,openib,uct"
 export BUILD=${BUILD:-1}
 export TEST=${TEST:-1}
 export CHECK_CMAKE=${CHECK_CMAKE:-0}
-export srcdir=${srcdir:-$PWD}
-export builddir=${builddir:-$PWD/build}
-export installdir=${installdir:-$PWD/install}
+export SRCDIR=${SRCDIR:-$PWD}
+export BUILDDIR=${BUILDDIR:-$PWD/build}
+export INSTALLDIR=${INSTALLDIR:-$PWD/install}
 export BUILD_MATRIX=${BUILD_MATRIX:-0}
 export JOB=gcc-cuda
 export VALID_JOBS=(gcc-cuda clang-omp cmake-lint cmake-lint-apply)
 
 echo "Paths:"
-echo "Source dir: $srcdir"
-echo "Build dir: $builddir"
-echo "Install dir: $installdir"
-echo "Path to buildsystem script: $srcdir/buildsystem/build.sh"
-cd $srcdir
+echo "Source dir: $SRCDIR"
+echo "Build dir: $BUILDDIR"
+echo "Install dir: $INSTALLDIR"
+echo "Path to buildsystem script: $SRCDIR/buildsystem/build.sh"
+cd $SRCDIR
 
 usage() {
   echo "Usage: ./buildsystem/build.sh [options]
@@ -177,7 +177,7 @@ ulimit -l unlimited || echo 'Could not set max locked memory to unlimited.'
 . /etc/profile.d/modules.sh
 module purge
 
-varfile="$srcdir/buildsystem/$JOB/$(echo $MY_CLUSTER)Variables.sh"
+varfile="$SRCDIR/buildsystem/$JOB/$(echo $MY_CLUSTER)Variables.sh"
 
 if [[ -f "$varfile" ]]; then
   # We don't want all the shell functions we bring into scope to be printed out
@@ -187,7 +187,7 @@ if [[ -f "$varfile" ]]; then
   echo Sourced system-specific variables for $MY_CLUSTER
 fi
 
-module list
+# module list
 
 #  NOTE: The following is required when running from Gitlab CI via slurm job
 base_path=`dirname $0`
@@ -195,12 +195,12 @@ if [ -z "$SLURM_SUBMIT_DIR" ]; then
   cd $base_path          || exit 1
 fi
 
-if [[ ! -f "$srcdir/buildsystem/$JOB/build.sh" ]]; then
+if [[ ! -f "$SRCDIR/buildsystem/$JOB/build.sh" ]]; then
   echo "Job $JOB not found!"
   usage
   exit 1
 fi
 
-source $srcdir/buildsystem/$JOB/build.sh
+source $SRCDIR/buildsystem/$JOB/build.sh
 doBuild
 exit $?
