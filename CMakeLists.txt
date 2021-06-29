@@ -73,9 +73,14 @@ option(EXAGO_RUN_TESTS "Enable tests" ON)
 # If tests are enabled, decides if tests are installed
 option(EXAGO_INSTALL_TESTS "Install testing binaries" ON)
 
-# For testing with BSUB on certain clusters
+# For testing with BSUB/jsrun on certain clusters
 option(EXAGO_TEST_WITH_BSUB
        "Use `jsrun` instead of `mpirun` commands when running tests" OFF
+)
+
+# For testing with Slurm/srun on certain clusters
+option(EXAGO_TEST_WITH_SLURM
+       "Use `srun` instead of `mpirun` commands when running tests" OFF
 )
 
 option(EXAGO_DISABLE_LOGGING "Disable all internal logging" OFF)
@@ -287,6 +292,13 @@ if(EXAGO_TEST_WITH_BSUB)
     set(RUNCMD ${RUNCMD} "-g" "1" ${EXAGO_EXTRA_MPI_FLAGS})
   endif()
   # Otherwise, set mpi command + extra flags
+elseif(EXAGO_TEST_WITH_SLURM)
+  set(MPICMD "srun")
+  set(RUNCMD "srun" "-n" "1")
+  if(EXAGO_ENABLE_GPU)
+    set(MPICMD ${MPICMD} "--gres=gpu:1")
+    set(RUNCMD ${RUNCMD} "--gres=gpu:1" ${EXAGO_EXTRA_MPI_FLAGS})
+  endif()
 else()
   set(MPICMD "mpiexec")
   set(RUNCMD "mpiexec" "-n" "1")

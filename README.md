@@ -24,6 +24,40 @@ ExaGO<sup>TM</sup> applications can use the following solvers:
 | HIOP       | Y      |           |       |         |         |
 | PETSc/TAO  | Y      |           | Y     |         |         |
 
+## Building on CI Platforms
+
+If you are building on one of our continuous integration platforms, you may
+want to use the CI environment for development. To do this, source the variables
+script like so:
+
+```console
+$ # On newell for example
+$ source ./buildsystem/gcc-cuda/newellVariables.sh
+$ mkdir build && cd build && cmake ..
+```
+
+If you would like to use the *exact* configuration used in CI, you may use the
+cmake cache script like so:
+
+```console
+$ # On newell for example
+$ source ./buildsystem/gcc-cuda/newellVariables.sh
+$ mkdir build && cd build
+$ cmake .. -C ../buildsystem/gcc-cuda/cache.cmake
+```
+
+However, users are encouraged to configure their build on their own. Please use
+this CMake cache script *only if you intend to reproduce the CI build*.
+
+### Additional Information
+
+If you are building ExaGO on one of the following systems, you may follow the
+link for more machine-specific information:
+
+- [Ascent, Newell, or Marianas](./docs/web/README.ci_clusters.md)
+- [Summit](./docs/web/README.summit.md)
+
+In short, 
 
 ## Prerequisites
 ExaGO depends on the [PETSc](docs/web/petsc_install.md) library and is compatible with version 3.13.
