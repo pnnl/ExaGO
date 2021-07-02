@@ -50,10 +50,10 @@ self and mutual susceptances, respectively and are calculated form the line para
 
 For the generator with the voltage setpoint following two constraints are calculated:
 
-- $`(Q-Q_{max})*(V_{set}-V)`>=0`$
-- $`(Q_{min}-Q)*(V-V_{set})`>=0`$
+- $`(Q-Q_{max})*(V_{set}-V)>=0`$
+- $`(Q_{min}-Q)*(V-V_{set})>=0`$
 
-**Add the constraints when *opflow_has_gensetpoint* **
+**Add the constraints when opflow_has_gensetpoint**
 
 ## Inequality constraints array
 
@@ -97,7 +97,7 @@ With the parameters of the example network array is:
 
 <table>
 <tr>
-<td>IEC1_V</td> <td>IEC2_V[1]</td> <td>Sf_Branch12</td> <td>St_Branch12</td> <td>Sf_Branch23</td> <td>St_Branch23</td> <td>Sf_Branch24</td> <td>St_Branch24</td> <td>Sf_Branch45</td> <td>St_Branch45</td>
+<td>IEC1_V</td> <td>IEC2_V </td> <td>Sf_Branch12</td> <td>St_Branch12</td> <td>Sf_Branch23</td> <td>St_Branch23</td> <td>Sf_Branch24</td> <td>St_Branch24</td> <td>Sf_Branch45</td> <td>St_Branch45</td>
 </tr>
 <tr>
 <td>300</td> <td>-300</td> <td>7.84</td> <td>7.84</td> <td>8.84</td> <td>14.44</td> <td>7.84</td> <td>7.84</td> <td>7.84</td> <td>7.84</td>
