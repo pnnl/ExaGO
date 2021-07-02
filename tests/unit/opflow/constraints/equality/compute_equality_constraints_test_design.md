@@ -136,7 +136,6 @@ With the parameters of the example network array is:
 To build a solution when the network is being multiplied folowing needs to be done:
 
 Copy only once first 2 elements; next 6 elements will be copied without any modifications for each segment; last two elements are first multipled by 2 and then coppied for each N except last one where you copy without multiplication.
-Two values added inbetween are Pf and Qf, or -100000 and 0.
 
 Example:
 a b c d e f g h i j
