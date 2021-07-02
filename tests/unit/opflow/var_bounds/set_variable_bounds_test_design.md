@@ -21,7 +21,7 @@ ExaGO builds two arrays for the variable bounds (lower and upper). Arrays are bu
 <td>Contributor</td> <td>array_l</td> <td>array_u</td>
 </tr>
 <tr>
-<td></td> <td>PETSC_NINFINITY</td> <td>PETSC_INFINITY</td>
+<td></td> <td>-INF</td> <td>INF</td>
 </tr>
 <tr>
 <td>bus</td><td>Vmin or 0 (for REF/PV bus)</td> <td>Vmax or 2 (for REF/PV bus)</td>
@@ -46,10 +46,10 @@ For the considered network, each array has five bounds for voltages, two bounds 
 
 <table>
 <tr>
-<td>array_l</td> <td>PETSC_NINFINITY</td> <td>Vmin1</td> <td>PETSC_NINFINITY</td> <td>Vmin2</td> <td>Va*PETSC_PI/180.0</td> <td>0</td> <td>Pgmin</td> <td>Qgmin</td> <td>PETSC_NINFINITY</td> <td>Vmin4</td> <td>PETSC_NINFINITY</td> <td>Vmin5</td>
+<td>array_l</td> <td>-INF</td> <td>Vmin1</td> <td>-INF</td> <td>Vmin2</td> <td>Va*PI/180.0</td> <td>0</td> <td>Pgmin</td> <td>Qgmin</td> <td>-INF</td> <td>Vmin4</td> <td>-INF</td> <td>Vmin5</td>
 </tr>
 <tr>
-<td>array_u</td> <td>PETSC_INFINITY</td> <td>Vmax1</td> <td>PETSC_INFINITY</td> <td>Vmax2</td> <td>Va*PETSC_PI/180.0</td> <td>2</td> <td>Pgmax</td> <td>Qgmax</td> <td>PETSC_NINFINITY</td> <td>Vmax4</td> <td>PETSC_NINFINITY</td> <td>Vmax5</td>
+<td>array_u</td> <td>INF</td> <td>Vmax1</td> <td>INF</td> <td>Vmax2</td> <td>Va*PI/180.0</td> <td>2</td> <td>Pgmax</td> <td>Qgmax</td> <td>-INF</td> <td>Vmax4</td> <td>-INF</td> <td>Vmax5</td>
 </tr>
 </table>
 
@@ -72,28 +72,28 @@ Following are the value of parameters of interest for this test:
 
 
 ### Solution for N=1
-With the parameters of the example network array is:
+With the parameters of the example network arrays are:
 
 <table>
 <tr>
-<td>array_l</td> <td>-INFINITY</td> <td>-1</td> <td>-INFINITY</td> <td>-2</td> <td>1</td> <td>0</td> <td>-10</td> <td>-20</td> <td>P-INFINITY</td> <td>-4</td> <td>-INFINITY</td> <td>-5</td>
+<td>array_l</td> <td>-INF</td> <td>-1</td> <td>-INF</td> <td>-2</td> <td>1</td> <td>0</td> <td>-10</td> <td>-20</td> <td>-INF</td> <td>-4</td> <td>-INF</td> <td>-5</td>
 </tr>
 <tr>
-<td>array_u</td> <td>INFINITY</td> <td>1</td> <td>INFINITY</td> <td>2</td> <td>1</td> <td>2</td> <td>10</td> <td>20</td> <td>INFINITY</td> <td>4</td> <td>INFINITY</td> <td>5</td>
+<td>array_u</td> <td>INF</td> <td>1</td> <td>INF</td> <td>2</td> <td>1</td> <td>2</td> <td>10</td> <td>20</td> <td>INF</td> <td>4</td> <td>INF</td> <td>5</td>
 </tr>
 </table>
 
 ## Scaling
 
-To build a solution when the network is being multiplied, to the original array all valuse except first two should be added N times; the elements for the reference ange should be replaced with -INFINITY/INFINITY.
+To build a solution when the network is being multiplied, to the original array all valuse except first two should be added N times; the elements for the reference ange should be replaced with -INF/INF.
 
 ### Solution for N=3
-So for N=3 the array is:
+So for N=3 the arrays are:
 <table>
 <tr>
-<td>-INFINITY -1 -INFINITY -2 1 0 -10 -20 -INFINITY -4 -INFINITY -5</td> <td>-INFINITY -2 -INFINITY 0 -10 -20 -INFINITY -4 -INFINITY -5</td> <td>-INFINITY -2 -INFINITY 0 -10 -20 -INFINITY -4 -INFINITY -5</td>
+<td>-INF -1 -INF -2 1 0 -10 -20 -INF -4 -INF -5</td> <td>-INF -2 -INF 0 -10 -20 -INF -4 -INF -5</td> <td>-INF -2 -INF 0 -10 -20 -INF -4 -INF -5</td>
 </tr>
 <tr>
-<td>INFINITY 1 INFINITY 2 1 2 10 20 INFINITY 4 INFINITY 5</td> <td>INFINITY 2 INFINITY 2 10 20 INFINITY 4 INFINITY 5</td> <td>INFINITY 2 INFINITY 2 10 20 INFINITY 4 INFINITY 5</td>
+<td>INF 1 INF 2 1 2 10 20 INF 4 INF 5</td> <td>INF 2 INF 2 10 20 INF 4 INF 5</td> <td>INF 2 INF 2 10 20 INF 4 INF 5</td>
 </tr>
 </table>
