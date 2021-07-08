@@ -73,6 +73,7 @@ void spdensetonatural(const double *xin,double *xout,int *idxn2sd_map,int nx)
  */
 int main(int argc, char** argv)
 {
+  /*
   const bool     isTestOpflowModelPBPOL     = false;
 #if not defined(EXAGO_ENABLE_RAJA)
   const bool     isTestOpflowModelPBPOLRAJAHIOP = true;
@@ -81,6 +82,10 @@ int main(int argc, char** argv)
   const bool     isTestOpflowModelPBPOLRAJAHIOP = false;
   const bool     isTestOpflowModelPBPOLHIOP = true;
 #endif
+*/
+  const bool     isTestOpflowModelPBPOL     = true;
+  const bool     isTestOpflowModelPBPOLHIOP = false;
+  const bool     isTestOpflowModelPBPOLRAJAHIOP = false;
   PetscErrorCode ierr;
   PetscBool      flg, gen_test_data, write_test_data;
   bool           ineq_present = false;
@@ -97,6 +102,7 @@ int main(int argc, char** argv)
   std::string    file, validation_path;
   char           appname[]="opflow";
   MPI_Comm       comm=MPI_COMM_WORLD;
+  int            num_copies = 1;
 
   char help[] = "Unit tests for objective function running opflow\n";
   
@@ -111,6 +117,10 @@ int main(int argc, char** argv)
   /* Get network data file from command line */
   ierr = PetscOptionsGetString(NULL,NULL,"-netfile",file_c_str,PETSC_MAX_PATH_LEN,&flg);CHKERRQ(ierr);
 
+  /* Get network data file from command line */
+  ierr = PetscOptionsGetInt(NULL,NULL,"-num_copies",&num_copies,&flg);CHKERRQ(ierr);
+
+
   if(!flg){
     file = "../datafiles/case9/case9mod.m";
   } 
@@ -124,7 +134,8 @@ int main(int argc, char** argv)
   ierr = PetscLogStageRegister("Test stage",&stages[0]);CHKERRQ(ierr);
 
   // Set obj_value as reference solution, and run as usual
-  obj_value = 10.0;
+  obj_value = 10.0 * num_copies;
+
 
   // Vec X = -
   // x_ref = -

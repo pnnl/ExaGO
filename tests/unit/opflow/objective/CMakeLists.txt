@@ -11,6 +11,7 @@ set(prefix ${PROJECT_SOURCE_DIR}/tests/unit/opflow/objective/)
 set(obj_network_files 
   OF-unittestx3.m 
   OF-unittestx600.m)
+# Map num_copies to a specific netfile
 list(TRANSFORM obj_network_files PREPEND ${prefix})
 install(FILES ${obj_network_files} DESTINATION ${EXAGO_DATAFILES_DIR})
 
