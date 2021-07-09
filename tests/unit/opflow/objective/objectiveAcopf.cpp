@@ -63,12 +63,6 @@ void spdensetonatural(const double *xin,double *xout,int *idxn2sd_map,int nx)
  *
  *    ~ -netfile <data_file> : Specifies the input data file to test against. Default value is `/<exago_dir>/datafiles/case9/case9mod.m`.
  *                             See directory datafiles for other potential inputs.
- *
- *    ~ -gen_test_data       : If used, generates an answer key using IPOPT to test against.
- *                             If not used, uses existing answer keys located in `/<exago_dir>/datafiles/test_validation`.
- *
- *    ~ -write_test_data     : If used, generates test data, and then writes out the results to `/<install_dir>/tests/datafiles/test_validation/<data_file>/`.
- *                             In order to save generated results, you should copy them into `/<exago_dir>/datafiles/test_validation/<data_file>/` and add them to git.
  *      
  */
 int main(int argc, char** argv)
@@ -83,19 +77,16 @@ int main(int argc, char** argv)
 #endif
 
   PetscErrorCode ierr;
-  PetscBool      flg, gen_test_data, write_test_data;
-  bool           ineq_present = false;
-  /*
-  Vec            X, Xl, Xu, G, Gl, Gu, grad, Lambda;
-  */
+  PetscBool      flg;
+  //bool           ineq_present = false;
+  // Vec            X, Xl, Xu, G, Gl, Gu, grad, Lambda;
   Vec            X, Lambda;
   // Mat            Jeq, Jineq, Hess;
   int            fail=0;
   PetscLogStage  stages[0];
-  double         obj_value, obj_factor;
+  double         obj_value;// , obj_factor;
   char           file_c_str[PETSC_MAX_PATH_LEN];
-  char           validation_dir_c_str[PETSC_MAX_PATH_LEN];
-  std::string    file, validation_path;
+  std::string    file;
   char           appname[]="opflow";
   MPI_Comm       comm=MPI_COMM_WORLD;
   int            num_copies = 1;
@@ -132,12 +123,6 @@ int main(int argc, char** argv)
   // Set obj_value as reference solution, and run as usual
   obj_value = 10.0 * num_copies;
 
-
-  // Vec X = -
-  // x_ref = -
-
-  ierr = PetscLogStagePop();CHKERRQ(ierr);
-
   ierr = PetscLogStagePush(stages[0]);CHKERRQ(ierr);
 
   if(isTestOpflowModelPBPOLHIOP)
@@ -173,7 +158,7 @@ int main(int argc, char** argv)
     double *x_vec, *xl_vec, *xu_vec, *grad_vec, \
            *x_ref, *xl_ref, *xu_ref, *grad_ref, *g_ref, *gl_ref, *gu_ref, *lambda_ref;
            */
-    double *x_vec, *x_ref, *lambda_ref;
+    double *x_vec, *x_ref;
 
     ierr = PetscMalloc1(nx,&x_ref);CHKERRQ(ierr);
     // ierr = PetscMalloc1(nx,&xl_ref);CHKERRQ(ierr);
@@ -193,9 +178,9 @@ int main(int argc, char** argv)
      * that obj_factor = 1.0 except when the solver is IPOPT which sets 
      * obj_factor
      */
-    ierr = VecScale(Lambda,obj_factor);CHKERRQ(ierr);
+    // ierr = VecScale(Lambda,obj_factor);CHKERRQ(ierr);
 
-    ierr = VecGetArray(Lambda, &lambda_ref);CHKERRQ(ierr);
+    // ierr = VecGetArray(Lambda, &lambda_ref);CHKERRQ(ierr);
 
     // ierr = VecGetArray(G,&g_ref);CHKERRQ(ierr);
     // ierr = VecGetArray(Gl,&gl_ref);CHKERRQ(ierr);
@@ -228,9 +213,9 @@ int main(int argc, char** argv)
     // ierr = VecRestoreArray(G,&g_ref);CHKERRQ(ierr);
     // ierr = VecRestoreArray(Gl,&gl_ref);CHKERRQ(ierr);
     // ierr = VecRestoreArray(Gu,&gu_ref);CHKERRQ(ierr);
-    ierr = VecRestoreArray(Lambda,&lambda_ref);CHKERRQ(ierr);
+    // ierr = VecRestoreArray(Lambda,&lambda_ref);CHKERRQ(ierr);
 
-    ierr = VecScale(Lambda,1/obj_factor);CHKERRQ(ierr);
+    // ierr = VecScale(Lambda,1/obj_factor);CHKERRQ(ierr);
     ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
   }
 
@@ -269,7 +254,7 @@ int main(int argc, char** argv)
 
     //double *x_vec, *xl_vec, *xu_vec, *grad_vec, \
       *x_ref, *xl_ref, *xu_ref, *grad_ref, *g_ref, *gl_ref, *gu_ref,*lambda_ref;
-   double *x_vec, *x_ref, *lambda_ref;
+   double *x_vec, *x_ref;
 
     ierr = PetscMalloc1(nx,&x_ref);CHKERRQ(ierr);
     // ierr = PetscMalloc1(nx,&xl_ref);CHKERRQ(ierr);
@@ -291,9 +276,9 @@ int main(int argc, char** argv)
      * that obj_factor = 1.0 except when the solver is IPOPT which sets 
      * obj_factor
      */
-    ierr = VecScale(Lambda,obj_factor);CHKERRQ(ierr);
+    // ierr = VecScale(Lambda,obj_factor);CHKERRQ(ierr);
 
-    ierr = VecGetArray(Lambda,&lambda_ref);CHKERRQ(ierr);
+    // ierr = VecGetArray(Lambda,&lambda_ref);CHKERRQ(ierr);
 
     /*
     ierr = VecGetArray(G,&g_ref);CHKERRQ(ierr);
@@ -320,22 +305,22 @@ int main(int argc, char** argv)
     umpire::util::AllocationRecord record_x{x_ref,sizeof(double)*nx,h_allocator.getAllocationStrategy()};
     resmgr.registerAllocation(x_ref,record_x);
 
-    umpire::util::AllocationRecord record_lam{lambda_ref,sizeof(double)*(nconeq+nconineq),h_allocator.getAllocationStrategy()};
-    resmgr.registerAllocation(lambda_ref,record_lam);
+    // umpire::util::AllocationRecord record_lam{lambda_ref,sizeof(double)*(nconeq+nconineq),h_allocator.getAllocationStrategy()};
+    // resmgr.registerAllocation(lambda_ref,record_lam);
 
     // Allocate and copy xref and lambdaref to device
-    double *x_ref_dev, *lambda_ref_dev;
+    double *x_ref_dev;//, *lambda_ref_dev;
 #ifdef EXAGO_ENABLE_GPU
     umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
     x_ref_dev = static_cast<double*>(d_allocator.allocate(nx*sizeof(double)));
-    lambda_ref_dev = static_cast<double*>(d_allocator.allocate((nconeq+nconineq)*sizeof(double)));
+    // lambda_ref_dev = static_cast<double*>(d_allocator.allocate((nconeq+nconineq)*sizeof(double)));
 #else
     x_ref_dev = x_ref;
-    lambda_ref_dev = lambda_ref;
+    // lambda_ref_dev = lambda_ref;
 #endif
 
     resmgr.copy(x_ref_dev,x_ref);
-    resmgr.copy(lambda_ref_dev,lambda_ref);
+    // resmgr.copy(lambda_ref_dev,lambda_ref);
 					    
     // Tests
     // fail += test.computeVariableBounds(opflowtest,xl_ref,xu_ref,resmgr);
@@ -363,7 +348,7 @@ int main(int argc, char** argv)
     */
 #ifdef EXAGO_ENABLE_GPU
     d_allocator.deallocate(x_ref_dev);
-    d_allocator.deallocate(lambda_ref_dev);
+    // d_allocator.deallocate(lambda_ref_dev);
     // d_allocator.deallocate(hess_dense_dev);
 #endif
 
@@ -378,7 +363,7 @@ int main(int argc, char** argv)
     ierr = VecRestoreArray(Xu,&xu_vec);CHKERRQ(ierr);
     ierr = VecRestoreArray(grad,&grad_vec);CHKERRQ(ierr);
     */
-    ierr = VecRestoreArray(Lambda,&lambda_ref);CHKERRQ(ierr);
+    // ierr = VecRestoreArray(Lambda,&lambda_ref);CHKERRQ(ierr);
 
     /*
     ierr = VecRestoreArray(G,&g_ref);CHKERRQ(ierr);
@@ -386,7 +371,7 @@ int main(int argc, char** argv)
     ierr = VecRestoreArray(Gu,&gu_ref);CHKERRQ(ierr);
     */
 
-    ierr = VecScale(Lambda,1/obj_factor);CHKERRQ(ierr);
+    // ierr = VecScale(Lambda,1/obj_factor);CHKERRQ(ierr);
     ierr = OPFLOWDestroy(&opflowtest);CHKERRQ(ierr);
   }
 #endif
@@ -407,11 +392,7 @@ int main(int argc, char** argv)
     ierr = OPFLOWSetModel(opflowtest,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
     ierr = OPFLOWSetUp(opflowtest);CHKERRQ(ierr);
     ierr = OPFLOWGetSolution(opflowtest, &X);CHKERRQ(ierr);
-    // VecView:
-    //    See the value of Lambda
-    //    See the value of X
-    //    Exit after
-    ierr = OPFLOWGetConstraintMultipliers(opflowtest,&Lambda);CHKERRQ(ierr);
+    // ierr = OPFLOWGetConstraintMultipliers(opflowtest,&Lambda);CHKERRQ(ierr);
 
     // fail += test.computeVariableBounds(opflowtest,Xl,Xu);
     fail += test.computeObjective(opflowtest,X,obj_value);
