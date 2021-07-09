@@ -73,19 +73,15 @@ void spdensetonatural(const double *xin,double *xout,int *idxn2sd_map,int nx)
  */
 int main(int argc, char** argv)
 {
-  /*
-  const bool     isTestOpflowModelPBPOL     = false;
+  const bool     isTestOpflowModelPBPOL     = true;
 #if not defined(EXAGO_ENABLE_RAJA)
-  const bool     isTestOpflowModelPBPOLRAJAHIOP = true;
+  const bool     isTestOpflowModelPBPOLRAJAHIOP = false;
   const bool     isTestOpflowModelPBPOLHIOP = false;
 #else
   const bool     isTestOpflowModelPBPOLRAJAHIOP = false;
-  const bool     isTestOpflowModelPBPOLHIOP = true;
-#endif
-*/
-  const bool     isTestOpflowModelPBPOL     = true;
   const bool     isTestOpflowModelPBPOLHIOP = false;
-  const bool     isTestOpflowModelPBPOLRAJAHIOP = false;
+#endif
+
   PetscErrorCode ierr;
   PetscBool      flg, gen_test_data, write_test_data;
   bool           ineq_present = false;
@@ -167,7 +163,6 @@ int main(int argc, char** argv)
     /* Set up */
     ierr = OPFLOWSetUp(opflowtest);CHKERRQ(ierr);
     ierr = OPFLOWGetSolution(opflowtest, &X);CHKERRQ(ierr);
-    ierr = VecView(X, 0);CHKERRQ(ierr);
     ierr = OPFLOWGetConstraintMultipliers(opflowtest,&Lambda);CHKERRQ(ierr);
 
     int nx,nconeq,nconineq,*idxn2sd_map;
