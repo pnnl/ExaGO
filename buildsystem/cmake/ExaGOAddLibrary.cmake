@@ -15,8 +15,6 @@ ExaGOAddLibrary.cmake
 #[[
 
 @brief Creates an object library + shared/static library
-@param STATIC_ONLY : Only create static lib (if EXAGO_BUILD_STATIC is enabled)
-@param SHARED_ONLY : Only create shared lib (if EXAGO_BUILD_SHARED is enabled)
 @param OUTPUT_NAME : Specifies the output name of the library to be created
 @param SOURCES : List of source files used to create the library
 @param HEADERS : List of header files to install with the library
@@ -37,13 +35,14 @@ macro(exago_add_library target)
     ${ARGN}
   )
 
-  # Library types that we want to create
+  # Library types that we want to create.
   set(_libtypes "")
-  if(EXAGO_BUILD_STATIC AND (NOT exago_add_library_SHARED_ONLY))
-    set(_libtypes "STATIC")
+  # Build shared lib first, as alias library should prefer linking shared lib.
+  if(EXAGO_BUILD_SHARED)
+    set(_libtypes "SHARED")
   endif()
-  if(EXAGO_BUILD_SHARED AND (NOT exago_add_library_STATIC_ONLY))
-    set(_libtypes "${_libtypes};SHARED")
+  if(EXAGO_BUILD_STATIC)
+    set(_libtypes "${_libtypes};STATIC")
   endif()
 
   # Build Libraries
@@ -102,8 +101,11 @@ macro(exago_add_library target)
              $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     )
 
-    # Enabling namespace usage with exported targets
-    add_library(ExaGO::${target} ALIAS ${_actual_target_name})
+    # Enabling namespace usage with exported targets Check for existing target
+    # (can't create same alias for shared + static)
+    if(NOT TARGET ExaGO::${target})
+      add_library(ExaGO::${target} ALIAS ${_actual_target_name})
+    endif()
 
     if(exago_add_library_OUTPUT_NAME)
       set_target_properties(

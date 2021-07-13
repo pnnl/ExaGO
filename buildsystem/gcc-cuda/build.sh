@@ -3,7 +3,7 @@
 #
 
 function doBuild {
-		
+
   for requiredVar in SRCDIR BUILDDIR INSTALLDIR MAKEARGS CTESTARGS
   do
     if [[ ! -v $requiredVar ]]

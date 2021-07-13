@@ -81,6 +81,7 @@ module load cuda/11.0.2
 module load gcc/7.4.0
 module load spectrum-mpi/10.3.1.2-20200121
 module load cmake/3.18.2
+module load python/3.7.0
 
 export MY_PETSC_DIR=$PETSC_DIR
 export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DCMAKE_CUDA_ARCHITECTURES=70"
