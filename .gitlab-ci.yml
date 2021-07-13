@@ -42,10 +42,15 @@ workflow:
   after_script:
     - |
       export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${MY_CLUSTER}/"
-      if [[ -f "$WORKDIR/jobid" ]]; then
-        jobid=$(cat "$WORKDIR/jobid")
-        scancel $jobid
-      fi
+      # Iterate over possible jobid named files (jobid_%J)
+      job_ids="$WORKDIR/jobid_*"
+      for job in $job_ids
+      do
+        if [[ -f "$job"]]; then
+          jobid=$(cat "$job")
+          scancel $jobid
+        fi
+      done
       rm -rf $WORKDIR
 
 .pnnl_script_template: &pnnl_script_definition
@@ -71,34 +76,40 @@ workflow:
       fi
 
       cd "$WORKDIR"
-      [ -f output ] && rm output
-      touch output
-      tail -f output &
+      # Unique output file for this stage
+      output="output_${OUTPUT_SUFFIX}"
+      [ -f $output ] && rm $output
+      touch $output
+      tail -f $output &
       tailpid=$!
 
       # Set some directories used in the build script manually, as they
       # can be inconsistent in gitlab pipelines
       export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
 
+      # Export CTESTARGS defined in variables to run correct tests for stage
+      export CTESTARGS=$CTESTARGS
+
       # jobid used in pnnl_after_script_template to cancel job if cancelled or
       # timed out by gitlab through the UI
-      jobid=$(sbatch --export=ALL -A EXASGD --gres=gpu:1 --ntasks=2 -p $SLURM_Q -o output -e output -t 1:00:00 $WORKDIR/buildsystem/build.sh $SCRIPT_ARGS)
+      jobid=$(sbatch --export=ALL -A EXASGD --gres=gpu:1 --ntasks=2 -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/buildsystem/build.sh $SCRIPT_ARGS)
       export jobid=$(echo $jobid | cut -f4 -d' ')
-      echo $jobid > "$WORKDIR/jobid"
+      # Unique jobid filename for this job
+      echo $jobid > "$WORKDIR/jobid_${jobid}"
       res=1
       while :;
       do
-        if [[ "$(awk 'BEGIN{i=0}/BUILD_STATUS/{i++}END{print i}' output)" != "0" ]]; then
+        if [[ "$(awk 'BEGIN{i=0}/BUILD_STATUS/{i++}END{print i}' $output)" != "0" ]]; then
           kill $tailpid
           echo 'Last tail of build output:'
-          tail -n 50 output
-          res=$(grep BUILD_STATUS output | tail -n 1 | cut -f2 -d':')
+          tail -n 50 $output
+          res=$(grep BUILD_STATUS $output | tail -n 1 | cut -f2 -d':')
           break
         fi
         sleep 10
       done
       echo "Finished batch job with exit code: $res"
-      rm "$WORKDIR/jobid"
+      rm "$WORKDIR/jobid_${jobid}"
       exit $res
 
 .pnnl_tags_template: &pnnl_tags_definition
@@ -145,6 +156,7 @@ cmake-lint:
   allow_failure: true
   variables:
     SLURM_Q: "newell_shared"
+    OUTPUT_SUFFIX: "_lint"
     MY_CLUSTER: "newell"
     SCRIPT_ARGS: " --job=cmake-lint "
     WORKDIR_SUFFIX: "cmake-lint"
@@ -157,6 +169,7 @@ ppc64le-gcc-cuda-build:
   variables:
     SLURM_Q: "newell_shared"
     MY_CLUSTER: "newell"
+    OUTPUT_SUFFIX: "_build"
     SCRIPT_ARGS: " --build-only --job=gcc-cuda "
     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
   <<: *pnnl_tags_definition
@@ -170,6 +183,8 @@ ppc64le-gcc-cuda-test:
   variables:
     SLURM_Q: "newell_shared"
     MY_CLUSTER: "newell"
+    CTESTARGS: "-VV -E Python"
+    OUTPUT_SUFFIX: "_test"
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
   <<: *pnnl_tags_definition
@@ -177,11 +192,28 @@ ppc64le-gcc-cuda-test:
   <<: *pnnl_after_script_definition
   <<: *pnnl_rules_definition
 
+ppc64le-gcc-cuda-python-test:
+  stage: test
+  dependencies:
+    - ppc64le-gcc-cuda-build
+  variables:
+    SLURM_Q: "newell_shared"
+    MY_CLUSTER: "newell"
+    CTESTARGS: "-VV -R Python"
+    OUTPUT_SUFFIX: "_test_python"
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+  <<: *pnnl_tags_definition
+  <<: *pnnl_script_definition
+    # No after_script as only one test per platform cleans up
+  <<: *pnnl_rules_definition
+
 x86_64-gcc-cuda-build:
   stage: build
   variables:
     SLURM_Q: "dl_shared"
     MY_CLUSTER: "marianas"
+    OUTPUT_SUFFIX: "_build"
     SCRIPT_ARGS: " --build-only --job=gcc-cuda "
     WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
   <<: *pnnl_tags_definition
@@ -195,10 +227,28 @@ x86_64-gcc-cuda-test:
   variables:
     SLURM_Q: "dl_shared"
     MY_CLUSTER: "marianas"
+    CTESTARGS: "-VV -E Python"
+    OUTPUT_SUFFIX: "_test"
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
     WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   <<: *pnnl_after_script_definition
+  <<: *pnnl_rules_definition
+
+x86_64-gcc-cuda-python-test:
+  stage: test
+  dependencies:
+    - x86_64-gcc-cuda-build
+  variables:
+    SLURM_Q: "dl_shared"
+    MY_CLUSTER: "marianas"
+    CTESTARGS: "-VV -R Python"
+    OUTPUT_SUFFIX: "_test_python"
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+  <<: *pnnl_tags_definition
+  <<: *pnnl_script_definition
+    # No after_script as only one test per platform cleans up
   <<: *pnnl_rules_definition
 # ---

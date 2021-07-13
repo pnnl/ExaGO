@@ -59,6 +59,7 @@ module load exasgd-zlib/1.2.11/gcc-7.3.0-zknfwan
 module load gcc/7.3.0
 module load openmpi/3.1.3
 module load cuda/10.2.89
+module load python/anaconda3.2019.3
 
 export CC=/share/apps/gcc/7.3.0/bin/gcc CXX=/share/apps/gcc/7.3.0/bin/g++ FC=/share/apps/gcc/7.3.0/bin/gfortran
 
@@ -73,4 +74,4 @@ EOD
 export NVBLAS_CONFIG_FILE=$PWD/nvblas.conf
 echo "Generated $PWD/nvblas.conf"
 
-export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DPETSC_DIR=$PETSC_DIR -DCMAKE_CUDA_ARCHITECTURES=60"
+export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DCMAKE_CUDA_ARCHITECTURES=60"

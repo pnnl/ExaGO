@@ -64,4 +64,10 @@ set(EXAGO_RUN_TESTS
     CACHE BOOL ""
 )
 
+message(STATUS "Enablying Python")
+set(EXAGO_ENABLE_PYTHON
+    ON
+    CACHE BOOL ""
+)
+
 message(STATUS "Done setting initial CMake cache")

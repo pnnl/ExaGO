@@ -94,7 +94,7 @@ extern PetscErrorCode ExaGOLogIsInitialized(PetscBool*);
  * @note this takes care of Petsc initialization, so don't this function in
  * conjunction with `PetscInitialize.`
  */
-extern PetscErrorCode ExaGOInitialize(MPI_Comm,int*argc,char***argv,
+extern "C" PetscErrorCode ExaGOInitialize(MPI_Comm,int*argc,char***argv,
     char*appname,char*help);
 
 /**
@@ -103,7 +103,7 @@ extern PetscErrorCode ExaGOInitialize(MPI_Comm,int*argc,char***argv,
  * @note this takes care of Petsc finalization, so don't this function in
  * conjunction with `PetscFinalize`.
  */
-extern PetscErrorCode ExaGOFinalize();
+extern "C" PetscErrorCode ExaGOFinalize();
 
 /** Returns 1 if files exists, else 0 */
 bool DoesFileExist(const char*);
@@ -126,5 +126,8 @@ inline bool IsEqual(int value, int ref, int tolerance, int& error)
   error = std::abs(value - ref);
   return (error < tolerance);
 }
+
+/** Used by python interface to get self communicattor */
+PETSC_EXTERN PetscErrorCode ExaGOGetSelfCommunicator(MPI_Comm*);
 
 #endif

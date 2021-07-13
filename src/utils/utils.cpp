@@ -389,6 +389,53 @@ PetscErrorCode ExagoHelpPrintf(MPI_Comm comm, const char appname[],...)
   std::exit(EXIT_SUCCESS);
 }
 
+/**
+ * Parse arguments for initializing an ExaGO application.
+ */
+PetscErrorCode ExaGOInitializeParseArgs(int* argc, char*** argv, char* appname,
+    char *help, std::vector<std::string> optfiles)
+{
+  PetscErrorCode ierr;
+  std::vector<std::string> args(*argv, *argv + *argc);
+  auto args_it = args.begin();
+  args_it++; /* Skip first argument, eg binary name */
+
+  for(; args_it != args.end(); args_it++)
+  {
+    /* Help message */
+    if (*args_it == "-help" or *args_it == "-h")
+    {
+      (*PetscHelpPrintf)(MPI_COMM_NULL, appname);
+    }
+
+    /* Version message */
+    else if (*args_it == "-v" or *args_it == "-version")
+    {
+      char* versionstr;
+      ierr = ExaGOVersionGetFullVersionInfo(&versionstr);
+      ExaGOCheckError(ierr);
+      std::cerr << "ExaGO Version Info:\n\n" << versionstr
+        << "ExaGO Help Message:\n" << help;
+      free(versionstr);
+      MPI_Finalize();
+      std::exit(EXIT_SUCCESS);
+    }
+
+    /* Paths to options files */
+    else if (*args_it == "-options_file")
+    {
+      /* Ensure the '-options_file' flag was not the last flag! If it was,
+       * give the help message. */
+      if (args_it + 1 == args.end())
+        (*PetscHelpPrintf)(MPI_COMM_NULL, appname);
+
+      args_it++;
+      optfiles.push_back(*args_it);
+    }
+  }
+  return 0;
+}
+
 PetscErrorCode ExaGOInitialize(MPI_Comm comm, int* argc, char*** argv,
     char* appname, char *help)
 {
@@ -396,27 +443,29 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int* argc, char*** argv,
   PetscErrorCode ierr;
   strcpy(ExaGOCurrentAppName,appname);
   PetscHelpPrintf = &ExagoHelpPrintf;
+  
+  /* Prefix checked for application options */
+  std::string options_pathname = EXAGO_OPTIONS_DIR;
 
-  std::vector<std::string> args(*argv, *argv + *argc);
-  auto args_it = args.begin();
-  args_it++; /* Skip first argument, eg binary name */
+  /* Filename used when searching for application-specific options */
+  std::string filename = std::string{ExaGOCurrentAppName} + "options";
 
-  for(; args_it != args.end(); args_it++)
+  /* Paths to option files for given application */
+  std::vector<std::string> optfiles;
+
+  /* Skip argument parsing. Used when called via external programs such as
+   * python */
+  bool skip_args = false;
+
+  if (argc == NULL || argv == NULL || *argc == 0)
   {
-    if (*args_it == "-help" or *args_it == "-h")
-      (*PetscHelpPrintf)(MPI_COMM_NULL, appname);
-
-    if (*args_it == "-v" or *args_it == "-version")
-    {
-      char* versionstr;
-      ierr=ExaGOVersionGetFullVersionInfo(&versionstr);CHKERRQ(ierr);
-      std::cerr << "ExaGO Version Info:\n\n" << versionstr
-        << "ExaGO Help Message:\n" << help;
-      free(versionstr);
-      MPI_Finalize();
-      std::exit(EXIT_SUCCESS);
-    }
+    skip_args = true;
+    argc = NULL;
+    argv = NULL;
   }
+
+  if (!skip_args)
+    ExaGOInitializeParseArgs(argc, argv, appname, help, optfiles);
 
   int initialized;
   MPI_Initialized(&initialized);
@@ -436,30 +485,7 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int* argc, char*** argv,
   if(fp==NULL)
     ExaGOLogSetLoggingFilePointer(stderr);
 
-  std::string options_pathname = EXAGO_OPTIONS_DIR;
-  std::string filename = std::string{ExaGOCurrentAppName} + "options";
-
-  std::vector<std::string> optfiles;
-  bool flg{false};
-
-  /* Iterate over all arguments to find '-options_file' flag */
-  for(auto arg = args.begin(); arg != args.end(); arg++)
-  {
-    if (*arg == "-options_file")
-    {
-      /* Ensure the '-options_file' flag was not the last flag! */
-      if (arg + 1 == args.end())
-        (*PetscHelpPrintf)(MPI_COMM_NULL, appname);
-
-      arg++;
-      optfiles.push_back(*arg);
-      flg = true;
-    }
-  }
-  if (!flg)
-  {
-    ExaGOLog(EXAGO_LOG_INFO, "%s", "-options_file not passed.");
-  }
+  puts("options");
 
   optfiles.push_back(std::string{options_pathname} + "/" + filename);
   optfiles.push_back("./" + std::string{filename});
@@ -493,4 +519,14 @@ PetscErrorCode ExaGOFinalize()
   ExaGOLogFinalize();
   PetscFinalize();
   MPI_Finalize();
+}
+
+#undef EXAGO_LOG_ENSURE_INITIALIZED
+
+/* Used by python interface to get communicator */
+PetscErrorCode ExaGOGetSelfCommunicator(MPI_Comm *comm)
+{
+  PetscFunctionBegin;
+  *comm = PETSC_COMM_SELF;
+  PetscFunctionReturn(0);
 }

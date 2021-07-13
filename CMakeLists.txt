@@ -4,7 +4,7 @@ Preamble
 
 #]]
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.18)
 
 project(ExaGO VERSION "1.0.0")
 
@@ -67,6 +67,11 @@ option(EXAGO_ENABLE_GPU "Enable GPU support" OFF)
 # Enable RAJA support
 option(EXAGO_ENABLE_RAJA "Enables RAJA and Umpire libraries" OFF)
 
+# Enable Python interface
+option(EXAGO_ENABLE_PYTHON "Enables Python bindings and tests" OFF)
+
+set(EXAGO_MIN_PYTHON_VERSION "3.6")
+
 # Enable tests
 option(EXAGO_RUN_TESTS "Enable tests" ON)
 
@@ -102,6 +107,11 @@ set(EXAGO_FLOPS_SQRTOP
     6
     CACHE STRING "Estimated number of flops per sqrt op"
 )
+
+if(EXAGO_ENABLE_PYTHON AND NOT EXAGO_BUILD_SHARED)
+  message(STATUS "Python bindings enabled, setting EXAGO_BUILD_SHARED=On")
+  set(EXAGO_BUILD_SHARED ON)
+endif()
 
 # Set default include path for the project
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR})
@@ -304,6 +314,26 @@ else()
   set(RUNCMD "mpiexec" "-n" "1")
   set(MPICMD ${MPICMD})
   set(RUNCMD ${RUNCMD} ${EXAGO_EXTRA_MPI_FLAGS})
+endif()
+
+if(EXAGO_ENABLE_PYTHON)
+  find_package(
+    Python
+    COMPONENTS Interpreter
+    REQUIRED
+  )
+
+  if(${Python_VERSION} VERSION_LESS ${EXAGO_MIN_PYTHON_VERSION})
+    message(
+      FATAL_ERROR
+        "Found Python ${Python_VERSION}, but ExaGO requires ${EXAGO_MIN_PYTHON_VERSION}"
+    )
+  endif()
+
+  set(EXAGO_PYTHON_SITELIB
+      "lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages"
+  )
+  add_subdirectory(interfaces/python)
 endif()
 
 # Build tests

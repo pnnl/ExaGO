@@ -17,3 +17,7 @@ endif(EXAGO_RUN_TESTS)
 
 add_subdirectory(unit)
 add_subdirectory(functionality)
+
+if(EXAGO_ENABLE_PYTHON)
+  add_subdirectory(interfaces/python)
+endif()
