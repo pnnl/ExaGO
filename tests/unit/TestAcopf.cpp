@@ -9,24 +9,11 @@
 #include "opflow/OpflowTests.hpp"
 #include "TestAcopfUtils.hpp"
 
-
 #if defined(EXAGO_ENABLE_RAJA)
 #include <umpire/Allocator.hpp>
 #include <umpire/ResourceManager.hpp>
 #include <RAJA/RAJA.hpp>
-
-#ifdef EXAGO_ENABLE_GPU
-  using exago_raja_exec = RAJA::cuda_exec<128>;
-  using exago_raja_reduce = RAJA::cuda_reduce;
-  using exago_raja_atomic = RAJA::cuda_atomic;
-  #define RAJA_LAMBDA [=] __device__
-#else
-  using exago_raja_exec = RAJA::omp_parallel_for_exec;
-  using exago_raja_reduce = RAJA::omp_reduce;
-  using exago_raja_atomic = RAJA::omp_atomic;
-  #define RAJA_LAMBDA [=]
-#endif
-
+#include <private/raja_exec_config.hpp>
 #endif
 
 /**

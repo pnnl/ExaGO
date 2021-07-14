@@ -52,8 +52,15 @@ if(HIOP_LIBRARY AND HIOP_INCLUDE_DIR)
 
   if(EXAGO_ENABLE_GPU)
     include(FindMagma)
+
+    if(EXAGO_ENABLE_CUDA)
+      target_include_directories(HiOp INTERFACE ${CUDA_TOOLKIT_INCLUDE})
+    elseif(EXAGO_ENABLE_HIP)
+      include(FindHipblas)
+      target_link_libraries(Magma INTERFACE Hipblas)
+    endif()
+
     target_link_libraries(HiOp INTERFACE Magma)
-    target_include_directories(HiOp INTERFACE ${CUDA_TOOLKIT_INCLUDE})
   endif()
 
   if(EXAGO_ENABLE_HIOP_SPARSE AND EXAGO_HIOP_USE_COINHSL)
