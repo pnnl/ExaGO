@@ -23,7 +23,7 @@ set(OPFLOW_SRC interface/opflow.c interface/opflowregi.c
 
 set_source_files_properties(${OPFLOW_SRC} PROPERTIES LANGUAGE CXX)
 
-if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_GPU)
+if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_CUDA)
   set_source_files_properties(
     model/power-bal-hiop/pbpolrajahiopkernels.cpp PROPERTIES LANGUAGE CUDA
   )
@@ -44,8 +44,7 @@ exago_add_library(
   PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_RAJA}>:RAJA>
   PUBLIC
-  $<$<BOOL:${EXAGO_ENABLE_RAJA}>:OpenMP::OpenMP_CXX>
-  PUBLIC
+  $<$<BOOL:${EXAGO_ENABLE_OMP}>:OpenMP::OpenMP_CXX>
   $<$<BOOL:${EXAGO_ENABLE_HIOP}>:HiOp>
   PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_IPOPT}>:Ipopt>

@@ -35,6 +35,10 @@ set(EXAGO_ENABLE_GPU
     ON
     CACHE BOOL ""
 )
+set(EXAGO_ENABLE_CUDA
+    ON
+    CACHE BOOL ""
+)
 set(EXAGO_ENABLE_HIOP
     ON
     CACHE BOOL ""

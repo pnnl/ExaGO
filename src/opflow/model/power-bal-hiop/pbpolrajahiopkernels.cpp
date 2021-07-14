@@ -7,23 +7,16 @@
 #include <umpire/ResourceManager.hpp>
 
 #include <RAJA/RAJA.hpp>
+#include <private/raja_exec_config.hpp>
 
 #include <private/psimpl.h>
 #include <private/opflowimpl.h>
 #include "pbpolrajahiopkernels.hpp"
 #include "pbpolrajahiop.hpp"
 
-#ifdef EXAGO_ENABLE_GPU
-  using exago_raja_exec = RAJA::cuda_exec<128>;
-  using exago_raja_reduce = RAJA::cuda_reduce;
-  using exago_raja_atomic = RAJA::cuda_atomic;
-  #define RAJA_LAMBDA [=] __device__
-#else
-  using exago_raja_exec = RAJA::omp_parallel_for_exec;
-  using exago_raja_reduce = RAJA::omp_reduce;
-  using exago_raja_atomic = RAJA::omp_atomic;
-  #define RAJA_LAMBDA [=]
-#endif
+/************* NOTE ***********************/
+/* No Load loss or power imbalance variables considered yet */
+/********************************************/
 
 /* Functions to create and destroy data arrays for different
    component classes

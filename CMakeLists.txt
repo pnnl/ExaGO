@@ -64,6 +64,18 @@ option(EXAGO_ENABLE_MPI "Enable MPI support" ON)
 # GPU support is disabled by default
 option(EXAGO_ENABLE_GPU "Enable GPU support" OFF)
 
+include(CMakeDependentOption)
+
+# CUDA is disabled by default, but is default when EXAGO_ENABLE_GPU=ON
+cmake_dependent_option(
+  EXAGO_ENABLE_CUDA "Build with support for CUDA" OFF "EXAGO_ENABLE_GPU" OFF
+)
+
+# HIP is disabled by default
+cmake_dependent_option(
+  EXAGO_ENABLE_HIP "Build with support for HIP" OFF "EXAGO_ENABLE_GPU" OFF
+)
+
 # Enable RAJA support
 option(EXAGO_ENABLE_RAJA "Enables RAJA and Umpire libraries" OFF)
 
@@ -71,6 +83,11 @@ option(EXAGO_ENABLE_RAJA "Enables RAJA and Umpire libraries" OFF)
 option(EXAGO_ENABLE_PYTHON "Enables Python bindings and tests" OFF)
 
 set(EXAGO_MIN_PYTHON_VERSION "3.6")
+
+# Enable OpenMP support. This should not be toggled directly by the user, which
+# is why it's marked as advanced.
+option(EXAGO_ENABLE_OMP "Enables OpenMP" ON)
+mark_as_advanced(FORCE EXAGO_ENABLE_OMP)
 
 # Enable tests
 option(EXAGO_RUN_TESTS "Enable tests" ON)
@@ -89,6 +106,11 @@ option(EXAGO_TEST_WITH_SLURM
 )
 
 option(EXAGO_DISABLE_LOGGING "Disable all internal logging" OFF)
+
+# When building with HIP support, OpenMP is not supported
+if(NOT EXAGO_ENABLE_RAJA OR (EXAGO_ENABLE_GPU AND EXAGO_ENABLE_HIP))
+  set(EXAGO_ENABLE_OMP OFF)
+endif()
 
 # Estimate number of flops per trig op
 set(EXAGO_FLOPS_SINOP
@@ -140,23 +162,47 @@ endif(EXAGO_ENABLE_MPI)
 
 # If GPU support is enabled, find CUDA
 if(EXAGO_ENABLE_GPU)
-  include(CheckLanguage)
-  enable_language(CUDA)
-  check_language(CUDA)
 
-  find_package(CUDA REQUIRED)
-
-  if(NOT DEFINED CMAKE_CUDA_STANDARD)
-    set(CMAKE_CUDA_STANDARD 11)
-    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+  if(NOT EXAGO_ENABLE_CUDA AND NOT EXAGO_ENABLE_HIP)
+    message(
+      WARNING
+        "\nGPU is enabled, but both CUDA and HIP are disabled. "
+        "Enabling CUDA by default. If you would like to enable a particular GPU "
+        "platform, set one of the following variables to ON: "
+        "\n* EXAGO_ENABLE_CUDA"
+        "\n* EXAGO_ENABLE_HIP"
+    )
+    set(EXAGO_ENABLE_CUDA ON)
   endif()
 
-  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-    set(CMAKE_CUDA_ARCHITECTURES 35)
-  endif()
+  if(EXAGO_ENABLE_CUDA)
+    include(CheckLanguage)
+    enable_language(CUDA)
+    check_language(CUDA)
 
-  message(STATUS "Using CUDA arch ${CMAKE_CUDA_ARCHITECTURES}")
-  set(CMAKE_CUDA_FLAGS "--expt-extended-lambda")
+    find_package(CUDA REQUIRED)
+
+    if(NOT DEFINED CMAKE_CUDA_STANDARD)
+      set(CMAKE_CUDA_STANDARD 11)
+      set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+    endif()
+
+    if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+      set(CMAKE_CUDA_ARCHITECTURES 35)
+    endif()
+
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda")
+  elseif(EXAGO_ENABLE_HIP)
+    set(EXAGO_HAVE_HIP 1)
+    add_definitions(-DHAVE_HIP) # For hipmagma
+    find_package(HIP REQUIRED)
+    set(CMAKE_CXX_COMPILER hipcc)
+  else()
+    message(
+      FATAL_ERROR "EXAGO_ENABLE_GPU enabled, but neither EXAGO_ENABLE_CUDA "
+                  "nor EXAGO_ENABLE_HIP is enabled!"
+    )
+  endif()
 endif(EXAGO_ENABLE_GPU)
 
 # Find PETSc and configure related variables
@@ -182,8 +228,11 @@ if(EXAGO_ENABLE_HIOP)
 endif(EXAGO_ENABLE_HIOP)
 
 if(EXAGO_ENABLE_RAJA)
-  # Find OpenMP -- this is a temporary fix
-  find_package(OpenMP)
+
+  if(EXAGO_ENABLE_OMP)
+    find_package(OpenMP REQUIRED)
+  endif()
+
   # Look for CMake configuration file in RAJA installation
   find_package(
     RAJA CONFIG PATHS ${RAJA_DIR} ${RAJA_DIR}/share/raja/cmake REQUIRED
@@ -310,10 +359,13 @@ elseif(EXAGO_TEST_WITH_SLURM)
     set(RUNCMD ${RUNCMD} "--gres=gpu:1" ${EXAGO_EXTRA_MPI_FLAGS})
   endif()
 else()
-  set(MPICMD "mpiexec")
-  set(RUNCMD "mpiexec" "-n" "1")
-  set(MPICMD ${MPICMD})
-  set(RUNCMD ${RUNCMD} ${EXAGO_EXTRA_MPI_FLAGS})
+  if(EXAGO_ENABLE_MPI)
+    set(MPICMD "mpiexec")
+    set(RUNCMD ${MPICMD} "-n" "1" ${EXAGO_EXTRA_MPI_FLAGS})
+  else()
+    set(MPICMD "")
+    set(RUNCMD "")
+  endif()
 endif()
 
 if(EXAGO_ENABLE_PYTHON)
