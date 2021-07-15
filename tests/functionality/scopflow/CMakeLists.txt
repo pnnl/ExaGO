@@ -102,6 +102,12 @@ if(EXAGO_INSTALL_TESTS)
       -1
       -opflow_initialization
       ACPF
+      -scopflow_subproblem_solver
+      HIOP
+      -scopflow_subproblem_model
+      POWER_BALANCE_HIOP
+      -hiop_compute_mode
+      CPU
       DEPENDS
       IPOPT
       HIOP
@@ -123,6 +129,12 @@ if(EXAGO_INSTALL_TESTS)
       20
       -opflow_initialization
       ACPF
+      -scopflow_subproblem_solver
+      HIOP
+      -scopflow_subproblem_model
+      POWER_BALANCE_HIOP
+      -hiop_compute_mode
+      CPU
       DEPENDS
       IPOPT
       HIOP
