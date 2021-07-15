@@ -1,7 +1,6 @@
 #include <exago_config.h>
 
 #if defined(EXAGO_ENABLE_HIOP)
-#if defined(EXAGO_ENABLE_HIOP_DISTRIBUTED)
 
 #include <private/opflowimpl.h>
 #include <private/sopflowimpl.h>
@@ -107,7 +106,8 @@ hiop::hiopSolveStatus SOPFLOWHIOPInterface::solve_master(hiop::hiopVector& xvec,
                                      const bool& include_r,
                                      const double& rval, 
                                      const double* grad,
-                                     const double*hess)
+				     const double*hess,
+				     const char* master_options_file)
 {
 
   PetscErrorCode ierr;
@@ -154,8 +154,9 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double* 
   PSBUS  bus,bus0;
   PSGEN  gen,gen0;
   PetscInt i,k,j,g=0;
-  PetscInt scen_num=idx+1;
+  PetscInt s=idx+1;
   char     modelname[32],solvername[32];
+  PetscInt scen_num,cont_num;
 
   /* Default model and solver */
   PetscStrcpy(modelname,"POWER_BALANCE_POLAR");
@@ -164,7 +165,7 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double* 
   ierr = PetscOptionsGetString(NULL,NULL,"-sopflow_subproblem_model",modelname,32,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsGetString(NULL,NULL,"-sopflow_subproblem_solver",solvername,32,NULL);CHKERRQ(ierr);
   
-  //  printf("[Rank %d] contingency %d Came in recourse objective function\n",sopflow->comm->rank,scen_num);
+  //  printf("[Rank %d] contingency %d Came in recourse objective function\n",sopflow->comm->rank,s);
 
   opflow0 = sopflow->opflow0;
 
@@ -177,8 +178,20 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double* 
   ps = opflowscen->ps;
   ierr = PSSetUp(ps);CHKERRQ(ierr);
       
-  if(sopflow->scenfileset) {
-    ierr = PSApplyScenario(ps,sopflow->scenlist.scen[scen_num]);
+  if(!sopflow->flatten_contingencies) {
+    if(sopflow->scenfileset) {
+      ierr = PSApplyScenario(ps,sopflow->scenlist.scen[s]);
+    }
+  } else {
+    if(sopflow->scenfileset) {
+      scen_num = s/sopflow->Nc;
+      cont_num = s%sopflow->Nc;
+      ierr = PSApplyScenario(ps,sopflow->scenlist.scen[scen_num]);CHKERRQ(ierr);
+      ierr = PSApplyContingency(ps,sopflow->ctgclist->cont[cont_num]);CHKERRQ(ierr);
+      if(cont_num != 0) {
+	ierr = OPFLOWSetObjectiveType(opflowscen,NO_OBJ);CHKERRQ(ierr);
+      }
+    }
   }
 
   ierr = OPFLOWHasGenSetPoint(opflowscen,PETSC_TRUE);CHKERRQ(ierr); /* Activates ramping variables */
@@ -197,11 +210,15 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double* 
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
       if(gen0->status) {
+	if(x[g] > gen->pt) {
+	  ierr = PetscPrintf(PETSC_COMM_SELF,"gen %d x[g] = %lf, gen->pt = %lf\n",gen->bus_i,x[g],gen->pt);CHKERRQ(ierr);
+	}
 	gen0->pgs = gen->pgs = x[g++];
       }
     }
   }
-  assert(g == n);
+
+  //  assert(g == n);
   /* Solve */
   ierr = OPFLOWSolve(opflowscen);
   ierr = OPFLOWGetObjective(opflowscen,&rval);
@@ -221,7 +238,7 @@ bool SOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int& n, double* x, 
   PetscInt i,k,j,g=0;
   const PetscScalar *lam,*lameq;
   Vec    Lambda;
-  PetscInt scen_num=idx+1;
+  PetscInt s=idx+1;
   
   // printf("[Rank %d] contingency %d Came in recourse gradient function\n",sopflow->comm->rank,scen_num);
   opflow0 = sopflow->opflow0;
@@ -239,13 +256,13 @@ bool SOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int& n, double* x, 
     for(k=0; k < bus->ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
-      if(gen0->status && gen->status) {
+      if(gen->status) {
 	/* Get the lagrange multiplier for the generator set-point equality constraint x_i - x_0 
 	   gradient is the partial derivative for it (note that it is negative) */
 	if(opflow->has_gensetpoint) {
 	  grad[g++] = -lameq[gen->starteqloc+1];
 	}
-      }
+      } else if(gen0->status && !gen->status) grad[g++] = 0.0;
     }
   }
   ierr = VecRestoreArrayRead(Lambda,&lam);
@@ -256,7 +273,7 @@ bool SOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int& n, double* x, 
 
 size_t SOPFLOWHIOPInterface::get_num_rterms() const
 {
-  return sopflow->Ns-1;
+  return (sopflow->Ns*sopflow->Nc)-1;
 }
 
 size_t SOPFLOWHIOPInterface::get_num_vars() const
@@ -369,7 +386,7 @@ PetscErrorCode SOPFLOWSolverGetSolution_HIOP(SOPFLOW sopflow,PetscInt scen_num,V
 	for(k=0; k < bus->ngen; k++) {
 	  ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
 	  ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
-	  if(gen0->status) {
+	  if(gen0->status && gen->status) {
 	    gen->pgs = gen0->pgs;
 	  }
 	}
@@ -474,5 +491,4 @@ PetscErrorCode SOPFLOWSolverCreate_HIOP(SOPFLOW sopflow)
   PetscFunctionReturn(0);
 }
 
-#endif
 #endif

@@ -35,38 +35,40 @@ public:
   ~OPFLOWHIOPSPARSEInterface() {
   }
 
-  bool get_prob_sizes(long long& n, long long& m);
+  bool get_prob_sizes(hiop::size_type& n, hiop::size_type& m);
 
-  bool get_vars_info(const long long& n, double *xlow, double* xupp, NonlinearityType* type);
+  bool get_vars_info(const hiop::size_type& n, double *xlow, double* xupp, NonlinearityType* type);
 
-  bool get_cons_info(const long long& m, double* clow, double* cupp, NonlinearityType* type);
+  bool get_cons_info(const hiop::size_type& m, double* clow, double* cupp, NonlinearityType* type);
 
-  bool get_sparse_blocks_info(int& nx,int& nnz_sparse_Jaceq, int& nnz_sparse_Jacineq,int& nnz_sparse_Hess_Lagr);
+  bool get_sparse_blocks_info(hiop::size_type& nx,hiop::size_type& nnz_sparse_Jaceq, hiop::size_type& nnz_sparse_Jacineq,hiop::size_type& nnz_sparse_Hess_Lagr);
 
-  bool eval_f(const long long& n, const double* x, bool new_x, double& obj_value);
+  bool eval_f(const hiop::size_type& n, const double* x, bool new_x, double& obj_value);
 
-  bool eval_cons(const long long& n, const long long& m, 
-		 const long long& num_cons, const long long* idx_cons,  
+  bool eval_cons(const hiop::size_type& n, const hiop::size_type& m, 
+		 const hiop::size_type& num_cons, const hiop::size_type* idx_cons,  
 		 const double* x, bool new_x, double* cons);
 
-  bool eval_cons(const long long& n, const long long& m,
+  bool eval_cons(const hiop::size_type& n, const hiop::size_type& m,
                          const double* x, bool new_x,
                          double* cons);
 
-  bool eval_grad_f(const long long& n, const double* x, bool new_x, double* gradf);
+  bool eval_grad_f(const hiop::size_type& n, const double* x, bool new_x, double* gradf);
 
-  virtual bool eval_Jac_cons(const long long& n, const long long& m,
-			     const long long& num_cons, const long long* idx_cons,
+  bool eval_Jac_cons(const hiop::size_type& n, const hiop::size_type& m,
+			     const hiop::size_type& num_cons, const hiop::index_type* idx_cons,
 			     const double* x, bool new_x,
-			     const int& nnzJacS, int* iJacS, int* jJacS, double* MJacS);
-  bool eval_Jac_cons(const long long& n, const long long& m,
+			     const hiop::size_type& nnzJacS, hiop::index_type* iJacS, hiop::index_type* jJacS, double* MJacS);
+
+  bool eval_Jac_cons(const hiop::size_type& n, const hiop::size_type& m,
 			     const double* x, bool new_x,
-			     const int& nnzJacS, int* iJacS, int* jJacS, double* MJacS);
-  bool get_starting_point(const long long&n, double* x0);
-  bool eval_Hess_Lagr(const long long& n, const long long& m,
+		     const hiop::size_type& nnzJacS, hiop::index_type* iJacS, hiop::index_type* jJacS, double* MJacS);
+
+  bool get_starting_point(const hiop::size_type&n, double* x0);
+  bool eval_Hess_Lagr(const hiop::size_type& n, const hiop::size_type& m,
 			      const double* x, bool new_x, const double& obj_factor,
 			      const double* lambda, bool new_lambda,
-			      const int& nnzHSS, int* iHSS, int* jHSS, double* MHSS);
+		      const hiop::size_type& nnzHSS, hiop::index_type* iHSS, hiop::index_type* jHSS, double* MHSS);
 
   void solution_callback(hiop::hiopSolveStatus status,
 			 int n, const double* x,

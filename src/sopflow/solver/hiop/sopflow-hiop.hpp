@@ -1,7 +1,7 @@
 #include <exago_config.h>
 
 #if defined(EXAGO_ENABLE_HIOP)
-#if defined(EXAGO_ENABLE_HIOP_DISTRIBUTED)
+
 /* 
    Primal decomposition based solver from HIOP
 */
@@ -27,7 +27,8 @@ public:
                                      const bool& include_r,
                                      const double& rval, 
                                      const double* grad,
-                                     const double*hess);
+                                     const double*hess,
+				     const char* master_options_file);
 
 
   bool eval_f_rterm(size_t idx, const int& n, const double* x, double& rval);
@@ -61,6 +62,5 @@ struct _p_SOPFLOWSolver_HIOP {
   hiop::hiopSolveStatus status;
 };
 
-#endif
 #endif
 #endif

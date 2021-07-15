@@ -108,6 +108,8 @@ if(EXAGO_INSTALL_TESTS)
       POWER_BALANCE_HIOP
       -hiop_compute_mode
       CPU
+      -hiop_verbosity_level
+      3
       DEPENDS
       IPOPT
       HIOP
@@ -120,9 +122,9 @@ if(EXAGO_INSTALL_TESTS)
       ${RUNCMD}
       $<TARGET_FILE:app_scopflow>
       -netfile
-      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod.m
+      ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
       -ctgcfile
-      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9.cont
+      ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
       -scopflow_solver
       HIOP
       -scopflow_Nc
@@ -135,6 +137,8 @@ if(EXAGO_INSTALL_TESTS)
       POWER_BALANCE_HIOP
       -hiop_compute_mode
       CPU
+      -hiop_verbosity_level
+      3
       DEPENDS
       IPOPT
       HIOP
@@ -156,8 +160,106 @@ if(EXAGO_INSTALL_TESTS)
       HIOP
       -scopflow_Nc
       -1
+      -scopflow_subproblem_solver
+      HIOP
+      -scopflow_subproblem_model
+      POWER_BALANCE_HIOP
+      -hiop_compute_mode
+      CPU
+      -hiop_verbosity_level
+      3
       -opflow_initialization
       ACPF
+      DEPENDS
+      IPOPT
+      HIOP
+    )
+
+    # These GPU tests will fail because of the bad_cast bug in HIOP
+    exago_add_test(
+      NAME
+      SCOPFLOW_9bus_HIOP_SERIAL_GPU
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:app_scopflow>
+      -netfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod.m
+      -ctgcfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9.cont
+      -scopflow_solver
+      HIOP
+      -scopflow_Nc
+      -1
+      -opflow_initialization
+      ACPF
+      -scopflow_subproblem_solver
+      HIOP
+      -scopflow_subproblem_model
+      PBPOLRAJAHIOP
+      -hiop_compute_mode
+      GPU
+      -hiop_verbosity_level
+      3
+      DEPENDS
+      IPOPT
+      HIOP
+    )
+
+    exago_add_test(
+      NAME
+      SCOPFLOW_200bus_HIOP_SERIAL_GPU
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:app_scopflow>
+      -netfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+      -ctgcfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
+      -scopflow_solver
+      HIOP
+      -scopflow_Nc
+      20
+      -opflow_initialization
+      ACPF
+      -scopflow_subproblem_solver
+      HIOP
+      -scopflow_subproblem_model
+      PBPOLRAJAHIOP
+      -hiop_compute_mode
+      CPU
+      -hiop_verbosity_level
+      3
+      DEPENDS
+      IPOPT
+      HIOP
+    )
+
+    exago_add_test(
+      NAME
+      SCOPFLOW_200bus_HIOP_MPI_GPU
+      COMMAND
+      ${MPICMD}
+      "-n"
+      4
+      $<TARGET_FILE:app_scopflow>
+      -netfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+      -ctgcfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
+      -scopflow_solver
+      HIOP
+      -scopflow_Nc
+      -1
+      -opflow_initialization
+      ACPF
+      -scopflow_subproblem_solver 
+      HIOP
+      -scopflow_subproblem_model
+      PBPOLRAJAHIOP
+      -hiop_compute_mode
+      GPU
+      -hiop_verbosity_level
+      3
       DEPENDS
       IPOPT
       HIOP
