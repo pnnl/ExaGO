@@ -160,6 +160,14 @@ struct _p_SOPFLOW{
   */
   PetscInt *scen_num; /* scenario number */
   PetscInt *cont_num; /* contingency number */
+  /* Data for contingencies */
+  ContingencyList ctgclist;      /* List of contingencies */
+  PetscBool       ctgcfileset;   /* Is the contingency file set ? */
+  char            ctgcfile[PETSC_MAX_PATH_LEN]; /* Contingency file */
+  ContingencyFileInputFormat ctgcfileformat;
+
+  PetscInt        Nc; /* Total number of contingencies */
+
 };
 
 extern PetscErrorCode SOPFLOWModelRegisterAll(SOPFLOW);

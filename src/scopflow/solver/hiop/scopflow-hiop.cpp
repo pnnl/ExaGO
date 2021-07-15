@@ -1,7 +1,6 @@
 #include <exago_config.h>
 
 #if defined(EXAGO_ENABLE_HIOP)
-#if defined(EXAGO_ENABLE_HIOP_DISTRIBUTED)
 
 #include <private/opflowimpl.h>
 #include <private/tcopflowimpl.h>
@@ -108,7 +107,8 @@ hiop::hiopSolveStatus SCOPFLOWHIOPInterface::solve_master(hiop::hiopVector& xvec
                                      const bool& include_r,
                                      const double& rval, 
                                      const double* grad,
-                                     const double*hess)
+				     const double*hess,
+				     const char* master_options_file)
 {
   double         *x = xvec.local_data();
   PetscErrorCode ierr;
@@ -181,21 +181,7 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double*
   /* Set contingencies */
   if(scopflow->ctgcfileset) {
     Contingency ctgc=scopflow->ctgclist->cont[cont_num];
-    for(j=0; j < ctgc.noutages; j++) {
-      if(ctgc.outagelist[j].type == GEN_OUTAGE) {
-	PetscInt gbus=ctgc.outagelist[j].bus;
-	char     *gid = ctgc.outagelist[j].id;
-	PetscInt status = ctgc.outagelist[j].status;
-	ierr = PSSetGenStatus(ps,gbus,gid,status);CHKERRQ(ierr);
-      }
-      if(ctgc.outagelist[j].type == BR_OUTAGE) {
-	PetscInt fbus=ctgc.outagelist[j].fbus;
-	PetscInt tbus=ctgc.outagelist[j].tbus;
-	char     *brid = ctgc.outagelist[j].id;
-	PetscInt status = ctgc.outagelist[j].status;
-	ierr = PSSetLineStatus(ps,fbus,tbus,brid,status);CHKERRQ(ierr);
-      }
-    }
+    ierr = PSApplyContingency(ps,ctgc);CHKERRQ(ierr);
   }
 
   /* Update generator set-points */
@@ -222,6 +208,7 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double*
   
   /* Solve */
   ierr = OPFLOWSolve(opflowctgc);
+  ierr = OPFLOWSolutionToPS(opflowctgc);CHKERRQ(ierr);
   ierr = OPFLOWGetObjective(opflowctgc,&rval);
   
   return true;
@@ -261,9 +248,10 @@ bool SCOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int& n, double* x,
 	/* Get the lagrange multiplier for the generator set-point equality constraint x_i - x_0 
 	   gradient is the partial derivative for it (note that it is negative) */
 	if(opflow->has_gensetpoint) {
+	  ierr = PetscPrintf(PETSC_COMM_SELF,"Gen[%d]: Pb = %lf Pt = %lf Pgs = %lf lambda = %lf\n",gen->bus_i,gen->pb,gen->pt,gen->pgs,lameq[gen->starteqloc+1]);CHKERRQ(ierr);
 	  grad[g++] = -lameq[gen->starteqloc+1];
 	}
-      }
+      } else if(gen0->status && !gen->status) grad[g++] = 0.0;
     }
   }
   ierr = VecRestoreArrayRead(Lambda,&lam);
@@ -505,5 +493,4 @@ PetscErrorCode SCOPFLOWSolverCreate_HIOP(SCOPFLOW scopflow)
   PetscFunctionReturn(0);
 }
 
-#endif
 #endif

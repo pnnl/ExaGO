@@ -24,7 +24,7 @@ PetscErrorCode SOPFLOWSetVariableBounds_GENRAMP(SOPFLOW sopflow,Vec Xl,Vec Xu)
   ierr = VecGetArray(Xl,&xl);CHKERRQ(ierr);
   ierr = VecGetArray(Xu,&xu);CHKERRQ(ierr);
 
-  for(i=0; i < sopflow->Ns; i++) {
+  for(i=0; i < sopflow->ns; i++) {
     opflow = sopflow->opflows[i];
 
     /* Set bounds on variables */
@@ -85,7 +85,7 @@ PetscErrorCode SOPFLOWSetConstraintBounds_GENRAMP(SOPFLOW sopflow,Vec Gl,Vec Gu)
   ierr = VecGetArray(sopflow->Gu,&gu);CHKERRQ(ierr);
 
   opflow0 = sopflow->opflows[0];
-  for(i=0; i < sopflow->Ns; i++) {
+  for(i=0; i < sopflow->ns; i++) {
     opflow = sopflow->opflows[i];
 
     /* Set bounds on constraints */
@@ -164,7 +164,7 @@ PetscErrorCode SOPFLOWSetInitialGuess_GENRAMP(SOPFLOW sopflow,Vec X)
   ierr = VecGetArray(sopflow->Xl,&xl);CHKERRQ(ierr);
   ierr = VecGetArray(sopflow->Xu,&xu);CHKERRQ(ierr);
 
-  for(i=0; i < sopflow->Ns; i++) {
+  for(i=0; i < sopflow->ns; i++) {
     opflow = sopflow->opflows[i];
     /* Set initial guess and bounds on variables */
     xi  = x  + sopflow->xstarti[i];
@@ -213,7 +213,7 @@ PetscErrorCode SOPFLOWComputeJacobian_GENRAMP(SOPFLOW sopflow,Vec X,Mat J)
   ierr = VecGetArray(X,&x);CHKERRQ(ierr);
 
   opflow0 = sopflow->opflows[0];
-  for(i=0; i < sopflow->Ns; i++) {
+  for(i=0; i < sopflow->ns; i++) {
     opflow = sopflow->opflows[i];
 
     roffset = sopflow->gstarti[i];
@@ -343,7 +343,7 @@ PetscErrorCode SOPFLOWComputeConstraints_GENRAMP(SOPFLOW sopflow,Vec X,Vec G)
   ps0 = opflow0->ps;
   x0 = x + sopflow->xstarti[0];
 
-  for(i=0; i < sopflow->Ns; i++) {
+  for(i=0; i < sopflow->ns; i++) {
     xi   = x + sopflow->xstarti[i];
     gi   = g + sopflow->gstarti[i];
 
@@ -425,7 +425,7 @@ PetscErrorCode SOPFLOWComputeObjective_GENRAMP(SOPFLOW sopflow,Vec X,PetscScalar
   *obj = 0.0;
 
   ierr = VecGetArray(X,&x);CHKERRQ(ierr);
-  for(i=0; i < sopflow->Ns; i++) {
+  for(i=0; i < sopflow->ns; i++) {
     xi = x + sopflow->xstarti[i];
     opflow = sopflow->opflows[i];
     opflow->obj = 0.0;
@@ -450,7 +450,7 @@ PetscErrorCode SOPFLOWComputeGradient_GENRAMP(SOPFLOW sopflow,Vec X,Vec Grad)
   ierr = VecGetArray(X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(Grad,&grad);CHKERRQ(ierr);
 
-  for(i=0; i < sopflow->Ns; i++) {
+  for(i=0; i < sopflow->ns; i++) {
     opflow = sopflow->opflows[i];
     xi    = x + sopflow->xstarti[i];
     gradi = grad + sopflow->xstarti[i];
@@ -525,7 +525,7 @@ PetscErrorCode SOPFLOWComputeHessian_GENRAMP(SOPFLOW sopflow,Vec X,Vec Lambda,Ma
   
   ierr = VecGetArray(X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(Lambda,&lambda);CHKERRQ(ierr);
-  for(i=0; i < sopflow->Ns; i++) {
+  for(i=0; i < sopflow->ns; i++) {
     opflow = sopflow->opflows[i];
     opflow->obj_factor = sopflow->obj_factor;
 

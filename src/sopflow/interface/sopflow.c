@@ -40,8 +40,11 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout)
   sopflow->mode = 1;
 
   sopflow->ismulticontingency = PETSC_FALSE;
+  sopflow->Nc = 0;
 
   sopflow->flatten_contingencies = PETSC_FALSE;
+  sopflow->ctgclist = NULL;
+  sopflow->ctgcfileset = PETSC_FALSE;
 
   sopflow->nmodelsregistered = 0;
   sopflow->SOPFLOWModelRegisterAllCalled = PETSC_FALSE;
@@ -120,6 +123,14 @@ PetscErrorCode SOPFLOWDestroy(SOPFLOW *sopflow)
       ierr = OPFLOWDestroy(&(*sopflow)->opflows[s]);CHKERRQ(ierr);
     }
     ierr = PetscFree((*sopflow)->opflows);CHKERRQ(ierr);
+
+    ierr = PetscFree((*sopflow)->scen_num);CHKERRQ(ierr);
+    if((*sopflow)->flatten_contingencies) {
+      if((*sopflow)->Nc > 1) {
+	ierr = ContingencyListDestroy(&(*sopflow)->ctgclist);CHKERRQ(ierr);
+      }
+      ierr = PetscFree((*sopflow)->cont_num);CHKERRQ(ierr);
+    }
   }
 
   ierr = PetscFree((*sopflow)->xstarti);CHKERRQ(ierr);
@@ -316,8 +327,8 @@ PetscErrorCode SOPFLOWUpdateOPFLOWVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu,v
 	if(!gen->status) continue;
 	if(sopflow->mode == 0) continue;
 	else {
-	  xl[gen->startxpdevloc] = -gen->ramp_rate_30min;
-	  xu[gen->startxpdevloc] =  gen->ramp_rate_30min;
+	  xl[opflow->idxn2sd_map[gen->startxpdevloc]] = -gen->ramp_rate_30min;
+	  xu[opflow->idxn2sd_map[gen->startxpdevloc]] =  gen->ramp_rate_30min;
 	}
       }
     }
@@ -328,6 +339,25 @@ PetscErrorCode SOPFLOWUpdateOPFLOWVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu,v
 }
 
 extern PetscErrorCode SOPFLOWGetNumScenarios(SOPFLOW,ScenarioFileInputFormat,const char scenfile[],PetscInt*);
+
+/**
+ * @brief Set the contingency data file for SOPFLOW
+ * 
+ * @param[in] sopflow application object 
+ * @param[in] contingency file format
+ * @param[in] name of the contingency list file
+*/
+PetscErrorCode SOPFLOWSetContingencyData(SOPFLOW sopflow,ContingencyFileInputFormat ctgcfileformat,const char ctgcfile[])
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  ierr = PetscMemcpy(sopflow->ctgcfile,ctgcfile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
+  sopflow->ctgcfileformat = ctgcfileformat;
+  sopflow->ctgcfileset = PETSC_TRUE;
+  PetscFunctionReturn(0);
+}
 
 /*
   SOPFLOWSetUp - Sets up an stochastic optimal power flow application object
@@ -367,6 +397,9 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   ierr = PetscOptionsBool("-sopflow_flatten_contingencies","Flatten contingencies for SOPFLOW?","",sopflow->flatten_contingencies,&sopflow->flatten_contingencies,NULL);CHKERRQ(ierr);
 
   ierr = PetscOptionsString("-ctgcfile","Contingency file","",ctgcfile,ctgcfile,PETSC_MAX_PATH_LEN,&flgctgc);CHKERRQ(ierr);
+  
+  ierr = PetscOptionsInt("-sopflow_Nc","Number of second stage scenarios","",sopflow->Nc,&sopflow->Nc,NULL);CHKERRQ(ierr);
+
   ierr = PetscOptionsReal("-sopflow_tolerance","optimization tolerance","",sopflow->tolerance,&sopflow->tolerance,NULL);CHKERRQ(ierr);
   PetscOptionsEnd();
 
@@ -384,84 +417,138 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
     if(sopflow->Ns == -1) sopflow->Ns = 1;
   }
 
-  /* Calculate the sizes of the subcommunicator */
-  /* Here, we compute a group of ranks that will work on each
-     scenario. This grouping of ranks is useful so that the
-     underlying scopflow operates in parallel using the
-     rank group for its scenario. As an example, assume
-     there 4 ranks (sopflow->comm->size) with 2 scenaarios (sopflow->Ns)
-     then we create 2 subcommunicators (one for each scenario) withh
-     the first subcommunicator using ranks 0 and 1 and the second
-     one using ranks 2 and 3. We use MPI_Comm_split*() to split
-     the outer communicator (sopflow->comm->type) into subcommunicators
-     (sopflow->subcomm)
-  */
-  int* color,*ns,*sstart,*send;
-  color = (int*)malloc(sopflow->comm->size*sizeof(int));
-  ns    = (int*)malloc(sopflow->comm->size*sizeof(int));
-  sstart = (int*)malloc(sopflow->comm->size*sizeof(int));
-  send    = (int*)malloc(sopflow->comm->size*sizeof(int));
+  if(sopflow->flatten_contingencies) {
+    sopflow->ismulticontingency = PETSC_FALSE;
 
-  for(i=0; i < sopflow->comm->size; i++) {
-    if(sopflow->comm->size > sopflow->Ns) {
-      ns[i] = 1;
-      if(sopflow->comm->size%sopflow->Ns == 0) color[i] = i/(sopflow->comm->size/sopflow->Ns);
-      else {
-	color[i] = PetscMin(i/(sopflow->comm->size/sopflow->Ns),sopflow->Ns); /* This is not an optimal distribution. It can be further optimized */
+    if(flgctgc) {
+      /* Need to remove hard coded native format later */
+      ierr = SOPFLOWSetContingencyData(sopflow,NATIVE,ctgcfile);CHKERRQ(ierr);
+
+      if(sopflow->Nc < 0) sopflow->Nc = MAX_CONTINGENCIES;
+      else sopflow->Nc +=1 ;
+      
+      if(sopflow->Nc > 1) { 
+	/* Create contingency list object */
+	ierr = ContingencyListCreate(sopflow->Nc,&sopflow->ctgclist);CHKERRQ(ierr);
+	ierr = ContingencyListSetData(sopflow->ctgclist,sopflow->ctgcfileformat,sopflow->ctgcfile);CHKERRQ(ierr);
+	ierr = ContingencyListReadData(sopflow->ctgclist,&sopflow->Nc);CHKERRQ(ierr);
+	sopflow->Nc += 1;
       }
     } else {
-      ns[i] = sopflow->Ns/sopflow->comm->size;
-      if(i >= (sopflow->comm->size - sopflow->Ns%sopflow->comm->size)) ns[i] += 1;
-      color[i] = i;
+      if(sopflow->Nc == -1) sopflow->Nc = 1;
     }
+  } else {
+    sopflow->Nc = 1; 
   }
-  sopflow->ns = ns[sopflow->comm->rank];
 
-  sstart[0] = 0;
-  send[0] = sstart[0] + ns[0];
-  int color_i = color[0];
-  i = 0;
-
-  /*  
-  if(!sopflow->comm->rank) {
-    ierr = PetscPrintf(PETSC_COMM_SELF,"Rank[%d]: color = %d, ns = %d, sstart= %d, send=%d\n",i,color[i],ns[i],sstart[i],send[i]);CHKERRQ(ierr);
-  }
-  */
-  
-  for(i=1; i < sopflow->comm->size; i++) {
-    if(color[i] == color_i) { /* Same group - copy start and end */
-      sstart[i] = sstart[i-1];
-      send[i]   = send[i-1];
-    } else { /* New group - update sstart and send */
-      sstart[i] = send[i-1];
-      send[i]  = sstart[i] + ns[i];
-      color_i = color[i];
-    }
-    
-    /*
-    if(!sopflow->comm->rank) {
-      ierr = PetscPrintf(PETSC_COMM_SELF,"Rank[%d]: color = %d, ns = %d, sstart= %d, send=%d\n",i,color[i],ns[i],sstart[i],send[i]);CHKERRQ(ierr);
-    }
+  if(sopflow->ismulticontingency) {
+    /* Calculate the sizes of the subcommunicator */
+    /* Here, we compute a group of ranks that will work on each
+       scenario. This grouping of ranks is useful so that the
+       underlying scopflow operates in parallel using the
+       rank group for its scenario. As an example, assume
+       there 4 ranks (sopflow->comm->size) with 2 scenaarios (sopflow->Ns)
+       then we create 2 subcommunicators (one for each scenario) withh
+       the first subcommunicator using ranks 0 and 1 and the second
+       one using ranks 2 and 3. We use MPI_Comm_split*() to split
+       the outer communicator (sopflow->comm->type) into subcommunicators
+       (sopflow->subcomm)
     */
+    int* color,*ns,*sstart,*send;
+    color = (int*)malloc(sopflow->comm->size*sizeof(int));
+    ns    = (int*)malloc(sopflow->comm->size*sizeof(int));
+    sstart = (int*)malloc(sopflow->comm->size*sizeof(int));
+    send    = (int*)malloc(sopflow->comm->size*sizeof(int));
+    
+    for(i=0; i < sopflow->comm->size; i++) {
+      if(sopflow->comm->size > sopflow->Ns) {
+	ns[i] = 1;
+	if(sopflow->comm->size%sopflow->Ns == 0) color[i] = i/(sopflow->comm->size/sopflow->Ns);
+	else {
+	  color[i] = PetscMin(i/(sopflow->comm->size/sopflow->Ns),sopflow->Ns); /* This is not an optimal distribution. It can be further optimized */
+	}
+      } else {
+	ns[i] = sopflow->Ns/sopflow->comm->size;
+	if(i >= (sopflow->comm->size - sopflow->Ns%sopflow->comm->size)) ns[i] += 1;
+	color[i] = i;
+      }
+    }
+    sopflow->ns = ns[sopflow->comm->rank];
+    
+    sstart[0] = 0;
+    send[0] = sstart[0] + ns[0];
+    int color_i = color[0];
+    i = 0;
+    
+    /*  
+	if(!sopflow->comm->rank) {
+	ierr = PetscPrintf(PETSC_COMM_SELF,"Rank[%d]: color = %d, ns = %d, sstart= %d, send=%d\n",i,color[i],ns[i],sstart[i],send[i]);CHKERRQ(ierr);
+	}
+    */
+    
+    for(i=1; i < sopflow->comm->size; i++) {
+      if(color[i] == color_i) { /* Same group - copy start and end */
+	sstart[i] = sstart[i-1];
+	send[i]   = send[i-1];
+      } else { /* New group - update sstart and send */
+	sstart[i] = send[i-1];
+	send[i]  = sstart[i] + ns[i];
+	color_i = color[i];
+      }
+      
+      /*
+	if(!sopflow->comm->rank) {
+	ierr = PetscPrintf(PETSC_COMM_SELF,"Rank[%d]: color = %d, ns = %d, sstart= %d, send=%d\n",i,color[i],ns[i],sstart[i],send[i]);CHKERRQ(ierr);
+	}
+      */
+    }
+
+    sopflow->sstart = sstart[sopflow->comm->rank];
+    sopflow->send = send[sopflow->comm->rank];
+
+    MPI_Barrier(sopflow->comm->type);
+    ExaGOLog(EXAGO_LOG_INFO,"SOPFLOW running with %d scenarios\n",sopflow->Ns);
+    //  ExaGOLogUseEveryRank(PETSC_TRUE);
+    //  ExaGOLog(EXAGO_LOG_INFO,"Rank %d scenario range [%d -- %d]\n",sopflow->comm->rank,sopflow->sstart,sopflow->send);
+    //  ExaGOLogUseEveryRank(PETSC_FALSE);
+    
+    /* Create subcommunicators to manage scopflows */
+    MPI_Comm_split(sopflow->comm->type,color[sopflow->comm->rank],sopflow->comm->rank,&sopflow->subcomm);
+    
+    free(color);
+    free(sstart);
+    free(send);
+    free(ns);
+  } else {
+    int q = (sopflow->Ns*sopflow->Nc)/sopflow->comm->size;
+    int d = (sopflow->Ns*sopflow->Nc)%sopflow->comm->size;
+
+    if(d) {
+      sopflow->ns = q + ((sopflow->comm->rank < d)?1:0); 
+    } else {
+      sopflow->ns = q;
+    }
+    ierr = MPI_Scan(&sopflow->ns,&sopflow->send,1,MPIU_INT,MPI_SUM,sopflow->comm->type);CHKERRQ(ierr);
+    sopflow->sstart = sopflow->send - sopflow->ns;
+    
+    ierr = PetscCalloc1(sopflow->ns,&sopflow->scen_num);CHKERRQ(ierr);
+    if(sopflow->flatten_contingencies) {
+      ierr = PetscCalloc1(sopflow->ns,&sopflow->cont_num);CHKERRQ(ierr);
+    
+      for(s=0; s < sopflow->ns; s++) {
+	sopflow->scen_num[s] = (sopflow->sstart+s)/sopflow->Nc;
+	sopflow->cont_num[s] = (sopflow->sstart+s)%sopflow->Nc;
+	ierr = PetscPrintf(PETSC_COMM_SELF,"Rank[%d],s = %d, scen_num = %d, cont_num = %d\n",sopflow->comm->rank,sopflow->sstart+s,sopflow->scen_num[s],sopflow->cont_num[s]);
+      }
+    } else {
+      for(s=0; s < sopflow->ns; s++) {
+	sopflow->scen_num[s] = sopflow->sstart+s;
+
+	ierr = PetscPrintf(PETSC_COMM_SELF,"Rank[%d],s = %d, scen_num = %d\n",sopflow->comm->rank,sopflow->sstart+s,sopflow->scen_num[s]);
+      }
+    }
   }
 
-  sopflow->sstart = sstart[sopflow->comm->rank];
-  sopflow->send = send[sopflow->comm->rank];
-
-  MPI_Barrier(sopflow->comm->type);
-  ExaGOLog(EXAGO_LOG_INFO,"SOPFLOW running with %d scenarios\n",sopflow->Ns);
-  //  ExaGOLogUseEveryRank(PETSC_TRUE);
-  //  ExaGOLog(EXAGO_LOG_INFO,"Rank %d scenario range [%d -- %d]\n",sopflow->comm->rank,sopflow->sstart,sopflow->send);
-  //  ExaGOLogUseEveryRank(PETSC_FALSE);
-			
-  /* Create subcommunicators to manage scopflows */
-  MPI_Comm_split(sopflow->comm->type,color[sopflow->comm->rank],sopflow->comm->rank,&sopflow->subcomm);
-
-  free(color);
-  free(sstart);
-  free(send);
-  free(ns);
-    
   /* Set Model */
   if(!sopflow->ismulticontingency) {
     ierr = SOPFLOWSetModel(sopflow,sopflowmodelname);CHKERRQ(ierr);
@@ -510,12 +597,22 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
 
       if(sopflow->scenfileset) {
 	/* Apply scenario */
-	ierr = PSApplyScenario(ps,sopflow->scenlist.scen[sopflow->sstart+s]);CHKERRQ(ierr);
+	ierr = PSApplyScenario(ps,sopflow->scenlist.scen[sopflow->scen_num[s]]);CHKERRQ(ierr);
+      }
+
+      if(flgctgc && sopflow->flatten_contingencies && sopflow->Nc > 1) {
+	ierr = PSApplyContingency(ps,sopflow->ctgclist->cont[sopflow->cont_num[s]]);CHKERRQ(ierr);
       }
 
       ierr = OPFLOWHasGenSetPoint(sopflow->opflows[s],PETSC_TRUE);CHKERRQ(ierr);
       if(issopflowsolverhiop && sopflow->sstart+s != 0) {
 	ierr = OPFLOWSetUpdateVariableBoundsFunction(sopflow->opflows[s],SOPFLOWUpdateOPFLOWVariableBounds,(void*)sopflow);
+      }
+
+      if(flgctgc && sopflow->flatten_contingencies) {
+	if(sopflow->cont_num[s] != 0) {
+	  //	  ierr = OPFLOWSetObjectiveType(sopflow->opflows[s],NO_OBJ);CHKERRQ(ierr);
+	}
       }
       ierr = OPFLOWSetUp(sopflow->opflows[s]);CHKERRQ(ierr);
     }

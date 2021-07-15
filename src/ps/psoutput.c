@@ -76,16 +76,16 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps,const char outfile[])
   /* Write generator data */
   fprintf(fd, "\n%%%% generator data\n");
   fprintf(fd, "%%\tbus\tPg\tQg\tQmax\tQmin\tVg\tmBase\tstatus\tPmax\tPmin");
-  fprintf(fd, "\tPc1\tPc2\tQc1min\tQc1max\tQc2min\tQc2max\tramp_agc\tramp_10\tramp_30\tramp_q\tapf\n");
+  fprintf(fd, "\tPc1\tPc2\tQc1min\tQc1max\tQc2min\tQc2max\tramp_agc\tramp_10\tramp_30\tramp_q\tapf\tpgs\n");
   fprintf(fd, "%sgen = [\n", prefix);
   for(i=0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
     for(k=0; k < bus->ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
-      fprintf(fd, "\t%d\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%d\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g;\n",
+      fprintf(fd, "\t%d\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%d\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g;\n",
 	      bus->bus_i,gen->pg*MVAbase,gen->qg*MVAbase,gen->qt*MVAbase,gen->qb*MVAbase,bus->vm,gen->mbase,gen->status,gen->pt*MVAbase,gen->pb*MVAbase, \
 	      gen->pc1*MVAbase,gen->pc2*MVAbase,gen->qc1min*MVAbase,gen->qc1max*MVAbase,gen->qc2min*MVAbase,gen->qc2max*MVAbase, \
-	      gen->ramp_rate_min*MVAbase,gen->ramp_rate_10min*MVAbase,gen->ramp_rate_30min*MVAbase,gen->ramp_rate_min_mvar*MVAbase,gen->apf);
+			gen->ramp_rate_min*MVAbase,gen->ramp_rate_10min*MVAbase,gen->ramp_rate_30min*MVAbase,gen->ramp_rate_min_mvar*MVAbase,gen->apf,gen->pgs*MVAbase);
     }
   }
   fprintf(fd, "];\n");

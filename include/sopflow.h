@@ -36,6 +36,7 @@ PETSC_EXTERN PetscErrorCode SOPFLOWDestroy(SOPFLOW*);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetNetworkData(SOPFLOW,const char[]);
 
 PETSC_EXTERN PetscErrorCode SOPFLOWSetScenarioData(SOPFLOW,ScenarioFileInputFormat,ScenarioUncertaintyType,const char[]);
+PETSC_EXTERN PetscErrorCode SOPFLOWSetContingencyData(SOPFLOW,ContingencyFileInputFormat,const char[]);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetUp(SOPFLOW);
 PETSC_EXTERN PetscErrorCode SOPFLOWCreateGlobalVector(SOPFLOW,Vec*);
 PETSC_EXTERN PetscErrorCode SOPFLOWCreateMatrix(SOPFLOW,Mat*);
