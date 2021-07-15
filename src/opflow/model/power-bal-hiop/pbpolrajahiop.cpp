@@ -469,6 +469,9 @@ PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOP(OPFLOW opflow)
 
   opflow->model = pbpol;
 
+  /* HIOP models only support VARIABLE_WITHIN_BOUNDS opflow->genbusvoltagetype */
+  opflow->genbusvoltagetype = VARIABLE_WITHIN_BOUNDS;
+
   opflow->spdnordering = PETSC_TRUE;
 
   /* Inherit Ops */

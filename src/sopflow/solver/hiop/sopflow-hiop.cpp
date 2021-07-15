@@ -49,7 +49,7 @@ PetscErrorCode SOPFLOWBaseAuxHessianFunction(OPFLOW opflow,const double* x,Mat H
   if(hiop->pridecompprob->include_r_) {
     for(i=0; i < hiop->pridecompprob->nxcoup; i++) {
       row = col = hiop->pridecompprob->loc_xcoup[i];
-      val = hiop->pridecompprob->rec_evaluator->get_rhess()[i];
+      val = hiop->pridecompprob->rec_evaluator->get_rhess()->local_data_const()[i];
       val *= opflow->obj_factor;
       ierr = MatSetValues(Hess,1,&row,1,&col,&val,ADD_VALUES);CHKERRQ(ierr);
     }
@@ -87,13 +87,15 @@ SOPFLOWHIOPInterface::SOPFLOWHIOPInterface(SOPFLOW sopflowin)
       if(gen->status) nxcoup++;  
     }
   }
+
+  PetscCalloc1(nxcoup,&loc_xcoup);
   /* Set the coupling indices */
   for(i = 0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
     for(k=0; k < bus->ngen; k++) {
       PSBUSGetGen(bus,k,&gen);
       if(gen->status) {
-	loc_xcoup.push_back(gen->startxpsetloc); /* Location for Pgset */
+	loc_xcoup[j] = gen->startxpsetloc; /* Location for Pgset */
 	j++;
       }
     }
@@ -101,7 +103,7 @@ SOPFLOWHIOPInterface::SOPFLOWHIOPInterface(SOPFLOW sopflowin)
   assert(j == nxcoup);
 }
 
-hiop::hiopSolveStatus SOPFLOWHIOPInterface::solve_master(double* x,
+hiop::hiopSolveStatus SOPFLOWHIOPInterface::solve_master(hiop::hiopVector& xvec,
                                      const bool& include_r,
                                      const double& rval, 
                                      const double* grad,
@@ -109,6 +111,7 @@ hiop::hiopSolveStatus SOPFLOWHIOPInterface::solve_master(double* x,
 {
 
   PetscErrorCode ierr;
+  double         *x = xvec.local_data();
   double         obj;
   OPFLOW         opflow;
   Vec            X;
@@ -133,18 +136,7 @@ hiop::hiopSolveStatus SOPFLOWHIOPInterface::solve_master(double* x,
 bool SOPFLOWHIOPInterface::set_recourse_approx_evaluator(const int n,hiopInterfacePriDecProblem::RecourseApproxEvaluator* evaluator)
 {
   assert(n == nxcoup);
-  if(rec_evaluator == NULL) {
-    rec_evaluator = new hiopInterfacePriDecProblem::
-      RecourseApproxEvaluator(n, evaluator->get_S(), loc_xcoup,
-			      evaluator->get_rval(), evaluator->get_rgrad(),
-			      evaluator->get_rhess(), evaluator->get_x0());
-  }
-  
-  assert(rec_evaluator->get_rgrad() != NULL);
-  rec_evaluator->set_rval(evaluator->get_rval());
-  rec_evaluator->set_rgrad(n,evaluator->get_rgrad());
-  rec_evaluator->set_rhess(n,evaluator->get_rhess());
-  rec_evaluator->set_x0(n,evaluator->get_x0());
+  rec_evaluator = evaluator;
 
   return true;
 }
@@ -163,13 +155,22 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double* 
   PSGEN  gen,gen0;
   PetscInt i,k,j,g=0;
   PetscInt scen_num=idx+1;
+  char     modelname[32],solvername[32];
+
+  /* Default model and solver */
+  PetscStrcpy(modelname,"POWER_BALANCE_POLAR");
+  PetscStrcpy(solvername,"IPOPT");
+  
+  ierr = PetscOptionsGetString(NULL,NULL,"-sopflow_subproblem_model",modelname,32,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL,NULL,"-sopflow_subproblem_solver",solvername,32,NULL);CHKERRQ(ierr);
   
   //  printf("[Rank %d] contingency %d Came in recourse objective function\n",sopflow->comm->rank,scen_num);
 
   opflow0 = sopflow->opflow0;
 
   ierr = OPFLOWCreate(PETSC_COMM_SELF,&opflowscen);CHKERRQ(ierr);
-  ierr = OPFLOWSetModel(opflowscen,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
+  ierr = OPFLOWSetModel(opflowscen,modelname);CHKERRQ(ierr);
+  ierr = OPFLOWSetSolver(opflowscen,solvername);CHKERRQ(ierr);
       
   ierr = OPFLOWReadMatPowerData(opflowscen,sopflow->netfile);CHKERRQ(ierr);
   /* Set up the PS object for opflow */
@@ -208,9 +209,10 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double* 
   return true;
 }
 
-bool SOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int& n, double* x, double* grad)
+bool SOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int& n, double* x, hiop::hiopVector& gradvec)
 {
   PetscErrorCode ierr;
+  double *grad = gradvec.local_data();
   OPFLOW opflow;
   OPFLOW opflow0; /* base case OPFLOW */
   PS     ps,ps0;
