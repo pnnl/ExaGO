@@ -6,7 +6,7 @@
 #include <exago_config.h>
 #include <utils.hpp>
 
-#include "include/OpflowTests.hpp"
+#include "OpflowTests.hpp"
 #include "TestAcopfUtils.hpp"
 
 

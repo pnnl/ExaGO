@@ -6,7 +6,7 @@
 #include <exago_config.h>
 #include <utils.hpp>
 
-#include "opflow/OpflowTests.hpp"
+#include "OpflowTests.hpp"
 #include "TestAcopfUtils.hpp"
 
 #if defined(EXAGO_ENABLE_RAJA)
