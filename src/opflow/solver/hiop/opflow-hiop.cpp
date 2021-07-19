@@ -455,11 +455,12 @@ PetscErrorCode OPFLOWSolverDestroy_HIOP(OPFLOW opflow)
 
   PetscFunctionBegin;
 
-
+#ifdef EXAGO_ENABLE_IPOPT
   if(!hiop->ipopt_debug) {
     delete hiop->mds;
     delete hiop->nlp;
   }
+#endif
 
   ierr = PetscFree(hiop);CHKERRQ(ierr);
 

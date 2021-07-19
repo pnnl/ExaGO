@@ -30,7 +30,7 @@ set(CMAKE_BUILD_TYPE
     CACHE STRING ""
 )
 
-message(STATUS "Enabling GPU, HiOp, Ipopt, MPI, PETSC, and RAJA")
+message(STATUS "Enabling GPU, HiOp, MPI, PETSC, and RAJA")
 set(EXAGO_ENABLE_GPU
     ON
     CACHE BOOL ""
@@ -44,7 +44,7 @@ set(EXAGO_ENABLE_HIOP
     CACHE BOOL ""
 )
 set(EXAGO_ENABLE_IPOPT
-    ON
+    OFF
     CACHE BOOL ""
 )
 set(EXAGO_ENABLE_MPI

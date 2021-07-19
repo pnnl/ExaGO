@@ -52,12 +52,6 @@ static ExaGOVerbosityLevel ExaGOLogMinLogLevel = EXAGO_LOG_INFO;
 /** ExaGO logging communicator to determine rank*/
 static MPI_Comm ExaGOLogComm=MPI_COMM_SELF;
 
-/** Rank from which logging statements will be written */
-static int ExaGOLogLoggingRank=0;
-
-/** Current MPI rank */
-static int ExaGOLogCurrentRank=0;
-
 PetscErrorCode ExaGOLogGetLoggingFileName(char** name)
 {
   if(ExaGOLogFileName==NULL)
@@ -113,14 +107,6 @@ PetscErrorCode ExaGOLogInitialize()
   char* filename;
   FILE* fp;
 
-  /** If we're not on the logging rank, there's no setup to perform */
-  ierr=MPI_Comm_rank(ExaGOLogComm,&ExaGOLogCurrentRank);CHKERRQ(ierr);
-  if (ExaGOLogCurrentRank!=ExaGOLogLoggingRank)
-  {
-    ExaGOLogIsLoggerInitialized = PETSC_TRUE;
-    return 0;
-  }
-
   ierr=ExaGOLogIsUsingLogFile(&flg);
   /** Normally we would check the error, but in here we don't even have logging
    * set up to handle the error so we have to just return a code. */
@@ -156,14 +142,6 @@ PetscErrorCode ExaGOLogFinalize()
   if (!flg)
     return 0;
 
-  /** If we're not on the logging rank, there's no teardown to perform */
-  if (ExaGOLogCurrentRank!=ExaGOLogLoggingRank)
-  {
-    ExaGOLogIsLoggerInitialized = PETSC_FALSE;
-    return 0;
-  }
- 
-
   FILE *fp;
   ExaGOLogGetLoggingFilePointer(&fp);
   fclose(fp);
@@ -184,19 +162,11 @@ PetscErrorCode ExaGOLogSetMinLogLevel(ExaGOVerbosityLevel l)
   return 0;
 }
 
-PetscErrorCode ExaGOLogUseEveryRank(PetscBool use)
-{
-  ExaGOLogLoggingRank = use ? -1 : 0;
-  return 0;
-}
-
 /** ExaGO logging function with format string */
 void ExaGOLogImpl(ExaGOVerbosityLevel verb, const char *fmt, ...)
 {
   EXAGO_LOG_ENSURE_INITIALIZED();
   int ierr;
-  if (ExaGOLogLoggingRank>=0 && ExaGOLogCurrentRank!=ExaGOLogLoggingRank)
-    return;
 
   if(verb<ExaGOLogMinLogLevel)
     return;

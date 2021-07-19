@@ -419,11 +419,10 @@ PetscErrorCode OPFLOWSolverSetUp_HIOPSPARSE(OPFLOW opflow)
   hiop->nlp = new OPFLOWHIOPSPARSEInterface(opflow);
   hiop->sp = new hiop::hiopNlpSparse(*hiop->nlp);
 
-  hiop->ipopt_debug = PETSC_FALSE;
-
   ierr = PetscOptionsBegin(opflow->comm->type,NULL,"HIOP options",NULL);CHKERRQ(ierr);
   ierr = PetscOptionsInt("-hiop_verbosity_level","HIOP verbosity level (Integer 0 to 12)","",verbose_level,&verbose_level,NULL);CHKERRQ(ierr);
 #if defined(EXAGO_ENABLE_IPOPT)
+  hiop->ipopt_debug = PETSC_FALSE;
   ierr = PetscOptionsBool("-hiop_ipopt_debug","Flag enabling debugging HIOP code with IPOPT","",hiop->ipopt_debug,&hiop->ipopt_debug,NULL);CHKERRQ(ierr);
 #endif
   PetscOptionsEnd();
