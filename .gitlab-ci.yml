@@ -207,6 +207,7 @@ ppc64le-gcc-cuda-python-test:
   <<: *pnnl_script_definition
     # No after_script as only one test per platform cleans up
   <<: *pnnl_rules_definition
+  allow_failure: true
 
 x86_64-gcc-cuda-build:
   stage: build
@@ -251,4 +252,5 @@ x86_64-gcc-cuda-python-test:
   <<: *pnnl_script_definition
     # No after_script as only one test per platform cleans up
   <<: *pnnl_rules_definition
+  allow_failure: true
 # ---
