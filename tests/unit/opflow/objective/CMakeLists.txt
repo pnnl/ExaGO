@@ -29,7 +29,7 @@ if(EXAGO_INSTALL_TESTS)
       NAME
       ${testname}
       DEPENDS
-      HIOP
+      IPOPT
       COMMAND
       ${RUNCMD}
       $<TARGET_FILE:objectiveAcopf>
