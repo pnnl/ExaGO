@@ -8,13 +8,9 @@ target_include_directories(objectiveAcopf PRIVATE ../../utils)
 
 # Network files to run on - doing 3 and 600 bus examples.
 set(prefix ${PROJECT_SOURCE_DIR}/tests/unit/opflow/objective/)
-set(obj_network_files 
-  OF-unittestx3.m 
-  OF-unittestx600.m)
+set(obj_network_files OF-unittestx3.m OF-unittestx600.m)
 # Map num_copies to a specific netfile
-set(num_copies
-  3
-  600)
+set(num_copies 3 600)
 
 list(TRANSFORM obj_network_files PREPEND ${prefix})
 install(FILES ${obj_network_files} DESTINATION ${EXAGO_DATAFILES_DIR})
@@ -35,7 +31,7 @@ if(EXAGO_INSTALL_TESTS)
       $<TARGET_FILE:objectiveAcopf>
       -opflow_genbusvoltage
       VARIABLE_WITHIN_BOUNDS
-      -opflow_initialization 
+      -opflow_initialization
       FROMFILE
       -netfile
       ${network}
@@ -44,4 +40,3 @@ if(EXAGO_INSTALL_TESTS)
     )
   endforeach()
 endif()
-
