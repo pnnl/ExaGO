@@ -455,8 +455,6 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int* argc, char*** argv,
   if(fp==NULL)
     ExaGOLogSetLoggingFilePointer(stderr);
 
-  puts("options");
-
   optfiles.push_back(std::string{options_pathname} + "/" + filename);
   optfiles.push_back("./" + std::string{filename});
   optfiles.push_back("./options/" + std::string{filename});

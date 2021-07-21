@@ -163,3 +163,22 @@ void validate_directory(std::string pth)
   //std::cout << "Existing dir found" << std::endl;
   return;
 }
+
+void spdensetonatural(const double *xin,double *xout,int *idxn2sd_map,int nx)
+{
+  int i;
+
+  for(i=0; i < nx; i++) {
+    xout[i] = xin[idxn2sd_map[i]];
+  }
+}
+
+void naturaltospdense(const double *xin,double *xout,int *idxn2sd_map,int nx)
+{
+  int i;
+
+  for(i=0; i < nx; i++) {
+    xout[idxn2sd_map[i]] = xin[i];
+  }
+}
+

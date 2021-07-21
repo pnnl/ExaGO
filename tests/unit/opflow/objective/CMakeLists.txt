@@ -24,8 +24,6 @@ if(EXAGO_INSTALL_TESTS)
     exago_add_test(
       NAME
       ${testname}
-      DEPENDS
-      IPOPT
       COMMAND
       ${RUNCMD}
       $<TARGET_FILE:objectiveAcopf>
