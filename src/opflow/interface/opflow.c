@@ -877,7 +877,11 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
     //    ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s model\n",modelname);CHKERRQ(ierr);
   } else {
     if(!opflow->model) {
+#if defined(EXAGO_ENABLE_IPOPT)
       ierr = OPFLOWSetModel(opflow,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
+#else
+      ierr = OPFLOWSetModel(opflow,OPFLOWMODEL_PBCAR);CHKERRQ(ierr);
+#endif
       //      ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s model\n",OPFLOWMODEL_PBCAR);CHKERRQ(ierr);
     }
   }
