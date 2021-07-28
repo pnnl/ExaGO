@@ -1831,3 +1831,10 @@ PetscErrorCode OPFLOWSetUpdateVariableBoundsFunction(OPFLOW opflow,PetscErrorCod
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode OPFLOWSetInitializationType(OPFLOW opflow, OPFLOWInitializationType type)
+{
+  PetscFunctionBegin;
+  opflow->initializationtype = type;
+  PetscFunctionReturn(0);
+}
+

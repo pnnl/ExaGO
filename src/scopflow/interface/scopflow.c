@@ -379,6 +379,8 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
     ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflow0);CHKERRQ(ierr);
     ierr = OPFLOWSetModel(scopflow->opflow0,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
     ierr = OPFLOWReadMatPowerData(scopflow->opflow0,scopflow->netfile);CHKERRQ(ierr);
+    ierr = OPFLOWSetInitializationType(scopflow->opflow0, scopflow->type);CHKERRQ(ierr);
+    ierr = OPFLOWSetGenBusVoltageType(scopflow->opflow0, scopflow->genbusvoltagetype);CHKERRQ(ierr);
     ierr = OPFLOWSetUp(scopflow->opflow0);CHKERRQ(ierr);
 
     ierr = OPFLOWSetObjectiveType(scopflow->opflow0,MIN_GEN_COST);CHKERRQ(ierr);
@@ -388,6 +390,8 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
       ierr = OPFLOWCreate(PETSC_COMM_SELF,&scopflow->opflows[c]);CHKERRQ(ierr);
       ierr = OPFLOWSetModel(scopflow->opflows[c],OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
       //    ierr = OPFLOWSetSolver(scopflow->opflows[c],opflowsolvername);CHKERRQ(ierr);
+      ierr = OPFLOWSetInitializationType(scopflow->opflows[c], scopflow->type);CHKERRQ(ierr);
+      ierr = OPFLOWSetGenBusVoltageType(scopflow->opflows[c], scopflow->genbusvoltagetype);CHKERRQ(ierr);
       
       ierr = OPFLOWReadMatPowerData(scopflow->opflows[c],scopflow->netfile);CHKERRQ(ierr);
       /* Set up the PS object for opflow */
@@ -739,3 +743,43 @@ PetscErrorCode SCOPFLOWGetTolerance(SCOPFLOW scopflow,PetscReal *tol)
   *tol = scopflow->tolerance;
   PetscFunctionReturn(0);
 }
+
+/**
+ * @brief Set SCOPFLOW initialization type
+ *
+ * @param[in] scopflow application object
+ * @param[in] type initialization type for underlying OPFLOW structs 
+ */
+PetscErrorCode SCOPFLOWSetInitilizationType(SCOPFLOW scopflow, OPFLOWInitializationType type)
+{
+  PetscFunctionBegin;
+  scopflow->type = type;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Set SCOPFLOW number of contingencies
+ *
+ * @param[in] scopflow application object
+ * @param[in] num_cont number of contingencies
+ */
+PetscErrorCode SCOPFLOWSetNumContingencies(SCOPFLOW scopflow, PetscInt num_cont)
+{
+  PetscFunctionBegin;
+  scopflow->Nc = num_cont;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Set SCOPFLOW  
+ *
+ * @param[in] scopflow application object
+ * @param[in] type genbusvoltage type for underlying OPFLOW structs
+ */
+PetscErrorCode SCOPFLOWSetGenBusVoltageType(SCOPFLOW scopflow, OPFLOWGenBusVoltageType type)
+{
+  PetscFunctionBegin;
+  scopflow->genbusvoltagetype = type;
+  PetscFunctionReturn(0);
+}
+

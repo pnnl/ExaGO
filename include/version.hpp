@@ -2,6 +2,7 @@
 #define EXAGO_VERSION_H
 
 #include <petsc.h>
+#include <unordered_map>
 
 /**
  * Print information about the current ExaGO build. The user is responsible for
@@ -27,18 +28,14 @@ PETSC_EXTERN PetscErrorCode ExaGOVersionGetVersion(int*,int*,int*);
  */
 PETSC_EXTERN PetscErrorCode ExaGOVersionVersionStr(char**);
 
-/** Number of ExaGO dependencies that are explicitly tracked */
-#define ExaGONumDependencies 6
-
 /**
- * Contains statically determinable information about the current ExaGO build.
+ *  @brief Returns map with keys as the names of the dependencies and values as bools
+ *  indicating whether they are enabled or not.
+ *
+ * @note The keys map to the lowercase endings of the macros defined in
+ * exago_config.h. For example, the key "hiop_sparse" will map to _true_ if
+ * the macro EXAGO_ENABLE_HIOP_SPARSE is defined in exago_config.h.
  */
-PETSC_EXTERN const char* ExaGODependencyNames[ExaGONumDependencies];
-
-/**
- * Each entry indicates whether the dependency indicated by the same index
- * of array `ExaGODependencyNames` is enabled or not.
- */
-PETSC_EXTERN const PetscBool ExaGOIsDependencyEnabled[ExaGONumDependencies];
+extern const std::unordered_map<std::string, bool>& ExaGOGetDependencies();
 
 #endif

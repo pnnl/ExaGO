@@ -1,0 +1,16 @@
+testsuite_name = "SCOPFLOW Functionality"
+
+[presets]
+tolerance = 1e-3
+network = 'datafiles/case_ACTIVSg200.m'
+contingencies = 'datafiles/case_ACTIVSg200.cont'
+solver = 'IPOPT'
+model = 'GENRAMP'
+opflow_intitialization = 3 # = OPFLOWINIT_ACPF
+multiperiod = 0
+opflow_genbusvoltage = 0 # = VARIABLE_WITHIN_BOUNDS
+
+[[testcase]]
+num_contingencies = 0
+num_iters = 214 
+obj_value = 2.7557570526001036e+04 

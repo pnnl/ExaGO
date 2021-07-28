@@ -7,6 +7,7 @@
 #define SCOPFLOW_H
 
 #include <ps.h>
+#include <opflow.h>
 
 /* Models */
 #define SCOPFLOWMODEL_GENRAMP "GENRAMP" 
@@ -30,6 +31,8 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWSetSolver(SCOPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWCreate(MPI_Comm,SCOPFLOW*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWDestroy(SCOPFLOW*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW,const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetInitilizationType(SCOPFLOW, OPFLOWInitializationType type);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetGenBusVoltageType(SCOPFLOW, OPFLOWGenBusVoltageType);
 
 /*
  * The native format for Contingency input file is as follows:
@@ -60,7 +63,7 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWSetUp(SCOPFLOW);
 PETSC_EXTERN PetscErrorCode SCOPFLOWCreateGlobalVector(SCOPFLOW,Vec*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWCreateMatrix(SCOPFLOW,Mat*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSolve(SCOPFLOW);
-PETSC_EXTERN PetscErrorCode SCOPFLOWSetNumScenarios(SCOPFLOW,PetscInt);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetNumContingencies(SCOPFLOW,PetscInt);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetObjective(SCOPFLOW,PetscReal*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetSolution(SCOPFLOW,PetscInt,Vec*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWPrintSolution(SCOPFLOW,PetscInt);

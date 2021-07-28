@@ -36,6 +36,13 @@ typedef enum {
   FIXED_AT_SETPOINT, /* Voltage is fixed to the set-point voltage */
 }OPFLOWGenBusVoltageType;
 
+typedef enum {
+  OPFLOWINIT_MIDPOINT, /* Midpoint */
+  OPFLOWINIT_FROMFILE, /* From file */
+  OPFLOWINIT_ACPF,      /* From AC power flow solution */
+  OPFLOWINIT_FLATSTART  /* Voltage flat start */
+}OPFLOWInitializationType; 
+
 PETSC_EXTERN PetscErrorCode OPFLOWSetModel(OPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode OPFLOWSetSolver(OPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode OPFLOWModelRegister(OPFLOW,const char[],PetscErrorCode (*create)(OPFLOW));
@@ -93,6 +100,8 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetGenBusVoltageType(OPFLOW,OPFLOWGenBusVoltag
 
 PETSC_EXTERN PetscErrorCode OPFLOWGetObjectiveType(OPFLOW,OPFLOWObjectiveType*);
 PETSC_EXTERN PetscErrorCode OPFLOWSetObjectiveType(OPFLOW,OPFLOWObjectiveType);
+
+PETSC_EXTERN PetscErrorCode OPFLOWSetInitializationType(OPFLOW, OPFLOWInitializationType);
 
 /* OPFLOWGetPS - Gets the underlying PS object
 

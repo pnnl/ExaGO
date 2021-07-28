@@ -2,7 +2,7 @@
 #include <common.h>
 #include <sys/utsname.h>
 #include <sys/stat.h>
-#include <version.h>
+#include <version.hpp>
 #include <stdarg.h>
 #include <dirent.h>
 #include <exago_config.h>
@@ -174,7 +174,8 @@ void ExaGOLogImpl(ExaGOVerbosityLevel verb, const char *fmt, ...)
   FILE *fp;
   ierr=ExaGOLogGetLoggingFilePointer(&fp);
 
-  char buf[1024];
+  static int log_bufsize = 32768;
+  char buf[log_bufsize];
   va_list args;
   va_start(args, fmt);
   vsprintf(buf, fmt, args);
@@ -185,6 +186,7 @@ void ExaGOLogImpl(ExaGOVerbosityLevel verb, const char *fmt, ...)
     endl = strtok(NULL, "\n");
   }
   va_end(args);
+  fflush(fp);
 }
 
 /**
@@ -363,7 +365,7 @@ PetscErrorCode ExagoHelpPrintf(MPI_Comm comm, const char appname[],...)
  * Parse arguments for initializing an ExaGO application.
  */
 PetscErrorCode ExaGOInitializeParseArgs(int* argc, char*** argv, char* appname,
-    char *help, std::vector<std::string> optfiles)
+    char *help, std::vector<std::string> optfiles, bool* no_optfile)
 {
   PetscErrorCode ierr;
   std::vector<std::string> args(*argv, *argv + *argc);
@@ -402,6 +404,11 @@ PetscErrorCode ExaGOInitializeParseArgs(int* argc, char*** argv, char* appname,
       args_it++;
       optfiles.push_back(*args_it);
     }
+    /* If we need to skip options file */
+    else if (*args_it == "-no_optfile")
+    {
+      *no_optfile = true;
+    }
   }
   return 0;
 }
@@ -414,6 +421,9 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int* argc, char*** argv,
   strcpy(ExaGOCurrentAppName,appname);
   PetscHelpPrintf = &ExagoHelpPrintf;
   
+  /* Skip options file if necessary */
+  bool no_optfile = false; 
+
   /* Prefix checked for application options */
   std::string options_pathname = EXAGO_OPTIONS_DIR;
 
@@ -435,7 +445,7 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int* argc, char*** argv,
   }
 
   if (!skip_args)
-    ExaGOInitializeParseArgs(argc, argv, appname, help, optfiles);
+    ExaGOInitializeParseArgs(argc, argv, appname, help, optfiles, &no_optfile);
 
   int initialized;
   MPI_Initialized(&initialized);
@@ -455,13 +465,21 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int* argc, char*** argv,
   if(fp==NULL)
     ExaGOLogSetLoggingFilePointer(stderr);
 
-  puts("options");
+  // Skip options file setting if -no_optfile is passed
+  if (no_optfile)
+  {
+    PetscInitialize(argc,argv,NULL,help);
+    return 0;
+  }
 
   optfiles.push_back(std::string{options_pathname} + "/" + filename);
   optfiles.push_back("./" + std::string{filename});
   optfiles.push_back("./options/" + std::string{filename});
 
+  
+
   auto file_it = FirstExistingFile(optfiles);
+
   if (file_it == optfiles.end())
   {
     ExaGOLog(EXAGO_LOG_ERROR,
@@ -469,7 +487,7 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int* argc, char*** argv,
         ExaGOCurrentAppName);
     throw std::runtime_error{"No options files were found"};
   }
-  
+ 
   PetscInitialize(argc,argv,file_it->c_str(),help);
   return 0;
 }

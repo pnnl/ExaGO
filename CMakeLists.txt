@@ -316,7 +316,7 @@ file(INSTALL datafiles/TAMU200_scenarios DESTINATION datafiles)
 file(INSTALL datafiles/test_validation DESTINATION datafiles)
 
 # EXAGO headers to install
-set(EXAGO_COMMON_INCLUDE include/constants.h include/version.h
+set(EXAGO_COMMON_INCLUDE include/constants.h include/version.hpp
                          ${PROJECT_BINARY_DIR}/exago_config.h
 )
 

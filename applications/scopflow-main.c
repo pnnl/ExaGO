@@ -56,8 +56,8 @@ int main(int argc,char **argv)
     ierr = SCOPFLOWSetContingencyData(scopflow,NATIVE,ctgcfile);CHKERRQ(ierr);
   }
   
-  /* Set a subset of scenarios to be selected. Can use the option -scopflow_Nc instead */
-  /*   ierr = SCOPFLOWSetNumScenarios(scopflow,2);CHKERRQ(ierr); */
+  /* Set a subset of contingencies to be selected. Can use the option -scopflow_Nc instead */
+  /*   ierr = SCOPFLOWSetNumContingencies(scopflow,2);CHKERRQ(ierr); */
 
   ierr = PetscLogStagePop();CHKERRQ(ierr);
   

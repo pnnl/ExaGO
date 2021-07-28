@@ -1,49 +1,77 @@
-#include <version.h>
+#include <version.hpp>
 #include <common.h>
 #include <utils.hpp>
 #include <exago_config.h>
+#include <unordered_map>
 
-const char* ExaGODependencyNames[ExaGONumDependencies]
-  = {"PETSC","MPI","Ipopt","HiOp","GPU","RAJA"};
-
-const PetscBool ExaGOIsDependencyEnabled[ExaGONumDependencies] =
-{
+namespace {
+  static const std::unordered_map<std::string, bool> ExaGODependencies = {
+    { 
+      "petsc",
 #ifdef EXAGO_ENABLE_PETSC
-    PETSC_TRUE,
+      true,
 #else
-    PETSC_FALSE,
+      false,
 #endif
-
+    },
+    { 
+      "mpi",
 #ifdef EXAGO_ENABLE_MPI
-    PETSC_TRUE,
+      true,
 #else
-    PETSC_FALSE,
+      false,
 #endif
-
+    },
+    { 
+      "ipopt",
 #ifdef EXAGO_ENABLE_IPOPT
-    PETSC_TRUE,
+      true,
 #else
-    PETSC_FALSE,
+      false,
 #endif
-
+    },
+    { 
+      "hiop",
 #ifdef EXAGO_ENABLE_HIOP
-    PETSC_TRUE,
+      true,
 #else
-    PETSC_FALSE,
+      false,
 #endif
-
+    },
+    { 
+      "hiop_distributed",
+#ifdef EXAGO_ENABLE_HIOP_DISTRIBUTED
+      true,
+#else
+      false,
+#endif
+    },
+    { 
+      "hiop_sparse",
+#ifdef EXAGO_ENABLE_HIOP_SPARSE
+      true,
+#else
+      false,
+#endif
+    },
+    { 
+      "gpu",
 #ifdef EXAGO_ENABLE_GPU
-    PETSC_TRUE,
+      true,
 #else
-    PETSC_FALSE,
+      false,
 #endif
-
+    },
+    { 
+      "raja",
 #ifdef EXAGO_ENABLE_RAJA
-    PETSC_TRUE,
+      true,
 #else
-    PETSC_FALSE,
+      false,
 #endif
-};
+    },
+  };
+}
 
 PetscErrorCode ExaGOVersionGetFullVersionInfo(char** str)
 {
@@ -53,11 +81,13 @@ PetscErrorCode ExaGOVersionGetFullVersionInfo(char** str)
   strcat(*str, " released on ");
   strcat(*str, EXAGO_RELEASE_DATE);
   strcat(*str, "\nbuilt with:\n");
-  int i;
-  for(i=0; i<ExaGONumDependencies; i++)
+
+  for(const auto& dep : ExaGODependencies)
   {
+    const auto& name = dep.first;
+    const auto& is_enabled = dep.second;
     char buf[1024];
-    sprintf(buf, "\t%-20s%20s\n", ExaGODependencyNames[i], ExaGOIsDependencyEnabled[i]?"YES":"NO");
+    sprintf(buf, "\t%-20s%20s\n", name, is_enabled?"YES":"NO");
     strcat(*str, buf);
   }
   return 0;
@@ -81,4 +111,9 @@ PetscErrorCode ExaGOVersionGetVersionStr(char **str)
 {
   *str = strdup(EXAGO_VERSION);
   return 0;
+}
+
+const std::unordered_map<std::string, bool>& ExaGOGetDependencies()
+{
+  return ExaGODependencies;
 }

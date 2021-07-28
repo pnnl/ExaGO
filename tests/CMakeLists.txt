@@ -15,6 +15,16 @@ if(EXAGO_RUN_TESTS)
   # Unit tests
 endif(EXAGO_RUN_TESTS)
 
+# Add toml11 subproject for selfcheck tests
+include(ExternalProject)
+ExternalProject_Add(
+  toml11
+  GIT_REPOSITORY https://github.com/ToruNiina/toml11.git
+  GIT_TAG v3.7.0
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}
+)
+include_directories(${CMAKE_BINARY_DIR}/include)
+
 add_subdirectory(unit)
 add_subdirectory(functionality)
 
