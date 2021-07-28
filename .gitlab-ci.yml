@@ -46,7 +46,7 @@ workflow:
       job_ids="$WORKDIR/jobid_*"
       for job in $job_ids
       do
-        if [[ -f "$job"]]; then
+        if [[ -f "$job" ]]; then
           jobid=$(cat "$job")
           scancel $jobid
         fi
