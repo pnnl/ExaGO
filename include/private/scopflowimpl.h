@@ -81,6 +81,9 @@ struct _p_SCOPFLOW{
   		      Each processor creates nc objects, one for each 
 		      contingency */
 
+  OPFLOWInitializationType type;
+  OPFLOWGenBusVoltageType genbusvoltagetype;
+
   TCOPFLOW *tcopflows; /* Array of multi-period optimal power flow application objects */
 
   PetscBool setupcalled; /* SCOPFLOWSetUp called? */

@@ -9,15 +9,29 @@ target_include_directories(
   testScopflowFunctionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+add_executable(testScopflowFunctionalityTOML selfcheck.cpp)
+
 set(tolerance "1e-3")
 
 #[[ Configure SCOPFLOW functionality tests ]]
 target_link_libraries(testScopflowFunctionality ExaGO::SCOPFLOW)
+target_link_libraries(testScopflowFunctionalityTOML ExaGO::SCOPFLOW)
 if(EXAGO_INSTALL_TESTS)
-  install(TARGETS testScopflowFunctionality
+  install(TARGETS testScopflowFunctionality testScopflowFunctionalityTOML
           RUNTIME DESTINATION tests/functionality
   )
-
+  # -- New TOML functionality tests
+  exago_add_test(
+    NAME
+    testScopflowFunctionalityTOML
+    DEPENDS
+    IPOPT
+    COMMAND
+    $<TARGET_FILE:testScopflowFunctionalityTOML>
+    ${CMAKE_CURRENT_SOURCE_DIR}/testcases.toml
+    -no_optfile
+  )
+  # --- Old smoke tests
   foreach(nc RANGE 1 9)
     # SCOPFLOW single-period tests
     exago_add_test(
