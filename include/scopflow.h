@@ -59,6 +59,11 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWSetGenBusVoltageType(SCOPFLOW, OPFLOWGenBusV
     3,1,0,8,9,1 ,0,0.1
  */
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetContingencyData(SCOPFLOW,ContingencyFileInputFormat,const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetPLoadData(SCOPFLOW,const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetQLoadData(SCOPFLOW,const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetWindGenProfile(SCOPFLOW,const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetTimeStep(SCOPFLOW,PetscReal);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetDuration(SCOPFLOW,PetscReal);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetUp(SCOPFLOW);
 PETSC_EXTERN PetscErrorCode SCOPFLOWCreateGlobalVector(SCOPFLOW,Vec*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWCreateMatrix(SCOPFLOW,Mat*);
@@ -70,7 +75,7 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWPrintSolution(SCOPFLOW,PetscInt);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSaveSolution(SCOPFLOW,PetscInt,OutputFormat,const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSaveSolutionAll(SCOPFLOW,OutputFormat,const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetConvergenceStatus(SCOPFLOW,PetscBool*);
-PETSC_EXTERN PetscErrorCode SCOPFLOWGetMode(SCOPFLOW,PetscInt*);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetMode(SCOPFLOW,PetscInt);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetNumIterations(SCOPFLOW,PetscInt*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetTolerance(SCOPFLOW,PetscReal);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetTolerance(SCOPFLOW,PetscReal*);
