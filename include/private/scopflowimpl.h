@@ -93,6 +93,12 @@ struct _p_SCOPFLOW{
   PetscReal tolerance; /* Tolerance for SCOPFLOW */
 
   char netfile[PETSC_MAX_PATH_LEN]; /* Network data file */
+  char pload[PETSC_MAX_PATH_LEN]; /* Pload data file */
+  char qload[PETSC_MAX_PATH_LEN]; /* Qload data file */
+  char windgen[PETSC_MAX_PATH_LEN]; /* Windgen data file */
+
+  PetscReal dT;
+  PetscReal duration;
 
   Vec  X,localX;    /* Global and local solution vector */
   Vec  G; /**< Inequality and equality constraint function */

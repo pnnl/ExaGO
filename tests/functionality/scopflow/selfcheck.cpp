@@ -106,8 +106,14 @@ int main(int argc, char** argv)
   std::string model;
   std::string network;
   std::string contingencies;
+  std::string pload;
+  std::string qload;
+  std::string windgen;
   int num_contingencies;
   double tolerance;
+  double duration;
+  double dT;
+  int mode;
   bool multiperiod;
 
   /* Parameters used to modify underlying opflow */
@@ -134,13 +140,19 @@ int main(int argc, char** argv)
       model = toml::find_or(presets, "model", "not set");
       network = toml::find_or(presets, "network", "not set");
       contingencies = toml::find_or(presets, "contingencies", "not set");
+      pload = toml::find_or(presets, "pload", "not set");
+      qload = toml::find_or(presets, "qload", "not set");
+      windgen = toml::find_or(presets, "windgen", "not set");
       num_contingencies = toml::find_or(presets, "num_contingencies", 0);
       expected_num_iters = toml::find_or(presets, "num_iters", 0);
       expected_obj_value = toml::find_or(presets, "obj_value", 0.0);
       tolerance = toml::find_or(presets, "tolerance", 0.0);
       opflow_initialization = toml::find_or(presets, "opflow_intitialization", 0);
       opflow_genbusvoltage = toml::find_or(presets, "opflow_genbusvoltage", 0);
+      mode = toml::find_or(presets, "mode", 0);
       multiperiod = toml::find_or(presets, "multiperiod", false);
+      duration = toml::find_or(presets, "duration", 5.0);
+      dT = toml::find_or(presets, "dT", 0.5);
     }
 
     /* If values are found for an individual test case, let these overwrite
@@ -149,13 +161,19 @@ int main(int argc, char** argv)
     model = toml::find_or(testcase, "model", model);
     network = toml::find_or(testcase, "network", network);
     contingencies = toml::find_or(testcase, "contingencies", contingencies);
+    pload = toml::find_or(testcase, "pload", pload); 
+    qload = toml::find_or(testcase, "qload", qload); 
+    windgen = toml::find_or(testcase, "windgen", windgen); 
     num_contingencies = toml::find_or(testcase, "num_contingencies", num_contingencies);
     expected_num_iters = toml::find_or(testcase, "num_iters", expected_num_iters);
     expected_obj_value = toml::find_or(testcase, "obj_value", expected_obj_value);
     tolerance = toml::find_or(testcase, "tolerance", tolerance);
     opflow_initialization = toml::find_or(testcase, "opflow_intitialization", opflow_initialization);
     opflow_genbusvoltage = toml::find_or(testcase, "opflow_genbusvoltage", opflow_genbusvoltage);
+    mode = toml::find_or(testcase, "mode", mode);
     multiperiod = toml::find_or(testcase, "multiperiod", multiperiod);
+    duration = toml::find_or(testcase, "duration", duration);
+    dT = toml::find_or(testcase, "dT", dT);
 
     SCOPFLOW scopflow;
     ierr = SCOPFLOWCreate(comm,&scopflow);CHKERRQ(ierr);
@@ -170,10 +188,24 @@ int main(int argc, char** argv)
     resolve_datafiles_path(contingencies);
     ierr = SCOPFLOWSetContingencyData(scopflow, NATIVE, contingencies.c_str());CHKERRQ(ierr);
 
+    // Prepend installation directory to network path
+    resolve_datafiles_path(pload);
+    ierr = SCOPFLOWSetPLoadData(scopflow,pload.c_str());CHKERRQ(ierr);
+
+    // Prepend installation directory to network path
+    resolve_datafiles_path(qload);
+    ierr = SCOPFLOWSetQLoadData(scopflow,qload.c_str());CHKERRQ(ierr);
+
+    // Prepend installation directory to network path
+    resolve_datafiles_path(windgen);
+    ierr = SCOPFLOWSetWindGenProfile(scopflow,windgen.c_str());CHKERRQ(ierr);
+
     // Set number of contingencies
     ierr = SCOPFLOWSetNumContingencies(scopflow, num_contingencies);CHKERRQ(ierr);
 
     ierr = SCOPFLOWEnableMultiPeriod(scopflow, (PetscBool)multiperiod);CHKERRQ(ierr);
+    ierr = SCOPFLOWSetTimeStep(scopflow, dT);CHKERRQ(ierr);
+    ierr = SCOPFLOWSetDuration(scopflow, duration);CHKERRQ(ierr);
 
     ierr = SCOPFLOWSetSolver(scopflow, solver.c_str());CHKERRQ(ierr);
 
@@ -181,6 +213,8 @@ int main(int argc, char** argv)
     ierr = SCOPFLOWSetGenBusVoltageType(scopflow, (OPFLOWGenBusVoltageType)opflow_genbusvoltage);CHKERRQ(ierr);
 
     ierr = SCOPFLOWSetModel(scopflow, model.c_str());CHKERRQ(ierr);
+    
+    ierr = SCOPFLOWSetMode(scopflow, (PetscInt)mode);CHKERRQ(ierr);
 
     ierr = SCOPFLOWSetUp(scopflow);CHKERRQ(ierr);
 
@@ -223,11 +257,17 @@ int main(int argc, char** argv)
       fmt_row(summary, col_width, "solver", solver);
       fmt_row(summary, col_width, "model", model);
       fmt_row(summary, col_width, "network", network);
+      fmt_row(summary, col_width, "pload", pload);
+      fmt_row(summary, col_width, "qload", qload);
+      fmt_row(summary, col_width, "windgen", windgen);
       fmt_row(summary, col_width, "contingencies", contingencies);
       fmt_row(summary, col_width, "num_contingencies", num_contingencies);
       fmt_row(summary, col_width, "opflow_intitialization", opflow_initialization);
       fmt_row(summary, col_width, "opflow_genbusvoltage", opflow_genbusvoltage);
       fmt_row(summary, col_width, "multiperiod", bool2str(multiperiod));
+      fmt_row(summary, col_width, "duration", duration);
+      fmt_row(summary, col_width, "dT", dT);
+      fmt_row(summary, col_width, "mode", mode);
       fmt_row(summary, col_width, "num_iters", expected_num_iters);
       fmt_comment(summary, col_width, "Actual Number of Iterations", numiter);
       fmt_row(summary, col_width, "obj_value", expected_obj_value);

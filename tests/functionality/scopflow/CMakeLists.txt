@@ -1,26 +1,17 @@
 #[[ Functionality tests for ExaGO SCOPFLOW applications ]]
 
-set_source_files_properties(
-  scopflow.c scopflowselfcheck.c PROPERTIES LANGUAGE CXX
-)
-
-add_executable(testScopflowFunctionality scopflow.c scopflowselfcheck.c)
-target_include_directories(
-  testScopflowFunctionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
 add_executable(testScopflowFunctionalityTOML selfcheck.cpp)
 
 set(tolerance "1e-3")
 
 #[[ Configure SCOPFLOW functionality tests ]]
-target_link_libraries(testScopflowFunctionality ExaGO::SCOPFLOW)
 target_link_libraries(testScopflowFunctionalityTOML ExaGO::SCOPFLOW)
 if(EXAGO_INSTALL_TESTS)
-  install(TARGETS testScopflowFunctionality testScopflowFunctionalityTOML
+  install(TARGETS testScopflowFunctionalityTOML
           RUNTIME DESTINATION tests/functionality
   )
-  # -- New TOML functionality tests
+  # SCOPFLOW Functionality Tests
+  message(STATUS "Configuring SCOPFLOW Functionality Tests.")
   exago_add_test(
     NAME
     testScopflowFunctionalityTOML
@@ -146,189 +137,4 @@ if(EXAGO_INSTALL_TESTS)
       HIOP
     )
   endif()
-
-  # SCOPFLOW Functionality Tests
-  message(STATUS "Configuring SCOPFLOW Functionality Tests.")
-  file(GLOB network_file ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m)
-  get_filename_component(input_file ${network_file} NAME)
-
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_SCOPFLOW_200bus_IPOPT
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:testScopflowFunctionality>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
-    -ctgcfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
-    -scopflow_solver
-    IPOPT
-    -scopflow_Nc
-    0
-    -scopflow_enable_multiperiod
-    0
-    -scopflow_tolerance
-    ${tolerance}
-    -opflow_initialization
-    ACPF
-    -opflow_genbusvoltage
-    VARIABLE_WITHIN_BOUNDS
-    DEPENDS
-    IPOPT
-  )
-
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_SCOPFLOW_200bus_IPOPT_15nCont
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:testScopflowFunctionality>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
-    -ctgcfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
-    -scopflow_solver
-    IPOPT
-    -scopflow_Nc
-    15
-    -scopflow_enable_multiperiod
-    0
-    -scopflow_tolerance
-    ${tolerance}
-    -opflow_initialization
-    ACPF
-    -opflow_genbusvoltage
-    VARIABLE_WITHIN_BOUNDS
-    DEPENDS
-    IPOPT
-  )
-
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_SCOPFLOW_200bus_IPOPT_mode_Corrective
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:testScopflowFunctionality>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
-    -ctgcfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
-    -scopflow_solver
-    IPOPT
-    -scopflow_Nc
-    15
-    -scopflow_enable_multiperiod
-    0
-    -scopflow_mode
-    1
-    -scopflow_tolerance
-    ${tolerance}
-    -opflow_initialization
-    ACPF
-    -opflow_genbusvoltage
-    VARIABLE_WITHIN_BOUNDS
-    DEPENDS
-    IPOPT
-  )
-
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_SCOPFLOW_9bus_IPOPT_9contingencies
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:testScopflowFunctionality>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod_gen3_wind.m
-    -ctgcfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9.cont
-    -scopflow_solver
-    IPOPT
-    -scopflow_Nc
-    9
-    -scopflow_enable_multiperiod
-    0
-    -scopflow_tolerance
-    ${tolerance}
-    -opflow_initialization
-    ACPF
-    -opflow_genbusvoltage
-    VARIABLE_WITHIN_BOUNDS
-    DEPENDS
-    IPOPT
-  )
-
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_SCOPFLOW_9bus_IPOPT_9contingencies_load_pq_scene_wind
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:testScopflowFunctionality>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod_gen3_wind.m
-    -ctgcfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9.cont
-    -scopflow_ploadprofile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/load_P.csv
-    -scopflow_qloadprofile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/load_Q.csv
-    -scopflow_windgenprofile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/scenarios_9bus.csv
-    -scopflow_solver
-    IPOPT
-    -scopflow_Nc
-    9
-    -scopflow_mode
-    1
-    -scopflow_enable_multiperiod
-    1
-    -scopflow_dT
-    5.0
-    -scopflow_duration
-    0.16666667
-    -scopflow_tolerance
-    ${tolerance}
-    -opflow_initialization
-    ACPF
-    -opflow_genbusvoltage
-    VARIABLE_WITHIN_BOUNDS
-    DEPENDS
-    IPOPT
-  )
-
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_SCOPFLOW_200bus_IPOPT_10contingencies_load_pq_scene_wind
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:testScopflowFunctionality>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
-    -ctgcfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
-    -scopflow_ploadprofile
-    ${CMAKE_SOURCE_DIR}/datafiles/TAMU200_scenarios/load_P.csv
-    -scopflow_qloadprofile
-    ${CMAKE_SOURCE_DIR}/datafiles/TAMU200_scenarios/load_Q.csv
-    -scopflow_windgenprofile
-    ${CMAKE_SOURCE_DIR}/datafiles/TAMU200_scenarios/scenarios_200bus.csv
-    -scopflow_solver
-    IPOPT
-    -scopflow_Nc
-    10
-    -scopflow_enable_multiperiod
-    1
-    -scopflow_dT
-    5.0
-    -scopflow_duration
-    0.16666667
-    -scopflow_tolerance
-    ${tolerance}
-    -opflow_initialization
-    ACPF
-    -opflow_genbusvoltage
-    VARIABLE_WITHIN_BOUNDS
-    DEPENDS
-    IPOPT
-  )
 endif()

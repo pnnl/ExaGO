@@ -236,6 +236,63 @@ PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW scopflow,const char netfile[])
   PetscFunctionReturn(0);
 }
 
+/**
+ * @brief Sets the pload data
+ * 
+ * @param[in] scopflow the scopflow object
+ * @param[in] profile the name of the pload file
+ * 
+ * @note The input data must be in MATPOWER data format
+*/
+PetscErrorCode SCOPFLOWSetPLoadData(SCOPFLOW scopflow,const char profile[])
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  ierr = PetscMemcpy(scopflow->pload,profile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Sets the qload data
+ * 
+ * @param[in] scopflow the scopflow object
+ * @param[in] profile the name of the qload file
+ * 
+ * @note The input data must be in MATPOWER data format
+*/
+PetscErrorCode SCOPFLOWSetQLoadData(SCOPFLOW scopflow,const char profile[])
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  ierr = PetscMemcpy(scopflow->qload,profile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Sets the WindGen profile data
+ * 
+ * @param[in] scopflow the scopflow object
+ * @param[in] profile the name of the profile 
+ * 
+ * @note The input data must be in MATPOWER data format
+*/
+PetscErrorCode SCOPFLOWSetWindGenProfile(SCOPFLOW scopflow,const char profile[])
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  ierr = PetscMemcpy(scopflow->windgen,profile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
 /* This is kind of a hack to update the variable bounds for OPFLOW based on the mode SCOPFLOW uses
 */
 PetscErrorCode SCOPFLOWUpdateOPFLOWVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu,void* ctx)
@@ -298,8 +355,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   char           ploadprofile[PETSC_MAX_PATH_LEN];
   char           qloadprofile[PETSC_MAX_PATH_LEN];
   char           windgenprofile[PETSC_MAX_PATH_LEN];
-  PetscBool      flg=PETSC_FALSE,flg1=PETSC_FALSE,flg2=PETSC_FALSE,flg3=PETSC_FALSE;
-  PetscReal      dT=5.0,duration=0.0; /* 5 minute time-step and single period */
+  PetscBool      flg1=PETSC_FALSE,flg2=PETSC_FALSE,flg3=PETSC_FALSE;
 
   PetscFunctionBegin;
 
@@ -316,8 +372,8 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
     ierr = PetscOptionsString("-scopflow_ploadprofile","Active power load profile","",ploadprofile,ploadprofile,200,&flg1);CHKERRQ(ierr);
     ierr = PetscOptionsString("-scopflow_qloadprofile","Reactive power load profile","",qloadprofile,qloadprofile,200,&flg2);CHKERRQ(ierr);
     ierr = PetscOptionsString("-scopflow_windgenprofile","Wind generation profile","",windgenprofile,windgenprofile,200,&flg3);CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-scopflow_dT","Length of time-step (minutes)","",dT,&dT,NULL);CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-scopflow_duration","Time horizon (hours)","",duration,&duration,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-scopflow_dT","Length of time-step (minutes)","",scopflow->dT,&scopflow->dT,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-scopflow_duration","Time horizon (hours)","",scopflow->duration,&scopflow->duration,NULL);CHKERRQ(ierr);
 
   }
   ierr = PetscOptionsReal("-scopflow_tolerance", "optimization tolerance", "", scopflow->tolerance,&scopflow->tolerance, NULL); CHKERRQ(ierr);
@@ -438,19 +494,23 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
       tcopflow = scopflow->tcopflows[c];
 
       ierr = TCOPFLOWSetNetworkData(tcopflow,scopflow->netfile);CHKERRQ(ierr);
-
-      if(flg1 && flg2) {
-	ierr = TCOPFLOWSetLoadProfiles(tcopflow,ploadprofile,qloadprofile);CHKERRQ(ierr);
-      } else if(flg1) {
-	ierr = TCOPFLOWSetLoadProfiles(tcopflow,ploadprofile,NULL);CHKERRQ(ierr);
-      } else if(flg2) {
-	ierr = TCOPFLOWSetLoadProfiles(tcopflow,NULL,qloadprofile);CHKERRQ(ierr);
+      // CLI option overrides any existing setting in scopflow
+      if(flg1)
+      {
+        SCOPFLOWSetPLoadData(scopflow, ploadprofile);
       }
-      if(flg3) {
-	ierr = TCOPFLOWSetWindGenProfiles(tcopflow,windgenprofile);CHKERRQ(ierr);
+      if(flg2)
+      {
+        SCOPFLOWSetQLoadData(scopflow, qloadprofile);
+      }
+      if(flg3)
+      {
+        SCOPFLOWSetWindGenProfile(scopflow,windgenprofile);
       }
 
-      ierr = TCOPFLOWSetTimeStepandDuration(tcopflow,dT,duration);CHKERRQ(ierr);
+    	ierr = TCOPFLOWSetLoadProfiles(tcopflow,scopflow->pload,scopflow->qload);CHKERRQ(ierr);
+	    ierr = TCOPFLOWSetWindGenProfiles(tcopflow,scopflow->windgen);CHKERRQ(ierr);
+      ierr = TCOPFLOWSetTimeStepandDuration(tcopflow,scopflow->dT,scopflow->duration);CHKERRQ(ierr);
 
       /* Set contingencies */
       if(scopflow->ctgcfileset) {
@@ -719,6 +779,32 @@ PetscErrorCode SCOPFLOWGetNumIterations(SCOPFLOW scopflow,PetscInt *iter)
 }
 
 /**
+ * @brief Set the time step for SCOPFLOW
+ * 
+ * @param[in] scopflow application object 
+ * @param[in] dT solver timestep 
+*/
+PetscErrorCode SCOPFLOWSetTimeStep(SCOPFLOW scopflow,PetscReal dT)
+{
+  PetscFunctionBegin;
+  scopflow->dT = dT;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Set the problem duration for SCOPFLOW
+ * 
+ * @param[in] scopflow application object 
+ * @param[in] duration application duration
+*/
+PetscErrorCode SCOPFLOWSetDuration(SCOPFLOW scopflow,PetscReal duration)
+{
+  PetscFunctionBegin;
+  scopflow->duration = duration;
+  PetscFunctionReturn(0);
+}
+
+/**
  * @brief Set the solver tolerance for SCOPFLOW
  * 
  * @param[in] scopflow application object 
@@ -771,7 +857,7 @@ PetscErrorCode SCOPFLOWSetNumContingencies(SCOPFLOW scopflow, PetscInt num_cont)
 }
 
 /**
- * @brief Set SCOPFLOW  
+ * @brief Set SCOPFLOW genbusvoltage type
  *
  * @param[in] scopflow application object
  * @param[in] type genbusvoltage type for underlying OPFLOW structs
@@ -780,6 +866,19 @@ PetscErrorCode SCOPFLOWSetGenBusVoltageType(SCOPFLOW scopflow, OPFLOWGenBusVolta
 {
   PetscFunctionBegin;
   scopflow->genbusvoltagetype = type;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Set SCOPFLOW mode
+ *
+ * @param[in] scopflow application object
+ * @param[in] mode for scopflow. 0 = preventive, 1 = corrective 
+ */
+PetscErrorCode SCOPFLOWSetMode(SCOPFLOW scopflow, PetscInt mode)
+{
+  PetscFunctionBegin;
+  scopflow->mode = mode;
   PetscFunctionReturn(0);
 }
 
