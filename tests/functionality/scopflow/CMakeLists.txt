@@ -1,6 +1,9 @@
 #[[ Functionality tests for ExaGO SCOPFLOW applications ]]
 
 add_executable(testScopflowFunctionalityTOML selfcheck.cpp)
+target_include_directories(
+  testScopflowFunctionalityTOML PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
 
 set(tolerance "1e-3")
 

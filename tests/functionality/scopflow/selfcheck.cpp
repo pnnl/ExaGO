@@ -6,68 +6,37 @@ static char help[] = "SCOPFLOW Functionality Tests.\n\n";
 #include <sstream>
 #include <toml.hpp>
 #include <scopflow.h>
-#include <exago_config.h>
-#include <utils.hpp>
-#include <version.hpp>
+#include "toml_utils.hpp"
 
-void resolve_datafiles_path(std::string &path)
+// Ensure that options for a given test case are internally consistent and that
+// all required parameters are defined.
+void ensure_options_are_consistent(toml::value testcase,
+    toml::value presets = toml::value{})
 {
-  std::vector<std::string> prefix;
-  prefix.push_back("./");
-  prefix.push_back( std::string(EXAGO_OPTIONS_DIR) + "/../");
-  for (int i=0; i<prefix.size(); i++) {
-    std::ifstream f{(prefix[i]+path).c_str()};
-    if (f.is_open()) {
-      path = prefix[i]+path;
-      f.close();
-      break;
+  auto ensure_option_available = [&] (const std::string& opt) {
+    bool is_available = testcase.contains(opt) || presets.contains(opt);
+    if (!is_available)
+    {
+      std::stringstream errs;
+      errs << "SCOPFLOW Test suite expected option '" << opt
+        << "' to be available, but it was not found in this testsuite"
+        << " configuration:\n";
+      errs << testcase << "\nwith these presets:\n" << presets;
+      throw ExaGOError(errs.str().c_str());
     }
-  }
+  };
+
+  for (const auto& opt : {"solver", "model", "network", "contingencies", "tolerance"})
+    ensure_option_available(opt);
+
+  bool is_multiperiod = false;
+  set_if_found(is_multiperiod, presets, "multiperiod");
+  set_if_found(is_multiperiod, testcase, "multiperiod");
+
+  if (is_multiperiod)
+    for (const auto& opt : {"qload", "pload", "dT", "windgen", "duration"})
+      ensure_option_available(opt);
 }
-
-/* For formatting reports as TOML */
-void fmt_row(std::stringstream& summary, int col_width, std::string key,
-    std::string value)
-{
-  std::stringstream value_fmt;
-  value_fmt << "'" << value << "'";
-
-  summary
-    << std::setw(col_width-1) << std::left << key << std::right << "="
-    << std::setw(col_width-1) << std::left << value_fmt.str() << std::right
-    << "\n";
-}
-
-template<typename T>
-void fmt_row(std::stringstream& summary, int col_width, std::string key, T value)
-{
-  summary
-    << std::setw(col_width-1) << std::left << key << std::right << "="
-    << std::setw(col_width-1) << std::left << value << std::right << "\n";
-}
-
-template<typename T>
-void fmt_comment(std::stringstream& summary, int col_width, std::string key, T value)
-{
-  summary
-    << "#"
-    << std::setw(col_width-2) << std::left << key << std::right << "="
-    << std::setw(col_width-1) << std::left << value << std::right << "\n";
-}
-
-static bool is_enabled(std::string dependency)
-{
-  const auto& deps = ExaGOGetDependencies();
-  auto it = deps.find(dependency);
-  if (it == deps.end())
-    return false;
-  return true;
-}
-
-static std::string bool2str(bool b)
-{
-  return (b?"true":"false");
-};
 
 int main(int argc, char** argv)
 {
@@ -136,44 +105,53 @@ int main(int argc, char** argv)
     if (testsuite.contains("presets"))
     {
       auto presets = toml::find(testsuite, "presets");
-      solver = toml::find_or(presets, "solver", "not set");
-      model = toml::find_or(presets, "model", "not set");
-      network = toml::find_or(presets, "network", "not set");
-      contingencies = toml::find_or(presets, "contingencies", "not set");
-      pload = toml::find_or(presets, "pload", "not set");
-      qload = toml::find_or(presets, "qload", "not set");
-      windgen = toml::find_or(presets, "windgen", "not set");
-      num_contingencies = toml::find_or(presets, "num_contingencies", 0);
-      expected_num_iters = toml::find_or(presets, "num_iters", 0);
-      expected_obj_value = toml::find_or(presets, "obj_value", 0.0);
-      tolerance = toml::find_or(presets, "tolerance", 0.0);
-      opflow_initialization = toml::find_or(presets, "opflow_intitialization", 0);
-      opflow_genbusvoltage = toml::find_or(presets, "opflow_genbusvoltage", 0);
-      mode = toml::find_or(presets, "mode", 0);
-      multiperiod = toml::find_or(presets, "multiperiod", false);
-      duration = toml::find_or(presets, "duration", 5.0);
-      dT = toml::find_or(presets, "dT", 0.5);
+
+      ensure_options_are_consistent(testcase, presets);
+
+      set_if_found(solver, presets, "solver");
+      set_if_found(model, presets, "model");
+      set_if_found(network, presets, "network");
+      set_if_found(contingencies, presets, "contingencies");
+      set_if_found(pload, presets, "pload");
+      set_if_found(qload, presets, "qload");
+      set_if_found(windgen, presets, "windgen");
+      set_if_found(num_contingencies, presets, "num_contingencies");
+      set_if_found(expected_num_iters, presets, "num_iters");
+      set_if_found(expected_obj_value, presets, "obj_value");
+      set_if_found(tolerance, presets, "tolerance");
+      set_if_found(opflow_initialization, presets, "opflow_initialization");
+      set_if_found(opflow_genbusvoltage, presets, "opflow_genbusvoltage");
+      set_if_found(mode, presets, "mode");
+      set_if_found(multiperiod, presets, "multiperiod");
+      set_if_found(duration, presets, "duration");
+      set_if_found(dT, presets, "dT");
+    }
+    else
+    {
+      // If there are no presets, ensure that each test case is internally
+      // consistent
+      ensure_options_are_consistent(testcase);
     }
 
     /* If values are found for an individual test case, let these overwrite
      * the global values */
-    solver = toml::find_or(testcase, "solver", solver);
-    model = toml::find_or(testcase, "model", model);
-    network = toml::find_or(testcase, "network", network);
-    contingencies = toml::find_or(testcase, "contingencies", contingencies);
-    pload = toml::find_or(testcase, "pload", pload); 
-    qload = toml::find_or(testcase, "qload", qload); 
-    windgen = toml::find_or(testcase, "windgen", windgen); 
-    num_contingencies = toml::find_or(testcase, "num_contingencies", num_contingencies);
-    expected_num_iters = toml::find_or(testcase, "num_iters", expected_num_iters);
-    expected_obj_value = toml::find_or(testcase, "obj_value", expected_obj_value);
-    tolerance = toml::find_or(testcase, "tolerance", tolerance);
-    opflow_initialization = toml::find_or(testcase, "opflow_intitialization", opflow_initialization);
-    opflow_genbusvoltage = toml::find_or(testcase, "opflow_genbusvoltage", opflow_genbusvoltage);
-    mode = toml::find_or(testcase, "mode", mode);
-    multiperiod = toml::find_or(testcase, "multiperiod", multiperiod);
-    duration = toml::find_or(testcase, "duration", duration);
-    dT = toml::find_or(testcase, "dT", dT);
+    set_if_found(solver, testcase, "solver");
+    set_if_found(model, testcase, "model");
+    set_if_found(network, testcase, "network");
+    set_if_found(contingencies, testcase, "contingencies");
+    set_if_found(pload, testcase, "pload");
+    set_if_found(qload, testcase, "qload");
+    set_if_found(windgen, testcase, "windgen");
+    set_if_found(num_contingencies, testcase, "num_contingencies");
+    set_if_found(expected_num_iters, testcase, "num_iters");
+    set_if_found(expected_obj_value, testcase, "obj_value");
+    set_if_found(tolerance, testcase, "tolerance");
+    set_if_found(opflow_initialization, testcase, "opflow_initialization");
+    set_if_found(opflow_genbusvoltage, testcase, "opflow_genbusvoltage");
+    set_if_found(mode, testcase, "mode");
+    set_if_found(multiperiod, testcase, "multiperiod");
+    set_if_found(duration, testcase, "duration");
+    set_if_found(dT, testcase, "dT");
 
     SCOPFLOW scopflow;
     ierr = SCOPFLOWCreate(comm,&scopflow);CHKERRQ(ierr);
@@ -291,9 +269,11 @@ int main(int argc, char** argv)
     ExaGOLog(EXAGO_LOG_ERROR, "%s%s",
         testsuite_name.c_str(),
         ":\ntests with the following configurations failed to match expected values:\n");
-    fmt_row(summary, col_width, "testsuite_name",
-        "ExaGO Test Suite Automatically Generated from Failed Tests");
-    ExaGOLog(EXAGO_LOG_ERROR, "%s", summary.str().c_str());
+    std::cerr << "# begin autogenerated TOML test suite\n";
+    fmt_row(std::cerr, col_width, "testsuite_name",
+        "'ExaGO Test Suite Automatically Generated from Failed Tests'");
+    std::cerr << summary.str();
+    std::cerr << "# end autogenerated TOML test suite\n";
   }
   ExaGOFinalize();
   return fail;
