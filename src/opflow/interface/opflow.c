@@ -520,6 +520,8 @@ PetscErrorCode OPFLOWGetTolerance(OPFLOW opflow,PetscReal *tol)
   Input Parameters:
 + opflow - opflow application object
 - solvername - name of the solver
+
+  Note: must be called before OPFLOWSetUp
 */
 PetscErrorCode OPFLOWSetSolver(OPFLOW opflow,const char* solvername)
 {
@@ -535,7 +537,7 @@ PetscErrorCode OPFLOWSetSolver(OPFLOW opflow,const char* solvername)
     }
   }
 
-  if(!r) SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_UNKNOWN_TYPE,"Unknown type for OPFLOW Solver %s",solvername);
+  if(!r) SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_UNKNOWN_TYPE,"Unknown type for OPFLOW Solver %s. You may need to rebuild ExaGO to support this solver.",solvername);
 
   /* Initialize (Null) the function pointers */
   opflow->solverops.destroy = 0;
@@ -555,6 +557,8 @@ PetscErrorCode OPFLOWSetSolver(OPFLOW opflow,const char* solvername)
   Input Parameters:
 + opflow - opflow application object
 - modelname - name of the model
+
+  Note: must be called before OPFLOWSetUp
 */
 PetscErrorCode OPFLOWSetModel(OPFLOW opflow,const char* modelname)
 {
@@ -570,7 +574,7 @@ PetscErrorCode OPFLOWSetModel(OPFLOW opflow,const char* modelname)
     }
   }
 
-  if(!r) SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_UNKNOWN_TYPE,"Unknown type for OPFLOW Model %s",modelname);
+  if(!r) SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_UNKNOWN_TYPE,"Unknown type for OPFLOW Model %s. You may need to rebuild ExaGO with the solver that supports this model.",modelname);
 
   /* Null the function pointers */
   opflow->modelops.destroy                        = 0;
@@ -836,10 +840,6 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
 
   PetscFunctionBegin;
 
-  /* Default model and solver */
-  PetscStrcpy(modelname,"POWER_BALANCE_POLAR");
-  PetscStrcpy(solvername,"IPOPT");
-
   /* Read run-time options */
   ierr =  PetscOptionsBegin(opflow->comm->type,NULL,"OPFLOW options",NULL);CHKERRQ(ierr);
 
@@ -870,24 +870,30 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
   ierr = PetscOptionsReal("-opflow_powerimbalance_penalty","Power imbalance penalty","",opflow->powerimbalance_penalty,&opflow->powerimbalance_penalty,NULL);CHKERRQ(ierr);
   PetscOptionsEnd();
 
-  /* Set model */
+  /* Set model if CLI argument */
   if(modelset) {
     if(opflow->model) ierr = (*opflow->modelops.destroy)(opflow);
     ierr = OPFLOWSetModel(opflow,modelname);CHKERRQ(ierr);
     //    ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s model\n",modelname);CHKERRQ(ierr);
   } else {
+    // Specify default arguments if model not set
     if(!opflow->model) {
+#if defined(EXAGO_ENABLE_IPOPT)
       ierr = OPFLOWSetModel(opflow,OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
+#else
+      ierr = OPFLOWSetModel(opflow,OPFLOWMODEL_PBCAR);CHKERRQ(ierr);
+#endif
       //      ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s model\n",OPFLOWMODEL_PBCAR);CHKERRQ(ierr);
     }
   }
 
-  /* Set solver */
+  /* Set solver if CLI argument */
   if(solverset) {
     if(opflow->solver) ierr = (*opflow->solverops.destroy)(opflow);
     ierr = OPFLOWSetSolver(opflow,solvername);CHKERRQ(ierr);
     //    ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s solver\n",solvername);CHKERRQ(ierr);
   } else {
+    // Specify default arguments if solver not set
     if(!opflow->solver) {
 #if defined(EXAGO_ENABLE_IPOPT)
       ierr = OPFLOWSetSolver(opflow,OPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
@@ -897,7 +903,8 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow)
       //      ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s solver\n",OPFLOWSOLVER_IPOPT);CHKERRQ(ierr); 
     }
   }
-
+  /* Once model and solver are set, we should check for compatibility */
+  ierr = OPFLOWCheckModelSolverCompatibility(opflow);CHKERRQ(ierr);
 
   /* Set up underlying PS object */
   ierr = OPFLOWSetUpPS(opflow);CHKERRQ(ierr);
@@ -1831,6 +1838,14 @@ PetscErrorCode OPFLOWSetUpdateVariableBoundsFunction(OPFLOW opflow,PetscErrorCod
   PetscFunctionReturn(0);
 }
 
+/**
+ * @brief Sets intialization type for opflow
+ *
+ * @param[in] opflow the OPFLOW object.
+ * @param[in] type the initialization type.
+ *
+ * @note Must be called before OPFLOWSetUp
+ */
 PetscErrorCode OPFLOWSetInitializationType(OPFLOW opflow, OPFLOWInitializationType type)
 {
   PetscFunctionBegin;
@@ -1838,3 +1853,62 @@ PetscErrorCode OPFLOWSetInitializationType(OPFLOW opflow, OPFLOWInitializationTy
   PetscFunctionReturn(0);
 }
 
+/**
+ * @brief Check used internally to verify model + solver compatibility
+ *
+ * @param[in] opflow model to verify
+ *
+ * @note Models and solvers can only be defined per what exago is built with.
+ */
+PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow)
+{
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+#if defined(EXAGO_ENABLE_IPOPT)
+  PetscBool ipopt, ipopt_pbpol, ipopt_pbcar, ipopt_ibcar, ipopt_ibcar2;
+  ierr = PetscStrcmp(opflow->solvername,OPFLOWSOLVER_IPOPT,&ipopt);CHKERRQ(ierr);
+  ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBPOL,&ipopt_pbpol);CHKERRQ(ierr);
+  ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBCAR,&ipopt_pbcar);CHKERRQ(ierr);
+  ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_IBCAR,&ipopt_ibcar);CHKERRQ(ierr);
+  ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_IBCAR2,&ipopt_ibcar2);CHKERRQ(ierr);
+  if (ipopt && !(ipopt_pbpol || ipopt_pbcar || ipopt_ibcar || ipopt_ibcar2))
+  {
+    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_SUP,"OPFLOW solver IPOPT incompatible with model %s",opflow->modelname);
+  }
+#endif
+#if defined(EXAGO_ENABLE_HIOP)
+  PetscBool hiop, hiop_pbpol;
+  ierr = PetscStrcmp(opflow->solvername,OPFLOWSOLVER_HIOP,&hiop);CHKERRQ(ierr);
+  ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBPOLHIOP,&hiop_pbpol);CHKERRQ(ierr);
+#if defined(EXAGO_ENABLE_RAJA)
+  PetscBool rajahiop_pbpol;
+  ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBPOLRAJAHIOP,&rajahiop_pbpol);CHKERRQ(ierr);
+#else
+  PetscBool rajahiop_pbpol = PETSC_FALSE;
+#endif // RAJA
+#if defined(EXAGO_ENABLE_HIOP_SPARSE)
+  PetscBool hiop_sparse;
+  PetscBool hiop_sparse_pbpol;
+  ierr = PetscStrcmp(opflow->solvername,OPFLOWSOLVER_HIOPSPARSE,&hiop_sparse);CHKERRQ(ierr);
+  ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBPOL,&hiop_sparse_pbpol);CHKERRQ(ierr);
+  if (hiop_sparse && !hiop_sparse_pbpol)
+  {
+    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_SUP,"OPFLOW solver HIOPSPARSE incompatible with model %s",opflow->modelname);
+  }
+#else
+  PetscBool hiop_sparse = PETSC_FALSE;
+#endif // HIOP_SPARSE
+  if ((hiop && !hiop_sparse) && !(hiop_pbpol || rajahiop_pbpol))
+  {
+    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_SUP,"OPFLOW solver HIOP incompatible with model %s",opflow->modelname);
+  }
+#endif // HIOP
+  PetscBool tao, tao_pbcar;
+  ierr = PetscStrcmp(opflow->solvername,OPFLOWSOLVER_TAO,&tao);CHKERRQ(ierr);
+  ierr = PetscStrcmp(opflow->modelname,OPFLOWMODEL_PBCAR,&tao_pbcar);CHKERRQ(ierr);
+  if (tao && !tao_pbcar)
+  {
+    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_SUP,"OPFLOW solver TAO incompatible with model %s",opflow->modelname);
+  }
+  PetscFunctionReturn(0);
+};

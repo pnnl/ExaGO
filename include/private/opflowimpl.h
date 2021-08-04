@@ -221,4 +221,7 @@ extern PetscErrorCode OPFLOWModelRegisterAll(OPFLOW);
 /* Register all OPFLOW solvers */
 extern PetscErrorCode OPFLOWSolverRegisterAll(OPFLOW);
 
+/* Internal function to check model + solver compatibility */
+extern PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW);
+
 #endif
