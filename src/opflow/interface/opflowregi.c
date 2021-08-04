@@ -78,7 +78,9 @@ PetscErrorCode OPFLOWModelRegisterAll(OPFLOW opflow)
   PetscFunctionBegin;
   if(opflow->OPFLOWModelRegisterAllCalled) PetscFunctionReturn(0);
 
+#if defined(EXAGO_ENABLE_IPOPT) || defined(EXAGO_ENABLE_HIOP_SPARSE)
   ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_PBPOL,OPFLOWModelCreate_PBPOL);CHKERRQ(ierr);
+#endif
   ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_PBCAR,OPFLOWModelCreate_PBCAR);CHKERRQ(ierr);
   ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_IBCAR,OPFLOWModelCreate_IBCAR);CHKERRQ(ierr);
   ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_IBCAR2,OPFLOWModelCreate_IBCAR2);CHKERRQ(ierr);
