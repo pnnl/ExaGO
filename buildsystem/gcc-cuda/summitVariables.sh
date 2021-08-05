@@ -1,3 +1,10 @@
+export MY_CLUSTER=summit
+export PROJ_DIR=/autofs/nccs-svm1_proj/csc359
+
+module use -a /autofs/nccs-svm1_proj/csc359/installs/spack/share/spack/modules/linux-rhel7-power9le
+
+module purge
+
 # autoconf-archive@2019.01.06%gcc@7.4.0 arch=linux-rhel7-power9le
 module load exasgd-autoconf-archive/2019.01.06/gcc-7.4.0-zr3h7p2
 # berkeley-db@18.1.40%gcc@7.4.0+cxx~docs+stl patches=b231fcc4d5cff05e5c3a4814f6a5af0e9a966428dc2176540d2c05aff41de522 arch=linux-rhel7-power9le
