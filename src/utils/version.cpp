@@ -87,7 +87,7 @@ PetscErrorCode ExaGOVersionGetFullVersionInfo(char** str)
     const auto& name = dep.first;
     const auto& is_enabled = dep.second;
     char buf[1024];
-    sprintf(buf, "\t%-20s%20s\n", name, is_enabled?"YES":"NO");
+    sprintf(buf, "\t%-20s%20s\n", name.c_str(), is_enabled?"YES":"NO");
     strcat(*str, buf);
   }
   return 0;
