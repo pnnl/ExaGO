@@ -3,6 +3,7 @@
 #include <utils.hpp>
 #include <version.hpp>
 #include <exago_config.h>
+#include <map>
 
 /**
  * 

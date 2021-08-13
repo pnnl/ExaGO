@@ -159,6 +159,8 @@ struct _p_OPFLOW{
   struct _p_OPFLOWModelOps modelops;
   char modelname[64];
 
+  char _p_hiop_compute_mode[64];
+
   /* List of models and solvers registered */
   struct _p_OPFLOWModelList OPFLOWModelList[OPFLOWMODELSMAX];
   struct _p_OPFLOWSolverList OPFLOWSolverList[OPFLOWSOLVERSMAX];

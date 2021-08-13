@@ -1,0 +1,121 @@
+testsuite_name = "HiOp OPFLOW Functionality"
+
+[presets]
+solver = 'HIOP'
+model = 'POWER_BALANCE_HIOP'
+tolerance = 1e-3
+gen_bus_voltage_type = 0 # VARIABLE_WITHIN_BOUNDS
+has_gen_set_point = false
+
+# - HIOP solver
+# -- HIOP model
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'  
+decription = 'datafiles/case9/case9mod.m base case'  
+is_loadloss_active = false
+is_powerimb_active = false
+num_iters = 14
+obj_value = 4.1444511e+03
+
+[[testcase]]
+network = 'datafiles/case118.m'
+description = 'datafiles/case118.m base case'
+is_loadloss_active = false
+is_powerimb_active = false
+num_iters = 25
+obj_value = 1.2965990e+05
+
+#[[testcase]]
+#network = 'datafiles/case_ACTIVSg200.m'
+#description = 'datafiles/case_ACTIVSg200.m base case'
+#is_loadloss_active = false
+#is_powerimb_active = false
+#num_iters = 130
+#obj_value = 2.7552974e+04
+
+[[testcase]]
+network = 'datafiles/case118.m'
+description = 'datafiles/case118.m with generator set point'
+is_loadloss_active = false
+is_powerimb_active = false
+has_gen_set_point = true
+num_iters = 26
+obj_value = 1.2965990e+05
+
+
+# -- HIOP model with load loss
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'  
+description = 'datafiles/case9/case9mod.m with load loss'  
+is_loadloss_active = true
+is_powerimb_active = false
+num_iters = 14
+obj_value = 4.1444511e+03
+
+[[testcase]]
+network = 'datafiles/case118.m'
+description = 'datafiles/case118.m with load loss'
+is_loadloss_active = true
+is_powerimb_active = false
+num_iters = 26
+obj_value = 1.2965990e+05
+
+#[[testcase]]
+#network = 'datafiles/case_ACTIVSg200.m'
+#description = 'datafiles/case_ACTIVSg200.m with load loss'
+#is_loadloss_active = true
+#is_powerimb_active = false
+#num_iters = 130
+#obj_value = 2.7552974e+04
+
+# -- HIOP model with power imbalance
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'  
+description = 'datafiles/case9/case9mod.m with power imbalance'  
+is_loadloss_active = false
+is_powerimb_active = true
+num_iters = 14
+obj_value = 4.1444511e+03
+
+[[testcase]]
+network = 'datafiles/case118.m'
+description = 'datafiles/case118.m with power imbalance'
+is_loadloss_active = false
+is_powerimb_active = true
+num_iters = 25
+obj_value = 1.2965990e+05
+
+#[[testcase]]
+#network = 'datafiles/case_ACTIVSg200.m'
+#description = 'datafiles/case_ACTIVSg200.m with power imbalance'
+#is_loadloss_active = false
+#is_powerimb_active = true
+#num_iters = 130
+#obj_value = 2.7552974e+04
+
+# -- HIOP model with load loss and power imbalance
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'  
+description = 'datafiles/case9/case9mod.m with load loss and power imbalance'  
+is_loadloss_active = true
+is_powerimb_active = true
+num_iters = 14
+obj_value = 4.1444511e+03
+
+[[testcase]]
+network = 'datafiles/case118.m'
+description = 'datafiles/case118.m with load loss and power imbalance'  
+is_loadloss_active = true
+is_powerimb_active = true
+num_iters = 26
+obj_value = 1.2965990e+05
+
+#[[testcase]]
+#network = 'datafiles/case_ACTIVSg200.m'
+#description = 'datafiles/case_ACTIVSg200.m with load loss and power imbalance'  
+#is_loadloss_active = true
+#is_powerimb_active = true
+#num_iters = 130
+#obj_value = 2.7552974e+04
+
+# - end HIOP solver

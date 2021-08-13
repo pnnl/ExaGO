@@ -28,7 +28,7 @@ module load exasgd-gmp/6.2.1/gcc-7.4.0-6svtfvr
 # hdf5@1.10.7%gcc@7.4.0~cxx~debug~fortran~hl~java+mpi+pic+shared~szip~threadsafe api=none arch=linux-rhel7-power9le
 module load exasgd-hdf5/1.10.7/openmpi-3.1.5/gcc-7.4.0-g2s5bk6
 # hiop@0.4.1%gcc@7.4.0+cuda~deepchecking+gpu~hip~ipo~jsrun+kron+mpi+raja+shared~sparse~srun amdgpu_target=none build_type=RelWithDebInfo cuda_arch=70 arch=linux-rhel7-power9le
-module load exasgd-hiop/0.4.1/cuda-10.2.89-system/openmpi-3.1.5/gcc-7.4.0-26m7qsd
+module load exasgd-hiop/0.4.1/cuda-10.2.89-system/openmpi-3.1.5/gcc-7.4.0-mwgv3uv
 # hypre@2.20.0%gcc@7.4.0~complex~cuda~debug~int64~internal-superlu~mixedint+mpi~openmp+shared~superlu-dist~unified-memory cuda_arch=none patches=6e3336b1d62155f6350dfe42b0f9ea25d4fa0af60c7e540959139deb93a26059 arch=linux-rhel7-power9le
 module load exasgd-hypre/2.20.0/openmpi-3.1.5/gcc-7.4.0-foavljr
 # ipopt@3.12.10%gcc@7.4.0+coinhsl~debug~mumps arch=linux-rhel7-power9le
