@@ -1,0 +1,76 @@
+testsuite_name = "IPOPT OPFLOW Functionality Test Suite"
+
+[presets]
+model = 'POWER_BALANCE_CARTESIAN'
+solver = 'IPOPT'
+tolerance = 1e-3
+gen_bus_voltage_type = 1 # FIXED_WITHIN_QBOUNDS
+
+# -- PBCAR model
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'  
+is_loadloss_active =	false
+is_powerimb_active =	false
+num_iters = 21
+obj_value = 4.144460534632e+03
+
+[[testcase]]
+network = 'datafiles/case118.m'
+is_loadloss_active =	false
+is_powerimb_active =	false
+num_iters = 15
+obj_value = 1.296606940412e+05
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+is_loadloss_active =	false
+is_powerimb_active =	false
+num_iters = 80
+obj_value = 2.755757042019e+04
+
+# -- IBCAR model
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'  
+is_loadloss_active =	false
+is_powerimb_active =	false
+num_iters = 24 
+obj_value = 4.144460534632e+03
+
+[[testcase]]
+network = 'datafiles/case118.m'
+is_loadloss_active =	false
+is_powerimb_active =	false
+num_iters = 29 
+obj_value = 1.296606940412e+05
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+is_loadloss_active =	false
+is_powerimb_active =	false
+num_iters = 256
+obj_value = 2.755757042019e+04
+
+# -- IBCAR2 model
+[[testcase]]
+model = 'CURRENT_BALANCE_CARTESIAN2'
+network = 'datafiles/case9/case9mod.m'  
+is_loadloss_active =	false
+is_powerimb_active =	false
+num_iters = 20 
+obj_value = 4.144460534632e+03
+
+[[testcase]]
+model = 'CURRENT_BALANCE_CARTESIAN2'
+network = 'datafiles/case118.m'
+is_loadloss_active =	false
+is_powerimb_active =	false
+num_iters = 36 
+obj_value = 1.296606940412e+05
+
+[[testcase]]
+model = 'CURRENT_BALANCE_CARTESIAN2'
+network = 'datafiles/case_ACTIVSg200.m'
+is_loadloss_active =	false
+is_powerimb_active =	false
+num_iters = 121
+obj_value = 2.755757042019e+04

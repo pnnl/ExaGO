@@ -1,0 +1,98 @@
+testsuite_name = "HiOp OPFLOW Functionality"
+
+[presets]
+solver = 'HIOP'
+model = 'PBPOLRAJAHIOP'
+hiop_compute_mode = 'GPU'
+tolerance = 1e-3
+gen_bus_voltage_type = 0 # VARIABLE_WITHIN_BOUNDS
+
+# - HIOP solver
+# -- RAJAHIOP model
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'  
+is_loadloss_active = false
+is_powerimb_active = false
+num_iters = 14
+obj_value = 4.1444511e+03
+
+#[[testcase]]
+#network = 'datafiles/case118.m'
+#is_loadloss_active = false
+#is_powerimb_active = false
+#num_iters = 25
+#obj_value = 1.2965990e+05
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+is_loadloss_active = false
+is_powerimb_active = false
+num_iters = 140
+obj_value = 2.7552974e+04
+
+# -- RAJAHIOP model with load loss
+#[[testcase]]
+#network = 'datafiles/case9/case9mod.m'  
+#is_loadloss_active = true
+#is_powerimb_active = false
+#num_iters = 14
+#obj_value = 4.1444511e+03
+
+#[[testcase]]
+#network = 'datafiles/case118.m'
+#is_loadloss_active = true
+#is_powerimb_active = false
+#num_iters = 25
+#obj_value = 1.2965990e+05
+
+#[[testcase]]
+#network = 'datafiles/case_ACTIVSg200.m'
+#is_loadloss_active = true
+#is_powerimb_active = false
+#num_iters = 140
+#obj_value = 2.7552974e+04
+
+# -- RAJAHIOP model with power imbalance
+#[[testcase]]
+#network = 'datafiles/case9/case9mod.m'  
+#is_loadloss_active = false
+#is_powerimb_active = true
+#num_iters = 14
+#obj_value = 4.1444511e+03
+
+#[[testcase]]
+#network = 'datafiles/case118.m'
+#is_loadloss_active = false
+#is_powerimb_active = true
+#num_iters = 25
+#obj_value = 1.2965990e+05
+
+#[[testcase]]
+#network = 'datafiles/case_ACTIVSg200.m'
+#is_loadloss_active = false
+#is_powerimb_active = true
+#num_iters = 140
+#obj_value = 2.7552974e+04
+
+
+# -- RAJAHIOP model with load loss and power imbalance
+#[[testcase]]
+#network = 'datafiles/case9/case9mod.m'  
+#is_loadloss_active = true
+#is_powerimb_active = true
+#num_iters = 12
+#obj_value = 4.1444511e+03
+
+#[[testcase]]
+#network = 'datafiles/case118.m'
+#is_loadloss_active = true
+#is_powerimb_active = true
+#num_iters = 26
+#obj_value = 1.2965990e+05
+
+#[[testcase]]
+#network = 'datafiles/case_ACTIVSg200.m'
+#is_loadloss_active = true
+#is_powerimb_active = true
+#num_iters = 140
+#obj_value = 2.7552974e+04

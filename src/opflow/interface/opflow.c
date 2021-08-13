@@ -105,6 +105,21 @@ PetscErrorCode OPFLOWSetBusPowerImbalancePenalty(OPFLOW opflow,PetscReal penalty
 }
 
 /*
+  OPFLOWSetHIOPComputeMode - Set compute mode for HIOP solver
+  Input parameters
++ opflow - OPFLOW object
+- mode - mode for HIOP solver
+
+  Command-line option: -hiop_compute_mode
+*/
+PetscErrorCode OPFLOWSetHIOPComputeMode(OPFLOW opflow, const char* mode)
+{
+  PetscFunctionBegin;
+  strcpy(opflow->_p_hiop_compute_mode,mode);
+  PetscFunctionReturn(0);
+}
+
+/*
   OPFLOWHasGenSetPoint - Use gen. set point in the OPFLOW formulation
 
   Input Parameters:
@@ -387,6 +402,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   opflow->spdnordering = PETSC_FALSE;
   opflow->setupcalled = PETSC_FALSE;
 
+  strcpy(opflow->_p_hiop_compute_mode,"auto");
   *opflowout = opflow;
 
   //  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Application created\n");

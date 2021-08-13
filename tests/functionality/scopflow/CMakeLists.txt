@@ -21,6 +21,7 @@ if(EXAGO_INSTALL_TESTS)
     DEPENDS
     IPOPT
     COMMAND
+    ${RUNCMD}
     $<TARGET_FILE:testScopflowFunctionalityTOML>
     ${CMAKE_CURRENT_SOURCE_DIR}/testcases.toml
     -no_optfile

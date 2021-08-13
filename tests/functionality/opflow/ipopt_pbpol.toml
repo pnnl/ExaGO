@@ -1,0 +1,102 @@
+testsuite_name = "IPOPT OPFLOW Functionality Test Suite"
+
+[presets]
+model = 'POWER_BALANCE_POLAR'
+solver = 'IPOPT'
+tolerance = 1e-3
+gen_bus_voltage_type = 1 # FIXED_WITHIN_QBOUNDS
+
+[[testcase]]
+is_loadloss_active = false
+is_powerimb_active = false
+network = 'datafiles/case9/case9mod.m'
+num_iters = 25
+obj_value = 4.1513585954144e+03
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'  
+is_loadloss_active =	false
+is_powerimb_active =	false
+num_iters = 25 
+obj_value = 4.1513585954144e+03
+
+[[testcase]]
+network = 'datafiles/case118.m'
+is_loadloss_active =	false
+is_powerimb_active =	false
+num_iters = 255
+obj_value = 1.3013187197492e+05
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+is_loadloss_active =	false
+is_powerimb_active =	false
+num_iters = 191
+obj_value = 2.7564247365138e+04
+
+# -- PBPOL model with load loss
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'  
+is_loadloss_active =	true
+is_powerimb_active =	false
+num_iters = 29 
+obj_value = 4.1513585954144e+03
+
+[[testcase]]
+network = 'datafiles/case118.m'
+is_loadloss_active =	true
+is_powerimb_active =	false
+num_iters = 716
+obj_value = 1.3013187197492e+05
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+is_loadloss_active =	true
+is_powerimb_active =	false
+num_iters = 390
+obj_value = 2.7564247365138e+04
+
+# -- PBPOL model with power imbalance
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'  
+is_loadloss_active =	false
+is_powerimb_active =	true
+num_iters = 25 
+obj_value = 4.1513585954144e+03
+
+[[testcase]]
+network = 'datafiles/case118.m'
+is_loadloss_active =	false
+is_powerimb_active =	true
+num_iters = 166
+obj_value = 1.3013187197492e+05
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+is_loadloss_active =	false
+is_powerimb_active =	true
+num_iters = 245
+obj_value = 2.7564247365138e+04
+
+# -- PBPOL model with load loss and power imbalance
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'  
+is_loadloss_active =	true
+is_powerimb_active =	true
+num_iters = 28 
+obj_value = 4.1513585954144e+03
+
+[[testcase]]
+network = 'datafiles/case118.m'
+is_loadloss_active =	true
+is_powerimb_active =	true
+num_iters = 154
+obj_value = 1.3013187197492e+05
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+is_loadloss_active =	true
+is_powerimb_active =	true
+num_iters = 493
+obj_value = 2.7564247365138e+04
+

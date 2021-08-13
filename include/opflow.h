@@ -56,6 +56,7 @@ PETSC_EXTERN PetscErrorCode OPFLOWCreateMatrix(OPFLOW,Mat*);
 PETSC_EXTERN PetscErrorCode OPFLOWSolve(OPFLOW);
 PETSC_EXTERN PetscErrorCode OPFLOWSetInitialGuess(OPFLOW,Vec);
 PETSC_EXTERN PetscErrorCode OPFLOWSetTolerance(OPFLOW,PetscReal);
+PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPComputeMode(OPFLOW,const char *);
 PETSC_EXTERN PetscErrorCode OPFLOWGetTolerance(OPFLOW,PetscReal*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetNumIterations(OPFLOW,PetscInt*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetObjectiveType(OPFLOW,OPFLOWObjectiveType*);

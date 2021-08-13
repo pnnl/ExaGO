@@ -476,8 +476,6 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int* argc, char*** argv,
   optfiles.push_back("./" + std::string{filename});
   optfiles.push_back("./options/" + std::string{filename});
 
-  
-
   auto file_it = FirstExistingFile(optfiles);
 
   if (file_it == optfiles.end())

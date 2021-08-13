@@ -15,12 +15,41 @@ target_include_directories(
   testOpflowFunctionality2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+add_executable(testOpflowFunctionalityTOML selfcheck.cpp)
+
+target_include_directories(
+  testOpflowFunctionalityTOML PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+                                     ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
 set(tolerance "1e-3")
 
 #[[ Configure OPFLOW functionality tests ]]
 target_link_libraries(testOpflowFunctionality ExaGO::OPFLOW)
 target_link_libraries(testOpflowFunctionality2 ExaGO::OPFLOW)
+target_link_libraries(testOpflowFunctionalityTOML ExaGO::OPFLOW)
 if(EXAGO_INSTALL_TESTS)
+
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_OPFLOW_HIOP_TOML_TESTSUITE
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:testOpflowFunctionalityTOML>
+    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_pbpolhiop.toml
+    -no_optfile
+    DEPENDS
+    HIOP
+  )
+
+  install(TARGETS testOpflowFunctionalityTOML
+          RUNTIME DESTINATION tests/functionality
+  )
+
+  set(test_suites hiop_pbpolhiop.toml)
+
+  install(FILES ${test_suites} DESTINATION share/exago/testsuites)
+
   install(TARGETS testOpflowFunctionality
           RUNTIME DESTINATION tests/functionality
   )
