@@ -122,7 +122,7 @@ Following are the value of parameters of interest for this test:
 - $`G_{l}=0.25`$
 - $`B_{l}=-0.05`$
 
-### Solution for N=1
+### Residual vector for the equality constraints for N=1
 With the parameters of the example network array is:
 
 <table>
@@ -154,7 +154,7 @@ a b c d e f g h i j
 
  i j  
 
-### Solution for N=3
+### Residual vector for the equality constraints for N=3
 So for N=3 the array is:
 <table>
 <tr>
