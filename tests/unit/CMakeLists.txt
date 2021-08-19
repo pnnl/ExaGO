@@ -1,4 +1,4 @@
-if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_GPU)
+if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_CUDA)
   set_source_files_properties(TestAcopf.cpp PROPERTIES LANGUAGE CUDA)
 endif()
 
