@@ -120,6 +120,21 @@ PetscErrorCode OPFLOWSetHIOPComputeMode(OPFLOW opflow, const char* mode)
 }
 
 /*
+  OPFLOWSetHIOPVerbosityLevel - Set verbosity level for HIOP solver
+  Input parameters
++ opflow - OPFLOW object
+- level - verbositiy level for HIOP solver
+
+  Command-line option: -hiop_compute_mode
+*/
+PetscErrorCode OPFLOWSetHIOPVerbosityLevel(OPFLOW opflow, int level)
+{
+  PetscFunctionBegin;
+  opflow->_p_hiop_verbosity_level = level;
+  PetscFunctionReturn(0);
+}
+
+/*
   OPFLOWHasGenSetPoint - Use gen. set point in the OPFLOW formulation
 
   Input Parameters:
@@ -403,6 +418,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
   opflow->setupcalled = PETSC_FALSE;
 
   strcpy(opflow->_p_hiop_compute_mode,"auto");
+  opflow->_p_hiop_verbosity_level = 0;
   *opflowout = opflow;
 
   //  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Application created\n");
@@ -1866,6 +1882,21 @@ PetscErrorCode OPFLOWSetInitializationType(OPFLOW opflow, OPFLOWInitializationTy
 {
   PetscFunctionBegin;
   opflow->initializationtype = type;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Sets ignore_lineflow_constraints for opflow
+ *
+ * @param[in] opflow the OPFLOW object.
+ * @param[in] set value for opflow->ignore_lineflow_constraints.
+ *
+ * @note Must be called before OPFLOWSetUp
+ */
+PetscErrorCode OPFLOWIgnoreLineflowConstraints(OPFLOW opflow, PetscBool set)
+{
+  PetscFunctionBegin;
+  opflow->ignore_lineflow_constraints = set;
   PetscFunctionReturn(0);
 }
 

@@ -102,7 +102,7 @@ OPFLOW can be used with several different models i.e., representations of networ
 |[POWER_BALANCE_CARTESIAN](../opflow/pbcar.md)| Power balance form with cartesian representation of voltages|
 |POWER_BALANCE_HIOP| An alternate version of power balance polar form used only with HIOP solver|
 |PBPOLRAJAHIOP| An alternate version of power balance polar for GPU with HIOP solver|
-<br></br>
+
 #### OPFLOW optimization solvers
 
 OPFLOW works with the following optimization solvers.
