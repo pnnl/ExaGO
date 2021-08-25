@@ -60,6 +60,7 @@ module load gcc/7.3.0
 module load openmpi/3.1.3
 module load cuda/10.2.89
 module load python/anaconda3.2019.3
+source /share/apps/python/anaconda3.2019.3/etc/profile.d/conda.sh
 
 export CC=/share/apps/gcc/7.3.0/bin/gcc CXX=/share/apps/gcc/7.3.0/bin/g++ FC=/share/apps/gcc/7.3.0/bin/gfortran
 

@@ -62,6 +62,8 @@ module load exasgd-zlib/1.2.11/gcc-8.1.0-vaypqs4
 module load gcc/8.1.0
 module load cuda/11.0
 module load openmpi/4.1.0
+module load python/anaconda3.2019.3
+source /share/apps/python/anaconda3.2019.3/etc/profile.d/conda.sh
 
 export CC=/share/apps/gcc/8.1.0/bin/gcc
 export CXX=/share/apps/gcc/8.1.0/bin/g++

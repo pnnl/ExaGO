@@ -160,6 +160,7 @@ struct _p_OPFLOW{
   char modelname[64];
 
   char _p_hiop_compute_mode[64];
+  int _p_hiop_verbosity_level;
 
   /* List of models and solvers registered */
   struct _p_OPFLOWModelList OPFLOWModelList[OPFLOWMODELSMAX];

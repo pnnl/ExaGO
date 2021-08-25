@@ -57,6 +57,7 @@ PETSC_EXTERN PetscErrorCode OPFLOWSolve(OPFLOW);
 PETSC_EXTERN PetscErrorCode OPFLOWSetInitialGuess(OPFLOW,Vec);
 PETSC_EXTERN PetscErrorCode OPFLOWSetTolerance(OPFLOW,PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPComputeMode(OPFLOW,const char *);
+PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPVerbosityLevel(OPFLOW, int);
 PETSC_EXTERN PetscErrorCode OPFLOWGetTolerance(OPFLOW,PetscReal*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetNumIterations(OPFLOW,PetscInt*);
 PETSC_EXTERN PetscErrorCode OPFLOWGetObjectiveType(OPFLOW,OPFLOWObjectiveType*);
@@ -99,10 +100,10 @@ PETSC_EXTERN PetscErrorCode OPFLOWUseAGC(OPFLOW,PetscBool);
 
 PETSC_EXTERN PetscErrorCode OPFLOWSetGenBusVoltageType(OPFLOW,OPFLOWGenBusVoltageType);
 
-PETSC_EXTERN PetscErrorCode OPFLOWGetObjectiveType(OPFLOW,OPFLOWObjectiveType*);
-PETSC_EXTERN PetscErrorCode OPFLOWSetObjectiveType(OPFLOW,OPFLOWObjectiveType);
-
 PETSC_EXTERN PetscErrorCode OPFLOWSetInitializationType(OPFLOW, OPFLOWInitializationType);
+PETSC_EXTERN PetscErrorCode OPFLOWIgnoreLineflowConstraints(OPFLOW, PetscBool);
+PETSC_EXTERN PetscErrorCode OPFLOWSetLoadLossPenalty(OPFLOW, PetscReal);
+PETSC_EXTERN PetscErrorCode OPFLOWSetBusPowerImbalancePenalty(OPFLOW, PetscReal);
 
 /* OPFLOWGetPS - Gets the underlying PS object
 

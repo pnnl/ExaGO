@@ -312,8 +312,14 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
   } else {
     hiop->mds->options->SetStringValue("compute_mode", HIOPComputeModeChoices[compute_mode]);
   }
-  ierr = PetscOptionsInt("-hiop_verbosity_level","HIOP verbosity level (Integer 0 to 12)","",verbose_level,&verbose_level,NULL);CHKERRQ(ierr);
-
+  ierr = PetscOptionsInt("-hiop_verbosity_level","HIOP verbosity level (Integer 0 to 12)","",verbose_level,&verbose_level,&mode_set);CHKERRQ(ierr);
+  if (mode_set == PETSC_FALSE) {
+   //  ierr = PetscPrintf(MPI_COMM_WORLD,"Using hiop verbosity level %d\n", opflow->_p_hiop_verbosity_level);CHKERRQ(ierr);
+    hiop->mds->options->SetIntegerValue("verbosity_level", opflow->_p_hiop_verbosity_level);
+  }
+  else {
+    hiop->mds->options->SetIntegerValue("verbosity_level", verbose_level);
+  }
 #if defined(EXAGO_ENABLE_IPOPT)
   ierr = PetscOptionsBool("-hiop_ipopt_debug","Flag enabling debugging HIOP code with IPOPT","",hiop->ipopt_debug,&hiop->ipopt_debug,NULL);CHKERRQ(ierr);
 #endif
@@ -351,7 +357,6 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
   hiop->mds->options->SetStringValue("fixed_var", "relax");
   hiop->mds->options->SetStringValue("Hessian", "analytical_exact");
   hiop->mds->options->SetStringValue("KKTLinsys", "xdycyd");
-  hiop->mds->options->SetIntegerValue("verbosity_level", verbose_level);
   hiop->mds->options->SetNumericValue("mu0", 1e-1);
   hiop->mds->options->SetNumericValue("tolerance", opflow->tolerance);
   hiop->mds->options->SetNumericValue("bound_relax_perturb",1e-4);

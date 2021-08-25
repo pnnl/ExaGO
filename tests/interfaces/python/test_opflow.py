@@ -86,6 +86,183 @@ def test_get_gen_dispatch():
     pg2set, qg2set = opf.get_gen_dispatch(2, "1 ")
 
 @exago_test
+def test_set_model():
+    '''Test setting opflow model'''
+    opf = OPFLOW()
+    opf.dont_finalize()
+    opf.set_model('POWER_BALANCE_POLAR')
+
+@exago_test
+def test_set_solver():
+    '''Test setting opflow solver'''
+    opf = OPFLOW()
+    opf.dont_finalize()
+    opf.read_mat_power_data(
+        os.path.join(config.prefix(), 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+    opf.set_model('POWER_BALANCE_CARTESIAN')
+    opf.set_solver('TAO')
+    opf.solve()
+
+@exago_test
+def test_set_initialization_type():
+    '''Test setting opflow intialization type'''
+    opf = OPFLOW()
+    opf.dont_finalize()
+    opf.read_mat_power_data(
+        os.path.join(config.prefix(), 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+    opf.set_initialization('MIDPOINT')
+    opf.solve()
+
+@exago_test
+def test_set_ignore_lineflow_constraints():
+    '''Test setting opflow ignore_lineflow_constraints'''
+    opf = OPFLOW()
+    opf.dont_finalize()
+    opf.read_mat_power_data(
+        os.path.join(config.prefix(), 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+    opf.set_ignore_lineflow_constraints(True)
+    opf.solve()
+
+@exago_test
+def test_set_include_loadloss():
+    '''Test setting opflow ignore_lineflow_constraints'''
+    opf = OPFLOW()
+    opf.dont_finalize()
+    opf.read_mat_power_data(
+        os.path.join(config.prefix(), 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+    opf.set_include_loadloss(True)
+    opf.solve()
+
+@exago_test
+def test_set_include_powerimbalance():
+    '''Test setting opflow include powerimbalance variables'''
+    opf = OPFLOW()
+    opf.dont_finalize()
+    opf.read_mat_power_data(
+        os.path.join(config.prefix(), 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+    opf.set_include_powerimbalance(True)
+    opf.solve()
+
+@exago_test
+def test_set_loadloss_penalty():
+    '''Test setting opflow loadloss penalty'''
+    opf = OPFLOW()
+    opf.dont_finalize()
+    opf.read_mat_power_data(
+        os.path.join(config.prefix(), 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+    opf.set_include_loadloss(True)
+    opf.set_loadloss_penalty(999)
+    opf.set_initialization('FROMFILE')
+    opf.set_genbusvoltage('VARIABLE_WITHIN_BOUNDS')
+    # See ExaGO issue #249
+    # opf.solve()
+
+@exago_test
+def test_set_include_powerimbalance():
+    '''Test setting opflow include powerimbalance variables'''
+    opf = OPFLOW()
+    opf.dont_finalize()
+    opf.read_mat_power_data(
+        os.path.join(config.prefix(), 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+    opf.set_include_powerimbalance(True)
+    opf.set_include_loadloss(True)
+    opf.set_loadloss_penalty(999)
+    opf.set_powerimbalance_penalty(999)
+    opf.set_initialization('FROMFILE')
+    opf.set_genbusvoltage('VARIABLE_WITHIN_BOUNDS')
+    # See ExaGO issue #249
+    # opf.solve()
+
+@exago_test
+def test_set_genbusvoltage():
+    '''Test setting opflow genbusvoltage mode'''
+    opf = OPFLOW()
+    opf.dont_finalize()
+    opf.read_mat_power_data(
+        os.path.join(config.prefix(), 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+    opf.set_genbusvoltage('VARIABLE_WITHIN_BOUNDS')
+    opf.solve()
+
+@exago_test
+def test_set_has_gensetpoint():
+    '''Test setting opflow has gensetpoint variable'''
+    opf = OPFLOW()
+    opf.dont_finalize()
+    opf.read_mat_power_data(
+        os.path.join(config.prefix(), 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+    opf.set_has_gensetpoint(True)
+    opf.solve()
+
+@exago_test
+def test_set_objective_function():
+    '''Test setting opflow objective function'''
+    opf = OPFLOW()
+    opf.dont_finalize()
+    opf.read_mat_power_data(
+        os.path.join(config.prefix(), 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+    opf.set_objective_function('MIN_GENSETPOINT_DEVIATION')
+    opf.solve()
+
+@exago_test
+def test_set_use_agc():
+    '''Test setting opflow AGC for generator real power dispatch'''
+    opf = OPFLOW()
+    opf.dont_finalize()
+    opf.read_mat_power_data(
+        os.path.join(config.prefix(), 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+    opf.set_use_agc(True)
+    opf.solve()
+
+@exago_test
+def test_set_tolerance():
+    '''Test setting tolerance for optimization solver'''
+    opf = OPFLOW()
+    opf.dont_finalize()
+    opf.read_mat_power_data(
+        os.path.join(config.prefix(), 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+    opf.set_tolerance(0.000001)
+    opf.solve()
+
+@exago_test
+def test_set_hiop_compute_mode():
+    '''Test setting hiop compute mode'''
+    opf = OPFLOW()
+    opf.dont_finalize()
+    opf.read_mat_power_data(
+        os.path.join(config.prefix(), 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+    opf.set_model('POWER_BALANCE_HIOP')
+    opf.set_solver('HIOP')
+    opf.set_hiop_compute_mode('cpu')
+    opf.set_genbusvoltage('VARIABLE_WITHIN_BOUNDS')
+    opf.solve()
+
+@exago_test
+def test_set_hiop_verbosity():
+    '''Test setting hiop verbosity level'''
+    opf = OPFLOW()
+    opf.dont_finalize()
+    opf.read_mat_power_data(
+        os.path.join(config.prefix(), 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+    opf.set_model('POWER_BALANCE_HIOP')
+    opf.set_solver('HIOP')
+    opf.set_hiop_compute_mode('cpu')
+    opf.set_genbusvoltage('VARIABLE_WITHIN_BOUNDS')
+    opf.set_hiop_verbosity(3)
+    opf.solve()
+
+@exago_test
+def test_print_save_output():
+    '''Testing printing and saving output'''
+    opf = OPFLOW()
+    opf.dont_finalize()
+    opf.read_mat_power_data(
+        os.path.join(config.prefix(), 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+    opf.solve()
+    opf.print_solution()
+    filepath = os.path.join(config.prefix(), '..', 'tmp.output')
+    opf.save_solution('CSV', filepath) 
+
+@exago_test
 def test_opf2_driver():
     '''Test opflow2 driver'''
     opf = OPFLOW()
