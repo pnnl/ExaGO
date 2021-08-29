@@ -155,10 +155,8 @@ spack-build:
   stage: build
   allow_failure: false
   tags:
-    - basic
-    - exasgd
-    - ikp
-    - k8s
+    - hpz400
+    - noprod
   <<: *pnnl_rules_definition
   variables:
     SPACK_VERSION: develop
