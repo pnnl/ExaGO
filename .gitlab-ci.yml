@@ -151,6 +151,26 @@ test_on_compute_node:
 # ---
 
 # For PNNL CI
+spack-build:
+  stage: build
+  allow_failure: false
+  tags:
+    - basic
+    - exasgd
+    - ikp
+    - k8s
+  <<: *pnnl_rules_definition
+  variables:
+    SPACK_VERSION: develop
+    SPACK_REPO: https://github.com/LLNL/spack.git
+  script:
+    - |
+      hostname
+      whoami
+      uname -a
+      ls
+      pwd
+
 cmake-lint:
   stage: build
   allow_failure: true
