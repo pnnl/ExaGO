@@ -157,6 +157,8 @@ include:
   - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v1/gitlab-lib.yaml'
 
 spack-build:
+  image:
+    name: gcr.io/kaniko-project/executor:v1.6.0-debug
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: always
