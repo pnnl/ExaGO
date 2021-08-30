@@ -156,24 +156,41 @@ test_on_compute_node:
 include:
   - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v1/gitlab-lib.yaml'
 
-spack-build:
-  image:
-    name: gcr.io/kaniko-project/executor:v1.6.0-debug
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
-      when: always
-    - when: manual
-  stage: build
-  extends: .pnnllib-gitlab-build-container-image
-  allow_failure: false
+.pnnl-nonhpc-tags:
+  extends: .pnnl_rules_template
   tags:
     - k8s
     - ikp
     - exasgd
     - basic
+
+spack-generate-dockerfile:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: always
+    - when: manual
+  stage: build
+  extends: .pnnl-nonhpc-tags
+  artifacts:
+    paths:
+      - Dockerfile
+  script:
+    |
+    git clone --single-branch --branch develop github.com/LLNL/spack.git
+    source ./spack/share/spack/setup-env.sh
+    cp buildsystem/container/spack.yaml .
+    spack containerize > Dockerfile
+
+spack-build-dockerfile:
+  stage: build
+  extends:
+    - .pnnllib-gitlab-build-container-image
+    - .pnnl-nonhpc-tags
   variables:
     CONTAINER_TAG: latest
-    DOCKERFILE: buildsystem/container/Dockerfile
+  needs:
+    - job: spack-generate-dockerfile
+      artifacts: true
 
 cmake-lint:
   stage: build
