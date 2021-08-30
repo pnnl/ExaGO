@@ -1,3 +1,4 @@
+set -x
 git clone --branch ${SPACK_VERSION} ${SPACK_REPO} ${SPACK_INSTALL_LOCATION}
 . "${SPACK_INSTALL_LOCATION}/share/spack/setup-env.sh"
 spack env activate .
