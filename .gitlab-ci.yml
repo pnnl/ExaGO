@@ -171,14 +171,12 @@ spack-generate-dockerfile:
     - when: manual
   stage: build
   extends: .pnnl-nonhpc-tags
+  image: spack/ubuntu-bionic
   artifacts:
     paths:
       - Dockerfile
   script:
     |
-    apt install -y git
-    git clone --single-branch --branch develop github.com/LLNL/spack.git
-    source ./spack/share/spack/setup-env.sh
     cp buildsystem/container/spack.yaml .
     spack containerize > Dockerfile
 
