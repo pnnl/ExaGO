@@ -126,6 +126,7 @@ workflow:
 stages:
   - build
   - test
+  - spack-build
 
 # For Ascent CI
 build_on_login_node:
@@ -154,7 +155,7 @@ test_on_compute_node:
 spack-build:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
-  stage: build
+  stage: spack-build
   allow_failure: false
   tags:
     - hpz400
