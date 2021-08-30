@@ -176,6 +176,7 @@ spack-generate-dockerfile:
       - Dockerfile
   script:
     |
+    apt install -y git
     git clone --single-branch --branch develop github.com/LLNL/spack.git
     source ./spack/share/spack/setup-env.sh
     cp buildsystem/container/spack.yaml .
