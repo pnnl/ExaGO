@@ -10,6 +10,6 @@ spack compiler find
 
 # Show the full concretization
 spack concretize -f
-spack install --verbose --source --keep-stage -j `nproc`
+spack install --source --keep-stage -j `nproc`
 
 spack test exago
