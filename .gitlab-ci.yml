@@ -152,26 +152,27 @@ test_on_compute_node:
 # ---
 
 # For PNNL CI
+
+# PNNL GitLab standard library
+include:
+  - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v1/gitlab-lib.yaml'
+
 spack-build:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: always
+    - when: manual
   stage: spack-build
+  extends: .pnnllib-gitlab-build-container-image
   allow_failure: false
   tags:
-    - hpz400
-    - noprod
-  <<: *pnnl_rules_definition
+    - k8s
+    - ikp
+    - exasgd
+    - basic
   variables:
-    SPACK_VERSION: develop
-    SPACK_REPO: https://github.com/LLNL/spack.git
-    SPACK_INSTALL_LOCATION: ~/spack
-  image: registry.access.redhat.com/ubi8:latest
-  script:
-    - |
-      set -xv
-      cd buildsystem/container
-      bash ./install-deps-rhel-ubi8.sh
-      bash ./install-spack-environment.sh
+    CONTAINER_TAG: latest
+    DOCKERFILE: buildsystem/container/Dockerfile
 
 cmake-lint:
   stage: build
