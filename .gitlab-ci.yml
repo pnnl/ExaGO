@@ -152,6 +152,8 @@ test_on_compute_node:
 
 # For PNNL CI
 spack-build:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
   stage: build
   allow_failure: false
   tags:
