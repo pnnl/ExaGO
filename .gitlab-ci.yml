@@ -126,7 +126,6 @@ workflow:
 stages:
   - build
   - test
-  - spack-build
 
 # For Ascent CI
 build_on_login_node:
@@ -162,7 +161,7 @@ spack-build:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: always
     - when: manual
-  stage: spack-build
+  stage: build
   extends: .pnnllib-gitlab-build-container-image
   allow_failure: false
   tags:
