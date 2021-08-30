@@ -1,0 +1,8 @@
+spack:
+  specs:
+    - exago@develop%gcc@8.4.1~ipopt+hiop+mpi~cuda ^hiop@0.4.1 ^openmpi ^petsc@3.13.5+mpi~hypre~hdf5~metis~superlu-dist
+  config:
+    clingo: true
+  concretization: together
+  view: false
+

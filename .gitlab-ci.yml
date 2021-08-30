@@ -161,13 +161,14 @@ spack-build:
   variables:
     SPACK_VERSION: develop
     SPACK_REPO: https://github.com/LLNL/spack.git
+    SPACK_INSTALL_LOCATION: ~/spack
+  image: registry.access.redhat.com/ubi8:latest
   script:
     - |
-      hostname
-      whoami
-      uname -a
-      ls
-      pwd
+      set -xv
+      cd buildsystem/container
+      bash ./install-deps-rhel-ubi8.sh
+      bash ./install-spack-environment.sh
 
 cmake-lint:
   stage: build
