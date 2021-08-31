@@ -126,6 +126,7 @@ workflow:
 stages:
   - build
   - test
+  - spack-build
 
 # For Ascent CI
 build_on_login_node:
@@ -166,10 +167,12 @@ include:
 
 spack-generate-dockerfile:
   rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+      when: always
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: always
     - when: manual
-  stage: build
+  stage: spack-build
   extends: .pnnl-nonhpc-tags
   image: ubuntu:20.04
   artifacts:
@@ -184,7 +187,7 @@ spack-generate-dockerfile:
     spack containerize > Dockerfile
 
 spack-build-dockerfile:
-  stage: build
+  stage: spack-build
   extends:
     - .pnnllib-gitlab-build-container-image
     - .pnnl-nonhpc-tags
