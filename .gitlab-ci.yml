@@ -127,8 +127,7 @@ workflow:
   rules:
     - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"' # Will only apply to PNNL
 
-.pnnl-nonhpc-tags:
-  extends: .pnnl_rules_template
+.pnnl-nonhpc-tags: &pnnl-nonhpc-definition
   tags:
     - k8s
     - ikp
@@ -143,23 +142,21 @@ stages:
 
 spack-generate-job:
   image: ubuntu:20.04
-  extends: .pnnl-nonhpc-tags
+  <<: *pnnl_rules_definition
   rules:
     - when: manual
   stage: spack-generate
   script:
     |
-    apt update && apt install -y git python3
+    apt update && apt install -y git python3 bash
     cd buildsystem/container
     bash generate-jobs.sh > ../../generated-pipeline.yaml
   artifacts:
     paths:
       - generated-pipeline.yml
 
-
 spack-build-job:
-  image: ubuntu:20.04
-  extends: .pnnl-nonhpc-tags
+  <<: *pnnl_rules_definition
   stage: spack-build
   trigger:
     include:
@@ -294,3 +291,4 @@ x86_64-gcc-cuda-python-test:
   <<: *pnnl_rules_definition
   allow_failure: true
 # ---
+
