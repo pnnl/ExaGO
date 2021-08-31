@@ -132,7 +132,7 @@ workflow:
     - k8s
     - ikp
     - exasgd
-    - basi
+    - basic
 
 stages:
   - build
@@ -143,24 +143,26 @@ stages:
 spack-generate-job:
   image: ubuntu:20.04
   <<: *pnnl_rules_definition
+  <<: *pnnl-nonhpc-definition
   rules:
     - when: manual
   stage: spack-generate
   script:
     |
-    apt update && apt install -y git python3 bash
+    set -x
+    apt update && apt install -y bash # git python3
     cd buildsystem/container
-    bash generate-jobs.sh > ../../generated-pipeline.yaml
+    bash generate-jobs.sh > generated-pipeline.yaml
   artifacts:
     paths:
-      - generated-pipeline.yml
+      - buildsystem/container/generated-pipeline.yaml
 
 spack-build-job:
   <<: *pnnl_rules_definition
   stage: spack-build
   trigger:
     include:
-      - artifact: generated-pipeline.yaml
+      - artifact: buildsystem/container/generated-pipeline.yaml
         job: spack-generate-job
     strategy: depend
 

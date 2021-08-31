@@ -14,6 +14,7 @@ job_${environment}:
   image: ubuntu:20.04
   script:
     |
+    set -x
     echo "Building dockerfile for ${environment}"
 EOD
   rm spack.yaml
