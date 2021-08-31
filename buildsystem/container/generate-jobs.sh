@@ -1,6 +1,10 @@
 #!/usr/bin/bash
 
-set -x
+cat <<EOD
+stages:
+  - build
+EOD
+
 for filename in *.yaml
 do
   export environment="${filename%.*}"
@@ -8,7 +12,7 @@ do
   export dockerfile="Dockerfile.${environment}"
   cat <<EOD
 job_${environment}:
-  stage: spack-container-build
+  stage: build
   tags: [k8s, ikp, exasgd, basic]
   image: ubuntu:20.04
   script:
