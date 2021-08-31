@@ -144,8 +144,8 @@ spack-generate-job:
   image: ubuntu:20.04
   <<: *pnnl_rules_definition
   <<: *pnnl-nonhpc-definition
-  rules:
-    - when: manual
+    #rules:
+    #- when: manual
   stage: spack-generate
   script:
     |
@@ -153,6 +153,7 @@ spack-generate-job:
     apt update && apt install -y bash # git python3
     cd buildsystem/container
     bash generate-jobs.sh > generated-pipeline.yaml
+    cat generated-pipeline.yaml
   artifacts:
     paths:
       - buildsystem/container/generated-pipeline.yaml
