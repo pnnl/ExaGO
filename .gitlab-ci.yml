@@ -119,21 +119,83 @@ workflow:
     - exasgd
     - marianas
 
-.pnnl_rules_template: &pnnl_rules_definition
+.pnnl-rules: &pnnl-rules
   rules:
-    - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"' # Will only apply to PNNL
+    - &pnnl-rule
+      if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"' # Will only apply to PNNL
+
+.pnnl-nonhpc-tags: &pnnl-nonhpc-definition
+  tags:
+    - k8s
+    - ikp
+    - exasgd
+    - basic
 
 stages:
   - build
   - test
+  - spack-generate
+  - spack-build
+
+# Include PNNL GitLab stdlib
+include:
+  - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v1/gitlab-lib.yaml'
+
+.spack-variables: &spack-variables
+  variables:
+    SPACK_REF: develop
+    SPACK_REPO: https://github.com/LLNL/spack.git
+    S3_ENDPOINT_URL: http://cache.exasgd.pnl.gov
+
+.spack-rules: &spack-rules
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+      when: never
+    - if: '$CI_COMMIT_REF_NAME != "develop"'
+      when: manual
+    - if: '$CI_COMMIT_MESSAGE =~ /\[matrix\]/'
+    - *pnnl-rule
+
+spack-generate-job:
+  <<: *spack-variables
+  <<: *spack-rules
+  stage: spack-generate
+  image: spack/ubuntu-bionic
+  tags: [k8s, ikp, exasgd, basic]
+  before_script:
+    - git clone ${SPACK_REPO}
+    - pushd spack && git checkout ${SPACK_REF} && popd
+    - . "./spack/share/spack/setup-env.sh"
+  script:
+    - cp buildsystem/container/spack.yaml . && spack env activate --without-view .
+    - spack -d ci generate
+      --artifacts-root "${CI_PROJECT_DIR}/jobs_scratch_dir"
+      --output-file "${CI_PROJECT_DIR}/jobs_scratch_dir/pipeline.yml"
+      --no-prune-dag
+  artifacts:
+    paths:
+      - "${CI_PROJECT_DIR}/jobs_scratch_dir"
+
+spack-build-job:
+  <<: *spack-rules
+  <<: *spack-variables
+  stage: spack-build
+  trigger:
+    include:
+      - artifact: "jobs_scratch_dir/pipeline.yml"
+        job: spack-generate-job
+    strategy: depend
 
 # For Ascent CI
+.ornl-rules: &ornl-rules
+  rules:
+    - if: '$CI_PROJECT_PATH == "ecpcitest/exasgd/exago"'
+
 build_on_login_node:
   stage: build
   tags:
     - nobatch
-  rules:
-    - if: '$CI_PROJECT_PATH == "ecpcitest/exasgd/exago"'
+  <<: *ornl-rules
   <<: *ornl_script_definition
   <<: *ornl_environment_variables
 
@@ -143,8 +205,7 @@ test_on_compute_node:
     - build_on_login_node
   tags:
     - batch
-  rules:
-    - if: '$CI_PROJECT_PATH == "ecpcitest/exasgd/exago"'
+  <<: *ornl-rules
   <<: *ornl_test_script_definition
   <<: *ornl_environment_variables
 
@@ -162,17 +223,15 @@ cmake-lint:
   stage: build
   allow_failure: true
   <<: *pnnl-nonhpc-definition
-  <<: *pnnl_rules_definition
+  <<: *pnnl-rules
   image: ubuntu:20.04
   script:
     |
     set -x
-    apt update && apt install -y python3 python3-pip
+    apt update && apt install -y python3 python3-pip ack
     pip install cmake_format
-
-    export findCmakeFiles=`find . -name '*.cmake' -or -name CMakeLists.txt`
     ret=0
-    for f in $findCmakeFiles; do
+    for f in $(ack -f --type cmake); do
       cmake-format --log-level info --check $f
       ret=$(($ret + $?))
     done
@@ -188,7 +247,7 @@ ppc64le-gcc-cuda-build:
     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
-  <<: *pnnl_rules_definition
+  <<: *pnnl-rules
 
 ppc64le-gcc-cuda-test:
   stage: test
@@ -204,7 +263,7 @@ ppc64le-gcc-cuda-test:
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   <<: *pnnl_after_script_definition
-  <<: *pnnl_rules_definition
+  <<: *pnnl-rules
 
 ppc64le-gcc-cuda-python-test:
   stage: test
@@ -220,7 +279,7 @@ ppc64le-gcc-cuda-python-test:
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
     # No after_script as only one test per platform cleans up
-  <<: *pnnl_rules_definition
+  <<: *pnnl-rules
   allow_failure: true
 
 x86_64-gcc-cuda-build:
@@ -233,7 +292,7 @@ x86_64-gcc-cuda-build:
     WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
-  <<: *pnnl_rules_definition
+  <<: *pnnl-rules
 
 x86_64-gcc-cuda-test:
   stage: test
@@ -249,7 +308,7 @@ x86_64-gcc-cuda-test:
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   <<: *pnnl_after_script_definition
-  <<: *pnnl_rules_definition
+  <<: *pnnl-rules
 
 x86_64-gcc-cuda-python-test:
   stage: test
@@ -265,6 +324,7 @@ x86_64-gcc-cuda-python-test:
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
     # No after_script as only one test per platform cleans up
-  <<: *pnnl_rules_definition
+  <<: *pnnl-rules
   allow_failure: true
 # ---
+
