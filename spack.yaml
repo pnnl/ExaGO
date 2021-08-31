@@ -1,0 +1,37 @@
+spack:
+  definitions:
+  - pkgs:
+    - exago@develop~ipopt+hiop+mpi~cuda ^hiop@0.4.1
+  - mpis:
+    - ^openmpi
+    - ^mpich
+  - arch:
+    - '%gcc@7.5.0 arch=linux-ubuntu18.04-x86_64'
+  specs:
+  - matrix:
+    - [$pkgs]
+    - [$mpis]
+    - [$arch]
+  mirrors:
+    pnnl: s3://spack
+  config:
+    clingo: true
+    install_tree:
+      padded_length: 128
+  packages:
+    petsc:
+      version: [3.13.5]
+      variants: +mpi~hypre~hdf5~metis~superlu-dist
+  gitlab-ci:
+    enable-artifacts-buildcache: True
+    rebuild-index: False
+    mappings:
+    - match:
+      - arch=linux-ubuntu18.04-x86_64
+      runner-attributes:
+        tags:
+        - k8s
+        - ikp
+        - exasgd
+        - basic
+        image: spack/ubuntu-bionic
