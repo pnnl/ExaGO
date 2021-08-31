@@ -5,7 +5,7 @@ stages:
   - build
 EOD
 
-for filename in *.yaml
+for filename in env*.yaml
 do
   export environment="${filename%.*}"
   cp $filename spack.yaml
