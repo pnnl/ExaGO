@@ -6,7 +6,6 @@ do
   export environment="${filename%.*}"
   cp $filename spack.yaml
   export dockerfile="Dockerfile.${environment}"
-  echo "spack containerize > '${dockerfile}'"
   cat <<EOD
 job_${environment}:
   stage: spack-container-build
@@ -18,5 +17,4 @@ job_${environment}:
     echo "Building dockerfile for ${environment}"
 EOD
   rm spack.yaml
-  echo "rm $dockerfile"
 done
