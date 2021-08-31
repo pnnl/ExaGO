@@ -248,7 +248,7 @@ bool SCOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int& n, double* x,
 	/* Get the lagrange multiplier for the generator set-point equality constraint x_i - x_0 
 	   gradient is the partial derivative for it (note that it is negative) */
 	if(opflow->has_gensetpoint) {
-	  ierr = PetscPrintf(PETSC_COMM_SELF,"Gen[%d]: Pb = %lf Pt = %lf Pgs = %lf lambda = %lf\n",gen->bus_i,gen->pb,gen->pt,gen->pgs,lameq[gen->starteqloc+1]);CHKERRQ(ierr);
+	  //	  ierr = PetscPrintf(PETSC_COMM_SELF,"Gen[%d]: Pb = %lf Pt = %lf Pgs = %lf lambda = %lf\n",gen->bus_i,gen->pb,gen->pt,gen->pgs,lameq[gen->starteqloc+1]);CHKERRQ(ierr);
 	  grad[g++] = -lameq[gen->starteqloc+1];
 	}
       } else if(gen0->status && !gen->status) grad[g++] = 0.0;
