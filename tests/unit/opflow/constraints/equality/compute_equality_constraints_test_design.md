@@ -54,13 +54,54 @@ ExaGO builds array of the equality constraints. Array is build with **for loop**
 </tr>
 </table>
 
-## Input file
+## Input
+
 ExaGO OPFLOW reads .m file, thus the input file for unit test is in this format.
-A 5-bus system **CEC-unittestx1.m** will be used as a basis for this test.
+A 5-bus system **CEC-unittestx1.m** will be used as a basis for this test. In addition, an artifical solution vector will be also generated as an input for the test.
 
-### Equality constraints array builder for the example network
+### Parameters values in .m file
 
-For the considered network equality constraints vector is built as follows:
+Following are the values of parameters of interest for this test:
+- $`R_{branch}=2`$
+- $`X_{branch}=1`$
+- $`B_{branch}=1.2`$
+- $`tapratio_{branch}=1`$ for all but transformer that has $`tapratio_{transformer}=2`$
+- $`phaseshift_{branch}=0`$ for all but transformer that has $`phaseshift_{branch}=60`$
+- $`P_{d}=-3.4`$
+- $`Q_{d}=8.8`$
+- $`G_{l}=0.25`$
+- $`B_{l}=-0.05`$
+
+### Solution vector values
+
+Following are the values of the solution vector's elements of interest for this test:
+
+- $`theta=0`$ for all but transformer that has $`theta=30`$
+- $`V_{m}=2`$
+- $`P_{g}=1.6`$
+- $`Q_{g}=-2.2`$
+
+## Vectors for N=1
+
+### Solution vector for N=1
+
+Solution vector can be built with **OPFLOWSetInitialGuess_PBPOL**, but for the purpose of this unit test, solution vector will be build independently in such a way that only the values of the interest will be different than zero. 
+In general, solution vector has following elements per bus:
+1. Voltage angle
+2. Voltage magnitude
+3. Generator MW (if generator bus)
+4. Generator MVar (if generator bus)
+
+For the 5-bus system **CEC-unittestx1.m**, solution vector is:
+<table>
+<tr>
+<td>0</td> <td>2</td> <td>0</td> <td>2</td> <td>30</td> <td>2</td> <td>1.6</td> <td>-2.2</td> <td>0</td> <td>2</td> <td>0</td> <td>2</td> 
+</tr>
+</table>
+
+### Residual vector builder for equality constraints for the example network
+
+For the considered network residual vector for equality constraints is built as follows:
 <table>
 <tr>
 <td>Contributor</td> <td>Bus1[0]</td> <td>Bus1[1]</td> <td>Bus2[0]</td> <td>Bus2[1]</td> <td>Bus3[0]</td> <td>Bus3[1]</td> <td>Bus4[0]</td> <td>Bus4[1]</td> <td>Bus5[0]</td> <td>Bus5[1]</td>
@@ -105,25 +146,11 @@ Where
 - $`P_{t}=G_{tt}*V_{mt}*V_{mt}+V_{mf}*V_{mt}*(G_{tf}*cos(\theta_{tf})+B_{tf}*sin(\theta_{tf}))`$
 - $`Q_{t}=-B_{tt}*V_{mt}*V_{mt}+V_{mf}*V_{mt}*(-B_{ft}*cos(\theta_{tf})+G_{tf}*sin(\theta_{tf}))`$
 
-### Parameters values
-Following are the value of parameters of interest for this test:
 
-- $`V_{m}=2`$
-- $`theta=0`$ for all but transformer that has $`theta=30`$
-- $`R_{branch}=2`$
-- $`X_{branch}=1`$
-- $`B_{branch}=1.2`$
-- $`tapratio_{branch}=1`$ for all but transformer that has $`tapratio_{transformer}=2`$
-- $`phaseshift_{branch}=0`$ for all but transformer that has $`phaseshift_{branch}=60`$
-- $`P_{g}=1.6`$
-- $`Q_{g}=-2.2`$
-- $`P_{d}=-3.4`$
-- $`Q_{d}=-8.8`$
-- $`G_{l}=0.25`$
-- $`B_{l}=-0.05`$
 
 ### Residual vector for the equality constraints for N=1
-With the parameters of the example network array is:
+
+With the parameters of the example network the vector is:
 
 <table>
 <tr>
@@ -133,7 +160,24 @@ With the parameters of the example network array is:
 
 ## Scaling
 
-To build a solution when the network is being multiplied folowing needs to be done:
+### Solution vector
+
+To scale the solution vector, following needs to be done:
+1. Copy once original solution vector.
+2. Copy N-1 times all elements of the initial vector, except first two.
+
+### Solution vector for N=3
+
+For N=3 the solution vector is:
+<table>
+<tr>
+<td>0   2   0   2   30   2   1.6   -2.2   0   2   0   2</td> <td>0   2   30   2   1.6   -2.2   0   2   0   2</td><td>0   2   30   2   1.6   -2.2   0   2   0   2</td>
+</tr>
+</table>
+
+### Residual vector
+
+To build a residual vector when the network is being multiplied folowing needs to be done:
 
 Copy only once first 2 elements; next 6 elements will be copied without any modifications for each segment; last two elements are first multipled by 2 and then coppied for each N except last one where you copy without multiplication.
 
@@ -154,8 +198,9 @@ a b c d e f g h i j
 
  i j  
 
-### Residual vector for the equality constraints for N=3
-So for N=3 the array is:
+### Residual for N=3
+
+So for N=3 the vector is:
 <table>
 <tr>
 <td>2.8  0.0</td> <td> 8.8  2.2  2.2  2.2  2.2  8.8</td> <td> 5.6  0.0</td><td> 8.8  2.2  2.2  2.2  2.2  8.8</td> <td> 5.6  0.0</td><td> 8.8  2.2  2.2  2.2  2.2  8.8</td> <td> 2.8  0.0</td>
