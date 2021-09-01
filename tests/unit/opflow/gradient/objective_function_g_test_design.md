@@ -21,31 +21,72 @@ For the purpose of this unit test, focus is only on the first gradient, because 
 - include_loadloss_variables
 - include_powerimbalance_variables
 
-## Input file
+## Input
+
 ExaGO OPFLOW reads .m file, thus the input file for unit test is in this format.
-A 5-bus system **OFG-unittestx1.m** will be used as a basis for this test.
+A 5-bus system **OFG-unittestx1.m** will be used as a basis for this test. In addition, an artifical solution vector will be also generated as an input for the test.
 
-### Parameter values
+### Parameter values in .m file
 
-Following are the value of parameters of interest for this test:
+Following are the values of parameters of interest for this test:
 
 - $`\alpha_{k}=0.045`$
 - $`\beta_{k}=0.1`$
+
+### Solution vector values
+
+Following is the value of the solution vector's element of interest for this test:
+
 - $`P_{Gk}=10`$
 
-### Solution for N=1
+## Vectors for N=1
 
-With the parameters of the example network, value of the objective function is equal **1**. 
+### Solution vector for N=1
+
+Solution vector can be built with **OPFLOWSetInitialGuess_PBPOL**, but for the purpose of this unit test, solution vector will be build independently in such a way that only the values of the interest will be different than zero. 
+In general, solution vector has following elements per bus:
+1. Voltage angle
+2. Voltage magnitude
+3. Generator MW (if generator bus)
+4. Generator MVar (if generator bus)
+
+For the 5-bus system **OFG-unittestx1.m**, solution vector is:
+<table>
+<tr>
+<td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>10</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> 
+</tr>
+</table>
+
+### Residual for the gradient for N=1
+
+With the parameters of the example network, value of the gradient is equal **1**. 
 
 ## Scaling
 
-To build a solution when the network is being multiplied folowing needs to be done:
+### Solution vector
 
-Create the vector with lenght(vector)=N.
+To scale the solution vector, following needs to be done:
+1. Copy once original solution vector.
+2. Copy N-1 times all elements of the initial vector, except first two.
 
-### Solution for N=3
+### Solution vector for N=3
 
-For N=3 the value of the objective function's gradient is equal to vector with length of 3 where all values are equal to 1:
+For N=3 the solution vector is:
+<table>
+<tr>
+<td>0   0   0   0   0   0   10   0   0   0   0   0</td> <td>0   0   0   0   10   0   0   0   0   0</td><td>0   0   0   0   10   0   0   0   0   0</td>
+</tr>
+</table>
+
+### Residual vector
+
+To build a residual vector when the network is being multiplied folowing needs to be done:
+
+1. Create the vector with lenght(vector)=N.
+
+### Residual vector for N=3
+
+For N=3 residual vector of gradient is equal to vector with length of 3 where all values are equal to 1:
 
 <table>
 <tr>
