@@ -22,14 +22,14 @@ module load exasgd-cub/1.12.0-rc0/gcc-7.3.0-cscwjgd
 module load exasgd-gmp/6.2.1/gcc-7.3.0-sqgj2tv
 # hdf5@1.10.7%gcc@7.3.0~cxx~debug~fortran~hl~java+mpi+pic+shared~szip~threadsafe api=none arch=linux-centos7-x86_64
 module load exasgd-hdf5/1.10.7/openmpi-3.1.3/gcc-7.3.0-rpcf5xq
-# hiop@0.4.1%gcc@7.3.0+cuda~deepchecking~ipo~jsrun+kron+mpi+raja+shared+sparse build_type=Release cuda_arch=60 arch=linux-centos7-x86_64
-module load exasgd-hiop/0.4.1/cuda-10.2.89/openmpi-3.1.3/gcc-7.3.0-irr2n7a
+# hiop@0.4.6%gcc@8.1.0+cuda~deepchecking~ipo~jsrun+kron+mpi+raja+shared+sparse build_type=Release cuda_arch=80 arch=linux-centos7-zen
+module load exasgd-hiop/0.4.6/cuda-10.2.89/openmpi-3.1.3/gcc-7.3.0-jeuhgas
 # hypre@2.20.0%gcc@7.3.0~complex~cuda~debug~int64~internal-superlu~mixedint+mpi~openmp+shared~superlu-dist~unified-memory cuda_arch=none patches=6e3336b1d62155f6350dfe42b0f9ea25d4fa0af60c7e540959139deb93a26059 arch=linux-centos7-x86_64
 module load exasgd-hypre/2.20.0/openmpi-3.1.3/gcc-7.3.0-kcfd7f4
 # ipopt@3.12.10%gcc@7.3.0+coinhsl~debug~metis~mumps arch=linux-centos7-x86_64
 module load exasgd-ipopt/3.12.10/gcc-7.3.0-pyjg6pd
-# magma@2.5.4%gcc@7.3.0+cuda+fortran~ipo+shared build_type=RelWithDebInfo cuda_arch=60 arch=linux-centos7-x86_64
-module load exasgd-magma/2.5.4/cuda-10.2.89/gcc-7.3.0-hopwkmt
+# magma@2.6.1%gcc@8.1.0+cuda+fortran~ipo+shared build_type=RelWithDebInfo cuda_arch=80 arch=linux-centos7-zen
+module load exasgd-magma/2.6.1/cuda-10.2.89/gcc-7.3.0-mb7xpns
 # metis@5.1.0%gcc@7.3.0~gdb~int64~real64+shared build_type=Release patches=4991da938c1d3a1d3dea78e49bbebecba00273f98df2a656e38b83d55b281da1,b1225da886605ea558db7ac08dd8054742ea5afe5ed61ad4d0fe7a495b1270d2 arch=linux-centos7-x86_64
 module load exasgd-metis/5.1.0/gcc-7.3.0-t2i65bz
 # mpfr@4.0.2%gcc@7.3.0 patches=3f80b836948aa96f8d1cb9cc7f3f55973f19285482a96f9a4e1623d460bcccf0 arch=linux-centos7-x86_64
