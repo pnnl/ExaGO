@@ -11,7 +11,6 @@ workflow:
 .ornl_script_template: &ornl_script_definition
   script:
     - |
-      exit 0
       # Do _not_ clean up WORKDIR as files are needed for testing
       set -xv
       mkdir -p "$WORKDIR"
@@ -23,7 +22,6 @@ workflow:
 .ornl_test_script_template: &ornl_test_script_definition
   script:
     - |
-      exit 0
       set -xv
       cd "$WORKDIR"
       export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
@@ -43,7 +41,6 @@ workflow:
 .pnnl_after_script_template: &pnnl_after_script_definition
   after_script:
     - |
-      exit 0
       export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${MY_CLUSTER}/"
       # Iterate over possible jobid named files (jobid_%J)
       job_ids="$WORKDIR/jobid_*"
@@ -59,7 +56,6 @@ workflow:
 .pnnl_script_template: &pnnl_script_definition
   script:
     - |
-      exit 0
       set -xv
       #
       #  NOTES:  WORKDIR is on constance/marianas/newell
@@ -144,8 +140,10 @@ spack-generate-job:
   image: ubuntu:20.04
   <<: *pnnl_rules_definition
   <<: *pnnl-nonhpc-definition
-    #rules:
-    #- when: manual
+  rules:
+    - when: manual
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      when: always
   stage: spack-generate
   script:
     |
@@ -196,15 +194,20 @@ test_on_compute_node:
 cmake-lint:
   stage: build
   allow_failure: true
-  variables:
-    SLURM_Q: "newell_shared"
-    OUTPUT_SUFFIX: "_lint"
-    MY_CLUSTER: "newell"
-    SCRIPT_ARGS: " --job=cmake-lint "
-    WORKDIR_SUFFIX: "cmake-lint"
-  <<: *pnnl_tags_definition
-  <<: *pnnl_script_definition
+  <<: *pnnl-nonhpc-definition
   <<: *pnnl_rules_definition
+  image: ubuntu:20.04
+  script:
+    |
+    set -x
+    apt update && apt install -y python3 python3-pip ack
+    pip install cmake_format
+    ret=0
+    for f in $(ack -f --type cmake); do
+      cmake-format --log-level info --check $f
+      ret=$(($ret + $?))
+    done
+    exit $ret
 
 ppc64le-gcc-cuda-build:
   stage: build
