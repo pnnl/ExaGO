@@ -150,16 +150,19 @@ spack-generate-job:
   script:
     |
     set -x
-    apt update && apt install -y bash # git python3
+    apt update && apt install -y bash git python3
     cd buildsystem/container
     bash generate-jobs.sh > generated-pipeline.yaml
   artifacts:
     paths:
       - buildsystem/container/generated-pipeline.yaml
+      - buildsystem/container/Dockerfile.*
 
 spack-build-job:
   <<: *pnnl_rules_definition
   stage: spack-build
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
   trigger:
     include:
       - artifact: buildsystem/container/generated-pipeline.yaml
