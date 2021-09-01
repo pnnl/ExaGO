@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-# git clone --single-branch -b develop https://github.com/LLNL/spack.git
+git clone --single-branch -b develop https://github.com/LLNL/spack.git
 source ./spack/share/spack/setup-env.sh
 set -e
 
