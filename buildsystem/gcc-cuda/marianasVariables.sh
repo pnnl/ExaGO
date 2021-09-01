@@ -12,8 +12,6 @@ module load exasgd-autoconf-archive/2019.01.06/gcc-7.3.0-5a4lwsi
 module load exasgd-blt/0.3.6/gcc-7.3.0-glzuyxk
 # camp@0.1.0%gcc@7.3.0+cuda~ipo~rocm~tests amdgpu_target=none build_type=RelWithDebInfo cuda_arch=60 arch=linux-centos7-x86_64
 module load exasgd-camp/0.1.0/cuda-10.2.89/gcc-7.3.0-cvqyc5h
-# cmake@3.19.6%gcc@7.3.0~doc+ncurses+openssl+ownlibs~qt build_type=Release patches=b48396c0e4f61756248156b6cebe9bc0d7a22228639b47b5aa77c9330588ce88 arch=linux-centos7-x86_64
-module load exasgd-cmake/3.19.6/gcc-7.3.0-ihjiqv4
 # coinhsl@2015.06.23%gcc@7.3.0+blas arch=linux-centos7-x86_64
 module load exasgd-coinhsl/2015.06.23/gcc-7.3.0-zv2yxcl
 # cub@1.12.0-rc0%gcc@7.3.0 arch=linux-centos7-x86_64
@@ -54,6 +52,7 @@ module load gcc/7.3.0
 module load openmpi/3.1.3
 module load cuda/10.2.89
 module load python/anaconda3.2019.3
+module load cmake/3.19.6
 
 export CC=/share/apps/gcc/7.3.0/bin/gcc CXX=/share/apps/gcc/7.3.0/bin/g++ FC=/share/apps/gcc/7.3.0/bin/gfortran
 
