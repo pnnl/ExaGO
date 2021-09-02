@@ -4,21 +4,25 @@ testsuite_name = "HiOp Sparse OPFLOW Functionality"
 solver = 'HIOPSPARSE'
 model = 'POWER_BALANCE_POLAR'
 tolerance = 1e-3
-gen_bus_voltage_type = 0 # VARIABLE_WITHIN_BOUNDS
+gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
 is_loadloss_active = false
 is_powerimb_active = false
+has_gen_set_point = false
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'
+description = 'datafiles/case9/case9mod.m base case'
 num_iters = 12
 obj_value = 4.1444511e+03
 
 [[testcase]]
 network = 'datafiles/case118.m'
+description = 'datafiles/case118.m base case'
 num_iters = 25
 obj_value = 1.2965990e+05
 
-[[testcase]]
-network = 'datafiles/case_ACTIVSg200.m'
-num_iters = 130
-obj_value = 2.7552974e+04
+#[[testcase]]
+#network = 'datafiles/case_ACTIVSg200.m'
+#description = 'datafiles/case_ACTIVSg200.m base case'
+#num_iters = 130
+#obj_value = 2.7552974e+04

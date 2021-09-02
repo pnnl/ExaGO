@@ -68,17 +68,6 @@ int main(int argc, char** argv)
   summary << std::fixed;
   static constexpr int col_width = 35;
 
-  /* Parameters used to set up an OPFLOW */
-  std::string solver;
-  std::string model;
-  std::string network;
-  bool is_loadloss_active;
-  bool is_powerimb_active;
-  int gen_bus_voltage_type;
-  double tolerance;
-  bool has_gen_set_point;
-  std::string description;
-  std::string hiop_compute_mode;
 
   /* Parameters used to determine success or failure of functionality test */
   int expected_num_iters;
@@ -86,6 +75,22 @@ int main(int argc, char** argv)
 
   /* Iterate over all test cases and run individual functionality tests */
   for (auto& testcase : testcases.as_array()) {
+    /* Parameters used to set up an OPFLOW */
+    std::string solver;
+    std::string model;
+    std::string network;
+    bool is_loadloss_active;
+    bool is_powerimb_active;
+    std::string gen_bus_voltage_type;
+    double tolerance;
+    bool has_gen_set_point;
+    bool use_agc = false;
+    double load_loss_penalty = 1000.0;
+    double power_imbalance_penalty = 1000.0;
+    std::string description;
+    std::string hiop_compute_mode;
+    std::string initialization_type = "MIDPOINT";
+
     total++;
     double obj_value, error;
     int numiter = 0;
@@ -108,6 +113,10 @@ int main(int argc, char** argv)
       set_if_found(hiop_compute_mode, presets, "hiop_compute_mode");
       set_if_found(tolerance, presets, "tolerance");
       set_if_found(has_gen_set_point, presets, "has_gen_set_point");
+      set_if_found(use_agc, presets, "use_agc");
+      set_if_found(load_loss_penalty, presets, "load_loss_penalty");
+      set_if_found(power_imbalance_penalty, presets, "power_imbalance_penalty");
+      set_if_found(initialization_type, presets, "initialization_types");
       ensure_options_are_consistent(testcase, presets);
     }
     else
@@ -131,6 +140,10 @@ int main(int argc, char** argv)
     set_if_found(hiop_compute_mode, testcase, "hiop_compute_mode");
     set_if_found(tolerance, testcase, "tolerance");
     set_if_found(has_gen_set_point, testcase, "has_gen_set_point");
+    set_if_found(use_agc, testcase, "use_agc");
+    set_if_found(load_loss_penalty, testcase, "load_loss_penalty");
+    set_if_found(power_imbalance_penalty, testcase, "power_imbalance_penalty");
+    set_if_found(initialization_type, testcase, "initialization_types");
 
     /* Possible ways for a funcitonality test to fail */
     bool converge_failed = false;
@@ -141,8 +154,13 @@ int main(int argc, char** argv)
     OPFLOW opflow;
     ierr = OPFLOWCreate(comm,&opflow);CHKERRQ(ierr);
 
-    ierr = OPFLOWSetGenBusVoltageType(opflow,
-        static_cast<OPFLOWGenBusVoltageType>(gen_bus_voltage_type));CHKERRQ(ierr);
+    if (gen_bus_voltage_type == "VARIABLE_WITHIN_BOUNDS") {
+      ierr = OPFLOWSetGenBusVoltageType(opflow,VARIABLE_WITHIN_BOUNDS);CHKERRQ(ierr);
+    } else if (gen_bus_voltage_type == "FIXED_WITHIN_QBOUNDS") {
+      ierr = OPFLOWSetGenBusVoltageType(opflow,FIXED_WITHIN_QBOUNDS);CHKERRQ(ierr);
+    } else if (gen_bus_voltage_type == "FIXED_AT_SETPOINT") {
+      ierr = OPFLOWSetGenBusVoltageType(opflow,FIXED_AT_SETPOINT);CHKERRQ(ierr);
+    }
 
     ierr = OPFLOWSetTolerance(opflow, tolerance);CHKERRQ(ierr);
 
@@ -159,6 +177,22 @@ int main(int argc, char** argv)
     ierr = OPFLOWHasLoadLoss(opflow, (PetscBool)is_loadloss_active);CHKERRQ(ierr);
 
     ierr = OPFLOWHasGenSetPoint(opflow,(PetscBool) has_gen_set_point);
+
+    ierr = OPFLOWUseAGC(opflow, (PetscBool)use_agc);CHKERRQ(ierr);
+
+    ierr = OPFLOWSetLoadLossPenalty(opflow, load_loss_penalty);CHKERRQ(ierr);
+
+    ierr = OPFLOWSetBusPowerImbalancePenalty(opflow, power_imbalance_penalty);CHKERRQ(ierr);
+
+    if (initialization_type == "MIDPOINT") {
+      ierr = OPFLOWSetInitializationType(opflow, OPFLOWINIT_MIDPOINT);CHKERRQ(ierr);
+    } else if (initialization_type == "FROMFILE") {
+      ierr = OPFLOWSetInitializationType(opflow, OPFLOWINIT_FROMFILE);CHKERRQ(ierr);
+    } else if (initialization_type == "ACPF") {
+      ierr = OPFLOWSetInitializationType(opflow, OPFLOWINIT_ACPF);CHKERRQ(ierr);
+    } else if (initialization_type == "FLATSTART") {
+      ierr = OPFLOWSetInitializationType(opflow, OPFLOWINIT_FLATSTART);CHKERRQ(ierr);
+    }
 
     ierr = OPFLOWSetUp(opflow);CHKERRQ(ierr);
 
@@ -214,6 +248,10 @@ int main(int argc, char** argv)
       fmt_comment(summary, col_width, "Did OPFLOW Converge", bool2str(conv_status));
       fmt_row(summary, col_width, "hiop_compute_mode", hiop_compute_mode);
       fmt_row(summary, col_width, "has_gen_set_point", bool2str(has_gen_set_point));
+      fmt_row(summary, col_width, "initialization_type", initialization_type);
+      fmt_row(summary, col_width, "load_loss_penalty", load_loss_penalty);
+      fmt_row(summary, col_width, "power_imbalance_penalty", power_imbalance_penalty);
+      fmt_row(summary, col_width, "use_agc", bool2str(use_agc));
     }
 
     ExaGOLog(EXAGO_LOG_INFO, "-- %s #%d: %s", testsuite_name.c_str(), total,

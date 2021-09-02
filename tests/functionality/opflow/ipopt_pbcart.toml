@@ -4,7 +4,8 @@ testsuite_name = "IPOPT OPFLOW Functionality Test Suite"
 model = 'POWER_BALANCE_CARTESIAN'
 solver = 'IPOPT'
 tolerance = 1e-3
-gen_bus_voltage_type = 1 # FIXED_WITHIN_QBOUNDS
+gen_bus_voltage_type = 'FIXED_WITHIN_QBOUNDS'
+has_gen_set_point = false
 
 # -- PBCAR model
 [[testcase]]
@@ -30,6 +31,7 @@ obj_value = 2.755757042019e+04
 
 # -- IBCAR model
 [[testcase]]
+model = 'CURRENT_BALANCE_CARTESIAN'
 network = 'datafiles/case9/case9mod.m'  
 is_loadloss_active =	false
 is_powerimb_active =	false
@@ -37,6 +39,7 @@ num_iters = 24
 obj_value = 4.144460534632e+03
 
 [[testcase]]
+model = 'CURRENT_BALANCE_CARTESIAN'
 network = 'datafiles/case118.m'
 is_loadloss_active =	false
 is_powerimb_active =	false
@@ -44,6 +47,7 @@ num_iters = 29
 obj_value = 1.296606940412e+05
 
 [[testcase]]
+model = 'CURRENT_BALANCE_CARTESIAN'
 network = 'datafiles/case_ACTIVSg200.m'
 is_loadloss_active =	false
 is_powerimb_active =	false
