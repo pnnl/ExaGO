@@ -41,6 +41,7 @@ workflow:
 .pnnl_after_script_template: &pnnl_after_script_definition
   after_script:
     - |
+      exit 0
       export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${MY_CLUSTER}/"
       # Iterate over possible jobid named files (jobid_%J)
       job_ids="$WORKDIR/jobid_*"
@@ -56,6 +57,7 @@ workflow:
 .pnnl_script_template: &pnnl_script_definition
   script:
     - |
+      exit 0
       set -xv
       #
       #  NOTES:  WORKDIR is on constance/marianas/newell
