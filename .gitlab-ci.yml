@@ -151,18 +151,32 @@ test_on_compute_node:
 # ---
 
 # For PNNL CI
+.pnnl-nonhpc-tags: &pnnl-nonhpc-definition
+  tags:
+    - k8s
+    - ikp
+    - exasgd
+    - basic
+
 cmake-lint:
   stage: build
   allow_failure: true
-  variables:
-    SLURM_Q: "newell_shared"
-    OUTPUT_SUFFIX: "_lint"
-    MY_CLUSTER: "newell"
-    SCRIPT_ARGS: " --job=cmake-lint "
-    WORKDIR_SUFFIX: "cmake-lint"
-  <<: *pnnl_tags_definition
-  <<: *pnnl_script_definition
+  <<: *pnnl-nonhpc-definition
   <<: *pnnl_rules_definition
+  image: ubuntu:20.04
+  script:
+    |
+    set -x
+    apt update && apt install -y python3 python3-pip
+    pip install cmake_format
+
+    export findCmakeFiles=`find . -name '*.cmake' -or -name CMakeLists.txt`
+    ret=0
+    for f in $findCmakeFiles; do
+      cmake-format --log-level info --check $f
+      ret=$(($ret + $?))
+    done
+    exit $ret
 
 ppc64le-gcc-cuda-build:
   stage: build
