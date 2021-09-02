@@ -4,4 +4,6 @@ spack:
   config:
     clingo: true
   concretization: together
-
+  view: false
+  mirrors:
+    minio: s3://spack
