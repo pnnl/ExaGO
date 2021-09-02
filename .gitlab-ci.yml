@@ -156,7 +156,6 @@ spack-generate-job:
   artifacts:
     paths:
       - buildsystem/container/generated-pipeline.yaml
-      - buildsystem/container/Dockerfile.*
 
 spack-build-job:
   <<: *pnnl_rules_definition
