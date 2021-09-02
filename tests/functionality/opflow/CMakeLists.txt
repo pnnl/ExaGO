@@ -42,11 +42,62 @@ if(EXAGO_INSTALL_TESTS)
     HIOP
   )
 
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_OPFLOW_RAJAHIOP_TOML_TESTSUITE
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:testOpflowFunctionalityTOML>
+    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_pbpolrajahiop.toml
+    -no_optfile
+    DEPENDS
+    HIOP
+    RAJA
+  )
+
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_TOML_TESTSUITE
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:testOpflowFunctionalityTOML>
+    ${CMAKE_CURRENT_SOURCE_DIR}/hiopsparse_pbpol.toml
+    -no_optfile
+    DEPENDS
+    HIOP_SPARSE
+  )
+
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_OPFLOW_IPOPT_CARTESIAN_TOML_TESTSUITE
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:testOpflowFunctionalityTOML>
+    ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_pbcart.toml
+    -no_optfile
+    DEPENDS
+    IPOPT
+  )
+
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_OPFLOW_IPOPT_POLAR_TOML_TESTSUITE
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:testOpflowFunctionalityTOML>
+    ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_pbpol.toml
+    -no_optfile
+    DEPENDS
+    IPOPT
+  )
+
   install(TARGETS testOpflowFunctionalityTOML
           RUNTIME DESTINATION tests/functionality
   )
 
-  set(test_suites hiop_pbpolhiop.toml)
+  set(test_suites hiop_pbpolhiop.toml hiop_pbpolrajahiop.toml
+                  hiopsparse_pbpol.toml ipopt_pbpol.toml ipopt_pbcart.toml
+  )
 
   install(FILES ${test_suites} DESTINATION share/exago/testsuites)
 

@@ -4,14 +4,8 @@ testsuite_name = "IPOPT OPFLOW Functionality Test Suite"
 model = 'POWER_BALANCE_POLAR'
 solver = 'IPOPT'
 tolerance = 1e-3
-gen_bus_voltage_type = 1 # FIXED_WITHIN_QBOUNDS
-
-[[testcase]]
-is_loadloss_active = false
-is_powerimb_active = false
-network = 'datafiles/case9/case9mod.m'
-num_iters = 25
-obj_value = 4.1513585954144e+03
+gen_bus_voltage_type = 'FIXED_WITHIN_QBOUNDS'
+has_gen_set_point = false
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'  
@@ -66,17 +60,19 @@ obj_value = 4.1513585954144e+03
 
 [[testcase]]
 network = 'datafiles/case118.m'
+description = "CHECK THIS ANSWER"
 is_loadloss_active =	false
 is_powerimb_active =	true
-num_iters = 166
-obj_value = 1.3013187197492e+05
+num_iters = 143
+obj_value = 1.3008569089941e+05
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
+description = "CHECK THIS ANSWER"
 is_loadloss_active =	false
 is_powerimb_active =	true
-num_iters = 245
-obj_value = 2.7564247365138e+04
+num_iters = 195
+obj_value = 2.7561895866753e+04
 
 # -- PBPOL model with load loss and power imbalance
 [[testcase]]
@@ -88,15 +84,124 @@ obj_value = 4.1513585954144e+03
 
 [[testcase]]
 network = 'datafiles/case118.m'
+description = "CHECK THIS ANSWER"
 is_loadloss_active =	true
 is_powerimb_active =	true
-num_iters = 154
+num_iters = 145
+obj_value = 1.3004655457438e+05
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+description = "CHECK THIS ANSWER"
+is_loadloss_active =	true
+is_powerimb_active =	true
+num_iters = 354
+obj_value = 2.7560626008184e+04
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'  
+description = "CHECK THIS ANSWER"
+is_loadloss_active =	false
+is_powerimb_active =	false
+initialization_type = "FROMFILE"
+num_iters = 25 
+obj_value = 4.1513585954144e+03
+
+[[testcase]]
+network = 'datafiles/case118.m'
+description = "CHECK THIS ANSWER"
+is_loadloss_active =	false
+is_powerimb_active =	false
+initialization_type = "FROMFILE"
+num_iters = 255
 obj_value = 1.3013187197492e+05
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
-is_loadloss_active =	true
-is_powerimb_active =	true
-num_iters = 493
+description = "CHECK THIS ANSWER"
+is_loadloss_active =	false
+is_powerimb_active =	false
+initialization_type = "FROMFILE"
+num_iters = 191
 obj_value = 2.7564247365138e+04
 
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'  
+description = "CHECK THIS ANSWER"
+is_loadloss_active =	false
+is_powerimb_active =	false
+initialization_type = "FLATSTART"
+num_iters = 25 
+obj_value = 4.1513585954144e+03
+
+[[testcase]]
+network = 'datafiles/case118.m'
+description = "CHECK THIS ANSWER"
+is_loadloss_active =	false
+is_powerimb_active =	false
+initialization_type = "FLATSTART"
+num_iters = 255
+obj_value = 1.3013187197492e+05
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+description = "CHECK THIS ANSWER"
+is_loadloss_active =	false
+is_powerimb_active =	false
+initialization_type = "FLATSTART"
+num_iters = 191
+obj_value = 2.7564247365138e+04
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'  
+description = "CHECK THIS ANSWER"
+is_loadloss_active =	false
+is_powerimb_active =	false
+use_agc = true
+num_iters = 24 
+obj_value = 4.305286924911201e+03
+
+[[testcase]]
+network = 'datafiles/case118.m'
+description = "CHECK THIS ANSWER"
+is_loadloss_active =	false
+is_powerimb_active =	false
+use_agc = true
+num_iters = 135
+obj_value = 1.3120693356652581e+05
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+description = "CHECK THIS ANSWER"
+is_loadloss_active =	false
+is_powerimb_active =	false
+use_agc = true
+num_iters = 75
+obj_value = 2.7564520456963968e+04
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'  
+description = "CHECK THIS ANSWER"
+is_loadloss_active =	false
+is_powerimb_active =	false
+gen_bus_voltage_type = 'FIXED_AT_SETPOINT'
+num_iters = 10 
+obj_value = 4.151358595803445e+03
+
+[[testcase]]
+network = 'datafiles/case118.m'
+description = "CHECK THIS ANSWER"
+is_loadloss_active =	false
+is_powerimb_active =	false
+gen_bus_voltage_type = 'FIXED_AT_SETPOINT'
+num_iters = 21
+obj_value = 1.31004751574488371e+05
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+description = "CHECK THIS ANSWER"
+is_loadloss_active =	false
+is_powerimb_active =	false
+gen_bus_voltage_type = 'FIXED_AT_SETPOINT'
+num_iters = 160
+obj_value = 3.0033692505285599e+04
