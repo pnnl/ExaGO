@@ -192,68 +192,68 @@ test_on_compute_node:
 # ---
 
 # For PNNL CI
-cmake-lint:
-  stage: build
-  allow_failure: true
-  <<: *pnnl-nonhpc-definition
-  <<: *pnnl_rules_definition
-  image: ubuntu:20.04
-  script:
-    |
-    set -x
-    apt update && apt install -y python3 python3-pip ack
-    pip install cmake_format
-    ret=0
-    for f in $(ack -f --type cmake); do
-      cmake-format --log-level info --check $f
-      ret=$(($ret + $?))
-    done
-    exit $ret
-
-ppc64le-gcc-cuda-build:
-  stage: build
-  variables:
-    SLURM_Q: "newell_shared"
-    MY_CLUSTER: "newell"
-    OUTPUT_SUFFIX: "_build"
-    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
-  <<: *pnnl_tags_definition
-  <<: *pnnl_script_definition
-  <<: *pnnl_rules_definition
-
-ppc64le-gcc-cuda-test:
-  stage: test
-  dependencies:
-    - ppc64le-gcc-cuda-build
-  variables:
-    SLURM_Q: "newell_shared"
-    MY_CLUSTER: "newell"
-    CTESTARGS: "-VV -E Python"
-    OUTPUT_SUFFIX: "_test"
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
-  <<: *pnnl_tags_definition
-  <<: *pnnl_script_definition
-  <<: *pnnl_after_script_definition
-  <<: *pnnl_rules_definition
-
-ppc64le-gcc-cuda-python-test:
-  stage: test
-  dependencies:
-    - ppc64le-gcc-cuda-build
-  variables:
-    SLURM_Q: "newell_shared"
-    MY_CLUSTER: "newell"
-    CTESTARGS: "-VV -R Python"
-    OUTPUT_SUFFIX: "_test_python"
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
-  <<: *pnnl_tags_definition
-  <<: *pnnl_script_definition
-    # No after_script as only one test per platform cleans up
-  <<: *pnnl_rules_definition
-  allow_failure: true
+#cmake-lint:
+#  stage: build
+#  allow_failure: true
+#  <<: *pnnl-nonhpc-definition
+#  <<: *pnnl_rules_definition
+#  image: ubuntu:20.04
+#  script:
+#    |
+#    set -x
+#    apt update && apt install -y python3 python3-pip ack
+#    pip install cmake_format
+#    ret=0
+#    for f in $(ack -f --type cmake); do
+#      cmake-format --log-level info --check $f
+#      ret=$(($ret + $?))
+#    done
+#    exit $ret
+#
+#ppc64le-gcc-cuda-build:
+#  stage: build
+#  variables:
+#    SLURM_Q: "newell_shared"
+#    MY_CLUSTER: "newell"
+#    OUTPUT_SUFFIX: "_build"
+#    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
+#    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+#  <<: *pnnl_tags_definition
+#  <<: *pnnl_script_definition
+#  <<: *pnnl_rules_definition
+#
+#ppc64le-gcc-cuda-test:
+#  stage: test
+#  dependencies:
+#    - ppc64le-gcc-cuda-build
+#  variables:
+#    SLURM_Q: "newell_shared"
+#    MY_CLUSTER: "newell"
+#    CTESTARGS: "-VV -E Python"
+#    OUTPUT_SUFFIX: "_test"
+#    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+#    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+#  <<: *pnnl_tags_definition
+#  <<: *pnnl_script_definition
+#  <<: *pnnl_after_script_definition
+#  <<: *pnnl_rules_definition
+#
+#ppc64le-gcc-cuda-python-test:
+#  stage: test
+#  dependencies:
+#    - ppc64le-gcc-cuda-build
+#  variables:
+#    SLURM_Q: "newell_shared"
+#    MY_CLUSTER: "newell"
+#    CTESTARGS: "-VV -R Python"
+#    OUTPUT_SUFFIX: "_test_python"
+#    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+#    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+#  <<: *pnnl_tags_definition
+#  <<: *pnnl_script_definition
+#    # No after_script as only one test per platform cleans up
+#  <<: *pnnl_rules_definition
+#  allow_failure: true
 
 x86_64-gcc-cuda-build:
   stage: build
@@ -283,21 +283,21 @@ x86_64-gcc-cuda-test:
   <<: *pnnl_after_script_definition
   <<: *pnnl_rules_definition
 
-x86_64-gcc-cuda-python-test:
-  stage: test
-  dependencies:
-    - x86_64-gcc-cuda-build
-  variables:
-    SLURM_Q: "dl_shared"
-    MY_CLUSTER: "marianas"
-    CTESTARGS: "-VV -R Python"
-    OUTPUT_SUFFIX: "_test_python"
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
-  <<: *pnnl_tags_definition
-  <<: *pnnl_script_definition
-    # No after_script as only one test per platform cleans up
-  <<: *pnnl_rules_definition
-  allow_failure: true
+    #x86_64-gcc-cuda-python-test:
+    #  stage: test
+    #  dependencies:
+    #    - x86_64-gcc-cuda-build
+    #  variables:
+    #    SLURM_Q: "dl_shared"
+    #    MY_CLUSTER: "marianas"
+    #    CTESTARGS: "-VV -R Python"
+    #    OUTPUT_SUFFIX: "_test_python"
+    #    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    #    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+    #  <<: *pnnl_tags_definition
+    #  <<: *pnnl_script_definition
+    #    # No after_script as only one test per platform cleans up
+    #  <<: *pnnl_rules_definition
+    #  allow_failure: true
 # ---
 
