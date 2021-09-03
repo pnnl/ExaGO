@@ -1,7 +1,7 @@
--netfile /people/abhy245/projects/exaSGD/exago/datafiles/case_ACTIVSg2000.m
+-netfile ../../datafiles/case_ACTIVSg2000.m
 
 # Contingency file
--ctgcfile /people/abhy245/projects/exaSGD/exago/datafiles/case_ACTIVSg2000.cont
+-ctgcfile ../../datafiles/case_ACTIVSg2000.cont
 
 # Coupling between second stage and first stage?
 -scopflow_iscoupling 1
