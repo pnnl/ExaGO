@@ -328,8 +328,8 @@ PetscErrorCode SCOPFLOWUpdateOPFLOWVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu,
 	    xl[opflow->idxn2sd_map[gen->startxpdevloc]]   = xu[opflow->idxn2sd_map[gen->startxpdevloc]] = 0.0;
 	  }
 	} else {
-	  xl[opflow->idxn2sd_map[gen->startxpdevloc]] = -gen->ramp_rate_30min;
-	  xu[opflow->idxn2sd_map[gen->startxpdevloc]] =  gen->ramp_rate_30min;
+	  xl[opflow->idxn2sd_map[gen->startxpdevloc]] = gen->pb - gen->pgs; //-gen->ramp_rate_30min;
+	  xu[opflow->idxn2sd_map[gen->startxpdevloc]] =  gen->pt - gen->pgs; //gen->ramp_rate_30min;
 	}
       }
     }

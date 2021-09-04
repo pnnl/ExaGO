@@ -194,7 +194,7 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double*
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
       if(gen0->status) {
-	gen0->pgs = gen->pgs = x[g++];
+	gen0->pgs = gen->pgs = gen->pg = x[g++];
       }
     }
   }

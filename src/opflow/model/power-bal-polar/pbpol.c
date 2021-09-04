@@ -84,8 +84,8 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow,Vec Xl,Vec Xu)
       if(opflow->has_gensetpoint) {
 	loc = gen->startxpdevloc;
 
-	xl[loc] = gen->pb - gen->pt;
-	xu[loc] = gen->pt - gen->pb;
+	xl[loc] = gen->pb - gen->pgs;
+	xu[loc] = gen->pt - gen->pgs;
 
 	loc = gen->startxpsetloc;
 	xl[loc] = gen->pb;
