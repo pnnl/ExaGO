@@ -20,6 +20,8 @@ do
 ${name}-build:
   stage: build
   tags: [k8s, ikp, exasgd, basic]
+  variables:
+    KANIKO_EXTRA_ARGS: --single-snapshot
   extends:
     - .pnnllib-gitlab-build-container-image
   before_script:
