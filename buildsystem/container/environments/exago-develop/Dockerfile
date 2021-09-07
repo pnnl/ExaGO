@@ -3,7 +3,7 @@ FROM spack/ubuntu-bionic:latest
 RUN mkdir /opt/spack-environment \
 &&  (echo "spack:" \
 &&   echo "  specs:" \
-&&   echo "  - exago@develop~ipopt~hiop+mpi~cuda target=linux-ubuntu18.04-x86_64" \
+&&   echo "  - exago@develop~ipopt~hiop+mpi~cuda" \
 &&   echo "  config:" \
 &&   echo "    clingo: true" \
 &&   echo "    build_jobs: 1" \

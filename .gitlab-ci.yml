@@ -135,38 +135,29 @@ workflow:
 stages:
   - build
   - test
-  - spack-generate
   - spack-build
 
-spack-generate-job:
-  image: ubuntu:20.04
-  <<: *pnnl_rules_definition
-  <<: *pnnl-nonhpc-definition
-  rules:
-    - when: manual
-    - if: '$CI_COMMIT_BRANCH == "develop"'
-      when: always
-  stage: spack-generate
-  script:
-    |
-    set -x
-    apt update && apt install -y bash git python3
-    cd buildsystem/container
-    bash generate-jobs.sh > generated-pipeline.yaml
-  artifacts:
-    paths:
-      - buildsystem/container/generated-pipeline.yaml
+# Include PNNL GitLab stdlib
+include:
+  - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v1/gitlab-lib.yaml'
 
 spack-build-job:
   <<: *pnnl_rules_definition
   stage: spack-build
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - when: manual
+  tags: [k8s, ikp, exasgd, basic]
+  parallel:
+    matrix:
+      - ENVIRONMENT: [exago-develop-hiop-0.4.1, exago-develop]
   variables:
-    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
-  trigger:
-    include:
-      - artifact: buildsystem/container/generated-pipeline.yaml
-        job: spack-generate-job
-    strategy: depend
+    KANIKO_EXTRA_ARGS: --single-snapshot
+  extends:
+    - .pnnllib-gitlab-build-container-image
+  before_script:
+    - cp buildsystem/container/environments/${ENVIRONMENT}/Dockerfile Dockerfile
 
 # For Ascent CI
 build_on_login_node:

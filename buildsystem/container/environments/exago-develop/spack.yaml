@@ -1,6 +1,6 @@
 spack:
   specs:
-    - exago@develop~ipopt~hiop+mpi~cuda target=linux-ubuntu18.04-x86_64
+    - exago@develop~ipopt~hiop+mpi~cuda
   config:
     clingo: true
     build_jobs: 1
