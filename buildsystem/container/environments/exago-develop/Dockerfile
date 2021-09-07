@@ -32,6 +32,6 @@ RUN mkdir /opt/spack-environment \
 RUN cd /opt/spack-environment && \
   spack env activate . && \
   spack gpg init && \
-  spack buildcache keys -it &&
+  spack buildcache keys -it && \
   spack install --fail-fast
 
