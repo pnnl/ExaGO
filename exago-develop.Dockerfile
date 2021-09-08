@@ -1,4 +1,6 @@
 FROM spack/ubuntu-bionic:latest
+ARG AWS_ACCESS_KEY_ID
+ARG AWS_SECRET_ACCESS_KEY
 
 RUN mkdir /opt/spack-environment \
 &&  (echo "spack:" \
