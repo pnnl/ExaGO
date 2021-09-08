@@ -52,7 +52,7 @@ RUN cd /opt/spack-environment && \
   do \
     spack buildcache create -af -d /cache --only=package $ii ; \
   done && \
-  spack buildcache sync --src-directory /cache --dest-mirror-url s3://spack && \
+  spack -d buildcache sync --src-directory /cache --dest-mirror-url s3://spack && \
   spack gpg export key.pub && \
   cat key.pub
 
