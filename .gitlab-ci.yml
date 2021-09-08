@@ -33,7 +33,7 @@ spack-build-job:
     matrix:
       - ENVIRONMENT: [minio-test]
   variables:
-    KANIKO_EXTRA_ARGS: --single-snapshot --build-arg AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY --build-arg AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+    KANIKO_EXTRA_ARGS: --single-snapshot --build-arg _AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY --build-arg _AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
   extends:
     - .pnnllib-gitlab-build-container-image
   before_script:
