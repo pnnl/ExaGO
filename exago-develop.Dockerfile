@@ -32,6 +32,19 @@ RUN mkdir /opt/spack-environment \
 RUN cd /opt/spack-environment && \
   spack env activate . && \
   spack gpg init && \
+  spack gpg create 'Asher Mancinelli' 'ashermancinelli@gmail.com' && \
   spack buildcache keys -it && \
-  spack install --fail-fast
+  spack mirror add minio s3://spack && \
+  spack install --fail-fast && \
+  mkdir /cache && \
+  for ii in $(spack find --format "yyy {version} /{hash}" | \
+        grep -v -E "^(develop^master)" | \
+        grep "yyy" | \
+        cut -f3 -d" "); \
+  do \
+    spack buildcache create -af -d /cache --only=package $ii ; \
+  done && \
+  spack buildcache sync --src-directory /cache --dest-mirror-url s3://spack && \
+  spack gpg export key.pub && \
+  cat key.pub
 

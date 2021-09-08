@@ -1,1 +1,0 @@
-../cmake-lint/marianasVariables.sh

@@ -21,10 +21,24 @@ RUN mkdir /opt/spack-environment \
 &&   echo "      - 3.13.5" \
 &&   echo "      variants: +mpi~hypre~hdf5~metis~superlu-dist") > /opt/spack-environment/spack.yaml
 
+ENV S3_ENDPOINT_URL=http://cache.exasgd.pnl.gov
+
 # Install the software, remove unnecessary deps
 RUN cd /opt/spack-environment && \
   spack env activate . && \
   spack gpg init && \
   spack buildcache keys -it && \
-  spack install --fail-fast
+  spack mirror add minio s3://spack && \
+  spack install --fail-fast && \
+  mkdir /cache && \
+  for ii in $(spack find --format "yyy {version} /{hash}" | \
+        grep -v -E "^(develop^master)" | \
+        grep "yyy" | \
+        cut -f3 -d" "); \
+  do \
+    spack buildcache create -af -d /cache --only=package $ii ; \
+  done && \
+  spack buildcache sync --src-directory /cache --dest-mirror-url s3://spack && \
+  spack gpg export key.pub && \
+  cat key.pub
 
