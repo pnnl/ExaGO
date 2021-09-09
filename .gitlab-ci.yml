@@ -26,8 +26,8 @@ include:
 spack-build-job:
   <<: *pnnl_rules_definition
   stage: spack-create-buildcache
-  rules:
-    - when: manual
+    # rules:
+    # - when: manual
   tags: [k8s, ikp, exasgd, basic]
   parallel:
     matrix:
@@ -35,8 +35,24 @@ spack-build-job:
   variables:
     AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
     AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-    KANIKO_EXTRA_ARGS: --single-snapshot --build-arg _AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY --build-arg _AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-  extends:
-    - .pnnllib-gitlab-build-container-image
+      # KANIKO_EXTRA_ARGS: --single-snapshot --build-arg AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY --build-arg AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+      # extends:
+      # - .pnnllib-gitlab-build-container-image
   before_script:
     - cp "${ENVIRONMENT}.Dockerfile" Dockerfile
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  script:
+  - mkdir -p /kaniko/.docker
+  - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+  - |
+    if [ -f /etc/gitlab-runner/certs/ca.crt ]; then
+      cat /etc/gitlab-runner/certs/ca.crt >> /kaniko/ssl/certs/ca-certificates.crt
+    fi
+  - |
+    DOCKERFILE="${DOCKERFILE:-Dockerfile}"
+    CONTAINER_TAG="${CONTAINER_TAG:-$CI_COMMIT_TAG}"
+    KANIKO_EXTRA_ARGS="${KANIKO_EXTRA_ARGS:-}"
+    /kaniko/executor --context "$CI_PROJECT_DIR" --dockerfile "$CI_PROJECT_DIR/$DOCKERFILE" --destination "$CI_REGISTRY_IMAGE${CONTAINER_PREFIX}:$CONTAINER_TAG" --build-arg AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY --build-arg AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID --single-snapshot
+
