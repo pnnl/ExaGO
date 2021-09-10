@@ -59,7 +59,7 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout)
   ierr = SOPFLOWSolverRegisterAll(sopflow);
 
   /* Run-time options */
-  sopflow->iscoupling = PETSC_FALSE;
+  sopflow->iscoupling = PETSC_TRUE;
 
   sopflow->scenfileset = PETSC_FALSE;
   sopflow->scenunctype = NONE;
@@ -325,10 +325,14 @@ PetscErrorCode SOPFLOWUpdateOPFLOWVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu,v
       for(k=0; k < bus->ngen; k++) {
 	ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
 	if(!gen->status) continue;
-	if(sopflow->mode == 0) continue;
-	else {
-	  xl[opflow->idxn2sd_map[gen->startxpdevloc]] = -gen->ramp_rate_30min;
-	  xu[opflow->idxn2sd_map[gen->startxpdevloc]] =  gen->ramp_rate_30min;
+	if(sopflow->mode == 0) {
+	  /* Only ref. bus responsible for make-up power for contingencies */
+	  if(bus->ide != REF_BUS || gen->genfuel_type != GENFUEL_WIND) {
+	    xl[opflow->idxn2sd_map[gen->startxpdevloc]]   = xu[opflow->idxn2sd_map[gen->startxpdevloc]] = 0.0;
+	  }
+	} else {
+	  xl[opflow->idxn2sd_map[gen->startxpdevloc]] = gen->pb - gen->pgs; //-gen->ramp_rate_30min;
+	  xu[opflow->idxn2sd_map[gen->startxpdevloc]] = gen->pt - gen->pgs;// gen->ramp_rate_30min;
 	}
       }
     }
@@ -346,11 +350,11 @@ extern PetscErrorCode SOPFLOWGetNumScenarios(SOPFLOW,ScenarioFileInputFormat,con
  * @param[in] sopflow application object 
  * @param[in] contingency file format
  * @param[in] name of the contingency list file
-*/
+ */
 PetscErrorCode SOPFLOWSetContingencyData(SOPFLOW sopflow,ContingencyFileInputFormat ctgcfileformat,const char ctgcfile[])
 {
   PetscErrorCode ierr;
-
+  
   PetscFunctionBegin;
 
   ierr = PetscMemcpy(sopflow->ctgcfile,ctgcfile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
@@ -611,7 +615,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
 
       if(flgctgc && sopflow->flatten_contingencies) {
 	if(sopflow->cont_num[s] != 0) {
-	  //	  ierr = OPFLOWSetObjectiveType(sopflow->opflows[s],NO_OBJ);CHKERRQ(ierr);
+	  ierr = OPFLOWSetObjectiveType(sopflow->opflows[s],NO_OBJ);CHKERRQ(ierr);
 	}
       }
       ierr = OPFLOWSetUp(sopflow->opflows[s]);CHKERRQ(ierr);

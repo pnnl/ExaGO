@@ -53,7 +53,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
   ierr = SCOPFLOWSolverRegisterAll(scopflow);
 
   /* Run-time options */
-  scopflow->iscoupling = PETSC_FALSE;
+  scopflow->iscoupling = PETSC_TRUE;;
 
   scopflow->ctgclist    = NULL;
   scopflow->ctgcfileset = PETSC_FALSE;

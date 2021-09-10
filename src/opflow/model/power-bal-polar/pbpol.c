@@ -88,8 +88,8 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow,Vec Xl,Vec Xu)
 	xu[loc] = gen->pt - gen->pgs;
 
 	loc = gen->startxpsetloc;
-	xl[loc] = gen->pb;
-	xu[loc] = gen->pt;
+	xl[loc] = -10000.0; // Free variable //gen->pb;
+	xu[loc] = 100000; // Free variable // gen->pt;
       }
     }
 
