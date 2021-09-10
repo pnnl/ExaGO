@@ -38,11 +38,14 @@ spack-build-job:
       # KANIKO_EXTRA_ARGS: --single-snapshot --build-arg AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY --build-arg AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
       # extends:
       # - .pnnllib-gitlab-build-container-image
-  before_script:
-    - cp "${ENVIRONMENT}.Dockerfile" Dockerfile
   image:
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
+  before_script:
+    - echo "export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> /kaniko/s3env.sh
+    - echo "export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> /kaniko/s3env.sh
+    - echo "export S3_ENDPOINT_URL=http://cache.exasgd.pnl.gov" >> /kaniko/s3env.sh
+    - cp "${ENVIRONMENT}.Dockerfile" Dockerfile
   script:
   - mkdir -p /kaniko/.docker
   - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
