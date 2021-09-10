@@ -3,7 +3,7 @@ FROM spack/ubuntu-bionic:latest
 RUN mkdir /opt/spack-environment \
 &&  (echo "spack:" \
 &&   echo "  specs:" \
-&&   echo "  - pkgconf" \
+&&   echo "  - perl" \
 &&   echo "  #- exago@develop~ipopt~hiop+mpi~cuda" \
 &&   echo "  config:" \
 &&   echo "    clingo: true" \
