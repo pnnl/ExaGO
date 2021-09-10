@@ -38,7 +38,6 @@ RUN cd /opt/spack-environment && \
   spack mirror add minio s3://spack && \
   spack mirror add local file:///cache && \
   spack buildcache keys -it && \
-  spack install wget && \
   spack env activate . && \
   spack install --fail-fast && \
   mkdir /cache && \
@@ -58,9 +57,8 @@ RUN cd /opt/spack-environment && \
         if (/^pub/) { $pub=1; } \
       }') && \
   spack gpg export "${keyid}.pub" && \
-  spack load wget && \
-  wget https://dl.min.io/client/mc/release/linux-amd64/mc && \
-  chmod +x mc && \
+  curl https://dl.min.io/client/mc/release/linux-amd64/mc -s -o ./mc && \
+  chmod +x ./mc && \
   ./mc alias set minio $S3_ENDPOINT_URL $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY && \
   ./mc cp "${keyid}.pub" minio/spack/_pgp/
 
