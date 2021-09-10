@@ -37,7 +37,7 @@ RUN cd /opt/spack-environment && \
   spack gpg create 'Asher Mancinelli' 'ashermancinelli@gmail.com' && \
   spack mirror add minio s3://spack && \
   spack mirror add local file:///cache && \
-  spack buildcache keys -it && \
+  spack --debug buildcache keys -it && \
   spack env activate . && \
   spack install --fail-fast && \
   mkdir /cache && \
