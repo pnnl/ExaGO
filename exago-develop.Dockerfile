@@ -34,6 +34,7 @@ RUN mkdir /opt/spack-environment \
 # Install the software, remove unnecessary deps
 RUN cd /opt/spack-environment && \
   . /kaniko/s3env.sh && \
+  set -x && \
   spack env activate . && \
   spack gpg init && \
   spack gpg create 'Asher Mancinelli' 'ashermancinelli@gmail.com' && \
