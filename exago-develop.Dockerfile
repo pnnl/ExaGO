@@ -50,6 +50,16 @@ RUN cd /opt/spack-environment && \
     spack buildcache create -af -d /cache --only=package $ii ; \
   done && \
   spack buildcache sync --src-directory /cache --dest-mirror-url s3://spack && \
-  spack gpg export key.pub && \
-  cat key.pub
+  keyid=$(spack gpg list | \
+    perl -e ' \
+      my $pub=0; \
+      while (<>) { \
+        if ($pub == 1) { s/\s+//g; print; exit; }; \
+        if (/^pub/) { $pub=1; } \
+      }') && \
+  spack gpg export "${keyid}.pub" && \
+  wget https://dl.min.io/client/mc/release/linux-amd64/mc && \
+  chmod +x mc && \
+  ./mc alias set minio $S3_ENDPOINT_URL $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY && \
+  ./mc cp "${keyid}.pub" minio/spack/_pgp/
 
