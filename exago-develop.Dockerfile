@@ -60,4 +60,9 @@ RUN cd /opt/spack-environment && \
   curl https://dl.min.io/client/mc/release/linux-amd64/mc -s -o ./mc && \
   chmod +x ./mc && \
   ./mc alias set minio $S3_ENDPOINT_URL $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY && \
-  ./mc cp "${keyid}.pub" minio/spack/build_cache/_pgp/
+  ./mc cp "${keyid}.pub" minio/spack/build_cache/_pgp/ && \
+  (./mc cp minio/spack/build_cache/_pgp/index.json . || echo '{"keys": {}}' >> index.json) && \
+  curl https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -L -s -o jq && \
+  chmod +x ./jq && \
+  (cat index.json | ./jq --arg keyid "${keyid}" '. * { keys: { ($keyid): {} } }' > updated_index.json) && \
+  ./mc cp updated_index.json minio/spack/build_cache/_pgp/index.json
