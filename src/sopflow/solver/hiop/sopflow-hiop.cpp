@@ -94,7 +94,7 @@ SOPFLOWHIOPInterface::SOPFLOWHIOPInterface(SOPFLOW sopflowin)
     for(k=0; k < bus->ngen; k++) {
       PSBUSGetGen(bus,k,&gen);
       if(gen->status) {
-	loc_xcoup[j] = gen->startxpsetloc; /* Location for Pgset */
+	loc_xcoup[j] = gen->startxpowloc; /* Location for Pg */
 	j++;
       }
     }
@@ -122,8 +122,10 @@ hiop::hiopSolveStatus SOPFLOWHIOPInterface::solve_master(hiop::hiopVector& xvec,
 
   //  printf("Rank[%d]:Enter solve_master\n",sopflow->comm->rank);
   ierr = OPFLOWSolve(opflow);
+  ierr = OPFLOWSolutionToPS(opflow);
   ierr = OPFLOWGetObjective(opflow,&obj);
   ierr = OPFLOWGetSolution(opflow,&X);
+  
   ierr = VecGetArrayRead(X,&xsol);
   ierr = PetscMemcpy(x,xsol,opflow->nx*sizeof(double));
   ierr = VecRestoreArrayRead(X,&xsol);
@@ -195,10 +197,6 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double* 
   }
 
   ierr = OPFLOWHasGenSetPoint(opflowscen,PETSC_TRUE);CHKERRQ(ierr); /* Activates ramping variables */
-  //  ierr = OPFLOWSetObjectiveType(opflowscen,NO_OBJ);CHKERRQ(ierr);
-  ierr = OPFLOWSetUpdateVariableBoundsFunction(opflowscen,SOPFLOWUpdateOPFLOWVariableBounds,(void*)sopflow);
-
-  ierr = OPFLOWSetUp(opflowscen);CHKERRQ(ierr);
   
   /* Update generator set-points */
   ps = opflowscen->ps;
@@ -209,20 +207,29 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double* 
     for(k=0; k < bus->ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
-      if(gen0->status) {
+      if(gen0->status && gen->status) {
+	// For non-renewable generators gen0->pt = gen->pt.
+	// For renewable generators, we need to use the set-point for the
+	// base-case generator. Otherwise if gen->pt < x[g] then the problem
+	// will be infeasible
+	//	gen->pt = gen0->pt; 
 	if(x[g] > gen->pt) {
 	  ierr = PetscPrintf(PETSC_COMM_SELF,"gen %d x[g] = %lf, gen->pt = %lf\n",gen->bus_i,x[g],gen->pt);CHKERRQ(ierr);
 	}
-	gen0->pgs = gen->pgs = x[g++];
-      }
+	gen0->pgs = gen->pgs = gen->pg = x[g++];
+      } else if(gen0->status) g++;
     }
   }
+
+  ierr = OPFLOWSetUpdateVariableBoundsFunction(opflowscen,SOPFLOWUpdateOPFLOWVariableBounds,(void*)sopflow);
+
+  ierr = OPFLOWSetUp(opflowscen);CHKERRQ(ierr);
 
   //  assert(g == n);
   /* Solve */
   ierr = OPFLOWSolve(opflowscen);
   ierr = OPFLOWGetObjective(opflowscen,&rval);
-  
+  ierr = OPFLOWSolutionToPS(opflowscen);CHKERRQ(ierr);
   return true;
 }
 
@@ -256,7 +263,7 @@ bool SOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int& n, double* x, 
     for(k=0; k < bus->ngen; k++) {
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
-      if(gen->status) {
+      if(gen0->status && gen->status) {
 	/* Get the lagrange multiplier for the generator set-point equality constraint x_i - x_0 
 	   gradient is the partial derivative for it (note that it is negative) */
 	if(opflow->has_gensetpoint) {

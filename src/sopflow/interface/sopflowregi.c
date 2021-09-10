@@ -80,9 +80,7 @@ extern PetscErrorCode SOPFLOWSolverCreate_IPOPT(SOPFLOW);
 extern PetscErrorCode SOPFLOWSolverCreate_EMPAR(SOPFLOW);
 
 #if defined(EXAGO_ENABLE_HIOP)
-#if defined(EXAGO_ENABLE_HIOP_DISTRIBUTED)
 extern PetscErrorCode SOPFLOWSolverCreate_HIOP(SOPFLOW);
-#endif
 #endif
 
 /*
@@ -101,9 +99,7 @@ PetscErrorCode SOPFLOWSolverRegisterAll(SOPFLOW sopflow)
   ierr = SOPFLOWSolverRegister(sopflow,SOPFLOWSOLVER_EMPAR,SOPFLOWSolverCreate_EMPAR);CHKERRQ(ierr);
 
 #if defined(EXAGO_ENABLE_HIOP)
-#if defined(EXAGO_ENABLE_HIOP_DISTRIBUTED)
   ierr = SOPFLOWSolverRegister(sopflow,SOPFLOWSOLVER_HIOP,SOPFLOWSolverCreate_HIOP);CHKERRQ(ierr);
-#endif
 #endif
 
   sopflow->SOPFLOWSolverRegisterAllCalled = PETSC_TRUE;
