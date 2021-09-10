@@ -59,5 +59,5 @@ RUN cd /opt/spack-environment && \
   curl https://dl.min.io/client/mc/release/linux-amd64/mc -s -o ./mc && \
   chmod +x ./mc && \
   ./mc alias set minio $S3_ENDPOINT_URL $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY && \
-  ./mc cp "${keyid}.pub" minio/spack/_pgp/
+  ./mc cp "${keyid}.pub" minio/spack/build_cache/_pgp/
 
