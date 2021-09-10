@@ -31,7 +31,7 @@ spack-build-job:
   tags: [k8s, ikp, exasgd, basic]
   parallel:
     matrix:
-      - ENVIRONMENT: [exago-develop, exago-develop-hiop-0.4.1]
+      - ENVIRONMENT: [exago-develop] #, exago-develop-hiop-0.4.1]
   variables:
     KANIKO_EXTRA_ARGS: --single-snapshot
   extends:

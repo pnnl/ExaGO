@@ -27,11 +27,11 @@ ENV S3_ENDPOINT_URL=http://cache.exasgd.pnl.gov
 
 # Install the software, remove unnecessary deps
 RUN cd /opt/spack-environment && \
+  . /kaniko/s3env.sh && \
   spack env activate . && \
   spack gpg init && \
   spack gpg create 'Asher Mancinelli' 'ashermancinelli@gmail.com' && \
   spack buildcache keys -it && \
-  export S3_ENDPOINT_URL=http://cache.exasgd.pnl.gov && \
   spack mirror add minio s3://spack && \
   spack mirror add local file:///cache && \
   spack install --fail-fast && \
