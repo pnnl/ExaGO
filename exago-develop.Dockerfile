@@ -1,6 +1,4 @@
 FROM spack/ubuntu-bionic:latest
-ARG AWS_ACCESS_KEY_ID
-ARG AWS_SECRET_ACCESS_KEY
 
 RUN mkdir /opt/spack-environment \
 &&  (echo "spack:" \
@@ -35,13 +33,13 @@ RUN mkdir /opt/spack-environment \
 RUN cd /opt/spack-environment && \
   . /kaniko/s3env.sh && \
   set -x && \
-  spack env activate . && \
   spack gpg init && \
   spack gpg create 'Asher Mancinelli' 'ashermancinelli@gmail.com' && \
   spack mirror add minio s3://spack && \
   spack mirror add local file:///cache && \
   spack buildcache keys -it && \
   spack install wget && \
+  spack env activate . && \
   spack install --fail-fast && \
   mkdir /cache && \
   for ii in $(spack find --format "yyy {version} /{hash}" | \
