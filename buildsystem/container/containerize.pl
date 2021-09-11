@@ -5,8 +5,14 @@ use warnings;
 use Getopt::Std;
 
 sub main::HELP_MESSAGE {
+
+  print "containerize.pl\n";
   print "-f <file> spack environment to containerize\n";
   print "-c        should this environment generate the build cache as well?\n";
+  print "\n";
+  print "Similar to the `spack containerize` command, this script generates\n";
+  print "a dockerfile to install the spack environment, but with out\n";
+  print "stripping the binaries and with an option to push to a buildcache.\n"
 
   exit;
 }
@@ -61,7 +67,7 @@ if ($opt_c) {
   # Generate local buildcache
   andand("  spack gpg init");
   bslash("  spack gpg create 'Asher Mancinelli' 'ashermancinelli\@gmail.com'");
-  andand("   --comment 'Key use to rebuild buildcache in CI'");
+  andand("   --comment 'Key used to generate buildcache in CI'");
   andand("  mkdir /cache");
   bslash("  for ii in \$(spack find --format \"yyy {version} /{hash}\" |");
   bslash("        grep -v -E \"^(develop^master)\" |");

@@ -150,7 +150,7 @@ include:
 spack-generate-job:
   <<: *pnnl_rules_definition
   stage: spack-generate
-  image: ubuntu:20.04
+  image: perl
     # rules:
     #   - if: $CI_COMMIT_BRANCH == "develop"
     #   - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -162,8 +162,6 @@ spack-generate-job:
   script:
     - |
       set -x
-      apt update && apt install -y curl
-      curl -L https://cpanmin.us/ -o cpanm && chmod +x ./cpanm && ./cpanm Getopt::Std
       args=""; export args
       if [ ! "x${REBUILD_SPACK_BUILDCACHE}" = "x0" ]; then
         args=" -c "; export args
