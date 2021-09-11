@@ -12,7 +12,7 @@ sub main::HELP_MESSAGE {
   print "\n";
   print "Similar to the `spack containerize` command, this script generates\n";
   print "a dockerfile to install the spack environment, but with out\n";
-  print "stripping the binaries and with an option to push to a buildcache.\n"
+  print "stripping the binaries and with an option to push to a buildcache.\n";
 
   exit;
 }
