@@ -190,6 +190,9 @@ spack-build-job:
     - job: spack-generate-job
       artifacts: true
   before_script:
+    - echo "export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> /kaniko/env
+    - echo "export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> /kaniko/env
+    - echo "export S3_ENDPOINT_URL=http://cache.exasgd.pnl.gov" >> /kaniko/env
     - cp "${ENVIRONMENT}.Dockerfile" Dockerfile
 
 # For Ascent CI

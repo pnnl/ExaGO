@@ -26,6 +26,8 @@ $opt_o = '-' if not defined $opt_o; # Shorthand for stdout
 die "Could not find spack environment" unless -f $opt_i;
 
 open(my $if, '<', $opt_i) or die $!;
+
+# two-arg open call, unfortunately...
 open(my $of, '>' . $opt_o) or die $!;
 
 # Line continuation
@@ -57,7 +59,7 @@ endwrap();
 andand("RUN cd /opt/spack-environment");
 
 # Load secrets to the minio instance
-andand("  . /kaniko/s3env.sh");
+andand("  . /kaniko/env");
 andand("  set -x");
 andand("  spack mirror add minio s3://spack");
 andand("  spack mirror add local file:///cache");
@@ -110,4 +112,4 @@ if ($opt_c) {
 endwrap();
 
 close $if;
-close $of unless ($of == \*STDOUT);
+close $of;
