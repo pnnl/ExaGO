@@ -192,7 +192,7 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double* 
 
       if(cont_num != 0) {
       ierr = PSApplyContingency(ps,sopflow->ctgclist->cont[cont_num]);CHKERRQ(ierr);
-      ierr = OPFLOWSetObjectiveType(opflowscen,NO_OBJ);CHKERRQ(ierr);
+      //      ierr = OPFLOWSetObjectiveType(opflowscen,NO_OBJ);CHKERRQ(ierr);
       }
     }
   }
