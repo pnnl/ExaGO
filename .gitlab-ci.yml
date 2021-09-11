@@ -149,7 +149,6 @@ include:
 
 spack-generate-job:
   <<: *pnnl_rules_definition
-  <<: *spack-parallel-def
   stage: spack-generate
   image: ubuntu:20.04
     # rules:
@@ -163,12 +162,15 @@ spack-generate-job:
   script:
     - |
       set -x
+      curl -L https://cpanmin.us/ -o cpanm && chmod +x ./cpanm && ./cpanm Getopt::Std
       args=""; export args
-      cp buildsystem/container/environments/${ENVIRONMENT}.yaml spack.yaml
       if [ ! "x${REBUILD_SPACK_BUILDCACHE}" = "x0" ]; then
         args=" -c "; export args
       fi
-      ./buildsystem/container/containerize.pl $args > "${ENVIRONMENT}.Dockerfile"
+      for spackenv in (find buildsystem/container/environments/ -name '*.yaml'); do
+        cp $spackenv ./spack.yaml
+        ./buildsystem/container/containerize.pl $args > "${ENVIRONMENT}.Dockerfile"
+      done
 
 spack-build-job:
   <<: *spack-parallel-def
