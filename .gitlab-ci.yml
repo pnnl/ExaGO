@@ -167,7 +167,7 @@ spack-generate-job:
       if [ ! "x${REBUILD_SPACK_BUILDCACHE}" = "x0" ]; then
         args=" -c "; export args
       fi
-      for spackenv in (find buildsystem/container/environments/ -name '*.yaml'); do
+      for spackenv in $(find buildsystem/container/environments/ -name '*.yaml'); do
         cp $spackenv ./spack.yaml
         ./buildsystem/container/containerize.pl $args > "${ENVIRONMENT}.Dockerfile"
       done
