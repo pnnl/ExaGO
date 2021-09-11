@@ -135,30 +135,23 @@ workflow:
 stages:
   - build
   - test
+  - spack-generate
   - spack-build
 
 # Include PNNL GitLab stdlib
 include:
   - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v1/gitlab-lib.yaml'
 
-spack-build-job:
+spack-generate-job:
   <<: *pnnl_rules_definition
-  stage: spack-build
+  stage: spack-generate
+  image: ubuntu:20.04
     # rules:
     #   - if: $CI_COMMIT_BRANCH == "develop"
     #   - if: $CI_PIPELINE_SOURCE == "schedule"
     #   - when: manual
   tags: [k8s, ikp, exasgd, basic]
-  parallel:
-    matrix:
-      - ENVIRONMENT: [exago-develop-hiop-0.4.1, exago-develop]
-  variables:
-    KANIKO_EXTRA_ARGS: --single-snapshot
-    CONTAINER_TAG: $ENVIRONMENT
-  extends:
-    - .pnnllib-gitlab-build-container-image
   artifacts:
-    # For debugging
     paths:
       - "*.Dockerfile"
   before_script:
@@ -169,8 +162,25 @@ spack-build-job:
       if [ ! "x${REBUILD_SPACK_BUILDCACHE}" = "x0" ]; then
         args=" -c "; export args
       fi
-      perl ./buildsystem/container/containerize.pl $args > "${ENVIRONMENT}.Dockerfile"
-      cp "${ENVIRONMENT}.Dockerfile" Dockerfile
+      ./buildsystem/container/containerize.pl $args > "${ENVIRONMENT}.Dockerfile"
+
+spack-build-job:
+  <<: *pnnl_rules_definition
+  stage: spack-generate
+  tags: [k8s, ikp, exasgd, basic]
+  parallel:
+    matrix:
+      - ENVIRONMENT: [exago-develop-hiop-0.4.1, exago-develop]
+  variables:
+    KANIKO_EXTRA_ARGS: --single-snapshot
+    CONTAINER_TAG: $ENVIRONMENT
+  extends:
+    - .pnnllib-gitlab-build-container-image
+  needs:
+    - job: spack-build-job
+      artifacts: true
+  before_script:
+    - cp "${ENVIRONMENT}.Dockerfile" Dockerfile
 
 # For Ascent CI
 build_on_login_node:
