@@ -6,9 +6,10 @@ use Getopt::Std;
 
 sub main::HELP_MESSAGE {
 
-  print "containerize.pl\n";
-  print "-f <file> spack environment to containerize\n";
-  print "-c        should this environment generate the build cache as well?\n";
+  print "\ncontainerize.pl\n";
+  print "  -f <file> spack environment to containerize (default: spack.yaml)\n";
+  print "  -o <file> file to which the docker file should be written (default: stderr)\n";
+  print "  -c        should this environment generate the build cache as well?\n";
   print "\n";
   print "Similar to the `spack containerize` command, this script generates\n";
   print "a dockerfile to install the spack environment, but with out\n";
@@ -17,34 +18,36 @@ sub main::HELP_MESSAGE {
   exit;
 }
 
-our($opt_f, $opt_c);
-getopts("cf:");
+our($opt_f, $opt_o, $opt_c);
+getopts("co:f:");
 
 $opt_f = "./spack.yaml" if not defined $opt_f;
+$opt_o = '-' if not defined $opt_o; # Shorthand for stdout
 die "Could not find spack environment" unless -f $opt_f;
 
-open(FH, '<', $opt_f) or die $!;
+open(my $if, '<', $opt_f) or die $!;
+open(my $of, '>' . $opt_o) or die $!;
 
 # Line continuation
 sub bslash {
   my $str = shift;
-  print "$str \\\n";
+  print $of "$str \\\n";
 }
 
 # Continue on the next line, contingent on this line's success
 sub andand {
   my $str = shift;
-  print "$str && \\\n";
+  print $of "$str && \\\n";
 }
 
 # End with a posix "true" command
-sub endwrap { print "  :\n\n"; }
+sub endwrap { print $of "  :\n\n"; }
 
-print "FROM spack/ubuntu-bionic:latest\n\n";
+print $of "FROM spack/ubuntu-bionic:latest\n\n";
 
 # Create the environment in the container
 andand("RUN mkdir /opt/spack-environment");
-while (<FH>) {
+while (<$if>) {
   chomp();
   andand("  echo \"$_\"");
 }
@@ -105,3 +108,6 @@ if ($opt_c) {
 }
 
 endwrap();
+
+close $if;
+close $of unless ($of == \*STDOUT);

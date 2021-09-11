@@ -169,8 +169,8 @@ spack-generate-job:
         args=" -c "; export args
       fi
       for spackenv in $(find buildsystem/container/environments/ -name '*.yaml'); do
-        cp $spackenv ./spack.yaml
-        ./buildsystem/container/containerize.pl $args > "${spackenv}.Dockerfile"
+        echo "Processing ${spackenv}"
+        ./buildsystem/container/containerize.pl $args -f "${spackenv}" -o "$(basename ${spackenv}).Dockerfile"
       done
 
 spack-build-job:
