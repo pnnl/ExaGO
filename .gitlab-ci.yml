@@ -177,7 +177,7 @@ spack-build-job:
   extends:
     - .pnnllib-gitlab-build-container-image
   needs:
-    - job: spack-build-job
+    - job: spack-generate-job
       artifacts: true
   before_script:
     - cp "${ENVIRONMENT}.Dockerfile" Dockerfile
