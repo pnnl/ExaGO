@@ -154,18 +154,24 @@ spack-build-job:
       - ENVIRONMENT: [exago-develop-hiop-0.4.1, exago-develop]
   variables:
     KANIKO_EXTRA_ARGS: --single-snapshot
+    CONTAINER_TAG: $ENVIRONMENT
   extends:
     - .pnnllib-gitlab-build-container-image
+  artifacts:
+    # For debugging
+    paths:
+      - *.Dockerfile
   before_script:
     - |
       set -x
       cp buildsystem/container/environments/${ENVIRONMENT}.yaml spack.yaml
       args=""; export args;
       if [ "x${REBUILD_SPACK_BUILDCACHE}" = "x0" ]; then
-        ./buildsystem/container/containerize.pl > Dockerfile
+        ./buildsystem/container/containerize.pl > "${ENVIRONMENT}.Dockerfile"
       else
-        ./buildsystem/container/containerize.pl -c > Dockerfile
+        ./buildsystem/container/containerize.pl -c > "${ENVIRONMENT}.Dockerfile"
       fi
+      cp "${ENVIRONMENT}.Dockerfile" Dockerfile
 
 # For Ascent CI
 build_on_login_node:
