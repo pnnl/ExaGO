@@ -168,9 +168,12 @@ spack-generate-job:
       if [ ! "x${REBUILD_SPACK_BUILDCACHE}" = "x0" ]; then
         args=" -c "; export args
       fi
-      for spackenv in $(find buildsystem/container/environments/ -name '*.yaml'); do
+      for infile in $(find buildsystem/container/environments/ -name '*.yaml'); do
         echo "Processing ${spackenv}"
-        ./buildsystem/container/containerize.pl $args -f "${spackenv}" -o "$(basename ${spackenv}).Dockerfile"
+        # Remove extension, use cwd
+        outfile=$(basename ${infile})
+        outfile="${outfile%.*}.Dockerfile"
+        ./buildsystem/container/containerize.pl $args -i "${infile}" -o "${outfile}"
       done
 
 spack-build-job:

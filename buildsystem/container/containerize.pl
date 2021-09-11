@@ -7,7 +7,7 @@ use Getopt::Std;
 sub main::HELP_MESSAGE {
 
   print "\ncontainerize.pl\n";
-  print "  -f <file> spack environment to containerize (default: spack.yaml)\n";
+  print "  -i <file> spack environment to containerize (default: spack.yaml)\n";
   print "  -o <file> file to which the docker file should be written (default: stderr)\n";
   print "  -c        should this environment generate the build cache as well?\n";
   print "\n";
@@ -18,14 +18,14 @@ sub main::HELP_MESSAGE {
   exit;
 }
 
-our($opt_f, $opt_o, $opt_c);
-getopts("co:f:");
+our($opt_i, $opt_o, $opt_c);
+getopts("co:i:");
 
-$opt_f = "./spack.yaml" if not defined $opt_f;
+$opt_i = "./spack.yaml" if not defined $opt_i;
 $opt_o = '-' if not defined $opt_o; # Shorthand for stdout
-die "Could not find spack environment" unless -f $opt_f;
+die "Could not find spack environment" unless -f $opt_i;
 
-open(my $if, '<', $opt_f) or die $!;
+open(my $if, '<', $opt_i) or die $!;
 open(my $of, '>' . $opt_o) or die $!;
 
 # Line continuation
