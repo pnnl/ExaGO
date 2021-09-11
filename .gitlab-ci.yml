@@ -160,7 +160,7 @@ spack-build-job:
   artifacts:
     # For debugging
     paths:
-      - *.Dockerfile
+      - "*.Dockerfile"
   before_script:
     - |
       set -x
