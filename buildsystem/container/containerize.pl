@@ -57,7 +57,7 @@ while (<$if>) {
   chomp();
   andand("  echo \"$_\"");
 }
-print $of "  :) > spack.yaml\n";
+print $of "  :) > /opt/spack-environment/spack.yaml\n";
 nl();
 
 # Base commands used in every build
