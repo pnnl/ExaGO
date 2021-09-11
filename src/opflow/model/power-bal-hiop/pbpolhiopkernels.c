@@ -421,7 +421,7 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLHIOP(OPFLOW opflow,double *xl,d
       xl[genparams->xidx[i]+2] = genparams->pb[i] - genparams->pt[i];
       xu[genparams->xidx[i]+2] = genparams->pt[i] - genparams->pb[i];
       xl[genparams->xidx[i]+3] = genparams->pb[i];
-      xu[genparams->xidx[i]+3] = genparams->pt[i];
+      xu[genparams->xidx[i]+3] = 10000.0; //genparams->pt[i]; This is a temporary fix for now. The proper fix is to check the generator fuel type and set it o gen->pt if it is non-renewable and 10000.0 otherwise.
     }
   }
 
