@@ -621,7 +621,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
 
       if(flgctgc && sopflow->flatten_contingencies) {
 	if(sopflow->cont_num[s] != 0) {
-	  ierr = OPFLOWSetObjectiveType(sopflow->opflows[s],NO_OBJ);CHKERRQ(ierr);
+	  //	  ierr = OPFLOWSetObjectiveType(sopflow->opflows[s],NO_OBJ);CHKERRQ(ierr);
 	}
       }
       ierr = OPFLOWSetUp(sopflow->opflows[s]);CHKERRQ(ierr);
