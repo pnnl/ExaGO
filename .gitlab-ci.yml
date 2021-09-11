@@ -162,6 +162,7 @@ spack-generate-job:
   script:
     - |
       set -x
+      apt update && apt install -y curl
       curl -L https://cpanmin.us/ -o cpanm && chmod +x ./cpanm && ./cpanm Getopt::Std
       args=""; export args
       if [ ! "x${REBUILD_SPACK_BUILDCACHE}" = "x0" ]; then
