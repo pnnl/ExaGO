@@ -144,10 +144,10 @@ include:
 spack-build-job:
   <<: *pnnl_rules_definition
   stage: spack-build
-  rules:
-    - if: $CI_COMMIT_BRANCH == "develop"
-    - if: $CI_PIPELINE_SOURCE == "schedule"
-    - when: manual
+    # rules:
+    #   - if: $CI_COMMIT_BRANCH == "develop"
+    #   - if: $CI_PIPELINE_SOURCE == "schedule"
+    #   - when: manual
   tags: [k8s, ikp, exasgd, basic]
   parallel:
     matrix:
@@ -164,13 +164,12 @@ spack-build-job:
   before_script:
     - |
       set -x
+      args=""; export args
       cp buildsystem/container/environments/${ENVIRONMENT}.yaml spack.yaml
-      args=""; export args;
-      if [ "x${REBUILD_SPACK_BUILDCACHE}" = "x0" ]; then
-        ./buildsystem/container/containerize.pl > "${ENVIRONMENT}.Dockerfile"
-      else
-        ./buildsystem/container/containerize.pl -c > "${ENVIRONMENT}.Dockerfile"
+      if [ ! "x${REBUILD_SPACK_BUILDCACHE}" = "x0" ]; then
+        args=" -c "; export args
       fi
+      perl ./buildsystem/container/containerize.pl $args > "${ENVIRONMENT}.Dockerfile"
       cp "${ENVIRONMENT}.Dockerfile" Dockerfile
 
 # For Ascent CI
