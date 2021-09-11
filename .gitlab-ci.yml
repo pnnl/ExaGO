@@ -170,7 +170,7 @@ spack-generate-job:
       fi
       for spackenv in $(find buildsystem/container/environments/ -name '*.yaml'); do
         cp $spackenv ./spack.yaml
-        ./buildsystem/container/containerize.pl $args > "${ENVIRONMENT}.Dockerfile"
+        ./buildsystem/container/containerize.pl $args > "${spackenv}.Dockerfile"
       done
 
 spack-build-job:
