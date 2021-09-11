@@ -142,8 +142,14 @@ stages:
 include:
   - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v1/gitlab-lib.yaml'
 
+.spack-parallel: &spack-parallel-def
+  parallel:
+    matrix:
+      - ENVIRONMENT: [exago-develop-hiop-0.4.1, exago-develop]
+
 spack-generate-job:
   <<: *pnnl_rules_definition
+  <<: *spack-parallel-def
   stage: spack-generate
   image: ubuntu:20.04
     # rules:
@@ -165,12 +171,10 @@ spack-generate-job:
       ./buildsystem/container/containerize.pl $args > "${ENVIRONMENT}.Dockerfile"
 
 spack-build-job:
+  <<: *spack-parallel-def
   <<: *pnnl_rules_definition
   stage: spack-build
   tags: [k8s, ikp, exasgd, basic]
-  parallel:
-    matrix:
-      - ENVIRONMENT: [exago-develop-hiop-0.4.1, exago-develop]
   variables:
     KANIKO_EXTRA_ARGS: --single-snapshot
     CONTAINER_TAG: $ENVIRONMENT
