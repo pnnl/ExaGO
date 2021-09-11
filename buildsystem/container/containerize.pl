@@ -43,17 +43,22 @@ sub andand {
 }
 
 # End with a posix "true" command
-sub endwrap { print $of "  :\n\n"; }
+sub endwrap { print $of "  :\n"; }
+
+# write newline to the output file
+sub nl { print $of "\n"; }
 
 print $of "FROM spack/ubuntu-bionic:latest\n\n";
 
-# Create the environment in the container
+# Write to the environment file
 andand("RUN mkdir /opt/spack-environment");
+bslash("  (");
 while (<$if>) {
   chomp();
   andand("  echo \"$_\"");
 }
-endwrap();
+andand("  :) > spack.yaml");
+nl();
 
 # Base commands used in every build
 andand("RUN cd /opt/spack-environment");
@@ -110,6 +115,7 @@ if ($opt_c) {
 }
 
 endwrap();
+nl();
 
 close $if;
 close $of;
