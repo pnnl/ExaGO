@@ -6,8 +6,6 @@ spack:
   config:
     clingo: true
     build_jobs: 1
-  mirrors:
-    e4s: https://cache.e4s.io
   packages:
     all:
       target: [x86_64]

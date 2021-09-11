@@ -157,7 +157,15 @@ spack-build-job:
   extends:
     - .pnnllib-gitlab-build-container-image
   before_script:
-    - cp buildsystem/container/environments/${ENVIRONMENT}/Dockerfile Dockerfile
+    - |
+      set -x
+      cp buildsystem/container/environments/${ENVIRONMENT}.yaml spack.yaml
+      args=""; export args;
+      if [ "x${REBUILD_SPACK_BUILDCACHE}" = "x0" ]; then
+        ./buildsystem/container/containerize.pl > Dockerfile
+      else
+        ./buildsystem/container/containerize.pl -c > Dockerfile
+      fi
 
 # For Ascent CI
 build_on_login_node:
