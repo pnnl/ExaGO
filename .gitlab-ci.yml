@@ -145,7 +145,7 @@ include:
 .spack-parallel: &spack-parallel-def
   parallel:
     matrix:
-      - ENVIRONMENT: [exago-develop-hiop-0.4.1, exago-develop]
+      - ENVIRONMENT: [exago-develop-hiop-0.4.1] # , exago-develop
 
 spack-generate-job:
   <<: *pnnl_rules_definition
