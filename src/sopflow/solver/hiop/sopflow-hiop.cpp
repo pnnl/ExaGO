@@ -189,9 +189,10 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double* 
       scen_num = s/sopflow->Nc;
       cont_num = s%sopflow->Nc;
       ierr = PSApplyScenario(ps,sopflow->scenlist.scen[scen_num]);CHKERRQ(ierr);
-      ierr = PSApplyContingency(ps,sopflow->ctgclist->cont[cont_num]);CHKERRQ(ierr);
+
       if(cont_num != 0) {
-	ierr = OPFLOWSetObjectiveType(opflowscen,NO_OBJ);CHKERRQ(ierr);
+      ierr = PSApplyContingency(ps,sopflow->ctgclist->cont[cont_num]);CHKERRQ(ierr);
+      ierr = OPFLOWSetObjectiveType(opflowscen,NO_OBJ);CHKERRQ(ierr);
       }
     }
   }

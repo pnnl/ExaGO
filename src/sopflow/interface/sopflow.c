@@ -331,8 +331,14 @@ PetscErrorCode SOPFLOWUpdateOPFLOWVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu,v
 	    xl[opflow->idxn2sd_map[gen->startxpdevloc]]   = xu[opflow->idxn2sd_map[gen->startxpdevloc]] = 0.0;
 	  }
 	} else {
-	  xl[opflow->idxn2sd_map[gen->startxpdevloc]] = gen->pb - gen->pgs; //-gen->ramp_rate_30min;
-	  xu[opflow->idxn2sd_map[gen->startxpdevloc]] = gen->pt - gen->pgs;// gen->ramp_rate_30min;
+	  if(gen->genfuel_type == GENFUEL_WIND) {
+	    // We don't exactly know what the set-point would be during the primaal decomposition iterations. So, we relax the bounds for the power deviations or the renwable generator 
+	    xl[opflow->idxn2sd_map[gen->startxpdevloc]] = -10000.0; //-gen->ramp_rate_30min;
+	    xu[opflow->idxn2sd_map[gen->startxpdevloc]] = 10000.0;;// gen->ramp_rate_30min;
+	  } else {
+	    xl[opflow->idxn2sd_map[gen->startxpdevloc]] = gen->pb - gen->pt; //-gen->ramp_rate_30min;
+	    xu[opflow->idxn2sd_map[gen->startxpdevloc]] = gen->pt - gen->pb;// gen->ramp_rate_30min;
+	  }
 	}
       }
     }

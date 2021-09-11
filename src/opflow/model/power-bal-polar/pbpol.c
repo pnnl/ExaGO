@@ -83,13 +83,24 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow,Vec Xl,Vec Xu)
 
       if(opflow->has_gensetpoint) {
 	loc = gen->startxpdevloc;
-
-	xl[loc] = gen->pb - gen->pgs;
-	xu[loc] = gen->pt - gen->pgs;
-
+	
+	xl[loc] = gen->pb - gen->pt;
+	xu[loc] = gen->pt - gen->pb;
+	
 	loc = gen->startxpsetloc;
-	xl[loc] = -10000.0; // Free variable //gen->pb;
-	xu[loc] = 100000; // Free variable // gen->pt;
+	
+	if(gen->genfuel_type == GENFUEL_WIND) {
+	  xl[loc] = gen->pb;;
+	  /* We don't what the upper set-point would be. It may
+	     exceed gen->pt for stochastic scenarios. We don't have
+	     data on what the max. renewable energy output is, so we
+	     set it to some max. upper value 
+	  */
+	  xu[loc] = 10000.0;
+	} else {
+	  xl[loc] = gen->pb;
+	  xu[loc] = gen->pt;
+	}
       }
     }
 
