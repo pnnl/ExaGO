@@ -150,7 +150,9 @@ include:
 spack-generate-job:
   <<: *pnnl_rules_definition
   stage: spack-generate
-  image: perl
+  image:
+    name: perl
+    entrypoint: ["/bin/bash", "-c"]
     # rules:
     #   - if: $CI_COMMIT_BRANCH == "develop"
     #   - if: $CI_PIPELINE_SOURCE == "schedule"
