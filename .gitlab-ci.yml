@@ -133,8 +133,8 @@ workflow:
     - basic
 
 stages:
-  - build
-  - test
+  #- build
+  #- test
   - spack-generate
   - spack-build
 
@@ -154,7 +154,7 @@ spack-generate-job:
   artifacts:
     paths:
       - "*.Dockerfile"
-  before_script:
+  script:
     - |
       set -x
       args=""; export args
@@ -166,7 +166,7 @@ spack-generate-job:
 
 spack-build-job:
   <<: *pnnl_rules_definition
-  stage: spack-generate
+  stage: spack-build
   tags: [k8s, ikp, exasgd, basic]
   parallel:
     matrix:
@@ -183,26 +183,26 @@ spack-build-job:
     - cp "${ENVIRONMENT}.Dockerfile" Dockerfile
 
 # For Ascent CI
-build_on_login_node:
-  stage: build
-  tags:
-    - nobatch
-  rules:
-    - if: '$CI_PROJECT_PATH == "ecpcitest/exasgd/exago"'
-  <<: *ornl_script_definition
-  <<: *ornl_environment_variables
-
-test_on_compute_node:
-  stage: test
-  dependencies:
-    - build_on_login_node
-  tags:
-    - batch
-  rules:
-    - if: '$CI_PROJECT_PATH == "ecpcitest/exasgd/exago"'
-  <<: *ornl_test_script_definition
-  <<: *ornl_environment_variables
-
+#build_on_login_node:
+#  stage: build
+#  tags:
+#    - nobatch
+#  rules:
+#    - if: '$CI_PROJECT_PATH == "ecpcitest/exasgd/exago"'
+#  <<: *ornl_script_definition
+#  <<: *ornl_environment_variables
+#
+#test_on_compute_node:
+#  stage: test
+#  dependencies:
+#    - build_on_login_node
+#  tags:
+#    - batch
+#  rules:
+#    - if: '$CI_PROJECT_PATH == "ecpcitest/exasgd/exago"'
+#  <<: *ornl_test_script_definition
+#  <<: *ornl_environment_variables
+#
 # ---
 
 # For PNNL CI
@@ -269,49 +269,49 @@ test_on_compute_node:
 #  <<: *pnnl_rules_definition
 #  allow_failure: true
 
-x86_64-gcc-cuda-build:
-  stage: build
-  variables:
-    SLURM_Q: "dl_shared"
-    MY_CLUSTER: "marianas"
-    OUTPUT_SUFFIX: "_build"
-    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
-  <<: *pnnl_tags_definition
-  <<: *pnnl_script_definition
-  <<: *pnnl_rules_definition
+#x86_64-gcc-cuda-build:
+#  stage: build
+#  variables:
+#    SLURM_Q: "dl_shared"
+#    MY_CLUSTER: "marianas"
+#    OUTPUT_SUFFIX: "_build"
+#    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
+#    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+#  <<: *pnnl_tags_definition
+#  <<: *pnnl_script_definition
+#  <<: *pnnl_rules_definition
+#
+#x86_64-gcc-cuda-test:
+#  stage: test
+#  dependencies:
+#    - x86_64-gcc-cuda-build
+#  variables:
+#    SLURM_Q: "dl_shared"
+#    MY_CLUSTER: "marianas"
+#    CTESTARGS: "-VV -E Python"
+#    OUTPUT_SUFFIX: "_test"
+#    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+#    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+#  <<: *pnnl_tags_definition
+#  <<: *pnnl_script_definition
+#  <<: *pnnl_after_script_definition
+#  <<: *pnnl_rules_definition
 
-x86_64-gcc-cuda-test:
-  stage: test
-  dependencies:
-    - x86_64-gcc-cuda-build
-  variables:
-    SLURM_Q: "dl_shared"
-    MY_CLUSTER: "marianas"
-    CTESTARGS: "-VV -E Python"
-    OUTPUT_SUFFIX: "_test"
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
-  <<: *pnnl_tags_definition
-  <<: *pnnl_script_definition
-  <<: *pnnl_after_script_definition
-  <<: *pnnl_rules_definition
-
-    #x86_64-gcc-cuda-python-test:
-    #  stage: test
-    #  dependencies:
-    #    - x86_64-gcc-cuda-build
-    #  variables:
-    #    SLURM_Q: "dl_shared"
-    #    MY_CLUSTER: "marianas"
-    #    CTESTARGS: "-VV -R Python"
-    #    OUTPUT_SUFFIX: "_test_python"
-    #    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    #    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
-    #  <<: *pnnl_tags_definition
-    #  <<: *pnnl_script_definition
-    #    # No after_script as only one test per platform cleans up
-    #  <<: *pnnl_rules_definition
-    #  allow_failure: true
+#x86_64-gcc-cuda-python-test:
+#  stage: test
+#  dependencies:
+#    - x86_64-gcc-cuda-build
+#  variables:
+#    SLURM_Q: "dl_shared"
+#    MY_CLUSTER: "marianas"
+#    CTESTARGS: "-VV -R Python"
+#    OUTPUT_SUFFIX: "_test_python"
+#    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+#    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+#  <<: *pnnl_tags_definition
+#  <<: *pnnl_script_definition
+#    # No after_script as only one test per platform cleans up
+#  <<: *pnnl_rules_definition
+#  allow_failure: true
 # ---
 
