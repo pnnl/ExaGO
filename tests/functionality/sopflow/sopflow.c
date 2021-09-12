@@ -57,7 +57,7 @@ int main(int argc,char **argv)
   
   /* Set Scenario Data file */
   if(flgscen) {
-    ierr = SOPFLOWSetScenarioData(sopflow,SOPFLOW_NATIVE,WIND,scenfile);CHKERRQ(ierr);
+    ierr = SOPFLOWSetScenarioData(sopflow,SOPFLOW_NATIVE_MULTIPERIOD,WIND,scenfile);CHKERRQ(ierr);
   }
   
   /* Set a subset of scenarios to be selected. Can use the option -sopflow_Ns instead */

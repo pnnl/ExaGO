@@ -282,6 +282,19 @@ PetscErrorCode SOPFLOWSetSolver(SOPFLOW sopflow,const char* solvername)
   PetscFunctionReturn(0);
 }
 
+/**
+ * @brief Set SOPFLOW number of scenarios
+ *
+ * @param[in] sopflow application object
+ * @param[in] num_scen number of scenarios
+ */
+PetscErrorCode SOPFLOWSetNumScenarios(SOPFLOW sopflow, PetscInt num_scen)
+{
+  PetscFunctionBegin;
+  sopflow->Ns = num_scen;
+  PetscFunctionReturn(0);
+}
+
 /*
   SOPFLOWSetNetworkData - Sets and reads the network data
 
@@ -348,7 +361,6 @@ PetscErrorCode SOPFLOWUpdateOPFLOWVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu,v
   PetscFunctionReturn(0);
 }
 
-extern PetscErrorCode SOPFLOWGetNumScenarios(SOPFLOW,ScenarioFileInputFormat,const char scenfile[],PetscInt*);
 
 /**
  * @brief Set the contingency data file for SOPFLOW
@@ -416,7 +428,9 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   if(sopflow->Ns == 0) SETERRQ(PETSC_COMM_SELF,0,"Number of scenarios should be greater than 0");
 
   if(sopflow->scenfileset) {
-    if(sopflow->Ns == -1) sopflow->Ns = MAX_SCENARIOS;
+    if(sopflow->Ns == -1) {
+      ierr = SOPFLOWGetNumScenarios(sopflow,sopflow->scenfileformat,sopflow->scenfile,&sopflow->Ns);CHKERRQ(ierr);
+    }
 
     ierr = PetscCalloc1(sopflow->Ns,&sopflow->scenlist.scen);CHKERRQ(ierr);
 

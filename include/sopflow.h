@@ -42,6 +42,7 @@ PETSC_EXTERN PetscErrorCode SOPFLOWCreateGlobalVector(SOPFLOW,Vec*);
 PETSC_EXTERN PetscErrorCode SOPFLOWCreateMatrix(SOPFLOW,Mat*);
 PETSC_EXTERN PetscErrorCode SOPFLOWSolve(SOPFLOW);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetNumScenarios(SOPFLOW,PetscInt);
+PETSC_EXTERN PetscErrorCode SOPFLOWGetNumScenarios(SOPFLOW,ScenarioFileInputFormat,const char*,PetscInt*);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetObjective(SOPFLOW,PetscReal*);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetSolution(SOPFLOW,PetscInt,Vec*);
 PETSC_EXTERN PetscErrorCode SOPFLOWPrintSolution(SOPFLOW,PetscInt);
