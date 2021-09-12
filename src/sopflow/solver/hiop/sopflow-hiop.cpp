@@ -58,6 +58,7 @@ PetscErrorCode SOPFLOWBaseAuxHessianFunction(OPFLOW opflow,const double* x,Mat H
 
 SOPFLOWHIOPInterface::~SOPFLOWHIOPInterface()
 {
+  PetscFree(loc_xcoup);
   //    printf("Exiting application\n");
 }
 
