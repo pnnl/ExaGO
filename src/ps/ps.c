@@ -1322,6 +1322,7 @@ PetscErrorCode PSApplyScenario(PS ps, Scenario scenario)
 	gen->pg = gen->pt = forecast->val[j]/ps->MVAbase; /* Set real power generation. Note that
 					       Pg upper limit is also set to the forecast value. This allows the wind generator to be dispatched at its limit */
 	gen->pgs = gen->pb; /* Set-point set to lower bound. This is good for optimization */
+	if(PetscAbsScalar(gen->pg) < 1e-6) gen->status = 0; /* Generation value is zero, so switch off the generator */
       }
     }
   }
