@@ -14,11 +14,19 @@ spack:
     clingo: true
     install_tree:
       padded_length: 128
+
   packages:
     petsc:
       version: [3.13.5]
       variants: +mpi~hypre~hdf5~metis~superlu-dist
   gitlab-ci:
+    before_script:
+      - git clone ${SPACK_REPO}
+      - pushd spack && git checkout ${SPACK_CHECKOUT_VERSION} && popd
+      - . "./spack/share/spack/setup-env.sh"
+    script:
+      - pushd ${SPACK_CONCRETE_ENV_DIR} && spack env activate --without-view . && popd
+      - spack -d ci rebuild
     rebuild-index: false
     mappings:
     - match:
@@ -29,4 +37,6 @@ spack:
         - ikp
         - exasgd
         - basic
-        image: spack/ubuntu-bionic
+        image:
+          name: spack/ubuntu-bionic
+          entrypoint: [""]
