@@ -146,6 +146,7 @@ include:
   variables:
     SPACK_REF: develop
     SPACK_REPO: https://github.com/LLNL/spack.git
+    S3_ENDPOINT_URL: http://cache.exasgd.pnl.gov
 
 spack-generate-job:
   <<: *pnnl_rules_definition
@@ -154,7 +155,9 @@ spack-generate-job:
   image: ubuntu:18.04
   tags: [k8s, ikp, exasgd, basic]
   before_script:
-    - apt update && apt install -y git python3 python3-pip
+    - apt update &&
+        apt install -y git python3 python3-pip &&
+        pip3 install boto boto3 botocore
     - git clone ${SPACK_REPO}
     - pushd spack && git checkout ${SPACK_REF} && popd
     - . "./spack/share/spack/setup-env.sh"
