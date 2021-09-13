@@ -3,9 +3,16 @@ testsuite_name = "HiOp OPFLOW Functionality"
 [presets]
 solver = 'HIOP'
 model = 'POWER_BALANCE_HIOP'
+hiop_compute_mode = 'CPU'
 tolerance = 1e-3
 gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
 has_gen_set_point = false
+is_loadloss_active = false
+is_powerimb_active = false
+use_agc = false
+load_loss_penalty = 1000.0
+power_imbalance_penalty = 1000.0
+initialization_type = 'MIDPOINT'
 
 # - HIOP solver
 # -- HIOP model
@@ -39,7 +46,7 @@ description = 'datafiles/case118.m with generator set point'
 is_loadloss_active = false
 is_powerimb_active = false
 has_gen_set_point = true
-num_iters = 26
+num_iters = 25
 obj_value = 1.2965990e+05
 
 

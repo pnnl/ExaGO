@@ -3,37 +3,228 @@ static char help[] = "OPFLOW Functionality Tests.\n\n";
 #include <iostream>
 #include <iomanip>
 #include <string>
-#include <unordered_map>
 #include <sstream>
 #include <toml.hpp>
 #include <opflow.h>
-#include <exago_config.h>
-#include <utils.hpp>
 #include "toml_utils.hpp"
-#include <version.hpp>
 
-// Ensure that options for a given test case are internally consistent and that
-// all required parameters are defined.
-void ensure_options_are_consistent(toml::value testcase,
-    toml::value presets = toml::value{})
+struct OpflowFunctionalityTestParameters
 {
-  auto ensure_option_available = [&] (const std::string& opt) {
-    bool is_available = testcase.contains(opt) || presets.contains(opt);
-    if (!is_available)
-    {
-      std::stringstream errs;
-      errs << "SCOPFLOW Test suite expected option '" << opt
-        << "' to be available, but it was not found in this testsuite"
-        << " configuration:\n";
-      errs << testcase << "\nwith these presets:\n" << presets;
-      throw ExaGOError(errs.str().c_str());
-    }
-  };
+  /* Communicator required to run funcitonality test */
+  MPI_Comm comm=MPI_COMM_WORLD;
 
-  for (const auto& opt : {"solver", "model", "network", "gen_bus_voltage_type",
-      "tolerance", "has_gen_set_point"})
-    ensure_option_available(opt);
-}
+  /* Parameters required to set up and test a OPFlow */
+  std::string solver="";
+  std::string model="";
+  std::string network="";
+  bool is_loadloss_active;
+  bool is_powerimb_active;
+  std::string gen_bus_voltage_string;
+  OPFLOWGenBusVoltageType gen_bus_voltage_type;
+  double tolerance;
+  double has_gen_set_point;
+  bool use_agc = false;
+  double load_loss_penalty = 1000.0;
+  double power_imbalance_penalty = 1000.0;
+  std::string description = "";
+  std::string hiop_compute_mode;
+  std::string initialization_string = "MIDPOINT";
+  OPFLOWInitializationType initialization_type;
+
+  /* Parameters used to determine success or failure of functionality test */
+  int expected_num_iters;
+  double expected_obj_value;
+
+  /* Actual values observed from the system-under-test. */
+  double obj_value;
+  double error;
+  int numiter;
+  PetscBool conv_status=PETSC_FALSE;
+
+  /* Assign all member variables from a toml map if values are found */
+  void assign_from(toml::value values)
+  {
+    set_if_found(solver, values, "solver");
+    set_if_found(model, values, "model");
+    set_if_found(network, values, "network");
+    set_if_found(is_loadloss_active, values, "is_loadloss_active");
+    set_if_found(is_powerimb_active, values, "is_powerimb_active");
+    set_if_found(gen_bus_voltage_string, values, "gen_bus_voltage_type");
+    set_if_found(description, values, "description");
+    set_if_found(expected_num_iters, values, "num_iters");
+    set_if_found(expected_obj_value, values, "obj_value");
+    set_if_found(tolerance, values, "tolerance");
+    set_if_found(use_agc, values, "use_agc");
+    set_if_found(load_loss_penalty, values, "load_loss_penalty");
+    set_if_found(power_imbalance_penalty, values, "power_imbalance_penalty");
+    set_if_found(initialization_string, values, "initialization_type");
+    set_if_found(hiop_compute_mode, values, "hiop_compute_mode");
+
+    if (gen_bus_voltage_string == "VARIABLE_WITHIN_BOUNDS") {
+      gen_bus_voltage_type = VARIABLE_WITHIN_BOUNDS;
+    } else if (gen_bus_voltage_string == "FIXED_WITHIN_QBOUNDS") {
+      gen_bus_voltage_type = FIXED_WITHIN_QBOUNDS;
+    } else if (gen_bus_voltage_string == "FIXED_AT_SETPOINT") {
+      gen_bus_voltage_type = FIXED_AT_SETPOINT;
+    }
+
+
+    if (initialization_string == "MIDPOINT") {
+      initialization_type = OPFLOWINIT_MIDPOINT;
+    } else if (initialization_string == "FROMFILE") {
+      initialization_type = OPFLOWINIT_FROMFILE;
+    } else if (initialization_string == "ACPF") {
+      initialization_type = OPFLOWINIT_ACPF;
+    } else if (initialization_string == "FLATSTART") {
+      initialization_type = OPFLOWINIT_FLATSTART;
+    }
+  }
+};
+
+struct OpflowFunctionalityTests
+  : public FunctionalityTestContext<OpflowFunctionalityTestParameters>
+{
+  OpflowFunctionalityTests(std::string testsuite_filename,
+      ExaGOVerbosityLevel logging_verbosity=EXAGO_LOG_INFO)
+    : FunctionalityTestContext(testsuite_filename, logging_verbosity)
+  {}
+
+  using Params = OpflowFunctionalityTestParameters;
+  void ensure_options_are_consistent(toml::value testcase,
+      toml::value presets = toml::value{}) override
+  {
+    auto ensure_option_available = [&] (const std::string& opt) {
+      bool is_available = testcase.contains(opt) || presets.contains(opt);
+      if (!is_available)
+      {
+        std::stringstream errs;
+        errs << "OPFLOW Test suite expected option '" << opt
+          << "' to be available, but it was not found in this testsuite"
+          << " configuration:\n";
+        errs << testcase << "\nwith these presets:\n" << presets;
+        throw ExaGOError(errs.str().c_str());
+      }
+    };
+
+    for (const auto& opt : {"solver", "model", "network", "gen_bus_voltage_type", "tolerance", "has_gen_set_point"})
+      ensure_option_available(opt);
+
+  }
+
+  void initialize_test_parameters(
+      Params& params,
+      const toml::value& testcase, const toml::value& presets) override
+  {
+    params.assign_from(presets);
+    params.assign_from(testcase);
+  }
+
+  toml::value create_failing_testcase(const Params& params) override
+  {
+    toml::value testcase;
+
+    testcase["solver"] = params.solver;
+    testcase["model"] = params.model;
+    testcase["network"] = params.network;
+    testcase["is_loadloss_active"] = params.is_loadloss_active;
+    testcase["is_powerimb_active"] = params.is_powerimb_active;
+    testcase["gen_bus_voltage_type"] = params.gen_bus_voltage_type;
+    testcase["description"] = params.description;
+    testcase["num_iters"] = params.expected_num_iters;
+    testcase["observed_num_iters"] = params.numiter;
+    testcase["tolerance"] = params.tolerance;
+    testcase["use_agc"] = params.use_agc;
+    testcase["load_loss_penalty"] = params.load_loss_penalty;
+    testcase["power_imbalance_penalty"] = params.power_imbalance_penalty;
+    testcase["initialization_type"] = params.initialization_type;
+    testcase["hiop_compute_mode"] = params.hiop_compute_mode;
+    testcase["obj_value"] = params.expected_obj_value;
+    testcase["observed_obj_value"] = params.obj_value;
+    testcase["scaled_objective_value_error"] = params.error;
+    testcase["did_opflow_converge"] = params.conv_status;
+
+    return testcase;
+  }
+
+  void run_test_case(Params& params) override
+  {
+    PetscErrorCode ierr;
+    OPFLOW opflow;
+
+    std::cout<<"Test Description: "<<params.description<<std::endl;
+    ierr = OPFLOWCreate(params.comm,&opflow);ExaGOCheckError(ierr);
+
+    ierr = OPFLOWSetTolerance(opflow, params.tolerance);ExaGOCheckError(ierr);
+
+    // Prepend installation directory to network path
+    resolve_datafiles_path(params.network);
+    ierr = OPFLOWReadMatPowerData(opflow,params.network.c_str());ExaGOCheckError(ierr);
+
+    ierr = OPFLOWSetGenBusVoltageType(opflow,params.gen_bus_voltage_type);ExaGOCheckError(ierr);
+
+    ierr = OPFLOWSetSolver(opflow, params.solver.c_str());ExaGOCheckError(ierr);
+
+    ierr = OPFLOWSetModel(opflow, params.model.c_str());ExaGOCheckError(ierr);
+
+    ierr = OPFLOWHasBusPowerImbalance(opflow, (PetscBool)params.is_powerimb_active);ExaGOCheckError(ierr);
+
+    ierr = OPFLOWHasLoadLoss(opflow, (PetscBool)params.is_loadloss_active);ExaGOCheckError(ierr);
+
+    ierr = OPFLOWHasGenSetPoint(opflow,(PetscBool)params.has_gen_set_point);ExaGOCheckError(ierr);
+
+    ierr = OPFLOWUseAGC(opflow, (PetscBool)params.use_agc);ExaGOCheckError(ierr);ExaGOCheckError(ierr);
+
+    ierr = OPFLOWSetLoadLossPenalty(opflow, params.load_loss_penalty);ExaGOCheckError(ierr);
+
+    ierr = OPFLOWSetBusPowerImbalancePenalty(opflow, params.power_imbalance_penalty);ExaGOCheckError(ierr);
+
+    ierr = OPFLOWSetInitializationType(opflow, params.initialization_type);ExaGOCheckError(ierr);
+
+    ierr = OPFLOWSetUp(opflow);ExaGOCheckError(ierr);
+
+    if (params.solver == "HIOP") {
+      ierr = OPFLOWSetHIOPComputeMode(opflow, params.hiop_compute_mode.c_str());ExaGOCheckError(ierr);
+    }
+
+    ierr = OPFLOWSolve(opflow);ExaGOCheckError(ierr);
+
+    /* Possible ways for a functionality test to fail */
+    bool converge_failed = false;
+    bool obj_failed = false;
+    bool num_iter_failed = false;
+
+    /* Test convergence status */
+    ierr = OPFLOWGetConvergenceStatus(opflow,&params.conv_status);ExaGOCheckError(ierr);
+    if (params.conv_status==PETSC_FALSE)
+    {
+      converge_failed = true;
+    }
+
+    /* Test objective value */
+    ierr = OPFLOWGetObjective(opflow,&params.obj_value);ExaGOCheckError(ierr);
+    if (!IsEqual(params.obj_value,params.expected_obj_value,params.tolerance,params.error))
+    {
+      obj_failed = true;
+    }
+
+    /* Test num iterations */
+    ierr = OPFLOWGetNumIterations(opflow,&params.numiter);ExaGOCheckError(ierr);
+    if (params.numiter!=params.expected_num_iters)
+    {
+      num_iter_failed = true;
+    }
+
+    /* Did the current functionality test fail in any way? */
+    bool local_fail = converge_failed || obj_failed || num_iter_failed;
+
+    if (local_fail)
+      fail();
+    else
+      pass();
+
+    ierr = OPFLOWDestroy(&opflow);ExaGOCheckError(ierr);
+  }
+};
 
 int main(int argc, char** argv)
 {
@@ -52,227 +243,11 @@ int main(int argc, char** argv)
   ierr = ExaGOInitialize(comm,&argc,&argv,appname,help);
 
   ExaGOLog(EXAGO_LOG_INFO,"%s\n","Creating OPFlow Functionality Test");
-  ExaGOLog(EXAGO_LOG_INFO,"Using TOML testsuite file %s\n", argv[1]);
-  const auto testsuite = toml::parse(argv[1]);
-  const auto testcases = toml::find(testsuite, "testcase");
 
-  const auto testsuite_name = toml::find<std::string>(testsuite, "testsuite_name");
-  ExaGOLog(EXAGO_LOG_INFO, "Running test suite '%s'\n", testsuite_name.c_str());
-
-  int total = 0;
-  int fail = 0;
-
-  /* Stream used for formatting results */
-  std::stringstream summary;
-  summary.precision(12);
-  summary << std::fixed;
-  static constexpr int col_width = 35;
-
-
-  /* Parameters used to determine success or failure of functionality test */
-  int expected_num_iters;
-  double expected_obj_value;
-
-  /* Iterate over all test cases and run individual functionality tests */
-  for (auto& testcase : testcases.as_array()) {
-    /* Parameters used to set up an OPFLOW */
-    std::string solver;
-    std::string model;
-    std::string network;
-    bool is_loadloss_active;
-    bool is_powerimb_active;
-    std::string gen_bus_voltage_type;
-    double tolerance;
-    bool has_gen_set_point;
-    bool use_agc = false;
-    double load_loss_penalty = 1000.0;
-    double power_imbalance_penalty = 1000.0;
-    std::string description;
-    std::string hiop_compute_mode;
-    std::string initialization_type = "MIDPOINT";
-
-    total++;
-    double obj_value, error;
-    int numiter = 0;
-
-    /* If presets are defined for the test suite, use these initially.
-     * The fallback values in this scope are pretty arbitrary - better defaults
-     * should be used. */
-    if (testsuite.contains("presets"))
-    {
-      auto presets = toml::find(testsuite, "presets");
-      set_if_found(solver, presets, "solver");
-      set_if_found(model, presets, "model");
-      set_if_found(network, presets, "network");
-      set_if_found(description, presets, "description");
-      set_if_found(is_loadloss_active, presets, "is_loadloss_active");
-      set_if_found(is_powerimb_active, presets, "is_powerimb_active");
-      set_if_found(expected_num_iters, presets, "num_iters");
-      set_if_found(gen_bus_voltage_type, presets, "gen_bus_voltage_type");
-      set_if_found(expected_obj_value, presets, "obj_value");
-      set_if_found(hiop_compute_mode, presets, "hiop_compute_mode");
-      set_if_found(tolerance, presets, "tolerance");
-      set_if_found(has_gen_set_point, presets, "has_gen_set_point");
-      set_if_found(use_agc, presets, "use_agc");
-      set_if_found(load_loss_penalty, presets, "load_loss_penalty");
-      set_if_found(power_imbalance_penalty, presets, "power_imbalance_penalty");
-      set_if_found(initialization_type, presets, "initialization_types");
-      ensure_options_are_consistent(testcase, presets);
-    }
-    else
-    {
-      // If there are no presets, ensure that each test case is internally
-      // consistent on its own
-      ensure_options_are_consistent(testcase);
-    }
-
-    /* If values are found for an individual test case, let these overwrite
-     * the global values */
-    set_if_found(solver, testcase, "solver");
-    set_if_found(model, testcase, "model");
-    set_if_found(network, testcase, "network");
-    set_if_found(description, testcase, "description");
-    set_if_found(is_loadloss_active, testcase, "is_loadloss_active");
-    set_if_found(is_powerimb_active, testcase, "is_powerimb_active");
-    set_if_found(expected_num_iters, testcase, "num_iters");
-    set_if_found(gen_bus_voltage_type, testcase, "gen_bus_voltage_type");
-    set_if_found(expected_obj_value, testcase, "obj_value");
-    set_if_found(hiop_compute_mode, testcase, "hiop_compute_mode");
-    set_if_found(tolerance, testcase, "tolerance");
-    set_if_found(has_gen_set_point, testcase, "has_gen_set_point");
-    set_if_found(use_agc, testcase, "use_agc");
-    set_if_found(load_loss_penalty, testcase, "load_loss_penalty");
-    set_if_found(power_imbalance_penalty, testcase, "power_imbalance_penalty");
-    set_if_found(initialization_type, testcase, "initialization_types");
-
-    /* Possible ways for a funcitonality test to fail */
-    bool converge_failed = false;
-    bool obj_failed = false;
-    bool num_iter_failed = false;
-
-    PetscBool conv_status=PETSC_FALSE;
-    OPFLOW opflow;
-    ierr = OPFLOWCreate(comm,&opflow);CHKERRQ(ierr);
-
-    if (gen_bus_voltage_type == "VARIABLE_WITHIN_BOUNDS") {
-      ierr = OPFLOWSetGenBusVoltageType(opflow,VARIABLE_WITHIN_BOUNDS);CHKERRQ(ierr);
-    } else if (gen_bus_voltage_type == "FIXED_WITHIN_QBOUNDS") {
-      ierr = OPFLOWSetGenBusVoltageType(opflow,FIXED_WITHIN_QBOUNDS);CHKERRQ(ierr);
-    } else if (gen_bus_voltage_type == "FIXED_AT_SETPOINT") {
-      ierr = OPFLOWSetGenBusVoltageType(opflow,FIXED_AT_SETPOINT);CHKERRQ(ierr);
-    }
-
-    ierr = OPFLOWSetTolerance(opflow, tolerance);CHKERRQ(ierr);
-
-    // Prepend installation directory to network path
-    resolve_datafiles_path(network);
-    ierr = OPFLOWReadMatPowerData(opflow,network.c_str());CHKERRQ(ierr);
-
-    ierr = OPFLOWSetSolver(opflow, solver.c_str());CHKERRQ(ierr);
-
-    ierr = OPFLOWSetModel(opflow, model.c_str());CHKERRQ(ierr);
-
-    ierr = OPFLOWHasBusPowerImbalance(opflow, (PetscBool)is_powerimb_active);CHKERRQ(ierr);
-
-    ierr = OPFLOWHasLoadLoss(opflow, (PetscBool)is_loadloss_active);CHKERRQ(ierr);
-
-    ierr = OPFLOWHasGenSetPoint(opflow,(PetscBool) has_gen_set_point);
-
-    ierr = OPFLOWUseAGC(opflow, (PetscBool)use_agc);CHKERRQ(ierr);
-
-    ierr = OPFLOWSetLoadLossPenalty(opflow, load_loss_penalty);CHKERRQ(ierr);
-
-    ierr = OPFLOWSetBusPowerImbalancePenalty(opflow, power_imbalance_penalty);CHKERRQ(ierr);
-
-    if (initialization_type == "MIDPOINT") {
-      ierr = OPFLOWSetInitializationType(opflow, OPFLOWINIT_MIDPOINT);CHKERRQ(ierr);
-    } else if (initialization_type == "FROMFILE") {
-      ierr = OPFLOWSetInitializationType(opflow, OPFLOWINIT_FROMFILE);CHKERRQ(ierr);
-    } else if (initialization_type == "ACPF") {
-      ierr = OPFLOWSetInitializationType(opflow, OPFLOWINIT_ACPF);CHKERRQ(ierr);
-    } else if (initialization_type == "FLATSTART") {
-      ierr = OPFLOWSetInitializationType(opflow, OPFLOWINIT_FLATSTART);CHKERRQ(ierr);
-    }
-
-    ierr = OPFLOWSetUp(opflow);CHKERRQ(ierr);
-
-    if (solver == "HIOP") {
-      ierr = OPFLOWSetHIOPComputeMode(opflow, hiop_compute_mode.c_str());CHKERRQ(ierr);
-    }
-
-    std::cout<<"Test Description: "<<description<<std::endl;
-    ierr = OPFLOWSolve(opflow);CHKERRQ(ierr);
-
-    /* Test convergence status */
-    ierr = OPFLOWGetConvergenceStatus(opflow,&conv_status);CHKERRQ(ierr);
-    if (conv_status==PETSC_FALSE)
-    {
-      converge_failed = true;
-    }
-
-    /* Test objective value */
-    ierr = OPFLOWGetObjective(opflow,&obj_value);CHKERRQ(ierr);
-    if (!IsEqual(obj_value,expected_obj_value,tolerance,error))
-    {
-      obj_failed = true;
-    }
-
-    /* Test num iterations */
-    ierr = OPFLOWGetNumIterations(opflow,&numiter);CHKERRQ(ierr);
-    if (numiter!=expected_num_iters)
-    {
-      num_iter_failed = true;
-    }
-
-    ierr = OPFLOWDestroy(&opflow);CHKERRQ(ierr);
-
-    /* Did the current functionality test fail in any way? */
-    bool local_fail = converge_failed || obj_failed || num_iter_failed;
-
-    if (local_fail)
-    {
-      /* Print summary of configuration */
-      summary << "[[testcase]]\n";
-      fmt_row(summary, col_width, "solver", solver);
-      fmt_row(summary, col_width, "model", model);
-      fmt_row(summary, col_width, "network", network);
-      fmt_row(summary, col_width, "is_powerimb_active", bool2str(is_powerimb_active));
-      fmt_row(summary, col_width, "is_loadloss_active", bool2str(is_loadloss_active));
-      fmt_row(summary, col_width, "num_iters", expected_num_iters);
-      fmt_comment(summary, col_width, "Actual Number of Iterations", numiter);
-      fmt_row(summary, col_width, "obj_value", expected_obj_value);
-      fmt_comment(summary, col_width, "Actual Objective Value", obj_value);
-      fmt_comment(summary, col_width, "Scaled Objective Value Error", error);
-      fmt_row(summary, col_width, "tolerance", tolerance);
-      fmt_row(summary, col_width, "gen_bus_voltage_type", gen_bus_voltage_type);
-      fmt_comment(summary, col_width, "Did OPFLOW Converge", bool2str(conv_status));
-      fmt_row(summary, col_width, "hiop_compute_mode", hiop_compute_mode);
-      fmt_row(summary, col_width, "has_gen_set_point", bool2str(has_gen_set_point));
-      fmt_row(summary, col_width, "initialization_type", initialization_type);
-      fmt_row(summary, col_width, "load_loss_penalty", load_loss_penalty);
-      fmt_row(summary, col_width, "power_imbalance_penalty", power_imbalance_penalty);
-      fmt_row(summary, col_width, "use_agc", bool2str(use_agc));
-    }
-
-    ExaGOLog(EXAGO_LOG_INFO, "-- %s #%d: %s", testsuite_name.c_str(), total,
-        (local_fail?"FAIL":"PASS"));
-
-    if (local_fail)
-      fail++;
-  }
-
-  ExaGOLog(EXAGO_LOG_INFO,"%s%d/%d%s","Selfcheck OPFLOW got ", fail, total, " failures.");
-
-  if (fail)
-  {
-    ExaGOLog(EXAGO_LOG_ERROR, "%s%s",
-        testsuite_name.c_str(),
-        ":\ntests with the following configurations failed to match expected values:\n");
-    fmt_row(summary, col_width, "testsuite_name",
-        "ExaGO Test Suite Automatically Generated from Failed Tests");
-    std::cerr << summary.str() << "\n";
-  }
+  OpflowFunctionalityTests test{std::string(argv[1])};
+  test.run_all_test_cases();
+  test.print_report();
 
   ExaGOFinalize();
-  return fail;
+  return test.failures();
 }
