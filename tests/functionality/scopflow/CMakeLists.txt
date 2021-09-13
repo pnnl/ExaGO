@@ -15,66 +15,76 @@ if(EXAGO_INSTALL_TESTS)
   )
   # SCOPFLOW Functionality Tests
   message(STATUS "Configuring SCOPFLOW Functionality Tests.")
+
   exago_add_test(
     NAME
-    testScopflowFunctionalityTOML
+    FUNCTIONALITY_TEST_SCOPFLOW_IPOPT_CONT_TESTSUITE
     DEPENDS
     IPOPT
     COMMAND
     ${RUNCMD}
     $<TARGET_FILE:testScopflowFunctionalityTOML>
-    ${CMAKE_CURRENT_SOURCE_DIR}/testcases.toml
+    ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_cont.toml
     -no_optfile
   )
-  # --- Old smoke tests
-  foreach(nc RANGE 1 9)
-    # SCOPFLOW single-period tests
-    exago_add_test(
-      NAME
-      SCOPFLOW_9bus_${nc}cont
-      COMMAND
-      ${RUNCMD}
-      $<TARGET_FILE:app_scopflow>
-      -netfile
-      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod.m
-      -ctgcfile
-      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9.cont
-      -scopflow_solver
-      IPOPT
-      -scopflow_Nc
-      ${nc}
-      DEPENDS
-      IPOPT
-    )
-    # SCOPFLOW multi-period tests
-    exago_add_test(
-      NAME
-      SCOPFLOW_9bus_multiperiod_${nc}cont
-      COMMAND
-      ${RUNCMD}
-      $<TARGET_FILE:app_scopflow>
-      -netfile
-      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod_gen3_wind.m
-      -ctgcfile
-      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9.cont
-      -scopflow_enable_multiperiod
-      1
-      -scopflow_ploadprofile
-      ${CMAKE_SOURCE_DIR}/datafiles/case9/load_P.csv
-      -scopflow_qloadprofile
-      ${CMAKE_SOURCE_DIR}/datafiles/case9/load_Q.csv
-      -scopflow_windgenprofile
-      ${CMAKE_SOURCE_DIR}/datafiles/case9/scenarios_9bus.csv
-      -scopflow_solver
-      IPOPT
-      -scopflow_Nc
-      ${nc}
-      DEPENDS
-      IPOPT
-    )
-  endforeach(nc)
+
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_SCOPFLOW_EMPAR_CONT_TESTSUITE
+    DEPENDS
+    IPOPT
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:testScopflowFunctionalityTOML>
+    ${CMAKE_CURRENT_SOURCE_DIR}/empar_cont.toml
+    -no_optfile
+  )
+
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_SCOPFLOW_IPOPT_MULTIPERIOD_TESTSUITE
+    DEPENDS
+    IPOPT
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:testScopflowFunctionalityTOML>
+    ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_multiperiod.toml
+    -no_optfile
+  )
 
   # Tests for HIOP pridecomp
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_TESTSUITE
+    DEPENDS
+    IPOPT
+    HIOP
+    HIOP_DISTRIBUTED
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:testScopflowFunctionalityTOML>
+    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont.toml
+    -no_optfile
+  )
+
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_MPI_TESTSUITE
+    DEPENDS
+    IPOPT
+    HIOP
+    HIOP_DISTRIBUTED
+    COMMAND
+    ${MPICMD}
+    "-n"
+    4
+    $<TARGET_FILE:testScopflowFunctionalityTOML>
+    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_nocont_mpi.toml
+    -no_optfile
+  )
+
+  # Tests for HIOP pridecomp (these tests are duplicated above and should be
+  # removed after verifying that they work
   if(EXAGO_ENABLE_HIOP_DISTRIBUTED)
     exago_add_test(
       NAME

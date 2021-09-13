@@ -1,0 +1,85 @@
+testsuite_name = "SCOPFLOW Functionality IPOPT Solver"
+
+[presets]
+tolerance = 1e-3
+network = 'datafiles/case_ACTIVSg200.m'
+contingencies = 'datafiles/case_ACTIVSg200.cont'
+solver = 'IPOPT'
+model = 'GENRAMP'
+opflow_initialization = 'ACPF'
+multiperiod = false
+opflow_genbusvoltage = 'VARIABLE_WITHIN_BOUNDS'
+mode = 0 # 0 = preventive, 1 = corrective
+description = "No Description"
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'
+contingencies = 'datafiles/case9/case9.cont'
+description = 'case9mod.m with IPOPT/1 contingency'
+num_contingencies = 1
+num_iters = 23 
+obj_value = 4.14446056775e+03
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'
+contingencies = 'datafiles/case9/case9.cont'
+description = 'case9mod.m with IPOPT/2 contingencies'
+num_contingencies = 2
+num_iters = 28 
+obj_value = 4.14446069138e+03
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'
+contingencies = 'datafiles/case9/case9.cont'
+description = 'case9mod.m with IPOPT/3 contingencies'
+num_contingencies = 3
+num_iters = 23 
+obj_value = 4.14446056725e+03
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'
+contingencies = 'datafiles/case9/case9.cont'
+description = 'case9mod.m with IPOPT/4 contingencies'
+num_contingencies = 4
+num_iters = 24 
+obj_value = 4.14446056771e+03
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'
+contingencies = 'datafiles/case9/case9.cont'
+description = 'case9mod.m with IPOPT/5 contingencies'
+num_contingencies = 5
+num_iters = 22 
+obj_value = 4.14446056771e+03
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'
+contingencies = 'datafiles/case9/case9.cont'
+description = 'case9mod.m with IPOPT/6 contingencies'
+num_contingencies = 6
+num_iters = 24 
+obj_value = 4.14446070551e+03
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'
+contingencies = 'datafiles/case9/case9.cont'
+description = 'case9mod.m with IPOPT/7 contingencies'
+num_contingencies = 7
+num_iters = 19 
+obj_value = 4.14446070461e+03
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'
+contingencies = 'datafiles/case9/case9.cont'
+description = 'case9mod.m with IPOPT/8 contingencies'
+num_contingencies = 8
+num_iters = 18
+obj_value = 4.14446056529e+03
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'
+contingencies = 'datafiles/case9/case9.cont'
+description = 'case9mod.m with IPOPT/9 contingencies'
+num_contingencies = 9
+num_iters = 18 
+obj_value = 4.14446056529e+03

@@ -21,6 +21,7 @@ struct ScopflowFunctionalityTestParameters
   std::string pload="";
   std::string qload="";
   std::string windgen="";
+  std::string description = "";
   int num_contingencies;
   double tolerance;
   double duration;
@@ -29,7 +30,9 @@ struct ScopflowFunctionalityTestParameters
   bool multiperiod;
 
   /* Parameters used to modify underlying opflow */
+  std::string opflow_initialization_string;
   int opflow_initialization;
+  std::string opflow_genbusvoltage_string;
   int opflow_genbusvoltage;
 
   /* Parameters used to determine success or failure of functionality test */
@@ -52,16 +55,36 @@ struct ScopflowFunctionalityTestParameters
     set_if_found(pload, values, "pload");
     set_if_found(qload, values, "qload");
     set_if_found(windgen, values, "windgen");
+    set_if_found(description, values, "description");
     set_if_found(num_contingencies, values, "num_contingencies");
     set_if_found(expected_num_iters, values, "num_iters");
     set_if_found(expected_obj_value, values, "obj_value");
     set_if_found(tolerance, values, "tolerance");
-    set_if_found(opflow_initialization, values, "opflow_initialization");
-    set_if_found(opflow_genbusvoltage, values, "opflow_genbusvoltage");
+    set_if_found(opflow_initialization_string, values, "opflow_initialization");
+    set_if_found(opflow_genbusvoltage_string, values, "opflow_genbusvoltage");
     set_if_found(mode, values, "mode");
     set_if_found(multiperiod, values, "multiperiod");
     set_if_found(duration, values, "duration");
     set_if_found(dT, values, "dT");
+
+    if (opflow_genbusvoltage_string == "VARIABLE_WITHIN_BOUNDS") {
+      opflow_genbusvoltage = VARIABLE_WITHIN_BOUNDS;
+    } else if (opflow_genbusvoltage_string == "FIXED_WITHIN_QBOUNDS") {
+      opflow_genbusvoltage = FIXED_WITHIN_QBOUNDS;
+    } else if (opflow_genbusvoltage_string == "FIXED_AT_SETPOINT") {
+      opflow_genbusvoltage = FIXED_AT_SETPOINT;
+    }
+
+
+    if (opflow_initialization_string == "MIDPOINT") {
+      opflow_initialization = OPFLOWINIT_MIDPOINT;
+    } else if (opflow_initialization_string == "FROMFILE") {
+      opflow_initialization = OPFLOWINIT_FROMFILE;
+    } else if (opflow_initialization_string == "ACPF") {
+      opflow_initialization = OPFLOWINIT_ACPF;
+    } else if (opflow_initialization_string == "FLATSTART") {
+      opflow_initialization = OPFLOWINIT_FLATSTART;
+    }
   }
 };
 
@@ -148,6 +171,7 @@ struct ScopflowFunctionalityTests
     PetscErrorCode ierr;
     SCOPFLOW scopflow;
 
+    std::cout<<"Test Description: "<<params.description<<std::endl;
     ierr = SCOPFLOWCreate(params.comm,&scopflow);ExaGOCheckError(ierr);
 
     ierr = SCOPFLOWSetTolerance(scopflow, params.tolerance);ExaGOCheckError(ierr);

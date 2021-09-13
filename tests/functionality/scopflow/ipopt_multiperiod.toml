@@ -1,0 +1,72 @@
+testsuite_name = "SCOPFLOW Functionality with Multiperiods"
+
+[presets]
+tolerance = 1e-3
+network = 'datafiles/case9/case9mod_gen3_wind.m'
+contingencies = 'datafiles/case9/case9.cont'
+pload = 'datafiles/case9/load_P.csv'
+qload = 'datafiles/case9/load_Q.csv'
+windgen = 'datafiles/case9/scenarios_9bus.csv'
+multiperiod = true
+duration = 0.16666667
+dT = 5.0
+solver = 'IPOPT'
+model = 'GENRAMP'
+opflow_initialization = 'ACPF'
+opflow_genbusvoltage = 'VARIABLE_WITHIN_BOUNDS'
+mode = 1 # 0 = preventive, 1 = corrective
+description = "No Description"
+
+[[testcase]]
+description = 'case9mod_gen3_wind.m with IPOPT solver/multiperiod/1 contingency'
+num_contingencies = 1
+num_iters = 54
+obj_value = 17422.6730657 
+
+[[testcase]]
+description = 'case9mod_gen3_wind.m with IPOPT solver/multiperiod/2 contingencies'
+num_contingencies = 2
+num_iters = 111
+obj_value = 26269.8241937
+
+[[testcase]]
+description = 'case9mod_gen3_wind.m with IPOPT solver/multiperiod/3 contingencies'
+num_contingencies = 3
+num_iters = 123
+obj_value = 35113.4381181
+
+[[testcase]]
+description = 'case9mod_gen3_wind.m with IPOPT solver/multiperiod/4 contingencies'
+num_contingencies = 4
+num_iters = 101
+obj_value = 43970.3147043
+
+[[testcase]]
+description = 'case9mod_gen3_wind.m with IPOPT solver/multiperiod/5 contingencies'
+num_contingencies = 5
+num_iters = 114
+obj_value = 52959.6880975
+
+[[testcase]]
+description = 'case9mod_gen3_wind.m with IPOPT solver/multiperiod/6 contingencies'
+num_contingencies = 6
+num_iters = 112
+obj_value = 61737.0266436
+
+[[testcase]]
+description = 'case9mod_gen3_wind.m with IPOPT solver/multiperiod/7 contingencies'
+num_contingencies = 7
+num_iters = 108
+obj_value = 73220.5750008
+
+[[testcase]]
+description = 'case9mod_gen3_wind.m with IPOPT solver/multiperiod/8 contingencies'
+num_contingencies = 8
+num_iters = 99
+obj_value = 87751.8858419
+
+[[testcase]]
+description = 'case9mod_gen3_wind.m with IPOPT solver/multiperiod/9 contingencies'
+num_contingencies = 9
+num_iters = 97
+obj_value = 102831.17007 
