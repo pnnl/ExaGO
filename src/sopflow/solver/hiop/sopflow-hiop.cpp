@@ -210,14 +210,6 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double* 
       ierr = PSBUSGetGen(bus,k,&gen);CHKERRQ(ierr);
       ierr = PSBUSGetGen(bus0,k,&gen0);CHKERRQ(ierr);
       if(gen0->status && gen->status) {
-	// For non-renewable generators gen0->pt = gen->pt.
-	// For renewable generators, we need to use the set-point for the
-	// base-case generator. Otherwise if gen->pt < x[g] then the problem
-	// will be infeasible
-	//	gen->pt = gen0->pt; 
-	if(x[g] > gen->pt) {
-	  ierr = PetscPrintf(PETSC_COMM_SELF,"gen %d x[g] = %lf, gen->pt = %lf\n",gen->bus_i,x[g],gen->pt);CHKERRQ(ierr);
-	}
 	gen0->pgs = gen->pgs = gen->pg = x[g++];
       } else if(gen0->status) g++;
     }
@@ -229,6 +221,10 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int& n, const double* 
 
   //  assert(g == n);
   /* Solve */
+  ierr = PetscPrintf(PETSC_COMM_SELF,"\n*******************************************\n",scen_num+1);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_SELF,"SC = %d, SCENARIO NUMBER = %d, CONTINGENCY NUMBER = %d\n",s,scen_num+1,cont_num);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_SELF,"\n*******************************************\n",scen_num+1);CHKERRQ(ierr);
+
   ierr = OPFLOWSolve(opflowscen);
   ierr = OPFLOWGetObjective(opflowscen,&rval);
   ierr = OPFLOWSolutionToPS(opflowscen);CHKERRQ(ierr);

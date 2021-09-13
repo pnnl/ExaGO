@@ -441,8 +441,8 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
     if(sopflow->Ns == -1) sopflow->Ns = 1;
   }
 
-  if(sopflow->flatten_contingencies) {
-    sopflow->ismulticontingency = PETSC_FALSE;
+  if(sopflow->ismulticontingency && sopflow->flatten_contingencies) {
+    sopflow->ismulticontingency = PETSC_FALSE; // Collapse contingencies into scenarios
 
     if(flgctgc) {
       /* Need to remove hard coded native format later */
