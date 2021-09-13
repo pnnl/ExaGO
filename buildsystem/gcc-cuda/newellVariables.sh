@@ -73,7 +73,8 @@ module load exasgd-pkgconf/1.7.4/gcc-7.4.0-5ios5aw
 # python@3.8.6%gcc@7.4.0+bz2+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tix~tkinter~ucs4+uuid+zlib patches=0d98e93189bc278fbc37a50ed7f183bd8aaf249a8e1670a465f0db6bb4f8cf87 arch=linux-rhel7-power9le
 module load exasgd-python/3.8.6/gcc-7.4.0-rs6cbgj
 # raja@0.13.0%gcc@7.4.0+cuda~examples~exercises~hip~ipo+openmp+shared~tests amdgpu_target=none build_type=RelWithDebInfo cuda_arch=none arch=linux-rhel7-power9le
-module load exasgd-raja/0.13.0/cuda-10.2.89-system/gcc-7.4.0-haqrgbr
+#module load exasgd-raja/0.13.0/cuda-10.2.89-system/gcc-7.4.0-haqrgbr
+module load exasgd-raja/0.13.0/cuda-10.2.89-system/gcc-7.4.0-uj7zop4
 # readline@8.1%gcc@7.4.0 arch=linux-rhel7-power9le
 module load exasgd-readline/8.1/gcc-7.4.0-vqamj6w
 # sqlite@3.35.5%gcc@7.4.0+column_metadata+fts~functions~rtree arch=linux-rhel7-power9le
@@ -87,7 +88,12 @@ module load exasgd-tar/1.34/gcc-7.4.0-gkbivc5
 # texinfo@6.5%gcc@7.4.0 patches=12f6edb0c6b270b8c8dba2ce17998c580db01182d871ee32b7b6e4129bd1d23a,1732115f651cff98989cb0215d8f64da5e0f7911ebf0c13b064920f088f2ffe1 arch=linux-rhel7-power9le
 module load exasgd-texinfo/6.5/gcc-7.4.0-r24oezq
 # umpire@4.1.2%gcc@7.4.0+c+cuda~deviceconst~examples~fortran~hip~ipo~numa+openmp~shared amdgpu_target=none build_type=RelWithDebInfo cuda_arch=none patches=7d912d31cd293df005ba74cb96c6f3e32dc3d84afff49b14509714283693db08 tests=none arch=linux-rhel7-power9le
-module load exasgd-umpire/4.1.2/cuda-10.2.89-system/gcc-7.4.0-hi2bbqe
+#module load exasgd-umpire/4.1.2/cuda-10.2.89-system/gcc-7.4.0-hi2bbqe
+# umpire@5.0.1%gcc@7.4.0+c+cuda~deviceconst~examples~fortran~hip~ipo~numa+openmp~shared amdgpu_target=none build_type=RelWithDebInfo cuda_arch=none patches=7d912d31cd293df005ba74cb96c6f3e32dc3d84afff49b14509714283693db08 tests=none arch=linux-rhel7-power9le
+module load exasgd-umpire/5.0.1/cuda-10.2.89-system/gcc-7.4.0-mdo4fae
+# Umpire 5.0.1 needs camp
+module load exasgd-camp/0.1.0/cuda-10.2.89-system/gcc-7.4.0-fvkaniz
+
 # util-linux-uuid@2.36.2%gcc@7.4.0 arch=linux-rhel7-power9le
 module load exasgd-util-linux-uuid/2.36.2/gcc-7.4.0-oruzuyx
 # xz@5.2.5%gcc@7.4.0~pic libs=shared,static arch=linux-rhel7-power9le
