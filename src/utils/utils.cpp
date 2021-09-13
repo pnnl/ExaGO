@@ -442,6 +442,8 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int* argc, char*** argv,
     skip_args = true;
     argc = NULL;
     argv = NULL;
+    no_optfile = true;
+    comm = MPI_COMM_WORLD;
   }
 
   if (!skip_args)

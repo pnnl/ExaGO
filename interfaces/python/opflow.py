@@ -127,11 +127,11 @@ class OPFLOW:
 
     def set_loadloss_penalty(self, penalty):
         logging.debug(f'Setting opflow loadloss penalty to {penalty}')
-        self.opflowlib.OPFLOWSetLoadLossPenalty(self.opflow, penalty)
+        self.opflowlib.OPFLOWSetLoadLossPenalty(self.opflow, c_double(penalty))
 
     def set_powerimbalance_penalty(self, penalty):
         logging.debug(f'Setting opflow power imbalance penalty to {penalty}')
-        self.opflowlib.OPFLOWSetBusPowerImbalancePenalty(self.opflow, penalty)
+        self.opflowlib.OPFLOWSetBusPowerImbalancePenalty(self.opflow, c_double(penalty))
 
     def set_genbusvoltage(self, control_mode):
         logging.debug(f'Setting opflow genbusvoltage to type {control_mode}')
