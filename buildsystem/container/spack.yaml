@@ -43,7 +43,7 @@ spack:
       - curl -L -s -o mc 'https://dl.min.io/client/mc/release/linux-amd64/mc'
          && chmod +x ./mc
          && ./mc alias set minio $S3_ENDPOINT_URL $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY
-         && ./mc cp minio/private/* .
+         && ./mc cp -r minio/private/ .
       - git clone ${SPACK_REPO}
       - pushd spack && git checkout ${SPACK_CHECKOUT_VERSION} && popd
       - . "./spack/share/spack/setup-env.sh"
