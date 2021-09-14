@@ -18,7 +18,6 @@ int main(int argc,char **argv)
   #if defined(PETSC_USE_LOG)
     PetscLogStage stages[2];
   #endif
-  char options_pathname[200] = EXAGO_OPTIONS_DIR;
   char filename[] = "/tcopflowoptions";
   MPI_Comm          comm=MPI_COMM_WORLD;
   char              appname[]="tcopflow";
