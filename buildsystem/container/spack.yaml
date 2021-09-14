@@ -1,10 +1,10 @@
 spack:
   definitions:
   - pkgs:
-    - exago@develop+mpi
+    - exago@develop+hiop
   - rajas: ['+raja', '~raja']
-  - hiops: ['+hiop', '~hiop']
   - ipopts: ['+ipopt', '~ipopt']
+  - mpis: ['+mpi', '~mpi']
   - arch:
     - '%gcc@7.5.0 arch=linux-ubuntu18.04-x86_64'
   specs:
@@ -13,7 +13,7 @@ spack:
     - [$arch]
     - [$rajas]
     - [$ipopts]
-    - [$hiops]
+    - [$mpis]
 
   mirrors:
     pnnl: s3://spack-ci
@@ -29,7 +29,7 @@ spack:
         mpi: [openmpi, mpich]
     petsc:
       version: [3.13.5]
-      variants: +mpi~hypre~hdf5~metis~superlu-dist
+      variants: ~hypre~hdf5~metis~superlu-dist
     ipopt:
       variants: +coinhsl~mumps
       version: [3.12.10]
