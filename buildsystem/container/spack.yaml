@@ -44,7 +44,6 @@ spack:
          && chmod +x ./mc
          && ./mc alias set minio $S3_ENDPOINT_URL $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY
          && ./mc cp -r minio/private/ .
-      - cp ./*.tar.gz /builds/exasgd/frameworks/exago/
       - git clone ${SPACK_REPO}
       - pushd spack && git checkout ${SPACK_CHECKOUT_VERSION} && popd
       - . "./spack/share/spack/setup-env.sh"
