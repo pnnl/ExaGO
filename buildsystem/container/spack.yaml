@@ -16,7 +16,7 @@ spack:
     - [$hiops]
 
   mirrors:
-    pnnl: s3://spack
+    pnnl: s3://spack-ci
 
   config:
     clingo: true
@@ -26,7 +26,7 @@ spack:
   packages:
     all:
       providers:
-        mpi: [openmpi]
+        mpi: [openmpi, mpich]
     petsc:
       version: [3.13.5]
       variants: +mpi~hypre~hdf5~metis~superlu-dist
@@ -35,11 +35,14 @@ spack:
       version: [3.12.10]
     hiop:
       version: [0.4.1]
+    coinhsl:
+      variants: +blas
       
 
   gitlab-ci:
 
     before_script:
+      - unset SPACK_SIGNING_KEY
       - curl -L -s -o mc 'https://dl.min.io/client/mc/release/linux-amd64/mc'
          && chmod +x ./mc
          && ./mc alias set minio $S3_ENDPOINT_URL $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY
@@ -49,6 +52,7 @@ spack:
       - . "./spack/share/spack/setup-env.sh"
 
     script:
+      - unset SPACK_SIGNING_KEY
       - pushd ${SPACK_CONCRETE_ENV_DIR} && spack env activate --without-view . && popd
       - spack -d ci rebuild
 
