@@ -160,12 +160,9 @@ spack-generate-job:
       when: manual
 
   stage: spack-generate
-  image: ubuntu:18.04
+  image: spack/ubuntu-bionic
   tags: [k8s, ikp, exasgd, basic]
   before_script:
-    - apt update
-    - apt install -y git python3 python3-pip
-    - pip3 install boto boto3 botocore
     - git clone ${SPACK_REPO}
     - pushd spack && git checkout ${SPACK_REF} && popd
     - . "./spack/share/spack/setup-env.sh"
