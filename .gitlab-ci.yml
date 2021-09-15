@@ -146,17 +146,14 @@ include:
     SPACK_REPO: https://github.com/LLNL/spack.git
     S3_ENDPOINT_URL: http://cache.exasgd.pnl.gov
 
-.spack-rules-template: &spack-rules-def
+spack-generate-job:
   rules:
     - if: '$CI_COMMIT_REF_NAME == "develop"'
     - if: '$CI_COMMIT_MESSAGE =~ /\[matrix\]/'
     - if: '$CI_COMMIT_REF_NAME != "develop"'
       when: manual
-
-spack-generate-job:
   <<: *pnnl_rules_definition
   <<: *spack-variables-def
-  <<: *spack-rules-def
   stage: spack-generate
   image: spack/ubuntu-bionic
   tags: [k8s, ikp, exasgd, basic]
@@ -176,7 +173,6 @@ spack-generate-job:
 
 spack-build-job:
   <<: *spack-variables-def
-  <<: *spack-rules-def
   stage: spack-build
   trigger:
     include:
@@ -323,3 +319,4 @@ x86_64-gcc-cuda-python-test:
   <<: *pnnl_rules_definition
   allow_failure: true
 # ---
+
