@@ -1,6 +1,6 @@
 
 # CI constraints for every branch
-workflow:
+.global-rules-template: &global-rules-def
   rules:
       # Only run if source is an open merge request or a branch push
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
@@ -120,6 +120,7 @@ workflow:
     - marianas
 
 .pnnl_rules_template: &pnnl_rules_definition
+  <<: *global-rules-def
   rules:
     - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"' # Will only apply to PNNL
 
@@ -187,6 +188,7 @@ build_on_login_node:
   stage: build
   tags:
     - nobatch
+  <<: *global-rules-def
   rules:
     - if: '$CI_PROJECT_PATH == "ecpcitest/exasgd/exago"'
   <<: *ornl_script_definition
@@ -198,6 +200,7 @@ test_on_compute_node:
     - build_on_login_node
   tags:
     - batch
+  <<: *global-rules-def
   rules:
     - if: '$CI_PROJECT_PATH == "ecpcitest/exasgd/exago"'
   <<: *ornl_test_script_definition
