@@ -323,4 +323,3 @@ x86_64-gcc-cuda-python-test:
   <<: *pnnl_rules_definition
   allow_failure: true
 # ---
-
