@@ -5,7 +5,13 @@ model = 'POWER_BALANCE_CARTESIAN'
 solver = 'IPOPT'
 tolerance = 1e-3
 gen_bus_voltage_type = 'FIXED_WITHIN_QBOUNDS'
+is_loadloss_active = false
+is_powerimb_active = false
 has_gen_set_point = false
+use_agc = false
+load_loss_penalty = 1000.0
+power_imbalance_penalty = 1000.0
+initialization_type = 'MIDPOINT'
 
 # -- PBCAR model
 [[testcase]]
