@@ -166,7 +166,6 @@ spack-generate-job:
     - spack -d ci generate
       --artifacts-root "${CI_PROJECT_DIR}/jobs_scratch_dir"
       --output-file "${CI_PROJECT_DIR}/jobs_scratch_dir/pipeline.yml"
-      --no-prune-dag
   artifacts:
     paths:
       - "${CI_PROJECT_DIR}/jobs_scratch_dir"

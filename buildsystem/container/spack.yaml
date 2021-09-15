@@ -59,6 +59,10 @@ spack:
     rebuild-index: true
 
     service-job-attributes:
+      before_script:
+        - git clone ${SPACK_REPO}
+        - pushd spack && git checkout ${SPACK_CHECKOUT_VERSION} && popd
+        - . "./spack/share/spack/setup-env.sh"
       tags:
       - k8s
       - ikp
