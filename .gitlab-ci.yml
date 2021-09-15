@@ -178,6 +178,16 @@ cmake-lint:
     done
     exit $ret
 
+svc cleanup:
+  stage: .pre
+  <<: *pnnl_rules_definition
+  <<: *pnnl_tags_definition
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[cleanup\]/'
+
+  script:
+    - cd /people/svcexasgd/ && rm -rf gitlab/*
+
 ppc64le-gcc-cuda-build:
   stage: build
   variables:
@@ -268,3 +278,4 @@ x86_64-gcc-cuda-python-test:
   <<: *pnnl_rules_definition
   allow_failure: true
 # ---
+
