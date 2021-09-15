@@ -11,7 +11,6 @@ workflow:
 .ornl_script_template: &ornl_script_definition
   script:
     - |
-      exit 0
       # Do _not_ clean up WORKDIR as files are needed for testing
       set -xv
       mkdir -p "$WORKDIR"
@@ -23,7 +22,6 @@ workflow:
 .ornl_test_script_template: &ornl_test_script_definition
   script:
     - |
-      exit 0
       set -xv
       cd "$WORKDIR"
       export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
@@ -58,7 +56,6 @@ workflow:
 .pnnl_script_template: &pnnl_script_definition
   script:
     - |
-      exit 0
       set -xv
       #
       #  NOTES:  WORKDIR is on constance/marianas/newell
