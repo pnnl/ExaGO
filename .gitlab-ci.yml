@@ -155,6 +155,7 @@ spack-generate-job:
 
   rules:
     - if: '$CI_COMMIT_REF_NAME == "develop"'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[matrix\]/'
     - if: '$CI_COMMIT_REF_NAME != "develop"'
       when: manual
 

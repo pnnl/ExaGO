@@ -6,7 +6,7 @@ spack:
   - ipopts: ['+ipopt', '~ipopt']
   - mpis: ['+mpi', '~mpi']
   - arch:
-    - '%gcc@7.5.0 arch=linux-ubuntu18.04-x86_64'
+    - '%gcc@7.5.0 os=ubuntu18.04'
   specs:
   - matrix:
     - [$pkgs]
@@ -19,12 +19,12 @@ spack:
     pnnl: s3://spack-ci
 
   config:
-    clingo: true
     install_tree:
       padded_length: 128
 
   packages:
     all:
+      target: [x86_64]
       providers:
         mpi: [openmpi, mpich]
     petsc:
