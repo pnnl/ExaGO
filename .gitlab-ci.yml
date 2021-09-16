@@ -120,7 +120,6 @@
     - marianas
 
 .pnnl_rules_template: &pnnl_rules_definition
-  <<: *global-rules-def
   rules:
     - if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"' # Will only apply to PNNL
 
@@ -154,7 +153,6 @@ spack-generate-job:
     - if: '$CI_COMMIT_REF_NAME != "develop"'
       when: manual
     - if: '$CI_COMMIT_MESSAGE =~ /\[matrix\]/'
-    - if: '$CI_COMMIT_REF_NAME == "develop"'
   <<: *pnnl_rules_definition
   <<: *spack-variables-def
   stage: spack-generate
@@ -175,6 +173,7 @@ spack-generate-job:
       - "${CI_PROJECT_DIR}/jobs_scratch_dir"
 
 spack-build-job:
+  <<: *global-rules-def
   <<: *spack-variables-def
   stage: spack-build
   trigger:
