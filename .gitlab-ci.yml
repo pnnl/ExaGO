@@ -148,7 +148,7 @@ include:
 
 spack-generate-job:
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: $CI_MERGE_REQUEST_ID
       when: never
     - if: '$CI_COMMIT_REF_NAME != "develop"'
       when: manual
@@ -159,11 +159,7 @@ spack-generate-job:
   image: spack/ubuntu-bionic
   tags: [k8s, ikp, exasgd, basic]
   before_script:
-    - if [ ! "x$CI_OPEN_MERGE_REQUESTS" = "x" ]; then
-        echo -e "\e[34mOpen merge request found for this branch.";
-        echo -e "Skipping spack generate step\e[39m";
-        exit 0;
-      fi
+    - if [ ! "x$CI_OPEN_MERGE_REQUESTS" = "x" ]; then exit 0; fi
     - git clone ${SPACK_REPO}
     - pushd spack && git checkout ${SPACK_REF} && popd
     - . "./spack/share/spack/setup-env.sh"
