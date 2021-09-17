@@ -159,10 +159,20 @@ spack-generate-job:
   image: spack/ubuntu-bionic
   tags: [k8s, ikp, exasgd, basic]
   before_script:
+    - if [ ! "x$CI_OPEN_MERGE_REQUESTS" = "x" ]; then
+        echo -e "\e[34mOpen merge request found for this branch.";
+        echo -e "Skipping spack generate step\e[39m";
+        exit 0;
+      fi
     - git clone ${SPACK_REPO}
     - pushd spack && git checkout ${SPACK_REF} && popd
     - . "./spack/share/spack/setup-env.sh"
   script:
+    - if [ ! "x$CI_OPEN_MERGE_REQUESTS" = "x" ]; then
+        echo -e "\e[34mOpen merge request found for this branch.";
+        echo -e "Skipping spack generate step\e[39m";
+        exit 0;
+      fi
     - cp buildsystem/container/spack.yaml . && spack env activate --without-view .
     - spack -d ci generate
       --artifacts-root "${CI_PROJECT_DIR}/jobs_scratch_dir"
