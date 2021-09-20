@@ -239,7 +239,7 @@ cmake-lint:
 
 svc cleanup:
   stage: .pre
-  <<: *pnnl_rules_definition
+  <<: *pnnl-rules
   <<: *pnnl_tags_definition
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[cleanup\]/'
