@@ -1,0 +1,86 @@
+spack:
+  definitions:
+  - pkgs:
+    - exago@develop+hiop
+  - rajas: ['+raja', '~raja']
+  - ipopts: ['+ipopt', '~ipopt']
+  - mpis: ['+mpi', '~mpi']
+  - arch:
+    - '%gcc@7.5.0 os=ubuntu18.04'
+  specs:
+  - matrix:
+    - [$pkgs]
+    - [$arch]
+    - [$rajas]
+    - [$ipopts]
+    - [$mpis]
+
+  mirrors:
+    pnnl: s3://spack-ci
+
+  config:
+    install_tree:
+      padded_length: 128
+
+  packages:
+    all:
+      target: [x86_64]
+      providers:
+        mpi: [openmpi, mpich]
+    petsc:
+      version: [3.13.5]
+      variants: ~hypre~hdf5~metis~superlu-dist
+    ipopt:
+      variants: +coinhsl~mumps
+      version: [3.12.10]
+    hiop:
+      version: [0.4.1]
+    coinhsl:
+      variants: +blas
+      
+
+  gitlab-ci:
+
+    before_script:
+      - unset SPACK_SIGNING_KEY
+      - curl -L -s -o mc 'https://dl.min.io/client/mc/release/linux-amd64/mc'
+         && chmod +x ./mc
+         && ./mc alias set minio $S3_ENDPOINT_URL $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY
+         && ./mc cp -r minio/private/ .
+      - git clone ${SPACK_REPO}
+      - pushd spack && git checkout ${SPACK_CHECKOUT_VERSION} && popd
+      - . "./spack/share/spack/setup-env.sh"
+
+    script:
+      - unset SPACK_SIGNING_KEY
+      - pushd ${SPACK_CONCRETE_ENV_DIR} && spack env activate --without-view . && popd
+      - spack -d ci rebuild
+
+    rebuild-index: true
+
+    service-job-attributes:
+      before_script:
+        - git clone ${SPACK_REPO}
+        - pushd spack && git checkout ${SPACK_CHECKOUT_VERSION} && popd
+        - . "./spack/share/spack/setup-env.sh"
+      tags:
+      - k8s
+      - ikp
+      - exasgd
+      - basic
+      image:
+        name: spack/ubuntu-bionic
+        entrypoint: [""]
+
+    mappings:
+    - match:
+      - arch=linux-ubuntu18.04-x86_64
+      runner-attributes:
+        tags:
+        - k8s
+        - ikp
+        - exasgd
+        - basic
+        image:
+          name: spack/ubuntu-bionic
+          entrypoint: [""]
