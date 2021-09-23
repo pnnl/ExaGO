@@ -12,7 +12,6 @@
 #include <sopflow.h>
 #include <scopflow.h>
 #include <private/scenariolist.h>
-#include <private/contingencylist.h>
 
 #define SOPFLOWSOLVERSMAX 10
 #define SOPFLOWMODELSMAX  10
