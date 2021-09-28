@@ -38,6 +38,8 @@ def test_solution_to_ps():
     opf.dont_finalize()
     opf.read_mat_power_data(
         os.path.join(config.prefix(), 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+    opf.setup_ps()
+    opf.ps_set_gen_power_limits(3, "1 ", 65, 0, exago_ignore, exago_ignore)
     opf.solve()
     opf.solution_to_ps()
 
@@ -154,8 +156,7 @@ def test_set_loadloss_penalty():
     opf.set_loadloss_penalty(999)
     opf.set_initialization('FROMFILE')
     opf.set_genbusvoltage('VARIABLE_WITHIN_BOUNDS')
-    # See ExaGO issue #249
-    # opf.solve()
+    opf.solve()
 
 @exago_test
 def test_set_include_powerimbalance():
@@ -170,8 +171,7 @@ def test_set_include_powerimbalance():
     opf.set_powerimbalance_penalty(999)
     opf.set_initialization('FROMFILE')
     opf.set_genbusvoltage('VARIABLE_WITHIN_BOUNDS')
-    # See ExaGO issue #249
-    # opf.solve()
+    opf.solve()
 
 @exago_test
 def test_set_genbusvoltage():
