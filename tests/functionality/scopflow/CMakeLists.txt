@@ -5,8 +5,6 @@ target_include_directories(
   testScopflowFunctionalityTOML PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
-set(tolerance "1e-3")
-
 #[[ Configure SCOPFLOW functionality tests ]]
 target_link_libraries(testScopflowFunctionalityTOML ExaGO::SCOPFLOW)
 if(EXAGO_INSTALL_TESTS)

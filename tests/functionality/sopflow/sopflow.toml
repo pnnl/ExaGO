@@ -1,0 +1,53 @@
+testsuite_name = "SOPFLOW Functionality tests"
+
+[presets]
+tolerance = 1e-3
+network = 'datafiles/case_ACTIVSg200.m'
+scenfile = 'datafiles/TAMU200_scenarios/scenarios_200bus.csv'
+multicontingency = false
+multiperiod = false
+
+[[testcase]]
+description = 'ACTIVSg200 IPOPT 1scen SOPFLOW'
+solver = 'IPOPT'
+num_scenarios = 1
+num_iters = 276
+obj_value = 26667.7197703
+
+[[testcase]]
+description = 'ACTIVSg200 IPOPT 2scen SOPFLOW'
+solver = 'IPOPT'
+num_scenarios = 2
+num_iters = 323
+obj_value = 53400.5582282
+
+[[testcase]]
+description = 'ACTIVSg200 IPOPT 3scen SOPFLOW'
+solver = 'IPOPT'
+num_scenarios = 3
+num_iters = 648
+obj_value = 80321.0011453
+
+# For some reason num_iters is coming back as 0 for these tests
+[[testcase]]
+description = 'ACTIVSg200 EMPAR 1scen SOPFLOW'
+solver = 'EMPAR'
+num_scenarios = 1
+num_iters = 0
+obj_value = 26667.7179803
+
+[[testcase]]
+description = 'ACTIVSg200 EMPAR 2scen SOPFLOW'
+solver = 'EMPAR'
+num_scenarios = 2
+num_iters = 0
+obj_value = 26667.7179803
+
+
+[[testcase]]
+description = 'ACTIVSg200 EMPAR 3scen SOPFLOW'
+solver = 'EMPAR'
+num_scenarios = 3
+num_iters = 0
+obj_value = 26667.7179803
+

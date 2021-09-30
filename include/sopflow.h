@@ -33,6 +33,8 @@ PETSC_EXTERN PetscErrorCode SOPFLOWSetSolver(SOPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode SOPFLOWCreate(MPI_Comm,SOPFLOW*);
 PETSC_EXTERN PetscErrorCode SOPFLOWDestroy(SOPFLOW*);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetNetworkData(SOPFLOW,const char[]);
+PETSC_EXTERN PetscErrorCode SOPFLOWSetContingencyData(SOPFLOW,const char[]);
+PETSC_EXTERN PetscErrorCode SOPFLOWSetWindGenProfile(SOPFLOW,const char[]);
 
 PETSC_EXTERN PetscErrorCode SOPFLOWSetScenarioData(SOPFLOW,ScenarioFileInputFormat,ScenarioUncertaintyType,const char[]);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetUp(SOPFLOW);

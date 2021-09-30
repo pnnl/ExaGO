@@ -1,9 +1,12 @@
 #[[ Functionality tests for ExaGO SOPFLOW applications ]]
 
 set_source_files_properties(
-  sopflow.c sopflowselfcheck.c PROPERTIES LANGUAGE CXX
+  sopflow.c sopflowselfcheck.c selfcheck.cpp PROPERTIES LANGUAGE CXX
 )
-
+add_executable(testSopflowFunctionalityTOML selfcheck.cpp)
+target_include_directories(
+  testSopflowFunctionalityTOML PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/.. 
+)
 add_executable(testSopflowFunctionality sopflow.c sopflowselfcheck.c)
 target_include_directories(
   testSopflowFunctionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13,9 +16,27 @@ set(tolerance "1e-3")
 
 #[[ Configure SOPFLOW functionality tests ]]
 target_link_libraries(testSopflowFunctionality ExaGO::SOPFLOW)
+target_link_libraries(testSopflowFunctionalityTOML ExaGO::SOPFLOW)
 if(EXAGO_INSTALL_TESTS)
+  message(STATUS "Configuring SOPFLOW functionality tests")
+
   install(TARGETS testSopflowFunctionality
           RUNTIME DESTINATION tests/functionality
+  )
+  install(TARGETS testSopflowFunctionalityTOML
+          RUNTIME DESTINATION tests/functionality
+  )
+
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_SOPFLOW_TOML
+    DEPENDS
+    IPOPT
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:testSopflowFunctionalityTOML>
+    ${CMAKE_CURRENT_SOURCE_DIR}/sopflow.toml
+    -no_optfile
   )
 
   foreach(ns RANGE 1 3)
@@ -101,6 +122,8 @@ if(EXAGO_INSTALL_TESTS)
     ${CMAKE_SOURCE_DIR}/datafiles/case9/load_P.csv
     -scopflow_qloadprofile
     ${CMAKE_SOURCE_DIR}/datafiles/case9/load_Q.csv
+    -windgen
+    ${CMAKE_SOURCE_DIR}/datafiles/case9/scenarios_9bus.csv
     -sopflow_solver
     IPOPT
     -sopflow_enable_multicontingency
@@ -119,7 +142,6 @@ if(EXAGO_INSTALL_TESTS)
     IPOPT
   )
 
-  message(STATUS "Configuring SOPFLOW functionality tests")
   foreach(ns RANGE 1 3)
     exago_add_test(
       NAME
@@ -194,6 +216,8 @@ if(EXAGO_INSTALL_TESTS)
     ${CMAKE_SOURCE_DIR}/datafiles/case9/load_P.csv
     -scopflow_qloadprofile
     ${CMAKE_SOURCE_DIR}/datafiles/case9/load_Q.csv
+    -windgen
+    ${CMAKE_SOURCE_DIR}/datafiles/case9/scenarios_9bus.csv
     -sopflow_solver
     IPOPT
     -sopflow_enable_multicontingency
