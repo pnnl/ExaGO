@@ -274,6 +274,42 @@ PetscErrorCode SOPFLOWSetNetworkData(SOPFLOW sopflow,const char netfile[])
   PetscFunctionReturn(0);
 }
 
+/*
+  SOPFLOWSetContingencyData - Sets and reads the contingency data
+
+  Input Parameter
++  sopflow - The SOPFLOW object
+-  ctgfile - The name of the ctgfile file
+*/
+PetscErrorCode SOPFLOWSetContingencyData(SOPFLOW sopflow,const char ctgfile[])
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  ierr = PetscMemcpy(sopflow->ctgfile,ctgfile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+/*
+  SOPFLOWSetWindGenProfile - Sets and reads the windgen data
+
+  Input Parameter
++  sopflow - The SOPFLOW object
+-  windgen - The name of the network file
+*/
+PetscErrorCode SOPFLOWSetWindGenProfile(SOPFLOW sopflow,const char windgen[])
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  ierr = PetscMemcpy(sopflow->windgen,windgen,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
 extern PetscErrorCode SOPFLOWGetNumScenarios(SOPFLOW,ScenarioFileInputFormat,const char scenfile[],PetscInt*);
 
 /*
@@ -297,7 +333,10 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   PS             ps;
   OPFLOW         opflow;
   char           ctgcfile[PETSC_MAX_PATH_LEN];
+  char           windgen[PETSC_MAX_PATH_LEN];
   PetscBool      flgctgc=PETSC_FALSE;
+  PetscBool      flgwindgen=PETSC_FALSE;
+
 
   PetscFunctionBegin;
 
@@ -311,6 +350,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
 
   ierr = PetscOptionsBool("-sopflow_enable_multicontingency","Multi-contingency SOPFLOW?","",sopflow->ismulticontingency,&sopflow->ismulticontingency,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsString("-ctgcfile","Contingency file","",ctgcfile,ctgcfile,PETSC_MAX_PATH_LEN,&flgctgc);CHKERRQ(ierr);
+  ierr = PetscOptionsString("-windgen","Wind Generation file","",windgen,windgen,PETSC_MAX_PATH_LEN,&flgwindgen);CHKERRQ(ierr);
   ierr = PetscOptionsReal("-sopflow_tolerance","optimization tolerance","",sopflow->tolerance,&sopflow->tolerance,NULL);CHKERRQ(ierr);
   PetscOptionsEnd();
 
@@ -453,6 +493,14 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
     /* Create SCOPFLOW objects */
     ierr = PetscCalloc1(sopflow->ns,&sopflow->scopflows);CHKERRQ(ierr);
 
+    /* Override windgen and ctgc files if CLI option set */
+    if (flgctgc) {
+      ierr = SOPFLOWSetContingencyData(sopflow, ctgcfile);CHKERRQ(ierr);
+    }
+    if (flgwindgen) {
+      ierr = SOPFLOWSetWindGenProfile(sopflow, windgen);CHKERRQ(ierr);
+    }
+
     for(s=0; s < sopflow->ns; s++) {
       /* Create SCOPFLOW object */
       ierr = SCOPFLOWCreate(sopflow->subcomm,&sopflow->scopflows[s]);CHKERRQ(ierr);
@@ -460,7 +508,9 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
       ierr = SCOPFLOWSetNetworkData(sopflow->scopflows[s],sopflow->netfile);CHKERRQ(ierr);
       /* Set contingency data */
       /* Should not set hard coded native format */
-      ierr = SCOPFLOWSetContingencyData(sopflow->scopflows[s],NATIVE,ctgcfile);CHKERRQ(ierr);
+      ierr = SCOPFLOWSetContingencyData(sopflow->scopflows[s],NATIVE,sopflow->ctgfile);CHKERRQ(ierr);
+
+      ierr = SCOPFLOWSetWindGenProfile(sopflow->scopflows[s],sopflow->windgen); 
     }
 
     if(sopflow->scenfileset) {
@@ -610,6 +660,14 @@ PetscErrorCode SOPFLOWSolve(SOPFLOW sopflow)
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode SOPFLOWSetNumScenarios(SOPFLOW sopflow, PetscInt num_scenarios)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  sopflow->Ns = num_scenarios;
+  PetscFunctionReturn(0);
+}
 /*
   SOPFLOWGetObjective - Returns the objective function value
 

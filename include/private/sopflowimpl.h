@@ -89,6 +89,8 @@ struct _p_SOPFLOW{
   PetscReal tolerance; /* Tolerance for SOPFLOW */
 
   char netfile[PETSC_MAX_PATH_LEN]; /* Network data file */
+  char ctgfile[PETSC_MAX_PATH_LEN]; /* Contingency data file */
+  char windgen[PETSC_MAX_PATH_LEN]; /* Wingen data file */
 
   Vec  X,localX;    /* Global and local solution vector */
   Vec  G; /**< Inequality and equality constraint function */
