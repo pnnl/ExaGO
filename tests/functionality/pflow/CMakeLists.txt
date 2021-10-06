@@ -23,15 +23,20 @@ if(EXAGO_INSTALL_TESTS)
   message(STATUS "Configuring PFLOW Functionality Tests.")
 
   # PFLOW Functionality Tests
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_PFLOW_TESTSUITE
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:testPflowFunctionalityTOML>
-    ${CMAKE_CURRENT_SOURCE_DIR}/pflow.toml
-    -no_optfile
-  )
+  foreach(np RANGE 1 2)
+    exago_add_test(
+      NAME
+      FUNCTIONALITY_TEST_PFLOW_TESTSUITE_${np}_proc
+      COMMAND
+      ${MPICMD}
+      "-n"
+      ${np}
+      ${EXAGO_EXTRA_MPI_FLAGS}
+      $<TARGET_FILE:testPflowFunctionalityTOML>
+      ${CMAKE_CURRENT_SOURCE_DIR}/pflow.toml
+      -no_optfile
+    )
+  endforeach(np)
 
   foreach(np RANGE 1 2)
     exago_add_test(
