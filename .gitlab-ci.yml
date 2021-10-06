@@ -131,6 +131,9 @@ workflow:
     - exasgd
     - basic
 
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
 stages:
   - build
   - test
@@ -228,10 +231,15 @@ cmake-lint:
   script:
     |
     set -x
-    apt update && apt install -y python3 python3-pip ack
+    apt update && apt install -y python3 python3-pip 
     pip install cmake_format
     ret=0
-    for f in $(ack -f --type cmake); do
+    export files_to_format=$( \
+      find . -type f \
+      -name "*.cmake" -o \
+      -name "CMakeLists.txt" -a \
+      -not -path "*/tests/toml11/*")
+    for f in "${files_to_format}"; do
       cmake-format --log-level info --check $f
       ret=$(($ret + $?))
     done
