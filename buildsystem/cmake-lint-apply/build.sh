@@ -11,9 +11,14 @@ if [[ $? -eq 1 ]]; then
   exit 1
 fi
 
+cd ..
 export cmakeFormat="cmake-format --log-level info"
 export srcdir=${srcdir:-$PWD}
-export findCmakeFiles=`find $srcdir -name '*.cmake' -or -name CMakeLists.txt`
+export findCmakeFiles=`find $srcdir -type f -name '*.cmake' -o \
+  -name CMakeLists.txt \
+  -a -not -path '*/tests/toml11/*'\
+  -a -not -path '*/build/*'\
+  -a -not -path '*/install/*'`
 
 function doBuild {
   for f in $findCmakeFiles; do

@@ -1,20 +1,38 @@
 #[[ Functionality tests for ExaGO PFLOW applications ]]
 
-set_source_files_properties(pflow.c pflowselfcheck.c PROPERTIES LANGUAGE CXX)
+set_source_files_properties(
+  pflow.c pflowselfcheck.c selfcheck.cpp PROPERTIES LANGUAGE CXX
+)
 
 add_executable(testPflowFunctionality pflow.c pflowselfcheck.c)
+
 target_include_directories(
   testPflowFunctionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+add_executable(testPflowFunctionalityTOML selfcheck.cpp)
+target_include_directories(
+  testPflowFunctionalityTOML PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+                                    ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
 #[[ Configure PFLOW functionality tests ]]
 target_link_libraries(testPflowFunctionality ExaGO::PFLOW)
+target_link_libraries(testPflowFunctionalityTOML ExaGO::PFLOW)
 if(EXAGO_INSTALL_TESTS)
-  install(TARGETS testPflowFunctionality
-          RUNTIME DESTINATION tests/functionality
+  message(STATUS "Configuring PFLOW Functionality Tests.")
+
+  # PFLOW Functionality Tests
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_PFLOW_TESTSUITE
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:testPflowFunctionalityTOML>
+    ${CMAKE_CURRENT_SOURCE_DIR}/pflow.toml
+    -no_optfile
   )
 
-  message(STATUS "Configuring PFLOW functionality tests")
   foreach(np RANGE 1 2)
     exago_add_test(
       NAME
@@ -29,5 +47,12 @@ if(EXAGO_INSTALL_TESTS)
       ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod.m
     )
   endforeach(np)
+
+  install(TARGETS testPflowFunctionality
+          RUNTIME DESTINATION tests/functionality
+  )
+  install(TARGETS testPflowFunctionalityTOML
+          RUNTIME DESTINATION tests/functionality
+  )
 
 endif()

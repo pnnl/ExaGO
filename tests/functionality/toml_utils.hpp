@@ -4,6 +4,9 @@
 #include <version.hpp>
 #include <exago_config.h>
 #include <iostream>
+#include <iomanip>
+#include <string>
+#include <sstream>
 
 /**
  * 

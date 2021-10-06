@@ -1,10 +1,5 @@
 static char help[] = "SOPFLOW Functionality Tests.\n\n";
 
-#include <iostream>
-#include <iomanip>
-#include <string>
-#include <sstream>
-#include <toml.hpp>
 #include <sopflow.h>
 #include "toml_utils.hpp"
 

@@ -5,7 +5,8 @@ set_source_files_properties(
 )
 add_executable(testSopflowFunctionalityTOML selfcheck.cpp)
 target_include_directories(
-  testSopflowFunctionalityTOML PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/.. 
+  testSopflowFunctionalityTOML PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+                                       ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 add_executable(testSopflowFunctionality sopflow.c sopflowselfcheck.c)
 target_include_directories(
