@@ -24,6 +24,35 @@ ExaGO<sup>TM</sup> applications can use the following solvers:
 | HIOP       | Y      |           |       |         |         |
 | PETSc/TAO  | Y      |           | Y     |         |         |
 
+## Building with Spack
+
+Many configurations are supported via Spack. At the moment, the following
+configuration is reccommended:
+
+```bash
+git clone git@github.com:spack/spack.git
+source spack/share/spack/setup-env.sh
+spack compiler find
+spack install exago@develop%gcc \
+  ^openmpi ^ipopt@3.12.10+coinhsl~mumps ^coinhsl+blas
+spack load exago
+opflow -help
+```
+
+## Building with CMake
+
+```console
+git clone ssh://git@gitlab.pnnl.gov:2222/exasgd/frameworks/exago.git
+cd exago
+mkdir build
+cd build
+cmake ..
+cmake . # cusomize your build here
+make
+make install
+make test # if you like
+```
+
 ## Building on CI Platforms
 
 If you are building on one of our continuous integration platforms, you may

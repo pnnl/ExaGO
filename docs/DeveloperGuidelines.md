@@ -19,8 +19,6 @@ $ git checkout develop
 $ git checkout -b my-cool-feature-dev
 ```
 
-Feature branches must have the suffix `-dev` and fix branches `-fix`.
-
 To submit a merge request, please make sure your branch is up to date with
 current development like so:
 
@@ -75,7 +73,7 @@ recommended.
 
 Each month, we tag our master branch after incrementing the patch number.
 We also push a release if we merge a feature significant enough to have its own
-release.
+release. This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and the [Keep-a-Changelog](https://keepachangelog.com/en/1.0.0/) guidelines.
 
 ### Files
 
@@ -93,3 +91,6 @@ release.
 1. [ExaGO's public repository](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/merge_requests)
 1. [Chris Beams's blog post on writing commit messages](https://chris.beams.io/posts/git-commit)
 1. [Pablo Ariasblog post on cmake best practices](https://pabloariasal.github.io/2018/02/19/its-time-to-do-cmake-right/)
+1. [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
+1. [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
+1. [xSDK Project](https://xsdk.info/policies/)
