@@ -35,13 +35,15 @@ struct PflowFunctionalityTests
 
   MPI_Comm comm;
   int nprocs;
-  int mpierr = MPI_Comm_size(comm, &nprocs);
 
   PflowFunctionalityTests(std::string testsuite_filename, MPI_Comm comm,
       ExaGOVerbosityLevel logging_verbosity=EXAGO_LOG_INFO) : comm{comm},
      FunctionalityTestContext(testsuite_filename, logging_verbosity)
-  {}
-  
+  {
+    auto err = MPI_Comm_size(comm, &nprocs);
+    if (err)
+      throw ExaGOError("Error getting MPI num ranks");
+  }
 
   using Params = PflowFunctionalityTestParameters;
   void ensure_options_are_consistent(toml::value testcase,
