@@ -33,7 +33,7 @@ if(EXAGO_INSTALL_TESTS)
       ${np}
       ${EXAGO_EXTRA_MPI_FLAGS}
       $<TARGET_FILE:testPflowFunctionalityTOML>
-      ${CMAKE_CURRENT_SOURCE_DIR}/pflow.toml
+      ${CMAKE_CURRENT_SOURCE_DIR}/pflow${np}procs.toml
       -no_optfile
     )
   endforeach(np)

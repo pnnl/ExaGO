@@ -32,15 +32,34 @@ struct PflowFunctionalityTestParameters
 struct PflowFunctionalityTests
   : public FunctionalityTestContext<PflowFunctionalityTestParameters>
 {
-  PflowFunctionalityTests(std::string testsuite_filename,
-      ExaGOVerbosityLevel logging_verbosity=EXAGO_LOG_INFO)
-    : FunctionalityTestContext(testsuite_filename, logging_verbosity)
+
+  MPI_Comm comm;
+  int nprocs;
+  int mpierr = MPI_Comm_size(comm, &nprocs);
+
+  PflowFunctionalityTests(std::string testsuite_filename, MPI_Comm comm,
+      ExaGOVerbosityLevel logging_verbosity=EXAGO_LOG_INFO) : comm{comm},
+     FunctionalityTestContext(testsuite_filename, logging_verbosity)
   {}
+  
 
   using Params = PflowFunctionalityTestParameters;
   void ensure_options_are_consistent(toml::value testcase,
       toml::value presets = toml::value{}) override
   {
+
+    int n_preset_procs;
+    set_if_found(n_preset_procs, presets, "n_procs");
+    if (nprocs != n_preset_procs)
+    {
+      std::stringstream errs;
+      errs << "PFLOW Functionality test suite found " << n_preset_procs
+        << " processes specified in the test suite TOML file, but this test is being run with "
+        << nprocs << " processes.\nTestcase: "
+        << testcase << "\nWith presets:\n" << presets;
+      throw ExaGOError(errs.str().c_str());
+    }
+    
     auto ensure_option_available = [&] (const std::string& opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
       if (!is_available)
@@ -54,7 +73,7 @@ struct PflowFunctionalityTests
       }
     };
 
-    for (const auto& opt : {"network"})
+    for (const auto& opt : {"network", "n_procs"})
       ensure_option_available(opt);
 
   }
@@ -151,7 +170,10 @@ int main(int argc, char** argv)
   // TODO:
   // - Pass MPI_COMM_WORLD_SIZE to constructor
   // - Assert n_procs == MPI_COMM_WORLD_SIZE
-  PflowFunctionalityTests test{std::string(argv[1])};
+  // mpi comm get size (comm) 
+  // pass into test below (test driver)
+  // check if on rank 0 before printing
+  PflowFunctionalityTests test{std::string(argv[1]), comm};
   test.run_all_test_cases();
   test.print_report();
 
