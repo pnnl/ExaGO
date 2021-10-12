@@ -169,12 +169,6 @@ int main(int argc, char** argv)
 
   ExaGOLog(EXAGO_LOG_INFO,"%s\n","Creating PFlow Functionality Test");
 
-  // TODO:
-  // - Pass MPI_COMM_WORLD_SIZE to constructor
-  // - Assert n_procs == MPI_COMM_WORLD_SIZE
-  // mpi comm get size (comm) 
-  // pass into test below (test driver)
-  // check if on rank 0 before printing
   PflowFunctionalityTests test{std::string(argv[1]), comm};
   test.run_all_test_cases();
   test.print_report();
