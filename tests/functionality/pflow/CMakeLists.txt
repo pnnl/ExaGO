@@ -16,7 +16,7 @@ if(EXAGO_INSTALL_TESTS)
   message(STATUS "Configuring PFLOW Functionality Tests.")
 
   # PFLOW Functionality Tests
-  foreach(np RANGE 1 2)
+  foreach(np RANGE 1 3)
     exago_add_test(
       NAME
       FUNCTIONALITY_TEST_PFLOW_TESTSUITE_${np}_proc
