@@ -1,7 +1,7 @@
 #[[ Functionality tests for ExaGO PFLOW applications ]]
 
 set_source_files_properties(
-  pflow.c pflowselfcheck.c selfcheck.cpp PROPERTIES LANGUAGE CXX
+  pflow.c selfcheck.cpp PROPERTIES LANGUAGE CXX
 )
 
 add_executable(testPflowFunctionalityTOML selfcheck.cpp)
