@@ -4,12 +4,6 @@ set_source_files_properties(
   pflow.c pflowselfcheck.c selfcheck.cpp PROPERTIES LANGUAGE CXX
 )
 
-add_executable(testPflowFunctionality pflow.c pflowselfcheck.c)
-
-target_include_directories(
-  testPflowFunctionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
 add_executable(testPflowFunctionalityTOML selfcheck.cpp)
 target_include_directories(
   testPflowFunctionalityTOML PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17,7 +11,6 @@ target_include_directories(
 )
 
 #[[ Configure PFLOW functionality tests ]]
-target_link_libraries(testPflowFunctionality ExaGO::PFLOW)
 target_link_libraries(testPflowFunctionalityTOML ExaGO::PFLOW)
 if(EXAGO_INSTALL_TESTS)
   message(STATUS "Configuring PFLOW Functionality Tests.")
@@ -38,9 +31,6 @@ if(EXAGO_INSTALL_TESTS)
     )
   endforeach(np)
 
-  install(TARGETS testPflowFunctionality
-          RUNTIME DESTINATION tests/functionality
-  )
   install(TARGETS testPflowFunctionalityTOML
           RUNTIME DESTINATION tests/functionality
   )
