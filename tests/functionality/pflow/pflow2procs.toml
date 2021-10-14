@@ -1,0 +1,12 @@
+testsuite_name = "PFLOW Functionality"
+
+[presets]
+network = 'datafiles/case9/case9mod.m'
+description = "No Description"
+n_procs = 2 
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'
+description = 'case9mod.m pflow test 2 proc'
+num_iters = 3
+
