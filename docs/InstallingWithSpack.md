@@ -1,88 +1,58 @@
 # Spack Installation
 
+Spack is a package manager for installing packages from source and maintaining many versions of many packages.
+
+Spack may be installed with:
+```console
+git clone -c feature.manyFiles=true https://github.com/spack/spack.git
+export PATH=$PWD/spack/bin:$PATH
+spack install zlib
+```
+
+The rest of this documentation will assume you have the `spack` executable on your path.
+
+More information on Spack can be found at the [GitHub repo](https://github.com/spack/spack) and on their [readthedocs page](https://spack.readthedocs.io/en/latest/).
+
 ## Getting Started
 
 The ExaGO Spack package was first avilable in spack version `0.16.1-2103-c4a83aa22c`.
 To use the ExaGO Spack package, download spack and check out a recent version like so:
 
-```shell
-$ git clone https://github.com/spack/spack.git
-$ export PATH="$PATH:$PWD/spack/bin"
+```console
+git clone https://github.com/spack/spack.git
+export PATH="$PATH:$PWD/spack/bin"
+```
 
-$ # The exact version may differ, but the full version will be at least 0.16.1
-$ spack --version
-0.16.1-2103-7c87ebeb91
+## Building with Spack
 
-$ spack info exago
-CMakePackage:   exago
+The following configuration spack configuration is reccommended for a minimal install with Ipopt solver.
+The command `spack info exago` will provide the most up-to-date information about the ExaGO spack package.
 
-Description:
-    ExaGO is a package for solving large-scale power grid optimization
-    problems on parallel and distributed architectures, particularly
-    targeted for exascale machines.
+***NOTE:*** Please see [the section on installing CoinHSL](#coinhsl-dependency) if you would like to build with Ipopt.
+CoinHSL requires a separate license and download process.
 
-Homepage: https://gitlab.pnnl.gov/exasgd/frameworks/exago
-
-Tags:
-    None
-
-Preferred version:
-    1.0.0     [git] https://gitlab.pnnl.gov/exasgd/frameworks/exago.git at tag v1.0.0
-
-Safe versions:
-    master    [git] https://gitlab.pnnl.gov/exasgd/frameworks/exago.git on branch master
-    1.0.0     [git] https://gitlab.pnnl.gov/exasgd/frameworks/exago.git at tag v1.0.0
-    0.99.2    [git] https://gitlab.pnnl.gov/exasgd/frameworks/exago.git at tag v0.99.2
-    0.99.1    [git] https://gitlab.pnnl.gov/exasgd/frameworks/exago.git at tag v0.99.1
-
-Variants:
-    Name [Default]                 Allowed values          Description
-    ===========================    ====================    ==================================
-
-    build_type [RelWithDebInfo]    Debug, Release,         CMake build type
-                                   RelWithDebInfo,
-                                   MinSizeRel
-    cuda [off]                     on, off                 Build with CUDA
-    cuda_arch [none]               none, 12, 20, 35,       CUDA architecture
-                                   60, 32, 80, 86, 72,
-                                   75, 13, 52, 70, 37,
-                                   53, 11, 50, 21, 10,
-                                   61, 30, 62
-    hiop [off]                     on, off                 Enable/Disable HiOp
-    ipo [off]                      on, off                 CMake interprocedural optimization
-    ipopt [off]                    on, off                 Enable/Disable IPOPT
-    mpi [on]                       on, off                 Enable/Disable MPI
-    petsc [on]                     on, off                 Enable/Disable PETSc
-    raja [off]                     on, off                 Enable/Disable RAJA
-
-Installation Phases:
-    cmake    build    install
-
-Build Dependencies:
-    blas  camp  cmake  cuda  hiop  ipopt  mpi  petsc  raja  umpire
-
-Link Dependencies:
-    blas  camp  cuda  hiop  ipopt  mpi  petsc  raja  umpire
-
-Run Dependencies:
-    None
-
-Virtual Packages:
-    None
+```console
+source /path-to-spack/share/spack/setup-env.sh
+spack compiler find
+spack install exago@develop%gcc \
+  ^openmpi ^ipopt@3.12.10+coinhsl~mumps ^coinhsl+blas \
+  ^petsc@3.13.6+mpi~hypre~superlu-dist~mumps+shared
+spack load exago
+opflow -help
 ```
 
 ## Installation on OSX
 
 The simplest version of ExaGO running on OSX uses GCC 8-10 and Ipopt with the COINHSL solver library:
 
-```shell
-$ uname -a
+```console
+uname -a
 Darwin WE40281 19.6.0 Darwin Kernel Version 19.6.0: Tue Jan 12 22:13:05 PST 2021; root:xnu-6153.141.16~1/RELEASE_X86_64 x86_64
 
-$ spack install -j 16 exago%gcc@10.2.0+ipopt ^ipopt+coinhsl~mumps
+spack install -j 16 exago%gcc@10.2.0+ipopt ^ipopt+coinhsl~mumps
 
-$ spack load -r exago@1.0.0
-$ opflow -help
+spack load -r exago@1.0.0
+opflow -help
 ===================================================================
 ExaGO Version Info:
 
@@ -100,23 +70,7 @@ built with:
  Options:
 	 -netfile <netfilename>
 	 -opflow_model <POWER_BALANCE_POLAR|...>
-	 -opflow_solver <IPOPT|...>
-	 -opflow_initialization <MIDPOINT|...>
-	 -opflow_ignore_lineflow_constraints <0|1>
-	 -opflow_include_loadloss_variables <0|1>
-	 -opflow_include_powerimbalance_variables <0|1>
-	 -opflow_loadloss_penalty <Penalty ($)>
-	 -opflow_powerimbalance_penalty <Penalty ($)>
-	 -opflow_genbusvoltage <FIXED_WITHIN_QBOUNDS|...>
-	 -opflow_has_gensetpoint <0|1>
-	 -opflow_objective <MIN_GEN_COST|...>
-	 -opflow_use_agc <0|1>
-	 -opflow_tolerance <1e-6|...>
-	 -hiop_compute_mode <hybrid|...>
-	 -hiop_verbosity_level <0-10>
-	 -hiop_tolerance <1e-6|...>
-	 -print_output <0|1>
-	 -save_output <0|1>
+   ...
 ```
 
 The installation prefix may be found with `spack location -i exago`.

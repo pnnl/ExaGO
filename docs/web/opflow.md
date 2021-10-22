@@ -17,29 +17,6 @@ In order to run OPFLOW in an HPC environment (such as PNNL cluster Newell), you 
 $ srun -A <account name> -p newell --gres=gpu:1 -N 1 -n <N> ./opflow <options>
 ```
 
-In this environment, you will also have to enable modules, which provide access to installations of specific versions of software packages. For example, to run on Newell you would run the following to enable the needed packages for ExaGO:
-
-```console
-$ module load gcc/7.4.0
-$ module load cmake/3.16.4
-$ module load openmpi/3.1.5
-$ module load magma/2.5.2_cuda10.2
-$ module load metis/5.1.0
-$ module load cuda/10.2
-```
-
-Bringing all of this together, to run an ExaGO application on Newell, one would run the following commands:
-
-```console
-$ module load gcc/7.4.0
-$ module load cmake/3.16.4
-$ module load openmpi/3.1.5
-$ module load magma/2.5.2_cuda10.2
-$ module load metis/5.1.0
-p$ module load cuda/10.2
-$ srun -A <account name> -p newell --gres=gpu:1 -N 1 -n <N> ./opflow <options>
-```
-
 ### Input
 
 OPFLOW currently only supports input in the MATPOWER format. See [MATPOWER case format](https://matpower.org/docs/ref/matpower5.0/caseformat.html) for a description of the various fields for the network data. The `-netfile` option is used for specifying the input file. If no network file is used an input then OPFLOW on the 9-bus case is run with the network file `datafiles/case9/case9mod.m`.

@@ -3,176 +3,31 @@
 # <b>Exa</b>scale <b>G</b>rid <b>O</b>ptimization toolkit (ExaGO<sup>TM</sup>)
 ExaGO<sup>TM</sup> is a package for solving large-scale power grid optimization problems on parallel and distributed architectures, particularly targeted for exascale machines with heteregenous architectures (GPU). It is written in C/C++ using the [PETSc](https://www.mcs.anl.gov/petsc/) library. ExaGO<sup>TM</sup> includes the following power grid applications:
 
-- [S-ACOPF or SOPFLOW](docs/web/sopflow.md) solves a stochastic security-constrained multi-period optimal power flow
-- [SC-ACOPF or SCOPFLOW](docs/web/scopflow.md) solves a multi-period security-constrained (contingency) constrained optimal power
-- [TC-ACOPF or TCOPFLOW](docs/web/tcopflow.md) solves a multi-period optimal power flow
+%- [ACPF or PFLOW](docs/web/pflow.md) solves an AC power flow
 - [ACOPF or OPFLOW](docs/web/opflow.md) solves an AC optimal power flow either on CPU and GPU
-- [ACPF or PFLOW](docs/web/pflow.md) solves an AC power flow
-
-
+- [TC-ACOPF or TCOPFLOW](docs/web/tcopflow.md) solves a multi-period optimal power flow
+- [SC-ACOPF or SCOPFLOW](docs/web/scopflow.md) solves a multi-period security-constrained (contingency) constrained optimal power
+- [S-ACOPF or SOPFLOW](docs/web/sopflow.md) solves a stochastic security-constrained multi-period optimal power flow
 
 ExaGO<sup>TM</sup> applications can use the following solvers:
 
 - [IPOPT](https://github.com/coin-or/Ipopt) is a popular optimization package for solving nonlinear optimization problems that uses an interior-point algorithm.
 - [HiOp](https://github.com/LLNL/hiop) is a HPC solver for optimization. OPFLOW uses HiOp's mixed sparse-dense interior-point solver (NewtonMDS) that allows part of the computation to be run on GPU and part on CPU.
-- [PETSc/TAO](https://www.mcs.anl.gov/petsc/) is a high-performance library providing numerical solvers for linear, nonlinear, time-dependent, and optimizatin problems. The optimization package is PETSc, TAO, includes a parallel primal-dual interior method (TAOPDIPM) that can be used for solving OPFLOW.
+- [PETSc/TAO<sup>*</sup>](https://www.mcs.anl.gov/petsc/) is a high-performance library providing numerical solvers for linear, nonlinear, time-dependent, and optimizatin problems. The optimization package is PETSc, TAO, includes a parallel primal-dual interior method (TAOPDIPM) that can be used for solving OPFLOW.
 
+<sup>*</sup> The PETSc/TAO solver interface is for experimental purposes and we do not recommend using it. Instead, one should use IPOPT or HiOP solvers instead.
 
-|  Solver    | OPFLOW | SCOPFLOW  | PFLOW | TCOPLOW | SOPFLOW |
-|:----------:|:------:|:---------:|:-----:|:-------:|:-------:|
-| IPOPT      | Y      | Y         |       | Y       | Y       | 
-| HIOP       | Y      |           |       |         |         |
-| PETSc/TAO  | Y      |           | Y     |         |         |
+The following table lists the solver-application compatibility.
 
-## Building with Spack
+|  Solver    | OPFLOW  | TCOPFLOW | SCOPLOW | SOPFLOW |
+|:------:|:---------:|:-----:|:-------:|:-------:|
+| IPOPT      | Y         |  Y     | Y       | Y       | 
+| HIOP       | Y          |       |         |         |
+| PETSc/TAO  | Y          |      |         |         |
 
-Many configurations are supported via Spack. At the moment, the following
-configuration is reccommended:
+## Installing
 
-```bash
-git clone git@github.com:spack/spack.git
-source spack/share/spack/setup-env.sh
-spack compiler find
-spack install exago@develop%gcc \
-  ^openmpi ^ipopt@3.12.10+coinhsl~mumps ^coinhsl+blas
-spack load exago
-opflow -help
-```
-
-## Building with CMake
-
-```console
-git clone ssh://git@gitlab.pnnl.gov:2222/exasgd/frameworks/exago.git
-cd exago
-mkdir build
-cd build
-cmake ..
-cmake . # cusomize your build here
-make
-make install
-make test # if you like
-```
-
-## Building on CI Platforms
-
-If you are building on one of our continuous integration platforms, you may
-want to use the CI environment for development. To do this, source the variables
-script like so:
-
-```console
-$ # On newell for example
-$ source ./buildsystem/gcc-cuda/newellVariables.sh
-$ mkdir build && cd build && cmake ..
-```
-
-If you would like to use the *exact* configuration used in CI, you may use the
-cmake cache script like so:
-
-```console
-$ # On newell for example
-$ source ./buildsystem/gcc-cuda/newellVariables.sh
-$ mkdir build && cd build
-$ cmake .. -C ../buildsystem/gcc-cuda/cache.cmake
-```
-
-However, users are encouraged to configure their build on their own. Please use
-this CMake cache script *only if you intend to reproduce the CI build*.
-
-### Additional Information
-
-If you are building ExaGO on one of the following systems, you may follow the
-link for more machine-specific information:
-
-- [Ascent, Newell, or Marianas](./docs/web/README.ci_clusters.md)
-- [Summit](./docs/web/README.summit.md)
-
-In short, 
-
-## Prerequisites
-ExaGO depends on the [PETSc](docs/web/petsc_install.md) library and is compatible with version 3.13.
-
-In addtion, at least one of the solver packages should be installed depending the application.
-1. [IPOPT](docs/web/ipopt_install.md) (version 3.12 and above)
-1. [HiOP](docs/web/hiop_install.md) (develop branch)
-
-ExaGO can run the OPFLOW application on the GPU using HiOP solver library and, in addition, needs UMPIRE and RAJA libraries that provide portability layer and memory management for running calculations on the GPU.
-1. [RAJA](https://github.com/LLNL/RAJA)
-1. [UMPIRE](https://github.com/LLNL/Umpire) 
-
-## Download
-Download ExaGO<sup>TM</sup> from gitlab via
-```
-git clone https://gitlab.pnnl.gov/exasgd/frameworks/exago.git
-```
-or if you have SSH access to the repository
-```
-git clone ssh://git@gitlab.pnnl.gov:2222/exasgd/frameworks/exago.git
-```
-
-## Building and Installing with CMake
-ExaGO uses a CMake build system for building, installing, and testing. We recommend using `cmake` ver. 3.10 or higher. To build
-ExaGO with CMake, first create build directory outside the ExaGO source directory. For example
-```shell
-$ mkdir build
-$ ls
-build  exago
-$
-```
-Then from build directory configure ExaGO using `cmake`:
-```shell
-$ cd build
-$ cmake ../exago
-$ make install
-```
-The ExaGO library and its applications are installed in the default installation
-directory. To change installation directory run CMake with flag
-```
-$ cmake ../exago -DCMAKE_INSTALL_PREFIX=<your_exago_install_dir>
-```
-ExaGO assumes PETSc is built with MPI support. If it is not, it is recommended
-you configure ExaGO not to use MPI: 
-```
-$ cmake -DEXAGO_ENABLE_MPI=Off ../exago
-```
-
-To use ExaGO without MPI, you must also build PETSc without MPI. See [PETSc installation](docs/web/petsc_install.md) for instructions on how to build PETSc without MPI.
-
-
-In case PETSc dependency is not automatically found, you can specify it using
-`ccmake` interactive shell or add command line option like this:
-```
-$ cmake ../exago -DPETSC_DIR=<petsc_install_dir> -DPETSC_ARCH=<petsc_arch>
-```
-
-To use IPOPT with ExaGO, set the `EXAGO_ENABLE_IPOPT`. When this flag is set, ExaGO will try to find IPOPT in some default locations and will error if IPOPT is not found. In this case, the IPOPT installation directory should be set with `IPOPT_DIR'.
-```
-cmake ../exago -DEXAGO_ENABLE_IPOPT=ON -DIPOPT_DIR=<ipopt_install_dir>
-```
-
-Similar to IPOPT, the corresponding flags for HiOp are 'EXAGO_ENABLE_HIOP' and 'HIOP_DIR'.
-```
-cmake ../exago -DEXAGO_ENABLE_HIOP=ON -DHIOP_DIR=<hiop_install_dir>
-```
-
-Below is an example build with all (optional) dependencies installed
-```
-cmake ../
--DCMAKE_INSTALL_PREFIX=$installdir/ \
-  -DCMAKE_BUILD_TYPE=Debug \
-  -DEXAGO_ENABLE_GPU=ON \
-  -DEXAGO_ENABLE_HIOP=ON \
-  -DEXAGO_ENABLE_IPOPT=ON \
-  -DEXAGO_ENABLE_MPI=ON \
-  -DEXAGO_ENABLE_PETSC=ON \
-  -DEXAGO_RUN_TESTS=ON \
-  -DEXAGO_ENABLE_RAJA=ON \
-  -DRAJA_DIR=$raja_dir \
-  -Dumpire_DIR=$umpire_dir \
-  -DHIOP_DIR=$hiop_dir \
-  -DIPOPT_DIR=$ipopt_dir \
-  -DMAGMA_DIR=$magma_dir \
-  -DPETSC_DIR=$petsc_dir
-```
+See [INSTALL.md](./INSTALL.md) for information on acquiring, building and installing ExaGO.
 
 ## Usage
 Instructions for executing the different ExaGO applications is given below.

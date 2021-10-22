@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v1.0.99.1] - 10-6-2021
 
-### Summary
+### Added
 
-This is a prerelease tag to prepare for the release of v1.1.0.
+- Top-level INSTALLING.md documentation
+- file `doc/InstallingWithSpack.md` with updated spack documentation
+
+### Removed
+
+- Outdated spack documentation
 
 ## [v1.0.0] - 3-31-2021
 
