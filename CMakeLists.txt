@@ -81,9 +81,7 @@ cmake_dependent_option(
 option(EXAGO_ENABLE_RAJA "Enables RAJA and Umpire libraries" OFF)
 
 # Enable Python interface
-option(EXAGO_ENABLE_PYTHON "Enables Python bindings and tests" OFF)
-
-set(EXAGO_MIN_PYTHON_VERSION "3.6")
+option(EXAGO_ENABLE_PYTHON "Enables Python bindings and tests" ON)
 
 # Enable OpenMP support. This should not be toggled directly by the user, which
 # is why it's marked as advanced.
@@ -130,11 +128,6 @@ set(EXAGO_FLOPS_SQRTOP
     6
     CACHE STRING "Estimated number of flops per sqrt op"
 )
-
-if(EXAGO_ENABLE_PYTHON AND NOT EXAGO_BUILD_SHARED)
-  message(STATUS "Python bindings enabled, setting EXAGO_BUILD_SHARED=On")
-  set(EXAGO_BUILD_SHARED ON)
-endif()
 
 # Set default include path for the project
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR})
@@ -369,23 +362,8 @@ else()
   endif()
 endif()
 
+include(ExaGOCheckPython)
 if(EXAGO_ENABLE_PYTHON)
-  find_package(
-    Python
-    COMPONENTS Interpreter
-    REQUIRED
-  )
-
-  if(${Python_VERSION} VERSION_LESS ${EXAGO_MIN_PYTHON_VERSION})
-    message(
-      FATAL_ERROR
-        "Found Python ${Python_VERSION}, but ExaGO requires ${EXAGO_MIN_PYTHON_VERSION}"
-    )
-  endif()
-
-  set(EXAGO_PYTHON_SITELIB
-      "lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages"
-  )
   add_subdirectory(interfaces/python)
 endif()
 
