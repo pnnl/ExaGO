@@ -56,7 +56,7 @@ Additional documentation on installing these dependencies are linked below.
 
 | Dependency | Dependency Version | CMake Variable (if applicable) | Notes |
 |---|---|---|---|
-| HiOp | v0.4.6 | `EXAGO_ENABLE_HIOP`, `HIOP_DIR` | Optional, needs to be built with CUDA and MPI if using those options. [See HiOp repo linked here for more information.](https://github.com/LLNL/hiop) |
+| HiOp | v0.5 | `EXAGO_ENABLE_HIOP`, `HIOP_DIR` | Optional, needs to be built with CUDA and MPI if using those options. [See HiOp repo linked here for more information.](https://github.com/LLNL/hiop) |
 | Ipopt | >=3.12 | `EXAGO_ENABLE_IPOPT`, `IPOPT_DIR` | Needs to be built with COINHSL if using HiOp sparse linear algebra. [See the linked document for more information on building Ipopt for ExaGO](./docs/web/ipopt_install.md), [and see this link for PETSC documentation.](https://petsc.org/release/)|
 
 #### GPU-Related Dependencies
@@ -67,9 +67,9 @@ If you are using the HiOp solver, HiOp must be built with the same RAJA and Umpi
 | Dependency | Dependency Version | CMake Variable | Notes |
 |---|---|---|---|
 | CUDA | >=10.2 | `EXAGO_ENABLE_GPU` and `EXAGO_ENABLE_CUDA` | Optional. `EXAGO_ENABLE_GPU` and `EXAGO_ENABLE_CUDA` must both be enabled because other GPU platforms are under development. `CUDAToolkit_ROOT`  and `CMAKE_CUDA_COMPILER` can be used to select a specific CUDA installation if you have multiple. |
-| RAJA | >=0.12 | `EXAGO_ENABLE_RAJA`, `RAJA_DIR` | Optional, needs to be built with CUDA if using `EXAGO_ENABLE_CUDA`. [Refer to RAJA documentation linked here.](https://github.com/LLNL/RAJA) |
-| Umpire | >=5.0 | `EXAGO_ENABLE_RAJA`, `umpire_DIR` | Optional, needs to be built with CUDA if using `EXAGO_ENABLE_CUDA`. [Refer to Umpire documentation linked here.](https://github.com/LLNL/Umpire) |
-| MAGMA |  | `EXAGO_ENABLE_HIOP`, `MAGMA_DIR` | Only required when using HiOp solve (`EXAGO_ENABLE_HIOP`) with `EXAGO_ENABLE_GPU`. Must be same version your HiOp was built with. |
+| RAJA | >=0.14 | `EXAGO_ENABLE_RAJA`, `RAJA_DIR` | Optional, needs to be built with CUDA if using `EXAGO_ENABLE_CUDA`. [Refer to RAJA documentation linked here.](https://github.com/LLNL/RAJA) |
+| Umpire | >=6.0 | `EXAGO_ENABLE_RAJA`, `umpire_DIR` | Optional, needs to be built with CUDA if using `EXAGO_ENABLE_CUDA`. [Refer to Umpire documentation linked here.](https://github.com/LLNL/Umpire) |
+| MAGMA | >=2.6.1 | `EXAGO_ENABLE_HIOP`, `MAGMA_DIR` | Only required when using HiOp solve (`EXAGO_ENABLE_HIOP`) with `EXAGO_ENABLE_GPU`. Must be same version your HiOp was built with. |
 
 ### Additional CMake options
 
