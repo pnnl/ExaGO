@@ -3,6 +3,7 @@
 set_source_files_properties(pflow.c selfcheck.cpp PROPERTIES LANGUAGE CXX)
 
 add_executable(testPflowFunctionalityTOML selfcheck.cpp)
+
 target_include_directories(
   testPflowFunctionalityTOML PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
                                     ${CMAKE_CURRENT_SOURCE_DIR}/..

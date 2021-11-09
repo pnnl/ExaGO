@@ -395,7 +395,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout)
 
   opflow->objectivetype = MIN_GEN_COST;
 
-  opflow->genbusvoltagetype = FIXED_WITHIN_QBOUNDS;
+  opflow->genbusvoltagetype = VARIABLE_WITHIN_BOUNDS;
 
   opflow->nmodelsregistered = opflow->nsolversregistered = 0;
   opflow->OPFLOWModelRegisterAllCalled = opflow->OPFLOWSolverRegisterAllCalled = PETSC_FALSE;

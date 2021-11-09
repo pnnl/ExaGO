@@ -242,11 +242,15 @@ PetscErrorCode TCOPFLOWSolverSolve_IPOPT(TCOPFLOW tcopflow)
   ierr = VecRestoreArray(tcopflow->Gl,&gl);CHKERRQ(ierr);
   ierr = VecRestoreArray(tcopflow->Gu,&gu);CHKERRQ(ierr);
 
-  /* IPOPT tolerance */
-  {
-    static char tol[] = "tol";
-    AddIpoptNumOption(tcopflowipopt->nlp,tol,tcopflow->tolerance);
-  }
+  /* IPOPT solver options */
+  AddIpoptNumOption(tcopflowipopt->nlp,(char*)"tol",tcopflow->tolerance);
+  AddIpoptIntOption(tcopflowipopt->nlp, (char*)"max_iter", 5000);
+  AddIpoptStrOption(tcopflowipopt->nlp, (char*)"mu_strategy",(char*)"monotone");
+  AddIpoptStrOption(tcopflowipopt->nlp, (char*)"fixed_variable_treatment", (char*)"relax_bounds");
+  AddIpoptStrOption(tcopflowipopt->nlp,(char*)"inf_pr_output",(char*)"internal");
+  AddIpoptNumOption(tcopflowipopt->nlp,(char*)"constr_mult_init_max", 0.0);
+  AddIpoptNumOption(tcopflowipopt->nlp,(char*)"residual_ratio_max", 1e3);
+  AddIpoptNumOption(tcopflowipopt->nlp,(char*)"residual_ratio_singular",1e4);
 
   ierr = VecGetArray(tcopflow->X,&x);CHKERRQ(ierr);
   ierr = VecGetArray(tcopflow->G,&g);CHKERRQ(ierr);

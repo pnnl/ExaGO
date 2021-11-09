@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Top-level INSTALLING.md documentation
 - file `doc/InstallingWithSpack.md` with updated spack documentation
+- TOML-based testing system for applications
+
+### Removed
+
+- Outdated spack documentation
+- CMake-based functionality tests
+
+### Changed
+- Modified OPFLOW HIOP interface to use HIOP version 0.5.
 
 ### Removed
 

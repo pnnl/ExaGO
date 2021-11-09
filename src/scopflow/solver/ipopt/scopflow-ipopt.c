@@ -246,11 +246,16 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow)
   ierr = VecGetArray(scopflow->G,&g);CHKERRQ(ierr);
   ierr = VecGetArray(scopflow->Lambda,&lam);CHKERRQ(ierr);
 
-  /** IPOPT tolerance */
-  {
-    static char tol[] = "tol";
-    AddIpoptNumOption(scopflowipopt->nlp,tol,scopflow->tolerance);
-  }
+  /* IPOPT solver options */
+  AddIpoptNumOption(scopflowipopt->nlp, (char*)"tol", scopflow->tolerance);
+  AddIpoptIntOption(scopflowipopt->nlp, (char*)"max_iter", 5000);
+  AddIpoptStrOption(scopflowipopt->nlp, (char*)"mu_strategy",(char*)"monotone");
+  AddIpoptStrOption(scopflowipopt->nlp, (char*)"fixed_variable_treatment", (char*)"relax_bounds");
+  AddIpoptStrOption(scopflowipopt->nlp,(char*)"inf_pr_output",(char*)"internal");
+  AddIpoptNumOption(scopflowipopt->nlp,(char*)"constr_mult_init_max", 0.0);
+  AddIpoptNumOption(scopflowipopt->nlp,(char*)"residual_ratio_max", 1e3);
+  AddIpoptNumOption(scopflowipopt->nlp,(char*)"residual_ratio_singular",1e4);
+
 
   /** Add intermediate callback to get solver info.
    * Called by IPOPT each iteration. 

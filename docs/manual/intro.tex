@@ -1,5 +1,5 @@
 \chapter{Introduction}\label{chap:intro}
-The Exascale Grid Optimization (ExaGO\texttrademark) toolkit is an open source package for solving large-scale power grid optimization problems on parallel and distributed architectures, particularly targeted for exascale machines with heteregenous architectures (GPU). ExaGO\texttrademark~is written in C/C++ and makes heavy use of the functionality provided by the PETSc\cite{petsc-user-ref} library. It uses \raja and \umpire libraries for execution on the GPU and can make use of several optimization solvers - \ipopt, \hiop, and \tao - for solving the optimization problems.
+The Exascale Grid Optimization (ExaGO\texttrademark) toolkit is an open source package for solving large-scale power grid optimization problems on parallel and distributed architectures, particularly targeted for exascale machines with heteregenous architectures (GPU). ExaGO\texttrademark~is written in C/C++ and makes heavy use of the functionality provided by the PETSc\cite{petsc-user-ref} library. It uses \raja and \umpire libraries for execution on the GPU and can make use of several optimization solvers - \ipopt, \hiop - for solving the optimization problems.
 
 
 All ExaGO\texttrademark~applications use a nonlinear formulation based on full AC optimal power flow. The different applications available with \exago are listed in Table \ref{tab:exago_apps}
@@ -43,6 +43,7 @@ While \exago is targeted for making use of distributed computing environments an
 \end{table}
 \end{center}
 
+\noindent
 Together, these applications cater to problems spanning the dimensions of security (contingencies), stochasticity, and time as shown in Figure \ref{fig:intro_fig}.
 
 \input{figures/intro_fig.tex}

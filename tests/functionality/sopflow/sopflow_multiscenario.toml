@@ -1,0 +1,81 @@
+testsuite_name = "SOPFLOW Multiscenario Functionality tests"
+
+[presets]
+tolerance = 1e-3
+network = 'datafiles/case_ACTIVSg200.m'
+scenfile = 'datafiles/TAMU200_scenarios/scenarios_200bus.csv'
+multicontingency = false
+multiperiod = false
+
+[[testcase]]
+description = 'datafiles/case_ACTIVSg200.m IPOPT 1scen SOPFLOW'
+solver = 'IPOPT'
+num_scenarios = 1
+num_iters = 276
+obj_value = 26667.7197703
+
+[[testcase]]
+description = 'datafiles/case_ACTIVSg200.m IPOPT 2scen SOPFLOW'
+solver = 'IPOPT'
+num_scenarios = 2
+num_iters = 323
+obj_value = 53400.5582282
+
+[[testcase]]
+description = 'datafiles/case_ACTIVSg200.m IPOPT 3scen SOPFLOW'
+solver = 'IPOPT'
+num_scenarios = 3
+num_iters = 648
+obj_value = 80321.0011453
+
+# For some reason num_iters is coming back as 0 for these tests
+[[testcase]]
+description = 'datafiles/case_ACTIVSg200.m EMPAR 1scen SOPFLOW'
+solver = 'EMPAR'
+num_scenarios = 1
+num_iters = 0
+obj_value = 26667.7179803
+
+[[testcase]]
+description = 'datafiles/case_ACTIVSg200.m EMPAR 2scen SOPFLOW'
+solver = 'EMPAR'
+num_scenarios = 2
+num_iters = 0
+obj_value = 26667.7179803
+
+[[testcase]]
+description = 'datafiles/case_ACTIVSg200.m EMPAR 3scen SOPFLOW'
+solver = 'EMPAR'
+num_scenarios = 3
+num_iters = 0
+obj_value = 26667.7179803
+
+[[testcase]]
+description = 'datafiles/case_ACTIVSg200.m IPOPT 1scen ACPF init SOPFLOW'
+solver = 'IPOPT'
+num_scenarios = 1
+tolerance = 1.0e-03
+initialization_type = 'ACPF'
+gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
+num_iters = 27
+obj_value = 26667.7197693
+
+[[testcase]]
+description = 'datafiles/case_ACTIVSg200.m IPOPT 2scen ACPF init SOPFLOW'
+solver = 'IPOPT'
+num_scenarios = 2
+tolerance = 1.0e-03
+initialization_type = 'ACPF'
+gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
+num_iters = 26
+obj_value = 53400.5582263
+
+[[testcase]]
+description = 'datafiles/case_ACTIVSg200.m IPOPT 3scen ACPF init SOPFLOW'
+solver = 'IPOPT'
+num_scenarios = 3
+tolerance = 1.0e-03
+initialization_type = 'ACPF'
+gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
+num_iters = 40
+obj_value = 80321.0011433

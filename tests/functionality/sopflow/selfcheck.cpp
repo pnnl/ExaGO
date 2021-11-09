@@ -1,5 +1,6 @@
 static char help[] = "SOPFLOW Functionality Tests.\n\n";
 
+#include <opflow.h>
 #include <sopflow.h>
 #include "toml_utils.hpp"
 
@@ -25,6 +26,10 @@ struct SopflowFunctionalityTestParameters
   int mode;
   bool multiperiod;
   bool multicontingency;
+  std::string initialization_string = "MIDPOINT";
+  OPFLOWInitializationType initialization_type;
+  std::string gen_bus_voltage_string = "FIXED_WITHIN_QBOUNDS";
+  OPFLOWGenBusVoltageType gen_bus_voltage_type;
 
   /* Parameters used to determine success or failure of functionality test */
   int expected_num_iters;
@@ -45,6 +50,8 @@ struct SopflowFunctionalityTestParameters
     set_if_found(scenfile, values, "scenfile");
     set_if_found(num_scenarios, values, "num_scenarios");
     set_if_found(tolerance, values, "tolerance");
+    set_if_found(initialization_string, values, "initialization_type");
+    set_if_found(gen_bus_voltage_string, values, "gen_bus_voltage_type");
 
     // Multi-contingency SOPFLOW settings
     set_if_found(multicontingency, values, "multicontingency");
@@ -63,7 +70,26 @@ struct SopflowFunctionalityTestParameters
     set_if_found(description, values, "description");
     set_if_found(expected_num_iters, values, "num_iters");
     set_if_found(expected_obj_value, values, "obj_value");
+
+    if (initialization_string == "MIDPOINT") {
+      initialization_type = OPFLOWINIT_MIDPOINT;
+    } else if (initialization_string == "FROMFILE") {
+      initialization_type = OPFLOWINIT_FROMFILE;
+    } else if (initialization_string == "ACPF") {
+      initialization_type = OPFLOWINIT_ACPF;
+    } else if (initialization_string == "FLATSTART") {
+      initialization_type = OPFLOWINIT_FLATSTART;
+    }
+
+    if (gen_bus_voltage_string == "VARIABLE_WITHIN_BOUNDS") {
+      gen_bus_voltage_type = VARIABLE_WITHIN_BOUNDS;
+    } else if (gen_bus_voltage_string == "FIXED_WITHIN_QBOUNDS") {
+      gen_bus_voltage_type = FIXED_WITHIN_QBOUNDS;
+    } else if (gen_bus_voltage_string == "FIXED_AT_SETPOINT") {
+      gen_bus_voltage_type = FIXED_AT_SETPOINT;
+    }
   }
+
 };
 
 struct SopflowFunctionalityTests
@@ -128,6 +154,7 @@ struct SopflowFunctionalityTests
     testcase["network"] = params.network;
     testcase["scenfile"] = params.scenfile;
     testcase["num_scenarios"] = params.num_scenarios;
+    testcase["initialization_type"] = params.initialization_type;
 
     testcase["multicontingency"] = params.multicontingency;
     if (params.multicontingency)
@@ -177,9 +204,29 @@ struct SopflowFunctionalityTests
 
     ierr = SOPFLOWSetNumScenarios(sopflow, params.num_scenarios);ExaGOCheckError(ierr);
 
+    ierr = SOPFLOWSetInitializationType(sopflow, params.initialization_type);ExaGOCheckError(ierr);
+
+    ierr = SOPFLOWSetGenBusVoltageType(sopflow, params.gen_bus_voltage_type);ExaGOCheckError(ierr);
+
     // TODO:
     // - Implement multi contingency
+    ierr = SOPFLOWEnableMultiContingency(sopflow,(PetscBool)params.multicontingency);ExaGOCheckError(ierr);
+    if(params.multicontingency) {
+      resolve_datafiles_path(params.contingencies);
+      ierr = SOPFLOWSetNumContingencies(sopflow,params.num_contingencies);ExaGOCheckError(ierr);
+      ierr = SOPFLOWSetContingencyData(sopflow,params.contingencies.c_str());ExaGOCheckError(ierr);
+   //   ierr = SOPFLOWEnableMultiPeriod(sopflow,(PetscBool)params.multiperiod);ExaGOCheckError(ierr);
+      if(params.multiperiod) {
+        resolve_datafiles_path(params.windgen);
+        resolve_datafiles_path(params.pload);
+        resolve_datafiles_path(params.qload);
+        ierr = SOPFLOWSetWindGenProfile(sopflow,params.windgen.c_str());ExaGOCheckError(ierr);
+        ierr = SOPFLOWSetTimeStepandDuration(sopflow,params.dT,params.duration);ExaGOCheckError(ierr);
+        ierr = SOPFLOWSetLoadProfiles(sopflow,params.pload.c_str(),params.qload.c_str());ExaGOCheckError(ierr);
+      }
+    }
     // - Implement multi contingency + multiperiod
+
 
     ierr = SOPFLOWSetSolver(sopflow, params.solver.c_str());ExaGOCheckError(ierr);
     ierr = SOPFLOWSetUp(sopflow);ExaGOCheckError(ierr);

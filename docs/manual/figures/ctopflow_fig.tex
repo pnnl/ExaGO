@@ -5,41 +5,46 @@
 \def\lav{lavander!90}
 \def\oran{orange!30}
 
-\tikzstyle{time}=[draw,circle,violet,bottom color=\lav,
-                  top color= white, text=violet,minimum width=20pt]
-                  
+\tikzstyle{contingency}=[draw,circle,violet,bottom color=\lav,
+                  top color= white, text=violet,minimum width=50pt]
 \tikzstyle{base}=[draw,circle,burntorange, left color=\oran,
-                       text=violet,minimum width=20pt]
+                       text=violet,minimum width=50pt]
+
+\tikzstyle{time}=[draw,circle,blue,text=violet,minimum width=2pt]
+\tikzstyle{tbase}=[draw,circle,burntorange, left color=\oran,
+                            text=violet,minimum width=2pt]
+                       
+\tikzstyle{cedge}=[color=red]
 
 \begin{figure}[h!]
 \centering
 \begin{tikzpicture}[auto, thick]
-  \node[base,label=below:$t_0$] (c0t0) at (0,0) {};
-  \node[time,label=below:$t_1$] (c0t1) at (2,0) {};
-  \node[time,label=below:$t_2$] (c0t2) at (4,0) {};
-  \node[time,label=below:$t_3$] (c0t3) at (6,0) {};
+  % Place base case
+  \node[base,label=left:$c_0$] (base) at (0,0) {};
+  \node[time,label=below:$t_0$] (c0t0) at (-0.4,0) {};
+  \node[time,label=below:$t_1$] (c0t1) at (0.4,0) {};
+  
+  \node[contingency,label=right:$c_1$] (c1) at (3,3) {};
+  \node[time,label=below:$t_0$] (c1t0) at (2.6,3) {};
+  \node[time,label=below:$t_1$] (c1t1) at (3.4,3) {};
+
+  \node[contingency,label=right:$c_2$] (c2) at (3,0) {};
+  \node[time,label=below:$t_0$] (c2t0) at (2.6,0) {};
+  \node[time,label=below:$t_1$] (c2t1) at (3.4,0) {};
+
+  
+  \node[contingency,label=right:$c_3$] (c3) at (3,-3) {};
+  \node[time,label=below:$t_0$] (c3t0) at (2.6,-3) {};
+  \node[time,label=below:$t_1$] (c3t1) at (3.4,-3) {};
   
   \path (c0t0) edge (c0t1);
-  \path (c0t1) edge (c0t2);
-  \path (c0t2) edge (c0t3);
-  
-  % rectangle from (-1.0,-0.5) to (7.0,0.5)
-   \node[draw,rectangle,dashed,minimum width=8cm,minimum height=1cm,label=left:{$\mathbf{c_0}$}] (s0) at (3.0,0.0) {};
-  
-  \node[time,label=below:$t_0$] (c1t0) at (0,2) {};
-  \node[time,label=below:$t_1$] (c1t1) at (2,2) {};
-  \node[time,label=below:$t_2$] (c1t2) at (4,2) {};
-  \node[time,label=below:$t_3$] (c1t3) at (6,2) {};
-  
   \path (c1t0) edge (c1t1);
-  \path (c1t1) edge (c1t2);
-  \path (c1t2) edge (c1t3);
+  \path (c2t0) edge (c2t1);
+  \path (c3t0) edge (c3t1);
   
-  \path (c0t0) edge [bend left,color=red] (c1t0);
-  
-   % rectangle from (-1.0,1.5) to (7.0,2.5)
-   \node[draw,rectangle,dashed,minimum width=8cm,minimum height=1cm,label=left:{$\mathbf{c_1}$}] (s0) at (3.0,2.0) {};
-  
+  \path[cedge] (base) edge (c1);
+  \path[cedge] (base) edge (c2);
+  \path[cedge] (base) edge (c3);  
   
   
 %  \foreach \place/\name in {{(0,-1)/a}, {(2,0)/b}, {(2,2)/c}, {(0,2)/d},
@@ -68,6 +73,6 @@
 %   \path (\speer) edge (\peer);
 
 \end{tikzpicture}
-\caption{Multi-period contingency constrained optimal power flow example with two contingencies $c_0$ and $c_1$, each with four time-periods $t_0$, $t_1$, $t_2$, $t_3$. State $c_0,t_0$ represent the base case (no contingency) case. We assume that any contingency is incident at the first time-step, i.e., at $t_0$. The contingency states $c_1,t_0$ is coupled with the no-contingency state $c_0,t_0$ at time $t_0$. The {\textcolor{red}{red}} line denotes the coupling between the contingency.}
+\caption{Multi-period contingency constrained optimal power flow example with two contingencies $c_0$ and $c_1$, each with two time-periods $t_0$, $t_1$. State $c_0$ represents the base case (no contingency) case. The contingency states $c_1$,$c_2$,$c_3$ are coupled with the no-contingency state $c_0$. The {\textcolor{red}{red}} line denotes the coupling between the contingencies.}
 \label{fig:ctopflow}
 \end{figure}

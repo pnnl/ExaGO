@@ -1,17 +1,12 @@
 \chapter{Stochastic optimal power flow (SOPFLOW)}\label{chap:sopflow}
-SOPFLOW solves a stochastic security-constrained multi-period optimal power flow problem. The problem is set up as a two-stage optimization problem where the first-stage (base-case) represents the normal operation of the grid (or the most likely forecast) and the second-stage comprises $N_s$ scenarios of forecast deviation. Each scenario can have multiple contingencies and each contingency can be multi-period. Thus, depending on the options selected, each stochastic scenario can be
-\begin{itemize}
-    \item Single-period, no contingencies
-    \item Single-period, with contingencies
-    \item Multi-period, with contingencies
-\end{itemize}
+SOPFLOW solves a stochastic security-constrained multi-period optimal power flow problem. The problem is set up as a two-stage optimization problem where the first-stage (base-case) represents the normal operation of the grid (or the most likely forecast) and the second-stage comprises $N_s$ scenarios of forecast deviation. Each scenario can have multiple contingencies and each contingency can be multi-period.
 
 \section{Formulation}
-An illustration of \sopflow is shown in Fig. \ref{fig:sctopflow} for a case with two scenarios $s_0$ and $s_1$. Each scenario has two contingencies $c_0$, $c_1$, and each contingency has four time-periods.
+An illustration of \sopflow is shown in Fig. \ref{fig:sctopflow} for a case with two scenarios $s_0$ and $s_1$ with three contingencies each, and each scenario/contingency with two time-periods. We assume that any contingency is incident at the first time-step, i.e., at $t_0$.
 
 \input{figures/sctopflow_fig.tex}
 
-The formulation for the stochastic security-constrained multi-period optimal power flow is given in (\ref{eq:sctopflow_start}) -- (\ref{eq:sctopflow_end}). In this formulation, the objective is to reduce the expected cost, where $f(x_{s,c,t})$ is the cost for scenario $s$ with contingency $c$ at time $t$. $\pi_s$ is the probability of scenario $s$.
+The full formulation for the stochastic security-constrained multi-period optimal power flow is given in (\ref{eq:sctopflow_start}) -- (\ref{eq:sctopflow_end}). In this formulation, the objective is to reduce the expected cost, where $f(x_{s,c,t})$ is the cost for scenario $s$ with contingency $c$ at time $t$. $\pi_s$ is the probability of scenario $s$.
 
 \begin{align}
 \centering
@@ -20,18 +15,25 @@ The formulation for the stochastic security-constrained multi-period optimal pow
 &~g(x_{s,c,t}) = 0,                                        &s \in \left[1,N_s-1\right],c \in \left[0,N_c-1\right], t \in \left[0,N_t-1\right]& \\
 &~h(x_{s,c,t}) \le 0,                                      &s \in \left[1,N_s-1\right],c \in \left[0,N_c-1\right], t \in \left[0,N_t-1\right]& \\
 x^- & \le x_{s,c,t} \le x^+,                               &s \in \left[1,N_s-1\right],c \in \left[0,N_c-1\right], t\in \left[0,N_t-1\right]& \\
--\delta_t{x} & \le x_{s,c,t} - x_{s,c,t-\Delta{t}} \le \delta_t{x},&s \in \left[1,N_s-1\right],c \in \left[0,N_c-1\right], t \in \left[1,N_t-1\right]& \label{eq:sctopflow_time_coupling}\\
--\delta_c{x} & \le x_{s,c,0} - x_{s,0,0} \le \delta_c{x},&s \in \left[1,N_s-1\right],c \in \left[1,N_c-1\right]&
+-\Delta x_t & \le x_{s,c,t} - x_{s,c,t-\Delta{t}} \le \Delta x_t,&s \in \left[1,N_s-1\right],c \in \left[0,N_c-1\right], t \in \left[1,N_t-1\right]& \label{eq:sctopflow_time_coupling}\\
+-\Delta x_c & \le x_{s,c,0} - x_{s,0,0} \le \Delta x_c,&s \in \left[1,N_s-1\right],c \in \left[1,N_c-1\right]&
 \label{eq:sctopflow_contingency_coupling} \\
--\delta_s{x} & \le x_{s,0,0} - x_{0,0,0} \le \delta_s{x},&s \in \left[1,N_s-1\right]&
+-\Delta x_s & \le x_{s,0,0} - x_{0,0,0} \le \Delta x_s,&s \in \left[1,N_s-1\right]&
 \label{eq:sctopflow_end}
 \end{align}
 
 The modeling details used for an optimial power flow problem are also used for a {\sopflow} problem, i.e., each of the circles shown in Fig. \ref{fig:sctopflow} has the modeling details of an optimal power flow problem (\opflow). Incorporating the probabilities $\pi_s$ for each scenario is not implemented yet which leads to each scenario having an equal probability. 
 
+Depending on the options selected, SOPFLOW can be used to solve 
+\begin{itemize}
+    \item Single-period stochastic optimal power flow : No contingencies or time-periods
+    \item Single-period contingency-constrained stochastic optimal power flow : No time-periods
+    \item Multi-period security-constrained stochastic optimal power flow : Full formulation
+\end{itemize}
+
 Currently, \sopflow uses wind power generation as the stochastic variables and each scenario is a realization of the power output from wind generators. A zero fuel cost is used for wind power generation to ensure wind generation would be the dispatched to the given target level (upper limit). 
 
-For contingencies, \sopflow supports generation and/or transmission outages. A contingency can have multiple outages, but, it should not cause any islanding. The coupling between the no-contingency and the contingency case for each scenario is also the difference in real power output ($p_{jsct}^{\text{g}} - p_{js0t}^{\text{g}},~ \jinJgen$) that must be within the 30 minute generator ramp rate.
+For contingencies, \sopflow supports generation and/or transmission outages. A contingency can have multiple outages, but, it should not cause any islanding. The coupling between the no-contingency and the contingency case for each scenario is also the difference in real power output ($p_{jsct}^{\text{g}} - p_{js0t}^{\text{g}},~ \jinJgen$) that must be within the 30 minute generator ramp rate. Refer to \ref{chap:scopflow} for details on the contingency modeling.
 
 For multi time-period, we use ramping constraints on the generator real power output between successive time steps.
 
@@ -49,7 +51,14 @@ The following files are needed for executing SOPFLOW.
     \item \textbf{Load data:} One file for load real power and one for reactive power. The files need to be in CSV format. An example of the format for the 9-bus case is \href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/tree/master/datafiles/case9}{here}.
 \end{itemize}
 
-The \sopflow output is saved to a directory named \emph{sopflowout}. This directory contains $N_s$ subdirectories to save the solution for each scenario. Each of these subdirectories contain $N_c$ subdirectories, one for each contingency. Each contingency subdirectory has $N_t$ MATPOWER format files to store the output for each time-period for the given contingency and scenario. The subdirectories have the directory name format \emph{scen\_x} where x is the scenario number,  \emph{cont\_y} where y is the contingency number, and the output files have the file name format \emph{t\_z} where z is the time-step number.
+The \sopflow output is saved to a directory named \texttt{sopflowout}. This
+directory contains $N_s$ subdirectories to save the solution for each scenario.
+Each of these subdirectories contain $N_c$ subdirectories, one for each
+contingency. Each contingency subdirectory has $N_t$ MATPOWER format files to
+store the output for each time-period for the given contingency and scenario.
+The subdirectories have the directory name format \texttt{scen_x} where x is
+the scenario number,  \texttt{cont_y} where y is the contingency number, and
+the output files have the file name format \texttt{t_z} where z is the time-step number.
 
 \section{Usage}
 \begin{lstlisting}
@@ -69,14 +78,14 @@ The \sopflow output is saved to a directory named \emph{sopflowout}. This direct
     -scenfile & Scenario file name & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/scenarios_9bus.csv}{case9/scenarios\_9bus.csv}) \\ \hline
     -sopflow\_mode & Operation mode: Preventive or corrective & 0 or 1 (0) \\ \hline
     -sopflow\_solver & Set solver for sopflow & IPOPT or  EMPAR \\ \hline
-    -sopflow\_enable\_multicontingency & Multi-contingency SOPFLOW & 0 or 1 (0) \\ \hline \hline
+    -sopflow\_enable\_multicontingency & Multi-contingency SOPFLOW & 0 or 1 (0) \\ \hline
     -ctgcfile & Contingency file name & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9.cont}{case9.cont}) \\ \hline
-    -sopflow\_Ns & Number of scenarios & int (Default 0. Passing -1 results in all scenarios in the file being used) \\ \hline
+    -sopflow\_Ns & Number of scenarios & int (Default 0. Use -1 to select all scenarios from the scenario file) \\ \hline
   \end{tabular}
   \label{tab:sopflow_options}
 \end{table}
 
-See table \ref{tab:sopflow_options}. With multi-contingency SOPFLOW, all \scopflow options given in Table \ref{tab:scopflow_options} can be used to tune the contingencies. All \opflow options in Table \ref{tab:opflow_options}, along with \tcopflow options in Table \ref{tab:tcopflow_options} can also be used. Multi-contingency SOPFLOW also allows the options listed after -sopflow\_enable\_multicontingency in Table \ref{tab:sopflow_options} to be used.
+%See table \ref{tab:sopflow_options}. With multi-contingency SOPFLOW, all \scopflow options given in Table \ref{tab:scopflow_options} can be used to tune the contingencies. All \opflow options in Table \ref{tab:opflow_options}, along with \tcopflow options in Table \ref{tab:tcopflow_options} can also be used. Multi-contingency SOPFLOW also allows the options listed after -sopflow\_enable\_multicontingency in Table \ref{tab:sopflow_options} to be used.
 
 Depending on the \emph{mode}, SOPFLOW can either be \emph{preventive} (mode = 0) or \emph{corrective} (mode = 1). In the preventive mode, the PV and PQ generator real power is fixed to its corresponding base-case values. The generators at the reference bus pick up any make-up power required for the contingency. The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability.
 

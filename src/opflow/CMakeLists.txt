@@ -45,6 +45,7 @@ exago_add_library(
   $<$<BOOL:${EXAGO_ENABLE_RAJA}>:RAJA>
   PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_OMP}>:OpenMP::OpenMP_CXX>
+  PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_HIOP}>:HiOp>
   PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_IPOPT}>:Ipopt>
@@ -52,7 +53,8 @@ exago_add_library(
   ExaGO::PFLOW
   PUBLIC
   PETSC::ALL
-  ${LAPACK_LIRBARIES}
+  PUBLIC
+  ${LAPACK_LIBRARIES}
   OUTPUT_NAME
   exago_opflow
 )

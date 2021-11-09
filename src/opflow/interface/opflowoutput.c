@@ -24,8 +24,10 @@ PetscErrorCode OPFLOWPrintSolution(OPFLOW opflow)
   ierr = PetscPrintf(opflow->comm->type,"=============================================================\n");CHKERRQ(ierr);
   ierr = PetscPrintf(opflow->comm->type,"%-35s %s\n","Model",opflow->modelname);CHKERRQ(ierr);
   ierr = PetscPrintf(opflow->comm->type,"%-35s %s\n","Solver",opflow->solvername);CHKERRQ(ierr);
-    ierr = PetscPrintf(opflow->comm->type,"%-35s %s\n","Objective",OPFLOWObjectiveTypes[opflow->objectivetype]);CHKERRQ(ierr);
+  ierr = PetscPrintf(opflow->comm->type,"%-35s %s\n","Objective",OPFLOWObjectiveTypes[opflow->objectivetype]);CHKERRQ(ierr);
   ierr = PetscPrintf(opflow->comm->type,"%-35s %s\n","Initialization",OPFLOWInitializationTypes[opflow->initializationtype]);CHKERRQ(ierr);
+  ierr = PetscPrintf(opflow->comm->type,"%-35s %s\n","Gen. bus voltage mode",OPFLOWGenBusVoltageTypes[opflow->genbusvoltagetype]);CHKERRQ(ierr);
+
 
   ierr = PetscPrintf(opflow->comm->type,"%-35s %s\n","Load loss allowed",opflow->include_loadloss_variables?"YES":"NO");CHKERRQ(ierr);
   if(opflow->include_loadloss_variables) {

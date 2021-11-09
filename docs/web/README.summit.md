@@ -10,8 +10,8 @@ $ make -j 12 install
 $ make test
 ```
 
-The script `./buildsystem/gcc-cuda/summitVariables.sh` will load all the needed modules
-to build ExaGO on Summit as of 6/23/2021. The system modules change somewhat
+The script `./buildsystem/gcc-cuda/summitVariables.sh` will load all the modules
+needed to build ExaGO on Summit as of 6/23/2021. The system modules change somewhat
 frequently on Summit, so if some modules are not avialable but you need to build
 there, please contact Asher Mancinelli <asher.mancinelli@pnnl.gov> or better yet
 file an issue here: https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/issues.

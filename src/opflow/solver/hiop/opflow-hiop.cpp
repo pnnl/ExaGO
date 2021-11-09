@@ -38,14 +38,14 @@ OPFLOWHIOPInterface::OPFLOWHIOPInterface(OPFLOW opflowin)
   opflow   = opflowin;
 }
 
-bool OPFLOWHIOPInterface::get_prob_sizes(long long& n, long long& m)
+bool OPFLOWHIOPInterface::get_prob_sizes(hiop::size_type& n, hiop::size_type& m)
 { 
   n = opflow->nx;
   m = opflow->ncon;
   return true; 
 }
 
-bool OPFLOWHIOPInterface::get_vars_info(const long long& n, double *xlow, double* xupp, NonlinearityType* type)
+bool OPFLOWHIOPInterface::get_vars_info(const hiop::size_type& n, double *xlow, double* xupp, NonlinearityType* type)
 {
   PetscInt       i;
   PetscErrorCode ierr;
@@ -60,7 +60,7 @@ bool OPFLOWHIOPInterface::get_vars_info(const long long& n, double *xlow, double
   return true;
 }
 
-bool OPFLOWHIOPInterface::get_cons_info(const long long& m, double* clow, double* cupp, NonlinearityType* type)
+bool OPFLOWHIOPInterface::get_cons_info(const hiop::size_type& m, double* clow, double* cupp, NonlinearityType* type)
 {
   PetscInt i;
   PetscErrorCode ierr;
@@ -94,7 +94,7 @@ bool OPFLOWHIOPInterface::get_sparse_dense_blocks_info(int& nx_sparse, int& nx_d
   return true;
 }
 
-bool OPFLOWHIOPInterface::eval_f(const long long& n, const double* x, bool new_x, double& obj_value)
+bool OPFLOWHIOPInterface::eval_f(const hiop::size_type& n, const double* x, bool new_x, double& obj_value)
 {
   PetscErrorCode ierr;
 
@@ -110,8 +110,8 @@ bool OPFLOWHIOPInterface::eval_f(const long long& n, const double* x, bool new_x
   return true;
 }
 
-bool OPFLOWHIOPInterface::eval_cons(const long long& n, const long long& m, 
-	       const long long& num_cons, const long long* idx_cons,  
+bool OPFLOWHIOPInterface::eval_cons(const hiop::size_type& n, const hiop::size_type& m, 
+	       const hiop::size_type& num_cons, const hiop::size_type* idx_cons,  
 	       const double* x, bool new_x, double* cons)
 {
   PetscErrorCode ierr;
@@ -138,7 +138,7 @@ bool OPFLOWHIOPInterface::eval_cons(const long long& n, const long long& m,
   return true;
 }
 
-bool OPFLOWHIOPInterface::eval_grad_f(const long long& n, const double* x, bool new_x, double* gradf)
+bool OPFLOWHIOPInterface::eval_grad_f(const hiop::size_type& n, const double* x, bool new_x, double* gradf)
 {
   PetscErrorCode ierr;
   //  PetscPrintf(MPI_COMM_SELF,"Enter eval_grad_f \n");
@@ -151,10 +151,10 @@ bool OPFLOWHIOPInterface::eval_grad_f(const long long& n, const double* x, bool 
   return true;
 }
 
-bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m, 
-		   const long long& num_cons, const long long* idx_cons,
+bool OPFLOWHIOPInterface::eval_Jac_cons(const hiop::size_type& n, const hiop::size_type& m, 
+		   const hiop::size_type& num_cons, const hiop::size_type* idx_cons,
 		   const double* x, bool new_x,
-		   const long long& nsparse, const long long& ndense, 
+		   const hiop::size_type& nsparse, const hiop::size_type& ndense, 
 		   const int& nnzJacS, int* iJacS, int* jJacS, double* MJacS, 
 		   double* JacD)
 {
@@ -192,10 +192,10 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(const long long& n, const long long& m,
   return true;
 }
 
-bool OPFLOWHIOPInterface::eval_Hess_Lagr(const long long& n, const long long& m, 
+bool OPFLOWHIOPInterface::eval_Hess_Lagr(const hiop::size_type& n, const hiop::size_type& m, 
 		    const double* x, bool new_x, const double& obj_factor,
 		    const double* lambda, bool new_lambda,
-		    const long long& nsparse, const long long& ndense, 
+		    const hiop::size_type& nsparse, const hiop::size_type& ndense, 
 		    const int& nnzHSS, int* iHSS, int* jHSS, double* MHSS, 
 		    double* HDD,
 		    int& nnzHSD, int* iHSD, int* jHSD, double* MHSD)
@@ -219,7 +219,7 @@ bool OPFLOWHIOPInterface::eval_Hess_Lagr(const long long& n, const long long& m,
   return true;
 }
 
-bool OPFLOWHIOPInterface::get_starting_point(const long long& global_n, double* x0)
+bool OPFLOWHIOPInterface::get_starting_point(const hiop::size_type& global_n, double* x0)
 {
   PetscErrorCode ierr;
   //  PetscPrintf(MPI_COMM_SELF,"Enter get_starting_point \n");
@@ -231,15 +231,24 @@ bool OPFLOWHIOPInterface::get_starting_point(const long long& global_n, double* 
   return true;
 }
 
-bool OPFLOWHIOPInterface::iterate_callback(int iter, double obj_value,
-		      int n, const double* x,
+bool OPFLOWHIOPInterface::iterate_callback(int iter,
+            double obj_value,
+            double logbar_obj_value,
+		      int n,
+            const double* x,
 		      const double* z_L,
 		      const double* z_U,
-		      int m, const double* g,
+            int m_ineq,
+            const double *s,
+		      int m,
+            const double* g,
 		      const double* lambda,
-		      double inf_pr, double inf_du,
+		      double inf_pr,
+            double inf_du,
 		      double mu,
-		      double alpha_du, double alpha_pr,
+            double onenorm_pr_,
+		      double alpha_du,
+            double alpha_pr,
 		      int ls_trials)
 {
   opflow->numits = iter;
@@ -312,14 +321,8 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
   } else {
     hiop->mds->options->SetStringValue("compute_mode", HIOPComputeModeChoices[compute_mode]);
   }
-  ierr = PetscOptionsInt("-hiop_verbosity_level","HIOP verbosity level (Integer 0 to 12)","",verbose_level,&verbose_level,&mode_set);CHKERRQ(ierr);
-  if (mode_set == PETSC_FALSE) {
-   //  ierr = PetscPrintf(MPI_COMM_WORLD,"Using hiop verbosity level %d\n", opflow->_p_hiop_verbosity_level);CHKERRQ(ierr);
-    hiop->mds->options->SetIntegerValue("verbosity_level", opflow->_p_hiop_verbosity_level);
-  }
-  else {
-    hiop->mds->options->SetIntegerValue("verbosity_level", verbose_level);
-  }
+  ierr = PetscOptionsInt("-hiop_verbosity_level","HIOP verbosity level (Integer 0 to 12)","",verbose_level,&verbose_level,NULL);CHKERRQ(ierr);
+
 #if defined(EXAGO_ENABLE_IPOPT)
   ierr = PetscOptionsBool("-hiop_ipopt_debug","Flag enabling debugging HIOP code with IPOPT","",hiop->ipopt_debug,&hiop->ipopt_debug,NULL);CHKERRQ(ierr);
 #endif
@@ -357,6 +360,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow)
   hiop->mds->options->SetStringValue("fixed_var", "relax");
   hiop->mds->options->SetStringValue("Hessian", "analytical_exact");
   hiop->mds->options->SetStringValue("KKTLinsys", "xdycyd");
+  hiop->mds->options->SetIntegerValue("verbosity_level", verbose_level);
   hiop->mds->options->SetNumericValue("mu0", 1e-1);
   hiop->mds->options->SetNumericValue("tolerance", opflow->tolerance);
   hiop->mds->options->SetNumericValue("bound_relax_perturb",1e-4);

@@ -81,6 +81,17 @@ struct _p_SOPFLOW{
   SCOPFLOW *scopflows; /* Array of security-constrained optimal power flow application objects. */
   PetscBool ismulticontingency; /* Is it a multi-contingency SOPFLOW? */
 
+  PetscBool ismultiperiod; /* Is the contingency multi-period? */
+  PetscInt  Nc;            /* Number of contingencies */
+  PetscReal  dT;            /* Time-step */
+  PetscReal duration;      /* duration */
+  char ploadprofile[PETSC_MAX_PATH_LEN]; /* Active load profile */
+  char qloadprofile[PETSC_MAX_PATH_LEN]; /* Reactive load profile */
+
+  OPFLOWInitializationType initialization_type; /* Initialization type for OPFLOW */
+  OPFLOWGenBusVoltageType gen_bus_voltage_type; /* Gen bus voltage type for OPFLOW */
+
+
 
   PetscBool setupcalled; /* SOPFLOWSetUp called? */
 

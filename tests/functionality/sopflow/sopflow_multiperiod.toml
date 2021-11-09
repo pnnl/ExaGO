@@ -1,0 +1,33 @@
+testsuite_name = "SOPFLOW Multiperiod/Multcontingency Functionality tests"
+
+[presets]
+tolerance = 1e-3
+network = 'datafiles/case9/case9mod_gen3_wind.m'
+scenfile = 'datafiles/case9/scenarios_9bus.csv'
+contingencies = 'datafiles/case9/case9.cont'
+num_scenarios = 3
+multicontingency = true
+multiperiod = true
+dT = 5.0
+duration = 0.16666667
+pload = 'datafiles/case9/load_P.csv'
+qload = 'datafiles/case9/load_Q.csv'
+windgen = 'datafiles/case9/scenarios_9bus.csv'
+
+[[testcase]]
+description = 'datafiles/case9/case9mod_gen3_wind.m IPOPT scenerios periods contingencies SOPFLOW'
+solver = 'IPOPT'
+num_contingencies = -1
+num_scenarios = -1
+num_iters = 24
+obj_value = 9147.74304628
+
+[[testcase]]
+description = 'datafiles/case9/case9mod_gen3_wind.m IPOPT scenerios periods contingencies ACPF SOPFLOW'
+solver = 'IPOPT'
+initialization_type = 'ACPF'
+gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
+num_contingencies = -1
+num_scenarios = -1
+num_iters = 15
+obj_value = 9147.74141343

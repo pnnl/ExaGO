@@ -1,245 +1,59 @@
 #[[ Functionality tests for ExaGO SOPFLOW applications ]]
 
-set_source_files_properties(
-  sopflow.c sopflowselfcheck.c selfcheck.cpp PROPERTIES LANGUAGE CXX
-)
+set_source_files_properties(selfcheck.cpp PROPERTIES LANGUAGE CXX)
 add_executable(testSopflowFunctionalityTOML selfcheck.cpp)
 target_include_directories(
   testSopflowFunctionalityTOML PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
                                        ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
-add_executable(testSopflowFunctionality sopflow.c sopflowselfcheck.c)
-target_include_directories(
-  testSopflowFunctionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-)
 
 set(tolerance "1e-3")
 
 #[[ Configure SOPFLOW functionality tests ]]
-target_link_libraries(testSopflowFunctionality ExaGO::SOPFLOW)
 target_link_libraries(testSopflowFunctionalityTOML ExaGO::SOPFLOW)
 if(EXAGO_INSTALL_TESTS)
   message(STATUS "Configuring SOPFLOW functionality tests")
 
-  install(TARGETS testSopflowFunctionality
-          RUNTIME DESTINATION tests/functionality
-  )
   install(TARGETS testSopflowFunctionalityTOML
           RUNTIME DESTINATION tests/functionality
   )
 
+  if(EXAGO_ENABLE_ALL_TESTS)
   exago_add_test(
     NAME
-    FUNCTIONALITY_TEST_SOPFLOW_TOML
+    FUNCTIONALITY_TEST_SOPFLOW_SCENARIO_TOML
     DEPENDS
     IPOPT
     COMMAND
     ${RUNCMD}
     $<TARGET_FILE:testSopflowFunctionalityTOML>
-    ${CMAKE_CURRENT_SOURCE_DIR}/sopflow.toml
+    ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario.toml
+    -no_optfile
+  )
+  endif()
+
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_SOPFLOW_CONTINGENCY_TOML
+    DEPENDS
+    IPOPT
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:testSopflowFunctionalityTOML>
+    ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multicontingency.toml
     -no_optfile
   )
 
-  foreach(ns RANGE 1 3)
-    exago_add_test(
-      NAME
-      SOPFLOW_200bus_IPOPT_${ns}scen
-      COMMAND
-      ${RUNCMD}
-      $<TARGET_FILE:app_sopflow>
-      -netfile
-      ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
-      -scenfile
-      ${CMAKE_SOURCE_DIR}/datafiles/TAMU200_scenarios/scenarios_200bus.csv
-      -sopflow_solver
-      IPOPT
-      -sopflow_enable_multicontingency
-      0
-      -sopflow_Ns
-      ${ns}
-      DEPENDS
-      IPOPT
-    )
-    exago_add_test(
-      NAME
-      SOPFLOW_200bus_EMPAR_${ns}scen
-      COMMAND
-      ${RUNCMD}
-      $<TARGET_FILE:app_sopflow>
-      -netfile
-      ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
-      -scenfile
-      ${CMAKE_SOURCE_DIR}/datafiles/TAMU200_scenarios/scenarios_200bus.csv
-      -sopflow_solver
-      EMPAR
-      -sopflow_enable_multicontingency
-      0
-      -sopflow_Ns
-      ${ns}
-      DEPENDS
-      IPOPT
-    )
-  endforeach()
-
-  # Multicontingency
   exago_add_test(
     NAME
-    SOPFLOW_9bus_3scen_9cont
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:app_sopflow>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod_gen3_wind.m
-    -scenfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/scenarios_9bus.csv
-    -ctgcfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9.cont
-    -sopflow_solver
-    IPOPT
-    -sopflow_enable_multicontingency
-    1
-    -sopflow_Ns
-    -1
-    -scopflow_Nc
-    -1
+    FUNCTIONALITY_TEST_SOPFLOW_CONTINGENCY_MULTIPERIOD_TOML
     DEPENDS
     IPOPT
-  )
-
-  # Multicontingency-multiperiod
-  exago_add_test(
-    NAME
-    SOPFLOW_9bus_3scen_9cont_3steps
     COMMAND
     ${RUNCMD}
-    $<TARGET_FILE:app_sopflow>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod_gen3_wind.m
-    -scenfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/scenarios_9bus.csv
-    -ctgcfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9.cont
-    -scopflow_ploadprofile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/load_P.csv
-    -scopflow_qloadprofile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/load_Q.csv
-    -windgen
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/scenarios_9bus.csv
-    -sopflow_solver
-    IPOPT
-    -sopflow_enable_multicontingency
-    1
-    -scopflow_enable_multiperiod
-    1
-    -scopflow_dT
-    5.0
-    -scopflow_duration
-    0.16666667
-    -sopflow_Ns
-    -1
-    -scopflow_Nc
-    -1
-    DEPENDS
-    IPOPT
+    $<TARGET_FILE:testSopflowFunctionalityTOML>
+    ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiperiod.toml
+    -no_optfile
   )
 
-  foreach(ns RANGE 1 3)
-    exago_add_test(
-      NAME
-      FUNCTIONALITY_TEST_SOPFLOW_200bus_IPOPT_${ns}scen
-      DEPENDS
-      IPOPT
-      NETFILES
-      ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
-      COMMAND
-      ${RUNCMD}
-      $<TARGET_FILE:testSopflowFunctionality>
-      -scenfile
-      ${CMAKE_SOURCE_DIR}/datafiles/TAMU200_scenarios/scenarios_200bus.csv
-      -sopflow_solver
-      IPOPT
-      -sopflow_enable_multicontingency
-      0
-      -sopflow_Ns
-      ${ns}
-      -sopflow_tolerance
-      ${tolerance}
-      -opflow_initialization
-      ACPF
-      -opflow_genbusvoltage
-      VARIABLE_WITHIN_BOUNDS
-    )
-  endforeach(ns)
-
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_SOPFLOW_9bus_3scen_9cont
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:testSopflowFunctionality>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod_gen3_wind.m
-    -scenfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/scenarios_9bus.csv
-    -ctgcfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9.cont
-    -sopflow_solver
-    IPOPT
-    -sopflow_enable_multicontingency
-    1
-    -sopflow_tolerance
-    ${tolerance}
-    -sopflow_Ns
-    -1
-    -scopflow_Nc
-    -1
-    -opflow_initialization
-    ACPF
-    -opflow_genbusvoltage
-    VARIABLE_WITHIN_BOUNDS
-    DEPENDS
-    IPOPT
-  )
-
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_SOPFLOW_9bus_3scen_9cont_3steps
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:testSopflowFunctionality>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod_gen3_wind.m
-    -scenfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/scenarios_9bus.csv
-    -ctgcfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9.cont
-    -scopflow_ploadprofile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/load_P.csv
-    -scopflow_qloadprofile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/load_Q.csv
-    -windgen
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/scenarios_9bus.csv
-    -sopflow_solver
-    IPOPT
-    -sopflow_enable_multicontingency
-    1
-    -sopflow_tolerance
-    ${tolerance}
-    -scopflow_enable_multiperiod
-    1
-    -scopflow_dT
-    5.0
-    -scopflow_duration
-    0.16666667
-    -sopflow_Ns
-    -1
-    -scopflow_Nc
-    -1
-    -opflow_initialization
-    ACPF
-    -opflow_genbusvoltage
-    VARIABLE_WITHIN_BOUNDS
-    DEPENDS
-    IPOPT
-  )
 endif()

@@ -495,21 +495,20 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
 
       ierr = TCOPFLOWSetNetworkData(tcopflow,scopflow->netfile);CHKERRQ(ierr);
       // CLI option overrides any existing setting in scopflow
-      if(flg1)
-      {
-        SCOPFLOWSetPLoadData(scopflow, ploadprofile);
+      if(flg1) {
+        ierr = SCOPFLOWSetPLoadData(scopflow, ploadprofile);CHKERRQ(ierr);
       }
       if(flg2)
       {
-        SCOPFLOWSetQLoadData(scopflow, qloadprofile);
+        ierr = SCOPFLOWSetQLoadData(scopflow, qloadprofile);CHKERRQ(ierr);
       }
       if(flg3)
       {
-        SCOPFLOWSetWindGenProfile(scopflow,windgenprofile);
+        ierr = SCOPFLOWSetWindGenProfile(scopflow,windgenprofile);CHKERRQ(ierr);
       }
 
-    	ierr = TCOPFLOWSetLoadProfiles(tcopflow,scopflow->pload,scopflow->qload);CHKERRQ(ierr);
-	    ierr = TCOPFLOWSetWindGenProfiles(tcopflow,scopflow->windgen);CHKERRQ(ierr);
+      ierr = TCOPFLOWSetLoadProfiles(tcopflow,scopflow->pload,scopflow->qload);CHKERRQ(ierr);
+      ierr = TCOPFLOWSetWindGenProfiles(tcopflow,scopflow->windgen);CHKERRQ(ierr);
       ierr = TCOPFLOWSetTimeStepandDuration(tcopflow,scopflow->dT,scopflow->duration);CHKERRQ(ierr);
 
       /* Set contingencies */
@@ -805,6 +804,21 @@ PetscErrorCode SCOPFLOWSetDuration(SCOPFLOW scopflow,PetscReal duration)
 }
 
 /**
+ * @brief Set the time-step and problem duration for SCOPFLOW
+ * 
+ * @param[in] scopflow application object
+ * @param[in] dT time-step
+ * @param[in] duration problem duration
+ */
+PetscErrorCode SCOPFLOWSetTimeStepandDuration(SCOPFLOW scopflow, PetscReal dT, PetscReal duration)
+{
+  PetscFunctionBegin;
+  scopflow->dT = dT;
+  scopflow->duration = duration;
+  PetscFunctionReturn(0);
+}
+
+/**
  * @brief Set the solver tolerance for SCOPFLOW
  * 
  * @param[in] scopflow application object 
@@ -882,3 +896,23 @@ PetscErrorCode SCOPFLOWSetMode(SCOPFLOW scopflow, PetscInt mode)
   PetscFunctionReturn(0);
 }
 
+
+/*
+  SCOPFLOWSetLoadProfiles - Sets the data files for time-varying load profiles
+
+  Input Parameter
++  scopflow - The SCOPFLOW object
+.  ploadproffile - The name of the file with real power load variationt
+-  qloadproffile - The name of the file with reactive power load variationt
+*/
+PetscErrorCode SCOPFLOWSetLoadProfiles(SCOPFLOW scopflow,const char ploadprofile[],const char qloadprofile[])
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  
+  ierr = SCOPFLOWSetPLoadData(scopflow, ploadprofile);CHKERRQ(ierr);
+  ierr = SCOPFLOWSetQLoadData(scopflow, qloadprofile);CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}

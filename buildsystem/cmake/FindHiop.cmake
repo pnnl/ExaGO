@@ -42,12 +42,25 @@ if(HIOP_LIBRARY AND HIOP_INCLUDE_DIR)
   target_link_libraries(HiOp INTERFACE ${HIOP_LIBRARY})
   target_include_directories(HiOp INTERFACE ${HIOP_INCLUDE_DIR})
 
+  set(HIOP_DEFINITIONS ${HIOP_INCLUDE_DIR}/hiop_defs.hpp)
+  message(STATUS "HiOp definitions: ${HIOP_DEFINITIONS}")
+
+  # Force cmake to use mpi flags if we're building with mpi. Otherwise, the
+  # underlying call to `try_compile` will fail and the the symbol will be
+  # reported as missing even if it's defined in the header.
+  if(EXAGO_ENABLE_MPI)
+    message(STATUS "Adding MPI compile flags for HiOp sparse/coinhsl detection")
+    set(CMAKE_REQUIRED_FLAGS -I${MPI_C_INCLUDE_DIRS} ${MPI_C_COMPILE_OPTIONS}
+                             -I${MPI_CXX_INCLUDE_DIRS} ${MPI_CXX_COMPILE_OPTIONS})
+    set(CMAKE_REQUIRED_LIBRARIES ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES})
+  endif()
+
   check_cxx_symbol_exists(
-    HIOP_SPARSE ${HIOP_INCLUDE_DIR}/hiop_defs.hpp EXAGO_ENABLE_HIOP_SPARSE
+    HIOP_SPARSE ${HIOP_DEFINITIONS} EXAGO_ENABLE_HIOP_SPARSE
   )
 
   check_cxx_symbol_exists(
-    HIOP_USE_COINHSL ${HIOP_INCLUDE_DIR}/hiop_defs.hpp EXAGO_HIOP_USE_COINHSL
+    HIOP_USE_COINHSL ${HIOP_DEFINITIONS} EXAGO_HIOP_USE_COINHSL
   )
 
   if(EXAGO_ENABLE_GPU)
