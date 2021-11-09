@@ -50,8 +50,10 @@ if(HIOP_LIBRARY AND HIOP_INCLUDE_DIR)
   # reported as missing even if it's defined in the header.
   if(EXAGO_ENABLE_MPI)
     message(STATUS "Adding MPI compile flags for HiOp sparse/coinhsl detection")
-    set(CMAKE_REQUIRED_FLAGS -I${MPI_C_INCLUDE_DIRS} ${MPI_C_COMPILE_OPTIONS}
-                             -I${MPI_CXX_INCLUDE_DIRS} ${MPI_CXX_COMPILE_OPTIONS})
+    set(CMAKE_REQUIRED_FLAGS
+        -I${MPI_C_INCLUDE_DIRS} ${MPI_C_COMPILE_OPTIONS}
+        -I${MPI_CXX_INCLUDE_DIRS} ${MPI_CXX_COMPILE_OPTIONS}
+    )
     set(CMAKE_REQUIRED_LIBRARIES ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES})
   endif()
 

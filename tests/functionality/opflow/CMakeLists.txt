@@ -50,9 +50,8 @@ if(EXAGO_INSTALL_TESTS)
     )
   endif()
 
-  # Note: All cartesian and/or current balance models are way
-  # behind. These models should not be used and their tests should
-  # be disabled.
+  # Note: All cartesian and/or current balance models are way behind. These
+  # models should not be used and their tests should be disabled.
   if(EXAGO_FEATURE_CARTESIAN_ACTIVE)
     exago_add_test(
       NAME

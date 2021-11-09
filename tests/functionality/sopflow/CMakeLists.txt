@@ -19,17 +19,17 @@ if(EXAGO_INSTALL_TESTS)
   )
 
   if(EXAGO_ENABLE_ALL_TESTS)
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_SOPFLOW_SCENARIO_TOML
-    DEPENDS
-    IPOPT
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:testSopflowFunctionalityTOML>
-    ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario.toml
-    -no_optfile
-  )
+    exago_add_test(
+      NAME
+      FUNCTIONALITY_TEST_SOPFLOW_SCENARIO_TOML
+      DEPENDS
+      IPOPT
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:testSopflowFunctionalityTOML>
+      ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario.toml
+      -no_optfile
+    )
   endif()
 
   exago_add_test(

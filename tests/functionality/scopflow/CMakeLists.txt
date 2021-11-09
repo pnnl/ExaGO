@@ -39,17 +39,17 @@ if(EXAGO_INSTALL_TESTS)
   )
 
   if(EXAGO_ENABLE_ALL_TESTS)
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_SCOPFLOW_IPOPT_MULTIPERIOD_TESTSUITE
-    DEPENDS
-    IPOPT
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:testScopflowFunctionalityTOML>
-    ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_multiperiod.toml
-    -no_optfile
-  )
+    exago_add_test(
+      NAME
+      FUNCTIONALITY_TEST_SCOPFLOW_IPOPT_MULTIPERIOD_TESTSUITE
+      DEPENDS
+      IPOPT
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:testScopflowFunctionalityTOML>
+      ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_multiperiod.toml
+      -no_optfile
+    )
   endif()
 
   # Tests for HIOP pridecomp
