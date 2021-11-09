@@ -40,6 +40,8 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout)
   sopflow->mode = 1;
 
   sopflow->ismulticontingency = PETSC_FALSE;
+  sopflow->Nc = 0;
+  sopflow->ismultiperiod = PETSC_FALSE;
 
   sopflow->nmodelsregistered = 0;
   sopflow->SOPFLOWModelRegisterAllCalled = PETSC_FALSE;
@@ -218,6 +220,33 @@ PetscErrorCode SOPFLOWGetTolerance(SOPFLOW sopflow,PetscReal *tol)
   PetscFunctionReturn(0);
 }
 
+/* 
+   SOPFLOWSetInitializationType - Set initialization type for underlying OPFLOW
+
+  Input Parameters:
++ sopflow - sopflow application object
+- type    - OPFLOW initialization type
+*/
+PetscErrorCode SOPFLOWSetInitializationType(SOPFLOW sopflow, OPFLOWInitializationType type)
+{
+  PetscFunctionBegin;
+  sopflow->initialization_type = type;
+  PetscFunctionReturn(0);
+}
+
+/* 
+   SOPFLOWSetGenBusVoltageType - Set gen bus voltage type for underlying OPFLOW
+
+  Input Parameters:
++ sopflow - sopflow application object
+- type    - OPFLOW gen bus voltage type
+*/
+PetscErrorCode SOPFLOWSetGenBusVoltageType(SOPFLOW sopflow, OPFLOWGenBusVoltageType type)
+{
+  PetscFunctionBegin;
+  sopflow->gen_bus_voltage_type = type;
+  PetscFunctionReturn(0);
+}
 
 /*
   SOPFLOWSetSolver - Sets the solver for SOPFLOW
@@ -350,6 +379,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
 
   ierr = PetscOptionsBool("-sopflow_enable_multicontingency","Multi-contingency SOPFLOW?","",sopflow->ismulticontingency,&sopflow->ismulticontingency,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsString("-ctgcfile","Contingency file","",ctgcfile,ctgcfile,PETSC_MAX_PATH_LEN,&flgctgc);CHKERRQ(ierr);
+  ierr = PetscOptionsInt("-sopflow_Nc","Number of contingencies for multi-contingency scenario","",sopflow->Nc,&sopflow->Nc,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsString("-windgen","Wind Generation file","",windgen,windgen,PETSC_MAX_PATH_LEN,&flgwindgen);CHKERRQ(ierr);
   ierr = PetscOptionsReal("-sopflow_tolerance","optimization tolerance","",sopflow->tolerance,&sopflow->tolerance,NULL);CHKERRQ(ierr);
   PetscOptionsEnd();
@@ -468,6 +498,8 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
       ierr = OPFLOWSetModel(sopflow->opflows[s],OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
       //    ierr = OPFLOWSetSolver(sopflow->opflows[c],opflowsolvername);CHKERRQ(ierr);
       
+      ierr = OPFLOWSetInitializationType(sopflow->opflows[s],sopflow->initialization_type);CHKERRQ(ierr);
+      ierr = OPFLOWSetGenBusVoltageType(sopflow->opflows[s],sopflow->gen_bus_voltage_type);CHKERRQ(ierr);
       ierr = OPFLOWReadMatPowerData(sopflow->opflows[s],sopflow->netfile);CHKERRQ(ierr);
       /* Set up the PS object for opflow */
       ps = sopflow->opflows[s]->ps;
@@ -509,9 +541,14 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
       /* Set contingency data */
       /* Should not set hard coded native format */
       ierr = SCOPFLOWSetContingencyData(sopflow->scopflows[s],NATIVE,sopflow->ctgfile);CHKERRQ(ierr);
+      ierr = SCOPFLOWSetInitilizationType(sopflow->scopflows[s],sopflow->initialization_type);CHKERRQ(ierr);
 
+      ierr = SCOPFLOWSetNumContingencies(sopflow->scopflows[s],sopflow->Nc);CHKERRQ(ierr);
+      ierr = SCOPFLOWSetTimeStepandDuration(sopflow->scopflows[s],sopflow->dT,sopflow->duration);CHKERRQ(ierr);
+      ierr = SCOPFLOWSetLoadProfiles(sopflow->scopflows[s],sopflow->ploadprofile,sopflow->qloadprofile);CHKERRQ(ierr);
       ierr = SCOPFLOWSetWindGenProfile(sopflow->scopflows[s],sopflow->windgen); 
     }
+
 
     if(sopflow->scenfileset) {
       ierr = SOPFLOWReadScenarioData(sopflow,sopflow->scenfileformat,sopflow->scenfile);CHKERRQ(ierr);
@@ -770,5 +807,56 @@ PetscErrorCode SOPFLOWGetNumIterations(SOPFLOW sopflow,PetscInt *iter)
 {
   PetscErrorCode ierr;
   *iter = sopflow->numiter;
+  PetscFunctionReturn(0);
+}
+
+/*
+  SOPFLOWSetNumContingencies - Sets the number of contingencies
+*/
+PetscErrorCode SOPFLOWSetNumContingencies(SOPFLOW sopflow, PetscInt numctgc)
+{
+  PetscFunctionBegin;
+  sopflow->Nc = numctgc;
+  PetscFunctionReturn(0);
+}
+
+/*
+  SOPFLOWSetTimeStepandDuration - Sets the time-step and optimization horizon for multi-period multi-contingecy SOPFLOW
+
+  Input Parameters:
++ sopflow - the SOPFLOW object
+. dT       - time step in minutes
+- duration - duration (horizon) in hours
+*/
+PetscErrorCode SOPFLOWSetTimeStepandDuration(SOPFLOW sopflow,PetscReal dT,PetscReal duration)
+{
+  PetscFunctionBegin;
+  sopflow->dT = dT;
+  sopflow->duration = duration;
+  PetscFunctionReturn(0);
+}
+
+/*
+  SOPFLOWSetLoadProfiles - Sets the data files for time-varying load profiles
+
+  Input Parameter
++  sopflow - The SOPFLOW object
+.  ploadproffile - The name of the file with real power load variationt
+-  qloadproffile - The name of the file with reactive power load variationt
+*/
+PetscErrorCode SOPFLOWSetLoadProfiles(SOPFLOW sopflow,const char ploadprofile[],const char qloadprofile[])
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  
+  if(ploadprofile) {
+    ierr = PetscMemcpy(sopflow->ploadprofile,ploadprofile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
+  }
+
+  if(qloadprofile) {
+    ierr = PetscMemcpy(sopflow->qloadprofile,qloadprofile,PETSC_MAX_PATH_LEN*sizeof(char));CHKERRQ(ierr);
+  }
+
   PetscFunctionReturn(0);
 }

@@ -18,7 +18,7 @@ For example, \texttt{/path/to/cuda} is a placeholder for a path to a valid \text
 
 \section{Dependencies}
 
-\exago has dependencies in table \ref{tab:deps}.
+\exago has the dependencies listed in table \ref{tab:deps}.
 
 \begin{table}[h]
   \caption{\label{tab:deps}Dependency Table}
@@ -40,6 +40,7 @@ For example, \texttt{/path/to/cuda} is a placeholder for a path to a valid \text
   
 \end{table}
 
+\noindent
 These may all be toggled via \cmake, which will be discussed in the section \hyperref[sec:building_and_installation]{Building and installation}.
 
 \subsection{Notes on environment modules}
@@ -61,9 +62,7 @@ For example, the modules needed to build and run \exago on Newell, an IBM Power9
 
 \subsection{Additional Notes on GPU Accelerators}
 
-As of January 2021, \texttt{CUDA} is the only GPU accelerator platform \exago fully supports.
-We have preliminary support for \texttt{HIP}, however this is not in any of our main development branches yet.
-Full \texttt{HIP} support should arrive in early 2021.
+\texttt{CUDA} is currently the only GPU accelerator platform \exago fully supports.
 
 \subsection{Additional Notes on Umpire}
 
@@ -87,9 +86,10 @@ Additionally, if a user would like to run \exago with \texttt{RAJA} and without 
 > make install
 \end{lstlisting}
 
+\noindent
 The following sections will assume the user is following the basic workflow outlined above.
 
-\textbf{Note:} For changes to the \cmake configuration to take effect, the code will have to be rebuilt.
+\textbf{Note:} For changes to the \cmake configuration to take effect, the code will have to be reconfigured using \texttt{cmake} and rebuilt using \texttt{make}.
 
 \subsection{Additional Options}
 
@@ -101,6 +101,7 @@ For example, the following shell commands will build \exago with \texttt{MPI}:
 > cmake .. -DCMAKE_INSTALL_PREFIX=$INSTALLDIR -DEXAGO_ENABLE_MPI=ON
 \end{lstlisting}
 
+\noindent
 \exago's \cmake configuration will search the usual system locations for an \texttt{MPI} installation.
 
 For dependencies not installed to a system-wide location, users may also directly specify the location of a dependency.
@@ -113,6 +114,7 @@ For example, this will build \exago with \texttt{IPOPT} enabled and installed to
     -DIPOPT_DIR=/path/to/ipopt
 \end{lstlisting}
 
+\noindent
 Notice that the \cmake variable \texttt{IPOPT\_DIR} does not have an \texttt{EXAGO\_} prefix.
 This is because the variables specifying locations often belong to external \cmake modules.
 \cmake variables indicating installation directories do not have an \texttt{EXAGO\_} prefix.
@@ -123,7 +125,10 @@ For example, if the user enables \texttt{EXAGO\_ENABLE\_GPU} and \texttt{EXAGO\_
 \texttt{Umpire} is also an implicit dependency of \texttt{RAJA}, so if the user enables \texttt{EXAGO\_ENABLE\_GPU} they must \textbf{also} provide a GPU-enabled \texttt{Umpire} installation.
 
 Below is a complete shell session on PNNL's cluster Newell in which a more complicated \exago configuration is built, where each dependency installation is explicitly passed to \cmake.
-Environment modules specific to Newell are provided to make the example thorough, even though they are not likely to work on another machine.
+Environment modules specific to Newell are provided to make the example
+thorough, even though they are not likely to work on another machine. However,
+similar modules (with different version numbers) are likely to be available on
+other platforms.
 
 \begin{lstlisting}[language=bash,caption={\exago build with all options enabled}]
 > module load gcc/7.4.0
@@ -175,12 +180,13 @@ For instance,
   ./opflow -netfile case9mod.m -opflow_model POWER_BALANCE_POLAR \
   -opflow_solver IPOPT
 \end{lstlisting}
-will execute the \opflow application using \lstinline{case9mod.m} input file with the model \lstinline{POWER_BALANCE_POLAR} and \ipopt solver.
+will execute the \opflow application using \lstinline{case9mod.m} input file
+with the model\newline \lstinline{POWER_BALANCE_POLAR} and \ipopt solver.
 
-Options can also be passed to each application through \lstinline{-options_file}, or through a combination of the command line and options file. The configuration specified last on the command line overrides any previous options. For example, if \lstinline{-options_file opflowoptions} specified \lstinline{-netfile case9mod.m} within it's settings:
+Options can also be passed to each application through \lstinline{-options_file}, or through a combination of the command line and options file. The configuration specified last on the command line overrides any previous options. For example, if \lstinline{-options_file opflowoptions} specified \lstinline{-netfile case9mod.m} within its settings:
 \begin{lstlisting}[language=bash]
 ./opflow -netfile case118.m -options_file opflowoptions # Uses case9mod.m
 ./opflow -options_file opflowoptoins -netfile case118.m # Uses case118.m
 \end{lstlisting}
 If no options file is specified through the command line, ExaGO applications will attempt to locate the default options file for a given application in \lstinline{./, ./options, <install_dir>/options}.
-Each solver that can be used within \exago also have their own unique options. Some of these options are specified internally within \exago, but any other options that are needed should either be passed through the command line, or additionally specified in the options file.
+Each solver that can be used within \exago also have their own unique options. Some of these options are specified internally within \exago, but any other options that are needed should either be passed through the command line or specified in the options file.

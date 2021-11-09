@@ -17,186 +17,191 @@ initialization_type = 'MIDPOINT'
 network = 'datafiles/case9/case9mod.m'  
 is_loadloss_active =	false
 is_powerimb_active =	false
-num_iters = 25
+num_iters = 22
 obj_value = 4.1513585954144e+03
 
 [[testcase]]
 network = 'datafiles/case118.m'
 is_loadloss_active =	false
 is_powerimb_active =	false
-num_iters = 255
+num_iters = 258
 obj_value = 1.3013187197492e+05
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
 is_loadloss_active =	false
 is_powerimb_active =	false
-num_iters = 191
+num_iters = 361
 obj_value = 2.7564247365138e+04
 
 # -- PBPOL model with load loss
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'  
+description = "datafiles/case9/case9mod.m with load loss"
 is_loadloss_active =	true
 is_powerimb_active =	false
-num_iters = 29 
-obj_value = 4.1513585954144e+03
-
-[[testcase]]
-network = 'datafiles/case118.m'
-is_loadloss_active =	true
-is_powerimb_active =	false
-num_iters = 716
-obj_value = 1.3013187197492e+05
-
-[[testcase]]
-network = 'datafiles/case_ACTIVSg200.m'
-is_loadloss_active =	true
-is_powerimb_active =	false
-num_iters = 390
-obj_value = 2.7564247365138e+04
-
-# -- PBPOL model with power imbalance
-[[testcase]]
-network = 'datafiles/case9/case9mod.m'  
-is_loadloss_active =	false
-is_powerimb_active =	true
 num_iters = 25 
 obj_value = 4.1513585954144e+03
 
 [[testcase]]
 network = 'datafiles/case118.m'
-description = "CHECK THIS ANSWER"
+description = "datafiles/case118.m with load loss"
+is_loadloss_active =	true
+is_powerimb_active =	false
+num_iters = 565
+obj_value = 1.3009272698e+05
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+description = "datafiles/case_ACTIVSg200.m with load loss"
+is_loadloss_active =	true
+is_powerimb_active =	false
+num_iters = 402
+obj_value = 2.7564247365138e+04
+
+# -- PBPOL model with power imbalance
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'  
+description = "datafiles/case9/case9mod.m with power imbalance"
 is_loadloss_active =	false
 is_powerimb_active =	true
-num_iters = 143
+num_iters = 22
+obj_value = 4.15037527581e+03
+
+[[testcase]]
+network = 'datafiles/case118.m'
+description = "datafiles/case118.m with power imbalance"
+is_loadloss_active =	false
+is_powerimb_active =	true
+num_iters = 157
 obj_value = 1.3008569089941e+05
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
-description = "CHECK THIS ANSWER"
+description = "datafiles/case_ACTIVSg200.m with power imbalance"
 is_loadloss_active =	false
 is_powerimb_active =	true
-num_iters = 195
+num_iters = 314
 obj_value = 2.7561895866753e+04
 
 # -- PBPOL model with load loss and power imbalance
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'  
+description = "datafiles/case9/case9mod.m with power imbalance and load loss"
 is_loadloss_active =	true
 is_powerimb_active =	true
-num_iters = 28 
-obj_value = 4.1513585954144e+03
+num_iters = 25 
+obj_value = 4.15004001652e+03
 
 [[testcase]]
 network = 'datafiles/case118.m'
-description = "CHECK THIS ANSWER"
+description = "datafiles/case118.m with power imbalance and load loss"
 is_loadloss_active =	true
 is_powerimb_active =	true
-num_iters = 145
+num_iters = 164
 obj_value = 1.3004655457438e+05
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
-description = "CHECK THIS ANSWER"
+description = "datafiles/case_ACTIVSg200.m with power imbalance and load loss"
 is_loadloss_active =	true
 is_powerimb_active =	true
-num_iters = 354
+num_iters = 408
 obj_value = 2.7560626008184e+04
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'  
-description = "CHECK THIS ANSWER"
+description = "datafile/case9/case9mod.m initialization FROMFILE"
 is_loadloss_active =	false
 is_powerimb_active =	false
 initialization_type = "FROMFILE"
-num_iters = 20 
+num_iters = 17 
 obj_value = 4.1513585954144e+03
 
 [[testcase]]
 network = 'datafiles/case118.m'
-description = "CHECK THIS ANSWER"
+description = "datafiles/case118.m initialization FROMFILE"
 is_loadloss_active =	false
 is_powerimb_active =	false
 initialization_type = "FROMFILE"
-num_iters = 37
+num_iters = 32
 obj_value = 1.3013187197492e+05
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
-description = "CHECK THIS ANSWER"
+description = "datafiles/case_ACTIVSg200.m initialization FROMFILE"
 is_loadloss_active =	false
 is_powerimb_active =	false
 initialization_type = "FROMFILE"
-num_iters = 26
+num_iters = 24
 obj_value = 2.7564247365138e+04
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'  
-description = "CHECK THIS ANSWER"
+description = "datafiles/case9/case9mod.m initialization FLATSTART"
 is_loadloss_active =	false
 is_powerimb_active =	false
 initialization_type = "FLATSTART"
-num_iters = 25
+num_iters = 22
 obj_value = 4.1513585954144e+03
 
 [[testcase]]
 network = 'datafiles/case118.m'
-description = "CHECK THIS ANSWER"
+description = "datafiles/case118.m initialization FLATSTART"
 is_loadloss_active =	false
 is_powerimb_active =	false
 initialization_type = "FLATSTART"
-num_iters = 255
+num_iters = 211
 obj_value = 1.3013187197492e+05
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
-description = "CHECK THIS ANSWER"
+description = "datafiles/case_ACTIVSg200.m initialization FLATSTART"
 is_loadloss_active =	false
 is_powerimb_active =	false
 initialization_type = "FLATSTART"
-num_iters = 191
+num_iters = 361
 obj_value = 2.7564247365138e+04
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'  
-description = "CHECK THIS ANSWER"
+description = "datafiles/case9/case9mode.m use AGC"
 is_loadloss_active =	false
 is_powerimb_active =	false
 use_agc = true
-num_iters = 24 
+num_iters = 26 
 obj_value = 4.305286924911201e+03
 
 [[testcase]]
 network = 'datafiles/case118.m'
-description = "CHECK THIS ANSWER"
+description = "datafiles/case118.m use AGC"
 is_loadloss_active =	false
 is_powerimb_active =	false
 use_agc = true
-num_iters = 135
+num_iters = 127
 obj_value = 1.3120693356652581e+05
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
-description = "CHECK THIS ANSWER"
+description = "datafiles/case_ACTIVSg200.m use AGC"
 is_loadloss_active =	false
 is_powerimb_active =	false
 use_agc = true
-num_iters = 75
+num_iters = 96
 obj_value = 2.7564520456963968e+04
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'  
-description = "CHECK THIS ANSWER"
+description = "datafiles/case9/case9mod.m generator bus voltage FIXED_AT_SETPOINT"
 is_loadloss_active =	false
 is_powerimb_active =	false
 gen_bus_voltage_type = 'FIXED_AT_SETPOINT'
-num_iters = 10 
+num_iters = 9 
 obj_value = 4.151358595803445e+03
 
 [[testcase]]
 network = 'datafiles/case118.m'
-description = "CHECK THIS ANSWER"
+description = "datafiles/case118.m generator bus voltage FIXED_AT_SETPOINT"
 is_loadloss_active =	false
 is_powerimb_active =	false
 gen_bus_voltage_type = 'FIXED_AT_SETPOINT'
@@ -205,9 +210,9 @@ obj_value = 1.31004751574488371e+05
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
-description = "CHECK THIS ANSWER"
+description = "datafiles/case_ACTIVSg200.m generator bus voltage FIXED_AT_SETPOINT"
 is_loadloss_active =	false
 is_powerimb_active =	false
 gen_bus_voltage_type = 'FIXED_AT_SETPOINT'
-num_iters = 160
-obj_value = 3.0033692505285599e+04
+num_iters = 189
+obj_value = 2.75973158849e+04

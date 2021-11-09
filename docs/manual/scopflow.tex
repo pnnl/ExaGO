@@ -10,7 +10,16 @@ The contingency-constrained optimal power flow (popularly termed as security-con
 \input{figures/scopflow_fig.tex}
 
 In general form, the equations for contingency-constrained optimal power flow are given by
-(\ref{eq:scopflow_start}) -- (\ref{eq:scopflow_end}). This is a two-stage stochastic optimization problem where the first stage is the base case $c_0$ and each of the contingency states $c_i, i \in [1,N_c-1]$ are second-stage subproblems. SCOPFLOW aims to minimize the objective $\sum_{c=0}^{N_c-1}f(x_c)$, while adhering to the equality $g(x_c)$, inequality $h(x_c)$, and the lower/upper bound ($x^-$,$x^+$) constraints. Equation (\ref{eq:scopflow_end}) represents the coupling between the base-case and each of the contingency states $c_i$. Equation (\ref{eq:scopflow_end}) is the most typical form of coupling that limits the deviation of the contingency variables $x_c$ from the base $x_0$ to within $\delta_c{x}$. An example of this constraint could be the allowed real power output deviation for the generators constrained by their ramp limit.
+(\ref{eq:scopflow_start}) -- (\ref{eq:scopflow_end}). This is a two-stage
+stochastic optimization problem where the first stage is the base case $c_0$ and
+each of the contingency states $c_i, i \in [1,N_c-1]$ are second-stage
+subproblems. SCOPFLOW aims to minimize the objective $\sum_{c=0}^{N_c-1}f(x_c)$,
+while adhering to the equality $g(x_c)$, inequality $h(x_c)$, and the
+lower/upper bound ($x^-$,$x^+$) constraints. Equation (\ref{eq:scopflow_end})
+represents the coupling between the base-case and each of the contingency states
+$c_i$. Equation (\ref{eq:scopflow_end}) is the most typical form of coupling
+that limits the deviation of the contingency variables $x_c$ from the base $x_0$
+to within $\Delta x_c$. An example of this constraint could be the allowed real power output deviation for the generators constrained by their ramp limit.
 
 
 \begin{align}
@@ -20,13 +29,13 @@ In general form, the equations for contingency-constrained optimal power flow ar
 &~g(x_c) = 0,                             &c \in \left[0,N_c-1\right]& \\
 &~h(x_c) \le 0,                           &c \in \left[0,N_c-1\right]& \\
 x^- & \le x_c \le x^+,                     &c\in \left[0,N_c-1\right]& \\
--\delta_c{x} & \le x_c - x_0 \le \delta_c{x},&c \in \left[1,N_c\right]&
+-\Delta x_c & \le x_c - x_0 \le \Delta x_c,&c \in \left[1,N_c\right]&
 \label{eq:scopflow_end}
 \end{align}
 
 \subsection{Multiperiod}
 
-In the multi-period version,each contingency is comprised of multiple time-periods. The multiple periods have variables and constraints as described in chapter \ref{chap:tcopflow}. An example of multi-contingency multi-period optimal power flow is illustrated in Fig. \ref{fig:ctopflow} with two contingencies $c_0$ and $c_1$. Here, $c_0$ is the case with no contingencies, i.e., the base-case. Each contingency is multi-period with four time-periods. Each time-step is coupled with its adjacent one through ramping constraints. We assume that the contingency is incident at the first time-step, i.e. at $t_0$. This results in the coupling between the contingency cases $c_i, i \in [1,N_c-1]$ and the base-case $c_0$ only at time-step $t_0$ as shown in Fig. \ref{fig:ctopflow}.
+In the multi-period version, each contingency is comprised of multiple time-periods. The multiple periods have variables and constraints as described in chapter \ref{chap:tcopflow}. An example of multi-contingency multi-period optimal power flow is illustrated in Fig. \ref{fig:ctopflow} for multi-period SCOPFLOW with three contingencies $c_1$, $c_2$, and $c_3$ coupled to the base case $c_0$. Each state is multi-period with two time-periods. Each time-step is coupled with its adjacent one through ramping constraints. We assume that the contingency is incident at the first time-step, i.e. at $t_0$. This results in the coupling between the contingency cases $c_i, i \in [1,N_c-1]$ and the base-case $c_0$ only at time-step $t_0$.
 
 \input{figures/ctopflow_fig}
 
@@ -39,15 +48,20 @@ The overall objective of this contingency-constrained multi-period optimal power
 &~g(x_{c,t}) = 0,                                        &c \in \left[0,N_c-1\right], t \in \left[0,N_t-1\right]& \\
 &~h(x_{c,t}) \le 0,                                      &c \in \left[0,N_c-1\right], t \in \left[0,N_t-1\right]& \\
 x^- & \le x_{c,t} \le x^+,                               &c \in \left[0,N_c-1\right], t\in \left[0,N_t-1\right]& \\
--\delta_t{x} & \le x_{c,t} - x_{c,t-\Delta{t}} \le \delta_t{x},&c \in \left[0,N_c-1\right], t \in \left[1,N_t-1\right]& \label{eq:ctopflow_time_coupling}\\
--\delta_c{x} & \le x_{c,0} - x_{0,0} \le \delta_c{x},&c \in \left[1,N_c-1\right]& \\
+-\Delta x_t & \le x_{c,t} - x_{c,t-\Delta{t}} \le \Delta x_t,&c \in \left[0,N_c-1\right], t \in \left[1,N_t-1\right]& \label{eq:ctopflow_time_coupling}\\
+-\Delta x_c & \le x_{c,0} - x_{0,0} \le \Delta x_c,&c \in \left[1,N_c-1\right]& \\
 \label{eq:ctopflow_end}
 \end{align}
 
-In this formulation, the objective is to reduce the cost for the base-case time horizon, where $f(x_{0,t})$ is the objective cost for contingency $c_0$ at time $t$. Equation (\ref{eq:ctopflow_end}) represents the coupling between the base case $c_0$ and each contingency $c_i$ at time-step $t_0$. We use a simple box constraint $\delta_c{x}$ to restrict the  deviation of decision variables $x_{c,0}$ from the base-case $x_{0,0}$. The bound $\delta_c{x}$ could represent here, for example, the allowable reserve for each generator.
+In this formulation, the objective is to reduce the cost for the base-case time
+horizon, where $f(x_{0,t})$ is the objective cost for contingency $c_0$ at time
+$t$. Equation (\ref{eq:ctopflow_end}) represents the coupling between the base
+case $c_0$ and each contingency $c_i$ at time-step $t_0$. We use a simple box
+constraint $\Delta x_c$ to restrict the  deviation of decision variables
+$x_{c,0}$ from the base-case $x_{0,0}$. The bound $\Delta x_c$ could represent here, for example, the allowable reserve for each generator.
 
 \section{Solvers}
-\scopflow can be solved with \ipopt and \hiop. \ipopt is a sequential solver so it can be only run on one rank. \hiop supports the parallel solution of the problem using an asynchronous primal decomposition based approach. In addition if one wants to solve each contingency independently, i.e., without any coupling constraints then use  the \emph{EMPAR} solver. \emph{EMPAR} distributes the contingencies to different processes when executed in parallel.
+\scopflow currently supports two solvers: \ipopt and \emph{EMPAR}. \ipopt can solve \scopflow on single rank. The \emph{EMPAR} solver does not solve the security-constrained ACOPF problem, but it only solves the base-case and the contingencies independently with \opflow. It distributes the contingencies to different processes when executed in parallel.
 
 \section{Input and Output}
 To execute SCOPFLOW, the following files are required:
@@ -61,9 +75,14 @@ If the multi-period option is chosen, then additional files describing the load 
     \item \textbf{Wind generation:} The wind generation time-series described in CSV format. See an example of the format \href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/tree/master/datafiles/case9}{here}.
 \end{itemize}
 
-The \scopflow output is saved to a directory named \emph{scopflowout}. This directory contains $N_c$ files to save the solution for each contingency in MATPOWER datafile format. Each file has the name \emph{cont\_xx} where \emph{xx} is the contingency number. 
+The \scopflow output is saved to a directory named \texttt{scopflowout}. This
+directory contains $N_c$ files to save the solution for each contingency in
+MATPOWER datafile format. Each file has the name \texttt{cont_xx} where \texttt{xx} is the contingency number. 
 
-If the multi-period option is chosen then $N_c$ subdirectories are created (one for each contingency), and each subdirectory contains $N_t$ output files, one for each time-period. The subdirectories have the naming convention \emph{cont\_xx} and the output file are named as \emph{t\_yy} where \emph{yy} is the time-step number.
+If the multi-period option is chosen then $N_c$ subdirectories are created (one
+for each contingency), and each subdirectory contains $N_t$ output files, one
+for each time-period. The subdirectories have the naming convention
+\texttt{cont_xx} and the output file are named as \texttt{t_yy} where \texttt{yy} is the time-step number.
 
 \section{Usage}
 
@@ -86,8 +105,7 @@ See table \ref{tab:scopflow_options}. In addition, all \opflow options in Table 
     -scopflow\_solver & Set solver for scopflow & IPOPT or EMPAR \\ \hline
     -scopflow\_Nc & Number of contingencies & int (0. Passing -1 results in all contingencies in the file used) \\ \hline
     -scopflow\_mode & Operation mode: Preventive or corrective & 0 or 1 (0) \\ \hline
-    -scopflow\_iscoupling & Coupling between first and second stage & 0 or 1 (0) \\ \hline
-    -scopflow\_enable\_multiperiod & Multi-period SCOPFLOW & 0 or 1 (0) \\ \hline \hline
+    -scopflow\_enable\_multiperiod & Multi-period SCOPFLOW & 0 or 1 (0) \\ \hline
     -scopflow\_pload\_profile & Real power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_P.csv}{load\_P.csv}) \\ \hline
     -scopflow\_qload\_profile & Reactive power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_Q.csv}{load\_Q.csv}) \\ \hline
     -scopflow\_windgenprofile & Wind generation profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/scenarios_9bus.csv}{case9/scenarios\_9bus.csv}) \\ \hline
@@ -97,9 +115,16 @@ See table \ref{tab:scopflow_options}. In addition, all \opflow options in Table 
   \label{tab:scopflow_options}
 \end{table}
 
-Depending on the \emph{mode}, SCOPFLOW can either be \emph{preventive} (mode = 0) or \emph{corrective} (mode = 1). In the preventive mode, the PV and PQ generator real power is fixed to its corresponding base-case values. The generators at the reference bus pick up any make-up power required for the contingency. The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability.
+Depending on the value chosen for \texttt{-scopflow_mode}, SCOPFLOW can operate
+either in \emph{preventive} (mode = 0) or \emph{corrective} (mode = 1) mode. In
+the preventive mode, the PV and PQ generator real power is fixed to its
+corresponding base-case values. The generators at the reference bus pick up any
+make-up power required for the contingency. The corrective mode allows deviation
+of the PV and PQ generator real power from the base-case dispatch constrained by
+its 30-min. ramp rate capability. The optimization decides the optimal
+redispatch. One can have AGC control instead of having the generators proportionally share the deficit/excess power by using the option \emph(-opflow_use_agc).
 
--scopflow\_enable\_multiperiod 1 must be used in order to enable any of the options listed in table \ref{tab:scopflow_options} that are below -scopflow\_enable\_multiperiod.
+The option \texttt{-scopflow_enable_multiperiod} 1 must be used in order to enable any of the options listed in table \ref{tab:scopflow_options} for multiperiod analysis.
 
 \section{Examples}
 

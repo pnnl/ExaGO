@@ -1,6 +1,6 @@
 \chapter{Optimal power flow (OPFLOW)}\label{chap:opflow}
 
-OPFLOW solves the full AC optimal power flow problem and provides various flexible features that can be toggled via run-time options. It has interfaces to different optimization solvers and includes different representations of the underlying equations (power-balance-polar and power-balance-cartesian) that can be used. By selecting the appropriate solver, OPFLOW can be executed on CPUs (in serial or parallel) or on GPUs.
+OPFLOW solves the full AC optimal power flow problem and provides various flexible features that can be toggled via run-time options. It has interfaces to different optimization solvers that can be executed on CPUs or on GPUs.
 
 \section{Formulation}
 Optimal power flow is a general nonlinear programming problem with the following form
@@ -42,10 +42,10 @@ The different variables used in \opflow formulation are described in Table \ref{
     \hline
     Bus voltage magnitude & $\vi$ & $\vmini \le \vi \le \vmaxi$ & \begin{itemize}[noitemsep,topsep=0pt,leftmargin=*] \item Used with power balance polar model (\option{\opflowmodel~\pbpol})\item $\vmini = \vmaxi = \vseti$ if fixed generator set point voltage option is active (\option{\opflowgensetpoint}) \end{itemize} \\
     \hline
-    Bus voltage real part & $\vreali$ & $-\vmaxi \le \vreali \le \vmaxi$ & Used with power balance cartesian model (\option{\opflowmodel~ \pbcar})\\
-    \hline
-    Bus voltage imaginary part & $\vimagi$ & $-\vmaxi \le \vimagi \le \vmaxi$ & Used with power balance cartesian model (\option{\opflowmodel~\pbcar})\\
-    \hline
+  %  Bus voltage real part & $\vreali$ & $-\vmaxi \le \vreali \le \vmaxi$ & Used with power balance cartesian model (\option{\opflowmodel~ \pbcar})\\
+  %  \hline
+  %  Bus voltage imaginary part & $\vimagi$ & $-\vmaxi \le \vimagi \le \vmaxi$ & Used with power balance cartesian model (\option{\opflowmodel~\pbcar})\\
+  %  \hline
     Bus real power mismatch & $\pmisi$ & Unbounded & Used when power mismatch variable option is active (\option{\opflowincludepowerimbalance 1}) \\
     \hline
     Bus reactive power mismatch & $\qmisi$ & Unbounded & Used when power mismatch variable option is active (\option{\opflowincludepowerimbalance 1}) \\
@@ -65,40 +65,44 @@ Power imbalance variables are non-physical (slack) variables that measure the vi
 
 The objective function for OPFLOW is given in (\ref{eq:opflow_obj})
 \begin{equation}
-\text{min.} ~ C(p^{\text{g}}) + C(\Delta p^{\text{g}}) + C(\Delta p^{\text{l}},\Delta q^{\text{l}}) + C(\Delta p,\Delta q)
+\text{min.} ~ C_{gen}(p^{\text{g}}) + C_{dev}(\Delta p^{\text{g}}) +
+C_{loss}(\Delta p^{\text{l}},\Delta q^{\text{l}}) + C_{imb}(\Delta p,\Delta q)
 \label{eq:opflow_obj}
 \end{equation}
  
-\subsubsection{Total generation cost $C(p^{\text{g}})$}
+\subsubsection{Total generation cost $C_{gen}(p^{\text{g}})$}
 Needs option \opflowoption{\opflowobjective}{\mingencost}
 \begin{equation}
-C(p^{\text{g}}) = \sum_{\jinJgen} \costgj(\pgj)
+C_{gen}(p^{\text{g}}) = \sum_{\jinJgen} \costgj(\pgj)
 \label{eq:opf_obj_mingencost}
 \end{equation}
 Here, $\costgj$ is a quadratic function of the form $\costgj = \agj{\pgj}^2 + \bgj\pgj + \cgj$.
 
 \subsubsection{Total generation setpoint deviation $C(\Delta p^{\text{g}})$}
-Needs option \opflowoption{\opflowobjective}{\mingensetpointdeviation} option
+Needs option \opflowoption{\opflowobjective}{\mingensetpointdeviation}
 \begin{equation}
-C(\Delta p^{\text{g}}) = \sum_{\jinJgen} ({\Deltapj}^2)
+C_{dev}(\Delta p^{\text{g}}) = \sum_{\jinJgen} ({\Deltapj}^2)
 \label{eq:opf_obj_mingensetpointdev}
 \end{equation}
+This feature is only supported with IPOPT solver.
 
 \subsubsection{Load loss $C(\Delta p^{\text{l}},\Delta q^{\text{l}})$}
 This term gets added to the objective when  \option{\opflowincludeloadloss} option is active. 
 \begin{equation}
-C(\Delta p^{\text{l}},\Delta q^{\text{l}}) =  \sum_{\jinJload} \sigmalj({\Deltaplj}^2 + {\Deltaqlj}^2)
+C_{loss}(\Delta p^{\text{l}},\Delta q^{\text{l}}) =  \sum_{\jinJload} \sigmalj({\Deltaplj}^2 + {\Deltaqlj}^2)
 \label{eq:opf_obj_minloadloss}
 \end{equation}
-The load loss penalty $\sigmalj$ can be set via the option \option{-opflow\_loadloss\_penalty}. The default is \$1000/MW for all loads.
+The load loss penalty $\sigmalj$ can be set via the option
+\option{-opflow\_loadloss\_penalty}. The default is \$1000/MW$^2$ for all loads.
 
 \subsubsection{Power imbalance $C(\Delta p,\Delta q)$}
 This term gets added to the objective when  \option{-opflow\_include_powerimbalance_variables} option is active. 
 \begin{equation}
-C(\Delta p,\Delta q) =  \sum_{i \in J^{bus}} \sigmai({\Delta p_i}^2 + {\Delta q_i}^2)
+C_{imb}(\Delta p,\Delta q) =  \sum_{i \in J^{bus}} \sigmai({\Delta p_i}^2 + {\Delta q_i}^2)
 \label{eq:opf_obj_minpowerimbalance}
 \end{equation}
-The power imbalance cost $\sigmai$ can be set via the option \option{-opflow\_powerimbalance\_penalty}. The default is \$10,000/MW for all buses. Though the power imbalance variables $\Delta p_i,\Delta q_i$ are slack or non-physical, they can help in solving infeasible cases and provide a meaasure of the infeasibility. 
+The power imbalance cost $\sigmai$ can be set via the option
+\option{-opflow\_powerimbalance\_penalty}. The default is \$10,000/MW$^2$ for all buses. Though the power imbalance variables $\Delta p_i,\Delta q_i$ are slack or non-physical, they can help in solving infeasible cases and provide a meaasure of the infeasibility. 
 
 \subsection{Equality constraints}\label{sec:opflow_eq}
 
@@ -116,6 +120,12 @@ The real and reactive power flow $\pbrjod$, $\qbrjod$ for line $j$ from the orig
 and from destination bus $d$ to origin bus $o$ is given by (\ref{eq:opflow_br_pdoflow}) -- 
  (\ref{eq:opflow_br_qdoflow})
 
+ \subsubsection{Shunt power}
+\begin{align}
+&\pshi = \gshi{\vi}^2 \label{eq:opflow_sh_p} \\
+&\qshi = -\bshi{\vi}^2 \label{eq:opflow_sh_q}
+\end{align}
+
 \subsubsection{Generator real power output}
 
 When using \option{\opflowgensetpoint}, two extra variables $\pgjset$ and $\Deltapj$ are added for each generator. The generator real power output $\pgj$ is related to the power deviation $\Deltapj$ by the following relations
@@ -123,7 +133,7 @@ When using \option{\opflowgensetpoint}, two extra variables $\pgjset$ and $\Delt
   \pgjset + \Deltapj - \pgj = 0 \\
   \pgjset - p^{\text{g*}}_j = 0
 \end{align}
-The second equation here allows to fix the generator set point $\pgjset$ to a fixed value $p^{\text{g*}}_j$. Here, $p^{\text{g*}}_j$ is the set-point for the generator real power output, which can be thought of as an operator set or contractual agreement set-point.
+The second equation sets the generator set-point $\pgjset$ to a fixed value $p^{\text{g*}}_j$. Here, $p^{\text{g*}}_j$ is the set-point for the generator real power output, which can be thought of as an operator set or contractual agreement set-point.
 
 \subsection{Inequality constraints}
 
@@ -135,6 +145,24 @@ MVA flow limits at origin and destination buses for each line.
 \end{align}
 To reduce the number of inequality constraints, only lines that are in service and having MVA A rating $\srateAj$ less than 10000 MVA are considered.
 
+\subsubsection{Branch flows}
+In polar coordinates, the real and reactive power flow $\pbrjod$, $\qbrjod$  from bus $o$ to bus $d$ on line $j$ is given by (\ref{eq:opflow_br_podflow}) -- 
+ (\ref{eq:opflow_br_qodflow})
+
+
+\begin{align}
+\pbrjod &= g_{oo}{v^2_o} + v_ov_d(g_{od}\cos(\theta_o - \theta_d) + b_{od}\sin(\theta_o - \theta_d)) \label{eq:opflow_br_podflow}\\
+\qbrjod &= -b_{oo}{v^2_o} + v_ov_d(-b_{od}\cos(\theta_o - \theta_d) + g_{od}\sin(\theta_o - \theta_d)) \label{eq:opflow_br_qodflow}
+\end{align}
+
+\noindent
+and from bus $d$ to bus $o$ is given by (\ref{eq:opflow_br_pdoflow}) -- (\ref{eq:opflow_br_qdoflow})
+
+\begin{align}
+\pbrjdo &= g_{dd}{v^2_d} + v_dv_o(g_{do}\cos(\theta_d - \theta_o) + b_{do}\sin(\theta_d - \theta_o))  \label{eq:opflow_br_pdoflow} \\
+\qbrjdo &= -b_{dd}{v^2_d} + v_dv_o(-b_{do}\cos(\theta_d - \theta_o) + g_{do}\sin(\theta_d - \theta_o)) \label{eq:opflow_br_qdoflow}
+\end{align}
+
 \subsubsection{Automatic generation control (AGC)}
 With \option{\opflowuseagc}, two additional constraints are added for each participating generator to enforce the proportional generator redispatch participation as done in automatic generation control (AGC). These two equations are 
 \begin{equation}
@@ -144,7 +172,7 @@ With \option{\opflowuseagc}, two additional constraints are added for each parti
 \end{aligned}
 \label{eq:opflow_agc}
 \end{equation}
-Eq. \ref{eq:opflow_agc} enforces the generator set-point deviation to be equal to the generation participation when the generator has head-room available $\pminj \le \pgj \le \pmaxj$. Here, $\alpha^{\text{g}}_j$ is the generator participation factor which is the proportion of the power deficit/excess $\Delta{P}$ that the generator provides.
+Eq. \ref{eq:opflow_agc} forces the generator set-point deviation to be equal to the generation participation when the generator has head-room available $\pminj \le \pgj \le \pmaxj$. Here, $\alpha^{\text{g}}_j$ is the generator participation factor which is the proportion of the power deficit/excess $\Delta{P}$ that the generator provides.
 
 \subsubsection{Generator bus voltage control}
 When the option \opflowoption{\opflowgenbusvoltage~\fixedwithinqbounds} is used, the generator bus voltage is fixed when the total reactive power generation available at the bus is within bounds. When it reaches its bounds, the voltage varies with the generator reactive power fixed at its bound. To implement this behavior, two inequality constraints are added for each generator bus
@@ -166,7 +194,22 @@ When using cartesian coordinates for voltages, inequality constraints (\ref{eq:o
 \end{equation}
 \end{comment}
 
+\section{Solvers}\label{sec:opflow_solvers}
+\opflow can be used with a few different solvers. All the solvers solve the optimization problem via a nonlinear interior-point algorithm.
+\begin{enumerate}
+  \item \ipopt~is a popular open-source package for solving nonlinear optimization problems. It is the most robust of the solvers implemented for solving \opflow. However, it can be run only on a single process and does not have GPU support. \\ Option:
+  \opflowoption{-opflow\_solver}{IPOPT} \opflowoption{-opflow_model}{POWER\_BALANCE\_POLAR}
+
+  \item \hiop~ is a high-performance optimization library that implements an interior-point algorithm for solving nonlinear optimization problems. There are two solvers available from the \hiop library: Mixed sparse-dense formulation {\opflowoption{-opflow\_solver}{HIOP}}, and sparse formulation {\opflowoption{-opflow\_solver}{HIOPSPARSE}}. The library supports execution both on the CPU and the GPU. Options: \\ CPU: {\opflowoption{-opflow\_solver}{HIOP}} {\opflowoption{-opflow\_model}{POWER\_BALANCE\_HIOP}} {\opflowoption{-hiop\_compute\_mode}{CPU}} \\ GPU: \opflowoption{-opflow\_solver}{HIOP} {\opflowoption{-opflow\_model}{PBPOLRAJAHIOP}} {\opflowoption{-hiop\_compute\_mode}{GPU}} 
+
+ % \item The Toolkit for Applied Optimization (\tao) is a toolkit available through \petsc for solving optimization problems. TAO includes a interior-point algorithm that is used by OPFLOW. The TAO algorithm is fully parallel, but is less robust compared to IPOPT. Currently, the TAO solver can only be used with the power balance cartesian model. Option:\\ \opflowoption{-opflow\_solver TAO} \opflowoption{-opflow\_model POWER\_BALANCE\_CARTESIAN}
+  %The option \opflowoption{-hiop\_ipopt\_debug} can be used with the CPU option in order to use an adapter that verifies the correctness of the first and second order derivates when compared to \ipopt. This may be useful when debugging experimental changes.
+
+\end{enumerate}
+
 \section{Models}\label{sec:opflow_model}
+
+A `model' in \exago describes the representation of the underlying physics. All \opflow models use the power balance formulation in polar coordinates for the ACOPF equations. The difference between the different models arises from their specific implementation/interface. The different models available for \opflow are listed in Table \ref{tab:opflow_models}. As discussed earlier, not every `model' is compatible with every `solver'. Table \ref{tab:opflow_model_solver_compatibility} lists the solver compatibility for the different models.
 
 \begin{table}[!h]
   \caption{OPFLOW models}
@@ -175,10 +218,10 @@ When using cartesian coordinates for voltages, inequality constraints (\ref{eq:o
     \hline
     \textbf{Model type} & \textbf{OPFLOW option (\opflowoption{\opflowmodel}{})} & \textbf{Compatible solvers} & \textbf{CPU-GPU}\\
     \hline
-    Power balance with polar coordinates & \pbpol & IPOPT & CPU\\
+    Power balance with polar coordinates & \pbpol & IPOPT, HIOPSPARSE & CPU\\
     \hline
-    Power balance with cartesian coordinates & \pbcar & IPOPT, TAO & CPU\\
-    \hline
+%    Power balance with cartesian coordinates & \pbcar & IPOPT, TAO & CPU\\
+%    \hline
     Power balance with polar coordinates used with HIOP & {\pbpolhiop} & \hiop & CPU/GPU\\
     \hline
     Power balance with polar coordinates used with HIOP on GPU & {\pbpolrajahiop} & \hiop & GPU\\
@@ -187,66 +230,36 @@ When using cartesian coordinates for voltages, inequality constraints (\ref{eq:o
   \label{tab:opflow_models}
 \end{table}
 
+\begin{table}[h!]
+  \centering
+  \caption{OPFLOW Model-solver compatibility}
+  \begin{tabular}{|c|c|c|c|}
+    \hline
+    Model Name & \ipopt & \hiop & HIOPSPARSE \\ \hline
+    POWER\_BALANCE\_POLAR & \checkmark & & \checkmark \\ \hline
+%    POWER\_BALANCE\_CARTESIAN & \checkmark &  & \checkmark & \\ \hline
+    POWER\_BALANCE\_HIOP & & \checkmark &  \\ \hline
+    PBPOLRAJAHIOP & & \checkmark &  \\ \hline
+  \end{tabular}
+\label{tab:opflow_model_solver_compatibility}
+\end{table}
+
 \subsection{Power balance polar}
-
-\subsubsection{Shunt power}
-\begin{align}
-&\pshi = \gshi{\vi}^2 \label{eq:opflow_sh_p} \\
-&\qshi = -\bshi{\vi}^2 \label{eq:opflow_sh_q}
-\end{align}
-
-\subsubsection{Branch flows}
-The real and reactive power flow $\pbrjod$, $\qbrjod$  from bus $o$ to bus $d$ on line $j$ is given by (\ref{eq:opflow_br_podflow}) -- 
- (\ref{eq:opflow_br_qodflow})
-
-
-\begin{align}
-\pbrjod &= g_{oo}{v^2_o} + v_ov_d(g_{od}\cos(\theta_o - \theta_d) + b_{od}\sin(\theta_o - \theta_d)) \label{eq:opflow_br_podflow}\\
-\qbrjod &= -b_{oo}{v^2_o} + v_ov_d(-b_{od}\cos(\theta_o - \theta_d) + g_{od}\sin(\theta_o - \theta_d)) \label{eq:opflow_br_qodflow}
-\end{align}
-
-and from bus $d$ to bus $o$ is given by (\ref{eq:opflow_br_pdoflow}) -- (\ref{eq:opflow_br_qdoflow})
-
-\begin{align}
-\pbrjdo &= g_{dd}{v^2_d} + v_dv_o(g_{do}\cos(\theta_d - \theta_o) + b_{do}\sin(\theta_d - \theta_o))  \label{eq:opflow_br_pdoflow} \\
-\qbrjdo &= -b_{dd}{v^2_d} + v_dv_o(-b_{do}\cos(\theta_d - \theta_o) + g_{do}\sin(\theta_d - \theta_o)) \label{eq:opflow_br_qdoflow}
-\end{align}
+The power balance polar model ({\opflowmodel~\pbpol}) uses the power balance formulation with polar representation for the network voltages. It runs on CPU only and is compatible with \ipopt and sparse \hiop solvers.
 
 \begin{comment}
 \subsection{Power balance cartesian}
 \end{comment}
 
-\subsection{Power balance with HiOp}
-Power balance formulation with polar coordinates used with \hiop \cite{hiop-manual} library. This model runs on CPU only, though the \hiop solver can run on GPU.
+\subsection{Power balance with HiOp on CPU}
+This model ({\opflowmodel~\pbpolhiop}) implements the power balance formulation with polar coordinates used with \hiop solver only. The model evaluation is done only on the CPU, but the \hiop solver can be executed either on the CPU (\opflowoption{-hiop\_compute_mode}{CPU}) or GPU (\opflowoption{-hiop\
+_compute\_mode}{HYBRID}) by setting the \option{-hiop_compute_mode} option appropriately.
 
-\subsection{Power balance with HiOp,RAJA,and Umpire}
-Power balance formulation with polar coordinates used with \hiop and \raja. This model uses \raja~\cite{beckingsale2019raja} and Umpire \cite{beckingsale2019umpire} libraries to run \opflow calculations (objective, constraints, etc.) on the GPU. 
-
-\section{Solvers}\label{sec:opflow_solvers}
-\opflow can be used with a few different solvers. All the three solvers solve the optimization problem via a nonlinear interior-point algorithm.
-\begin{enumerate}
-  \item \ipopt~is a popular open-source package for solving nonlinear optimization problems. It is the most robust of the solvers implemented for solving \opflow. However, it can be run only on a single process and does not have GPU support. Option: \\
-  \opflowoption{-opflow\_solver IPOPT}
-  \item The Toolkit for Applied Optimization (\tao) is a toolkit available through \petsc for solving optimization problems. TAO includes a interior-point algorithm that is used by OPFLOW. The TAO algorithm is fully parallel, but is less robust compared to IPOPT. Currently, the TAO solver can only be used with the power balance cartesian model. Option:\\ \opflowoption{-opflow\_solver TAO} \opflowoption{-opflow\_model POWER\_BALANCE\_CARTESIAN}
-  \item \hiop~ is a high-performance optimization library that implements an interior-point algorithm for solving nonlinear optimization problems. There are two solvers available from the \hiop library: Mixed sparse-dense formulation {\opflowoption{-opflow\_solver HIOP}}, and sparse formulation {\opflowoption{-opflow\_solver HIOPSPARSE}}The library supports execution both on the CPU and the GPU. Options: \\ CPU: \opflowoption{-opflow\_solver HIOP} {\opflowoption{-opflow\_model POWER\_BALANCE\_HIOP}} \\ GPU: \opflowoption{-opflow\_solver HIOP} {\opflowoption{-opflow\_model PBPOLRAJAHIOP}} \\ The option \opflowoption{-hiop\_ipopt\_debug} can be used with the CPU option in order to use an adapter that verifies the correctness of the first and second order derivates when compared to \ipopt. This may be useful when debugging experimental changes.
-\end{enumerate}
-
-\begin{table}
-  \centering
-  \caption{OPFLOW Model-solver compatibility}
-  \begin{tabular}{|c|c|c|c|c|}
-    \hline
-    Model & \ipopt & \hiop & \tao \\ HIOPSPARSE \hline
-    POWER\_BALANCE\_POLAR & \checkmark & & \checkmark \\ \hline
-    POWER\_BALANCE\_CARTESIAN & \checkmark &  & \checkmark & \\ \hline
-    POWER\_BALANCE\_HIOP & & \checkmark & & \\ \hline
-    PBPOLRAJAHIOP & & \checkmark & & \\ \hline
-  \end{tabular}
-\label{tab:opflow_model_solver_compatibility}
-\end{table}
+\subsection{Power balance with HiOp on GPU}
+The PBPOLRAJAHIOP model ({\opflowmodel~\pbpolrajahiop}) computes all the model and optimization calculations on the GPU. This model uses \raja and Umpire \cite{beckingsale2019umpire} libraries to run \opflow calculations (objective, constraints, etc.) on the GPU. 
 
 \section{Input and Output}
-The current \exago version only supports reading network file in \matpower format and can (optionally) write the output back in \matpower data file format.
+The current \exago version only supports reading network files in \matpower format and can (optionally) write the output back in \matpower data file format.
 
 \section{Usage}
 \begin{lstlisting}
@@ -258,25 +271,25 @@ See table \ref{tab:opflow_options}
 \begin{table}[!htbp]
   \caption{OPFLOW options}
   \small
-  \begin{tabular}{|p{0.4\textwidth}|p{0.3\textwidth}|p{0.3\textwidth}|}
+  \begin{tabular}{|p{0.4\textwidth}|p{0.2\textwidth}|p{0.2\textwidth}|p{0.2\textwidth}|}
     \hline
-    \textbf{Option} & \textbf{Meaning} & \textbf{Values (Default value)} \\ \hline
-    -netfile & Network file name & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod.m}{case9mod.m}) \\ \hline
-    -print\_output & Print output to screen & 0 or 1 (0) \\ \hline
-    -save\_output & Save output to file & 0 or 1 (0) \\ \hline
-    -opflow\_model & Representation of network balance equations and bus voltages & See Table \ref{sec:opflow_model} (POWER\_BALANCE\_POLAR) \\ \hline
-    -opflow\_solver & Optimization solver & See section \ref{sec:opflow_solvers} \\ \hline
-    -opflow\_initialization & Type of initialization & See Table \ref{tab:opflow_initializations} (MIDPOINT) \\ \hline
-    -opflow\_has\_gensetpoint & Uses generation set point and activates ramping variables & 0 or 1 (0) \\ \hline
-    -opflow\_use\_agc & Uses AGC formulation in OPF & 0 or 1 (0) \\
-    -opflow\_objective & type of objective function & See table \ref{tab:opflow_objtypes} (MIN\_GEN\_COST) \\ \hline
-    -opflow\_genbusvoltage & Type of generator bus voltage control & See Table \ref{tab:opflow_genbusvoltage} (FIXED\_WITHIN\_QBOUNDS) \\ \hline
-    -opflow\_ignore\_lineflow\_constraints & Ignore line flow constraints & 0 or 1 (0) \\ \hline
-    -opflow\_include\_loadloss\_variables & Include load loss & 0 or 1 (0) \\ \hline
-    -opflow\_include\_powerimbalance\_variables & Include power imbalance & 0 or 1 (0) \\ \hline
-    -opflow\_loadloss\_penality & \$ penalty for load loss & real (1000) \\ \hline
-    -opflow\_powerimbalance\_penalty & \$ penalty for power imbalance & real (10000) \\ \hline
-    -opflow\_tolerance & Optimization solver tolerance & real (1e-6) \\ \hline 
+    \textbf{Option} & \textbf{Meaning} & \textbf{Values (Default value)} & \textbf{Compatibility}\\ \hline
+    -netfile & Network file name & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod.m}{case9mod.m}) & \\ \hline
+    -print\_output & Print output to screen & 0 or 1 (0) & All solvers\\ \hline
+    -save\_output & Save output to file & 0 or 1 (0) & All solvers \\ \hline
+    -opflow\_model & Representation of network balance equations and bus voltages & See Table \ref{sec:opflow_model} (POWER\_BALANCE\_POLAR) & \\ \hline
+    -opflow\_solver & Optimization solver & See section \ref{sec:opflow_solvers} & \\ \hline
+    -opflow\_initialization & Type of initialization & See Table \ref{tab:opflow_initializations} (MIDPOINT) & All solvers \\ \hline
+    -opflow\_has\_gensetpoint & Uses generation set point and activates ramping variables & 0 or 1 (0) & All models\\ \hline
+    -opflow\_use\_agc & Uses AGC formulation in OPF & 0 or 1 (0) & POWER\_BALANCE \_POLAR only \\ \hline
+    -opflow\_objective & type of objective function & See table \ref{tab:opflow_objtypes} (MIN\_GEN\_COST) & All models\\ \hline
+    -opflow\_genbusvoltage & Type of generator bus voltage control & See Table \ref{tab:opflow_genbusvoltage} (VARIABLE\_WITHIN \_BOUNDS) & POWER\_BALANCE \_POLAR only \\ \hline
+    -opflow\_ignore\_lineflow\_constraints & Ignore line flow constraints & 0 or 1 (0) & All models \\ \hline
+    -opflow\_include\_loadloss\_variables & Include load loss & 0 or 1 (0) & All models\\ \hline
+    -opflow\_include\_powerimbalance\_variables & Include power imbalance & 0 or 1 (0) & All models \\ \hline
+    -opflow\_loadloss\_penality & \$ penalty for load loss & real (1000) & All models \\ \hline
+    -opflow\_powerimbalance\_penalty & \$ penalty for power imbalance & real (10000) & All models \\ \hline
+    -opflow\_tolerance & Optimization solver tolerance & real (1e-6) & All solvers \\ \hline 
   \end{tabular}
   \label{tab:opflow_options}
 \end{table}
@@ -298,12 +311,12 @@ See table \ref{tab:opflow_options}
 \begin{table}[!htbp]
   \centering
   \caption{OPFLOW generator bus voltage control modes}
-  \begin{tabular}{|c|c|}
+  \begin{tabular}{|p{0.35\textwidth}|p{0.3\textwidth}|p{0.35\textwidth}|}
     \hline
-    \textbf{Voltage control type} & \textbf{Meaning} \\ \hline
-    FIXED\_AT\_SETPOINT & Fixed at given set-point. Reactive power limits are ignored \\ \hline
-    FIXED\_WITHIN\_QBOUNDS & Fixed within reactive power bounds \\ \hline
-    VARIABLE\_WITHIN\_BOUNDS & Variable within voltage bounds \\ \hline
+    \textbf{Voltage control type} & \textbf{Meaning} & \textbf{Compatibility}\\ \hline
+%    FIXED\_AT\_SETPOINT & Fixed at given set-point. Reactive power limits are ignored \\ \hline
+    FIXED\_WITHIN\_QBOUNDS & Fixed within reactive power bounds & POWER\_BALANCE\_POLAR only \\ \hline
+    VARIABLE\_WITHIN\_BOUNDS & Variable within voltage bounds & All models \\ \hline
   \end{tabular}
 \label{tab:opflow_genbusvoltage}
 \end{table}
@@ -311,12 +324,12 @@ See table \ref{tab:opflow_options}
 \begin{table}[!htbp]
   \centering
   \caption{OPFLOW objective function types}
-  \begin{tabular}{|c|c|}
+  \begin{tabular}{|p{0.35\textwidth}|p{0.35\textwidth}|p{0.3\textwidth}|}
     \hline
-    \textbf{Objective function} & \textbf{Meaning} \\ \hline
-    MIN\_GEN\_COST & Minimize generation cost \\ \hline
-    MIN\_GENSETPOINT\_DEVIATION & Minimize deviation (ramp up-down) from generataor set-point \\ \hline
-    NO\_OBJ & No objective function \\ \hline
+    \textbf{Objective function} & \textbf{Meaning} & \textbf{Compatibility}\\ \hline
+    MIN\_GEN\_COST & Minimize generation cost & All models \\ \hline
+    MIN\_GENSETPOINT\_DEVIATION & Minimize deviation (ramp up-down) from generataor set-point & POWER\_BALANCE\_POLAR model only\\ \hline
+    NO\_OBJ & No objective function (only feasibility) & All models \\ \hline
   \end{tabular}
 \label{tab:opflow_objtypes}
 \end{table}
@@ -326,6 +339,7 @@ See table \ref{tab:opflow_options}
 
 Some \opflow example runs are provided with some sample output. Options values are the default values in table \ref{tab:opflow_options} unless otherwise specified. \opflowoption{-print_output} is only used in the first example to save space. Sample output is generated by running examples from the installation directory.
 
+\begin{comment}
 Example using the \tao solver:
 
 \begin{lstlisting}
@@ -386,12 +400,13 @@ Gen  Status   Fuel      Pg      Qg      Pmin     Pmax     Qmin     Qmax
 3     1    UNDEFINED   80.21  -23.47    10.00   270.00  -300.00   300.00
 [ExaGO INFO]: Finalizing opflow application.
 \end{lstlisting}
+\end{comment}
 
 Example using the \ipopt solver:
 
 \begin{lstlisting}
 $ ./bin/opflow -opflow_solver IPOPT -opflow_model POWER_BALANCE_POLAR \
--opflow_initialisation ACPF -opflow_objective MIN_GENSETPOINT_DEVIATION
+-opflow_initialization ACPF -opflow_objective MIN_GENSETPOINT_DEVIATION
 [ExaGO INFO]: -- Checking ... -options_file not passed       exists: no
 [ExaGO INFO]: Creating OPFlow
 
@@ -454,7 +469,7 @@ Example using the \hiop solver on the CPU:
 
 \begin{lstlisting}
 $ ./bin/opflow -opflow_solver HIOP -opflow_model POWER_BALANCE_HIOP \
--opflow_initialisaition FLATSTART -hiop_compute_mode CPU \
+-opflow_initialization FLATSTART -hiop_compute_mode CPU \
 -hiop_verbosity_level 3
 [ExaGO INFO]: -- Checking ... -options_file not passed     exists: no
 [ExaGO INFO]: Creating OPFlow

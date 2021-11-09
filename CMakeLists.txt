@@ -23,6 +23,9 @@ if(POLICY CMP0104)
   cmake_policy(SET CMP0104 NEW) # CMake 3.18
 endif()
 
+# Make CMake debugging available globally
+include(CMakePrintHelpers)
+
 #[[#############################################################################
 
 Configuration and library discovery.
@@ -38,14 +41,14 @@ set(EXAGO_OPTIONS_DIR "${CMAKE_INSTALL_PREFIX}/share/exago/options")
 set(EXAGO_DATAFILES_DIR "${CMAKE_INSTALL_PREFIX}/share/exago/datafiles")
 
 # Specify whether to build shared libraries, static libraries, or both
-option(EXAGO_BUILD_SHARED "Build shared libraries" ON)
-option(EXAGO_BUILD_STATIC "Build static libraries" OFF)
+option(EXAGO_BUILD_SHARED "Build shared libraries" OFF)
+option(EXAGO_BUILD_STATIC "Build static libraries" ON)
 include(ExaGOAddLibrary)
 
 # Enable PETSc by default
 option(EXAGO_ENABLE_PETSC "Enable PETSc support" ON)
 
-# Enable MPI
+# MPI support is enabled by default
 option(EXAGO_ENABLE_MPI "Enable MPI support" ON)
 
 # Ipopt support is disabled by default
@@ -58,9 +61,6 @@ option(EXAGO_ENABLE_HIOP "Enable HiOP support" OFF)
 option(EXAGO_ENABLE_HIOP_DISTRIBUTED
        "Enable HiOP distributed MPI engine support" OFF
 )
-
-# MPI support is enabled by default
-option(EXAGO_ENABLE_MPI "Enable MPI support" ON)
 
 # GPU support is disabled by default
 option(EXAGO_ENABLE_GPU "Enable GPU support" OFF)
@@ -186,6 +186,10 @@ if(EXAGO_ENABLE_GPU)
     endif()
 
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda")
+
+    # HiOp requires this since we require static
+    set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
+
   elseif(EXAGO_ENABLE_HIP)
     set(EXAGO_HAVE_HIP 1)
     add_definitions(-DHAVE_HIP) # For hipmagma
@@ -216,7 +220,7 @@ if(EXAGO_ENABLE_IPOPT)
 endif(EXAGO_ENABLE_IPOPT)
 
 if(EXAGO_ENABLE_HIOP)
-  set(HIOP_ROOT_DIR CACHE PATH "Path to Ipopt installation root.")
+  set(HIOP_ROOT_DIR CACHE PATH "Path to HiOp installation root.")
   include(FindHiop)
   set(CMAKE_INSTALL_RPATH ${HIOP_LIBRARY_DIR} ${CMAKE_INSTALL_RPATH})
 endif(EXAGO_ENABLE_HIOP)

@@ -1,9 +1,9 @@
 ## PETSc
 
-Portable Extensible Toolkit for Scientific Computation ([PETSc](https://www.mcs.anl.gov/petsc/)) is a popular high-performance numerical library for large-scale scientific computation. It includes a suite of high-performance linear, nonlinear, time-stepping, and optimization solvers. PETSc also includes a framework for managing unstructured networks called [`DMNetwork`](https://www.mcs.anl.gov/petsc/dmnetwork/index.html) which is used by SCOPFLOW for topology and data (component) management.
+The Portable Extensible Toolkit for Scientific Computation ([PETSc](https://www.mcs.anl.gov/petsc/)) is a popular high-performance numerical library for large-scale scientific computation. It includes a suite of high-performance linear, nonlinear, time-stepping, and optimization solvers. PETSc also includes a framework for managing unstructured networks called [`DMNetwork`](https://www.mcs.anl.gov/petsc/dmnetwork/index.html) which is used by SCOPFLOW for topology and data (component) management.
 
 ### 1. Download
-Download the PETSc release version (ver 3.13) 
+Download the PETSc release version (v3.13) 
 ```
 git clone https://bitbucket.org/petsc/petsc petsc
 ```
@@ -30,7 +30,7 @@ In its minimal configuration, only the configure script needs to be run.
 ```
 ./config/configure.py
 ```
-In this mode, PETSc is not installed with any third party packages. It will look for MPI and BLAS/LAPACK (its core dependencies) in certain standard locations. Since SCOPFLOW has only optional dependence on third party packages installed with PETSc, running just the configure script should suffice.
+In this mode, PETSc is not installed with any third party packages. It will look for MPI and BLAS/LAPACK (its core dependencies) in certain standard locations.  Since SCOPFLOW has only optional dependencies on third party packages installed with PETSc, running just the configure script should suffice.
 
 By default, PETSc is installed in debug mode. To use the release/production mode, add the flag `--with-debugging=0`. Compiler optimization flags can also be specified if need be.
 
@@ -38,7 +38,7 @@ By default, PETSc is installed in debug mode. To use the release/production mode
 ./config/configure.py --with-debugging=0 COPTFLAGS=-O3 CXXOPTFLAGS=-O3
 ```
 
-To change the location of the PETSc installation use `--prefix=<location_of_PETSC_install>`. If prefix option is not set then PETSc will install files at `/usr`. We highly recommend setting a PETSc installation directory with the `--prefix` option.
+To change the location of the PETSc installation use `--prefix=<location_of_PETSC_install>`. If the prefix option is not set, then PETSc will install files at `/usr`. We highly recommend setting a PETSc installation directory with the `--prefix` option.
 
 #### With MPI and/or BLAS/LAPACK specified
 PETSc will attempt to find its core dependencies (MPI, Blas/Lapack) in certain standard locations. If these are in non-standard locations then they can be specified via 
@@ -50,7 +50,7 @@ Alternately, one can also download MPI and/or BLAS/LAPACK
 - BLAS/LAPACK: `--download-fblaslapack` (when fortran compiler is present) or `--download-f2cblaslapack` (without a fortran compiler)
 
 #### Without MPI
-PETSc, by default, has dependency on MPI. If one wishes to build PETSc without MPI then `--with-mpi=0` option should be used when configuring PETSc.
+PETSc, by default, has a dependency on MPI. If one wishes to build PETSc without MPI then the `--with-mpi=0` option should be used when configuring PETSc.
 
 #### With third-party packages
 PETSc has interfaces to a variety of third party packages. These third party packages can be either downloaded and installed with PETSc installation, or if already installed can be linked to PETSc. We recommend downloading the packages to avoid any conflict or version incompatability issues. Below, we specify a few of these solver packages
@@ -68,7 +68,7 @@ If you are installing PARMETIS then installing METIS is also suggested in case t
     - Download: `--download-superlu_dist --download-metis --download-parmetis`
     - Already installed: `--with-superlu_dist-dir=<superlu_dist_location> --with-metis-dir=<metis_location> --with-parmetis-dir=<parmetis_location>` 
     
-    Note that SuperLU_Dist depends on METIS and PARMETIS libraries hence these are needed as well.
+    Note that SuperLU_Dist depends on METIS and PARMETIS libraries, hence these are needed as well.
 
 - MUMPS:
     - Download: `--download-mumps --download-metis --download-parmetis --download-scalapack`
@@ -95,5 +95,5 @@ make
 make check
 make install
 ```
-At the completion of this step, PETSc installation files will be at the location set with `--prefix` configure option. If `--prefix` option is not set then PETSc will be installed in `/usr`.
+At the completion of this step, PETSc installation files will be at the location set with `--prefix` configure option. If `--prefix` option is not set then PETSc will be installed in `/usr`. In most cases, you will need root privileges (superuser) to install software in this location.
 

@@ -7,6 +7,7 @@
 #define SOPFLOW_H
 
 #include <ps.h>
+#include <opflow.h>
 
 /* Models */
 #define SOPFLOWMODEL_GENRAMP "GENRAMP" 
@@ -31,6 +32,8 @@ PETSC_EXTERN PetscErrorCode SOPFLOWSetModel(SOPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode SOPFLOWModelRegister(SOPFLOW,const char[],PetscErrorCode (*create)(SOPFLOW));
 PETSC_EXTERN PetscErrorCode SOPFLOWSetSolver(SOPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode SOPFLOWCreate(MPI_Comm,SOPFLOW*);
+PETSC_EXTERN PetscErrorCode SOPFLOWSetInitializationType(SOPFLOW,OPFLOWInitializationType);
+PETSC_EXTERN PetscErrorCode SOPFLOWSetGenBusVoltageType(SOPFLOW,OPFLOWGenBusVoltageType);
 PETSC_EXTERN PetscErrorCode SOPFLOWDestroy(SOPFLOW*);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetNetworkData(SOPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetContingencyData(SOPFLOW,const char[]);
@@ -42,6 +45,7 @@ PETSC_EXTERN PetscErrorCode SOPFLOWCreateGlobalVector(SOPFLOW,Vec*);
 PETSC_EXTERN PetscErrorCode SOPFLOWCreateMatrix(SOPFLOW,Mat*);
 PETSC_EXTERN PetscErrorCode SOPFLOWSolve(SOPFLOW);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetNumScenarios(SOPFLOW,PetscInt);
+PETSC_EXTERN PetscErrorCode SOPFLOWSetNumContingencies(SOPFLOW,PetscInt);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetObjective(SOPFLOW,PetscReal*);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetSolution(SOPFLOW,PetscInt,Vec*);
 PETSC_EXTERN PetscErrorCode SOPFLOWPrintSolution(SOPFLOW,PetscInt);
@@ -52,6 +56,9 @@ PETSC_EXTERN PetscErrorCode SOPFLOWGetMode(SOPFLOW,PetscInt*);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetNumIterations(SOPFLOW,PetscInt*);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetTolerance(SOPFLOW,PetscReal);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetTolerance(SOPFLOW,PetscReal*);
+
+PETSC_EXTERN PetscErrorCode SOPFLOWSetTimeStepandDuration(SOPFLOW,PetscReal,PetscReal);
+PETSC_EXTERN PetscErrorCode SOPFLOWSetLoadProfiles(SOPFLOW, const char[], const char[]);
 
 #endif
 

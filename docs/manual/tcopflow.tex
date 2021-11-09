@@ -7,7 +7,16 @@ The multi-period optimal power flow problem is a series of optimal power flow pr
 
 \input{figures/tcopflow_fig}
 
-In general form, the equations for multi-period optimal power flow are given by (\ref{eq:tcopflow_start}) -- (\ref{eq:tcopflow_end}). TCOPFLOW solves to minimize the total generation cost $\sum_{t=0}^{N_t-1}f(x_t)$ over the time horizon, where $N_t$ is the number of time-steps. At each time-step, the equality constraints ($g(x_t)$), inequality $h(x_t)$, and the lower/upper limit ($x^-$,$x^+$) constraints need to be satisfied. Equation (\ref{eq:tcopflow_end}) represents the coupling between the consecutive time-steps. It is the most common form of coupling that limits the deviation of the real power generation at time $t$ from its preceding time-step $t-\Delta{t}$ to within its ramping capability $\delta_t{x}$.
+In general form, the equations for multi-period optimal power flow are given by
+(\ref{eq:tcopflow_start}) -- (\ref{eq:tcopflow_end}). TCOPFLOW solves to
+minimize the total generation cost $\sum_{t=0}^{N_t-1}f(x_t)$ over the time
+horizon, where $N_t$ is the number of time-steps. At each time-step, the
+equality constraints ($g(x_t)$), inequality $h(x_t)$, and the lower/upper limit
+($x^-$,$x^+$) constraints need to be satisfied. Equation (\ref{eq:tcopflow_end})
+represents the coupling between the consecutive time-steps. It is the most
+common form of coupling that limits the deviation of the real power generation
+at time $t$ from its preceding time-step $t-\Delta{t}$ to within its ramping
+capability $\Delta x_t$.
 
 
 \begin{align}
@@ -17,12 +26,12 @@ In general form, the equations for multi-period optimal power flow are given by 
 &~g(x_t) = 0,                                        &t \in \left[0,N_t-1\right]& \\
 &~h(x_t) \le 0,                                      &t \in \left[0,N_t-1\right]& \\
 x^- & \le x_t \le x^+,                               &t\in \left[0,N_t-1\right]& \\
--\delta_t{x} & \le x_t - x_{t-\Delta{t}} \le \delta_t{x},&t \in \left[1,N_t-1\right]&
+-\Delta x_t & \le x_t - x_{t-\Delta{t}} \le \Delta x_t,&t \in \left[1,N_t-1\right]&
 \label{eq:tcopflow_end}
 \end{align}
 
 \section{Solvers}\label{sec:tcopflow_solvers}%
-\tcopflow solves the coupled multi-period using the solver \ipopt. Currently, \exago only supports solving \tcopflow using \ipopt~, which is also the default solver. Solving TCOPFLOW is supported only on a single process. %Option:\\ %\opflowoption{-tcopflow_solver IPOPT}
+Currently, \exago only supports solving \tcopflow using \ipopt~ on on a single rank. %Option:\\ %\opflowoption{-tcopflow_solver IPOPT}
 
 \section{Input and Output}
 \begin{itemize}
@@ -32,7 +41,7 @@ x^- & \le x_t \le x^+,                               &t\in \left[0,N_t-1\right]&
 \end{itemize}
 If the load data and/or wind generation profiles are not set then a flat profile is assumed, i.e., the load and wind generation for all hours is constant.
 
-The \tcopflow output is saved to a directory named \emph{tcopflowout}. This directory contains $N_t$ files, one for each time-step, in \matpower data file format.
+The \tcopflow output is saved to a directory named \texttt{tcopflowout}. This directory contains $N_t$ files, one for each time-step, in \matpower data file format.
 
 \section{Usage}
 \begin{lstlisting}

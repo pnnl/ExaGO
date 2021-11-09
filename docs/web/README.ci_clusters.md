@@ -44,7 +44,7 @@ $ make test
 
 ### System description
 
-Newell is a cluster of five IBM AC922 Power9 servers four NVIDIA Volta GPUs per
+Newell is a cluster of five IBM AC922 Power9 servers with four NVIDIA Volta GPUs per
 system. This system gives researchers unfettered access to
 architectures found in the Summit supercomputer at Oak Ridge that is currently
 ranked No. 1 on the [Top500 list](https://www.top500.org/).
@@ -58,7 +58,7 @@ Specs:
 - 10Gb/s connections to PNNL network
 - Nodes have 2 physical Infiniband ports each of which has 2 virtual ports
 
-More information is available at Research Computing
+More information is available on the Research Computing
 [confluence page](https://confluence.pnnl.gov/confluence/display/RC/Newell).
 
 ### Quick start using CI Configuration
@@ -71,7 +71,7 @@ The build scripts currently only work in the bash shell. If you are not using
 bash, type `bash` immediately after logging into newell. Then `cd` into the
 root source directory of ExaGO.
 
-Then source the shell script we use to load the needed modules and set
+Source the shell script we use to load the needed modules and set
 the needed environment variables to build on Newell
 ```
 source buildsystem/gcc-cuda/newellVariables.sh
@@ -83,13 +83,14 @@ Next, request an interactive session on one of the compute nodes:
 srun -A exasgd -t 20:00 --gres=gpu:1 -p newell -n 2 --pty bash
 ```
 
-The <code>-A exasgd</code> indicates you are using the ExaSGD allocation, <code>-t
-20:00 </code> specifies that you are requesting 20 minutes for your interactive
+The <code>-A exasgd</code> indicates you are using the ExaSGD allocation,
+<code>-t 20:00 </code> specifies that you are requesting 20 minutes for your interactive
 session, <code>--gres=gpu:1</code> configures the GPUs, <code>-p newell</code> means
 that you are using the newell partition on SLURM, <code>-n 2</code> specifies the
 number of MPI tasks for this session that you are requesting and
 <code>--pty bash</code> means your interactive session will be using the bash shell.
-One or two tests are using two MPI task, so you sould select at least two tasks
+One or two tests are using more than one MPI task with a maximum of three tasks, so you
+sould select at least three tasks
 in the interactive shell.  Using the newell partition guarantees that all your
 environment variables and binary files match up with the hardware you are running on.
 
@@ -137,8 +138,8 @@ For more information take a look at OpenMPI [FAQs](https://www.open-mpi.org/faq/
 
 ## Modules
 
-Currently tested (and recommended) tool chain for building ExaGO consists of
-GCC 7.4 and OpenMPI 3.1.5. You will also need recent version of CMake. ExaGO
+The currently tested (and recommended) tool chain for building ExaGO consists of
+GCC 7.4 and OpenMPI 3.1.5. You will also need a recent version of CMake. ExaGO
 depends on PETSc >= 3.13, and optionally on Ipopt and HiOp optimization
 libraries. To get needed modules, refer to the CI scripts under `buildsystem/gcc-cuda/`.
 
@@ -146,21 +147,21 @@ libraries. To get needed modules, refer to the CI scripts under `buildsystem/gcc
 
 ExaGO can be installed on Newell easily with `cmake`.
 
-First create build directory outside the ExaGO source directory. For example
+First create a build directory outside the ExaGO source directory. For example
 ```
 $ mkdir build
 $ ls
 build  exago
 $
 ```
-Then from build directory configure ExaGO using `cmake`:
+Then configure ExaGO from the build directory using `cmake`:
 ```
 $ cd build
 $ cmake ../exago
 $ make install
 ```
 
-If you would like to configure ExaGO to use all options used in continuous
+If you would like to configure ExaGO to use all the options used in continuous
 integration, invoke CMake like so:
 
 ```console
@@ -170,7 +171,7 @@ $ make install
 ```
 
 The ExaGO library and its applications are installed in the default
-installation directory. To change installation directory run CMake with flag
+installation directory. To change the installation directory, run CMake with the flag
 ```
 $ cmake ../exago -DCMAKE_INSTALL_PREFIX=<your_exago_install_dir>
 ```
@@ -179,7 +180,7 @@ you configure ExaGO not to use MPI:
 ```
 $ cmake -DEXAGO_ENABLE_MPI=Off ../exago
 ```
-In case PETSc dependency is not automatically found, you can specify it using
+In case the PETSc dependency is not automatically found, you can specify it using
 `ccmake` interactive shell or add command line option like this:
 ```
 $ cmake ../exago -DPETSC_DIR=<petsc_install_dir> -DPETSC_ARCH=<petsc_arch>
@@ -189,7 +190,7 @@ To use IPOPT with ExaGO, set:
 ```
 cmake ../exago -DEXAGO_ENABLE_IPOPT=ON
 ```
-ExaGO will find Ipopt module you loaded on Newell. If you want to use your
+ExaGO will find the Ipopt module you loaded on Newell. If you want to use your
 own Ipopt build, you will most likely need to specify its location like this:
 ```
 cmake ../exago -DEXAGO_ENABLE_IPOPT=ON -DIPOPT_DIR=<ipopt_install_dir>
@@ -238,6 +239,6 @@ $ make test
 
 ## Notes on Marianas
 
-A workflow on Marianas should look almost exactly like on Newell, except you
+A workflow on Marianas should look almost exactly like one on Newell, except you
 should request an allocation in the `dl` or `dl_shared` partition, and
 source `buildsystem/gcc-cuda/marianasVariables.sh`.

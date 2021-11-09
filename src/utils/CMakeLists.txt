@@ -21,6 +21,8 @@ exago_add_library(
   PETSC::SNES
   PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_C>
+  PUBLIC
+  $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_CXX>
   OUTPUT_NAME
   exago_utils
 )

@@ -79,6 +79,10 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWSetMode(SCOPFLOW,PetscInt);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetNumIterations(SCOPFLOW,PetscInt*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetTolerance(SCOPFLOW,PetscReal);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetTolerance(SCOPFLOW,PetscReal*);
+
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetTimeStepandDuration(SCOPFLOW,PetscReal,PetscReal);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetLoadProfiles(SCOPFLOW, const char[], const char[]);
+
 #endif
 
 

@@ -56,7 +56,7 @@ network = 'datafiles/case9/case9mod.m'
 description = 'datafiles/case9/case9mod.m with load loss'  
 is_loadloss_active = true
 is_powerimb_active = false
-num_iters = 14
+num_iters = 13
 obj_value = 4.1444511e+03
 
 [[testcase]]
@@ -106,7 +106,7 @@ network = 'datafiles/case9/case9mod.m'
 description = 'datafiles/case9/case9mod.m with load loss and power imbalance'  
 is_loadloss_active = true
 is_powerimb_active = true
-num_iters = 14
+num_iters = 13
 obj_value = 4.1444511e+03
 
 [[testcase]]
@@ -128,16 +128,16 @@ obj_value = 1.2965990e+05
 # -- HIOP model with higher load loss penalty
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'  
-description = 'CHECK THIS ANSWER datafiles/case9/case9mod.m with higher load loss'  
+description = 'datafiles/case9/case9mod.m with higher load loss'  
 is_loadloss_active = true
 is_powerimb_active = false
 load_loss_penalty = 1500.0
-num_iters = 14
+num_iters = 13
 obj_value = 4.1444511e+03
 
 [[testcase]]
 network = 'datafiles/case118.m'
-description = 'CHECK THIS ANSWER datafiles/case118.m with higher load loss'
+description = 'datafiles/case118.m with higher load loss'
 is_loadloss_active = true
 is_powerimb_active = false
 load_loss_penalty = 1500.0
@@ -146,7 +146,7 @@ obj_value = 1.2963384e+05
 
 #[[testcase]]
 #network = 'datafiles/case_ACTIVSg200.m'
-#description = 'CHECK THIS ANSWER datafiles/case_ACTIVSg200.m with higher load loss'
+#description = 'datafiles/case_ACTIVSg200.m with higher load loss'
 #is_loadloss_active = true
 #is_powerimb_active = false
 #load_loss_penalty = 1500.0
@@ -156,7 +156,7 @@ obj_value = 1.2963384e+05
 # -- HIOP model with higher power imbalance penalty
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'  
-description = 'CHECK THIS ANSWER datafiles/case9/case9mod.m with higher power imbalance penalty'  
+description = 'datafiles/case9/case9mod.m with higher power imbalance penalty'  
 is_loadloss_active = false
 is_powerimb_active = true
 power_imbalance_penalty = 1500.0
@@ -165,7 +165,7 @@ obj_value = 4.1444511e+03
 
 [[testcase]]
 network = 'datafiles/case118.m'
-description = 'CHECK THIS ANSWER datafiles/case118.m with higher power imbalance penalty'
+description = 'datafiles/case118.m with higher power imbalance penalty'
 is_loadloss_active = false
 is_powerimb_active = true
 power_imbalance_penalty = 1500.0
@@ -174,7 +174,7 @@ obj_value = 1.2962914e+05
 
 #[[testcase]]
 #network = 'datafiles/case_ACTIVSg200.m'
-#description = 'CHECK THIS ANSWER datafiles/case_ACTIVSg200.m with higher power imbalance penalty'
+#description = 'datafiles/case_ACTIVSg200.m with higher power imbalance penalty'
 #is_loadloss_active = false
 #is_powerimb_active = true
 #power_imbalance_penalty = 1500.0

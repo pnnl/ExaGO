@@ -10,14 +10,14 @@ OPFLOWHIOPSPARSEInterface::OPFLOWHIOPSPARSEInterface(OPFLOW opflowin)
   opflow   = opflowin;  
 }
 
-bool OPFLOWHIOPSPARSEInterface::get_prob_sizes(long long& n, long long& m)
+bool OPFLOWHIOPSPARSEInterface::get_prob_sizes(hiop::size_type& n, hiop::size_type& m)
 { 
   n = opflow->nx;
   m = opflow->ncon;
   return true; 
 }
 
-bool OPFLOWHIOPSPARSEInterface::get_vars_info(const long long& n, double *xlow, double* xupp, NonlinearityType* type)
+bool OPFLOWHIOPSPARSEInterface::get_vars_info(const hiop::size_type& n, double *xlow, double* xupp, NonlinearityType* type)
 {
   PetscErrorCode ierr;
   PetscInt       i;
@@ -40,7 +40,7 @@ bool OPFLOWHIOPSPARSEInterface::get_vars_info(const long long& n, double *xlow, 
   return true;
 }
 
-bool OPFLOWHIOPSPARSEInterface::get_cons_info(const long long& m, double* clow, double* cupp, NonlinearityType* type)
+bool OPFLOWHIOPSPARSEInterface::get_cons_info(const hiop::size_type& m, double* clow, double* cupp, NonlinearityType* type)
 {
   PetscInt i;
   PetscErrorCode ierr;
@@ -58,7 +58,7 @@ bool OPFLOWHIOPSPARSEInterface::get_cons_info(const long long& m, double* clow, 
   return true;
 }
 
-bool OPFLOWHIOPSPARSEInterface::get_sparse_blocks_info(int& nx,int& nnz_sparse_Jaceq, int& nnz_sparse_Jacineq,int& nnz_sparse_Hess_Lagr)
+bool OPFLOWHIOPSPARSEInterface::get_sparse_blocks_info(hiop::size_type& nx,hiop::size_type& nnz_sparse_Jaceq, hiop::size_type& nnz_sparse_Jacineq,hiop::size_type& nnz_sparse_Hess_Lagr)
 {
   PetscErrorCode     ierr;
   PetscScalar        *xl,*xu,*gl,*gu;
@@ -96,7 +96,7 @@ bool OPFLOWHIOPSPARSEInterface::get_sparse_blocks_info(int& nx,int& nnz_sparse_J
   return true;
 }
 
-bool OPFLOWHIOPSPARSEInterface::eval_f(const long long& n, const double* x, bool new_x, double& obj_value)
+bool OPFLOWHIOPSPARSEInterface::eval_f(const hiop::size_type& n, const double* x, bool new_x, double& obj_value)
 {
   PetscErrorCode ierr;
   PetscScalar    *xarr;
@@ -112,14 +112,14 @@ bool OPFLOWHIOPSPARSEInterface::eval_f(const long long& n, const double* x, bool
   return true;
 }
 
-bool OPFLOWHIOPSPARSEInterface::eval_cons(const long long& n, const long long& m, 
-				    const long long& num_cons, const long long* idx_cons,  
+bool OPFLOWHIOPSPARSEInterface::eval_cons(const hiop::size_type& n, const hiop::size_type& m, 
+				    const hiop::size_type& num_cons, const hiop::size_type* idx_cons,  
 				    const double* x, bool new_x, double* cons)
 {
   return false;
 }
 
-bool OPFLOWHIOPSPARSEInterface::eval_cons(const long long& n, const long long& m,
+bool OPFLOWHIOPSPARSEInterface::eval_cons(const hiop::size_type& n, const hiop::size_type& m,
 		       const double* x, bool new_x,
 		       double* cons)
 {
@@ -147,7 +147,7 @@ bool OPFLOWHIOPSPARSEInterface::eval_cons(const long long& n, const long long& m
   return true;
 }
 
-bool OPFLOWHIOPSPARSEInterface::eval_grad_f(const long long& n, const double* x, bool new_x, double* gradf)
+bool OPFLOWHIOPSPARSEInterface::eval_grad_f(const hiop::size_type& n, const double* x, bool new_x, double* gradf)
 {
   PetscErrorCode ierr;
 
@@ -163,17 +163,17 @@ bool OPFLOWHIOPSPARSEInterface::eval_grad_f(const long long& n, const double* x,
   return true;
 }
 
-bool OPFLOWHIOPSPARSEInterface::eval_Jac_cons(const long long& n, const long long& m,
-			     const long long& num_cons, const long long* idx_cons,
+bool OPFLOWHIOPSPARSEInterface::eval_Jac_cons(const hiop::size_type& n, const hiop::size_type& m,
+			     const hiop::size_type& num_cons, const hiop::size_type* idx_cons,
 			     const double* x, bool new_x,
-			     const int& nnzJacS, int* iJacS, int* jJacS, double* MJacS)
+			     const hiop::size_type& nnzJacS, hiop::index_type* iJacS, hiop::index_type* jJacS, double* MJacS)
 {
   return false;
 }
 
-bool OPFLOWHIOPSPARSEInterface::eval_Jac_cons(const long long& n, const long long& m,
+bool OPFLOWHIOPSPARSEInterface::eval_Jac_cons(const hiop::size_type& n, const hiop::size_type& m,
 			     const double* x, bool new_x,
-			     const int& nnzJacS, int* iRow, int* jCol, double* values)
+			     const hiop::size_type& nnzJacS, hiop::index_type* iRow, hiop::index_type* jCol, double* values)
 {
   PetscErrorCode ierr;
   PetscInt       *iRowstart = iRow,*jColstart=jCol;
@@ -264,10 +264,10 @@ bool OPFLOWHIOPSPARSEInterface::eval_Jac_cons(const long long& n, const long lon
   return true;
 }
 
-bool OPFLOWHIOPSPARSEInterface::eval_Hess_Lagr(const long long& n, const long long& m,
+bool OPFLOWHIOPSPARSEInterface::eval_Hess_Lagr(const hiop::size_type& n, const hiop::size_type& m,
 			      const double* x, bool new_x, const double& obj_factor,
 			      const double* lambda, bool new_lambda,
-		              const int& nnzHSS, int* iRow, int* jCol, double* values)
+		              const hiop::size_type& nnzHSS, hiop::index_type* iRow, hiop::index_type* jCol, double* values)
 {
   PetscErrorCode ierr;
   PetscInt       nrow;
@@ -338,7 +338,7 @@ bool OPFLOWHIOPSPARSEInterface::eval_Hess_Lagr(const long long& n, const long lo
   return true;
 }
 
-bool OPFLOWHIOPSPARSEInterface::get_starting_point(const long long& global_n, double* x0)
+bool OPFLOWHIOPSPARSEInterface::get_starting_point(const hiop::size_type& global_n, double* x0)
 {
   PetscErrorCode ierr;
   const PetscScalar    *xarr;
@@ -392,15 +392,24 @@ void OPFLOWHIOPSPARSEInterface::solution_callback(hiop::hiopSolveStatus status,
   }
 }
 
-bool OPFLOWHIOPSPARSEInterface::iterate_callback(int iter, double obj_value,
-		      int n, const double* x,
+bool OPFLOWHIOPSPARSEInterface::iterate_callback(int iter,
+            double obj_value,
+            double logbar_obj_value,
+		      int n,
+            const double* x,
 		      const double* z_L,
 		      const double* z_U,
-		      int m, const double* g,
+            int m_ineq,
+            const double* s,
+		      int m,
+            const double* g,
 		      const double* lambda,
-		      double inf_pr, double inf_du,
+		      double inf_pr,
+            double inf_du,
+            double onenorm_pr_,
 		      double mu,
-		      double alpha_du, double alpha_pr,
+		      double alpha_du,
+            double alpha_pr,
 		      int ls_trials)
 {
   opflow->numits = iter;

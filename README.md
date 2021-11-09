@@ -1,29 +1,28 @@
 [![pipeline status](https://gitlab.pnnl.gov/exasgd/frameworks/exago/badges/master/pipeline.svg)](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/commits/master)
 
 # <b>Exa</b>scale <b>G</b>rid <b>O</b>ptimization toolkit (ExaGO<sup>TM</sup>)
-ExaGO<sup>TM</sup> is a package for solving large-scale power grid optimization problems on parallel and distributed architectures, particularly targeted for exascale machines with heteregenous architectures (GPU). It is written in C/C++ using the [PETSc](https://www.mcs.anl.gov/petsc/) library. ExaGO<sup>TM</sup> includes the following power grid applications:
+ExaGO<sup>TM</sup> is a package for solving large-scale power grid optimization problems on parallel and distributed architectures, particularly targeted for exascale machines with heteregenous architectures (GPU). It is written in C/C++ using the [PETSc](https://www.mcs.anl.gov/petsc/) library. An overview of the package is given on this page and the different links provided. For detailed information, including the different formulations used, see the [ExaGO manual](docs/manual/manual.pdf). 
 
-%- [ACPF or PFLOW](docs/web/pflow.md) solves an AC power flow
-- [ACOPF or OPFLOW](docs/web/opflow.md) solves an AC optimal power flow either on CPU and GPU
-- [TC-ACOPF or TCOPFLOW](docs/web/tcopflow.md) solves a multi-period optimal power flow
-- [SC-ACOPF or SCOPFLOW](docs/web/scopflow.md) solves a multi-period security-constrained (contingency) constrained optimal power
-- [S-ACOPF or SOPFLOW](docs/web/sopflow.md) solves a stochastic security-constrained multi-period optimal power flow
+ExaGO<sup>TM</sup> includes the following applications for solving different power grid optimization problems:
 
-ExaGO<sup>TM</sup> applications can use the following solvers:
+- [OPFLOW](docs/web/opflow.md) solves an AC optimal power flow either on CPU and GPU
+- [TCOPFLOW](docs/web/tcopflow.md) solves a multi-period optimal power flow
+- [SCOPFLOW](docs/web/scopflow.md) solves a multi-period security-constrained (contingency-constrained) optimal power
+- [SOPFLOW](docs/web/sopflow.md) solves a stochastic security-constrained multi-period optimal power flow
+
+ExaGO<sup>TM</sup> applications can use the following optimization packaages:
 
 - [IPOPT](https://github.com/coin-or/Ipopt) is a popular optimization package for solving nonlinear optimization problems that uses an interior-point algorithm.
-- [HiOp](https://github.com/LLNL/hiop) is a HPC solver for optimization. OPFLOW uses HiOp's mixed sparse-dense interior-point solver (NewtonMDS) that allows part of the computation to be run on GPU and part on CPU.
-- [PETSc/TAO<sup>*</sup>](https://www.mcs.anl.gov/petsc/) is a high-performance library providing numerical solvers for linear, nonlinear, time-dependent, and optimizatin problems. The optimization package is PETSc, TAO, includes a parallel primal-dual interior method (TAOPDIPM) that can be used for solving OPFLOW.
+- [HiOp](https://github.com/LLNL/hiop) is a HPC package for optimization. ExaGO interfaces with two of its solvers -- a mixed sparse-dense interior-point solver (NewtonMDS) and a sparse interior-point solver (HiOPSparse). NewtonMDS  allows execution of the optimization either on CPU and GPU. The sparse HiOp solver is currently supported on CPU only.
 
-<sup>*</sup> The PETSc/TAO solver interface is for experimental purposes and we do not recommend using it. Instead, one should use IPOPT or HiOP solvers instead.
-
-The following table lists the solver-application compatibility.
+Note that not all applications can utilize all solvers yet. The following table lists the solver-application compatibility.
 
 |  Solver    | OPFLOW  | TCOPFLOW | SCOPLOW | SOPFLOW |
 |:------:|:---------:|:-----:|:-------:|:-------:|
 | IPOPT      | Y         |  Y     | Y       | Y       | 
 | HIOP       | Y          |       |         |         |
-| PETSc/TAO  | Y          |      |         |         |
+
+Note: The support for solving SCOPFLOW and SOPFLOW in parallel using the HiOP package is currently in development and is expected to be added in the next release.
 
 ## Installing
 
@@ -32,18 +31,14 @@ See [INSTALL.md](./INSTALL.md) for information on acquiring, building and instal
 ## Usage
 Instructions for executing the different ExaGO applications is given below.
 - [OPFLOW](docs/web/opflow.md)
+- [TCOPFLOW](docs/web/tcopflow.md)
 - [SOPFLOW](docs/web/sopflow.md)
 - [SCOPFLOW](docs/web/scopflow.md)
 - [PFLOW](docs/web/pflow.md)
 
-## Contributing
-
-Please see [the developer guidelines](docs/DeveloperGuidelines.md) before attempting to contribute.
-Feel free to raise an issue or contact the team if the guidelines are ambiguous or you have a particular question.
-
 ### Options
 
-Each application has a different set of options that are described in depth in the usage notes. These options can be passed through an options file (`-options_file <option_file>`), or directly on the command line.
+Each application has a different set of options that are described in depth in the usage notes. These options can be passed optionally through an options file (`-options_file <option_file>`), or directly on the command line.
 
 Since options may be specified in more than one location (on the command line, and through an options file), it is worth noting that the option specified **last** is used. For example, if `opflowoptions` specified `-netfile case9mod.m`, the following behavior occurs:
 
@@ -54,21 +49,22 @@ Since options may be specified in more than one location (on the command line, a
 # This uses case9mod.m
 ./opflow -netfile case118.m -options_file opflowoptions
 ```
-Note that all ExaGO applications must run with an options file passed, and so if none is specified on the command line, ExaGO attempts to use the default application options in `options`. 
+Note that all ExaGO applications must run with an options file passed, and so if none is specified on the command line, ExaGO attempts to use the default application options in the `options` directory. 
 
-### Adding tests
-Additional information on adding tests to the CMake build system can be found
-[here](docs/web/test_add.md). 
+## Contributing
+
+Please see [the developer guidelines](docs/DeveloperGuidelines.md) before attempting to contribute.
+Feel free to raise an issue or contact the team if the guidelines are ambiguous or you have a particular question.
 
 ## Authors
 - Shrirang Abhyankar
 - Slaven Peles
 - Asher Mancinelli
-- Robert Rutherford
+- Cameron Rutherford
 - Bruce Palmer
 
 ## Acknowledgement
-This package is developed as a part of [ExaSGD](https://www.exascaleproject.org/wp-content/uploads/2019/10/ExaSGD.pdf) project under the [Exascale computing project](https://www.exascaleproject.org/).
+This package is being developed as a part of [ExaSGD](https://www.exascaleproject.org/wp-content/uploads/2019/10/ExaSGD.pdf) project under the [Exascale computing project](https://www.exascaleproject.org/).
 
 ## Copyright
 Copyright &copy; 2020, Battelle Memorial Institute.

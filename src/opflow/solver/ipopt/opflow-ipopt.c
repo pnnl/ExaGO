@@ -405,10 +405,16 @@ PetscErrorCode OPFLOWSolverSetUp_IPOPT(OPFLOW opflow)
   ierr = VecRestoreArray(opflow->Gl,&gl);CHKERRQ(ierr);
   ierr = VecRestoreArray(opflow->Gu,&gu);CHKERRQ(ierr);
 
-  /* IPOPT tolerance */
+  /* IPOPT solver options */
   {
-    static char tol[] = "tol";
-    AddIpoptNumOption(ipopt->nlp, tol, opflow->tolerance);
+    AddIpoptNumOption(ipopt->nlp, (char*)"tol", opflow->tolerance);
+    AddIpoptIntOption(ipopt->nlp, (char*)"max_iter", 5000);
+    AddIpoptStrOption(ipopt->nlp, (char*)"mu_strategy",(char*)"monotone");
+    AddIpoptStrOption(ipopt->nlp, (char*)"fixed_variable_treatment", (char*)"relax_bounds");
+    AddIpoptStrOption(ipopt->nlp,(char*)"inf_pr_output",(char*)"internal");
+    AddIpoptNumOption(ipopt->nlp,(char*)"constr_mult_init_max", 0.0);
+    AddIpoptNumOption(ipopt->nlp,(char*)"residual_ratio_max", 1e3);
+    AddIpoptNumOption(ipopt->nlp,(char*)"residual_ratio_singular",1e4);
   }
 
   /* Add intermediate callback function to get the solver info
