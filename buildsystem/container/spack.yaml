@@ -54,7 +54,10 @@ spack:
     script:
       - unset SPACK_SIGNING_KEY
       - pushd ${SPACK_CONCRETE_ENV_DIR} && spack env activate --without-view . && popd
-      - spack -d ci rebuild
+      - spack -d ci generate 
+        --artifacts-root "${CI_PROJECT_DIR}/jobs_scratch_dir" 
+        --output-file "${CI_PROJECT_DIR}/jobs_scratch_dir/pipeline.yml"
+        --no-prune-dag
 
     rebuild-index: true
 
