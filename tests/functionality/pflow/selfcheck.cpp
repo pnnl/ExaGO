@@ -48,38 +48,53 @@ struct PflowFunctionalityTests
   ensure_options_are_consistent(toml::value testcase,
                                 toml::value presets = toml::value{}) override {
 
+    int my_rank;
+    auto err = MPI_Comm_rank(comm, &my_rank);
+    if(err)
+      throw ExaGOError("Error getting MPI rank number");
+
     int n_preset_procs;
     set_if_found(n_preset_procs, presets, "n_procs");
     int n_testcase_procs = -1;
     set_if_found(n_testcase_procs, testcase, "n_procs");
 
-    if (-1 != n_testcase_procs) {
-      std::stringstream errs;
-      errs << "Number of processes should be declared globally in the preset "
-              "area of the test suite TOML file, not inside each testcase.\n"
-           << "Testcase: " << testcase << "\nWith presets:\n"
-           << presets;
-      throw ExaGOError(errs.str().c_str());
-    } else if (nprocs != n_preset_procs) {
-      std::stringstream errs;
-      errs << "PFLOW Functionality test suite found " << n_preset_procs
-           << " processes specified in the presets of the test suite TOML "
-              "file, but this test is being run with "
-           << nprocs << " processes.\nTestcase: " << testcase
-           << "\nWith presets:\n"
-           << presets;
-      throw ExaGOError(errs.str().c_str());
+    if (-1 != n_testcase_procs) 
+    {
+      if (my_rank == 0)
+      {
+        std::stringstream errs;
+        errs << "Number of processes should be declared globally in the preset area of the test suite TOML file, not inside each testcase.\n"
+          << "Testcase: "
+          << testcase << "\nWith presets:\n" << presets;
+        throw ExaGOError(errs.str().c_str());
+      }
+    }
+    else if (nprocs != n_preset_procs)
+    {
+      if (my_rank == 0)
+      {
+        std::stringstream errs;
+        errs << "PFLOW Functionality test suite found " << n_preset_procs
+          << " processes specified in the presets of the test suite TOML file, but this test is being run with "
+          << nprocs << " processes.\nTestcase: "
+          << testcase << "\nWith presets:\n" << presets;
+        throw ExaGOError(errs.str().c_str());
+      }
     }
 
     auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
-      if (!is_available) {
-        std::stringstream errs;
-        errs << "PFLOW Test suite expected option '" << opt
-             << "' to be available, but it was not found in this testsuite"
-             << " configuration:\n";
-        errs << testcase << "\nwith these presets:\n" << presets;
-        throw ExaGOError(errs.str().c_str());
+      if (!is_available)
+      {
+        if (my_rank == 0)
+        {
+          std::stringstream errs;
+          errs << "PFLOW Test suite expected option '" << opt
+            << "' to be available, but it was not found in this testsuite"
+            << " configuration:\n";
+          errs << testcase << "\nwith these presets:\n" << presets;
+          throw ExaGOError(errs.str().c_str());
+        }
       }
     };
 
