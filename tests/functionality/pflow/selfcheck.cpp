@@ -39,9 +39,17 @@ struct PflowFunctionalityTests
                           int logging_verbosity = EXAGO_LOG_INFO)
       : FunctionalityTestContext(testsuite_filename, logging_verbosity),
         comm{comm} {
+    int my_rank;
+    auto rerr = MPI_Comm_rank(comm, &my_rank);
+    if(rerr)
+      throw ExaGOError("Error getting MPI rank number");
+
     auto err = MPI_Comm_size(comm, &nprocs);
     if (err)
-      throw ExaGOError("Error getting MPI num ranks");
+    {
+      if (my_rank == 0)
+        throw ExaGOError("Error getting MPI num ranks");
+    }
   }
 
   void
