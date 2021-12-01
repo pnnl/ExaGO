@@ -14,12 +14,10 @@ fi
 cd ..
 export cmakeFormat="cmake-format --log-level info"
 export srcdir=${srcdir:-$PWD}
-export findCmakeFiles=`find $srcdir -type f -name '*.cmake' -o \
+export findCmakeFiles=`find $srcdir  \
+  -type f -name '*.cmake' -o \
   -name CMakeLists.txt \
-  -a -not -path '*/tests/toml11/*'\
-  -a -not -path '*/build/*'\
-  -a -not -path '*/install/*'`
-
+  | egrep -v "/toml11/|/pybind11/|/build/|/install/"`
 function doBuild {
   for f in $findCmakeFiles; do
     $cmakeFormat --in-place $f
