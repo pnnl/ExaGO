@@ -88,6 +88,10 @@ struct PflowFunctionalityTests
           << testcase << "\nWith presets:\n" << presets;
         throw ExaGOError(errs.str().c_str());
       }
+      //printf("exago finalizing on rank %d\n", my_rank);
+      //ExaGOFinalize();
+      exit(0);
+      return;
     }
 
     auto ensure_option_available = [&](const std::string &opt) {
@@ -218,7 +222,6 @@ int main(int argc, char **argv) {
   PflowFunctionalityTests test{std::string(argv[1]), comm};
   test.run_all_test_cases();
   test.print_report();
-
   ExaGOFinalize();
   return test.failures();
 }
