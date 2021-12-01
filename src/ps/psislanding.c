@@ -72,7 +72,9 @@ PetscErrorCode PSIslandCheckandSetRefBus(PS ps,PetscInt isnum)
     if (ps->busext2intmap[firstpvbus] != -1) {
       ps->bus[ps->busext2intmap[firstpvbus]].ide = REF_BUS;
       ps->nref++;
+#if defined DEBUGPS
       ierr = PetscPrintf(PETSC_COMM_SELF,"Setting bus %d as the new ref. bus\n ",firstpvbus);CHKERRQ(ierr);
+#endif
     }
   }
 

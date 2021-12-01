@@ -18,6 +18,7 @@ PetscErrorCode OPFLOWPrintSolution(OPFLOW opflow)
     ierr = OPFLOWSolutionToPS(opflow);CHKERRQ(ierr);
   }
 
+#ifndef EXAGO_DISABLE_LOGGING
   /* Print to stdout */
   ierr = PetscPrintf(opflow->comm->type,"=============================================================\n");CHKERRQ(ierr);
   ierr = PetscPrintf(opflow->comm->type,"\t\tOptimal Power Flow\n");CHKERRQ(ierr);
@@ -57,6 +58,7 @@ PetscErrorCode OPFLOWPrintSolution(OPFLOW opflow)
   MPI_Barrier(opflow->comm->type);
 
   ierr = PSPrintSystemSummary(opflow->ps);CHKERRQ(ierr);
+#endif
 
   PetscFunctionReturn(0);
 }
