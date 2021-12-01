@@ -6,7 +6,7 @@ Preamble
 
 cmake_minimum_required(VERSION 3.18)
 
-project(ExaGO VERSION "1.0.99.1")
+project(ExaGO VERSION "1.1.1")
 
 string(TIMESTAMP EXAGO_RELEASE_DATE "%Y-%m-%d")
 
