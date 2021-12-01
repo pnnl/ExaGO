@@ -49,6 +49,7 @@ struct PflowFunctionalityTests
     {
       if (my_rank == 0)
         throw ExaGOError("Error getting MPI num ranks");
+      exit(0);
     }
   }
 
@@ -76,6 +77,7 @@ struct PflowFunctionalityTests
           << testcase << "\nWith presets:\n" << presets;
         throw ExaGOError(errs.str().c_str());
       }
+      exit(0);
     }
     else if (nprocs != n_preset_procs)
     {
@@ -107,6 +109,7 @@ struct PflowFunctionalityTests
           errs << testcase << "\nwith these presets:\n" << presets;
           throw ExaGOError(errs.str().c_str());
         }
+        exit(0);
       }
     };
 
@@ -135,15 +138,14 @@ struct PflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     PFLOW pflow;
-    int rank;
+    int my_rank;
+    auto err = MPI_Comm_rank(comm, &my_rank);
+    if(err)
+      throw ExaGOError("Error getting MPI rank number");
 
-    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-
-    if (rank == 0) {
-      std::cout << "Test Description: " << params.description << std::endl;
-    }
-    ierr = PFLOWCreate(params.comm, &pflow);
-    ExaGOCheckError(ierr);
+    if(my_rank == 0)
+      std::cout<<"Test Description: "<<params.description<<std::endl;
+    ierr = PFLOWCreate(params.comm,&pflow);ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.network);
@@ -219,6 +221,13 @@ int main(int argc, char **argv) {
   ExaGOCheckError(ierr);
   ExaGOLog(EXAGO_LOG_INFO, "{}", "Creating PFlow Functionality Test");
 
+  int my_rank;
+  auto err = MPI_Comm_rank(comm, &my_rank);
+  if(err)
+    throw ExaGOError("Error getting MPI rank number");
+
+  if(my_rank == 0)
+    ExaGOLog(EXAGO_LOG_INFO,"{}","Creating PFlow Functionality Test");
   PflowFunctionalityTests test{std::string(argv[1]), comm};
   test.run_all_test_cases();
   test.print_report();

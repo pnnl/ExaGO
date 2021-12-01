@@ -584,12 +584,18 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
 PetscErrorCode ExaGOFinalize() {
   PetscFunctionBegin;
   ExaGOLog(EXAGO_LOG_INFO, "Finalizing {} application.", ExaGOCurrentAppName);
+  MPI_Comm comm = MPI_COMM_WORLD;
+  int my_rank;
+  auto err = MPI_Comm_rank(comm, &my_rank);
+  if(err)
+    throw ExaGOError("Error getting MPI rank number");
   bool flg;
   ExaGOLogIsUsingLogFile(&flg);
   if (flg) {
     std::string filename;
     ExaGOLogGetLoggerName(filename);
-    ExaGOLog(EXAGO_LOG_INFO, "See logfile {} for output.", filename);
+    if(my_rank == 0)
+      ExaGOLog(EXAGO_LOG_INFO, "See logfile {} for output.", filename);
   }
   PetscFinalize();
 
