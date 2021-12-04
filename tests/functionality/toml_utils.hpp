@@ -108,6 +108,7 @@ private:
   TestParameters test_parameters_;
   inline TestParameters& test_parameters() { return test_parameters_; }
   MPI_Comm comm = MPI_COMM_WORLD;
+  int logging_rank = 0;
   inline int get_my_rank() { int my_rank; auto err = MPI_Comm_rank(comm, &my_rank); if(err) return -1; else return my_rank; }
 
 public:
@@ -161,7 +162,7 @@ public:
   virtual inline void fail()
   {
     int my_rank = get_my_rank();
-    if(my_rank == 0)
+    if(my_rank == logging_rank)
       ExaGOLog(verbosity(), "%s", "-- FAIL\n");
     auto testcase = create_failing_testcase(test_parameters());
     failing_testcases_.push_back(testcase);
@@ -174,14 +175,14 @@ public:
   {
     total_num_tests_++;
     int my_rank = get_my_rank();
-    if(my_rank == 0)
+    if(my_rank == logging_rank)
       ExaGOLog(verbosity(), "%s", "-- PASS\n");
   }
 
   void print_report()
   {
     int my_rank = get_my_rank();
-    if(my_rank == 0)
+    if(my_rank == logging_rank)
     { 
       ExaGOLog(verbosity(), "%zu / %zu tests failed.\n", failures(), total_tests());
       if (failures())

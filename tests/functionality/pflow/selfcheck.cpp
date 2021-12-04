@@ -34,6 +34,7 @@ struct PflowFunctionalityTests
   using Params = PflowFunctionalityTestParameters;
   MPI_Comm comm;
   int nprocs;
+  int logging_rank = 0;
 
   PflowFunctionalityTests(std::string testsuite_filename, MPI_Comm comm,
                           int logging_verbosity = EXAGO_LOG_INFO)
@@ -47,7 +48,7 @@ struct PflowFunctionalityTests
     auto err = MPI_Comm_size(comm, &nprocs);
     if (err)
     {
-      if (my_rank == 0)
+      if (my_rank == logging_rank)
         throw ExaGOError("Error getting MPI num ranks");
       exit(0);
     }
@@ -69,7 +70,7 @@ struct PflowFunctionalityTests
 
     if (-1 != n_testcase_procs) 
     {
-      if (my_rank == 0)
+      if (my_rank == logging_rank)
       {
         std::stringstream errs;
         errs << "Number of processes should be declared globally in the preset area of the test suite TOML file, not inside each testcase.\n"
@@ -81,7 +82,7 @@ struct PflowFunctionalityTests
     }
     else if (nprocs != n_preset_procs)
     {
-      if (my_rank == 0)
+      if (my_rank == logging_rank)
       {
         std::stringstream errs;
         errs << "PFLOW Functionality test suite found " << n_preset_procs
@@ -100,7 +101,7 @@ struct PflowFunctionalityTests
       bool is_available = testcase.contains(opt) || presets.contains(opt);
       if (!is_available)
       {
-        if (my_rank == 0)
+        if (my_rank == logging_rank)
         {
           std::stringstream errs;
           errs << "PFLOW Test suite expected option '" << opt
@@ -143,7 +144,7 @@ struct PflowFunctionalityTests
     if(err)
       throw ExaGOError("Error getting MPI rank number");
 
-    if(my_rank == 0)
+    if(my_rank == logging_rank)
       std::cout<<"Test Description: "<<params.description<<std::endl;
     ierr = PFLOWCreate(params.comm,&pflow);ExaGOCheckError(ierr);
 
