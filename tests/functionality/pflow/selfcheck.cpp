@@ -46,7 +46,12 @@ struct PflowFunctionalityTests
       throw ExaGOError("Error getting MPI rank number");
 
     auto err = MPI_Comm_size(comm, &nprocs);
+<<<<<<< HEAD
     if (err) {
+=======
+    if (err)
+    {
+>>>>>>> d762ff9... add logging rank variable
       if (my_rank == logging_rank)
         throw ExaGOError("Error getting MPI num ranks");
       exit(0);
@@ -67,8 +72,15 @@ struct PflowFunctionalityTests
     int n_testcase_procs = -1;
     set_if_found(n_testcase_procs, testcase, "n_procs");
 
+<<<<<<< HEAD
     if (-1 != n_testcase_procs) {
       if (my_rank == logging_rank) {
+=======
+    if (-1 != n_testcase_procs) 
+    {
+      if (my_rank == logging_rank)
+      {
+>>>>>>> d762ff9... add logging rank variable
         std::stringstream errs;
         errs << "Number of processes should be declared globally in the preset "
                 "area of the test suite TOML file, not inside each testcase.\n"
@@ -77,8 +89,16 @@ struct PflowFunctionalityTests
         throw ExaGOError(errs.str().c_str());
       }
       exit(0);
+<<<<<<< HEAD
     } else if (nprocs != n_preset_procs) {
       if (my_rank == logging_rank) {
+=======
+    }
+    else if (nprocs != n_preset_procs)
+    {
+      if (my_rank == logging_rank)
+      {
+>>>>>>> d762ff9... add logging rank variable
         std::stringstream errs;
         errs << "PFLOW Functionality test suite found " << n_preset_procs
              << " processes specified in the presets of the test suite TOML "
@@ -94,8 +114,15 @@ struct PflowFunctionalityTests
 
     auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
+<<<<<<< HEAD
       if (!is_available) {
         if (my_rank == logging_rank) {
+=======
+      if (!is_available)
+      {
+        if (my_rank == logging_rank)
+        {
+>>>>>>> d762ff9... add logging rank variable
           std::stringstream errs;
           errs << "PFLOW Test suite expected option '" << opt
                << "' to be available, but it was not found in this testsuite"
@@ -138,10 +165,16 @@ struct PflowFunctionalityTests
     if (err)
       throw ExaGOError("Error getting MPI rank number");
 
+<<<<<<< HEAD
     if (my_rank == logging_rank)
       std::cout << "Test Description: " << params.description << std::endl;
     ierr = PFLOWCreate(params.comm, &pflow);
     ExaGOCheckError(ierr);
+=======
+    if(my_rank == logging_rank)
+      std::cout<<"Test Description: "<<params.description<<std::endl;
+    ierr = PFLOWCreate(params.comm,&pflow);ExaGOCheckError(ierr);
+>>>>>>> d762ff9... add logging rank variable
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.network);
