@@ -21,7 +21,7 @@ if [[ ! -f $PWD/buildsystem/build.sh ]]; then
 fi
 
 MAKEARGS=${MAKEARGS:-"-j"}
-CTESTARGS=${CTESTARGS:-"-VV"}
+CTESTARGS=${CTESTARGS:-"--output-on-failure"}
 EXTRA_CMAKE_ARGS=${EXTRA_CMAKE_ARGS:-""}
 export OMPI_MCA_btl="^vader,tcp,openib,uct"
 export BUILD=${BUILD:-1}

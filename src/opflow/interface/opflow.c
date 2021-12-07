@@ -1283,6 +1283,7 @@ PetscErrorCode OPFLOWComputeVariableBounds(OPFLOW opflow,Vec Xl, Vec Xu)
   if(opflow->modelops.updatevariablebounds) {
     ierr = (*opflow->modelops.updatevariablebounds)(opflow,Xl,Xu,opflow->userctx);CHKERRQ(ierr);
   }
+
   PetscFunctionReturn(0);
 }
 

@@ -61,6 +61,7 @@ module load zlib-1.2.11-gcc-7.3.0-3m33c3a
 module load gcc/7.3.0
 module load openmpi/3.1.3
 module load cuda/10.2.89
+
 module load python/miniconda3.8
 source /share/apps/python/miniconda3.8/etc/profile.d/conda.sh
 

@@ -1,5 +1,6 @@
-set(SOPFLOW_SOLVER_SRC solver/ipopt/sopflow-ipopt.c
-                       solver/empar/sopflow-empar.c
+set(SOPFLOW_SOLVER_SRC
+    solver/ipopt/sopflow-ipopt.c solver/empar/sopflow-empar.c
+    solver/hiop/sopflow-hiop.cpp
 )
 
 set(SOPFLOW_MODEL_SRC model/genramp/sopflow-genramp.c

@@ -1,11 +1,12 @@
 #include <exago_config.h>
 
 #if defined(EXAGO_ENABLE_HIOP)
+
 /* 
    Primal decomposition based solver from HIOP
 */
-#ifndef SCOPFLOWHIOP_HPP
-#define SCOPFLOWHIOP_HPP
+#ifndef SOPFLOWHIOP_HPP
+#define SOPFLOWHIOP_HPP
 
 #include <cstdlib>
 #include <string>
@@ -15,12 +16,12 @@
 #include <hiopInterfacePrimalDecomp.hpp>
 #include <hiopAlgPrimalDecomp.hpp>
 
-class SCOPFLOWHIOPInterface : public hiop::hiopInterfacePriDecProblem
+class SOPFLOWHIOPInterface : public hiop::hiopInterfacePriDecProblem
 {
 public:
-  SCOPFLOWHIOPInterface(SCOPFLOW);
+  SOPFLOWHIOPInterface(SOPFLOW);
 
-  ~SCOPFLOWHIOPInterface();
+  ~SOPFLOWHIOPInterface();
 
   hiop::hiopSolveStatus solve_master(hiop::hiopVector& x,
                                      const bool& include_r,
@@ -48,15 +49,15 @@ public:
   bool     include_r_;
   hiopInterfacePriDecProblem::RecourseApproxEvaluator* rec_evaluator;
 private:
-  SCOPFLOW scopflow;
-  OPFLOW   opflowctgc;
+  SOPFLOW sopflow;
+  OPFLOW   opflowscen;
 
 };
 
-typedef struct _p_SCOPFLOWSolver_HIOP *SCOPFLOWSolver_HIOP;
+typedef struct _p_SOPFLOWSolver_HIOP *SOPFLOWSolver_HIOP;
 
-struct _p_SCOPFLOWSolver_HIOP {
-  SCOPFLOWHIOPInterface  *pridecompprob;
+struct _p_SOPFLOWSolver_HIOP {
+  SOPFLOWHIOPInterface  *pridecompprob;
   hiop::hiopAlgPrimalDecomposition *pridecsolver;
   hiop::hiopSolveStatus status;
 };

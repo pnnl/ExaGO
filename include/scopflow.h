@@ -31,6 +31,7 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWSetSolver(SCOPFLOW,const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWCreate(MPI_Comm,SCOPFLOW*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWDestroy(SCOPFLOW*);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW,const char[]);
+
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetInitilizationType(SCOPFLOW, OPFLOWInitializationType type);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetGenBusVoltageType(SCOPFLOW, OPFLOWGenBusVoltageType);
 
@@ -82,6 +83,8 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWGetTolerance(SCOPFLOW,PetscReal*);
 
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetTimeStepandDuration(SCOPFLOW,PetscReal,PetscReal);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetLoadProfiles(SCOPFLOW, const char[], const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetSubproblemModel(SCOPFLOW,const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetSubproblemSolver(SCOPFLOW,const char[]);
 
 #endif
 

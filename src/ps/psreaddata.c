@@ -642,39 +642,44 @@ PetscErrorCode PSReadMatPowerData(PS ps,const char netfile[])
         Gen[genfueli].ramp_rate_min = GENRAMPRATE_COAL/ps->MVAbase;
         Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
         Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
+	ps->ngencoal++;
       } else if(strstr(line,"wind") != NULL) {
 	Gen[genfueli].genfuel_type = GENFUEL_WIND;
         Gen[genfueli].ramp_rate_min = GENRAMPRATE_WIND/ps->MVAbase;
         Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
         Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;	
-
 	Gen[genfueli].pb = 0.0; /* Set lower Pg limit to 0.0 so that wind power can be curtailed if need be */
+	ps->ngenwind++;
       } else if(strstr(line,"ng") != NULL) {
 	Gen[genfueli].genfuel_type = GENFUEL_NG;
         Gen[genfueli].ramp_rate_min = GENRAMPRATE_NG/ps->MVAbase;
         Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
         Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
+	ps->ngenng++;
       } else if(strstr(line,"solar") != NULL) {
 	Gen[genfueli].genfuel_type = GENFUEL_SOLAR;
         Gen[genfueli].ramp_rate_min = GENRAMPRATE_SOLAR/ps->MVAbase;
         Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
         Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
+	ps->ngensolar++;
       } else if(strstr(line,"nuclear") != NULL) {
 	Gen[genfueli].genfuel_type = GENFUEL_NUCLEAR;
         Gen[genfueli].ramp_rate_min = GENRAMPRATE_NUCLEAR/ps->MVAbase;
         Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
         Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
+	ps->ngennuclear++;
       } else if(strstr(line,"hydro") != NULL) {
 	Gen[genfueli].genfuel_type = GENFUEL_HYDRO;
         Gen[genfueli].ramp_rate_min = GENRAMPRATE_HYDRO/ps->MVAbase;
         Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
         Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
-
+	ps->ngenhydro++;
       } else {
 	Gen[genfueli].genfuel_type = GENFUEL_UNDEFINED;
         Gen[genfueli].ramp_rate_min = GENRAMPRATE_COAL/ps->MVAbase; /* Defaults to COAL ramp rate */
         Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min*10;
         Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min*30;
+	ps->ngenundefined++;
       }
       genfueli++;
     }

@@ -38,10 +38,6 @@ if(HIOP_LIBRARY AND HIOP_INCLUDE_DIR)
   message(STATUS "Found HiOp library: " ${HIOP_LIBRARY})
   message(STATUS "Found HiOp include directory: " ${HIOP_INCLUDE_DIR})
 
-  add_library(HiOp INTERFACE)
-  target_link_libraries(HiOp INTERFACE ${HIOP_LIBRARY})
-  target_include_directories(HiOp INTERFACE ${HIOP_INCLUDE_DIR})
-
   set(HIOP_DEFINITIONS ${HIOP_INCLUDE_DIR}/hiop_defs.hpp)
   message(STATUS "HiOp definitions: ${HIOP_DEFINITIONS}")
 
@@ -57,6 +53,8 @@ if(HIOP_LIBRARY AND HIOP_INCLUDE_DIR)
     set(CMAKE_REQUIRED_LIBRARIES ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES})
   endif()
 
+  message(STATUS "hiop_defs" ${HIOP_INCLUDE_DIR}/hiop_defs.hpp)
+
   check_cxx_symbol_exists(
     HIOP_SPARSE ${HIOP_DEFINITIONS} EXAGO_ENABLE_HIOP_SPARSE
   )
@@ -64,6 +62,23 @@ if(HIOP_LIBRARY AND HIOP_INCLUDE_DIR)
   check_cxx_symbol_exists(
     HIOP_USE_COINHSL ${HIOP_DEFINITIONS} EXAGO_HIOP_USE_COINHSL
   )
+
+  add_library(HiOp INTERFACE)
+  target_link_libraries(HiOp INTERFACE ${HIOP_LIBRARY})
+  target_include_directories(HiOp INTERFACE ${HIOP_INCLUDE_DIR})
+
+  set(EXAGO_ENABLE_HIOP_SPARSE ON)
+  set(EXAGO_HIOP_USE_COINHSL ON)
+
+  if(EXAGO_ENABLE_HIOP_SPARSE AND EXAGO_HIOP_USE_COINHSL)
+    include(FindExaGOCOINHSL)
+    if(NOT COINHSL_LIBRARY)
+      message(
+        FATAL_ERROR "HIOP_SPARSE is enabled, but COINHSL could not be found."
+      )
+    endif()
+    target_link_libraries(HiOp INTERFACE COINHSL)
+  endif()
 
   if(EXAGO_ENABLE_GPU)
     include(FindMagma)
@@ -78,15 +93,6 @@ if(HIOP_LIBRARY AND HIOP_INCLUDE_DIR)
     target_link_libraries(HiOp INTERFACE Magma)
   endif()
 
-  if(EXAGO_ENABLE_HIOP_SPARSE AND EXAGO_HIOP_USE_COINHSL)
-    include(FindExaGOCOINHSL)
-    if(NOT COINHSL_LIBRARY)
-      message(
-        FATAL_ERROR "HIOP_SPARSE is enabled, but COINHSL could not be found."
-      )
-    endif()
-    target_link_libraries(HiOp INTERFACE COINHSL)
-  endif()
 else()
   if(NOT HIOP_LIB)
     message(STATUS "HiOp library not found! Please provide correct filepath.")
