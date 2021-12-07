@@ -29,44 +29,30 @@ mpiexec -n <N> ./sopflow <options>
 where \<options\> are the available command line options as given in the next section.
 
 ### Options
-The current version has several options available for SOPFLOW. These options can be either set through the options file `options/sopflowoptions` or via the command line.
+The current version has several options available for SOPFLOW. These options can be set either through the options file `options/sopflowoptions` or via the command line.
 
-#### Network file (-netfile \<netfilename\>): 
-Set the name of the network file. Only MATPOWER format is currently supported. 4096 characters max.
+|  Option Name | Description | Values (Default value) | Compatibility |
+|:-----|:----|:-----|:-----|
+|-netfile| Name of network file in MATPOWER format| ([case9mod.m](../../datafiles/case9/case9mod.m))|  4096 characters max. |
+|-scenfile| Name of scenario list file | ([10_scenarios_9bus.csv](../../datafiles/case9/10scenarios_9bus.csv)) | 4096 characters max. Uses a native format for describing scenarios. See [10_scenarios_9bus.csv](../../datafiles/case9/10scenarios_9bus.csv)|
+|-sopflow_Ns | Number of scenarios || With this option set, SOPFLOW will only pick up the first Ns scenarios in the scenario file. To select all scenarios, use `Ns = -1` |
+|-sopflow_solver | Optimization solver | (IPOPT), HIOP, or EMPAR | See the note below on solvers |
+|-sopflow_mode | Mode of operation | 0 or 1 (0) | See the note below on mode of operation |
+|-sopflow_subproblem_solver | Optimization solver for the subproblem when using HIOP solver| IPOPT or HIOP (IPOPT) | See [opflow](opflow.md) page for description of solvers |
+|-sopflow_subproblem_model | Model for the subproblem when using HIOP solver| (POWER_BALANCE_POLAR) | See [opflow](opflow.md) page for available models |
+|-sopflow_tolerance|Optimization solver tolerance | (1e-6) | All solvers |
+|-scopflow_enable_multicontingency | Each scenario has multiple contingencies | 0 or 1 (0)| |
+|-sopflow_Nc | Number of contingencies || With this option set, SOPFLOW will only pick up the first Nc contingencies in the contingency file. To select all contingencies, use `Nc = -1` |
+|-sopflow_flatten_contingencies | Flattens out the scenario-contingency structure |0 or 1 (0)| Only used when multi-contingency is enabled |
+|-print_output| Print SOPFLOW solution to screen| 0 or 1 (0)| All solvers |
+|-save_output| Save SOPFLOW solution to file | 0 or 1 (0)| All solvers. Saves solution for each scenario. |
 
-```
-mpiexec -n <N> ./sopflow -netfile <netfilename>
-```
+#### Scenarios
+There are two types of uncertainties supported: Wind generation and load (currently not implemented).
+Scenarios are specified in a native format. See `datafiles/case9/10scenarios_9bus.csv` as an example of a scenario file that describes wind generation scenarios for the 9-bus case.
 
-#### Scenario file (-scenfile \<scenfilename\>): 
-Set the name of the file that describes the uncertainty scenarios. There are two types of uncertainties supported: Wind generation and load (currently not implemented). 4096 characters max.
-```
-mpiexec -n <N> ./sopflow -netfile <netfilename> -scenfile <ctgcfilename>
-```
-Scenarios are specified in a native format. See `datafiles/TAM200_scenarios/scenarios.csv` as an example of a scenario file that describes wind generation scenarios for the TAMU 200-bus case.
+#### Solver
+SOPFLOW supports solving the problem using IPOPT, HiOP, or EMPAR solvers. With IPOPT, SOPFLOW can be only run on one processor (N = 1) as IPOPT only supports single process execution. HIOP supports solving the problem in parallel using a primal-decomposition algorithm. EMPAR is a parallel solver, however it merely executes an embarassingly parallel solver, i.e., all the scenarios are solved independently via optimal power flow.
 
-#### Solver (-sopflow_solver \<IPOPT or EMPAR\>)
-Set the solver to be used for SOPFLOW. With IPOPT, SOPFLOW can be only run on one processor (N = 1) as IPOPT only supports single process execution. EMPAR is a parallel solver, however it merely executes an embarassingly parallel solver, i.e., all the scenarios are solved independently via optimal power flow.
-```
-mpiexec -n <N> ./sopflow -netfile <netfilename> -ctgcfile <ctgcfilename> -sopflow_solver <IPOPT>
-```
-#### Mode (-sopflow_mode \<0 or 1\>)
-Set SOPFLOW to either run in `preventive` (0) or `corrective` (1) mode. In preventive mode, the base-case and scenario real-power dispatch is equal for the PV and PQ generators. In the corrective mode, the scenario real-power dispatch for these generators is allowed to deviate from the base-case limited by its 30-min ramping limit. 
-```
-mpiexec -n <N> ./sopflow -netfile <netfilename> -scenfile <scenfilename> -sopflow_mode <0 or 1>
-```
-
-#### Number of scenarios (-sopflow_Ns \<Ns\>): 
-Sets the number of scenarios. This should be less than or equal to the number of scenarios set in the scenario file.
-
-```
-./sopflow -netfile <netfilename> -scenfile <scenfilename> -sopflow_Ns <Ns>
-```
-
-With this option set, SOPFLOW will only pick up the first Ns scenarios in the scenario file. To select all scenarios, use `Ns = -1`
-
-#### Enable multi-contingency [Only for multi-contingency SOPFLOW] (-sopflow_enable_multicontingency \<0 or 1\>)
-Disable/Enable multicontingency SOPFLOW (disabled by default). All SCOPFLOW options (see [SCOPFLOW](scopflow.md)) can be used when the multi-contingency option is enabled.
-
-#### Enable multi-period SCOPFLOW (-scopflow_enable_multiperiod \<0 or 1\>)
-Disable/Enable multi-period multicontingency SCOPFLOW (disabled by default). All options for multi-period SCOPFLOW (see [SCOPFLOW](scopflow.md)) can be used when the multi-period option is enabled.
+#### Mode 
+Set SOPFLOW to either run in `preventive` (0) or `corrective` (1) mode. In preventive mode, the base-case and scenario real-power dispatch is equal for the PV and PQ generators. Any power surplus/deficit is contributed by the swing generator only. In the corrective mode, the scenario real-power dispatch for all generators is allowed to deviate from the base-case limited by its 30-min ramping limit.

@@ -187,7 +187,7 @@ description = "datafiles/case_ACTIVSg200.m use AGC"
 is_loadloss_active =	false
 is_powerimb_active =	false
 use_agc = true
-num_iters = 96
+num_iters = 97
 obj_value = 2.7564520456963968e+04
 
 [[testcase]]

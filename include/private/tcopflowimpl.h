@@ -10,6 +10,7 @@
 #include <opflow.h>
 #include <tcopflow.h>
 #include <private/contingencylist.h>
+#include <private/scenariolist.h>
 
 #define TCOPFLOWMODELSMAX  10
 #define TCOPFLOWSOLVERSMAX 3
@@ -138,6 +139,7 @@ struct _p_TCOPFLOW{
   PetscBool windgenprofileset; /* Is the wind generation profile set ? */
 
   Contingency *ctgc;
+  Scenario    *scen;
 };
 
 /* Register all TCOPFLOW solvers */
@@ -150,6 +152,6 @@ extern PetscErrorCode TCOPFLOWReadWindGenProfile(TCOPFLOW,char[]);
 extern PetscErrorCode TCOPFLOWGetConstraints(TCOPFLOW,PetscInt,Vec*);
 extern PetscErrorCode TCOPFLOWGetConstraintMultipliers(TCOPFLOW,PetscInt,Vec*);
 extern PetscErrorCode TCOPFLOWSetContingency(TCOPFLOW,Contingency*);
-
+extern PetscErrorCode TCOPFLOWSetScenario(TCOPFLOW,Scenario*);
 
 #endif

@@ -27,62 +27,34 @@ where \<options\> are the available command line options as given in the next se
 ### Options
 The current version has several options available for SCOPFLOW. These options can be set either through the options file `options/scopflowoptions` or via the command line.
 
-#### Network file (-netfile \<netfilename\>): 
-Set the name of the network file. Only MATPOWER format is currently supported. 4096 characters max.
+|  Option Name | Description | Values (Default value) | Compatibility |
+|:-----|:----|:-----|:-----|
+|-netfile| Name of network file in MATPOWER format| ([case9mod.m](../../datafiles/case9/case9mod.m))|  4096 characters max. |
+|-ctgcfile| Name of contingency list file | ([case9.cont](../../datafiles/case9/case9.cont)) | 4096 characters max. Uses a native format for describing contingencies. See [scopflow.h](../../include/scopflow.h)|
+|-scopflow_Nc | Number of contingencies || With this option set, SCOPFLOW will only pick up the first Nc contingencies in the contingency file. To select all contingencies, use `Nc = -1` |
+|-scopflow_solver | Optimization solver | (IPOPT), HIOP, or EMPAR | See the note below on solvers |
+|-scopflow_mode | Mode of operation | 0 or 1 (0) | See the note below on mode of operation |
+|-scopflow_subproblem_solver | Optimization solver for the subproblem when using HIOP solver| IPOPT or HIOP (IPOPT) | See [opflow](opflow.md) page for description of solvers |
+|-scopflow_subproblem_model | Model for the subproblem when using HIOP solver| (POWER_BALANCE_POLAR) | See [opflow](opflow.md) page for available models |
+|-scopflow_mode | Mode of operation | 0 or 1 (0) | See the note below on mode of operation |
+|-scopflow_tolerance|Optimization solver tolerance | (1e-6) | All solvers |
+|-scopflow_enable_multiperiod | Include multi-period | 0 or 1 (0)| Only compatible with IPOPT solver |
+|-scopflow_duration| Duration for multi-period run in hours| | Only when multi-period is enabled |
+|-scopflow_dt| Time-step for multi-period run in minutes| | Only when multi-period is enabled |
+|-scopflow_ploadprofile| Active power load profile filename| | Only when multi-period is enabled |
+|-scopflow_qloadprofile| Reactive power load profile filename| | Only when multi-period is enabled |
+|-scopflow_windgenprofile| Wind generation profile filename| | Only when multi-period is enabled |
+|-print_output| Print SCOPFLOW solution to screen| 0 or 1 (0)| All solvers |
+|-save_output| Save OPFLOW solution to file | 0 or 1 (0)| All solvers |
 
-```
-mpiexec -n <N> ./scopflow -netfile <netfilename>
-```
-
-#### Contingency file (-ctgcfile \<ctgcfilename\>): 
-Set the name of the contingency data file. The contingency scenarios are set through this file. 4096 characters max.
-```
-mpiexec -n <N> ./scopflow -netfile <netfilename> -ctgcfile <ctgcfilename>
-```
+#### Contingencies 
 Contingencies can either be specified in PTI format (.con file) or a native format. The description of the native format is given in the header file `include/scopflow.h`. SCOPFLOW supports single/multiple generator and line/transformer outage contingencies.
 
-#### Solver (-scopflow_solver \<IPOPT,HIOP,EMPAR\>)
-Set the solver to be used for SCOPFLOW. With IPOPT, SCOPFLOW can be only run on one processor (N = 1) as IPOPT only supports single process execution. HIOP supports a distributed solution allowing SCOPFLOW to be solved in parallel. In addition, one can solve SCOPFLOW in an embarrasingly parallel model with the EMPAR solver. With EMPAR, the base case and the contingencies are solved independently, i.e, there is no coupling.
-```
-mpiexec -n <N> ./scopflow -netfile <netfilename> -ctgcfile <ctgcfilename> -scopflow_solver <IPOPT>
-```
-#### Mode (-scopflow_mode \<0 or 1\>)
-Set SCOPFLOW to either run in `preventive` (0) or `corrective` (1) mode. In preventive mode, the base-case and contingency real-power dispatch is equal for the PV and PQ generators. In the corrective mode, the contingency real-power dispatch for these generators is allowed to deviate from the base-case limited by its 30-min ramping limit. 
-```
-mpiexec -n <N> ./scopflow -netfile <netfilename> -ctgcfile <ctgcfilename> -scopflow_mode <0 or 1>
-```
+#### Solver
+SCOPFLOW can be solved with either IPOPT, HIOP, or EMPAR. With IPOPT, SCOPFLOW can be only run on one processor (N = 1) as IPOPT only supports single process execution. HIOP supports a distributed solution allowing SCOPFLOW to be solved in parallel. It uses a two-stage primal decomposition algorithm for solving the problem. 
 
-#### Number of contingencies (-scopflow_Nc \<Nc\>): 
-Sets the number of contingencies. This should be less than or equal to the number of contingencies set in the contingency file.
+In addition, one can solve SCOPFLOW in an embarrasingly parallel model with the EMPAR solver. With EMPAR, the base case and the contingencies are solved independently, i.e, there is no coupling.
 
-```
-./scopflow -netfile <netfilename> -ctgcfile <ctgcfilename> -scopflow_Nc <Nc>
-```
+#### Mode
+Set SCOPFLOW to either run in `preventive` (0) or `corrective` (1) mode. In preventive mode, any power deficit or surplus in the contingency problem is provided by the swing bus only. In the corrective mode, in addition to the swing bus, thhe generators at PV/PQ buses contribute to the deficit/surplus. The contribution amount is decided by the optimization with the constraint that the real power dispatch for these generators should be within 30-min ramping limit. 
 
-With this option set, SCOPFLOW will only pick up the first Nc contingencies in the contingency file. To select all contingencies, use `Nc = -1`
-
-#### Enable multi-period [Only for multi-period SCOPFLOW] (-scopflow_enable_multiperiod \<0 or 1\>)
-Disable/Enable multiperiod SCOPFLOW (disabled by default)
-
-#### Duration [Only for multi-period SCOPFLOW] (-scopflow_duration \<duration\>)
-The duration for the multi-period SCOFLOW in hours.
-
-#### Time-step [Only for multi-period SCOPFLOW] (-scopflow_dT \<dT\>)
-The time-step for multi-period SCOPFFLOW in minutes.
-
-#### Active power load profile [Only for multi-period SCOPFLOW] (-scopflow_ploadprofile \<ploadprofile_filename\>)
-The name of the file describing the active load profile. See `$EXAGO_DIR/datafiles/case9/load_P.csv` for the format.
-
-#### Reactive power load profile [Only for multi-period SCOPFLOW] (-scopflow_qloadprofile \<qloadprofile_filename\>)
-The name of the file describing the reactive load profile. See `$EXAGO_DIR/datafiles/case9/load_Q.csv` for the format.
-
-#### Wind generation profile [Only for multi-period SCOPFLOW] (-scopflow_windgenprofile \<windgenprofile_filename\>)
-The name of the file describing the wind generation profile. See `$EXAGO_DIR/datafiles/case9/scenarios.csv` for the format.
-
-#### OPFLOW model (-opflow_model \<modelname\>)
-This is an option inherited from [OPFLOW](opflow.md). It sets the model (representation of variables and equations) to be used for SCOPFLOW. The default formulation is power balance form with polar representation for voltages
-```
-mpiexec -n <N> ./scopflow -netfile <netfilename> -ctgcfile <ctgcfilename> -opflow_model POWER_BALANCE_POLAR
-```
-
-All other OPFLOW options can be used with SCOPFLOW to select the appropriate model and parameter options.

@@ -73,6 +73,7 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOLRAJAHIOP(OPFLOW opflow,Vec Xl,Vec Xu
 
   ierr = VecDestroy(&Xlt);CHKERRQ(ierr);
   ierr = VecDestroy(&Xut);CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -306,10 +307,11 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOP(OPFLOW opflow)
 
 	spct += gen->nxpdev;
 	
+	loc = gen->startxpsetloc;
+
 	idxn2sd_map[loc] = spct;
 	
 	spct += gen->nxpset;
-	loc  += gen->nxpset;      
       }
     }
 
@@ -466,6 +468,9 @@ PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOP(OPFLOW opflow)
   PbpolModelRajaHiop* pbpol = new PbpolModelRajaHiop(opflow);
 
   opflow->model = pbpol;
+
+  /* HIOP models only support VARIABLE_WITHIN_BOUNDS opflow->genbusvoltagetype */
+  opflow->genbusvoltagetype = VARIABLE_WITHIN_BOUNDS;
 
   opflow->spdnordering = PETSC_TRUE;
 

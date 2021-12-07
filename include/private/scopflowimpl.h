@@ -12,6 +12,7 @@
 #include <tcopflow.h>
 #include <scopflow.h>
 #include <private/contingencylist.h>
+#include <private/scenariolist.h>
 
 #define SCOPFLOWSOLVERSMAX 10
 #define SCOPFLOWMODELSMAX  10
@@ -163,6 +164,11 @@ struct _p_SCOPFLOW{
 
   PetscBool ismultiperiod; /* Are we doing a multi-period OPF? */
 
+  Scenario *scen; /* Used by SOPFLOW to pass the scenario information */
+
+  /* Used by HIOP solver */
+  char subproblem_model[64]; /* subproblem model */
+  char subproblem_solver[64]; /* subproblem solver */
 };
 
 extern PetscErrorCode SCOPFLOWModelRegisterAll(SCOPFLOW);
@@ -171,5 +177,6 @@ extern PetscErrorCode SCOPFLOWGetConstraints(SCOPFLOW,PetscInt,Vec*);
 extern PetscErrorCode SCOPFLOWGetConstraintMultipliers(SCOPFLOW,PetscInt,Vec*);
 extern PetscErrorCode SCOPFLOWReadContingencyData(SCOPFLOW,ContingencyFileInputFormat,const char[]);
 extern PetscErrorCode SCOPFLOWGetNumVariablesandConstraints(SCOPFLOW,PetscInt*,PetscInt*);
+extern PetscErrorCode SCOPFLOWSetScenario(SCOPFLOW,Scenario*);
 
 #endif

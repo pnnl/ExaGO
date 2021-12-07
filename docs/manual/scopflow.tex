@@ -12,30 +12,30 @@ The contingency-constrained optimal power flow (popularly termed as security-con
 In general form, the equations for contingency-constrained optimal power flow are given by
 (\ref{eq:scopflow_start}) -- (\ref{eq:scopflow_end}). This is a two-stage
 stochastic optimization problem where the first stage is the base case $c_0$ and
-each of the contingency states $c_i, i \in [1,N_c-1]$ are second-stage
-subproblems. SCOPFLOW aims to minimize the objective $\sum_{c=0}^{N_c-1}f(x_c)$,
-while adhering to the equality $g(x_c)$, inequality $h(x_c)$, and the
+each of the contingency states $c_i, i \in [1,N_c]$ are second-stage
+subproblems. SCOPFLOW aims to minimize the objective $\sum_{c=0}^{N_c}f(x_c)$,
+while adhering to the equality $g_c(x_c)$, inequality $h_c(x_c)$, and the
 lower/upper bound ($x^-$,$x^+$) constraints. Equation (\ref{eq:scopflow_end})
-represents the coupling between the base-case and each of the contingency states
+represents the coupling between the base-case $c_0$ and each of the contingency states
 $c_i$. Equation (\ref{eq:scopflow_end}) is the most typical form of coupling
 that limits the deviation of the contingency variables $x_c$ from the base $x_0$
-to within $\Delta x_c$. An example of this constraint could be the allowed real power output deviation for the generators constrained by their ramp limit.
+to within $\Delta x_c$. An example of this constraint could be the allowed real power output deviation for the generators constrained by their ramp limit, which is currently the only constraint SCOPFLOW supports.
 
 
 \begin{align}
 \centering
-\text{min}&~f(x_0)&  \label{eq:scopflow_start}\\
+\text{min}&~\sum_{c=0}^{N_c}f_c(x_c)&  \label{eq:scopflow_start}\\
 &\text{s.t.}& \nonumber \\
-&~g(x_c) = 0,                             &c \in \left[0,N_c-1\right]& \\
-&~h(x_c) \le 0,                           &c \in \left[0,N_c-1\right]& \\
-x^- & \le x_c \le x^+,                     &c\in \left[0,N_c-1\right]& \\
+&~g_c(x_c) = 0,                             &c \in \left[0,N_c\right]& \\
+&~h_c(x_c) \le 0,                           &c \in \left[0,N_c\right]& \\
+x^- & \le x_c \le x^+,                     &c\in \left[0,N_c\right]& \\
 -\Delta x_c & \le x_c - x_0 \le \Delta x_c,&c \in \left[1,N_c\right]&
 \label{eq:scopflow_end}
 \end{align}
 
 \subsection{Multiperiod}
 
-In the multi-period version, each contingency is comprised of multiple time-periods. The multiple periods have variables and constraints as described in chapter \ref{chap:tcopflow}. An example of multi-contingency multi-period optimal power flow is illustrated in Fig. \ref{fig:ctopflow} for multi-period SCOPFLOW with three contingencies $c_1$, $c_2$, and $c_3$ coupled to the base case $c_0$. Each state is multi-period with two time-periods. Each time-step is coupled with its adjacent one through ramping constraints. We assume that the contingency is incident at the first time-step, i.e. at $t_0$. This results in the coupling between the contingency cases $c_i, i \in [1,N_c-1]$ and the base-case $c_0$ only at time-step $t_0$.
+In the multi-period version, each contingency is comprised of multiple time-periods. The multiple periods have variables and constraints as described in chapter \ref{chap:tcopflow}. An example of multi-contingency multi-period optimal power flow is illustrated in Fig. \ref{fig:ctopflow} for multi-period SCOPFLOW with three contingencies $c_1$, $c_2$, and $c_3$ coupled to the base case $c_0$. Each state is multi-period with two time-periods. Each time-step is coupled with its adjacent one through ramping constraints. We assume that the contingency is incident at the first time-step, i.e. at $t_0$. This results in the coupling between the contingency cases $c_i, i \in [1,N_c]$ and the base-case $c_0$ only at time-step $t_0$.
 
 \input{figures/ctopflow_fig}
 
@@ -43,13 +43,13 @@ The overall objective of this contingency-constrained multi-period optimal power
 
 \begin{align}
 \centering
-\text{min}&~\sum_{c=0}^{N_c-1}\sum_{t=0}^{N_t-1}f(x_{c,t})& \label{eq:ctopflow_start}\\
+\text{min}&~\sum_{c=0}^{N_c}\sum_{t=0}^{N_t-1}f_{ct}(x_{c,t})& \label{eq:ctopflow_start}\\
 &\text{s.t.}& \nonumber \\
-&~g(x_{c,t}) = 0,                                        &c \in \left[0,N_c-1\right], t \in \left[0,N_t-1\right]& \\
-&~h(x_{c,t}) \le 0,                                      &c \in \left[0,N_c-1\right], t \in \left[0,N_t-1\right]& \\
-x^- & \le x_{c,t} \le x^+,                               &c \in \left[0,N_c-1\right], t\in \left[0,N_t-1\right]& \\
--\Delta x_t & \le x_{c,t} - x_{c,t-\Delta{t}} \le \Delta x_t,&c \in \left[0,N_c-1\right], t \in \left[1,N_t-1\right]& \label{eq:ctopflow_time_coupling}\\
--\Delta x_c & \le x_{c,0} - x_{0,0} \le \Delta x_c,&c \in \left[1,N_c-1\right]& \\
+&~g_{ct}(x_{c,t}) = 0,                                        &c \in \left[0,N_c\right], t \in \left[0,N_t-1\right]& \\
+&~h_{ct}(x_{c,t}) \le 0,                                      &c \in \left[0,N_c\right], t \in \left[0,N_t-1\right]& \\
+x^- & \le x_{c,t} \le x^+,                               &c \in \left[0,N_c\right], t\in \left[0,N_t-1\right]& \\
+-\Delta x_t & \le x_{c,t} - x_{c,t-\Delta{t}} \le \Delta x_t,&c \in \left[0,N_c\right], t \in \left[1,N_t-1\right]& \label{eq:ctopflow_time_coupling}\\
+-\Delta x_c & \le x_{c,0} - x_{0,0} \le \Delta x_c,&c \in \left[1,N_c\right]& \\
 \label{eq:ctopflow_end}
 \end{align}
 
@@ -61,7 +61,7 @@ constraint $\Delta x_c$ to restrict the  deviation of decision variables
 $x_{c,0}$ from the base-case $x_{0,0}$. The bound $\Delta x_c$ could represent here, for example, the allowable reserve for each generator.
 
 \section{Solvers}
-\scopflow currently supports two solvers: \ipopt and \emph{EMPAR}. \ipopt can solve \scopflow on single rank. The \emph{EMPAR} solver does not solve the security-constrained ACOPF problem, but it only solves the base-case and the contingencies independently with \opflow. It distributes the contingencies to different processes when executed in parallel.
+\scopflow supports solving the optimization problem via \ipopt, \hiop, or \emph{EMPAR}. \ipopt can solve \scopflow on single rank only. \hiop supports solving the problem in parallel using a primal-decomposition algorithm. With HIOP, one can solve the subproblem either on the CPU or GPU by selecting the appropriate subproblem model and solver (see options table below).  The \emph{EMPAR} solver does not solve the security-constrained ACOPF problem, but it only solves the base-case and the contingencies independently with \opflow. It distributes the contingencies to different processes when executed in parallel.
 
 \section{Input and Output}
 To execute SCOPFLOW, the following files are required:
@@ -96,21 +96,24 @@ See table \ref{tab:scopflow_options}. In addition, all \opflow options in Table 
 \begin{table}[!htbp]
   \caption{SCOPFLOW options}
   \small
-  \begin{tabular}{|p{0.3\textwidth}|p{0.3\textwidth}|p{0.3\textwidth}|}
+  \begin{tabular}{|p{0.3\textwidth}|p{0.2\textwidth}|p{0.3\textwidth}|p{0.2\textwidth}|}
     \hline
-    \textbf{Option} & \textbf{Meaning} & \textbf{Values (Default value)} \\ \hline
-    -netfile & Network file name & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod_gen3_wind.m}{case9mod\_gen3\_wind.m}) \\ \hline
-    -ctgcfile & Contingency file name & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9.cont}{case9.cont}) \\ \hline
-    -save\_output & Save output to directory & 0 or 1 (0) \\ \hline
-    -scopflow\_solver & Set solver for scopflow & IPOPT or EMPAR \\ \hline
-    -scopflow\_Nc & Number of contingencies & int (0. Passing -1 results in all contingencies in the file used) \\ \hline
-    -scopflow\_mode & Operation mode: Preventive or corrective & 0 or 1 (0) \\ \hline
-    -scopflow\_enable\_multiperiod & Multi-period SCOPFLOW & 0 or 1 (0) \\ \hline
-    -scopflow\_pload\_profile & Real power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_P.csv}{load\_P.csv}) \\ \hline
-    -scopflow\_qload\_profile & Reactive power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_Q.csv}{load\_Q.csv}) \\ \hline
-    -scopflow\_windgenprofile & Wind generation profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/scenarios_9bus.csv}{case9/scenarios\_9bus.csv}) \\ \hline
-    -scopflow\_dT & Length of time-step (minutes) & double (5.0) \\ \hline
-    -scopflow\_duration & Total duration (hours) & double (0.5) \\ \hline 
+    \textbf{Option} & \textbf{Meaning} & \textbf{Values (Default value)} & \textbf{Compatibility} \\ \hline
+    -netfile & Network file name & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod_gen3_wind.m}{case9mod\_gen3\_wind.m}) &\\ \hline
+    -ctgcfile & Contingency file name & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9.cont}{case9.cont}) &\\ \hline
+    -print\_output & Print output to screen & 0 or 1 (0) &\\ \hline
+    -save\_output & Save output to directory & 0 or 1 (0) &\\ \hline
+    -scopflow\_solver & Set solver for scopflow & IPOPT, HIOP, or EMPAR (IPOPT) &\\ \hline
+    -scopflow\_subproblem\_solver & Set solver for subproblem & IPOPT or HIOP (IPOPT) &Only when using HIOP solver for SCOPFLOW \\ \hline
+    -scopflow\_subproblem\_model & Set model for subproblem & See OPFLOW chapter &Only when using HIOP solver for SCOPFLOW \\ \hline
+    -scopflow\_Nc & Number of contingencies & int (0. Passing -1 results in all contingencies in the file used) &\\ \hline
+    -scopflow\_mode & Operation mode: Preventive or corrective & 0 or 1 (0) &\\ \hline
+    -scopflow\_enable\_multiperiod & Multi-period SCOPFLOW & 0 or 1 (0) & IPOPT solver only\\ \hline
+    -scopflow\_pload\_profile & Real power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_P.csv}{load\_P.csv}) &\\ \hline
+    -scopflow\_qload\_profile & Reactive power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_Q.csv}{load\_Q.csv}) &\\ \hline
+    -scopflow\_windgenprofile & Wind generation profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/scenarios_9bus.csv}{case9/scenarios\_9bus.csv}) &\\ \hline
+    -scopflow\_dT & Length of time-step (minutes) & double (5.0) &\\ \hline
+    -scopflow\_duration & Total duration (hours) & double (0.5) &\\ \hline 
   \end{tabular}
   \label{tab:scopflow_options}
 \end{table}
@@ -133,8 +136,7 @@ Some \scopflow example runs are provided with some sample output. Options are th
 Example using the \ipopt solver:
 
 \begin{lstlisting}
-$ ./bin/scopflow -scopflow_solver IPOPT -tcopflow_iscoupling 1 \
--scopflow_iscoupling 1 -print_output
+$ ./bin/scopflow -scopflow_solver IPOPT -print_output
 [ExaGO INFO]: -- Checking ... -options_file not passed        exists: no
 SCOPFLOW: Application created
 SCOPFLOW running with 2 contingencies (base case + 1 contingencies)
@@ -249,8 +251,7 @@ Gen   Status  Fuel     Pg       Qg       Pmin     Pmax     Qmin     Qmax
 Example using the IPOPT solver with multiperiod enabled:
 
 \begin{lstlisting}
-$./bin/scopflow -scopflow_solver IPOPT -scopflow_enable_multiperiod 1 \
--tcopflow_iscoupling 1 -scopflow_iscoupling 1
+$./bin/scopflow -scopflow_solver IPOPT -scopflow_enable_multiperiod 1
 [ExaGO INFO]: -- Checking ... -options_file not passed         exists: no
 SCOPFLOW: Application created
 SCOPFLOW running with 2 contingencies (base case + 1 contingencies)
@@ -323,8 +324,7 @@ EXIT: Optimal Solution Found.
 Example using the \emph{EMPAR} solver with multiperiod enabled:
 
 \begin{lstlisting}
-$ ./bin/scopflow -scopflow_solver EMPAR -scopflow_enable_multiperiod 1 \
--tcopflow_iscoupling 1 -scopflow_iscoupling 1
+$ ./bin/scopflow -scopflow_solver EMPAR -scopflow_enable_multiperiod 1
 [ExaGO INFO]: -- Checking ... -options_file not passed       exists: no
 SCOPFLOW: Application created
 SCOPFLOW running with 2 contingencies (base case + 1 contingencies)

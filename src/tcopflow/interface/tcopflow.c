@@ -105,6 +105,7 @@ PetscErrorCode TCOPFLOWCreate(MPI_Comm mpicomm, TCOPFLOW *tcopflowout)
   tcopflow->model    = NULL;
 
   tcopflow->ctgc     = NULL;
+  tcopflow->scen     = NULL;
 
   tcopflow->nmodelsregistered = 0;
   tcopflow->TCOPFLOWModelRegisterAllCalled = PETSC_FALSE;
@@ -293,6 +294,14 @@ PetscErrorCode TCOPFLOWSetContingency(TCOPFLOW tcopflow,Contingency *ctgc)
   tcopflow->ctgc = ctgc;
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode TCOPFLOWSetScenario(TCOPFLOW tcopflow,Scenario *scen)
+{
+  PetscFunctionBegin;
+  tcopflow->scen = scen;
+  PetscFunctionReturn(0);
+}
+
 /*
   TCOPFLOWSetUp - Sets up an multi-period optimal power flow application object
 
@@ -354,6 +363,11 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
     /* Set up the PS object for opflow */
     ps = tcopflow->opflows[i]->ps;
     ierr = PSSetUp(ps);CHKERRQ(ierr);
+
+    if(tcopflow->scen) {
+      // Scenario is set, apply it */
+      ierr = PSApplyScenario(ps,*tcopflow->scen);CHKERRQ(ierr);
+    }
 
     if(tcopflow->ctgc) {
       // Contingency is set, apply it */

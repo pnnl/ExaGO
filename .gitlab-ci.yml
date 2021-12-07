@@ -274,7 +274,7 @@ ppc64le-gcc-cuda-test:
   variables:
     SLURM_Q: "newell_shared"
     MY_CLUSTER: "newell"
-    CTESTARGS: "-VV -E Python"
+    CTESTARGS: "--output-on-failure -E Python"
     OUTPUT_SUFFIX: "_test"
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
@@ -290,7 +290,7 @@ ppc64le-gcc-cuda-python-test:
   variables:
     SLURM_Q: "newell_shared"
     MY_CLUSTER: "newell"
-    CTESTARGS: "-VV -R Python"
+    CTESTARGS: "--output-on-failure -R Python"
     OUTPUT_SUFFIX: "_test_python"
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
@@ -319,7 +319,7 @@ x86_64-gcc-cuda-test:
   variables:
     SLURM_Q: "dl_shared"
     MY_CLUSTER: "marianas"
-    CTESTARGS: "-VV -E Python"
+    CTESTARGS: "--output-on-failure -E Python"
     OUTPUT_SUFFIX: "_test"
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
     WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
@@ -335,7 +335,7 @@ x86_64-gcc-cuda-python-test:
   variables:
     SLURM_Q: "dl_shared"
     MY_CLUSTER: "marianas"
-    CTESTARGS: "-VV -R Python"
+    CTESTARGS: "--output-on-failure -R Python"
     OUTPUT_SUFFIX: "_test_python"
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
     WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"

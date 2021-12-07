@@ -65,7 +65,6 @@ PETSC_EXTERN PetscErrorCode PSComputeParticipationFactors(PS);
 PETSC_EXTERN PetscErrorCode PSSetGenStatus(PS,PetscInt,const char*,PetscInt);
 PETSC_EXTERN PetscErrorCode PSSetLineStatus(PS,PetscInt,PetscInt,const char*,PetscInt);
 
-
 /*  
   PSSetGenPowerLimits - Sets generator real and reactive power limits given a bus number and generator id
 

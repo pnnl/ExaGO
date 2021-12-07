@@ -5,11 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [Unreleased]
+
+### General
 
 * Added option `EXAGO_GEN_CODECOV` to generate code coverage reports.
 
-## [v1.1.0] 
+### Build system
+
+### PS
+
+### PFLOW
+
+### OPFLOW
+
+### TCOPFLOW
+
+### SCOPFLOW
+- Added new solver `HIOP` for SCOPFLOW
+- New API functions
+    - `SCOPFLOWSetSubproblemModel` allows setting of subproblem model. Used with HIOP solver only.
+    - `SCOPFLOWSetSubproblemSolver` allows setting of subproblem solver. Used with HIOP solver only.
+
+### SOPFLOW
+- Added new solver `HIOP` for SOPFLOW
+- New API functions
+    - `SOPFLOWSetSubproblemModel` allows setting of subproblem model. Used with HIOP solver only.
+    - `SOPFLOWSetSubproblemSolver` allows setting of subproblem solver. Used with HIOP solver only.
+
+### Documentation
+- Updated changelog file
+
+### Testing
+- Updated tests for OPFLOW, SCOPFLOW, and SOPFLOW
+
+### Miscallenous
+- Added a new object `scenariolist` to manage scenarios.
+- Updated object `contingencylist` to manage contingencies
+
+## [v1.1.0]
 
 ### General
 - Third-party library compatibiity changes
