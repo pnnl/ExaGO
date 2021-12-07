@@ -81,6 +81,7 @@ If you are using the HiOp solver, HiOp must be built with the same RAJA and Umpi
 | `EXAGO_BUILD_STATIC` | Build ExaGO static libraries. |
 | `EXAGO_TEST_WITH_BSUB` | Use BSUB/JSRUN commands in CTest. Use if you would like to run ExaGO test suite in a BSUB allocation. |
 | `EXAGO_EXTRA_MPI_FLAGS` | Pass extra flags to `mpirun`/`mpiexec`/`jsrun`/`srun` in CTest.  |
+| `EXAGO_GEN_CODECOV` | Enable generation of code coverage reports. Requires `gcov` and `gcovr` programs.  |
 
 ### CMake Workflow
 
