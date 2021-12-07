@@ -25,6 +25,7 @@ workflow:
       set -xv
       cd "$WORKDIR"
       export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+      export CTESTARGS="--output-on-failure -E Python"
       MY_CLUSTER="ascent" ./buildsystem/build.sh --test-only --job=gcc-cuda
       res=$?
       exit $res
