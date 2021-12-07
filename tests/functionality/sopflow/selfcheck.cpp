@@ -200,7 +200,7 @@ struct SopflowFunctionalityTests
 
     // Prepend installation directory to scenario data
     resolve_datafiles_path(params.scenfile);
-    ierr = SOPFLOWSetScenarioData(sopflow, SOPFLOW_NATIVE,WIND,params.scenfile.c_str());ExaGOCheckError(ierr);
+    ierr = SOPFLOWSetScenarioData(sopflow, SOPFLOW_NATIVE_SINGLEPERIOD,WIND,params.scenfile.c_str());ExaGOCheckError(ierr);
 
     ierr = SOPFLOWSetNumScenarios(sopflow, params.num_scenarios);ExaGOCheckError(ierr);
 
@@ -214,7 +214,7 @@ struct SopflowFunctionalityTests
     if(params.multicontingency) {
       resolve_datafiles_path(params.contingencies);
       ierr = SOPFLOWSetNumContingencies(sopflow,params.num_contingencies);ExaGOCheckError(ierr);
-      ierr = SOPFLOWSetContingencyData(sopflow,params.contingencies.c_str());ExaGOCheckError(ierr);
+      ierr = SOPFLOWSetContingencyData(sopflow,NATIVE,params.contingencies.c_str());ExaGOCheckError(ierr);
    //   ierr = SOPFLOWEnableMultiPeriod(sopflow,(PetscBool)params.multiperiod);ExaGOCheckError(ierr);
       if(params.multiperiod) {
         resolve_datafiles_path(params.windgen);

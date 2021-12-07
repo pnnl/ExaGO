@@ -20,7 +20,7 @@ Note that not all applications can utilize all solvers yet. The following table 
 |  Solver    | OPFLOW  | TCOPFLOW | SCOPLOW | SOPFLOW |
 |:------:|:---------:|:-----:|:-------:|:-------:|
 | IPOPT      | Y         |  Y     | Y       | Y       | 
-| HIOP       | Y          |       |         |         |
+| HIOP       | Y          |       |   Y      |  Y       |
 
 Note: The support for solving SCOPFLOW and SOPFLOW in parallel using the HiOP package is currently in development and is expected to be added in the next release.
 

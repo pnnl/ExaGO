@@ -1,19 +1,29 @@
--netfile share/exago/datafiles/case9/case9mod_gen3_wind.m
+-netfile ../../datafiles/case_ACTIVSg2000.m
 
 # Contingency file
--ctgcfile share/exago/datafiles/case9/case9.cont
+-ctgcfile ../../datafiles/case_ACTIVSg2000.cont
 
 # Coupling between second stage and first stage?
 -scopflow_iscoupling 1
 
 # Operation mode (preventive (0) or corrective (1))
--scopflow_mode 0
+-scopflow_mode 1
 
 # Ignore line flow constraints
 -opflow_ignore_lineflow_constraints 0
 
 # Number of contingencies
 -scopflow_Nc 1
+
+-scopflow_solver HIOP
+-hiop_compute_mode CPU
+-hiop_verbosity_level 3
+
+-opflow_genbusvoltage VARIABLE_WITHIN_BOUNDS
+-opflow_initialization ACPF
+
+-scopflow_subproblem_solver IPOPT
+-scopflow_subproblem_model POWER_BALANCE_POLAR
 
 # performance
 #-------------

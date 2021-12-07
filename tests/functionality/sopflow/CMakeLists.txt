@@ -42,8 +42,11 @@ if(EXAGO_INSTALL_TESTS)
     $<TARGET_FILE:testSopflowFunctionalityTOML>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multicontingency.toml
     -no_optfile
+    -sopflow_flatten_contingencies
   )
 
+  # Disabled test for now, feature not ready yet
+  if(EXAGO_ENABLE_ALL_TESTS)
   exago_add_test(
     NAME
     FUNCTIONALITY_TEST_SOPFLOW_CONTINGENCY_MULTIPERIOD_TOML
@@ -55,5 +58,193 @@ if(EXAGO_INSTALL_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiperiod.toml
     -no_optfile
   )
+  endif()
 
+  # Tests for HIOP pridecomp
+  # These tests should be added to the TOML test-suite
+    exago_add_test(
+      NAME
+      SOPFLOW_9bus_HIOP_SERIAL
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:app_sopflow>
+      -netfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod_gen3_wind.m
+      -scenfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case9/10_scenarios_9bus.csv
+      -sopflow_solver
+      HIOP
+      -sopflow_Ns
+      -1
+      -opflow_initialization
+      ACPF
+      -sopflow_subproblem_solver
+      HIOP
+      -sopflow_subproblem_model
+      POWER_BALANCE_HIOP
+      -hiop_compute_mode
+      CPU
+      -hiop_verbosity_level
+      3
+      DEPENDS
+      IPOPT
+      HIOP
+    )
+
+    exago_add_test(
+      NAME
+      SOPFLOW_200bus_HIOP_SERIAL
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:app_sopflow>
+      -netfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+      -scenfile
+      ${CMAKE_SOURCE_DIR}/datafiles/10_scenarios_ACTIVSg200.csv
+      -sopflow_solver
+      HIOP
+      -sopflow_Ns
+      -1
+      -opflow_initialization
+      ACPF
+      -opflow_ignore_lineflow_constraints
+      1
+      -sopflow_subproblem_solver
+      HIOP
+      -sopflow_subproblem_model
+      POWER_BALANCE_HIOP
+      -hiop_compute_mode
+      CPU
+      -hiop_verbosity_level
+      3
+      DEPENDS
+      IPOPT
+      HIOP
+    )
+
+    exago_add_test(
+      NAME
+      SOPFLOW_200bus_HIOP_MPI
+      COMMAND
+      ${MPICMD}
+      "-n"
+      3
+      $<TARGET_FILE:app_sopflow>
+      -netfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+      -scenfile
+      ${CMAKE_SOURCE_DIR}/datafiles/10_scenarios_ACTIVSg200.csv
+      -sopflow_solver
+      HIOP
+      -sopflow_Ns
+      -1
+      -sopflow_subproblem_solver
+      HIOP
+      -sopflow_subproblem_model
+      POWER_BALANCE_HIOP
+      -hiop_compute_mode
+      CPU
+      -hiop_verbosity_level
+      3
+      -opflow_initialization
+      ACPF
+      -opflow_ignore_lineflow_constraints
+      1
+      DEPENDS
+      IPOPT
+      HIOP
+    )
+
+    exago_add_test(
+      NAME
+      SOPFLOW_9bus_HIOP_SERIAL_GPU
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:app_sopflow>
+      -netfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod_gen3_wind.m
+      -scenfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case9/10_scenarios_9bus.csv
+      -sopflow_solver
+      HIOP
+      -sopflow_Ns
+      -1
+      -opflow_initialization
+      ACPF
+      -sopflow_subproblem_solver
+      HIOP
+      -sopflow_subproblem_model
+      PBPOLRAJAHIOP
+      -hiop_compute_mode
+      GPU
+      -hiop_verbosity_level
+      3
+      DEPENDS
+      IPOPT
+      HIOP
+    )
+
+    exago_add_test(
+      NAME
+      SOPFLOW_200bus_HIOP_SERIAL_GPU
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:app_sopflow>
+      -netfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+      -scenfile
+      ${CMAKE_SOURCE_DIR}/datafiles/10_scenarios_ACTIVSg200.csv
+      -sopflow_solver
+      HIOP
+      -sopflow_Ns
+      -1
+      -opflow_initialization
+      ACPF
+      -opflow_ignore_lineflow_constraints
+      1
+      -sopflow_subproblem_solver
+      HIOP
+      -sopflow_subproblem_model
+      PBPOLRAJAHIOP
+      -hiop_compute_mode
+      CPU
+      -hiop_verbosity_level
+      3
+      DEPENDS
+      IPOPT
+      HIOP
+    )
+
+    exago_add_test(
+      NAME
+      SOPFLOW_200bus_HIOP_MPI_GPU
+      COMMAND
+      ${MPICMD}
+      "-n"
+      3
+      $<TARGET_FILE:app_sopflow>
+      -netfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+      -scenfile
+      ${CMAKE_SOURCE_DIR}/datafiles/10_scenarios_ACTIVSg200.csv
+      -sopflow_solver
+      HIOP
+      -sopflow_Ns
+      -1
+      -opflow_initialization
+      ACPF
+      -opflow_ignore_lineflow_constraints
+      1
+      -sopflow_subproblem_solver 
+      HIOP
+      -sopflow_subproblem_model
+      PBPOLRAJAHIOP
+      -hiop_compute_mode
+      GPU
+      -hiop_verbosity_level
+      3
+      DEPENDS
+      IPOPT
+      HIOP
+    )
 endif()
