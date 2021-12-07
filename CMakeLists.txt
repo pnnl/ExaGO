@@ -106,6 +106,8 @@ option(EXAGO_TEST_WITH_SLURM
 
 option(EXAGO_DISABLE_LOGGING "Disable all internal logging" OFF)
 
+option(EXAGO_GEN_CODECOV "Generate code coverage data" OFF)
+
 # When building with HIP support, OpenMP is not supported
 if(NOT EXAGO_ENABLE_RAJA OR (EXAGO_ENABLE_GPU AND EXAGO_ENABLE_HIP))
   set(EXAGO_ENABLE_OMP OFF)
@@ -135,6 +137,15 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR})
 # Create alias for -lm which is needed when linking math on UNIX
 if(UNIX)
   set(EXAGO_MATH_LIB m)
+endif()
+
+if(EXAGO_GEN_CODECOV)
+  include(CodeCoverage)
+  append_coverage_compiler_flags()
+  setup_target_for_coverage_gcovr_html(
+    NAME cov
+    EXCLUDE "${PROJECT_SOURCE_DIR}/tests/toml11"
+    )
 endif()
 
 # If MPI support is enabled, find MPI includes and libraries
