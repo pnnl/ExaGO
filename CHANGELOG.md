@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Develop] 
+## [1.2.0] 
 
 ### General
 
@@ -41,6 +41,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a new object `scenariolist` to manage scenarios.
 - Updated object `contingencylist` to manage contingencies
 
+## [v1.1.2]
+
+### Documentation
+
+* Patch to bring ExaGO into full compliance with xSDK policies and update our compliance document
+
+## [v1.1.1]
+
+### General
+
+* Hotfix to update versions in user manual and CMake
 
 ## [v1.1.0]
 
