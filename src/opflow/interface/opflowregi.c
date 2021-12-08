@@ -1,6 +1,6 @@
 
-#include <private/opflowimpl.h>
 #include <exago_config.h>
+#include <private/opflowimpl.h>
 
 /*
   OPFLOWModelRegister - Registers an OPFLOW model
@@ -9,21 +9,25 @@
 + sname     - model name (string)
 - createfunction  - the class constructor
 */
-PetscErrorCode OPFLOWModelRegister(OPFLOW opflow,const char sname[],PetscErrorCode (*createfunction)(OPFLOW))
-{
+PetscErrorCode OPFLOWModelRegister(OPFLOW opflow, const char sname[],
+                                   PetscErrorCode (*createfunction)(OPFLOW)) {
   PetscErrorCode ierr;
-  PetscInt       i;
+  PetscInt i;
   PetscFunctionBegin;
-  for(i=0; i < opflow->nmodelsregistered;i++) {
+  for (i = 0; i < opflow->nmodelsregistered; i++) {
     PetscBool match;
-    ierr = PetscStrcmp(opflow->OPFLOWModelList[i].name,sname,&match);
-    if(match) PetscFunctionReturn(0);
+    ierr = PetscStrcmp(opflow->OPFLOWModelList[i].name, sname, &match);
+    if (match)
+      PetscFunctionReturn(0);
   }
-  if(opflow->nmodelsregistered == OPFLOWMODELSMAX) {
-    SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Cannot register %s OPFLOW model, maximum limit %d reached\n",sname,OPFLOWMODELSMAX);
+  if (opflow->nmodelsregistered == OPFLOWMODELSMAX) {
+    SETERRQ2(PETSC_COMM_SELF, PETSC_ERR_SUP,
+             "Cannot register %s OPFLOW model, maximum limit %d reached\n",
+             sname, OPFLOWMODELSMAX);
   }
   i = opflow->nmodelsregistered;
-  ierr = PetscStrcpy(opflow->OPFLOWModelList[i].name,sname);CHKERRQ(ierr);
+  ierr = PetscStrcpy(opflow->OPFLOWModelList[i].name, sname);
+  CHKERRQ(ierr);
   opflow->OPFLOWModelList[i].create = createfunction;
   opflow->nmodelsregistered++;
   PetscFunctionReturn(0);
@@ -36,21 +40,25 @@ PetscErrorCode OPFLOWModelRegister(OPFLOW opflow,const char sname[],PetscErrorCo
 + sname     - solver name (string)
 - createfunction  - the class constructor
 */
-PetscErrorCode OPFLOWSolverRegister(OPFLOW opflow,const char sname[],PetscErrorCode (*createfunction)(OPFLOW))
-{
+PetscErrorCode OPFLOWSolverRegister(OPFLOW opflow, const char sname[],
+                                    PetscErrorCode (*createfunction)(OPFLOW)) {
   PetscErrorCode ierr;
-  PetscInt       i;
+  PetscInt i;
   PetscFunctionBegin;
-  for(i=0; i < opflow->nsolversregistered;i++) {
+  for (i = 0; i < opflow->nsolversregistered; i++) {
     PetscBool match;
-    ierr = PetscStrcmp(opflow->OPFLOWSolverList[i].name,sname,&match);
-    if(match) PetscFunctionReturn(0);
+    ierr = PetscStrcmp(opflow->OPFLOWSolverList[i].name, sname, &match);
+    if (match)
+      PetscFunctionReturn(0);
   }
-  if(opflow->nsolversregistered == OPFLOWSOLVERSMAX) {
-    SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Cannot register %s OPFLOW solver, maximum limit %d reached\n",sname,OPFLOWSOLVERSMAX);
+  if (opflow->nsolversregistered == OPFLOWSOLVERSMAX) {
+    SETERRQ2(PETSC_COMM_SELF, PETSC_ERR_SUP,
+             "Cannot register %s OPFLOW solver, maximum limit %d reached\n",
+             sname, OPFLOWSOLVERSMAX);
   }
   i = opflow->nsolversregistered;
-  ierr = PetscStrcpy(opflow->OPFLOWSolverList[i].name,sname);CHKERRQ(ierr);
+  ierr = PetscStrcpy(opflow->OPFLOWSolverList[i].name, sname);
+  CHKERRQ(ierr);
   opflow->OPFLOWSolverList[i].create = createfunction;
   opflow->nsolversregistered++;
   PetscFunctionReturn(0);
@@ -72,25 +80,37 @@ extern PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOP(OPFLOW);
 /*
   OPFLOWModelRegisterAll - Registers all built OPFLOW models
 */
-PetscErrorCode OPFLOWModelRegisterAll(OPFLOW opflow)
-{
+PetscErrorCode OPFLOWModelRegisterAll(OPFLOW opflow) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  if(opflow->OPFLOWModelRegisterAllCalled) PetscFunctionReturn(0);
+  if (opflow->OPFLOWModelRegisterAllCalled)
+    PetscFunctionReturn(0);
 
 #if defined(EXAGO_ENABLE_IPOPT) || defined(EXAGO_ENABLE_HIOP_SPARSE)
-  ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_PBPOL,OPFLOWModelCreate_PBPOL);CHKERRQ(ierr);
+  ierr =
+      OPFLOWModelRegister(opflow, OPFLOWMODEL_PBPOL, OPFLOWModelCreate_PBPOL);
+  CHKERRQ(ierr);
 #endif
-  ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_PBCAR,OPFLOWModelCreate_PBCAR);CHKERRQ(ierr);
-  ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_IBCAR,OPFLOWModelCreate_IBCAR);CHKERRQ(ierr);
-  ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_IBCAR2,OPFLOWModelCreate_IBCAR2);CHKERRQ(ierr);
+  ierr =
+      OPFLOWModelRegister(opflow, OPFLOWMODEL_PBCAR, OPFLOWModelCreate_PBCAR);
+  CHKERRQ(ierr);
+  ierr =
+      OPFLOWModelRegister(opflow, OPFLOWMODEL_IBCAR, OPFLOWModelCreate_IBCAR);
+  CHKERRQ(ierr);
+  ierr =
+      OPFLOWModelRegister(opflow, OPFLOWMODEL_IBCAR2, OPFLOWModelCreate_IBCAR2);
+  CHKERRQ(ierr);
 
 #if defined(EXAGO_ENABLE_HIOP)
-  ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_PBPOLHIOP,OPFLOWModelCreate_PBPOLHIOP);CHKERRQ(ierr);
+  ierr = OPFLOWModelRegister(opflow, OPFLOWMODEL_PBPOLHIOP,
+                             OPFLOWModelCreate_PBPOLHIOP);
+  CHKERRQ(ierr);
 #endif
 
 #if defined(EXAGO_ENABLE_RAJA)
-  ierr = OPFLOWModelRegister(opflow,OPFLOWMODEL_PBPOLRAJAHIOP,OPFLOWModelCreate_PBPOLRAJAHIOP);CHKERRQ(ierr);
+  ierr = OPFLOWModelRegister(opflow, OPFLOWMODEL_PBPOLRAJAHIOP,
+                             OPFLOWModelCreate_PBPOLRAJAHIOP);
+  CHKERRQ(ierr);
 #endif
 
   opflow->OPFLOWModelRegisterAllCalled = PETSC_TRUE;
@@ -112,20 +132,27 @@ extern PetscErrorCode OPFLOWSolverCreate_HIOPSPARSE(OPFLOW);
 /*
   OPFLOWSolverRegisterAll - Registers all OPFLOW solvers
 */
-PetscErrorCode OPFLOWSolverRegisterAll(OPFLOW opflow)
-{
+PetscErrorCode OPFLOWSolverRegisterAll(OPFLOW opflow) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  if(opflow->OPFLOWSolverRegisterAllCalled) PetscFunctionReturn(0);
+  if (opflow->OPFLOWSolverRegisterAllCalled)
+    PetscFunctionReturn(0);
 
 #if defined(EXAGO_ENABLE_IPOPT)
-  ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_IPOPT,OPFLOWSolverCreate_IPOPT);CHKERRQ(ierr);
+  ierr = OPFLOWSolverRegister(opflow, OPFLOWSOLVER_IPOPT,
+                              OPFLOWSolverCreate_IPOPT);
+  CHKERRQ(ierr);
 #endif
-  ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_TAO,OPFLOWSolverCreate_TAO);CHKERRQ(ierr);
+  ierr = OPFLOWSolverRegister(opflow, OPFLOWSOLVER_TAO, OPFLOWSolverCreate_TAO);
+  CHKERRQ(ierr);
 #if defined(EXAGO_ENABLE_HIOP)
-  ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_HIOP,OPFLOWSolverCreate_HIOP);CHKERRQ(ierr);
+  ierr =
+      OPFLOWSolverRegister(opflow, OPFLOWSOLVER_HIOP, OPFLOWSolverCreate_HIOP);
+  CHKERRQ(ierr);
 #if defined(EXAGO_ENABLE_HIOP_SPARSE)
-  ierr = OPFLOWSolverRegister(opflow,OPFLOWSOLVER_HIOPSPARSE,OPFLOWSolverCreate_HIOPSPARSE);CHKERRQ(ierr);
+  ierr = OPFLOWSolverRegister(opflow, OPFLOWSOLVER_HIOPSPARSE,
+                              OPFLOWSolverCreate_HIOPSPARSE);
+  CHKERRQ(ierr);
 #endif
 #endif
   opflow->OPFLOWSolverRegisterAllCalled = PETSC_TRUE;

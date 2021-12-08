@@ -8,21 +8,25 @@
 + sname     - model name (string)
 - createfunction  - the class constructor
 */
-PetscErrorCode SOPFLOWModelRegister(SOPFLOW sopflow,const char sname[],PetscErrorCode (*createfunction)(SOPFLOW))
-{
+PetscErrorCode SOPFLOWModelRegister(SOPFLOW sopflow, const char sname[],
+                                    PetscErrorCode (*createfunction)(SOPFLOW)) {
   PetscErrorCode ierr;
-  PetscInt       i;
+  PetscInt i;
   PetscFunctionBegin;
-  for(i=0; i < sopflow->nmodelsregistered;i++) {
+  for (i = 0; i < sopflow->nmodelsregistered; i++) {
     PetscBool match;
-    ierr = PetscStrcmp(sopflow->SOPFLOWModelList[i].name,sname,&match);
-    if(match) PetscFunctionReturn(0);
+    ierr = PetscStrcmp(sopflow->SOPFLOWModelList[i].name, sname, &match);
+    if (match)
+      PetscFunctionReturn(0);
   }
-  if(sopflow->nmodelsregistered == SOPFLOWMODELSMAX) {
-    SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_SUP,"Cannot register %s OPFLOW model, maximum limit %d reached\n",sname,SOPFLOWMODELSMAX);
+  if (sopflow->nmodelsregistered == SOPFLOWMODELSMAX) {
+    SETERRQ2(PETSC_COMM_SELF, PETSC_ERR_SUP,
+             "Cannot register %s OPFLOW model, maximum limit %d reached\n",
+             sname, SOPFLOWMODELSMAX);
   }
   i = sopflow->nmodelsregistered;
-  ierr = PetscStrcpy(sopflow->SOPFLOWModelList[i].name,sname);CHKERRQ(ierr);
+  ierr = PetscStrcpy(sopflow->SOPFLOWModelList[i].name, sname);
+  CHKERRQ(ierr);
   sopflow->SOPFLOWModelList[i].create = createfunction;
   sopflow->nmodelsregistered++;
   PetscFunctionReturn(0);
@@ -31,18 +35,21 @@ PetscErrorCode SOPFLOWModelRegister(SOPFLOW sopflow,const char sname[],PetscErro
 extern PetscErrorCode SOPFLOWModelCreate_GENRAMP(SOPFLOW);
 extern PetscErrorCode SOPFLOWModelCreate_GENRAMPC(SOPFLOW);
 
-
 /*
   SOPFLOWModelRegisterAll - Registers all built-in SOPFLOW models
 */
-PetscErrorCode SOPFLOWModelRegisterAll(SOPFLOW sopflow)
-{
+PetscErrorCode SOPFLOWModelRegisterAll(SOPFLOW sopflow) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  if(sopflow->SOPFLOWModelRegisterAllCalled) PetscFunctionReturn(0);
+  if (sopflow->SOPFLOWModelRegisterAllCalled)
+    PetscFunctionReturn(0);
 
-  ierr = SOPFLOWModelRegister(sopflow,SOPFLOWMODEL_GENRAMP,SOPFLOWModelCreate_GENRAMP);CHKERRQ(ierr);
-  ierr = SOPFLOWModelRegister(sopflow,SOPFLOWMODEL_GENRAMPC,SOPFLOWModelCreate_GENRAMPC);CHKERRQ(ierr);
+  ierr = SOPFLOWModelRegister(sopflow, SOPFLOWMODEL_GENRAMP,
+                              SOPFLOWModelCreate_GENRAMP);
+  CHKERRQ(ierr);
+  ierr = SOPFLOWModelRegister(sopflow, SOPFLOWMODEL_GENRAMPC,
+                              SOPFLOWModelCreate_GENRAMPC);
+  CHKERRQ(ierr);
 
   sopflow->SOPFLOWModelRegisterAllCalled = PETSC_TRUE;
 
@@ -56,18 +63,21 @@ PetscErrorCode SOPFLOWModelRegisterAll(SOPFLOW sopflow)
 + sname           - model name (string)
 - createfunction  - the class constructor
 */
-PetscErrorCode SOPFLOWSolverRegister(SOPFLOW sopflow,const char sname[],PetscErrorCode (*createfunction)(SOPFLOW))
-{
+PetscErrorCode
+SOPFLOWSolverRegister(SOPFLOW sopflow, const char sname[],
+                      PetscErrorCode (*createfunction)(SOPFLOW)) {
   PetscErrorCode ierr;
-  PetscInt       i;
+  PetscInt i;
   PetscFunctionBegin;
-  for(i=0; i < sopflow->nsolversregistered;i++) {
+  for (i = 0; i < sopflow->nsolversregistered; i++) {
     PetscBool match;
-    ierr = PetscStrcmp(sopflow->SOPFLOWSolverList[i].name,sname,&match);
-    if(match) PetscFunctionReturn(0);
+    ierr = PetscStrcmp(sopflow->SOPFLOWSolverList[i].name, sname, &match);
+    if (match)
+      PetscFunctionReturn(0);
   }
   i = sopflow->nsolversregistered;
-  ierr = PetscStrcpy(sopflow->SOPFLOWSolverList[i].name,sname);CHKERRQ(ierr);
+  ierr = PetscStrcpy(sopflow->SOPFLOWSolverList[i].name, sname);
+  CHKERRQ(ierr);
   sopflow->SOPFLOWSolverList[i].create = createfunction;
   sopflow->nsolversregistered++;
   PetscFunctionReturn(0);
@@ -86,20 +96,26 @@ extern PetscErrorCode SOPFLOWSolverCreate_HIOP(SOPFLOW);
 /*
   SOPFLOWSolverRegisterAll - Registers all SOPFLOW solvers
 */
-PetscErrorCode SOPFLOWSolverRegisterAll(SOPFLOW sopflow)
-{
+PetscErrorCode SOPFLOWSolverRegisterAll(SOPFLOW sopflow) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  if(sopflow->SOPFLOWSolverRegisterAllCalled) PetscFunctionReturn(0);
+  if (sopflow->SOPFLOWSolverRegisterAllCalled)
+    PetscFunctionReturn(0);
 
 #if defined(EXAGO_ENABLE_IPOPT)
-  ierr = SOPFLOWSolverRegister(sopflow,SOPFLOWSOLVER_IPOPT,SOPFLOWSolverCreate_IPOPT);CHKERRQ(ierr);
+  ierr = SOPFLOWSolverRegister(sopflow, SOPFLOWSOLVER_IPOPT,
+                               SOPFLOWSolverCreate_IPOPT);
+  CHKERRQ(ierr);
 #endif
 
-  ierr = SOPFLOWSolverRegister(sopflow,SOPFLOWSOLVER_EMPAR,SOPFLOWSolverCreate_EMPAR);CHKERRQ(ierr);
+  ierr = SOPFLOWSolverRegister(sopflow, SOPFLOWSOLVER_EMPAR,
+                               SOPFLOWSolverCreate_EMPAR);
+  CHKERRQ(ierr);
 
 #if defined(EXAGO_ENABLE_HIOP)
-  ierr = SOPFLOWSolverRegister(sopflow,SOPFLOWSOLVER_HIOP,SOPFLOWSolverCreate_HIOP);CHKERRQ(ierr);
+  ierr = SOPFLOWSolverRegister(sopflow, SOPFLOWSOLVER_HIOP,
+                               SOPFLOWSolverCreate_HIOP);
+  CHKERRQ(ierr);
 #endif
 
   sopflow->SOPFLOWSolverRegisterAllCalled = PETSC_TRUE;

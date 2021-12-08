@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] 
 
 ### General
+- Added clang format utility script and formatted source code
+- Use spdlog for logging instead of hand-rolled logger
 
 ### Build system
 

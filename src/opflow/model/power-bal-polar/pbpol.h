@@ -2,6 +2,6 @@
 
 typedef struct _p_FormPBPOL *PBPOL;
 
-struct _p_FormPBPOL{
+struct _p_FormPBPOL {
   PetscInt Nx;
 };

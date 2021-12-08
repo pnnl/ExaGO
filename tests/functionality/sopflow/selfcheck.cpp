@@ -1,22 +1,21 @@
 static char help[] = "SOPFLOW Functionality Tests.\n\n";
 
+#include "toml_utils.hpp"
 #include <opflow.h>
 #include <sopflow.h>
-#include "toml_utils.hpp"
 
-struct SopflowFunctionalityTestParameters
-{
+struct SopflowFunctionalityTestParameters {
   /* Communicator required to run funcitonality test */
-  MPI_Comm comm=MPI_COMM_WORLD;
+  MPI_Comm comm = MPI_COMM_WORLD;
 
   /* Parameters required to set up and test a SCOPFlow */
-  std::string solver="";
-  std::string network="";
-  std::string scenfile="";
-  std::string contingencies="";
-  std::string pload="";
-  std::string qload="";
-  std::string windgen="";
+  std::string solver = "";
+  std::string network = "";
+  std::string scenfile = "";
+  std::string contingencies = "";
+  std::string pload = "";
+  std::string qload = "";
+  std::string windgen = "";
   std::string description = "";
   int num_contingencies;
   int num_scenarios;
@@ -39,11 +38,10 @@ struct SopflowFunctionalityTestParameters
   double obj_value;
   double error;
   int numiter;
-  PetscBool conv_status=PETSC_FALSE;
+  PetscBool conv_status = PETSC_FALSE;
 
   /* Assign all member variables from a toml map if values are found */
-  void assign_from(toml::value values)
-  {
+  void assign_from(toml::value values) {
     // Default SOPFLOW settings
     set_if_found(solver, values, "solver");
     set_if_found(network, values, "network");
@@ -89,35 +87,33 @@ struct SopflowFunctionalityTestParameters
       gen_bus_voltage_type = FIXED_AT_SETPOINT;
     }
   }
-
 };
 
 struct SopflowFunctionalityTests
-  : public FunctionalityTestContext<SopflowFunctionalityTestParameters>
-{
-  SopflowFunctionalityTests(std::string testsuite_filename,
-      ExaGOVerbosityLevel logging_verbosity=EXAGO_LOG_INFO)
-    : FunctionalityTestContext(testsuite_filename, logging_verbosity)
-  {}
+    : public FunctionalityTestContext<SopflowFunctionalityTestParameters> {
+  SopflowFunctionalityTests(
+      std::string testsuite_filename,
+      ExaGOVerbosityLevel logging_verbosity = EXAGO_LOG_INFO)
+      : FunctionalityTestContext(testsuite_filename, logging_verbosity) {}
 
   using Params = SopflowFunctionalityTestParameters;
-  void ensure_options_are_consistent(toml::value testcase,
-      toml::value presets = toml::value{}) override
-  {
-    auto ensure_option_available = [&] (const std::string& opt) {
+  void
+  ensure_options_are_consistent(toml::value testcase,
+                                toml::value presets = toml::value{}) override {
+    auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
-      if (!is_available)
-      {
+      if (!is_available) {
         std::stringstream errs;
         errs << "SOPFLOW Test suite expected option '" << opt
-          << "' to be available, but it was not found in this testsuite"
-          << " configuration:\n";
+             << "' to be available, but it was not found in this testsuite"
+             << " configuration:\n";
         errs << testcase << "\nwith these presets:\n" << presets;
         throw ExaGOError(errs.str().c_str());
       }
     };
 
-    for (const auto& opt : {"solver", "network", "scenfile", "num_scenarios", "tolerance"})
+    for (const auto &opt :
+         {"solver", "network", "scenfile", "num_scenarios", "tolerance"})
       ensure_option_available(opt);
 
     bool is_multicontingency = false;
@@ -125,7 +121,7 @@ struct SopflowFunctionalityTests
     set_if_found(is_multicontingency, testcase, "multicontingency");
 
     if (is_multicontingency)
-      for (const auto& opt : {"contingencies", "num_contingencies"})
+      for (const auto &opt : {"contingencies", "num_contingencies"})
         ensure_option_available(opt);
 
     bool is_multiperiod = false;
@@ -133,20 +129,17 @@ struct SopflowFunctionalityTests
     set_if_found(is_multiperiod, testcase, "multiperiod");
 
     if (is_multiperiod)
-      for (const auto& opt : {"qload", "pload", "dT", "windgen", "duration"})
+      for (const auto &opt : {"qload", "pload", "dT", "windgen", "duration"})
         ensure_option_available(opt);
   }
 
-  void initialize_test_parameters(
-      Params& params,
-      const toml::value& testcase, const toml::value& presets) override
-  {
+  void initialize_test_parameters(Params &params, const toml::value &testcase,
+                                  const toml::value &presets) override {
     params.assign_from(presets);
     params.assign_from(testcase);
   }
 
-  toml::value create_failing_testcase(const Params& params) override
-  {
+  toml::value create_failing_testcase(const Params &params) override {
     toml::value testcase;
 
     testcase["description"] = params.description;
@@ -157,8 +150,7 @@ struct SopflowFunctionalityTests
     testcase["initialization_type"] = params.initialization_type;
 
     testcase["multicontingency"] = params.multicontingency;
-    if (params.multicontingency)
-    {
+    if (params.multicontingency) {
       testcase["contingencies"] = params.contingencies;
       testcase["num_contingencies"] = params.num_contingencies;
     }
@@ -172,8 +164,7 @@ struct SopflowFunctionalityTests
     testcase["did_sopflow_converge"] = params.conv_status;
 
     testcase["multiperiod"] = params.multiperiod;
-    if (params.multiperiod)
-    {
+    if (params.multiperiod) {
       testcase["duration"] = params.duration;
       testcase["dT"] = params.dT;
       testcase["pload"] = params.pload;
@@ -184,53 +175,73 @@ struct SopflowFunctionalityTests
     return testcase;
   }
 
-  void run_test_case(Params& params) override
-  {
+  void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     SOPFLOW sopflow;
 
-    std::cout<<"Test Description: "<<params.description<<std::endl;
-    ierr = SOPFLOWCreate(params.comm,&sopflow);ExaGOCheckError(ierr);
+    std::cout << "Test Description: " << params.description << std::endl;
+    ierr = SOPFLOWCreate(params.comm, &sopflow);
+    ExaGOCheckError(ierr);
 
-    ierr = SOPFLOWSetTolerance(sopflow, params.tolerance);ExaGOCheckError(ierr);
+    ierr = SOPFLOWSetTolerance(sopflow, params.tolerance);
+    ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.network);
-    ierr = SOPFLOWSetNetworkData(sopflow,params.network.c_str());ExaGOCheckError(ierr);
+    ierr = SOPFLOWSetNetworkData(sopflow, params.network.c_str());
+    ExaGOCheckError(ierr);
 
     // Prepend installation directory to scenario data
     resolve_datafiles_path(params.scenfile);
-    ierr = SOPFLOWSetScenarioData(sopflow, SOPFLOW_NATIVE_SINGLEPERIOD,WIND,params.scenfile.c_str());ExaGOCheckError(ierr);
+    ierr = SOPFLOWSetScenarioData(sopflow, SOPFLOW_NATIVE_SINGLEPERIOD, WIND,
+                                  params.scenfile.c_str());
+    ExaGOCheckError(ierr);
 
-    ierr = SOPFLOWSetNumScenarios(sopflow, params.num_scenarios);ExaGOCheckError(ierr);
+    ierr = SOPFLOWSetNumScenarios(sopflow, params.num_scenarios);
+    ExaGOCheckError(ierr);
 
-    ierr = SOPFLOWSetInitializationType(sopflow, params.initialization_type);ExaGOCheckError(ierr);
+    ierr = SOPFLOWSetInitializationType(sopflow, params.initialization_type);
+    ExaGOCheckError(ierr);
 
-    ierr = SOPFLOWSetGenBusVoltageType(sopflow, params.gen_bus_voltage_type);ExaGOCheckError(ierr);
+    ierr = SOPFLOWSetGenBusVoltageType(sopflow, params.gen_bus_voltage_type);
+    ExaGOCheckError(ierr);
 
     // TODO:
     // - Implement multi contingency
-    ierr = SOPFLOWEnableMultiContingency(sopflow,(PetscBool)params.multicontingency);ExaGOCheckError(ierr);
-    if(params.multicontingency) {
+    ierr = SOPFLOWEnableMultiContingency(sopflow,
+                                         (PetscBool)params.multicontingency);
+    ExaGOCheckError(ierr);
+    if (params.multicontingency) {
       resolve_datafiles_path(params.contingencies);
-      ierr = SOPFLOWSetNumContingencies(sopflow,params.num_contingencies);ExaGOCheckError(ierr);
-      ierr = SOPFLOWSetContingencyData(sopflow,NATIVE,params.contingencies.c_str());ExaGOCheckError(ierr);
-   //   ierr = SOPFLOWEnableMultiPeriod(sopflow,(PetscBool)params.multiperiod);ExaGOCheckError(ierr);
-      if(params.multiperiod) {
+      ierr = SOPFLOWSetNumContingencies(sopflow, params.num_contingencies);
+      ExaGOCheckError(ierr);
+      ierr = SOPFLOWSetContingencyData(sopflow, NATIVE,
+                                       params.contingencies.c_str());
+      ExaGOCheckError(ierr);
+      //   ierr =
+      //   SOPFLOWEnableMultiPeriod(sopflow,(PetscBool)params.multiperiod);ExaGOCheckError(ierr);
+      if (params.multiperiod) {
         resolve_datafiles_path(params.windgen);
         resolve_datafiles_path(params.pload);
         resolve_datafiles_path(params.qload);
-        ierr = SOPFLOWSetWindGenProfile(sopflow,params.windgen.c_str());ExaGOCheckError(ierr);
-        ierr = SOPFLOWSetTimeStepandDuration(sopflow,params.dT,params.duration);ExaGOCheckError(ierr);
-        ierr = SOPFLOWSetLoadProfiles(sopflow,params.pload.c_str(),params.qload.c_str());ExaGOCheckError(ierr);
+        ierr = SOPFLOWSetWindGenProfile(sopflow, params.windgen.c_str());
+        ExaGOCheckError(ierr);
+        ierr =
+            SOPFLOWSetTimeStepandDuration(sopflow, params.dT, params.duration);
+        ExaGOCheckError(ierr);
+        ierr = SOPFLOWSetLoadProfiles(sopflow, params.pload.c_str(),
+                                      params.qload.c_str());
+        ExaGOCheckError(ierr);
       }
     }
     // - Implement multi contingency + multiperiod
 
-
-    ierr = SOPFLOWSetSolver(sopflow, params.solver.c_str());ExaGOCheckError(ierr);
-    ierr = SOPFLOWSetUp(sopflow);ExaGOCheckError(ierr);
-    ierr = SOPFLOWSolve(sopflow);ExaGOCheckError(ierr);
+    ierr = SOPFLOWSetSolver(sopflow, params.solver.c_str());
+    ExaGOCheckError(ierr);
+    ierr = SOPFLOWSetUp(sopflow);
+    ExaGOCheckError(ierr);
+    ierr = SOPFLOWSolve(sopflow);
+    ExaGOCheckError(ierr);
 
     /* Possible ways for a funcitonality test to fail */
     bool converge_failed = false;
@@ -238,23 +249,24 @@ struct SopflowFunctionalityTests
     bool num_iter_failed = false;
 
     /* Test convergence status */
-    ierr = SOPFLOWGetConvergenceStatus(sopflow,&params.conv_status);ExaGOCheckError(ierr);
-    if (params.conv_status==PETSC_FALSE)
-    {
+    ierr = SOPFLOWGetConvergenceStatus(sopflow, &params.conv_status);
+    ExaGOCheckError(ierr);
+    if (params.conv_status == PETSC_FALSE) {
       converge_failed = true;
     }
 
     /* Test objective value */
-    ierr = SOPFLOWGetObjective(sopflow,&params.obj_value);ExaGOCheckError(ierr);
-    if (!IsEqual(params.obj_value,params.expected_obj_value,params.tolerance,params.error))
-    {
+    ierr = SOPFLOWGetObjective(sopflow, &params.obj_value);
+    ExaGOCheckError(ierr);
+    if (!IsEqual(params.obj_value, params.expected_obj_value, params.tolerance,
+                 params.error)) {
       obj_failed = true;
     }
 
     /* Test num iterations */
-    ierr = SOPFLOWGetNumIterations(sopflow,&params.numiter);ExaGOCheckError(ierr);
-    if (params.numiter!=params.expected_num_iters)
-    {
+    ierr = SOPFLOWGetNumIterations(sopflow, &params.numiter);
+    ExaGOCheckError(ierr);
+    if (params.numiter != params.expected_num_iters) {
       num_iter_failed = true;
     }
 
@@ -266,27 +278,26 @@ struct SopflowFunctionalityTests
     else
       pass();
 
-    ierr = SOPFLOWDestroy(&sopflow);ExaGOCheckError(ierr);
+    ierr = SOPFLOWDestroy(&sopflow);
+    ExaGOCheckError(ierr);
   }
 };
 
-int main(int argc, char** argv)
-{
-  if (argc < 2)
-  {
+int main(int argc, char **argv) {
+  if (argc < 2) {
     std::cerr << "Pass path to test cases TOML file as the first argument to "
-      << "this test driver.\n";
+              << "this test driver.\n";
     std::exit(1);
   }
 
   PetscErrorCode ierr;
-  OutputFormat fmt=MATPOWER;
-  MPI_Comm comm=MPI_COMM_WORLD;
-  char appname[]="sopflow";
+  OutputFormat fmt = MATPOWER;
+  MPI_Comm comm = MPI_COMM_WORLD;
+  char appname[] = "sopflow";
   int _argc = 0;
-  ierr = ExaGOInitialize(comm,&argc,&argv,appname,help);
+  ierr = ExaGOInitialize(comm, &argc, &argv, appname, help);
 
-  ExaGOLog(EXAGO_LOG_INFO,"{}","Creating SOPFLOW Functionality Test");
+  ExaGOLog(EXAGO_LOG_INFO, "{}", "Creating SOPFLOW Functionality Test");
 
   SopflowFunctionalityTests test{std::string(argv[1])};
   test.run_all_test_cases();

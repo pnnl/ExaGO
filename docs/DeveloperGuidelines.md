@@ -46,15 +46,25 @@ This reduces unneeded burden on our CI system.
 auto *my_var = dynamic_cast<MyType*>(my_other_var);
 ```
 - Functions should usually be less than 50 lines of code. If they are longer, consider breaking the function down into smaller functions.
-- All C++ APIs should be wrapped in the `ExaGO::` namespace, followed by the module name. For example, the `ExaGO::OPFLOW::` namespaces should wrap any public APIs in the `src/opflow` directory.
 - Use anonymous namespaces for functions and variables which should have internal linkage.
 - Don't use dynamic solutions to solve problems that can be solved at build time; don't solve build time problems by writing programs that produce source code when macros and templates suffice; don't write macros when templates suffice.
-- Indent with two spaces.
-- Don't indent `public:`, `protected:`, and `private:` accessibility labels.
 - Never use more than 80 characters per source line, unless you're editing documentation.
-- Don't use tabs.
-- Don't indent the bodies of namespaces, even when nested.
-- Function result types go on the same line as the function and argument names.
+- Use `clang-format` (or the utility script `scripts/clang-format.pl`) to format your code.
+
+Example usage of the utility script:
+```console
+$ cd exago/build
+$ # do some development
+$ make && ctest
+
+$ # format ExaGO source in-place
+$ ../scripts/clang-format.pl -i
+
+$ # check to make sure everything is formatted (no flags means check if already formatted):
+$ ../scripts/clang-format.pl
+```
+
+This will format all the C++ source code in the ExaGO source tree.
 
 ### Commit Messages
 
@@ -71,9 +81,8 @@ recommended.
 
 ### Releases
 
-Each month, we tag our master branch after incrementing the patch number.
-We also push a release if we merge a feature significant enough to have its own
-release. This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and the [Keep-a-Changelog](https://keepachangelog.com/en/1.0.0/) guidelines.
+After merging significant changes, we tag our master branch after incrementing the patch number and merging develop into master.
+This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and the [Keep-a-Changelog](https://keepachangelog.com/en/1.0.0/) guidelines.
 
 ### Files
 
