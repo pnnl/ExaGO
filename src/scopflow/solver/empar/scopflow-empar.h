@@ -1,7 +1,7 @@
 #include <exago_config.h>
 
-/* Embarassingly parallel solver - It does not actually solve the SCOPFLOW, but rather
-   runs each OPFLOW independently
+/* Embarassingly parallel solver - It does not actually solve the SCOPFLOW, but
+   rather runs each OPFLOW independently
 */
 #ifndef SCOPFLOWEMPAR_H
 #define SCOPFLOWEMPAR_H

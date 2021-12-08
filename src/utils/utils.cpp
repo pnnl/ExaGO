@@ -1,17 +1,17 @@
-#include <iostream>
 #include <common.h>
-#include <sys/utsname.h>
-#include <sys/stat.h>
-#include <version.hpp>
-#include <stdarg.h>
 #include <dirent.h>
-#include <spdlog/spdlog.h>
+#include <exago_config.h>
+#include <iostream>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include <exago_config.h>
+#include <spdlog/spdlog.h>
+#include <stdarg.h>
+#include <sys/stat.h>
+#include <sys/utsname.h>
 #include <utils.hpp>
+#include <version.hpp>
 
-const char* ExaGOVerbosityNames[] = {"INFO","WARNING","ERROR"};
+const char *ExaGOVerbosityNames[] = {"INFO", "WARNING", "ERROR"};
 
 static char ExaGOCurrentAppName[128];
 
@@ -23,121 +23,109 @@ ExaGOError::ExaGOError(PetscErrorCode ierr) : is_petsc_error{true} {
   message += specific_error_message;
 }
 
-void ExaGOCheckError(int e)
-{
-  if (static_cast<int>(e) > PETSC_ERR_MIN_VALUE
-      && static_cast<int>(e) < PETSC_ERR_MAX_VALUE)
+void ExaGOCheckError(int e) {
+  if (static_cast<int>(e) > PETSC_ERR_MIN_VALUE &&
+      static_cast<int>(e) < PETSC_ERR_MAX_VALUE)
     throw ExaGOError(e);
 }
 
-static bool ExaGOLogIsLoggerInitialized=false;
+static bool ExaGOLogIsLoggerInitialized = false;
 
 /** This macro is undef'ed at the end of this header, don't use elsewhere.
     Only for use within PetscErrorCode-returning ExaGOLog-related functions. */
-#define EXAGO_LOG_ENSURE_INITIALIZED() \
-  do { \
-    if (!ExaGOLogIsLoggerInitialized) \
-    { \
-      fprintf(stderr,"An `ExaGOLog` function has been called, but ExaGOLog" \
-          " is not initialized!\n"); \
-      exit(1); \
-    } \
-  } while(0)
+#define EXAGO_LOG_ENSURE_INITIALIZED()                                         \
+  do {                                                                         \
+    if (!ExaGOLogIsLoggerInitialized) {                                        \
+      fprintf(stderr, "An `ExaGOLog` function has been called, but ExaGOLog"   \
+                      " is not initialized!\n");                               \
+      exit(1);                                                                 \
+    }                                                                          \
+  } while (0)
 
-static FILE* ExaGOLogFilePointer=NULL;
+static FILE *ExaGOLogFilePointer = NULL;
 
 std::shared_ptr<spdlog::logger> ExaGOLoggerPointer = NULL;
 
-static char ExaGOLogFileName[PETSC_MAX_PATH_LEN]="filename_unset";
+static char ExaGOLogFileName[PETSC_MAX_PATH_LEN] = "filename_unset";
 
-static bool ExaGOLogUseLogFile=false;
+static bool ExaGOLogUseLogFile = false;
 
 static ExaGOVerbosityLevel ExaGOLogMinLogLevel = EXAGO_LOG_INFO;
 
 /** ExaGO logging communicator to determine rank*/
-static MPI_Comm ExaGOLogComm=MPI_COMM_SELF;
+static MPI_Comm ExaGOLogComm = MPI_COMM_SELF;
 
-PetscErrorCode ExaGOLogGetLoggingFileName(char** name)
-{
-  if(ExaGOLogFileName==NULL)
+PetscErrorCode ExaGOLogGetLoggingFileName(char **name) {
+  if (ExaGOLogFileName == NULL)
     return 1;
   *name = strdup(ExaGOLogFileName);
   return 0;
 }
 
-PetscErrorCode ExaGOLogSetLoggingFileName(char* name)
-{
-  strcpy(ExaGOLogFileName,name);
+PetscErrorCode ExaGOLogSetLoggingFileName(char *name) {
+  strcpy(ExaGOLogFileName, name);
   ExaGOLogUseLogFile = PETSC_TRUE;
   return 0;
 }
 
-PetscErrorCode ExaGOLogIsUsingLogFile(bool *flg)
-{
+PetscErrorCode ExaGOLogIsUsingLogFile(bool *flg) {
   *flg = ExaGOLogUseLogFile;
   return 0;
 }
 
-PetscErrorCode ExaGOLogGetLoggingFilePointer(FILE** fp)
-{
-  if(ExaGOLogFilePointer==NULL)
+PetscErrorCode ExaGOLogGetLoggingFilePointer(FILE **fp) {
+  if (ExaGOLogFilePointer == NULL)
     return 1;
   *fp = ExaGOLogFilePointer;
   return 0;
 }
 
-PetscErrorCode ExaGOLogSetLoggingFilePointer(FILE* fp)
-{
+PetscErrorCode ExaGOLogSetLoggingFilePointer(FILE *fp) {
   ExaGOLogFilePointer = fp;
   return 0;
 }
 
-PetscErrorCode ExaGOSetLoggerPointer(std::shared_ptr<spdlog::logger> logger)
-{
+PetscErrorCode ExaGOSetLoggerPointer(std::shared_ptr<spdlog::logger> logger) {
   ExaGOLoggerPointer = logger;
   return 0;
 }
 
-PetscErrorCode ExaGOGetLoggerPointer(std::shared_ptr<spdlog::logger> *logger)
-{
+PetscErrorCode ExaGOGetLoggerPointer(std::shared_ptr<spdlog::logger> *logger) {
   *logger = ExaGOLoggerPointer;
   return 0;
 }
 
 /** Set ExaGO logging communicator */
-PetscErrorCode ExaGOLogSetComm(MPI_Comm c)
-{
+PetscErrorCode ExaGOLogSetComm(MPI_Comm c) {
   ExaGOLogComm = c;
   return 0;
 }
 
-PetscErrorCode ExaGOLogIsInitialized(bool*flg)
-{
+PetscErrorCode ExaGOLogIsInitialized(bool *flg) {
   *flg = ExaGOLogIsLoggerInitialized;
   return 0;
 }
 
-PetscErrorCode ExaGOLogInitialize()
-{
-  bool flg=false;
-  PetscErrorCode ierr=0;
-  char* filename;
-  FILE* fp;
+PetscErrorCode ExaGOLogInitialize() {
+  bool flg = false;
+  PetscErrorCode ierr = 0;
+  char *filename;
+  FILE *fp;
 
-  ierr=ExaGOLogIsUsingLogFile(&flg);
+  ierr = ExaGOLogIsUsingLogFile(&flg);
   /** Normally we would check the error, but in here we don't even have logging
    * set up to handle the error so we have to just return a code. */
-  if(ierr != 0)
+  if (ierr != 0)
     return 1;
 
   /** If we're not using a logfile, there's no additional setup to perform */
   if (flg) {
 
-    ierr=ExaGOLogGetLoggingFileName(&filename);
+    ierr = ExaGOLogGetLoggingFileName(&filename);
     /** We still don't have proper logging set up, so just return the error */
-    if(ierr != 0)
+    if (ierr != 0)
       return 1;
-    auto logger = spdlog::basic_logger_mt("exago_logger",filename);
+    auto logger = spdlog::basic_logger_mt("exago_logger", filename);
     logger->set_pattern("%^[%l]%$ %v");
     ExaGOSetLoggerPointer(logger);
   } else {
@@ -149,30 +137,27 @@ PetscErrorCode ExaGOLogInitialize()
   return 0;
 }
 
-PetscErrorCode ExaGOLogFinalize()
-{
+PetscErrorCode ExaGOLogFinalize() {
   EXAGO_LOG_ENSURE_INITIALIZED();
 
-  bool flg=false;
-  PetscErrorCode ierr=0;
-  ierr=ExaGOLogIsUsingLogFile(&flg);
+  bool flg = false;
+  PetscErrorCode ierr = 0;
+  ierr = ExaGOLogIsUsingLogFile(&flg);
   /** If we're not using a logfile, there's no teardown to perform */
   if (!flg)
     return 0;
-    /** File is automatically closed when sink goes out of scope? */
+  /** File is automatically closed when sink goes out of scope? */
 
   ExaGOLogIsLoggerInitialized = false;
   return 0;
 }
 
-PetscErrorCode ExaGOLogGetMinLogLevel(ExaGOVerbosityLevel *l)
-{
+PetscErrorCode ExaGOLogGetMinLogLevel(ExaGOVerbosityLevel *l) {
   *l = ExaGOLogMinLogLevel;
   return 0;
 }
 
-PetscErrorCode ExaGOLogSetMinLogLevel(ExaGOVerbosityLevel l)
-{
+PetscErrorCode ExaGOLogSetMinLogLevel(ExaGOVerbosityLevel l) {
   ExaGOLogMinLogLevel = l;
   return 0;
 }
@@ -216,8 +201,7 @@ void ExaGOLogImpl(ExaGOVerbosityLevel verb, const char *fmt, ...)
  * @param[in] pth filepath to stat
  * @see stat
  **/
-bool DoesFileExist(const char* pth)
-{
+bool DoesFileExist(const char *pth) {
   struct stat path_stat;
   stat(pth, &path_stat);
   return S_ISREG(path_stat.st_mode);
@@ -233,12 +217,13 @@ bool DoesFileExist(const char* pth)
  *
  * @see opendir
  **/
-bool DoesDirExist(const char* pth)
-{
-  if (pth==NULL) return false;
+bool DoesDirExist(const char *pth) {
+  if (pth == NULL)
+    return false;
   DIR *dp;
   dp = opendir(pth);
-  if (dp == NULL) return false;
+  if (dp == NULL)
+    return false;
   return true;
 }
 
@@ -248,18 +233,15 @@ bool DoesDirExist(const char* pth)
  * @param[in] files Iterable collection of files to be searched
  * @return first iterator _it_ to point to an element of _files_ such that _it_
  * is statable as a regular file.
- * 
+ *
  * @see DoesFileExist
  **/
-std::vector<std::string>::const_iterator FirstExistingFile(
-    const std::vector<std::string> &files)
-{
+std::vector<std::string>::const_iterator
+FirstExistingFile(const std::vector<std::string> &files) {
   auto it = files.begin();
-  for (; it != files.end(); it++)
-  {
+  for (; it != files.end(); it++) {
     auto message = std::string{"-- Checking "} + *it + " exists: ";
-    if (DoesFileExist(it->c_str()))
-    {
+    if (DoesFileExist(it->c_str())) {
       message += "yes";
       ExaGOLog(EXAGO_LOG_INFO, "{}", message.c_str());
       return it;
@@ -281,17 +263,20 @@ std::vector<std::string>::const_iterator FirstExistingFile(
  * @pre Any explicitly managed resources are cleaned up before this is called -
  * this function will std::exit for you.
  */
-PetscErrorCode ExagoHelpPrintf(MPI_Comm comm, const char appname[],...)
-{
+PetscErrorCode ExagoHelpPrintf(MPI_Comm comm, const char appname[], ...) {
   PetscErrorCode ierr;
 
-  char* versionstr;
-  ierr=ExaGOVersionGetFullVersionInfo(&versionstr);CHKERRQ(ierr);
-  fprintf(stderr, "===================================================================\n");
-  fprintf(stderr, "ExaGO Version Info:\n\n%s", versionstr); 
-  if (strcmp(appname,"opflow") == 0)
-  {
-    fprintf(stderr, "============== Help Options for application %s ==============\n\n", appname); 
+  char *versionstr;
+  ierr = ExaGOVersionGetFullVersionInfo(&versionstr);
+  CHKERRQ(ierr);
+  fprintf(
+      stderr,
+      "===================================================================\n");
+  fprintf(stderr, "ExaGO Version Info:\n\n%s", versionstr);
+  if (strcmp(appname, "opflow") == 0) {
+    fprintf(stderr,
+            "============== Help Options for application %s ==============\n\n",
+            appname);
     fprintf(stderr, " General usage: mpiexec -n <N> ./%s <options>\n", appname);
     fprintf(stderr, " Options:\n");
     fprintf(stderr, "\t -netfile <netfilename>\n");
@@ -314,14 +299,14 @@ PetscErrorCode ExagoHelpPrintf(MPI_Comm comm, const char appname[],...)
     fprintf(stderr, "\t -print_output <0|1>\n");
     fprintf(stderr, "\t -save_output <0|1>\n");
     fprintf(stderr, "\n");
-  } 
-  else if (strcmp(appname,"pflow")==0) 
-  {
-    fprintf(stderr, "============== Help Options for application %s ==============\n", appname);
-  } 
-  else if (strcmp(appname,"sopflow") == 0) 
-  {
-    fprintf(stderr, "============== Help Options for application %s ==============\n", appname);
+  } else if (strcmp(appname, "pflow") == 0) {
+    fprintf(stderr,
+            "============== Help Options for application %s ==============\n",
+            appname);
+  } else if (strcmp(appname, "sopflow") == 0) {
+    fprintf(stderr,
+            "============== Help Options for application %s ==============\n",
+            appname);
     fprintf(stderr, " General usage: mpiexec -n <N> ./%s <options>\n", appname);
     fprintf(stderr, " Options:\n");
     fprintf(stderr, "\t -netfile <netfilename>\n");
@@ -335,10 +320,10 @@ PetscErrorCode ExagoHelpPrintf(MPI_Comm comm, const char appname[],...)
     fprintf(stderr, "\t -scopflow_enable_multiperiod <0|1>\n");
     fprintf(stderr, "\t -sopflow_tolerance <1e-6|...>\n");
     fprintf(stderr, "\n");
-  }
-  else if (strcmp(appname,"scopflow") == 0) 
-  {
-    fprintf(stderr, "============== Help Options for application %s ==============\n", appname);
+  } else if (strcmp(appname, "scopflow") == 0) {
+    fprintf(stderr,
+            "============== Help Options for application %s ==============\n",
+            appname);
     fprintf(stderr, " General usage: mpiexec -n <N> ./%s <options>\n", appname);
     fprintf(stderr, " Options:\n");
     fprintf(stderr, "\t -netfile <netfilename>\n");
@@ -356,10 +341,10 @@ PetscErrorCode ExagoHelpPrintf(MPI_Comm comm, const char appname[],...)
     fprintf(stderr, "\t -scopflow_tolerance <1e-6|...>\n");
     fprintf(stderr, "\n");
 
-  }
-  else if (strcmp(appname,"tcopflow") == 0) 
-  {
-    fprintf(stderr, "============== Help Options for application %s ==============\n", appname);
+  } else if (strcmp(appname, "tcopflow") == 0) {
+    fprintf(stderr,
+            "============== Help Options for application %s ==============\n",
+            appname);
     fprintf(stderr, " General usage: mpiexec -n <N> ./%s <options>\n", appname);
     fprintf(stderr, " Options:\n");
     fprintf(stderr, "\t -netfile <netfilename>\n");
@@ -373,9 +358,7 @@ PetscErrorCode ExagoHelpPrintf(MPI_Comm comm, const char appname[],...)
     fprintf(stderr, "\t -tcopflow_dT <Minutes>\n");
     fprintf(stderr, "\t -tcopflow_tolerance <1e-6|...>\n");
     fprintf(stderr, "\n");
-  }
-  else 
-  {
+  } else {
     fprintf(stderr, "Please enter a valid application name.\n");
   }
   std::exit(EXIT_SUCCESS);
@@ -384,38 +367,36 @@ PetscErrorCode ExagoHelpPrintf(MPI_Comm comm, const char appname[],...)
 /**
  * Parse arguments for initializing an ExaGO application.
  */
-PetscErrorCode ExaGOInitializeParseArgs(int* argc, char*** argv, char* appname,
-    char *help, std::vector<std::string> optfiles, bool* no_optfile)
-{
+PetscErrorCode ExaGOInitializeParseArgs(int *argc, char ***argv, char *appname,
+                                        char *help,
+                                        std::vector<std::string> optfiles,
+                                        bool *no_optfile) {
   PetscErrorCode ierr;
   std::vector<std::string> args(*argv, *argv + *argc);
   auto args_it = args.begin();
   args_it++; /* Skip first argument, eg binary name */
 
-  for(; args_it != args.end(); args_it++)
-  {
+  for (; args_it != args.end(); args_it++) {
     /* Help message */
-    if (*args_it == "-help" or *args_it == "-h")
-    {
+    if (*args_it == "-help" or *args_it == "-h") {
       (*PetscHelpPrintf)(MPI_COMM_NULL, appname);
     }
 
     /* Version message */
-    else if (*args_it == "-v" or *args_it == "-version")
-    {
-      char* versionstr;
+    else if (*args_it == "-v" or *args_it == "-version") {
+      char *versionstr;
       ierr = ExaGOVersionGetFullVersionInfo(&versionstr);
       ExaGOCheckError(ierr);
-      std::cerr << "ExaGO Version Info:\n\n" << versionstr
-        << "ExaGO Help Message:\n" << help;
+      std::cerr << "ExaGO Version Info:\n\n"
+                << versionstr << "ExaGO Help Message:\n"
+                << help;
       free(versionstr);
       MPI_Finalize();
       std::exit(EXIT_SUCCESS);
     }
 
     /* Paths to options files */
-    else if (*args_it == "-options_file")
-    {
+    else if (*args_it == "-options_file") {
       /* Ensure the '-options_file' flag was not the last flag! If it was,
        * give the help message. */
       if (args_it + 1 == args.end())
@@ -425,24 +406,22 @@ PetscErrorCode ExaGOInitializeParseArgs(int* argc, char*** argv, char* appname,
       optfiles.push_back(*args_it);
     }
     /* If we need to skip options file */
-    else if (*args_it == "-no_optfile")
-    {
+    else if (*args_it == "-no_optfile") {
       *no_optfile = true;
     }
   }
   return 0;
 }
 
-PetscErrorCode ExaGOInitialize(MPI_Comm comm, int* argc, char*** argv,
-    char* appname, char *help)
-{
+PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
+                               char *appname, char *help) {
   int i;
   PetscErrorCode ierr;
-  strcpy(ExaGOCurrentAppName,appname);
+  strcpy(ExaGOCurrentAppName, appname);
   PetscHelpPrintf = &ExagoHelpPrintf;
-  
+
   /* Skip options file if necessary */
-  bool no_optfile = false; 
+  bool no_optfile = false;
 
   /* Prefix checked for application options */
   std::string options_pathname = EXAGO_OPTIONS_DIR;
@@ -457,8 +436,7 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int* argc, char*** argv,
    * python */
   bool skip_args = false;
 
-  if (argc == NULL || argv == NULL || *argc == 0)
-  {
+  if (argc == NULL || argv == NULL || *argc == 0) {
     skip_args = true;
     argc = NULL;
     argv = NULL;
@@ -471,26 +449,24 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int* argc, char*** argv,
 
   int initialized;
   MPI_Initialized(&initialized);
-  if(!initialized)
-    MPI_Init(argc,argv);
+  if (!initialized)
+    MPI_Init(argc, argv);
 
   ExaGOLogSetComm(comm);
   ierr = ExaGOLogInitialize();
-  if(ierr)
-  {
+  if (ierr) {
     fprintf(stderr, "Could not initialize ExaGO logger.\n");
     return ierr;
   }
 
   FILE *fp;
   ExaGOLogGetLoggingFilePointer(&fp);
-  if(fp==NULL)
+  if (fp == NULL)
     ExaGOLogSetLoggingFilePointer(stderr);
 
   // Skip options file setting if -no_optfile is passed
-  if (no_optfile)
-  {
-    PetscInitialize(argc,argv,NULL,help);
+  if (no_optfile) {
+    PetscInitialize(argc, argv, NULL, help);
     return 0;
   }
 
@@ -500,30 +476,25 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int* argc, char*** argv,
 
   auto file_it = FirstExistingFile(optfiles);
 
-  if (file_it == optfiles.end())
-  {
-    ExaGOLog(EXAGO_LOG_ERROR,
-        "Could not find options file for application {}.",
-        ExaGOCurrentAppName);
+  if (file_it == optfiles.end()) {
+    ExaGOLog(EXAGO_LOG_ERROR, "Could not find options file for application {}.",
+             ExaGOCurrentAppName);
     throw std::runtime_error{"No options files were found"};
   }
- 
-  PetscInitialize(argc,argv,file_it->c_str(),help);
+
+  PetscInitialize(argc, argv, file_it->c_str(), help);
   return 0;
 }
 
-
-PetscErrorCode ExaGOFinalize()
-{
+PetscErrorCode ExaGOFinalize() {
   PetscFunctionBegin;
-  ExaGOLog(EXAGO_LOG_INFO,"Finalizing {} application.",ExaGOCurrentAppName);
+  ExaGOLog(EXAGO_LOG_INFO, "Finalizing {} application.", ExaGOCurrentAppName);
   bool flg;
   ExaGOLogIsUsingLogFile(&flg);
-  if (flg)
-  {
-    char* filename;
+  if (flg) {
+    char *filename;
     ExaGOLogGetLoggingFileName(&filename);
-    ExaGOLog(EXAGO_LOG_INFO,"See logfile {} for output.",filename);
+    ExaGOLog(EXAGO_LOG_INFO, "See logfile {} for output.", filename);
   }
   ExaGOLogFinalize();
   PetscFinalize();
@@ -534,8 +505,7 @@ PetscErrorCode ExaGOFinalize()
 #undef EXAGO_LOG_ENSURE_INITIALIZED
 
 /* Used by python interface to get communicator */
-PetscErrorCode ExaGOGetSelfCommunicator(MPI_Comm *comm)
-{
+PetscErrorCode ExaGOGetSelfCommunicator(MPI_Comm *comm) {
   PetscFunctionBegin;
   *comm = PETSC_COMM_SELF;
   PetscFunctionReturn(0);

@@ -12,14 +12,7 @@ if [[ $? -eq 1 ]]; then
 fi
 
 cd ..
-export cmakeFormat="cmake-format --log-level info"
 export srcdir=${srcdir:-$PWD}
-export findCmakeFiles=`find $srcdir  \
-  -type f -name '*.cmake' -o \
-  -name CMakeLists.txt \
-  | egrep -v "/toml11/|/pybind11/|/build/|/install/"`
 function doBuild {
-  for f in $findCmakeFiles; do
-    $cmakeFormat --in-place $f
-  done
+  $srcdir/scripts/cmake-format.pl -vi
 }

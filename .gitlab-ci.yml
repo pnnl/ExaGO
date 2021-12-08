@@ -223,7 +223,7 @@ test_on_compute_node:
     - exasgd
     - basic
 
-cmake-lint:
+CMake Lint:
   stage: build
   allow_failure: true
   <<: *pnnl-nonhpc-definition
@@ -232,19 +232,23 @@ cmake-lint:
   script:
     |
     set -x
-    apt update && apt install -y python3 python3-pip 
+    apt update && apt install -y python3 python3-pip perl
     pip install cmake_format
-    ret=0
-    export files_to_format=$( \
-      find . -type f \
-      -name "*.cmake" -o \
-      -name "CMakeLists.txt" -a \
-      -not -path "*/tests/toml11/*")
-    for f in "${files_to_format}"; do
-      cmake-format --log-level info --check $f
-      ret=$(($ret + $?))
-    done
-    exit $ret
+    ./scripts/cmake-format.pl -v
+    exit $?
+
+C++ Lint:
+  stage: build
+  allow_failure: true
+  <<: *pnnl-nonhpc-definition
+  <<: *pnnl-rules
+  image: ubuntu:20.04
+  script:
+    |
+    set -x
+    apt update && apt install -y clang-format perl
+    ./scripts/clang-format.pl -v
+    exit $?
 
 svc cleanup:
   stage: .pre

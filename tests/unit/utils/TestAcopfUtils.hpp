@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <common.h>
+#include <string>
 
 /**
  * @brief Writes a PetscVec to _file_ in ASCII format.
@@ -43,14 +43,15 @@ void saveToFile(Mat a, std::string file);
  * @param[out] vector PetscVec to be read from _file_.
  * @param[in] file The absolute file path to be written to.
  *
- * @pre _file_ contains the number of elements to be stored into vec as the first
- *             entry in the file. The other values of the vector follow.
- * @pre _file_ stores the data in enough precision to be accurately stored by _vector_.
+ * @pre _file_ contains the number of elements to be stored into vec as the
+ * first entry in the file. The other values of the vector follow.
+ * @pre _file_ stores the data in enough precision to be accurately stored by
+ * _vector_.
  *
  * @post _vector_ is filled with data from file.
  */
 
-void readFromFile(Vec* vector, std::string file);
+void readFromFile(Vec *vector, std::string file);
 
 /**
  * @brief Reads a double from _file_ in ASCII format.
@@ -61,14 +62,14 @@ void readFromFile(Vec* vector, std::string file);
  * @post _data_ is filled with data from file to 16 sig. figs.
  */
 
-void readFromFile(double* data, std::string file);
+void readFromFile(double *data, std::string file);
 
 /**
  * @brief Reads a Petsc Matrix from _file_ in binary format.
  *
  * @param[out] data double that is assigned data from _file_.
  * @param[in] file The absolute file path to be written to.
- * 
+ *
  * @return true if the matrix was read succesfully, false if not
  *
  * @post _a_ is filled with from a binary file.
@@ -92,10 +93,12 @@ bool readFromFile(Mat *a, std::string file);
 std::string getFileName(std::string file_path);
 
 /**
- * @brief Checks to see if there is a directory at _dir_path_. If none exists, it creates on in place.
- * 
- * @pre The process running this function has permission to create a directory at _dir_path_ if need be.
- * 
+ * @brief Checks to see if there is a directory at _dir_path_. If none exists,
+ * it creates on in place.
+ *
+ * @pre The process running this function has permission to create a directory
+ * at _dir_path_ if need be.
+ *
  * @post The directory _dir_path_ exists at the specified location.
  */
 void validate_directory(std::string dir_path);

@@ -2,6 +2,6 @@
 
 typedef struct _p_FormPBCAR *PBCAR;
 
-struct _p_FormPBCAR{
+struct _p_FormPBCAR {
   PetscInt Nx;
 };

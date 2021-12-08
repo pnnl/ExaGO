@@ -7,20 +7,17 @@ using namespace exago::tests;
 /* These _Throw*_ functions test various constructors for ExaGOErrors */
 
 /* Throw an ExaGOError with the default constructor */
-static void ThrowExaGOErrorDefaultConstructor() noexcept(false)
-{
+static void ThrowExaGOErrorDefaultConstructor() noexcept(false) {
   throw ExaGOError();
 }
 
 /* Throw an ExaGOError with a string */
-static void ThrowExaGOErrorStringConstructor() noexcept(false)
-{
+static void ThrowExaGOErrorStringConstructor() noexcept(false) {
   throw ExaGOError("Some error");
 }
 
 /* Throw an ExaGOError from a PetscErrorCode */
-static void ThrowExaGOErrorFromPetscError() noexcept(false)
-{
+static void ThrowExaGOErrorFromPetscError() noexcept(false) {
   /* The error doesn't actually matter here - we're just ensuring that
    * constructing an ExaGOError from a petsc error code is functional */
   PetscErrorCode ierr = PETSC_ERR_MEM;
@@ -30,50 +27,47 @@ static void ThrowExaGOErrorFromPetscError() noexcept(false)
 //------------------------------------------------------------------------------
 
 struct TestExaGOErrorHandler : public TestBase {
-  static int TestExaGOErrorDefaultConstructor()
-  {
+  static int TestExaGOErrorDefaultConstructor() {
     static int fail = 0;
     try {
       ThrowExaGOErrorDefaultConstructor();
       /* If this line isn't reached, something went wrong with the ExaGOError */
       fail++;
-    } catch (const ExaGOError& e) {
+    } catch (const ExaGOError &e) {
       /* Success! */
     }
     printMessage(fail, __func__, 0);
     return fail;
   }
 
-  static int TestExaGOErrorStringConstructor()
-  {
+  static int TestExaGOErrorStringConstructor() {
     static int fail = 0;
     try {
       ThrowExaGOErrorStringConstructor();
       /* If this line isn't reached, something went wrong with the ExaGOError */
       fail++;
-    } catch (const ExaGOError& e) {
+    } catch (const ExaGOError &e) {
       /* Success! */
     }
     printMessage(fail, __func__, 0);
     return fail;
   }
 
-  static int TestExaGOErrorPetscErrorCodeConstructor()
-  {
+  static int TestExaGOErrorPetscErrorCodeConstructor() {
     static int fail = 0;
     try {
       ThrowExaGOErrorFromPetscError();
       /* If this line isn't reached, something went wrong with the ExaGOError */
       fail++;
-    } catch (const ExaGOError& e) {
-      if (!e.IsPetscError()) fail++;
+    } catch (const ExaGOError &e) {
+      if (!e.IsPetscError())
+        fail++;
     }
     printMessage(fail, __func__, 0);
     return fail;
   }
 
-  static int TestExaGOErrorCheckMacro()
-  {
+  static int TestExaGOErrorCheckMacro() {
     static int fail = 0;
     try {
       /* A common idiom is to retrieve the return code from an ExaGO or PETSc
@@ -82,12 +76,13 @@ struct TestExaGOErrorHandler : public TestBase {
        * throws an ExaGOError via the PetscErrorCode initializer if the code
        * falls within PetscError's range of values. */
 
-      PetscErrorCode ierr = PETSC_ERR_MEM; /* pretend this value is returned from
-                                              a Petsc function call */
-      ExaGOCheckError(ierr); /* Check the error code just like we already do with
-                                the CHKERRQ family of Petsc macros */
-    } catch (const ExaGOError& e) {
-      if (!e.IsPetscError()) fail++;
+      PetscErrorCode ierr = PETSC_ERR_MEM; /* pretend this value is returned
+                                              from a Petsc function call */
+      ExaGOCheckError(ierr); /* Check the error code just like we already do
+                                with the CHKERRQ family of Petsc macros */
+    } catch (const ExaGOError &e) {
+      if (!e.IsPetscError())
+        fail++;
     }
     printMessage(fail, __func__, 0);
     return fail;
@@ -103,7 +98,4 @@ struct TestExaGOErrorHandler : public TestBase {
   }
 };
 
-int main()
-{
-  return TestExaGOErrorHandler().RunAllTests();
-}
+int main() { return TestExaGOErrorHandler().RunAllTests(); }
