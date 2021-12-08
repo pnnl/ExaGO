@@ -125,7 +125,7 @@ PetscErrorCode TCOPFLOWCreate(MPI_Comm mpicomm, TCOPFLOW *tcopflowout)
   tcopflow->setupcalled = PETSC_FALSE;
   *tcopflowout = tcopflow;
 
-  ExaGOLog(EXAGO_LOG_INFO,"%s","TCOPFLOW: Application created\n");
+  ExaGOLog(EXAGO_LOG_INFO,"{}","TCOPFLOW: Application created");
   PetscFunctionReturn(0);
 }
 
@@ -335,7 +335,7 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
 
   tcopflow->Nt = round(tcopflow->duration*60.0/tcopflow->dT)+1;
 
-  ExaGOLog(EXAGO_LOG_INFO,"TCOPFLOW: Duration = %lf hours, timestep = %lf minutes, number of time-steps = %d\n",tcopflow->duration,tcopflow->dT,tcopflow->Nt);
+  ExaGOLog(EXAGO_LOG_INFO,"TCOPFLOW: Duration = {:f} hours, timestep = {:f} minutes, number of time-steps = {:d}",tcopflow->duration,tcopflow->dT,tcopflow->Nt);
 
   /* Set Model */
   ierr = TCOPFLOWSetModel(tcopflow,modelname);CHKERRQ(ierr);
@@ -344,11 +344,11 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
   if(solverset) {
     if(tcopflow->solver) ierr = (*tcopflow->solverops.destroy)(tcopflow);
     ierr = TCOPFLOWSetSolver(tcopflow,solvername);CHKERRQ(ierr);
-    ExaGOLog(EXAGO_LOG_INFO,"TCOPFLOW: Using %s solver\n",solvername);
+    ExaGOLog(EXAGO_LOG_INFO,"TCOPFLOW: Using {} solver",solvername);
   } else {
     if(!tcopflow->solver) {
       ierr = TCOPFLOWSetSolver(tcopflow,TCOPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
-      ExaGOLog(EXAGO_LOG_INFO,"TCOPFLOW: Using %s solver\n",TCOPFLOWSOLVER_IPOPT);
+      ExaGOLog(EXAGO_LOG_INFO,"TCOPFLOW: Using {} solver",TCOPFLOWSOLVER_IPOPT);
     }
   }
 
@@ -455,7 +455,7 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow)
 
   ierr = (*tcopflow->solverops.setup)(tcopflow);CHKERRQ(ierr);
 
-  ExaGOLog(EXAGO_LOG_INFO,"%s","TCOPFLOW: Setup completed\n");
+  ExaGOLog(EXAGO_LOG_INFO,"{}","TCOPFLOW: Setup completed");
   
   tcopflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);

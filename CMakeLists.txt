@@ -260,6 +260,8 @@ if(EXAGO_RUN_TESTS)
   include(ExaGOTestingUtilities)
 endif()
 
+include_directories(${PROJECT_SOURCE_DIR}/tpl/spdlog/include)
+
 # Build libraries (specified in src/CMakeLists.txt)
 add_subdirectory(src)
 

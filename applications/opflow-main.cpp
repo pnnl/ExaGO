@@ -37,7 +37,7 @@ int main(int argc,char **argv)
   /* Stage 1 - Application creation and reading data */
   ierr = PetscLogStagePush(stages[0]);ExaGOCheckError(ierr);
 
-  ExaGOLog(EXAGO_LOG_INFO,"%s","Creating OPFlow\n");
+  ExaGOLog(EXAGO_LOG_INFO,"{}","Creating OPFlow\n");
 
   /* Create OPFLOW object */
   ierr = OPFLOWCreate(comm,&opflow);ExaGOCheckError(ierr);

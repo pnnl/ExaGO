@@ -65,7 +65,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout)
   scopflow->setupcalled = PETSC_FALSE;
   *scopflowout = scopflow;
 
-  ExaGOLog(EXAGO_LOG_INFO,"%s","SCOPFLOW: Application created\n");
+  ExaGOLog(EXAGO_LOG_INFO,"{}","SCOPFLOW: Application created");
   PetscFunctionReturn(0);
 }
 
@@ -418,8 +418,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = MPI_Scan(&scopflow->nc,&scopflow->cend,1,MPIU_INT,MPI_SUM,scopflow->comm->type);CHKERRQ(ierr);
   scopflow->cstart = scopflow->cend - scopflow->nc;
 
-  
-  ExaGOLog(EXAGO_LOG_INFO,"SCOPFLOW running with %d contingencies (base case + %d contingencies)\n",scopflow->Nc,scopflow->Nc-1);
+  ExaGOLog(EXAGO_LOG_INFO,"SCOPFLOW running with {:d} contingencies (base case + {:d} contingencies)",scopflow->Nc,scopflow->Nc-1);
   //  ExaGOLogUseEveryRank(PETSC_TRUE);
   //  ExaGOLog(EXAGO_LOG_INFO,"Rank %d has %d contingencies, range [%d -- %d]\n",scopflow->comm->rank,scopflow->nc,scopflow->cstart,scopflow->cend);
   //  ExaGOLogUseEveryRank(PETSC_FALSE);
@@ -435,11 +434,11 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   if(scopflowsolverset) {
     if(scopflow->solver) ierr = (*scopflow->solverops.destroy)(scopflow);
     ierr = SCOPFLOWSetSolver(scopflow,scopflowsolvername);CHKERRQ(ierr);
-    ExaGOLog(EXAGO_LOG_INFO,"SCOPFLOW: Using %s solver\n",scopflowsolvername);
+    ExaGOLog(EXAGO_LOG_INFO,"SCOPFLOW: Using {} solver",scopflowsolvername);
   } else {
     if(!scopflow->solver) {
       ierr = SCOPFLOWSetSolver(scopflow,SCOPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
-      ExaGOLog(EXAGO_LOG_INFO,"SCOPFLOW: Using %s solver\n",SCOPFLOWSOLVER_IPOPT);
+      ExaGOLog(EXAGO_LOG_INFO,"SCOPFLOW: Using {} solver",SCOPFLOWSOLVER_IPOPT);
     }
   }
   
@@ -640,7 +639,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow)
   ierr = VecDuplicate(scopflow->G,&scopflow->Lambda);CHKERRQ(ierr);
 
   ierr = (*scopflow->solverops.setup)(scopflow);CHKERRQ(ierr);
-  ExaGOLog(EXAGO_LOG_INFO,"%s","SCOPFLOW: Setup completed\n");
+  ExaGOLog(EXAGO_LOG_INFO,"{}","SCOPFLOW: Setup completed");
   
   scopflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);

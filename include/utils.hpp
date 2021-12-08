@@ -63,13 +63,39 @@ extern PetscErrorCode ExaGOLogSetMinLogLevel(ExaGOVerbosityLevel);
 extern PetscErrorCode ExaGOLogUseEveryRank(PetscBool);
 
 #if !defined(EXAGO_DISABLE_LOGGING)
+#include <spdlog/spdlog.h>
 
 /** 
  * @brief Implementation to log string according to ExaGO build configuration.
  * @note Users should use `ExaGOLog` instead, as this can be disabled for
  * optimization.
  */
+/*
 extern void ExaGOLogImpl(ExaGOVerbosityLevel,const char*,...);
+*/
+template<typename... Args> void ExaGOLogImpl(ExaGOVerbosityLevel level, std::string fmt, Args... args)
+{
+  auto logger = spdlog::get("exago_logger");
+  switch (level) {
+    case EXAGO_LOG_INFO:
+      logger->info(fmt,args...);
+      break;
+    case EXAGO_LOG_WARN:
+      logger->warn(fmt,args...);
+      break;
+    case EXAGO_LOG_ERROR:
+      logger->error(fmt,args...);
+      break;
+    case EXAGO_LOG_DISABLE:
+      logger->info(fmt,args...);
+      break;
+    case EXAGO_LOG_NUM_LOG_LEVELS:
+      logger->info(fmt,args...);
+      break;
+    default:
+      break;
+  }
+}
 
 /**
  * @brief `ExaGOLog` is the user-facing logging function.

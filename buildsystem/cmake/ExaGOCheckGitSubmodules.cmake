@@ -15,9 +15,16 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
   endif()
 endif()
 
-if(NOT EXISTS "${PROJECT_SOURCE_DIR}/tests/toml11/CMakeLists.txt")
+if(NOT EXISTS "${PROJECT_SOURCE_DIR}/tpl/toml11/CMakeLists.txt")
   message(
     FATAL_ERROR
-      "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again."
+      "The toml submodule was not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again."
+  )
+endif()
+
+if(NOT EXISTS "${PROJECT_SOURCE_DIR}/tpl/spdlog/CMakeLists.txt")
+  message(
+    FATAL_ERROR
+      "The spdlog submodule was not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again."
   )
 endif()

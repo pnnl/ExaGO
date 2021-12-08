@@ -13,7 +13,7 @@ if(EXAGO_RUN_TESTS)
   message(STATUS "Configuring tests")
 endif(EXAGO_RUN_TESTS)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/toml11)
+include_directories(${PROJECT_SOURCE_DIR}/tpl/toml11)
 add_subdirectory(unit)
 add_subdirectory(functionality)
 

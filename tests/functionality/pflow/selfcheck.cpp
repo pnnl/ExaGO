@@ -178,7 +178,7 @@ int main(int argc, char** argv)
   int _argc = 0;
   ierr = ExaGOInitialize(comm,&argc,&argv,appname,help);
 
-  ExaGOLog(EXAGO_LOG_INFO,"%s\n","Creating PFlow Functionality Test");
+  ExaGOLog(EXAGO_LOG_INFO,"{}","Creating PFlow Functionality Test");
 
   PflowFunctionalityTests test{std::string(argv[1]), comm};
   test.run_all_test_cases();
