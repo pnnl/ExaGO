@@ -134,17 +134,20 @@ workflow:
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
-stages:
-  - spack-generate
-  - spack-build
-
 # Include PNNL GitLab stdlib
 include:
   - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v1/gitlab-lib.yaml'
 
+stages:
+  - spack-generate
+  - spack-build
+
 .spack-variables: &spack-variables
   variables:
-    SPACK_REF: 2d45a9d617 # 64a323b # parent of conc pool # develop
+    # fails: 2d45a9d617
+    # works: 64a323b
+    # usual: develop
+    SPACK_REF: 64a323b
     SPACK_REPO: https://github.com/LLNL/spack.git
     S3_ENDPOINT_URL: http://cache.exasgd.pnl.gov
 
