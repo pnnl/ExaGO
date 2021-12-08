@@ -71,7 +71,7 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout)
   sopflow->setupcalled = PETSC_FALSE;
   *sopflowout = sopflow;
 
-  ExaGOLog(EXAGO_LOG_INFO,"%s","SOPFLOW: Application created\n");
+  ExaGOLog(EXAGO_LOG_INFO,"{}","SOPFLOW: Application created");
   PetscFunctionReturn(0);
 }
 
@@ -660,11 +660,11 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   if(sopflowsolverset) {
     if(sopflow->solver) ierr = (*sopflow->solverops.destroy)(sopflow);
     ierr = SOPFLOWSetSolver(sopflow,sopflowsolvername);CHKERRQ(ierr);
-    ExaGOLog(EXAGO_LOG_INFO,"SOPFLOW: Using %s solver\n",sopflowsolvername);
+    ExaGOLog(EXAGO_LOG_INFO,"SOPFLOW: Using {} solver",sopflowsolvername);
   } else {
     if(!sopflow->solver) {
       ierr = SOPFLOWSetSolver(sopflow,SOPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
-      ExaGOLog(EXAGO_LOG_INFO,"SOPFLOW: Using %s solver\n",SOPFLOWSOLVER_IPOPT);
+      ExaGOLog(EXAGO_LOG_INFO,"SOPFLOW: Using {} solver",SOPFLOWSOLVER_IPOPT);
     }
   }
 
@@ -842,7 +842,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow)
   ierr = VecDuplicate(sopflow->G,&sopflow->Lambda);CHKERRQ(ierr);
 
   ierr = (*sopflow->solverops.setup)(sopflow);CHKERRQ(ierr);
-  ExaGOLog(EXAGO_LOG_INFO,"%s","SOPFLOW: Setup completed\n");
+  ExaGOLog(EXAGO_LOG_INFO,"{}","SOPFLOW: Setup completed");
   
   sopflow->setupcalled = PETSC_TRUE;
   PetscFunctionReturn(0);

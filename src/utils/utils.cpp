@@ -5,6 +5,9 @@
 #include <version.hpp>
 #include <stdarg.h>
 #include <dirent.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <exago_config.h>
 #include <utils.hpp>
 
@@ -27,7 +30,7 @@ void ExaGOCheckError(int e)
     throw ExaGOError(e);
 }
 
-static PetscBool ExaGOLogIsLoggerInitialized=PETSC_FALSE;
+static bool ExaGOLogIsLoggerInitialized=false;
 
 /** This macro is undef'ed at the end of this header, don't use elsewhere.
     Only for use within PetscErrorCode-returning ExaGOLog-related functions. */
@@ -43,9 +46,11 @@ static PetscBool ExaGOLogIsLoggerInitialized=PETSC_FALSE;
 
 static FILE* ExaGOLogFilePointer=NULL;
 
+std::shared_ptr<spdlog::logger> ExaGOLoggerPointer = NULL;
+
 static char ExaGOLogFileName[PETSC_MAX_PATH_LEN]="filename_unset";
 
-static PetscBool ExaGOLogUseLogFile=PETSC_FALSE;
+static bool ExaGOLogUseLogFile=false;
 
 static ExaGOVerbosityLevel ExaGOLogMinLogLevel = EXAGO_LOG_INFO;
 
@@ -67,7 +72,7 @@ PetscErrorCode ExaGOLogSetLoggingFileName(char* name)
   return 0;
 }
 
-PetscErrorCode ExaGOLogIsUsingLogFile(PetscBool *flg)
+PetscErrorCode ExaGOLogIsUsingLogFile(bool *flg)
 {
   *flg = ExaGOLogUseLogFile;
   return 0;
@@ -87,6 +92,18 @@ PetscErrorCode ExaGOLogSetLoggingFilePointer(FILE* fp)
   return 0;
 }
 
+PetscErrorCode ExaGOSetLoggerPointer(std::shared_ptr<spdlog::logger> logger)
+{
+  ExaGOLoggerPointer = logger;
+  return 0;
+}
+
+PetscErrorCode ExaGOGetLoggerPointer(std::shared_ptr<spdlog::logger> *logger)
+{
+  *logger = ExaGOLoggerPointer;
+  return 0;
+}
+
 /** Set ExaGO logging communicator */
 PetscErrorCode ExaGOLogSetComm(MPI_Comm c)
 {
@@ -94,7 +111,7 @@ PetscErrorCode ExaGOLogSetComm(MPI_Comm c)
   return 0;
 }
 
-PetscErrorCode ExaGOLogIsInitialized(PetscBool*flg)
+PetscErrorCode ExaGOLogIsInitialized(bool*flg)
 {
   *flg = ExaGOLogIsLoggerInitialized;
   return 0;
@@ -102,7 +119,7 @@ PetscErrorCode ExaGOLogIsInitialized(PetscBool*flg)
 
 PetscErrorCode ExaGOLogInitialize()
 {
-  PetscBool flg=PETSC_FALSE;
+  bool flg=false;
   PetscErrorCode ierr=0;
   char* filename;
   FILE* fp;
@@ -114,20 +131,21 @@ PetscErrorCode ExaGOLogInitialize()
     return 1;
 
   /** If we're not using a logfile, there's no additional setup to perform */
-  if (!flg)
-    goto lbl_success; // so sue me
+  if (flg) {
 
-  ierr=ExaGOLogGetLoggingFileName(&filename);
-  /** We still don't have proper logging set up, so just return the error */
-  if(ierr != 0)
-    return 1;
-
-  fp = fopen(ExaGOLogFileName, "w");
-  ExaGOLogSetLoggingFilePointer(fp);
-
-lbl_success:
-  ExaGOLogSetLoggingFilePointer(stdout);
-  ExaGOLogIsLoggerInitialized = PETSC_TRUE;
+    ierr=ExaGOLogGetLoggingFileName(&filename);
+    /** We still don't have proper logging set up, so just return the error */
+    if(ierr != 0)
+      return 1;
+    auto logger = spdlog::basic_logger_mt("exago_logger",filename);
+    logger->set_pattern("%^[%l]%$ %v");
+    ExaGOSetLoggerPointer(logger);
+  } else {
+    auto logger = spdlog::stdout_color_mt("exago_logger");
+    logger->set_pattern("%^[%l]%$ %v");
+    ExaGOSetLoggerPointer(logger);
+  }
+  ExaGOLogIsLoggerInitialized = true;
   return 0;
 }
 
@@ -135,18 +153,15 @@ PetscErrorCode ExaGOLogFinalize()
 {
   EXAGO_LOG_ENSURE_INITIALIZED();
 
-  PetscBool flg=PETSC_FALSE;
+  bool flg=false;
   PetscErrorCode ierr=0;
   ierr=ExaGOLogIsUsingLogFile(&flg);
   /** If we're not using a logfile, there's no teardown to perform */
   if (!flg)
     return 0;
+    /** File is automatically closed when sink goes out of scope? */
 
-  FILE *fp;
-  ExaGOLogGetLoggingFilePointer(&fp);
-  fclose(fp);
-
-  ExaGOLogIsLoggerInitialized = PETSC_FALSE;
+  ExaGOLogIsLoggerInitialized = false;
   return 0;
 }
 
@@ -162,6 +177,7 @@ PetscErrorCode ExaGOLogSetMinLogLevel(ExaGOVerbosityLevel l)
   return 0;
 }
 
+#if 0
 /** ExaGO logging function with format string */
 void ExaGOLogImpl(ExaGOVerbosityLevel verb, const char *fmt, ...)
 {
@@ -171,23 +187,27 @@ void ExaGOLogImpl(ExaGOVerbosityLevel verb, const char *fmt, ...)
   if(verb<ExaGOLogMinLogLevel)
     return;
 
-  FILE *fp;
-  ierr=ExaGOLogGetLoggingFilePointer(&fp);
+  std::shared_ptr<spdlog::logger> logger;
+  ierr = ExaGOGetLoggerPointer(&logger);
 
   static int log_bufsize = 32768;
   char buf[log_bufsize];
+  char log_msg[log_bufsize];
   va_list args;
   va_start(args, fmt);
   vsprintf(buf, fmt, args);
   char *endl = strtok(buf, "\n");
   while (endl!=NULL)
   {
-    fprintf(fp,"[ExaGO %s]: %s\n",ExaGOVerbosityNames[verb],endl);
+    sprintf(log_msg,"[ExaGO %s]: %s",ExaGOVerbosityNames[verb],endl);
+    logger->info(&log_msg[0]);
     endl = strtok(NULL, "\n");
   }
   va_end(args);
-  fflush(fp);
+  logger->flush();
 }
+#else
+#endif
 
 /**
  * @brief Checks whether or not a directory entry can be opened at the given
@@ -241,11 +261,11 @@ std::vector<std::string>::const_iterator FirstExistingFile(
     if (DoesFileExist(it->c_str()))
     {
       message += "yes";
-      ExaGOLog(EXAGO_LOG_INFO, "%s", message.c_str());
+      ExaGOLog(EXAGO_LOG_INFO, "{}", message.c_str());
       return it;
     }
     message += "no";
-    ExaGOLog(EXAGO_LOG_INFO, "%s", message.c_str());
+    ExaGOLog(EXAGO_LOG_INFO, "{}", message.c_str());
   }
 
   /* No files were found to exist! Just return iterator to files.end() to follow
@@ -483,7 +503,7 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int* argc, char*** argv,
   if (file_it == optfiles.end())
   {
     ExaGOLog(EXAGO_LOG_ERROR,
-        "Could not find options file for application %s.\n",
+        "Could not find options file for application {}.",
         ExaGOCurrentAppName);
     throw std::runtime_error{"No options files were found"};
   }
@@ -496,14 +516,14 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int* argc, char*** argv,
 PetscErrorCode ExaGOFinalize()
 {
   PetscFunctionBegin;
-  ExaGOLog(EXAGO_LOG_INFO,"Finalizing %s application.\n",ExaGOCurrentAppName);
-  PetscBool flg;
+  ExaGOLog(EXAGO_LOG_INFO,"Finalizing {} application.",ExaGOCurrentAppName);
+  bool flg;
   ExaGOLogIsUsingLogFile(&flg);
   if (flg)
   {
     char* filename;
     ExaGOLogGetLoggingFileName(&filename);
-    ExaGOLog(EXAGO_LOG_INFO,"See logfile %s for output.\n",filename);
+    ExaGOLog(EXAGO_LOG_INFO,"See logfile {} for output.",filename);
   }
   ExaGOLogFinalize();
   PetscFinalize();

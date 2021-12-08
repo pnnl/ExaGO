@@ -90,6 +90,7 @@ if(EXAGO_INSTALL_TESTS)
     HIOP
   )
 
+  if (FALSE)
   exago_add_test(
     NAME
     SOPFLOW_200bus_HIOP_SERIAL
@@ -120,6 +121,7 @@ if(EXAGO_INSTALL_TESTS)
     IPOPT
     HIOP
   )
+  endif()
 
   exago_add_test(
     NAME
@@ -183,6 +185,7 @@ if(EXAGO_INSTALL_TESTS)
     HIOP
   )
 
+  if (FALSE)
   exago_add_test(
     NAME
     SOPFLOW_200bus_HIOP_SERIAL_GPU
@@ -246,4 +249,5 @@ if(EXAGO_INSTALL_TESTS)
     IPOPT
     HIOP
   )
+  endif()
 endif()

@@ -158,7 +158,7 @@ public:
   /* Callback for each failing test */
   virtual inline void fail()
   {
-    ExaGOLog(verbosity(), "%s", "-- FAIL\n");
+    ExaGOLog(verbosity(), "{}", "-- FAIL");
     auto testcase = create_failing_testcase(test_parameters());
     failing_testcases_.push_back(testcase);
     failures_++;
@@ -169,15 +169,15 @@ public:
   virtual inline void pass()
   {
     total_num_tests_++;
-    ExaGOLog(verbosity(), "%s", "-- PASS\n");
+    ExaGOLog(verbosity(), "{}", "-- PASS");
   }
 
   void print_report()
   {
-    ExaGOLog(verbosity(), "%zu / %zu tests failed.\n", failures(), total_tests());
+    ExaGOLog(verbosity(), "{:d} / {:d} tests failed.\n", failures(), total_tests());
     if (failures())
     {
-      ExaGOLog(verbosity(), "%s", "Summary of failing functionality tests:\n");
+      ExaGOLog(verbosity(), "{}", "Summary of failing functionality tests:");
       std::cout.precision(12);
       std::cout 
         << std::flush

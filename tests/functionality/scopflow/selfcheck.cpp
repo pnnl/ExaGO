@@ -268,7 +268,7 @@ int main(int argc, char** argv)
   int _argc = 0;
   ierr = ExaGOInitialize(comm,&argc,&argv,appname,help);
 
-  ExaGOLog(EXAGO_LOG_INFO,"%s\n","Creating SCOPFlow Functionality Test");
+  ExaGOLog(EXAGO_LOG_INFO,"{}","Creating SCOPFlow Functionality Test");
 
   ScopflowFunctionalityTests test{std::string(argv[1])};
   test.run_all_test_cases();
