@@ -144,7 +144,8 @@ include:
 
 .spack-variables: &spack-variables
   variables:
-    SPACK_REF: 2d45a9d617 # 64a323b # parent of conc pool # develop
+    # 2d45a9d617 # 64a323b # parent of conc pool # develop
+    SPACK_REF: develop
     SPACK_REPO: https://github.com/LLNL/spack.git
     S3_ENDPOINT_URL: http://cache.exasgd.pnl.gov
 
@@ -170,6 +171,10 @@ spack-generate-job:
     - . "./spack/share/spack/setup-env.sh"
   script:
     - cp buildsystem/container/spack.yaml . && spack env activate --without-view .
+
+    # See https://github.com/spack/spack/issues/27865
+    - sed -i.bak 's/16/1/g' spack/lib/spack/spack/environment/environment.py
+
     - spack -d ci generate
       --artifacts-root "${CI_PROJECT_DIR}/jobs_scratch_dir"
       --output-file "${CI_PROJECT_DIR}/jobs_scratch_dir/pipeline.yml"
