@@ -175,7 +175,7 @@ spack-generate-job:
     # See https://github.com/spack/spack/issues/27865
     - sed -i.bak 's/16/1/g' spack/lib/spack/spack/environment/environment.py
 
-    - spack -d ci generate
+    - spack -kd ci generate
       --artifacts-root "${CI_PROJECT_DIR}/jobs_scratch_dir"
       --output-file "${CI_PROJECT_DIR}/jobs_scratch_dir/pipeline.yml"
   artifacts:
