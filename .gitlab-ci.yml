@@ -195,7 +195,7 @@ spack-build-job:
   rules:
     - if: '$CI_PROJECT_PATH == "ecpcitest/exasgd/exago"'
 
-build_on_login_node:
+Ascent Build:
   stage: build
   tags:
     - nobatch
@@ -203,10 +203,10 @@ build_on_login_node:
   <<: *ornl_script_definition
   <<: *ornl_environment_variables
 
-test_on_compute_node:
+Ascent Test:
   stage: test
   dependencies:
-    - build_on_login_node
+    - 'Ascent Build'
   tags:
     - batch
   <<: *ornl-rules
@@ -234,7 +234,7 @@ CMake Lint:
     set -x
     apt update && apt install -y python3 python3-pip perl
     pip install cmake_format
-    ./scripts/cmake-format.pl -v
+    ./buildsystem/tools/cmake-format.pl -v
     exit $?
 
 C++ Lint:
@@ -247,10 +247,10 @@ C++ Lint:
     |
     set -x
     apt update && apt install -y clang-format perl
-    ./scripts/clang-format.pl -v
+    ./buildsystem/tools/clang-format.pl -v
     exit $?
 
-svc cleanup:
+SVC Account Cleanup:
   stage: .pre
   <<: *pnnl-rules
   <<: *pnnl_tags_definition
@@ -260,7 +260,7 @@ svc cleanup:
   script:
     - cd /people/svcexasgd/ && rm -rf gitlab/*
 
-ppc64le-gcc-cuda-build:
+Newell Build:
   stage: build
   variables:
     SLURM_Q: "newell_shared"
@@ -272,10 +272,10 @@ ppc64le-gcc-cuda-build:
   <<: *pnnl_script_definition
   <<: *pnnl-rules
 
-ppc64le-gcc-cuda-test:
+Newell Test:
   stage: test
   dependencies:
-    - ppc64le-gcc-cuda-build
+    - 'Newell Build'
   variables:
     SLURM_Q: "newell_shared"
     MY_CLUSTER: "newell"
@@ -288,24 +288,7 @@ ppc64le-gcc-cuda-test:
   <<: *pnnl_after_script_definition
   <<: *pnnl-rules
 
-ppc64le-gcc-cuda-python-test:
-  stage: test
-  dependencies:
-    - ppc64le-gcc-cuda-build
-  variables:
-    SLURM_Q: "newell_shared"
-    MY_CLUSTER: "newell"
-    CTESTARGS: "--output-on-failure -R Python"
-    OUTPUT_SUFFIX: "_test_python"
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
-  <<: *pnnl_tags_definition
-  <<: *pnnl_script_definition
-    # No after_script as only one test per platform cleans up
-  <<: *pnnl-rules
-  allow_failure: true
-
-x86_64-gcc-cuda-build:
+Marianas Build:
   stage: build
   variables:
     SLURM_Q: "dl_shared"
@@ -317,10 +300,10 @@ x86_64-gcc-cuda-build:
   <<: *pnnl_script_definition
   <<: *pnnl-rules
 
-x86_64-gcc-cuda-test:
+Marianas Test:
   stage: test
   dependencies:
-    - x86_64-gcc-cuda-build
+    - 'Marianas Build'
   variables:
     SLURM_Q: "dl_shared"
     MY_CLUSTER: "marianas"
@@ -333,21 +316,39 @@ x86_64-gcc-cuda-test:
   <<: *pnnl_after_script_definition
   <<: *pnnl-rules
 
-x86_64-gcc-cuda-python-test:
-  stage: test
-  dependencies:
-    - x86_64-gcc-cuda-build
-  variables:
-    SLURM_Q: "dl_shared"
-    MY_CLUSTER: "marianas"
-    CTESTARGS: "--output-on-failure -R Python"
-    OUTPUT_SUFFIX: "_test_python"
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
-  <<: *pnnl_tags_definition
-  <<: *pnnl_script_definition
-    # No after_script as only one test per platform cleans up
-  <<: *pnnl-rules
-  allow_failure: true
+    # Python tests are disabled until new bindings are ready
+    # Newell Py Test:
+    #   stage: test
+    #   dependencies:
+    #     - 'Newell Build'
+    #   variables:
+    #     SLURM_Q: "newell_shared"
+    #     MY_CLUSTER: "newell"
+    #     CTESTARGS: "--output-on-failure -R Python"
+    #     OUTPUT_SUFFIX: "_test_python"
+    #     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    #     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+    #   <<: *pnnl_tags_definition
+    #   <<: *pnnl_script_definition
+    #     # No after_script as only one test per platform cleans up
+    #   <<: *pnnl-rules
+    #   allow_failure: true
+
+    #Marianas Py Test:
+    #  stage: test
+    #  dependencies:
+    #    - 'Marianas Build'
+    #  variables:
+    #    SLURM_Q: "dl_shared"
+    #    MY_CLUSTER: "marianas"
+    #    CTESTARGS: "--output-on-failure -R Python"
+    #    OUTPUT_SUFFIX: "_test_python"
+    #    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    #    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+    #  <<: *pnnl_tags_definition
+    #  <<: *pnnl_script_definition
+    #    # No after_script as only one test per platform cleans up
+    #  <<: *pnnl-rules
+    #  allow_failure: true
 # ---
 
