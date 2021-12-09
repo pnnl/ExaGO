@@ -16,7 +16,21 @@ spack:
     - [$mpis]
 
   mirrors:
-    pnnl: s3://spack-ci
+    pnnl:
+      fetch:
+        url: s3://spack-ci
+        access_pair:
+        - null
+        - null
+        access_token: null
+        profile: null
+      push:
+        url: s3://spack-ci
+        access_pair:
+        - null
+        - null
+        access_token: null
+        profile: null
 
   config:
     install_tree:
