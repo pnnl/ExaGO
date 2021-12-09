@@ -49,7 +49,7 @@ auto *my_var = dynamic_cast<MyType*>(my_other_var);
 - Use anonymous namespaces for functions and variables which should have internal linkage.
 - Don't use dynamic solutions to solve problems that can be solved at build time; don't solve build time problems by writing programs that produce source code when macros and templates suffice; don't write macros when templates suffice.
 - Never use more than 80 characters per source line, unless you're editing documentation.
-- Use `clang-format` (or the utility script `scripts/clang-format.pl`) to format your code.
+- Use `clang-format` (or the utility script `buildsystem/tools/clang-format.pl`) to format your code.
 
 Example usage of the utility script:
 ```console
@@ -58,10 +58,10 @@ $ # do some development
 $ make && ctest
 
 $ # format ExaGO source in-place
-$ ../scripts/clang-format.pl -i
+$ ../buildsystem/tools/clang-format.pl -i
 
 $ # check to make sure everything is formatted (no flags means check if already formatted):
-$ ../scripts/clang-format.pl
+$ ../buildsystem/tools/clang-format.pl
 ```
 
 This will format all the C++ source code in the ExaGO source tree.
