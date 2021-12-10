@@ -1,7 +1,7 @@
 # Specify PowerSystem module sources (shared across libraries)
 set(PS_SRC ps.c psreaddata.c psoutput.c psislanding.c)
 
-set(PS_HEADERS ${CMAKE_SOURCE_DIR}/include/ps.h ${CMAKE_SOURCE_DIR})
+set(PS_HEADERS ${CMAKE_SOURCE_DIR}/include/ps.h)
 
 set_source_files_properties(${PS_SRC} PROPERTIES LANGUAGE CXX)
 
