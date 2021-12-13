@@ -1,15 +1,15 @@
 set(SOPFLOW_SOLVER_SRC
-    solver/ipopt/sopflow-ipopt.c solver/empar/sopflow-empar.c
-    solver/hiop/sopflow-hiop.cpp
+    solver/ipopt/sopflow_ipopt.cpp solver/empar/sopflow_empar.cpp
+    solver/hiop/sopflow_hiop.cpp
 )
 
-set(SOPFLOW_MODEL_SRC model/genramp/sopflow-genramp.c
-                      model/genrampc/sopflow-genrampc.c
+set(SOPFLOW_MODEL_SRC model/genramp/sopflow_genramp.cpp
+                      model/genrampc/sopflow_genrampc.cpp
 )
 
 set(SOPFLOW_SRC
-    interface/sopflow.c interface/sopflowregi.c interface/sopflowoutput.c
-    interface/sopflowscen.c ${SOPFLOW_MODEL_SRC} ${SOPFLOW_SOLVER_SRC}
+    interface/sopflow.cpp interface/sopflowregi.cpp interface/sopflowoutput.cpp
+    interface/sopflowscen.cpp ${SOPFLOW_MODEL_SRC} ${SOPFLOW_SOLVER_SRC}
 )
 
 # Header files for sopflow

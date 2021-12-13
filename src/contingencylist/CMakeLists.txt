@@ -1,5 +1,5 @@
 # Specify PowerSystem module sources (shared across libraries)
-set(CTGCLIST_SRC contingencylist.c)
+set(CTGCLIST_SRC contingencylist.cpp)
 
 set(CTGCLIST_INCLUDE ${CMAKE_SOURCE_DIR}/include/private/contingencylist.h)
 

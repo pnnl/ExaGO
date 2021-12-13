@@ -1,7 +1,7 @@
 #include <exago_config.h>
 #if defined(EXAGO_ENABLE_IPOPT)
 
-#include "tcopflow-ipopt.h"
+#include "tcopflow_ipopt.h"
 #include <private/opflowimpl.h>
 #include <private/tcopflowimpl.h>
 

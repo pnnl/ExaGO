@@ -1,31 +1,35 @@
 # Models
 set(OPFLOW_FORM_SRC
-    model/current-bal-cartesian/ibcar.c model/current-bal-cartesian/ibcar2.c
-    model/power-bal-polar/pbpol.c model/power-bal-cartesian/pbcar.c
-    model/power-bal-hiop/pbpolhiop.c model/power-bal-hiop/pbpolhiopkernels.c
+    model/current_bal_cartesian/ibcar.cpp
+    model/current_bal_cartesian/ibcar2.cpp
+    model/power_bal_polar/pbpol.cpp
+    model/power_bal_cartesian/pbcar.cpp
+    model/power_bal_hiop/pbpolhiop.cpp
+    model/power_bal_hiop/pbpolhiopkernels.cpp
 )
 
 # Build RAJA/Umpire modules if RAJA and Umpire are enabled
 if(EXAGO_ENABLE_RAJA)
-  set(OPFLOW_FORM_SRC ${OPFLOW_FORM_SRC} model/power-bal-hiop/pbpolrajahiop.cpp
-                      model/power-bal-hiop/pbpolrajahiopkernels.cpp
+  set(OPFLOW_FORM_SRC ${OPFLOW_FORM_SRC} model/power_bal_hiop/pbpolrajahiop.cpp
+                      model/power_bal_hiop/pbpolrajahiopkernels.cpp
   )
 endif()
 
 set(OPFLOW_SOLVER_SRC
-    solver/tao/opflow-tao.c solver/ipopt/opflow-ipopt.c
-    solver/hiop/opflow-hiop.cpp solver/hiop/opflow-hiopsparse.cpp
+    solver/tao/opflow_tao.cpp solver/ipopt/opflow_ipopt.cpp
+    solver/hiop/opflow_hiop.cpp solver/hiop/opflow_hiopsparse.cpp
 )
 
-set(OPFLOW_SRC interface/opflow.c interface/opflowregi.c
-               interface/opflowoutput.c ${OPFLOW_FORM_SRC} ${OPFLOW_SOLVER_SRC}
+set(OPFLOW_SRC
+    interface/opflow.cpp interface/opflowregi.cpp interface/opflowoutput.cpp
+    ${OPFLOW_FORM_SRC} ${OPFLOW_SOLVER_SRC}
 )
 
 set_source_files_properties(${OPFLOW_SRC} PROPERTIES LANGUAGE CXX)
 
 if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_CUDA)
   set_source_files_properties(
-    model/power-bal-hiop/pbpolrajahiopkernels.cpp PROPERTIES LANGUAGE CUDA
+    model/power_bal_hiop/pbpolrajahiopkernels.cpp PROPERTIES LANGUAGE CUDA
   )
 endif()
 

@@ -39,6 +39,11 @@ sub tool {
   if ( exists( $ENV{'CMAKEFORMAT'} ) ) {    # Use env var CMAKEFORMAT if found
     $cf = $ENV{'CMAKEFORMAT'};
   }
+  elsif ( $host =~ /newell/s ) {
+    &module('load', 'python/miniconda3.8');
+    $ENV{'PYTHONPATH'} = '/qfs/projects/exasgd/src/cmake_format_newell';
+    $cf = '/qfs/projects/exasgd/src/cmake_format_newell/bin/cmake-format';
+  }
   else {                                    # else just look in PATH
     $cf = `which cmake-format`;
     chomp($cf);

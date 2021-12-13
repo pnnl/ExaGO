@@ -1,16 +1,16 @@
 #include <exago_config.h>
 #if defined(EXAGO_ENABLE_IPOPT)
 
-#ifndef SOPFLOWIPOPT_H
-#define SOPFLOWIPOPT_H
+#ifndef TCOPFLOWIPOPT_H
+#define TCOPFLOWIPOPT_H
 
-#include "../../../opflow/solver/ipopt/opflow-ipopt.h"
+#include "../../../opflow/solver/ipopt/opflow_ipopt.h"
 #include <IpStdCInterface.h>
-#include <sopflow.h>
+#include <tcopflow.h>
 
-typedef struct _p_SOPFLOWSolver_IPOPT *SOPFLOWSolver_IPOPT;
+typedef struct _p_TCOPFLOWSolver_IPOPT *TCOPFLOWSolver_IPOPT;
 
-struct _p_SOPFLOWSolver_IPOPT {
+struct _p_TCOPFLOWSolver_IPOPT {
 
   PetscInt
       nnz_jac_g; /**< Number of nonzeros in the jacobian of the constraints */

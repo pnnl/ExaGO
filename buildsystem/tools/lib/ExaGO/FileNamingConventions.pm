@@ -10,6 +10,9 @@ use Exporter;
 our @ISA    = qw( Exporter );
 our @EXPORT = qw(tool);
 
+# Files that match this pattern will be skipped
+my @skip = ('pycache');
+
 sub tool {
   my $help    = shift @_;
   my $verbose = shift @_;
@@ -35,7 +38,7 @@ sub tool {
   my @dirs = (
     "$root/src",                 "$root/include",
     "$root/tests/functionality", "$root/tests/interfaces",
-    "$root/tests/unit", "$root/applications"
+    "$root/tests/unit",          "$root/applications"
   );
 
   my @fails;
@@ -48,13 +51,19 @@ sub tool {
       $f =~ s{$root/}{}g;
       printoneline $verbose, "($tool) Checking " . ( $verbose ? $f : $_ );
 
+      foreach my $skip_ (@skip) {
+        if ($f =~ /$skip_/) {
+          return;
+        }
+      }
+
       # Check for dashes where we expect underscores
       if (/-/s) {
-        say "P003: found dash '-' where expected underscore '_'. " .
-          "Consider the following replacement:$el";
+        say "P003: found dash '-' where expected underscore '_'. "
+          . "Consider the following replacement:$el";
         my $cmd = "mv $f";
         $f =~ s{-}{_}g;
-        $cmd = "$cmd"." $f";
+        $cmd = "$cmd" . " $f";
         say "\t\$ $cmd\n";
         push @fails, $cmd;
       }
@@ -66,8 +75,8 @@ sub tool {
         if ( $f =~ /[A-Z]/s ) {
           $f =~ s/.+\/..\/..\///g;
 
-          say "P003: possible pascal cased filename. " .
-            "Consider the following replacement:$el";
+          say "P003: possible pascal cased filename. "
+            . "Consider the following replacement:$el";
           my $cmd = "mv $f";
 
           # Replace leading character with lowercase character
@@ -76,7 +85,7 @@ sub tool {
           # Replace all other chars with underscore followed by lowercase char
           $f =~ s/([A-Z])/_\L$1/g;
 
-          $cmd = "$cmd "."$f";
+          $cmd = "$cmd " . "$f";
 
           say "\t\$ $cmd\n";
           push @fails, $cmd;
@@ -90,8 +99,8 @@ sub tool {
   if ($ret) {
     say "These are the suggested changes:$el";
     say join "\n", @fails;
-    say "Please visit docs/DeveloperGuidelines.md if you need to review " .
-      "conventions.";
+    say "Please visit docs/DeveloperGuidelines.md if you need to review "
+      . "conventions.";
   }
   say "Returning $ret $el";
 

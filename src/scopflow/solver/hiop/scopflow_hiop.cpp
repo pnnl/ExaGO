@@ -2,7 +2,7 @@
 
 #if defined(EXAGO_ENABLE_HIOP)
 
-#include "scopflow-hiop.hpp"
+#include "scopflow_hiop.hpp"
 #include <private/opflowimpl.h>
 #include <private/scopflowimpl.h>
 #include <private/tcopflowimpl.h>

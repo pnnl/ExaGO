@@ -1,5 +1,5 @@
 
-#include "sopflow-genrampc.h"
+#include "sopflow_genrampc.h"
 #include <private/opflowimpl.h>
 #include <private/scopflowimpl.h>
 #include <private/sopflowimpl.h>

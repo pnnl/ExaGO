@@ -1,16 +1,16 @@
 if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_CUDA)
-  set_source_files_properties(TestAcopf.cpp PROPERTIES LANGUAGE CUDA)
+  set_source_files_properties(test_acopf.cpp PROPERTIES LANGUAGE CUDA)
 endif()
 
-add_executable(testAcopf TestAcopf.cpp utils/TestAcopfUtils.cpp)
-target_link_libraries(testAcopf ExaGO::OPFLOW)
-target_include_directories(testAcopf PRIVATE ./utils)
+add_executable(test_acopf test_acopf.cpp utils/test_acopf_utils.cpp)
+target_link_libraries(test_acopf ExaGO::OPFLOW)
+target_include_directories(test_acopf PRIVATE ./utils)
 
-add_executable(testErrorHandler TestErrorHandler.cpp)
-target_link_libraries(testErrorHandler ExaGO::UTILS)
+add_executable(test_error_handler test_error_handler.cpp)
+target_link_libraries(test_error_handler ExaGO::UTILS)
 
 if(EXAGO_INSTALL_TESTS)
-  install(TARGETS testAcopf testErrorHandler DESTINATION tests/unit)
+  install(TARGETS test_acopf test_error_handler DESTINATION tests/unit)
 
   # Unit tests
   exago_add_test(
@@ -20,7 +20,7 @@ if(EXAGO_INSTALL_TESTS)
     HIOP
     COMMAND
     ${RUNCMD}
-    $<TARGET_FILE:testAcopf>
+    $<TARGET_FILE:test_acopf>
     -opflow_genbusvoltage
     VARIABLE_WITHIN_BOUNDS
     -validation_dir
@@ -29,5 +29,7 @@ if(EXAGO_INSTALL_TESTS)
     ${network_files}
   )
 
-  exago_add_test(NAME UNIT_TESTS_UTILS COMMAND $<TARGET_FILE:testErrorHandler>)
+  exago_add_test(
+    NAME UNIT_TESTS_UTILS COMMAND $<TARGET_FILE:test_error_handler>
+  )
 endif()

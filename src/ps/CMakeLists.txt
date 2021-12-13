@@ -1,5 +1,5 @@
 # Specify PowerSystem module sources (shared across libraries)
-set(PS_SRC ps.c psreaddata.c psoutput.c psislanding.c)
+set(PS_SRC ps.cpp psreaddata.cpp psoutput.cpp psislanding.cpp)
 
 set(PS_HEADERS ${CMAKE_SOURCE_DIR}/include/ps.h)
 
