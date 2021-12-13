@@ -147,7 +147,8 @@ Header files should use header guards.
 
 #### P003: File Naming Conventions
 
-Use underscores (`_`) and all lowercase characters for filenames and paths.
+Use underscores (`_`) and all lowercase characters for C, C++, and Python filenames and paths.
+Use pascal case for CMake code.
 
 #### P021: Driver Naming Conventions
 

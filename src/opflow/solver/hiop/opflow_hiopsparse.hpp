@@ -13,8 +13,8 @@
 #include <opflow.h>
 
 #if defined(EXAGO_ENABLE_IPOPT)
-#include <IpIpoptApplication.hpp>
 #include <IpoptAdapter.hpp> // ipopt adapter from hiop
+#include <IpIpoptApplication.hpp>
 #endif
 
 #include <cstdio>

@@ -1,4 +1,4 @@
-#include "opflow-tao.h"
+#include "opflow_tao.h"
 #include <private/opflowimpl.h>
 
 PetscErrorCode OPFLOWObjectiveandGradientFunction_TAO(Tao nlp, Vec X,

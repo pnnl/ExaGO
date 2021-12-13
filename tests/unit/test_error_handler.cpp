@@ -1,7 +1,7 @@
 #include <petsc.h>
 #include <utils.hpp>
 
-#include "utils/testBase.hpp"
+#include "utils/test_base.hpp"
 using namespace exago::tests;
 
 /* These _Throw*_ functions test various constructors for ExaGOErrors */

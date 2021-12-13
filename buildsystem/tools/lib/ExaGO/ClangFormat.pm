@@ -10,6 +10,9 @@ use Exporter;
 our @ISA    = qw( Exporter );
 our @EXPORT = qw(tool);
 
+# Files that match this pattern will be skipped
+my @skip = ('IpoptAdapter.hpp');
+
 sub tool {
   my $help    = shift @_;
   my $verbose = shift @_;
@@ -41,7 +44,8 @@ sub tool {
   }
   elsif ( $host =~ /newell/s )
   {    # Use full path on newell if no CLANGFORMAT env var
-    $cf = '/share/apps/llvm/12.0.0/newell/bin/clang-format';
+    &module('load', 'llvm/12.0.0');
+    $cf = 'clang-format';
   }
   else {    # else just look in PATH
     $cf = `which clang-format`;
@@ -68,6 +72,11 @@ sub tool {
 
   find(
     sub {
+      foreach my $skip_ (@skip) {
+        if (/$skip_/s) {
+          return;
+        }
+      }
       if (/\.cpp$|\.hpp$|\.h$|\.c$|\.cu$/s) {
         my $f = $File::Find::name;
         my $cmd =

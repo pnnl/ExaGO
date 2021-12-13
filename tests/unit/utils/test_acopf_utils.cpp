@@ -1,4 +1,3 @@
-#include <TestAcopfUtils.hpp>
 #include <cstring>
 #include <dirent.h>
 #include <fstream>
@@ -8,6 +7,7 @@
 #include <limits>
 #include <petscviewer.h>
 #include <sys/stat.h>
+#include <test_acopf_utils.hpp>
 
 void saveToFile(Vec vector, std::string file) {
 

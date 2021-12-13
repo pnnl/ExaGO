@@ -1,14 +1,14 @@
 #[[ Functionality tests for ExaGO SCOPFLOW applications ]]
 
-add_executable(testScopflowFunctionalityTOML selfcheck.cpp)
+add_executable(test_scopflow_functionality selfcheck.cpp)
 target_include_directories(
-  testScopflowFunctionalityTOML PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..
+  test_scopflow_functionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
 #[[ Configure SCOPFLOW functionality tests ]]
-target_link_libraries(testScopflowFunctionalityTOML ExaGO::SCOPFLOW)
+target_link_libraries(test_scopflow_functionality ExaGO::SCOPFLOW)
 if(EXAGO_INSTALL_TESTS)
-  install(TARGETS testScopflowFunctionalityTOML
+  install(TARGETS test_scopflow_functionality
           RUNTIME DESTINATION tests/functionality
   )
   # SCOPFLOW Functionality Tests
@@ -21,7 +21,7 @@ if(EXAGO_INSTALL_TESTS)
     IPOPT
     COMMAND
     ${RUNCMD}
-    $<TARGET_FILE:testScopflowFunctionalityTOML>
+    $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_cont.toml
     -no_optfile
   )
@@ -33,7 +33,7 @@ if(EXAGO_INSTALL_TESTS)
     IPOPT
     COMMAND
     ${RUNCMD}
-    $<TARGET_FILE:testScopflowFunctionalityTOML>
+    $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/empar_cont.toml
     -no_optfile
   )
@@ -46,7 +46,7 @@ if(EXAGO_INSTALL_TESTS)
       IPOPT
       COMMAND
       ${RUNCMD}
-      $<TARGET_FILE:testScopflowFunctionalityTOML>
+      $<TARGET_FILE:test_scopflow_functionality>
       ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_multiperiod.toml
       -no_optfile
     )
@@ -62,7 +62,7 @@ if(EXAGO_INSTALL_TESTS)
     HIOP_DISTRIBUTED
     COMMAND
     ${RUNCMD}
-    $<TARGET_FILE:testScopflowFunctionalityTOML>
+    $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont.toml
     -no_optfile
   )
@@ -78,7 +78,7 @@ if(EXAGO_INSTALL_TESTS)
     ${MPICMD}
     "-n"
     3
-    $<TARGET_FILE:testScopflowFunctionalityTOML>
+    $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_nocont_mpi.toml
     -no_optfile
   )

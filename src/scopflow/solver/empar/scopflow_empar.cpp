@@ -1,6 +1,6 @@
 #include <exago_config.h>
 
-#include "scopflow-empar.h"
+#include "scopflow_empar.h"
 #include <private/opflowimpl.h>
 #include <private/scopflowimpl.h>
 #include <private/tcopflowimpl.h>

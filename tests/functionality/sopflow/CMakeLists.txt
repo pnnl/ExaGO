@@ -1,20 +1,20 @@
 #[[ Functionality tests for ExaGO SOPFLOW applications ]]
 
 set_source_files_properties(selfcheck.cpp PROPERTIES LANGUAGE CXX)
-add_executable(testSopflowFunctionalityTOML selfcheck.cpp)
+add_executable(test_sopflow_functionality selfcheck.cpp)
 target_include_directories(
-  testSopflowFunctionalityTOML PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-                                       ${CMAKE_CURRENT_SOURCE_DIR}/..
+  test_sopflow_functionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+                                    ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
 set(tolerance "1e-3")
 
 #[[ Configure SOPFLOW functionality tests ]]
-target_link_libraries(testSopflowFunctionalityTOML ExaGO::SOPFLOW)
+target_link_libraries(test_sopflow_functionality ExaGO::SOPFLOW)
 if(EXAGO_INSTALL_TESTS)
   message(STATUS "Configuring SOPFLOW functionality tests")
 
-  install(TARGETS testSopflowFunctionalityTOML
+  install(TARGETS test_sopflow_functionality
           RUNTIME DESTINATION tests/functionality
   )
 
@@ -26,7 +26,7 @@ if(EXAGO_INSTALL_TESTS)
       IPOPT
       COMMAND
       ${RUNCMD}
-      $<TARGET_FILE:testSopflowFunctionalityTOML>
+      $<TARGET_FILE:test_sopflow_functionality>
       ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario.toml
       -no_optfile
     )
@@ -39,7 +39,7 @@ if(EXAGO_INSTALL_TESTS)
     IPOPT
     COMMAND
     ${RUNCMD}
-    $<TARGET_FILE:testSopflowFunctionalityTOML>
+    $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multicontingency.toml
     -no_optfile
     -sopflow_flatten_contingencies
@@ -54,7 +54,7 @@ if(EXAGO_INSTALL_TESTS)
       IPOPT
       COMMAND
       ${RUNCMD}
-      $<TARGET_FILE:testSopflowFunctionalityTOML>
+      $<TARGET_FILE:test_sopflow_functionality>
       ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiperiod.toml
       -no_optfile
     )

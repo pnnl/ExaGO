@@ -6,7 +6,7 @@ use v5.16;
 
 use Exporter;
 our @ISA    = qw( Exporter );
-our @EXPORT = qw($root $host $el printoneline);
+our @EXPORT = qw($root $host $el printoneline module);
 
 use Cwd 'abs_path';
 use Sys::Hostname;
@@ -14,6 +14,10 @@ use File::Basename;
 our ( $root, $host, $el );
 
 my ( $name, $path, $suffix ) = fileparse(__FILE__);
+
+if (-e '/usr/share/Modules/init/perl.pm') {
+  require '/usr/share/Modules/init/perl.pm';
+}
 
 # Root of ExaGO source tree
 $root = abs_path("$path/../../../..");

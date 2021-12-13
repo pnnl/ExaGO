@@ -1,7 +1,7 @@
 # Sources for power flow functions shared across libraries
 
 # Specify PowerSystem module sources (shared across libraries)
-set(PFLOW_SRC pflow.c)
+set(PFLOW_SRC pflow.cpp)
 
 # Header files for pflow
 set(PFLOW_INCLUDE ${CMAKE_SOURCE_DIR}/include/pflow.h)

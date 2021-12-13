@@ -2,15 +2,15 @@
 
 set_source_files_properties(pflow.c selfcheck.cpp PROPERTIES LANGUAGE CXX)
 
-add_executable(testPflowFunctionalityTOML selfcheck.cpp)
+add_executable(test_pflow_functionality selfcheck.cpp)
 
 target_include_directories(
-  testPflowFunctionalityTOML PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-                                    ${CMAKE_CURRENT_SOURCE_DIR}/..
+  test_pflow_functionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
 #[[ Configure PFLOW functionality tests ]]
-target_link_libraries(testPflowFunctionalityTOML ExaGO::PFLOW)
+target_link_libraries(test_pflow_functionality ExaGO::PFLOW)
 if(EXAGO_INSTALL_TESTS)
   message(STATUS "Configuring PFLOW Functionality Tests.")
 
@@ -24,13 +24,13 @@ if(EXAGO_INSTALL_TESTS)
       "-n"
       ${np}
       ${EXAGO_EXTRA_MPI_FLAGS}
-      $<TARGET_FILE:testPflowFunctionalityTOML>
+      $<TARGET_FILE:test_pflow_functionality>
       ${CMAKE_CURRENT_SOURCE_DIR}/pflow${np}procs.toml
       -no_optfile
     )
   endforeach(np)
 
-  install(TARGETS testPflowFunctionalityTOML
+  install(TARGETS test_pflow_functionality
           RUNTIME DESTINATION tests/functionality
   )
 

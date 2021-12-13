@@ -4,7 +4,7 @@
 #ifndef SCOPFLOWIPOPT_H
 #define SCOPFLOWIPOPT_H
 
-#include "../../../opflow/solver/ipopt/opflow-ipopt.h"
+#include "../../../opflow/solver/ipopt/opflow_ipopt.h"
 #include <IpStdCInterface.h>
 #include <scopflow.h>
 
