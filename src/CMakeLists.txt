@@ -1,4 +1,5 @@
 add_subdirectory(utils)
+add_subdirectory(contingencylist)
 add_subdirectory(ps)
 add_subdirectory(pflow)
 add_subdirectory(opflow)

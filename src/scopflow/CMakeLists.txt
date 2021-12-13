@@ -1,13 +1,13 @@
 set(SCOPFLOW_SOLVER_SRC
-    solver/ipopt/scopflow-ipopt.c solver/empar/scopflow-empar.c
-    solver/hiop/scopflow-hiop.cpp
+    solver/ipopt/scopflow_ipopt.cpp solver/empar/scopflow_empar.cpp
+    solver/hiop/scopflow_hiop.cpp
 )
 
-set(SCOPFLOW_MODEL_SRC model/genramp/genramp.c model/genrampt/genrampt.c)
+set(SCOPFLOW_MODEL_SRC model/genramp/genramp.cpp model/genrampt/genrampt.cpp)
 
 set(SCOPFLOW_SRC
-    interface/scopflow.c interface/scopflowregi.c interface/scopflowoutput.c
-    interface/scopflowctgc.c ${SCOPFLOW_MODEL_SRC} ${SCOPFLOW_SOLVER_SRC}
+    interface/scopflow.cpp interface/scopflowregi.cpp
+    interface/scopflowoutput.cpp ${SCOPFLOW_MODEL_SRC} ${SCOPFLOW_SOLVER_SRC}
 )
 
 # Header files for scopflow
@@ -22,6 +22,8 @@ exago_add_library(
   HEADERS
   ${SCOPFLOW_INCLUDE}
   LINK_LIBRARIES
+  PUBLIC
+  ExaGO::CTGCLIST
   PUBLIC
   ExaGO::TCOPFLOW
   PRIVATE

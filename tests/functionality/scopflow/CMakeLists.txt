@@ -1,14 +1,14 @@
 #[[ Functionality tests for ExaGO SCOPFLOW applications ]]
 
-add_executable(testScopflowFunctionalityTOML selfcheck.cpp)
+add_executable(test_scopflow_functionality selfcheck.cpp)
 target_include_directories(
-  testScopflowFunctionalityTOML PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..
+  test_scopflow_functionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
 #[[ Configure SCOPFLOW functionality tests ]]
-target_link_libraries(testScopflowFunctionalityTOML ExaGO::SCOPFLOW)
+target_link_libraries(test_scopflow_functionality ExaGO::SCOPFLOW)
 if(EXAGO_INSTALL_TESTS)
-  install(TARGETS testScopflowFunctionalityTOML
+  install(TARGETS test_scopflow_functionality
           RUNTIME DESTINATION tests/functionality
   )
   # SCOPFLOW Functionality Tests
@@ -21,7 +21,7 @@ if(EXAGO_INSTALL_TESTS)
     IPOPT
     COMMAND
     ${RUNCMD}
-    $<TARGET_FILE:testScopflowFunctionalityTOML>
+    $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_cont.toml
     -no_optfile
   )
@@ -33,7 +33,7 @@ if(EXAGO_INSTALL_TESTS)
     IPOPT
     COMMAND
     ${RUNCMD}
-    $<TARGET_FILE:testScopflowFunctionalityTOML>
+    $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/empar_cont.toml
     -no_optfile
   )
@@ -46,7 +46,7 @@ if(EXAGO_INSTALL_TESTS)
       IPOPT
       COMMAND
       ${RUNCMD}
-      $<TARGET_FILE:testScopflowFunctionalityTOML>
+      $<TARGET_FILE:test_scopflow_functionality>
       ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_multiperiod.toml
       -no_optfile
     )
@@ -62,7 +62,7 @@ if(EXAGO_INSTALL_TESTS)
     HIOP_DISTRIBUTED
     COMMAND
     ${RUNCMD}
-    $<TARGET_FILE:testScopflowFunctionalityTOML>
+    $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont.toml
     -no_optfile
   )
@@ -77,78 +77,196 @@ if(EXAGO_INSTALL_TESTS)
     COMMAND
     ${MPICMD}
     "-n"
-    4
-    $<TARGET_FILE:testScopflowFunctionalityTOML>
+    3
+    $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_nocont_mpi.toml
     -no_optfile
   )
 
-  # Tests for HIOP pridecomp (these tests are duplicated above and should be
-  # removed after verifying that they work
-  if(EXAGO_ENABLE_HIOP_DISTRIBUTED)
-    exago_add_test(
-      NAME
-      SCOPFLOW_9bus_HIOP_SERIAL
-      COMMAND
-      ${RUNCMD}
-      $<TARGET_FILE:app_scopflow>
-      -netfile
-      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod.m
-      -ctgcfile
-      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9.cont
-      -scopflow_solver
-      HIOP
-      -scopflow_Nc
-      -1
-      -opflow_initialization
-      ACPF
-      DEPENDS
-      IPOPT
-      HIOP
-    )
+  # These tests should be added to the TOML test suite
+  exago_add_test(
+    NAME
+    SCOPFLOW_9bus_HIOP_SERIAL
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:app_scopflow>
+    -netfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod.m
+    -ctgcfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9.cont
+    -scopflow_solver
+    HIOP
+    -scopflow_Nc
+    -1
+    -opflow_initialization
+    ACPF
+    -scopflow_subproblem_solver
+    HIOP
+    -scopflow_subproblem_model
+    POWER_BALANCE_HIOP
+    -hiop_compute_mode
+    CPU
+    -hiop_verbosity_level
+    3
+    DEPENDS
+    IPOPT
+    HIOP
+  )
 
-    exago_add_test(
-      NAME
-      SCOPFLOW_200bus_HIOP_SERIAL
-      COMMAND
-      ${RUNCMD}
-      $<TARGET_FILE:app_scopflow>
-      -netfile
-      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod.m
-      -ctgcfile
-      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9.cont
-      -scopflow_solver
-      HIOP
-      -scopflow_Nc
-      20
-      -opflow_initialization
-      ACPF
-      DEPENDS
-      IPOPT
-      HIOP
-    )
+  exago_add_test(
+    NAME
+    SCOPFLOW_200bus_HIOP_SERIAL
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:app_scopflow>
+    -netfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+    -ctgcfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
+    -scopflow_solver
+    HIOP
+    -scopflow_Nc
+    20
+    -opflow_initialization
+    ACPF
+    -opflow_ignore_lineflow_constraints
+    1
+    -scopflow_subproblem_solver
+    HIOP
+    -scopflow_subproblem_model
+    POWER_BALANCE_HIOP
+    -hiop_compute_mode
+    CPU
+    -hiop_verbosity_level
+    3
+    DEPENDS
+    IPOPT
+    HIOP
+  )
 
-    exago_add_test(
-      NAME
-      SCOPFLOW_200bus_HIOP_MPI
-      COMMAND
-      ${MPICMD}
-      "-n"
-      4
-      $<TARGET_FILE:app_scopflow>
-      -netfile
-      ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
-      -ctgcfile
-      ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
-      -scopflow_solver
-      HIOP
-      -scopflow_Nc
-      -1
-      -opflow_initialization
-      ACPF
-      DEPENDS
-      IPOPT
-      HIOP
-    )
-  endif()
+  exago_add_test(
+    NAME
+    SCOPFLOW_200bus_HIOP_MPI
+    COMMAND
+    ${MPICMD}
+    "-n"
+    3
+    $<TARGET_FILE:app_scopflow>
+    -netfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+    -ctgcfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
+    -scopflow_solver
+    HIOP
+    -scopflow_Nc
+    20
+    -scopflow_subproblem_solver
+    HIOP
+    -scopflow_subproblem_model
+    POWER_BALANCE_HIOP
+    -hiop_compute_mode
+    CPU
+    -hiop_verbosity_level
+    3
+    -opflow_initialization
+    ACPF
+    -opflow_ignore_lineflow_constraints
+    1
+    DEPENDS
+    IPOPT
+    HIOP
+  )
+
+  exago_add_test(
+    NAME
+    SCOPFLOW_9bus_HIOP_SERIAL_GPU
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:app_scopflow>
+    -netfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod.m
+    -ctgcfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9.cont
+    -scopflow_solver
+    HIOP
+    -scopflow_Nc
+    -1
+    -opflow_initialization
+    ACPF
+    -scopflow_subproblem_solver
+    HIOP
+    -scopflow_subproblem_model
+    PBPOLRAJAHIOP
+    -hiop_compute_mode
+    GPU
+    -hiop_verbosity_level
+    3
+    DEPENDS
+    IPOPT
+    HIOP
+  )
+
+  exago_add_test(
+    NAME
+    SCOPFLOW_200bus_HIOP_SERIAL_GPU
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:app_scopflow>
+    -netfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+    -ctgcfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
+    -scopflow_solver
+    HIOP
+    -scopflow_Nc
+    20
+    -opflow_initialization
+    ACPF
+    -opflow_ignore_lineflow_constraints
+    1
+    -scopflow_subproblem_solver
+    HIOP
+    -scopflow_subproblem_model
+    PBPOLRAJAHIOP
+    -hiop_compute_mode
+    CPU
+    -hiop_verbosity_level
+    3
+    DEPENDS
+    IPOPT
+    HIOP
+  )
+
+  exago_add_test(
+    NAME
+    SCOPFLOW_200bus_HIOP_MPI_GPU
+    COMMAND
+    ${MPICMD}
+    "-n"
+    3
+    $<TARGET_FILE:app_scopflow>
+    -netfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+    -ctgcfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
+    -scopflow_solver
+    HIOP
+    -scopflow_Nc
+    20
+    -opflow_initialization
+    ACPF
+    -opflow_ignore_lineflow_constraints
+    1
+    -scopflow_subproblem_solver
+    HIOP
+    -scopflow_subproblem_model
+    PBPOLRAJAHIOP
+    -hiop_compute_mode
+    GPU
+    -hiop_verbosity_level
+    3
+    DEPENDS
+    IPOPT
+    HIOP
+  )
 endif()

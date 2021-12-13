@@ -1,14 +1,14 @@
 #[[ Functionality tests for ExaGO OPFLOW applications ]]
 
-add_executable(testOpflowFunctionalityTOML selfcheck.cpp)
+add_executable(test_opflow_functionality selfcheck.cpp)
 
 target_include_directories(
-  testOpflowFunctionalityTOML PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-                                     ${CMAKE_CURRENT_SOURCE_DIR}/..
+  test_opflow_functionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+                                   ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
 #[[ Configure OPFLOW functionality tests ]]
-target_link_libraries(testOpflowFunctionalityTOML ExaGO::OPFLOW)
+target_link_libraries(test_opflow_functionality ExaGO::OPFLOW)
 if(EXAGO_INSTALL_TESTS)
 
   exago_add_test(
@@ -16,7 +16,7 @@ if(EXAGO_INSTALL_TESTS)
     FUNCTIONALITY_TEST_OPFLOW_HIOP_TOML_TESTSUITE
     COMMAND
     ${RUNCMD}
-    $<TARGET_FILE:testOpflowFunctionalityTOML>
+    $<TARGET_FILE:test_opflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_pbpolhiop.toml
     -no_optfile
     DEPENDS
@@ -28,7 +28,7 @@ if(EXAGO_INSTALL_TESTS)
     FUNCTIONALITY_TEST_OPFLOW_RAJAHIOP_TOML_TESTSUITE
     COMMAND
     ${RUNCMD}
-    $<TARGET_FILE:testOpflowFunctionalityTOML>
+    $<TARGET_FILE:test_opflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_pbpolrajahiop.toml
     -no_optfile
     DEPENDS
@@ -42,7 +42,7 @@ if(EXAGO_INSTALL_TESTS)
       FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_TOML_TESTSUITE
       COMMAND
       ${RUNCMD}
-      $<TARGET_FILE:testOpflowFunctionalityTOML>
+      $<TARGET_FILE:test_opflow_functionality>
       ${CMAKE_CURRENT_SOURCE_DIR}/hiopsparse_pbpol.toml
       -no_optfile
       DEPENDS
@@ -58,7 +58,7 @@ if(EXAGO_INSTALL_TESTS)
       FUNCTIONALITY_TEST_OPFLOW_IPOPT_CARTESIAN_TOML_TESTSUITE
       COMMAND
       ${RUNCMD}
-      $<TARGET_FILE:testOpflowFunctionalityTOML>
+      $<TARGET_FILE:test_opflow_functionality>
       ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_pbcart.toml
       -no_optfile
       DEPENDS
@@ -71,14 +71,14 @@ if(EXAGO_INSTALL_TESTS)
     FUNCTIONALITY_TEST_OPFLOW_IPOPT_POLAR_TOML_TESTSUITE
     COMMAND
     ${RUNCMD}
-    $<TARGET_FILE:testOpflowFunctionalityTOML>
+    $<TARGET_FILE:test_opflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_pbpol.toml
     -no_optfile
     DEPENDS
     IPOPT
   )
 
-  install(TARGETS testOpflowFunctionalityTOML
+  install(TARGETS test_opflow_functionality
           RUNTIME DESTINATION tests/functionality
   )
 

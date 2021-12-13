@@ -1,22 +1,22 @@
 set_source_files_properties(
-  pflow-main.c opflow-main.c scopflow-main.c sopflow-main.c tcopflow-main.c
+  pflow_main.cpp opflow_main.cpp scopflow_main.cpp sopflow_main.cpp tcopflow_main.cpp
   PROPERTIES LANGUAGE CXX
 )
 
 # Define sources for applications PFLOW
-set(PFLOW_SRC pflow-main.c)
+set(PFLOW_SRC pflow_main.cpp)
 
 # OPFLOW
-set(OPFLOW_SRC opflow-main.cpp)
+set(OPFLOW_SRC opflow_main.cpp)
 
 # SCOPFLOW
-set(SCOPFLOW_SRC scopflow-main.c)
+set(SCOPFLOW_SRC scopflow_main.cpp)
 
 # SOPFLOW
-set(SOPFLOW_SRC sopflow-main.c)
+set(SOPFLOW_SRC sopflow_main.cpp)
 
 # TCOPFLOW
-set(TCOPFLOW_SRC tcopflow-main.c)
+set(TCOPFLOW_SRC tcopflow_main.cpp)
 
 # Add executables PFLOW
 add_executable(app_pflow ${PFLOW_SRC})
