@@ -25,6 +25,7 @@ workflow:
       set -xv
       cd "$WORKDIR"
       export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+      export CTESTARGS="--output-on-failure -E Python"
       MY_CLUSTER="ascent" ./buildsystem/build.sh --test-only --job=gcc-cuda
       res=$?
       exit $res
@@ -137,64 +138,17 @@ variables:
 stages:
   - build
   - test
-  - spack-generate
-  - spack-build
 
 # Include PNNL GitLab stdlib
 include:
   - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v1/gitlab-lib.yaml'
-
-.spack-variables: &spack-variables
-  variables:
-    SPACK_REF: develop
-    SPACK_REPO: https://github.com/LLNL/spack.git
-    S3_ENDPOINT_URL: http://cache.exasgd.pnl.gov
-
-.spack-rules: &spack-rules
-  rules:
-    - if: $CI_MERGE_REQUEST_ID
-      when: never
-    - if: '$CI_COMMIT_REF_NAME != "develop"'
-      when: manual
-    - if: '$CI_COMMIT_MESSAGE =~ /\[matrix\]/'
-    - *pnnl-rule
-
-spack-generate-job:
-  <<: *spack-variables
-  <<: *spack-rules
-  stage: spack-generate
-  image: spack/ubuntu-bionic
-  tags: [k8s, ikp, exasgd, basic]
-  before_script:
-    - git clone ${SPACK_REPO}
-    - pushd spack && git checkout ${SPACK_REF} && popd
-    - . "./spack/share/spack/setup-env.sh"
-  script:
-    - cp buildsystem/container/spack.yaml . && spack env activate --without-view .
-    - spack -d ci generate
-      --artifacts-root "${CI_PROJECT_DIR}/jobs_scratch_dir"
-      --output-file "${CI_PROJECT_DIR}/jobs_scratch_dir/pipeline.yml"
-      --no-prune-dag
-  artifacts:
-    paths:
-      - "${CI_PROJECT_DIR}/jobs_scratch_dir"
-
-spack-build-job:
-  <<: *spack-rules
-  <<: *spack-variables
-  stage: spack-build
-  trigger:
-    include:
-      - artifact: "jobs_scratch_dir/pipeline.yml"
-        job: spack-generate-job
-    strategy: depend
 
 # For Ascent CI
 .ornl-rules: &ornl-rules
   rules:
     - if: '$CI_PROJECT_PATH == "ecpcitest/exasgd/exago"'
 
-build_on_login_node:
+Ascent Build:
   stage: build
   tags:
     - nobatch
@@ -202,10 +156,10 @@ build_on_login_node:
   <<: *ornl_script_definition
   <<: *ornl_environment_variables
 
-test_on_compute_node:
+Ascent Test:
   stage: test
   dependencies:
-    - build_on_login_node
+    - 'Ascent Build'
   tags:
     - batch
   <<: *ornl-rules
@@ -222,7 +176,7 @@ test_on_compute_node:
     - exasgd
     - basic
 
-cmake-lint:
+CMake Lint:
   stage: build
   allow_failure: true
   <<: *pnnl-nonhpc-definition
@@ -231,21 +185,38 @@ cmake-lint:
   script:
     |
     set -x
-    apt update && apt install -y python3 python3-pip 
+    apt update && apt install -y python3 python3-pip perl
     pip install cmake_format
-    ret=0
-    export files_to_format=$( \
-      find . -type f \
-      -name "*.cmake" -o \
-      -name "CMakeLists.txt" -a \
-      -not -path "*/tests/toml11/*")
-    for f in "${files_to_format}"; do
-      cmake-format --log-level info --check $f
-      ret=$(($ret + $?))
-    done
-    exit $ret
+    ./buildsystem/tools/cmake_format.pl -v
+    exit $?
 
-svc cleanup:
+C++ Lint:
+  stage: build
+  allow_failure: true
+  <<: *pnnl-nonhpc-definition
+  <<: *pnnl-rules
+  image: ubuntu:20.04
+  script:
+    |
+    set -x
+    apt update && apt install -y clang-format perl
+    ./buildsystem/tools/clang_format.pl -v
+    exit $?
+
+File Naming Conventions:
+  stage: build
+  allow_failure: true
+  <<: *pnnl-nonhpc-definition
+  <<: *pnnl-rules
+  image: ubuntu:20.04
+  script:
+    |
+    set -x
+    apt update && apt install -y perl
+    ./buildsystem/tools/file_naming_conventions.pl
+    exit $?
+
+SVC Account Cleanup:
   stage: .pre
   <<: *pnnl-rules
   <<: *pnnl_tags_definition
@@ -255,7 +226,7 @@ svc cleanup:
   script:
     - cd /people/svcexasgd/ && rm -rf gitlab/*
 
-ppc64le-gcc-cuda-build:
+Newell Build:
   stage: build
   variables:
     SLURM_Q: "newell_shared"
@@ -267,14 +238,14 @@ ppc64le-gcc-cuda-build:
   <<: *pnnl_script_definition
   <<: *pnnl-rules
 
-ppc64le-gcc-cuda-test:
+Newell Test:
   stage: test
   dependencies:
-    - ppc64le-gcc-cuda-build
+    - 'Newell Build'
   variables:
     SLURM_Q: "newell_shared"
     MY_CLUSTER: "newell"
-    CTESTARGS: "-VV -E Python"
+    CTESTARGS: "--output-on-failure -E Python"
     OUTPUT_SUFFIX: "_test"
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
@@ -283,24 +254,7 @@ ppc64le-gcc-cuda-test:
   <<: *pnnl_after_script_definition
   <<: *pnnl-rules
 
-ppc64le-gcc-cuda-python-test:
-  stage: test
-  dependencies:
-    - ppc64le-gcc-cuda-build
-  variables:
-    SLURM_Q: "newell_shared"
-    MY_CLUSTER: "newell"
-    CTESTARGS: "-VV -R Python"
-    OUTPUT_SUFFIX: "_test_python"
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
-  <<: *pnnl_tags_definition
-  <<: *pnnl_script_definition
-    # No after_script as only one test per platform cleans up
-  <<: *pnnl-rules
-  allow_failure: true
-
-x86_64-gcc-cuda-build:
+Marianas Build:
   stage: build
   variables:
     SLURM_Q: "dl_shared"
@@ -312,14 +266,14 @@ x86_64-gcc-cuda-build:
   <<: *pnnl_script_definition
   <<: *pnnl-rules
 
-x86_64-gcc-cuda-test:
+Marianas Test:
   stage: test
   dependencies:
-    - x86_64-gcc-cuda-build
+    - 'Marianas Build'
   variables:
     SLURM_Q: "dl_shared"
     MY_CLUSTER: "marianas"
-    CTESTARGS: "-VV -E Python"
+    CTESTARGS: "--output-on-failure -E Python"
     OUTPUT_SUFFIX: "_test"
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
     WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
@@ -328,21 +282,39 @@ x86_64-gcc-cuda-test:
   <<: *pnnl_after_script_definition
   <<: *pnnl-rules
 
-x86_64-gcc-cuda-python-test:
-  stage: test
-  dependencies:
-    - x86_64-gcc-cuda-build
-  variables:
-    SLURM_Q: "dl_shared"
-    MY_CLUSTER: "marianas"
-    CTESTARGS: "-VV -R Python"
-    OUTPUT_SUFFIX: "_test_python"
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
-  <<: *pnnl_tags_definition
-  <<: *pnnl_script_definition
-    # No after_script as only one test per platform cleans up
-  <<: *pnnl-rules
-  allow_failure: true
+    # Python tests are disabled until new bindings are ready
+    # Newell Py Test:
+    #   stage: test
+    #   dependencies:
+    #     - 'Newell Build'
+    #   variables:
+    #     SLURM_Q: "newell_shared"
+    #     MY_CLUSTER: "newell"
+    #     CTESTARGS: "--output-on-failure -R Python"
+    #     OUTPUT_SUFFIX: "_test_python"
+    #     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    #     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+    #   <<: *pnnl_tags_definition
+    #   <<: *pnnl_script_definition
+    #     # No after_script as only one test per platform cleans up
+    #   <<: *pnnl-rules
+    #   allow_failure: true
+
+    #Marianas Py Test:
+    #  stage: test
+    #  dependencies:
+    #    - 'Marianas Build'
+    #  variables:
+    #    SLURM_Q: "dl_shared"
+    #    MY_CLUSTER: "marianas"
+    #    CTESTARGS: "--output-on-failure -R Python"
+    #    OUTPUT_SUFFIX: "_test_python"
+    #    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    #    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+    #  <<: *pnnl_tags_definition
+    #  <<: *pnnl_script_definition
+    #    # No after_script as only one test per platform cleans up
+    #  <<: *pnnl-rules
+    #  allow_failure: true
 # ---
 

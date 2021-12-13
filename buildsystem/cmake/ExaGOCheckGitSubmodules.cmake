@@ -15,9 +15,11 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
   endif()
 endif()
 
-if(NOT EXISTS "${PROJECT_SOURCE_DIR}/tests/toml11/CMakeLists.txt")
-  message(
-    FATAL_ERROR
-      "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again."
-  )
-endif()
+foreach(CHK_FILE "toml11/CMakeLists.txt" "spdlog/CMakeLists.txt")
+  if(NOT EXISTS "${PROJECT_SOURCE_DIR}/tpl/${CHK_FILE}")
+    message(
+      FATAL_ERROR
+        "A required submodule was not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again."
+    )
+  endif()
+endforeach()

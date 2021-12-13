@@ -1,17 +1,16 @@
 static char help[] = "OPFLOW Functionality Tests.\n\n";
 
-#include <opflow.h>
 #include "toml_utils.hpp"
+#include <opflow.h>
 
-struct OpflowFunctionalityTestParameters
-{
+struct OpflowFunctionalityTestParameters {
   /* Communicator required to run funcitonality test */
-  MPI_Comm comm=MPI_COMM_WORLD;
+  MPI_Comm comm = MPI_COMM_WORLD;
 
   /* Parameters required to set up and test a OPFlow */
-  std::string solver="";
-  std::string model="";
-  std::string network="";
+  std::string solver = "";
+  std::string model = "";
+  std::string network = "";
   bool is_loadloss_active;
   bool is_powerimb_active;
   std::string gen_bus_voltage_string;
@@ -34,11 +33,10 @@ struct OpflowFunctionalityTestParameters
   double obj_value;
   double error;
   int numiter;
-  PetscBool conv_status=PETSC_FALSE;
+  PetscBool conv_status = PETSC_FALSE;
 
   /* Assign all member variables from a toml map if values are found */
-  void assign_from(toml::value values)
-  {
+  void assign_from(toml::value values) {
     set_if_found(solver, values, "solver");
     set_if_found(model, values, "model");
     set_if_found(network, values, "network");
@@ -63,7 +61,6 @@ struct OpflowFunctionalityTestParameters
       gen_bus_voltage_type = FIXED_AT_SETPOINT;
     }
 
-
     if (initialization_string == "MIDPOINT") {
       initialization_type = OPFLOWINIT_MIDPOINT;
     } else if (initialization_string == "FROMFILE") {
@@ -77,45 +74,41 @@ struct OpflowFunctionalityTestParameters
 };
 
 struct OpflowFunctionalityTests
-  : public FunctionalityTestContext<OpflowFunctionalityTestParameters>
-{
-  OpflowFunctionalityTests(std::string testsuite_filename,
-      ExaGOVerbosityLevel logging_verbosity=EXAGO_LOG_INFO)
-    : FunctionalityTestContext(testsuite_filename, logging_verbosity)
-  {}
+    : public FunctionalityTestContext<OpflowFunctionalityTestParameters> {
+  OpflowFunctionalityTests(
+      std::string testsuite_filename,
+      ExaGOVerbosityLevel logging_verbosity = EXAGO_LOG_INFO)
+      : FunctionalityTestContext(testsuite_filename, logging_verbosity) {}
 
   using Params = OpflowFunctionalityTestParameters;
-  void ensure_options_are_consistent(toml::value testcase,
-      toml::value presets = toml::value{}) override
-  {
-    auto ensure_option_available = [&] (const std::string& opt) {
+  void
+  ensure_options_are_consistent(toml::value testcase,
+                                toml::value presets = toml::value{}) override {
+    auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
-      if (!is_available)
-      {
+      if (!is_available) {
         std::stringstream errs;
         errs << "OPFLOW Test suite expected option '" << opt
-          << "' to be available, but it was not found in this testsuite"
-          << " configuration:\n";
+             << "' to be available, but it was not found in this testsuite"
+             << " configuration:\n";
         errs << testcase << "\nwith these presets:\n" << presets;
         throw ExaGOError(errs.str().c_str());
       }
     };
 
-    for (const auto& opt : {"solver", "model", "network", "gen_bus_voltage_type", "tolerance", "has_gen_set_point"})
+    for (const auto &opt :
+         {"solver", "model", "network", "gen_bus_voltage_type", "tolerance",
+          "has_gen_set_point"})
       ensure_option_available(opt);
-
   }
 
-  void initialize_test_parameters(
-      Params& params,
-      const toml::value& testcase, const toml::value& presets) override
-  {
+  void initialize_test_parameters(Params &params, const toml::value &testcase,
+                                  const toml::value &presets) override {
     params.assign_from(presets);
     params.assign_from(testcase);
   }
 
-  toml::value create_failing_testcase(const Params& params) override
-  {
+  toml::value create_failing_testcase(const Params &params) override {
     toml::value testcase;
 
     testcase["solver"] = params.solver;
@@ -141,47 +134,65 @@ struct OpflowFunctionalityTests
     return testcase;
   }
 
-  void run_test_case(Params& params) override
-  {
+  void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     OPFLOW opflow;
 
-    std::cout<<"Test Description: "<<params.description<<std::endl;
-    ierr = OPFLOWCreate(params.comm,&opflow);ExaGOCheckError(ierr);
+    std::cout << "Test Description: " << params.description << std::endl;
+    ierr = OPFLOWCreate(params.comm, &opflow);
+    ExaGOCheckError(ierr);
 
-    ierr = OPFLOWSetTolerance(opflow, params.tolerance);ExaGOCheckError(ierr);
+    ierr = OPFLOWSetTolerance(opflow, params.tolerance);
+    ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.network);
-    ierr = OPFLOWReadMatPowerData(opflow,params.network.c_str());ExaGOCheckError(ierr);
+    ierr = OPFLOWReadMatPowerData(opflow, params.network.c_str());
+    ExaGOCheckError(ierr);
 
-    ierr = OPFLOWSetGenBusVoltageType(opflow,params.gen_bus_voltage_type);ExaGOCheckError(ierr);
+    ierr = OPFLOWSetGenBusVoltageType(opflow, params.gen_bus_voltage_type);
+    ExaGOCheckError(ierr);
 
-    ierr = OPFLOWSetSolver(opflow, params.solver.c_str());ExaGOCheckError(ierr);
+    ierr = OPFLOWSetSolver(opflow, params.solver.c_str());
+    ExaGOCheckError(ierr);
 
-    ierr = OPFLOWSetModel(opflow, params.model.c_str());ExaGOCheckError(ierr);
+    ierr = OPFLOWSetModel(opflow, params.model.c_str());
+    ExaGOCheckError(ierr);
 
-    ierr = OPFLOWHasBusPowerImbalance(opflow, (PetscBool)params.is_powerimb_active);ExaGOCheckError(ierr);
+    ierr = OPFLOWHasBusPowerImbalance(opflow,
+                                      (PetscBool)params.is_powerimb_active);
+    ExaGOCheckError(ierr);
 
-    ierr = OPFLOWHasLoadLoss(opflow, (PetscBool)params.is_loadloss_active);ExaGOCheckError(ierr);
+    ierr = OPFLOWHasLoadLoss(opflow, (PetscBool)params.is_loadloss_active);
+    ExaGOCheckError(ierr);
 
-    ierr = OPFLOWHasGenSetPoint(opflow,(PetscBool)params.has_gen_set_point);ExaGOCheckError(ierr);
+    ierr = OPFLOWHasGenSetPoint(opflow, (PetscBool)params.has_gen_set_point);
+    ExaGOCheckError(ierr);
 
-    ierr = OPFLOWUseAGC(opflow, (PetscBool)params.use_agc);ExaGOCheckError(ierr);ExaGOCheckError(ierr);
+    ierr = OPFLOWUseAGC(opflow, (PetscBool)params.use_agc);
+    ExaGOCheckError(ierr);
+    ExaGOCheckError(ierr);
 
-    ierr = OPFLOWSetLoadLossPenalty(opflow, params.load_loss_penalty);ExaGOCheckError(ierr);
+    ierr = OPFLOWSetLoadLossPenalty(opflow, params.load_loss_penalty);
+    ExaGOCheckError(ierr);
 
-    ierr = OPFLOWSetBusPowerImbalancePenalty(opflow, params.power_imbalance_penalty);ExaGOCheckError(ierr);
+    ierr = OPFLOWSetBusPowerImbalancePenalty(opflow,
+                                             params.power_imbalance_penalty);
+    ExaGOCheckError(ierr);
 
-    ierr = OPFLOWSetInitializationType(opflow, params.initialization_type);ExaGOCheckError(ierr);
+    ierr = OPFLOWSetInitializationType(opflow, params.initialization_type);
+    ExaGOCheckError(ierr);
 
-    ierr = OPFLOWSetUp(opflow);ExaGOCheckError(ierr);
+    ierr = OPFLOWSetUp(opflow);
+    ExaGOCheckError(ierr);
 
     if (params.solver == "HIOP") {
-      ierr = OPFLOWSetHIOPComputeMode(opflow, params.hiop_compute_mode.c_str());ExaGOCheckError(ierr);
+      ierr = OPFLOWSetHIOPComputeMode(opflow, params.hiop_compute_mode.c_str());
+      ExaGOCheckError(ierr);
     }
 
-    ierr = OPFLOWSolve(opflow);ExaGOCheckError(ierr);
+    ierr = OPFLOWSolve(opflow);
+    ExaGOCheckError(ierr);
 
     /* Possible ways for a functionality test to fail */
     bool converge_failed = false;
@@ -189,23 +200,24 @@ struct OpflowFunctionalityTests
     bool num_iter_failed = false;
 
     /* Test convergence status */
-    ierr = OPFLOWGetConvergenceStatus(opflow,&params.conv_status);ExaGOCheckError(ierr);
-    if (params.conv_status==PETSC_FALSE)
-    {
+    ierr = OPFLOWGetConvergenceStatus(opflow, &params.conv_status);
+    ExaGOCheckError(ierr);
+    if (params.conv_status == PETSC_FALSE) {
       converge_failed = true;
     }
 
     /* Test objective value */
-    ierr = OPFLOWGetObjective(opflow,&params.obj_value);ExaGOCheckError(ierr);
-    if (!IsEqual(params.obj_value,params.expected_obj_value,params.tolerance,params.error))
-    {
+    ierr = OPFLOWGetObjective(opflow, &params.obj_value);
+    ExaGOCheckError(ierr);
+    if (!IsEqual(params.obj_value, params.expected_obj_value, params.tolerance,
+                 params.error)) {
       obj_failed = true;
     }
 
     /* Test num iterations */
-    ierr = OPFLOWGetNumIterations(opflow,&params.numiter);ExaGOCheckError(ierr);
-    if (params.numiter!=params.expected_num_iters)
-    {
+    ierr = OPFLOWGetNumIterations(opflow, &params.numiter);
+    ExaGOCheckError(ierr);
+    if (params.numiter != params.expected_num_iters) {
       num_iter_failed = true;
     }
 
@@ -217,27 +229,26 @@ struct OpflowFunctionalityTests
     else
       pass();
 
-    ierr = OPFLOWDestroy(&opflow);ExaGOCheckError(ierr);
+    ierr = OPFLOWDestroy(&opflow);
+    ExaGOCheckError(ierr);
   }
 };
 
-int main(int argc, char** argv)
-{
-  if (argc < 2)
-  {
+int main(int argc, char **argv) {
+  if (argc < 2) {
     std::cerr << "Pass path to test cases TOML file as the first argument to "
-      << "this test driver.\n";
+              << "this test driver.\n";
     std::exit(1);
   }
 
   PetscErrorCode ierr;
-  OutputFormat fmt=MATPOWER;
-  MPI_Comm comm=MPI_COMM_WORLD;
-  char appname[]="opflow";
+  OutputFormat fmt = MATPOWER;
+  MPI_Comm comm = MPI_COMM_WORLD;
+  char appname[] = "opflow";
   int _argc = 0;
-  ierr = ExaGOInitialize(comm,&argc,&argv,appname,help);
+  ierr = ExaGOInitialize(comm, &argc, &argv, appname, help);
 
-  ExaGOLog(EXAGO_LOG_INFO,"%s\n","Creating OPFlow Functionality Test");
+  ExaGOLog(EXAGO_LOG_INFO, "{}", "Creating OPFlow Functionality Test");
 
   OpflowFunctionalityTests test{std::string(argv[1])};
   test.run_all_test_cases();

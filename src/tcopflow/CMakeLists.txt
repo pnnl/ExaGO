@@ -1,11 +1,11 @@
-set(TCOPFLOW_SOLVER_SRC solver/ipopt/tcopflow-ipopt.c)
+set(TCOPFLOW_SOLVER_SRC solver/ipopt/tcopflow_ipopt.cpp)
 
-set(TCOPFLOW_MODEL_SRC model/genramp/genramp.c)
+set(TCOPFLOW_MODEL_SRC model/genramp/genramp.cpp)
 
 set(TCOPFLOW_SRC
-    interface/tcopflow.c interface/tcopflowregi.c interface/tcopflowoutput.c
-    interface/tcopflowreadprofiles.c ${TCOPFLOW_MODEL_SRC}
-    ${TCOPFLOW_SOLVER_SRC}
+    interface/tcopflow.cpp interface/tcopflowregi.cpp
+    interface/tcopflowoutput.cpp interface/tcopflowreadprofiles.cpp
+    ${TCOPFLOW_MODEL_SRC} ${TCOPFLOW_SOLVER_SRC}
 )
 
 # Header files for tcopflow

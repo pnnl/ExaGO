@@ -1,20 +1,20 @@
 #[[ Functionality tests for ExaGO TCOPFLOW applications ]]
 
 set_source_files_properties(
-  tcopflow.c tcopflowselfcheck.c PROPERTIES LANGUAGE CXX
+  tcopflow.cpp tcopflowselfcheck.cpp PROPERTIES LANGUAGE CXX
 )
 
-add_executable(testTcopflowFunctionality tcopflow.c tcopflowselfcheck.c)
+add_executable(test_tcopflow_functionality tcopflow.cpp tcopflowselfcheck.cpp)
 target_include_directories(
-  testTcopflowFunctionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+  test_tcopflow_functionality PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 set(tolerance "1e-3")
 
 #[[ Configure TCOPFLOW functionality tests ]]
-target_link_libraries(testTcopflowFunctionality ExaGO::TCOPFLOW)
+target_link_libraries(test_tcopflow_functionality ExaGO::TCOPFLOW)
 if(EXAGO_INSTALL_TESTS)
-  install(TARGETS testTcopflowFunctionality
+  install(TARGETS test_tcopflow_functionality
           RUNTIME DESTINATION tests/functionality
   )
 
@@ -24,7 +24,7 @@ if(EXAGO_INSTALL_TESTS)
     FUNCTIONALITY_TEST_TCOPFLOW
     COMMAND
     ${RUNCMD}
-    $<TARGET_FILE:testTcopflowFunctionality>
+    $<TARGET_FILE:test_tcopflow_functionality>
     -netfile
     ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod_gen3_wind.m
     -tcopflow_windgenprofile

@@ -6,7 +6,7 @@ Preamble
 
 cmake_minimum_required(VERSION 3.18)
 
-project(ExaGO VERSION "1.1.1")
+project(ExaGO VERSION "1.2.0")
 
 string(TIMESTAMP EXAGO_RELEASE_DATE "%Y-%m-%d")
 
@@ -57,10 +57,8 @@ option(EXAGO_ENABLE_IPOPT "Enable Ipopt support" OFF)
 # HiOP support is disabled by default
 option(EXAGO_ENABLE_HIOP "Enable HiOP support" OFF)
 
-# HIOP distributed engine
-option(EXAGO_ENABLE_HIOP_DISTRIBUTED
-       "Enable HiOP distributed MPI engine support" OFF
-)
+# MPI support is enabled by default
+option(EXAGO_ENABLE_MPI "Enable MPI support" ON)
 
 # GPU support is disabled by default
 option(EXAGO_ENABLE_GPU "Enable GPU support" OFF)
@@ -261,6 +259,8 @@ if(EXAGO_RUN_TESTS)
   enable_testing()
   include(ExaGOTestingUtilities)
 endif()
+
+include_directories(${PROJECT_SOURCE_DIR}/tpl/spdlog/include)
 
 # Build libraries (specified in src/CMakeLists.txt)
 add_subdirectory(src)

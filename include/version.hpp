@@ -8,34 +8,34 @@
  * Print information about the current ExaGO build. The user is responsible for
  * free'ing this memory.
  */
-PETSC_EXTERN PetscErrorCode ExaGOVersionGetFullVersionInfo(char**);
+PETSC_EXTERN PetscErrorCode ExaGOVersionGetFullVersionInfo(char **);
 
 /**
  * Print release date for the current ExaGO build in format "%Y-%m-%d".
  * The user is responsible for free'ing this memory.
  */
-PETSC_EXTERN PetscErrorCode ExaGOVersionGetReleaseDate(char**);
+PETSC_EXTERN PetscErrorCode ExaGOVersionGetReleaseDate(char **);
 
 /**
  * Sets major, minor, and patch versions for current ExaGO build. The user is
  * responsible for free'ing this memory.
  */
-PETSC_EXTERN PetscErrorCode ExaGOVersionGetVersion(int*,int*,int*);
+PETSC_EXTERN PetscErrorCode ExaGOVersionGetVersion(int *, int *, int *);
 
 /**
  * Sets string with build version for current ExaGO build in format
  * "major.minor.patch". The user is responsible for free'ing this memory.
  */
-PETSC_EXTERN PetscErrorCode ExaGOVersionVersionStr(char**);
+PETSC_EXTERN PetscErrorCode ExaGOVersionVersionStr(char **);
 
 /**
- *  @brief Returns map with keys as the names of the dependencies and values as bools
- *  indicating whether they are enabled or not.
+ *  @brief Returns map with keys as the names of the dependencies and values as
+ * bools indicating whether they are enabled or not.
  *
  * @note The keys map to the lowercase endings of the macros defined in
  * exago_config.h. For example, the key "hiop_sparse" will map to _true_ if
  * the macro EXAGO_ENABLE_HIOP_SPARSE is defined in exago_config.h.
  */
-extern const std::unordered_map<std::string, bool>& ExaGOGetDependencies();
+extern const std::unordered_map<std::string, bool> &ExaGOGetDependencies();
 
 #endif

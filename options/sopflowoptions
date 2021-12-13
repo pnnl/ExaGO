@@ -1,19 +1,44 @@
--netfile share/exago/datafiles/case9/case9mod_gen3_wind.m
+-netfile ../../datafiles/case9/case9mod_gen3_wind.m
 
 # Wind scenario profiles
--scenfile share/exago/datafiles/case9/scenarios_9bus.csv
+-scenfile ../../datafiles/case9/10_scenarios_9bus.csv
 
 # Coupling between second stage and first stage?
 -sopflow_iscoupling 1
 
 # Operation mode (preventive (0) or corrective (1))
--sopflow_mode 0
+-sopflow_mode 1
 
 # Ignore line flow constraints
 -opflow_ignore_lineflow_constraints 0
 
 # Number of scenarios
 -sopflow_Ns 1
+
+-sopflow_solver HIOP
+-hiop_compute_mode CPU
+-hiop_verbosity_level 3
+
+-opflow_genbusvoltage VARIABLE_WITHIN_BOUNDS
+-opflow_initialization ACPF
+
+-scopflow_subproblem_solver IPOPT
+-scopflow_subproblem_model POWER_BALANCE_POLAR
+
+#Options for multi-contingency
+
+# Enable multi-contingency
+-sopflow_enable_multicontingency 1
+
+# Flatten contingencies
+-sopflow_flatten_contingencies 1
+
+# Contingency file
+-ctgcfile ../../datafiles/case9/case9.cont
+
+# Number of contingencies
+-sopflow_Nc 1
+
 
 # performance
 #-------------
@@ -23,13 +48,6 @@
 # Display options left
 -options_left no
 
-#Options for multi-contingency
-
-# Enable multi-contingency
--sopflow_enable_multicontingency 0
-
-# Contingency file
--ctgcfile share/exago/datafiles/case9/case9.cont
 
 # Coupling between second stage and first stage?
 -scopflow_iscoupling 1
@@ -39,9 +57,6 @@
 
 # Ignore line flow constraints
 -opflow_ignore_lineflow_constraints 0
-
-# Number of contingencies
--scopflow_Nc 1
 
 # Options for multiperiod scopflow
 # Active load power profile file
