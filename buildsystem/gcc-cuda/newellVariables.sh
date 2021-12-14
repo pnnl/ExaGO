@@ -79,6 +79,9 @@ module load zlib-1.2.11-gcc-7.4.0-vnk3szs
 module load gcc/7.4.0
 module load openmpi/3.1.5
 module load cuda/10.2
+module load python/miniconda3.8
+
+source /share/apps/python/miniconda3.8/etc/profile.d/conda.sh
 
 [ -f $PWD/nvblas.conf ] && rm $PWD/nvblas.conf
 cat > $PWD/nvblas.conf <<-EOD

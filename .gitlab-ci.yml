@@ -78,7 +78,7 @@ workflow:
 
       cd "$WORKDIR"
       # Unique output file for this stage
-      output="output_${OUTPUT_SUFFIX}"
+      output="output${OUTPUT_SUFFIX}"
       [ -f $output ] && rm $output
       touch $output
       tail -f $output &
@@ -103,7 +103,7 @@ workflow:
         if [[ "$(awk 'BEGIN{i=0}/BUILD_STATUS/{i++}END{print i}' $output)" != "0" ]]; then
           kill $tailpid
           echo 'Last tail of build output:'
-          tail -n 50 $output
+          tail -n 200 $output
           res=$(grep BUILD_STATUS $output | tail -n 1 | cut -f2 -d':')
           break
         fi
@@ -203,6 +203,20 @@ C++ Lint:
     ./buildsystem/tools/clang_format.pl -v
     exit $?
 
+Python Lint:
+  stage: build
+  allow_failure: true
+  <<: *pnnl-nonhpc-definition
+  <<: *pnnl-rules
+  image: ubuntu:20.04
+  script:
+    |
+    set -x
+    apt update && apt install -y python3 python3-pip perl
+    pip install pycodestyle autopep8
+    ./buildsystem/tools/python_format.pl -v
+    exit $?
+
 File Naming Conventions:
   stage: build
   allow_failure: true
@@ -282,39 +296,38 @@ Marianas Test:
   <<: *pnnl_after_script_definition
   <<: *pnnl-rules
 
-    # Python tests are disabled until new bindings are ready
-    # Newell Py Test:
-    #   stage: test
-    #   dependencies:
-    #     - 'Newell Build'
-    #   variables:
-    #     SLURM_Q: "newell_shared"
-    #     MY_CLUSTER: "newell"
-    #     CTESTARGS: "--output-on-failure -R Python"
-    #     OUTPUT_SUFFIX: "_test_python"
-    #     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    #     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
-    #   <<: *pnnl_tags_definition
-    #   <<: *pnnl_script_definition
-    #     # No after_script as only one test per platform cleans up
-    #   <<: *pnnl-rules
-    #   allow_failure: true
+Newell Py Test:
+  stage: test
+  dependencies:
+    - 'Newell Build'
+  variables:
+    SLURM_Q: "newell_shared"
+    MY_CLUSTER: "newell"
+    CTESTARGS: "--output-on-failure -R Python"
+    OUTPUT_SUFFIX: "_test_python"
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+  <<: *pnnl_tags_definition
+  <<: *pnnl_script_definition
+    # No after_script as only one test per platform cleans up
+  <<: *pnnl-rules
+  allow_failure: true
 
-    #Marianas Py Test:
-    #  stage: test
-    #  dependencies:
-    #    - 'Marianas Build'
-    #  variables:
-    #    SLURM_Q: "dl_shared"
-    #    MY_CLUSTER: "marianas"
-    #    CTESTARGS: "--output-on-failure -R Python"
-    #    OUTPUT_SUFFIX: "_test_python"
-    #    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    #    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
-    #  <<: *pnnl_tags_definition
-    #  <<: *pnnl_script_definition
-    #    # No after_script as only one test per platform cleans up
-    #  <<: *pnnl-rules
-    #  allow_failure: true
+Marianas Py Test:
+  stage: test
+  dependencies:
+    - 'Marianas Build'
+  variables:
+    SLURM_Q: "dl_shared"
+    MY_CLUSTER: "marianas"
+    CTESTARGS: "--output-on-failure -R Python"
+    OUTPUT_SUFFIX: "_test_python"
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+  <<: *pnnl_tags_definition
+  <<: *pnnl_script_definition
+    # No after_script as only one test per platform cleans up
+  <<: *pnnl-rules
+  allow_failure: true
 # ---
 

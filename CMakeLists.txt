@@ -368,6 +368,8 @@ endif()
 
 include(ExaGOCheckPython)
 if(EXAGO_ENABLE_PYTHON)
+  # Build pybind11 target manually
+  add_subdirectory(tpl/pybind11)
   add_subdirectory(interfaces/python)
 endif()
 

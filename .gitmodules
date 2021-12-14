@@ -4,3 +4,7 @@
 [submodule "tpl/spdlog"]
 	path = tpl/spdlog
 	url = https://github.com/gabime/spdlog.git
+
+[submodule "tpl/pybind11"]
+	path = tpl/pybind11
+	url = https://github.com/pybind/pybind11.git

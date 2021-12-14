@@ -27,12 +27,15 @@ if ($opt_h) {
 my $ret = 0;
 
 say "-- Running clang-format tool";
-$ret += ExaGO::ClangFormat::tool( 0, $opt_v, $opt_i );
+$ret += ExaGO::ClangFormat::tool( $opt_v, $opt_i );
 
 say "-- Running cmake-format tool";
-$ret += ExaGO::CMakeFormat::tool( 0, $opt_v, $opt_i );
+$ret += ExaGO::CMakeFormat::tool( $opt_v, $opt_i );
 
 say "-- Running file naming convention tool";
-$ret += ExaGO::FileNamingConventions::tool( 0, $opt_v );
+$ret += ExaGO::FileNamingConventions::tool( $opt_v );
+
+say "-- Running python formatting tool";
+$ret += ExaGO::PythonFormat::tool( $opt_v, $opt_i );
 
 exit $ret;

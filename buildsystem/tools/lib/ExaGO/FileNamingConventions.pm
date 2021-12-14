@@ -14,31 +14,15 @@ our @EXPORT = qw(tool);
 my @skip = ('pycache');
 
 sub tool {
-  my $help    = shift @_;
   my $verbose = shift @_;
-
-  if ($help) {
-    say "Utility script for checking file naming conventions in ExaGO";
-    say "Usage: ./file-nameing-conventions.pl";
-    say "\t-h: print this help message";
-    say "\t-i: perform formatting in-place.";
-    say "\t\tOtherwise, the script verifies that files are formatted.";
-    say "\t-v: verbose output";
-    print
-      "\nSet the environment variable CF to the cmake format executable you ";
-    say "would like to use, if you have multiple.";
-    say "\nYou most likely just need to run:";
-    say "\n\t\$ ./scripts/file-nameing-conventions.pl -i\n";
-    say "from the root ExaGO source directory before committing your code.";
-    exit 1;
-  }
 
   my $tool = "file-naming-conventions";
 
   my @dirs = (
     "$root/src",                 "$root/include",
     "$root/tests/functionality", "$root/tests/interfaces",
-    "$root/tests/unit",          "$root/applications"
+    "$root/tests/unit",          "$root/applications",
+    "$root/interfaces"
   );
 
   my @fails;
@@ -52,7 +36,7 @@ sub tool {
       printoneline $verbose, "($tool) Checking " . ( $verbose ? $f : $_ );
 
       foreach my $skip_ (@skip) {
-        if ($f =~ /$skip_/) {
+        if ( $f =~ /$skip_/ ) {
           return;
         }
       }

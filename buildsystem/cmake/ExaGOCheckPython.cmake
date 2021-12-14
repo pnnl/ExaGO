@@ -1,6 +1,6 @@
 set(EXAGO_MIN_PYTHON_VERSION "3.6")
 
-find_package(Python COMPONENTS Interpreter)
+find_package(Python COMPONENTS Interpreter Development)
 
 if(${Python_VERSION} VERSION_LESS ${EXAGO_MIN_PYTHON_VERSION})
   message(
@@ -18,10 +18,4 @@ else()
   message(STATUS "ExaGO Python bindings will be installed in: "
                  "${CMAKE_INSTALL_PREFIX}/${EXAGO_PYTHON_SITELIB}"
   )
-  if(EXAGO_ENABLE_PYTHON AND NOT EXAGO_BUILD_SHARED)
-    message(STATUS "Python bindings enabled, but shared libraries are not. "
-                   "setting EXAGO_BUILD_SHARED=On"
-    )
-    set(EXAGO_BUILD_SHARED ON)
-  endif()
 endif()
