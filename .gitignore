@@ -1,4 +1,7 @@
 build/*
 install/*
 *~
+*.swp
 .ubuild.json
+*__pycache__*
+*nvblas.conf

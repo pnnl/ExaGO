@@ -15,7 +15,7 @@ our ( $root, $host, $el );
 
 my ( $name, $path, $suffix ) = fileparse(__FILE__);
 
-if (-e '/usr/share/Modules/init/perl.pm') {
+if ( -e '/usr/share/Modules/init/perl.pm' ) {
   require '/usr/share/Modules/init/perl.pm';
 }
 

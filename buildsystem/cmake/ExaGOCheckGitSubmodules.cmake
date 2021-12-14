@@ -15,7 +15,9 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
   endif()
 endif()
 
-foreach(CHK_FILE "toml11/CMakeLists.txt" "spdlog/CMakeLists.txt")
+foreach(CHK_FILE "toml11/CMakeLists.txt" "spdlog/CMakeLists.txt"
+                 "pybind11/CMakeLists.txt"
+)
   if(NOT EXISTS "${PROJECT_SOURCE_DIR}/tpl/${CHK_FILE}")
     message(
       FATAL_ERROR

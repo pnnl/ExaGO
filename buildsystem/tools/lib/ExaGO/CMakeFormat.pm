@@ -11,25 +11,8 @@ our @ISA    = qw( Exporter );
 our @EXPORT = qw(tool);
 
 sub tool {
-  my $help    = shift @_;
   my $verbose = shift @_;
   my $inplace = shift @_;
-
-  if ($help) {
-    say "cmake-format utility script for ExaGO";
-    say "Usage: ./cmake-format.pl";
-    say "\t-h: print this help message";
-    say "\t-i: perform formatting in-place.";
-    say "\t\tOtherwise, the script verifies that files are formatted.";
-    say "\t-v: verbose output";
-    print
-"\nSet the environment variable CMAKEFORMAT to the cmake format executable you ";
-    say "would like to use, if you have multiple.";
-    say "\nYou most likely just need to run:";
-    say "\n\t\$ ./scripts/cmake-format.pl -i\n";
-    say "from the root ExaGO source directory before committing your code.";
-    exit 1;
-  }
 
   my $tool = "cmake-format";
 
@@ -40,18 +23,18 @@ sub tool {
     $cf = $ENV{'CMAKEFORMAT'};
   }
   elsif ( $host =~ /newell/s ) {
-    &module('load', 'python/miniconda3.8');
+    &module( 'load', 'python/miniconda3.8' );
     $ENV{'PYTHONPATH'} = '/qfs/projects/exasgd/src/cmake_format_newell';
     $cf = '/qfs/projects/exasgd/src/cmake_format_newell/bin/cmake-format';
   }
-  else {                                    # else just look in PATH
+  else {
     $cf = `which cmake-format`;
     chomp($cf);
   }
   `which $cf`;
   if ($?) {
-    say
-"ERROR: no cmake-format executable could be found. CMake code will not be linted.";
+    say "ERROR: no cmake-format executable could be found. CMake code will not "
+      . "be linted.";
     return 1;
   }
 
@@ -64,7 +47,7 @@ sub tool {
     "$root/src",                 "$root/include",
     "$root/tests/functionality", "$root/tests/interfaces",
     "$root/tests/unit",          "$root/buildsystem",
-    "$root/CMakeLists.txt",
+    "$root/CMakeLists.txt",      "$root/interfaces"
   );
 
   my @fails;

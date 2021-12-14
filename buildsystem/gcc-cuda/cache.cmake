@@ -68,7 +68,7 @@ set(EXAGO_RUN_TESTS
     CACHE BOOL ""
 )
 
-message(STATUS "Enablying Python")
+message(STATUS "Enabling Python")
 set(EXAGO_ENABLE_PYTHON
     ON
     CACHE BOOL ""

@@ -3,8 +3,8 @@ import os
 import inspect
 from collections import defaultdict
 
-# Maps filenames to test cases. Each test case will register itself in the entry
-# corresponding to it's filename so test cases are grouped by file.
+# Maps filenames to test cases. Each test case will register itself in the
+# entry corresponding to it's filename so test cases are grouped by file.
 _exago_tests = defaultdict(list)
 
 
@@ -26,6 +26,7 @@ def exago_test(testcase):
     _exago_tests[inspect.getfile(testcase)].append(wrapper)
 
     return wrapper
+
 
 def exago_run_all_tests(file_name):
     '''Run all test cases that were registered in the caller's file.

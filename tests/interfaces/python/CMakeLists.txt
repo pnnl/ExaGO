@@ -4,7 +4,7 @@ set(pythonpath ${CMAKE_INSTALL_PREFIX}/${EXAGO_PYTHON_SITELIB}:$ENV{PYTHONPATH})
 # element for concatentation later
 list(TRANSFORM RUNCMD APPEND " ")
 
-foreach(testcase test_config test_pflow test_opflow)
+foreach(testcase test_opflow)
   string(CONCAT CMD ${RUNCMD} ${Python_EXECUTABLE} " " ${testcase}.py)
   exago_add_test(
     NAME
