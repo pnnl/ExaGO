@@ -91,19 +91,30 @@ PetscErrorCode SOPFLOWPrintSolution(SOPFLOW sopflow, PetscInt scen_num) {
         "=============================================================\n");
     CHKERRQ(ierr);
 
-    ierr = PetscPrintf(sopflow->comm->type, "%-35s %s\n", "OPFLOW Formulation",
-                       opflow->modelname);
-    CHKERRQ(ierr);
-    ierr = PetscPrintf(sopflow->comm->type, "%-35s %s\n", "Solver",
-                       sopflow->solvername);
-    CHKERRQ(ierr);
-    ierr = PetscPrintf(sopflow->comm->type, "%-35s %s\n", "Initialization",
-                       OPFLOWInitializationTypes[opflow->initializationtype]);
-    CHKERRQ(ierr);
     ierr = PetscPrintf(sopflow->comm->type, "%-35s %d\n", "Number of scenarios",
                        sopflow->Ns);
     CHKERRQ(ierr);
+    ierr = PetscPrintf(sopflow->comm->type, "%-35s %s\n",
+                       "Multi-contingency scenarios?",
+                       (sopflow->flatten_contingencies ||
+                        sopflow->ismulticontingency || (sopflow->Nc - 1))
+                           ? "YES"
+                           : "NO");
+    CHKERRQ(ierr);
+    if (sopflow->flatten_contingencies || sopflow->ismulticontingency ||
+        (sopflow->Nc - 1)) {
+      ierr = PetscPrintf(sopflow->comm->type, "%-35s %d\n",
+                         "Contingencies per scenario", sopflow->Nc - 1);
+      CHKERRQ(ierr);
+    }
 
+    ierr = PetscPrintf(sopflow->comm->type, "%-35s %s\n", "Solver",
+                       sopflow->solvername);
+    CHKERRQ(ierr);
+
+    ierr = PetscPrintf(sopflow->comm->type, "%-35s %s\n", "Initialization",
+                       OPFLOWInitializationTypes[opflow->initializationtype]);
+    CHKERRQ(ierr);
     ierr = PetscPrintf(sopflow->comm->type, "%-35s %s\n", "Load loss allowed",
                        opflow->include_loadloss_variables ? "YES" : "NO");
     CHKERRQ(ierr);
@@ -131,6 +142,7 @@ PetscErrorCode SOPFLOWPrintSolution(SOPFLOW sopflow, PetscInt scen_num) {
     ierr = PetscPrintf(sopflow->comm->type, "\n");
     CHKERRQ(ierr);
 
+#if 0 
     ierr = PetscPrintf(sopflow->comm->type, "%-35s %d\n", "Number of variables",
                        sopflow->Nx);
     CHKERRQ(ierr);
@@ -146,6 +158,7 @@ PetscErrorCode SOPFLOWPrintSolution(SOPFLOW sopflow, PetscInt scen_num) {
 
     ierr = PetscPrintf(sopflow->comm->type, "\n");
     CHKERRQ(ierr);
+#endif
   }
   MPI_Barrier(sopflow->comm->type);
   ierr = SOPFLOWGetConvergenceStatus(sopflow, &conv_status);
@@ -153,10 +166,10 @@ PetscErrorCode SOPFLOWPrintSolution(SOPFLOW sopflow, PetscInt scen_num) {
   ierr = PetscPrintf(sopflow->comm->type, "%-35s %s\n", "Convergence status",
                      conv_status ? "CONVERGED" : "DID NOT CONVERGE");
   CHKERRQ(ierr);
-  ierr = SOPFLOWGetObjective(sopflow, &cost);
+  ierr = SOPFLOWGetBaseObjective(sopflow, &cost);
   CHKERRQ(ierr);
-  ierr = PetscPrintf(sopflow->comm->type, "%-35s %-7.2f\n", "Objective value",
-                     cost);
+  ierr = PetscPrintf(sopflow->comm->type, "%-35s %-7.2f\n",
+                     "Objective value (base)", cost);
   CHKERRQ(ierr);
   ierr = PetscPrintf(sopflow->comm->type, "\n");
   CHKERRQ(ierr);

@@ -236,7 +236,7 @@ struct ScopflowFunctionalityTests
     }
 
     /* Test objective value */
-    ierr = SCOPFLOWGetObjective(scopflow, &params.obj_value);
+    ierr = SCOPFLOWGetBaseObjective(scopflow, &params.obj_value);
     ExaGOCheckError(ierr);
     if (!IsEqual(params.obj_value, params.expected_obj_value, params.tolerance,
                  params.error)) {

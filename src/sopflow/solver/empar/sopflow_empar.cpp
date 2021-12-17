@@ -39,24 +39,45 @@ PetscErrorCode SOPFLOWSolverDestroy_EMPAR(SOPFLOW sopflow) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SOPFLOWSolverGetObjective_EMPAR(SOPFLOW sopflow,
-                                               PetscReal *obj) {
+PetscErrorCode SOPFLOWSolverGetBaseObjective_EMPAR(SOPFLOW sopflow,
+                                                   PetscReal *obj) {
   PetscErrorCode ierr;
-  PetscReal temp;
+  PetscReal temp = 0.0;
   PetscFunctionBegin;
   if (!sopflow->comm->rank) {
     if (!sopflow->ismulticontingency) {
       temp = sopflow->opflows[0]->obj;
     } else {
-      temp = sopflow->scopflows[0]->obj;
+      temp = sopflow->scopflows[0]->objbase;
     }
   }
 
   // ierr = MPI_Bcast(&temp,1,MPI_REAL,0,sopflow->comm->type);CHKERRQ(ierr);
   ierr = MPI_Bcast(&temp, 1, MPI_DOUBLE, 0, sopflow->comm->type);
   CHKERRQ(ierr);
-  sopflow->obj = temp;
-  *obj = sopflow->obj;
+  sopflow->objbase = temp;
+  *obj = sopflow->objbase;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SOPFLOWSolverGetTotalObjective_EMPAR(SOPFLOW sopflow,
+                                                    PetscReal *obj) {
+  PetscErrorCode ierr;
+  PetscReal temp = 0.0;
+  PetscFunctionBegin;
+  if (!sopflow->ismulticontingency) {
+    for (int i = 0; i < sopflow->ns; i++) {
+      temp += sopflow->opflows[i]->obj;
+    }
+  } else {
+    temp = sopflow->scopflows[0]->objtot;
+  }
+
+  // ierr = MPI_Bcast(&temp,1,MPI_REAL,0,sopflow->comm->type);CHKERRQ(ierr);
+  ierr = MPI_Allreduce(&temp, &sopflow->objtot, 1, MPI_DOUBLE, MPI_SUM,
+                       sopflow->comm->type);
+  CHKERRQ(ierr);
+  *obj = sopflow->objtot;
   PetscFunctionReturn(0);
 }
 
@@ -154,7 +175,8 @@ PetscErrorCode SOPFLOWSolverCreate_EMPAR(SOPFLOW sopflow) {
   sopflow->solverops.setup = SOPFLOWSolverSetUp_EMPAR;
   sopflow->solverops.solve = SOPFLOWSolverSolve_EMPAR;
   sopflow->solverops.destroy = SOPFLOWSolverDestroy_EMPAR;
-  sopflow->solverops.getobjective = SOPFLOWSolverGetObjective_EMPAR;
+  sopflow->solverops.getbaseobjective = SOPFLOWSolverGetBaseObjective_EMPAR;
+  sopflow->solverops.gettotalobjective = SOPFLOWSolverGetTotalObjective_EMPAR;
   sopflow->solverops.getsolution = SOPFLOWSolverGetSolution_EMPAR;
   sopflow->solverops.getconvergencestatus =
       SOPFLOWSolverGetConvergenceStatus_EMPAR;

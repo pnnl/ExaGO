@@ -421,8 +421,8 @@ PetscErrorCode SCOPFLOWComputeConstraints_GENRAMPT(SCOPFLOW scopflow, Vec X,
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SCOPFLOWComputeObjective_GENRAMPT(SCOPFLOW scopflow, Vec X,
-                                                 PetscScalar *obj) {
+PetscErrorCode SCOPFLOWComputeTotalObjective_GENRAMPT(SCOPFLOW scopflow, Vec X,
+                                                      PetscScalar *obj) {
   PetscErrorCode ierr;
   TCOPFLOW tcopflow;
   PetscInt i;
@@ -448,6 +448,36 @@ PetscErrorCode SCOPFLOWComputeObjective_GENRAMPT(SCOPFLOW scopflow, Vec X,
     ierr = VecResetArray(tcopflow->X);
     CHKERRQ(ierr);
   }
+  ierr = VecRestoreArray(X, &x);
+  CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SCOPFLOWComputeBaseObjective_GENRAMPT(SCOPFLOW scopflow, Vec X,
+                                                     PetscScalar *obj) {
+  PetscErrorCode ierr;
+  TCOPFLOW tcopflow;
+  PetscScalar *xi;
+  PetscScalar tcopflowobj = 0.0;
+  PetscScalar *x;
+
+  PetscFunctionBegin;
+  *obj = 0.0;
+
+  ierr = VecGetArray(X, &x);
+  CHKERRQ(ierr);
+  xi = x + scopflow->xstarti[0];
+  tcopflow = scopflow->tcopflows[0];
+  ierr = VecPlaceArray(tcopflow->X, xi);
+  CHKERRQ(ierr);
+  ierr = (*tcopflow->modelops.computeobjective)(tcopflow, tcopflow->X,
+                                                &tcopflowobj);
+  CHKERRQ(ierr);
+  *obj = tcopflowobj;
+  ierr = VecResetArray(tcopflow->X);
+  CHKERRQ(ierr);
+
   ierr = VecRestoreArray(X, &x);
   CHKERRQ(ierr);
 
@@ -491,20 +521,6 @@ PetscErrorCode SCOPFLOWComputeGradient_GENRAMPT(SCOPFLOW scopflow, Vec X,
   ierr = VecRestoreArray(X, &x);
   CHKERRQ(ierr);
   ierr = VecRestoreArray(Grad, &grad);
-  CHKERRQ(ierr);
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode SCOPFLOWComputeObjandGradient_GENRAMPT(SCOPFLOW scopflow, Vec X,
-                                                      PetscScalar *obj,
-                                                      Vec Grad) {
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-
-  ierr = SCOPFLOWComputeObjective_GENRAMPT(scopflow, X, obj);
-  CHKERRQ(ierr);
-  ierr = SCOPFLOWComputeGradient_GENRAMPT(scopflow, X, Grad);
   CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
@@ -630,9 +646,10 @@ PetscErrorCode SCOPFLOWModelCreate_GENRAMPT(SCOPFLOW scopflow) {
   scopflow->modelops.computeconstraints = SCOPFLOWComputeConstraints_GENRAMPT;
   scopflow->modelops.computejacobian = SCOPFLOWComputeJacobian_GENRAMPT;
   scopflow->modelops.computehessian = SCOPFLOWComputeHessian_GENRAMPT;
-  scopflow->modelops.computeobjandgradient =
-      SCOPFLOWComputeObjandGradient_GENRAMPT;
-  scopflow->modelops.computeobjective = SCOPFLOWComputeObjective_GENRAMPT;
+  scopflow->modelops.computebaseobjective =
+      SCOPFLOWComputeBaseObjective_GENRAMPT;
+  scopflow->modelops.computetotalobjective =
+      SCOPFLOWComputeTotalObjective_GENRAMPT;
   scopflow->modelops.computegradient = SCOPFLOWComputeGradient_GENRAMPT;
 
   PetscFunctionReturn(0);

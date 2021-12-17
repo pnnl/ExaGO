@@ -325,7 +325,7 @@ PetscErrorCode SCOPFLOWSolverSolve_HIOP(SCOPFLOW scopflow) {
   CHKERRQ(ierr);
 
   /* Get objective value */
-  ierr = SCOPFLOWGetObjective(scopflow, &scopflow->obj);
+  ierr = SCOPFLOWGetBaseObjective(scopflow, &scopflow->objbase);
   CHKERRQ(ierr);
 
   /* Get number of iterations */
@@ -350,8 +350,8 @@ PetscErrorCode SCOPFLOWSolverDestroy_HIOP(SCOPFLOW scopflow) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SCOPFLOWSolverGetObjective_HIOP(SCOPFLOW scopflow,
-                                               PetscReal *obj) {
+PetscErrorCode SCOPFLOWSolverGetBaseObjective_HIOP(SCOPFLOW scopflow,
+                                                   PetscReal *obj) {
   PetscErrorCode ierr;
   PetscReal temp = 0.0;
   PetscFunctionBegin;
@@ -366,8 +366,28 @@ PetscErrorCode SCOPFLOWSolverGetObjective_HIOP(SCOPFLOW scopflow,
   // ierr = MPI_Bcast(&temp,1,MPI_REAL,0,scopflow->comm->type);CHKERRQ(ierr);
   ierr = MPI_Bcast(&temp, 1, MPI_DOUBLE, 0, scopflow->comm->type);
   CHKERRQ(ierr);
-  scopflow->obj = temp;
-  *obj = scopflow->obj;
+  scopflow->objbase = temp;
+  *obj = scopflow->objbase;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SCOPFLOWSolverGetTotalObjective_HIOP(SCOPFLOW scopflow,
+                                                    PetscReal *obj) {
+  PetscErrorCode ierr;
+  PetscReal temp;
+  PetscFunctionBegin;
+  if (!scopflow->ismultiperiod) {
+    for (int i = 0; i < scopflow->nc; i++) {
+      temp = scopflow->opflows[0]->obj;
+    }
+  } else {
+    temp = scopflow->tcopflows[0]->obj;
+  }
+
+  ierr = MPI_Allreduce(&temp, &scopflow->objtot, 1, MPI_DOUBLE, MPI_SUM,
+                       scopflow->comm->type);
+  CHKERRQ(ierr);
+  *obj = scopflow->objtot;
   PetscFunctionReturn(0);
 }
 
@@ -513,7 +533,8 @@ PetscErrorCode SCOPFLOWSolverCreate_HIOP(SCOPFLOW scopflow) {
   scopflow->solverops.setup = SCOPFLOWSolverSetUp_HIOP;
   scopflow->solverops.solve = SCOPFLOWSolverSolve_HIOP;
   scopflow->solverops.destroy = SCOPFLOWSolverDestroy_HIOP;
-  scopflow->solverops.getobjective = SCOPFLOWSolverGetObjective_HIOP;
+  scopflow->solverops.getbaseobjective = SCOPFLOWSolverGetBaseObjective_HIOP;
+  scopflow->solverops.gettotalobjective = SCOPFLOWSolverGetTotalObjective_HIOP;
   scopflow->solverops.getsolution = SCOPFLOWSolverGetSolution_HIOP;
   scopflow->solverops.getconvergencestatus =
       SCOPFLOWSolverGetConvergenceStatus_HIOP;

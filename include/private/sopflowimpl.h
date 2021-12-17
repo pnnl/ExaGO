@@ -38,8 +38,11 @@ struct _p_SOPFLOWModelOps {
   PetscErrorCode (*computehessian)(SOPFLOW, Vec, Vec, Mat);
   PetscErrorCode (*computeobjandgradient)(
       SOPFLOW, Vec, PetscScalar *, Vec); /* Objective and gradient routine */
-  PetscErrorCode (*computeobjective)(SOPFLOW, Vec,
-                                     PetscScalar *); /* Objective */
+  PetscErrorCode (*computebaseobjective)(
+      SOPFLOW, Vec, PetscScalar *); /* Base case Objective */
+  PetscErrorCode (*computetotalobjective)(SOPFLOW, Vec,
+                                          PetscScalar *); /* Total Objective */
+
   PetscErrorCode (*computegradient)(
       SOPFLOW, Vec, Vec); /* Gradient of the objective function */
 };
@@ -53,7 +56,8 @@ struct _p_SOPFLOWSolverOps {
   PetscErrorCode (*destroy)(SOPFLOW);
   PetscErrorCode (*setup)(SOPFLOW);
   PetscErrorCode (*solve)(SOPFLOW);
-  PetscErrorCode (*getobjective)(SOPFLOW, PetscReal *);
+  PetscErrorCode (*getbaseobjective)(SOPFLOW, PetscReal *);
+  PetscErrorCode (*gettotalobjective)(SOPFLOW, PetscReal *);
   PetscErrorCode (*getsolution)(SOPFLOW, PetscInt, Vec *);
   PetscErrorCode (*getconvergencestatus)(SOPFLOW, PetscBool *);
   PetscErrorCode (*getconstraints)(SOPFLOW, PetscInt, Vec *);
@@ -145,8 +149,10 @@ struct _p_SOPFLOW {
   Vec Gl; /**< Lower bound on G */
   Vec Gu; /**< Upper bound on G */
 
-  PetscScalar obj; /**< Objective function */
-  Vec gradobj;     /**< Gradient of the objective function */
+  PetscScalar objbase; /**< Base-case objective function value */
+  PetscScalar objtot;  /**< Total objective function value */
+
+  Vec gradobj; /**< Gradient of the objective function */
 
   PetscScalar obj_factor; /* IPOPT scales the objective hessian part with this
                              factor. For all other solvers, unless it is set,

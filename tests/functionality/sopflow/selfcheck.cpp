@@ -256,7 +256,7 @@ struct SopflowFunctionalityTests
     }
 
     /* Test objective value */
-    ierr = SOPFLOWGetObjective(sopflow, &params.obj_value);
+    ierr = SOPFLOWGetBaseObjective(sopflow, &params.obj_value);
     ExaGOCheckError(ierr);
     if (!IsEqual(params.obj_value, params.expected_obj_value, params.tolerance,
                  params.error)) {
