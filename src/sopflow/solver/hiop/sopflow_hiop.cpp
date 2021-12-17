@@ -366,15 +366,14 @@ PetscErrorCode SOPFLOWSolverDestroy_HIOP(SOPFLOW sopflow) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SOPFLOWSolverGetObjective_HIOP(SOPFLOW sopflow, PetscReal *obj) {
+PetscErrorCode SOPFLOWSolverGetBaseObjective_HIOP(SOPFLOW sopflow,
+                                                  PetscReal *obj) {
   PetscErrorCode ierr;
   PetscReal temp = 0.0;
   PetscFunctionBegin;
   if (!sopflow->comm->rank) {
     if (!sopflow->ismulticontingency) {
-      for (int i = 0; i < sopflow->ns; i++) {
-        temp += sopflow->opflows[i]->obj;
-      }
+      temp = sopflow->opflows[0]->obj;
     } else {
       //      temp = sopflow->tcopflows[0]->obj;
     }
@@ -382,8 +381,29 @@ PetscErrorCode SOPFLOWSolverGetObjective_HIOP(SOPFLOW sopflow, PetscReal *obj) {
   // ierr = MPI_Bcast(&temp,1,MPI_REAL,0,sopflow->comm->type);CHKERRQ(ierr);
   ierr = MPI_Bcast(&temp, 1, MPI_DOUBLE, 0, sopflow->comm->type);
   CHKERRQ(ierr);
-  sopflow->obj = temp;
-  *obj = sopflow->obj;
+  sopflow->objbase = temp;
+  *obj = sopflow->objbase;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SOPFLOWSolverGetTotalObjective_HIOP(SOPFLOW sopflow,
+                                                   PetscReal *obj) {
+  PetscErrorCode ierr;
+  PetscReal temp = 0.0;
+  PetscFunctionBegin;
+  if (!sopflow->ismulticontingency) {
+    for (int i = 0; i < sopflow->ns; i++) {
+      temp += sopflow->opflows[i]->obj;
+    }
+  } else {
+    //    temp = sopflow->scopflows[0]->obj;
+  }
+
+  // ierr = MPI_Bcast(&temp,1,MPI_REAL,0,sopflow->comm->type);CHKERRQ(ierr);
+  ierr = MPI_Allreduce(&temp, &sopflow->objtot, 1, MPI_DOUBLE, MPI_SUM,
+                       sopflow->comm->type);
+  CHKERRQ(ierr);
+  *obj = sopflow->objtot;
   PetscFunctionReturn(0);
 }
 
@@ -516,7 +536,8 @@ PetscErrorCode SOPFLOWSolverCreate_HIOP(SOPFLOW sopflow) {
   sopflow->solverops.setup = SOPFLOWSolverSetUp_HIOP;
   sopflow->solverops.solve = SOPFLOWSolverSolve_HIOP;
   sopflow->solverops.destroy = SOPFLOWSolverDestroy_HIOP;
-  sopflow->solverops.getobjective = SOPFLOWSolverGetObjective_HIOP;
+  sopflow->solverops.getbaseobjective = SOPFLOWSolverGetBaseObjective_HIOP;
+  sopflow->solverops.gettotalobjective = SOPFLOWSolverGetTotalObjective_HIOP;
   sopflow->solverops.getsolution = SOPFLOWSolverGetSolution_HIOP;
   sopflow->solverops.getconvergencestatus =
       SOPFLOWSolverGetConvergenceStatus_HIOP;

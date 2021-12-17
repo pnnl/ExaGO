@@ -61,7 +61,8 @@ PETSC_EXTERN PetscErrorCode SOPFLOWGetNumScenarios(SOPFLOW,
                                                    ScenarioFileInputFormat,
                                                    const char *, PetscInt *);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetNumContingencies(SOPFLOW, PetscInt);
-PETSC_EXTERN PetscErrorCode SOPFLOWGetObjective(SOPFLOW, PetscReal *);
+PETSC_EXTERN PetscErrorCode SOPFLOWGetTotalObjective(SOPFLOW, PetscReal *);
+PETSC_EXTERN PetscErrorCode SOPFLOWGetBaseObjective(SOPFLOW, PetscReal *);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetSolution(SOPFLOW, PetscInt, Vec *);
 PETSC_EXTERN PetscErrorCode SOPFLOWPrintSolution(SOPFLOW, PetscInt);
 PETSC_EXTERN PetscErrorCode SOPFLOWSaveSolution(SOPFLOW, PetscInt, OutputFormat,

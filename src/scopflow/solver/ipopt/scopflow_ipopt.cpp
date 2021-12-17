@@ -16,8 +16,8 @@ Bool eval_scopflow_f(PetscInt n, PetscScalar *x, Bool new_x,
 
   ierr = VecPlaceArray(scopflow->X, x);
   CHKERRQ(ierr);
-  ierr =
-      (*scopflow->modelops.computeobjective)(scopflow, scopflow->X, obj_value);
+  ierr = (*scopflow->modelops.computetotalobjective)(scopflow, scopflow->X,
+                                                     obj_value);
   CHKERRQ(ierr);
   ierr = VecResetArray(scopflow->X);
   CHKERRQ(ierr);
@@ -324,7 +324,7 @@ PetscErrorCode SCOPFLOWSolverSolve_IPOPT(SCOPFLOW scopflow) {
 
   /* Solve */
   scopflowipopt->solve_status = IpoptSolve(
-      scopflowipopt->nlp, x, g, &scopflow->obj, lam, NULL, NULL, scopflow);
+      scopflowipopt->nlp, x, g, &scopflow->objtot, lam, NULL, NULL, scopflow);
 
   ierr = VecRestoreArray(scopflow->X, &x);
   CHKERRQ(ierr);
@@ -357,10 +357,26 @@ PetscErrorCode SCOPFLOWSolverSetUp_IPOPT(SCOPFLOW scopflow) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SCOPFLOWSolverGetObjective_IPOPT(SCOPFLOW scopflow,
-                                                PetscReal *obj) {
+PetscErrorCode SCOPFLOWSolverGetBaseObjective_IPOPT(SCOPFLOW scopflow,
+                                                    PetscReal *obj) {
+  PetscErrorCode ierr;
+  PetscScalar *x;
+
   PetscFunctionBegin;
-  *obj = scopflow->obj;
+  *obj = 0.0;
+
+  ierr = (*scopflow->modelops.computebaseobjective)(scopflow, scopflow->X,
+                                                    &scopflow->objbase);
+  CHKERRQ(ierr);
+
+  *obj = scopflow->objbase;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SCOPFLOWSolverGetTotalObjective_IPOPT(SCOPFLOW scopflow,
+                                                     PetscReal *obj) {
+  PetscFunctionBegin;
+  *obj = scopflow->objtot;
   PetscFunctionReturn(0);
 }
 
@@ -516,7 +532,8 @@ PetscErrorCode SCOPFLOWSolverCreate_IPOPT(SCOPFLOW scopflow) {
   scopflow->solverops.setup = SCOPFLOWSolverSetUp_IPOPT;
   scopflow->solverops.solve = SCOPFLOWSolverSolve_IPOPT;
   scopflow->solverops.destroy = SCOPFLOWSolverDestroy_IPOPT;
-  scopflow->solverops.getobjective = SCOPFLOWSolverGetObjective_IPOPT;
+  scopflow->solverops.getbaseobjective = SCOPFLOWSolverGetBaseObjective_IPOPT;
+  scopflow->solverops.gettotalobjective = SCOPFLOWSolverGetTotalObjective_IPOPT;
   scopflow->solverops.getsolution = SCOPFLOWSolverGetSolution_IPOPT;
   scopflow->solverops.getconvergencestatus =
       SCOPFLOWSolverGetConvergenceStatus_IPOPT;

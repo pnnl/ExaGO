@@ -30,7 +30,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout) {
   scopflow->Lambdai = NULL;
 
   scopflow->obj_factor = 1.0;
-  scopflow->obj = 0.0;
+  scopflow->objbase = scopflow->objtot = 0.0;
 
   scopflow->mode = 0;
   scopflow->tolerance = 1e-6;
@@ -212,7 +212,8 @@ PetscErrorCode SCOPFLOWSetModel(SCOPFLOW scopflow, const char *modelname) {
   scopflow->modelops.computejacobian = 0;
   scopflow->modelops.computehessian = 0;
   scopflow->modelops.computeobjandgradient = 0;
-  scopflow->modelops.computeobjective = 0;
+  scopflow->modelops.computebaseobjective = 0;
+  scopflow->modelops.computetotalobjective = 0;
   scopflow->modelops.computegradient = 0;
 
   ierr = PetscStrcpy(scopflow->modelname, modelname);
@@ -877,18 +878,35 @@ PetscErrorCode SCOPFLOWSolve(SCOPFLOW scopflow) {
 }
 
 /**
- * @brief Returns the objective function value
+ * @brief Returns the objective function value for the base case
  *
  * @param[in] scopflow the scopflow object
- * @param[in] obj the objective function value
+ * @param[in] objbase the objective function value for the base case
  *
  * @note Should be called after the optimization finishes
  */
-PetscErrorCode SCOPFLOWGetObjective(SCOPFLOW scopflow, PetscReal *obj) {
+PetscErrorCode SCOPFLOWGetBaseObjective(SCOPFLOW scopflow, PetscReal *objbase) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  ierr = (*scopflow->solverops.getobjective)(scopflow, obj);
+  ierr = (*scopflow->solverops.getbaseobjective)(scopflow, objbase);
+  CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Returns the total objective function value
+ *
+ * @param[in] scopflow the scopflow object
+ * @param[in] objtot the total objective function value
+ *
+ * @note Should be called after the optimization finishes
+ */
+PetscErrorCode SCOPFLOWGetTotalObjective(SCOPFLOW scopflow, PetscReal *objtot) {
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*scopflow->solverops.gettotalobjective)(scopflow, objtot);
   CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }

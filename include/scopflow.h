@@ -80,7 +80,8 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWCreateGlobalVector(SCOPFLOW, Vec *);
 PETSC_EXTERN PetscErrorCode SCOPFLOWCreateMatrix(SCOPFLOW, Mat *);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSolve(SCOPFLOW);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetNumContingencies(SCOPFLOW, PetscInt);
-PETSC_EXTERN PetscErrorCode SCOPFLOWGetObjective(SCOPFLOW, PetscReal *);
+PETSC_EXTERN PetscErrorCode SCOPFLOWGetTotalObjective(SCOPFLOW, PetscReal *);
+PETSC_EXTERN PetscErrorCode SCOPFLOWGetBaseObjective(SCOPFLOW, PetscReal *);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetSolution(SCOPFLOW, PetscInt, Vec *);
 PETSC_EXTERN PetscErrorCode SCOPFLOWPrintSolution(SCOPFLOW, PetscInt);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSaveSolution(SCOPFLOW, PetscInt,

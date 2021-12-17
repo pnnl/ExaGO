@@ -39,8 +39,8 @@ PetscErrorCode SCOPFLOWSolverDestroy_EMPAR(SCOPFLOW scopflow) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SCOPFLOWSolverGetObjective_EMPAR(SCOPFLOW scopflow,
-                                                PetscReal *obj) {
+PetscErrorCode SCOPFLOWSolverGetBaseObjective_EMPAR(SCOPFLOW scopflow,
+                                                    PetscReal *obj) {
   PetscErrorCode ierr;
   PetscReal temp;
   PetscFunctionBegin;
@@ -54,8 +54,28 @@ PetscErrorCode SCOPFLOWSolverGetObjective_EMPAR(SCOPFLOW scopflow,
   // ierr = MPI_Bcast(&temp,1,MPI_REAL,0,scopflow->comm->type);CHKERRQ(ierr);
   ierr = MPI_Bcast(&temp, 1, MPI_DOUBLE, 0, scopflow->comm->type);
   CHKERRQ(ierr);
-  scopflow->obj = temp;
-  *obj = scopflow->obj;
+  scopflow->objbase = temp;
+  *obj = scopflow->objbase;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SCOPFLOWSolverGetTotalObjective_EMPAR(SCOPFLOW scopflow,
+                                                     PetscReal *obj) {
+  PetscErrorCode ierr;
+  PetscReal temp;
+  PetscFunctionBegin;
+  if (!scopflow->ismultiperiod) {
+    for (int i = 0; i < scopflow->nc; i++) {
+      temp = scopflow->opflows[0]->obj;
+    }
+  } else {
+    temp = scopflow->tcopflows[0]->obj;
+  }
+
+  ierr = MPI_Allreduce(&temp, &scopflow->objtot, 1, MPI_DOUBLE, MPI_SUM,
+                       scopflow->comm->type);
+  CHKERRQ(ierr);
+  *obj = scopflow->objtot;
   PetscFunctionReturn(0);
 }
 
@@ -153,7 +173,9 @@ PetscErrorCode SCOPFLOWSolverCreate_EMPAR(SCOPFLOW scopflow) {
   scopflow->solverops.setup = SCOPFLOWSolverSetUp_EMPAR;
   scopflow->solverops.solve = SCOPFLOWSolverSolve_EMPAR;
   scopflow->solverops.destroy = SCOPFLOWSolverDestroy_EMPAR;
-  scopflow->solverops.getobjective = SCOPFLOWSolverGetObjective_EMPAR;
+  scopflow->solverops.getbaseobjective = SCOPFLOWSolverGetBaseObjective_EMPAR;
+  scopflow->solverops.gettotalobjective = SCOPFLOWSolverGetTotalObjective_EMPAR;
+
   scopflow->solverops.getsolution = SCOPFLOWSolverGetSolution_EMPAR;
   scopflow->solverops.getconvergencestatus =
       SCOPFLOWSolverGetConvergenceStatus_EMPAR;

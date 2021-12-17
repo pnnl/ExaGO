@@ -84,17 +84,20 @@ PetscErrorCode SCOPFLOWPrintSolution(SCOPFLOW scopflow, PetscInt cont_num) {
         "=============================================================\n");
     CHKERRQ(ierr);
 
-    ierr = PetscPrintf(scopflow->comm->type, "%-35s %s\n", "OPFLOW Formulation",
-                       opflow->modelname);
+    ierr = PetscPrintf(scopflow->comm->type, "%-35s %d\n",
+                       "Number of contingencies", scopflow->Nc - 1);
     CHKERRQ(ierr);
+    ierr = PetscPrintf(scopflow->comm->type, "%-35s %s\n",
+                       "Multi-period contingencies?",
+                       (scopflow->ismultiperiod) ? "YES" : "NO");
+    CHKERRQ(ierr);
+
     ierr = PetscPrintf(scopflow->comm->type, "%-35s %s\n", "Solver",
                        scopflow->solvername);
     CHKERRQ(ierr);
+
     ierr = PetscPrintf(scopflow->comm->type, "%-35s %s\n", "Initialization",
                        OPFLOWInitializationTypes[opflow->initializationtype]);
-    CHKERRQ(ierr);
-    ierr = PetscPrintf(scopflow->comm->type, "%-35s %d\n",
-                       "Number of contingencies", scopflow->Nc - 1);
     CHKERRQ(ierr);
 
     ierr = PetscPrintf(scopflow->comm->type, "%-35s %s\n", "Load loss allowed",
@@ -124,6 +127,7 @@ PetscErrorCode SCOPFLOWPrintSolution(SCOPFLOW scopflow, PetscInt cont_num) {
     ierr = PetscPrintf(scopflow->comm->type, "\n");
     CHKERRQ(ierr);
 
+#if 0
     ierr = PetscPrintf(scopflow->comm->type, "%-35s %d\n",
                        "Number of variables", scopflow->Nx);
     CHKERRQ(ierr);
@@ -136,6 +140,7 @@ PetscErrorCode SCOPFLOWPrintSolution(SCOPFLOW scopflow, PetscInt cont_num) {
     ierr = PetscPrintf(scopflow->comm->type, "%-35s %d\n",
                        "Number of coupling constraints", scopflow->Nconcoup);
     CHKERRQ(ierr);
+#endif
 
     ierr = PetscPrintf(scopflow->comm->type, "\n");
     CHKERRQ(ierr);
@@ -146,10 +151,10 @@ PetscErrorCode SCOPFLOWPrintSolution(SCOPFLOW scopflow, PetscInt cont_num) {
   ierr = PetscPrintf(scopflow->comm->type, "%-35s %s\n", "Convergence status",
                      conv_status ? "CONVERGED" : "DID NOT CONVERGE");
   CHKERRQ(ierr);
-  ierr = SCOPFLOWGetObjective(scopflow, &cost);
+  ierr = SCOPFLOWGetBaseObjective(scopflow, &cost);
   CHKERRQ(ierr);
-  ierr = PetscPrintf(scopflow->comm->type, "%-35s %-7.2f\n", "Objective value",
-                     cost);
+  ierr = PetscPrintf(scopflow->comm->type, "%-35s %-7.2f\n",
+                     "Objective value (base)", cost);
   CHKERRQ(ierr);
   ierr = PetscPrintf(scopflow->comm->type, "\n");
   CHKERRQ(ierr);

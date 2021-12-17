@@ -458,8 +458,41 @@ PetscErrorCode SOPFLOWComputeConstraints_GENRAMPC(SOPFLOW sopflow, Vec X,
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SOPFLOWComputeObjective_GENRAMPC(SOPFLOW sopflow, Vec X,
-                                                PetscScalar *obj) {
+PetscErrorCode SOPFLOWComputeBaseObjective_GENRAMPC(SOPFLOW sopflow, Vec X,
+                                                    PetscScalar *obj) {
+  PetscErrorCode ierr;
+  SCOPFLOW scopflow;
+  PetscInt i;
+  PetscScalar *xi;
+  PetscScalar scopflowobj = 0.0;
+  PetscScalar *x;
+
+  PetscFunctionBegin;
+  *obj = 0.0;
+
+  ierr = VecGetArray(X, &x);
+  CHKERRQ(ierr);
+
+  scopflowobj = 0.0;
+  xi = x + sopflow->xstarti[0];
+  scopflow = sopflow->scopflows[0];
+  ierr = VecPlaceArray(scopflow->X, xi);
+  CHKERRQ(ierr);
+  ierr = (*scopflow->modelops.computebaseobjective)(scopflow, scopflow->X,
+                                                    &scopflowobj);
+  CHKERRQ(ierr);
+  *obj = scopflowobj;
+  ierr = VecResetArray(scopflow->X);
+  CHKERRQ(ierr);
+
+  ierr = VecRestoreArray(X, &x);
+  CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SOPFLOWComputeTotalObjective_GENRAMPC(SOPFLOW sopflow, Vec X,
+                                                     PetscScalar *obj) {
   PetscErrorCode ierr;
   SCOPFLOW scopflow;
   PetscInt i;
@@ -478,8 +511,8 @@ PetscErrorCode SOPFLOWComputeObjective_GENRAMPC(SOPFLOW sopflow, Vec X,
     scopflow = sopflow->scopflows[i];
     ierr = VecPlaceArray(scopflow->X, xi);
     CHKERRQ(ierr);
-    ierr = (*scopflow->modelops.computeobjective)(scopflow, scopflow->X,
-                                                  &scopflowobj);
+    ierr = (*scopflow->modelops.computetotalobjective)(scopflow, scopflow->X,
+                                                       &scopflowobj);
     CHKERRQ(ierr);
     *obj += scopflowobj;
     ierr = VecResetArray(scopflow->X);
@@ -529,20 +562,6 @@ PetscErrorCode SOPFLOWComputeGradient_GENRAMPC(SOPFLOW sopflow, Vec X,
   ierr = VecRestoreArray(X, &x);
   CHKERRQ(ierr);
   ierr = VecRestoreArray(Grad, &grad);
-  CHKERRQ(ierr);
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode SOPFLOWComputeObjandGradient_GENRAMPC(SOPFLOW sopflow, Vec X,
-                                                     PetscScalar *obj,
-                                                     Vec Grad) {
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-
-  ierr = SOPFLOWComputeObjective_GENRAMPC(sopflow, X, obj);
-  CHKERRQ(ierr);
-  ierr = SOPFLOWComputeGradient_GENRAMPC(sopflow, X, Grad);
   CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
@@ -675,9 +694,10 @@ PetscErrorCode SOPFLOWModelCreate_GENRAMPC(SOPFLOW sopflow) {
   sopflow->modelops.computeconstraints = SOPFLOWComputeConstraints_GENRAMPC;
   sopflow->modelops.computejacobian = SOPFLOWComputeJacobian_GENRAMPC;
   sopflow->modelops.computehessian = SOPFLOWComputeHessian_GENRAMPC;
-  sopflow->modelops.computeobjandgradient =
-      SOPFLOWComputeObjandGradient_GENRAMPC;
-  sopflow->modelops.computeobjective = SOPFLOWComputeObjective_GENRAMPC;
+  sopflow->modelops.computebaseobjective = SOPFLOWComputeBaseObjective_GENRAMPC;
+  sopflow->modelops.computetotalobjective =
+      SOPFLOWComputeTotalObjective_GENRAMPC;
+
   sopflow->modelops.computegradient = SOPFLOWComputeGradient_GENRAMPC;
 
   PetscFunctionReturn(0);

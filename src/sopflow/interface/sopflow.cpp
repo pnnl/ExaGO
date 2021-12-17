@@ -32,7 +32,7 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout) {
   sopflow->Lambdai = NULL;
 
   sopflow->obj_factor = 1.0;
-  sopflow->obj = 0.0;
+  sopflow->objbase = sopflow->objtot = 0.0;
   sopflow->tolerance = 1e-6;
 
   sopflow->solver = NULL;
@@ -248,7 +248,8 @@ PetscErrorCode SOPFLOWSetModel(SOPFLOW sopflow, const char *modelname) {
   sopflow->modelops.computejacobian = 0;
   sopflow->modelops.computehessian = 0;
   sopflow->modelops.computeobjandgradient = 0;
-  sopflow->modelops.computeobjective = 0;
+  sopflow->modelops.computebaseobjective = 0;
+  sopflow->modelops.computetotalobjective = 0;
   sopflow->modelops.computegradient = 0;
 
   ierr = PetscStrcpy(sopflow->modelname, modelname);
@@ -1114,19 +1115,38 @@ PetscErrorCode SOPFLOWSolve(SOPFLOW sopflow) {
 }
 
 /*
-  SOPFLOWGetObjective - Returns the objective function value
+  SOPFLOWGetBaseObjective - Returns the objective function value for the
+base-case
 
   Input Parameters:
 + SOPFLOW - the SOPFLOW object
-- obj    - the objective function value
+- objbase    - the objective function value for the base case
 
   Notes: Should be called after the optimization finishes
 */
-PetscErrorCode SOPFLOWGetObjective(SOPFLOW sopflow, PetscReal *obj) {
+PetscErrorCode SOPFLOWGetBaseObjective(SOPFLOW sopflow, PetscReal *objbase) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  ierr = (*sopflow->solverops.getobjective)(sopflow, obj);
+  ierr = (*sopflow->solverops.getbaseobjective)(sopflow, objbase);
+  CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  SOPFLOWGetTotalObjective - Returns the total objective function value
+
+  Input Parameters:
++ SOPFLOW - the SOPFLOW object
+- objtot  - the total objective function value
+
+  Notes: Should be called after the optimization finishes
+*/
+PetscErrorCode SOPFLOWGetTotalObjective(SOPFLOW sopflow, PetscReal *objtot) {
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  ierr = (*sopflow->solverops.gettotalobjective)(sopflow, objtot);
   CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
