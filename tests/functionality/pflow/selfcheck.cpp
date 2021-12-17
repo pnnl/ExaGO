@@ -1,6 +1,6 @@
 static char help[] = "PFLOW Functionality Tests.\n\n";
 
-#include "toml_utils.hpp"
+#include "toml_utils.h"
 #include <pflow.h>
 
 struct PflowFunctionalityTestParameters {
@@ -33,9 +33,8 @@ struct PflowFunctionalityTests
   MPI_Comm comm;
   int nprocs;
 
-  PflowFunctionalityTests(
-      std::string testsuite_filename, MPI_Comm comm,
-      ExaGOVerbosityLevel logging_verbosity = EXAGO_LOG_INFO)
+  PflowFunctionalityTests(std::string testsuite_filename, MPI_Comm comm,
+                          int logging_verbosity = EXAGO_LOG_INFO)
       : comm{comm},
         FunctionalityTestContext(testsuite_filename, logging_verbosity) {
     auto err = MPI_Comm_size(comm, &nprocs);

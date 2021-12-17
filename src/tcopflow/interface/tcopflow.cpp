@@ -1,6 +1,6 @@
 #include <private/opflowimpl.h>
 #include <private/tcopflowimpl.h>
-#include <utils.hpp>
+#include <utils.h>
 
 /*
   TCOPFLOWSetTimeStepandDuration - Sets the time-step and optimization horizon

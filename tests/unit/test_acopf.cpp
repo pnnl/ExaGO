@@ -4,14 +4,14 @@
 
 #include <exago_config.h>
 #include <private/opflowimpl.h>
-#include <utils.hpp>
+#include <utils.h>
 
-#include "opflow/opflow_tests.hpp"
-#include "test_acopf_utils.hpp"
+#include "opflow/opflow_tests.h"
+#include "test_acopf_utils.h"
 
 #if defined(EXAGO_ENABLE_RAJA)
 #include <RAJA/RAJA.hpp>
-#include <private/raja_exec_config.hpp>
+#include <private/raja_exec_config.h>
 #include <umpire/Allocator.hpp>
 #include <umpire/ResourceManager.hpp>
 #endif
@@ -44,7 +44,7 @@ void spdensetonatural(const double *xin, double *xout, int *idxn2sd_map,
 
 /**
  * @brief Unit test driver for ACOPF models
- * @see opflow/OpflowTests.hpp for kernels tested by this driver
+ * @see opflow/opflow_tests.h for kernels tested by this driver
  *
  * You can pass several options to the TestAcopf executatable through the
  * command line (implemented using PETSc options):

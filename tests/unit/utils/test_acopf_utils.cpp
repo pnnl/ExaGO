@@ -7,7 +7,7 @@
 #include <limits>
 #include <petscviewer.h>
 #include <sys/stat.h>
-#include <test_acopf_utils.hpp>
+#include <test_acopf_utils.h>
 
 void saveToFile(Vec vector, std::string file) {
 

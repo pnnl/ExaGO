@@ -1,6 +1,6 @@
 static char help[] = "SCOPFLOW Functionality Tests.\n\n";
 
-#include "toml_utils.hpp"
+#include "toml_utils.h"
 #include <scopflow.h>
 
 struct ScopflowFunctionalityTestParameters {
@@ -82,9 +82,8 @@ struct ScopflowFunctionalityTestParameters {
 
 struct ScopflowFunctionalityTests
     : public FunctionalityTestContext<ScopflowFunctionalityTestParameters> {
-  ScopflowFunctionalityTests(
-      std::string testsuite_filename,
-      ExaGOVerbosityLevel logging_verbosity = EXAGO_LOG_INFO)
+  ScopflowFunctionalityTests(std::string testsuite_filename,
+                             int logging_verbosity = EXAGO_LOG_INFO)
       : FunctionalityTestContext(testsuite_filename, logging_verbosity) {}
 
   using Params = ScopflowFunctionalityTestParameters;

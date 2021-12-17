@@ -2,7 +2,7 @@
 #if defined(EXAGO_ENABLE_HIOP)
 #if defined(EXAGO_ENABLE_HIOP_SPARSE)
 
-#include "opflow_hiopsparse.hpp"
+#include "opflow_hiopsparse.h"
 #include <private/opflowimpl.h>
 
 OPFLOWHIOPSPARSEInterface::OPFLOWHIOPSPARSEInterface(OPFLOW opflowin) {

@@ -2,7 +2,7 @@
 
 #if defined(EXAGO_ENABLE_HIOP)
 
-#include "sopflow_hiop.hpp"
+#include "sopflow_hiop.h"
 #include <private/opflowimpl.h>
 #include <private/sopflowimpl.h>
 

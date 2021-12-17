@@ -1,7 +1,7 @@
 
 #pragma once
 #include <cassert>
-#include <test_base.hpp>
+#include <test_base.h>
 #include <type_traits>
 
 #include <common.h>

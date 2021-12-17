@@ -1,7 +1,7 @@
 #include <private/opflowimpl.h>
 #include <private/scopflowimpl.h>
 #include <private/sopflowimpl.h>
-#include <utils.hpp>
+#include <utils.h>
 
 /*
   SOPFLOWCreate - Creates a stochastic optimal power flow application object

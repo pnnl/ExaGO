@@ -5,8 +5,8 @@
 #include <sstream>
 #include <string>
 #include <toml.hpp>
-#include <utils.hpp>
-#include <version.hpp>
+#include <utils.h>
+#include <version.h>
 
 /**
  *
@@ -99,9 +99,8 @@ public:
   /* Column width used when formatting failing test suite */
   static constexpr int col_width = 35;
 
-  FunctionalityTestContext(
-      std::string testsuite_filename,
-      ExaGOVerbosityLevel logging_verbosity = EXAGO_LOG_INFO)
+  FunctionalityTestContext(std::string testsuite_filename,
+                           int logging_verbosity = EXAGO_LOG_INFO)
       : logging_verbosity_{logging_verbosity} {
     testsuite_ = toml::parse(testsuite_filename);
     testcases_ = toml::find(testsuite(), "testcase");
@@ -194,7 +193,7 @@ private:
   }
 
   /* Verbosity used by calls to ExaGOLog in methods of this structure. */
-  inline ExaGOVerbosityLevel verbosity() const { return logging_verbosity_; }
+  inline int verbosity() const { return logging_verbosity_; }
 
   /* Const accessors for constant private members */
   inline const toml::value &testcases() const { return testcases_; }
@@ -205,7 +204,7 @@ private:
   toml::value failing_testsuite_;
   std::vector<toml::value> failing_testcases_;
   std::size_t failures_{0}, total_num_tests_{0};
-  ExaGOVerbosityLevel logging_verbosity_;
+  int logging_verbosity_;
   std::string testsuite_name_{""};
   toml::value testcases_;
   toml::value testsuite_;

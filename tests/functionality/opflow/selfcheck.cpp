@@ -1,6 +1,6 @@
 static char help[] = "OPFLOW Functionality Tests.\n\n";
 
-#include "toml_utils.hpp"
+#include "toml_utils.h"
 #include <opflow.h>
 
 struct OpflowFunctionalityTestParameters {
@@ -75,9 +75,8 @@ struct OpflowFunctionalityTestParameters {
 
 struct OpflowFunctionalityTests
     : public FunctionalityTestContext<OpflowFunctionalityTestParameters> {
-  OpflowFunctionalityTests(
-      std::string testsuite_filename,
-      ExaGOVerbosityLevel logging_verbosity = EXAGO_LOG_INFO)
+  OpflowFunctionalityTests(std::string testsuite_filename,
+                           int logging_verbosity = EXAGO_LOG_INFO)
       : FunctionalityTestContext(testsuite_filename, logging_verbosity) {}
 
   using Params = OpflowFunctionalityTestParameters;

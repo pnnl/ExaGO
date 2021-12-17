@@ -7,7 +7,7 @@
 #include <umpire/Allocator.hpp>
 #include <umpire/ResourceManager.hpp>
 
-#include "pbpolrajahiop.hpp"
+#include "pbpolrajahiop.h"
 #include <opflow.h>
 
 /**

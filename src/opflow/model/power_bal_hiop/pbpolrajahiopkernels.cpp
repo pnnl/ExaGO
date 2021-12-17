@@ -7,10 +7,10 @@
 #include <umpire/ResourceManager.hpp>
 
 #include <RAJA/RAJA.hpp>
-#include <private/raja_exec_config.hpp>
+#include <private/raja_exec_config.h>
 
-#include "pbpolrajahiop.hpp"
-#include "pbpolrajahiopkernels.hpp"
+#include "pbpolrajahiop.h"
+#include "pbpolrajahiopkernels.h"
 #include <private/opflowimpl.h>
 #include <private/psimpl.h>
 

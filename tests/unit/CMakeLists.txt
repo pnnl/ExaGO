@@ -9,8 +9,13 @@ target_include_directories(test_acopf PRIVATE ./utils)
 add_executable(test_error_handler test_error_handler.cpp)
 target_link_libraries(test_error_handler ExaGO::UTILS)
 
+add_executable(test_logger test_logger.cpp)
+target_link_libraries(test_logger ExaGO::UTILS)
+
 if(EXAGO_INSTALL_TESTS)
-  install(TARGETS test_acopf test_error_handler DESTINATION tests/unit)
+  install(TARGETS test_logger test_acopf test_error_handler
+          DESTINATION tests/unit
+  )
 
   # Unit tests
   exago_add_test(
@@ -31,5 +36,11 @@ if(EXAGO_INSTALL_TESTS)
 
   exago_add_test(
     NAME UNIT_TESTS_UTILS COMMAND $<TARGET_FILE:test_error_handler>
+  )
+
+  exago_add_test(
+    NAME UNIT_TESTS_LOGGER COMMAND
+    ${CMAKE_CURRENT_SOURCE_DIR}/run_test_logger.pl ${MPICMD}
+    $<TARGET_FILE:test_logger>
   )
 endif()

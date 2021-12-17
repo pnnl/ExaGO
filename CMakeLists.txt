@@ -260,7 +260,7 @@ if(EXAGO_RUN_TESTS)
   include(ExaGOTestingUtilities)
 endif()
 
-include_directories(${PROJECT_SOURCE_DIR}/tpl/spdlog/include)
+include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/tpl/spdlog/include)
 
 # Build libraries (specified in src/CMakeLists.txt)
 add_subdirectory(src)
@@ -314,7 +314,7 @@ file(INSTALL datafiles/TAMU200_scenarios DESTINATION datafiles)
 file(INSTALL datafiles/test_validation DESTINATION datafiles)
 
 # EXAGO headers to install
-set(EXAGO_COMMON_INCLUDE include/constants.h include/version.hpp
+set(EXAGO_COMMON_INCLUDE include/constants.h include/version.h
                          ${PROJECT_BINARY_DIR}/exago_config.h
 )
 
