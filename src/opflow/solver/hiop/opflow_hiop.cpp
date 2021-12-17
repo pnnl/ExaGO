@@ -1,7 +1,7 @@
 
 #include <exago_config.h>
 #if defined(EXAGO_ENABLE_HIOP)
-#include "opflow_hiop.hpp"
+#include "opflow_hiop.h"
 #include <private/opflowimpl.h>
 
 typedef enum { AUTO = 0, CPU = 1, HYBRID = 2, GPU = 3 } HIOPComputeMode;

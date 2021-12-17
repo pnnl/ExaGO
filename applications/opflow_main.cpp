@@ -2,7 +2,7 @@ static char help[] = "User example calling OPFLOW.\n\n";
 
 #include <opflow.h>
 #include <exago_config.h>
-#include <utils.hpp>
+#include <utils.h>
 #include <string>
 #include <vector>
 

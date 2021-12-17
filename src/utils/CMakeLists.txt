@@ -5,7 +5,7 @@ set(UTILS_SRC utils.cpp version.cpp scopflowutils.cpp comm.cpp)
 
 # Headers
 set(UTILS_HEADERS ${CMAKE_SOURCE_DIR}/include/common.h
-                  ${CMAKE_SOURCE_DIR}/include/utils.hpp
+                  ${CMAKE_SOURCE_DIR}/include/utils.h
 )
 
 set_source_files_properties(${UTILS_SRC} PROPERTIES LANGUAGE CXX)

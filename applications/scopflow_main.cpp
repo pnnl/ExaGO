@@ -2,7 +2,7 @@ static char help[] = "User example calling SCOPFLOW.\n\n";
 
 #include <exago_config.h>
 #include <scopflow.h>
-#include <utils.hpp>
+#include <utils.h>
 
 int main(int argc,char **argv)
 {

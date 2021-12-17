@@ -2,7 +2,7 @@
 
 #if defined(EXAGO_ENABLE_RAJA)
 
-#include "pbpolrajahiopkernels.hpp"
+#include "pbpolrajahiopkernels.h"
 #include <private/opflowimpl.h>
 
 /* Initialization is done on the host through this function. Copying over values

@@ -2,7 +2,7 @@
 #include <mpi.h>
 #include <opflow.h>
 #include <private/opflowimpl.h>
-#include <utils.hpp>
+#include <utils.h>
 #include <string.h>
 
 std::string get_datafile_path() {

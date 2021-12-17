@@ -1,8 +1,8 @@
 #include <common.h>
 #include <exago_config.h>
 #include <unordered_map>
-#include <utils.hpp>
-#include <version.hpp>
+#include <utils.h>
+#include <version.h>
 
 namespace {
 static const std::unordered_map<std::string, bool> ExaGODependencies = {

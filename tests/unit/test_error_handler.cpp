@@ -1,7 +1,7 @@
 #include <petsc.h>
-#include <utils.hpp>
+#include <utils.h>
 
-#include "utils/test_base.hpp"
+#include "utils/test_base.h"
 using namespace exago::tests;
 
 /* These _Throw*_ functions test various constructors for ExaGOErrors */
@@ -72,7 +72,7 @@ struct TestExaGOErrorHandler : public TestBase {
     try {
       /* A common idiom is to retrieve the return code from an ExaGO or PETSc
        * function call and run an error checking macro on the return code before
-       * continuing execution. We provide a similar macro in _utils.hpp_ which
+       * continuing execution. We provide a similar macro in _utils.h_ which
        * throws an ExaGOError via the PetscErrorCode initializer if the code
        * falls within PetscError's range of values. */
 
