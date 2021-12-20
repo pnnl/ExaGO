@@ -929,12 +929,12 @@ PetscErrorCode PSSetUp(PS ps) {
   ierr = PSGetLineConnectivity(ps, Nlines, lineconn[0]);
   CHKERRQ(ierr);
 
-  /* Set sizes for the network */
-  ierr = DMNetworkSetSizes(networkdm, 1, &Nbuses, &Nlines, 0, NULL);
+  /* Set sizes for the network and provide edge connectivity information */
+  ierr = DMNetworkSetNumSubNetworks(networkdm, PETSC_DECIDE, 1);
   CHKERRQ(ierr);
-  /* Set edge connectivity */
-  ierr = DMNetworkSetEdgeList(networkdm, lineconn, NULL);
+  ierr = DMNetworkAddSubnetwork(networkdm, "", Nlines, lineconn[0], NULL);
   CHKERRQ(ierr);
+
   /* Set up network layout */
   ierr = DMNetworkLayoutSetUp(networkdm);
   CHKERRQ(ierr);
@@ -944,13 +944,11 @@ PetscErrorCode PSSetUp(PS ps) {
   /* Add network components and variables */
   /* Associate and copy line data to the edges in networkdm, add number of
    * variables if applicable */
-  ierr = DMNetworkGetSubnetworkInfo(networkdm, 0, &nv, &ne, &vtx, &edge);
+  ierr = DMNetworkGetSubnetwork(networkdm, 0, &nv, &ne, &vtx, &edge);
   CHKERRQ(ierr);
   for (i = 0; i < ne; i++) {
-    ierr =
-        DMNetworkAddComponent(networkdm, edge[i], ps->compkey[0], &ps->line[i]);
-    CHKERRQ(ierr);
-    ierr = DMNetworkAddNumVariables(networkdm, edge[i], 0);
+    ierr = DMNetworkAddComponent(networkdm, edge[i], ps->compkey[0],
+                                 &ps->line[i], 0);
     CHKERRQ(ierr);
   }
   /* Associate and copy bus, gen, branch to the vertices of the networkdm */
@@ -961,16 +959,14 @@ PetscErrorCode PSSetUp(PS ps) {
     if (ps->appname == APP_ACOPF)
       numbusvariables = 2; /* The variables are set later by the application */
 
-    ierr = DMNetworkAddNumVariables(networkdm, vtx[i], numbusvariables);
-    CHKERRQ(ierr); /* Bus variables */
-    ierr =
-        DMNetworkAddComponent(networkdm, vtx[i], ps->compkey[1], &ps->bus[i]);
+    ierr = DMNetworkAddComponent(networkdm, vtx[i], ps->compkey[1], &ps->bus[i],
+                                 numbusvariables);
     CHKERRQ(ierr);
 
     for (j = 0; j < ps->bus[i].ngen; j++) {
       /* Add generator */
       gen = &ps->gen[ps->bus[i].gidx[j]];
-      ierr = DMNetworkAddComponent(networkdm, vtx[i], ps->compkey[2], gen);
+      ierr = DMNetworkAddComponent(networkdm, vtx[i], ps->compkey[2], gen, 0);
       CHKERRQ(ierr);
     }
 
@@ -978,7 +974,7 @@ PetscErrorCode PSSetUp(PS ps) {
     for (j = 0; j < ps->bus[i].nload; j++) {
       /* Add load */
       load = &ps->load[ps->bus[i].lidx[j]];
-      ierr = DMNetworkAddComponent(networkdm, vtx[i], ps->compkey[3], load);
+      ierr = DMNetworkAddComponent(networkdm, vtx[i], ps->compkey[3], load, 0);
       CHKERRQ(ierr);
     }
   }
@@ -999,7 +995,7 @@ PetscErrorCode PSSetUp(PS ps) {
     CHKERRQ(ierr);
   }
 
-  ierr = DMNetworkGetSubnetworkInfo(networkdm, 0, &nv, &ne, &vtx, &edge);
+  ierr = DMNetworkGetSubnetwork(networkdm, 0, &nv, &ne, &vtx, &edge);
   CHKERRQ(ierr);
 
   /* Set local sizes of buses and branches */
@@ -1060,8 +1056,8 @@ PetscErrorCode PSSetUp(PS ps) {
       ierr = DMNetworkGetNumComponents(ps->networkdm, vtx[i], &numComponents);
       CHKERRQ(ierr);
       for (j = 0; j < numComponents; j++) {
-        ierr =
-            DMNetworkGetComponent(ps->networkdm, vtx[i], j, &key, &component);
+        ierr = DMNetworkGetComponent(ps->networkdm, vtx[i], j, &key, &component,
+                                     NULL);
         CHKERRQ(ierr);
         if (key == ps->compkey[2])
           ps->ngen++;
@@ -1082,7 +1078,8 @@ PetscErrorCode PSSetUp(PS ps) {
 
     /* Copy line data from DMNetwork data array to PSLINE */
     for (i = 0; i < ne; i++) {
-      ierr = DMNetworkGetComponent(ps->networkdm, edge[i], 0, &key, &component);
+      ierr = DMNetworkGetComponent(ps->networkdm, edge[i], 0, &key, &component,
+                                   NULL);
       CHKERRQ(ierr);
       ierr = PetscMemcpy(&ps->line[i], component, sizeof(struct _p_PSLINE));
       CHKERRQ(ierr);
@@ -1097,8 +1094,8 @@ PetscErrorCode PSSetUp(PS ps) {
       ierr = DMNetworkGetNumComponents(ps->networkdm, vtx[i], &numComponents);
       CHKERRQ(ierr);
       for (j = 0; j < numComponents; j++) {
-        ierr =
-            DMNetworkGetComponent(ps->networkdm, vtx[i], j, &key, &component);
+        ierr = DMNetworkGetComponent(ps->networkdm, vtx[i], j, &key, &component,
+                                     NULL);
         CHKERRQ(ierr);
         if (key == ps->compkey[1]) {
           ierr = PetscMemcpy(&ps->bus[i], component, sizeof(struct _p_PSBUS));
@@ -1150,12 +1147,12 @@ PetscErrorCode PSSetUp(PS ps) {
     ps->line[i].internal_j = ps->bus[connnodes[1] - vStart].internal_i;
 
     /* Starting location in the local vector */
-    ierr = DMNetworkGetVariableOffset(ps->networkdm, edge[i],
+    ierr = DMNetworkGetLocalVecOffset(ps->networkdm, edge[i], ALL_COMPONENTS,
                                       &ps->line[i].startloc);
     CHKERRQ(ierr);
     /* Starting location in the global vector */
-    ierr = DMNetworkGetVariableGlobalOffset(ps->networkdm, edge[i],
-                                            &ps->line[i].startlocglob);
+    ierr = DMNetworkGetGlobalVecOffset(ps->networkdm, edge[i], ALL_COMPONENTS,
+                                       &ps->line[i].startlocglob);
     CHKERRQ(ierr);
   }
 
@@ -1178,20 +1175,14 @@ PetscErrorCode PSSetUp(PS ps) {
     CHKERRQ(ierr);
 
     /* Starting location in the local array */
-    ierr =
-        DMNetworkGetVariableOffset(ps->networkdm, vtx[i], &ps->bus[i].startloc);
+    ierr = DMNetworkGetLocalVecOffset(ps->networkdm, vtx[i], ALL_COMPONENTS,
+                                      &ps->bus[i].startloc);
     CHKERRQ(ierr);
 
     /* Starting location in the global array */
-    ierr = DMNetworkGetVariableGlobalOffset(ps->networkdm, vtx[i],
-                                            &ps->bus[i].startlocglob);
+    ierr = DMNetworkGetGlobalVecOffset(ps->networkdm, vtx[i], ALL_COMPONENTS,
+                                       &ps->bus[i].startlocglob);
     CHKERRQ(ierr);
-    /* If the bus is a ghost bus then DMPlex (DMNetwork) has the global offset
-       negative to indicate that it is a ghost bus. We need to convert it to the
-       actual global offset so that matrix values can be set using it
-    */
-    //    if(ps->bus[i-vStart].startlocglob < 0) ps->bus[i-vStart].startlocglob
-    //    = -ps->bus[i-vStart].startlocglob - 1;
 
     /* Incident generators */
 
@@ -1437,19 +1428,20 @@ PetscErrorCode PSSetEdgeandBusStartLoc(PS ps) {
   CHKERRQ(ierr);
 
   for (i = eStart; i < eEnd; i++) {
-    ierr = DMNetworkGetVariableOffset(ps->networkdm, i, &ps->line[i].startloc);
+    ierr = DMNetworkGetLocalVecOffset(ps->networkdm, i, ALL_COMPONENTS,
+                                      &ps->line[i].startloc);
     CHKERRQ(ierr);
-    ierr = DMNetworkGetVariableGlobalOffset(ps->networkdm, i,
-                                            &ps->line[i].startlocglob);
+    ierr = DMNetworkGetGlobalVecOffset(ps->networkdm, i, ALL_COMPONENTS,
+                                       &ps->line[i].startlocglob);
     CHKERRQ(ierr);
   }
 
   for (i = vStart; i < vEnd; i++) {
-    ierr = DMNetworkGetVariableOffset(ps->networkdm, i,
+    ierr = DMNetworkGetLocalVecOffset(ps->networkdm, i, ALL_COMPONENTS,
                                       &ps->bus[i - vStart].startloc);
     CHKERRQ(ierr);
-    ierr = DMNetworkGetVariableGlobalOffset(ps->networkdm, i,
-                                            &ps->bus[i - vStart].startlocglob);
+    ierr = DMNetworkGetGlobalVecOffset(ps->networkdm, i, ALL_COMPONENTS,
+                                       &ps->bus[i - vStart].startlocglob);
     CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
