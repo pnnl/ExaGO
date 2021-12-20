@@ -61,7 +61,9 @@ module load parmetis-4.0.3-gcc-7.3.0-5t7icxb
 # perl@5.26.0%gcc@7.3.0+cpanm+shared+threads patches=0eac10ed90aeb0459ad8851f88081d439a4e41978e586ec743069e8b059370ac,8cf4302ca8b480c60ccdcaa29ec53d9d50a71d4baf469ac8c6fca00ca31e58a2 arch=linux-centos7-broadwell
 module load perl-5.26.0-gcc-7.3.0-glzxh6e
 # petsc@3.14.6%gcc@7.3.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw~giflib+hdf5~hpddm~hwloc+hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind+metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse+superlu-dist~tetgen~trilinos~valgrind clanguage=C arch=linux-centos7-broadwell
-module load petsc-3.14.6-gcc-7.3.0-jjk4fna
+#module load petsc-3.14.6-gcc-7.3.0-jjk4fna
+# petsc3.16
+module load petsc-3.16-gcc-7.3.0-z2blx7k
 # pkgconf@1.8.0%gcc@7.3.0 arch=linux-centos7-broadwell
 module load pkgconf-1.8.0-gcc-7.3.0-eoghvsn
 # raja@0.14.0%gcc@7.3.0+cuda~examples~exercises~ipo+openmp~rocm~shared~tests build_type=RelWithDebInfo cuda_arch=60 arch=linux-centos7-broadwell

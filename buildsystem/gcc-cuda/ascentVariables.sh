@@ -65,8 +65,8 @@ module load openblas-0.3.18-gcc-7.4.0-rldw4nn
 module load parmetis-4.0.3-gcc-7.4.0-7xoixmc
 # perl@5.34.0%gcc@7.4.0+cpanm+shared+threads arch=linux-rhel7-power9le
 module load perl-5.34.0-gcc-7.4.0-h45ivzd
-# petsc@3.14.6%gcc@7.4.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw~giflib+hdf5~hpddm~hwloc+hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind+metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse+superlu-dist~tetgen~trilinos~valgrind clanguage=C arch=linux-rhel7-power9le
-module load petsc-3.14.6-gcc-7.4.0-mvtf25k
+#petsc3.16
+module load petsc-3.16-gcc-7.4.0-v7otnkx
 # pkgconf@1.8.0%gcc@7.4.0 arch=linux-rhel7-power9le
 module load pkgconf-1.8.0-gcc-7.4.0-jfmmybn
 # raja@0.14.0%gcc@7.4.0+cuda~examples~exercises~ipo+openmp~rocm+shared~tests build_type=RelWithDebInfo cuda_arch=70 arch=linux-rhel7-power9le

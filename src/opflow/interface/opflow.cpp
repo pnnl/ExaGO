@@ -859,8 +859,8 @@ PetscErrorCode OPFLOWSetNumConstraints(OPFLOW opflow, PetscInt *branchnconeq,
   ierr = PetscCalloc1(ps->nbus, &opflow->eqconglobloc);
   CHKERRQ(ierr);
   for (i = 0; i < ps->nbus; i++) {
-    ierr = DMNetworkGetVariableGlobalOffset(networkdm, vStart + i,
-                                            &opflow->eqconglobloc[i]);
+    ierr = DMNetworkGetGlobalVecOffset(networkdm, vStart + i, ALL_COMPONENTS,
+                                       &opflow->eqconglobloc[i]);
     CHKERRQ(ierr);
   }
 
@@ -976,21 +976,21 @@ PetscErrorCode OPFLOWSetNumVariables(OPFLOW opflow, PetscInt *busnvararray,
 
   /* Update starting locations for variables at each line */
   for (i = 0; i < ps->nline; i++) {
-    ierr = DMNetworkGetVariableOffset(networkdm, eStart + i,
+    ierr = DMNetworkGetLocalVecOffset(networkdm, eStart + i, ALL_COMPONENTS,
                                       &ps->line[i].startloc);
     CHKERRQ(ierr);
-    ierr = DMNetworkGetVariableGlobalOffset(networkdm, eStart + i,
-                                            &ps->line[i].startlocglob);
+    ierr = DMNetworkGetGlobalVecOffset(networkdm, eStart + i, ALL_COMPONENTS,
+                                       &ps->line[i].startlocglob);
     CHKERRQ(ierr);
   }
 
   /* Update starting locations for variables at each bus */
   for (i = 0; i < ps->nbus; i++) {
-    ierr =
-        DMNetworkGetVariableOffset(networkdm, vStart + i, &ps->bus[i].startloc);
+    ierr = DMNetworkGetLocalVecOffset(networkdm, vStart + i, ALL_COMPONENTS,
+                                      &ps->bus[i].startloc);
     CHKERRQ(ierr);
-    ierr = DMNetworkGetVariableGlobalOffset(networkdm, vStart + i,
-                                            &ps->bus[i].startlocglob);
+    ierr = DMNetworkGetGlobalVecOffset(networkdm, vStart + i, ALL_COMPONENTS,
+                                       &ps->bus[i].startlocglob);
     CHKERRQ(ierr);
   }
 

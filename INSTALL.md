@@ -43,7 +43,7 @@ Dependencies are broken down into three categories:
 
 | Dependency | Dependency Version | CMake Variable (if applicable) | Notes |
 |---|---|---|---|
-| PETSC | >=3.13, <3.15 | `EXAGO_ENABLE_PETSC`. `PETSC_DIR` sets the PETSC installation prefix. | Required. PETSC needs to be built with MPI if building ExaGO with MPI. [See the linked document for more information on building PETSC for ExaGO.](docs/web/petsc_install.md) |
+| PETSC | ==3.16 | `EXAGO_ENABLE_PETSC`. `PETSC_DIR` sets the PETSC installation prefix. | Required. PETSC needs to be built with MPI if building ExaGO with MPI. [See the linked document for more information on building PETSC for ExaGO.](docs/web/petsc_install.md) |
 | CMake | >=3.18 | N/A |  |
 | blas |  | `BLAS_LIBRARIES` sets the blas libraries. | ExaGO uses the builtin [`FindBLAS` cmake module](https://cmake.org/cmake/help/latest/module/FindBLAS.html). Please refer to the linked documentation. |
 | MPI | >=3 | `EXAGO_ENABLE_MPI`. `MPI_HOME` sets the MPI installation prefix. | Optional. ExaGO uses the builtin [`FindMPI` cmake module](https://cmake.org/cmake/help/latest/module/FindMPI.html). |
