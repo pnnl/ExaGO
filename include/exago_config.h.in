@@ -43,4 +43,6 @@
 /** Date of build with the format "%Y-%m-%d" */
 #define EXAGO_RELEASE_DATE "@EXAGO_RELEASE_DATE@"
 
+#define EXAGO_INSTALL_PREFIX "@CMAKE_INSTALL_PREFIX@"
+
 #endif /* _EXAGO_CONFIG_H_ */

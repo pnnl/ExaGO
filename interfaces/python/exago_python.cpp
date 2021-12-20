@@ -1,29 +1,31 @@
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 #include <mpi.h>
 #include <opflow.h>
 #include <private/opflowimpl.h>
 #include <utils.h>
 #include <string.h>
 
-std::string get_datafile_path() {
-  return std::string(EXAGO_OPTIONS_DIR) + "/../datafiles/";
-}
+static inline auto prefix() -> const char * { return EXAGO_INSTALL_PREFIX; }
 
 int initialize(char *appname) {
   PetscErrorCode ierr;
   MPI_Comm communicator;
   ierr = ExaGOGetSelfCommunicator(&communicator);
   ExaGOCheckError(ierr);
-  ierr = ExaGOInitialize(communicator, NULL, NULL, appname, NULL);
+  ierr = ExaGOInitialize(communicator, nullptr, nullptr, appname, nullptr);
   ExaGOCheckError(ierr);
   return ierr;
 }
 
 PYBIND11_MODULE(exago, m) {
   m.doc() = "Python wrapper for ExaGO.";
+
+  /* Bindings for top-level utilities, such as initialization, finalization,
+   * and helpers for interacting with enums and macros */
   m.def("initialize", &initialize);
   m.def("finalize", &ExaGOFinalize);
-  m.def("get_datafile_path", &get_datafile_path);
+  m.def("prefix", &prefix);
 
   pybind11::class_<_p_OPFLOW>(m, "opf")
       .def(pybind11::init([]() {
@@ -32,26 +34,12 @@ PYBIND11_MODULE(exago, m) {
         MPI_Comm communicator;
         ierr = ExaGOGetSelfCommunicator(&communicator);
         ExaGOCheckError(ierr);
-        char *appname = (char *)"opflow";
         ierr = OPFLOWCreate(communicator, &opf);
         ExaGOCheckError(ierr);
         return opf;
       }))
 
-      .def("solve",
-           [](_p_OPFLOW &opf) {
-             PetscErrorCode ierr;
-             ierr = OPFLOWSolve(&opf);
-             ExaGOCheckError(ierr);
-           })
-
-      .def("print_solution",
-           [](_p_OPFLOW &opf) {
-             PetscErrorCode ierr;
-             ierr = OPFLOWPrintSolution(&opf);
-             ExaGOCheckError(ierr);
-           })
-
+      /* Setters */
       .def("set_loadloss_penalty",
            [](_p_OPFLOW &opf, double p) {
              PetscErrorCode ierr;
@@ -73,6 +61,7 @@ PYBIND11_MODULE(exago, m) {
              ExaGOCheckError(ierr);
            })
 
+      /* Getters */
       .def("get_tolerance",
            [](_p_OPFLOW &opf) -> double {
              PetscErrorCode ierr;
@@ -80,6 +69,30 @@ PYBIND11_MODULE(exago, m) {
              ierr = OPFLOWGetTolerance(&opf, &tol);
              ExaGOCheckError(ierr);
              return tol;
+           })
+
+      .def("get_objective",
+           [](_p_OPFLOW opf) -> double {
+             PetscErrorCode ierr;
+             double obj;
+             ierr = OPFLOWGetObjective(&opf, &obj);
+             ExaGOCheckError(ierr);
+             return obj;
+           })
+
+      /* Everything else */
+      .def("solve",
+           [](_p_OPFLOW &opf) {
+             PetscErrorCode ierr;
+             ierr = OPFLOWSolve(&opf);
+             ExaGOCheckError(ierr);
+           })
+
+      .def("print_solution",
+           [](_p_OPFLOW &opf) {
+             PetscErrorCode ierr;
+             ierr = OPFLOWPrintSolution(&opf);
+             ExaGOCheckError(ierr);
            })
 
       .def("read_mat_power_data", [](_p_OPFLOW &opf, std::string filename) {
