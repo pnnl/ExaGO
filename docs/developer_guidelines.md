@@ -108,6 +108,11 @@ recommended.
 
 ### Merge Request Conventions
 
+#### P025: CI and Testing
+
+If your merge request changes only documentation, you may add `[skip ci]` to your commit message to skip CI.
+Otherwise, your MR must pass our continuous integration pipelines before being merged.
+
 #### P012: Patches Should Be Small
 
 ***IMPORTANT: Patches should be rather small***.
@@ -120,20 +125,14 @@ Each MR should usually have a corresponding issue.
 
 ### Releases
 
-#### P014: Merging to Master
+#### P014: Follow the Release Checklist
 
-After a significant amount of time has passed or significant changes have been merged into development branches, merge `develop` back into `master`.
+[The release checklist is linked here. Refer to this document for release documentation.](/docs/release_checklist.md)
 
-#### P015: CHANGELOG
+#### P024: Changelog
 
-This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and the [Keep-a-Changelog](https://keepachangelog.com/en/1.0.0/) guidelines.
+This project adheres to the [Keep-a-Changelog](https://keepachangelog.com/en/1.0.0/) guidelines.
 When making significant changes, summarize the changes in `CHANGELOG.md` under the `develop` or `unreleased` header.
-
-#### P016: Tagging and Versioning
-
-Merging into master is usually a good time to tag a new version, even if changes are minimal.
-Tags should only ever be made on the master branch.
-Before tagging, `CHANGELOG.md` must be updated such that the items under the `develop` or `unrealeased` header are moved to a new header indicative of the new version being tagged.
 
 ### Files
 
