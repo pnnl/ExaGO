@@ -47,7 +47,8 @@ sub tool {
     "$root/src",                 "$root/include",
     "$root/tests/functionality", "$root/tests/interfaces",
     "$root/tests/unit",          "$root/buildsystem",
-    "$root/CMakeLists.txt",      "$root/interfaces"
+    "$root/CMakeLists.txt",      "$root/interfaces",
+    "$root/applications"
   );
 
   my @fails;

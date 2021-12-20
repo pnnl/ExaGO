@@ -149,6 +149,8 @@ Header files should use header guards.
 
 Use underscores (`_`) and all lowercase characters for C, C++, and Python filenames and paths.
 Use pascal case for CMake code.
+Use the `.h` extension for all C and C++ headers.
+Use the `.cpp` extension for all C++ sources.
 
 #### P021: Driver Naming Conventions
 
@@ -163,7 +165,7 @@ Use target-oriented cmake wherever possible.
 #### P020: CMake Formatting
 
 A `.cmake-format.py` file exists in the top-level directory - if you change any cmake code, please run `cmake-format -i <file name>` before pushing your changes.
-You may also run `buildsystem/tools/cmake-format.pl -i`.
+You may also run `buildsystem/tools/cmake_format.pl -i`.
 
 ## References
 

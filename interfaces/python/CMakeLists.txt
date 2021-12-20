@@ -1,5 +1,5 @@
 # New true python bindings
-pybind11_add_module(exago opflow_python.cpp)
+pybind11_add_module(exago exago_python.cpp)
 target_link_libraries(exago PRIVATE ExaGO::UTILS ExaGO::OPFLOW)
 
 # Install Python bindings to same installation path:

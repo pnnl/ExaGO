@@ -55,7 +55,8 @@ appropriate clang-format executable";
   my @dirs = (
     "$root/src",              "$root/include",
     "$root/interfaces",       "$root/tests/functionality",
-    "$root/tests/interfaces", "$root/tests/unit"
+    "$root/tests/interfaces", "$root/tests/unit",
+    "$root/applications"
   );
 
   my @fails;

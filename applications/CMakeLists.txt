@@ -1,6 +1,6 @@
 set_source_files_properties(
-  pflow_main.cpp opflow_main.cpp scopflow_main.cpp sopflow_main.cpp tcopflow_main.cpp
-  PROPERTIES LANGUAGE CXX
+  pflow_main.cpp opflow_main.cpp scopflow_main.cpp sopflow_main.cpp
+  tcopflow_main.cpp PROPERTIES LANGUAGE CXX
 )
 
 # Define sources for applications PFLOW

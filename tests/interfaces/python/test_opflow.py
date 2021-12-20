@@ -48,15 +48,16 @@ def test_solve_opflow():
     '''Testing opflow solve'''
     opf = exago.opf()
     print(opf)
-    path = exago.get_datafile_path()
-    opf.read_mat_power_data(os.path.join(path, 'case9', 'case9mod.m'))
+    path = exago.prefix()
+    opf.read_mat_power_data(os.path.join(
+        path, 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
     opf.solve()
 
 
 @exago_test
 def test_get_datafile_path():
     '''Test retrieving datafile path'''
-    path = exago.get_datafile_path()
+    path = exago.prefix()
     assert isinstance(path, str)
 
 
