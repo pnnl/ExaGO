@@ -53,6 +53,7 @@ Since options may be specified in more than one location (on the command line, a
 Note that all ExaGO applications must run with an options file passed, and so if none is specified on the command line, ExaGO attempts to use the default application options in the `options` directory. 
 
 ## Contributing
+
 Please see [the developer guidelines](docs/DeveloperGuidelines.md) before attempting to contribute.
 Feel free to raise an issue or contact the team if the guidelines are ambiguous or you have a particular question.
 
