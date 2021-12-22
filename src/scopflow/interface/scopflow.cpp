@@ -798,9 +798,11 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
   ierr = MatSetSizes(scopflow->Jac, scopflow->ncon, scopflow->nx,
                      scopflow->Ncon, scopflow->Nx);
   CHKERRQ(ierr);
-  ierr = MatSetUp(scopflow->Jac);
-  CHKERRQ(ierr);
   ierr = MatSetFromOptions(scopflow->Jac);
+  CHKERRQ(ierr);
+  /* Assume 10% sparsity */
+  ierr = MatSeqAIJSetPreallocation(scopflow->Jac,
+                                   (PetscInt)(0.1 * scopflow->nx), NULL);
   CHKERRQ(ierr);
 
   /* Hessian */
@@ -809,10 +811,11 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
   ierr = MatSetSizes(scopflow->Hes, scopflow->nx, scopflow->nx, scopflow->Nx,
                      scopflow->Nx);
   CHKERRQ(ierr);
-  ierr = MatSetUp(scopflow->Hes);
-  CHKERRQ(ierr);
   ierr = MatSetFromOptions(scopflow->Hes);
   CHKERRQ(ierr);
+  /* Assume 10% sparsity */
+  ierr = MatSeqAIJSetPreallocation(scopflow->Hes,
+                                   (PetscInt)(0.1 * scopflow->nx), NULL);
 
   /* Lagrangian multipliers */
   ierr = VecDuplicate(scopflow->G, &scopflow->Lambda);

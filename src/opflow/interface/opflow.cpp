@@ -1262,9 +1262,14 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   ierr = MatSetSizes(opflow->Jac_Ge, opflow->nconeq, opflow->nx, opflow->Nconeq,
                      opflow->Nx);
   CHKERRQ(ierr);
-  ierr = MatSetUp(opflow->Jac_Ge);
-  CHKERRQ(ierr);
   ierr = MatSetFromOptions(opflow->Jac_Ge);
+  CHKERRQ(ierr);
+  /* Assume 10% sparsity */
+  ierr = MatSeqAIJSetPreallocation(opflow->Jac_Ge, (PetscInt)(0.1 * opflow->nx),
+                                   NULL);
+  CHKERRQ(ierr);
+  ierr =
+      MatSetOption(opflow->Jac_Ge, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
   CHKERRQ(ierr);
 
   if (opflow->Nconineq) {
@@ -1273,9 +1278,13 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
     ierr = MatSetSizes(opflow->Jac_Gi, opflow->nconineq, opflow->nx,
                        opflow->Nconineq, opflow->Nx);
     CHKERRQ(ierr);
-    ierr = MatSetUp(opflow->Jac_Gi);
+    ierr = MatSetOption(opflow->Jac_Gi, MAT_NEW_NONZERO_ALLOCATION_ERR,
+                        PETSC_FALSE);
     CHKERRQ(ierr);
     ierr = MatSetFromOptions(opflow->Jac_Gi);
+    CHKERRQ(ierr);
+
+    ierr = MatSeqAIJSetPreallocation(opflow->Jac_Gi, 6, NULL);
     CHKERRQ(ierr);
   }
 
