@@ -38,9 +38,10 @@ if(EXAGO_INSTALL_TESTS)
     NAME UNIT_TESTS_UTILS COMMAND $<TARGET_FILE:test_error_handler>
   )
 
+  string(REPLACE ";" " " MPICMD_STR "${MPICMD}")
   exago_add_test(
     NAME UNIT_TESTS_LOGGER COMMAND
-    ${CMAKE_CURRENT_SOURCE_DIR}/run_test_logger.pl ${MPICMD}
+    ${CMAKE_CURRENT_SOURCE_DIR}/run_test_logger.pl ${MPICMD_STR}
     $<TARGET_FILE:test_logger>
   )
 endif()
