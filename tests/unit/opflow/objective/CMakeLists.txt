@@ -1,10 +1,13 @@
 if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_GPU)
-  set_source_files_properties(objectiveAcopf.cpp PROPERTIES LANGUAGE CUDA)
+  set_source_files_properties(objective_acopf.cpp PROPERTIES LANGUAGE CUDA)
 endif()
 
-add_executable(objectiveAcopf objectiveAcopf.cpp ../../utils/TestAcopfUtils.cpp)
-target_link_libraries(objectiveAcopf ExaGO::OPFLOW)
-target_include_directories(objectiveAcopf PRIVATE ../../utils)
+add_executable(
+  objective_acopf objective_acopf.cpp ../../utils/test_acopf_utils.cpp
+)
+target_link_libraries(objective_acopf ExaGO::OPFLOW)
+target_include_directories(objective_acopf PRIVATE ../../utils)
+target_include_directories(objective_acopf PRIVATE ../)
 
 # Network files to run on - doing 3 and 600 bus examples.
 set(prefix ${PROJECT_SOURCE_DIR}/tests/unit/opflow/objective/)
@@ -16,7 +19,7 @@ list(TRANSFORM obj_network_files PREPEND ${prefix})
 install(FILES ${obj_network_files} DESTINATION ${EXAGO_DATAFILES_DIR})
 
 if(EXAGO_INSTALL_TESTS)
-  install(TARGETS objectiveAcopf DESTINATION ./)
+  install(TARGETS objective_acopf DESTINATION tests/unit/opflow/objective)
   # Iterate over networks, matching network file to num_copies
   foreach(network num IN ZIP_LISTS obj_network_files num_copies)
     get_filename_component(net ${network} NAME)
@@ -28,7 +31,7 @@ if(EXAGO_INSTALL_TESTS)
       IPOPT
       COMMAND
       ${RUNCMD}
-      $<TARGET_FILE:objectiveAcopf>
+      $<TARGET_FILE:objective_acopf>
       -opflow_genbusvoltage
       VARIABLE_WITHIN_BOUNDS
       -opflow_initialization
