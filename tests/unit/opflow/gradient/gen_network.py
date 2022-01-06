@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
   print(f'Generating a network of size {network_length}')
 
-  output_filename='OF-unittestx' + network_length + '.m'
+  output_filename='OFG-unittestx' + network_length + '.m'
   
   f=open(output_filename,"w+")
 

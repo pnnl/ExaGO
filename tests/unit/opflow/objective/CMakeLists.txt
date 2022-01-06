@@ -10,13 +10,12 @@ target_include_directories(objective_acopf PRIVATE ../../utils)
 target_include_directories(objective_acopf PRIVATE ../)
 
 # Network files to run on - doing 3 and 600 bus examples.
-set(prefix ${PROJECT_SOURCE_DIR}/tests/unit/opflow/objective/)
-set(obj_network_files OF-unittestx3.m OF-unittestx600.m)
+set(prefix ${EXAGO_DATAFILES_DIR}/unit/opflow/objective/)
+set(obj_network_files OF_unittestx3.m OF_unittestx600.m)
 # Map num_copies to a specific netfile
 set(num_copies 3 600)
 
 list(TRANSFORM obj_network_files PREPEND ${prefix})
-install(FILES ${obj_network_files} DESTINATION ${EXAGO_DATAFILES_DIR})
 
 if(EXAGO_INSTALL_TESTS)
   install(TARGETS objective_acopf DESTINATION tests/unit/opflow/objective)
