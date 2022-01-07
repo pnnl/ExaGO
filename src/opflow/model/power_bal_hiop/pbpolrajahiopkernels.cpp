@@ -1122,8 +1122,7 @@ PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLRAJAHIOP(OPFLOW opflow,
         RAJA_LAMBDA(RAJA::Index_type i) {
           double Pdloss = x_dev[l_xidx[i]];
           double Qdloss = x_dev[l_xidx[i] + 1];
-          obj_val_sum += loadloss_penalty_dev_[i] * MVAbase * MVAbase *
-                         (Pdloss * Pdloss + Qdloss * Qdloss);
+          obj_val_sum += loadloss_penalty_dev_[i] * MVAbase * (Pdloss + Qdloss);
         });
   }
 
@@ -1195,10 +1194,8 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOP(OPFLOW opflow,
         RAJA_LAMBDA(RAJA::Index_type i) {
           double Pdloss = x_dev[l_xidx[i]];
           double Qdloss = x_dev[l_xidx[i] + 1];
-          grad_dev[l_xidx[i]] =
-              loadloss_penalty_dev_[i] * MVAbase * MVAbase * 2 * Pdloss;
-          grad_dev[l_xidx[i] + 1] =
-              loadloss_penalty_dev_[i] * MVAbase * MVAbase * 2 * Qdloss;
+          grad_dev[l_xidx[i]] = loadloss_penalty_dev_[i] * MVAbase;
+          grad_dev[l_xidx[i] + 1] = loadloss_penalty_dev_[i] * MVAbase;
         });
   }
 
@@ -1574,10 +1571,8 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOP(
       RAJA::forall<exago_raja_exec>(
           RAJA::RangeSegment(0, loadparams->nload),
           RAJA_LAMBDA(RAJA::Index_type i) {
-            MHSS_dev[l_hesssp_idx[i]] =
-                obj_factor * 2.0 * loadloss_penalty_dev_[i] * MVAbase * MVAbase;
-            MHSS_dev[l_hesssp_idx[i] + 1] =
-                obj_factor * 2.0 * loadloss_penalty_dev_[i] * MVAbase * MVAbase;
+            MHSS_dev[l_hesssp_idx[i]] = 0.0;
+            MHSS_dev[l_hesssp_idx[i] + 1] = 0.0;
           });
     }
   }

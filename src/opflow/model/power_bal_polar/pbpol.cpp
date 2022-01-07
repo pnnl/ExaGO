@@ -1324,9 +1324,8 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow, Vec X,
         loc = load->startxloadlossloc;
         Pdloss = x[loc];
         Qdloss = x[loc + 1];
-        *obj += opflow->loadloss_penalty * ps->MVAbase * ps->MVAbase *
-                (Pdloss * Pdloss + Qdloss * Qdloss);
-        flps += 7.0;
+        *obj += opflow->loadloss_penalty * ps->MVAbase * (Pdloss + Qdloss);
+        flps += 4.0;
       }
     }
   }
@@ -1404,11 +1403,9 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
         loc = load->startxloadlossloc;
         Pdloss = x[loc];
         Qdloss = x[loc + 1];
-        df[loc] =
-            opflow->loadloss_penalty * ps->MVAbase * ps->MVAbase * 2 * Pdloss;
-        df[loc + 1] =
-            opflow->loadloss_penalty * ps->MVAbase * ps->MVAbase * 2 * Qdloss;
-        flps += 8.0;
+        df[loc] = opflow->loadloss_penalty * ps->MVAbase;
+        df[loc + 1] = opflow->loadloss_penalty * ps->MVAbase;
+        flps += 2.0;
       }
     }
   }
@@ -2647,19 +2644,16 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow, Vec X,
         xlocglob = load->startxloadlosslocglob;
         row[0] = xlocglob;
         col[0] = xlocglob;
-        val[0] = obj_factor * 2.0 * opflow->loadloss_penalty * ps->MVAbase *
-                 ps->MVAbase;
+        val[0] = 0.0;
         ierr = MatSetValues(H, 1, row, 1, col, val, ADD_VALUES);
         CHKERRQ(ierr);
 
         row[0] = xlocglob + 1;
         col[0] = xlocglob + 1;
-        val[0] = obj_factor * 2.0 * opflow->loadloss_penalty * ps->MVAbase *
-                 ps->MVAbase;
+        val[0] = 0.0;
         ierr = MatSetValues(H, 1, row, 1, col, val, ADD_VALUES);
         CHKERRQ(ierr);
       }
-      flps += 8 * bus->nload;
     }
   }
 

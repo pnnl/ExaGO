@@ -39,7 +39,7 @@ only if the power imbalance variable flag, -opflow_include_imbalance_variables, 
 OPFLOW does a minimization of the generation cost and the generation cost function is assumed to be a polynomial function of order 2.
 ```math
 \begin{aligned}
-C = \sum_{k=1}^{ng} \alpha_kP^2_{Gk} + \beta_kP_{Gk} + \gamma_k + \sum_{j=1}^{nl}c_{\delta{S_Dj}}({\delta{P^2_{Dj}} + \delta{Q^2_{Dj}}}) 
+C = \sum_{k=1}^{ng} \alpha_kP^2_{Gk} + \beta_kP_{Gk} + \gamma_k + \sum_{j=1}^{nl}c_{\delta{S_Dj}}({\delta{P_{Dj}} + \delta{Q_{Dj}}}) 
 + \sum_{i=1}^{nb}c_{\delta{S_i}}({\delta{P^2_{i}} + \delta{Q^2_{i}}})
 \end{aligned}
 ```
@@ -94,8 +94,8 @@ where the maximum flow,$`S^+_{ft}`$ is either the RATE_A (normal), RATE_B (short
 ```math
 \begin{aligned}
 \dfrac{\partial{C}}{\partial{P_{Gk}}} &= 2\alpha_kP_{Gk} + \beta_k \\
-\dfrac{\partial{C}}{\partial{\delta{P_{Dj}}}} &= 2c_{\delta{S_{Dj}}}\delta{P_{Dj}} \\
-\dfrac{\partial{C}}{\partial{\delta{Q_{Dj}}}} &= 2c_{\delta{S_{Dj}}}\delta{Q_{Dj}} \\
+\dfrac{\partial{C}}{\partial{\delta{P_{Dj}}}} &= 1 \\
+\dfrac{\partial{C}}{\partial{\delta{Q_{Dj}}}} &= 1 \\
 \dfrac{\partial{C}}{\partial{\delta{P_{i}}}} &= 2c_{\delta{S_i}}\delta{P_{i}} \\
 \dfrac{\partial{C}}{\partial{\delta{Q_{i}}}} &= 2c_{\delta{S_i}}\delta{Q_{i}}
 \end{aligned}

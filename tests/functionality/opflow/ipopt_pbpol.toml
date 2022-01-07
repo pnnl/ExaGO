@@ -40,24 +40,24 @@ network = 'datafiles/case9/case9mod.m'
 description = "datafiles/case9/case9mod.m with load loss"
 is_loadloss_active =	true
 is_powerimb_active =	false
-num_iters = 25 
-obj_value = 4.1513585954144e+03
+num_iters = 23 
+obj_value = 4151.35271404
 
 [[testcase]]
 network = 'datafiles/case118.m'
 description = "datafiles/case118.m with load loss"
 is_loadloss_active =	true
 is_powerimb_active =	false
-num_iters = 565
-obj_value = 1.3009272698e+05
+num_iters = 617
+obj_value = 130131.680103
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
 description = "datafiles/case_ACTIVSg200.m with load loss"
 is_loadloss_active =	true
 is_powerimb_active =	false
-num_iters = 402
-obj_value = 2.7564247365138e+04
+num_iters = 201
+obj_value = 27564.0344453
 
 # -- PBPOL model with power imbalance
 [[testcase]]
@@ -90,24 +90,24 @@ network = 'datafiles/case9/case9mod.m'
 description = "datafiles/case9/case9mod.m with power imbalance and load loss"
 is_loadloss_active =	true
 is_powerimb_active =	true
-num_iters = 26
-obj_value = 4150.98752244
+num_iters = 23 
+obj_value = 4150.36939403
 
 [[testcase]]
 network = 'datafiles/case118.m'
 description = "datafiles/case118.m with power imbalance and load loss"
 is_loadloss_active =	true
 is_powerimb_active =	true
-num_iters = 80
-obj_value = 130046.554574
+num_iters = 91
+obj_value = 130131.212396
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
 description = "datafiles/case_ACTIVSg200.m with power imbalance and load loss"
 is_loadloss_active =	true
 is_powerimb_active =	true
-num_iters = 122
-obj_value = 27562.1813703
+num_iters = 253
+obj_value = 27563.2417181
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'  
@@ -216,3 +216,21 @@ is_powerimb_active =	false
 gen_bus_voltage_type = 'FIXED_AT_SETPOINT'
 num_iters = 189
 obj_value = 2.75973158849e+04
+
+[[testcase]]
+network = 'datafiles/case9/case9mod_loadloss.m'  
+description = "Test for non-zero load loss"
+is_loadloss_active =	true
+is_powerimb_active =	false
+gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
+num_iters = 29 
+obj_value = 7.4003744239504717e+05
+
+[[testcase]]
+network = 'datafiles/case9/case9mod_loadloss.m'  
+description = "Test for non-zero power imbalance"
+is_loadloss_active =	false
+is_powerimb_active =	true
+gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
+num_iters = 23 
+obj_value = 740037.410048

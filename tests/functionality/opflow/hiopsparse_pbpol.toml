@@ -32,3 +32,12 @@ obj_value = 1.2965990e+05
 #description = 'datafiles/case_ACTIVSg200.m base case'
 #num_iters = 130
 #obj_value = 2.7552974e+04
+
+[[testcase]]
+network = 'datafiles/case9/case9mod_loadloss.m'  
+description = "Test for non-zero load loss with HIOP sparse solver"
+is_loadloss_active =	true
+is_powerimb_active =	false
+num_iters = 53
+obj_value = 740037.443304
+

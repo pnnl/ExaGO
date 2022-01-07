@@ -89,11 +89,11 @@ This feature is only supported with IPOPT solver.
 \subsubsection{Load loss $C(\Delta p^{\text{l}},\Delta q^{\text{l}})$}
 This term gets added to the objective when  \option{\opflowincludeloadloss} option is active. 
 \begin{equation}
-C_{loss}(\Delta p^{\text{l}},\Delta q^{\text{l}}) =  \sum_{\jinJload} \sigmalj({\Deltaplj}^2 + {\Deltaqlj}^2)
+C_{loss}(\Delta p^{\text{l}},\Delta q^{\text{l}}) =  \sum_{\jinJload} \sigmalj({\Deltaplj} + {\Deltaqlj})
 \label{eq:opf_obj_minloadloss}
 \end{equation}
 The load loss penalty $\sigmalj$ can be set via the option
-\option{-opflow\_loadloss\_penalty}. The default is \$1000/MW$^2$ for all loads.
+\option{-opflow\_loadloss\_penalty}. The default is \$1000/MW for all loads.
 
 \subsubsection{Power imbalance $C_{imb}(\Delta p^{+},\Delta p^{-},\Delta q^{+},\Delta q^{-})$}
 This term gets added to the objective when  \option{-opflow\_include_powerimbalance_variables} option is active. 
