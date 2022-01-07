@@ -384,8 +384,8 @@ PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLHIOP(OPFLOW opflow,
     for (i = 0; i < loadparams->nload; i++) {
       Pdloss = x[loadparams->xidx[i]];
       Qdloss = x[loadparams->xidx[i] + 1];
-      obj_val += loadparams->loadloss_penalty[i] * ps->MVAbase * ps->MVAbase *
-                 (Pdloss * Pdloss + Qdloss * Qdloss);
+      obj_val +=
+          loadparams->loadloss_penalty[i] * ps->MVAbase * (Pdloss + Qdloss);
     }
   }
   *obj = obj_val;
@@ -445,10 +445,9 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLHIOP(OPFLOW opflow,
     for (i = 0; i < loadparams->nload; i++) {
       Pdloss = x[loadparams->xidx[i]];
       Qdloss = x[loadparams->xidx[i] + 1];
-      grad[loadparams->xidx[i]] = loadparams->loadloss_penalty[i] *
-                                  ps->MVAbase * ps->MVAbase * 2 * Pdloss;
-      grad[loadparams->xidx[i] + 1] = loadparams->loadloss_penalty[i] *
-                                      ps->MVAbase * ps->MVAbase * 2 * Qdloss;
+      grad[loadparams->xidx[i]] = loadparams->loadloss_penalty[i] * ps->MVAbase;
+      grad[loadparams->xidx[i] + 1] =
+          loadparams->loadloss_penalty[i] * ps->MVAbase;
     }
   }
 
@@ -706,10 +705,8 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLHIOP(OPFLOW opflow,
     if (opflow->include_loadloss_variables) {
       for (i = 0; i < loadparams->nload; i++) {
         loc = loadparams->hesssp_idx[i];
-        MHSS[loc] = obj_factor * 2.0 * loadparams->loadloss_penalty[i] *
-                    ps->MVAbase * ps->MVAbase;
-        MHSS[loc + 1] = obj_factor * 2.0 * loadparams->loadloss_penalty[i] *
-                        ps->MVAbase * ps->MVAbase;
+        MHSS[loc] = 0.0;
+        MHSS[loc + 1] = 0.0;
       }
     }
     flps += 5 * genparams->ngenON;

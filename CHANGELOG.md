@@ -12,6 +12,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Python bindings re-released using pybind11 instead of the ctypes bindings.
 This is required to build python bindings when shared libraries are disabled.
 
+### Build system
+
+### PS
+
+### PFLOW
+
+### OPFLOW
+- Replaced quadratic load loss objective with linear
+
+### TCOPFLOW
+
+### SCOPFLOW
+
+### SOPFLOW
+
+### Documentation
+
+### Testing
+
+### Miscallenous
+
+
 ## [1.2.0] 
 
 ### General
