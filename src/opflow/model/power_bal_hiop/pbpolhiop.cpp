@@ -41,8 +41,6 @@ PetscErrorCode DestroyBusParams(OPFLOW opflow, BUSParams *busparams) {
     CHKERRQ(ierr);
     ierr = PetscFree(busparams->jacsq_idx);
     CHKERRQ(ierr);
-    ierr = PetscFree(busparams->hesssp_idx);
-    CHKERRQ(ierr);
     ierr = PetscFree(busparams->powerimbalance_penalty);
     CHKERRQ(ierr);
   }
@@ -94,8 +92,6 @@ PetscErrorCode CreateBusParams(OPFLOW opflow, BUSParams *busparams) {
     CHKERRQ(ierr);
     ierr = PetscCalloc1(busparams->nbus, &busparams->jacsq_idx);
     CHKERRQ(ierr);
-    ierr = PetscCalloc1(busparams->nbus, &busparams->hesssp_idx);
-    CHKERRQ(ierr);
   }
 
   /* Populate the arrays */
@@ -135,7 +131,6 @@ PetscErrorCode CreateBusParams(OPFLOW opflow, BUSParams *busparams) {
       busparams->powerimbalance_penalty[i] = opflow->powerimbalance_penalty;
       loc = bus->startxpimbloc;
       busparams->xidxpimb[i] = opflow->idxn2sd_map[loc];
-      // busparams->xidxpimb[i+1] = opflow->idxn2sd_map[loc+1];
     }
   }
 
@@ -582,8 +577,8 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOLHIOP(OPFLOW opflow) {
 
     if (opflow->include_powerimbalance_variables) {
       loc = bus->startxpimbloc;
-      bus->pimb = x[loc];
-      bus->qimb = x[loc + 1];
+      bus->pimb = x[loc] - x[loc + 1];
+      bus->qimb = x[loc + 2] - x[loc + 2];
     }
 
     for (k = 0; k < bus->ngen; k++) {
@@ -758,6 +753,8 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLHIOP(OPFLOW opflow) {
       loc = bus->startxpimbloc;
       idxn2sd_map[loc] = spct;
       idxn2sd_map[loc + 1] = spct + 1;
+      idxn2sd_map[loc + 2] = spct + 2;
+      idxn2sd_map[loc + 3] = spct + 3;
       spct += bus->nxpimb;
     }
 
@@ -836,9 +833,7 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLHIOP(OPFLOW opflow) {
 
     if (opflow->include_powerimbalance_variables) {
       busparams->jacsp_idx[i] = nnz_eqjacsp;
-      busparams->hesssp_idx[i] = nnz_hesssp;
-      nnz_eqjacsp += 1;
-      nnz_hesssp += 2; /* Includes contributions for real and imaginary part */
+      nnz_eqjacsp += 2;
     }
 
     gi = 0;
@@ -868,7 +863,7 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLHIOP(OPFLOW opflow) {
     /* Jacobian elements for reactive power contributions */
     if (opflow->include_powerimbalance_variables) {
       busparams->jacsq_idx[i] = nnz_eqjacsp;
-      nnz_eqjacsp += 1;
+      nnz_eqjacsp += 2;
     }
 
     gi = 0;

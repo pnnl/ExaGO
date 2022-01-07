@@ -142,8 +142,8 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOLRAJAHIOP(OPFLOW opflow) {
 
     if (opflow->include_powerimbalance_variables) {
       loc = bus->startxpimbloc;
-      bus->pimb = x[loc];
-      bus->qimb = x[loc + 1];
+      bus->pimb = x[loc] - x[loc + 1];
+      bus->qimb = x[loc + 2] - x[loc + 3];
     }
 
     for (k = 0; k < bus->ngen; k++) {
@@ -319,6 +319,8 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOP(OPFLOW opflow) {
       loc = bus->startxpimbloc;
       idxn2sd_map[loc] = spct;
       idxn2sd_map[loc + 1] = spct + 1;
+      idxn2sd_map[loc + 2] = spct + 2;
+      idxn2sd_map[loc + 3] = spct + 3;
       spct += bus->nxpimb;
     }
 
@@ -397,9 +399,7 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOP(OPFLOW opflow) {
 
     if (opflow->include_powerimbalance_variables) {
       busparams->jacsp_idx[i] = nnz_eqjacsp;
-      busparams->hesssp_idx[i] = nnz_hesssp;
-      nnz_eqjacsp += 1;
-      nnz_hesssp += 2; /* Includes contributions for real and imaginary part */
+      nnz_eqjacsp += 2;
     }
 
     gi = 0;
@@ -430,7 +430,7 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOP(OPFLOW opflow) {
 
     if (opflow->include_powerimbalance_variables) {
       busparams->jacsq_idx[i] = nnz_eqjacsp;
-      nnz_eqjacsp += 1;
+      nnz_eqjacsp += 2;
     }
 
     gi = 0;

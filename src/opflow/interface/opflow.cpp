@@ -1278,13 +1278,12 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
     ierr = MatSetSizes(opflow->Jac_Gi, opflow->nconineq, opflow->nx,
                        opflow->Nconineq, opflow->Nx);
     CHKERRQ(ierr);
-    ierr = MatSetOption(opflow->Jac_Gi, MAT_NEW_NONZERO_ALLOCATION_ERR,
-                        PETSC_FALSE);
-    CHKERRQ(ierr);
     ierr = MatSetFromOptions(opflow->Jac_Gi);
     CHKERRQ(ierr);
-
     ierr = MatSeqAIJSetPreallocation(opflow->Jac_Gi, 6, NULL);
+    CHKERRQ(ierr);
+    ierr = MatSetOption(opflow->Jac_Gi, MAT_NEW_NONZERO_ALLOCATION_ERR,
+                        PETSC_FALSE);
     CHKERRQ(ierr);
   }
 

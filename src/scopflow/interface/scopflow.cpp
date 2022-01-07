@@ -82,8 +82,6 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow) {
   PetscInt c;
 
   PetscFunctionBegin;
-  ierr = COMMDestroy(&(*scopflow)->comm);
-  CHKERRQ(ierr);
 
   /* Solution vector */
   ierr = VecDestroy(&(*scopflow)->X);
@@ -108,11 +106,13 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow) {
   ierr = VecDestroy(&(*scopflow)->Lambda);
   CHKERRQ(ierr);
 
-  /* Jacobian of constraints */
-  ierr = MatDestroy(&(*scopflow)->Jac);
-  CHKERRQ(ierr);
-  ierr = MatDestroy(&(*scopflow)->Hes);
-  CHKERRQ(ierr);
+  if ((*scopflow)->comm->size == 1) {
+    /* Jacobian of constraints and Hessian */
+    ierr = MatDestroy(&(*scopflow)->Jac);
+    CHKERRQ(ierr);
+    ierr = MatDestroy(&(*scopflow)->Hes);
+    CHKERRQ(ierr);
+  }
 
   if ((*scopflow)->solverops.destroy) {
     ierr = ((*scopflow)->solverops.destroy)(*scopflow);
@@ -157,6 +157,10 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow) {
     ierr = ContingencyListDestroy(&(*scopflow)->ctgclist);
     CHKERRQ(ierr);
   }
+
+  ierr = COMMDestroy(&(*scopflow)->comm);
+  CHKERRQ(ierr);
+
   ierr = PetscFree(*scopflow);
   CHKERRQ(ierr);
   //  *scopflow = 0;
@@ -517,9 +521,9 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
   scopflow->cstart = scopflow->cend - scopflow->nc;
 
   ExaGOLog(EXAGO_LOG_INFO,
-           "SCOPFLOW running with {:d} contingencies (base case + {:d} "
+           "SCOPFLOW running with {:d} subproblems (base case + {:d} "
            "contingencies)",
-           scopflow->Nc, scopflow->Nc - 1);
+           scopflow->nc, scopflow->nc - 1);
   //  ExaGOLogUseEveryRank(PETSC_TRUE);
   //  ExaGOLog(EXAGO_LOG_INFO,"Rank %d has %d contingencies, range [%d --
   //  %d]\n",scopflow->comm->rank,scopflow->nc,scopflow->cstart,scopflow->cend);
@@ -559,6 +563,8 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
     ierr = OPFLOWCreate(PETSC_COMM_SELF, &scopflow->opflow0);
     CHKERRQ(ierr);
     ierr = OPFLOWSetModel(scopflow->opflow0, OPFLOWMODEL_PBPOL);
+    CHKERRQ(ierr);
+    ierr = OPFLOWSetSolver(scopflow->opflow0, OPFLOWSOLVER_IPOPT);
     CHKERRQ(ierr);
     ierr = OPFLOWReadMatPowerData(scopflow->opflow0, scopflow->netfile);
     CHKERRQ(ierr);
@@ -630,12 +636,18 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
       }
 
       if (scopflow->cstart + c == 0) { /* First stage */
+        ierr = OPFLOWSetModel(scopflow->opflows[c], OPFLOWMODEL_PBPOL);
+        CHKERRQ(ierr);
+        ierr = OPFLOWSetSolver(scopflow->opflows[c], OPFLOWSOLVER_IPOPT);
+        CHKERRQ(ierr);
         ierr = OPFLOWSetObjectiveType(scopflow->opflows[c], MIN_GEN_COST);
         CHKERRQ(ierr);
       } else { /* Second stages */
         ierr = OPFLOWHasGenSetPoint(scopflow->opflows[c], PETSC_TRUE);
         CHKERRQ(ierr); /* Activates ramping variables */
         ierr = OPFLOWSetModel(scopflow->opflows[c], OPFLOWMODEL_PBPOL);
+        CHKERRQ(ierr);
+        ierr = OPFLOWSetSolver(scopflow->opflows[c], OPFLOWSOLVER_IPOPT);
         CHKERRQ(ierr);
         ierr = OPFLOWSetObjectiveType(scopflow->opflows[c], NO_OBJ);
         CHKERRQ(ierr);
@@ -781,8 +793,10 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
   CHKERRQ(ierr);
   ierr = VecSetSizes(scopflow->G, scopflow->ncon, PETSC_DECIDE);
   CHKERRQ(ierr);
+
   ierr = VecSetFromOptions(scopflow->G);
   CHKERRQ(ierr);
+
   ierr = VecGetSize(scopflow->G, &scopflow->Ncon);
   CHKERRQ(ierr);
 
@@ -792,30 +806,42 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
   ierr = VecDuplicate(scopflow->G, &scopflow->Gu);
   CHKERRQ(ierr);
 
-  /* Constraint Jacobian */
-  ierr = MatCreate(scopflow->comm->type, &scopflow->Jac);
-  CHKERRQ(ierr);
-  ierr = MatSetSizes(scopflow->Jac, scopflow->ncon, scopflow->nx,
-                     scopflow->Ncon, scopflow->Nx);
-  CHKERRQ(ierr);
-  ierr = MatSetFromOptions(scopflow->Jac);
-  CHKERRQ(ierr);
-  /* Assume 10% sparsity */
-  ierr = MatSeqAIJSetPreallocation(scopflow->Jac,
-                                   (PetscInt)(0.1 * scopflow->nx), NULL);
-  CHKERRQ(ierr);
+  /* The matrices are not used in parallel, so we don't need to create them */
+  if (scopflow->comm->size == 1) {
+    /* Constraint Jacobian */
+    ierr = MatCreate(scopflow->comm->type, &scopflow->Jac);
+    CHKERRQ(ierr);
+    ierr = MatSetSizes(scopflow->Jac, scopflow->ncon, scopflow->nx,
+                       scopflow->Ncon, scopflow->Nx);
+    CHKERRQ(ierr);
+    ierr = MatSetFromOptions(scopflow->Jac);
+    CHKERRQ(ierr);
 
-  /* Hessian */
-  ierr = MatCreate(scopflow->comm->type, &scopflow->Hes);
-  CHKERRQ(ierr);
-  ierr = MatSetSizes(scopflow->Hes, scopflow->nx, scopflow->nx, scopflow->Nx,
-                     scopflow->Nx);
-  CHKERRQ(ierr);
-  ierr = MatSetFromOptions(scopflow->Hes);
-  CHKERRQ(ierr);
-  /* Assume 10% sparsity */
-  ierr = MatSeqAIJSetPreallocation(scopflow->Hes,
-                                   (PetscInt)(0.1 * scopflow->nx), NULL);
+    /* Assume 10% sparsity */
+    ierr = MatSeqAIJSetPreallocation(scopflow->Jac,
+                                     (PetscInt)(0.1 * scopflow->nx), NULL);
+    CHKERRQ(ierr);
+
+    ierr = MatSetOption(scopflow->Jac, MAT_NEW_NONZERO_ALLOCATION_ERR,
+                        PETSC_FALSE);
+    CHKERRQ(ierr);
+
+    /* Hessian */
+    ierr = MatCreate(scopflow->comm->type, &scopflow->Hes);
+    CHKERRQ(ierr);
+    ierr = MatSetSizes(scopflow->Hes, scopflow->nx, scopflow->nx, scopflow->Nx,
+                       scopflow->Nx);
+    CHKERRQ(ierr);
+    ierr = MatSetFromOptions(scopflow->Hes);
+    CHKERRQ(ierr);
+    /* Assume 10% sparsity */
+    ierr = MatSeqAIJSetPreallocation(scopflow->Hes,
+                                     (PetscInt)(0.1 * scopflow->nx), NULL);
+    CHKERRQ(ierr);
+    ierr = MatSetOption(scopflow->Hes, MAT_NEW_NONZERO_ALLOCATION_ERR,
+                        PETSC_FALSE);
+    CHKERRQ(ierr);
+  }
 
   /* Lagrangian multipliers */
   ierr = VecDuplicate(scopflow->G, &scopflow->Lambda);

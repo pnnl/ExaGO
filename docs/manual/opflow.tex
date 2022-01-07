@@ -46,9 +46,9 @@ The different variables used in \opflow formulation are described in Table \ref{
   %  \hline
   %  Bus voltage imaginary part & $\vimagi$ & $-\vmaxi \le \vimagi \le \vmaxi$ & Used with power balance cartesian model (\option{\opflowmodel~\pbcar})\\
   %  \hline
-    $\pmisi$ & Bus real power mismatch & Unbounded & Used when power mismatch variable option is active (\option{\opflowincludepowerimbalance 1}) \\
+    $\pmisplusi,\pmisminusi$ & Bus real power mismatch variables & $0 \le \pmisplusi,\pmisminusi \le \infty$ & Used when power mismatch variable option is active (\option{\opflowincludepowerimbalance 1}) \\
     \hline
-    $\qmisi$ & Bus reactive power mismatch & Unbounded & Used when power mismatch variable option is active (\option{\opflowincludepowerimbalance 1}) \\
+    $\qmisplusi,\qmisminusi$ & Bus reactive power mismatch variables & $0 \le \qmisplusi,\qmisminusi \le \infty$ & Used when power mismatch variable option is active (\option{\opflowincludepowerimbalance 1}) \\
     \hline
     $\Deltaplj$ & Real power load loss & $0 \le \Deltaplj \le \plj $ & Used when load loss variable option is active (\option{\opflowincludeloadloss 1}) \\
     \hline
@@ -66,7 +66,7 @@ Power imbalance variables are non-physical (slack) variables that measure the vi
 The objective function for OPFLOW is given in (\ref{eq:opflow_obj})
 \begin{equation}
 \text{min.} ~ C_{gen}(p^{\text{g}}) + C_{dev}(\Delta p^{\text{g}}) +
-C_{loss}(\Delta p^{\text{l}},\Delta q^{\text{l}}) + C_{imb}(\Delta p,\Delta q)
+C_{loss}(\Delta p^{\text{l}},\Delta q^{\text{l}}) + C_{imb}(\Delta p^{+},\Delta p^{-},\Delta q^{+},\Delta q^{-})
 \label{eq:opflow_obj}
 \end{equation}
  
@@ -95,21 +95,22 @@ C_{loss}(\Delta p^{\text{l}},\Delta q^{\text{l}}) =  \sum_{\jinJload} \sigmalj({
 The load loss penalty $\sigmalj$ can be set via the option
 \option{-opflow\_loadloss\_penalty}. The default is \$1000/MW$^2$ for all loads.
 
-\subsubsection{Power imbalance $C(\Delta p,\Delta q)$}
+\subsubsection{Power imbalance $C_{imb}(\Delta p^{+},\Delta p^{-},\Delta q^{+},\Delta q^{-})$}
 This term gets added to the objective when  \option{-opflow\_include_powerimbalance_variables} option is active. 
 \begin{equation}
-C_{imb}(\Delta p,\Delta q) =  \sum_{i \in J^{bus}} \sigmai({\Delta p_i}^2 + {\Delta q_i}^2)
+C_{imb}(\Delta p^{+},\Delta p^{-},\Delta q^{+},\Delta q^{-}) =  \sum_{i \in J^{bus}} \sigmai(\Delta p^{+} + \Delta p^{-} + \Delta q^{+} + \Delta q^{-})
 \label{eq:opf_obj_minpowerimbalance}
 \end{equation}
 The power imbalance cost $\sigmai$ can be set via the option
-\option{-opflow\_powerimbalance\_penalty}. The default is \$10,000/MW$^2$ for all buses. Though the power imbalance variables $\Delta p_i,\Delta q_i$ are slack or non-physical, they can help in solving infeasible cases and provide a meaasure of the infeasibility. 
+\option{-opflow\_powerimbalance\_penalty}. The default is \$10,000/MW$^2$ for all buses. Though the power imbalance variables $\Delta p^{+},\Delta p^{-},\Delta q^{+},\Delta q^{-}$ are slack or non-physical, they can help in solving infeasible cases having no power flow solution, and thus provide a measure of the infeasibility. 
 
 \subsection{Equality constraints}\label{sec:opflow_eq}
 
 \subsubsection{Nodal power balance}
+The nodal power balance equations for each bus $i$ are given by
 \begin{align}
-\sum_{\substack{\jinJgen \\ A^{\text{g}}_{ij} \neq 0}} \pgj &=   \pshi + \sum_{\substack{\jinJload \\ A^{\text{l}}_{ij} \neq 0}} \plj + \sum_{\substack{\jinJbr \\ A^{\text{br}}_{oi} \neq 0}} \pbrjod + \sum_{\substack{\jinJbr \\ A^{\text{br}}_{id} \neq 0}} \pbrjdo \\
-\sum_{\substack{\jinJgen \\ A^{\text{g}}_{ij} \neq 0}} \qgj &=  \qshi + \sum_{\substack{\jinJload \\ A^{\text{l}}_{ij} \neq 0}} \qlj +
+\sum_{\substack{\jinJgen \\ A^{\text{g}}_{ij} \neq 0}} \pgj &=   \pshi + \pmisplusi - \pmisminusi + \sum_{\substack{\jinJload \\ A^{\text{l}}_{ij} \neq 0}} (\plj - \Deltaplj) + \sum_{\substack{\jinJbr \\ A^{\text{br}}_{oi} \neq 0}} \pbrjod + \sum_{\substack{\jinJbr \\ A^{\text{br}}_{id} \neq 0}} \pbrjdo \\
+\sum_{\substack{\jinJgen \\ A^{\text{g}}_{ij} \neq 0}} \qgj &=  \qshi + \qmisplusi - \qmisminusi + \sum_{\substack{\jinJload \\ A^{\text{l}}_{ij} \neq 0}} (\qlj - \Deltaqlj) +
 \sum_{\substack{\jinJbr \\ A^{\text{br}}_{oi} \neq 0}} \qbrjod + \sum_{\substack{\jinJbr \\ A^{\text{br}}_{id} \neq 0}} \qbrjdo \\
 \end{align}
 where, the real and reactive power shunt consumption is given by (\ref{eq:opflow_sh_p}) and (\ref{eq:opflow_sh_q})
@@ -168,7 +169,7 @@ With \option{\opflowuseagc}, two additional constraints are added for each parti
 \begin{equation}
 \begin{aligned}
   \left(\alpha^{\text{g}}_j\Delta{P} - \Deltapj\right)\left(\pgj - \pmaxj\right) \ge 0 \\
-  \left((\Deltapj - \alpha_j\Delta{P}\right)\left(\pminj - \pgj\right) \ge 0
+  \left(\Deltapj - \alpha^{\text{g}}_j\Delta{P}\right)\left(\pminj - \pgj\right) \ge 0
 \end{aligned}
 \label{eq:opflow_agc}
 \end{equation}

@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
   CHKERRQ(ierr);
 
   /* Create SCOPFLOW object */
-  ierr = SCOPFLOWCreate(PETSC_COMM_WORLD, &scopflow);
+  ierr = SCOPFLOWCreate(MPI_COMM_WORLD, &scopflow);
   CHKERRQ(ierr);
 
   /* Set Network Data file */

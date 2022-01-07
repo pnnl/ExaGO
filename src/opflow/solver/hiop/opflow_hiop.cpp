@@ -376,6 +376,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
     hiop->ipoptApp->Options()->SetNumericValue("bound_frac", 1e-8);
     hiop->ipoptApp->Options()->SetNumericValue("bound_push", 1e-8);
     hiop->ipoptApp->Options()->SetNumericValue("bound_relax_factor", 0.);
+    hiop->ipoptApp->Options()->SetNumericValue("bound_relax_perturb", 1e-8);
     hiop->ipoptApp->Options()->SetNumericValue("constr_mult_init_max", 0.001);
     hiop->ipoptApp->Options()->SetStringValue("derivative_test",
                                               "second-order");
@@ -401,7 +402,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
   hiop->mds->options->SetIntegerValue("verbosity_level", verbose_level);
   hiop->mds->options->SetNumericValue("mu0", 1e-1);
   hiop->mds->options->SetNumericValue("tolerance", opflow->tolerance);
-  hiop->mds->options->SetNumericValue("bound_relax_perturb", 1e-4);
+  hiop->mds->options->SetNumericValue("bound_relax_perturb", 1e-8);
   hiop->mds->options->SetStringValue("scaling_type", "none");
 
   /* Error if model is not power balance hiop or power balance raja hiop */

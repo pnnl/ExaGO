@@ -65,24 +65,24 @@ network = 'datafiles/case9/case9mod.m'
 description = "datafiles/case9/case9mod.m with power imbalance"
 is_loadloss_active =	false
 is_powerimb_active =	true
-num_iters = 22
-obj_value = 4.15037527581e+03
+num_iters = 24
+obj_value = 4151.32292307
 
 [[testcase]]
 network = 'datafiles/case118.m'
 description = "datafiles/case118.m with power imbalance"
 is_loadloss_active =	false
 is_powerimb_active =	true
-num_iters = 157
-obj_value = 1.3008569089941e+05
+num_iters = 86
+obj_value =  130131.404646
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
 description = "datafiles/case_ACTIVSg200.m with power imbalance"
 is_loadloss_active =	false
 is_powerimb_active =	true
-num_iters = 314
-obj_value = 2.7561895866753e+04
+num_iters = 164
+obj_value = 27561.8958668
 
 # -- PBPOL model with load loss and power imbalance
 [[testcase]]
@@ -90,24 +90,24 @@ network = 'datafiles/case9/case9mod.m'
 description = "datafiles/case9/case9mod.m with power imbalance and load loss"
 is_loadloss_active =	true
 is_powerimb_active =	true
-num_iters = 25 
-obj_value = 4.15004001652e+03
+num_iters = 26
+obj_value = 4150.98752244
 
 [[testcase]]
 network = 'datafiles/case118.m'
 description = "datafiles/case118.m with power imbalance and load loss"
 is_loadloss_active =	true
 is_powerimb_active =	true
-num_iters = 164
-obj_value = 1.3004655457438e+05
+num_iters = 80
+obj_value = 130046.554574
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
 description = "datafiles/case_ACTIVSg200.m with power imbalance and load loss"
 is_loadloss_active =	true
 is_powerimb_active =	true
-num_iters = 408
-obj_value = 2.7560626008184e+04
+num_iters = 122
+obj_value = 27562.1813703
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'  
