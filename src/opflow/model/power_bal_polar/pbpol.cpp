@@ -69,8 +69,9 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
     if (opflow->include_powerimbalance_variables) {
       loc = bus->startxpimbloc;
 
-      xl[loc] = xl[loc + 1] = PETSC_NINFINITY;
-      xu[loc] = xu[loc + 1] = PETSC_INFINITY;
+      xl[loc] = xl[loc + 1] = xl[loc + 2] = xl[loc + 3] = 0.0;
+      xu[loc] = xu[loc + 1] = xu[loc + 2] = xu[loc + 3] = PETSC_INFINITY;
+
       loc += bus->nxpimb;
     }
 
@@ -310,7 +311,7 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X) {
 
     if (opflow->include_powerimbalance_variables) {
       loc = bus->startxpimbloc;
-      x[loc] = x[loc + 1] = 0.0;
+      x[loc] = x[loc + 1] = x[loc + 2] = x[loc + 3] = 0.0;
     }
 
     for (k = 0; k < bus->ngen; k++) {
@@ -436,10 +437,15 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL(OPFLOW opflow, Vec X,
 
     /* Power imbalance addition */
     if (opflow->include_powerimbalance_variables) {
-      PetscScalar Pimb, Qimb;
+      PetscScalar Pimbplus, Pimbminus, Qimbplus, Qimbminus, Pimb, Qimb;
       xloc = bus->startxpimbloc;
-      Pimb = x[xloc];
-      Qimb = x[xloc + 1];
+      Pimbplus = x[xloc];
+      Pimbminus = x[xloc + 1];
+      Qimbplus = x[xloc + 2];
+      Qimbminus = x[xloc + 3];
+
+      Pimb = Pimbplus - Pimbminus;
+      Qimb = Qimbplus - Qimbminus;
       val[0] = Pimb;
       val[1] = Qimb;
       ierr = VecSetValues(Ge, 2, row, val, ADD_VALUES);
@@ -648,12 +654,15 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,
       locglob = bus->startxpimblocglob;
 
       val[0] = 1;
+      val[1] = -1;
       col[0] = locglob;
-      ierr = MatSetValues(Je, 1, row, 1, col, val, ADD_VALUES);
+      col[1] = locglob + 1;
+      ierr = MatSetValues(Je, 1, row, 2, col, val, ADD_VALUES);
       CHKERRQ(ierr);
 
-      col[0] = locglob + 1;
-      ierr = MatSetValues(Je, 1, row + 1, 1, col, val, ADD_VALUES);
+      col[0] = locglob + 2;
+      col[1] = locglob + 3;
+      ierr = MatSetValues(Je, 1, row + 1, 2, col, val, ADD_VALUES);
       CHKERRQ(ierr);
     }
 
@@ -1270,12 +1279,16 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow, Vec X,
 
     if (opflow->include_powerimbalance_variables) {
       loc = bus->startxpimbloc;
-      PetscScalar Pimb, Qimb;
-      Pimb = x[loc];
-      Qimb = x[loc + 1];
-      *obj += opflow->powerimbalance_penalty * ps->MVAbase * ps->MVAbase *
-              (Pimb * Pimb + Qimb * Qimb);
-      flps += 7.0;
+      PetscScalar Pimbplus, Pimbminus, Qimbplus, Qimbminus;
+      loc = bus->startxpimbloc;
+      Pimbplus = x[loc];
+      Pimbminus = x[loc + 1];
+      Qimbplus = x[loc + 2];
+      Qimbminus = x[loc + 3];
+
+      *obj += opflow->powerimbalance_penalty * ps->MVAbase *
+              (Pimbplus + Pimbminus + Qimbplus + Qimbminus);
+      flps += 5.0;
     }
 
     for (k = 0; k < bus->ngen; k++) {
@@ -1350,13 +1363,13 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
     if (opflow->include_powerimbalance_variables) {
       PetscScalar Pimb, Qimb;
       loc = bus->startxpimbloc;
-      Pimb = x[loc];
-      Qimb = x[loc + 1];
-      df[loc] =
-          opflow->powerimbalance_penalty * ps->MVAbase * ps->MVAbase * 2 * Pimb;
-      df[loc + 1] =
-          opflow->powerimbalance_penalty * ps->MVAbase * ps->MVAbase * 2 * Qimb;
-      flps += 8.0;
+
+      df[loc] = opflow->powerimbalance_penalty * ps->MVAbase;
+      df[loc + 1] = opflow->powerimbalance_penalty * ps->MVAbase;
+      df[loc + 2] = opflow->powerimbalance_penalty * ps->MVAbase;
+      df[loc + 3] = opflow->powerimbalance_penalty * ps->MVAbase;
+
+      flps += 4.0;
     }
 
     for (k = 0; k < bus->ngen; k++) {
@@ -1456,8 +1469,8 @@ PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW opflow,
     bus->nxV = busnvar[i];
 
     if (opflow->include_powerimbalance_variables) {
-      busnvar[i] += 2;
-      bus->nxpimb = 2;
+      busnvar[i] += 4;
+      bus->nxpimb = 4;
     }
 
     bus->nxshunt = 0;
@@ -2583,18 +2596,17 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow, Vec X,
 
       row[0] = xlocglob;
       col[0] = xlocglob;
-      val[0] = obj_factor * 2.0 * opflow->powerimbalance_penalty * ps->MVAbase *
-               ps->MVAbase;
+      val[0] = 0.0;
+
       ierr = MatSetValues(H, 1, row, 1, col, val, ADD_VALUES);
       CHKERRQ(ierr);
 
       row[0] = xlocglob + 1;
       col[0] = xlocglob + 1;
-      val[0] = obj_factor * 2.0 * opflow->powerimbalance_penalty * ps->MVAbase *
-               ps->MVAbase;
+      val[0] = 0.0;
+
       ierr = MatSetValues(H, 1, row, 1, col, val, ADD_VALUES);
       CHKERRQ(ierr);
-      flps += 8;
     }
 
     for (k = 0; k < bus->ngen; k++) {
@@ -2735,8 +2747,13 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow) {
 
     if (opflow->include_powerimbalance_variables) {
       loc = bus->startxpimbloc;
-      bus->pimb = x[loc];
-      bus->qimb = x[loc + 1];
+      PetscScalar Pimbplus, Pimbminus, Qimbplus, Qimbminus;
+      Pimbplus = x[loc];
+      Pimbminus = x[loc + 1];
+      Qimbplus = x[loc + 2];
+      Qimbminus = x[loc + 3];
+      bus->pimb = Pimbplus - Pimbminus;
+      bus->qimb = Qimbplus - Qimbminus;
     }
 
     for (k = 0; k < bus->ngen; k++) {

@@ -25,6 +25,11 @@ bool OPFLOWHIOPSPARSEInterface::get_vars_info(const hiop::size_type &n,
 
   ierr = (*opflow->modelops.setvariablebounds)(opflow, opflow->Xl, opflow->Xu);
   CHKERRQ(ierr);
+  if (opflow->modelops.updatevariablebounds) {
+    ierr = (*opflow->modelops.updatevariablebounds)(
+        opflow, opflow->Xl, opflow->Xu, opflow->userctx);
+    CHKERRQ(ierr);
+  }
 
   ierr = VecGetArrayRead(opflow->Xl, &xl);
   CHKERRQ(ierr);
@@ -139,6 +144,13 @@ bool OPFLOWHIOPSPARSEInterface::eval_f(const hiop::size_type &n,
   CHKERRQ(ierr);
 
   ierr = VecResetArray(opflow->X);
+
+  if (opflow->modelops.computeauxobjective) {
+    ierr = (*opflow->modelops.computeauxobjective)(opflow, (const double *)x,
+                                                   &obj_value, opflow->userctx);
+    CHKERRQ(ierr);
+  }
+
   CHKERRQ(ierr);
 
   return true;
@@ -212,6 +224,12 @@ bool OPFLOWHIOPSPARSEInterface::eval_grad_f(const hiop::size_type &n,
   CHKERRQ(ierr);
   ierr = VecResetArray(opflow->gradobj);
   CHKERRQ(ierr);
+
+  if (opflow->modelops.computeauxgradient) {
+    ierr = (*opflow->modelops.computeauxgradient)(opflow, (const double *)x,
+                                                  gradf, opflow->userctx);
+    CHKERRQ(ierr);
+  }
 
   return true;
 }
@@ -397,6 +415,16 @@ bool OPFLOWHIOPSPARSEInterface::eval_Hess_Lagr(
         opflow, opflow->X, opflow->Lambdae, opflow->Lambdai, opflow->Hes);
     CHKERRQ(ierr);
 
+    if (opflow->modelops.computeauxhessian) {
+      ierr = (*opflow->modelops.computeauxhessian)(opflow, x, opflow->Hes,
+                                                   opflow->userctx);
+      CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(opflow->Hes, MAT_FINAL_ASSEMBLY);
+      CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(opflow->Hes, MAT_FINAL_ASSEMBLY);
+      CHKERRQ(ierr);
+    }
+
     /* Copy over values */
     ierr = MatGetSize(opflow->Hes, &nrow, &nrow);
     CHKERRQ(ierr);
@@ -471,7 +499,7 @@ void OPFLOWHIOPSPARSEInterface::solution_callback(
     ierr = VecGetArray(opflow->Lambda, &lam);
     CHKERRV(ierr);
     ierr =
-        PetscMemcpy((double *)lamsol, lam, opflow->ncon * sizeof(PetscScalar));
+        PetscMemcpy(lam, (double *)lamsol, opflow->ncon * sizeof(PetscScalar));
     CHKERRV(ierr);
     ierr = VecRestoreArray(opflow->Lambda, &lam);
     CHKERRV(ierr);
@@ -484,7 +512,7 @@ void OPFLOWHIOPSPARSEInterface::solution_callback(
     /* Same situation as lamsol - gsol is NULL */
     ierr = VecGetArray(opflow->G, &g);
     CHKERRV(ierr);
-    ierr = PetscMemcpy((double *)gsol, g, opflow->ncon * sizeof(PetscScalar));
+    ierr = PetscMemcpy(g, (double *)gsol, opflow->ncon * sizeof(PetscScalar));
     CHKERRV(ierr);
     ierr = VecRestoreArray(opflow->G, &g);
     CHKERRV(ierr);
@@ -568,7 +596,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOPSPARSE(OPFLOW opflow) {
   hiop->sp->options->SetIntegerValue("verbosity_level", verbose_level);
   hiop->sp->options->SetNumericValue("mu0", 1e-1);
   hiop->sp->options->SetNumericValue("tolerance", opflow->tolerance);
-  hiop->sp->options->SetNumericValue("bound_relax_perturb", 1e-4);
+  hiop->sp->options->SetNumericValue("bound_relax_perturb", 1e-8);
   hiop->sp->options->SetStringValue("scaling_type", "none");
 
   hiop->solver = new hiop::hiopAlgFilterIPMNewton(hiop->sp);

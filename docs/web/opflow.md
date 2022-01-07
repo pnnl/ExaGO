@@ -57,7 +57,7 @@ The behavior of OPFLOW is controlled through the different options given in the 
 |-opflow_include_loadloss_variables| Include load loss| 0 or 1 (0)| All models |
 |-opflow_include_powerimbalance_variables| Allow power imbalance at buses| 0 or 1 (0)| All models |
 |-opflow_loadloss_penalty| Penalty ($) for loss of load per load| (1000)| All models |
-|-opflow_powerimbalance_penalty| Penalty ($) for  power imbalance at bus| (1000)| All models |
+|-opflow_powerimbalance_penalty| Penalty ($) for  power imbalance at bus| (10000)| All models |
 |-opflow_genbusvoltage| Control mode for generator bus voltage| "VARIABLE_WITHIN_BOUNDS"<br>"FIXED_WITHIN_QBOUNDS" (default)| POWER_BALANCE_POLAR model only |
 |-opflow_has_gensetpoint| Real power set point set? | 0 or 1 (0)| All models |
 |-opflow_objective| Objective function| "MIN_GEN_COST" (default)<br>"MIN_GENSETPOINT_DEVIATION"<br>"NO_OBJ"| MIN_GENSETPOINT_DEVIATION with POWER_BALANCE_POLAR model only |

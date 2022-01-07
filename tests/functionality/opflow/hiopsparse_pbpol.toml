@@ -18,13 +18,13 @@ initialization_type = 'MIDPOINT'
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'
 description = 'datafiles/case9/case9mod.m base case'
-num_iters = 12
+num_iters = 9
 obj_value = 4.1444511e+03
 
 [[testcase]]
 network = 'datafiles/case118.m'
 description = 'datafiles/case118.m base case'
-num_iters = 25
+num_iters = 22
 obj_value = 1.2965990e+05
 
 #[[testcase]]

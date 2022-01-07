@@ -38,7 +38,6 @@ int BUSParamsRajaHiop::destroy(OPFLOW opflow) {
     h_allocator_.deallocate(powerimbalance_penalty);
     h_allocator_.deallocate(jacsp_idx);
     h_allocator_.deallocate(jacsq_idx);
-    h_allocator_.deallocate(hesssp_idx);
   }
 
 #ifdef EXAGO_ENABLE_GPU
@@ -58,7 +57,6 @@ int BUSParamsRajaHiop::destroy(OPFLOW opflow) {
     d_allocator_.deallocate(powerimbalance_penalty_dev_);
     d_allocator_.deallocate(jacsp_idx_dev_);
     d_allocator_.deallocate(jacsq_idx_dev_);
-    d_allocator_.deallocate(hesssp_idx_dev_);
   }
 #endif
 
@@ -92,7 +90,6 @@ int BUSParamsRajaHiop::copy(OPFLOW opflow) {
     resmgr.copy(xidxpimb_dev_, xidxpimb);
     resmgr.copy(jacsp_idx_dev_, jacsp_idx);
     resmgr.copy(jacsq_idx_dev_, jacsq_idx);
-    resmgr.copy(hesssp_idx_dev_, hesssp_idx);
     resmgr.copy(powerimbalance_penalty_dev_, powerimbalance_penalty);
   }
 #else
@@ -110,7 +107,6 @@ int BUSParamsRajaHiop::copy(OPFLOW opflow) {
   gidx_dev_ = gidx;
   jacsp_idx_dev_ = jacsp_idx;
   jacsq_idx_dev_ = jacsq_idx;
-  hesssp_idx_dev_ = hesssp_idx;
   powerimbalance_penalty_dev_ = powerimbalance_penalty;
 #endif
   return 0;
@@ -147,7 +143,6 @@ int BUSParamsRajaHiop::allocate(OPFLOW opflow) {
     powerimbalance_penalty = paramAlloc<double>(h_allocator_, nbus);
     jacsp_idx = paramAlloc<int>(h_allocator_, nbus);
     jacsq_idx = paramAlloc<int>(h_allocator_, nbus);
-    hesssp_idx = paramAlloc<int>(h_allocator_, nbus);
   }
 
   /* Memzero arrays */
@@ -216,7 +211,6 @@ int BUSParamsRajaHiop::allocate(OPFLOW opflow) {
     powerimbalance_penalty_dev_ = paramAlloc<double>(d_allocator_, nbus);
     jacsp_idx_dev_ = paramAlloc<int>(d_allocator_, nbus);
     jacsq_idx_dev_ = paramAlloc<int>(d_allocator_, nbus);
-    hesssp_idx_dev_ = paramAlloc<int>(d_allocator_, nbus);
   }
 #endif
   return 0;
@@ -956,8 +950,8 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP(
                                                ispvpq[i] * Vm * Vm * bl[i]);
 
         if (include_powerimbalance_variables) {
-          double Pimb = x_dev[b_xidxpimb[i]];
-          double Qimb = x_dev[b_xidxpimb[i] + 1];
+          double Pimb = x_dev[b_xidxpimb[i]] - x_dev[b_xidxpimb[i] + 1];
+          double Qimb = x_dev[b_xidxpimb[i] + 2] - x_dev[b_xidxpimb[i] + 3];
           RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[b_gidx[i]], Pimb);
           RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[b_gidx[i] + 1], Qimb);
         }
@@ -1140,10 +1134,12 @@ PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLRAJAHIOP(OPFLOW opflow,
     RAJA::forall<exago_raja_exec>(
         RAJA::RangeSegment(0, busparams->nbus),
         RAJA_LAMBDA(RAJA::Index_type i) {
-          double Pimb = x_dev[b_xidxpimb[i]];
-          double Qimb = x_dev[b_xidxpimb[i] + 1];
-          obj_val_sum += powerimbalance_penalty_dev_[i] * MVAbase * MVAbase *
-                         (Pimb * Pimb + Qimb * Qimb);
+          double Pimbplus = x_dev[b_xidxpimb[i]];
+          double Pimbminus = x_dev[b_xidxpimb[i] + 1];
+          double Qimbplus = x_dev[b_xidxpimb[i] + 2];
+          double Qimbminus = x_dev[b_xidxpimb[i] + 3];
+          obj_val_sum += powerimbalance_penalty_dev_[i] * MVAbase *
+                         (Pimbplus + Pimbminus + Qimbplus + Qimbminus);
         });
   }
 
@@ -1212,12 +1208,13 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOP(OPFLOW opflow,
     RAJA::forall<exago_raja_exec>(
         RAJA::RangeSegment(0, busparams->nbus),
         RAJA_LAMBDA(RAJA::Index_type i) {
-          double Pimb = x_dev[b_xidxpimb[i]];
-          double Qimb = x_dev[b_xidxpimb[i] + 1];
-          grad_dev[b_xidxpimb[i]] =
-              powerimbalance_penalty_dev_[i] * MVAbase * MVAbase * 2 * Pimb;
+          grad_dev[b_xidxpimb[i]] = powerimbalance_penalty_dev_[i] * MVAbase;
           grad_dev[b_xidxpimb[i] + 1] =
-              powerimbalance_penalty_dev_[i] * MVAbase * MVAbase * 2 * Qimb;
+              powerimbalance_penalty_dev_[i] * MVAbase;
+          grad_dev[b_xidxpimb[i] + 2] =
+              powerimbalance_penalty_dev_[i] * MVAbase;
+          grad_dev[b_xidxpimb[i] + 3] =
+              powerimbalance_penalty_dev_[i] * MVAbase;
         });
   }
 
@@ -1299,8 +1296,11 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP_old(OPFLOW opflow,
             isref[i] * vmax[i] + ispvpq[i] * vmax[i] + isisolated[i] * vm[i];
         /* Bounds for Power Imbalance Variables (second bus variables) */
         if (include_powerimbalance_variables) {
-          xl_dev[b_xidxpimb[i]] = xl_dev[b_xidxpimb[i] + 1] = PETSC_NINFINITY;
-          xu_dev[b_xidxpimb[i]] = xu_dev[b_xidxpimb[i] + 1] = PETSC_INFINITY;
+          xl_dev[b_xidxpimb[i]] = xl_dev[b_xidxpimb[i] + 1] =
+              xl_dev[b_xidxpimb[i] + 2] = xl_dev[b_xidxpimb[i] + 3] = 0.0;
+          xu_dev[b_xidxpimb[i]] = xu_dev[b_xidxpimb[i] + 1] =
+              xu_dev[b_xidxpimb[i] + 2] = xu_dev[b_xidxpimb[i] + 3] =
+                  PETSC_INFINITY;
         }
       });
 
@@ -1387,8 +1387,13 @@ PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOP(
           RAJA_LAMBDA(RAJA::Index_type i) {
             iJacS_dev[b_jacsp_idx[i]] = b_gidx[i];
             jJacS_dev[b_jacsp_idx[i]] = b_xidxpimb[i];
+            iJacS_dev[b_jacsp_idx[i] + 1] = b_gidx[i];
+            jJacS_dev[b_jacsp_idx[i] + 1] = b_xidxpimb[i] + 1;
+
             iJacS_dev[b_jacsq_idx[i]] = b_gidx[i] + 1;
-            jJacS_dev[b_jacsq_idx[i]] = b_xidxpimb[i] + 1;
+            jJacS_dev[b_jacsq_idx[i]] = b_xidxpimb[i] + 2;
+            iJacS_dev[b_jacsq_idx[i] + 1] = b_gidx[i] + 1;
+            jJacS_dev[b_jacsq_idx[i] + 1] = b_xidxpimb[i] + 3;
           });
     }
 
@@ -1454,8 +1459,10 @@ PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOP(
       RAJA::forall<exago_raja_exec>(
           RAJA::RangeSegment(0, busparams->nbus),
           RAJA_LAMBDA(RAJA::Index_type i) {
-            MJacS_dev[b_jacsp_idx[i]] = 1;
-            MJacS_dev[b_jacsq_idx[i]] = 1;
+            MJacS_dev[b_jacsp_idx[i]] = 1.0;
+            MJacS_dev[b_jacsp_idx[i] + 1] = -1.0;
+            MJacS_dev[b_jacsq_idx[i]] = 1.0;
+            MJacS_dev[b_jacsq_idx[i] + 1] = -1.0;
           });
     }
 
@@ -1505,7 +1512,6 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOP(
   PetscErrorCode ierr;
   GENParamsRajaHiop *genparams = &pbpolrajahiop->genparams;
   LOADParamsRajaHiop *loadparams = &pbpolrajahiop->loadparams;
-  BUSParamsRajaHiop *busparams = &pbpolrajahiop->busparams;
   PS ps = opflow->ps;
   double obj_factor = opflow->obj_factor;
   int isobj_gencost = opflow->obj_gencost;
@@ -1514,19 +1520,6 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOP(
   //  PetscPrintf(MPI_COMM_SELF,"Entered sparse Hessian\n");
 
   if (iHSS_dev != NULL && jHSS_dev != NULL) {
-    /* Bus contribution - powerimbalance */
-    int *b_xidxpimb = busparams->xidxpimb_dev_;
-    int *b_hesssp_idx = busparams->hesssp_idx_dev_;
-    if (opflow->include_powerimbalance_variables) {
-      RAJA::forall<exago_raja_exec>(
-          RAJA::RangeSegment(0, busparams->nbus),
-          RAJA_LAMBDA(RAJA::Index_type i) {
-            iHSS_dev[b_hesssp_idx[i]] = b_xidxpimb[i];
-            jHSS_dev[b_hesssp_idx[i]] = b_xidxpimb[i];
-            iHSS_dev[b_hesssp_idx[i] + 1] = b_xidxpimb[i] + 1;
-            jHSS_dev[b_hesssp_idx[i] + 1] = b_xidxpimb[i] + 1;
-          });
-    }
 
     /* Generator contributions for row,col numbers */
     int *g_xidx = genparams->xidx_dev_;
@@ -1554,22 +1547,6 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOP(
   }
 
   if (MHSS_dev != NULL) {
-    /* Bus contributions - power imbalance */
-    int *b_hesssp_idx = busparams->hesssp_idx_dev_;
-    if (opflow->include_powerimbalance_variables) {
-      double *powerimbalance_penalty_dev_ =
-          busparams->powerimbalance_penalty_dev_;
-      RAJA::forall<exago_raja_exec>(
-          RAJA::RangeSegment(0, busparams->nbus),
-          RAJA_LAMBDA(RAJA::Index_type i) {
-            MHSS_dev[b_hesssp_idx[i]] = obj_factor * 2.0 *
-                                        powerimbalance_penalty_dev_[i] *
-                                        MVAbase * MVAbase;
-            MHSS_dev[b_hesssp_idx[i] + 1] = obj_factor * 2.0 *
-                                            powerimbalance_penalty_dev_[i] *
-                                            MVAbase * MVAbase;
-          });
-    }
 
     /* Generator contributions */
     if (opflow->objectivetype == MIN_GEN_COST) {

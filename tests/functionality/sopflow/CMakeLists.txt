@@ -77,6 +77,8 @@ if(EXAGO_INSTALL_TESTS)
     -1
     -opflow_initialization
     ACPF
+    -opflow_ignore_lineflow_constraints
+    1
     -sopflow_subproblem_solver
     HIOP
     -sopflow_subproblem_model
@@ -85,19 +87,45 @@ if(EXAGO_INSTALL_TESTS)
     CPU
     -hiop_verbosity_level
     3
+    -no_optfile
     DEPENDS
     IPOPT
     HIOP
   )
 
-  # exago_add_test( NAME SOPFLOW_200bus_HIOP_SERIAL COMMAND ${RUNCMD}
-  # $<TARGET_FILE:app_sopflow> -netfile
-  # ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m -scenfile
-  # ${CMAKE_SOURCE_DIR}/datafiles/10_scenarios_ACTIVSg200.csv -sopflow_solver
-  # HIOP -sopflow_Ns -1 -opflow_initialization ACPF
-  # -opflow_ignore_lineflow_constraints 1 -sopflow_subproblem_solver HIOP
-  # -sopflow_subproblem_model POWER_BALANCE_HIOP -hiop_compute_mode CPU
-  # -hiop_verbosity_level 3 DEPENDS IPOPT HIOP )
+  exago_add_test(
+    NAME
+    SOPFLOW_200bus_HIOP_SERIAL
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:app_sopflow>
+    -netfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+    -scenfile
+    ${CMAKE_SOURCE_DIR}/datafiles/10_scenarios_ACTIVSg200.csv
+    -sopflow_solver
+    HIOP
+    -sopflow_Ns
+    -1
+    -opflow_initialization
+    ACPF
+    -opflow_ignore_lineflow_constraints
+    1
+    -sopflow_subproblem_solver
+    HIOP
+    -sopflow_subproblem_model
+    POWER_BALANCE_HIOP
+    -hiop_compute_mode
+    CPU
+    -hiop_verbosity_level
+    3
+    -opflow_include_powerimbalance_variables
+    1
+    -no_optfile
+    DEPENDS
+    IPOPT
+    HIOP
+  )
 
   # exago_add_test( NAME SOPFLOW_200bus_HIOP_MPI COMMAND ${MPICMD} "-n" 3
   # $<TARGET_FILE:app_sopflow> -netfile
@@ -124,6 +152,8 @@ if(EXAGO_INSTALL_TESTS)
     -1
     -opflow_initialization
     ACPF
+    -opflow_ignore_lineflow_constraints
+    1
     -sopflow_subproblem_solver
     HIOP
     -sopflow_subproblem_model

@@ -108,6 +108,9 @@ if(EXAGO_INSTALL_TESTS)
     CPU
     -hiop_verbosity_level
     3
+    -opflow_include_powerimbalance_variables
+    1
+    -no_optfile
     DEPENDS
     IPOPT
     HIOP
@@ -126,7 +129,7 @@ if(EXAGO_INSTALL_TESTS)
     -scopflow_solver
     HIOP
     -scopflow_Nc
-    20
+    4
     -opflow_initialization
     ACPF
     -opflow_ignore_lineflow_constraints
@@ -139,6 +142,9 @@ if(EXAGO_INSTALL_TESTS)
     CPU
     -hiop_verbosity_level
     3
+    -opflow_include_powerimbalance_variables
+    1
+    -no_optfile
     DEPENDS
     IPOPT
     HIOP
@@ -159,7 +165,7 @@ if(EXAGO_INSTALL_TESTS)
     -scopflow_solver
     HIOP
     -scopflow_Nc
-    20
+    4
     -scopflow_subproblem_solver
     HIOP
     -scopflow_subproblem_model
@@ -172,6 +178,9 @@ if(EXAGO_INSTALL_TESTS)
     ACPF
     -opflow_ignore_lineflow_constraints
     1
+    -opflow_include_powerimbalance_variables
+    1
+    -no_optfile
     DEPENDS
     IPOPT
     HIOP
@@ -201,6 +210,9 @@ if(EXAGO_INSTALL_TESTS)
     GPU
     -hiop_verbosity_level
     3
+    -opflow_include_powerimbalance_variables
+    1
+    -no_optfile
     DEPENDS
     IPOPT
     HIOP
@@ -219,7 +231,7 @@ if(EXAGO_INSTALL_TESTS)
     -scopflow_solver
     HIOP
     -scopflow_Nc
-    20
+    4
     -opflow_initialization
     ACPF
     -opflow_ignore_lineflow_constraints
@@ -229,9 +241,12 @@ if(EXAGO_INSTALL_TESTS)
     -scopflow_subproblem_model
     PBPOLRAJAHIOP
     -hiop_compute_mode
-    CPU
+    GPU
     -hiop_verbosity_level
     3
+    -opflow_include_powerimbalance_variables
+    1
+    -no_optfile
     DEPENDS
     IPOPT
     HIOP
@@ -252,7 +267,7 @@ if(EXAGO_INSTALL_TESTS)
     -scopflow_solver
     HIOP
     -scopflow_Nc
-    20
+    4
     -opflow_initialization
     ACPF
     -opflow_ignore_lineflow_constraints
@@ -265,6 +280,9 @@ if(EXAGO_INSTALL_TESTS)
     GPU
     -hiop_verbosity_level
     3
+    -opflow_include_powerimbalance_variables
+    1
+    -no_optfile
     DEPENDS
     IPOPT
     HIOP

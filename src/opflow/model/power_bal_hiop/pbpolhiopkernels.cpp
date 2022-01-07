@@ -53,7 +53,7 @@ PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLHIOP(OPFLOW opflow, double *x) {
     if (opflow->include_powerimbalance_variables) {
       loc_nat = bus->startxpimbloc;
       loc = idxn2sd_map[loc_nat];
-      x[loc] = x[loc + 1] = 0.0;
+      x[loc] = x[loc + 1] = x[loc + 2] = x[loc + 3] = 0.0;
     }
 
     for (k = 0; k < bus->ngen; k++) {
@@ -227,9 +227,14 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLHIOP(OPFLOW opflow,
 
     /* Power imbalance addition (Second Bus Variable)*/
     if (opflow->include_powerimbalance_variables) {
-      double Pimb, Qimb;
-      Pimb = x[busparams->xidxpimb[i]];
-      Qimb = x[busparams->xidxpimb[i] + 1];
+      double Pimbplus, Pimbminus, Qimbplus, Qimbminus, Pimb, Qimb;
+      Pimbplus = x[busparams->xidxpimb[i]];
+      Pimbminus = x[busparams->xidxpimb[i] + 1];
+      Qimbplus = x[busparams->xidxpimb[i] + 2];
+      Qimbminus = x[busparams->xidxpimb[i] + 3];
+
+      Pimb = Pimbplus - Pimbminus;
+      Qimb = Qimbplus - Qimbminus;
       ge[busparams->gidx[i]] += Pimb;
       ge[busparams->gidx[i] + 1] += Qimb;
     }
@@ -351,12 +356,15 @@ PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLHIOP(OPFLOW opflow,
 
   /* Power Imbalance Contributions (BUS) */
   if (opflow->include_powerimbalance_variables) {
-    double Pimb, Qimb;
     for (int i = 0; i < busparams->nbus; i++) {
-      Pimb = x[busparams->xidxpimb[i]];
-      Qimb = x[busparams->xidxpimb[i] + 1];
+      double Pimbplus, Pimbminus, Qimbplus, Qimbminus;
+      Pimbplus = x[busparams->xidxpimb[i]];
+      Pimbminus = x[busparams->xidxpimb[i] + 1];
+      Qimbplus = x[busparams->xidxpimb[i] + 2];
+      Qimbminus = x[busparams->xidxpimb[i] + 3];
+
       obj_val += busparams->powerimbalance_penalty[i] * ps->MVAbase *
-                 ps->MVAbase * (Pimb * Pimb + Qimb * Qimb);
+                 (Pimbplus + Pimbminus + Qimbplus + Qimbminus);
     }
   }
 
@@ -409,14 +417,15 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLHIOP(OPFLOW opflow,
 
   /* Power Imbalance Contributions (Second BUS Variable) */
   if (opflow->include_powerimbalance_variables) {
-    double Pimb, Qimb;
     for (int i = 0; i < busparams->nbus; i++) {
-      Pimb = x[busparams->xidxpimb[i]];
-      Qimb = x[busparams->xidxpimb[i] + 1];
-      grad[busparams->xidxpimb[i]] = busparams->powerimbalance_penalty[i] *
-                                     ps->MVAbase * ps->MVAbase * 2 * Pimb;
-      grad[busparams->xidxpimb[i] + 1] = busparams->powerimbalance_penalty[i] *
-                                         ps->MVAbase * ps->MVAbase * 2 * Qimb;
+      grad[busparams->xidxpimb[i]] =
+          busparams->powerimbalance_penalty[i] * ps->MVAbase;
+      grad[busparams->xidxpimb[i] + 1] =
+          busparams->powerimbalance_penalty[i] * ps->MVAbase * 1.0;
+      grad[busparams->xidxpimb[i] + 2] =
+          busparams->powerimbalance_penalty[i] * ps->MVAbase;
+      grad[busparams->xidxpimb[i] + 3] =
+          busparams->powerimbalance_penalty[i] * ps->MVAbase;
     }
   }
 
@@ -480,9 +489,10 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLHIOP(OPFLOW opflow, double *xl,
     /* Bounds for Power Imbalance Variables (second bus variables) */
     if (opflow->include_powerimbalance_variables) {
       xl[busparams->xidxpimb[i]] = xl[busparams->xidxpimb[i] + 1] =
-          PETSC_NINFINITY;
+          xl[busparams->xidxpimb[i] + 2] = xl[busparams->xidxpimb[i] + 3] = 0.0;
       xu[busparams->xidxpimb[i]] = xu[busparams->xidxpimb[i] + 1] =
-          PETSC_INFINITY;
+          xu[busparams->xidxpimb[i] + 2] = xu[busparams->xidxpimb[i] + 3] =
+              PETSC_INFINITY;
     }
   }
 
@@ -534,8 +544,13 @@ PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLHIOP(
       for (int i = 0; i < busparams->nbus; i++) {
         iJacS[busparams->jacsp_idx[i]] = busparams->gidx[i];
         jJacS[busparams->jacsp_idx[i]] = busparams->xidxpimb[i];
+        iJacS[busparams->jacsp_idx[i] + 1] = busparams->gidx[i];
+        jJacS[busparams->jacsp_idx[i] + 1] = busparams->xidxpimb[i] + 1;
+
         iJacS[busparams->jacsq_idx[i]] = busparams->gidx[i] + 1;
-        jJacS[busparams->jacsq_idx[i]] = busparams->xidxpimb[i] + 1;
+        jJacS[busparams->jacsq_idx[i]] = busparams->xidxpimb[i] + 2;
+        iJacS[busparams->jacsq_idx[i] + 1] = busparams->gidx[i] + 1;
+        jJacS[busparams->jacsq_idx[i] + 1] = busparams->xidxpimb[i] + 3;
       }
     }
 
@@ -580,8 +595,10 @@ PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLHIOP(
     /* Power Imbalance Contributions (BUS) */
     if (opflow->include_powerimbalance_variables) {
       for (int i = 0; i < busparams->nbus; i++) {
-        MJacS[busparams->jacsp_idx[i]] = 1;
-        MJacS[busparams->jacsq_idx[i]] = 1;
+        MJacS[busparams->jacsp_idx[i]] = 1.0;
+        MJacS[busparams->jacsp_idx[i] + 1] = -1.0;
+        MJacS[busparams->jacsq_idx[i]] = 1.0;
+        MJacS[busparams->jacsq_idx[i] + 1] = -1.0;
       }
     }
 
@@ -650,16 +667,7 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLHIOP(OPFLOW opflow,
   int loc;
 
   if (iHSS != NULL && jHSS != NULL) {
-    /* Power Imbalance Contributions (BUS 2nd Variable) */
-    if (opflow->include_powerimbalance_variables) {
-      for (i = 0; i < busparams->nbus; i++) {
-        loc = busparams->hesssp_idx[i];
-        iHSS[loc] = busparams->xidxpimb[i];
-        jHSS[loc] = busparams->xidxpimb[i];
-        iHSS[loc + 1] = busparams->xidxpimb[i] + 1;
-        jHSS[loc + 1] = busparams->xidxpimb[i] + 1;
-      }
-    }
+
     /* Generator contributions */
     for (i = 0; i < genparams->ngenON; i++) {
       loc = genparams->hesssp_idx[i];
@@ -679,17 +687,6 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLHIOP(OPFLOW opflow,
   }
 
   if (MHSS != NULL) {
-    /* Power Imbalance Contributions (BUS) */
-    if (opflow->include_powerimbalance_variables) {
-      for (i = 0; i < busparams->nbus; i++) {
-        loc = busparams->hesssp_idx[i];
-        MHSS[loc] = obj_factor * 2.0 * busparams->powerimbalance_penalty[i] *
-                    ps->MVAbase * ps->MVAbase;
-        MHSS[loc + 1] = obj_factor * 2.0 *
-                        busparams->powerimbalance_penalty[i] * ps->MVAbase *
-                        ps->MVAbase;
-      }
-    }
 
     if (opflow->objectivetype == MIN_GEN_COST) {
       /* Generator contributions */
