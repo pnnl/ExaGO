@@ -1,18 +1,35 @@
 #!/bin/bash
 
+exit() {
+  # Clear all trap handlers so this isn't echo'ed multiple times, potentially
+  # throwing off the CI script watching for this output
+  trap - `seq 1 31`
+
+  # If called without an argument, assume not an error
+  local ec=${1:-0}
+
+  # Echo the snippet the CI script is looking for
+  echo BUILD_STATUS:${ec}
+
+  # Actually exit with that code, although it won't matter in most cases, as CI
+  # is only looking for the string 'BUILD_STATUS:N'
+  builtin exit ${ec}
+}
+
 # This will be the catch-all trap handler after arguments are parsed.
 cleanup() {
+  # Clear all trap handlers
+  trap - `seq 1 31`
+
+  # When 'trap' is invoked, each signal handler will be a curried version of
+  # this function which has the first argument bound to the signal it's catching
+  local sig=$1
+
   echo
-  echo Exit code $1 caught in build script.
+  echo Exit code $2 caught in build script triggered by signal ${sig}.
   echo
-  if [[ "$1" == "0" ]]; then
-    echo BUILD_STATUS:0
-  else
-    echo
-    echo Failure found on line $2 in build script.
-    echo
-    echo BUILD_STATUS:1
-  fi
+
+  exit $2
 }
 
 if [[ ! -f $PWD/buildsystem/build.sh ]]; then
@@ -150,8 +167,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Trap all signals and pass signal to the handler so we know what signal was
+# sent in CI
+for sig in `seq 1 31`; do
+  trap "cleanup $sig \$? \$LINENO" $sig
+done
+
 set -xv
-trap 'cleanup $? $LINENO' EXIT
 
 if [[ ! -v MY_CLUSTER ]]
 then
