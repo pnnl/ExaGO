@@ -34,9 +34,6 @@ $ git pull --rebase origin develop
 
 This will ensure you are rebased on the most recent development branch.
 If you see [open merge requests on ExaGO's repository](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/merge_requests) that touch the same lines of code that you are working on, please coordinate with the developers of that merge request so your work doesn't conflict.
-Ideally, only one person is working on a single part of the codebase - this
-prevents situations which require difficult rebases, which are extremely
-error-prone.
 
 #### P001: Don't Run Continuous Integration Pipelines If You Only Changed Documentation
 
@@ -47,7 +44,7 @@ This reduces unneeded burden on our CI system.
 
 #### P002: Variable, Function, and Class Names
 
-Use `PascalCase` for functions/classes, and `snake_case` for variables.
+Use `PascalCase` for functions and classes, and `snake_case` for variables.
 
 #### P004: Enums
 
@@ -71,6 +68,7 @@ Functions should usually be less than 50 lines of code. If they are longer, cons
 #### P008: Anonymous Namespaces
 
 Use anonymous namespaces for functions and variables which should have internal linkage.
+It's common practice in C to mark these functions `static`, however it is preferred to use anonymous namespaces for this in ExaGO.
 
 #### P009: Perform as Much Work as Possible Before Runtime
 
@@ -97,13 +95,17 @@ $ ../buildsystem/tools/all.pl
 
 This will format all the C++ source code in the ExaGO source tree.
 
+There are some instances in which is makes sense to go over 80 characters per line, or to otherwise contradict our clang format configuration.
+If this is the case, add `// clang-format off` before the snippet and `// clang-format on` after.
+For the vast majority of cases, just use the clang-format configuration.
+
 ### Commit Messages
 
 #### P011: Commit messages should use the imperative mood.
 
 [This widely referenced article on commit messages](https://chris.beams.io/posts/git-commit/#imperative)
-goes into greater detail and describes other best practices that are also
-recommended.
+goes into greater detail and describes other best practices that are also recommended.
+The commit message should read like: _If applied, this commit will <commit message>_.
 *Merge request titles should also follow the same conventions.*
 
 ### Merge Request Conventions
@@ -142,7 +144,7 @@ Header files should be idempotent.
 
 #### P018: Header Guards
 
-Header files should use header guards.
+Header files should use header guards, particularly `#pragma once` over other methods of header guards.
 
 #### P003: File Naming Conventions
 
@@ -155,11 +157,37 @@ Use the `.cpp` extension for all C++ sources.
 
 All binaries, applications, drivers, tests, and libraries should use underscores (`_`) and all lowercase characters.
 
-### CMake
+### Build System and Testing Code
 
 #### P019: Target-Oriented CMake
 
 Use target-oriented cmake wherever possible.
+The following table provides a mapping from legacy CMake conventions to modern CMake:
+
+* [This article provides a helpful overview of target-oriented CMake.](https://enccs.github.io/cmake-workshop/targets/)
+* [This article on modern CMake provides a basis for good CMake code.](https://cliutils.gitlab.io/modern-cmake/)
+
+#### P026: Use Lists of Sources for Large Targets
+
+When working with large lists of source files, create a list of source files before creating the target and then pass that list to `add_library` or `add_executable`.
+
+The following are reasons this policy is helpful:
+
+1. Many times, when working with many source files for a single target, we will eventually run into a use case where we need to conditionally add a source file to the target. Using `target_sources` to add source files when the target has already been created can be harder to read. Simply create a list of sources and conditionally call `list(APPEND MYSRCLIST mysource.cpp)` before creating the target with `add_library(foo ${MYSRCLIST})`.
+1. When creating a large target, it is sometimes helpful to provide a secondary name for the collection of sources that do not make up an entire library of their own. For example, in `src/opflow/CMakeLists.txt`, we create several lists of sources, the CMake list `OPFLOW_SOLVER_SRC` contains the source files needed for the OPFLOW solver. The lists are then all concatenated at the bottom when the target is created. This makes our intent clearer.
+1. When sources are already collected into lists, it is very simple to change the source language, which is needed for the portable GPU components of ExaGO. It is simple to set any property on a colletion of source files if they are already collected into a list. For example, in [this CMake file in HiOp's codebase](https://github.com/LLNL/hiop/blob/develop/src/LinAlg/CMakeLists.txt) we can simply set all the GPU-portable sources to source language CUDA when CUDA and RAJA are enabled like so:
+```cmake
+set_source_files_properties(${hiopLinAlg_RAJA_SRC} PROPERTIES LANGUAGE CUDA)
+```
+
+#### P028: Use `exago_add_library` when adding a new library to ExaGO
+
+The CMake wrapper function `exago_add_library` handles shared/static libraries consistently across all ExaGO libraries, and should be used over the usual `add_library`.
+
+#### P027: Prefer the Most Private Visibility
+
+When linking libraries to a target, use `PRIVATE` whenever possible.
+This prevents linking against libraries we don't have to link against, and makes our exported targets cleaner.
 
 #### P020: CMake Formatting
 
