@@ -39,41 +39,13 @@ PetscErrorCode SCOPFLOWSetVariableBounds_GENRAMP(SCOPFLOW scopflow, Vec Xl,
     CHKERRQ(ierr);
 
     /* Set bounds */
-    ierr =
-        (*opflow->modelops.setvariablebounds)(opflow, opflow->Xl, opflow->Xu);
+    ierr = OPFLOWComputeVariableBounds(opflow, opflow->Xl, opflow->Xu);
     CHKERRQ(ierr);
 
     ierr = VecResetArray(opflow->Xl);
     CHKERRQ(ierr);
     ierr = VecResetArray(opflow->Xu);
     CHKERRQ(ierr);
-
-    if (opflow->has_gensetpoint) {
-      /* Modify the bounds on ramping variables */
-      PetscInt j, k;
-      PS ps = opflow->ps;
-      PSBUS bus;
-      PSGEN gen;
-
-      for (j = 0; j < ps->nbus; j++) {
-        bus = &ps->bus[j];
-        for (k = 0; k < bus->ngen; k++) {
-          ierr = PSBUSGetGen(bus, k, &gen);
-          CHKERRQ(ierr);
-          if (!gen->status)
-            continue;
-          if (scopflow->mode == 0) {
-            /* Only ref. bus responsible for make-up power for contingencies */
-            if (bus->ide != REF_BUS) {
-              xli[gen->startxpdevloc] = xui[gen->startxpdevloc] = 0.0;
-            }
-          } else {
-            xli[gen->startxpdevloc] = -gen->ramp_rate_30min;
-            xui[gen->startxpdevloc] = gen->ramp_rate_30min;
-          }
-        }
-      }
-    }
   }
 
   ierr = VecRestoreArray(Xl, &xl);

@@ -459,6 +459,33 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLHIOP(OPFLOW opflow,
 /** VARIABLE BOUNDS **/
 PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLHIOP(OPFLOW opflow, double *xl,
                                                       double *xu) {
+  PetscErrorCode ierr;
+  PetscScalar *xlow, *xupp;
+
+  PetscFunctionBegin;
+
+  ierr = VecGetArray(opflow->Xl, &xlow);
+  CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->Xu, &xupp);
+  CHKERRQ(ierr);
+
+  ierr = PetscMemcpy(xl, xlow, opflow->nx * sizeof(double));
+  CHKERRQ(ierr);
+  ierr = PetscMemcpy(xu, xupp, opflow->nx * sizeof(double));
+  CHKERRQ(ierr);
+
+  ierr = VecGetArray(opflow->Xl, &xlow);
+  CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->Xu, &xupp);
+  CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+#if 0
+// Deactivated code. 
+PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLHIOP_old(OPFLOW opflow, double *xl,
+                                                      double *xu) {
   PBPOLHIOP pbpolhiop = (PBPOLHIOP)opflow->model;
   BUSParams *busparams = &pbpolhiop->busparams;
   GENParams *genparams = &pbpolhiop->genparams;
@@ -525,6 +552,7 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLHIOP(OPFLOW opflow, double *xl,
 
   PetscFunctionReturn(0);
 }
+#endif
 
 /** Custom routines that work with HIOP interface only */
 PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLHIOP(

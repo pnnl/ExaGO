@@ -94,20 +94,20 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
       if (opflow->has_gensetpoint) {
         loc = gen->startxpdevloc;
 
-        xl[loc] = gen->pb - gen->pt;
-        xu[loc] = gen->pt - gen->pb;
+        xl[loc] = gen->pb - PetscMax(gen->pt, gen->pgs);
+        xu[loc] = PetscMax(gen->pt, gen->pgs) - gen->pb;
 
         loc = gen->startxpsetloc;
 
         if (gen->genfuel_type == GENFUEL_WIND) {
           xl[loc] = gen->pb;
-          ;
-          /* We don't what the upper set-point would be. It may
-             exceed gen->pt for stochastic scenarios. We don't have
-             data on what the max. renewable energy output is, so we
-             set it to some max. upper value
+          /* In SOPFLOW, gen->pgs set may be more than gen->pt.
+             We can use PetscMax(gen->pt,gen->pgs) to circumvent the
+             issue, but the bounds get set only once with IPOPT solver
+             for SOPFLOW. As such, this can lead to wrong results. So,
+             we set the upper bound for set-point to a large value.
           */
-          xu[loc] = 10000.0;
+          xu[loc] = 10000.0; // PetscMax(gen->pt,gen->pgs);
         } else {
           xl[loc] = gen->pb;
           xu[loc] = gen->pt;

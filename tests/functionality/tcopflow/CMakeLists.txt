@@ -24,7 +24,7 @@ if(EXAGO_INSTALL_TESTS)
     FUNCTIONALITY_TEST_TCOPFLOW
     COMMAND
     ${RUNCMD}
-    $<TARGET_FILE:test_tcopflow_functionality>
+    $<TARGET_FILE:app_tcopflow>
     -netfile
     ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod_gen3_wind.m
     -tcopflow_windgenprofile

@@ -32,7 +32,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout) {
   scopflow->obj_factor = 1.0;
   scopflow->objbase = scopflow->objtot = 0.0;
 
-  scopflow->mode = 0;
+  scopflow->mode = 1;
   scopflow->tolerance = 1e-6;
 
   scopflow->scen = NULL;
@@ -382,12 +382,14 @@ PetscErrorCode SCOPFLOWUpdateOPFLOWVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu,
           if (bus->ide != REF_BUS) {
             xl[opflow->idxn2sd_map[gen->startxpdevloc]] =
                 xu[opflow->idxn2sd_map[gen->startxpdevloc]] = 0.0;
+          } else {
+            // Reference bus can supply full output
+            xl[opflow->idxn2sd_map[gen->startxpdevloc]] = gen->pb - gen->pt;
+            xu[opflow->idxn2sd_map[gen->startxpdevloc]] = gen->pt - gen->pb;
           }
         } else {
-          xl[opflow->idxn2sd_map[gen->startxpdevloc]] =
-              gen->pb - gen->pgs; //-gen->ramp_rate_30min;
-          xu[opflow->idxn2sd_map[gen->startxpdevloc]] =
-              gen->pt - gen->pgs; // gen->ramp_rate_30min;
+          xl[opflow->idxn2sd_map[gen->startxpdevloc]] = -gen->ramp_rate_30min;
+          xu[opflow->idxn2sd_map[gen->startxpdevloc]] = gen->ramp_rate_30min;
         }
       }
     }

@@ -459,29 +459,28 @@ PetscErrorCode SOPFLOWUpdateOPFLOWVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu,
           continue;
         if (sopflow->mode == 0) {
           /* Only ref. bus responsible for make-up power for contingencies */
-          if (bus->ide == REF_BUS || gen->genfuel_type == GENFUEL_WIND) {
-            xl[opflow->idxn2sd_map[gen->startxpdevloc]] =
-                -10000.0; //-gen->ramp_rate_30min;
-            xu[opflow->idxn2sd_map[gen->startxpdevloc]] = 10000.0;
-            ; // gen->ramp_rate_30min;
+          if (bus->ide == REF_BUS) {
+            // Ref. bus can supply full output
+            xl[opflow->idxn2sd_map[gen->startxpdevloc]] = gen->pb - gen->pt;
+            xu[opflow->idxn2sd_map[gen->startxpdevloc]] = gen->pt - gen->pb;
+          } else if (gen->genfuel_type == GENFUEL_WIND) {
+            xl[opflow->idxn2sd_map[gen->startxpdevloc]] = -gen->ramp_rate_30min;
+            xu[opflow->idxn2sd_map[gen->startxpdevloc]] = gen->ramp_rate_30min;
           } else {
             xl[opflow->idxn2sd_map[gen->startxpdevloc]] =
                 xu[opflow->idxn2sd_map[gen->startxpdevloc]] = 0.0;
           }
         } else {
           if (gen->genfuel_type == GENFUEL_WIND) {
-            // We don't exactly know what the set-point would be during the
-            // primaal decomposition iterations. So, we relax the bounds for the
-            // power deviations or the renwable generator
             xl[opflow->idxn2sd_map[gen->startxpdevloc]] =
-                -10000.0; //-gen->ramp_rate_30min;
-            xu[opflow->idxn2sd_map[gen->startxpdevloc]] = 10000.0;
-            ; // gen->ramp_rate_30min;
+                -gen->ramp_rate_30min; // -10000.0;
+            xu[opflow->idxn2sd_map[gen->startxpdevloc]] =
+                gen->ramp_rate_30min; // 10000.0
           } else {
             xl[opflow->idxn2sd_map[gen->startxpdevloc]] =
-                gen->pb - gen->pt; //-gen->ramp_rate_30min;
+                -gen->ramp_rate_30min; // gen->pb - gen->pt
             xu[opflow->idxn2sd_map[gen->startxpdevloc]] =
-                gen->pt - gen->pb; // gen->ramp_rate_30min;
+                gen->ramp_rate_30min; // gen->pt - gen->pb
           }
         }
       }
@@ -831,6 +830,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
     }
     ierr = OPFLOWHasGenSetPoint(sopflow->opflow0, PETSC_TRUE);
     CHKERRQ(ierr);
+
     ierr = OPFLOWSetUp(sopflow->opflow0);
     CHKERRQ(ierr);
 
@@ -873,18 +873,12 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
 
       ierr = OPFLOWHasGenSetPoint(sopflow->opflows[s], PETSC_TRUE);
       CHKERRQ(ierr);
-      if (issopflowsolverhiop && sopflow->sstart + s != 0) {
+      if (sopflow->sstart + s != 0) {
         ierr = OPFLOWSetUpdateVariableBoundsFunction(
             sopflow->opflows[s], SOPFLOWUpdateOPFLOWVariableBounds,
             (void *)sopflow);
       }
 
-      if (flgctgc && sopflow->flatten_contingencies) {
-        if (sopflow->cont_num[s] != 0) {
-          //	  ierr =
-          // OPFLOWSetObjectiveType(sopflow->opflows[s],NO_OBJ);CHKERRQ(ierr);
-        }
-      }
       ierr = OPFLOWSetUp(sopflow->opflows[s]);
       CHKERRQ(ierr);
     }

@@ -529,6 +529,57 @@ PetscErrorCode CreateGenParams(OPFLOW opflow, GENParams *genparams) {
   PetscFunctionReturn(0);
 }
 
+extern PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW, Vec, Vec);
+
+/* The variable bounds are also calculated on the host.
+ */
+PetscErrorCode OPFLOWSetVariableBounds_PBPOLHIOP(OPFLOW opflow, Vec Xl,
+                                                 Vec Xu) {
+  PetscErrorCode ierr;
+  double *xl, *xu, *xlt, *xut;
+  Vec Xlt, Xut;
+  int i;
+
+  PetscFunctionBegin;
+  ierr = VecDuplicate(opflow->Xl, &Xlt);
+  CHKERRQ(ierr);
+  ierr = VecDuplicate(opflow->Xu, &Xut);
+  CHKERRQ(ierr);
+  ierr = OPFLOWSetVariableBounds_PBPOL(opflow, Xlt, Xut);
+  CHKERRQ(ierr);
+
+  ierr = VecGetArray(Xl, &xl);
+  CHKERRQ(ierr);
+  ierr = VecGetArray(Xu, &xu);
+  CHKERRQ(ierr);
+  ierr = VecGetArray(Xlt, &xlt);
+  CHKERRQ(ierr);
+  ierr = VecGetArray(Xut, &xut);
+  CHKERRQ(ierr);
+
+  /* Copy values from natural to sparse-dense format */
+  for (i = 0; i < opflow->nx; i++) {
+    xl[opflow->idxn2sd_map[i]] = xlt[i];
+    xu[opflow->idxn2sd_map[i]] = xut[i];
+  }
+
+  ierr = VecRestoreArray(Xlt, &xlt);
+  CHKERRQ(ierr);
+  ierr = VecRestoreArray(Xut, &xut);
+  CHKERRQ(ierr);
+  ierr = VecRestoreArray(Xl, &xl);
+  CHKERRQ(ierr);
+  ierr = VecRestoreArray(Xu, &xu);
+  CHKERRQ(ierr);
+
+  ierr = VecDestroy(&Xlt);
+  CHKERRQ(ierr);
+  ierr = VecDestroy(&Xut);
+  CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode OPFLOWSolutionToPS_PBPOLHIOP(OPFLOW opflow) {
   PetscErrorCode ierr;
   PS ps = (PS)opflow->ps;
@@ -961,6 +1012,7 @@ PetscErrorCode OPFLOWModelCreate_PBPOLHIOP(OPFLOW opflow) {
   opflow->modelops.destroy = OPFLOWModelDestroy_PBPOLHIOP;
   opflow->modelops.setnumvariables = OPFLOWModelSetNumVariables_PBPOL;
   opflow->modelops.setnumconstraints = OPFLOWModelSetNumConstraints_PBPOL;
+  opflow->modelops.setvariablebounds = OPFLOWSetVariableBounds_PBPOLHIOP;
   opflow->modelops.setvariableboundsarray =
       OPFLOWSetVariableBoundsArray_PBPOLHIOP;
   opflow->modelops.setconstraintboundsarray =
