@@ -13,6 +13,7 @@ struct PflowFunctionalityTestParameters {
 
   /* Parameters used to determine success or failure of functionality test */
   int expected_num_iters;
+  std::vector<std::string> reasons_for_failure;
 
   /* Actual values observed from the system-under-test. */
   double error;
@@ -99,6 +100,7 @@ struct PflowFunctionalityTests
     testcase["num_iters"] = params.expected_num_iters;
     testcase["observed_num_iters"] = params.numiter;
     testcase["did_pflow_converge"] = params.conv_status;
+    testcase["reasons_for_failure"] = params.reasons_for_failure;
 
     return testcase;
   }
@@ -136,6 +138,7 @@ struct PflowFunctionalityTests
     ExaGOCheckError(ierr);
     if (params.conv_status == PETSC_FALSE) {
       converge_failed = true;
+      params.reasons_for_failure.push_back("failed to converge");
     }
 
     /* Test num iterations */
@@ -143,6 +146,9 @@ struct PflowFunctionalityTests
     ExaGOCheckError(ierr);
     if (params.numiter != params.expected_num_iters) {
       num_iter_failed = true;
+      params.reasons_for_failure.push_back(
+          fmt::format("expected {} num iters, got {}",
+                      params.expected_num_iters, params.numiter));
     }
 
     /* Did the current functionality test fail in any way? */
