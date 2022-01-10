@@ -102,3 +102,17 @@ std::string getFileName(std::string file_path);
  * @post The directory _dir_path_ exists at the specified location.
  */
 void validate_directory(std::string dir_path);
+
+/**
+ * @brief Converts an array xin in sparse dense ordering to an array xout in
+ * natural ordering
+ */
+void spdensetonatural(const double *xin, double *xout, int *idxn2sd_map,
+                      int nx);
+
+/**
+ * @brief Converts an array xin in natural ordering to an array xout in
+ * sparse-dense ordering
+ */
+void naturaltospdense(const double *xin, double *xout, int *idxn2sd_map,
+                      int nx);

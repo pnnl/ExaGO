@@ -300,6 +300,7 @@ set(EXAGO_DATA_FILES
 
 # Install data files
 install(FILES ${EXAGO_DATA_FILES} DESTINATION ${EXAGO_DATAFILES_DIR})
+install(DIRECTORY datafiles/unit DESTINATION ${EXAGO_DATAFILES_DIR})
 install(DIRECTORY datafiles/case9 DESTINATION ${EXAGO_DATAFILES_DIR})
 install(DIRECTORY datafiles/TAMU200_scenarios
         DESTINATION ${EXAGO_DATAFILES_DIR}
@@ -310,6 +311,7 @@ install(DIRECTORY datafiles/test_validation DESTINATION ${EXAGO_DATAFILES_DIR})
 file(INSTALL ${EXAGO_DATA_FILES} DESTINATION datafiles)
 file(INSTALL datafiles/case9 DESTINATION datafiles)
 file(INSTALL datafiles/TAMU200_scenarios DESTINATION datafiles)
+file(INSTALL datafiles/unit DESTINATION datafiles)
 # Custom testing data files
 file(INSTALL datafiles/test_validation DESTINATION datafiles)
 
