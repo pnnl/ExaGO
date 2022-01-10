@@ -50,7 +50,7 @@ exago_add_library(
   PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_OMP}>:OpenMP::OpenMP_CXX>
   PUBLIC
-  $<$<BOOL:${EXAGO_ENABLE_HIOP}>:HiOp>
+  $<$<BOOL:${EXAGO_ENABLE_HIOP}>:HiOp::HiOp>
   PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_IPOPT}>:Ipopt>
   PUBLIC
