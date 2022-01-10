@@ -1,4 +1,5 @@
 #pragma once
+#include <spdlog/fmt/fmt.h>
 #include <exago_config.h>
 #include <iomanip>
 #include <iostream>

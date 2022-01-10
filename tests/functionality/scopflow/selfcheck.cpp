@@ -32,6 +32,7 @@ struct ScopflowFunctionalityTestParameters {
   /* Parameters used to determine success or failure of functionality test */
   int expected_num_iters;
   double expected_obj_value;
+  std::vector<std::string> reasons_for_failure;
 
   /* Actual values observed from the system-under-test. */
   double obj_value;
@@ -139,6 +140,7 @@ struct ScopflowFunctionalityTests
     testcase["tolerance"] = params.tolerance;
     testcase["did_scopflow_converge"] = params.conv_status;
     testcase["mode"] = params.mode;
+    testcase["reasons_for_failure"] = params.reasons_for_failure;
 
     testcase["multiperiod"] = params.multiperiod;
     if (params.multiperiod) {
@@ -232,6 +234,7 @@ struct ScopflowFunctionalityTests
     ExaGOCheckError(ierr);
     if (params.conv_status == PETSC_FALSE) {
       converge_failed = true;
+      params.reasons_for_failure.push_back("failed to converge");
     }
 
     /* Test objective value */
@@ -240,6 +243,10 @@ struct ScopflowFunctionalityTests
     if (!IsEqual(params.obj_value, params.expected_obj_value, params.tolerance,
                  params.error)) {
       obj_failed = true;
+      params.reasons_for_failure.push_back(fmt::format(
+          "expected objective value={} actual objective value={} tol={} err={}",
+          params.expected_obj_value, params.obj_value, params.tolerance,
+          params.error));
     }
 
     /* Test num iterations */
@@ -247,6 +254,9 @@ struct ScopflowFunctionalityTests
     ExaGOCheckError(ierr);
     if (params.numiter != params.expected_num_iters) {
       num_iter_failed = true;
+      params.reasons_for_failure.push_back(
+          fmt::format("expected {} num iters, got {}",
+                      params.expected_num_iters, params.numiter));
     }
 
     /* Did the current functionality test fail in any way? */

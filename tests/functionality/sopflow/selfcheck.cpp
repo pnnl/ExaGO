@@ -39,6 +39,7 @@ struct SopflowFunctionalityTestParameters {
   double error;
   int numiter;
   PetscBool conv_status = PETSC_FALSE;
+  std::vector<std::string> reasons_for_failure;
 
   /* Assign all member variables from a toml map if values are found */
   void assign_from(toml::value values) {
@@ -170,6 +171,7 @@ struct SopflowFunctionalityTests
       testcase["qload"] = params.qload;
       testcase["windgen"] = params.windgen;
     }
+    testcase["reasons_for_failure"] = params.reasons_for_failure;
 
     return testcase;
   }
@@ -205,8 +207,6 @@ struct SopflowFunctionalityTests
     ierr = SOPFLOWSetGenBusVoltageType(sopflow, params.gen_bus_voltage_type);
     ExaGOCheckError(ierr);
 
-    // TODO:
-    // - Implement multi contingency
     ierr = SOPFLOWEnableMultiContingency(sopflow,
                                          (PetscBool)params.multicontingency);
     ExaGOCheckError(ierr);
@@ -252,6 +252,7 @@ struct SopflowFunctionalityTests
     ExaGOCheckError(ierr);
     if (params.conv_status == PETSC_FALSE) {
       converge_failed = true;
+      params.reasons_for_failure.push_back("failed to converge");
     }
 
     /* Test objective value */
@@ -260,6 +261,10 @@ struct SopflowFunctionalityTests
     if (!IsEqual(params.obj_value, params.expected_obj_value, params.tolerance,
                  params.error)) {
       obj_failed = true;
+      params.reasons_for_failure.push_back(fmt::format(
+          "expected objective value={} actual objective value={} tol={} err={}",
+          params.expected_obj_value, params.obj_value, params.tolerance,
+          params.error));
     }
 
     /* Test num iterations */
@@ -267,6 +272,9 @@ struct SopflowFunctionalityTests
     ExaGOCheckError(ierr);
     if (params.numiter != params.expected_num_iters) {
       num_iter_failed = true;
+      params.reasons_for_failure.push_back(
+          fmt::format("expected {} num iters, got {}",
+                      params.expected_num_iters, params.numiter));
     }
 
     /* Did the current functionality test fail in any way? */
