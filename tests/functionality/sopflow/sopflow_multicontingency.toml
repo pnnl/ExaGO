@@ -13,22 +13,22 @@ multiperiod = false
 description = 'datafiles/case9/case9mod_gen3_wind.m IPOPT 3scen contingencies SOPFLOW'
 solver = 'IPOPT'
 num_contingencies = 1
-num_iters = 23
-obj_value = 2848.83102845
+num_iters = 21
+obj_value = 2851.35629373
 
 [[testcase]]
 description = 'datafiles/case9/case9mod_gen3_wind.m IPOPT 3scen contingencies SOPFLOW'
 solver = 'IPOPT'
 num_contingencies = 2
-num_iters = 19
-obj_value = 2848.83102845
+num_iters = 25
+obj_value = 2851.35629373
 
 [[testcase]]
 description = 'datafiles/case9/case9mod_gen3_wind.m IPOPT 3scen contingencies SOPFLOW'
 solver = 'IPOPT'
 num_contingencies = 3
-num_iters = 19
-obj_value = 2848.83102845
+num_iters = 23
+obj_value = 2851.35629373
 
 [[testcase]]
 description = 'datafiles/case9/case9mod_gen3_wind.m EMPAR 3scen contingencies SOPFLOW'
@@ -56,8 +56,8 @@ description = 'datafiles/case9/case9mod_gen3_wind.m IPOPT default scen contingen
 solver = 'IPOPT'
 num_contingencies = 6
 num_scenarios = 3
-num_iters = 19
-obj_value = 2848.83102845
+num_iters = 23
+obj_value = 2851.35629371
 
 [[testcase]]
 description = 'datafiles/case9/case9mod_gen3_wind.m IPOPT default 3 scen contingencies ACPF SOPFLOW'
@@ -67,5 +67,5 @@ gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
 tolerance = 1.0e-3
 num_contingencies = 6
 num_scenarios = 3
-num_iters = 18
-obj_value = 2842.53752689
+num_iters = 14
+obj_value = 2851.48105927

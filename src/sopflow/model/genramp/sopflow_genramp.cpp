@@ -39,38 +39,13 @@ PetscErrorCode SOPFLOWSetVariableBounds_GENRAMP(SOPFLOW sopflow, Vec Xl,
     CHKERRQ(ierr);
 
     /* Set bounds */
-    ierr =
-        (*opflow->modelops.setvariablebounds)(opflow, opflow->Xl, opflow->Xu);
+    ierr = OPFLOWComputeVariableBounds(opflow, opflow->Xl, opflow->Xu);
     CHKERRQ(ierr);
 
     ierr = VecResetArray(opflow->Xl);
     CHKERRQ(ierr);
     ierr = VecResetArray(opflow->Xu);
     CHKERRQ(ierr);
-
-    if (i > 0 && opflow->has_gensetpoint) {
-      /* Modify the bounds on ramping variables */
-      PetscInt j, k;
-      PS ps = opflow->ps;
-      PSBUS bus;
-      PSGEN gen;
-
-      for (j = 0; j < ps->nbus; j++) {
-        bus = &ps->bus[j];
-        for (k = 0; k < bus->ngen; k++) {
-          ierr = PSBUSGetGen(bus, k, &gen);
-          CHKERRQ(ierr);
-          if (!gen->status)
-            continue;
-          if (sopflow->mode == 0)
-            continue;
-          else {
-            xli[gen->startxpdevloc] = -gen->ramp_rate_30min;
-            xui[gen->startxpdevloc] = gen->ramp_rate_30min;
-          }
-        }
-      }
-    }
   }
 
   ierr = VecRestoreArray(Xl, &xl);
@@ -299,7 +274,7 @@ PetscErrorCode SOPFLOWComputeJacobian_GENRAMP(SOPFLOW sopflow, Vec X, Mat J) {
           if (!gen->status)
             continue;
 
-          loc0 = gen0->startxpsetloc;
+          loc0 = gen0->startxpowloc;
           gloc = gen->starteqloc + 1;
 
           x0loc = sopflow->xstarti[0] + loc0;
@@ -428,7 +403,7 @@ PetscErrorCode SOPFLOWComputeConstraints_GENRAMP(SOPFLOW sopflow, Vec X,
           if (!gen->status)
             continue;
           /* Update the generator set-point */
-          gen->pgs = x0[gen0->startxpsetloc];
+          gen->pgs = x0[gen0->startxpowloc];
         }
       }
     }

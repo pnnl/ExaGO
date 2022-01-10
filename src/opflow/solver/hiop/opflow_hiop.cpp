@@ -402,7 +402,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
   hiop->mds->options->SetIntegerValue("verbosity_level", verbose_level);
   hiop->mds->options->SetNumericValue("mu0", 1e-1);
   hiop->mds->options->SetNumericValue("tolerance", opflow->tolerance);
-  hiop->mds->options->SetNumericValue("bound_relax_perturb", 1e-8);
+  hiop->mds->options->SetNumericValue("bound_relax_perturb", 1e-6);
   hiop->mds->options->SetStringValue("scaling_type", "none");
 
   /* Error if model is not power balance hiop or power balance raja hiop */
@@ -515,12 +515,8 @@ PetscErrorCode OPFLOWSolverDestroy_HIOP(OPFLOW opflow) {
 
   PetscFunctionBegin;
 
-#ifdef EXAGO_ENABLE_IPOPT
-  if (!hiop->ipopt_debug) {
-    delete hiop->mds;
-    delete hiop->nlp;
-  }
-#endif
+  delete hiop->mds;
+  delete hiop->nlp;
 
   ierr = PetscFree(hiop);
   CHKERRQ(ierr);

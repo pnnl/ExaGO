@@ -524,9 +524,7 @@ PetscErrorCode OPFLOWSolverSetUp_IPOPT(OPFLOW opflow) {
     AddIpoptNumOption(ipopt->nlp, (char *)"constr_mult_init_max", 0.0);
     AddIpoptNumOption(ipopt->nlp, (char *)"residual_ratio_max", 1e3);
     AddIpoptNumOption(ipopt->nlp, (char *)"residual_ratio_singular", 1e4);
-    AddIpoptNumOption(ipopt->nlp, (char *)"bound_relax_factor", 1e-8);
-    AddIpoptStrOption(ipopt->nlp, (char *)"fixed_variable_treatment",
-                      (char *)"relax_bounds");
+    AddIpoptNumOption(ipopt->nlp, (char *)"bound_relax_factor", 1e-6);
   }
 
   /* Add intermediate callback function to get the solver info

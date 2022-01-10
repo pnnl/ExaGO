@@ -123,6 +123,7 @@ hiop::hiopSolveStatus SOPFLOWHIOPInterface::solve_master(
   ierr = OPFLOWSolutionToPS(opflow);
   ierr = OPFLOWGetObjective(opflow, &obj);
   ierr = OPFLOWGetSolution(opflow, &X);
+  //  ierr = OPFLOWPrintSolution(opflow);
 
   ierr = VecGetArrayRead(X, &xsol);
   ierr = PetscMemcpy(x, xsol, opflow->nx * sizeof(double));
@@ -157,7 +158,7 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
   PSGEN gen, gen0;
   PetscInt i, k, j, g = 0;
   PetscInt s = idx + 1;
-  PetscInt scen_num, cont_num;
+  PetscInt scen_num, cont_num = 0;
 
   //  printf("[Rank %d] contingency %d Came in recourse objective
   //  function\n",sopflow->comm->rank,s);
@@ -179,6 +180,7 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
   CHKERRQ(ierr);
 
   if (!sopflow->flatten_contingencies) {
+    scen_num = s;
     if (sopflow->scenfileset) {
       ierr = PSApplyScenario(ps, sopflow->scenlist.scen[s]);
     }
@@ -212,7 +214,7 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
       ierr = PSBUSGetGen(bus0, k, &gen0);
       CHKERRQ(ierr);
       if (gen0->status && gen->status) {
-        gen0->pgs = gen->pgs = gen->pg = x[g++];
+        gen->pgs = x[g++];
       } else if (gen0->status)
         g++;
     }
@@ -226,6 +228,7 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
 
   //  assert(g == n);
   /* Solve */
+  /*
   ierr = PetscPrintf(PETSC_COMM_SELF,
                      "\n*******************************************\n",
                      scen_num + 1);
@@ -238,11 +241,13 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
                      "\n*******************************************\n",
                      scen_num + 1);
   CHKERRQ(ierr);
+  */
 
   ierr = OPFLOWSolve(opflowscen);
   ierr = OPFLOWGetObjective(opflowscen, &rval);
   ierr = OPFLOWSolutionToPS(opflowscen);
   CHKERRQ(ierr);
+  //  ierr = OPFLOWPrintSolution(opflowscen);
   return true;
 }
 
@@ -285,9 +290,11 @@ bool SOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int &n, double *x,
            gradient is the partial derivative for it (note that it is negative)
          */
         if (opflow->has_gensetpoint) {
-          //	  ierr = PetscPrintf(PETSC_COMM_SELF,"Gen[%d]: Pb = %lf Pt = %lf
-          // Pgs = %lf lambda =
-          //%lf\n",gen->bus_i,gen->pb,gen->pt,gen->pgs,lameq[gen->starteqloc+1]);CHKERRQ(ierr);
+          /*
+          ierr = PetscPrintf(PETSC_COMM_SELF,"Gen[%d]: Pg = %lf Pb = %lf Pt =
+          %lf Pgs = %lf Ramp rate = %lf lambda = %lf\n",gen->bus_i,gen->pg,
+          gen->pb,gen->pt,gen->pgs,gen->ramp_rate_30min,lameq[gen->starteqloc+1]);CHKERRQ(ierr);
+          */
           grad[g++] = -lameq[gen->starteqloc + 1];
         }
       } else if (gen0->status && !gen->status)
@@ -443,6 +450,7 @@ PetscErrorCode SOPFLOWSolverGetSolution_HIOP(SOPFLOW sopflow, PetscInt scen_num,
 
       /* Solve */
       ierr = OPFLOWSolve(opflow);
+      CHKERRQ(ierr);
       *X = opflow->X;
     }
   } else {
