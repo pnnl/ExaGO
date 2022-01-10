@@ -25,5 +25,5 @@ network = 'datafiles/case_ACTIVSg200.m'
 contingencies = 'datafiles/case_ACTIVSg200.cont'
 description = 'case_ACTIVSg200.m with HIOP solver/20 contingencies'
 num_contingencies = 20
-num_iters = 1 
+num_iters = 1
 obj_value = 27557.570528403896
