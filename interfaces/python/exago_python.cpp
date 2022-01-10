@@ -1,6 +1,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <mpi.h>
+#include <pflow.h>
+#include <private/pflowimpl.h>
 #include <opflow.h>
 #include <private/opflowimpl.h>
 #include <utils.h>
@@ -26,6 +28,29 @@ PYBIND11_MODULE(exago, m) {
   m.def("initialize", &initialize);
   m.def("finalize", &ExaGOFinalize);
   m.def("prefix", &prefix);
+
+  pybind11::class_<_p_PFLOW>(m, "pflow")
+      .def(pybind11::init([]() {
+        PetscErrorCode ierr;
+        PFLOW pflow;
+        MPI_Comm communicator;
+        ierr = ExaGOGetSelfCommunicator(&communicator);
+        ExaGOCheckError(ierr);
+        ierr = PFLOWCreate(communicator, &pflow);
+        ExaGOCheckError(ierr);
+        return pflow;
+      }))
+      .def("read_mat_power_data",
+           [](_p_PFLOW &pflow, std::string filename) {
+             PetscErrorCode ierr;
+             ierr = PFLOWReadMatPowerData(&pflow, filename.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("solve", [](_p_PFLOW &pflow) {
+        PetscErrorCode ierr;
+        ierr = PFLOWSolve(&pflow);
+        ExaGOCheckError(ierr);
+      });
 
   pybind11::class_<_p_OPFLOW>(m, "opf")
       .def(pybind11::init([]() {

@@ -117,7 +117,7 @@ export DYLD_LIBRARY_PATH=/<exago_install>/lib:$DYLD_LIBRARY_PATH
 export LD_LIBRARY_PATH=/<exago_install>/lib:$LD_LIBRARY_PATH
 ```
 
-A sample opflow script `test.py` is provided, with `exago.prefix()` providing the path to the installation directory of exago. For more example usage and for the tests that cover this code, see `tests/interfaces/python`:
+A sample opflow script [`test.py`](/interfaces/python/test.py) is provided, with `exago.prefix()` providing the path to the installation directory of exago. For more example usage and for the tests that cover this code, see [`tests/interfaces/python`](/tests/interfaces/python).
 
 ## History
 
