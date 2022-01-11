@@ -162,6 +162,7 @@ if(EXAGO_INSTALL_TESTS)
     GPU
     -hiop_verbosity_level
     3
+    -no_optfile
     DEPENDS
     IPOPT
     HIOP

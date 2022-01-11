@@ -71,7 +71,6 @@ SOPFLOWReadScenarioData_Wind_SinglePeriod(SOPFLOW sopflow,
   if (fp == NULL) {
     SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
              "Cannot open wind generation profile file %s", windgenprofile);
-    CHKERRQ(ierr);
   }
 
   /* First line -- has the bus numbers */
