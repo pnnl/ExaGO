@@ -115,7 +115,6 @@ PetscErrorCode ContingencyListReadData_Native(ContingencyList ctgclist) {
   if (fp == NULL) {
     SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN, "Cannot open file %s",
              ctgclist->inputfile);
-    CHKERRQ(ierr);
   }
 
   ctgclist->Ncont = -1;
@@ -183,7 +182,6 @@ PetscErrorCode ContingencyListReadData_PSSE(ContingencyList ctgclist) {
   if (fp == NULL) {
     SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN, "Cannot open file %s",
              ctgclist->inputfile);
-    CHKERRQ(ierr);
   }
 
   ctgclist->Ncont = -1;
@@ -274,8 +272,10 @@ PetscErrorCode ContingencyListReadData(ContingencyList ctgclist, PetscInt *Nc) {
   PetscFunctionBegin;
   if (ctgclist->inputfileformat == NATIVE) {
     ierr = ContingencyListReadData_Native(ctgclist);
+    CHKERRQ(ierr);
   } else if (ctgclist->inputfileformat == PSSE) {
     ierr = ContingencyListReadData_PSSE(ctgclist);
+    CHKERRQ(ierr);
   } else {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
             "Unknown contingency input file format %s\n");

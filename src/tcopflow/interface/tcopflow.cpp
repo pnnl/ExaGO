@@ -445,16 +445,19 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow) {
   /* Read Pload profiles */
   if (tcopflow->ploadprofileset) {
     ierr = TCOPFLOWReadPloadProfile(tcopflow, tcopflow->ploadprofile);
+    CHKERRQ(ierr);
   }
 
   /* Read Qload profiles */
   if (tcopflow->qloadprofileset) {
     ierr = TCOPFLOWReadQloadProfile(tcopflow, tcopflow->qloadprofile);
+    CHKERRQ(ierr);
   }
 
   /* Read wind generation profiles */
   if (tcopflow->windgenprofileset) {
     ierr = TCOPFLOWReadWindGenProfile(tcopflow, tcopflow->windgenprofile);
+    CHKERRQ(ierr);
   }
 
   ierr = PetscCalloc1(tcopflow->Nt, &tcopflow->nconineqcoup);
