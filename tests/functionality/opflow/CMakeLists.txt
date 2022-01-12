@@ -18,7 +18,6 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_opflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_pbpolhiop.toml
-    -no_optfile
     DEPENDS
     HIOP
   )
@@ -30,7 +29,6 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_opflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_pbpolrajahiop.toml
-    -no_optfile
     DEPENDS
     HIOP
     RAJA
@@ -44,7 +42,6 @@ if(EXAGO_INSTALL_TESTS)
       ${RUNCMD}
       $<TARGET_FILE:test_opflow_functionality>
       ${CMAKE_CURRENT_SOURCE_DIR}/hiopsparse_pbpol.toml
-      -no_optfile
       DEPENDS
       HIOP_SPARSE
     )
@@ -60,7 +57,6 @@ if(EXAGO_INSTALL_TESTS)
       ${RUNCMD}
       $<TARGET_FILE:test_opflow_functionality>
       ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_pbcart.toml
-      -no_optfile
       DEPENDS
       IPOPT
     )
@@ -73,7 +69,6 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_opflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_pbpol.toml
-    -no_optfile
     DEPENDS
     IPOPT
   )

@@ -183,10 +183,8 @@ For instance,
 will execute the \opflow application using \lstinline{case9mod.m} input file
 with the model\newline \lstinline{POWER_BALANCE_POLAR} and \ipopt solver.
 
-Options can also be passed to each application through \lstinline{-options_file}, or through a combination of the command line and options file. The configuration specified last on the command line overrides any previous options. For example, if \lstinline{-options_file opflowoptions} specified \lstinline{-netfile case9mod.m} within its settings:
+Options can also be passed to each application through an options file \lstinline{-optionsfile <optionfilename}, or via command line or through a combination of the command line and options file. The option specified via command line supersedes that given in in the options file. For example, if \lstinline{-options_file opflowoptions} specified \lstinline{-netfile case9mod.m} within its settings:
 \begin{lstlisting}[language=bash]
-./opflow -netfile case118.m -options_file opflowoptions # Uses case9mod.m
-./opflow -options_file opflowoptoins -netfile case118.m # Uses case118.m
+./opflow -options_file opflowoptions # Uses case9mod.m
+./opflow -netfile case118.m -options_file opflowoptions # Uses case118.m
 \end{lstlisting}
-If no options file is specified through the command line, ExaGO applications will attempt to locate the default options file for a given application in \lstinline{./, ./options, <install_dir>/options}.
-Each solver that can be used within \exago also have their own unique options. Some of these options are specified internally within \exago, but any other options that are needed should either be passed through the command line or specified in the options file.

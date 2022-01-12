@@ -38,19 +38,17 @@ Instructions for executing the different ExaGO<sup>TM</sup> applications is give
 
 ### Options
 
-Each application has a different set of options that are described in depth in the usage notes. These options can be passed optionally through an options file (`-options_file <option_file>`), or directly on the command line.
+Each application has a different set of options that are described in depth in the usage notes. These options can be passed optionally through an options file (`-optionsfile <option_file>`), or directly on the command line.
 
-Since options may be specified in more than one location (on the command line, and through an options file), it is worth noting that the option specified **last** is used. For example, if `opflowoptions` specified `-netfile case9mod.m`, the following behavior occurs:
+Since options may be specified in more than one location (on the command line, and through an options file), it is worth noting that the option specified on the command line supersede those in the options file. For example, if `opflowoptions` options file set the network file via the option `-netfile case9mod.m`, the following behavior occurs:
 
 ```bash
-# This uses case118.m
-./opflow -options_file opflowoptions -netfile case118.m
-
 # This uses case9mod.m
+./opflow -optionsfile opflowoptions
+
+# This uses case118.m
 ./opflow -netfile case118.m -options_file opflowoptions
 ```
-
-Note that all ExaGO applications must run with an options file passed, and so if none is specified on the command line, ExaGO attempts to use the default application options in the `options` directory. 
 
 ## Contributing
 

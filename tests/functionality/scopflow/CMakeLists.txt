@@ -23,7 +23,6 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_cont.toml
-    -no_optfile
   )
 
   exago_add_test(
@@ -35,7 +34,6 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/empar_cont.toml
-    -no_optfile
   )
 
   if(EXAGO_ENABLE_ALL_TESTS)
@@ -48,7 +46,6 @@ if(EXAGO_INSTALL_TESTS)
       ${RUNCMD}
       $<TARGET_FILE:test_scopflow_functionality>
       ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_multiperiod.toml
-      -no_optfile
     )
   endif()
 
@@ -64,7 +61,6 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont.toml
-    -no_optfile
   )
 
   exago_add_test(
@@ -80,7 +76,6 @@ if(EXAGO_INSTALL_TESTS)
     3
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_nocont_mpi.toml
-    -no_optfile
   )
 
   # These tests should be added to the TOML test suite
@@ -110,7 +105,6 @@ if(EXAGO_INSTALL_TESTS)
     3
     -opflow_include_powerimbalance_variables
     1
-    -no_optfile
     DEPENDS
     IPOPT
     HIOP
@@ -144,7 +138,6 @@ if(EXAGO_INSTALL_TESTS)
     3
     -opflow_include_powerimbalance_variables
     1
-    -no_optfile
     DEPENDS
     IPOPT
     HIOP
@@ -180,7 +173,6 @@ if(EXAGO_INSTALL_TESTS)
     1
     -opflow_include_powerimbalance_variables
     1
-    -no_optfile
     DEPENDS
     IPOPT
     HIOP
@@ -212,7 +204,6 @@ if(EXAGO_INSTALL_TESTS)
     3
     -opflow_include_powerimbalance_variables
     1
-    -no_optfile
     DEPENDS
     IPOPT
     HIOP
@@ -246,7 +237,6 @@ if(EXAGO_INSTALL_TESTS)
     3
     -opflow_include_powerimbalance_variables
     1
-    -no_optfile
     DEPENDS
     IPOPT
     HIOP
@@ -282,7 +272,6 @@ if(EXAGO_INSTALL_TESTS)
     3
     -opflow_include_powerimbalance_variables
     1
-    -no_optfile
     DEPENDS
     IPOPT
     HIOP

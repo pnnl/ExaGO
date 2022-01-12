@@ -36,9 +36,9 @@ module load gnuconfig-2021-08-14-gcc-7.4.0-qr6nxuq
 # hdf5@1.10.8%gcc@7.4.0~cxx~fortran~hl~ipo~java+mpi+shared~szip~threadsafe+tools api=default build_type=RelWithDebInfo arch=linux-rhel7-power9le
 module load hdf5-1.10.8-gcc-7.4.0-nkgqj64
 # hiop@0.5.3%gcc@7.4.0+cuda+deepchecking~ipo~jsrun~kron+mpi+raja~rocm~shared+sparse build_type=RelWithDebInfo cuda_arch=70 arch=linux-rhel7-power9le
-# module load hiop-0.5.3-gcc-7.4.0-ucleakw
+module load hiop-0.5.3-gcc-7.4.0-ucleakw
 # hiop@0.5.3%gcc@7.4.0+cuda+deepchecking~ipo~jsrun~kron+mpi+raja~rocm~shared+sparse build_type=RelWithDebInfo cuda_arch=70 arch=linux-rhel7-power9le
-module load exasgd-hiop/0.5.3/cuda-10.2/openmpi-3.1.5/gcc-7.4.0-6g6qwel
+# module load exasgd-hiop/0.5.3/cuda-10.2/openmpi-3.1.5/gcc-7.4.0-6g6qwel
 
 # hypre@2.23.0%gcc@7.4.0~complex~cuda~debug+fortran~int64~internal-superlu~mixedint+mpi~openmp+shared~superlu-dist~unified-memory arch=linux-rhel7-power9le
 module load hypre-2.23.0-gcc-7.4.0-ti2eoez
