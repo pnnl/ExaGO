@@ -9,8 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### General
 
-Python bindings re-released using pybind11 instead of the ctypes bindings.
-This is required to build python bindings when shared libraries are disabled.
+- Python bindings re-released using pybind11 instead of the ctypes bindings.
+	This is required to build python bindings when shared libraries are disabled.
+- Removed -no_optfile option and searching options file in default path.  Use -optionsfile
+	option to explicitly set the options file.
 
 ### Build system
 

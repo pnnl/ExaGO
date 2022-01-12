@@ -28,7 +28,6 @@ if(EXAGO_INSTALL_TESTS)
       ${RUNCMD}
       $<TARGET_FILE:test_sopflow_functionality>
       ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario.toml
-      -no_optfile
     )
   endif()
 
@@ -41,7 +40,6 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multicontingency.toml
-    -no_optfile
     -sopflow_flatten_contingencies
   )
 
@@ -56,7 +54,6 @@ if(EXAGO_INSTALL_TESTS)
       ${RUNCMD}
       $<TARGET_FILE:test_sopflow_functionality>
       ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiperiod.toml
-      -no_optfile
     )
   endif()
 
@@ -87,7 +84,6 @@ if(EXAGO_INSTALL_TESTS)
     CPU
     -hiop_verbosity_level
     3
-    -no_optfile
     DEPENDS
     IPOPT
     HIOP
@@ -121,7 +117,6 @@ if(EXAGO_INSTALL_TESTS)
     3
     -opflow_include_powerimbalance_variables
     1
-    -no_optfile
     DEPENDS
     IPOPT
     HIOP
