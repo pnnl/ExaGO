@@ -3,7 +3,7 @@ testsuite_name = "SOPFLOW Multiscenario Functionality tests"
 [presets]
 tolerance = 1e-3
 network = 'datafiles/case_ACTIVSg200.m'
-scenfile = 'datafiles/TAMU200_scenarios/scenarios_200bus.csv'
+scenfile = 'datafiles/10_scenarios_ACTIVSg200.csv'
 multicontingency = false
 multiperiod = false
 
@@ -11,22 +11,22 @@ multiperiod = false
 description = 'datafiles/case_ACTIVSg200.m IPOPT 1scen SOPFLOW'
 solver = 'IPOPT'
 num_scenarios = 1
-num_iters = 276
-obj_value = 26667.7197703
+num_iters = 256
+obj_value = 27460.2510105
 
 [[testcase]]
 description = 'datafiles/case_ACTIVSg200.m IPOPT 2scen SOPFLOW'
 solver = 'IPOPT'
 num_scenarios = 2
-num_iters = 323
-obj_value = 53400.5582282
+num_iters = 219
+obj_value = 27460.2510105
 
 [[testcase]]
 description = 'datafiles/case_ACTIVSg200.m IPOPT 3scen SOPFLOW'
 solver = 'IPOPT'
 num_scenarios = 3
-num_iters = 648
-obj_value = 80321.0011453
+num_iters = 443
+obj_value = 27460.2510107
 
 # For some reason num_iters is coming back as 0 for these tests
 [[testcase]]
@@ -34,21 +34,21 @@ description = 'datafiles/case_ACTIVSg200.m EMPAR 1scen SOPFLOW'
 solver = 'EMPAR'
 num_scenarios = 1
 num_iters = 0
-obj_value = 26667.7179803
+obj_value = 27460.2492436
 
 [[testcase]]
 description = 'datafiles/case_ACTIVSg200.m EMPAR 2scen SOPFLOW'
 solver = 'EMPAR'
 num_scenarios = 2
 num_iters = 0
-obj_value = 26667.7179803
+obj_value = 27460.2492436
 
 [[testcase]]
 description = 'datafiles/case_ACTIVSg200.m EMPAR 3scen SOPFLOW'
 solver = 'EMPAR'
 num_scenarios = 3
 num_iters = 0
-obj_value = 26667.7179803
+obj_value = 27460.2492436
 
 [[testcase]]
 description = 'datafiles/case_ACTIVSg200.m IPOPT 1scen ACPF init SOPFLOW'
@@ -57,8 +57,8 @@ num_scenarios = 1
 tolerance = 1.0e-03
 initialization_type = 'ACPF'
 gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
-num_iters = 27
-obj_value = 26667.7197693
+num_iters = 42
+obj_value = 27453.5100222
 
 [[testcase]]
 description = 'datafiles/case_ACTIVSg200.m IPOPT 2scen ACPF init SOPFLOW'
@@ -67,8 +67,8 @@ num_scenarios = 2
 tolerance = 1.0e-03
 initialization_type = 'ACPF'
 gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
-num_iters = 26
-obj_value = 53400.5582263
+num_iters = 55
+obj_value = 27460.2510105
 
 [[testcase]]
 description = 'datafiles/case_ACTIVSg200.m IPOPT 3scen ACPF init SOPFLOW'
@@ -77,5 +77,33 @@ num_scenarios = 3
 tolerance = 1.0e-03
 initialization_type = 'ACPF'
 gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
-num_iters = 40
-obj_value = 80321.0011433
+num_iters = 58
+obj_value = 27460.2510107
+
+[[testcase]]
+description = 'datafiles/case9/case9mod_gen3_wind.m HIOP CPU 10 scenario SOPFLOW'
+solver = 'HIOP'
+network = 'datafiles/case9/case9mod_gen3_wind.m'
+scenfile = 'datafiles/case9/10_scenarios_9bus.csv'
+num_scenarios = -1
+initialization_type = 'ACPF'
+subproblem_solver = 'HIOP'
+subproblem_model = 'POWER_BALANCE_HIOP'
+compute_mode = 'CPU'
+verbosity_level = 3
+num_iters = 0
+obj_value = 0.0
+
+[[testcase]]
+description = 'datafiles/case9/case9mod_gen3_wind.m HIOP GPU 10 scenario SOPFLOW'
+solver = 'HIOP'
+network = 'datafiles/case9/case9mod_gen3_wind.m'
+scenfile = 'datafiles/case9/10_scenarios_9bus.csv'
+num_scenarios = -1
+initialization_type = 'ACPF'
+subproblem_solver = 'HIOP'
+subproblem_model = 'PBPOLRAJAHIOP'
+compute_mode = 'GPU'
+verbosity_level = 3
+num_iters = 0
+obj_value = 0.0

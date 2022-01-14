@@ -319,6 +319,8 @@ set(EXAGO_DATA_FILES
     ${PROJECT_SOURCE_DIR}/datafiles/case118.cont
     ${PROJECT_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
     ${PROJECT_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
+    ${PROJECT_SOURCE_DIR}/datafiles/10_scenarios_ACTIVSg200.csv
+    ${PROJECT_SOURCE_DIR}/datafiles/10_scenarios_ACTIVSg2000.csv
 )
 
 # Install data files

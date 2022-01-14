@@ -73,6 +73,12 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout) {
   /* Run-time options */
   sopflow->iscoupling = SOPFLOWOptions::iscoupling.default_value;
 
+#if defined(EXAGO_ENABLE_HIOP)
+  /* HIOP options */
+  strcpy(sopflow->compute_mode, "auto");
+  sopflow->verbosity_level = 0;
+#endif
+
   sopflow->scenfileset = PETSC_FALSE;
   sopflow->scenunctype = NONE;
   sopflow->setupcalled = PETSC_FALSE;
@@ -222,6 +228,19 @@ PetscErrorCode SOPFLOWEnableMultiContingency(SOPFLOW sopflow,
 }
 
 /*
+  SOPFLOWFlattenContingencies - Flatten or not flatten contingencies
+
+  Input Parameters:
++ sopflow - sopflow application object
+- flatten - PETSC_FALSE if not flattening contingencies, PETSC_TRUE otherwise
+*/
+PetscErrorCode SOPFLOWFlattenContingencies(SOPFLOW sopflow, PetscBool flatten) {
+  PetscFunctionBegin;
+  sopflow->flatten_contingencies = flatten;
+  PetscFunctionReturn(0);
+}
+
+/*
   SOPFLOWSetModel - Sets the model for SOPFLOW
 
   Input Parameters:
@@ -307,6 +326,21 @@ PetscErrorCode SOPFLOWSetInitializationType(SOPFLOW sopflow,
                                             OPFLOWInitializationType type) {
   PetscFunctionBegin;
   sopflow->initialization_type = type;
+  PetscFunctionReturn(0);
+}
+
+/*
+   SOPFLOWSetIgnoreLineflowConstraints - Set ignore lineflow constraints flag
+for underlying OPFLOW
+
+  Input Parameters:
++ sopflow - sopflow application object
+- flag    - OPFLOW ignore lineflow constraints flag
+*/
+PetscErrorCode SOPFLOWSetIgnoreLineflowConstraints(SOPFLOW sopflow,
+                                                   PetscBool flag) {
+  PetscFunctionBegin;
+  sopflow->ignore_lineflow_constraints = flag;
   PetscFunctionReturn(0);
 }
 
@@ -604,6 +638,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
                           "", sopflow->ismulticontingency,
                           &sopflow->ismulticontingency, NULL);
   CHKERRQ(ierr);
+
   ierr = PetscOptionsBool(SOPFLOWOptions::flatten_contingencies.opt.c_str(),
                           SOPFLOWOptions::flatten_contingencies.desc.c_str(),
                           "", sopflow->flatten_contingencies,
@@ -829,12 +864,13 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
       ierr = (*sopflow->solverops.destroy)(sopflow);
     ierr = SOPFLOWSetSolver(sopflow, sopflowsolvername);
     CHKERRQ(ierr);
-    ExaGOLog(EXAGO_LOG_INFO, "SOPFLOW: Using {} solver", sopflowsolvername);
+    ExaGOLog(EXAGO_LOG_INFO, "SOPFLOW: Using {} solver\n", sopflowsolvername);
   } else {
     if (!sopflow->solver) {
       ierr = SOPFLOWSetSolver(sopflow, SOPFLOWSOLVER_IPOPT);
       CHKERRQ(ierr);
-      ExaGOLog(EXAGO_LOG_INFO, "SOPFLOW: Using {} solver", SOPFLOWSOLVER_IPOPT);
+      ExaGOLog(EXAGO_LOG_INFO, "SOPFLOW: Using {} solver\n",
+               SOPFLOWSOLVER_IPOPT);
     }
   }
 
@@ -847,6 +883,9 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
     ierr = OPFLOWCreate(PETSC_COMM_SELF, &sopflow->opflow0);
     CHKERRQ(ierr);
     ierr = OPFLOWSetModel(sopflow->opflow0, OPFLOWMODEL_PBPOL);
+    CHKERRQ(ierr);
+    ierr = OPFLOWSetInitializationType(sopflow->opflow0,
+                                       sopflow->initialization_type);
     CHKERRQ(ierr);
     ierr = OPFLOWReadMatPowerData(sopflow->opflow0, sopflow->netfile);
     CHKERRQ(ierr);
@@ -879,6 +918,9 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
       ierr = OPFLOWSetGenBusVoltageType(sopflow->opflows[s],
                                         sopflow->gen_bus_voltage_type);
       CHKERRQ(ierr);
+      ierr = OPFLOWIgnoreLineflowConstraints(
+          sopflow->opflows[s], sopflow->ignore_lineflow_constraints);
+      CHKERRQ(ierr);
       ierr = OPFLOWReadMatPowerData(sopflow->opflows[s], sopflow->netfile);
       CHKERRQ(ierr);
       /* Set up the PS object for opflow */
@@ -905,6 +947,27 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
         ierr = OPFLOWSetUpdateVariableBoundsFunction(
             sopflow->opflows[s], SOPFLOWUpdateOPFLOWVariableBounds,
             (void *)sopflow);
+      }
+
+      if (flgctgc && sopflow->flatten_contingencies) {
+        if (sopflow->cont_num[s] != 0) {
+          //	  ierr =
+          // OPFLOWSetObjectiveType(sopflow->opflows[s],NO_OBJ);CHKERRQ(ierr);
+        }
+      }
+
+      /* Set subproblem parameters */
+      if (issopflowsolverhiop) {
+        ierr = OPFLOWSetModel(sopflow->opflows[s], sopflow->subproblem_model);
+        CHKERRQ(ierr);
+        ierr = OPFLOWSetSolver(sopflow->opflows[s], sopflow->subproblem_solver);
+        CHKERRQ(ierr);
+        ierr = OPFLOWSetHIOPComputeMode(sopflow->opflows[s],
+                                        sopflow->compute_mode);
+        CHKERRQ(ierr);
+        ierr = OPFLOWSetHIOPVerbosityLevel(sopflow->opflows[s],
+                                           sopflow->verbosity_level);
+        CHKERRQ(ierr);
       }
 
       ierr = OPFLOWSetUp(sopflow->opflows[s]);
@@ -1372,5 +1435,41 @@ PetscErrorCode SOPFLOWSetSubproblemSolver(SOPFLOW sopflow,
   PetscErrorCode ierr;
   ierr = PetscStrcpy(sopflow->subproblem_solver, solvername);
   CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  SOPFLOWSetSubproblemComputeMode - Set subproblem solver compute mode
+
+  Inputs
++ sopflow - sopflow object
+- mode   - subproblem solver compute mode
+
+  Option Name
+  -hiop_compute_mode
+  Notes: This is used with HIOP solver only
+*/
+PetscErrorCode SOPFLOWSetSubproblemComputeMode(SOPFLOW sopflow,
+                                               const char mode[]) {
+  PetscErrorCode ierr;
+  ierr = PetscStrcpy(sopflow->compute_mode, mode);
+  CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  SOPFLOWSetSubproblemVerbosityLevel - Set subproblem solver verbosity level
+
+  Inputs
++ sopflow - sopflow object
+- level   - subproblem solver verbosity level
+
+  Option Name
+  -hiop_verbosity_level
+  Notes: This is used with HIOP solver only
+*/
+PetscErrorCode SOPFLOWSetSubproblemVerbosityLevel(SOPFLOW sopflow, int level) {
+  PetscErrorCode ierr;
+  sopflow->verbosity_level = level;
   PetscFunctionReturn(0);
 }

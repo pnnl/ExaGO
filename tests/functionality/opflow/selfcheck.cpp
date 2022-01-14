@@ -199,6 +199,7 @@ struct OpflowFunctionalityTests
     bool converge_failed = false;
     bool obj_failed = false;
     bool num_iter_failed = false;
+    params.reasons_for_failure.clear();
 
     /* Test convergence status */
     ierr = OPFLOWGetConvergenceStatus(opflow, &params.conv_status);

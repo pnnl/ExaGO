@@ -17,7 +17,7 @@ struct SopflowFunctionalityTestParameters {
   std::string qload = "";
   std::string windgen = "";
   std::string description = "";
-  int num_contingencies;
+  int num_contingencies = 0;
   int num_scenarios;
   double tolerance;
   double duration;
@@ -29,6 +29,12 @@ struct SopflowFunctionalityTestParameters {
   OPFLOWInitializationType initialization_type;
   std::string gen_bus_voltage_string = "FIXED_WITHIN_QBOUNDS";
   OPFLOWGenBusVoltageType gen_bus_voltage_type;
+  std::string subproblem_solver = "IPOPT";
+  std::string subproblem_model = "POWER_BALANCE_POLAR";
+  bool ignore_lineflow_constraints = false;
+  std::string compute_mode = "auto";
+  int verbosity_level = 0;
+  bool flatten = true;
 
   /* Parameters used to determine success or failure of functionality test */
   int expected_num_iters;
@@ -51,11 +57,18 @@ struct SopflowFunctionalityTestParameters {
     set_if_found(tolerance, values, "tolerance");
     set_if_found(initialization_string, values, "initialization_type");
     set_if_found(gen_bus_voltage_string, values, "gen_bus_voltage_type");
+    set_if_found(subproblem_solver, values, "subproblem_solver");
+    set_if_found(subproblem_model, values, "subproblem_model");
+    set_if_found(ignore_lineflow_constraints, values,
+                 "ignore_lineflow_constraints");
+    set_if_found(verbosity_level, values, "verbosity_level");
+    set_if_found(compute_mode, values, "compute_mode");
 
     // Multi-contingency SOPFLOW settings
     set_if_found(multicontingency, values, "multicontingency");
     set_if_found(contingencies, values, "contingencies");
     set_if_found(num_contingencies, values, "num_contingencies");
+    set_if_found(flatten, values, "flatten");
 
     // Multi-contingency + multi-period SOPFLOW settings
     set_if_found(multiperiod, values, "multiperiod");
@@ -192,13 +205,13 @@ struct SopflowFunctionalityTests
     ierr = SOPFLOWSetNetworkData(sopflow, params.network.c_str());
     ExaGOCheckError(ierr);
 
+    ierr = SOPFLOWSetNumScenarios(sopflow, params.num_scenarios);
+    ExaGOCheckError(ierr);
+
     // Prepend installation directory to scenario data
     resolve_datafiles_path(params.scenfile);
     ierr = SOPFLOWSetScenarioData(sopflow, SOPFLOW_NATIVE_SINGLEPERIOD, WIND,
                                   params.scenfile.c_str());
-    ExaGOCheckError(ierr);
-
-    ierr = SOPFLOWSetNumScenarios(sopflow, params.num_scenarios);
     ExaGOCheckError(ierr);
 
     ierr = SOPFLOWSetInitializationType(sopflow, params.initialization_type);
@@ -207,15 +220,37 @@ struct SopflowFunctionalityTests
     ierr = SOPFLOWSetGenBusVoltageType(sopflow, params.gen_bus_voltage_type);
     ExaGOCheckError(ierr);
 
+    ierr = SOPFLOWSetSubproblemModel(sopflow, params.subproblem_model.c_str());
+    ExaGOCheckError(ierr);
+
+    ierr =
+        SOPFLOWSetSubproblemSolver(sopflow, params.subproblem_solver.c_str());
+    ExaGOCheckError(ierr);
+
+    ierr = SOPFLOWSetIgnoreLineflowConstraints(
+        sopflow, (PetscBool)params.ignore_lineflow_constraints);
+    ExaGOCheckError(ierr);
+
+    ierr =
+        SOPFLOWSetSubproblemComputeMode(sopflow, params.compute_mode.c_str());
+    ExaGOCheckError(ierr);
+
+    ierr = SOPFLOWSetSubproblemVerbosityLevel(sopflow, params.verbosity_level);
+    ExaGOCheckError(ierr);
+
+    // TODO:
+    // - Implement multi contingency
     ierr = SOPFLOWEnableMultiContingency(sopflow,
                                          (PetscBool)params.multicontingency);
     ExaGOCheckError(ierr);
     if (params.multicontingency) {
       resolve_datafiles_path(params.contingencies);
-      ierr = SOPFLOWSetNumContingencies(sopflow, params.num_contingencies);
-      ExaGOCheckError(ierr);
       ierr = SOPFLOWSetContingencyData(sopflow, NATIVE,
                                        params.contingencies.c_str());
+      ExaGOCheckError(ierr);
+      ierr = SOPFLOWSetNumContingencies(sopflow, params.num_contingencies);
+      ExaGOCheckError(ierr);
+      ierr = SOPFLOWFlattenContingencies(sopflow, (PetscBool)params.flatten);
       ExaGOCheckError(ierr);
       //   ierr =
       //   SOPFLOWEnableMultiPeriod(sopflow,(PetscBool)params.multiperiod);ExaGOCheckError(ierr);
@@ -232,6 +267,8 @@ struct SopflowFunctionalityTests
                                       params.qload.c_str());
         ExaGOCheckError(ierr);
       }
+    } else {
+      ierr = SOPFLOWSetNumContingencies(sopflow, 1);
     }
     // - Implement multi contingency + multiperiod
 
@@ -246,6 +283,7 @@ struct SopflowFunctionalityTests
     bool converge_failed = false;
     bool obj_failed = false;
     bool num_iter_failed = false;
+    params.reasons_for_failure.clear();
 
     /* Test convergence status */
     ierr = SOPFLOWGetConvergenceStatus(sopflow, &params.conv_status);
