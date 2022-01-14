@@ -18,7 +18,7 @@ exago_add_library(
   ${UTILS_HEADERS}
   LINK_LIBRARIES
   PUBLIC
-  PETSC::SNES
+  PkgConfig::PETSC
   PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_C>
   PUBLIC
