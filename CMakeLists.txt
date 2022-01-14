@@ -8,8 +8,6 @@ cmake_minimum_required(VERSION 3.18)
 
 project(ExaGO VERSION "1.2.0")
 
-string(TIMESTAMP EXAGO_RELEASE_DATE "%Y-%m-%d")
-
 set(CMAKE_CXX_STANDARD 11)
 # Enable setting Mac OS X rpath
 set(CMAKE_MACOSX_RPATH 1)
@@ -21,6 +19,13 @@ endif()
 
 if(POLICY CMP0104)
   cmake_policy(SET CMP0104 NEW) # CMake 3.18
+endif()
+
+if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+  set(CMAKE_BUILD_TYPE
+      "Release"
+      CACHE STRING ""
+  )
 endif()
 
 # Make CMake debugging available globally
@@ -105,7 +110,9 @@ option(EXAGO_TEST_WITH_SLURM
 option(EXAGO_DISABLE_LOGGING "Disable all internal logging" OFF)
 
 # When building with HIP support, OpenMP is not supported
-if(NOT EXAGO_ENABLE_RAJA OR (EXAGO_ENABLE_GPU AND EXAGO_ENABLE_HIP))
+if((NOT EXAGO_ENABLE_RAJA AND NOT EXAGO_ENABLE_HIOP) OR (EXAGO_ENABLE_GPU
+                                                         AND EXAGO_ENABLE_HIP)
+)
   set(EXAGO_ENABLE_OMP OFF)
 endif()
 
@@ -133,6 +140,13 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR})
 # Create alias for -lm which is needed when linking math on UNIX
 if(UNIX)
   set(EXAGO_MATH_LIB m)
+endif()
+
+if((NOT EXAGO_ENABLE_IPOPT) AND (NOT EXAGO_ENABLE_HIOP))
+  message(
+    FATAL_ERROR
+      "ExaGO requires at least one solver. Please enable Ipopt and/or HiOp."
+  )
 endif()
 
 # If MPI support is enabled, find MPI includes and libraries
@@ -164,7 +178,10 @@ if(EXAGO_ENABLE_GPU)
         "\n* EXAGO_ENABLE_CUDA"
         "\n* EXAGO_ENABLE_HIP"
     )
-    set(EXAGO_ENABLE_CUDA ON)
+    set(EXAGO_ENABLE_CUDA
+        ON
+        CACHE BOOL ""
+    )
   endif()
 
   if(EXAGO_ENABLE_CUDA)
@@ -222,6 +239,10 @@ if(EXAGO_ENABLE_IPOPT)
   set(CMAKE_INSTALL_RPATH ${IPOPT_LIBRARY_DIR} ${CMAKE_INSTALL_RPATH})
 endif(EXAGO_ENABLE_IPOPT)
 
+if(EXAGO_ENABLE_OMP)
+  find_package(OpenMP REQUIRED COMPONENTS C CXX)
+endif()
+
 if(EXAGO_ENABLE_HIOP)
   set(HIOP_ROOT_DIR CACHE PATH "Path to HiOp installation root.")
   include(FindHiop)
@@ -229,10 +250,6 @@ if(EXAGO_ENABLE_HIOP)
 endif(EXAGO_ENABLE_HIOP)
 
 if(EXAGO_ENABLE_RAJA)
-
-  if(EXAGO_ENABLE_OMP)
-    find_package(OpenMP REQUIRED)
-  endif()
 
   # Look for CMake configuration file in RAJA installation
   find_package(
@@ -253,6 +270,7 @@ endif(NOT DEFINED LAPACK_LIBRARIES)
 
 # Set up configuration header file
 configure_file(include/exago_config.h.in exago_config.h)
+configure_file(include/exago_build_options.h.in exago_build_options.h)
 
 #[[#############################################################################
 
@@ -321,8 +339,9 @@ file(INSTALL datafiles/unit DESTINATION datafiles)
 file(INSTALL datafiles/test_validation DESTINATION datafiles)
 
 # EXAGO headers to install
-set(EXAGO_COMMON_INCLUDE include/constants.h include/version.h
-                         ${PROJECT_BINARY_DIR}/exago_config.h
+set(EXAGO_COMMON_INCLUDE
+    include/constants.h include/version.h ${PROJECT_BINARY_DIR}/exago_config.h
+    ${PROJECT_BINARY_DIR}/exago_build_options.h
 )
 
 # Install header files

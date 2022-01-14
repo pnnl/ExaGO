@@ -8,7 +8,7 @@
 #include <utils.h>
 #include <string.h>
 
-static inline auto prefix() -> const char * { return EXAGO_INSTALL_PREFIX; }
+static inline auto prefix() -> const char * { return CMAKE_INSTALL_PREFIX; }
 
 int initialize(char *appname) {
   PetscErrorCode ierr;

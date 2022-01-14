@@ -7,21 +7,20 @@
 #define SOPFLOW_H
 
 #include <opflow.h>
+#include <scopflow.h>
 #include <ps.h>
 
 /* Models */
 #define SOPFLOWMODEL_GENRAMP "GENRAMP"
-#define SOPFLOWMODEL_GENRAMPC                                                  \
-  "GENRAMPC" /* Model for multi-contingency SOPFLOW */
+/* Model for multi-contingency SOPFLOW */
+#define SOPFLOWMODEL_GENRAMPC "GENRAMPC"
 
 /* Solvers */
 #define SOPFLOWSOLVER_IPOPT "IPOPT"
-#define SOPFLOWSOLVER_EMPAR                                                    \
-  "EMPAR" /* Embarassingly parallel solver - solves each OPFLOW independently  \
-           */
-#define SOPFLOWSOLVER_HIOP                                                     \
-  "HIOP" /* Primal decomposition-basedd HIOp solver                            \
-          */
+/* Embarassingly parallel solver - solves each OPFLOW independently */
+#define SOPFLOWSOLVER_EMPAR "EMPAR"
+/* Primal decomposition-basedd HIOp solver */
+#define SOPFLOWSOLVER_HIOP "HIOP"
 
 /* Initialization and Parameters*/
 #define SOPFLOW_INITIALIZATION "ACPF"
@@ -31,6 +30,56 @@
 typedef enum { NONE, WIND, LOAD } ScenarioUncertaintyType;
 
 typedef struct _p_SOPFLOW *SOPFLOW;
+
+namespace SOPFLOWOptions {
+
+const auto sopflow_model = ExaGOStringOption(
+    "-sopflow_model", "SOPFLOW model type", "GENRAMP", {"GENRAMPC"});
+
+const auto sopflow_solver =
+    ExaGOStringOption("-sopflow_solver", "SOPFLOW solver type",
+                      SCOPFLOWOptions::solver.default_value,
+                      SCOPFLOWOptions::solver.possible_values);
+
+/* Retain default solver and model values from OPFLOW */
+
+const auto opflow_model = OPFLOWOptions::model;
+
+const auto subproblem_model = ExaGOStringOption(
+    "-sopflow_subproblem_model", "SOPFLOW subproblem model type",
+    OPFLOWOptions::model.default_value, OPFLOWOptions::model.possible_values);
+
+const auto subproblem_solver = ExaGOStringOption(
+    "-sopflow_subproblem_solver", "SOPFLOW subproblem solver type",
+    OPFLOWOptions::solver.default_value, OPFLOWOptions::solver.possible_values);
+
+const auto iscoupling = ExaGOBoolOption(
+    "-sopflow_iscoupling",
+    "Include coupling between first stage and second stage", PETSC_TRUE);
+
+const auto Ns = ExaGOIntOption("-sopflow_Ns", "Number of scenarios", 1);
+const auto Nc = ExaGOIntOption(
+    "-sopflow_Nc", "Number of contingencies for multi-contingency scenario", 0);
+
+const auto mode = ExaGOIntOption(
+    "-sopflow_mode", "Operation mode:Preventive (0) or Corrective (1)", 1);
+const auto enable_multicontingency =
+    ExaGOBoolOption("-sopflow_enable_multicontingency",
+                    "Multi-contingency SOPFLOW?", PETSC_FALSE);
+const auto flatten_contingencies =
+    ExaGOBoolOption("-sopflow_flatten_contingencies",
+                    "Flatten contingencies for SOPFLOW?", PETSC_FALSE);
+
+const auto tolerance =
+    ExaGORealOption("-sopflow_tolerance", "Optimization tolerance", 1e-6);
+
+const auto ctgcfile = ExaGOStringOption("-ctgcfile", "Contingency file",
+                                        "/path/to/contingency_file", {});
+
+const auto windgen = ExaGOStringOption("-windgen", "Wind generation file",
+                                       "/path/to/windgen_file", {});
+
+} // namespace SOPFLOWOptions
 
 PETSC_EXTERN PetscErrorCode SOPFLOWEnableMultiContingency(SOPFLOW, PetscBool);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetModel(SOPFLOW, const char[]);

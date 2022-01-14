@@ -11,24 +11,83 @@
 
 /* Models */
 #define SCOPFLOWMODEL_GENRAMP "GENRAMP"
-#define SCOPFLOWMODEL_GENRAMPT                                                 \
-  "GENRAMPT" /* Model for multi-period SCOPFLOW                                \
-              */
+/* Model for multi-period SCOPFLOW */
+#define SCOPFLOWMODEL_GENRAMPT "GENRAMPT"
 
 /* Solvers */
 #define SCOPFLOWSOLVER_IPOPT "IPOPT"
-#define SCOPFLOWSOLVER_EMPAR                                                   \
-  "EMPAR" /* Embarassingly parallel solver - solves each OPFLOW independently  \
-           */
-#define SCOPFLOWSOLVER_HIOP                                                    \
-  "HIOP" /* Primal decomposition-based HiOp solver                             \
-          */
+/* Embarassingly parallel solver - solves each OPFLOW independently */
+#define SCOPFLOWSOLVER_EMPAR "EMPAR"
+/* Primal decomposition-based HiOp solver */
+#define SCOPFLOWSOLVER_HIOP "HIOP"
 
 /* Initialization and Parameters*/
 #define SCOPFLOW_INITIALIZATION "ACPF"
 #define SCOPFLOW_GENBUSVOLTAGE "VARIABLE_WITHIN_BOUNDS"
 
 typedef struct _p_SCOPFLOW *SCOPFLOW;
+
+namespace SCOPFLOWOptions {
+
+const auto model = ExaGOStringOption("-scopflow_model", "SCOPFLOW model type",
+                                     "GENRAMP", {"GENRAMPT"});
+
+const auto solver =
+    ExaGOStringOption("-scopflow_solver", "SCOPFLOW solver type",
+#if defined(EXAGO_ENABLE_IPOPT) && defined(EXAGO_ENABLE_HIOP)
+                      "IPOPT", {"EMPAR", "HIOP"});
+#else
+#if defined(EXAGO_ENABLE_IPOPT)
+                      "IPOPT", {"EMPAR"});
+#elif defined(EXAGO_ENABLE_HIOP)
+                      "HIOP", {"EMPAR"});
+#else
+#error "At least one solver must be enabled!"
+#endif
+#endif
+
+const auto subproblem_model = ExaGOStringOption(
+    "-subproblem_model", "SCOPFLOW subproblem model type",
+    OPFLOWOptions::model.default_value, OPFLOWOptions::model.possible_values);
+const auto subproblem_solver = ExaGOStringOption(
+    "-subproblem_solver", "SCOPFLOW subproblem solver type",
+    OPFLOWOptions::solver.default_value, OPFLOWOptions::solver.possible_values);
+const auto iscoupling = ExaGOBoolOption(
+    "-scopflow_iscoupling",
+    "Include coupling between first stage and second stage", PETSC_TRUE);
+
+const auto Nc =
+    ExaGOIntOption("-scopflow_Nc", "Number of second-stage scenarios", 0);
+const auto mode = ExaGOIntOption(
+    "-scopflow_mode", "Operation mode: Preventive (0) or Corrective (1)", 1);
+const auto enable_multiperiod = ExaGOBoolOption(
+    "-scopflow_enable_multiperiod", "Multi-period SCOPFLOW?", PETSC_FALSE);
+
+const auto tolerance =
+    ExaGORealOption("-scopflow_tolerance", "Optimization tolerance",
+                    OPFLOWOptions::tolerance.default_value);
+
+namespace {
+static const std::string onlymultiperiod =
+    " (only when multiperiod is enabled)";
+}
+/* Options only relevant when multiperiod is enabled */
+const auto windgenprofile = ExaGOStringOption(
+    "-scopflow_windgenprofile", "Wind generation file" + onlymultiperiod,
+    "/path/to/windgenprofile", {});
+const auto ploadprofile = ExaGOStringOption(
+    "-scopflow_ploadprofile", "Active power load profile" + onlymultiperiod,
+    "/path/to/ploadprofile", {});
+const auto qloadprofile = ExaGOStringOption(
+    "-scopflow_qloadprofile", "Reactive power load profile" + onlymultiperiod,
+    "/path/to/qloadprofile", {});
+
+const auto dT = ExaGORealOption(
+    "-scopflow_dT", "Length of time-step (minutes)" + onlymultiperiod, 1.0);
+const auto duration = ExaGORealOption(
+    "-scopflow_duration", "Time horizon (hours)" + onlymultiperiod, 1.0);
+
+} // namespace SCOPFLOWOptions
 
 PETSC_EXTERN PetscErrorCode SCOPFLOWEnableMultiPeriod(SCOPFLOW, PetscBool);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetModel(SCOPFLOW, const char[]);

@@ -136,6 +136,66 @@ void ExaGOLog(int level, std::string fmt, Args... args) {
 
 #endif
 
+template <typename T> struct ExaGOOption {
+  std::string opt;
+  std::string desc;
+  T default_value;
+  ExaGOOption(std::string const &opt, std::string const &desc, T const &value)
+      : opt{opt}, desc{desc}, default_value{value} {}
+};
+
+template <> struct ExaGOOption<void> {
+  std::string opt;
+  std::string desc;
+  ExaGOOption(std::string const &opt, std::string const &desc)
+      : opt{opt}, desc{desc} {}
+};
+
+template <> struct ExaGOOption<std::string> {
+  std::string default_value;
+  std::string desc;
+  std::string opt;
+  std::vector<std::string> possible_values;
+
+  ExaGOOption(std::string const &opt, std::string const &desc,
+              std::string const &default_value,
+              std::vector<std::string> const &possible_values)
+      : opt{opt}, desc{desc}, possible_values{possible_values},
+        default_value{default_value} {}
+
+  /**
+   * \brief Get the enum value of a stringy enum option.
+   *
+   * \param names array of names to be searched for the default value
+   * \param num_items number of items in `names` to be searched
+   * \param prefix prefix to add to elements of `names`. PETSc enum options take
+   *        a similar argument, so we handle it here to minimize the number of
+   *        changes required to effectively handle command line options.
+   */
+  std::size_t ToEnum(const char *const names[], std::size_t num_items,
+                     std::string const &prefix = "") const {
+    const auto it =
+        std::find_if(names, names + num_items, [=](const char *name) {
+          return (prefix + std::string(name)) == default_value;
+        });
+    std::size_t enumval = std::distance(names, it);
+    if (enumval == num_items) {
+      throw ExaGOError((std::string{"could not find default value '"} +
+                        default_value +
+                        "' when attempting to convert string option '" + opt +
+                        "' into an enum value")
+                           .c_str());
+    }
+    return enumval;
+  }
+};
+
+using ExaGOStringOption = ExaGOOption<std::string>;
+using ExaGOBoolOption = ExaGOOption<PetscBool>;
+using ExaGOIntOption = ExaGOOption<int>;
+using ExaGORealOption = ExaGOOption<double>;
+using ExaGOFlagOption = ExaGOOption<void>;
+
 /**
  * Initialize an ExaGO application.
  *

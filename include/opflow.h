@@ -6,6 +6,7 @@
 #define OPFLOW_H
 
 #include <ps.h>
+#include <utils.h>
 
 /* Models */
 #define OPFLOWMODEL_PBPOL "POWER_BALANCE_POLAR"
@@ -17,7 +18,6 @@
 
 /* Solvers */
 #define OPFLOWSOLVER_IPOPT "IPOPT"
-#define OPFLOWSOLVER_TAO "TAO"
 #define OPFLOWSOLVER_HIOP "HIOP"
 #define OPFLOWSOLVER_HIOPSPARSE "HIOPSPARSE"
 
@@ -42,6 +42,119 @@ typedef enum {
   OPFLOWINIT_ACPF,     /* From AC power flow solution */
   OPFLOWINIT_FLATSTART /* Voltage flat start */
 } OPFLOWInitializationType;
+
+/**
+ * \brief Option declarations and default values.
+ *
+ * The values are printed in the help messages here:
+ * \see src/utils/utils.cpp
+ *
+ * The default values are used and the options are declared via PETSc here:
+ * \see src/opflow/interface/opflow.cpp
+ */
+namespace OPFLOWOptions {
+
+/*
+ * Default model/solver combination is a valid Ipopt configuration, and falls
+ * back to HiOp. If niether is enabled, error at build-time (although the CMake
+ * should error at configure-time anyways).
+ */
+#if defined(EXAGO_ENABLE_IPOPT)
+const auto model = ExaGOStringOption("-opflow_model", "OPFLOW model name",
+                                     "POWER_BALANCE_POLAR",
+                                     {
+#ifdef EXAGO_ENABLE_HIOP
+                                         "POWER_BALANCE_HIOP",
+                                         "PBPOLRAJAHIOP",
+#endif
+                                     });
+const auto solver =
+    ExaGOStringOption("-opflow_solver", "OPFLOW solver type", "IPOPT",
+                      {
+#ifdef EXAGO_ENABLE_HIOP
+                          "HIOP",
+                          "HIOPSPARSE",
+#endif
+                      });
+#elif defined(EXAGO_ENABLE_HIOP)
+const auto model = ExaGOStringOption("-opflow_model", "OPFLOW model name",
+                                     "POWER_BALANCE_HIOP",
+                                     {
+                                         "POWER_BALANCE_POLAR",
+                                         "PBPOLRAJAHIOP",
+                                     });
+const auto solver = ExaGOStringOption("-opflow_solver", "OPFLOW solver type",
+                                      "OPFLOWSOLVER_HIOP",
+                                      {
+#ifdef EXAGO_ENABLE_IPOPT
+                                          "IPOPT",
+#endif
+                                          "HIOPSPARSE",
+                                      });
+#else
+#error "ExaGO must be built with at least one solver enabled"
+#endif
+
+const auto initialization =
+    ExaGOStringOption("-opflow_initialization", "Type of OPFLOW initialization",
+                      "OPFLOWINIT_MIDPOINT",
+                      {
+                          "OPFLOWINIT_FROMFILE",
+                          "OPFLOWINIT_ACPF",
+                          "OPFLOWINIT_FLATSTART",
+                      });
+const auto objective = ExaGOStringOption(
+    "-opflow_objective", "Type of OPFLOW objective", "MIN_GEN_COST",
+    {
+        "MIN_GENSETPOINT_DEVIATION",
+        "NO_OBJ",
+    });
+const auto genbusvoltage = ExaGOStringOption(
+    "-opflow_genbusvoltage", "Type of OPFLOW gen bus voltage control",
+    "VARIABLE_WITHIN_BOUNDS",
+    {
+        "FIXED_WITHIN_QBOUNDS",
+        "FIXED_AT_SETPOINT",
+    });
+const auto has_gensetpoint =
+    ExaGOBoolOption("-opflow_has_gensetpoint",
+                    "Use set-points for generator real power", PETSC_FALSE);
+const auto use_agc = ExaGOBoolOption(
+    "-opflow_use_agc", "Use automatic generation control (AGC)", PETSC_FALSE);
+const auto tolerance =
+    ExaGORealOption("-opflow_tolerance", "Optimization tolerance", 1e-6);
+
+const auto ignore_lineflow_constraints =
+    ExaGOBoolOption("-opflow_ignore_lineflow_constraints",
+                    "Ignore line flow constraints?", PETSC_FALSE);
+const auto include_loadloss_variables =
+    ExaGOBoolOption("-opflow_include_loadloss_variables",
+                    "Ignore line flow constraints?", PETSC_FALSE);
+const auto loadloss_penalty =
+    ExaGORealOption("-opflow_loadloss_penalty", "Penalty for load loss", 1e3);
+const auto include_powerimbalance_variables =
+    ExaGOBoolOption("-opflow_include_powerimbalance_variables",
+                    "Allow power imbalance?", PETSC_FALSE);
+const auto powerimbalance_penalty = ExaGORealOption(
+    "-opflow_powerimbalance_penalty", "Power imbalance penalty", 1e4);
+
+#ifdef EXAGO_ENABLE_HIOP
+const auto hiop_compute_mode =
+    ExaGOStringOption("-hiop_compute_mode", "Set compute mode for HiOp solver",
+                      "auto", {"cpu", "hybrid", "gpu"});
+const auto hiop_verbosity_level =
+    ExaGOIntOption("-hiop_verbosity_level",
+                   "Set verbosity level for HiOp solver, between 0 and 12", 0);
+
+#ifdef EXAGO_ENABLE_IPOPT
+const auto hiop_ipopt_debug = ExaGOBoolOption(
+    "-hiop_ipopt_debug", "Flag enabling debugging HIOP code with IPOPT",
+    PETSC_FALSE);
+#endif
+
+#endif
+
+} // namespace OPFLOWOptions
 
 PETSC_EXTERN PetscErrorCode OPFLOWSetModel(OPFLOW, const char[]);
 PETSC_EXTERN PetscErrorCode OPFLOWSetSolver(OPFLOW, const char[]);

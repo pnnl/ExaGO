@@ -2,12 +2,31 @@
 #include <exago_config.h>
 #include <unordered_map>
 #include <utils.h>
+#include <opflow.h>
+#include <scopflow.h>
+#include <sopflow.h>
 #include <version.h>
 
 namespace {
-static const std::unordered_map<std::string, bool> ExaGODependencies = {
+static const std::unordered_map<std::string, bool> ExaGOBoolConfigOptions = {
     {
-        "petsc",
+        "EXAGO_BUILD_SHARED",
+#ifdef EXAGO_BUILD_SHARED
+        true,
+#else
+        false,
+#endif
+    },
+    {
+        "EXAGO_BUILD_STATIC",
+#ifdef EXAGO_BUILD_STATIC
+        true,
+#else
+        false,
+#endif
+    },
+    {
+        "EXAGO_ENABLE_PETSC",
 #ifdef EXAGO_ENABLE_PETSC
         true,
 #else
@@ -15,7 +34,7 @@ static const std::unordered_map<std::string, bool> ExaGODependencies = {
 #endif
     },
     {
-        "mpi",
+        "EXAGO_ENABLE_MPI",
 #ifdef EXAGO_ENABLE_MPI
         true,
 #else
@@ -23,7 +42,7 @@ static const std::unordered_map<std::string, bool> ExaGODependencies = {
 #endif
     },
     {
-        "ipopt",
+        "EXAGO_ENABLE_IPOPT",
 #ifdef EXAGO_ENABLE_IPOPT
         true,
 #else
@@ -31,7 +50,7 @@ static const std::unordered_map<std::string, bool> ExaGODependencies = {
 #endif
     },
     {
-        "hiop",
+        "EXAGO_ENABLE_HIOP",
 #ifdef EXAGO_ENABLE_HIOP
         true,
 #else
@@ -39,7 +58,7 @@ static const std::unordered_map<std::string, bool> ExaGODependencies = {
 #endif
     },
     {
-        "hiop_distributed",
+        "EXAGO_ENABLE_HIOP_DISTRIBUTED",
 #ifdef EXAGO_ENABLE_HIOP_DISTRIBUTED
         true,
 #else
@@ -47,7 +66,7 @@ static const std::unordered_map<std::string, bool> ExaGODependencies = {
 #endif
     },
     {
-        "hiop_sparse",
+        "EXAGO_ENABLE_HIOP_SPARSE",
 #ifdef EXAGO_ENABLE_HIOP_SPARSE
         true,
 #else
@@ -55,7 +74,7 @@ static const std::unordered_map<std::string, bool> ExaGODependencies = {
 #endif
     },
     {
-        "gpu",
+        "EXAGO_ENABLE_GPU",
 #ifdef EXAGO_ENABLE_GPU
         true,
 #else
@@ -63,7 +82,31 @@ static const std::unordered_map<std::string, bool> ExaGODependencies = {
 #endif
     },
     {
-        "raja",
+        "EXAGO_ENABLE_CUDA",
+#ifdef EXAGO_ENABLE_CUDA
+        true,
+#else
+        false,
+#endif
+    },
+    {
+        "EXAGO_ENABLE_HIP",
+#ifdef EXAGO_ENABLE_HIP
+        true,
+#else
+        false,
+#endif
+    },
+    {
+        "EXAGO_ENABLE_PYTHON",
+#ifdef EXAGO_ENABLE_PYTHON
+        true,
+#else
+        false,
+#endif
+    },
+    {
+        "EXAGO_ENABLE_RAJA",
 #ifdef EXAGO_ENABLE_RAJA
         true,
 #else
@@ -71,28 +114,49 @@ static const std::unordered_map<std::string, bool> ExaGODependencies = {
 #endif
     },
 };
+static const std::unordered_map<std::string, std::string>
+    ExaGOStringConfigOptions = {
+        {"EXAGO_OPTIONS_DIR", EXAGO_OPTIONS_DIR},
+        {"CMAKE_INSTALL_PREFIX", CMAKE_INSTALL_PREFIX},
+        {"CMAKE_BUILD_TYPE", CMAKE_BUILD_TYPE},
+        {"CMAKE_C_COMPILER", CMAKE_C_COMPILER},
+        {"CMAKE_CXX_COMPILER", CMAKE_CXX_COMPILER},
+        {"PETSC_DIR", EXAGO_PETSC_DIR},
+        {"PETSC_INCLUDES", EXAGO_PETSC_INCLUDES},
+        {"PETSC_LIBRARIES", EXAGO_PETSC_LIBRARIES},
+#ifdef EXAGO_ENABLE_HIOP
+        {"HiOp_DIR", EXAGO_HiOp_DIR},
+#endif
+#ifdef EXAGO_ENABLE_IPOPT
+        {"IPOPT_ROOT_DIR", EXAGO_IPOPT_ROOT_DIR},
+        {"IPOPT_INCLUDES", EXAGO_IPOPT_INCLUDES},
+        {"IPOPT_LIBRARIES", EXAGO_IPOPT_LIBRARIES},
+#endif
+};
 } // namespace
 
-PetscErrorCode ExaGOVersionGetFullVersionInfo(char **str) {
-  *str = (char *)malloc(2048);
-  strcat(*str, "ExaGO version ");
-  strcat(*str, EXAGO_VERSION);
-  strcat(*str, " released on ");
-  strcat(*str, EXAGO_RELEASE_DATE);
-  strcat(*str, "\nbuilt with:\n");
+PetscErrorCode ExaGOVersionGetFullVersionInfo(std::string &str) {
+  str = fmt::format("ExaGO version {} built on {}\n", EXAGO_VERSION, __DATE__);
 
-  for (const auto &dep : ExaGODependencies) {
-    const auto &name = dep.first;
-    const auto &is_enabled = dep.second;
-    char buf[1024];
-    sprintf(buf, "\t%-20s%20s\n", name.c_str(), is_enabled ? "YES" : "NO");
-    strcat(*str, buf);
+  /* Recreate configure command */
+  str +=
+      fmt::format("Built with the following command:\n$ cmake -B {} -S {} \\\n",
+                  CMAKE_BUILD_DIR, CMAKE_SOURCE_DIR);
+  for (auto const &conf_opt : ExaGOBoolConfigOptions) {
+    const auto &name = conf_opt.first;
+    const auto &is_enabled = conf_opt.second;
+    str +=
+        fmt::format("\t-D{}:BOOL={} \\\n", name, (is_enabled ? "ON" : "OFF"));
   }
-  return 0;
-}
-
-PetscErrorCode ExaGOVersionGetReleaseDate(char **str) {
-  *str = strdup(EXAGO_RELEASE_DATE);
+  auto confit = ExaGOStringConfigOptions.begin();
+  while (confit != ExaGOStringConfigOptions.end()) {
+    const auto &name = (*confit).first;
+    const auto &value = (*confit).second;
+    /* If it's not the final option, add a newline escape */
+    str +=
+        fmt::format("\t-D{}:STRING=\"{}\" {}\n", name, value,
+                    (++confit == ExaGOStringConfigOptions.end() ? "" : "\\"));
+  }
   return 0;
 }
 
@@ -103,11 +167,15 @@ PetscErrorCode ExaGOVersionGetVersion(int *major, int *minor, int *patch) {
   return 0;
 }
 
-PetscErrorCode ExaGOVersionGetVersionStr(char **str) {
-  *str = strdup(EXAGO_VERSION);
+PetscErrorCode ExaGOVersionGetVersionStr(std::string &str) {
+  str = EXAGO_VERSION;
   return 0;
 }
 
-const std::unordered_map<std::string, bool> &ExaGOGetDependencies() {
-  return ExaGODependencies;
+const std::unordered_map<std::string, bool> &ExaGOGetBoolConfigOptions() {
+  return ExaGOBoolConfigOptions;
+}
+const std::unordered_map<std::string, std::string> &
+ExaGOGetStringConfigOptions() {
+  return ExaGOStringConfigOptions;
 }

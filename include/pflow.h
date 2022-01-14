@@ -6,6 +6,7 @@
 #define PFLOW_H
 
 #include <ps.h>
+#include <utils.h>
 
 typedef struct _p_PFLOW *PFLOW;
 
