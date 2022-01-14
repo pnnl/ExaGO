@@ -100,6 +100,7 @@ PetscErrorCode TCOPFLOWCreate(MPI_Comm mpicomm, TCOPFLOW *tcopflowout) {
 
   tcopflow->obj_factor = 1.0;
   tcopflow->obj = 0.0;
+  tcopflow->tolerance = 1e-6;
 
   tcopflow->duration = 1.0;
   tcopflow->dT = 60.0;
@@ -535,6 +536,9 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow) {
   ierr = MatSeqAIJSetPreallocation(tcopflow->Jac,
                                    (PetscInt)(0.1 * tcopflow->Nx), NULL);
   CHKERRQ(ierr);
+  ierr =
+      MatSetOption(tcopflow->Jac, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+  CHKERRQ(ierr);
 
   /* Hessian */
   ierr = MatCreate(tcopflow->comm->type, &tcopflow->Hes);
@@ -547,6 +551,9 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow) {
   /* Assume 10% sparsity */
   ierr = MatSeqAIJSetPreallocation(tcopflow->Hes,
                                    (PetscInt)(0.1 * tcopflow->Nx), NULL);
+  CHKERRQ(ierr);
+  ierr =
+      MatSetOption(tcopflow->Hes, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
   CHKERRQ(ierr);
 
   /* Lagrangian multipliers */

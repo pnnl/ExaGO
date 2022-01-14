@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [v1.3.0]
 
 ### General
 
@@ -16,12 +16,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Build system
 
+- Depend on HiOp's exported cmake configuration to configure HiOp interoperation. Many CMake find package scripts have been removed as a result.
+- ExaGO depends on HiOp v0.5.3 and PETSc v3.16 and above.
+
 ### PS
 
 ### PFLOW
 
+- Native Python bindings to the PFLOW ExaGO library have been added.
+
 ### OPFLOW
-- Replaced quadratic load loss objective with linear
+
+- Replaced quadratic load loss objective with linear.
+- Native Python bindings to the PFLOW ExaGO library have been extended.
 
 ### TCOPFLOW
 
@@ -31,7 +38,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 
+- Update Python documentation.
+- Add release checklist.
+- Add and extend developer guidelines.
+
 ### Testing
+
+- Improved error messages for functionality tests. Reasons for failure are printed in the TOML output.
+- First of a new suite of unit tests has been added.
+- Added unit test for new internal logging api.
+- Misc fixes for more robust continuous integration.
 
 ### Miscallenous
 

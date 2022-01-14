@@ -56,7 +56,7 @@ Additional documentation on installing these dependencies are linked below.
 
 | Dependency | Dependency Version | CMake Variable (if applicable) | Notes |
 |---|---|---|---|
-| HiOp | v0.5 | `EXAGO_ENABLE_HIOP`, `HIOP_DIR` | Optional, needs to be built with CUDA and MPI if using those options. [See HiOp repo linked here for more information.](https://github.com/LLNL/hiop) |
+| HiOp | v0.5.3 | `EXAGO_ENABLE_HIOP`, `HIOP_DIR` | Optional, needs to be built with CUDA and MPI if using those options. [See HiOp repo linked here for more information.](https://github.com/LLNL/hiop) |
 | Ipopt | >=3.12 | `EXAGO_ENABLE_IPOPT`, `IPOPT_DIR` | Needs to be built with COINHSL if using HiOp sparse linear algebra. [See the linked document for more information on building Ipopt for ExaGO](./docs/web/ipopt_install.md), [and see this link for PETSC documentation.](https://petsc.org/release/)|
 
 #### GPU-Related Dependencies
