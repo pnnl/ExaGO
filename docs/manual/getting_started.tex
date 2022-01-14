@@ -174,6 +174,108 @@ Each \exago application has the following format for execution
 \begin{lstlisting}[language=bash]
   ./app <app_options>
 \end{lstlisting}
+
+For OPFLOW for example:
+\begin{lstlisting}[language=bash]
+./opflow -help
+ExaGO 1.3.0 built on Jan 14 2022
+
+Arguments for opflow:
+	-help
+		Print help message (type: flag)
+
+	-version
+		Print version information (type: flag)
+
+	-config
+		Print configuration options used to build ExaGO (type: flag)
+
+	-options_file /path/to/options_file
+		Path to options file used to load additional ExaGO configuration options (type: string)
+
+	-opflow_model (POWER_BALANCE_POLAR|POWER_BALANCE_HIOP|PBPOLRAJAHIOP)
+		OPFLOW model name (type: string)
+
+	-opflow_solver (IPOPT|HIOP|HIOPSPARSE)
+		OPFLOW solver type (type: string)
+
+	-opflow_initialization (OPFLOWINIT_MIDPOINT|OPFLOWINIT_FROMFILE|OPFLOWINIT_ACPF|OPFLOWINIT_FLATSTART)
+		Type of OPFLOW initialization (type: string)
+
+	-opflow_objective (MIN_GEN_COST|MIN_GENSETPOINT_DEVIATION|NO_OBJ)
+		Type of OPFLOW objective (type: string)
+
+	-opflow_genbusvoltage (VARIABLE_WITHIN_BOUNDS|FIXED_WITHIN_QBOUNDS|FIXED_AT_SETPOINT)
+		Type of OPFLOW gen bus voltage control (type: string)
+
+	-opflow_has_gensetpoint 0
+		Use set-points for generator real power (type: bool)
+
+	-opflow_use_agc 0
+		Use automatic generation control (AGC) (type: bool)
+
+	-opflow_tolerance 1e-06
+		Optimization tolerance (type: real)
+
+	-opflow_ignore_lineflow_constraints 0
+		Ignore line flow constraints? (type: bool)
+
+	-opflow_include_loadloss_variables 0
+		Ignore line flow constraints? (type: bool)
+
+	-opflow_loadloss_penalty 1000
+		Penalty for load loss (type: real)
+
+	-opflow_include_powerimbalance_variables 0
+		Allow power imbalance? (type: bool)
+
+	-opflow_powerimbalance_penalty 10000
+		Power imbalance penalty (type: real)
+
+	-hiop_compute_mode (auto|cpu|hybrid|gpu)
+		Set compute mode for HiOp solver (type: string)
+
+	-hiop_verbosity_level 0
+		Set verbosity level for HiOp solver, between 0 and 12 (type: int)
+
+	-hiop_ipopt_debug 0
+		Flag enabling debugging HIOP code with IPOPT (type: bool)
+\end{lstlisting}
+
+ExaGO applications also have an option to print many options ExaGO was configured with, which aid in reproducing build environments that a given ExaGO source tree was built with.
+
+\begin{lstlisting}[language=bash]
+./opflow -config
+ExaGO version 1.3.0 built on Jan 14 2022
+Built with the following command:
+$ cmake -B /Users/manc568/workspace/exago/build -S /Users/manc568/workspace/exago \
+	-DEXAGO_ENABLE_RAJA:BOOL=OFF \
+	-DEXAGO_ENABLE_PYTHON:BOOL=ON \
+	-DEXAGO_ENABLE_HIP:BOOL=OFF \
+	-DEXAGO_ENABLE_GPU:BOOL=OFF \
+	-DEXAGO_ENABLE_HIOP_SPARSE:BOOL=ON \
+	-DEXAGO_ENABLE_HIOP:BOOL=ON \
+	-DEXAGO_ENABLE_IPOPT:BOOL=ON \
+	-DEXAGO_ENABLE_MPI:BOOL=ON \
+	-DEXAGO_BUILD_STATIC:BOOL=OFF \
+	-DEXAGO_ENABLE_CUDA:BOOL=OFF \
+	-DEXAGO_ENABLE_HIOP_DISTRIBUTED:BOOL=OFF \
+	-DEXAGO_ENABLE_PETSC:BOOL=ON \
+	-DEXAGO_BUILD_SHARED:BOOL=OFF \
+	-DIPOPT_INCLUDES:STRING="" \
+	-DIPOPT_ROOT_DIR:STRING="" \
+	-DHiOp_DIR:STRING="/some/path" \
+	-DPETSC_DIR:STRING="/some/path" \
+	-DCMAKE_CXX_COMPILER:STRING="/usr/local/bin/g++-11" \
+	-DIPOPT_LIBRARIES:STRING="" \
+	-DCMAKE_BUILD_TYPE:STRING="Debug" \
+	-DPETSC_INCLUDES:STRING="" \
+	-DCMAKE_C_COMPILER:STRING="/usr/local/bin/gcc-11" \
+	-DCMAKE_INSTALL_PREFIX:STRING="/Users/manc568/workspace/exago/install" \
+	-DPETSC_LIBRARIES:STRING="" \
+	-DEXAGO_OPTIONS_DIR:STRING="/Users/manc568/workspace/exago/install/share/exago/options"
+\end{lstlisting}
+
 Here, \lstinline{app_options} are the command line options for the application. Each application has many options through which the input files and the control options can be set for the application. All application options have the form \lstinline{-app_option_name} followed by the \lstinline{app_option_value}. 
 For instance,
 \begin{lstlisting}[language=bash]

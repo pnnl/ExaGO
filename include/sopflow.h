@@ -68,7 +68,7 @@ const auto enable_multicontingency =
                     "Multi-contingency SOPFLOW?", PETSC_FALSE);
 const auto flatten_contingencies =
     ExaGOBoolOption("-sopflow_flatten_contingencies",
-                    "Flatten contingencies for SOPFLOW?", PETSC_FALSE);
+                    "Flatten contingencies for SOPFLOW?", PETSC_TRUE);
 
 const auto tolerance =
     ExaGORealOption("-sopflow_tolerance", "Optimization tolerance", 1e-6);
