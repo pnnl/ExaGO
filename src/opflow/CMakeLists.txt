@@ -56,8 +56,6 @@ exago_add_library(
   PUBLIC
   ExaGO::PFLOW
   PUBLIC
-  PETSC::ALL
-  PUBLIC
   ${LAPACK_LIBRARIES}
   OUTPUT_NAME
   exago_opflow

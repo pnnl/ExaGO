@@ -203,8 +203,13 @@ endif(EXAGO_ENABLE_GPU)
 
 # Find PETSc and configure related variables
 if(EXAGO_ENABLE_PETSC)
-  include(FindPETSC)
-  include_directories(${PETSC_INCLUDE_CONF})
+  include(FindPkgConfig)
+  # Include petsc package path in pkg_config_path
+  set(ENV{PKG_CONFIG_PATH}
+      ${PETSC_DIR}/lib/pkgconfig:${PETSC_DIR}/${PETSC_ARCH}/lib/pkgconfig
+  )
+  pkg_check_modules(PETSC REQUIRED IMPORTED_TARGET PETSc)
+  set(EXAGO_HAVE_PETSC 1)
 endif()
 
 # Set install rpath to the locations where EXAGO and PETSc libraries reside.
