@@ -25,19 +25,19 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout) {
   scopflow->Nconineq = scopflow->nconineq = 0;
   scopflow->Ncon = scopflow->ncon = 0;
   scopflow->Nx = scopflow->nx = 0;
-  scopflow->Nc = scopflow->nc = 0;
+  scopflow->Nc = scopflow->nc = SCOPFLOWOptions::Nc.default_value;
   scopflow->Gi = NULL;
   scopflow->Lambdai = NULL;
 
   scopflow->obj_factor = 1.0;
   scopflow->objbase = scopflow->objtot = 0.0;
 
-  scopflow->mode = 1;
+  scopflow->mode = SCOPFLOWOptions::mode.default_value;
   scopflow->tolerance = 1e-6;
 
   scopflow->scen = NULL;
 
-  scopflow->ismultiperiod = PETSC_FALSE;
+  scopflow->ismultiperiod = SCOPFLOWOptions::enable_multiperiod.default_value;
 
   scopflow->solver = NULL;
   scopflow->model = NULL;
@@ -55,15 +55,18 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout) {
   ierr = SCOPFLOWSolverRegisterAll(scopflow);
 
   /* Run-time options */
-  scopflow->iscoupling = PETSC_TRUE;
-  ;
+  scopflow->iscoupling = SCOPFLOWOptions::iscoupling.default_value;
 
   scopflow->ctgclist = NULL;
   scopflow->ctgcfileset = PETSC_FALSE;
 
   /* Default subproblem model and solver */
-  PetscStrcpy(scopflow->subproblem_model, "POWER_BALANCE_POLAR");
-  PetscStrcpy(scopflow->subproblem_solver, "IPOPT");
+  (void)std::strncpy(scopflow->subproblem_model,
+                     SCOPFLOWOptions::subproblem_model.default_value.c_str(),
+                     sizeof(scopflow->subproblem_model));
+  (void)std::strncpy(scopflow->subproblem_solver,
+                     SCOPFLOWOptions::subproblem_solver.default_value.c_str(),
+                     sizeof(scopflow->subproblem_solver));
 
   scopflow->setupcalled = PETSC_FALSE;
   *scopflowout = scopflow;
@@ -414,76 +417,97 @@ object
 PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
   PetscErrorCode ierr;
   PetscBool scopflowsolverset;
-  char opflowmodelname[32] = "POWER_BALANCE_POLAR";
-  char scopflowsolvername[32] = "IPOPT";
   PetscInt c, i, j;
-  char scopflowmodelname[32] = "GENRAMP";
   PS ps;
   OPFLOW opflow;
+
   char ploadprofile[PETSC_MAX_PATH_LEN];
   char qloadprofile[PETSC_MAX_PATH_LEN];
   char windgenprofile[PETSC_MAX_PATH_LEN];
   PetscBool flg1 = PETSC_FALSE, flg2 = PETSC_FALSE, flg3 = PETSC_FALSE;
+
+  char scopflowsolvername[max_solver_name_len];
+  char scopflowmodelname[max_model_name_len];
+
+  (void)std::strncpy(scopflowmodelname,
+                     SCOPFLOWOptions::model.default_value.c_str(),
+                     sizeof(scopflowmodelname));
+  (void)std::strncpy(scopflowsolvername,
+                     SCOPFLOWOptions::solver.default_value.c_str(),
+                     sizeof(scopflowsolvername));
 
   PetscFunctionBegin;
 
   ierr =
       PetscOptionsBegin(scopflow->comm->type, NULL, "SCOPFLOW options", NULL);
   CHKERRQ(ierr);
-  ierr = PetscOptionsString("-scopflow_model", "SCOPFLOW model type", "",
-                            scopflowmodelname, scopflowmodelname, 32, NULL);
-  CHKERRQ(ierr);
-  ierr = PetscOptionsString("-scopflow_solver", "SCOPFLOW solver type", "",
-                            scopflowsolvername, scopflowsolvername, 32,
-                            &scopflowsolverset);
-  CHKERRQ(ierr);
   ierr = PetscOptionsString(
-      "-scopflow_subproblem_model", "SCOPFLOW subproblem model type", "",
-      scopflow->subproblem_model, scopflow->subproblem_model, 64, NULL);
+      SCOPFLOWOptions::model.opt.c_str(), SCOPFLOWOptions::model.desc.c_str(),
+      "", scopflowmodelname, scopflowmodelname, max_model_name_len, NULL);
   CHKERRQ(ierr);
-  ierr = PetscOptionsString(
-      "-scopflow_subproblem_solver", "SCOPFLOW subproblem solver type", "",
-      scopflow->subproblem_solver, scopflow->subproblem_solver, 64, NULL);
+  ierr = PetscOptionsString(SCOPFLOWOptions::solver.opt.c_str(),
+                            SCOPFLOWOptions::solver.desc.c_str(), "",
+                            scopflowsolvername, scopflowsolvername,
+                            max_solver_name_len, &scopflowsolverset);
+  CHKERRQ(ierr);
+  ierr =
+      PetscOptionsString(SCOPFLOWOptions::subproblem_model.opt.c_str(),
+                         SCOPFLOWOptions::subproblem_model.desc.c_str(), "",
+                         scopflow->subproblem_model, scopflow->subproblem_model,
+                         max_model_name_len, NULL);
+  CHKERRQ(ierr);
+  ierr = PetscOptionsString(SCOPFLOWOptions::subproblem_solver.opt.c_str(),
+                            SCOPFLOWOptions::subproblem_solver.desc.c_str(), "",
+                            scopflow->subproblem_solver,
+                            scopflow->subproblem_solver, max_solver_name_len,
+                            NULL);
   CHKERRQ(ierr);
 
+  ierr = PetscOptionsBool(SCOPFLOWOptions::iscoupling.opt.c_str(),
+                          SCOPFLOWOptions::iscoupling.desc.c_str(), "",
+                          scopflow->iscoupling, &scopflow->iscoupling, NULL);
+  CHKERRQ(ierr);
+  ierr = PetscOptionsInt(SCOPFLOWOptions::Nc.opt.c_str(),
+                         SCOPFLOWOptions::Nc.desc.c_str(), "", scopflow->Nc,
+                         &scopflow->Nc, NULL);
+  CHKERRQ(ierr);
+  ierr = PetscOptionsInt(SCOPFLOWOptions::mode.opt.c_str(),
+                         SCOPFLOWOptions::mode.desc.c_str(), "", scopflow->mode,
+                         &scopflow->mode, NULL);
+  CHKERRQ(ierr);
   ierr =
-      PetscOptionsBool("-scopflow_iscoupling",
-                       "Include coupling between first stage and second stage",
-                       "", scopflow->iscoupling, &scopflow->iscoupling, NULL);
-  CHKERRQ(ierr);
-  ierr = PetscOptionsInt("-scopflow_Nc", "Number of second stage scenarios", "",
-                         scopflow->Nc, &scopflow->Nc, NULL);
-  CHKERRQ(ierr);
-  ierr = PetscOptionsInt("-scopflow_mode",
-                         "Operation mode:Preventive (0) or Corrective (1)", "",
-                         scopflow->mode, &scopflow->mode, NULL);
-  CHKERRQ(ierr);
-  ierr = PetscOptionsBool("-scopflow_enable_multiperiod",
-                          "Multi-period SCOPFLOW?", "", scopflow->ismultiperiod,
-                          &scopflow->ismultiperiod, NULL);
+      PetscOptionsBool(SCOPFLOWOptions::enable_multiperiod.opt.c_str(),
+                       SCOPFLOWOptions::enable_multiperiod.desc.c_str(), "",
+                       scopflow->ismultiperiod, &scopflow->ismultiperiod, NULL);
   CHKERRQ(ierr);
   if (scopflow->ismultiperiod) {
     /* Set loadp,loadq, and windgen files */
-    ierr = PetscOptionsString("-scopflow_ploadprofile",
-                              "Active power load profile", "", ploadprofile,
-                              ploadprofile, 200, &flg1);
+    ierr = PetscOptionsString(SCOPFLOWOptions::ploadprofile.opt.c_str(),
+                              SCOPFLOWOptions::ploadprofile.desc.c_str(), "",
+                              ploadprofile, ploadprofile, PETSC_MAX_PATH_LEN,
+                              &flg1);
     CHKERRQ(ierr);
-    ierr = PetscOptionsString("-scopflow_qloadprofile",
-                              "Reactive power load profile", "", qloadprofile,
-                              qloadprofile, 200, &flg2);
+    ierr = PetscOptionsString(SCOPFLOWOptions::qloadprofile.opt.c_str(),
+                              SCOPFLOWOptions::qloadprofile.desc.c_str(), "",
+                              qloadprofile, qloadprofile, PETSC_MAX_PATH_LEN,
+                              &flg2);
     CHKERRQ(ierr);
-    ierr = PetscOptionsString("-scopflow_windgenprofile",
-                              "Wind generation profile", "", windgenprofile,
-                              windgenprofile, 200, &flg3);
+    ierr = PetscOptionsString(SCOPFLOWOptions::windgenprofile.opt.c_str(),
+                              SCOPFLOWOptions::windgenprofile.desc.c_str(), "",
+                              windgenprofile, windgenprofile,
+                              PETSC_MAX_PATH_LEN, &flg3);
     CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-scopflow_dT", "Length of time-step (minutes)", "",
-                            scopflow->dT, &scopflow->dT, NULL);
+    ierr = PetscOptionsReal(SCOPFLOWOptions::dT.opt.c_str(),
+                            SCOPFLOWOptions::dT.desc.c_str(), "", scopflow->dT,
+                            &scopflow->dT, NULL);
     CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-scopflow_duration", "Time horizon (hours)", "",
+    ierr = PetscOptionsReal(SCOPFLOWOptions::duration.opt.c_str(),
+                            SCOPFLOWOptions::duration.desc.c_str(), "",
                             scopflow->duration, &scopflow->duration, NULL);
     CHKERRQ(ierr);
   }
-  ierr = PetscOptionsReal("-scopflow_tolerance", "optimization tolerance", "",
+  ierr = PetscOptionsReal(SCOPFLOWOptions::tolerance.opt.c_str(),
+                          SCOPFLOWOptions::tolerance.desc.c_str(), "",
                           scopflow->tolerance, &scopflow->tolerance, NULL);
   CHKERRQ(ierr);
   PetscOptionsEnd();

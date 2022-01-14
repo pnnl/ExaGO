@@ -27,28 +27,34 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout) {
   sopflow->Nconineq = sopflow->nconineq = 0;
   sopflow->Ncon = sopflow->ncon = 0;
   sopflow->Nx = sopflow->nx = 0;
-  sopflow->Ns = sopflow->ns = 1;
+  sopflow->Ns = sopflow->ns = SOPFLOWOptions::Ns.default_value;
   sopflow->Gi = NULL;
   sopflow->Lambdai = NULL;
 
   sopflow->obj_factor = 1.0;
   sopflow->objbase = sopflow->objtot = 0.0;
-  sopflow->tolerance = 1e-6;
+  sopflow->tolerance = SOPFLOWOptions::tolerance.default_value;
 
   sopflow->solver = NULL;
   sopflow->model = NULL;
 
   /* Default subproblemmodel and solver */
-  PetscStrcpy(sopflow->subproblem_model, "POWER_BALANCE_POLAR");
-  PetscStrcpy(sopflow->subproblem_solver, "IPOPT");
+  (void)std::strncpy(sopflow->subproblem_model,
+                     SOPFLOWOptions::subproblem_model.default_value.c_str(),
+                     sizeof(sopflow->subproblem_model));
+  (void)std::strncpy(sopflow->subproblem_solver,
+                     SOPFLOWOptions::subproblem_model.default_value.c_str(),
+                     sizeof(sopflow->subproblem_solver));
 
-  sopflow->mode = 1;
+  sopflow->mode = SOPFLOWOptions::mode.default_value;
 
-  sopflow->ismulticontingency = PETSC_FALSE;
-  sopflow->Nc = 0;
+  sopflow->ismulticontingency =
+      SOPFLOWOptions::enable_multicontingency.default_value;
+  sopflow->Nc = SOPFLOWOptions::Nc.default_value;
   sopflow->ismultiperiod = PETSC_FALSE;
 
-  sopflow->flatten_contingencies = PETSC_FALSE;
+  sopflow->flatten_contingencies =
+      SOPFLOWOptions::flatten_contingencies.default_value;
   sopflow->ctgclist = NULL;
   sopflow->ctgcfileset = PETSC_FALSE;
 
@@ -65,7 +71,7 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout) {
   ierr = SOPFLOWSolverRegisterAll(sopflow);
 
   /* Run-time options */
-  sopflow->iscoupling = PETSC_TRUE;
+  sopflow->iscoupling = SOPFLOWOptions::iscoupling.default_value;
 
   sopflow->scenfileset = PETSC_FALSE;
   sopflow->scenunctype = NONE;
@@ -530,10 +536,7 @@ SOPFLOWSetContingencyData(SOPFLOW sopflow,
 PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
   PetscErrorCode ierr;
   PetscBool sopflowsolverset;
-  char opflowmodelname[32] = "POWER_BALANCE_POLAR";
-  char sopflowsolvername[32] = "IPOPT";
   PetscInt c, s, i, j;
-  char sopflowmodelname[32] = "GENRAMP";
   PS ps;
   OPFLOW opflow;
   char ctgcfile[PETSC_MAX_PATH_LEN];
@@ -542,61 +545,86 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
   PetscBool flgwindgen = PETSC_FALSE;
   PetscBool issopflowsolverhiop;
 
+  char opflowmodelname[max_model_name_len];
+  char sopflowsolvername[max_solver_name_len];
+  char sopflowmodelname[max_model_name_len];
+
+  (void)std::strncpy(sopflowmodelname,
+                     SOPFLOWOptions::sopflow_model.default_value.c_str(),
+                     sizeof(sopflowmodelname));
+  (void)std::strncpy(sopflowsolvername,
+                     SOPFLOWOptions::sopflow_solver.default_value.c_str(),
+                     sizeof(sopflowsolvername));
+  (void)std::strncpy(opflowmodelname,
+                     SOPFLOWOptions::opflow_model.default_value.c_str(),
+                     sizeof(opflowmodelname));
+
   PetscFunctionBegin;
 
   ierr = PetscOptionsBegin(sopflow->comm->type, NULL, "SOPFLOW options", NULL);
   CHKERRQ(ierr);
-  ierr = PetscOptionsString("-sopflow_model", "SOPFLOW model type", "",
-                            sopflowmodelname, sopflowmodelname, 32, NULL);
+  ierr = PetscOptionsString(SOPFLOWOptions::sopflow_model.opt.c_str(),
+                            SOPFLOWOptions::sopflow_model.desc.c_str(), "",
+                            sopflowmodelname, sopflowmodelname,
+                            max_model_name_len, NULL);
   CHKERRQ(ierr);
-  ierr = PetscOptionsString("-sopflow_solver", "SOPFLOW solver type", "",
-                            sopflowsolvername, sopflowsolvername, 32,
-                            &sopflowsolverset);
+  ierr = PetscOptionsString(SOPFLOWOptions::sopflow_solver.opt.c_str(),
+                            SOPFLOWOptions::sopflow_solver.desc.c_str(), "",
+                            sopflowsolvername, sopflowsolvername,
+                            max_solver_name_len, &sopflowsolverset);
   CHKERRQ(ierr);
-  ierr = PetscOptionsString(
-      "-sopflow_subproblem_model", "SOPFLOW subproblem model type", "",
-      sopflow->subproblem_model, sopflow->subproblem_model, 64, NULL);
+  ierr =
+      PetscOptionsString(SOPFLOWOptions::subproblem_model.opt.c_str(),
+                         SOPFLOWOptions::subproblem_model.desc.c_str(), "",
+                         sopflow->subproblem_model, sopflow->subproblem_model,
+                         max_model_name_len, NULL);
   CHKERRQ(ierr);
-  ierr = PetscOptionsString(
-      "-sopflow_subproblem_solver", "SOPFLOW subproblem solver type", "",
-      sopflow->subproblem_solver, sopflow->subproblem_solver, 64, NULL);
+  ierr =
+      PetscOptionsString(SOPFLOWOptions::subproblem_solver.opt.c_str(),
+                         SOPFLOWOptions::subproblem_solver.desc.c_str(), "",
+                         sopflow->subproblem_solver, sopflow->subproblem_solver,
+                         max_solver_name_len, NULL);
   CHKERRQ(ierr);
 
-  ierr =
-      PetscOptionsBool("-sopflow_iscoupling",
-                       "Include coupling between first stage and second stage",
-                       "", sopflow->iscoupling, &sopflow->iscoupling, NULL);
+  ierr = PetscOptionsBool(SOPFLOWOptions::iscoupling.opt.c_str(),
+                          SOPFLOWOptions::iscoupling.desc.c_str(), "",
+                          sopflow->iscoupling, &sopflow->iscoupling, NULL);
   CHKERRQ(ierr);
-  ierr = PetscOptionsInt("-sopflow_Ns", "Number of scenarios", "", sopflow->Ns,
+  ierr = PetscOptionsInt(SOPFLOWOptions::Ns.opt.c_str(),
+                         SOPFLOWOptions::Ns.desc.c_str(), "", sopflow->Ns,
                          &sopflow->Ns, NULL);
   CHKERRQ(ierr);
-  ierr = PetscOptionsInt("-sopflow_mode",
-                         "Operation mode:Preventive (0) or Corrective (1)", "",
-                         sopflow->mode, &sopflow->mode, NULL);
+  ierr = PetscOptionsInt(SOPFLOWOptions::mode.opt.c_str(),
+                         SOPFLOWOptions::mode.desc.c_str(), "", sopflow->mode,
+                         &sopflow->mode, NULL);
   CHKERRQ(ierr);
 
-  ierr = PetscOptionsBool(
-      "-sopflow_enable_multicontingency", "Multi-contingency SOPFLOW?", "",
-      sopflow->ismulticontingency, &sopflow->ismulticontingency, NULL);
+  ierr = PetscOptionsBool(SOPFLOWOptions::enable_multicontingency.opt.c_str(),
+                          SOPFLOWOptions::enable_multicontingency.desc.c_str(),
+                          "", sopflow->ismulticontingency,
+                          &sopflow->ismulticontingency, NULL);
   CHKERRQ(ierr);
-  ierr = PetscOptionsBool("-sopflow_flatten_contingencies",
-                          "Flatten contingencies for SOPFLOW?", "",
-                          sopflow->flatten_contingencies,
+  ierr = PetscOptionsBool(SOPFLOWOptions::flatten_contingencies.opt.c_str(),
+                          SOPFLOWOptions::flatten_contingencies.desc.c_str(),
+                          "", sopflow->flatten_contingencies,
                           &sopflow->flatten_contingencies, NULL);
   CHKERRQ(ierr);
 
-  ierr = PetscOptionsString("-ctgcfile", "Contingency file", "", ctgcfile,
+  ierr = PetscOptionsString(SOPFLOWOptions::ctgcfile.opt.c_str(),
+                            SOPFLOWOptions::ctgcfile.desc.c_str(), "", ctgcfile,
                             ctgcfile, PETSC_MAX_PATH_LEN, &flgctgc);
   CHKERRQ(ierr);
-  ierr = PetscOptionsInt(
-      "-sopflow_Nc", "Number of contingencies for multi-contingency scenario",
-      "", sopflow->Nc, &sopflow->Nc, NULL);
+  ierr = PetscOptionsInt(SOPFLOWOptions::Nc.opt.c_str(),
+                         SOPFLOWOptions::Nc.desc.c_str(), "", sopflow->Nc,
+                         &sopflow->Nc, NULL);
   CHKERRQ(ierr);
-  ierr = PetscOptionsString("-windgen", "Wind Generation file", "", windgen,
+  ierr = PetscOptionsString(SOPFLOWOptions::windgen.opt.c_str(),
+                            SOPFLOWOptions::windgen.desc.c_str(), "", windgen,
                             windgen, PETSC_MAX_PATH_LEN, &flgwindgen);
   CHKERRQ(ierr);
 
-  ierr = PetscOptionsReal("-sopflow_tolerance", "optimization tolerance", "",
+  ierr = PetscOptionsReal(SOPFLOWOptions::tolerance.opt.c_str(),
+                          SOPFLOWOptions::tolerance.desc.c_str(), "",
                           sopflow->tolerance, &sopflow->tolerance, NULL);
   CHKERRQ(ierr);
   PetscOptionsEnd();

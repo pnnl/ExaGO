@@ -7,6 +7,7 @@
 #define TCOPFLOW_H
 
 #include <ps.h>
+#include <utils.h>
 
 /* Solvers */
 #define TCOPFLOWSOLVER_IPOPT "IPOPT"

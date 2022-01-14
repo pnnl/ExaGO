@@ -1,0 +1,46 @@
+#ifndef _EXAGO_CONFIG_H_
+#define _EXAGO_CONFIG_H_
+
+/**
+ * \brief Define some macros for configure-time variables to make help messages
+ * more helpful. These allow users with only access to a binary distribution
+ * of ExaGO to retrieve the options used to build ExaGO.
+ */
+
+#cmakedefine EXAGO_BUILD_SHARED @EXAGO_BUILD_SHARED@
+
+#cmakedefine EXAGO_BUILD_STATIC @EXAGO_BUILD_STATIC@
+
+/* Global CMake-specific configuration variables */
+#define CMAKE_INSTALL_PREFIX "@CMAKE_INSTALL_PREFIX@"
+
+#define CMAKE_BUILD_TYPE "@CMAKE_BUILD_TYPE@"
+
+#define CMAKE_SOURCE_DIR "@PROJECT_SOURCE_DIR@"
+
+#define CMAKE_BUILD_DIR "@PROJECT_BINARY_DIR@"
+
+#define CMAKE_C_COMPILER "@CMAKE_C_COMPILER@"
+
+#define CMAKE_CXX_COMPILER "@CMAKE_CXX_COMPILER@"
+
+/* Petsc configure options */
+#define EXAGO_PETSC_DIR "@PETSC_DIR@"
+
+#define EXAGO_PETSC_LIBRARIES "@PETSC_LIBRARIES@"
+
+#define EXAGO_PETSC_INCLUDES "@PETSC_INCLUDES@"
+
+/* HiOp configuration options */
+#ifdef EXAGO_ENABLE_HIOP
+#define EXAGO_HiOp_DIR "@HiOp_DIR@"
+#endif
+
+/* Ipopt configuration options */
+#ifdef EXAGO_ENABLE_IPOPT
+#define EXAGO_IPOPT_ROOT_DIR "@IPOPT_ROOT_DIR@"
+#define EXAGO_IPOPT_LIBRARIES "@IPOPT_LIBRARIES@"
+#define EXAGO_IPOPT_INCLUDES "@IPOPT_INCLUDES@"
+#endif
+
+#endif /* _EXAGO_CONFIG_H_ */

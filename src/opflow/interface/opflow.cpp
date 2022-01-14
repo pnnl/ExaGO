@@ -402,6 +402,9 @@ PetscErrorCode OPFLOWComputePrePflow(OPFLOW opflow, PetscBool *converged) {
 
   Output Parameters
 . opflowout - The optimal power flow application object
+
+  If any of these default values are updated, the corresponding option in
+  include/opflow.h must be updated as well.
 */
 PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
   PetscErrorCode ierr;
@@ -421,6 +424,11 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
   ierr = PSSetApplication(opflow->ps, opflow, APP_ACOPF);
   CHKERRQ(ierr);
 
+  (void)std::strncpy(opflow->modelname, OPFLOWOptions::model.opt.c_str(),
+                     sizeof(opflow->modelname));
+  (void)std::strncpy(opflow->solvername, OPFLOWOptions::solver.opt.c_str(),
+                     sizeof(opflow->solvername));
+
   opflow->Nconeq = opflow->nconeq = -1;
   opflow->Nconineq = opflow->nconineq = -1;
   opflow->Ncon = opflow->ncon = -1;
@@ -433,19 +441,23 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
   opflow->obj_gencost =
       PETSC_TRUE; /* Generation cost minimization ON by default */
   opflow->solutiontops = PETSC_FALSE;
-  opflow->tolerance = 1e-6;
+  opflow->tolerance = OPFLOWOptions::tolerance.default_value;
 
-  opflow->has_gensetpoint = PETSC_FALSE;
-  opflow->use_agc = PETSC_FALSE;
+  opflow->has_gensetpoint = OPFLOWOptions::has_gensetpoint.default_value;
+  opflow->use_agc = OPFLOWOptions::use_agc.default_value;
 
   opflow->solver = NULL;
   opflow->model = NULL;
 
-  opflow->initializationtype = OPFLOWINIT_MIDPOINT;
+  opflow->initializationtype = static_cast<OPFLOWInitializationType>(
+      OPFLOWOptions::initialization.ToEnum(OPFLOWInitializationTypes, 4,
+                                           /*prefix=*/"OPFLOWINIT_"));
 
-  opflow->objectivetype = MIN_GEN_COST;
+  opflow->objectivetype = static_cast<OPFLOWObjectiveType>(
+      OPFLOWOptions::objective.ToEnum(OPFLOWObjectiveTypes, 3));
 
-  opflow->genbusvoltagetype = VARIABLE_WITHIN_BOUNDS;
+  opflow->genbusvoltagetype = static_cast<OPFLOWGenBusVoltageType>(
+      OPFLOWOptions::genbusvoltage.ToEnum(OPFLOWGenBusVoltageTypes, 3));
 
   opflow->nmodelsregistered = opflow->nsolversregistered = 0;
   opflow->OPFLOWModelRegisterAllCalled = opflow->OPFLOWSolverRegisterAllCalled =
@@ -458,12 +470,16 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
   ierr = OPFLOWSolverRegisterAll(opflow);
 
   /* Run-time options */
-  opflow->ignore_lineflow_constraints = PETSC_FALSE;
-  opflow->include_loadloss_variables = PETSC_FALSE;
-  opflow->include_powerimbalance_variables = PETSC_FALSE;
+  opflow->ignore_lineflow_constraints =
+      OPFLOWOptions::ignore_lineflow_constraints.default_value;
+  opflow->include_loadloss_variables =
+      OPFLOWOptions::include_loadloss_variables.default_value;
+  opflow->include_powerimbalance_variables =
+      OPFLOWOptions::include_powerimbalance_variables.default_value;
 
-  opflow->loadloss_penalty = 1e3;
-  opflow->powerimbalance_penalty = 1e4;
+  opflow->loadloss_penalty = OPFLOWOptions::loadloss_penalty.default_value;
+  opflow->powerimbalance_penalty =
+      OPFLOWOptions::powerimbalance_penalty.default_value;
 
   opflow->spdnordering = PETSC_FALSE;
   opflow->setupcalled = PETSC_FALSE;
@@ -1021,40 +1037,47 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   ierr = PetscOptionsBegin(opflow->comm->type, NULL, "OPFLOW options", NULL);
   CHKERRQ(ierr);
 
-  ierr = PetscOptionsString("-opflow_model", "OPFLOW model type", "", modelname,
+  ierr = PetscOptionsString(OPFLOWOptions::model.opt.c_str(),
+                            OPFLOWOptions::model.desc.c_str(), "", modelname,
                             modelname, 32, &modelset);
   CHKERRQ(ierr);
 
-  ierr = PetscOptionsString("-opflow_solver", "OPFLOW solver type", "",
-                            solvername, solvername, 32, &solverset);
+  ierr = PetscOptionsString(OPFLOWOptions::solver.opt.c_str(),
+                            OPFLOWOptions::solver.desc.c_str(), "", solvername,
+                            solvername, 32, &solverset);
   CHKERRQ(ierr);
-  ierr = PetscOptionsEnum(
-      "-opflow_initialization", "Type of OPFLOW initialization", "",
-      OPFLOWInitializationTypes, (PetscEnum)opflow->initializationtype,
-      (PetscEnum *)&opflow->initializationtype, NULL);
+  ierr = PetscOptionsEnum(OPFLOWOptions::initialization.opt.c_str(),
+                          OPFLOWOptions::initialization.desc.c_str(), "",
+                          OPFLOWInitializationTypes,
+                          (PetscEnum)opflow->initializationtype,
+                          (PetscEnum *)&opflow->initializationtype, NULL);
   CHKERRQ(ierr);
   ierr =
-      PetscOptionsEnum("-opflow_objective", "Type of OPFLOW objective", "",
+      PetscOptionsEnum(OPFLOWOptions::objective.opt.c_str(),
+                       OPFLOWOptions::objective.desc.c_str(), "",
                        OPFLOWObjectiveTypes, (PetscEnum)opflow->objectivetype,
                        (PetscEnum *)&opflow->objectivetype, NULL);
   CHKERRQ(ierr);
-  ierr = PetscOptionsEnum(
-      "-opflow_genbusvoltage", "Type of OPFLOW gen bus voltage control", "",
-      OPFLOWGenBusVoltageTypes, (PetscEnum)opflow->genbusvoltagetype,
-      (PetscEnum *)&opflow->genbusvoltagetype, NULL);
+  ierr = PetscOptionsEnum(OPFLOWOptions::genbusvoltage.opt.c_str(),
+                          OPFLOWOptions::genbusvoltage.desc.c_str(), "",
+                          OPFLOWGenBusVoltageTypes,
+                          (PetscEnum)opflow->genbusvoltagetype,
+                          (PetscEnum *)&opflow->genbusvoltagetype, NULL);
   CHKERRQ(ierr);
 
-  ierr = PetscOptionsBool(
-      "-opflow_has_gensetpoint", "Use set-points for generator real power", "",
-      opflow->has_gensetpoint, &opflow->has_gensetpoint, NULL);
+  ierr =
+      PetscOptionsBool(OPFLOWOptions::has_gensetpoint.opt.c_str(),
+                       OPFLOWOptions::has_gensetpoint.desc.c_str(), "",
+                       opflow->has_gensetpoint, &opflow->has_gensetpoint, NULL);
   CHKERRQ(ierr);
-  ierr = PetscOptionsBool("-opflow_use_agc",
-                          "Use automatic generation control (AGC)", "",
+  ierr = PetscOptionsBool(OPFLOWOptions::use_agc.opt.c_str(),
+                          OPFLOWOptions::use_agc.desc.c_str(), "",
                           opflow->use_agc, &opflow->use_agc, NULL);
   CHKERRQ(ierr);
   if (opflow->use_agc)
     opflow->has_gensetpoint = PETSC_TRUE;
-  ierr = PetscOptionsReal("-opflow_tolerance", "optimization tolerance", "",
+  ierr = PetscOptionsReal(OPFLOWOptions::tolerance.opt.c_str(),
+                          OPFLOWOptions::tolerance.desc.c_str(), "",
                           opflow->tolerance, &opflow->tolerance, NULL);
   CHKERRQ(ierr);
 
@@ -1065,28 +1088,33 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
     opflow->has_gensetpoint = PETSC_TRUE;
   }
 
-  ierr = PetscOptionsBool("-opflow_ignore_lineflow_constraints",
-                          "Ignore line flow constraints?", "",
-                          opflow->ignore_lineflow_constraints,
-                          &opflow->ignore_lineflow_constraints, NULL);
+  ierr =
+      PetscOptionsBool(OPFLOWOptions::ignore_lineflow_constraints.opt.c_str(),
+                       OPFLOWOptions::ignore_lineflow_constraints.desc.c_str(),
+                       "", opflow->ignore_lineflow_constraints,
+                       &opflow->ignore_lineflow_constraints, NULL);
   CHKERRQ(ierr);
-  ierr = PetscOptionsBool("-opflow_include_loadloss_variables",
-                          "Include load loss?", "",
-                          opflow->include_loadloss_variables,
-                          &opflow->include_loadloss_variables, NULL);
+  ierr =
+      PetscOptionsBool(OPFLOWOptions::include_loadloss_variables.opt.c_str(),
+                       OPFLOWOptions::include_loadloss_variables.desc.c_str(),
+                       "", opflow->include_loadloss_variables,
+                       &opflow->include_loadloss_variables, NULL);
   CHKERRQ(ierr);
-  ierr = PetscOptionsReal("-opflow_loadloss_penalty", "Penalty for load loss",
-                          "", opflow->loadloss_penalty,
-                          &opflow->loadloss_penalty, NULL);
+  ierr = PetscOptionsReal(OPFLOWOptions::loadloss_penalty.opt.c_str(),
+                          OPFLOWOptions::loadloss_penalty.desc.c_str(), "",
+                          opflow->loadloss_penalty, &opflow->loadloss_penalty,
+                          NULL);
   CHKERRQ(ierr);
-  ierr = PetscOptionsBool("-opflow_include_powerimbalance_variables",
-                          "Allow power imbalance?", "",
-                          opflow->include_powerimbalance_variables,
-                          &opflow->include_powerimbalance_variables, NULL);
+  ierr = PetscOptionsBool(
+      OPFLOWOptions::include_powerimbalance_variables.opt.c_str(),
+      OPFLOWOptions::include_powerimbalance_variables.desc.c_str(), "",
+      opflow->include_powerimbalance_variables,
+      &opflow->include_powerimbalance_variables, NULL);
   CHKERRQ(ierr);
-  ierr = PetscOptionsReal(
-      "-opflow_powerimbalance_penalty", "Power imbalance penalty", "",
-      opflow->powerimbalance_penalty, &opflow->powerimbalance_penalty, NULL);
+  ierr = PetscOptionsReal(OPFLOWOptions::powerimbalance_penalty.opt.c_str(),
+                          OPFLOWOptions::powerimbalance_penalty.desc.c_str(),
+                          "", opflow->powerimbalance_penalty,
+                          &opflow->powerimbalance_penalty, NULL);
   CHKERRQ(ierr);
   PetscOptionsEnd();
 
@@ -1101,15 +1129,8 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   } else {
     // Specify default arguments if model not set
     if (!opflow->model) {
-#if defined(EXAGO_ENABLE_IPOPT)
-      ierr = OPFLOWSetModel(opflow, OPFLOWMODEL_PBPOL);
+      ierr = OPFLOWSetModel(opflow, OPFLOWOptions::model.default_value.c_str());
       CHKERRQ(ierr);
-#else
-      ierr = OPFLOWSetModel(opflow, OPFLOWMODEL_PBCAR);
-      CHKERRQ(ierr);
-#endif
-      //      ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s
-      //      model\n",OPFLOWMODEL_PBCAR);CHKERRQ(ierr);
     }
   }
 
@@ -1124,15 +1145,18 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   } else {
     // Specify default arguments if solver not set
     if (!opflow->solver) {
-#if defined(EXAGO_ENABLE_IPOPT)
-      ierr = OPFLOWSetSolver(opflow, OPFLOWSOLVER_IPOPT);
+
+      // Default values may have OPFLOWSOLVER_ prepended to the string ExaGO
+      // uses internally, so we strip it before assigning (if found)
+      auto default_solver =
+          std::string(OPFLOWOptions::solver.default_value.c_str());
+      auto underscore = default_solver.find("_");
+
+      if (underscore != std::string::npos)
+        default_solver.erase(0, ++underscore);
+
+      ierr = OPFLOWSetSolver(opflow, default_solver.c_str());
       CHKERRQ(ierr);
-#else
-      ierr = OPFLOWSetSolver(opflow, OPFLOWSOLVER_TAO);
-      CHKERRQ(ierr);
-#endif
-      //      ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Using %s
-      //      solver\n",OPFLOWSOLVER_IPOPT);CHKERRQ(ierr);
     }
   }
   /* Once model and solver are set, we should check for compatibility */
@@ -2335,14 +2359,5 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
              opflow->modelname);
   }
 #endif // HIOP
-  PetscBool tao, tao_pbcar;
-  ierr = PetscStrcmp(opflow->solvername, OPFLOWSOLVER_TAO, &tao);
-  CHKERRQ(ierr);
-  ierr = PetscStrcmp(opflow->modelname, OPFLOWMODEL_PBCAR, &tao_pbcar);
-  CHKERRQ(ierr);
-  if (tao && !tao_pbcar) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_SUP,
-             "OPFLOW solver TAO incompatible with model %s", opflow->modelname);
-  }
   PetscFunctionReturn(0);
 };

@@ -329,7 +329,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
   OPFLOWSolver_HIOP hiop = (OPFLOWSolver_HIOP)opflow->solver;
   PetscBool ismodelpbpolhiop, ismodelpbpolrajahiop;
   HIOPComputeMode compute_mode = AUTO;
-  int verbose_level = 0;
+  int verbose_level = OPFLOWOptions::hiop_verbosity_level.default_value;
   PetscBool mode_set = PETSC_FALSE;
 
   PetscFunctionBegin;
@@ -339,10 +339,12 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
 
   ierr = PetscOptionsBegin(opflow->comm->type, NULL, "HIOP options", NULL);
   CHKERRQ(ierr);
-  ierr = PetscOptionsEnum("-hiop_compute_mode", "Type of compute mode", "",
+  ierr = PetscOptionsEnum(OPFLOWOptions::hiop_compute_mode.opt.c_str(),
+                          OPFLOWOptions::hiop_compute_mode.desc.c_str(), "",
                           HIOPComputeModeChoices, (PetscEnum)compute_mode,
                           (PetscEnum *)&compute_mode, &mode_set);
   CHKERRQ(ierr);
+
   if (mode_set == PETSC_FALSE) {
     hiop->mds->options->SetStringValue("compute_mode",
                                        opflow->_p_hiop_compute_mode);
@@ -350,14 +352,17 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
     hiop->mds->options->SetStringValue("compute_mode",
                                        HIOPComputeModeChoices[compute_mode]);
   }
-  ierr = PetscOptionsInt("-hiop_verbosity_level",
-                         "HIOP verbosity level (Integer 0 to 12)", "",
+
+  ierr = PetscOptionsInt(OPFLOWOptions::hiop_verbosity_level.opt.c_str(),
+                         OPFLOWOptions::hiop_verbosity_level.desc.c_str(), "",
                          verbose_level, &verbose_level, NULL);
   CHKERRQ(ierr);
 
 #if defined(EXAGO_ENABLE_IPOPT)
-  ierr = PetscOptionsBool("-hiop_ipopt_debug",
-                          "Flag enabling debugging HIOP code with IPOPT", "",
+  hiop->ipopt_debug =
+      static_cast<PetscBool>(OPFLOWOptions::hiop_ipopt_debug.default_value);
+  ierr = PetscOptionsBool(OPFLOWOptions::hiop_ipopt_debug.opt.c_str(),
+                          OPFLOWOptions::hiop_ipopt_debug.desc.c_str(), "",
                           hiop->ipopt_debug, &hiop->ipopt_debug, NULL);
   CHKERRQ(ierr);
 #endif

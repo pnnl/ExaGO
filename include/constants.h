@@ -42,4 +42,12 @@
 
 #define EXAGO_IGNORE -1000000 /* Ignore value */
 
+/*
+ * We often want a char[] with enough space to handle any solver or model name.
+ * These sizes are greater than the greatest of the model or solver name,
+ * respectively.
+ */
+static constexpr std::size_t max_model_name_len = 64;
+static constexpr std::size_t max_solver_name_len = 64;
+
 #endif
