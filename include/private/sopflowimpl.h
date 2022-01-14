@@ -114,6 +114,8 @@ struct _p_SOPFLOW {
       initialization_type; /* Initialization type for OPFLOW */
   OPFLOWGenBusVoltageType
       gen_bus_voltage_type; /* Gen bus voltage type for OPFLOW */
+  PetscBool
+      ignore_lineflow_constraints; /* Line flow constraints flag for OPFLOW */
 
   PetscBool flatten_contingencies; /* Flattens the contingencies to fuse the
                                       scenarios and contingencies */
@@ -215,6 +217,8 @@ struct _p_SOPFLOW {
   // Only used for HIOP solver
   char subproblem_model[64];
   char subproblem_solver[64];
+  char compute_mode[64];
+  int verbosity_level;
 };
 
 extern PetscErrorCode SOPFLOWModelRegisterAll(SOPFLOW);

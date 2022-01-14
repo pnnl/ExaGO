@@ -109,6 +109,7 @@ PETSC_EXTERN PetscErrorCode SOPFLOWSetNumScenarios(SOPFLOW, PetscInt);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetNumScenarios(SOPFLOW,
                                                    ScenarioFileInputFormat,
                                                    const char *, PetscInt *);
+PETSC_EXTERN PetscErrorCode SOPFLOWFlattenContingencies(SOPFLOW, PetscBool);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetNumContingencies(SOPFLOW, PetscInt);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetTotalObjective(SOPFLOW, PetscReal *);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetBaseObjective(SOPFLOW, PetscReal *);
@@ -130,5 +131,10 @@ PETSC_EXTERN PetscErrorCode SOPFLOWSetLoadProfiles(SOPFLOW, const char[],
                                                    const char[]);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemModel(SOPFLOW, const char[]);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemSolver(SOPFLOW, const char[]);
+PETSC_EXTERN PetscErrorCode SOPFLOWSetIgnoreLineflowConstraints(SOPFLOW,
+                                                                PetscBool);
+PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemComputeMode(SOPFLOW,
+                                                            const char[]);
+PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemVerbosityLevel(SOPFLOW, int);
 
 #endif

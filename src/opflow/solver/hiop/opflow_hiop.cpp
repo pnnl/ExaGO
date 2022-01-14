@@ -355,7 +355,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
 
   ierr = PetscOptionsInt(OPFLOWOptions::hiop_verbosity_level.opt.c_str(),
                          OPFLOWOptions::hiop_verbosity_level.desc.c_str(), "",
-                         verbose_level, &verbose_level, NULL);
+                         verbose_level, &opflow->_p_hiop_verbosity_level, NULL);
   CHKERRQ(ierr);
 
 #if defined(EXAGO_ENABLE_IPOPT)
@@ -404,7 +404,8 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
   hiop->mds->options->SetStringValue("fixed_var", "relax");
   hiop->mds->options->SetStringValue("Hessian", "analytical_exact");
   hiop->mds->options->SetStringValue("KKTLinsys", "xdycyd");
-  hiop->mds->options->SetIntegerValue("verbosity_level", verbose_level);
+  hiop->mds->options->SetIntegerValue("verbosity_level",
+                                      opflow->_p_hiop_verbosity_level);
   hiop->mds->options->SetNumericValue("mu0", 1e-1);
   hiop->mds->options->SetNumericValue("tolerance", opflow->tolerance);
   hiop->mds->options->SetNumericValue("bound_relax_perturb", 1e-6);

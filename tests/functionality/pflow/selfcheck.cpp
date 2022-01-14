@@ -132,6 +132,7 @@ struct PflowFunctionalityTests
     /* Possible ways for a funcitonality test to fail */
     bool converge_failed = false;
     bool num_iter_failed = false;
+    params.reasons_for_failure.clear();
 
     /* Test convergence status */
     ierr = PFLOWConverged(pflow, &params.conv_status);

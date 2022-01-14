@@ -159,6 +159,7 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
   PetscInt i, k, j, g = 0;
   PetscInt s = idx + 1;
   PetscInt scen_num, cont_num = 0;
+  PetscBool issubproblemsolver_hiop = PETSC_FALSE;
 
   //  printf("[Rank %d] contingency %d Came in recourse objective
   //  function\n",sopflow->comm->rank,s);
@@ -169,8 +170,19 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
   CHKERRQ(ierr);
   ierr = OPFLOWSetModel(opflowscen, sopflow->subproblem_model);
   CHKERRQ(ierr);
+  ierr = OPFLOWSetInitializationType(opflowscen, sopflow->initialization_type);
+  CHKERRQ(ierr);
   ierr = OPFLOWSetSolver(opflowscen, sopflow->subproblem_solver);
   CHKERRQ(ierr);
+  ierr =
+      PetscStrcmp(sopflow->subproblem_solver, "HIOP", &issubproblemsolver_hiop);
+  CHKERRQ(ierr);
+  if (issubproblemsolver_hiop) {
+    ierr = OPFLOWSetHIOPComputeMode(opflowscen, sopflow->compute_mode);
+    CHKERRQ(ierr);
+    ierr = OPFLOWSetHIOPVerbosityLevel(opflowscen, sopflow->verbosity_level);
+    CHKERRQ(ierr);
+  }
 
   ierr = OPFLOWReadMatPowerData(opflowscen, sopflow->netfile);
   CHKERRQ(ierr);
@@ -179,6 +191,8 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
   ierr = PSSetUp(ps);
   CHKERRQ(ierr);
 
+  scen_num = s;
+  cont_num = 0;
   if (!sopflow->flatten_contingencies) {
     scen_num = s;
     if (sopflow->scenfileset) {
