@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Build system
 
 - Depend on HiOp's exported cmake configuration to configure HiOp interoperation. Many CMake find package scripts have been removed as a result.
+- Use of Pkgconfig instead of PETSc cmake modules.
 - ExaGO depends on HiOp v0.5.3 and PETSc v3.16 and above.
 
 ### PS
@@ -33,8 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### TCOPFLOW
 
 ### SCOPFLOW
-
+- Defaults to corrective mode of operaation
 ### SOPFLOW
+- Defaults to corrective mode o operation
+- Added translator for converting native .cont contingency format to .con PSSE format.	
 
 ### Documentation
 
@@ -50,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Misc fixes for more robust continuous integration.
 
 ### Miscallenous
+- Updated case9mod_gen3_wind.m to (a) have no reactive power for wind generator, (b) tighter bounds on generator bus voltages.
+- Added case9mod_loadloss.m as a test network for non-zero load loss.
 
 
 ## [1.2.0] 
