@@ -2,9 +2,9 @@
 
 ### Overview
 
-The ExaGO python bindings use an object-oriented API slightly different from the
-C++ api.
-The C++ api uses the application type in uppercase as the prefix for its
+The ExaGO Python bindings use an object-oriented API slightly different from the
+C++ API.
+The C++ API uses the application type in uppercase as the prefix for its
 methods, where they are native methods in Python.
 
 For example, solving an OPF from C++ might look like this:
@@ -58,9 +58,9 @@ While a version of the same driver that uses the Python bindings looks like
 this:
 
 ```python
-from exago.opflow import OPFLOW
+import exago
 exago.initialize("opflow")
-opf = OPFLOW()
+opf = exago.OPFLOW()
 opf.read_mat_power_data('datafiles/case9/case9mod.m')
 opf.solve()
 opf.print_solution()
@@ -75,6 +75,26 @@ straightforward.
 ***If you identify components of the C++ API that you need to call from Python,
 please [open an issue on our issues page](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/issues).***
 
+### Bindings Table
+
+| C++ API | Python API | Notes |
+|---|---|---|
+| `ExaGOInitialize` | `exago.initialize` |  |
+| `ExaGOFinalize` | `exago.finalize` |  |
+| `PFLOW` | `exago.PFLOW` class | From here below, `pflow` objects are instances of the Python `exago.PFLOW` class. The same is the case for opflow, scopflow, tcopflow, and sopflow. |
+| `PFLOWReadMatPowerData` | `pflow.read_mat_power_data` |  |
+| `PFLOWSolve` | `pflow.solve` |  |
+| `OPFLOW` | `exago.OPFLOW` class |  |
+| `OPFLOWSetLoadLossPenalty` | `set_loadloss_penalty` | |
+| `OPFLOWSetBusPowerImbalancePenalty` | `set_bus_powerimbalance_penalty` | |
+| `OPFLOWSetTolerance` | `set_tolerance` | |
+| `OPFLOWGetTolerance` | `get_tolerance` | |
+| `OPFLOWGetObjective` | `get_objective` | |
+| `OPFLOWSolve` | `solve` | |
+| `OPFLOWPrintSolution` | `print_solution` | |
+| `OPFLOWReadMatPowerData` | `read_mat_power_data` | |
+
+
 ### Building
 
 This documentation only applies to ExaGO >=v1.2.1.
@@ -85,7 +105,7 @@ For example,
 ```console
 cmake .. \
   -D... # Set other ExaGO configuration options
-  -DEXAGO_ENABLE_PYTHON=ON # Make sure python bindings are enabled
+  -DEXAGO_ENABLE_PYTHON=ON # Make sure Python bindings are enabled
 make -j 12 install
 ```
 
@@ -98,8 +118,8 @@ library `exago.cpython-38-powerpc64le-linux-gnu.so` into
 
 ## Environment
 
-Currently exago requires python version greater than 3.6.
-Once Python is available in your environment (`module load python`), you will need to the ExaGO python libraries to your `PYTHONPATH` according to your target python version:
+Currently ExaGO requires Python version greater than 3.6.
+Once Python is available in your environment (`module load python`), you will need to add the ExaGO Python libraries to your `PYTHONPATH` according to your target Python version:
 
 ```bash
 # For Python 3.6
@@ -117,15 +137,15 @@ export DYLD_LIBRARY_PATH=/<exago_install>/lib:$DYLD_LIBRARY_PATH
 export LD_LIBRARY_PATH=/<exago_install>/lib:$LD_LIBRARY_PATH
 ```
 
-A sample opflow script [`test.py`](/interfaces/python/test.py) is provided, with `exago.prefix()` providing the path to the installation directory of exago. For more example usage and for the tests that cover this code, see [`tests/interfaces/python`](/tests/interfaces/python).
+A sample opflow script [`test.py`](/interfaces/python/test.py) is provided, with `exago.prefix()` providing the path to the installation directory of ExaGO. For more example usage and for the tests that cover this code, see [`tests/interfaces/python`](/tests/interfaces/python).
 
 ## History
 
-ExaGO pre v1.1 had optional python bindings that could be enabled. HiOp, a
+ExaGO pre v1.1 had optional Python bindings that could be enabled. HiOp, a
 critical dependency, updated to Umpire v6 when GPU and RAJA options were
 enabled. Because Umpire after v6 ships with CUDA device code, a final device
 link step was required for any libraries/executables. This drastically
-complicated the ctypes python bindings, which relied on calling out to the
+complicated the ctypes Python bindings, which relied on calling out to the
 shared library directly.
 
 ExaGO v1.2.1 was the first version to ship Python bindings that used Pybind11,

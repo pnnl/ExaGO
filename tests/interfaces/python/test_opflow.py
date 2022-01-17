@@ -13,14 +13,14 @@ def test_initialize():
 @exago_test
 def test_creating_opflow():
     '''Testing creation of opflow object'''
-    opf = exago.opf()
+    opf = exago.OPFLOW()
     print(opf)
 
 
 @exago_test
 def test_tolerance_opflow():
     '''Testing setting tolerance in opflow object'''
-    opf = exago.opf()
+    opf = exago.OPFLOW()
     opf.set_tolerance(1e-6)
     tol = opf.get_tolerance()
     assert tol == 1e-6
@@ -32,21 +32,21 @@ def test_tolerance_opflow():
 @exago_test
 def test_set_loadloss_penalty_opflow():
     '''Testing setting load loss penalty in opflow object'''
-    opf = exago.opf()
+    opf = exago.OPFLOW()
     opf.set_loadloss_penalty(999)
 
 
 @exago_test
-def test_set_powerimbalance_penalty_opflow():
+def test_set_bus_powerimbalance_penalty_opflow():
     '''Testing setting power imbalance penalty in opflow object'''
-    opf = exago.opf()
-    opf.set_powerimbalance_penalty(999)
+    opf = exago.OPFLOW()
+    opf.set_bus_powerimbalance_penalty(999)
 
 
 @exago_test
 def test_solve_opflow():
     '''Testing opflow solve'''
-    opf = exago.opf()
+    opf = exago.OPFLOW()
     print(opf)
     path = exago.prefix()
     opf.read_mat_power_data(os.path.join(

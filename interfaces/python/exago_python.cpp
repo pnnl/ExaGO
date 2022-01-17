@@ -29,7 +29,7 @@ PYBIND11_MODULE(exago, m) {
   m.def("finalize", &ExaGOFinalize);
   m.def("prefix", &prefix);
 
-  pybind11::class_<_p_PFLOW>(m, "pflow")
+  pybind11::class_<_p_PFLOW>(m, "PFLOW")
       .def(pybind11::init([]() {
         PetscErrorCode ierr;
         PFLOW pflow;
@@ -52,7 +52,7 @@ PYBIND11_MODULE(exago, m) {
         ExaGOCheckError(ierr);
       });
 
-  pybind11::class_<_p_OPFLOW>(m, "opf")
+  pybind11::class_<_p_OPFLOW>(m, "OPFLOW")
       .def(pybind11::init([]() {
         PetscErrorCode ierr;
         OPFLOW opf;
@@ -72,7 +72,7 @@ PYBIND11_MODULE(exago, m) {
              ExaGOCheckError(ierr);
            })
 
-      .def("set_powerimbalance_penalty",
+      .def("set_bus_powerimbalance_penalty",
            [](_p_OPFLOW &opf, double p) {
              PetscErrorCode ierr;
              ierr = OPFLOWSetBusPowerImbalancePenalty(&opf, p);
