@@ -20,14 +20,14 @@ def test_get_datafile_path():
 @exago_test
 def test_creating_pflow():
     '''Testing creation of pflow object'''
-    pflow = exago.pflow()
+    pflow = exago.PFLOW()
     print(pflow)
 
 
 @exago_test
 def test_solve():
     '''Testing pflow solve'''
-    pflow = exago.pflow()
+    pflow = exago.PFLOW()
     path = exago.prefix()
     pflow.read_mat_power_data(os.path.join(
         path, 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))

@@ -22,8 +22,6 @@ Note that not all applications can utilize all solvers yet. The following table 
 | IPOPT      | Y         |  Y     | Y       | Y       | 
 | HIOP       | Y          |       |   Y      |  Y       |
 
-Note: The support for solving SCOPFLOW and SOPFLOW in parallel using the HiOP package is currently in development and is expected to be added in the next release.
-
 ## Installing
 
 See [INSTALL.md](./INSTALL.md) for information on acquiring, building and installing ExaGO.
