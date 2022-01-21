@@ -44,7 +44,7 @@ def gen_cost(bus_size):
   output.append("%% generator cost data\n")
   output.append("mpc.gencost = [\n")
   for _ in range(int(bus_size)):
-    output.append("2 0 0 4 0.0000 0.450 0.100 8.00\n")
+    output.append("2 0 0 3 0.0450 0.100 8.00\n")
   output.append("];\n")
   output.append("\n")
   return output
