@@ -187,6 +187,8 @@ PETSC_EXTERN PetscErrorCode OPFLOWGetConvergenceStatus(OPFLOW, PetscBool *);
 PETSC_EXTERN PetscErrorCode OPFLOWGetConstraints(OPFLOW, Vec *);
 PETSC_EXTERN PetscErrorCode OPFLOWGetConstraintMultipliers(OPFLOW, Vec *);
 
+PETSC_EXTERN PetscErrorCode OPFLOWGetModel(OPFLOW, char*);
+PETSC_EXTERN PetscErrorCode OPFLOWGetSolver(OPFLOW, char*);
 PETSC_EXTERN PetscErrorCode OPFLOWComputeVariableBounds(OPFLOW, Vec, Vec);
 PETSC_EXTERN PetscErrorCode OPFLOWComputeGradient(OPFLOW, Vec, Vec);
 PETSC_EXTERN PetscErrorCode OPFLOWComputeGradientArray(OPFLOW, const double *,

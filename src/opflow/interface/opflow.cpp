@@ -2095,6 +2095,42 @@ PetscErrorCode OPFLOWGetConstraintMultipliers(OPFLOW opflow, Vec *Lambda) {
 }
 
 /*
+  OPFLOWGetModel - Returns the OPFLOW model
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+
+  Output Parameters:
+- modelname - the model opflow is using
+
+*/
+PetscErrorCode OPFLOWGetModel(OPFLOW opflow, char *modelname) {
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  strcpy(modelname, opflow->modelname);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWGetSolver - Returns the OPFLOW solver
+
+  Input Parameters:
++ OPFLOW - the OPFLOW object
+
+  Output Parameters:
+- solvername - the solver opflow is using
+
+*/
+PetscErrorCode OPFLOWGetSolver(OPFLOW opflow, char *solvername) {
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  strcpy(solvername, opflow->solvername);
+  PetscFunctionReturn(0);
+}
+
+/*
   OPFLOWGetConvergenceStatus - Did OPFLOW converge?
 
   Input Parameters:
