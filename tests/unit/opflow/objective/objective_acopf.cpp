@@ -71,8 +71,9 @@ int main(int argc, char **argv) {
   CHKERRQ(ierr);
   ierr = OPFLOWReadMatPowerData(opflowtest, file.c_str());
   CHKERRQ(ierr);
-  ierr = OPFLOWSetModel(opflowtest, OPFLOWMODEL_PBPOL);
-  CHKERRQ(ierr);
+  // Model and solver will be set from the command line
+  //ierr = OPFLOWSetModel(opflowtest, OPFLOWMODEL_PBPOL);
+  //CHKERRQ(ierr);
   ierr = OPFLOWSetInitializationType(opflowtest, OPFLOWINIT_FROMFILE);
   CHKERRQ(ierr);
   ierr = OPFLOWSetUp(opflowtest);
@@ -80,7 +81,69 @@ int main(int argc, char **argv) {
   ierr = OPFLOWGetSolution(opflowtest, &X);
   CHKERRQ(ierr);
 
-  fail += test.computeObjective(opflowtest, X, obj_value);
+  // If we are using HIOP, need to convert X to be an array
+  // The string lengths must be 64
+  char modelname[64];
+  char solvername[64];
+  ierr = OPFLOWGetModel(opflowtest, modelname);
+  ierr = OPFLOWGetSolver(opflowtest, solvername);
+
+  if(strncmp(solvername, "HIOP", 64) == 0)
+  {
+    double *x_ref;
+    ierr = VecGetArray(X, &x_ref);
+    CHKERRQ(ierr);
+    
+    // If we are running using the CPU model, nothing needs to be done
+    if(strncmp(modelname, "POWER_BALANCE_HIOP", 64) == 0)
+    {
+      fail += test.computeObjective(opflowtest, x_ref, obj_value);
+    }
+    else // Using model PBPOLRAJAHIOP
+    {
+      int nx, nconeq, nconineq;
+      ierr = OPFLOWGetSizes(opflowtest, &nx, &nconeq, &nconineq);
+      CHKERRQ(ierr);
+
+      // Get resource manager instance
+      auto &resmgr = umpire::ResourceManager::getInstance();
+
+      // Get Allocator
+      umpire::Allocator h_allocator = resmgr.getAllocator("HOST");
+
+      // Register array xref with umpire
+      umpire::util::AllocationRecord record_x{
+          x_ref, sizeof(double) * nx, h_allocator.getAllocationStrategy()};
+      resmgr.registerAllocation(x_ref, record_x);
+      // Allocate and copy xref and lambdaref to device
+      double *x_ref_dev;
+
+// Really this should depend on HiOp compute mode, and we should test CPU/GPU compute mode
+#ifdef EXAGO_ENABLE_GPU
+      umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
+      x_ref_dev =
+          static_cast<double *>(d_allocator.allocate(nx * sizeof(double)));
+#else
+      x_ref_dev = x_ref;
+#endif
+      resmgr.copy(x_ref_dev, x_ref);
+
+      fail += test.computeObjective(opflowtest, x_ref_dev, obj_value);
+
+#ifdef EXAGO_ENABLE_GPU
+      d_allocator.deallocate(x_ref_dev);
+#endif
+      
+    }
+
+    ierr = VecRestoreArray(X, &x_ref);
+    CHKERRQ(ierr);
+  }
+  else
+  {
+    // Additionally need to allocate on GPU for RAJA
+    fail += test.computeObjective(opflowtest, X, obj_value);
+  }
 
   ierr = OPFLOWDestroy(&opflowtest);
   CHKERRQ(ierr);
