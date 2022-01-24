@@ -21,27 +21,38 @@ set(num_copies 3 600)
 
 list(TRANSFORM obj_network_files PREPEND ${prefix})
 
+set(solvers IPOPT HIOP HIOP HIOPSPARSE)
+set(models POWER_BALANCE_POLAR POWER_BALANCE_HIOP PBPOLRAJAHIOP POWER_BALANCE_POLAR)
+# Logic in CMake is HiOp::Sparse/HIOP_SPARSE, while opflow options are HIOPSPARSE
+set(dependencies IPOPT HIOP HIOP HIOP_SPARSE)
+
 if(EXAGO_INSTALL_TESTS)
   install(TARGETS gradient_acopf DESTINATION tests/unit/opflow/gradient)
   # Iterate over networks, matching network file to num_copies
   foreach(network num IN ZIP_LISTS obj_network_files num_copies)
     get_filename_component(net ${network} NAME)
-    set(testname "UNIT_TESTS_GRADIENT_SIZE_${net}")
-    exago_add_test(
-      NAME
-      ${testname}
-      DEPENDS
-      IPOPT
-      COMMAND
-      ${RUNCMD}
-      $<TARGET_FILE:gradient_acopf>
-      -opflow_include_loadloss_variables 1
-      -opflow_include_powerimbalance_variables 1
-      -netfile
-      ${network}
-      -num_copies
-      ${num}
-    )
+    foreach(model solver dependency IN ZIP_LISTS models solvers dependencies)
+      set(testname "UNIT_TESTS_GRADIENT_SIZE_${num}_${solver}_${model}")
+      exago_add_test(
+        NAME
+        ${testname}
+        DEPENDS
+        ${dependency}
+        COMMAND
+        ${RUNCMD}
+        $<TARGET_FILE:gradient_acopf>
+        -opflow_include_loadloss_variables 1
+        -opflow_include_powerimbalance_variables 1
+        -netfile
+        ${network}
+        -opflow_model
+        ${model}
+        -opflow_solver
+        ${solver}
+        -num_copies
+        ${num}
+      )
+    endforeach()
   endforeach()
 endif()
 
