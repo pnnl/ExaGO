@@ -71,9 +71,6 @@ int main(int argc, char **argv) {
   CHKERRQ(ierr);
   ierr = OPFLOWReadMatPowerData(opflowtest, file.c_str());
   CHKERRQ(ierr);
-  // Model and solver will be set from the command line
-  //ierr = OPFLOWSetModel(opflowtest, OPFLOWMODEL_PBPOL);
-  //CHKERRQ(ierr);
   ierr = OPFLOWSetInitializationType(opflowtest, OPFLOWINIT_FROMFILE);
   CHKERRQ(ierr);
   ierr = OPFLOWSetUp(opflowtest);
@@ -120,10 +117,16 @@ int main(int argc, char **argv) {
 
 // Really this should depend on HiOp compute mode, and we should test CPU/GPU compute mode
 #ifdef EXAGO_ENABLE_GPU
+
+      ierr = OPFLOWSetHIOPComputeMode(opflowtest, "GPU");
+      CHKERRQ(ierr);
+
       umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
       x_ref_dev =
           static_cast<double *>(d_allocator.allocate(nx * sizeof(double)));
 #else
+      ierr = OPFLOWSetHIOPComputeMode(opflowtest, "CPU");
+      CHKERRQ(ierr);
       x_ref_dev = x_ref;
 #endif
       resmgr.copy(x_ref_dev, x_ref);
