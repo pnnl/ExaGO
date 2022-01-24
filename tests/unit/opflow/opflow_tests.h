@@ -15,6 +15,10 @@
 #include <umpire/ResourceManager.hpp>
 #endif
 
+// Used for reference solution for gradient function computation
+// Internal to model power_blanace polar
+extern PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW, Vec, Vec);
+
 #define cleanup(fail, opflow)                                                  \
   printMessage(fail, __func__, getRank(opflow));                               \
   return reduceReturn(fail, opflow);

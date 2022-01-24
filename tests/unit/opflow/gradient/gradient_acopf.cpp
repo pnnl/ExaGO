@@ -61,6 +61,8 @@ int main(int argc, char **argv) {
   /* Get network data file from command line */
   ierr = PetscOptionsGetString(NULL, NULL, "-netfile", file_c_str,
                                PETSC_MAX_PATH_LEN, &flg);
+
+  // TODO : Should this be ExaGOCheckError?
   CHKERRQ(ierr);
 
   /* Get network data file from command line */
@@ -92,39 +94,11 @@ int main(int argc, char **argv) {
   CHKERRQ(ierr);
 
   // Set the grad array to be the solution
-  int nx, nconeq, nconineq;
-  ierr = OPFLOWGetSizes(opflowtest, &nx, &nconeq, &nconineq);
-  CHKERRQ(ierr);
-
+  // Duplicate grad to avoid compiler warning
   ierr = VecDuplicate(X, &grad);
   CHKERRQ(ierr);
 
-  ierr = VecAssemblyBegin(grad);
-  CHKERRQ(ierr);
-
-  // Start at 2 as first two elements are always 0
-  for(int i=2; i<nx; i++)
-  {
-    if((i - 2) % 12 == 4)
-    {
-      ierr = VecSetValue(grad, i, 4.5, INSERT_VALUES);
-      CHKERRQ(ierr);
-    }
-    else if ((i - 2) % 12 == 8 || (i - 2) % 12 == 9)
-    {
-      ierr = VecSetValue(grad, i, 100000, INSERT_VALUES);
-      CHKERRQ(ierr);
-    }
-  }
-
-  ierr = VecAssemblyEnd(grad);
-  CHKERRQ(ierr);
-
-  // Call test.computeGradient
-
-  ierr = VecView(X, 0);
-  CHKERRQ(ierr);
-  ierr = VecView(grad, 0);
+  ierr = OPFLOWComputeGradient_PBPOL(opflowtest, X, grad);
   CHKERRQ(ierr);
 
   fail += test.computeGradient(opflowtest, X, grad);

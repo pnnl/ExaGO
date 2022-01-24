@@ -2,9 +2,13 @@ if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_GPU)
   set_source_files_properties(gradient_acopf.cpp PROPERTIES LANGUAGE CUDA)
 endif()
 
-add_executable(
-  gradient_acopf gradient_acopf.cpp ../../utils/test_acopf_utils.cpp
-)
+set(GRADIENT_SRC
+  gradient_acopf.cpp
+  ../../utils/test_acopf_utils.cpp
+  ../../../../../src/opflow/model/power_bal_polar/pbpol.cpp)
+
+add_executable(gradient_acopf ${GRADIENT_SRC})
+
 target_link_libraries(gradient_acopf ExaGO::OPFLOW)
 target_include_directories(gradient_acopf PRIVATE ../../utils)
 target_include_directories(gradient_acopf PRIVATE ../)
@@ -32,7 +36,7 @@ if(EXAGO_INSTALL_TESTS)
       ${RUNCMD}
       $<TARGET_FILE:gradient_acopf>
       -opflow_include_loadloss_variables 1
-      -opflow_include_powerimblance_variables 1
+      -opflow_include_powerimbalance_variables 1
       -netfile
       ${network}
       -num_copies
