@@ -85,18 +85,15 @@ int main(int argc, char **argv) {
   ierr = OPFLOWGetModel(opflowtest, modelname);
   ierr = OPFLOWGetSolver(opflowtest, solvername);
 
-  if(strncmp(solvername, "HIOP", 64) == 0)
-  {
+  if (strncmp(solvername, "HIOP", 64) == 0) {
     double *x_ref;
     ierr = VecGetArray(X, &x_ref);
     CHKERRQ(ierr);
-    
+
     // If we are running using the CPU model, nothing needs to be done
-    if(strncmp(modelname, "POWER_BALANCE_HIOP", 64) == 0)
-    {
+    if (strncmp(modelname, "POWER_BALANCE_HIOP", 64) == 0) {
       fail += test.computeObjective(opflowtest, x_ref, obj_value);
-    }
-    else // Using model PBPOLRAJAHIOP
+    } else // Using model PBPOLRAJAHIOP
     {
       int nx, nconeq, nconineq;
       ierr = OPFLOWGetSizes(opflowtest, &nx, &nconeq, &nconineq);
@@ -115,7 +112,8 @@ int main(int argc, char **argv) {
       // Allocate and copy xref and lambdaref to device
       double *x_ref_dev;
 
-// Really this should depend on HiOp compute mode, and we should test CPU/GPU compute mode
+// Really this should depend on HiOp compute mode, and we should test CPU/GPU
+// compute mode
 #ifdef EXAGO_ENABLE_GPU
 
       ierr = OPFLOWSetHIOPComputeMode(opflowtest, "GPU");
@@ -136,14 +134,11 @@ int main(int argc, char **argv) {
 #ifdef EXAGO_ENABLE_GPU
       d_allocator.deallocate(x_ref_dev);
 #endif
-      
     }
 
     ierr = VecRestoreArray(X, &x_ref);
     CHKERRQ(ierr);
-  }
-  else
-  {
+  } else {
     // Additionally need to allocate on GPU for RAJA
     fail += test.computeObjective(opflowtest, X, obj_value);
   }

@@ -114,7 +114,6 @@ int main(int argc, char **argv) {
   ierr = OPFLOWComputeGradient_PBPOL(opflowtest, X, grad);
   CHKERRQ(ierr);
 
-
   // If we are using HIOP, need to convert X and grad to be an array
   // The string lengths must be 64
   char modelname[64];
@@ -122,8 +121,7 @@ int main(int argc, char **argv) {
   ierr = OPFLOWGetModel(opflowtest, modelname);
   ierr = OPFLOWGetSolver(opflowtest, solvername);
 
-  if(strncmp(solvername, "HIOP", 64) == 0)
-  {
+  if (strncmp(solvername, "HIOP", 64) == 0) {
     double *x_vec, *x_ref, *grad_vec, *grad_ref;
     ierr = VecGetArray(X, &x_vec);
     CHKERRQ(ierr);
@@ -134,7 +132,7 @@ int main(int argc, char **argv) {
     int nx, nconeq, nconineq;
     ierr = OPFLOWGetSizes(opflowtest, &nx, &nconeq, &nconineq);
     CHKERRQ(ierr);
-    
+
     int *idxn2sd_map;
     ierr = OPFLOWGetVariableOrdering(opflowtest, &idxn2sd_map);
     CHKERRQ(ierr);
@@ -150,13 +148,11 @@ int main(int argc, char **argv) {
     naturaltospdense(grad_vec, grad_ref, idxn2sd_map, nx);
     CHKERRQ(ierr);
     /* _ref pointers are now in sparse-dense ordering */
-    
+
     // If we are running using the CPU model, nothing needs to be done
-    if(strncmp(modelname, "POWER_BALANCE_HIOP", 64) == 0)
-    {
+    if (strncmp(modelname, "POWER_BALANCE_HIOP", 64) == 0) {
       fail += test.computeGradient(opflowtest, x_ref, grad_ref);
-    }
-    else // Using model PBPOLRAJAHIOP
+    } else // Using model PBPOLRAJAHIOP
     {
 
       // Get resource manager instance
@@ -193,7 +189,6 @@ int main(int argc, char **argv) {
 #ifdef EXAGO_ENABLE_GPU
       d_allocator.deallocate(x_ref_dev);
 #endif
-      
     }
 
     ierr = VecRestoreArray(X, &x_ref);
@@ -206,8 +201,7 @@ int main(int argc, char **argv) {
     CHKERRQ(ierr);
     ierr = PetscFree(grad_ref);
     CHKERRQ(ierr);
-  }
-  else // model POWER_BALANCE_POLAR
+  } else // model POWER_BALANCE_POLAR
   {
     fail += test.computeGradient(opflowtest, X, grad);
   }
