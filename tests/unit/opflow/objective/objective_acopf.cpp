@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
                                PETSC_MAX_PATH_LEN, &flg);
   CHKERRQ(ierr);
 
-  /* Get network data file from command line */
+  /* Get num copies from command line */
   ierr = PetscOptionsGetInt(NULL, NULL, "-num_copies", &num_copies, &flg);
   CHKERRQ(ierr);
 

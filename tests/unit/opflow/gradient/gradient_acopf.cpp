@@ -49,9 +49,6 @@ void spdensetonatural(const double *xin, double *xout, int *idxn2sd_map,
  * Default value is `/<exago_dir>/datafiles/case9/case9mod.m`. See directory
  * datafiles for other potential inputs.
  *
- *    ~ -num_copies <number> : Specifies the number of replications of the
- * network given through `-netfile`. If this is not set properly, test may fail
- *
  */
 int main(int argc, char **argv) {
   PetscErrorCode ierr;
@@ -62,7 +59,6 @@ int main(int argc, char **argv) {
   std::string file;
   char appname[] = "opflow";
   MPI_Comm comm = MPI_COMM_WORLD;
-  int num_copies = 1;
 
   char help[] = "Unit tests for gradient function running opflow\n";
 
@@ -78,10 +74,6 @@ int main(int argc, char **argv) {
                                PETSC_MAX_PATH_LEN, &flg);
 
   // TODO : Should this be ExaGOCheckError?
-  CHKERRQ(ierr);
-
-  /* Get network data file from command line */
-  ierr = PetscOptionsGetInt(NULL, NULL, "-num_copies", &num_copies, &flg);
   CHKERRQ(ierr);
 
   if (!flg) {

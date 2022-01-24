@@ -15,8 +15,6 @@ target_include_directories(gradient_acopf PRIVATE ../)
 # Network files to run on - doing 3 and 600 bus examples.
 set(prefix ${EXAGO_DATAFILES_DIR}/unit/opflow/gradient/)
 set(obj_network_files OFG_unittestx3.m OFG_unittestx600.m)
-# Map num_copies to a specific netfile
-set(num_copies 3 600)
 
 list(TRANSFORM obj_network_files PREPEND ${prefix})
 
@@ -31,7 +29,7 @@ set(dependencies IPOPT HIOP HIOP HIOP_SPARSE)
 if(EXAGO_INSTALL_TESTS)
   install(TARGETS gradient_acopf DESTINATION tests/unit/opflow/gradient)
   # Iterate over networks, matching network file to num_copies
-  foreach(network num IN ZIP_LISTS obj_network_files num_copies)
+  foreach(network obj_network_files)
     get_filename_component(net ${network} NAME)
     foreach(
       model
@@ -62,8 +60,6 @@ if(EXAGO_INSTALL_TESTS)
         ${model}
         -opflow_solver
         ${solver}
-        -num_copies
-        ${num}
       )
     endforeach()
   endforeach()
