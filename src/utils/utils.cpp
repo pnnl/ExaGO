@@ -279,8 +279,7 @@ template <typename T> static inline void print(T const &opt) {
   PetscErrorCode ierr;
 
   std::string versionstr;
-  ierr = ExaGOVersionGetVersionStr(versionstr);
-  CHKERRQ(ierr);
+  ExaGOVersionGetVersionStr(versionstr);
   fmt::print("ExaGO {} built on {}\n", versionstr, __DATE__);
 
   const std::string appname = _appname;
@@ -365,7 +364,7 @@ template <typename T> static inline void print(T const &opt) {
                "very out of date.");
     fprintf(stderr, "============== Help Options for application tcopflow "
                     "==============\n");
-    fprintf(stderr, " General usage: ./%s <options>\n", appname);
+    fprintf(stderr, " General usage: ./%s <options>\n", appname.c_str());
     fprintf(stderr, " Options:\n");
     fprintf(stderr, "\t -netfile <netfilename>\n");
     fprintf(stderr, "\t -tcopflow_windgenprofile <windgenproffilename>\n");
