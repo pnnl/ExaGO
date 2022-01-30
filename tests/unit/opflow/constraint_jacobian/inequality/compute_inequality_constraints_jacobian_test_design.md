@@ -55,10 +55,18 @@ For the generator with the voltage setpoint following two constraints are calcul
 
 **Add the constraints when opflow_has_gensetpoint**
 
+## Inequality constraint Jacobian
+
+Jacobian terms are calculated as partial w.r.t voltage magniude and angle at each bus, as well as w.r.t generator injections, (and load loss and power imbalance if enabled).
+Dimensions of the matrix are:
+- $`Number_of_rows = 2*Number_of_lines+2*Number_of_generators`
+- $`Number_of_columns = 2*(Number_of_buses+Number_of_generators)+(2*Number_of_buses if load loss and power imbalance options are enabled)`
+
+
 ## Input
 
 ExaGO OPFLOW reads .m file, thus the input file for unit test is in this format.
-A 5-bus system **CIC-unittestx1.m** will be used as a basis for this test. In addition, an artifical solution vector will be also generated as an input for the test.
+A 5-bus system **CICJ-unittestx1.m** will be used as a basis for this test. In addition, an artifical solution vector will be also generated as an input for the test.
 
 ### Parameters values in .m file
 
@@ -106,27 +114,83 @@ For the 5-bus system **CEC-unittestx1.m**, solution vector is:
 </tr>
 </table>
 
-### Residual vector builder for inequality constraints for the example network
+### Matrix builder for inequality constraints Jacobian for the example network
 
-For the considered network there are two inequality constraints for voltages, and two for each branch, thus the total number is ten.
-
+For the considered network matrix for equality constraint Jacobian is built as follows:
 <table>
 <tr>
-<td>IEC1_V</td> <td>IEC2_V[1]</td> <td>Sf_Branch12</td> <td>St_Branch12</td> <td>Sf_Branch23</td> <td>St_Branch23</td> <td>Sf_Branch24</td> <td>St_Branch24</td> <td>Sf_Branch45</td> <td>St_Branch45</td>
+<td> </td> <td>theta1</td> <td>Vm1</td> <td>theta2</td> <td>Vm2</td> <td>theta3</td> <td>Vm3</td> <td>Pg3</td> <td>Qg3</td> <td>theta4</td> <td>Vm4</td> <td>theta5</td> <td>Vm5</td>
+</tr>
+<tr>
+<td>IEC1</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>dIEC1dVm3</td> <td>0</td> <td>dIEC1dQg3</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+</tr>
+<tr>
+<td>IEC2</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>dIEC2dVm3</td> <td>0</td> <td>dIEC2dQg3</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+</tr>
+<tr>
+<td>Sf12</td> <td>dSf12dtheta1</td> <td>dSf12dVm1</td> <td>dSf12dtheta2</td> <td>dSf12dVm2</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+</tr>
+<tr>
+<td>St12</td> <td>dSt12dtheta1</td> <td>dSt12dVm1</td> <td>dSt12dtheta2</td> <td>dSf12dVm2</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+</tr>
+<tr>
+<td>Sf23</td> <td>0</td> <td>0</td> <td>dSf23dtheta2</td> <td>dSf23dVm2</td> <td>dSf23dtheta3</td> <td>dSf23dVm3</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+</tr>
+<tr>
+<td>St23</td> <td>0</td> <td>0</td> <td>dSt23dtheta2</td> <td>dSt23dVm2</td> <td>dSt23dtheta3</td> <td>dSt23dVm3</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+</tr>
+<tr>
+<td>Sf24</td> <td>0</td> <td>0</td> <td>dSf24dtheta2</td> <td>dSf24dVm2</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>dSf24dtheta4</td> <td>dSf24dVm4</td> <td>0</td> <td>0</td>
+</tr>
+<tr>
+<td>St24</td> <td>0</td> <td>0</td> <td>dSt24dtheta2</td> <td>dSt24dVm2</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>dSt24dtheta4</td> <td>dSt24dVm4</td> <td>0</td> <td>0</td>
+</tr>
+<tr>
+<td>Sf45</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>dSf45dtheta4</td> <td>dSf45dVm4</td> <td>dSf45dtheta5</td> <td>dSf45dVm5</td>
+</tr>
+<tr>
+<td>St45</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>dSt45dtheta4</td> <td>dSt45dVm4</td> <td>dSt45dtheta5</td> <td>dSt45dVm5</td>
 </tr>
 </table>
 
 
-### Residual vector for the inequality constraints for N=1
+### Jacobian matrix for N=1
 
-With the parameters of the example network the vector is:
+With the parameters of the example network the matrix is:
 
 <table>
 <tr>
-<td>IEC1_V</td> <td>IEC2_V </td> <td>Sf_Branch12</td> <td>St_Branch12</td> <td>Sf_Branch23</td> <td>St_Branch23</td> <td>Sf_Branch24</td> <td>St_Branch24</td> <td>Sf_Branch45</td> <td>St_Branch45</td>
+<td> </td> <td>theta1</td> <td>Vm1</td> <td>theta2</td> <td>Vm2</td> <td>theta3</td> <td>Vm3</td> <td>Pg3</td> <td>Qg3</td> <td>theta4</td> <td>Vm4</td> <td>theta5</td> <td>Vm5</td>
 </tr>
 <tr>
-<td>300</td> <td>-300</td> <td>7.84</td> <td>7.84</td> <td>8.84</td> <td>14.44</td> <td>7.84</td> <td>7.84</td> <td>7.84</td> <td>7.84</td>
+<td>IEC1</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>200</td> <td>0</td> <td>-1.5</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+</tr>
+<tr>
+<td>IEC2</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>-200</td> <td>0</td> <td>-1.5</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+</tr>
+<tr>
+<td>Sf12</td> <td>3.84</td> <td>4.8</td> <td>-3.84</td> <td>0.96</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+</tr>
+<tr>
+<td>St12</td> <td>-3.84</td> <td>0.96</td> <td>3.84</td> <td>4.8</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+</tr>
+<tr>
+<td>Sf23</td> <td>0</td> <td>0</td> <td>-0.16</td> <td>0</td> <td>0.16</td> <td>0.16</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+</tr>
+<tr>
+<td>St23</td> <td>0</td> <td>0</td> <td>-0.64</td> <td>1.36</td> <td>0.64</td> <td>8.4</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+</tr>
+<tr>
+<td>Sf24</td> <td>0</td> <td>0</td> <td>3.84</td> <td>4.8</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>-3.84</td> <td>0.96</td> <td>0</td> <td>0</td>
+</tr>
+<tr>
+<td>St24</td> <td>0</td> <td>0</td> <td>-3.84</td> <td>0.96</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>3.84</td> <td>4.8</td> <td>1.6</td> <td>-0.4</td>
+</tr>
+<tr>
+<td>Sf45</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>7.68</td> <td>9.6</td> <td>-7.68</td> <td>1.92</td>
+</tr>
+<tr>
+<td>St45</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>-7.68</td> <td>1.92</td> <td>7.68</td> <td>9.6</td>
 </tr>
 </table>
 
@@ -147,15 +211,10 @@ For N=3 the solution vector is:
 </tr>
 </table>
 
-### Residual vector
+### Jacobian
 
-To build a solution when the network is being multiplied, vector just needs to be concat() N times. 
+To build a Jacobian matrix when the network is being multiplied the process for matrix builder is shown in the Figure below:
 
-### Residual for N=3
+![img1.png](Jacobian.jpg)
 
-So for N=3 the vector is:
-<table>
-<tr>
-<td>300  -300  7.84  7.84  8.84  14.44  7.84  7.84  7.84  7.84</td> <td>300  -300  7.84  7.84  8.84  14.44  7.84  7.84  7.84  7.84</td> <td>300  -300  7.84  7.84  8.84  14.44  7.84  7.84  7.84  7.84</td>
-</tr>
-</table>
+### Jacobian for N=3
