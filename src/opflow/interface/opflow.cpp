@@ -1289,7 +1289,15 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   ierr = MatSetFromOptions(opflow->Jac_Ge);
   CHKERRQ(ierr);
   /* Assume 10% sparsity */
-  ierr = MatSeqAIJSetPreallocation(opflow->Jac_Ge, (PetscInt)(0.1 * opflow->nx),
+  PetscInt nzrow;
+  if(opflow->nx < 1000) {
+    /* Small case, assume 10% sparsity */
+    nzrow = (PetscInt)(0.1 * opflow->nx);
+  } else {
+    /* Bigger case, assume 2% sparsity */
+    nzrow = (PetscInt)(0.02 * opflow->nx);
+  }
+  ierr = MatSeqAIJSetPreallocation(opflow->Jac_Ge, nzrow,
                                    NULL);
   CHKERRQ(ierr);
   ierr =
