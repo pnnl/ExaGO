@@ -249,6 +249,25 @@ J(10,12) = dQt45dVm5;
 
 J
 
+JW(1,1) =  2*N;
+JW(1,2) = 2*N+2*Gen;
+count = 1;
+
+for i=1:2*N
+    for j=1:(2*N+2*Gen)
+        if J(i,j)~=0
+            count = count+1;
+            JW(count, 1) = i;
+            JW(count, 2) = j;
+            JW(count, 3) = J(i,j);
+        end
+    end
+end
+writematrix(JW,'cecj.csv') 
+            
+    
+
+
 
 
 

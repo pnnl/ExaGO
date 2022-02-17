@@ -169,28 +169,28 @@ With the parameters of the example network the matrix is:
 <td>IEC2</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>-200</td> <td>0</td> <td>-1.5</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
 </tr>
 <tr>
-<td>Sf12</td> <td>3.84</td> <td>4.8</td> <td>-3.84</td> <td>0.96</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+<td>Sf12</td> <td>7.68</td> <td>9.6</td> <td>-7.68</td> <td>1.92</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
 </tr>
 <tr>
-<td>St12</td> <td>-3.84</td> <td>0.96</td> <td>3.84</td> <td>4.8</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+<td>St12</td> <td>-7.68</td> <td>1.92</td> <td>7.68</td> <td>9.6</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
 </tr>
 <tr>
-<td>Sf23</td> <td>0</td> <td>0</td> <td>-0.16</td> <td>0</td> <td>0.16</td> <td>0.16</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+<td>Sf23</td> <td>0</td> <td>0</td> <td>-0.32</td> <td>0</td> <td>0.32</td> <td>0.32</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
 </tr>
 <tr>
-<td>St23</td> <td>0</td> <td>0</td> <td>-0.64</td> <td>1.36</td> <td>0.64</td> <td>8.4</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+<td>St23</td> <td>0</td> <td>0</td> <td>-1.28</td> <td>2.72</td> <td>1.28</td> <td>16.8</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>
 </tr>
 <tr>
-<td>Sf24</td> <td>0</td> <td>0</td> <td>3.84</td> <td>4.8</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>-3.84</td> <td>0.96</td> <td>0</td> <td>0</td>
+<td>Sf24</td> <td>0</td> <td>0</td> <td>7.68</td> <td>9.6</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>-7.68</td> <td>1.92</td> <td>0</td> <td>0</td>
 </tr>
 <tr>
-<td>St24</td> <td>0</td> <td>0</td> <td>-3.84</td> <td>0.96</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>3.84</td> <td>4.8</td> <td>1.6</td> <td>-0.4</td>
+<td>St24</td> <td>0</td> <td>0</td> <td>-7.68</td> <td>1.92</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>7.68</td> <td>9.6</td> <td>1.6</td> <td>-0.4</td>
 </tr>
 <tr>
-<td>Sf45</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>7.68</td> <td>9.6</td> <td>-7.68</td> <td>1.92</td>
+<td>Sf45</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>15.36</td> <td>19.2</td> <td>-15.36</td> <td>3.84</td>
 </tr>
 <tr>
-<td>St45</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>-7.68</td> <td>1.92</td> <td>7.68</td> <td>9.6</td>
+<td>St45</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>-15.36</td> <td>3.94</td> <td>15.36</td> <td>19.2</td>
 </tr>
 </table>
 

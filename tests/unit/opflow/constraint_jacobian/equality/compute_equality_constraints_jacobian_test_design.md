@@ -94,7 +94,7 @@ For the considered network matrix for equality constraint Jacobian is built as f
 <td>P2</td> <td>dPt12dtheta1</td> <td>dPt12dVm1</td> <td>dPt12dtheta2+0+dPf23dtheta2+dPf24dtheta2</td> <td>dPt12dVm2+2*Vm*Gl+dPf23dVm2+dPf24dVm2</td> <td>dPf23dtheta3</td> <td>dPf23dVm3</td> <td>0</td> <td>0</td> <td>dPf24dtheta4</td> <td>dPf24dVm4</td> <td>0</td> <td>0</td>
 </tr>
 <tr>
-<td>Q2</td> <td>dQt12dtheta1</td> <td>dQt12dVm1</td> <td>dQt12dtheta2+0+dQf23dtheta2+dQf24dtheta2</td> <td>dQt12dVm2+2*Vm*Gl+dQf23dVm2+dQf24dVm2</td> <td>dQf23dtheta3</td> <td>dQf23dVm3</td> <td>0</td> <td>0</td> <td>dQf24dtheta4</td> <td>dQf24dVm4</td> <td>0</td> <td>0</td>
+<td>Q2</td> <td>dQt12dtheta1</td> <td>dQt12dVm1</td> <td>dQt12dtheta2+0+dQf23dtheta2+dQf24dtheta2</td> <td>dQt12dVm2+2*Vm*Bl+dQf23dVm2+dQf24dVm2</td> <td>dQf23dtheta3</td> <td>dQf23dVm3</td> <td>0</td> <td>0</td> <td>dQf24dtheta4</td> <td>dQf24dVm4</td> <td>0</td> <td>0</td>
 </tr>
 <tr>
 <td>P3</td> <td>0</td> <td>0</td> <td>dPt23dtheta2</td> <td>dPt23dVm2</td> <td>dPt23dtheta3</td> <td>dPt23dVm3</td> <td>-1</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td> <td>0</td>

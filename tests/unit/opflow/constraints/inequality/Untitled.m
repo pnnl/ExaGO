@@ -121,4 +121,11 @@ Res(10)=St45;
 
 Res
 
+ResW(1,1) =  10;
+
+for i=1:10
+    ResW(i+1,1) = Res(i);
+end
+writematrix(ResW,'cic.csv') 
+
 
