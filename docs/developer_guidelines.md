@@ -1,4 +1,3 @@
-
 # Developer Guidelines
 
 ## Contributing
@@ -152,6 +151,7 @@ Use underscores (`_`) and all lowercase characters for C, C++, and Python filena
 Use pascal case for CMake code.
 Use the `.h` extension for all C and C++ headers.
 Use the `.cpp` extension for all C++ sources.
+Use the `.def` extension for all X-Macro headers.
 
 #### P021: Driver Naming Conventions
 

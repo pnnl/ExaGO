@@ -24,23 +24,22 @@
 typedef struct _p_OPFLOW *OPFLOW;
 
 typedef enum {
-  MIN_GEN_COST,              /* Generator cost minimization */
-  MIN_GENSETPOINT_DEVIATION, /* Minimize generator set-point deviation */
-  NO_OBJ,                    /* No objective function */
+#define OPFLOW_OBJ_DEF(x) x,
+#include "private/opflow_enum.def"
+#undef OPFLOW_OBJ_DEF
 } OPFLOWObjectiveType;
 
 /* Generator bus voltage type */
 typedef enum {
-  VARIABLE_WITHIN_BOUNDS, /* Voltage can vary with voltage bounds */
-  FIXED_WITHIN_QBOUNDS,   /* Voltage is fixed within reactive power bounds */
-  FIXED_AT_SETPOINT,      /* Voltage is fixed to the set-point voltage */
+#define OPFLOW_GBV_DEF(x) x,
+#include "private/opflow_enum.def"
+#undef OPFLOW_GBV_DEF
 } OPFLOWGenBusVoltageType;
 
 typedef enum {
-  OPFLOWINIT_MIDPOINT, /* Midpoint */
-  OPFLOWINIT_FROMFILE, /* From file */
-  OPFLOWINIT_ACPF,     /* From AC power flow solution */
-  OPFLOWINIT_FLATSTART /* Voltage flat start */
+#define OPFLOW_INIT_DEF(x) x,
+#include "private/opflow_enum.def"
+#undef OPFLOW_INIT_DEF
 } OPFLOWInitializationType;
 
 /**
@@ -157,7 +156,9 @@ const auto hiop_ipopt_debug = ExaGOBoolOption(
 } // namespace OPFLOWOptions
 
 PETSC_EXTERN PetscErrorCode OPFLOWSetModel(OPFLOW, const char[]);
+PETSC_EXTERN PetscErrorCode OPFLOWGetModel(OPFLOW, char *);
 PETSC_EXTERN PetscErrorCode OPFLOWSetSolver(OPFLOW, const char[]);
+PETSC_EXTERN PetscErrorCode OPFLOWGetSolver(OPFLOW, char *);
 PETSC_EXTERN PetscErrorCode
 OPFLOWModelRegister(OPFLOW, const char[], PetscErrorCode (*create)(OPFLOW));
 PETSC_EXTERN PetscErrorCode
@@ -172,7 +173,9 @@ PETSC_EXTERN PetscErrorCode OPFLOWSolve(OPFLOW);
 PETSC_EXTERN PetscErrorCode OPFLOWSetInitialGuess(OPFLOW, Vec);
 PETSC_EXTERN PetscErrorCode OPFLOWSetTolerance(OPFLOW, PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPComputeMode(OPFLOW, const char *);
+PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPComputeMode(OPFLOW, char *);
 PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPVerbosityLevel(OPFLOW, int);
+PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPVerbosityLevel(OPFLOW, int *);
 PETSC_EXTERN PetscErrorCode OPFLOWGetTolerance(OPFLOW, PetscReal *);
 PETSC_EXTERN PetscErrorCode OPFLOWGetNumIterations(OPFLOW, PetscInt *);
 PETSC_EXTERN PetscErrorCode OPFLOWGetObjectiveType(OPFLOW,
@@ -218,19 +221,31 @@ PETSC_EXTERN PetscErrorCode OPFLOWGetVariableOrdering(OPFLOW, int **);
 PETSC_EXTERN PetscErrorCode OPFLOWGetSizes(OPFLOW, int *, int *, int *);
 
 PETSC_EXTERN PetscErrorCode OPFLOWHasGenSetPoint(OPFLOW, PetscBool);
+PETSC_EXTERN PetscErrorCode OPFLOWGetHasGenSetPoint(OPFLOW, PetscBool *);
 PETSC_EXTERN PetscErrorCode OPFLOWHasLoadLoss(OPFLOW, PetscBool);
+PETSC_EXTERN PetscErrorCode OPFLOWGetHasLoadLoss(OPFLOW, PetscBool *);
 PETSC_EXTERN PetscErrorCode OPFLOWHasBusPowerImbalance(OPFLOW, PetscBool);
+PETSC_EXTERN PetscErrorCode OPFLOWGetHasBusPowerImbalance(OPFLOW, PetscBool *);
 PETSC_EXTERN PetscErrorCode OPFLOWUseAGC(OPFLOW, PetscBool);
+PETSC_EXTERN PetscErrorCode OPFLOWGetUseAGC(OPFLOW, PetscBool *);
 
 PETSC_EXTERN PetscErrorCode OPFLOWSetGenBusVoltageType(OPFLOW,
                                                        OPFLOWGenBusVoltageType);
-
+PETSC_EXTERN PetscErrorCode
+OPFLOWGetGenBusVoltageType(OPFLOW, OPFLOWGenBusVoltageType *);
 PETSC_EXTERN PetscErrorCode
     OPFLOWSetInitializationType(OPFLOW, OPFLOWInitializationType);
+PETSC_EXTERN PetscErrorCode
+OPFLOWGetInitializationType(OPFLOW, OPFLOWInitializationType *);
 PETSC_EXTERN PetscErrorCode OPFLOWIgnoreLineflowConstraints(OPFLOW, PetscBool);
+PETSC_EXTERN PetscErrorCode OPFLOWGetIgnoreLineflowConstraints(OPFLOW,
+                                                               PetscBool *);
 PETSC_EXTERN PetscErrorCode OPFLOWSetLoadLossPenalty(OPFLOW, PetscReal);
+PETSC_EXTERN PetscErrorCode OPFLOWGetLoadLossPenalty(OPFLOW, PetscReal *);
 PETSC_EXTERN PetscErrorCode OPFLOWSetBusPowerImbalancePenalty(OPFLOW,
                                                               PetscReal);
+PETSC_EXTERN PetscErrorCode OPFLOWGetBusPowerImbalancePenalty(OPFLOW,
+                                                              PetscReal *);
 
 /* OPFLOWGetPS - Gets the underlying PS object
 
