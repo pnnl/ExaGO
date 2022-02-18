@@ -1,0 +1,31 @@
+
+//OPFLOWInitializationType
+#ifdef OPFLOW_INIT_DEF
+
+OPFLOW_INIT_DEF(OPFLOWINIT_MIDPOINT) // Midpoint
+OPFLOW_INIT_DEF(OPFLOWINIT_FROMFILE) // From file
+OPFLOW_INIT_DEF(OPFLOWINIT_ACPF) // From AC power flow solution
+OPFLOW_INIT_DEF(OPFLOWINIT_FLATSTART) // Voltage flat start
+
+#endif
+
+//OPFLOWObjectiveType
+#ifdef OPFLOW_OBJ_DEF
+
+OPFLOW_OBJ_DEF(MIN_GEN_COST) // Generator cost minimization
+OPFLOW_OBJ_DEF(MIN_GENSETPOINT_DEVIATION) // Minimize generator set-point deviation 
+OPFLOW_OBJ_DEF(NO_OBJ) // No objective function
+
+#endif
+
+//OPFLOWGenBusVoltageType
+#ifdef OPFLOW_GBV_DEF
+
+OPFLOW_GBV_DEF(VARIABLE_WITHIN_BOUNDS) // Voltage can vary with voltage bounds 
+OPFLOW_GBV_DEF(FIXED_WITHIN_QBOUNDS) // Voltage is fixed within reactive power bounds 
+OPFLOW_GBV_DEF(FIXED_AT_SETPOINT) // Voltage is fixed to the set-point voltage 
+
+#endif
+
+
+

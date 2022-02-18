@@ -46,6 +46,23 @@ PetscErrorCode OPFLOWSetGenBusVoltageType(OPFLOW opflow,
 }
 
 /*
+   OPFLOWGetGenBusVoltageType - Sets the voltage control mode for generator
+buses
+
+   Input Parameters:
++  opflow - the opflow object
+-  vtype  - voltage control type pointer
+
+   Command-line option: -opflow_genbusvoltage
+*/
+PetscErrorCode OPFLOWGetGenBusVoltageType(OPFLOW opflow,
+                                          OPFLOWGenBusVoltageType *vtype) {
+  PetscFunctionBegin;
+  *vtype = opflow->genbusvoltagetype;
+  PetscFunctionReturn(0);
+}
+
+/*
   OPFLOWHasLoadLoss - Use load loss in the OPFLOW formulation
 
   Input Parameters:
@@ -58,6 +75,20 @@ PetscErrorCode OPFLOWSetGenBusVoltageType(OPFLOW opflow,
 PetscErrorCode OPFLOWHasLoadLoss(OPFLOW opflow, PetscBool hasloadloss) {
   PetscFunctionBegin;
   opflow->include_loadloss_variables = hasloadloss;
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWGetHasLoadLoss - Use load loss in the OPFLOW formulation
+
+  Input Parameters:
++ opflow - OPFLOW object
+- hasloadloss - Use load loss?
+
+*/
+PetscErrorCode OPFLOWGetHasLoadLoss(OPFLOW opflow, PetscBool *hasloadloss) {
+  PetscFunctionBegin;
+  *hasloadloss = opflow->include_loadloss_variables;
   PetscFunctionReturn(0);
 }
 
@@ -80,6 +111,21 @@ PetscErrorCode OPFLOWHasBusPowerImbalance(OPFLOW opflow,
 }
 
 /*
+  OPFLOWGetHasBusPowerImbalance - Use bus power imbalance in the OPFLOW
+formulation
+
+  Input Parameters:
++ opflow - OPFLOW object
+- hasbuspowerimbalance - Use power imbalance?
+*/
+PetscErrorCode OPFLOWGetHasBusPowerImbalance(OPFLOW opflow,
+                                             PetscBool *hasbuspowerimbalance) {
+  PetscFunctionBegin;
+  *hasbuspowerimbalance = opflow->include_powerimbalance_variables;
+  PetscFunctionReturn(0);
+}
+
+/*
   OPFLOWSetLoadLossPenalty - Set load loss penalty
 
   Input Parameters:
@@ -93,6 +139,20 @@ PetscErrorCode OPFLOWHasBusPowerImbalance(OPFLOW opflow,
 PetscErrorCode OPFLOWSetLoadLossPenalty(OPFLOW opflow, PetscReal penalty) {
   PetscFunctionBegin;
   opflow->loadloss_penalty = penalty;
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWGetLoadLossPenalty - Get load loss penalty
+
+  Input Parameters:
++ opflow - OPFLOW object
+- penalty - penalty for load loss (for each load)
+
+*/
+PetscErrorCode OPFLOWGetLoadLossPenalty(OPFLOW opflow, PetscReal *penalty) {
+  PetscFunctionBegin;
+  *penalty = opflow->loadloss_penalty;
   PetscFunctionReturn(0);
 }
 
@@ -115,6 +175,20 @@ PetscErrorCode OPFLOWSetBusPowerImbalancePenalty(OPFLOW opflow,
 }
 
 /*
+  OPFLOWGetBusPowerImbalancePenalty - Get bus power imbalance penalty
+
+  Input Parameters:
++ opflow - OPFLOW object
+- penalty - penalty for power imbalance (at each bus)
+*/
+PetscErrorCode OPFLOWGetBusPowerImbalancePenalty(OPFLOW opflow,
+                                                 PetscReal *penalty) {
+  PetscFunctionBegin;
+  *penalty = opflow->powerimbalance_penalty;
+  PetscFunctionReturn(0);
+}
+
+/*
   OPFLOWSetHIOPComputeMode - Set compute mode for HIOP solver
   Input parameters
 + opflow - OPFLOW object
@@ -125,6 +199,18 @@ PetscErrorCode OPFLOWSetBusPowerImbalancePenalty(OPFLOW opflow,
 PetscErrorCode OPFLOWSetHIOPComputeMode(OPFLOW opflow, const char *mode) {
   PetscFunctionBegin;
   strcpy(opflow->_p_hiop_compute_mode, mode);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWGetHIOPComputeMode - Get compute mode for HIOP solver
+  Input parameters
++ opflow - OPFLOW object
+- mode - mode for HIOP solver
+*/
+PetscErrorCode OPFLOWGetHIOPComputeMode(OPFLOW opflow, char *mode) {
+  PetscFunctionBegin;
+  strcpy(mode, opflow->_p_hiop_compute_mode);
   PetscFunctionReturn(0);
 }
 
@@ -143,6 +229,17 @@ PetscErrorCode OPFLOWSetHIOPVerbosityLevel(OPFLOW opflow, int level) {
 }
 
 /*
+  OPFLOWGetHIOPVerbosityLevel - Get verbosity level for HIOP solver
+  Input parameters
++ opflow - OPFLOW object
+- level - verbositiy level for HIOP solver
+*/
+PetscErrorCode OPFLOWGetHIOPVerbosityLevel(OPFLOW opflow, int *level) {
+  PetscFunctionBegin;
+  *level = opflow->_p_hiop_verbosity_level;
+  PetscFunctionReturn(0);
+}
+/*
   OPFLOWHasGenSetPoint - Use gen. set point in the OPFLOW formulation
 
   Input Parameters:
@@ -154,6 +251,20 @@ PetscErrorCode OPFLOWSetHIOPVerbosityLevel(OPFLOW opflow, int level) {
 PetscErrorCode OPFLOWHasGenSetPoint(OPFLOW opflow, PetscBool hassetpoint) {
   PetscFunctionBegin;
   opflow->has_gensetpoint = hassetpoint;
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWGetHasGenSetPoint - Use gen. set point in the OPFLOW formulation
+
+  Input Parameters:
++ opflow - OPFLOW object
+- hassetpoint - Use set-point?
+
+*/
+PetscErrorCode OPFLOWGetHasGenSetPoint(OPFLOW opflow, PetscBool *hassetpoint) {
+  PetscFunctionBegin;
+  *hassetpoint = opflow->has_gensetpoint;
   PetscFunctionReturn(0);
 }
 
@@ -174,6 +285,18 @@ PetscErrorCode OPFLOWUseAGC(OPFLOW opflow, PetscBool useagc) {
   PetscFunctionReturn(0);
 }
 
+/*
+  OPFLOWGetUseAGC - Uses AGC to proportionally redispatch the generators
+
+  Input Parameters:
++ opflow - OPFLOW object
+- useagc - Use AGC?
+*/
+PetscErrorCode OPFLOWGetUseAGC(OPFLOW opflow, PetscBool *useagc) {
+  PetscFunctionBegin;
+  *useagc = opflow->use_agc;
+  PetscFunctionReturn(0);
+}
 /*
   OPFLOWGetSizes - Returns the size of solution vector, and constraints
 
@@ -685,6 +808,20 @@ PetscErrorCode OPFLOWSetSolver(OPFLOW opflow, const char *solvername) {
 }
 
 /*
+  OPFLOWGetSolver - Gets the solver for OPFLOW
+
+  Input Parameters:
++ opflow - opflow application object
+- solvername - name of the solver
+*/
+PetscErrorCode OPFLOWGetSolver(OPFLOW opflow, char *solvername) {
+  PetscErrorCode ierr;
+  ierr = PetscStrcpy(solvername, opflow->solvername);
+  CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
   OPFLOWSetModel - Sets the model for OPFLOW
 
   Input Parameters:
@@ -759,6 +896,20 @@ PetscErrorCode OPFLOWSetModel(OPFLOW opflow, const char *modelname) {
   ierr = (*r)(opflow);
   CHKERRQ(ierr);
 
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWGetModel - gets the model for OPFLOW
+
+  Input Parameters:
++ opflow - opflow application object
+- modelname - name of the model
+*/
+PetscErrorCode OPFLOWGetModel(OPFLOW opflow, char *modelname) {
+  PetscErrorCode ierr;
+  ierr = PetscStrcpy(modelname, opflow->modelname);
+  CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -1290,15 +1441,14 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   CHKERRQ(ierr);
   /* Assume 10% sparsity */
   PetscInt nzrow;
-  if(opflow->nx < 1000) {
+  if (opflow->nx < 1000) {
     /* Small case, assume 10% sparsity */
     nzrow = (PetscInt)(0.1 * opflow->nx);
   } else {
     /* Bigger case, assume 2% sparsity */
     nzrow = (PetscInt)(0.02 * opflow->nx);
   }
-  ierr = MatSeqAIJSetPreallocation(opflow->Jac_Ge, nzrow,
-                                   NULL);
+  ierr = MatSeqAIJSetPreallocation(opflow->Jac_Ge, nzrow, NULL);
   CHKERRQ(ierr);
   ierr =
       MatSetOption(opflow->Jac_Ge, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
@@ -2291,6 +2441,19 @@ PetscErrorCode OPFLOWSetInitializationType(OPFLOW opflow,
 }
 
 /**
+ * @brief Gets intialization type for opflow
+ *
+ * @param[in] opflow the OPFLOW object.
+ * @param[in] type the initialization type.
+ */
+PetscErrorCode OPFLOWGetInitializationType(OPFLOW opflow,
+                                           OPFLOWInitializationType *type) {
+  PetscFunctionBegin;
+  *type = opflow->initializationtype;
+  PetscFunctionReturn(0);
+}
+
+/**
  * @brief Sets ignore_lineflow_constraints for opflow
  *
  * @param[in] opflow the OPFLOW object.
@@ -2304,6 +2467,18 @@ PetscErrorCode OPFLOWIgnoreLineflowConstraints(OPFLOW opflow, PetscBool set) {
   PetscFunctionReturn(0);
 }
 
+/**
+ * @brief Gets ignore_lineflow_constraints
+ *
+ * @param[in] opflow the OPFLOW object.
+ * @param[in] set value for opflow->ignore_lineflow_constraints.
+ */
+PetscErrorCode OPFLOWGetIgnoreLineflowConstraints(OPFLOW opflow,
+                                                  PetscBool *set) {
+  PetscFunctionBegin;
+  *set = opflow->ignore_lineflow_constraints;
+  PetscFunctionReturn(0);
+}
 /**
  * @brief Check used internally to verify model + solver compatibility
  *

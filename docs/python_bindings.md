@@ -6,6 +6,7 @@ The ExaGO Python bindings use an object-oriented API slightly different from the
 C++ API.
 The C++ API uses the application type in uppercase as the prefix for its
 methods, where they are native methods in Python.
+To view the implementation of this wrapper, see [/interfaces/python/exago_python.cpp](../interfaces/python/exago_python.cpp).
 
 For example, solving an OPF from C++ might look like this:
 ```cpp
@@ -31,16 +32,12 @@ int main(int argc, char** argv) {
   ierr = OPFLOWReadMatPowerData(opflow, "datafiles/case9/case9mod.m");
   ExaGOCheckError(ierr);
 
-  /* Set up */
-  ierr = OPFLOWSetUp(opflow);
-  ExaGOCheckError(ierr);
-
   /* Solve */
   ierr = OPFLOWSolve(opflow);
   ExaGOCheckError(ierr);
 
-  /* Save output to file 'opflowout' */
-  ierr = OPFLOWSaveSolution(opflow, fmt, "opflowout");
+  /* Print solution */
+  ierr = OPFLOWPrintSolution(opflow);
   ExaGOCheckError(ierr);
 
   /* Destroy OPFLOW object */
@@ -75,25 +72,147 @@ straightforward.
 ***If you identify components of the C++ API that you need to call from Python,
 please [open an issue on our issues page](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/issues).***
 
-### Bindings Table
+### Bindings Tables
+
+#### ExaGO
 
 | C++ API | Python API | Notes |
 |---|---|---|
 | `ExaGOInitialize` | `exago.initialize` |  |
 | `ExaGOFinalize` | `exago.finalize` |  |
+|  | `exago.prefix` |  Returns the path to the installation directory of ExaGO (for finding mat power data files, etc) |
+| `OutputFormat` enum | `exago.OutputFormat` enum | Output format type for functions like `save_solution`. Possible values for this enum can be found in the [next section](#enums). |
+
+#### PFLOW
+
+| C++ API | Python API | Notes |
+|---|---|---|
 | `PFLOW` | `exago.PFLOW` class | From here below, `pflow` objects are instances of the Python `exago.PFLOW` class. The same is the case for opflow, scopflow, tcopflow, and sopflow. |
 | `PFLOWReadMatPowerData` | `pflow.read_mat_power_data` |  |
 | `PFLOWSolve` | `pflow.solve` |  |
-| `OPFLOW` | `exago.OPFLOW` class |  |
-| `OPFLOWSetLoadLossPenalty` | `set_loadloss_penalty` | |
-| `OPFLOWSetBusPowerImbalancePenalty` | `set_bus_powerimbalance_penalty` | |
-| `OPFLOWSetTolerance` | `set_tolerance` | |
-| `OPFLOWGetTolerance` | `get_tolerance` | |
-| `OPFLOWGetObjective` | `get_objective` | |
-| `OPFLOWSolve` | `solve` | |
-| `OPFLOWPrintSolution` | `print_solution` | |
-| `OPFLOWReadMatPowerData` | `read_mat_power_data` | |
 
+#### OPFLOW
+
+The following table assumes `opflow = exago.OPFLOW()`.
+
+| C++ API | Python API | Notes |
+|---|---|---|
+| `OPFLOW` | `exago.OPFLOW` class |  |
+| `OPFLOWObjectiveType` enum | `exago.OPFLOWObjectiveType` enum | More details and possible values for this enum can be found in the [next section](#enums). |
+| `OPFLOWInitializationType` enum | `exago.OPFLOWInitializationType` enum | More details and possible values for this enum can be found in the [next section](#enums). |
+| `OPFLOWGenBusVoltageType` enum | `exago.OPFLOWGenBusVoltageType` enum | More details and possible values for this enum can be found in the [next section](#enums). |
+| `OPFLOWSetObjectiveType` | `opflow.set_objective_type` | |
+| `OPFLOWSetInitializationType` | `opflow.set_initialization_type` | |
+| `OPFLOWSetGenBusVoltageType` | `opflow.set_gen_bus_voltage_type` | |
+| `OPFLOWSetModel` | `opflow.set_model` | |
+| `OPFLOWSetSolver` | `opflow.set_solver` | |
+| `OPFLOWHasGenSetPoint` | `opflow.set_has_gen_set_point` | |
+| `OPFLOWSetHIOPComputeMode` | `opflow.set_hiop_compute_mode` | |
+| `OPFLOWHasLoadLoss` | `opflow.set_has_loadloss` | |
+| `OPFLOWIgnoreLineflowConstraints` | `opflow.set_ignore_lineflow_constraints` | |
+| `OPFLOWHasBusPowerImbalance` | `opflow.set_has_bus_power_imbalance` | |
+| `OPFLOWUseAGC` | `opflow.set_use_agc` | |
+| `OPFLOWSetHIOPVerbosityLevel` | `opflow.set_hiop_verbosity_level` | |
+| `OPFLOWSetLoadLossPenalty` | `opflow.set_loadloss_penalty` | |
+| `OPFLOWSetBusPowerImbalancePenalty` | `opflow.set_bus_power_imbalance_penalty` | |
+| `OPFLOWSetTolerance` | `opflow.set_tolerance` | |
+| `PSSetGenPowerLimits` | `opflow.ps_set_gen_power_limits` | |
+| `OPFLOWGetTolerance` | `opflow.get_tolerance` | |
+| `OPFLOWGetHIOPComputeMode` | `opflow.get_hiop_compute_mode` | |
+| `OPFLOWGetModel` | `opflow.get_model` | |
+| `OPFLOWGetSolver` | `opflow.get_solver` | |
+| `OPFLOWGetConvergenceStatus` | `opflow.get_convergence_status` | |
+| `OPFLOWGetObjectiveType` | `opflow.get_objective_type` | |
+| `OPFLOWGetInitializationType` | `opflow.get_initialization_type` | |
+| `OPFLOWGetGenBusVoltageType` | `opflow.get_gen_bus_voltage_type` | |
+| `OPFLOWGetHasGenSetPoint` | `opflow.get_has_gen_set_point` | |
+| `OPFLOWGetLoadlossPenalty` | `opflow.get_loadloss_penalty` | |
+| `OPFLOWGetIgnoreLineflowConstraints` | `opflow.get_ignore_lineflow_constraints` | |
+| `OPFLOWGetHasLoadloss` | `opflow.get_has_loadloss` | |
+| `OPFLOWGetHasBusPowerImbalance` | `opflow.get_has_bus_power_imbalance` | |
+| `OPFLOWGetUseAGC` | `opflow.get_use_agc` | |
+| `OPFLOWGetHIOPVerbosityLevel` | `opflow.get_hiop_verbosity_level` | |
+| `OPFLOWGetBusPowerImbalancePenalty` | `opflow.get_bus_power_imbalance_penalty` | |
+| `PSGetGenDispatch` | `opflow.get_gen_dispatch` | |
+| `OPFLOWGetObjectiveTypes` | `opflow.get_objective_types` | |
+| `OPFLOWGetInitializationTypes` | `opflow.get_initialization_types` | |
+| `OPFLOWGetGenBusVoltageTypes` | `opflow.get_gen_bus_voltage_types` | |
+| `OPFLOWGetObjective` | `opflow.get_objective` | |
+| `OPFLOWSolve` | `opflow.solve` | |
+| `OPFLOWPrintSolution` | `opflow.print_solution` | |
+| `OPFLOWSaveSolution` | `opflow.save_solution` | |
+| `OPFLOWReadMatPowerData` | `opflow.read_mat_power_data` | |
+| `OPFLOWSolutionToPS` | `opflow.solution_to_ps` | |
+| `OPFLOWSetUpPS` | `opflow.set_up_ps` | |
+
+### Enums
+
+`OutputFormat` is the enum that specifies the output format in functions like `opflow.save_solution`.
+
+Instances can be constructed directly through the `exago` library (i.e. `exago.OutputFormat.CSV`). 
+Its possible values are:
+* CSV 
+* MATPOWER
+
+OPFLOW has several type settings that are represented by enums: `OPFLOWObjectiveType`, `OPFLOWInitializationType`, and `OPFLOWGenBusVoltageType`. 
+Possible values are as follows:
+
+OPFLOWObjectiveType
+* MIN_GEN_COST
+* MIN_GENSETPOINT_DEVIATION
+* NO_OB
+
+OPFLOWInitializationType
+* OPFLOWINIT_FROMFILE 
+* OPFLOWINIT_MIDPOINT
+* OPFLOWINIT_ACPF
+* OPFLOW_FLATSTART
+
+OPFLOWGenBusVoltageType
+* VARIABLE_WITHIN_BOUNDS
+* FIXED_WITHIN_QBOUNDS
+* FIXED_AT_SETPOINT
+
+Instances can be constructed directly through the `exago` library (i.e. `exago.OPFLOWObjectiveType.MIN_GEN_COST` or `exago.MIN_GEN_COST`)
+Setter functions for these OPFLOW configurations can take an integer, an instance of the exago enum, or a string that describes the enum (i.e. 'MIN_GEN_COST').
+
+The possible values for these enums can be retrieved through `opflow.get_xxx_types()` (i.e. `opflow.get_gen_bus_voltage_types()`). The `opflow.get_xxx_types` functions yield a list of the enum values.
+
+Below are some code examples of how to get and use these values. 
+
+**Code Examples**
+
+Set with a string
+```python
+>>> opflow.set_initialization_type('OPFLOWINIT_FROMFILE')
+>>> opflow.get_initialization_type()
+OPFLOWInitializationType.OPFLOWINIT_FROMFILE
+```
+
+Set with an integer
+```python
+>>> opflow.set_initialization_type(1)
+>>> opflow.get_initialization_type()
+OPFLOWInitializationType.OPFLOWINIT_FROMFILE
+```
+
+Set with an enum instance
+```python
+>>> opflow.set_initialization_type(exago.OPFLOWInitializationType.OPFLOWINIT_FROMFILE)
+>>> opflow.get_initialization_type()
+OPFLOWInitializationType.OPFLOWINIT_FROMFILE
+```
+
+Set via getter function:
+```python
+>>> types = opflow.get_objective_types()
+[<OPFLOWObjectiveType.MIN_GEN_COST: 0>, <OPFLOWObjectiveType.MIN_GENSETPOINT_DEVIATION: 1>, <OPFLOWObjectiveType.NO_OBJ: 2>]
+>>> opflow.set_objective_type(types[0])
+>>> opflow.get_objective_type()
+OPFLOWObjectiveType.MIN_GEN_COST
+```
+
+See [the OPFLOW testing file](../tests/interfaces/python/test_opflow.py) for more usage examples. 
 
 ### Building
 
