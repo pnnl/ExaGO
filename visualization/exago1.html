@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>ExaGO Viz 1</title>
+
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+
+    <link rel="stylesheet" href="leaflet/leaflet.css" />
+    <script src="leaflet/leaflet.js"></script>
+    <script src="jquery-3.6.0.js"></script>
+    <script src="require.js"></script>
+
+	<style>
+		html, body {
+			height: 100%;
+			margin: 0;
+		}
+		#map {
+			width: 1200px;
+			height: 800px;
+		}
+	</style>
+	<script type="text/javascript">
+	    $(function(){
+
+	     	L.Icon.Default.prototype.options.iconSize = [0, 0];
+	     	L.Icon.Default.prototype.options.shadowSize = [0, 0];
+
+			var geodata;
+
+	        var loadlayer = {"load":L.layerGroup([])};
+
+			var genlayers = {
+						"coal": L.layerGroup([]),
+						"nuclear": L.layerGroup([]),
+						"solar": L.layerGroup([]),
+						"wind": L.layerGroup([]),
+						"ng": L.layerGroup([]),
+						"hydro": L.layerGroup(),
+						"other": L.layerGroup([])
+			};
+
+	    	var wtmarker = L.icon({
+			  iconUrl: "images/wind-turbine.png",
+			  iconSize: [50,50],
+			});
+
+			var gtmarker = L.icon({
+			  iconUrl: "images/nat-gas.png",
+			  iconSize: [24,24],
+			});
+
+			var solarmarker = L.icon({
+			  iconUrl: "images/solar.jpg",
+			  iconSize: [20,20],
+			});
+
+			var coalmarker = L.icon({
+			  iconUrl: "images/coal.png",
+			  iconSize: [20,20],
+			});
+
+			var nuclearmarker = L.icon({
+			  iconUrl: "images/nuclear.png",
+			  iconSize: [20,20],
+			});
+
+			var hydromarker = L.icon({
+			  iconUrl: "images/hydro.jpg",
+			  iconSize: [20,20],
+			});
+
+			var lineKVlevels = {};
+			var KVlevels = {};
+
+			var map = L.map('map').setView([40.6421, -89.5996], 13);
+
+
+			L.tileLayer('https://osm-{s}.gs.mil/tiles/bright/{z}/{x}/{y}.png').addTo(map);
+
+			function getStyle(feature, layer=null)
+			{
+				if(feature.properties.elementtype.toLowerCase() === "substation")
+				{
+					return {
+						weight: 5,
+						opacity: 0.65
+					}
+				} else {
+					return getLineStyle(feature.properties);
+				}
+    		}
+
+    		function getLineStyle(line)
+			{
+			    var linestyle = {};
+			    linestyle.color = getLineColor(line);
+			    linestyle.weight = getLineWeight(line);
+			    linestyle.opacity = 0.65;
+
+			    return linestyle;
+			}
+
+			function getLineColor(line)
+			{
+				var line_loading = parseFloat(Math.abs(line.PF)/line.RATE_A);
+
+				if(line["BR_STATUS"] === 0) return 'black';
+				if(line_loading < 0.8) return 'black';
+				else if(line_loading < 0.9) return 'black';
+				else return 'black';
+			}
+
+			function getLineWeight(line)
+			{
+				var weight = line.KV/70.0;
+				return weight;
+			}
+
+
+			function onEachFeature(feature, layer) {
+
+				var latlng;
+				var marker;
+
+				//if (feature.properties && feature.properties.elementtype) {
+				//	layer.bindPopup(feature.properties.elementtype);
+				//}
+
+				if(feature.properties.elementtype.toLowerCase() === "substation")
+				{
+					var nbus = feature.properties.nbus;
+					var ngen = 0;
+					var genfuel = null;
+					var marker = null;
+            		var i;
+
+            		latlng = [feature.geometry.coordinates[1],feature.geometry.coordinates[0]];
+
+					for(i=0; i < nbus; i++) {
+						ngen = Math.max(ngen,feature.properties.bus[i].ngen);
+						if(ngen > 0) {
+							genfuel = feature.properties.bus[i].gen[0].GEN_FUEL;
+							break;
+						}
+            		}
+
+
+					for(i=0; i < feature.properties.KVlevels.length; i++)
+					{
+
+						if(ngen > 0) {
+							if(genfuel.toLowerCase() === 'wind') {
+								marker = new L.marker(latlng,{icon:wtmarker}).addTo(genlayers.wind);
+							} else if(genfuel.toLowerCase() === 'ng') {
+								marker = new L.marker(latlng,{icon:gtmarker}).addTo(genlayers.ng);
+							} else if(genfuel.toLowerCase() === 'solar') {
+								marker = new L.marker(latlng,{icon:solarmarker}).addTo(genlayers.solar);
+							} else if(genfuel.toLowerCase() === 'coal') {
+								marker = new L.marker(latlng,{icon:coalmarker}).addTo(genlayers.coal);
+							} else if(genfuel.toLowerCase() === 'nuclear') {
+								marker = new L.marker(latlng,{icon:nuclearmarker}).addTo(genlayers.nuclear);
+							} else if(genfuel.toLowerCase() === 'hydro') {
+								marker = new L.marker(latlng,{icon:hydromarker}).addTo(genlayers.hydro);
+							} else {
+								marker = new L.circleMarker(latlng, {radius: 2, fillOpacity: 0.5,color:'black'}).addTo(genlayers.other);
+							}
+						} else {
+							marker = new L.circleMarker(latlng, {radius: 1, fillOpacity: 0.5,color:'black'}).addTo(loadlayer.load);
+						}
+
+						marker.addTo(lineKVlevels[feature.properties.KVlevels[i]]);
+					} //end for
+				} //end if
+				else
+				{
+					var latlng_fbus = [feature.geometry.coordinates[0][1],feature.geometry.coordinates[0][0]];
+                	var latlng_tbus = [feature.geometry.coordinates[1][1],feature.geometry.coordinates[1][0]];
+
+                	latlng = [latlng_fbus,latlng_tbus];
+
+					var KVlevel = feature.properties.KV;
+					marker = new L.polyline(latlng, getStyle(feature)).addTo(lineKVlevels[KVlevel]);
+				}
+			} // end onEachFeature
+
+			const xhr = new XMLHttpRequest();
+			xhr.open('GET', 'http://localhost:8081/data/case_ACTIVSg200-2.json');
+			xhr.setRequestHeader('Content-Type', 'application/json');
+			xhr.responseType = 'json';
+			xhr.onload = function() {
+				if (xhr.status !== 200)
+				{
+					return;
+				}
+				geodata = xhr.response;
+				KVlevels = geodata.KVlevels;
+
+				var floatKV = KVlevels.map(Number).sort(function(a,b) {return a - b});
+
+				// Create layers for KV levels
+				for(var i = 0; i < KVlevels.length; i++)
+				{
+					lineKVlevels[floatKV[i].toString()] = L.layerGroup([]);
+        		}
+
+				L.geoJSON(geodata["geojsondata"],
+				          {onEachFeature: onEachFeature},
+				          {style: {"opacity": 0}}).addTo(map);
+
+				for(var gentype in genlayers)
+				{
+					genlayers[gentype].addTo(map);
+				}
+
+				loadlayer.load.addTo(map);
+
+				for(var i = 0; i < KVlevels.length; i++)
+				{
+					var tempLayer = lineKVlevels[floatKV[i].toString()].addTo(map);
+        		}
+			};
+			xhr.send();
+
+		}); // end $function
+
+	</script>
+</head>
+<body>
+
+	<div id="map"></div>
+
+</body>
+</html>
