@@ -46,21 +46,19 @@ For the considered network, each array has five bounds for voltages, two bounds 
 
 <table>
 <tr>
-<td>array_l</td> <td>-INF</td> <td>Vmin1</td> <td>-INF</td> <td>Vmin2</td> <td>Va*PI/180.0</td> <td>0</td> <td>Pgmin</td> <td>Qgmin</td> <td>-INF</td> <td>Vmin4</td> <td>-INF</td> <td>Vmin5</td>
+<td>array_l</td> <td>-Va*PI/180</td> <td>0</td> <td>-INF</td> <td>Vmin2</td> <td>-INF</td> <td>0</td> <td>Pgmin</td> <td>Qgmin</td> <td>-INF</td> <td>Vmin4</td> <td>-INF</td> <td>Vmin5</td>
 </tr>
 <tr>
-<td>array_u</td> <td>INF</td> <td>Vmax1</td> <td>INF</td> <td>Vmax2</td> <td>Va*PI/180.0</td> <td>2</td> <td>Pgmax</td> <td>Qgmax</td> <td>-INF</td> <td>Vmax4</td> <td>-INF</td> <td>Vmax5</td>
+<td>array_u</td> <td>Va*PI/180</td> <td>2</td> <td>INF</td> <td>Vmax2</td> <td>INF</td> <td>2</td> <td>Pgmax</td> <td>Qgmax</td> <td>INF</td> <td>Vmax4</td> <td>INF</td> <td>Vmax5</td>
 </tr>
 </table>
 
 ### Parameters values
 Following are the value of parameters of interest for this test:
 
-- $`V_{min1}=-1`$
 - $`V_{min2}=-2`$
 - $`V_{min4}=-4`$
 - $`V_{min5}=-5`$
-- $`V_{max1}=1`$
 - $`V_{max2}=2`$
 - $`V_{max4}=4`$
 - $`V_{max5}=5`$
@@ -76,10 +74,10 @@ With the parameters of the example network arrays are:
 
 <table>
 <tr>
-<td>array_l</td> <td>-INF</td> <td>-1</td> <td>-INF</td> <td>-2</td> <td>1</td> <td>0</td> <td>-10</td> <td>-20</td> <td>-INF</td> <td>-4</td> <td>-INF</td> <td>-5</td>
+<td>array_l</td> <td>0</td> <td>0</td> <td>-INF</td> <td>-2</td> <td>-INF</td> <td>0</td> <td>-10</td> <td>-20</td> <td>-INF</td> <td>-4</td> <td>-INF</td> <td>-5</td>
 </tr>
 <tr>
-<td>array_u</td> <td>INF</td> <td>1</td> <td>INF</td> <td>2</td> <td>1</td> <td>2</td> <td>10</td> <td>20</td> <td>INF</td> <td>4</td> <td>INF</td> <td>5</td>
+<td>array_u</td> <td>0</td> <td>2</td> <td>INF</td> <td>2</td> <td>INF</td> <td>2</td> <td>10</td> <td>20</td> <td>INF</td> <td>4</td> <td>INF</td> <td>5</td>
 </tr>
 </table>
 
@@ -91,9 +89,9 @@ To build a solution when the network is being multiplied, to the original array 
 So for N=3 the arrays are:
 <table>
 <tr>
-<td>-INF -1 -INF -2 1 0 -10 -20 -INF -4 -INF -5</td> <td>-INF -2 -INF 0 -10 -20 -INF -4 -INF -5</td> <td>-INF -2 -INF 0 -10 -20 -INF -4 -INF -5</td>
+<td>0 0 -INF -2 -INF 0 -10 -20 -INF -4 -INF -5</td> <td>-INF -2 -INF 0 -10 -20 -INF -4 -INF -5</td> <td>-INF -2 -INF 0 -10 -20 -INF -4 -INF -5</td>
 </tr>
 <tr>
-<td>INF 1 INF 2 1 2 10 20 INF 4 INF 5</td> <td>INF 2 INF 2 10 20 INF 4 INF 5</td> <td>INF 2 INF 2 10 20 INF 4 INF 5</td>
+<td>0 2 INF 2 INF 2 10 20 INF 4 INF 5</td> <td>INF 2 INF 2 10 20 INF 4 INF 5</td> <td>INF 2 INF 2 10 20 INF 4 INF 5</td>
 </tr>
 </table>
