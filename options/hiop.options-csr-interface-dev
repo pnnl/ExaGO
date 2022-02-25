@@ -1,0 +1,16 @@
+tolerance 1e-5
+KKTLinsys condensed
+compute_mode hybrid
+linsol_mode speculative
+fixed_var relax
+tau_min 0.9
+theta_mu 1.1
+kappa_mu 0.8
+elastic_mode correct_it_adjust_bound elastic_mode_bound_relax_final 1e-10
+elastic_mode_bound_relax_initial 0.01
+elastic_bound_strategy  mu_projected
+fact_acceptor inertia_free
+eq_relax_factor 1e-8
+
+verbosity_level 3
+
