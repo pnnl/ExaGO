@@ -105,7 +105,7 @@ struct _p_OPFLOWSolver_HIOPSPARSE {
 
   OPFLOWHIOPSPARSEInterface *nlp;
   hiop::hiopSolveStatus status;
-  hiop::hiopNlpSparse *sp;
+  hiop::hiopNlpSparseIneq *sp;
   hiop::hiopAlgFilterIPMNewton *solver;
 
 #if defined(EXAGO_ENABLE_IPOPT)

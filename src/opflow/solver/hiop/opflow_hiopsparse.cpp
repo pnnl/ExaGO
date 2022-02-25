@@ -538,7 +538,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOPSPARSE(OPFLOW opflow) {
   PetscFunctionBegin;
 
   hiop->nlp = new OPFLOWHIOPSPARSEInterface(opflow);
-  hiop->sp = new hiop::hiopNlpSparse(*hiop->nlp);
+  hiop->sp = new hiop::hiopNlpSparseIneq(*hiop->nlp);
 
   ierr = PetscOptionsBegin(opflow->comm->type, NULL, "HIOP options", NULL);
   CHKERRQ(ierr);
