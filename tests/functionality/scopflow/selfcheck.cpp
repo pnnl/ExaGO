@@ -28,6 +28,12 @@ struct ScopflowFunctionalityTestParameters {
   int opflow_initialization;
   std::string opflow_genbusvoltage_string;
   int opflow_genbusvoltage;
+  std::string subproblem_solver;
+  std::string subproblem_model;
+  bool enable_powerimbalance_variables;
+  bool ignore_lineflow_constraints;
+  int verbosity_level;
+  std::string compute_mode;
 
   /* Parameters used to determine success or failure of functionality test */
   int expected_num_iters;
@@ -60,6 +66,14 @@ struct ScopflowFunctionalityTestParameters {
     set_if_found(multiperiod, values, "multiperiod");
     set_if_found(duration, values, "duration");
     set_if_found(dT, values, "dT");
+    set_if_found(subproblem_solver, values, "subproblem_solver");
+    set_if_found(subproblem_model, values, "subproblem_model");
+    set_if_found(compute_mode, values, "compute_mode");
+    set_if_found(verbosity_level, values, "verbosity_level");
+    set_if_found(enable_powerimbalance_variables, values,
+                 "enable_powerimbalance_variables");
+    set_if_found(ignore_lineflow_constraints, values,
+                 "ignore_lineflow_constraints");
 
     if (opflow_genbusvoltage_string == "VARIABLE_WITHIN_BOUNDS") {
       opflow_genbusvoltage = VARIABLE_WITHIN_BOUNDS;
@@ -104,7 +118,9 @@ struct ScopflowFunctionalityTests
     };
 
     for (const auto &opt :
-         {"solver", "model", "network", "contingencies", "tolerance"})
+         {"solver", "model", "network", "contingencies", "tolerance",
+          "subproblem_model", "subproblem_solver", "compute_mode",
+          "verbosity_level"})
       ensure_option_available(opt);
 
     bool is_multiperiod = false;
@@ -140,6 +156,14 @@ struct ScopflowFunctionalityTests
     testcase["tolerance"] = params.tolerance;
     testcase["did_scopflow_converge"] = params.conv_status;
     testcase["mode"] = params.mode;
+    testcase["subproblem_solver"] = params.subproblem_solver;
+    testcase["subproblem_model"] = params.subproblem_model;
+    testcase["compute_mode"] = params.compute_mode;
+    testcase["verbosity_level"] = params.verbosity_level;
+    testcase["enable_powerimbalance_variables"] =
+        params.enable_powerimbalance_variables;
+    testcase["ignore_lineflow_constraints"] =
+        params.ignore_lineflow_constraints;
     testcase["reasons_for_failure"] = params.reasons_for_failure;
 
     testcase["multiperiod"] = params.multiperiod;
@@ -216,6 +240,29 @@ struct ScopflowFunctionalityTests
     ExaGOCheckError(ierr);
 
     ierr = SCOPFLOWSetMode(scopflow, (PetscInt)params.mode);
+    ExaGOCheckError(ierr);
+
+    ierr =
+        SCOPFLOWSetSubproblemSolver(scopflow, params.subproblem_solver.c_str());
+    ExaGOCheckError(ierr);
+
+    ierr =
+        SCOPFLOWSetSubproblemModel(scopflow, params.subproblem_model.c_str());
+    ExaGOCheckError(ierr);
+
+    ierr = SCOPFLOWSetComputeMode(scopflow, params.compute_mode.c_str());
+    ExaGOCheckError(ierr);
+
+    ierr =
+        SCOPFLOWSetVerbosityLevel(scopflow, (PetscInt)params.verbosity_level);
+    ExaGOCheckError(ierr);
+
+    ierr = SCOPFLOWEnablePowerImbalanceVariables(
+        scopflow, (PetscBool)params.enable_powerimbalance_variables);
+    ExaGOCheckError(ierr);
+
+    ierr = SCOPFLOWIgnoreLineflowConstraints(
+        scopflow, (PetscBool)params.ignore_lineflow_constraints);
     ExaGOCheckError(ierr);
 
     ierr = SCOPFLOWSetUp(scopflow);

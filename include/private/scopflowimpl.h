@@ -123,6 +123,8 @@ struct _p_SCOPFLOW {
   char qload[PETSC_MAX_PATH_LEN];   /* Qload data file */
   char windgen[PETSC_MAX_PATH_LEN]; /* Windgen data file */
 
+  PetscBool solverset; /* Solver has been set */
+
   PetscReal dT;
   PetscReal duration;
 
@@ -197,9 +199,15 @@ struct _p_SCOPFLOW {
 
   Scenario *scen; /* Used by SOPFLOW to pass the scenario information */
 
+  PetscBool
+      enable_powerimbalance_variables;   /* Enable power imbalance variables */
+  PetscBool ignore_lineflow_constraints; /* Ignore lineflow constraints */
+
   /* Used by HIOP solver */
   char subproblem_model[64];  /* subproblem model */
   char subproblem_solver[64]; /* subproblem solver */
+  char compute_mode[64];
+  int verbosity_level;
 };
 
 extern PetscErrorCode SCOPFLOWModelRegisterAll(SCOPFLOW);

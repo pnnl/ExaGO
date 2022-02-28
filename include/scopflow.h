@@ -47,11 +47,20 @@ const auto solver =
 #endif
 
 const auto subproblem_model = ExaGOStringOption(
-    "-subproblem_model", "SCOPFLOW subproblem model type",
+    "-scopflow_subproblem_model", "SCOPFLOW subproblem model type",
     OPFLOWOptions::model.default_value, OPFLOWOptions::model.possible_values);
 const auto subproblem_solver = ExaGOStringOption(
-    "-subproblem_solver", "SCOPFLOW subproblem solver type",
+    "-scopflow_subproblem_solver", "SCOPFLOW subproblem solver type",
     OPFLOWOptions::solver.default_value, OPFLOWOptions::solver.possible_values);
+#ifdef EXAGO_ENABLE_HIOP
+const auto compute_mode =
+    ExaGOStringOption("-hiop_compute_mode", "SCOPFLOW subproblem compute mode",
+                      OPFLOWOptions::hiop_compute_mode.default_value,
+                      OPFLOWOptions::hiop_compute_mode.possible_values);
+const auto verbosity_level = ExaGOIntOption(
+    "-hiop_verbosity_level", "SCOPFLOW subproblem verbosity level",
+    OPFLOWOptions::hiop_verbosity_level.default_value);
+#endif
 const auto iscoupling = ExaGOBoolOption(
     "-scopflow_iscoupling",
     "Include coupling between first stage and second stage", PETSC_TRUE);
@@ -62,6 +71,12 @@ const auto mode = ExaGOIntOption(
     "-scopflow_mode", "Operation mode: Preventive (0) or Corrective (1)", 1);
 const auto enable_multiperiod = ExaGOBoolOption(
     "-scopflow_enable_multiperiod", "Multi-period SCOPFLOW?", PETSC_FALSE);
+const auto enable_powerimbalance =
+    ExaGOBoolOption("-opflow_include_powerimbalance_variables",
+                    "Allow power imbalance", PETSC_FALSE);
+const auto ignore_lineflow_constraints = ExaGOBoolOption(
+    "-opflow_ignore_lineflow_constraints", "Allow power imbalance",
+    OPFLOWOptions::ignore_lineflow_constraints.default_value);
 
 const auto tolerance =
     ExaGORealOption("-scopflow_tolerance", "Optimization tolerance",
@@ -159,5 +174,11 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWSetLoadProfiles(SCOPFLOW, const char[],
                                                     const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetSubproblemModel(SCOPFLOW, const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetSubproblemSolver(SCOPFLOW, const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetComputeMode(SCOPFLOW, const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetVerbosityLevel(SCOPFLOW, PetscInt);
+PETSC_EXTERN PetscErrorCode SCOPFLOWEnablePowerImbalanceVariables(SCOPFLOW,
+                                                                  PetscBool);
+PETSC_EXTERN PetscErrorCode SCOPFLOWIgnoreLineflowConstraints(SCOPFLOW,
+                                                              PetscBool);
 
 #endif

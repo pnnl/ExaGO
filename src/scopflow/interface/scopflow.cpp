@@ -41,6 +41,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout) {
 
   scopflow->solver = NULL;
   scopflow->model = NULL;
+  scopflow->solverset = PETSC_FALSE;
 
   scopflow->nmodelsregistered = 0;
   scopflow->SCOPFLOWModelRegisterAllCalled = PETSC_FALSE;
@@ -50,6 +51,11 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout) {
 
   scopflow->nsolversregistered = 0;
   scopflow->SCOPFLOWSolverRegisterAllCalled = PETSC_FALSE;
+
+  scopflow->enable_powerimbalance_variables =
+      SCOPFLOWOptions::enable_powerimbalance.default_value;
+  scopflow->ignore_lineflow_constraints =
+      SCOPFLOWOptions::ignore_lineflow_constraints.default_value;
 
   /* Register all solvers */
   ierr = SCOPFLOWSolverRegisterAll(scopflow);
@@ -67,6 +73,10 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout) {
   (void)std::strncpy(scopflow->subproblem_solver,
                      SCOPFLOWOptions::subproblem_solver.default_value.c_str(),
                      sizeof(scopflow->subproblem_solver));
+  (void)std::strncpy(scopflow->compute_mode,
+                     SCOPFLOWOptions::compute_mode.default_value.c_str(),
+                     sizeof(scopflow->compute_mode));
+  scopflow->verbosity_level = SCOPFLOWOptions::verbosity_level.default_value;
 
   scopflow->setupcalled = PETSC_FALSE;
   *scopflowout = scopflow;
@@ -184,6 +194,35 @@ PetscErrorCode SCOPFLOWEnableMultiPeriod(SCOPFLOW scopflow,
 }
 
 /**
+ * @brief Enable/Disable power imbalance variables
+ *
+ * @param[in] scopflow the scopflow application object
+ * @param[in] use_power_imbalance PETSC_TRUE if using power imbalance variables,
+ *                                false otherwise.
+ */
+PetscErrorCode
+SCOPFLOWEnablePowerImbalanceVariables(SCOPFLOW scopflow,
+                                      PetscBool use_power_imbalance) {
+  PetscFunctionBegin;
+  scopflow->enable_powerimbalance_variables = use_power_imbalance;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Enable/Disable line flow constraints
+ *
+ * @param[in] scopflow the scopflow application object
+ * @param[in] ignore_constraints PETSC_FALSE if constraints,
+ *                                PETSC_TRUE otherwise.
+ */
+PetscErrorCode SCOPFLOWIgnoreLineflowConstraints(SCOPFLOW scopflow,
+                                                 PetscBool ignore_constraints) {
+  PetscFunctionBegin;
+  scopflow->ignore_lineflow_constraints = ignore_constraints;
+  PetscFunctionReturn(0);
+}
+
+/**
  * @brief Sets the model for SCOPFLOW
  *
  * @param[in] scopflow scopflow application object
@@ -267,6 +306,7 @@ PetscErrorCode SCOPFLOWSetSolver(SCOPFLOW scopflow, const char *solvername) {
   /* Call the underlying implementation constructor */
   ierr = (*r)(scopflow);
   CHKERRQ(ierr);
+  scopflow->solverset = PETSC_TRUE;
 
   PetscFunctionReturn(0);
 }
@@ -416,7 +456,6 @@ object
 */
 PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
   PetscErrorCode ierr;
-  PetscBool scopflowsolverset;
   PetscInt c, i, j;
   PS ps;
   OPFLOW opflow;
@@ -428,6 +467,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
 
   char scopflowsolvername[max_solver_name_len];
   char scopflowmodelname[max_model_name_len];
+  PetscBool scopflowsolverset = PETSC_FALSE;
 
   (void)std::strncpy(scopflowmodelname,
                      SCOPFLOWOptions::model.default_value.c_str(),
@@ -462,6 +502,18 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
                             scopflow->subproblem_solver, max_solver_name_len,
                             NULL);
   CHKERRQ(ierr);
+#ifdef EXAGO_ENABLE_HIOP
+  ierr = PetscOptionsString(SCOPFLOWOptions::compute_mode.opt.c_str(),
+                            SCOPFLOWOptions::compute_mode.desc.c_str(), "",
+                            scopflow->compute_mode, scopflow->compute_mode,
+                            max_model_name_len, NULL);
+  CHKERRQ(ierr);
+  ierr = PetscOptionsInt(SCOPFLOWOptions::verbosity_level.opt.c_str(),
+                         SCOPFLOWOptions::verbosity_level.desc.c_str(), "",
+                         scopflow->verbosity_level, &scopflow->verbosity_level,
+                         NULL);
+  CHKERRQ(ierr);
+#endif
 
   ierr = PetscOptionsBool(SCOPFLOWOptions::iscoupling.opt.c_str(),
                           SCOPFLOWOptions::iscoupling.desc.c_str(), "",
@@ -588,9 +640,15 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
     /* Create base-case OPFLOW */
     ierr = OPFLOWCreate(PETSC_COMM_SELF, &scopflow->opflow0);
     CHKERRQ(ierr);
-    ierr = OPFLOWSetModel(scopflow->opflow0, OPFLOWMODEL_PBPOL);
+    ierr = OPFLOWHasBusPowerImbalance(
+        scopflow->opflow0, scopflow->enable_powerimbalance_variables);
     CHKERRQ(ierr);
-    ierr = OPFLOWSetSolver(scopflow->opflow0, OPFLOWSOLVER_IPOPT);
+    ierr = OPFLOWIgnoreLineflowConstraints(
+        scopflow->opflow0, scopflow->ignore_lineflow_constraints);
+    CHKERRQ(ierr);
+    ierr = OPFLOWSetModel(scopflow->opflow0, scopflow->subproblem_model);
+    CHKERRQ(ierr);
+    ierr = OPFLOWSetSolver(scopflow->opflow0, scopflow->subproblem_solver);
     CHKERRQ(ierr);
     ierr = OPFLOWReadMatPowerData(scopflow->opflow0, scopflow->netfile);
     CHKERRQ(ierr);
@@ -598,6 +656,13 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
     CHKERRQ(ierr);
     ierr = OPFLOWSetGenBusVoltageType(scopflow->opflow0,
                                       scopflow->genbusvoltagetype);
+#ifdef EXAGO_ENABLE_HIOP
+    ierr = OPFLOWSetHIOPComputeMode(scopflow->opflow0, scopflow->compute_mode);
+    CHKERRQ(ierr);
+    ierr = OPFLOWSetHIOPVerbosityLevel(scopflow->opflow0,
+                                       scopflow->verbosity_level);
+    CHKERRQ(ierr);
+#endif
     CHKERRQ(ierr);
 
     ierr = PSSetUp(scopflow->opflow0->ps);
@@ -616,15 +681,29 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
     for (c = 0; c < scopflow->nc; c++) {
       ierr = OPFLOWCreate(PETSC_COMM_SELF, &scopflow->opflows[c]);
       CHKERRQ(ierr);
-      //      ierr =
-      //      OPFLOWSetModel(scopflow->opflows[c],OPFLOWMODEL_PBPOL);CHKERRQ(ierr);
-      //    ierr =
-      //    OPFLOWSetSolver(scopflow->opflows[c],opflowsolvername);CHKERRQ(ierr);
+      ierr = OPFLOWHasBusPowerImbalance(
+          scopflow->opflows[c], scopflow->enable_powerimbalance_variables);
+      CHKERRQ(ierr);
+      ierr = OPFLOWIgnoreLineflowConstraints(
+          scopflow->opflows[c], scopflow->ignore_lineflow_constraints);
+      CHKERRQ(ierr);
+      ierr = OPFLOWSetModel(scopflow->opflows[c], scopflow->subproblem_model);
+      CHKERRQ(ierr);
+      ierr = OPFLOWSetSolver(scopflow->opflows[c], scopflow->subproblem_solver);
+      CHKERRQ(ierr);
       ierr = OPFLOWSetInitializationType(scopflow->opflows[c], scopflow->type);
       CHKERRQ(ierr);
       ierr = OPFLOWSetGenBusVoltageType(scopflow->opflows[c],
                                         scopflow->genbusvoltagetype);
       CHKERRQ(ierr);
+#ifdef EXAGO_ENABLE_HIOP
+      ierr = OPFLOWSetHIOPComputeMode(scopflow->opflows[c],
+                                      scopflow->compute_mode);
+      CHKERRQ(ierr);
+      ierr = OPFLOWSetHIOPVerbosityLevel(scopflow->opflows[c],
+                                         scopflow->verbosity_level);
+      CHKERRQ(ierr);
+#endif
 
       ierr = OPFLOWReadMatPowerData(scopflow->opflows[c], scopflow->netfile);
       CHKERRQ(ierr);
@@ -1278,5 +1357,40 @@ PetscErrorCode SCOPFLOWSetSubproblemSolver(SCOPFLOW scopflow,
   PetscErrorCode ierr;
   ierr = PetscStrcpy(scopflow->subproblem_solver, solvername);
   CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  SCOPFLOWSetSubproblemComputeMode - Set subproblem solver compute mode
+
+  Inputs
++ scopflow - scopflow object
+- mode   - subproblem solver compute mode
+
+  Option Name
+  -hiop_compute_mode
+  Notes: This is used with HIOP solver only
+*/
+PetscErrorCode SCOPFLOWSetComputeMode(SCOPFLOW scopflow, const char mode[]) {
+  PetscErrorCode ierr;
+  ierr = PetscStrcpy(scopflow->compute_mode, mode);
+  CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  SOPFLOWSetSubproblemVerbosityLevel - Set subproblem solver verbosity level
+
+  Inputs
++ sopflow - sopflow object
+- level   - subproblem solver verbosity level
+
+  Option Name
+  -hiop_verbosity_level
+  Notes: This is used with HIOP solver only
+*/
+PetscErrorCode SCOPFLOWSetVerbosityLevel(SCOPFLOW scopflow, int level) {
+  PetscErrorCode ierr;
+  scopflow->verbosity_level = level;
   PetscFunctionReturn(0);
 }

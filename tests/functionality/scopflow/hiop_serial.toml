@@ -10,12 +10,11 @@ opflow_initialization = 'ACPF'
 multiperiod = false
 opflow_genbusvoltage = 'VARIABLE_WITHIN_BOUNDS'
 mode = 0 # 0 = preventive, 1 = corrective
+description = "No Description"
 subproblem_model = 'POWER_BALANCE_POLAR'
 subproblem_solver = 'IPOPT'
 compute_mode = 'CPU'
-enable_powerimbalance_variables = true
 verbosity_level = 3
-description = "No Description"
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'
@@ -26,29 +25,22 @@ num_iters = 1
 obj_value = 4072.4623373385125
 
 [[testcase]]
-network = 'datafiles/case9/case9mod.m'
-contingencies = 'datafiles/case9/case9.cont'
-description = 'case9mod.m with HIOP solver/HIOP subproblem solver/9 contingencies'
-subproblem_model = 'POWER_BALANCE_HIOP'
-subproblem_solver = 'HIOP'
-num_contingencies = -1
-num_iters = 1
-obj_value = 4108.461435148055
-
-[[testcase]]
-network = 'datafiles/case_ACTIVSg200.m'
-contingencies = 'datafiles/case_ACTIVSg200.cont'
-description = 'case_ACTIVSg200.m with HIOP solver/4 contingencies'
-subproblem_model = 'POWER_BALANCE_HIOP'
-subproblem_solver = 'HIOP'
-num_contingencies = 4
-num_iters = 1
-obj_value = 26757.526402535495
-
-[[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
 contingencies = 'datafiles/case_ACTIVSg200.cont'
 description = 'case_ACTIVSg200.m with HIOP solver/20 contingencies'
 num_contingencies = 20
 num_iters = 1
-obj_value = 25957.567696945775
+obj_value = 25957.567697046274
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'
+contingencies = 'datafiles/case9/case9.cont'
+description = 'case9mod.m with HIOP solver/9 contingencies/using RAJA'
+subproblem_model = 'PBPOLRAJAHIOP'
+subproblem_solver = 'HIOP'
+compute_mode = 'GPU'
+enable_powerimbalance_variables = true
+num_contingencies = -1
+num_iters = 1
+obj_value = 4108.46045175
+

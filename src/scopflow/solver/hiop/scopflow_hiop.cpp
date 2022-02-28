@@ -166,6 +166,22 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
   CHKERRQ(ierr);
   ierr = OPFLOWSetSolver(opflowctgc, scopflow->subproblem_solver);
   CHKERRQ(ierr);
+  if (!strcmp(scopflow->subproblem_solver, "HIOP")) {
+    ierr = OPFLOWSetHIOPComputeMode(opflowctgc, scopflow->compute_mode);
+    CHKERRQ(ierr);
+    ierr = OPFLOWSetHIOPVerbosityLevel(opflowctgc, scopflow->verbosity_level);
+    CHKERRQ(ierr);
+  }
+  ierr = OPFLOWSetInitializationType(opflowctgc, scopflow->type);
+  CHKERRQ(ierr);
+  ierr = OPFLOWSetGenBusVoltageType(opflowctgc, scopflow->genbusvoltagetype);
+  CHKERRQ(ierr);
+  ierr = OPFLOWHasBusPowerImbalance(opflowctgc,
+                                    scopflow->enable_powerimbalance_variables);
+  CHKERRQ(ierr);
+  ierr = OPFLOWIgnoreLineflowConstraints(opflowctgc,
+                                         scopflow->ignore_lineflow_constraints);
+  CHKERRQ(ierr);
 
   ierr = OPFLOWReadMatPowerData(opflowctgc, scopflow->netfile);
   CHKERRQ(ierr);
