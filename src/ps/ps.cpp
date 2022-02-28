@@ -1725,3 +1725,86 @@ PetscErrorCode PSGetGenDispatch(PS ps, PetscInt gbus, const char *gid,
 
   PetscFunctionReturn(0);
 }
+
+/*
+  PSCopy - Copies PS data
+
+  Inputs:
++ psin  - PS object from which data is copied
+- psout - PS object where data is copied
+
+  Notes: This routine copies data for the bus, branch, gen, and load
+         structs.
+
+         Must be called after PSSetUp() is called.
+
+*/
+PetscErrorCode PSCopy(PS psin, PS psout) {
+  PetscErrorCode ierr;
+  PetscInt i, k;
+  PSBUS busin, busout;
+  PSGEN genin, genout;
+  PSLINE linein, lineout;
+  PSLOAD loadin, loadout;
+
+  PetscFunctionBegin;
+
+  /* Copy bus data */
+  for (i = 0; i < psin->nbus; i++) {
+    busin = &psin->bus[i];
+    busout = &psout->bus[i];
+
+    /* voltage magnitude and angle */
+    busout->vm = busin->vm;
+    busout->va = busin->va;
+
+    /* mismatch lagrange multipliers */
+    busout->mult_pmis = busin->mult_pmis;
+    busout->mult_qmis = busin->mult_qmis;
+
+    /* Power imbalance */
+    busout->pimb = busin->pimb;
+    busout->qimb = busin->qimb;
+
+    /* Copy generator data */
+    for (k = 0; k < busin->ngen; k++) {
+      ierr = PSBUSGetGen(busin, k, &genin);
+      CHKERRQ(ierr);
+      ierr = PSBUSGetGen(busout, k, &genout);
+      CHKERRQ(ierr);
+
+      genout->pg = genin->pg;
+      genout->qg = genin->qg;
+    }
+
+    /* Copy load data */
+    for (k = 0; k < busin->nload; k++) {
+      ierr = PSBUSGetLoad(busin, k, &loadin);
+      CHKERRQ(ierr);
+      ierr = PSBUSGetLoad(busout, k, &loadout);
+      CHKERRQ(ierr);
+      loadout->pl = loadin->pl;
+      loadout->ql = loadin->ql;
+      loadout->pl_loss = loadin->pl_loss;
+      loadout->ql_loss = loadin->ql_loss;
+    }
+  }
+
+  /* Copy branch data */
+  for (i = 0; i < psin->nline; i++) {
+    linein = &psin->line[i];
+    lineout = &psout->line[i];
+
+    lineout->pf = linein->pf;
+    lineout->qf = linein->qf;
+    lineout->pt = linein->pt;
+    lineout->qt = linein->qt;
+    lineout->sf = linein->sf;
+    lineout->st = linein->st;
+
+    lineout->mult_sf = linein->mult_sf;
+    lineout->mult_st = linein->mult_st;
+  }
+
+  PetscFunctionReturn(0);
+}

@@ -1,3 +1,4 @@
+
 /**
  * @file opflowimpl.h
  * @brief Private header file that defines data and structures for Optimal Power
@@ -47,7 +48,7 @@ struct _p_OPFLOWModelOps {
       OPFLOW, double *, double *, double *,
       double *); /* Array version of setvariable and constraint bounds */
   PetscErrorCode (*setinitialguess)(
-      OPFLOW, Vec); /* Set the initial guess for the optimization */
+      OPFLOW, Vec, Vec); /* Set the initial guess for the optimization */
   PetscErrorCode (*setinitialguessarray)(
       OPFLOW, double *); /* Array version of set initial guess */
   PetscErrorCode (*computeequalityconstraints)(
@@ -280,6 +281,8 @@ struct _p_OPFLOW {
 
   /** @brief user provided data struct for auxillary objective */
   void *userctx;
+
+  PetscBool skip_options; /* Skip run-time options */
 };
 
 /* Registers all the OPFLOW models */

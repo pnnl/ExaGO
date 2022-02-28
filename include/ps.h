@@ -68,6 +68,7 @@ PETSC_EXTERN PetscErrorCode PSSetGenStatus(PS, PetscInt, const char *,
                                            PetscInt);
 PETSC_EXTERN PetscErrorCode PSSetLineStatus(PS, PetscInt, PetscInt,
                                             const char *, PetscInt);
+PETSC_EXTERN PetscErrorCode PSCopy(PS, PS);
 
 /*
   PSSetGenPowerLimits - Sets generator real and reactive power limits given a

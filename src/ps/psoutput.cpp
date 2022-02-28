@@ -69,8 +69,8 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
     for (k = 0; k < bus->nload; k++) {
       ierr = PSBUSGetLoad(bus, k, &load);
       CHKERRQ(ierr);
-      Pd += load->pl * ps->MVAbase;
-      Qd += load->ql * ps->MVAbase;
+      Pd += (load->pl - load->pl_loss) * ps->MVAbase;
+      Qd += (load->ql - load->ql_loss) * ps->MVAbase;
     }
     fprintf(fd,
             "\t%d\t%d\t%.9g\t%.9g\t%.9g\t%.9g\t%d\t%.9g\t%.9g\t%.9g\t%d\t%."
@@ -269,20 +269,22 @@ PetscErrorCode PSPrintSystemSummary(PS ps) {
   PSLINE line;
   PetscBool ghostbus;
   PetscInt i, k;
-  PetscScalar Pd, Qd;
+  PetscScalar Pd, Qd, Pdloss, Qdloss;
 
   PetscFunctionBegin;
 
   ierr = PetscPrintf(ps->comm->type, "-----------------------------------------"
-                                     "-----------------------------\n");
-  CHKERRQ(ierr);
-  ierr = PetscPrintf(ps->comm->type,
-                     "%-10s %-7s %-7s %-7s %-7s %-14s %-14s %-14s %-14s\n",
-                     "Bus", "Pd", "Qd", "Vm", "Va", "mult_Pmis", "mult_Qmis",
-                     "Pslack", "Qslack");
+                                     "-----------------------------------------"
+                                     "--------------------\n");
+  ierr = PetscPrintf(
+      ps->comm->type,
+      "%-10s %-7s %-6s %-7s %-6s %-7s %-7s %-14s %-14s %-14s %-14s\n", "Bus",
+      "Pd", "Pdloss", "Qd", "Qdloss", "Vm", "Va", "mult_Pmis", "mult_Qmis",
+      "Pslack", "Qslack");
   CHKERRQ(ierr);
   ierr = PetscPrintf(ps->comm->type, "-----------------------------------------"
-                                     "-----------------------------\n");
+                                     "-----------------------------------------"
+                                     "--------------------\n");
   CHKERRQ(ierr);
 
   MPI_Barrier(ps->comm->type);
@@ -295,28 +297,33 @@ PetscErrorCode PSPrintSystemSummary(PS ps) {
     if (ghostbus)
       continue;
 
-    Pd = Qd = 0.0;
+    Pd = Qd = Pdloss = Qdloss = 0.0;
     for (k = 0; k < bus->nload; k++) {
       ierr = PSBUSGetLoad(bus, k, &load);
       CHKERRQ(ierr);
       Pd += load->pl * ps->MVAbase;
       Qd += load->ql * ps->MVAbase;
+      Pdloss += load->pl_loss * ps->MVAbase;
+      Qdloss += load->ql_loss * ps->MVAbase;
     }
-    ierr = PetscPrintf(
-        ps->comm->type,
-        "%-6d %7.2f %7.2f %7.3f %7.3f %12.2f %12.2f %12.2f %12.2f\n",
-        bus->bus_i, Pd, Qd, bus->vm, bus->va * 180.0 / PETSC_PI, bus->mult_pmis,
-        bus->mult_qmis, bus->pimb * ps->MVAbase, bus->qimb * ps->MVAbase);
+    ierr =
+        PetscPrintf(ps->comm->type,
+                    "%-6d %7.2f %7.2f %7.2f %7.2f %7.3f %7.3f %12.2f %12.2f "
+                    "%12.2f %12.2f\n",
+                    bus->bus_i, Pd, Pdloss, Qd, Qdloss, bus->vm,
+                    bus->va * 180.0 / PETSC_PI, bus->mult_pmis, bus->mult_qmis,
+                    bus->pimb * ps->MVAbase, bus->qimb * ps->MVAbase);
     CHKERRQ(ierr);
   }
   ierr = PetscPrintf(ps->comm->type, "\n");
   CHKERRQ(ierr);
   MPI_Barrier(ps->comm->type);
 
-  ierr = PetscPrintf(ps->comm->type,
-                     "---------------------------------------------------------"
-                     "-------------------------------\n");
+  ierr = PetscPrintf(ps->comm->type, "-----------------------------------------"
+                                     "-----------------------------------------"
+                                     "--------------------\n");
   CHKERRQ(ierr);
+
   ierr = PetscPrintf(
       ps->comm->type, "%-10s %-8s %-10s %-8s %-7s %-8s %-8s %-8s\n", "From",
       "To", "Status", "Sft", "Stf", "Slim", "mult_Sf", "mult_St");

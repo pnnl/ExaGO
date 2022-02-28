@@ -165,6 +165,33 @@ obj_value = 27564.2030874
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'  
+description = "datafiles/case9/case9mod.m initialization DCOPF"
+is_loadloss_active =	false
+is_powerimb_active =	false
+initialization_type = "DCOPF"
+num_iters = 15
+obj_value = 4151.35859537
+
+[[testcase]]
+network = 'datafiles/case118.m'
+description = "datafiles/case118.m initialization DCOPF"
+is_loadloss_active =	false
+is_powerimb_active =	false
+initialization_type = "DCOPF"
+num_iters = 32
+obj_value = 130131.468118
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+description = "datafiles/case_ACTIVSg200.m initialization DCOPF"
+is_loadloss_active =	false
+is_powerimb_active =	false
+initialization_type = "DCOPF"
+num_iters = 25
+obj_value = 27564.2030862
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'  
 description = "datafiles/case9/case9mode.m use AGC"
 is_loadloss_active =	false
 is_powerimb_active =	false

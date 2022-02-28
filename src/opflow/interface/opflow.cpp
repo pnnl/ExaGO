@@ -4,7 +4,8 @@
 #include <private/pflowimpl.h>
 
 const char *const OPFLOWInitializationTypes[] = {
-    "MIDPOINT",    "FROMFILE", "ACPF", "FLATSTART", "OPFLOWInitializationType",
+    "MIDPOINT",    "FROMFILE", "ACPF",
+    "FLATSTART",   "DCOPF",    "OPFLOWInitializationType",
     "OPFLOWINIT_", NULL};
 
 const char *const OPFLOWObjectiveTypes[] = {"MIN_GEN_COST",
@@ -62,6 +63,22 @@ PetscErrorCode OPFLOWGetGenBusVoltageType(OPFLOW opflow,
   PetscFunctionReturn(0);
 }
 
+/*
+  OPFLOWSkipOptions - Skip run-time options?
+
+  Inputs:
++ opflow - OPFLOW object
+- skip_options - Skip run-time options?
+
+  Notes: Should be called before OPFLOWSetUp
+*/
+PetscErrorCode OPFLOWSkipOptions(OPFLOW opflow, PetscBool skip_options) {
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  opflow->skip_options = skip_options;
+  PetscFunctionReturn(0);
+}
 /*
   OPFLOWHasLoadLoss - Use load loss in the OPFLOW formulation
 
@@ -323,6 +340,81 @@ PetscErrorCode OPFLOWGetSizes(OPFLOW opflow, int *nx, int *nconeq,
 PetscErrorCode OPFLOWGetVariableOrdering(OPFLOW opflow, int **ordering) {
   PetscFunctionBegin;
   *ordering = opflow->idxn2sd_map;
+  PetscFunctionReturn(0);
+}
+
+/*
+   OPFLOWInitializeDCOPF - DCOPF initialization of OPFLOW
+*/
+PetscErrorCode OPFLOWInitializeDCOPF(OPFLOW opflow, PetscBool *converged) {
+  PetscErrorCode ierr;
+  OPFLOW dcopflow; // DCOPF object
+
+  PetscFunctionBegin;
+
+  ierr = OPFLOWCreate(opflow->comm->type, &dcopflow);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWReadMatPowerData(dcopflow, opflow->ps->net_file_name);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWSetModel(dcopflow, OPFLOWMODEL_DCOPF);
+  CHKERRQ(ierr);
+
+#if defined(EXAGO_ENABLE_IPOPT)
+  ierr = OPFLOWSetSolver(dcopflow, OPFLOWSOLVER_IPOPT);
+  CHKERRQ(ierr);
+#else
+  ierr = OPFLOWSetSolver(dcopflow, OPFLOWSOLVER_HIOPSPARSE);
+  CHKERRQ(ierr);
+#endif
+
+  /* Set options */
+  ierr = OPFLOWHasLoadLoss(dcopflow, opflow->include_loadloss_variables);
+  CHKERRQ(ierr);
+  ierr = OPFLOWSetLoadLossPenalty(dcopflow, opflow->loadloss_penalty);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWHasBusPowerImbalance(dcopflow,
+                                    opflow->include_powerimbalance_variables);
+  CHKERRQ(ierr);
+  ierr = OPFLOWSetBusPowerImbalancePenalty(dcopflow,
+                                           opflow->powerimbalance_penalty);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWHasGenSetPoint(dcopflow, opflow->has_gensetpoint);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWUseAGC(dcopflow, opflow->use_agc);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWIgnoreLineflowConstraints(dcopflow,
+                                         opflow->ignore_lineflow_constraints);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWSetTolerance(dcopflow, opflow->tolerance);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWSetObjectiveType(dcopflow, opflow->objectivetype);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWSkipOptions(dcopflow, PETSC_TRUE);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWSolve(dcopflow);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWSolutionToPS(dcopflow);
+  CHKERRQ(ierr);
+  ierr = OPFLOWGetConvergenceStatus(dcopflow, converged);
+  CHKERRQ(ierr);
+
+  ierr = PSCopy(dcopflow->ps, opflow->ps);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWDestroy(&dcopflow);
+  CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -609,6 +701,9 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
 
   strcpy(opflow->_p_hiop_compute_mode, "auto");
   opflow->_p_hiop_verbosity_level = 0;
+
+  opflow->skip_options = PETSC_FALSE;
+
   *opflowout = opflow;
 
   //  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Application created\n");
@@ -1185,89 +1280,91 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   PetscFunctionBegin;
 
   /* Read run-time options */
-  ierr = PetscOptionsBegin(opflow->comm->type, NULL, "OPFLOW options", NULL);
-  CHKERRQ(ierr);
+  if (!opflow->skip_options) {
+    ierr = PetscOptionsBegin(opflow->comm->type, NULL, "OPFLOW options", NULL);
+    CHKERRQ(ierr);
 
-  ierr = PetscOptionsString(OPFLOWOptions::model.opt.c_str(),
-                            OPFLOWOptions::model.desc.c_str(), "", modelname,
-                            modelname, 32, &modelset);
-  CHKERRQ(ierr);
+    ierr = PetscOptionsString(OPFLOWOptions::model.opt.c_str(),
+                              OPFLOWOptions::model.desc.c_str(), "", modelname,
+                              modelname, 32, &modelset);
+    CHKERRQ(ierr);
 
-  ierr = PetscOptionsString(OPFLOWOptions::solver.opt.c_str(),
-                            OPFLOWOptions::solver.desc.c_str(), "", solvername,
-                            solvername, 32, &solverset);
-  CHKERRQ(ierr);
-  ierr = PetscOptionsEnum(OPFLOWOptions::initialization.opt.c_str(),
-                          OPFLOWOptions::initialization.desc.c_str(), "",
-                          OPFLOWInitializationTypes,
-                          (PetscEnum)opflow->initializationtype,
-                          (PetscEnum *)&opflow->initializationtype, NULL);
-  CHKERRQ(ierr);
-  ierr =
-      PetscOptionsEnum(OPFLOWOptions::objective.opt.c_str(),
-                       OPFLOWOptions::objective.desc.c_str(), "",
-                       OPFLOWObjectiveTypes, (PetscEnum)opflow->objectivetype,
-                       (PetscEnum *)&opflow->objectivetype, NULL);
-  CHKERRQ(ierr);
-  ierr = PetscOptionsEnum(OPFLOWOptions::genbusvoltage.opt.c_str(),
-                          OPFLOWOptions::genbusvoltage.desc.c_str(), "",
-                          OPFLOWGenBusVoltageTypes,
-                          (PetscEnum)opflow->genbusvoltagetype,
-                          (PetscEnum *)&opflow->genbusvoltagetype, NULL);
-  CHKERRQ(ierr);
+    ierr = PetscOptionsString(OPFLOWOptions::solver.opt.c_str(),
+                              OPFLOWOptions::solver.desc.c_str(), "",
+                              solvername, solvername, 32, &solverset);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsEnum(OPFLOWOptions::initialization.opt.c_str(),
+                            OPFLOWOptions::initialization.desc.c_str(), "",
+                            OPFLOWInitializationTypes,
+                            (PetscEnum)opflow->initializationtype,
+                            (PetscEnum *)&opflow->initializationtype, NULL);
+    CHKERRQ(ierr);
+    ierr =
+        PetscOptionsEnum(OPFLOWOptions::objective.opt.c_str(),
+                         OPFLOWOptions::objective.desc.c_str(), "",
+                         OPFLOWObjectiveTypes, (PetscEnum)opflow->objectivetype,
+                         (PetscEnum *)&opflow->objectivetype, NULL);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsEnum(OPFLOWOptions::genbusvoltage.opt.c_str(),
+                            OPFLOWOptions::genbusvoltage.desc.c_str(), "",
+                            OPFLOWGenBusVoltageTypes,
+                            (PetscEnum)opflow->genbusvoltagetype,
+                            (PetscEnum *)&opflow->genbusvoltagetype, NULL);
+    CHKERRQ(ierr);
 
-  ierr =
-      PetscOptionsBool(OPFLOWOptions::has_gensetpoint.opt.c_str(),
-                       OPFLOWOptions::has_gensetpoint.desc.c_str(), "",
-                       opflow->has_gensetpoint, &opflow->has_gensetpoint, NULL);
-  CHKERRQ(ierr);
-  ierr = PetscOptionsBool(OPFLOWOptions::use_agc.opt.c_str(),
-                          OPFLOWOptions::use_agc.desc.c_str(), "",
-                          opflow->use_agc, &opflow->use_agc, NULL);
-  CHKERRQ(ierr);
-  if (opflow->use_agc)
-    opflow->has_gensetpoint = PETSC_TRUE;
-  ierr = PetscOptionsReal(OPFLOWOptions::tolerance.opt.c_str(),
-                          OPFLOWOptions::tolerance.desc.c_str(), "",
-                          opflow->tolerance, &opflow->tolerance, NULL);
-  CHKERRQ(ierr);
+    ierr = PetscOptionsBool(OPFLOWOptions::has_gensetpoint.opt.c_str(),
+                            OPFLOWOptions::has_gensetpoint.desc.c_str(), "",
+                            opflow->has_gensetpoint, &opflow->has_gensetpoint,
+                            NULL);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsBool(OPFLOWOptions::use_agc.opt.c_str(),
+                            OPFLOWOptions::use_agc.desc.c_str(), "",
+                            opflow->use_agc, &opflow->use_agc, NULL);
+    CHKERRQ(ierr);
+    if (opflow->use_agc)
+      opflow->has_gensetpoint = PETSC_TRUE;
+    ierr = PetscOptionsReal(OPFLOWOptions::tolerance.opt.c_str(),
+                            OPFLOWOptions::tolerance.desc.c_str(), "",
+                            opflow->tolerance, &opflow->tolerance, NULL);
+    CHKERRQ(ierr);
 
-  if (opflow->objectivetype == MIN_GEN_COST) {
-    opflow->obj_gencost = PETSC_TRUE;
-  } else if (opflow->objectivetype == MIN_GENSETPOINT_DEVIATION) {
-    opflow->obj_gencost = PETSC_FALSE;
-    opflow->has_gensetpoint = PETSC_TRUE;
+    if (opflow->objectivetype == MIN_GEN_COST) {
+      opflow->obj_gencost = PETSC_TRUE;
+    } else if (opflow->objectivetype == MIN_GENSETPOINT_DEVIATION) {
+      opflow->obj_gencost = PETSC_FALSE;
+      opflow->has_gensetpoint = PETSC_TRUE;
+    }
+
+    ierr = PetscOptionsBool(
+        OPFLOWOptions::ignore_lineflow_constraints.opt.c_str(),
+        OPFLOWOptions::ignore_lineflow_constraints.desc.c_str(), "",
+        opflow->ignore_lineflow_constraints,
+        &opflow->ignore_lineflow_constraints, NULL);
+    CHKERRQ(ierr);
+    ierr =
+        PetscOptionsBool(OPFLOWOptions::include_loadloss_variables.opt.c_str(),
+                         OPFLOWOptions::include_loadloss_variables.desc.c_str(),
+                         "", opflow->include_loadloss_variables,
+                         &opflow->include_loadloss_variables, NULL);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsReal(OPFLOWOptions::loadloss_penalty.opt.c_str(),
+                            OPFLOWOptions::loadloss_penalty.desc.c_str(), "",
+                            opflow->loadloss_penalty, &opflow->loadloss_penalty,
+                            NULL);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsBool(
+        OPFLOWOptions::include_powerimbalance_variables.opt.c_str(),
+        OPFLOWOptions::include_powerimbalance_variables.desc.c_str(), "",
+        opflow->include_powerimbalance_variables,
+        &opflow->include_powerimbalance_variables, NULL);
+    CHKERRQ(ierr);
+    ierr = PetscOptionsReal(OPFLOWOptions::powerimbalance_penalty.opt.c_str(),
+                            OPFLOWOptions::powerimbalance_penalty.desc.c_str(),
+                            "", opflow->powerimbalance_penalty,
+                            &opflow->powerimbalance_penalty, NULL);
+    CHKERRQ(ierr);
+    PetscOptionsEnd();
   }
-
-  ierr =
-      PetscOptionsBool(OPFLOWOptions::ignore_lineflow_constraints.opt.c_str(),
-                       OPFLOWOptions::ignore_lineflow_constraints.desc.c_str(),
-                       "", opflow->ignore_lineflow_constraints,
-                       &opflow->ignore_lineflow_constraints, NULL);
-  CHKERRQ(ierr);
-  ierr =
-      PetscOptionsBool(OPFLOWOptions::include_loadloss_variables.opt.c_str(),
-                       OPFLOWOptions::include_loadloss_variables.desc.c_str(),
-                       "", opflow->include_loadloss_variables,
-                       &opflow->include_loadloss_variables, NULL);
-  CHKERRQ(ierr);
-  ierr = PetscOptionsReal(OPFLOWOptions::loadloss_penalty.opt.c_str(),
-                          OPFLOWOptions::loadloss_penalty.desc.c_str(), "",
-                          opflow->loadloss_penalty, &opflow->loadloss_penalty,
-                          NULL);
-  CHKERRQ(ierr);
-  ierr = PetscOptionsBool(
-      OPFLOWOptions::include_powerimbalance_variables.opt.c_str(),
-      OPFLOWOptions::include_powerimbalance_variables.desc.c_str(), "",
-      opflow->include_powerimbalance_variables,
-      &opflow->include_powerimbalance_variables, NULL);
-  CHKERRQ(ierr);
-  ierr = PetscOptionsReal(OPFLOWOptions::powerimbalance_penalty.opt.c_str(),
-                          OPFLOWOptions::powerimbalance_penalty.desc.c_str(),
-                          "", opflow->powerimbalance_penalty,
-                          &opflow->powerimbalance_penalty, NULL);
-  CHKERRQ(ierr);
-  PetscOptionsEnd();
 
   /* Set model if CLI argument */
   if (modelset) {
@@ -1496,18 +1593,12 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   ierr = OPFLOWComputeConstraintBounds(opflow, opflow->Gl, opflow->Gu);
   CHKERRQ(ierr);
 
-  /* Set up power flow initialization */
-  if (opflow->initializationtype == OPFLOWINIT_ACPF) {
-    ierr = OPFLOWSetUpInitPflow(opflow);
-    CHKERRQ(ierr);
-  }
-
   /* Set initial guess */
-  ierr = OPFLOWSetInitialGuess(opflow, opflow->X);
+  ierr = OPFLOWSetInitialGuess(opflow, opflow->X, opflow->Lambda);
   CHKERRQ(ierr);
 
   /* Initial guess for multipliers */
-  ierr = VecSet(opflow->Lambda, 1.0);
+  /*  ierr = VecSet(opflow->Lambda, 1.0);
   CHKERRQ(ierr);
   ierr = VecSet(opflow->Lambdae, 1.0);
   CHKERRQ(ierr);
@@ -1515,6 +1606,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
     ierr = VecSet(opflow->Lambdai, 1.0);
     CHKERRQ(ierr);
   }
+  */
 
   /* Solver set up */
   if (opflow->solverops.setup) {
@@ -1567,12 +1659,13 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
 .  opflow - the optimal power flow application object
 
    Output Parameters:
-.  X - initial guess
++  X - initial guess (primal)
+-  Lambda - Lagrange multipliers for constraints
 
 */
-PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X) {
+PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X, Vec Lambda) {
   PetscErrorCode ierr;
-  PetscBool pflowconverged = PETSC_FALSE;
+  PetscBool converged = PETSC_FALSE; // Solver convergence status
 
   PetscFunctionBegin;
 
@@ -1582,7 +1675,7 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X) {
   case OPFLOWINIT_FROMFILE:
   case OPFLOWINIT_FLATSTART:
     if (opflow->modelops.setinitialguess) {
-      ierr = (*opflow->modelops.setinitialguess)(opflow, X);
+      ierr = (*opflow->modelops.setinitialguess)(opflow, X, Lambda);
       CHKERRQ(ierr);
     } else if (opflow->modelops.setinitialguessarray) {
       PetscScalar *x0;
@@ -1595,14 +1688,34 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X) {
     }
     break;
   case OPFLOWINIT_ACPF:
-    ierr = OPFLOWComputePrePflow(opflow, &pflowconverged);
+    ierr = OPFLOWSetUpInitPflow(opflow);              // Set up power flow
+    ierr = OPFLOWComputePrePflow(opflow, &converged); // Solve power flow
     CHKERRQ(ierr);
-    if (!pflowconverged) {
+    if (!converged) {
       SETERRQ(PETSC_COMM_SELF, 0,
-              "AC power flow initialization did not converged\n");
+              "AC power flow initialization did not converge\n");
     }
     if (opflow->modelops.setinitialguess) {
-      ierr = (*opflow->modelops.setinitialguess)(opflow, X);
+      ierr = (*opflow->modelops.setinitialguess)(opflow, X, Lambda);
+      CHKERRQ(ierr);
+    } else if (opflow->modelops.setinitialguessarray) {
+      PetscScalar *x0;
+      ierr = VecGetArray(X, &x0);
+      CHKERRQ(ierr);
+      ierr = (*opflow->modelops.setinitialguessarray)(opflow, x0);
+      CHKERRQ(ierr);
+      ierr = VecRestoreArray(X, &x0);
+      CHKERRQ(ierr);
+    }
+    break;
+  case OPFLOWINIT_DCOPF:
+    ierr = OPFLOWInitializeDCOPF(opflow, &converged); // DCOPF initialization
+    CHKERRQ(ierr);
+    if (!converged) {
+      SETERRQ(PETSC_COMM_SELF, 0, "DCOPF initialization did not converge\n");
+    }
+    if (opflow->modelops.setinitialguess) {
+      ierr = (*opflow->modelops.setinitialguess)(opflow, X, Lambda);
       CHKERRQ(ierr);
     } else if (opflow->modelops.setinitialguessarray) {
       PetscScalar *x0;
@@ -2490,7 +2603,8 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
 #if defined(EXAGO_ENABLE_IPOPT)
-  PetscBool ipopt, ipopt_pbpol, ipopt_pbcar, ipopt_ibcar, ipopt_ibcar2;
+  PetscBool ipopt, ipopt_pbpol, ipopt_pbcar, ipopt_ibcar, ipopt_ibcar2,
+      ipopt_dcopf;
   ierr = PetscStrcmp(opflow->solvername, OPFLOWSOLVER_IPOPT, &ipopt);
   CHKERRQ(ierr);
   ierr = PetscStrcmp(opflow->modelname, OPFLOWMODEL_PBPOL, &ipopt_pbpol);
@@ -2501,7 +2615,10 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
   CHKERRQ(ierr);
   ierr = PetscStrcmp(opflow->modelname, OPFLOWMODEL_IBCAR2, &ipopt_ibcar2);
   CHKERRQ(ierr);
-  if (ipopt && !(ipopt_pbpol || ipopt_pbcar || ipopt_ibcar || ipopt_ibcar2)) {
+  ierr = PetscStrcmp(opflow->modelname, "DCOPF", &ipopt_dcopf);
+  CHKERRQ(ierr);
+  if (ipopt && !(ipopt_pbpol || ipopt_pbcar || ipopt_ibcar || ipopt_ibcar2 ||
+                 ipopt_dcopf)) {
     SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_SUP,
              "OPFLOW solver IPOPT incompatible with model %s",
              opflow->modelname);
@@ -2524,11 +2641,14 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
 #if defined(EXAGO_ENABLE_HIOP_SPARSE)
   PetscBool hiop_sparse;
   PetscBool hiop_sparse_pbpol;
+  PetscBool hiop_sparse_dcopf;
   ierr = PetscStrcmp(opflow->solvername, OPFLOWSOLVER_HIOPSPARSE, &hiop_sparse);
   CHKERRQ(ierr);
   ierr = PetscStrcmp(opflow->modelname, OPFLOWMODEL_PBPOL, &hiop_sparse_pbpol);
   CHKERRQ(ierr);
-  if (hiop_sparse && !hiop_sparse_pbpol) {
+  ierr = PetscStrcmp(opflow->modelname, "DCOPF", &hiop_sparse_dcopf);
+  CHKERRQ(ierr);
+  if (hiop_sparse && !(hiop_sparse_pbpol || hiop_sparse_dcopf)) {
     SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_SUP,
              "OPFLOW solver HIOPSPARSE incompatible with model %s",
              opflow->modelname);

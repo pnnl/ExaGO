@@ -6,6 +6,7 @@ set(OPFLOW_FORM_SRC
     model/power_bal_cartesian/pbcar.cpp
     model/power_bal_hiop/pbpolhiop.cpp
     model/power_bal_hiop/pbpolhiopkernels.cpp
+    model/dcopf/dcopf.cpp
 )
 
 # Build RAJA/Umpire modules if RAJA and Umpire are enabled

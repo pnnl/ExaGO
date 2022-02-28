@@ -44,9 +44,8 @@ PetscErrorCode OPFLOWSetVariableBounds_IBCAR(OPFLOW opflow, Vec Xl, Vec Xu) {
     xu[loc + 1] = bus->Vmax;
 
     if (bus->ide == ISOLATED_BUS) {
-      xl[loc] = xu[loc] = bus->vm * PetscCosScalar(bus->va * PETSC_PI / 180.0);
-      xl[loc + 1] = xu[loc + 1] =
-          bus->vm * PetscSinScalar(bus->va * PETSC_PI / 180.0);
+      xl[loc] = xu[loc] = bus->vm * PetscCosScalar(bus->va);
+      xl[loc + 1] = xu[loc + 1] = bus->vm * PetscSinScalar(bus->va);
     }
 
     for (k = 0; k < bus->ngen; k++) {
@@ -177,7 +176,7 @@ PetscErrorCode OPFLOWSetVariableandConstraintBounds_IBCAR(OPFLOW opflow, Vec Xl,
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSetInitialGuess_IBCAR(OPFLOW opflow, Vec X) {
+PetscErrorCode OPFLOWSetInitialGuess_IBCAR(OPFLOW opflow, Vec X, Vec Lambda) {
   PetscErrorCode ierr;
   PS ps = opflow->ps;
   const PetscScalar *xl, *xu;
@@ -206,20 +205,19 @@ PetscErrorCode OPFLOWSetInitialGuess_IBCAR(OPFLOW opflow, Vec X) {
     CHKERRQ(ierr);
 
     if (bus->ide == ISOLATED_BUS) {
-      x[loc] = bus->vm * PetscCosScalar(bus->va * PETSC_PI / 180.0);
-      x[loc + 1] = bus->vm * PetscSinScalar(bus->va * PETSC_PI / 180.0);
+      x[loc] = bus->vm * PetscCosScalar(bus->va);
+      x[loc + 1] = bus->vm * PetscSinScalar(bus->va);
     } else {
       if (opflow->initializationtype == OPFLOWINIT_MIDPOINT) {
-        x[loc] = 0.5 * (bus->Vmin + bus->Vmax) *
-                 PetscCosScalar(bus->va * PETSC_PI / 180.0);
+        x[loc] = 0.5 * (bus->Vmin + bus->Vmax) * PetscCosScalar(bus->va);
         x[loc + 1] = 0; // 0.5*(bus->Vmin +
-                        // bus->Vmax)*PetscCosScalar(bus->va*PETSC_PI/180.0);
+                        // bus->Vmax)*PetscCosScalar(bus->va);
       } else if (opflow->initializationtype == OPFLOWINIT_FROMFILE ||
                  opflow->initializationtype == OPFLOWINIT_ACPF) {
         x[loc] = PetscMax(bus->Vmin, PetscMin(bus->vm, bus->Vmax)) *
-                 PetscCosScalar(bus->va * PETSC_PI / 180.0);
+                 PetscCosScalar(bus->va);
         x[loc + 1] = PetscMax(bus->Vmin, PetscMin(bus->vm, bus->Vmax)) *
-                     PetscSinScalar(bus->va * PETSC_PI / 180.0);
+                     PetscSinScalar(bus->va);
       } else if (opflow->initializationtype == OPFLOWINIT_FLATSTART) {
         x[loc] = 1.0;
         x[loc + 1] = 0.0;
@@ -321,8 +319,8 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow, Vec X,
     Vm2 = Vm * Vm;
 
     if (bus->ide == ISOLATED_BUS) {
-      val[0] = Vr - bus->vm * PetscCosScalar(bus->va * PETSC_PI / 180.0);
-      val[1] = Vi - bus->vm * PetscSinScalar(bus->va * PETSC_PI / 180.0);
+      val[0] = Vr - bus->vm * PetscCosScalar(bus->va);
+      val[1] = Vi - bus->vm * PetscSinScalar(bus->va);
 
       ierr = VecSetValues(Ge, 2, row, val, ADD_VALUES);
       CHKERRQ(ierr);
@@ -443,7 +441,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_IBCAR(OPFLOW opflow, Vec X,
     if (bus->ide == REF_BUS) {
       /* Equality constraint for angle */
       row[2] = row[1] + 1;
-      val[2] = Vi - Vr * PetscTanScalar(bus->va * PETSC_PI / 180.0);
+      val[2] = Vi - Vr * PetscTanScalar(bus->va);
       ierr = VecSetValues(Ge, 1, &row[2], &val[2], ADD_VALUES);
       CHKERRQ(ierr);
       gloc += 1;
@@ -756,7 +754,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_IBCAR(OPFLOW opflow,
       row[2] = row[1] + 1;
       col[0] = locglob;
       col[1] = locglob + 1;
-      val[0] = -PetscTanScalar(bus->va * PETSC_PI / 180.0);
+      val[0] = -PetscTanScalar(bus->va);
       val[1] = 1.0;
       ierr = MatSetValues(Je, 1, row + 2, 2, col, val, ADD_VALUES);
       CHKERRQ(ierr);

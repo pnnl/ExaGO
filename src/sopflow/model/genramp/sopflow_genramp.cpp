@@ -185,7 +185,7 @@ PetscErrorCode SOPFLOWSetInitialGuess_GENRAMP(SOPFLOW sopflow, Vec X) {
     CHKERRQ(ierr);
 
     /* Set initial guess */
-    ierr = OPFLOWSetInitialGuess(opflow, opflow->X);
+    ierr = OPFLOWSetInitialGuess(opflow, opflow->X, opflow->Lambda);
     CHKERRQ(ierr);
 
     ierr = VecResetArray(opflow->X);

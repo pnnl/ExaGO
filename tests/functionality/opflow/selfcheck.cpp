@@ -70,6 +70,8 @@ struct OpflowFunctionalityTestParameters {
       initialization_type = OPFLOWINIT_ACPF;
     } else if (initialization_string == "FLATSTART") {
       initialization_type = OPFLOWINIT_FLATSTART;
+    } else if (initialization_string == "DCOPF") {
+      initialization_type = OPFLOWINIT_DCOPF;
     }
   }
 };

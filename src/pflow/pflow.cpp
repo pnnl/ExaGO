@@ -429,7 +429,7 @@ PetscErrorCode PFLOWFunction(SNES snes, Vec X, Vec F, void *ctx) {
 
     if (!ghostbus) {
       if (bus->ide == REF_BUS || bus->ide == ISOLATED_BUS) {
-        farr[loc] = theta - bus->va * PETSC_PI / 180.0;
+        farr[loc] = theta - bus->va;
         farr[loc + 1] = Vm - bus->vm;
         flps += 3;
         continue;
@@ -660,7 +660,7 @@ PetscErrorCode PFLOWSetInitialGuess(PFLOW pflow, Vec X) {
         Vm = bus->vm;
     } else
       Vm = bus->vm;
-    Va = bus->va * PETSC_PI / 180.0;
+    Va = bus->va;
 
     xarr[loc] = Va;
     xarr[loc + 1] = Vm;
@@ -799,7 +799,7 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow) {
     theta = xarr[loc];
     Vm = xarr[loc + 1];
 
-    bus->va = theta * 180.0 / PETSC_PI;
+    bus->va = theta;
     bus->vm = Vm;
     flps += 2;
     if (!ghostbus) {

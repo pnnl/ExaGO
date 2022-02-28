@@ -209,6 +209,9 @@ PetscErrorCode PSReadPSSERawData(PS ps, const char netfile[]) {
             Bus[busi].va);
       CHKERRQ(ierr);
 #endif
+      // Convert angle to radians
+      Bus[busi].va *= PETSC_PI / 180.0;
+
       if (Bus[busi].ide == REF_BUS)
         ps->Nref++;
 
@@ -675,6 +678,9 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
       Bus[busi].Vmax = Bus[busi].Vmax == 0 ? 1.1 : Bus[busi].Vmax;
       Bus[busi].Vmin = Bus[busi].Vmin == 0 ? 0.9 : Bus[busi].Vmin;
 
+      // Convert angle to radians
+      Bus[busi].va *= PETSC_PI / 180.0;
+
       if (Bus[busi].ide == REF_BUS)
         ps->Nref++;
       Bus[busi].internal_i = busi;
@@ -933,6 +939,10 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
 
         Branch[bri].ytt[0] = G;
         Branch[bri].ytt[1] = B + Bc / 2.0;
+
+        /* For DC formulation */
+        Branch[bri].bdc = (1 / X) / tap;
+        Branch[bri].pshift = -(1 / X) * shift;
       } else {
         Branch[bri].ytt[0] = G / tap2;
         Branch[bri].ytt[1] = (B + Bc / 2.0) / tap2;
@@ -945,6 +955,10 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
 
         Branch[bri].yff[0] = G;
         Branch[bri].yff[1] = B + Bc / 2.0;
+
+        /* For DC formulation */
+        Branch[bri].bdc = (1 / X) / tap;
+        Branch[bri].pshift = -(1 / X) * shift;
       }
       bri++;
     }

@@ -33,7 +33,7 @@ PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLHIOP(OPFLOW opflow, double *x) {
     loc = idxn2sd_map[loc_nat];
 
     if (bus->ide == ISOLATED_BUS) {
-      x[loc] = bus->va * PETSC_PI / 180.0;
+      x[loc] = bus->va;
       x[loc + 1] = bus->vm;
     } else {
       if (opflow->initializationtype == OPFLOWINIT_MIDPOINT) {
@@ -41,8 +41,9 @@ PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLHIOP(OPFLOW opflow, double *x) {
         x[loc] = (xl[loc] + xu[loc]) / 2.0;
         x[loc + 1] = (xl[loc + 1] + xu[loc + 1]) / 2.0;
       } else if (opflow->initializationtype == OPFLOWINIT_FROMFILE ||
-                 opflow->initializationtype == OPFLOWINIT_ACPF) {
-        x[loc] = bus->va * PETSC_PI / 180.0;
+                 opflow->initializationtype == OPFLOWINIT_ACPF ||
+                 opflow->initializationtype == OPFLOWINIT_DCOPF) {
+        x[loc] = bus->va;
         x[loc + 1] = PetscMax(bus->Vmin, PetscMin(bus->vm, bus->Vmax));
       } else if (opflow->initializationtype == OPFLOWINIT_FLATSTART) {
         x[loc] = 0.0;
@@ -54,6 +55,20 @@ PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLHIOP(OPFLOW opflow, double *x) {
       loc_nat = bus->startxpimbloc;
       loc = idxn2sd_map[loc_nat];
       x[loc] = x[loc + 1] = x[loc + 2] = x[loc + 3] = 0.0;
+      if (bus->pimb > 0) {
+        x[loc] = bus->pimb;
+        x[loc + 1] = 0.0;
+      } else {
+        x[loc] = 0.0;
+        x[loc + 1] = -bus->pimb;
+      }
+      if (bus->qimb > 0) {
+        x[loc + 2] = bus->qimb;
+        x[loc + 3] = 0.0;
+      } else {
+        x[loc + 2] = 0.0;
+        x[loc + 3] = -bus->qimb;
+      }
     }
 
     for (k = 0; k < bus->ngen; k++) {
@@ -72,7 +87,8 @@ PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLHIOP(OPFLOW opflow, double *x) {
         x[loc] = 0.5 * (xl[loc] + xu[loc]);
         x[loc + 1] = 0.5 * (xl[loc + 1] + xu[loc + 1]);
       } else if (opflow->initializationtype == OPFLOWINIT_FROMFILE ||
-                 opflow->initializationtype == OPFLOWINIT_ACPF) {
+                 opflow->initializationtype == OPFLOWINIT_ACPF ||
+                 opflow->initializationtype == OPFLOWINIT_DCOPF) {
         x[loc] = PetscMax(gen->pb, PetscMin(gen->pg, gen->pt));
         x[loc + 1] = PetscMax(gen->qb, PetscMin(gen->qg, gen->qt));
       }
@@ -99,8 +115,8 @@ PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLHIOP(OPFLOW opflow, double *x) {
         loc = idxn2sd_map[loc_nat];
 
         /* Initial value for real and reactive power load loss */
-        x[loc] = 0.0;
-        x[loc + 1] = 0.0;
+        x[loc] = load->pl_loss;
+        x[loc + 1] = load->ql_loss;
       }
     }
     if (opflow->use_agc) {
@@ -218,8 +234,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLHIOP(OPFLOW opflow,
     double theta = x[busparams->xidx[i]];
     double Vm = x[busparams->xidx[i] + 1];
     ge[busparams->gidx[i]] +=
-        busparams->isisolated[i] *
-            (theta - busparams->va[i] * PETSC_PI / 180.0) +
+        busparams->isisolated[i] * (theta - busparams->va[i]) +
         busparams->ispvpq[i] * Vm * Vm * busparams->gl[i];
     ge[busparams->gidx[i] + 1] +=
         busparams->isisolated[i] * (Vm - busparams->vm[i]) -
@@ -499,11 +514,11 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLHIOP_old(OPFLOW opflow, double 
     xl[busparams->xidx[i]] =
         busparams->ispvpq[i] * PETSC_NINFINITY +
         busparams->isisolated[i] * busparams->va[i] +
-        busparams->isref[i] * busparams->va[i] * PETSC_PI / 180.0;
+        busparams->isref[i] * busparams->va[i];
     xu[busparams->xidx[i]] =
         busparams->ispvpq[i] * PETSC_INFINITY +
         busparams->isisolated[i] * busparams->va[i] +
-        busparams->isref[i] * busparams->va[i] * PETSC_PI / 180.0;
+        busparams->isref[i] * busparams->va[i];
 
     xl[busparams->xidx[i] + 1] = busparams->isref[i] * busparams->vmin[i] +
                                  busparams->ispvpq[i] * busparams->vmin[i] +

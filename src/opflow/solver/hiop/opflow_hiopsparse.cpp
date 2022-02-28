@@ -462,7 +462,7 @@ bool OPFLOWHIOPSPARSEInterface::get_starting_point(
   const PetscScalar *xarr;
 
   /* Set initial guess */
-  ierr = (*opflow->modelops.setinitialguess)(opflow, opflow->X);
+  ierr = (*opflow->modelops.setinitialguess)(opflow, opflow->X, opflow->Lambda);
   CHKERRQ(ierr);
 
   ierr = VecGetArrayRead(opflow->X, &xarr);
