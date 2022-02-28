@@ -62,7 +62,7 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
     }
 
     if (bus->ide == REF_BUS || bus->ide == ISOLATED_BUS)
-      xl[loc] = xu[loc] = bus->va * PETSC_PI / 180.0;
+      xl[loc] = xu[loc] = bus->va;
     if (bus->ide == ISOLATED_BUS)
       xl[loc + 1] = xu[loc + 1] = bus->vm;
 
@@ -265,19 +265,22 @@ PetscErrorCode OPFLOWSetVariableandConstraintBounds_PBPOL(OPFLOW opflow, Vec Xl,
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X) {
+PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X, Vec Lambda) {
   PetscErrorCode ierr;
   PS ps = opflow->ps;
   const PetscScalar *xl, *xu;
-  PetscScalar *x;
+  PetscScalar *x, *lambda;
   PetscInt i;
   PSBUS bus;
-  PetscInt loc;
+  PSLINE line;
+  PetscInt loc, gloc;
 
   PetscFunctionBegin;
 
   /* Get array pointers */
   ierr = VecGetArray(X, &x);
+  CHKERRQ(ierr);
+  ierr = VecGetArray(Lambda, &lambda);
   CHKERRQ(ierr);
   ierr = VecGetArrayRead(opflow->Xl, &xl);
   CHKERRQ(ierr);
@@ -292,7 +295,7 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X) {
     loc = bus->startxVloc;
 
     if (bus->ide == ISOLATED_BUS) {
-      x[loc] = bus->va * PETSC_PI / 180.0;
+      x[loc] = bus->va;
       x[loc + 1] = bus->vm;
     } else {
       if (opflow->initializationtype == OPFLOWINIT_MIDPOINT) {
@@ -300,8 +303,9 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X) {
         x[loc] = (xl[loc] + xu[loc]) / 2.0;
         x[loc + 1] = (xl[loc + 1] + xu[loc + 1]) / 2.0;
       } else if (opflow->initializationtype == OPFLOWINIT_FROMFILE ||
-                 opflow->initializationtype == OPFLOWINIT_ACPF) {
-        x[loc] = bus->va * PETSC_PI / 180.0;
+                 opflow->initializationtype == OPFLOWINIT_ACPF ||
+                 opflow->initializationtype == OPFLOWINIT_DCOPF) {
+        x[loc] = bus->va;
         x[loc + 1] = PetscMax(bus->Vmin, PetscMin(bus->vm, bus->Vmax));
       } else if (opflow->initializationtype == OPFLOWINIT_FLATSTART) {
         x[loc] = 0.0;
@@ -312,6 +316,20 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X) {
     if (opflow->include_powerimbalance_variables) {
       loc = bus->startxpimbloc;
       x[loc] = x[loc + 1] = x[loc + 2] = x[loc + 3] = 0.0;
+      if (bus->pimb > 0) {
+        x[loc] = bus->pimb;
+        x[loc + 1] = 0.0;
+      } else {
+        x[loc] = 0.0;
+        x[loc + 1] = -bus->pimb;
+      }
+      if (bus->qimb > 0) {
+        x[loc + 2] = bus->qimb;
+        x[loc + 3] = 0.0;
+      } else {
+        x[loc + 2] = 0.0;
+        x[loc + 3] = -bus->qimb;
+      }
     }
 
     for (k = 0; k < bus->ngen; k++) {
@@ -329,7 +347,8 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X) {
         x[loc] = 0.5 * (xl[loc] + xu[loc]);
         x[loc + 1] = 0.5 * (xl[loc + 1] + xu[loc + 1]);
       } else if (opflow->initializationtype == OPFLOWINIT_FROMFILE ||
-                 opflow->initializationtype == OPFLOWINIT_ACPF) {
+                 opflow->initializationtype == OPFLOWINIT_ACPF ||
+                 opflow->initializationtype == OPFLOWINIT_DCOPF) {
         x[loc] = PetscMax(gen->pb, PetscMin(gen->pg, gen->pt));
         x[loc + 1] = PetscMax(gen->qb, PetscMin(gen->qg, gen->qt));
       }
@@ -352,14 +371,35 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X) {
           continue;
         loc = load->startxloadlossloc;
         /* Initial value for real and reactive power load loss */
-        x[loc] = 0.0;
-        x[loc + 1] = 0.0;
+        x[loc] = load->pl_loss;
+        x[loc + 1] = load->ql_loss;
       }
     }
     if (opflow->use_agc) {
       if (bus->ide == REF_BUS) {
         loc = ps->startxloc;
         x[loc] = 0.0;
+      }
+    }
+
+    gloc = bus->starteqloc;
+    lambda[gloc] = bus->mult_pmis;
+    lambda[gloc + 1] = bus->mult_qmis;
+  }
+
+  PetscScalar *lambdai = lambda + opflow->nconeq;
+
+  if (!opflow->ignore_lineflow_constraints) {
+    for (i = 0; i < ps->nline; i++) {
+      line = &ps->line[i];
+      if (!line->status) {
+        continue;
+      }
+
+      if (line->rateA < 1e5) {
+        gloc = line->startineqloc;
+        lambdai[gloc] = line->mult_sf;
+        lambdai[gloc + 1] = line->mult_st;
       }
     }
   }
@@ -420,7 +460,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL(OPFLOW opflow, Vec X,
     if (bus->ide == ISOLATED_BUS) {
       row[0] = gloc;
       row[1] = row[0] + 1;
-      val[0] = theta - bus->va * PETSC_PI / 180.0;
+      val[0] = theta - bus->va;
       val[1] = Vm - bus->vm;
       ierr = VecSetValues(Ge, 2, row, val, ADD_VALUES);
       CHKERRQ(ierr);
@@ -2768,68 +2808,66 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow) {
         ierr = PSBUSGetLoad(bus, k, &load);
         CHKERRQ(ierr);
         loc = load->startxloadlossloc;
-        load->pl = load->pl - x[loc];
-        load->ql = load->ql - x[loc + 1];
+        load->pl_loss = x[loc];
+        load->ql_loss = x[loc + 1];
       }
     }
   }
 
-  if (!opflow->ignore_lineflow_constraints) {
-    for (i = 0; i < ps->nline; i++) {
-      line = &ps->line[i];
-      if (!line->status) {
-        line->mult_sf = line->mult_st = 0.0;
-        continue;
-      }
+  for (i = 0; i < ps->nline; i++) {
+    line = &ps->line[i];
+    if (!line->status) {
+      line->mult_sf = line->mult_st = 0.0;
+      continue;
+    }
 
-      Gff = line->yff[0];
-      Bff = line->yff[1];
-      Gft = line->yft[0];
-      Bft = line->yft[1];
-      Gtf = line->ytf[0];
-      Btf = line->ytf[1];
-      Gtt = line->ytt[0];
-      Btt = line->ytt[1];
+    Gff = line->yff[0];
+    Bff = line->yff[1];
+    Gft = line->yft[0];
+    Bft = line->yft[1];
+    Gtf = line->ytf[0];
+    Btf = line->ytf[1];
+    Gtt = line->ytt[0];
+    Btt = line->ytt[1];
 
-      ierr = PSLINEGetConnectedBuses(line, &connbuses);
-      CHKERRQ(ierr);
-      busf = connbuses[0];
-      bust = connbuses[1];
+    ierr = PSLINEGetConnectedBuses(line, &connbuses);
+    CHKERRQ(ierr);
+    busf = connbuses[0];
+    bust = connbuses[1];
 
-      xlocf = busf->startxVloc;
-      xloct = bust->startxVloc;
+    xlocf = busf->startxVloc;
+    xloct = bust->startxVloc;
 
-      thetaf = x[xlocf];
-      Vmf = x[xlocf + 1];
-      thetat = x[xloct];
-      Vmt = x[xloct + 1];
-      thetaft = thetaf - thetat;
-      thetatf = thetat - thetaf;
+    thetaf = x[xlocf];
+    Vmf = x[xlocf + 1];
+    thetat = x[xloct];
+    Vmt = x[xloct + 1];
+    thetaft = thetaf - thetat;
+    thetatf = thetat - thetaf;
 
-      Pf = Gff * Vmf * Vmf +
-           Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-      Qf = -Bff * Vmf * Vmf +
-           Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+    Pf =
+        Gff * Vmf * Vmf + Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+    Qf = -Bff * Vmf * Vmf +
+         Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
 
-      Pt = Gtt * Vmt * Vmt +
-           Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-      Qt = -Btt * Vmt * Vmt +
-           Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+    Pt =
+        Gtt * Vmt * Vmt + Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+    Qt = -Btt * Vmt * Vmt +
+         Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
 
-      line->pf = Pf;
-      line->qf = Qf;
-      line->pt = Pt;
-      line->qt = Qt;
-      line->sf = PetscSqrtScalar(Pf * Pf + Qf * Qf);
-      line->st = PetscSqrtScalar(Pt * Pt + Qt * Qt);
+    line->pf = Pf;
+    line->qf = Qf;
+    line->pt = Pt;
+    line->qt = Qt;
+    line->sf = PetscSqrtScalar(Pf * Pf + Qf * Qf);
+    line->st = PetscSqrtScalar(Pt * Pt + Qt * Qt);
 
-      if (line->rateA > 1e5) {
-        line->mult_sf = line->mult_st = 0.0;
-      } else {
-        gloc = line->startineqloc;
-        line->mult_sf = lambdai[gloc];
-        line->mult_st = lambdai[gloc + 1];
-      }
+    if (opflow->ignore_lineflow_constraints || line->rateA > 1e5) {
+      line->mult_sf = line->mult_st = 0.0;
+    } else {
+      gloc = line->startineqloc;
+      line->mult_sf = lambdai[gloc];
+      line->mult_st = lambdai[gloc + 1];
     }
   }
 

@@ -15,6 +15,7 @@
 #define OPFLOWMODEL_IBCAR2 "CURRENT_BALANCE_CARTESIAN2"
 #define OPFLOWMODEL_PBPOLHIOP "POWER_BALANCE_HIOP"
 #define OPFLOWMODEL_PBPOLRAJAHIOP "PBPOLRAJAHIOP"
+#define OPFLOWMODEL_DCOPF "DCOPF"
 
 /* Solvers */
 #define OPFLOWSOLVER_IPOPT "IPOPT"
@@ -101,6 +102,7 @@ const auto initialization =
                           "OPFLOWINIT_FROMFILE",
                           "OPFLOWINIT_ACPF",
                           "OPFLOWINIT_FLATSTART",
+                          "OPFLOWINIT_DCOPF",
                       });
 const auto objective = ExaGOStringOption(
     "-opflow_objective", "Type of OPFLOW objective", "MIN_GEN_COST",
@@ -170,7 +172,7 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetUp(OPFLOW);
 PETSC_EXTERN PetscErrorCode OPFLOWCreateGlobalVector(OPFLOW, Vec *);
 PETSC_EXTERN PetscErrorCode OPFLOWCreateMatrix(OPFLOW, Mat *);
 PETSC_EXTERN PetscErrorCode OPFLOWSolve(OPFLOW);
-PETSC_EXTERN PetscErrorCode OPFLOWSetInitialGuess(OPFLOW, Vec);
+PETSC_EXTERN PetscErrorCode OPFLOWSetInitialGuess(OPFLOW, Vec, Vec);
 PETSC_EXTERN PetscErrorCode OPFLOWSetTolerance(OPFLOW, PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPComputeMode(OPFLOW, const char *);
 PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPComputeMode(OPFLOW, char *);
@@ -246,6 +248,8 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetBusPowerImbalancePenalty(OPFLOW,
                                                               PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWGetBusPowerImbalancePenalty(OPFLOW,
                                                               PetscReal *);
+
+PETSC_EXTERN PetscErrorCode OPFLOWSkipOptions(OPFLOW, PetscBool);
 
 /* OPFLOWGetPS - Gets the underlying PS object
 

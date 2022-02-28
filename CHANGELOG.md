@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [develop]
+
+### General
+
+### Build system
+
+### PS
+- Added API PSCopy() to copy PS object data
+
+### PFLOW
+
+### OPFLOW
+- DC Optimal power flow (DCOPF) implementation. Can be used as an initialization OR as an OPFLOW model.
+- Added API OPFLOWSkipOptions() for skipping options (needed for DCOPF initialization)
+
+### TCOPFLOW
+
+### SCOPFLOW
+
+### Documentation
+
+### Testing
+
+
+### Miscallenous
+
+
 ## [v1.3.0]
 
 ### General

@@ -134,6 +134,8 @@ struct _p_PSLOAD {
   PetscInt intrpt; /**< Interruptible load flag of one for an interruptible load
                       for zero for a non interruptible load */
 
+  PetscScalar pl_loss; /* Real power load loss */
+  PetscScalar ql_loss; /* Reactive power load loss */
   /* Variable, constraint sizes and locations */
 
   PetscInt nxloadloss; /* Number of variables for load loss */
@@ -276,6 +278,8 @@ struct _p_PSLINE {
   PetscInt internal_i;                        /**< Internal From Bus Number */
   PetscInt internal_j;                        /**< Internal To Bus Number */
   PetscScalar yff[2], yft[2], ytf[2], ytt[2]; /**< [G,B] */
+  PetscScalar bdc,
+      pshift; /**< line admittance and power injection from phase shiters */
   PetscScalar pf, qf, pt,
       qt;             /**< Real and reactive power flows from and to ends */
   PetscScalar sf, st; /**<Apparent power flows at the two ends */

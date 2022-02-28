@@ -6,6 +6,7 @@ OPFLOW_INIT_DEF(OPFLOWINIT_MIDPOINT) // Midpoint
 OPFLOW_INIT_DEF(OPFLOWINIT_FROMFILE) // From file
 OPFLOW_INIT_DEF(OPFLOWINIT_ACPF) // From AC power flow solution
 OPFLOW_INIT_DEF(OPFLOWINIT_FLATSTART) // Voltage flat start
+OPFLOW_INIT_DEF(OPFLOWINIT_DCOPF) // From DC optimal power flow solution
 
 #endif
 

@@ -52,7 +52,7 @@ The behavior of OPFLOW is controlled through the different options given in the 
 |:-----|:----|:-----|:-----|
 |-opflow_model | Representation of network balance equations and bus voltages| See the different options for models below| |
 |-opflow_solver | Optimization solver | See the different solver options below| |
-|-opflow_initialization| Type of initialization| "MIDPOINT" (default)<br>"FROMFILE"<br>"ACPF"<br>"FLATSTART"| All solvers|
+|-opflow_initialization| Type of initialization| "MIDPOINT" (default)<br>"FROMFILE"<br>"ACPF"<br>"FLATSTART"<br>"DCOPF"| All solvers|
 |-opflow_ignore_lineflow_constraints| Ignore line flow constraints| 0 or 1 (0)| All models|
 |-opflow_include_loadloss_variables| Include load loss| 0 or 1 (0)| All models |
 |-opflow_include_powerimbalance_variables| Allow power imbalance at buses| 0 or 1 (0)| All models |

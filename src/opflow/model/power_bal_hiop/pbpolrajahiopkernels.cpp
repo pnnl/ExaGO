@@ -792,7 +792,7 @@ PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLRAJAHIOP(OPFLOW opflow,
   //  ierr = PetscPrintf(MPI_COMM_SELF,"Entered
   //  OPFLOWInitialization\n");CHKERRQ(ierr);
   // Do initialization on Host
-  ierr = (*opflow->modelops.setinitialguess)(opflow, opflow->X);
+  ierr = (*opflow->modelops.setinitialguess)(opflow, opflow->X, opflow->Lambda);
   CHKERRQ(ierr);
   ierr = VecGetArray(opflow->X, &x);
   CHKERRQ(ierr);
@@ -940,10 +940,9 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP(
       RAJA::RangeSegment(0, busparams->nbus), RAJA_LAMBDA(RAJA::Index_type i) {
         double theta = x_dev[b_xidx[i]];
         double Vm = x_dev[b_xidx[i] + 1];
-        RAJA::atomicAdd<exago_raja_atomic>(
-            &ge_dev[b_gidx[i]],
-            isisolated[i] * (theta - va[i] * PETSC_PI / 180.0) +
-                ispvpq[i] * Vm * Vm * gl[i]);
+        RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[b_gidx[i]],
+                                           isisolated[i] * (theta - va[i]) +
+                                               ispvpq[i] * Vm * Vm * gl[i]);
 
         RAJA::atomicAdd<exago_raja_atomic>(&ge_dev[b_gidx[i] + 1],
                                            isisolated[i] * (Vm - vm[i]) -
@@ -1283,9 +1282,9 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP_old(OPFLOW opflow,
       RAJA::RangeSegment(0, busparams->nbus) /* index set here */,
       RAJA_LAMBDA(RAJA::Index_type i) {
         xl_dev[xidx[i]] = ispvpq[i] * PETSC_NINFINITY + isisolated[i] * va[i] +
-                          isref[i] * va[i] * PETSC_PI / 180.0;
+                          isref[i] * va[i];
         xu_dev[xidx[i]] = ispvpq[i] * PETSC_INFINITY + isisolated[i] * va[i] +
-                          isref[i] * va[i] * PETSC_PI / 180.0;
+                          isref[i] * va[i];
 
         xl_dev[xidx[i] + 1] =
             isref[i] * vmin[i] + ispvpq[i] * vmin[i] + isisolated[i] * vm[i];
