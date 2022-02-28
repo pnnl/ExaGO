@@ -12,66 +12,70 @@ num_iters = 0
 opflow_genbusvoltage = 'VARIABLE_WITHIN_BOUNDS'
 mode = 0 # 0 = preventive, 1 = corrective
 description = "No Description"
+subproblem_model = 'POWER_BALANCE_POLAR'
+subproblem_solver = 'IPOPT'
+compute_mode = 'CPU'
+verbosity_level = 3
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'
 contingencies = 'datafiles/case9/case9.cont'
 description = 'case9mod.m with EMPAR/1 contingency'
 num_contingencies = 1
-obj_value = 4.14446056775e+03
+obj_value = 4108.46143516091
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'
 contingencies = 'datafiles/case9/case9.cont'
 description = 'case9mod.m with EMPAR/2 contingencies'
 num_contingencies = 2
-obj_value = 4.14446069138e+03
+obj_value = 4108.46143516091
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'
 contingencies = 'datafiles/case9/case9.cont'
 description = 'case9mod.m with EMPAR/3 contingencies'
 num_contingencies = 3
-obj_value = 4.14446056725e+03
+obj_value = 4108.46143516091
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'
 contingencies = 'datafiles/case9/case9.cont'
 description = 'case9mod.m with EMPAR/4 contingencies'
 num_contingencies = 4
-obj_value = 4.14446056771e+03
+obj_value = 4108.46143516091
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'
 contingencies = 'datafiles/case9/case9.cont'
 description = 'case9mod.m with EMPAR/5 contingencies'
 num_contingencies = 5
-obj_value = 4.14446056771e+03
+obj_value = 4108.46143516091
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'
 contingencies = 'datafiles/case9/case9.cont'
 description = 'case9mod.m with EMPAR/6 contingencies'
 num_contingencies = 6
-obj_value = 4.14446070551e+03
+obj_value = 4108.46143516091
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'
 contingencies = 'datafiles/case9/case9.cont'
 description = 'case9mod.m with EMPAR/7 contingencies'
 num_contingencies = 7
-obj_value = 4.14446070461e+03
+obj_value = 4108.46143516091
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'
 contingencies = 'datafiles/case9/case9.cont'
 description = 'case9mod.m with EMPAR/8 contingencies'
 num_contingencies = 8
-obj_value = 4.14446056529e+03
+obj_value = 4108.46143516091
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'
 contingencies = 'datafiles/case9/case9.cont'
 description = 'case9mod.m with EMPAR/9 contingencies'
 num_contingencies = 9
-obj_value = 4.14446056529e+03
+obj_value = 4108.46143516091

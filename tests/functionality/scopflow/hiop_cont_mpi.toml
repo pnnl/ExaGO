@@ -1,0 +1,51 @@
+testsuite_name = "SCOPFLOW Functionality with HIOP solver"
+
+[presets]
+tolerance = 1e-3
+network = 'datafiles/case9/case9mod.m'
+contingencies = 'datafiles/case9/case9.cont'
+solver = 'HIOP'
+model = 'GENRAMP'
+opflow_initialization = 'ACPF'
+multiperiod = false
+multicontingency = true
+opflow_genbusvoltage = 'VARIABLE_WITHIN_BOUNDS'
+mode = 1 # 0 = preventive, 1 = corrective
+description = "No Description"
+subproblem_model = 'POWER_BALANCE_POLAR'
+subproblem_solver = 'IPOPT'
+compute_mode = 'CPU'
+verbosity_level = 3
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+contingencies = 'datafiles/case_ACTIVSg200.cont'
+description = 'case_ACTIVSg200.m with HIOP solver/20 contingencies/run with MPI'
+num_contingencies = 20
+num_iters = 1
+obj_value = 25957.56699323513
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+contingencies = 'datafiles/case_ACTIVSg200.cont'
+description = 'case_ACTIVSg200.m with HIOP solver/4 contingencies/run with MPI'
+subproblem_model = 'POWER_BALANCE_HIOP'
+subproblem_solver = 'HIOP'
+num_contingencies = 4
+enable_powerimbalance_variables = true
+ignore_lineflow_constraints = true
+num_iters = 1
+obj_value = 26757.524918642226
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+contingencies = 'datafiles/case_ACTIVSg200.cont'
+description = 'case_ACTIVSg200.m with HIOP solver/4 contingencies/using RAJA'
+ignore_lineflow_constraints = true
+enable_powerimbalance_variables = true
+subproblem_model = 'PBPOLRAJAHIOP'
+subproblem_solver = 'HIOP'
+compute_mode = 'GPU'
+num_contingencies = 4
+num_iters = 1
+obj_value = 26757.524918642288

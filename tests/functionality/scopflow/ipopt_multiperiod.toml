@@ -16,6 +16,10 @@ opflow_initialization = 'ACPF'
 opflow_genbusvoltage = 'VARIABLE_WITHIN_BOUNDS'
 mode = 1 # 0 = preventive, 1 = corrective
 description = "No Description"
+subproblem_model = 'POWER_BALANCE_POLAR'
+subproblem_solver = 'IPOPT'
+compute_mode = 'CPU'
+verbosity_level = 3
 
 [[testcase]]
 description = 'case9mod_gen3_wind.m with IPOPT solver/multiperiod/1 contingency'

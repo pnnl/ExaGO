@@ -75,205 +75,36 @@ if(EXAGO_INSTALL_TESTS)
     "-n"
     3
     $<TARGET_FILE:test_scopflow_functionality>
-    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_nocont_mpi.toml
+    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_mpi.toml
   )
 
-  # These tests should be added to the TOML test suite
   exago_add_test(
     NAME
-    SCOPFLOW_9bus_HIOP_SERIAL
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:app_scopflow>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod.m
-    -ctgcfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9.cont
-    -scopflow_solver
-    HIOP
-    -scopflow_Nc
-    -1
-    -opflow_initialization
-    ACPF
-    -scopflow_subproblem_solver
-    HIOP
-    -scopflow_subproblem_model
-    POWER_BALANCE_HIOP
-    -hiop_compute_mode
-    CPU
-    -hiop_verbosity_level
-    3
-    -opflow_include_powerimbalance_variables
-    1
+    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_SERIAL_TESTSUITE
     DEPENDS
     IPOPT
     HIOP
-  )
-
-  exago_add_test(
-    NAME
-    SCOPFLOW_200bus_HIOP_SERIAL
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:app_scopflow>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
-    -ctgcfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
-    -scopflow_solver
-    HIOP
-    -scopflow_Nc
-    4
-    -opflow_initialization
-    ACPF
-    -opflow_ignore_lineflow_constraints
-    1
-    -scopflow_subproblem_solver
-    HIOP
-    -scopflow_subproblem_model
-    POWER_BALANCE_HIOP
-    -hiop_compute_mode
-    CPU
-    -hiop_verbosity_level
-    3
-    -opflow_include_powerimbalance_variables
-    1
-    DEPENDS
-    IPOPT
-    HIOP
-  )
-
-  exago_add_test(
-    NAME
-    SCOPFLOW_200bus_HIOP_MPI
+    HIOP_DISTRIBUTED
     COMMAND
     ${MPICMD}
     "-n"
     3
-    $<TARGET_FILE:app_scopflow>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
-    -ctgcfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
-    -scopflow_solver
-    HIOP
-    -scopflow_Nc
-    4
-    -scopflow_subproblem_solver
-    HIOP
-    -scopflow_subproblem_model
-    POWER_BALANCE_HIOP
-    -hiop_compute_mode
-    CPU
-    -hiop_verbosity_level
-    3
-    -opflow_initialization
-    ACPF
-    -opflow_ignore_lineflow_constraints
-    1
-    -opflow_include_powerimbalance_variables
-    1
-    DEPENDS
-    IPOPT
-    HIOP
+    $<TARGET_FILE:test_scopflow_functionality>
+    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_serial.toml
   )
 
   exago_add_test(
     NAME
-    SCOPFLOW_9bus_HIOP_SERIAL_GPU
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:app_scopflow>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod.m
-    -ctgcfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9.cont
-    -scopflow_solver
-    HIOP
-    -scopflow_Nc
-    -1
-    -opflow_initialization
-    ACPF
-    -scopflow_subproblem_solver
-    HIOP
-    -scopflow_subproblem_model
-    PBPOLRAJAHIOP
-    -hiop_compute_mode
-    GPU
-    -hiop_verbosity_level
-    3
-    -opflow_include_powerimbalance_variables
-    1
+    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_RAJA_TESTSUITE
     DEPENDS
     IPOPT
     HIOP
-  )
-
-  exago_add_test(
-    NAME
-    SCOPFLOW_200bus_HIOP_SERIAL_GPU
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:app_scopflow>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
-    -ctgcfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
-    -scopflow_solver
-    HIOP
-    -scopflow_Nc
-    4
-    -opflow_initialization
-    ACPF
-    -opflow_ignore_lineflow_constraints
-    1
-    -scopflow_subproblem_solver
-    HIOP
-    -scopflow_subproblem_model
-    PBPOLRAJAHIOP
-    -hiop_compute_mode
-    GPU
-    -hiop_verbosity_level
-    3
-    -opflow_include_powerimbalance_variables
-    1
-    DEPENDS
-    IPOPT
-    HIOP
-  )
-
-  exago_add_test(
-    NAME
-    SCOPFLOW_200bus_HIOP_MPI_GPU
+    HIOP_DISTRIBUTED
     COMMAND
     ${MPICMD}
     "-n"
     3
-    $<TARGET_FILE:app_scopflow>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
-    -ctgcfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
-    -scopflow_solver
-    HIOP
-    -scopflow_Nc
-    4
-    -opflow_initialization
-    ACPF
-    -opflow_ignore_lineflow_constraints
-    1
-    -scopflow_subproblem_solver
-    HIOP
-    -scopflow_subproblem_model
-    PBPOLRAJAHIOP
-    -hiop_compute_mode
-    GPU
-    -hiop_verbosity_level
-    3
-    -opflow_include_powerimbalance_variables
-    1
-    DEPENDS
-    IPOPT
-    HIOP
+    $<TARGET_FILE:test_scopflow_functionality>
+    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_raja.toml
   )
 endif()

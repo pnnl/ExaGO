@@ -1,0 +1,36 @@
+testsuite_name = "SCOPFLOW Functionality with HIOP solver"
+
+[presets]
+tolerance = 1e-3
+network = 'datafiles/case9/case9mod.m'
+contingencies = 'datafiles/case9/case9.cont'
+solver = 'HIOP'
+model = 'GENRAMP'
+opflow_initialization = 'ACPF'
+multiperiod = false
+opflow_genbusvoltage = 'VARIABLE_WITHIN_BOUNDS'
+mode = 0 # 0 = preventive, 1 = corrective
+description = "No Description"
+subproblem_model = 'PBPOLRAJAHIOP'
+subproblem_solver = 'HIOP'
+compute_mode = 'GPU'
+verbosity_level = 3
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'
+contingencies = 'datafiles/case9/case9.cont'
+description = 'case9mod.m with HIOP solver/9 contingencies/using RAJA'
+enable_powerimbalance_variables = true
+num_contingencies = -1
+num_iters = 1
+obj_value = 4108.46045175
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+contingencies = 'datafiles/case_ACTIVSg200.cont'
+description = 'case_ACTIVSg200.m with HIOP solver/4 contingencies/using RAJA'
+ignore_lineflow_constraints = true
+enable_powerimbalance_variables = true
+num_contingencies = 4
+num_iters = 1
+obj_value = 26757.524918642288
