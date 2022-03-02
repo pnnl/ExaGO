@@ -79,6 +79,30 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout) {
   sopflow->verbosity_level = 0;
 #endif
 
+#if defined(EXAGO_ENABLE_HIOP)
+  /* HIOP options */
+  strcpy(sopflow->compute_mode, "auto");
+  sopflow->verbosity_level = 0;
+#endif
+
+#if defined(EXAGO_ENABLE_HIOP)
+  /* HIOP options */
+  strcpy(sopflow->compute_mode, "auto");
+  sopflow->verbosity_level = 0;
+#endif
+
+#if defined(EXAGO_ENABLE_HIOP)
+  /* HIOP options */
+  strcpy(sopflow->compute_mode, "auto");
+  sopflow->verbosity_level = 0;
+#endif
+
+#if defined(EXAGO_ENABLE_HIOP)
+  /* HIOP options */
+  strcpy(sopflow->compute_mode, "auto");
+  sopflow->verbosity_level = 0;
+#endif
+
   sopflow->scenfileset = PETSC_FALSE;
   sopflow->scenunctype = NONE;
   sopflow->setupcalled = PETSC_FALSE;
