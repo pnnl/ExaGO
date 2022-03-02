@@ -73,11 +73,12 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout) {
   (void)std::strncpy(scopflow->subproblem_solver,
                      SCOPFLOWOptions::subproblem_solver.default_value.c_str(),
                      sizeof(scopflow->subproblem_solver));
+#ifdef EXAGO_ENABLE_HIOP
   (void)std::strncpy(scopflow->compute_mode,
                      SCOPFLOWOptions::compute_mode.default_value.c_str(),
                      sizeof(scopflow->compute_mode));
   scopflow->verbosity_level = SCOPFLOWOptions::verbosity_level.default_value;
-
+#endif
   scopflow->setupcalled = PETSC_FALSE;
   *scopflowout = scopflow;
 

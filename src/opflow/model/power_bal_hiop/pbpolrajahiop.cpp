@@ -223,7 +223,7 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOLRAJAHIOP(OPFLOW opflow) {
     line->sf = PetscSqrtScalar(Pf * Pf + Qf * Qf);
     line->st = PetscSqrtScalar(Pt * Pt + Qt * Qt);
 
-    if (line->rateA > 1e5) {
+    if (opflow->ignore_lineflow_constraints || line->rateA > 1e5) {
       line->mult_sf = line->mult_st = 0.0;
     } else {
       gloc = line->startineqloc;
