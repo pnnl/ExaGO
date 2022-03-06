@@ -242,6 +242,7 @@ OPFLOWGetInitializationType(OPFLOW, OPFLOWInitializationType *);
 PETSC_EXTERN PetscErrorCode OPFLOWIgnoreLineflowConstraints(OPFLOW, PetscBool);
 PETSC_EXTERN PetscErrorCode OPFLOWGetIgnoreLineflowConstraints(OPFLOW,
                                                                PetscBool *);
+PETSC_EXTERN PetscErrorCode OPFLOWGetLineOverloads(OPFLOW,PetscInt*,PetscInt**,PetscBool*);
 PETSC_EXTERN PetscErrorCode OPFLOWSetLoadLossPenalty(OPFLOW, PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWGetLoadLossPenalty(OPFLOW, PetscReal *);
 PETSC_EXTERN PetscErrorCode OPFLOWSetBusPowerImbalancePenalty(OPFLOW,

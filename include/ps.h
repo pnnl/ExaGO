@@ -53,6 +53,7 @@ PETSC_EXTERN PetscErrorCode PSLINESetStatus(PSLINE, PetscInt);
 PETSC_EXTERN PetscErrorCode PSLINEGetVariableLocation(PSLINE, PetscInt *);
 PETSC_EXTERN PetscErrorCode PSLINEGetVariableGlobalLocation(PSLINE, PetscInt *);
 PETSC_EXTERN PetscErrorCode PSGetNumActiveLines(PS, PetscInt *, PetscInt *);
+PETSC_EXTERN PetscErrorCode PSGetLineOverloads(PS,PetscInt*,PetscInt**,PetscBool*);
 PETSC_EXTERN PetscErrorCode PSGetNumGenerators(PS, PetscInt *, PetscInt *);
 PETSC_EXTERN PetscErrorCode PSGetNumLoads(PS, PetscInt *, PetscInt *);
 PETSC_EXTERN PetscErrorCode PSGetNumActiveGenerators(PS, PetscInt *,

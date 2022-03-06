@@ -2466,6 +2466,9 @@ PetscErrorCode OPFLOWSolutionToPS(OPFLOW opflow) {
   opflow->ps->opflowobj = opflow->obj;
 
   opflow->solutiontops = PETSC_TRUE;
+
+  /* Get Line overloads */
+  ierr = OPFLOWGetLineOverloads(opflow,&opflow->ps->nlines_overloaded,&opflow->ps->lines_overloaded,&opflow->ps->has_overloaded_lines);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -2773,3 +2776,31 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
 #endif // HIOP
   PetscFunctionReturn(0);
 };
+
+/*
+  OPFLOWGetLineOverloads - Gets overloaded lines and returns the indices (line numbers) for overloaded lines
+
+  Input Parameters:
+. opflow - OPFLOW object
+
+  Output Parameters:
++ nodlines - number of overloaded line
+. odlines  - Indices for overloaded lines
+- has_overload - True if any line is overloaded
+
+  Notes: Should be called after OPFLOWSolutionToPS has been called
+*/
+PetscErrorCode OPFLOWGetLineOverloads(OPFLOW opflow,PetscInt *nodlines,PetscInt **odlines, PetscBool *has_overload)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  if(!opflow->solutiontops) {
+    SETERRQ(opflow->comm->type,0,"Must call OPFLOWSolutioToPS before calling OPLOWCheckLineOverloads");
+  }
+
+  ierr = PSGetLineOverloads(opflow->ps,nodlines,odlines,has_overload);CHKERRQ(ierr);
+  
+  PetscFunctionReturn(0);
+}
