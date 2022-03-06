@@ -222,14 +222,13 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOLRAJAHIOP(OPFLOW opflow) {
     line->qt = Qt;
     line->sf = PetscSqrtScalar(Pf * Pf + Qf * Qf);
     line->st = PetscSqrtScalar(Pt * Pt + Qt * Qt);
+  }
 
-    if (opflow->ignore_lineflow_constraints || line->rateA > 1e5) {
-      line->mult_sf = line->mult_st = 0.0;
-    } else {
-      gloc = line->startineqloc;
-      line->mult_sf = lambdai[gloc];
-      line->mult_st = lambdai[gloc + 1];
-    }
+  for (i = 0; i < opflow->nlinesmon; i++) {
+    line = &ps->line[opflow->linesmon[i]];
+    gloc = line->startineqloc;
+    line->mult_sf = lambdai[gloc];
+    line->mult_st = lambdai[gloc + 1];
   }
 
   ierr = VecRestoreArrayRead(X, &x);

@@ -28,6 +28,39 @@ void swap_dm(DM *dm1, DM *dm2) {
   *dm2 = temp;
 }
 
+/* Sets the list of lines monitored */
+PetscErrorCode OPFLOWGetLinesMonitored(OPFLOW opflow) {
+  PetscErrorCode ierr;
+  PS ps = opflow->ps;
+  PSLINE line;
+  PetscInt i, j;
+
+  PetscFunctionBegin;
+  if (opflow->nlinesmon) {
+    /* Number of lines monitored already set through file. */
+    PetscFunctionReturn(0);
+  }
+  if (opflow->nlinekvmon == -1) {
+    opflow->nlinekvmon = opflow->ps->nkvlevels;
+    ierr = PetscMemcpy(opflow->linekvmon, ps->kvlevels,
+                       opflow->nlinekvmon * sizeof(PetscScalar));
+  }
+  ierr = PetscMalloc1(ps->nline, &opflow->linesmon);
+  CHKERRQ(ierr);
+  for (i = 0; i < ps->nline; i++) {
+    line = &ps->line[i];
+    if (!line->status || line->rateA > 1e5)
+      continue;
+    for (j = 0; j < opflow->nlinekvmon; j++) {
+      if (PetscAbsScalar(line->kvlevel - opflow->linekvmon[j]) < 1e-5) {
+        opflow->linesmon[opflow->nlinesmon++] = i;
+        break;
+      }
+    }
+  }
+  PetscFunctionReturn(0);
+}
+
 /*
    OPFLOWSetGenBusVoltageType - Sets the voltage control mode for generator
 buses
@@ -697,12 +730,19 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
       OPFLOWOptions::powerimbalance_penalty.default_value;
 
   opflow->spdnordering = PETSC_FALSE;
-  opflow->setupcalled = PETSC_FALSE;
+
+  opflow->nlinekvmon = -1;
+  ierr = PetscMalloc1(MAX_KV_LEVELS, &opflow->linekvmon);
+  CHKERRQ(ierr);
+  opflow->nlinesmon = 0;
+  opflow->linesmon = NULL;
 
   strcpy(opflow->_p_hiop_compute_mode, "auto");
   opflow->_p_hiop_verbosity_level = 0;
 
   opflow->skip_options = PETSC_FALSE;
+
+  opflow->setupcalled = PETSC_FALSE;
 
   *opflowout = opflow;
 
@@ -814,6 +854,10 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow) {
   ierr = PetscFree((*opflow)->branchnvararray);
   CHKERRQ(ierr);
   ierr = PetscFree((*opflow)->eqconglobloc);
+  CHKERRQ(ierr);
+  ierr = PetscFree((*opflow)->linekvmon);
+  CHKERRQ(ierr);
+  ierr = PetscFree((*opflow)->linesmon);
   CHKERRQ(ierr);
 
   ierr = PetscFree(*opflow);
@@ -1276,6 +1320,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   PS ps = opflow->ps;
   PetscInt *branchnconeq, *busnconeq;
   PetscInt sendbuf[3], recvbuf[3], i;
+  PetscInt nlinekvlevels = MAX_KV_LEVELS;
 
   PetscFunctionBegin;
 
@@ -1363,6 +1408,17 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
                             "", opflow->powerimbalance_penalty,
                             &opflow->powerimbalance_penalty, NULL);
     CHKERRQ(ierr);
+
+    if (!opflow->ignore_lineflow_constraints) {
+      ierr = PetscOptionsScalarArray("-opflow_monitor_line_kvlevels",
+                                     "KV levels for lines to monitor", "",
+                                     opflow->linekvmon, &nlinekvlevels, NULL);
+      CHKERRQ(ierr);
+      opflow->nlinekvmon = nlinekvlevels;
+      if (!opflow->nlinekvmon)
+        opflow->nlinekvmon = -1; /* Value not set by option so use -1 to
+                                  indicate to select all kvlevels */
+    }
     PetscOptionsEnd();
   }
 
@@ -1414,6 +1470,14 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   /* Set up underlying PS object */
   ierr = OPFLOWSetUpPS(opflow);
   CHKERRQ(ierr);
+
+  /* Get list of monitored lines. These will be included in
+     the inequality constraints for line flows
+  */
+  if (!opflow->ignore_lineflow_constraints) {
+    ierr = OPFLOWGetLinesMonitored(opflow);
+    CHKERRQ(ierr);
+  }
 
   ierr = PetscCalloc1(ps->nbus, &opflow->busnvararray);
   CHKERRQ(ierr);
@@ -2577,6 +2641,51 @@ PetscErrorCode OPFLOWGetInitializationType(OPFLOW opflow,
 PetscErrorCode OPFLOWIgnoreLineflowConstraints(OPFLOW opflow, PetscBool set) {
   PetscFunctionBegin;
   opflow->ignore_lineflow_constraints = set;
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWMonitorLines - List of lines to monitor. The flows for these lines
+                       are included as inequality constraints in OPFLOW
+
+ Input Parameter:
++ opflow      - OPFLOW object
+. nkvlevels   - Number of kvlevels to monitor (Use -1 to monitor all kvlevels)
+. kvlevels    - line kvlevels to monitor
+- monitorfile - File with list of lines to monitor.
+
+  Notes:
+    The lines to monitor are either specified through a file OR by
+    kvlevels, but not both. Use NULL for monitorfile if file is not set.
+    If monitorfile is given then the kvlevels are ignored.
+
+*/
+PetscErrorCode OPFLOWSetLinesMonitored(OPFLOW opflow, PetscInt nkvlevels,
+                                       const PetscScalar *kvlevels,
+                                       const char *monitorfile) {
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  if (monitorfile != NULL) {
+    SETERRQ(opflow->comm->type, PETSC_ERR_SUP,
+            "Providing line list via file not yet supported");
+  }
+
+  if (nkvlevels < 0) {
+    opflow->nlinekvmon = opflow->ps->nkvlevels;
+    ierr = PetscMemcpy(opflow->linekvmon, opflow->ps->kvlevels,
+                       opflow->nlinekvmon * sizeof(PetscScalar));
+  } else if (nkvlevels == 0) {
+    opflow->ignore_lineflow_constraints = PETSC_TRUE;
+    opflow->nlinekvmon = 0;
+    opflow->linesmon = NULL;
+  } else {
+    opflow->nlinekvmon = nkvlevels;
+    ierr = PetscMemcpy(opflow->linekvmon, kvlevels,
+                       nkvlevels * sizeof(PetscScalar));
+  }
+
   PetscFunctionReturn(0);
 }
 

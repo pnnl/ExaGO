@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### OPFLOW
 - DC Optimal power flow (DCOPF) implementation. Can be used as an initialization OR as an OPFLOW model.
 - Added API OPFLOWSkipOptions() for skipping options (needed for DCOPF initialization)
+- Added select monitor of lines (inequality constraints) for OPFLOW. The selection is currently based by KV levels. The user can provide KV levels to monitor via option -opflow_monitor_kvlevels or OPFLOWSetLinesMonitored() to have OPFLOW include these line flows as inequality constraints. Default is to monitor all lines.
 
 ### TCOPFLOW
 
@@ -83,6 +84,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated case9mod_gen3_wind.m to (a) have no reactive power for wind generator, (b) tighter bounds on generator bus voltages.
 - Added case9mod_loadloss.m as a test network for non-zero load loss.
 
+
+### OPFLOW
+- Added feature of setting selected lines to monitor 
+	- OPFLOWSetMonitoredLines()
+	- run-time option -opflow_monitor_line_kvlevels
 
 ## [1.2.0] 
 

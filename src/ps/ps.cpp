@@ -5,6 +5,42 @@ const char *const PSGENFuelTypes[] = {"COAL",      "WIND",         "SOLAR",
                                       "UNDEFINED", "GENFUELTYPE_", NULL};
 
 /*
+  PSGetKVLevels - Gets the different KV levels in the system
+
+  Input Parameters
+. ps - PS struct
+
+  Output Parameters
+nkv - number of kv levels found
+kv  - kv levels
+*/
+PetscErrorCode PSGetKVLevels(PS ps, PetscInt *nkv, const PetscScalar **kv) {
+  PetscErrorCode ierr;
+  PetscInt i, j;
+  PSBUS bus;
+  PetscScalar buskV;
+  PetscBool kvlevelfound;
+
+  PetscFunctionBegin;
+
+  for (i = 0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    buskV = bus->basekV;
+    kvlevelfound = PETSC_FALSE;
+    for (j = 0; j < ps->nkvlevels; j++) {
+      if (PetscAbsScalar(buskV - ps->kvlevels[j]) < 1e-6)
+        kvlevelfound = PETSC_TRUE;
+    }
+    if (!kvlevelfound) {
+      ps->kvlevels[ps->nkvlevels++] = buskV;
+    }
+  }
+
+  *nkv = ps->nkvlevels;
+  *kv = ps->kvlevels;
+  PetscFunctionReturn(0);
+}
+/*
      PSCheckandSetRefBus - Checks for active ref. bus and sets one if not
 available
 
@@ -749,6 +785,10 @@ PetscErrorCode PSCreate(MPI_Comm mpicomm, PS *psout) {
   ps->ngencoal = ps->ngenwind = ps->ngensolar = 0;
   ps->ngenng = ps->ngennuclear = ps->ngenundefined = 0;
 
+  ps->nkvlevels = 0;
+  ierr = PetscMalloc1(MAX_KV_LEVELS, &ps->kvlevels);
+  CHKERRQ(ierr);
+
   ierr = PSIncreaseReferenceCount(ps);
   CHKERRQ(ierr);
 
@@ -797,6 +837,8 @@ PetscErrorCode PSDestroy(PS *ps) {
   ierr = PSConnCompDestroy(*ps);
   CHKERRQ(ierr);
 
+  ierr = PetscFree((*ps)->kvlevels);
+  CHKERRQ(ierr);
   ierr = PetscFree((*ps)->busext2intmap);
   CHKERRQ(ierr);
   ierr = DMDestroy(&(*ps)->networkdm);
@@ -1128,6 +1170,7 @@ PetscErrorCode PSSetUp(PS ps) {
      (b) bus ghosted status
      (c) incident generators at bus
      (d) incident loads at bus
+     (e) kv levels for lines
      (e) sets the starting location for the variables for this bus in the given
      application state vector
   */
@@ -1145,6 +1188,8 @@ PetscErrorCode PSSetUp(PS ps) {
     ps->line[i].connbuses[1] = &ps->bus[connnodes[1] - vStart];
     ps->line[i].internal_i = ps->bus[connnodes[0] - vStart].internal_i;
     ps->line[i].internal_j = ps->bus[connnodes[1] - vStart].internal_i;
+    ps->line[i].kvlevel = PetscMax(ps->bus[connnodes[0] - vStart].basekV,
+                                   ps->bus[connnodes[1] - vStart].basekV);
 
     /* Starting location in the local vector */
     ierr = DMNetworkGetLocalVecOffset(ps->networkdm, edge[i], ALL_COMPONENTS,
@@ -1224,6 +1269,9 @@ PetscErrorCode PSSetUp(PS ps) {
   ierr = PSCheckandSetRefBus(ps);
   CHKERRQ(ierr);
 
+  /* Get KV levels */
+  ierr = PSGetKVLevels(ps, &ps->nkvlevels, (const PetscScalar **)&ps->kvlevels);
+  CHKERRQ(ierr);
   //  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d Came
   //  here\n",ps->comm->rank);CHKERRQ(ierr);
   ps->setupcalled = PETSC_TRUE;

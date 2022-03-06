@@ -1,4 +1,3 @@
-
 #include <exago_config.h>
 
 #if defined(EXAGO_ENABLE_RAJA)
@@ -238,10 +237,10 @@ int LINEParamsRajaHiop::copy(OPFLOW opflow) {
 
   resmgr.copy(geqidxf_dev_, geqidxf);
   resmgr.copy(geqidxt_dev_, geqidxt);
-  resmgr.copy(gineqidx_dev_, gineqidx);
-  resmgr.copy(gbineqidx_dev_, gbineqidx);
 
-  if (opflow->nconineq) {
+  if (opflow->nlinesmon) {
+    resmgr.copy(gineqidx_dev_, gineqidx);
+    resmgr.copy(gbineqidx_dev_, gbineqidx);
     resmgr.copy(linelimidx_dev_, linelimidx);
   }
 #else
@@ -258,9 +257,9 @@ int LINEParamsRajaHiop::copy(OPFLOW opflow) {
   xidxt_dev_ = xidxt;
   geqidxf_dev_ = geqidxf;
   geqidxt_dev_ = geqidxt;
-  gineqidx_dev_ = gineqidx;
-  gbineqidx_dev_ = gbineqidx;
-  if (opflow->nconineq) {
+  if (opflow->nlinesmon) {
+    gineqidx_dev_ = gineqidx;
+    gbineqidx_dev_ = gbineqidx;
     linelimidx_dev_ = linelimidx;
   }
 #endif
@@ -284,10 +283,10 @@ int LINEParamsRajaHiop::destroy(OPFLOW opflow) {
 
   h_allocator_.deallocate(geqidxf);
   h_allocator_.deallocate(geqidxt);
-  h_allocator_.deallocate(gineqidx);
-  h_allocator_.deallocate(gbineqidx);
 
-  if (opflow->nconineq) {
+  if (opflow->nlinesmon) {
+    h_allocator_.deallocate(gineqidx);
+    h_allocator_.deallocate(gbineqidx);
     h_allocator_.deallocate(linelimidx);
   }
 
@@ -308,9 +307,10 @@ int LINEParamsRajaHiop::destroy(OPFLOW opflow) {
 
   d_allocator_.deallocate(geqidxf_dev_);
   d_allocator_.deallocate(geqidxt_dev_);
-  d_allocator_.deallocate(gineqidx_dev_);
-  d_allocator_.deallocate(gbineqidx_dev_);
-  if (opflow->nconineq) {
+
+  if (opflow->nlinesmon) {
+    d_allocator_.deallocate(gineqidx_dev_);
+    d_allocator_.deallocate(gbineqidx_dev_);
     d_allocator_.deallocate(linelimidx_dev_);
   }
 #endif
@@ -321,7 +321,7 @@ int LINEParamsRajaHiop::destroy(OPFLOW opflow) {
 /* Create data for lines that is used in different computations */
 int LINEParamsRajaHiop::allocate(OPFLOW opflow) {
   PS ps = opflow->ps;
-  PetscInt linei = 0, linelimi = 0;
+  PetscInt linei = 0;
   PSLINE line;
   PetscInt i;
   PetscErrorCode ierr;
@@ -332,18 +332,7 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow) {
   ierr = PSGetNumActiveLines(ps, &nlineON, NULL);
   CHKERRQ(ierr);
 
-  nlinelim = 0;
-  /* Get the number of lines that are active and have finite limits. These lines
-     will be only considered in inequality constraints */
-  if (opflow->nconineq) {
-    for (i = 0; i < ps->nline; i++) {
-      line = &ps->line[i];
-
-      if (!line->status || line->rateA > 1e5)
-        continue;
-      nlinelim++;
-    }
-  }
+  nlinelim = opflow->nlinesmon;
 
   /* Allocate data arrays */
   auto &resmgr = umpire::ResourceManager::getInstance();
@@ -365,13 +354,14 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow) {
 
   geqidxf = paramAlloc<int>(h_allocator_, nlineON);
   geqidxt = paramAlloc<int>(h_allocator_, nlineON);
-  gineqidx = paramAlloc<int>(h_allocator_, nlineON);
-  gbineqidx = paramAlloc<int>(h_allocator_, nlineON);
 
-  if (opflow->nconineq) {
+  if (opflow->nlinesmon) {
     linelimidx = paramAlloc<int>(h_allocator_, nlinelim);
+    gineqidx = paramAlloc<int>(h_allocator_, nlinelim);
+    gbineqidx = paramAlloc<int>(h_allocator_, nlinelim);
   }
 
+  PetscInt j = 0;
   /* Populate arrays */
   for (i = 0; i < ps->nline; i++) {
     line = &ps->line[i];
@@ -408,14 +398,13 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow) {
     geqidxf[linei] = busf->starteqloc;
     geqidxt[linei] = bust->starteqloc;
 
-    if (opflow->nconineq) {
-      if (line->rateA < 1e5) {
-        gbineqidx[linelimi] = opflow->nconeq + line->startineqloc;
-        gineqidx[linelimi] = line->startineqloc;
-        linelimidx[linelimi] = linei;
-        linelimi++;
-      }
+    if (j < opflow->nlinesmon && opflow->linesmon[j] == i) {
+      gbineqidx[j] = opflow->nconeq + line->startineqloc;
+      gineqidx[j] = line->startineqloc;
+      linelimidx[j] = linei;
+      j++;
     }
+
     linei++;
   }
 
@@ -437,10 +426,10 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow) {
 
   geqidxf_dev_ = paramAlloc<int>(d_allocator_, nlineON);
   geqidxt_dev_ = paramAlloc<int>(d_allocator_, nlineON);
-  gineqidx_dev_ = paramAlloc<int>(d_allocator_, nlineON);
-  gbineqidx_dev_ = paramAlloc<int>(d_allocator_, nlineON);
 
   if (opflow->nconineq) {
+    gineqidx_dev_ = paramAlloc<int>(d_allocator_, nlinelim);
+    gbineqidx_dev_ = paramAlloc<int>(d_allocator_, nlinelim);
     linelimidx_dev_ = paramAlloc<int>(d_allocator_, nlinelim);
   }
 #endif

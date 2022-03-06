@@ -234,6 +234,12 @@ struct _p_OPFLOW {
 
   PetscInt numits; /* Number of solver iterations */
 
+  PetscInt nlinekvmon;    /* Number of line kv levels to monitor */
+  PetscScalar *linekvmon; /* Line kv levels to monitor */
+
+  PetscInt nlinesmon; /* Number of monitored lines */
+  PetscInt *linesmon; /* List of lines monitored */
+
   /* Flag to denote if the OPFLOW solution has been transfered to PS struct via
    * OPLOWSolutionToPS call */
   PetscBool solutiontops;
