@@ -297,6 +297,30 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetUpPS(OPFLOW);
 */
 PETSC_EXTERN PetscErrorCode OPFLOWSolutionToPS(OPFLOW);
 
+/*
+  OPFLOWSetLinesMonitored - List of lines to monitor. The flows for these lines
+                            are included as inequality constraints in OPFLOW
+
+ Input Parameter:
++ opflow      - OPFLOW object
+. nkvlevels   - Number of kvlevels to monitor (Use -1 to monitor all kvlevels)
+. kvlevels    - line kvlevels to monitor
+- monitorfile - File with list of lines to monitor.
+
+  Notes:
+    The lines to monitor are either specified through a file OR by
+    kvlevels, but not both. Use NULL for monitorfile if file is not set.
+    If monitorfile is given then the kvlevels are ignored.
+
+    Lines are specified in the file in the format frombus,tobus where
+    frombus and tobus are the from and to bus numbers for the line.
+
+    This function should be called after OPFLOWSetupPS() is called
+*/
+PETSC_EXTERN PetscErrorCode OPFLOWSetLinesMonitored(OPFLOW, PetscInt,
+                                                    const PetscScalar *,
+                                                    const char *);
+
 typedef PetscErrorCode (*OPFLOWAuxObjectiveFunction)(OPFLOW, const double *,
                                                      double *, void *);
 typedef PetscErrorCode (*OPFLOWAuxGradientFunction)(OPFLOW, const double *,

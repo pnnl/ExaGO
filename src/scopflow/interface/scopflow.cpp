@@ -79,6 +79,7 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout) {
                      sizeof(scopflow->compute_mode));
   scopflow->verbosity_level = SCOPFLOWOptions::verbosity_level.default_value;
 #endif
+
   scopflow->setupcalled = PETSC_FALSE;
   *scopflowout = scopflow;
 

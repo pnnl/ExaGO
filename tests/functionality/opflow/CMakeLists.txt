@@ -73,6 +73,80 @@ if(EXAGO_INSTALL_TESTS)
     IPOPT
   )
 
+  exago_add_test(
+    NAME
+    SOPFLOW_200bus_IPOPT_SELECT_LINE_FLOWS
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:app_opflow>
+    -netfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+    -opflow_solver
+    IPOPT
+    -opflow_model
+    POWER_BALANCE_POLAR
+    -opflow_initialization
+    ACPF
+    -opflow_monitor_line_kvlevels
+    115.0
+    -no_optfile
+    DEPENDS
+    IPOPT
+    HIOP
+  )
+
+  exago_add_test(
+    NAME
+    SOPFLOW_200bus_HIOP_CPU_SELECT_LINE_FLOWS
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:app_opflow>
+    -netfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+    -opflow_solver
+    HIOP
+    -opflow_model
+    POWER_BALANCE_HIOP
+    -hiop_compute_mode
+    CPU
+    -hiop_verbosity_level
+    3
+    -opflow_initialization
+    ACPF
+    -opflow_monitor_line_kvlevels
+    115.0
+    -no_optfile
+    DEPENDS
+    IPOPT
+    HIOP
+  )
+
+  exago_add_test(
+    NAME
+    SOPFLOW_200bus_HIOP_GPU_SELECT_LINE_FLOWS
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:app_opflow>
+    -netfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+    -opflow_solver
+    HIOP
+    -opflow_model
+    POWER_BALANCE_HIOP
+    -hiop_compute_mode
+    GPU
+    -hiop_verbosity_level
+    3
+    -opflow_initialization
+    ACPF
+    -opflow_monitor_line_kvlevels
+    115.0
+    -no_optfile
+    DEPENDS
+    IPOPT
+    HIOP
+  )
+
   install(TARGETS test_opflow_functionality
           RUNTIME DESTINATION tests/functionality
   )

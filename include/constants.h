@@ -18,6 +18,7 @@
                              */
 #define NLOAD_AT_BUS_MAX 32 /**< Maximum number of loads allowed at a bus */
 #define NPHASE 1            /**< Per-phase analysis */
+#define MAX_KV_LEVELS 20    /**< Maximum KV levels */
 
 /* Fuel types for generators */
 #define GENFUEL_COAL 0      /* Coal */

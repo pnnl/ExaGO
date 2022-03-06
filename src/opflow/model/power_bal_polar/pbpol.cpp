@@ -228,18 +228,14 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBPOL(OPFLOW opflow, Vec Gl, Vec Gu) {
     }
   }
   /* Line flow constraint bounds */
-  if (!opflow->ignore_lineflow_constraints) {
-    for (i = 0; i < ps->nline; i++) {
-      line = &ps->line[i];
-      if (!line->status || line->rateA > 1e5)
-        continue;
+  for (i = 0; i < opflow->nlinesmon; i++) {
+    line = &ps->line[opflow->linesmon[i]];
 
-      gloc = line->startineqloc;
-      /* Line flow inequality constraints */
-      gl[gloc] = gl[gloc + 1] = 0.0;
-      gu[gloc] = gu[gloc + 1] =
-          (line->rateA / ps->MVAbase) * (line->rateA / ps->MVAbase);
-    }
+    gloc = line->startineqloc;
+    /* Line flow inequality constraints */
+    gl[gloc] = gl[gloc + 1] = 0.0;
+    gu[gloc] = gu[gloc + 1] =
+        (line->rateA / ps->MVAbase) * (line->rateA / ps->MVAbase);
   }
 
   ierr = VecRestoreArray(Gl, &gl);
@@ -389,19 +385,13 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X, Vec Lambda) {
 
   PetscScalar *lambdai = lambda + opflow->nconeq;
 
-  if (!opflow->ignore_lineflow_constraints) {
-    for (i = 0; i < ps->nline; i++) {
-      line = &ps->line[i];
-      if (!line->status) {
-        continue;
-      }
+  PetscInt j = 0;
+  for (i = 0; i < opflow->nlinesmon; i++) {
+    line = &ps->line[opflow->linesmon[i]];
 
-      if (line->rateA < 1e5) {
-        gloc = line->startineqloc;
-        lambdai[gloc] = line->mult_sf;
-        lambdai[gloc + 1] = line->mult_st;
-      }
-    }
+    gloc = line->startineqloc;
+    lambdai[gloc] = line->mult_sf;
+    lambdai[gloc + 1] = line->mult_st;
   }
 
   ierr = VecRestoreArray(X, &x);
@@ -980,10 +970,8 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow, Vec X,
   }
 
   if (!opflow->ignore_lineflow_constraints) {
-    for (i = 0; i < ps->nline; i++) {
-      line = &ps->line[i];
-      if (!line->status || line->rateA > 1e5)
-        continue;
+    for (i = 0; i < opflow->nlinesmon; i++) {
+      line = &ps->line[opflow->linesmon[i]];
 
       gloc = line->startineqloc;
 
@@ -1170,10 +1158,8 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,
   }
 
   if (!opflow->ignore_lineflow_constraints) {
-    for (i = 0; i < ps->nline; i++) {
-      line = &ps->line[i];
-      if (!line->status || line->rateA > 1e5)
-        continue;
+    for (i = 0; i < opflow->nlinesmon; i++) {
+      line = &ps->line[opflow->linesmon[i]];
 
       gloc = line->startineqloc;
 
@@ -1274,8 +1260,8 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,
       ierr = MatSetValues(Ji, 1, row, 4, col, val, ADD_VALUES);
       CHKERRQ(ierr);
     }
-    flps +=
-        ps->nline * (160 + (20 * EXAGO_FLOPS_SINOP) + (20 * EXAGO_FLOPS_COSOP));
+    flps += opflow->nlinesmon *
+            (160 + (20 * EXAGO_FLOPS_SINOP) + (20 * EXAGO_FLOPS_COSOP));
   }
   ierr = VecRestoreArrayRead(X, &x);
   CHKERRQ(ierr);
@@ -1490,8 +1476,8 @@ PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW opflow,
 
   *nx = 0;
   /* No variables for the branches */
-  for (i = 0; i < ps->nline; i++) {
-    line = &ps->line[i];
+  for (i = 0; i < opflow->nlinesmon; i++) {
+    line = &ps->line[opflow->linesmon[i]];
     branchnvar[i] = line->nx = 0;
     *nx += branchnvar[i];
   }
@@ -1620,13 +1606,12 @@ PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW opflow,
   }
 
   if (!opflow->ignore_lineflow_constraints) {
-    for (i = 0; i < ps->nline; i++) {
-      line = &ps->line[i];
-      if (line->status && line->rateA < 1e5) {
-        *nconineq += 2; /* Line flow constraints */
-        line->nconineq = 2;
-        line->nconeq = 0;
-      }
+    for (i = 0; i < opflow->nlinesmon; i++) {
+      line = &ps->line[opflow->linesmon[i]];
+
+      *nconineq += 2; /* Number of line flow constraints */
+      line->nconineq = 2;
+      line->nconeq = 0;
     }
   }
 
@@ -2154,11 +2139,8 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow,
 
   // for the part of line constraints
   if (!opflow->ignore_lineflow_constraints) {
-    for (i = 0; i < ps->nline; i++) {
-      line = &ps->line[i];
-
-      if (!line->status || line->rateA > 1e5)
-        continue;
+    for (i = 0; i < opflow->nlinesmon; i++) {
+      line = &ps->line[opflow->linesmon[i]];
 
       PetscScalar Gff, Bff, Gft, Bft, Gtf, Btf, Gtt, Btt;
       Gff = line->yff[0];
@@ -2861,14 +2843,13 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow) {
     line->qt = Qt;
     line->sf = PetscSqrtScalar(Pf * Pf + Qf * Qf);
     line->st = PetscSqrtScalar(Pt * Pt + Qt * Qt);
+  }
 
-    if (opflow->ignore_lineflow_constraints || line->rateA > 1e5) {
-      line->mult_sf = line->mult_st = 0.0;
-    } else {
-      gloc = line->startineqloc;
-      line->mult_sf = lambdai[gloc];
-      line->mult_st = lambdai[gloc + 1];
-    }
+  for (i = 0; i < opflow->nlinesmon; i++) {
+    line = &ps->line[opflow->linesmon[i]];
+    gloc = line->startineqloc;
+    line->mult_sf = lambdai[gloc];
+    line->mult_st = lambdai[gloc + 1];
   }
 
   ierr = VecRestoreArrayRead(X, &x);
@@ -2978,12 +2959,10 @@ PetscErrorCode OPFLOWModelSetUp_PBPOL(OPFLOW opflow) {
     }
   }
 
-  for (i = 0; i < ps->nline; i++) {
-    line = &ps->line[i];
-    if (line->status && line->rateA < 1e5) {
-      line->startineqloc = ineqloc;
-      ineqloc += line->nconineq;
-    }
+  for (i = 0; i < opflow->nlinesmon; i++) {
+    line = &ps->line[opflow->linesmon[i]];
+    line->startineqloc = ineqloc;
+    ineqloc += line->nconineq;
   }
 
   PetscFunctionReturn(0);

@@ -284,6 +284,8 @@ struct _p_PSLINE {
       qt;             /**< Real and reactive power flows from and to ends */
   PetscScalar sf, st; /**<Apparent power flows at the two ends */
   PetscBool reversed_ends; /* Reversed line end (bus numbers are swapped) */
+  PetscScalar kvlevel; /* Kv level for lines, for transformers uses the HV side
+                          voltage */
 
   PSBUS connbuses[2]; /**< From and to buses */
 
@@ -387,6 +389,8 @@ struct _p_PS {
       starteqloc; /* Starting location for equality constraints for this bus */
   PetscInt startineqloc; /* Starting location for inequality constraints for
                             this bus */
+  PetscInt nkvlevels;    /* Number of different kV levels */
+  PetscScalar *kvlevels; /* kV levels */
 
   PetscBool setupcalled; /* Is setup called on PS? */
 };
@@ -407,4 +411,5 @@ extern PetscErrorCode PSSetGenDispatchandStatus(PS, PetscInt, PetscInt,
                                                 PetscInt, PetscScalar,
                                                 PetscScalar);
 extern PetscErrorCode PSApplyScenario(PS, Scenario);
+extern PetscErrorCode PSGetKVLevels(PS, PetscInt *, const PetscScalar **);
 #endif

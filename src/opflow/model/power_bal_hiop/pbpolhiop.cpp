@@ -182,7 +182,7 @@ PetscErrorCode DestroyLineParams(OPFLOW opflow, LINEParams *lineparams) {
 /* Create data for lines that is used in different computations */
 PetscErrorCode CreateLineParams(OPFLOW opflow, LINEParams *lineparams) {
   PS ps = opflow->ps;
-  PetscInt linei = 0, linelimi = 0;
+  PetscInt linei = 0;
   PSLINE line;
   PetscInt i;
   PetscErrorCode ierr;
@@ -194,18 +194,8 @@ PetscErrorCode CreateLineParams(OPFLOW opflow, LINEParams *lineparams) {
   ierr = PSGetNumActiveLines(ps, &lineparams->nlineON, NULL);
   CHKERRQ(ierr);
 
-  lineparams->nlinelim = 0;
-  /* Get the number of lines that are active and have finite limits. These lines
-     will be only considered in inequality constraints */
-  if (opflow->nconineq) {
-    for (i = 0; i < ps->nline; i++) {
-      line = &ps->line[i];
+  lineparams->nlinelim = opflow->nlinesmon;
 
-      if (!line->status || line->rateA > 1e5)
-        continue;
-      lineparams->nlinelim++;
-    }
-  }
   /* Allocate arrays */
   ierr = PetscCalloc1(lineparams->nlineON, &lineparams->Gff);
   CHKERRQ(ierr);
@@ -245,6 +235,7 @@ PetscErrorCode CreateLineParams(OPFLOW opflow, LINEParams *lineparams) {
     CHKERRQ(ierr);
   }
 
+  PetscInt j = 0;
   /* Populate arrays */
   for (i = 0; i < ps->nline; i++) {
     line = &ps->line[i];
@@ -282,16 +273,16 @@ PetscErrorCode CreateLineParams(OPFLOW opflow, LINEParams *lineparams) {
     lineparams->geqidxf[linei] = busf->starteqloc;
     lineparams->geqidxt[linei] = bust->starteqloc;
 
-    if (opflow->nconineq) {
-      if (line->rateA < 1e5) {
-        lineparams->gbineqidx[linelimi] = opflow->nconeq + line->startineqloc;
-        lineparams->gineqidx[linelimi] = line->startineqloc;
-        lineparams->linelimidx[linelimi] = linei;
-        linelimi++;
-      }
+    if (j < opflow->nlinesmon && opflow->linesmon[j] == i) {
+      lineparams->gbineqidx[j] = opflow->nconeq + line->startineqloc;
+      lineparams->gineqidx[j] = line->startineqloc;
+      lineparams->linelimidx[j] = linei;
+      j++;
     }
+
     linei++;
   }
+
   PetscFunctionReturn(0);
 }
 
@@ -707,14 +698,13 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOLHIOP(OPFLOW opflow) {
     line->qt = Qt;
     line->sf = PetscSqrtScalar(Pf * Pf + Qf * Qf);
     line->st = PetscSqrtScalar(Pt * Pt + Qt * Qt);
+  }
 
-    if (opflow->ignore_lineflow_constraints || line->rateA > 1e5) {
-      line->mult_sf = line->mult_st = 0.0;
-    } else {
-      gloc = line->startineqloc;
-      line->mult_sf = lambdai[gloc];
-      line->mult_st = lambdai[gloc + 1];
-    }
+  for (i = 0; i < opflow->nlinesmon; i++) {
+    line = &ps->line[opflow->linesmon[i]];
+    gloc = line->startineqloc;
+    line->mult_sf = lambdai[gloc];
+    line->mult_st = lambdai[gloc + 1];
   }
 
   ierr = VecRestoreArrayRead(X, &x);
