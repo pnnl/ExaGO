@@ -37,7 +37,7 @@ PetscErrorCode OPFLOWGetLinesMonitored(OPFLOW opflow) {
 
   PetscFunctionBegin;
   if (opflow->nlinesmon) {
-    /* Number of lines monitored already set through file. */
+    /* Number of lines monitored already set through input list or file. */
     PetscFunctionReturn(0);
   }
   if (opflow->nlinekvmon == -1) {
@@ -377,6 +377,46 @@ PetscErrorCode OPFLOWGetVariableOrdering(OPFLOW opflow, int **ordering) {
 }
 
 /*
+  OPLOWCopyOptions - Copies options
+*/
+PetscErrorCode OPFLOWCopyOptions(OPFLOW opflowin,OPFLOW opflowout)
+{
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  ierr = OPFLOWHasLoadLoss(opflowout, opflowin->include_loadloss_variables);
+  CHKERRQ(ierr);
+  ierr = OPFLOWSetLoadLossPenalty(opflowout, opflowin->loadloss_penalty);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWHasBusPowerImbalance(opflowout,
+                                    opflowin->include_powerimbalance_variables);
+  CHKERRQ(ierr);
+  ierr = OPFLOWSetBusPowerImbalancePenalty(opflowout,
+                                           opflowin->powerimbalance_penalty);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWHasGenSetPoint(opflowout, opflowin->has_gensetpoint);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWUseAGC(opflowout, opflowin->use_agc);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWIgnoreLineflowConstraints(opflowout,
+                                         opflowin->ignore_lineflow_constraints);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWSetTolerance(opflowout, opflowin->tolerance);
+  CHKERRQ(ierr);
+
+  ierr = OPFLOWSetObjectiveType(opflowout, opflowin->objectivetype);
+  CHKERRQ(ierr);
+  
+  PetscFunctionReturn(0);
+}
+
+/*
    OPFLOWInitializeDCOPF - DCOPF initialization of OPFLOW
 */
 PetscErrorCode OPFLOWInitializeDCOPF(OPFLOW opflow, PetscBool *converged) {
@@ -402,35 +442,10 @@ PetscErrorCode OPFLOWInitializeDCOPF(OPFLOW opflow, PetscBool *converged) {
   CHKERRQ(ierr);
 #endif
 
-  /* Set options */
-  ierr = OPFLOWHasLoadLoss(dcopflow, opflow->include_loadloss_variables);
+  /* Copy options */
+  ierr = OPFLOWCopyOptions(opflow,dcopflow);
   CHKERRQ(ierr);
-  ierr = OPFLOWSetLoadLossPenalty(dcopflow, opflow->loadloss_penalty);
-  CHKERRQ(ierr);
-
-  ierr = OPFLOWHasBusPowerImbalance(dcopflow,
-                                    opflow->include_powerimbalance_variables);
-  CHKERRQ(ierr);
-  ierr = OPFLOWSetBusPowerImbalancePenalty(dcopflow,
-                                           opflow->powerimbalance_penalty);
-  CHKERRQ(ierr);
-
-  ierr = OPFLOWHasGenSetPoint(dcopflow, opflow->has_gensetpoint);
-  CHKERRQ(ierr);
-
-  ierr = OPFLOWUseAGC(dcopflow, opflow->use_agc);
-  CHKERRQ(ierr);
-
-  ierr = OPFLOWIgnoreLineflowConstraints(dcopflow,
-                                         opflow->ignore_lineflow_constraints);
-  CHKERRQ(ierr);
-
-  ierr = OPFLOWSetTolerance(dcopflow, opflow->tolerance);
-  CHKERRQ(ierr);
-
-  ierr = OPFLOWSetObjectiveType(dcopflow, opflow->objectivetype);
-  CHKERRQ(ierr);
-
+  
   ierr = OPFLOWSkipOptions(dcopflow, PETSC_TRUE);
   CHKERRQ(ierr);
 
@@ -720,6 +735,8 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
   /* Run-time options */
   opflow->ignore_lineflow_constraints =
       OPFLOWOptions::ignore_lineflow_constraints.default_value;
+  opflow->lazy_lineflow_constraints =
+      OPFLOWOptions::lazy_lineflow_constraints.default_value;
   opflow->include_loadloss_variables =
       OPFLOWOptions::include_loadloss_variables.default_value;
   opflow->include_powerimbalance_variables =
@@ -1386,6 +1403,17 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
         opflow->ignore_lineflow_constraints,
         &opflow->ignore_lineflow_constraints, NULL);
     CHKERRQ(ierr);
+    ierr = PetscOptionsBool(
+        OPFLOWOptions::lazy_lineflow_constraints.opt.c_str(),
+        OPFLOWOptions::lazy_lineflow_constraints.desc.c_str(), "",
+        opflow->lazy_lineflow_constraints,
+        &opflow->lazy_lineflow_constraints, NULL);
+    CHKERRQ(ierr);
+
+    if(opflow->lazy_lineflow_constraints) {
+      opflow->ignore_lineflow_constraints = PETSC_TRUE;
+    }
+    
     ierr =
         PetscOptionsBool(OPFLOWOptions::include_loadloss_variables.opt.c_str(),
                          OPFLOWOptions::include_loadloss_variables.desc.c_str(),
@@ -1821,6 +1849,51 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
   CHKERRQ(ierr);
   ierr = PetscLogEventEnd(opflow->solvelogger, 0, 0, 0, 0);
   CHKERRQ(ierr);
+
+  if(opflow->lazy_lineflow_constraints) {
+    OPFLOW opflow2;
+    PetscBool has_overload=PETSC_FALSE;
+    PetscInt  nlines_overloaded;
+    PetscInt  *lines_overloaded;
+
+    ierr = OPFLOWSolutionToPS(opflow);
+    CHKERRQ(ierr);
+
+    nlines_overloaded = opflow->ps->nlines_overloaded;
+    lines_overloaded  = opflow->ps->lines_overloaded;
+    has_overload      = opflow->ps->has_overloaded_lines;
+    
+    if(has_overload) {
+      /* Create new OPFLOW */
+      ierr = OPFLOWCreate(opflow->comm->type,&opflow2);
+      CHKERRQ(ierr);
+      
+      ierr = OPFLOWReadMatPowerData(opflow2, opflow->ps->net_file_name);
+      CHKERRQ(ierr);
+      
+      ierr = OPFLOWSetModel(opflow2, opflow->modelname);
+      CHKERRQ(ierr);
+      
+      ierr = OPFLOWSetSolver(opflow2, opflow->solvername);
+      CHKERRQ(ierr);
+      
+      ierr = OPFLOWCopyOptions(opflow,opflow2);
+      CHKERRQ(ierr);
+      
+      ierr = OPFLOWSkipOptions(opflow2, PETSC_TRUE);
+      CHKERRQ(ierr);
+      
+      opflow2->lazy_lineflow_constraints = PETSC_FALSE;
+      opflow2->ignore_lineflow_constraints = PETSC_TRUE;
+      
+      ierr = OPFLOWSetLinesMonitored(opflow2,0,nlines_overloaded,lines_overloaded,0,NULL,NULL);
+      CHKERRQ(ierr);
+
+      ierr = OPFLOWSolve(opflow2);
+    }
+  }
+
+  //  ierr = OPFLOWDestroy(&opflow
 
   //  ierr = VecView(opflow->X,0);CHKERRQ(ierr);
 
@@ -2653,40 +2726,56 @@ PetscErrorCode OPFLOWIgnoreLineflowConstraints(OPFLOW opflow, PetscBool set) {
 
  Input Parameter:
 + opflow      - OPFLOW object
-. nkvlevels   - Number of kvlevels to monitor (Use -1 to monitor all kvlevels)
-. kvlevels    - line kvlevels to monitor
-- monitorfile - File with list of lines to monitor.
+. mon_mode -  - Monitor Mode (0 = Input lines, 1 = KV levels, 2 = From file)
+. nlinesmon   - Number of lines to be monitored (active with mon_mode = 0)
+. linesmon    - List of lines to be monitored (active with mon_mode = 0) 
+. nkvlevels   - Number of kvlevels to monitor (active with mon_mode = 1,Use -1 to monitor all kvlevels)
+. kvlevels    - line kvlevels to monitor (active with mon_mode = 1)
+- monitorfile - File with list of lines to monitor (active with mon_mode = 2)
 
   Notes:
-    The lines to monitor are either specified through a file OR by
-    kvlevels, but not both. Use NULL for monitorfile if file is not set.
-    If monitorfile is given then the kvlevels are ignored.
+    The lines to monitor are either specified via API, through a file OR by
+    kvlevels, Use NULL for monitorfile if file is not set.
 
 */
-PetscErrorCode OPFLOWSetLinesMonitored(OPFLOW opflow, PetscInt nkvlevels,
+PetscErrorCode OPFLOWSetLinesMonitored(OPFLOW opflow, PetscInt mon_mode,
+				       PetscInt nlinesmon, PetscInt *linesmon,
+				       PetscInt nkvlevels,
                                        const PetscScalar *kvlevels,
                                        const char *monitorfile) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
 
-  if (monitorfile != NULL) {
-    SETERRQ(opflow->comm->type, PETSC_ERR_SUP,
-            "Providing line list via file not yet supported");
+  if(mon_mode < 0 && mon_mode > 2) {
+    SETERRQ1(opflow->comm->type,PETSC_ERR_SUP,"mon_mode input for OPFLOWSetLinesMonitored should \
+            be either 0 (list of given lines), 1 (list of KV levels), 2 (list from input file. Incorrect \
+            mon_mode = %d given",mon_mode);
   }
 
-  if (nkvlevels < 0) {
-    opflow->nlinekvmon = opflow->ps->nkvlevels;
-    ierr = PetscMemcpy(opflow->linekvmon, opflow->ps->kvlevels,
-                       opflow->nlinekvmon * sizeof(PetscScalar));
-  } else if (nkvlevels == 0) {
-    opflow->ignore_lineflow_constraints = PETSC_TRUE;
-    opflow->nlinekvmon = 0;
-    opflow->linesmon = NULL;
+  if(mon_mode == 0) {
+    opflow->nlinesmon = nlinesmon;
+    ierr = PetscMalloc1(opflow->nlinesmon,&opflow->linesmon);CHKERRQ(ierr);
+    ierr = PetscMemcpy(linesmon,opflow->linesmon,opflow->nlinesmon*sizeof(PetscInt));CHKERRQ(ierr);
+  } else if(mon_mode == 1) {
+    if (nkvlevels < 0) {
+      opflow->nlinekvmon = opflow->ps->nkvlevels;
+      ierr = PetscMemcpy(opflow->linekvmon, opflow->ps->kvlevels,
+			 opflow->nlinekvmon * sizeof(PetscScalar));
+    } else if (nkvlevels == 0) {
+      opflow->ignore_lineflow_constraints = PETSC_TRUE;
+      opflow->nlinekvmon = 0;
+      opflow->linesmon = NULL;
+    } else {
+      opflow->nlinekvmon = nkvlevels;
+      ierr = PetscMemcpy(opflow->linekvmon, kvlevels,
+			 nkvlevels * sizeof(PetscScalar));
+    }
   } else {
-    opflow->nlinekvmon = nkvlevels;
-    ierr = PetscMemcpy(opflow->linekvmon, kvlevels,
-                       nkvlevels * sizeof(PetscScalar));
+    if (monitorfile != NULL) {
+      SETERRQ(opflow->comm->type, PETSC_ERR_SUP,
+	      "Providing line list via file not yet supported");
+    }
   }
 
   PetscFunctionReturn(0);

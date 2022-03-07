@@ -128,6 +128,10 @@ const auto tolerance =
 const auto ignore_lineflow_constraints =
     ExaGOBoolOption("-opflow_ignore_lineflow_constraints",
                     "Ignore line flow constraints?", PETSC_FALSE);
+const auto lazy_lineflow_constraints =
+    ExaGOBoolOption("-opflow_lazy_lineflow_constraints",
+                    "Apply line flow constraints lazily", PETSC_FALSE);
+
 const auto include_loadloss_variables =
     ExaGOBoolOption("-opflow_include_loadloss_variables",
                     "Ignore line flow constraints?", PETSC_FALSE);
@@ -299,27 +303,26 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetUpPS(OPFLOW);
 PETSC_EXTERN PetscErrorCode OPFLOWSolutionToPS(OPFLOW);
 
 /*
-  OPFLOWSetLinesMonitored - List of lines to monitor. The flows for these lines
-                            are included as inequality constraints in OPFLOW
+  OPFLOWMonitorLines - List of lines to monitor. The flows for these lines
+                       are included as inequality constraints in OPFLOW
 
  Input Parameter:
 + opflow      - OPFLOW object
-. nkvlevels   - Number of kvlevels to monitor (Use -1 to monitor all kvlevels)
-. kvlevels    - line kvlevels to monitor
-- monitorfile - File with list of lines to monitor.
+. mon_mode -  - Monitor Mode (0 = Input lines, 1 = KV levels, 2 = From file)
+. nlinesmon   - Number of lines to be monitored (active with mon_mode = 0)
+. linesmon    - List of lines to be monitored (active with mon_mode = 0) 
+. nkvlevels   - Number of kvlevels to monitor (active with mon_mode = 1,Use -1 to monitor all kvlevels)
+. kvlevels    - line kvlevels to monitor (active with mon_mode = 1)
+- monitorfile - File with list of lines to monitor (active with mon_mode = 2)
 
   Notes:
-    The lines to monitor are either specified through a file OR by
-    kvlevels, but not both. Use NULL for monitorfile if file is not set.
-    If monitorfile is given then the kvlevels are ignored.
+    The lines to monitor are either specified via API, through a file OR by
+    kvlevels, Use NULL for monitorfile if file is not set.
 
-    Lines are specified in the file in the format frombus,tobus where
-    frombus and tobus are the from and to bus numbers for the line.
-
-    This function should be called after OPFLOWSetupPS() is called
 */
 PETSC_EXTERN PetscErrorCode OPFLOWSetLinesMonitored(OPFLOW, PetscInt,
-                                                    const PetscScalar *,
+						    PetscInt,PetscInt*,
+                                                    PetscInt,const PetscScalar *,
                                                     const char *);
 
 typedef PetscErrorCode (*OPFLOWAuxObjectiveFunction)(OPFLOW, const double *,

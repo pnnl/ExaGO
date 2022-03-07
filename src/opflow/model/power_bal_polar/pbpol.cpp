@@ -969,54 +969,52 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow, Vec X,
     }
   }
 
-  if (!opflow->ignore_lineflow_constraints) {
-    for (i = 0; i < opflow->nlinesmon; i++) {
-      line = &ps->line[opflow->linesmon[i]];
-
-      gloc = line->startineqloc;
-
-      Gff = line->yff[0];
-      Bff = line->yff[1];
-      Gft = line->yft[0];
-      Bft = line->yft[1];
-      Gtf = line->ytf[0];
-      Btf = line->ytf[1];
-      Gtt = line->ytt[0];
-      Btt = line->ytt[1];
-
-      ierr = PSLINEGetConnectedBuses(line, &connbuses);
-      CHKERRQ(ierr);
-      busf = connbuses[0];
-      bust = connbuses[1];
-
-      xlocf = busf->startxVloc;
-      xloct = bust->startxVloc;
-
-      thetaf = x[xlocf];
-      Vmf = x[xlocf + 1];
-      thetat = x[xloct];
-      Vmt = x[xloct + 1];
-      thetaft = thetaf - thetat;
-      thetatf = thetat - thetaf;
-
-      Pf = Gff * Vmf * Vmf +
-           Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-      Qf = -Bff * Vmf * Vmf +
-           Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-
-      Pt = Gtt * Vmt * Vmt +
-           Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-      Qt = -Btt * Vmt * Vmt +
-           Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-
-      Sf2 = Pf * Pf + Qf * Qf;
-      St2 = Pt * Pt + Qt * Qt;
-
-      g[gloc] = Sf2;
-      g[gloc + 1] = St2;
-
-      flps += 158.0;
-    }
+  for (i = 0; i < opflow->nlinesmon; i++) {
+    line = &ps->line[opflow->linesmon[i]];
+    
+    gloc = line->startineqloc;
+    
+    Gff = line->yff[0];
+    Bff = line->yff[1];
+    Gft = line->yft[0];
+    Bft = line->yft[1];
+    Gtf = line->ytf[0];
+    Btf = line->ytf[1];
+    Gtt = line->ytt[0];
+    Btt = line->ytt[1];
+    
+    ierr = PSLINEGetConnectedBuses(line, &connbuses);
+    CHKERRQ(ierr);
+    busf = connbuses[0];
+    bust = connbuses[1];
+    
+    xlocf = busf->startxVloc;
+    xloct = bust->startxVloc;
+    
+    thetaf = x[xlocf];
+    Vmf = x[xlocf + 1];
+    thetat = x[xloct];
+    Vmt = x[xloct + 1];
+    thetaft = thetaf - thetat;
+    thetatf = thetat - thetaf;
+    
+    Pf = Gff * Vmf * Vmf +
+      Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+    Qf = -Bff * Vmf * Vmf +
+      Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+    
+    Pt = Gtt * Vmt * Vmt +
+      Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+    Qt = -Btt * Vmt * Vmt +
+      Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+    
+    Sf2 = Pf * Pf + Qf * Qf;
+    St2 = Pt * Pt + Qt * Qt;
+    
+    g[gloc] = Sf2;
+    g[gloc + 1] = St2;
+    
+    flps += 158.0;
   }
 
   ierr = VecRestoreArrayRead(X, &x);
@@ -1157,112 +1155,112 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,
     }
   }
 
-  if (!opflow->ignore_lineflow_constraints) {
-    for (i = 0; i < opflow->nlinesmon; i++) {
-      line = &ps->line[opflow->linesmon[i]];
-
-      gloc = line->startineqloc;
-
-      Gff = line->yff[0];
-      Bff = line->yff[1];
-      Gft = line->yft[0];
-      Bft = line->yft[1];
-      Gtf = line->ytf[0];
-      Btf = line->ytf[1];
-      Gtt = line->ytt[0];
-      Btt = line->ytt[1];
-
-      ierr = PSLINEGetConnectedBuses(line, &connbuses);
-      CHKERRQ(ierr);
-      busf = connbuses[0];
-      bust = connbuses[1];
-
-      xlocf = busf->startxVloc;
-      xloct = bust->startxVloc;
-
-      thetaf = x[xlocf];
-      Vmf = x[xlocf + 1];
-      thetat = x[xloct];
-      Vmt = x[xloct + 1];
-      thetaft = thetaf - thetat;
-      thetatf = thetat - thetaf;
-
-      Pf = Gff * Vmf * Vmf +
-           Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-      Qf = -Bff * Vmf * Vmf +
-           Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-
-      Pt = Gtt * Vmt * Vmt +
-           Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-      Qt = -Btt * Vmt * Vmt +
-           Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-
-      dSf2_dPf = 2 * Pf;
-      dSf2_dQf = 2 * Qf;
-      dSt2_dPt = 2 * Pt;
-      dSt2_dQt = 2 * Qt;
-
-      dPf_dthetaf = Vmf * Vmt * (-Gft * sin(thetaft) + Bft * cos(thetaft));
-      dPf_dVmf =
-          2 * Gff * Vmf + Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-      dPf_dthetat = Vmf * Vmt * (Gft * sin(thetaft) - Bft * cos(thetaft));
-      dPf_dVmt = Vmf * (Gft * cos(thetaft) + Bft * sin(thetaft));
-
-      dQf_dthetaf = Vmf * Vmt * (Bft * sin(thetaft) + Gft * cos(thetaft));
-      dQf_dVmf =
-          -2 * Bff * Vmf + Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-      dQf_dthetat = Vmf * Vmt * (-Bft * sin(thetaft) - Gft * cos(thetaft));
-      dQf_dVmt = Vmf * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-
-      dPt_dthetat = Vmt * Vmf * (-Gtf * sin(thetatf) + Btf * cos(thetatf));
-      dPt_dVmt =
-          2 * Gtt * Vmt + Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-      dPt_dthetaf = Vmt * Vmf * (Gtf * sin(thetatf) - Btf * cos(thetatf));
-      dPt_dVmf = Vmt * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-
-      dQt_dthetat = Vmt * Vmf * (Btf * sin(thetatf) + Gtf * cos(thetatf));
-      dQt_dVmt =
-          -2 * Btt * Vmt + Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-      dQt_dthetaf = Vmt * Vmf * (-Btf * sin(thetatf) - Gtf * cos(thetatf));
-      dQt_dVmf = Vmt * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-
-      dSf2_dthetaf = dSf2_dPf * dPf_dthetaf + dSf2_dQf * dQf_dthetaf;
-      dSf2_dthetat = dSf2_dPf * dPf_dthetat + dSf2_dQf * dQf_dthetat;
-      dSf2_dVmf = dSf2_dPf * dPf_dVmf + dSf2_dQf * dQf_dVmf;
-      dSf2_dVmt = dSf2_dPf * dPf_dVmt + dSf2_dQf * dQf_dVmt;
-
-      row[0] = gloc;
-      col[0] = xlocf;
-      col[1] = xlocf + 1;
-      col[2] = xloct;
-      col[3] = xloct + 1;
-      val[0] = dSf2_dthetaf;
-      val[1] = dSf2_dVmf;
-      val[2] = dSf2_dthetat;
-      val[3] = dSf2_dVmt;
-      ierr = MatSetValues(Ji, 1, row, 4, col, val, ADD_VALUES);
-      CHKERRQ(ierr);
-
-      dSt2_dthetaf = dSt2_dPt * dPt_dthetaf + dSt2_dQt * dQt_dthetaf;
-      dSt2_dthetat = dSt2_dPt * dPt_dthetat + dSt2_dQt * dQt_dthetat;
-      dSt2_dVmf = dSt2_dPt * dPt_dVmf + dSt2_dQt * dQt_dVmf;
-      dSt2_dVmt = dSt2_dPt * dPt_dVmt + dSt2_dQt * dQt_dVmt;
-
-      row[0] = gloc + 1;
-      col[0] = xloct;
-      col[1] = xloct + 1;
-      col[2] = xlocf;
-      col[3] = xlocf + 1;
-      val[0] = dSt2_dthetat;
-      val[1] = dSt2_dVmt;
-      val[2] = dSt2_dthetaf;
-      val[3] = dSt2_dVmf;
-      ierr = MatSetValues(Ji, 1, row, 4, col, val, ADD_VALUES);
-      CHKERRQ(ierr);
-    }
+  for (i = 0; i < opflow->nlinesmon; i++) {
+    line = &ps->line[opflow->linesmon[i]];
+    
+    gloc = line->startineqloc;
+    
+    Gff = line->yff[0];
+    Bff = line->yff[1];
+    Gft = line->yft[0];
+    Bft = line->yft[1];
+    Gtf = line->ytf[0];
+    Btf = line->ytf[1];
+    Gtt = line->ytt[0];
+    Btt = line->ytt[1];
+    
+    ierr = PSLINEGetConnectedBuses(line, &connbuses);
+    CHKERRQ(ierr);
+    busf = connbuses[0];
+    bust = connbuses[1];
+    
+    xlocf = busf->startxVloc;
+    xloct = bust->startxVloc;
+    
+    thetaf = x[xlocf];
+    Vmf = x[xlocf + 1];
+    thetat = x[xloct];
+    Vmt = x[xloct + 1];
+    thetaft = thetaf - thetat;
+    thetatf = thetat - thetaf;
+    
+    Pf = Gff * Vmf * Vmf +
+      Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+    Qf = -Bff * Vmf * Vmf +
+      Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+    
+    Pt = Gtt * Vmt * Vmt +
+      Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+    Qt = -Btt * Vmt * Vmt +
+      Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+    
+    dSf2_dPf = 2 * Pf;
+    dSf2_dQf = 2 * Qf;
+    dSt2_dPt = 2 * Pt;
+    dSt2_dQt = 2 * Qt;
+    
+    dPf_dthetaf = Vmf * Vmt * (-Gft * sin(thetaft) + Bft * cos(thetaft));
+    dPf_dVmf =
+      2 * Gff * Vmf + Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+    dPf_dthetat = Vmf * Vmt * (Gft * sin(thetaft) - Bft * cos(thetaft));
+    dPf_dVmt = Vmf * (Gft * cos(thetaft) + Bft * sin(thetaft));
+    
+    dQf_dthetaf = Vmf * Vmt * (Bft * sin(thetaft) + Gft * cos(thetaft));
+    dQf_dVmf =
+      -2 * Bff * Vmf + Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+    dQf_dthetat = Vmf * Vmt * (-Bft * sin(thetaft) - Gft * cos(thetaft));
+    dQf_dVmt = Vmf * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+    
+    dPt_dthetat = Vmt * Vmf * (-Gtf * sin(thetatf) + Btf * cos(thetatf));
+    dPt_dVmt =
+      2 * Gtt * Vmt + Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+    dPt_dthetaf = Vmt * Vmf * (Gtf * sin(thetatf) - Btf * cos(thetatf));
+    dPt_dVmf = Vmt * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+    
+    dQt_dthetat = Vmt * Vmf * (Btf * sin(thetatf) + Gtf * cos(thetatf));
+    dQt_dVmt =
+      -2 * Btt * Vmt + Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+    dQt_dthetaf = Vmt * Vmf * (-Btf * sin(thetatf) - Gtf * cos(thetatf));
+    dQt_dVmf = Vmt * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+    
+    dSf2_dthetaf = dSf2_dPf * dPf_dthetaf + dSf2_dQf * dQf_dthetaf;
+    dSf2_dthetat = dSf2_dPf * dPf_dthetat + dSf2_dQf * dQf_dthetat;
+    dSf2_dVmf = dSf2_dPf * dPf_dVmf + dSf2_dQf * dQf_dVmf;
+    dSf2_dVmt = dSf2_dPf * dPf_dVmt + dSf2_dQf * dQf_dVmt;
+    
+    row[0] = gloc;
+    col[0] = xlocf;
+    col[1] = xlocf + 1;
+    col[2] = xloct;
+    col[3] = xloct + 1;
+    val[0] = dSf2_dthetaf;
+    val[1] = dSf2_dVmf;
+    val[2] = dSf2_dthetat;
+    val[3] = dSf2_dVmt;
+    ierr = MatSetValues(Ji, 1, row, 4, col, val, ADD_VALUES);
+    CHKERRQ(ierr);
+    
+    dSt2_dthetaf = dSt2_dPt * dPt_dthetaf + dSt2_dQt * dQt_dthetaf;
+    dSt2_dthetat = dSt2_dPt * dPt_dthetat + dSt2_dQt * dQt_dthetat;
+    dSt2_dVmf = dSt2_dPt * dPt_dVmf + dSt2_dQt * dQt_dVmf;
+    dSt2_dVmt = dSt2_dPt * dPt_dVmt + dSt2_dQt * dQt_dVmt;
+    
+    row[0] = gloc + 1;
+    col[0] = xloct;
+    col[1] = xloct + 1;
+    col[2] = xlocf;
+    col[3] = xlocf + 1;
+    val[0] = dSt2_dthetat;
+    val[1] = dSt2_dVmt;
+    val[2] = dSt2_dthetaf;
+    val[3] = dSt2_dVmf;
+    ierr = MatSetValues(Ji, 1, row, 4, col, val, ADD_VALUES);
+    CHKERRQ(ierr);
+  
     flps += opflow->nlinesmon *
-            (160 + (20 * EXAGO_FLOPS_SINOP) + (20 * EXAGO_FLOPS_COSOP));
+      (160 + (20 * EXAGO_FLOPS_SINOP) + (20 * EXAGO_FLOPS_COSOP));
   }
+
   ierr = VecRestoreArrayRead(X, &x);
   CHKERRQ(ierr);
 
@@ -1605,14 +1603,12 @@ PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW opflow,
     }
   }
 
-  if (!opflow->ignore_lineflow_constraints) {
-    for (i = 0; i < opflow->nlinesmon; i++) {
-      line = &ps->line[opflow->linesmon[i]];
+  for (i = 0; i < opflow->nlinesmon; i++) {
+    line = &ps->line[opflow->linesmon[i]];
 
-      *nconineq += 2; /* Number of line flow constraints */
-      line->nconineq = 2;
-      line->nconeq = 0;
-    }
+    *nconineq += 2; /* Number of line flow constraints */
+    line->nconineq = 2;
+    line->nconeq = 0;
   }
 
   PetscFunctionReturn(0);
@@ -2138,429 +2134,427 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow,
   }
 
   // for the part of line constraints
-  if (!opflow->ignore_lineflow_constraints) {
-    for (i = 0; i < opflow->nlinesmon; i++) {
-      line = &ps->line[opflow->linesmon[i]];
+  for (i = 0; i < opflow->nlinesmon; i++) {
+    line = &ps->line[opflow->linesmon[i]];
+    
+    PetscScalar Gff, Bff, Gft, Bft, Gtf, Btf, Gtt, Btt;
+    Gff = line->yff[0];
+    Bff = line->yff[1];
+    Gft = line->yft[0];
+    Bft = line->yft[1];
+    Gtf = line->ytf[0];
+    Btf = line->ytf[1];
+    Gtt = line->ytt[0];
+    Btt = line->ytt[1];
+    
+    ierr = PSLINEGetConnectedBuses(line, &connbuses);
+    CHKERRQ(ierr);
+    busf = connbuses[0];
+    bust = connbuses[1];
+    
+    gloc = line->startineqloc;
+    
+    xlocf = busf->startxVloc;
+    xloct = bust->startxVloc;
+    xlocglobf = busf->startxVlocglob;
+    xlocglobt = bust->startxVlocglob;
+    
+    PetscScalar Vmf, Vmt, thetaf, thetat, thetaft, thetatf;
+    
+    thetaf = x[xlocf];
+    Vmf = x[xlocf + 1];
+    thetat = x[xloct];
+    Vmt = x[xloct + 1];
+    thetaft = thetaf - thetat;
+    thetatf = thetat - thetaf;
+    
+    // Sf2 and St2 are the constraints
+    PetscScalar Pf, Qf, Pt, Qt;
+    
+    Pf = Gff * Vmf * Vmf +
+      Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+    Qf = -Bff * Vmf * Vmf +
+      Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+    
+    Pt = Gtt * Vmt * Vmt +
+      Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+    Qt = -Btt * Vmt * Vmt +
+      Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
 
-      PetscScalar Gff, Bff, Gft, Bft, Gtf, Btf, Gtt, Btt;
-      Gff = line->yff[0];
-      Bff = line->yff[1];
-      Gft = line->yft[0];
-      Bft = line->yft[1];
-      Gtf = line->ytf[0];
-      Btf = line->ytf[1];
-      Gtt = line->ytt[0];
-      Btt = line->ytt[1];
-
-      ierr = PSLINEGetConnectedBuses(line, &connbuses);
-      CHKERRQ(ierr);
-      busf = connbuses[0];
-      bust = connbuses[1];
-
-      gloc = line->startineqloc;
-
-      xlocf = busf->startxVloc;
-      xloct = bust->startxVloc;
-      xlocglobf = busf->startxVlocglob;
-      xlocglobt = bust->startxVlocglob;
-
-      PetscScalar Vmf, Vmt, thetaf, thetat, thetaft, thetatf;
-
-      thetaf = x[xlocf];
-      Vmf = x[xlocf + 1];
-      thetat = x[xloct];
-      Vmt = x[xloct + 1];
-      thetaft = thetaf - thetat;
-      thetatf = thetat - thetaf;
-
-      // Sf2 and St2 are the constraints
-      PetscScalar Pf, Qf, Pt, Qt;
-
-      Pf = Gff * Vmf * Vmf +
-           Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-      Qf = -Bff * Vmf * Vmf +
-           Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-
-      Pt = Gtt * Vmt * Vmt +
-           Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-      Qt = -Btt * Vmt * Vmt +
-           Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-
-      PetscScalar dSf2_dPf, dSf2_dQf, dSt2_dPt, dSt2_dQt;
-
-      dSf2_dPf = 2. * Pf;
-      dSf2_dQf = 2. * Qf;
-      dSt2_dPt = 2. * Pt;
-      dSt2_dQt = 2. * Qt;
-
-      PetscScalar dPf_dthetaf, dPf_dVmf, dPf_dthetat, dPf_dVmt;
-      PetscScalar dQf_dthetaf, dQf_dVmf, dQf_dthetat, dQf_dVmt;
-      PetscScalar dPt_dthetaf, dPt_dVmf, dPt_dthetat, dPt_dVmt;
-      PetscScalar dQt_dthetaf, dQt_dVmf, dQt_dthetat, dQt_dVmt;
-
-      dPf_dthetaf = Vmf * Vmt * (-Gft * sin(thetaft) + Bft * cos(thetaft));
-      dPf_dVmf =
-          2. * Gff * Vmf + Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-      dPf_dthetat = Vmf * Vmt * (Gft * sin(thetaft) - Bft * cos(thetaft));
-      dPf_dVmt = Vmf * (Gft * cos(thetaft) + Bft * sin(thetaft));
-
-      dQf_dthetaf = Vmf * Vmt * (Bft * sin(thetaft) + Gft * cos(thetaft));
-      dQf_dVmf =
-          -2. * Bff * Vmf + Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-      dQf_dthetat = Vmf * Vmt * (-Bft * sin(thetaft) - Gft * cos(thetaft));
-      dQf_dVmt = Vmf * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-
-      dPt_dthetat = Vmt * Vmf * (-Gtf * sin(thetatf) + Btf * cos(thetatf));
-      dPt_dVmt =
-          2. * Gtt * Vmt + Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-      dPt_dthetaf = Vmt * Vmf * (Gtf * sin(thetatf) - Btf * cos(thetatf));
-      dPt_dVmf = Vmt * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-
-      dQt_dthetat = Vmt * Vmf * (Btf * sin(thetatf) + Gtf * cos(thetatf));
-      dQt_dVmt =
-          -2. * Btt * Vmt + Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-      dQt_dthetaf = Vmt * Vmf * (-Btf * sin(thetatf) - Gtf * cos(thetatf));
-      dQt_dVmf = Vmt * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-
-      PetscScalar d2Pf_dthetaf_dthetaf, d2Pf_dthetaf_dVmf, d2Pf_dthetaf_dthetat,
-          d2Pf_dthetaf_dVmt;
-      PetscScalar d2Pf_dVmf_dthetaf, d2Pf_dVmf_dVmf, d2Pf_dVmf_dthetat,
-          d2Pf_dVmf_dVmt;
-      PetscScalar d2Pf_dthetat_dthetaf, d2Pf_dthetat_dVmf, d2Pf_dthetat_dthetat,
-          d2Pf_dthetat_dVmt;
-      PetscScalar d2Pf_dVmt_dthetaf, d2Pf_dVmt_dVmf, d2Pf_dVmt_dthetat,
-          d2Pf_dVmt_dVmt;
-
-      /* dPf_dthetaf = Vmf*Vmt*(-Gft*sin(thetaft) + Bft*cos(thetaft)); */
-      d2Pf_dthetaf_dthetaf =
-          -Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-      d2Pf_dthetaf_dVmf = Vmt * (-Gft * sin(thetaft) + Bft * cos(thetaft));
-      d2Pf_dthetaf_dthetat =
-          Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-      d2Pf_dthetaf_dVmt = Vmf * (-Gft * sin(thetaft) + Bft * cos(thetaft));
-
-      /* dPf_Vmf  = 2*Gff*Vmf + Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft)); */
-      d2Pf_dVmf_dthetaf = Vmt * (-Gft * sin(thetaft) + Bft * cos(thetaft));
-      d2Pf_dVmf_dVmf = 2 * Gff;
-      d2Pf_dVmf_dthetat = Vmt * (Gft * sin(thetaft) - Bft * cos(thetaft));
-      d2Pf_dVmf_dVmt = (Gft * cos(thetaft) + Bft * sin(thetaft));
-
-      /* dPf_dthetat = Vmf*Vmt*(Gft*sin(thetaft) - Bft*cos(thetaft)); */
-      d2Pf_dthetat_dthetaf =
-          Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-      d2Pf_dthetat_dVmf = Vmt * (Gft * sin(thetaft) - Bft * cos(thetaft));
-      d2Pf_dthetat_dthetat =
-          Vmf * Vmt * (-Gft * cos(thetaft) - Bft * sin(thetaft));
-      d2Pf_dthetat_dVmt = Vmf * (Gft * sin(thetaft) - Bft * cos(thetaft));
-
-      /* dPf_dVmt = Vmf*(Gft*cos(thetaft) + Bft*sin(thetaft)); */
-      d2Pf_dVmt_dthetaf = Vmf * (-Gft * sin(thetaft) + Bft * cos(thetaft));
-      d2Pf_dVmt_dVmf = (Gft * cos(thetaft) + Bft * sin(thetaft));
-      d2Pf_dVmt_dthetat = Vmf * (Gft * sin(thetaft) - Bft * cos(thetaft));
-      d2Pf_dVmt_dVmt = 0.0;
-
-      PetscScalar d2Qf_dthetaf_dthetaf, d2Qf_dthetaf_dVmf, d2Qf_dthetaf_dthetat,
-          d2Qf_dthetaf_dVmt;
-      PetscScalar d2Qf_dVmf_dthetaf, d2Qf_dVmf_dVmf, d2Qf_dVmf_dthetat,
-          d2Qf_dVmf_dVmt;
-      PetscScalar d2Qf_dthetat_dthetaf, d2Qf_dthetat_dVmf, d2Qf_dthetat_dthetat,
-          d2Qf_dthetat_dVmt;
-      PetscScalar d2Qf_dVmt_dthetaf, d2Qf_dVmt_dVmf, d2Qf_dVmt_dthetat,
-          d2Qf_dVmt_dVmt;
-
-      /* dQf_dthetaf = Vmf*Vmt*(Bft*sin(thetaft) + Gft*cos(thetaft)); */
-      d2Qf_dthetaf_dthetaf =
-          Vmf * Vmt * (Bft * cos(thetaft) - Gft * sin(thetaft));
-      d2Qf_dthetaf_dVmf = Vmt * (Bft * sin(thetaft) + Gft * cos(thetaft));
-      d2Qf_dthetaf_dthetat =
-          Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-      d2Qf_dthetaf_dVmt = Vmf * (Bft * sin(thetaft) + Gft * cos(thetaft));
-
-      /* dQf_dVmf = -2*Bff*Vmf + Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft)); */
-      d2Qf_dVmf_dthetaf = Vmt * (Bft * sin(thetaft) + Gft * cos(thetaft));
-      d2Qf_dVmf_dVmf = -2 * Bff;
-      d2Qf_dVmf_dthetat = Vmt * (-Bft * sin(thetaft) - Gft * cos(thetaft));
-      d2Qf_dVmf_dVmt = (-Bft * cos(thetaft) + Gft * sin(thetaft));
-
-      /* dQf_dthetat = Vmf*Vmt*(-Bft*sin(thetaft) - Gft*cos(thetaft)); */
-      d2Qf_dthetat_dthetaf =
-          Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-      d2Qf_dthetat_dVmf = Vmt * (-Bft * sin(thetaft) - Gft * cos(thetaft));
-      d2Qf_dthetat_dthetat =
-          Vmf * Vmt * (Bft * cos(thetaft) - Gft * sin(thetaft));
-      d2Qf_dthetat_dVmt = Vmf * (-Bft * sin(thetaft) - Gft * cos(thetaft));
-
-      /* dQf_dVmt = Vmf*(-Bft*cos(thetaft) + Gft*sin(thetaft)); */
-      d2Qf_dVmt_dthetaf = Vmf * (Bft * sin(thetaft) + Gft * cos(thetaft));
-      d2Qf_dVmt_dVmf = (-Bft * cos(thetaft) + Gft * sin(thetaft));
-      d2Qf_dVmt_dthetat = Vmf * (-Bft * sin(thetaft) - Gft * cos(thetaft));
-      d2Qf_dVmt_dVmt = 0.0;
-
-      PetscScalar d2Pt_dthetat_dthetat, d2Pt_dthetat_dVmt, d2Pt_dthetat_dthetaf,
-          d2Pt_dthetat_dVmf;
-      PetscScalar d2Pt_dVmt_dthetat, d2Pt_dVmt_dVmt, d2Pt_dVmt_dthetaf,
-          d2Pt_dVmt_dVmf;
-      PetscScalar d2Pt_dthetaf_dthetat, d2Pt_dthetaf_dVmt, d2Pt_dthetaf_dthetaf,
-          d2Pt_dthetaf_dVmf;
-      PetscScalar d2Pt_dVmf_dthetat, d2Pt_dVmf_dVmt, d2Pt_dVmf_dthetaf,
-          d2Pt_dVmf_dVmf;
-
-      /* dPt_dthetat = Vmf*Vmt*(-Gtf*sin(thetatf) + Btf*cos(thetatf)); */
-      d2Pt_dthetat_dthetat =
-          Vmf * Vmt * (-Gtf * cos(thetatf) - Btf * sin(thetatf));
-      d2Pt_dthetat_dVmt = Vmf * (-Gtf * sin(thetatf) + Btf * cos(thetatf));
-      d2Pt_dthetat_dthetaf =
-          Vmf * Vmt * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-      d2Pt_dthetat_dVmf = Vmt * (-Gtf * sin(thetatf) + Btf * cos(thetatf));
-
-      /* dPt_Vmt  = 2*Gtt*Vmt + Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf)); */
-      d2Pt_dVmt_dthetat = Vmf * (-Gtf * sin(thetatf) + Bft * cos(thetatf));
-      d2Pt_dVmt_dVmt = 2 * Gtt;
-      d2Pt_dVmt_dthetaf = Vmf * (Gtf * sin(thetatf) - Btf * cos(thetatf));
-      d2Pt_dVmt_dVmf = (Gtf * cos(thetatf) + Btf * sin(thetatf));
-
-      /* dPt_dthetaf = Vmf*Vmt*(Gtf*sin(thetatf) - Btf*cos(thetatf)); */
-      d2Pt_dthetaf_dthetat =
-          Vmf * Vmt * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-      d2Pt_dthetaf_dVmt = Vmf * (Gtf * sin(thetatf) - Btf * cos(thetatf));
-      d2Pt_dthetaf_dthetaf =
-          Vmf * Vmt * (-Gtf * cos(thetatf) - Btf * sin(thetatf));
-      d2Pt_dthetaf_dVmf = Vmt * (Gtf * sin(thetatf) - Btf * cos(thetatf));
-
-      /* dPt_dVmf = Vmt*(Gtf*cos(thetatf) + Btf*sin(thetatf)); */
-      d2Pt_dVmf_dthetat = Vmt * (-Gtf * sin(thetatf) + Btf * cos(thetatf));
-      d2Pt_dVmf_dVmt = (Gtf * cos(thetatf) + Btf * sin(thetatf));
-      d2Pt_dVmf_dthetaf = Vmt * (Gtf * sin(thetatf) - Btf * cos(thetatf));
-      d2Pt_dVmf_dVmf = 0.0;
-
-      PetscScalar d2Qt_dthetaf_dthetaf, d2Qt_dthetaf_dVmf, d2Qt_dthetaf_dthetat,
-          d2Qt_dthetaf_dVmt;
-      PetscScalar d2Qt_dVmf_dthetaf, d2Qt_dVmf_dVmf, d2Qt_dVmf_dthetat,
-          d2Qt_dVmf_dVmt;
-      PetscScalar d2Qt_dthetat_dthetaf, d2Qt_dthetat_dVmf, d2Qt_dthetat_dthetat,
-          d2Qt_dthetat_dVmt;
-      PetscScalar d2Qt_dVmt_dthetaf, d2Qt_dVmt_dVmf, d2Qt_dVmt_dthetat,
-          d2Qt_dVmt_dVmt;
-
-      /* dQt_dthetat = Vmf*Vmt*(Btf*sin(thetatf) + Gtf*cos(thetatf)); */
-      d2Qt_dthetat_dthetat =
-          Vmf * Vmt * (Btf * cos(thetatf) - Gtf * sin(thetatf));
-      d2Qt_dthetat_dVmt = Vmf * (Btf * sin(thetatf) + Gtf * cos(thetatf));
-      d2Qt_dthetat_dthetaf =
-          Vmf * Vmt * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-      d2Qt_dthetat_dVmf = Vmf * (Btf * sin(thetatf) + Gtf * cos(thetatf));
-
-      /* dQt_dVmt = -2*Btt*Vmt + Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf)); */
-      d2Qt_dVmt_dthetat = Vmf * (Btf * sin(thetatf) + Gtf * cos(thetatf));
-      d2Qt_dVmt_dVmt = -2 * Btt;
-      d2Qt_dVmt_dthetaf = Vmf * (-Btf * sin(thetatf) + Gtf * cos(thetatf));
-      d2Qt_dVmt_dVmf = (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-
-      /* dQt_dthetaf = Vmf*Vmt*(-Btf*sin(thetatf) - Gtf*cos(thetatf)); */
-      d2Qt_dthetaf_dthetat =
-          Vmf * Vmt * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-      d2Qt_dthetaf_dVmt = Vmf * (-Btf * sin(thetatf) - Gtf * cos(thetatf));
-      d2Qt_dthetaf_dthetaf =
-          Vmf * Vmt * (Btf * cos(thetatf) - Gtf * sin(thetatf));
-      d2Qt_dthetaf_dVmf = Vmt * (-Btf * sin(thetatf) - Gtf * cos(thetatf));
-
-      /* dQt_dVmf = Vmt*(-Btf*cos(thetatf) + Gtf*sin(thetatf)); */
-      d2Qt_dVmf_dthetat = Vmt * (Btf * sin(thetatf) + Gtf * cos(thetatf));
-      d2Qt_dVmf_dVmt = (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-      d2Qt_dVmf_dthetaf = Vmt * (-Btf * sin(thetatf) - Gtf * cos(thetatf));
-      d2Qt_dVmf_dVmf = 0.0;
-
-      PetscScalar d2Sf2_dthetaf_dthetaf = 0.0, d2Sf2_dthetaf_dVmf = 0.0,
-                  d2Sf2_dthetaf_dthetat = 0.0, d2Sf2_dthetaf_dVmt = 0.0;
-      PetscScalar d2St2_dthetaf_dthetaf = 0.0, d2St2_dthetaf_dVmf = 0.0,
-                  d2St2_dthetaf_dthetat = 0.0, d2St2_dthetaf_dVmt = 0.0;
-
-      d2Sf2_dthetaf_dthetaf =
-          2 * dPf_dthetaf * dPf_dthetaf + dSf2_dPf * d2Pf_dthetaf_dthetaf +
-          2 * dQf_dthetaf * dQf_dthetaf + dSf2_dQf * d2Qf_dthetaf_dthetaf;
-      d2Sf2_dthetaf_dVmf =
-          2 * dPf_dVmf * dPf_dthetaf + dSf2_dPf * d2Pf_dthetaf_dVmf +
-          2 * dQf_dVmf * dQf_dthetaf + dSf2_dQf * d2Qf_dthetaf_dVmf;
-      d2Sf2_dthetaf_dthetat =
-          2 * dPf_dthetat * dPf_dthetaf + dSf2_dPf * d2Pf_dthetaf_dthetat +
-          2 * dQf_dthetat * dQf_dthetaf + dSf2_dQf * d2Qf_dthetaf_dthetat;
-      d2Sf2_dthetaf_dVmt =
-          2 * dPf_dVmt * dPf_dthetaf + dSf2_dPf * d2Pf_dthetaf_dVmt +
-          2 * dQf_dVmt * dQf_dthetaf + dSf2_dQf * d2Qf_dthetaf_dVmt;
-
-      d2St2_dthetaf_dthetaf =
-          2 * dPt_dthetaf * dPt_dthetaf + dSt2_dPt * d2Pt_dthetaf_dthetaf +
-          2 * dQt_dthetaf * dQt_dthetaf + dSt2_dQt * d2Qt_dthetaf_dthetaf;
-      d2St2_dthetaf_dVmf =
-          2 * dPt_dVmf * dPt_dthetaf + dSt2_dPt * d2Pt_dthetaf_dVmf +
-          2 * dQt_dVmf * dQt_dthetaf + dSt2_dQt * d2Qt_dthetaf_dVmf;
-      d2St2_dthetaf_dthetat =
-          2 * dPt_dthetat * dPt_dthetaf + dSt2_dPt * d2Pt_dthetaf_dthetat +
-          2 * dQt_dthetat * dQt_dthetaf + dSt2_dQt * d2Qt_dthetaf_dthetat;
-      d2St2_dthetaf_dVmt =
-          2 * dPt_dVmt * dPt_dthetaf + dSt2_dPt * d2Pt_dthetaf_dVmt +
-          2 * dQt_dVmt * dQt_dthetaf + dSt2_dQt * d2Qt_dthetaf_dVmt;
-
-      val[0] = val[1] = val[2] = val[3] = 0.0;
-      col[0] = xlocglobf;
-      col[1] = xlocglobf + 1;
-      col[2] = xlocglobt;
-      col[3] = xlocglobt + 1;
-      row[0] = xlocglobf;
-      val[0] = lambda[gloc] * d2Sf2_dthetaf_dthetaf +
-               lambda[gloc + 1] * d2St2_dthetaf_dthetaf;
-      val[1] = lambda[gloc] * d2Sf2_dthetaf_dVmf +
-               lambda[gloc + 1] * d2St2_dthetaf_dVmf;
-      val[2] = lambda[gloc] * d2Sf2_dthetaf_dthetat +
-               lambda[gloc + 1] * d2St2_dthetaf_dthetat;
-      val[3] = lambda[gloc] * d2Sf2_dthetaf_dVmt +
-               lambda[gloc + 1] * d2St2_dthetaf_dVmt;
-
-      ierr = MatSetValues(H, 1, row, 4, col, val, ADD_VALUES);
-      CHKERRQ(ierr);
-
-      PetscScalar d2Sf2_dVmf_dthetaf, d2Sf2_dVmf_dVmf, d2Sf2_dVmf_dthetat,
-          d2Sf2_dVmf_dVmt;
-      PetscScalar d2St2_dVmf_dthetaf, d2St2_dVmf_dVmf, d2St2_dVmf_dthetat,
-          d2St2_dVmf_dVmt;
-
-      d2Sf2_dVmf_dthetaf =
-          2 * dPf_dthetaf * dPf_dVmf + dSf2_dPf * d2Pf_dVmf_dthetaf +
-          2 * dQf_dthetaf * dQf_dVmf + dSf2_dQf * d2Qf_dVmf_dthetaf;
-      d2Sf2_dVmf_dVmf = 2 * dPf_dVmf * dPf_dVmf + dSf2_dPf * d2Pf_dVmf_dVmf +
-                        2 * dQf_dVmf * dQf_dVmf + dSf2_dQf * d2Qf_dVmf_dVmf;
-      d2Sf2_dVmf_dthetat =
-          2 * dPf_dthetat * dPf_dVmf + dSf2_dPf * d2Pf_dVmf_dthetat +
-          2 * dQf_dthetat * dQf_dVmf + dSf2_dQf * d2Qf_dVmf_dthetat;
-      d2Sf2_dVmf_dVmt = 2 * dPf_dVmt * dPf_dVmf + dSf2_dPf * d2Pf_dVmf_dVmt +
-                        2 * dQf_dVmt * dQf_dVmf + dSf2_dQf * d2Qf_dVmf_dVmt;
-
-      d2St2_dVmf_dthetaf =
-          2 * dPt_dthetaf * dPt_dVmf + dSt2_dPt * d2Pt_dVmf_dthetaf +
-          2 * dQt_dthetaf * dQt_dVmf + dSt2_dQt * d2Qt_dVmf_dthetaf;
-      d2St2_dVmf_dVmf = 2 * dPt_dVmf * dPt_dVmf + dSt2_dPt * d2Pt_dVmf_dVmf +
-                        2 * dQt_dVmf * dQt_dVmf + dSt2_dQt * d2Qt_dVmf_dVmf;
-      d2St2_dVmf_dthetat =
-          2 * dPt_dthetat * dPt_dVmf + dSt2_dPt * d2Pt_dVmf_dthetat +
-          2 * dQt_dthetat * dQt_dVmf + dSt2_dQt * d2Qt_dVmf_dthetat;
-      d2St2_dVmf_dVmt = 2 * dPt_dVmt * dPt_dVmf + dSt2_dPt * d2Pt_dVmf_dVmt +
-                        2 * dQt_dVmt * dQt_dVmf + dSt2_dQt * d2Qt_dVmf_dVmt;
-
-      val[0] = val[1] = val[2] = val[3] = 0.0;
-      col[0] = xlocglobf;
-      col[1] = xlocglobf + 1;
-      col[2] = xlocglobt;
-      col[3] = xlocglobt + 1;
-      row[0] = xlocglobf + 1;
-      val[0] = lambda[gloc] * d2Sf2_dVmf_dthetaf +
-               lambda[gloc + 1] * d2St2_dVmf_dthetaf;
-      val[1] =
-          lambda[gloc] * d2Sf2_dVmf_dVmf + lambda[gloc + 1] * d2St2_dVmf_dVmf;
-      val[2] = lambda[gloc] * d2Sf2_dVmf_dthetat +
-               lambda[gloc + 1] * d2St2_dVmf_dthetat;
-      val[3] =
-          lambda[gloc] * d2Sf2_dVmf_dVmt + lambda[gloc + 1] * d2St2_dVmf_dVmt;
-      ierr = MatSetValues(H, 1, row, 4, col, val, ADD_VALUES);
-      CHKERRQ(ierr);
-
-      PetscScalar d2Sf2_dthetat_dthetaf, d2Sf2_dthetat_dVmf,
-          d2Sf2_dthetat_dthetat, d2Sf2_dthetat_dVmt;
-      PetscScalar d2St2_dthetat_dthetaf, d2St2_dthetat_dVmf,
-          d2St2_dthetat_dthetat, d2St2_dthetat_dVmt;
-
-      d2Sf2_dthetat_dthetaf =
-          2 * dPf_dthetaf * dPf_dthetat + dSf2_dPf * d2Pf_dthetat_dthetaf +
-          2 * dQf_dthetat * dQf_dthetaf + dSf2_dQf * d2Qf_dthetat_dthetaf;
-      d2Sf2_dthetat_dVmf =
-          2 * dPf_dVmf * dPf_dthetat + dSf2_dPf * d2Pf_dthetat_dVmf +
-          2 * dQf_dthetat * dQf_dVmf + dSf2_dQf * d2Qf_dthetat_dVmf;
-      d2Sf2_dthetat_dthetat =
-          2 * dPf_dthetat * dPf_dthetat + dSf2_dPf * d2Pf_dthetat_dthetat +
-          2 * dQf_dthetat * dQf_dthetat + dSf2_dQf * d2Qf_dthetat_dthetat;
-      d2Sf2_dthetat_dVmt =
-          2 * dPf_dVmt * dPf_dthetat + dSf2_dPf * d2Pf_dthetat_dVmt +
-          2 * dQf_dthetat * dQf_dVmt + dSf2_dQf * d2Qf_dthetat_dVmt;
-
-      d2St2_dthetat_dthetaf =
-          2 * dPt_dthetaf * dPt_dthetat + dSt2_dPt * d2Pt_dthetat_dthetaf +
-          2 * dQt_dthetaf * dQt_dthetat + dSt2_dQt * d2Qt_dthetat_dthetaf;
-      d2St2_dthetat_dVmf =
-          2 * dPt_dVmf * dPt_dthetat + dSt2_dPt * d2Pt_dthetat_dVmf +
-          2 * dQt_dVmf * dQt_dthetat + dSt2_dQt * d2Qt_dthetat_dVmf;
-      d2St2_dthetat_dthetat =
-          2 * dPt_dthetat * dPt_dthetat + dSt2_dPt * d2Pt_dthetat_dthetat +
-          2 * dQt_dthetat * dQt_dthetat + dSt2_dQt * d2Qt_dthetat_dthetat;
-      d2St2_dthetat_dVmt =
-          2 * dPt_dVmt * dPt_dthetat + dSt2_dPt * d2Pt_dthetat_dVmt +
-          2 * dQt_dVmt * dQt_dthetat + dSt2_dQt * d2Qt_dthetat_dVmt;
-
-      val[0] = val[1] = val[2] = val[3] = 0.0;
-      col[0] = xlocglobf;
-      col[1] = xlocglobf + 1;
-      col[2] = xlocglobt;
-      col[3] = xlocglobt + 1;
-      row[0] = xlocglobt;
-
-      val[0] = lambda[gloc] * d2Sf2_dthetat_dthetaf +
-               lambda[gloc + 1] * d2St2_dthetat_dthetaf;
-      val[1] = lambda[gloc] * d2Sf2_dthetat_dVmf +
-               lambda[gloc + 1] * d2St2_dthetat_dVmf;
-      val[2] = lambda[gloc] * d2Sf2_dthetat_dthetat +
-               lambda[gloc + 1] * d2St2_dthetat_dthetat;
-      val[3] = lambda[gloc] * d2Sf2_dthetat_dVmt +
-               lambda[gloc + 1] * d2St2_dthetat_dVmt;
-
-      ierr = MatSetValues(H, 1, row, 4, col, val, ADD_VALUES);
-      CHKERRQ(ierr);
-
-      PetscScalar d2Sf2_dVmt_dthetaf, d2Sf2_dVmt_dVmf, d2Sf2_dVmt_dthetat,
-          d2Sf2_dVmt_dVmt;
-      PetscScalar d2St2_dVmt_dthetaf, d2St2_dVmt_dVmf, d2St2_dVmt_dthetat,
-          d2St2_dVmt_dVmt;
-
-      d2Sf2_dVmt_dthetaf =
-          2 * dPf_dthetaf * dPf_dVmt + dSf2_dPf * d2Pf_dVmt_dthetaf +
-          2 * dQf_dthetaf * dQf_dVmt + dSf2_dQf * d2Qf_dVmt_dthetaf;
-      d2Sf2_dVmt_dVmf = 2 * dPf_dVmf * dPf_dVmt + dSf2_dPf * d2Pf_dVmt_dVmf +
-                        2 * dQf_dVmf * dQf_dVmt + dSf2_dQf * d2Qf_dVmt_dVmf;
-      d2Sf2_dVmt_dthetat =
-          2 * dPf_dthetat * dPf_dVmt + dSf2_dPf * d2Pf_dVmt_dthetat +
-          2 * dQf_dthetat * dQf_dVmt + dSf2_dQf * d2Qf_dVmt_dthetat;
-      d2Sf2_dVmt_dVmt = 2 * dPf_dVmt * dPf_dVmt + dSf2_dPf * d2Pf_dVmt_dVmt +
-                        2 * dQf_dVmt * dQf_dVmt + dSf2_dQf * d2Qf_dVmt_dVmt;
-
-      d2St2_dVmt_dthetaf =
-          2 * dPt_dthetaf * dPt_dVmt + dSt2_dPt * d2Pt_dVmt_dthetaf +
-          2 * dQt_dthetaf * dQt_dVmt + dSt2_dQt * d2Qt_dVmt_dthetaf;
-      d2St2_dVmt_dVmf = 2 * dPt_dVmf * dPt_dVmt + dSt2_dPt * d2Pt_dVmt_dVmf +
-                        2 * dQt_dVmf * dQt_dVmt + dSt2_dQt * d2Qt_dVmt_dVmf;
-      d2St2_dVmt_dthetat =
-          2 * dPt_dthetat * dPt_dVmt + dSt2_dPt * d2Pt_dVmt_dthetat +
-          2 * dQt_dthetat * dQt_dVmt + dSt2_dQt * d2Qt_dVmt_dthetat;
-      d2St2_dVmt_dVmt = 2 * dPt_dVmt * dPt_dVmt + dSt2_dPt * d2Pt_dVmt_dVmt +
-                        2 * dQt_dVmt * dQt_dVmt + dSt2_dQt * d2Qt_dVmt_dVmt;
-
-      val[0] = val[1] = val[2] = val[3] = 0.0;
-      col[0] = xlocglobf;
-      col[1] = xlocglobf + 1;
-      col[2] = xlocglobt;
-      col[3] = xlocglobt + 1;
-      row[0] = xlocglobt + 1;
-
-      val[0] = lambda[gloc] * d2Sf2_dVmt_dthetaf +
-               lambda[gloc + 1] * d2St2_dVmt_dthetaf;
-      val[1] =
-          lambda[gloc] * d2Sf2_dVmt_dVmf + lambda[gloc + 1] * d2St2_dVmt_dVmf;
-      val[2] = lambda[gloc] * d2Sf2_dVmt_dthetat +
-               lambda[gloc + 1] * d2St2_dVmt_dthetat;
-      val[3] =
-          lambda[gloc] * d2Sf2_dVmt_dVmt + lambda[gloc + 1] * d2St2_dVmt_dVmt;
-
-      ierr = MatSetValues(H, 1, row, 4, col, val, ADD_VALUES);
-      CHKERRQ(ierr);
-      // Must be inside for loop since there's a continue condition
-      flps += (185 + (16 * EXAGO_FLOPS_SINOP) + (16 * EXAGO_FLOPS_COSOP));
-    }
+    PetscScalar dSf2_dPf, dSf2_dQf, dSt2_dPt, dSt2_dQt;
+    
+    dSf2_dPf = 2. * Pf;
+    dSf2_dQf = 2. * Qf;
+    dSt2_dPt = 2. * Pt;
+    dSt2_dQt = 2. * Qt;
+    
+    PetscScalar dPf_dthetaf, dPf_dVmf, dPf_dthetat, dPf_dVmt;
+    PetscScalar dQf_dthetaf, dQf_dVmf, dQf_dthetat, dQf_dVmt;
+    PetscScalar dPt_dthetaf, dPt_dVmf, dPt_dthetat, dPt_dVmt;
+    PetscScalar dQt_dthetaf, dQt_dVmf, dQt_dthetat, dQt_dVmt;
+    
+    dPf_dthetaf = Vmf * Vmt * (-Gft * sin(thetaft) + Bft * cos(thetaft));
+    dPf_dVmf =
+      2. * Gff * Vmf + Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+    dPf_dthetat = Vmf * Vmt * (Gft * sin(thetaft) - Bft * cos(thetaft));
+    dPf_dVmt = Vmf * (Gft * cos(thetaft) + Bft * sin(thetaft));
+    
+    dQf_dthetaf = Vmf * Vmt * (Bft * sin(thetaft) + Gft * cos(thetaft));
+    dQf_dVmf =
+      -2. * Bff * Vmf + Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+    dQf_dthetat = Vmf * Vmt * (-Bft * sin(thetaft) - Gft * cos(thetaft));
+    dQf_dVmt = Vmf * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+    
+    dPt_dthetat = Vmt * Vmf * (-Gtf * sin(thetatf) + Btf * cos(thetatf));
+    dPt_dVmt =
+      2. * Gtt * Vmt + Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+    dPt_dthetaf = Vmt * Vmf * (Gtf * sin(thetatf) - Btf * cos(thetatf));
+    dPt_dVmf = Vmt * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+    
+    dQt_dthetat = Vmt * Vmf * (Btf * sin(thetatf) + Gtf * cos(thetatf));
+    dQt_dVmt =
+      -2. * Btt * Vmt + Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+    dQt_dthetaf = Vmt * Vmf * (-Btf * sin(thetatf) - Gtf * cos(thetatf));
+    dQt_dVmf = Vmt * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+    
+    PetscScalar d2Pf_dthetaf_dthetaf, d2Pf_dthetaf_dVmf, d2Pf_dthetaf_dthetat,
+      d2Pf_dthetaf_dVmt;
+    PetscScalar d2Pf_dVmf_dthetaf, d2Pf_dVmf_dVmf, d2Pf_dVmf_dthetat,
+      d2Pf_dVmf_dVmt;
+    PetscScalar d2Pf_dthetat_dthetaf, d2Pf_dthetat_dVmf, d2Pf_dthetat_dthetat,
+      d2Pf_dthetat_dVmt;
+    PetscScalar d2Pf_dVmt_dthetaf, d2Pf_dVmt_dVmf, d2Pf_dVmt_dthetat,
+      d2Pf_dVmt_dVmt;
+    
+    /* dPf_dthetaf = Vmf*Vmt*(-Gft*sin(thetaft) + Bft*cos(thetaft)); */
+    d2Pf_dthetaf_dthetaf =
+      -Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+    d2Pf_dthetaf_dVmf = Vmt * (-Gft * sin(thetaft) + Bft * cos(thetaft));
+    d2Pf_dthetaf_dthetat =
+      Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+    d2Pf_dthetaf_dVmt = Vmf * (-Gft * sin(thetaft) + Bft * cos(thetaft));
+    
+    /* dPf_Vmf  = 2*Gff*Vmf + Vmt*(Gft*cos(thetaft) + Bft*sin(thetaft)); */
+    d2Pf_dVmf_dthetaf = Vmt * (-Gft * sin(thetaft) + Bft * cos(thetaft));
+    d2Pf_dVmf_dVmf = 2 * Gff;
+    d2Pf_dVmf_dthetat = Vmt * (Gft * sin(thetaft) - Bft * cos(thetaft));
+    d2Pf_dVmf_dVmt = (Gft * cos(thetaft) + Bft * sin(thetaft));
+    
+    /* dPf_dthetat = Vmf*Vmt*(Gft*sin(thetaft) - Bft*cos(thetaft)); */
+    d2Pf_dthetat_dthetaf =
+      Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+    d2Pf_dthetat_dVmf = Vmt * (Gft * sin(thetaft) - Bft * cos(thetaft));
+    d2Pf_dthetat_dthetat =
+      Vmf * Vmt * (-Gft * cos(thetaft) - Bft * sin(thetaft));
+    d2Pf_dthetat_dVmt = Vmf * (Gft * sin(thetaft) - Bft * cos(thetaft));
+    
+    /* dPf_dVmt = Vmf*(Gft*cos(thetaft) + Bft*sin(thetaft)); */
+    d2Pf_dVmt_dthetaf = Vmf * (-Gft * sin(thetaft) + Bft * cos(thetaft));
+    d2Pf_dVmt_dVmf = (Gft * cos(thetaft) + Bft * sin(thetaft));
+    d2Pf_dVmt_dthetat = Vmf * (Gft * sin(thetaft) - Bft * cos(thetaft));
+    d2Pf_dVmt_dVmt = 0.0;
+    
+    PetscScalar d2Qf_dthetaf_dthetaf, d2Qf_dthetaf_dVmf, d2Qf_dthetaf_dthetat,
+      d2Qf_dthetaf_dVmt;
+    PetscScalar d2Qf_dVmf_dthetaf, d2Qf_dVmf_dVmf, d2Qf_dVmf_dthetat,
+      d2Qf_dVmf_dVmt;
+    PetscScalar d2Qf_dthetat_dthetaf, d2Qf_dthetat_dVmf, d2Qf_dthetat_dthetat,
+      d2Qf_dthetat_dVmt;
+    PetscScalar d2Qf_dVmt_dthetaf, d2Qf_dVmt_dVmf, d2Qf_dVmt_dthetat,
+      d2Qf_dVmt_dVmt;
+    
+    /* dQf_dthetaf = Vmf*Vmt*(Bft*sin(thetaft) + Gft*cos(thetaft)); */
+    d2Qf_dthetaf_dthetaf =
+      Vmf * Vmt * (Bft * cos(thetaft) - Gft * sin(thetaft));
+    d2Qf_dthetaf_dVmf = Vmt * (Bft * sin(thetaft) + Gft * cos(thetaft));
+    d2Qf_dthetaf_dthetat =
+      Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+    d2Qf_dthetaf_dVmt = Vmf * (Bft * sin(thetaft) + Gft * cos(thetaft));
+    
+    /* dQf_dVmf = -2*Bff*Vmf + Vmt*(-Bft*cos(thetaft) + Gft*sin(thetaft)); */
+    d2Qf_dVmf_dthetaf = Vmt * (Bft * sin(thetaft) + Gft * cos(thetaft));
+    d2Qf_dVmf_dVmf = -2 * Bff;
+    d2Qf_dVmf_dthetat = Vmt * (-Bft * sin(thetaft) - Gft * cos(thetaft));
+    d2Qf_dVmf_dVmt = (-Bft * cos(thetaft) + Gft * sin(thetaft));
+    
+    /* dQf_dthetat = Vmf*Vmt*(-Bft*sin(thetaft) - Gft*cos(thetaft)); */
+    d2Qf_dthetat_dthetaf =
+      Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+    d2Qf_dthetat_dVmf = Vmt * (-Bft * sin(thetaft) - Gft * cos(thetaft));
+    d2Qf_dthetat_dthetat =
+      Vmf * Vmt * (Bft * cos(thetaft) - Gft * sin(thetaft));
+    d2Qf_dthetat_dVmt = Vmf * (-Bft * sin(thetaft) - Gft * cos(thetaft));
+    
+    /* dQf_dVmt = Vmf*(-Bft*cos(thetaft) + Gft*sin(thetaft)); */
+    d2Qf_dVmt_dthetaf = Vmf * (Bft * sin(thetaft) + Gft * cos(thetaft));
+    d2Qf_dVmt_dVmf = (-Bft * cos(thetaft) + Gft * sin(thetaft));
+    d2Qf_dVmt_dthetat = Vmf * (-Bft * sin(thetaft) - Gft * cos(thetaft));
+    d2Qf_dVmt_dVmt = 0.0;
+    
+    PetscScalar d2Pt_dthetat_dthetat, d2Pt_dthetat_dVmt, d2Pt_dthetat_dthetaf,
+      d2Pt_dthetat_dVmf;
+    PetscScalar d2Pt_dVmt_dthetat, d2Pt_dVmt_dVmt, d2Pt_dVmt_dthetaf,
+      d2Pt_dVmt_dVmf;
+    PetscScalar d2Pt_dthetaf_dthetat, d2Pt_dthetaf_dVmt, d2Pt_dthetaf_dthetaf,
+      d2Pt_dthetaf_dVmf;
+    PetscScalar d2Pt_dVmf_dthetat, d2Pt_dVmf_dVmt, d2Pt_dVmf_dthetaf,
+      d2Pt_dVmf_dVmf;
+    
+    /* dPt_dthetat = Vmf*Vmt*(-Gtf*sin(thetatf) + Btf*cos(thetatf)); */
+    d2Pt_dthetat_dthetat =
+      Vmf * Vmt * (-Gtf * cos(thetatf) - Btf * sin(thetatf));
+    d2Pt_dthetat_dVmt = Vmf * (-Gtf * sin(thetatf) + Btf * cos(thetatf));
+    d2Pt_dthetat_dthetaf =
+      Vmf * Vmt * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+    d2Pt_dthetat_dVmf = Vmt * (-Gtf * sin(thetatf) + Btf * cos(thetatf));
+    
+    /* dPt_Vmt  = 2*Gtt*Vmt + Vmf*(Gtf*cos(thetatf) + Btf*sin(thetatf)); */
+    d2Pt_dVmt_dthetat = Vmf * (-Gtf * sin(thetatf) + Bft * cos(thetatf));
+    d2Pt_dVmt_dVmt = 2 * Gtt;
+    d2Pt_dVmt_dthetaf = Vmf * (Gtf * sin(thetatf) - Btf * cos(thetatf));
+    d2Pt_dVmt_dVmf = (Gtf * cos(thetatf) + Btf * sin(thetatf));
+    
+    /* dPt_dthetaf = Vmf*Vmt*(Gtf*sin(thetatf) - Btf*cos(thetatf)); */
+    d2Pt_dthetaf_dthetat =
+      Vmf * Vmt * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+    d2Pt_dthetaf_dVmt = Vmf * (Gtf * sin(thetatf) - Btf * cos(thetatf));
+    d2Pt_dthetaf_dthetaf =
+      Vmf * Vmt * (-Gtf * cos(thetatf) - Btf * sin(thetatf));
+    d2Pt_dthetaf_dVmf = Vmt * (Gtf * sin(thetatf) - Btf * cos(thetatf));
+    
+    /* dPt_dVmf = Vmt*(Gtf*cos(thetatf) + Btf*sin(thetatf)); */
+    d2Pt_dVmf_dthetat = Vmt * (-Gtf * sin(thetatf) + Btf * cos(thetatf));
+    d2Pt_dVmf_dVmt = (Gtf * cos(thetatf) + Btf * sin(thetatf));
+    d2Pt_dVmf_dthetaf = Vmt * (Gtf * sin(thetatf) - Btf * cos(thetatf));
+    d2Pt_dVmf_dVmf = 0.0;
+    
+    PetscScalar d2Qt_dthetaf_dthetaf, d2Qt_dthetaf_dVmf, d2Qt_dthetaf_dthetat,
+      d2Qt_dthetaf_dVmt;
+    PetscScalar d2Qt_dVmf_dthetaf, d2Qt_dVmf_dVmf, d2Qt_dVmf_dthetat,
+      d2Qt_dVmf_dVmt;
+    PetscScalar d2Qt_dthetat_dthetaf, d2Qt_dthetat_dVmf, d2Qt_dthetat_dthetat,
+      d2Qt_dthetat_dVmt;
+    PetscScalar d2Qt_dVmt_dthetaf, d2Qt_dVmt_dVmf, d2Qt_dVmt_dthetat,
+      d2Qt_dVmt_dVmt;
+    
+    /* dQt_dthetat = Vmf*Vmt*(Btf*sin(thetatf) + Gtf*cos(thetatf)); */
+    d2Qt_dthetat_dthetat =
+      Vmf * Vmt * (Btf * cos(thetatf) - Gtf * sin(thetatf));
+    d2Qt_dthetat_dVmt = Vmf * (Btf * sin(thetatf) + Gtf * cos(thetatf));
+    d2Qt_dthetat_dthetaf =
+      Vmf * Vmt * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+    d2Qt_dthetat_dVmf = Vmf * (Btf * sin(thetatf) + Gtf * cos(thetatf));
+    
+    /* dQt_dVmt = -2*Btt*Vmt + Vmf*(-Btf*cos(thetatf) + Gtf*sin(thetatf)); */
+    d2Qt_dVmt_dthetat = Vmf * (Btf * sin(thetatf) + Gtf * cos(thetatf));
+    d2Qt_dVmt_dVmt = -2 * Btt;
+    d2Qt_dVmt_dthetaf = Vmf * (-Btf * sin(thetatf) + Gtf * cos(thetatf));
+    d2Qt_dVmt_dVmf = (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+    
+    /* dQt_dthetaf = Vmf*Vmt*(-Btf*sin(thetatf) - Gtf*cos(thetatf)); */
+    d2Qt_dthetaf_dthetat =
+      Vmf * Vmt * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+    d2Qt_dthetaf_dVmt = Vmf * (-Btf * sin(thetatf) - Gtf * cos(thetatf));
+    d2Qt_dthetaf_dthetaf =
+      Vmf * Vmt * (Btf * cos(thetatf) - Gtf * sin(thetatf));
+    d2Qt_dthetaf_dVmf = Vmt * (-Btf * sin(thetatf) - Gtf * cos(thetatf));
+    
+    /* dQt_dVmf = Vmt*(-Btf*cos(thetatf) + Gtf*sin(thetatf)); */
+    d2Qt_dVmf_dthetat = Vmt * (Btf * sin(thetatf) + Gtf * cos(thetatf));
+    d2Qt_dVmf_dVmt = (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+    d2Qt_dVmf_dthetaf = Vmt * (-Btf * sin(thetatf) - Gtf * cos(thetatf));
+    d2Qt_dVmf_dVmf = 0.0;
+    
+    PetscScalar d2Sf2_dthetaf_dthetaf = 0.0, d2Sf2_dthetaf_dVmf = 0.0,
+      d2Sf2_dthetaf_dthetat = 0.0, d2Sf2_dthetaf_dVmt = 0.0;
+    PetscScalar d2St2_dthetaf_dthetaf = 0.0, d2St2_dthetaf_dVmf = 0.0,
+      d2St2_dthetaf_dthetat = 0.0, d2St2_dthetaf_dVmt = 0.0;
+    
+    d2Sf2_dthetaf_dthetaf =
+      2 * dPf_dthetaf * dPf_dthetaf + dSf2_dPf * d2Pf_dthetaf_dthetaf +
+      2 * dQf_dthetaf * dQf_dthetaf + dSf2_dQf * d2Qf_dthetaf_dthetaf;
+    d2Sf2_dthetaf_dVmf =
+      2 * dPf_dVmf * dPf_dthetaf + dSf2_dPf * d2Pf_dthetaf_dVmf +
+      2 * dQf_dVmf * dQf_dthetaf + dSf2_dQf * d2Qf_dthetaf_dVmf;
+    d2Sf2_dthetaf_dthetat =
+      2 * dPf_dthetat * dPf_dthetaf + dSf2_dPf * d2Pf_dthetaf_dthetat +
+      2 * dQf_dthetat * dQf_dthetaf + dSf2_dQf * d2Qf_dthetaf_dthetat;
+    d2Sf2_dthetaf_dVmt =
+      2 * dPf_dVmt * dPf_dthetaf + dSf2_dPf * d2Pf_dthetaf_dVmt +
+      2 * dQf_dVmt * dQf_dthetaf + dSf2_dQf * d2Qf_dthetaf_dVmt;
+    
+    d2St2_dthetaf_dthetaf =
+      2 * dPt_dthetaf * dPt_dthetaf + dSt2_dPt * d2Pt_dthetaf_dthetaf +
+      2 * dQt_dthetaf * dQt_dthetaf + dSt2_dQt * d2Qt_dthetaf_dthetaf;
+    d2St2_dthetaf_dVmf =
+      2 * dPt_dVmf * dPt_dthetaf + dSt2_dPt * d2Pt_dthetaf_dVmf +
+      2 * dQt_dVmf * dQt_dthetaf + dSt2_dQt * d2Qt_dthetaf_dVmf;
+    d2St2_dthetaf_dthetat =
+      2 * dPt_dthetat * dPt_dthetaf + dSt2_dPt * d2Pt_dthetaf_dthetat +
+      2 * dQt_dthetat * dQt_dthetaf + dSt2_dQt * d2Qt_dthetaf_dthetat;
+    d2St2_dthetaf_dVmt =
+      2 * dPt_dVmt * dPt_dthetaf + dSt2_dPt * d2Pt_dthetaf_dVmt +
+      2 * dQt_dVmt * dQt_dthetaf + dSt2_dQt * d2Qt_dthetaf_dVmt;
+    
+    val[0] = val[1] = val[2] = val[3] = 0.0;
+    col[0] = xlocglobf;
+    col[1] = xlocglobf + 1;
+    col[2] = xlocglobt;
+    col[3] = xlocglobt + 1;
+    row[0] = xlocglobf;
+    val[0] = lambda[gloc] * d2Sf2_dthetaf_dthetaf +
+      lambda[gloc + 1] * d2St2_dthetaf_dthetaf;
+    val[1] = lambda[gloc] * d2Sf2_dthetaf_dVmf +
+      lambda[gloc + 1] * d2St2_dthetaf_dVmf;
+    val[2] = lambda[gloc] * d2Sf2_dthetaf_dthetat +
+      lambda[gloc + 1] * d2St2_dthetaf_dthetat;
+    val[3] = lambda[gloc] * d2Sf2_dthetaf_dVmt +
+      lambda[gloc + 1] * d2St2_dthetaf_dVmt;
+    
+    ierr = MatSetValues(H, 1, row, 4, col, val, ADD_VALUES);
+    CHKERRQ(ierr);
+    
+    PetscScalar d2Sf2_dVmf_dthetaf, d2Sf2_dVmf_dVmf, d2Sf2_dVmf_dthetat,
+      d2Sf2_dVmf_dVmt;
+    PetscScalar d2St2_dVmf_dthetaf, d2St2_dVmf_dVmf, d2St2_dVmf_dthetat,
+      d2St2_dVmf_dVmt;
+    
+    d2Sf2_dVmf_dthetaf =
+      2 * dPf_dthetaf * dPf_dVmf + dSf2_dPf * d2Pf_dVmf_dthetaf +
+      2 * dQf_dthetaf * dQf_dVmf + dSf2_dQf * d2Qf_dVmf_dthetaf;
+    d2Sf2_dVmf_dVmf = 2 * dPf_dVmf * dPf_dVmf + dSf2_dPf * d2Pf_dVmf_dVmf +
+      2 * dQf_dVmf * dQf_dVmf + dSf2_dQf * d2Qf_dVmf_dVmf;
+    d2Sf2_dVmf_dthetat =
+      2 * dPf_dthetat * dPf_dVmf + dSf2_dPf * d2Pf_dVmf_dthetat +
+      2 * dQf_dthetat * dQf_dVmf + dSf2_dQf * d2Qf_dVmf_dthetat;
+    d2Sf2_dVmf_dVmt = 2 * dPf_dVmt * dPf_dVmf + dSf2_dPf * d2Pf_dVmf_dVmt +
+      2 * dQf_dVmt * dQf_dVmf + dSf2_dQf * d2Qf_dVmf_dVmt;
+    
+    d2St2_dVmf_dthetaf =
+      2 * dPt_dthetaf * dPt_dVmf + dSt2_dPt * d2Pt_dVmf_dthetaf +
+      2 * dQt_dthetaf * dQt_dVmf + dSt2_dQt * d2Qt_dVmf_dthetaf;
+    d2St2_dVmf_dVmf = 2 * dPt_dVmf * dPt_dVmf + dSt2_dPt * d2Pt_dVmf_dVmf +
+      2 * dQt_dVmf * dQt_dVmf + dSt2_dQt * d2Qt_dVmf_dVmf;
+    d2St2_dVmf_dthetat =
+      2 * dPt_dthetat * dPt_dVmf + dSt2_dPt * d2Pt_dVmf_dthetat +
+      2 * dQt_dthetat * dQt_dVmf + dSt2_dQt * d2Qt_dVmf_dthetat;
+    d2St2_dVmf_dVmt = 2 * dPt_dVmt * dPt_dVmf + dSt2_dPt * d2Pt_dVmf_dVmt +
+      2 * dQt_dVmt * dQt_dVmf + dSt2_dQt * d2Qt_dVmf_dVmt;
+    
+    val[0] = val[1] = val[2] = val[3] = 0.0;
+    col[0] = xlocglobf;
+    col[1] = xlocglobf + 1;
+    col[2] = xlocglobt;
+    col[3] = xlocglobt + 1;
+    row[0] = xlocglobf + 1;
+    val[0] = lambda[gloc] * d2Sf2_dVmf_dthetaf +
+      lambda[gloc + 1] * d2St2_dVmf_dthetaf;
+    val[1] =
+      lambda[gloc] * d2Sf2_dVmf_dVmf + lambda[gloc + 1] * d2St2_dVmf_dVmf;
+    val[2] = lambda[gloc] * d2Sf2_dVmf_dthetat +
+      lambda[gloc + 1] * d2St2_dVmf_dthetat;
+    val[3] =
+      lambda[gloc] * d2Sf2_dVmf_dVmt + lambda[gloc + 1] * d2St2_dVmf_dVmt;
+    ierr = MatSetValues(H, 1, row, 4, col, val, ADD_VALUES);
+    CHKERRQ(ierr);
+    
+    PetscScalar d2Sf2_dthetat_dthetaf, d2Sf2_dthetat_dVmf,
+      d2Sf2_dthetat_dthetat, d2Sf2_dthetat_dVmt;
+    PetscScalar d2St2_dthetat_dthetaf, d2St2_dthetat_dVmf,
+      d2St2_dthetat_dthetat, d2St2_dthetat_dVmt;
+    
+    d2Sf2_dthetat_dthetaf =
+      2 * dPf_dthetaf * dPf_dthetat + dSf2_dPf * d2Pf_dthetat_dthetaf +
+      2 * dQf_dthetat * dQf_dthetaf + dSf2_dQf * d2Qf_dthetat_dthetaf;
+    d2Sf2_dthetat_dVmf =
+      2 * dPf_dVmf * dPf_dthetat + dSf2_dPf * d2Pf_dthetat_dVmf +
+      2 * dQf_dthetat * dQf_dVmf + dSf2_dQf * d2Qf_dthetat_dVmf;
+    d2Sf2_dthetat_dthetat =
+      2 * dPf_dthetat * dPf_dthetat + dSf2_dPf * d2Pf_dthetat_dthetat +
+      2 * dQf_dthetat * dQf_dthetat + dSf2_dQf * d2Qf_dthetat_dthetat;
+    d2Sf2_dthetat_dVmt =
+      2 * dPf_dVmt * dPf_dthetat + dSf2_dPf * d2Pf_dthetat_dVmt +
+      2 * dQf_dthetat * dQf_dVmt + dSf2_dQf * d2Qf_dthetat_dVmt;
+    
+    d2St2_dthetat_dthetaf =
+      2 * dPt_dthetaf * dPt_dthetat + dSt2_dPt * d2Pt_dthetat_dthetaf +
+      2 * dQt_dthetaf * dQt_dthetat + dSt2_dQt * d2Qt_dthetat_dthetaf;
+    d2St2_dthetat_dVmf =
+      2 * dPt_dVmf * dPt_dthetat + dSt2_dPt * d2Pt_dthetat_dVmf +
+      2 * dQt_dVmf * dQt_dthetat + dSt2_dQt * d2Qt_dthetat_dVmf;
+    d2St2_dthetat_dthetat =
+      2 * dPt_dthetat * dPt_dthetat + dSt2_dPt * d2Pt_dthetat_dthetat +
+      2 * dQt_dthetat * dQt_dthetat + dSt2_dQt * d2Qt_dthetat_dthetat;
+    d2St2_dthetat_dVmt =
+      2 * dPt_dVmt * dPt_dthetat + dSt2_dPt * d2Pt_dthetat_dVmt +
+      2 * dQt_dVmt * dQt_dthetat + dSt2_dQt * d2Qt_dthetat_dVmt;
+    
+    val[0] = val[1] = val[2] = val[3] = 0.0;
+    col[0] = xlocglobf;
+    col[1] = xlocglobf + 1;
+    col[2] = xlocglobt;
+    col[3] = xlocglobt + 1;
+    row[0] = xlocglobt;
+    
+    val[0] = lambda[gloc] * d2Sf2_dthetat_dthetaf +
+      lambda[gloc + 1] * d2St2_dthetat_dthetaf;
+    val[1] = lambda[gloc] * d2Sf2_dthetat_dVmf +
+      lambda[gloc + 1] * d2St2_dthetat_dVmf;
+    val[2] = lambda[gloc] * d2Sf2_dthetat_dthetat +
+      lambda[gloc + 1] * d2St2_dthetat_dthetat;
+    val[3] = lambda[gloc] * d2Sf2_dthetat_dVmt +
+      lambda[gloc + 1] * d2St2_dthetat_dVmt;
+    
+    ierr = MatSetValues(H, 1, row, 4, col, val, ADD_VALUES);
+    CHKERRQ(ierr);
+    
+    PetscScalar d2Sf2_dVmt_dthetaf, d2Sf2_dVmt_dVmf, d2Sf2_dVmt_dthetat,
+      d2Sf2_dVmt_dVmt;
+    PetscScalar d2St2_dVmt_dthetaf, d2St2_dVmt_dVmf, d2St2_dVmt_dthetat,
+      d2St2_dVmt_dVmt;
+    
+    d2Sf2_dVmt_dthetaf =
+      2 * dPf_dthetaf * dPf_dVmt + dSf2_dPf * d2Pf_dVmt_dthetaf +
+      2 * dQf_dthetaf * dQf_dVmt + dSf2_dQf * d2Qf_dVmt_dthetaf;
+    d2Sf2_dVmt_dVmf = 2 * dPf_dVmf * dPf_dVmt + dSf2_dPf * d2Pf_dVmt_dVmf +
+      2 * dQf_dVmf * dQf_dVmt + dSf2_dQf * d2Qf_dVmt_dVmf;
+    d2Sf2_dVmt_dthetat =
+      2 * dPf_dthetat * dPf_dVmt + dSf2_dPf * d2Pf_dVmt_dthetat +
+      2 * dQf_dthetat * dQf_dVmt + dSf2_dQf * d2Qf_dVmt_dthetat;
+    d2Sf2_dVmt_dVmt = 2 * dPf_dVmt * dPf_dVmt + dSf2_dPf * d2Pf_dVmt_dVmt +
+      2 * dQf_dVmt * dQf_dVmt + dSf2_dQf * d2Qf_dVmt_dVmt;
+    
+    d2St2_dVmt_dthetaf =
+      2 * dPt_dthetaf * dPt_dVmt + dSt2_dPt * d2Pt_dVmt_dthetaf +
+      2 * dQt_dthetaf * dQt_dVmt + dSt2_dQt * d2Qt_dVmt_dthetaf;
+    d2St2_dVmt_dVmf = 2 * dPt_dVmf * dPt_dVmt + dSt2_dPt * d2Pt_dVmt_dVmf +
+      2 * dQt_dVmf * dQt_dVmt + dSt2_dQt * d2Qt_dVmt_dVmf;
+    d2St2_dVmt_dthetat =
+      2 * dPt_dthetat * dPt_dVmt + dSt2_dPt * d2Pt_dVmt_dthetat +
+      2 * dQt_dthetat * dQt_dVmt + dSt2_dQt * d2Qt_dVmt_dthetat;
+    d2St2_dVmt_dVmt = 2 * dPt_dVmt * dPt_dVmt + dSt2_dPt * d2Pt_dVmt_dVmt +
+      2 * dQt_dVmt * dQt_dVmt + dSt2_dQt * d2Qt_dVmt_dVmt;
+    
+    val[0] = val[1] = val[2] = val[3] = 0.0;
+    col[0] = xlocglobf;
+    col[1] = xlocglobf + 1;
+    col[2] = xlocglobt;
+    col[3] = xlocglobt + 1;
+    row[0] = xlocglobt + 1;
+    
+    val[0] = lambda[gloc] * d2Sf2_dVmt_dthetaf +
+      lambda[gloc + 1] * d2St2_dVmt_dthetaf;
+    val[1] =
+      lambda[gloc] * d2Sf2_dVmt_dVmf + lambda[gloc + 1] * d2St2_dVmt_dVmf;
+    val[2] = lambda[gloc] * d2Sf2_dVmt_dthetat +
+      lambda[gloc + 1] * d2St2_dVmt_dthetat;
+    val[3] =
+      lambda[gloc] * d2Sf2_dVmt_dVmt + lambda[gloc + 1] * d2St2_dVmt_dVmt;
+    
+    ierr = MatSetValues(H, 1, row, 4, col, val, ADD_VALUES);
+    CHKERRQ(ierr);
+    // Must be inside for loop since there's a continue condition
+    flps += (185 + (16 * EXAGO_FLOPS_SINOP) + (16 * EXAGO_FLOPS_COSOP));
   }
 
   ierr = VecRestoreArrayRead(X, &x);
