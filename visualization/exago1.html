@@ -175,7 +175,7 @@
 						marker.addTo(lineKVlevels[feature.properties.KVlevels[i]]);
 					} //end for
 				} //end if
-				else
+				else if(feature.properties.elementtype.toLowerCase() === "branch")
 				{
 					var latlng_fbus = [feature.geometry.coordinates[0][1],feature.geometry.coordinates[0][0]];
                 	var latlng_tbus = [feature.geometry.coordinates[1][1],feature.geometry.coordinates[1][0]];
@@ -188,7 +188,7 @@
 			} // end onEachFeature
 
 			const xhr = new XMLHttpRequest();
-			xhr.open('GET', 'http://localhost:8081/data/case_ACTIVSg200-2.json');
+			xhr.open('GET', 'http://localhost:8081/data/case_ACTIVSg500-2.json');
 			xhr.setRequestHeader('Content-Type', 'application/json');
 			xhr.responseType = 'json';
 			xhr.onload = function() {
@@ -207,9 +207,11 @@
 					lineKVlevels[floatKV[i].toString()] = L.layerGroup([]);
         		}
 
-				L.geoJSON(geodata["geojsondata"],
-				          {onEachFeature: onEachFeature},
-				          {style: {"opacity": 0}}).addTo(map);
+				var mainLayer = L.geoJSON(geodata["geojsondata"],
+				          {onEachFeature: onEachFeature},).addTo(map);
+
+				mainLayer.setStyle({opacity: 0.0});
+
 
 				for(var gentype in genlayers)
 				{
