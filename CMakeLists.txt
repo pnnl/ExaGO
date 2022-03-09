@@ -244,9 +244,7 @@ if(EXAGO_ENABLE_OMP)
 endif()
 
 if(EXAGO_ENABLE_HIOP)
-  set(HIOP_ROOT_DIR CACHE PATH "Path to HiOp installation root.")
   include(FindHiop)
-  set(CMAKE_INSTALL_RPATH ${HIOP_LIBRARY_DIR} ${CMAKE_INSTALL_RPATH})
 endif(EXAGO_ENABLE_HIOP)
 
 if(EXAGO_ENABLE_RAJA)
