@@ -588,7 +588,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOPSPARSE(OPFLOW opflow) {
   // hiop->sp->options->SetStringValue("mem_space","host");
 
   hiop->sp->options->SetStringValue("dualsUpdateType", "linear");
-  hiop->sp->options->SetStringValue("dualsInitialization", "zero");
+  //  hiop->sp->options->SetStringValue("dualsInitialization", "zero");
   hiop->sp->options->SetStringValue("fixed_var", "relax");
   hiop->sp->options->SetStringValue("Hessian", "analytical_exact");
   hiop->sp->options->SetStringValue("KKTLinsys", "xdycyd");
@@ -597,7 +597,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOPSPARSE(OPFLOW opflow) {
   hiop->sp->options->SetNumericValue("mu0", 1e-1);
   hiop->sp->options->SetNumericValue("tolerance", opflow->tolerance);
   hiop->sp->options->SetNumericValue("bound_relax_perturb", 1e-8);
-  hiop->sp->options->SetStringValue("scaling_type", "none");
+  //  hiop->sp->options->SetStringValue("scaling_type", "none");
 
   hiop->solver = new hiop::hiopAlgFilterIPMNewton(hiop->sp);
 
@@ -720,6 +720,7 @@ PetscErrorCode OPFLOWSolverCreate_HIOPSPARSE(OPFLOW opflow) {
   opflow->solverops.getconstraintmultipliers =
       OPFLOWSolverGetConstraintMultipliers_HIOPSPARSE;
 
+  opflow->eqcons_scaling = 1e6;
   PetscFunctionReturn(0);
 }
 

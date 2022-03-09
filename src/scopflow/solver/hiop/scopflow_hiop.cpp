@@ -258,11 +258,7 @@ bool SCOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int &n, double *x,
            gradient is the partial derivative for it (note that it is negative)
          */
         if (opflow->has_gensetpoint) {
-          /*	  ierr = PetscPrintf(PETSC_COMM_SELF,"Gen[%d]: Pg = %lf Pb = %lf
-           * Pt = %lf Pgs = %lf Ramp rate = %lf lambda =
-           * %lf\n",gen->bus_i,gen->pg,
-           * gen->pb,gen->pt,gen->pgs,gen->ramp_rate_30min,lameq[gen->starteqloc+1]);CHKERRQ(ierr);
-           */
+          ierr = PetscPrintf(PETSC_COMM_SELF,"Gen[%d]: Pg = %lf Pb = %lf Pt = %lf Pgs = %lf Ramp rate = %lf lambda = %lf\n",gen->bus_i,gen->pg,gen->pb,gen->pt,gen->pgs,gen->ramp_rate_30min,lameq[gen->starteqloc+1]);CHKERRQ(ierr);
           grad[g++] = -lameq[gen->starteqloc + 1];
         }
       } else if (gen0->status && !gen->status)

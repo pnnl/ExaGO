@@ -586,6 +586,9 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL(OPFLOW opflow, Vec X,
   ierr = VecAssemblyEnd(Ge);
   CHKERRQ(ierr);
 
+  ierr = VecScale(Ge,opflow->eqcons_scaling);
+  CHKERRQ(ierr);
+
   ierr = VecRestoreArrayRead(X, &x);
   CHKERRQ(ierr);
 
@@ -843,6 +846,9 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,
   ierr = MatAssemblyBegin(Je, MAT_FINAL_ASSEMBLY);
   CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Je, MAT_FINAL_ASSEMBLY);
+  CHKERRQ(ierr);
+
+  ierr = MatScale(Je,opflow->eqcons_scaling);
   CHKERRQ(ierr);
 
   PetscLogFlops(flps);
@@ -1646,6 +1652,9 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL(OPFLOW opflow,
     col[0] = xloc + 1;
 
     val[0] = lambda[gloc] * 2 * bus->gl + lambda[gloc + 1] * (-2 * bus->bl);
+
+    val[0] *= opflow->eqcons_scaling;
+
     ierr = MatSetValues(H, 1, row, 1, col, val, ADD_VALUES);
     CHKERRQ(ierr);
 
@@ -1790,6 +1799,15 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL(OPFLOW opflow,
         val[7] =
             lambda[gloc] * dPf_dVmf_dVmt + lambda[gloc + 1] * dQf_dVmf_dVmt;
 
+	val[0] *= opflow->eqcons_scaling;
+	val[1] *= opflow->eqcons_scaling;
+	val[2] *= opflow->eqcons_scaling;
+	val[3] *= opflow->eqcons_scaling;
+	val[4] *= opflow->eqcons_scaling;
+	val[5] *= opflow->eqcons_scaling;
+	val[6] *= opflow->eqcons_scaling;
+	val[7] *= opflow->eqcons_scaling;
+
         ierr = MatSetValues(H, 2, row, 4, col, val, ADD_VALUES);
         CHKERRQ(ierr);
 
@@ -1820,6 +1838,15 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL(OPFLOW opflow,
                  lambda[gloc + 1] * dQf_dVmt_dthetat;
         val[7] =
             lambda[gloc] * dPf_dVmt_dVmt + lambda[gloc + 1] * dQf_dVmt_dVmt;
+
+	val[0] *= opflow->eqcons_scaling;
+	val[1] *= opflow->eqcons_scaling;
+	val[2] *= opflow->eqcons_scaling;
+	val[3] *= opflow->eqcons_scaling;
+	val[4] *= opflow->eqcons_scaling;
+	val[5] *= opflow->eqcons_scaling;
+	val[6] *= opflow->eqcons_scaling;
+	val[7] *= opflow->eqcons_scaling;
 
         ierr = MatSetValues(H, 2, row, 4, col, val, ADD_VALUES);
         CHKERRQ(ierr);
@@ -1929,6 +1956,15 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL(OPFLOW opflow,
         val[7] =
             lambda[gloc] * dPt_dVmt_dVmf + lambda[gloc + 1] * dQt_dVmt_dVmf;
 
+	val[0] *= opflow->eqcons_scaling;
+	val[1] *= opflow->eqcons_scaling;
+	val[2] *= opflow->eqcons_scaling;
+	val[3] *= opflow->eqcons_scaling;
+	val[4] *= opflow->eqcons_scaling;
+	val[5] *= opflow->eqcons_scaling;
+	val[6] *= opflow->eqcons_scaling;
+	val[7] *= opflow->eqcons_scaling;
+
         ierr = MatSetValues(H, 2, row, 4, col, val, ADD_VALUES);
         CHKERRQ(ierr);
 
@@ -1959,6 +1995,15 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL(OPFLOW opflow,
                  lambda[gloc + 1] * dQt_dVmf_dthetaf;
         val[7] =
             lambda[gloc] * dPt_dVmf_dVmf + lambda[gloc + 1] * dQt_dVmf_dVmf;
+
+	val[0] *= opflow->eqcons_scaling;
+	val[1] *= opflow->eqcons_scaling;
+	val[2] *= opflow->eqcons_scaling;
+	val[3] *= opflow->eqcons_scaling;
+	val[4] *= opflow->eqcons_scaling;
+	val[5] *= opflow->eqcons_scaling;
+	val[6] *= opflow->eqcons_scaling;
+	val[7] *= opflow->eqcons_scaling;
 
         ierr = MatSetValues(H, 2, row, 4, col, val, ADD_VALUES);
         CHKERRQ(ierr);

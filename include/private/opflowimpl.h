@@ -278,6 +278,7 @@ struct _p_OPFLOW {
   /** @brief number of nonzeros used with HiOP MDS */
   PetscInt nnz_eqjacsp, nnz_ineqjacsp, nnz_hesssp;
 
+  PetscScalar eqcons_scaling; /* Scaling for equality constraints */
   /** @brief user provided data struct for auxillary objective */
   void *userctx;
 };

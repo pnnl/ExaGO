@@ -569,6 +569,8 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
   opflow->has_gensetpoint = OPFLOWOptions::has_gensetpoint.default_value;
   opflow->use_agc = OPFLOWOptions::use_agc.default_value;
 
+  opflow->eqcons_scaling = 1.0;
+
   opflow->solver = NULL;
   opflow->model = NULL;
 
