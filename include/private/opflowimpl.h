@@ -290,6 +290,8 @@ struct _p_OPFLOW {
   /** @brief user provided data struct for auxillary objective */
   void *userctx;
 
+  OPFLOW* address; /* Address for this OPFLOW object, used with lazy constraints */
+
   PetscBool skip_options; /* Skip run-time options */
 };
 

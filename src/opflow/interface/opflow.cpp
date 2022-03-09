@@ -763,6 +763,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
 
   *opflowout = opflow;
 
+  opflow->address = opflowout;
   //  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Application created\n");
   PetscFunctionReturn(0);
 }
@@ -1890,6 +1891,8 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
       CHKERRQ(ierr);
 
       ierr = OPFLOWSolve(opflow2);
+
+      *opflow->address = opflow2;
     }
   }
 
