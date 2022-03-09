@@ -1,15 +1,13 @@
 #[[
 
-Finds HiOp include directory and libraries and exports target `HiOp`
+Calls find_package to search for HiOp. Requires HiOp >= 0.5.3
 
 User may set:
-- HIOP_ROOT_DIR
+- HiOp_DIR
 
 ]]
 
-include(CheckCXXSymbolExists)
-
-find_package(HiOp REQUIRED HINTS ${HIOP_ROOT_DIR})
+find_package(HiOp REQUIRED)
 
 if(TARGET HiOp::HiOp)
   if(HiOp::SPARSE AND TARGET HiOp::COINHSL)
@@ -23,6 +21,7 @@ if(TARGET HiOp::HiOp)
         CACHE BOOL "Enable HiOp Sparse" FORCE
     )
   endif()
+  mark_as_advanced(FORCE HiOp::SPARSE)
 else()
   message(FATAL_ERROR "Find_package could not load HiOp")
 endif()
