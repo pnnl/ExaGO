@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [develop]
 
 ### General
+- Added mpi4py as a dependency to ExaGO when building with Python and MPI
 
 ### Build system
 
@@ -28,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 
 ### Testing
-
+- Added testing for python with mpi4py, but still require testing without MPI
 
 ### Miscallenous
 

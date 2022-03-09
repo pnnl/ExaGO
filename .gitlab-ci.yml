@@ -25,7 +25,10 @@ workflow:
       set -xv
       cd "$WORKDIR"
       export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
-      export CTESTARGS="--output-on-failure -E Python"
+
+      # Export CTESTARGS defined in variables to run correct tests for stage
+      export CTESTARGS=$CTESTARGS
+
       MY_CLUSTER="ascent" ./buildsystem/build.sh --test-only --job=gcc-cuda
       res=$?
       exit $res
@@ -162,10 +165,24 @@ Ascent Test:
     - 'Ascent Build'
   tags:
     - batch
+  variables:
+    CTESTARGS: "--output-on-failure -E Python"
   <<: *ornl-rules
   <<: *ornl_test_script_definition
   <<: *ornl_environment_variables
 
+Ascent Py Test:
+  stage: test
+  dependencies:
+    - 'Ascent Build'
+  tags:
+    - batch 
+  variables:
+    CTESTARGS: "--output-on-failure -R Python"
+  <<: *ornl-rules
+  <<: *ornl_test_script_definition
+  <<: *ornl_environment_variables
+  allow_failure: true
 # ---
 
 # For PNNL CI
