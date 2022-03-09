@@ -72,6 +72,32 @@ straightforward.
 ***If you identify components of the C++ API that you need to call from Python,
 please [open an issue on our issues page](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/issues).***
 
+### Building with MPI
+
+ExaGO depends on mpi4py when running through the python interface.
+
+When running exago, you may need to disable threading through mpi4py before importing exago:
+
+```python
+import mpi4py.rc
+mpi4py.rc.threads = False
+from mpi4py import MPI
+import exago
+comm = MPI.COMM_WORLD
+exago.initialize("app", comm)
+# ...
+exago.finalzie()
+```
+
+Additionally linting tools may re-order your imports, and so you may need to add appropriate comments in order to avoid this:
+
+```python
+import mpi4py.rc
+mpi4py.rc.threads = False
+from mpi4py import MPI # noqa
+import exago # noqa
+```
+
 ### Bindings Tables
 
 #### ExaGO
