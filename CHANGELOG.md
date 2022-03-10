@@ -8,9 +8,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [develop]
 
 ### General
-- Added mpi4py as a dependency to ExaGO when building with Python and MPI
 
 ### Build system
+
+### PS
+
+### PFLOW
+
+### OPFLOW
+
+### TCOPFLOW
+
+### SCOPFLOW
+
+### Documentation
+
+### Testing
+
+### Miscallenous
+
+## [1.4.0]
+
+### General
+- Added mpi4py as a dependency to ExaGO when building with Python and MPI.
+- Expanded opflow python wrapper with updated documentation.
+
+### Build system
+- Added build system support for finding external python modules.
+- Improved option handling mechanisms for Python wrapper.
 
 ### PS
 - Added API PSCopy() to copy PS object data
@@ -21,15 +46,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DC Optimal power flow (DCOPF) implementation. Can be used as an initialization OR as an OPFLOW model.
 - Added API OPFLOWSkipOptions() for skipping options (needed for DCOPF initialization)
 - Added select monitor of lines (inequality constraints) for OPFLOW. The selection is currently based by KV levels. The user can provide KV levels to monitor via option -opflow_monitor_kvlevels or OPFLOWSetLinesMonitored() to have OPFLOW include these line flows as inequality constraints. Default is to monitor all lines.
+- Added getters for various opflow fields that were previously inaccessible.
 
 ### TCOPFLOW
 
 ### SCOPFLOW
+- Fixed bugs in configuring SCOPFLOW subproblems. Added API for SCOPFLOWEnablePowerImbalanceVariables, SCOPFLOWEnablePowerImbalanceVariables, SCOPFLOWSetComputeMode and SCOPFLOWSetComputeMode.
 
 ### Documentation
 
 ### Testing
-- Added testing for python with mpi4py, but still require testing without MPI
+- Added testing for python with mpi4py, but still require testing without MPI.
+- Re-enabled python tests on Ascent.
+- Convert existing smoke tests for SCOPLFOW and SOPFLOW to toml based testing.
 
 ### Miscallenous
 

@@ -29,6 +29,10 @@ The most important details of the guideslines are included here:
 Tags should only ever be made on the master branch.
 Before tagging, `CHANGELOG.md` must be updated such that the items under the `develop` or `unrealeased` header are moved to a new header indicative of the new version being tagged.
 
+### CMake version
+
+Before merging `develop`->`master` ensure that the version number in the project definition in main [CMakeLists.txt](./CMakeLists.txt) is upated in accordance with the planned upcoming release.
+
 ### Spack
 
 Update the Spack package for ExaGO.
