@@ -154,7 +154,7 @@ With the parameters of the example network the vector is:
 
 <table>
 <tr>
-<td>2.8</td> <td>0.0</td> <td>8.8</td> <td>2.2</td> <td>2.2</td> <td>2.2</td> <td>2.2</td> <td>8.8</td> <td>2.8</td> <td>0.0</td>
+<td>0</td> <td>-2.4</td> <td>1</td> <td>-1.8</td> <td>0.4</td> <td>-0.2</td> <td>-3.4</td> <td>4</td> <td>0</td> <td>-2.4</td>
 </tr>
 </table>
 
@@ -203,6 +203,6 @@ a b c d e f g h i j
 So for N=3 the vector is:
 <table>
 <tr>
-<td>2.8  0.0</td> <td> 8.8  2.2  2.2  2.2  2.2  8.8</td> <td> 5.6  0.0</td><td> 8.8  2.2  2.2  2.2  2.2  8.8</td> <td> 5.6  0.0</td><td> 8.8  2.2  2.2  2.2  2.2  8.8</td> <td> 2.8  0.0</td>
+<td>0.0  -2.4</td> <td> 1.0  -1.8  0.4  -0.2  -3.4  4.0</td> <td> 0.0  -4.8</td><td> 1.0  -1.8  0.4  -0.2  -3.4  4.0</td> <td> 0.0  -4.8</td><td> 1.0  -1.8  0.4  -0.2  -3.4  4.0</td> <td> 0.0  -2.4</td>
 </tr>
 </table>
