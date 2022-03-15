@@ -9,11 +9,17 @@ As per P025, all CI pipelines should pass before an MR is merged.
 This is especially important when merging `develop` -> `master`.
 Ensure all pipelines are passing before a release.
 
-### Changelog
+### Documentation
+
+#### Changelog
 
 As per ExaGO developer policy P024, this project adheres to the [Keep-a-Changelog](https://keepachangelog.com/en/1.0.0/) guidelines.
 If the changelog has not been updated, review merged MRs and update the changelog accordingly.
 It is especially important to document changes in versions of our dependencies in the changelog.
+
+#### Manual
+
+Ensure the user manual has the appropriate version and has been updated with any API changes.
 
 ### Tag
 
