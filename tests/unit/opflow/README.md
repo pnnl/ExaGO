@@ -60,11 +60,11 @@ Scripts are wrriten is python are are based on the previously given algorithm.
 - **OPFLOWComputeObjective_PBPOL (done)**
 - **OPFLOWComputeGradient_PBPOL (done)**
 - **OPFLOWComputeEqualityConstraints_PBPOL (done)**
-- OPFLOWComputeInequalityConstraints_PBPOL
-- OPFLOWComputeEqualityConstraintJacobian_PBPOL
-- OPFLOWComputeInequalityConstraintJacobian_PBPOL
+- **OPFLOWComputeInequalityConstraints_PBPOL (done)**
+- **OPFLOWComputeEqualityConstraintJacobian_PBPOL (done)**
+- **OPFLOWComputeInequalityConstraintJacobian_PBPOL(done)**
 - OPFLOWComputeEqualityConstraintsHessian_PBPOL  
 - OPFLOWComputeInequalityConstraintsHessian_PBPOL
 - OPFLOWComputeObjectiveHessian_PBPOL
-- OPFLOWSetVariableBounds_PBPOL
+- **OPFLOWSetVariableBounds_PBPOL (done)**
 - OPFLOWSetConstraintBounds_PBPOL

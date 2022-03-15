@@ -70,26 +70,26 @@ Bttt = B+Bc/2.0;
 
 
 
-Pf12=Gff*Vm*Vm+Vm+Vm*(Gft*cos(theta12)+Bft*sin(theta12));
-Qf12=-Bff*Vm*Vm+Vm+Vm*(-Bft*cos(theta12)+Gft*sin(theta12));
-Pt12=Gtt*Vm*Vm+Vm+Vm*(Gtf*cos(theta21)+Btf*sin(theta21));
+Pf12=Gff*Vm*Vm+Vm*Vm*(Gft*cos(theta12)+Bft*sin(theta12));
+Qf12=-Bff*Vm*Vm+Vm*Vm*(-Bft*cos(theta12)+Gft*sin(theta12));
+Pt12=Gtt*Vm*Vm+Vm*Vm*(Gtf*cos(theta21)+Btf*sin(theta21));
 Qt12=-Btt*Vm*Vm+Vm+Vm*(-Btf*cos(theta21)+Gtf*sin(theta21));
 
 
-Pf23=Gfft*Vm*Vm+Vm+Vm*(Gftt*cos(theta23)+Bftt*sin(theta23));
-Qf23=-Bfft*Vm*Vm+Vm+Vm*(-Bftt*cos(theta23)+Gftt*sin(theta23));
-Pt23=Gttt*Vm*Vm+Vm+Vm*(Gtft*cos(theta32)+Btft*sin(theta32));
-Qt23=-Bttt*Vm*Vm+Vm+Vm*(-Btft*cos(theta32)+Gtft*sin(theta32));
+Pf23=Gfft*Vm*Vm+Vm*Vm*(Gftt*cos(theta23)+Bftt*sin(theta23));
+Qf23=-Bfft*Vm*Vm+Vm*Vm*(-Bftt*cos(theta23)+Gftt*sin(theta23));
+Pt23=Gttt*Vm*Vm+Vm*Vm*(Gtft*cos(theta32)+Btft*sin(theta32));
+Qt23=-Bttt*Vm*Vm+Vm*Vm*(-Btft*cos(theta32)+Gtft*sin(theta32));
 
-Pf24=Gff*Vm*Vm+Vm+Vm*(Gft*cos(theta24)+Bft*sin(theta24));
-Qf24=-Bff*Vm*Vm+Vm+Vm*(-Bft*cos(theta24)+Gft*sin(theta24));
-Pt24=Gtt*Vm*Vm+Vm+Vm*(Gtf*cos(theta42)+Btf*sin(theta42));
-Qt24=-Btt*Vm*Vm+Vm+Vm*(-Btf*cos(theta42)+Gtf*sin(theta42));
+Pf24=Gff*Vm*Vm+Vm*Vm*(Gft*cos(theta24)+Bft*sin(theta24));
+Qf24=-Bff*Vm*Vm+Vm*Vm*(-Bft*cos(theta24)+Gft*sin(theta24));
+Pt24=Gtt*Vm*Vm+Vm*Vm*(Gtf*cos(theta42)+Btf*sin(theta42));
+Qt24=-Btt*Vm*Vm+Vm*Vm*(-Btf*cos(theta42)+Gtf*sin(theta42));
 
-Pf45=Gff*Vm*Vm+Vm+Vm*(Gft*cos(theta45)+Bft*sin(theta45));
-Qf45=-Bff*Vm*Vm+Vm+Vm*(-Bft*cos(theta45)+Gft*sin(theta45));
-Pt45=Gtt*Vm*Vm+Vm+Vm*(Gtf*cos(theta54)+Btf*sin(theta54));
-Qt45=-Btt*Vm*Vm+Vm+Vm*(-Btf*cos(theta54)+Gtf*sin(theta54));
+Pf45=Gff*Vm*Vm+Vm*Vm*(Gft*cos(theta45)+Bft*sin(theta45));
+Qf45=-Bff*Vm*Vm+Vm*Vm*(-Bft*cos(theta45)+Gft*sin(theta45));
+Pt45=Gtt*Vm*Vm+Vm*Vm*(Gtf*cos(theta54)+Btf*sin(theta54));
+Qt45=-Btt*Vm*Vm+Vm*Vm*(-Btf*cos(theta54)+Gtf*sin(theta54));
 
 B10=Pf12;
 B11=Qf12;
@@ -118,5 +118,13 @@ Res(9)=B50;
 Res(10)=B51;
 
 Res
+
+ResW(1,1) =  10;
+
+for i=1:10
+    ResW(i+1,1) = Res(i);
+end
+writematrix(ResW,'cec.csv') 
+            
 
 

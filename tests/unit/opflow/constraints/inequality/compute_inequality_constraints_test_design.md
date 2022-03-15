@@ -126,7 +126,7 @@ With the parameters of the example network the vector is:
 <td>IEC1_V</td> <td>IEC2_V </td> <td>Sf_Branch12</td> <td>St_Branch12</td> <td>Sf_Branch23</td> <td>St_Branch23</td> <td>Sf_Branch24</td> <td>St_Branch24</td> <td>Sf_Branch45</td> <td>St_Branch45</td>
 </tr>
 <tr>
-<td>300</td> <td>-300</td> <td>7.84</td> <td>7.84</td> <td>8.84</td> <td>14.44</td> <td>7.84</td> <td>7.84</td> <td>7.84</td> <td>7.84</td>
+<td>300</td> <td>-300</td> <td>5.76</td> <td>5.76</td> <td>0.16</td> <td>9.76</td> <td>5.76</td> <td>5.76</td> <td>5.76</td> <td>5.76</td>
 </tr>
 </table>
 
@@ -156,6 +156,6 @@ To build a solution when the network is being multiplied, vector just needs to b
 So for N=3 the vector is:
 <table>
 <tr>
-<td>300  -300  7.84  7.84  8.84  14.44  7.84  7.84  7.84  7.84</td> <td>300  -300  7.84  7.84  8.84  14.44  7.84  7.84  7.84  7.84</td> <td>300  -300  7.84  7.84  8.84  14.44  7.84  7.84  7.84  7.84</td>
+<td>300  -300  5.76  5.76  0.16  9.76  5.76  5.76  5.76  5.76</td> <td>300  -300  5.76  5.76  0.16  9.76  5.76  5.76  5.76  5.76</td> <td>300  -300  5.76  5.76  0.16  9.76  5.76  5.76  5.76  5.76</td>
 </tr>
 </table>
