@@ -18,6 +18,8 @@ exago_add_library(
   ${UTILS_HEADERS}
   LINK_LIBRARIES
   PUBLIC
+  spdlog::spdlog
+  PUBLIC
   PkgConfig::PETSC
   PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_C>

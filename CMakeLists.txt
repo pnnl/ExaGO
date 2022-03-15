@@ -281,7 +281,9 @@ if(EXAGO_RUN_TESTS)
   include(ExaGOTestingUtilities)
 endif()
 
-include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/tpl/spdlog/include)
+add_subdirectory(${PROJECT_SOURCE_DIR}/tpl/spdlog/)
+# -fPIC required for spdlog for use with python wrapper
+set_property(TARGET spdlog PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # Build libraries (specified in src/CMakeLists.txt)
 add_subdirectory(src)

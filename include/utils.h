@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <spdlog/spdlog.h>
 
 /**
  *
@@ -81,7 +83,6 @@ extern PetscErrorCode ExaGOLogGetMinLogLevel(int &);
 extern PetscErrorCode ExaGOLogSetMinLogLevel(int);
 
 #if !defined(EXAGO_DISABLE_LOGGING)
-#include <spdlog/spdlog.h>
 
 /**
  * @brief Implementation to log string according to ExaGO build configuration.
