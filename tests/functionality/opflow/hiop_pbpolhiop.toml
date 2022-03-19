@@ -3,6 +3,7 @@ testsuite_name = "HiOp OPFLOW Functionality"
 [presets]
 solver = 'HIOP'
 model = 'POWER_BALANCE_HIOP'
+hiop_verbosity_level = 12
 hiop_compute_mode = 'CPU'
 tolerance = 1e-3
 gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'

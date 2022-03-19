@@ -97,14 +97,9 @@ option(EXAGO_RUN_TESTS "Enable tests" ON)
 # If tests are enabled, decides if tests are installed
 option(EXAGO_INSTALL_TESTS "Install testing binaries" ON)
 
-# For testing with BSUB/jsrun on certain clusters
-option(EXAGO_TEST_WITH_BSUB
-       "Use `jsrun` instead of `mpirun` commands when running tests" OFF
-)
-
-# For testing with Slurm/srun on certain clusters
-option(EXAGO_TEST_WITH_SLURM
-       "Use `srun` instead of `mpirun` commands when running tests" OFF
+set(EXAGO_CTEST_LAUNCH_COMMAND
+    ""
+    CACHE STRING "Command to use when launching tests"
 )
 
 option(EXAGO_DISABLE_LOGGING "Disable all internal logging" OFF)
@@ -208,8 +203,7 @@ if(EXAGO_ENABLE_GPU)
   elseif(EXAGO_ENABLE_HIP)
     set(EXAGO_HAVE_HIP 1)
     add_definitions(-DHAVE_HIP) # For hipmagma
-    find_package(HIP REQUIRED)
-    set(CMAKE_CXX_COMPILER hipcc)
+    find_package(hip REQUIRED)
   else()
     message(
       FATAL_ERROR "EXAGO_ENABLE_GPU enabled, but neither EXAGO_ENABLE_CUDA "
@@ -355,39 +349,23 @@ Test definitions.
 
 @note The tests rely on utilities in @file cmake/ExaGOTestingUtilities.cmake.
 
-@note If running with BSUB, we should use jsrun commands
-  Use in CMake as:
-    - ${MPICMD} "-n" "<num_proc>" ${EXAGO_EXTRA_MPI_FLAGS}
-      for running with more than one process.
-        OR
-    - ${RUNCMD} when running with only one.
-
-@note EXAGO_EXTRA_MPI_FLAGS should be passed as a ';' delimited string, e.g.
-  export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS
-  -DEXAGO_EXTRA_MPI_FLAGS=-mca;oob;tcp" will result in "-mca" "oob" "tcp" being
-  passed to mpiexec/jsrun
+@note If running with a job scheduler, pass the required commands to
+  EXAGO_CTEST_LAUNCH_COMMAND. For example, to launch a slurm job for each test:
+  `cmake $SRC_DIR -DEXAGO_CTEST_LAUNCH_COMMAND="srun -N 1 --gres=gpu:1 -t 10:00"`
 
 #]]
-
-if(EXAGO_TEST_WITH_BSUB)
-  set(MPICMD "jsrun")
-  set(RUNCMD "jsrun" "-n" "1")
-  if(EXAGO_ENABLE_GPU)
-    set(MPICMD ${MPICMD} "-g" "1")
-    set(RUNCMD ${RUNCMD} "-g" "1" ${EXAGO_EXTRA_MPI_FLAGS})
-  endif()
-  # Otherwise, set mpi command + extra flags
-elseif(EXAGO_TEST_WITH_SLURM)
-  set(MPICMD "srun")
-  set(RUNCMD "srun" "-n" "1")
-  if(EXAGO_ENABLE_GPU)
-    set(MPICMD ${MPICMD} "--gres=gpu:1")
-    set(RUNCMD ${RUNCMD} "--gres=gpu:1" ${EXAGO_EXTRA_MPI_FLAGS})
-  endif()
+if(NOT (EXAGO_CTEST_LAUNCH_COMMAND STREQUAL ""))
+  message(
+    STATUS
+      "Manually overriding launch command for CTest with \"${EXAGO_CTEST_LAUNCH_COMMAND}\""
+  )
+  string(REPLACE " " ";" RUNCMD_LIST "${EXAGO_CTEST_LAUNCH_COMMAND}")
+  set(RUNCMD ${RUNCMD_LIST})
+  set(MPICMD ${RUNCMD_LIST})
 else()
   if(EXAGO_ENABLE_MPI)
-    set(MPICMD "mpiexec")
-    set(RUNCMD ${MPICMD} "-n" "1" ${EXAGO_EXTRA_MPI_FLAGS})
+    set(MPICMD "${MPIEXEC_EXECUTABLE}")
+    set(RUNCMD ${MPICMD} "${MPIEXEC_NUMPROC_FLAG}" "1" ${EXAGO_EXTRA_MPI_FLAGS})
   else()
     set(MPICMD "")
     set(RUNCMD "")
