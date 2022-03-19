@@ -21,6 +21,7 @@ struct OpflowFunctionalityTestParameters {
   double load_loss_penalty = 1000.0;
   double power_imbalance_penalty = 1000.0;
   std::string description = "";
+  int hiop_verbosity_level = 0;
   std::string hiop_compute_mode;
   std::string initialization_string = "MIDPOINT";
   OPFLOWInitializationType initialization_type;
@@ -128,6 +129,7 @@ struct OpflowFunctionalityTests
     testcase["power_imbalance_penalty"] = params.power_imbalance_penalty;
     testcase["initialization_type"] = params.initialization_type;
     testcase["hiop_compute_mode"] = params.hiop_compute_mode;
+    testcase["hiop_verbosity_level"] = params.hiop_verbosity_level;
     testcase["obj_value"] = params.expected_obj_value;
     testcase["observed_obj_value"] = params.obj_value;
     testcase["scaled_objective_value_error"] = params.error;
@@ -143,6 +145,9 @@ struct OpflowFunctionalityTests
 
     std::cout << "Test Description: " << params.description << std::endl;
     ierr = OPFLOWCreate(params.comm, &opflow);
+    ExaGOCheckError(ierr);
+
+    ierr = OPFLOWSetHIOPVerbosityLevel(opflow, params.hiop_verbosity_level);
     ExaGOCheckError(ierr);
 
     ierr = OPFLOWSetTolerance(opflow, params.tolerance);

@@ -220,11 +220,11 @@ $ # Load all the modules needed to build/run ExaGO
 $ source ./buildsystem/gcc-cuda/${MY_CLUSTER}Variables.sh
 $ cd ../build
 
-# The EXAGO_TEST_WITH_BSUB option ensures that `make test` will use `jsrun`
-# to launch each test on a compute node.
+# The EXAGO_CTEST_LAUNCH_COMMAND option lets the user customize the options
+# passed to the job scheduler when running CTest.
 $ cmake \
   -C ../exago/buildsystem/gcc-cuda/cache.cmake \
-  -DEXAGO_TEST_WITH_BSUB=ON \
+  -DEXAGO_CTEST_LAUNCH_COMMAND="jsrun -g 1" \
   -DCMAKE_INSTALL_PREFIX=$PWD/../install \
   ../exago
 
