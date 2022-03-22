@@ -7,10 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [develop]
 
+## [v1.4.1]
+
 ### General
 
 ### Build system
-- Build static spdlog to resolve repeat compiler warnings.
+- No longer set the C++ compiler to `hipcc` when building on ROCm platforms.
+- Add new CMake option `EXAGO_CTEST_LAUNCH_COMMAND` to allow users to toggle the command used to launch CTest tests
 
 ### PS
 
@@ -23,12 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### SCOPFLOW
 
 ### Documentation
+- Document new CMake option `EXAGO_CTEST_LAUNCH_COMMAND`
 
 ### Testing
 
 ### Miscallenous
 
-## [1.4.0]
+## [v1.4.0]
 
 ### General
 - Added mpi4py as a dependency to ExaGO when building with Python and MPI.
@@ -120,7 +124,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 	- OPFLOWSetMonitoredLines()
 	- run-time option -opflow_monitor_line_kvlevels
 
-## [1.2.0] 
+## [v1.2.0] 
 
 ### General
 - Added clang format utility script and formatted source code
