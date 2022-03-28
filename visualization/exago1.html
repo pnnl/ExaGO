@@ -29,7 +29,17 @@
 	     	L.Icon.Default.prototype.options.iconSize = [0, 0];
 	     	L.Icon.Default.prototype.options.shadowSize = [0, 0];
 
+	     	//$("input[type=checkbox]").each( function() {
+			//    alert($(this).val());
+			//});
+
+			$("input[type=checkbox]").on("change", function() {
+				loadMapGeoJSON();
+			});
+
 			var geodata;
+
+			var mainLayer;
 
 	        var loadlayer = {"load":L.layerGroup([])};
 
@@ -76,10 +86,14 @@
 			var lineKVlevels = {};
 			var KVlevels = {};
 
-			var map = L.map('map').setView([40.6421, -89.5996], 13);
+			var map = L.map('map').setView([34.37, -81.09], 7);
 
 
-			L.tileLayer('https://osm-{s}.gs.mil/tiles/bright/{z}/{x}/{y}.png').addTo(map);
+			var selectedKVs;
+
+
+			//L.tileLayer('https://osm-{s}.gs.mil/tiles/bright/{z}/{x}/{y}.png').addTo(map);
+			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 			function getStyle(feature, layer=null)
 			{
@@ -116,7 +130,7 @@
 
 			function getLineWeight(line)
 			{
-				var weight = line.KV/70.0;
+				var weight = line.KV/1.38;
 				return weight;
 			}
 
@@ -147,7 +161,6 @@
 							break;
 						}
             		}
-
 
 					for(i=0; i < feature.properties.KVlevels.length; i++)
 					{
@@ -182,57 +195,109 @@
 
                 	latlng = [latlng_fbus,latlng_tbus];
 
+					// only if KV level is checked, display the line
 					var KVlevel = feature.properties.KV;
-					marker = new L.polyline(latlng, getStyle(feature)).addTo(lineKVlevels[KVlevel]);
+
+					if(selectedKVs.includes(KVlevel))
+					{
+						marker = new L.polyline(latlng, getStyle(feature)).addTo(lineKVlevels[KVlevel]);
+					}
 				}
 			} // end onEachFeature
 
-			const xhr = new XMLHttpRequest();
-			xhr.open('GET', 'http://localhost:8081/data/case_ACTIVSg500-2.json');
-			xhr.setRequestHeader('Content-Type', 'application/json');
-			xhr.responseType = 'json';
-			xhr.onload = function() {
-				if (xhr.status !== 200)
-				{
-					return;
-				}
-				geodata = xhr.response;
-				KVlevels = geodata.KVlevels;
+			function loadMapGeoJSON()
+			{
+				selectedKVs = new Array();
 
-				var floatKV = KVlevels.map(Number).sort(function(a,b) {return a - b});
+				$("input[type=checkbox]:checked").each( function() {
+				    //alert($(this).val());
+				    selectedKVs.push(parseFloat($(this).val()));
+				});
 
-				// Create layers for KV levels
-				for(var i = 0; i < KVlevels.length; i++)
-				{
-					lineKVlevels[floatKV[i].toString()] = L.layerGroup([]);
-        		}
+		        var numLayers = 0;
 
-				var mainLayer = L.geoJSON(geodata["geojsondata"],
-				          {onEachFeature: onEachFeature},).addTo(map);
+				//map.eachLayer(function (layer) {
+				//	numLayers += 1;
+				//});
 
-				mainLayer.setStyle({opacity: 0.0});
+				//if(numLayers > 1)
+				//{
+				//	map.removeLayer(mainLayer);
+				//}
+
+				map.remove();
+			   	map = L.map('map').setView([34.37, -81.09], 7);
+			   	L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+				const xhr = new XMLHttpRequest();
+				xhr.open('GET', 'http://localhost:8081/data/case_ACTIVSg500-2.json');
+				xhr.setRequestHeader('Content-Type', 'application/json');
+				xhr.responseType = 'json';
+				xhr.onload = function() {
+					if (xhr.status !== 200)
+					{
+						return;
+					}
+					geodata = xhr.response;
+					KVlevels = geodata.KVlevels;
+
+					var floatKV = KVlevels.map(Number).sort(function(a,b) {return a - b});
+
+					// Create layers for KV levels
+					for(var i = 0; i < KVlevels.length; i++)
+					{
+						lineKVlevels[floatKV[i].toString()] = L.layerGroup([]);
+					}
+
+				    mainLayer = L.geoJSON(geodata["geojsondata"],
+							  {onEachFeature: onEachFeature},).addTo(map);
+
+					mainLayer.setStyle({opacity: 0.0});
 
 
-				for(var gentype in genlayers)
-				{
-					genlayers[gentype].addTo(map);
-				}
+					for(var gentype in genlayers)
+					{
+						genlayers[gentype].addTo(map);
+					}
 
-				loadlayer.load.addTo(map);
+					loadlayer.load.addTo(map);
 
-				for(var i = 0; i < KVlevels.length; i++)
-				{
-					var tempLayer = lineKVlevels[floatKV[i].toString()].addTo(map);
-        		}
-			};
-			xhr.send();
+					for(var i = 0; i < KVlevels.length; i++)
+					{
+						var tempLayer = lineKVlevels[floatKV[i].toString()].addTo(map);
+					}
+				};
+				xhr.send();
+
+				numLayers = 0;
+
+				map.eachLayer(function (layer) {
+					numLayers += 1;
+				});
+
+				//alert(numLayers);
+
+			}
+
+			loadMapGeoJSON();
+
+
 
 		}); // end $function
 
 	</script>
 </head>
 <body>
+	<form id="mainform">
+		<h2>KV Levels</h2>
+		<div id="KVLevels" style="border: black solid 1px">
+			<input type="checkbox" name="kvs" value="13.8" checked="checked">13.8</input>
+			<input type="checkbox" name="kvs" value="138.0" checked="checked">138.0</input>
+			<input type="checkbox" name="kvs" value="345.0" checked="checked">345.0</input>
+		</div>
 
+	</form>
+	<br /><br />
 	<div id="map"></div>
 
 </body>
