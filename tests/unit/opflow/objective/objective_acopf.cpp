@@ -31,10 +31,11 @@ int main(int argc, char **argv) {
   int fail = 0;
   double obj_value;
   char file_c_str[PETSC_MAX_PATH_LEN];
+  char validation_c_str[PETSC_MAX_PATH_LEN];
   std::string file;
   char appname[] = "opflow";
   MPI_Comm comm = MPI_COMM_WORLD;
-  int num_copies = 1;
+  int num_copies = 0;
 
   char help[] = "Unit tests for objective function running opflow\n";
 
@@ -50,7 +51,7 @@ int main(int argc, char **argv) {
                                PETSC_MAX_PATH_LEN, &flg);
   CHKERRQ(ierr);
 
-  /* Get network data file from command line */
+  /* Get num_copies from command line */
   ierr = PetscOptionsGetInt(NULL, NULL, "-num_copies", &num_copies, &flg);
   CHKERRQ(ierr);
 
@@ -61,7 +62,13 @@ int main(int argc, char **argv) {
   }
 
   // Set obj_value as reference solution, and run as usual
-  obj_value = 10.0 * num_copies;
+  /* Get validation data file from command line */
+  ierr = PetscOptionsGetString(NULL, NULL, "-validation", validation_c_str,
+                               PETSC_MAX_PATH_LEN, &flg);
+  CHKERRQ(ierr);
+  readFromFile(&obj_value, validation_c_str);
+
+  obj_value = obj_value * num_copies;
 
   OPFLOW opflowtest;
   exago::tests::TestOpflow test;
@@ -71,8 +78,6 @@ int main(int argc, char **argv) {
   CHKERRQ(ierr);
   ierr = OPFLOWReadMatPowerData(opflowtest, file.c_str());
   CHKERRQ(ierr);
-  ierr = OPFLOWSetModel(opflowtest, OPFLOWMODEL_PBPOL);
-  CHKERRQ(ierr);
   ierr = OPFLOWSetInitializationType(opflowtest, OPFLOWINIT_FROMFILE);
   CHKERRQ(ierr);
   ierr = OPFLOWSetUp(opflowtest);
@@ -80,8 +85,69 @@ int main(int argc, char **argv) {
   ierr = OPFLOWGetSolution(opflowtest, &X);
   CHKERRQ(ierr);
 
-  fail += test.computeObjective(opflowtest, X, obj_value);
+  // If we are using HIOP, need to convert X
+  // The string lengths must be 65
+  char modelname[64];
+  char solvername[64];
+  ierr = OPFLOWGetModel(opflowtest, modelname);
+  ierr = OPFLOWGetSolver(opflowtest, solvername);
 
+  if (strncmp(solvername, "HIOP", 64) == 0) {
+    double *x_ref;
+    ierr = VecGetArray(X, &x_ref);
+
+    int nx, nconeq, nconineq;
+    ierr = OPFLOWGetSizes(opflowtest, &nx, &nconeq, &nconineq);
+    CHKERRQ(ierr);
+
+    // If we are running using the CPU model, nothing needs to be done
+    if (strncmp(modelname, "POWER_BALANCE_HIOP", 64) == 0) {
+      fail += test.computeObjective(opflowtest, x_ref, obj_value);
+    } else // Using model PBPOLRAJAHIOP
+    {
+      // Get resource manager instance
+      auto &resmgr = umpire::ResourceManager::getInstance();
+
+      // Get Allocator
+      umpire::Allocator h_allocator = resmgr.getAllocator("HOST");
+
+      // Register array xref with umpire
+      umpire::util::AllocationRecord record_x{
+          x_ref, sizeof(double) * nx, h_allocator.getAllocationStrategy()};
+      resmgr.registerAllocation(x_ref, record_x);
+      // Allocate and copy xref to device
+      double *x_ref_dev;
+
+#ifdef EXAGO_ENABLE_GPU
+
+      ierr = OPFLOWSetHIOPComputeMode(opflowtest, "GPU");
+      CHKERRQ(ierr);
+
+      umpire::Allocator d_allocator = resmgr.getAllocator("DEVICE");
+      x_ref_dev =
+          static_cast<double *>(d_allocator.allocate(nx * sizeof(double)));
+#else
+      ierr = OPFLOWSetHIOPComputeMode(opflowtest, "CPU");
+      CHKERRQ(ierr);
+      x_ref_dev = x_ref;
+#endif
+      resmgr.copy(x_ref_dev, x_ref);
+
+      fail += test.computeObjective(opflowtest, x_ref_dev, obj_value);
+
+#ifdef EXAGO_ENABLE_GPU
+      d_allocator.deallocate(x_ref_dev);
+#endif
+    }
+
+    ierr = VecRestoreArray(X, &x_ref);
+    CHKERRQ(ierr);
+
+    ierr = PetscFree(x_ref);
+    CHKERRQ(ierr);
+  } else {
+    fail += test.computeObjective(opflowtest, X, obj_value);
+  }
   ierr = OPFLOWDestroy(&opflowtest);
   CHKERRQ(ierr);
 
