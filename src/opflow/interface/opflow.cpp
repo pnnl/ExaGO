@@ -1836,6 +1836,7 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X, Vec Lambda) {
 */
 PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
   PetscErrorCode ierr;
+  OPFLOW*        opflowaddr=opflow->address;
 
   PetscFunctionBegin;
 
@@ -1892,13 +1893,12 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
 
       ierr = OPFLOWSolve(opflow2);
 
-      *opflow->address = opflow2;
+      ierr = OPFLOWDestroy(&opflow);
+      CHKERRQ(ierr);
+
+      *opflowaddr = opflow2;
     }
   }
-
-  //  ierr = OPFLOWDestroy(&opflow
-
-  //  ierr = VecView(opflow->X,0);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -2759,7 +2759,7 @@ PetscErrorCode OPFLOWSetLinesMonitored(OPFLOW opflow, PetscInt mon_mode,
   if(mon_mode == 0) {
     opflow->nlinesmon = nlinesmon;
     ierr = PetscMalloc1(opflow->nlinesmon,&opflow->linesmon);CHKERRQ(ierr);
-    ierr = PetscMemcpy(linesmon,opflow->linesmon,opflow->nlinesmon*sizeof(PetscInt));CHKERRQ(ierr);
+    ierr = PetscMemcpy(opflow->linesmon,linesmon,opflow->nlinesmon*sizeof(PetscInt));CHKERRQ(ierr);
   } else if(mon_mode == 1) {
     if (nkvlevels < 0) {
       opflow->nlinekvmon = opflow->ps->nkvlevels;

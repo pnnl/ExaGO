@@ -1905,6 +1905,7 @@ PetscErrorCode PSGetLineOverloads(PS ps,PetscInt *nodlines,PetscInt **odlines, P
 
   if(!idx) {
     /* No overloaded lines */
+    ierr = PetscFree(odlines_temp);CHKERRQ(ierr);
     hasoverload_temp = PETSC_FALSE;
     ps->has_overloaded_lines = PETSC_FALSE;
     *has_overload = PETSC_FALSE;

@@ -1474,12 +1474,14 @@ PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW opflow,
 
   *nx = 0;
   /* No variables for the branches */
+  /*
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
-    branchnvar[i] = line->nx = 0;
+    branchnvar[opflow->linesmon[i]] = line->nx = 0;
     *nx += branchnvar[i];
   }
-
+  */
+  
   /* Variables for the buses */
   for (i = 0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
