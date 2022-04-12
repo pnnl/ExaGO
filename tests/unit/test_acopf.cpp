@@ -16,7 +16,6 @@
 #include <umpire/ResourceManager.hpp>
 #endif
 
-
 /**
  * @brief Unit test driver for ACOPF models
  * @see opflow/opflow_tests.h for kernels tested by this driver

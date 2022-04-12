@@ -163,4 +163,3 @@ void spdensetonatural(const double *xin, double *xout, int *idxn2sd_map,
     xout[i] = xin[idxn2sd_map[i]];
   }
 }
-

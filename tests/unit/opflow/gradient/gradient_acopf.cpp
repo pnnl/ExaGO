@@ -117,8 +117,7 @@ int main(int argc, char **argv) {
     CHKERRQ(ierr);
     naturaltospdense(grad_vec, grad_ref, idxn2sd_map, nx);
     CHKERRQ(ierr);
-    for(int i = 0; i < nx; i++)
-    {
+    for (int i = 0; i < nx; i++) {
       std::cout << "grad_ref[" << i << "] == " << grad_ref[i] << std::endl;
     }
 
@@ -190,4 +189,3 @@ int main(int argc, char **argv) {
   ExaGOFinalize();
   return fail;
 }
-
