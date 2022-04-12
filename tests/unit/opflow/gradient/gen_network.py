@@ -4,7 +4,7 @@ import sys
 
 def header(bus_size):
   output=[]
-  output.append("function mpc = OFG-unittestx" + bus_size + "\n") 
+  output.append("function mpc = OFG_unittestx" + bus_size + "\n") 
   output.append("mpc.version = '2';\n")
   output.append("mpc.baseMVA =  100.00;\n")
   output.append("\n")
@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
   print(f'Generating a network of size {network_length}')
 
-  output_filename='OFG-unittestx' + network_length + '.m'
+  output_filename='OFG_unittestx' + network_length + '.m'
   
   f=open(output_filename,"w+")
 
