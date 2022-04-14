@@ -9,6 +9,8 @@
 #include "opflow_tests.h"
 #include "test_acopf_utils.h"
 
+#include <unistd.h>
+
 /**
  * @brief Unit test driver for objective function
  * @see opflow/OpflowTests.hpp for kernel tested by this driver
@@ -37,6 +39,14 @@ int main(int argc, char **argv) {
   int num_copies = 0;
 
   char help[] = "Unit tests for gradient function running opflow\n";
+
+  // volatile int i = 0;
+  // char hostname[256];
+  // gethostname(hostname, sizeof(hostname));
+  // printf("PID %d on %s ready for attach\n", getpid(), hostname);
+  // fflush(stdout);
+  // while (0 == i)
+  //   sleep(5);
 
   /** Use `ExaGOLogSetLoggingFileName("opflow-logfile");` to log the output. */
   ierr = ExaGOInitialize(comm, &argc, &argv, appname, help);
@@ -80,9 +90,19 @@ int main(int argc, char **argv) {
   CHKERRQ(ierr);
   ierr = OPFLOWGetSolution(opflowtest, &X);
   CHKERRQ(ierr);
+  // Set X From configuration
+  int nx, nconeq, nconineq;
+  ierr = OPFLOWGetSizes(opflowtest, &nx, &nconeq, &nconineq);
+  CHKERRQ(ierr);
+
+  for(int i= 0; i< nx; i++)
+  {
+    VecSetValue(X, i, i, INSERT_VALUES);
+  }
+
   ierr = VecDuplicate(X, &grad);
   CHKERRQ(ierr);
-  readFromFile(&grad, validation_c_str);
+  // readFromFile(&grad, validation_c_str);
 
   // If we are using HIOP, need to convert X
   // The string lengths must be 65
@@ -99,9 +119,6 @@ int main(int argc, char **argv) {
     ierr = VecGetArray(grad, &grad_vec);
     CHKERRQ(ierr);
 
-    int nx, nconeq, nconineq;
-    ierr = OPFLOWGetSizes(opflowtest, &nx, &nconeq, &nconineq);
-    CHKERRQ(ierr);
 
     int *idxn2sd_map;
     ierr = OPFLOWGetVariableOrdering(opflowtest, &idxn2sd_map);

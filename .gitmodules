@@ -1,6 +1,7 @@
 [submodule "tests/toml11"]
 	path = tpl/toml11
-  url = https://github.com/ToruNiina/toml11.git
+	url = https://github.com/ToruNiina/toml11.git
+
 [submodule "tpl/spdlog"]
 	path = tpl/spdlog
 	url = https://github.com/gabime/spdlog.git

@@ -1382,6 +1382,9 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
   ierr = VecGetArray(grad, &df);
   CHKERRQ(ierr);
 
+  VecView(X, PETSC_VIEWER_STDOUT_SELF);
+  VecView(grad, PETSC_VIEWER_STDOUT_SELF);
+
   for (i = 0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
 
@@ -1406,7 +1409,13 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
       if (opflow->objectivetype == MIN_GEN_COST) {
         loc = gen->startxpowloc;
         Pg = x[loc] * ps->MVAbase;
-        df[loc] = ps->MVAbase * (2 * gen->cost_alpha * Pg + gen->cost_beta);
+	printf("Pg = %g\n", Pg);
+	printf("gen->cost_alpha = %g\n", gen->cost_alpha);
+	printf("gen->cost_beta = %g\n", gen->cost_beta);
+	printf("ps->MVAbase = %g\n", ps->MVAbase);
+	printf("loc = %d\n", loc);
+	printf("x[loc] = %g\n", x[loc]);
+        df[loc] = ps->MVAbase * (3 * gen->cost_alpha * Pg + gen->cost_beta);
         flps += 5.0;
       } else if (opflow->objectivetype == MIN_GENSETPOINT_DEVIATION) {
         PetscScalar delPg;
@@ -1439,6 +1448,9 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
   CHKERRQ(ierr);
   ierr = VecRestoreArray(grad, &df);
   CHKERRQ(ierr);
+
+  VecView(X, PETSC_VIEWER_STDOUT_SELF);
+  VecView(grad, PETSC_VIEWER_STDOUT_SELF);
 
   PetscLogFlops(flps);
   PetscFunctionReturn(0);

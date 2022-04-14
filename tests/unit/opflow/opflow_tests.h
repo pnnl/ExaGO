@@ -1253,6 +1253,10 @@ private:
                i, avals[i], i, bvals[i], tol);
         fail++;
       }
+      else
+      {
+        printf("avals[%d] = %18.16f IS equal to bvals[%d] = %18.16f.\n", i, avals[i], i, bvals[i]);
+      }
     }
 
     return (fail);
