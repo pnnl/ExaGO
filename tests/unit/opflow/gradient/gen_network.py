@@ -6,7 +6,7 @@ def header(bus_size):
   output=[]
   output.append("function mpc = OFG_unittestx" + bus_size + "\n") 
   output.append("mpc.version = '2';\n")
-  output.append("mpc.baseMVA =  100.00;\n")
+  output.append("mpc.baseMVA =  1.00;\n")
   output.append("\n")
   return output
 
@@ -44,7 +44,7 @@ def gen_cost(bus_size):
   output.append("%% generator cost data\n")
   output.append("mpc.gencost = [\n")
   for _ in range(int(bus_size)):
-    output.append("2 0 0 4 0.0000 0.450 0.100 8.00\n")
+    output.append("2 0 0 4 0.0450 0.100 8.00\n")
   output.append("];\n")
   output.append("\n")
   return output

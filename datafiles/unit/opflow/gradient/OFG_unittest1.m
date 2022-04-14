@@ -1,7 +1,7 @@
 % Case saved by PowerWorld Simulator, version 22, build date March 15, 2021
 function mpc = OFG-unittest1
 mpc.version = '2';
-mpc.baseMVA =  100.00;
+mpc.baseMVA =  1.00;
 
 %% bus data 
 mpc.bus = [
@@ -19,7 +19,7 @@ mpc.gen = [
 
 %% generator cost data
 mpc.gencost = [
-2	0	0	4	0.0000	0.045	0.100	8.00
+2	0	0	4	0.045	0.100	8.00
 ];
 
 %% branch data

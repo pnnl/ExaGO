@@ -1415,7 +1415,7 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
 	printf("ps->MVAbase = %g\n", ps->MVAbase);
 	printf("loc = %d\n", loc);
 	printf("x[loc] = %g\n", x[loc]);
-        df[loc] = ps->MVAbase * (3 * gen->cost_alpha * Pg + gen->cost_beta);
+        df[loc] = ps->MVAbase * (2 * gen->cost_alpha * Pg + gen->cost_beta);
         flps += 5.0;
       } else if (opflow->objectivetype == MIN_GENSETPOINT_DEVIATION) {
         PetscScalar delPg;
