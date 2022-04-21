@@ -96,8 +96,6 @@ int main(int argc, char **argv) {
 
   fail += test.computeGradient(opflowtest, X, grad);
 
-  ierr = VecDestroy(&X);
-  CHKERRQ(ierr);
   ierr = VecDestroy(&grad);
   CHKERRQ(ierr);
 
