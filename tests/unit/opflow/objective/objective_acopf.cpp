@@ -11,7 +11,7 @@
 
 /**
  * @brief Unit test driver for objective function
- * @see opflow/OpflowTests.hpp for kernel tested by this driver
+ * @see tests/unit/opflow/opflow_tests.h for kernel tested by this driver
  *
  * You can pass two options to the objectiveAcopf executatable through the
  * command line (implemented using PETSc options):
@@ -51,15 +51,16 @@ int main(int argc, char **argv) {
                                PETSC_MAX_PATH_LEN, &flg);
   CHKERRQ(ierr);
 
-  /* Get num_copies from command line */
-  ierr = PetscOptionsGetInt(NULL, NULL, "-num_copies", &num_copies, &flg);
-  CHKERRQ(ierr);
-
   if (!flg) {
     file = "../datafiles/case9/case9mod.m";
   } else {
     file.assign(file_c_str);
   }
+
+  /* Get num_copies from command line */
+  ierr = PetscOptionsGetInt(NULL, NULL, "-num_copies", &num_copies, &flg);
+  CHKERRQ(ierr);
+
 
   // Set obj_value as reference solution, and run as usual
   /* Get validation data file from command line */

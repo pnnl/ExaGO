@@ -11,14 +11,12 @@ target_include_directories(gradient_acopf PRIVATE ../)
 
 # Network files to run on - doing 3 and 600 bus examples.
 set(prefix ${EXAGO_DATAFILES_DIR}/unit/opflow/gradient/)
-set(obj_network_files OFG_unittest1.m)
-# Map num_copies to a specific netfile
-set(num_copies 1)
+set(obj_network_files OFG_unittest1.m OFG_unittestx3.m OFG_unittestx600.m)
 
 list(TRANSFORM obj_network_files PREPEND ${prefix})
 
-set(solvers IPOPT HIOPSPARSE)
 set(models POWER_BALANCE_POLAR POWER_BALANCE_POLAR)
+set(solvers IPOPT HIOPSPARSE)
 set(dependencies IPOPT HIOP_SPARSE)
 
 if(EXAGO_INSTALL_TESTS)
@@ -33,8 +31,8 @@ if(EXAGO_INSTALL_TESTS)
     solvers
     dependencies
   )
-    # Iterate over networks, matching network file to num_copies
-    foreach(network num IN ZIP_LISTS obj_network_files num_copies)
+    # Iterate over networks
+    foreach(network ${obj_network_files})
       get_filename_component(net ${network} NAME)
       set(testname "UNIT_TESTS_GRADIENT_${net}_${solver}_${model}")
       exago_add_test(
@@ -51,10 +49,6 @@ if(EXAGO_INSTALL_TESTS)
         ${solver}
         -netfile
         ${network}
-        -num_copies
-        ${num}
-        -validation
-        ${CMAKE_CURRENT_SOURCE_DIR}/ofg.csv
       )
     endforeach()
   endforeach()

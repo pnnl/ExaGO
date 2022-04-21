@@ -9,44 +9,32 @@
 #include "opflow_tests.h"
 #include "test_acopf_utils.h"
 
-#include <unistd.h>
-
 /**
- * @brief Unit test driver for objective function
- * @see opflow/OpflowTests.hpp for kernel tested by this driver
+ * @brief Unit test driver for gradient function
+ * @see /tests/unit/opflow/opflow_tests.h for kernel tested by this driver
  *
- * You can pass two options to the objectiveAcopf executatable through the
+ * You can pass the following option to the gradientAcopf executatable through the
  * command line (implemented using PETSc options):
  *
  *    ~ -netfile <data_file> : Specifies the input data file to test against.
  * Default value is `/<exago_dir>/datafiles/case9/case9mod.m`. See directory
  * datafiles for other potential inputs.
  *
- *    ~ -num_copies <number> : Specifies the number of replications of the
- * network given through `-netfile`. If this is not set properly, test may fail
  *
  */
 int main(int argc, char **argv) {
   PetscErrorCode ierr;
   PetscBool flg;
   Vec X, grad;
+  int nx, nconeq, nconineq;
+  PetscScalar *x_arr, *grad_arr;
   int fail = 0;
   char file_c_str[PETSC_MAX_PATH_LEN];
-  // char validation_c_str[PETSC_MAX_PATH_LEN];
   std::string file;
   char appname[] = "opflow";
   MPI_Comm comm = MPI_COMM_WORLD;
-  // int num_copies = 0;
 
   char help[] = "Unit tests for gradient function running opflow\n";
-
-  // volatile int i = 0;
-  // char hostname[256];
-  // gethostname(hostname, sizeof(hostname));
-  // printf("PID %d on %s ready for attach\n", getpid(), hostname);
-  // fflush(stdout);
-  // while (0 == i)
-  //   sleep(5);
 
   /** Use `ExaGOLogSetLoggingFileName("opflow-logfile");` to log the output. */
   ierr = ExaGOInitialize(comm, &argc, &argv, appname, help);
@@ -60,21 +48,11 @@ int main(int argc, char **argv) {
                                PETSC_MAX_PATH_LEN, &flg);
   CHKERRQ(ierr);
 
-  /* Get num_copies from command line */
-  //ierr = PetscOptionsGetInt(NULL, NULL, "-num_copies", &num_copies, &flg);
-  //CHKERRQ(ierr);
-
   if (!flg) {
     file = "../datafiles/case9/case9mod.m";
   } else {
     file.assign(file_c_str);
   }
-
-  // Set obj_value as reference solution, and run as usual
-  /* Get validation data file from command line */
-  // ierr = PetscOptionsGetString(NULL, NULL, "-validation", validation_c_str,
-  //                              PETSC_MAX_PATH_LEN, &flg);
-  // CHKERRQ(ierr);
 
   OPFLOW opflowtest;
   exago::tests::TestOpflow test;
@@ -82,51 +60,51 @@ int main(int argc, char **argv) {
   /* Set up test opflow */
   ierr = OPFLOWCreate(PETSC_COMM_WORLD, &opflowtest);
   CHKERRQ(ierr);
-
-  ierr = OPFLOWReadMatPowerData(opflowtest, "/ccsopen/home/rcrutherford/exago/exago-git/datafiles/unit/opflow/gradient/OFG_unittest1.m");
+  ierr = OPFLOWReadMatPowerData(opflowtest, file.c_str());
   CHKERRQ(ierr);
-
   ierr = OPFLOWSetInitializationType(opflowtest, OPFLOWINIT_FROMFILE);
   CHKERRQ(ierr);
-
   ierr = OPFLOWSetUp(opflowtest);
   CHKERRQ(ierr);
-
   ierr = OPFLOWGetSolution(opflowtest, &X);
   CHKERRQ(ierr);
 
-  VecView(X, 	PETSC_VIEWER_STDOUT_SELF);
-
-  // Set X From configuration
-  int nx, nconeq, nconineq;
   ierr = OPFLOWGetSizes(opflowtest, &nx, &nconeq, &nconineq);
   CHKERRQ(ierr);
 
-  for(int i= 0; i< nx; i++)
-  {
-    VecSetValue(X, i, 10, INSERT_VALUES);
-  }
-
+  // Set Grad Based on X
   ierr = VecDuplicate(X, &grad);
   CHKERRQ(ierr);
-  // readFromFile(&grad, validation_c_str);
 
-  // fail += test.computeGradient(opflowtest, X, grad);
-  Vec grad_tmp;
-  
-  ierr = VecDuplicate(grad, &grad_tmp);
+
+  ierr = VecGetArray(X, &x_arr);
   CHKERRQ(ierr);
-  ierr = VecSet(grad_tmp, 0.0);
-  CHKERRQ(ierr);
-  ierr = OPFLOWComputeGradient(opflowtest, X, grad_tmp);
+  ierr = VecGetArray(grad, &grad_arr);
   CHKERRQ(ierr);
 
-  //fail += verifyAnswer(grad_tmp, grad);
-  VecView(grad, PETSC_VIEWER_STDOUT_SELF);
-  VecView(grad_tmp, PETSC_VIEWER_STDOUT_SELF);
+  // Gradient for all generator costs should be 1
+  // 10 corresponds to locations of non-zero values
+  for(int i= 0; i< nx; i++)
+  {
+    if(x_arr[i] == 10)
+    {
+      grad_arr[i] = 1.0;
+    }
+  }
 
-  ierr = VecDestroy(&grad_tmp);
-  CHKERRQ(ierr); 
+  ierr = VecRestoreArray(X, &x_arr);
+  CHKERRQ(ierr);
+  ierr = VecRestoreArray(grad, &grad_arr);
+  CHKERRQ(ierr);
+
+  // If we are using HIOP, need to convert X
+  // The string lengths must be 65
+  char modelname[64];
+  char solvername[64];
+  ierr = OPFLOWGetModel(opflowtest, modelname);
+  ierr = OPFLOWGetSolver(opflowtest, solvername);
+
+  fail += test.computeGradient(opflowtest, X, grad);
 
   ierr = VecDestroy(&grad);
   CHKERRQ(ierr);
