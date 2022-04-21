@@ -9,7 +9,7 @@ target_link_libraries(gradient_acopf ExaGO::OPFLOW)
 target_include_directories(gradient_acopf PRIVATE ../../utils)
 target_include_directories(gradient_acopf PRIVATE ../)
 
-# Network files to run on - doing 3 and 600 bus examples.
+# Network files to run on
 set(prefix ${EXAGO_DATAFILES_DIR}/unit/opflow/gradient/)
 set(obj_network_files OFG_unittest1.m OFG_unittestx3.m OFG_unittestx600.m)
 

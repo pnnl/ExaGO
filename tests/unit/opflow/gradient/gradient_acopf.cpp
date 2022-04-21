@@ -94,15 +94,10 @@ int main(int argc, char **argv) {
   ierr = VecRestoreArray(grad, &grad_arr);
   CHKERRQ(ierr);
 
-  // If we are using HIOP, need to convert X
-  // The string lengths must be 65
-  char modelname[64];
-  char solvername[64];
-  ierr = OPFLOWGetModel(opflowtest, modelname);
-  ierr = OPFLOWGetSolver(opflowtest, solvername);
-
   fail += test.computeGradient(opflowtest, X, grad);
 
+  ierr = VecDestroy(&X);
+  CHKERRQ(ierr);
   ierr = VecDestroy(&grad);
   CHKERRQ(ierr);
 
