@@ -11,7 +11,9 @@ target_include_directories(objective_acopf PRIVATE ../)
 
 # Network files to run on - doing 3 and 600 bus examples.
 set(prefix ${EXAGO_DATAFILES_DIR}/unit/opflow/objective/)
-set(obj_network_files OF_unittest1.m OF_unittestx2.m OF_unittestx3.m OF_unittestx600.m)
+set(obj_network_files OF_unittest1.m OF_unittestx2.m OF_unittestx3.m
+                      OF_unittestx600.m
+)
 # Map num_copies to a specific netfile
 set(num_copies 1 2 3 600)
 

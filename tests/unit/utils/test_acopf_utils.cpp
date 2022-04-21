@@ -56,22 +56,20 @@ void readFromFile(Vec *vector, std::string file) {
 
   PetscErrorCode ierr;
 
-  // ierr = VecCreate(PETSC_COMM_WORLD, vector);
-  // CHKERRV(ierr);
+  ierr = VecCreate(PETSC_COMM_WORLD, vector);
+  CHKERRV(ierr);
 
   std::ifstream f(file);
   if (f.is_open()) {
     PetscInt n;
 
-    /*
     f >> n;
 
     ierr = VecSetSizes(*vector, n, PETSC_DECIDE);
     CHKERRV(ierr);
-    */
 
-    //ierr = VecSetFromOptions(*vector);
-    //CHKERRV(ierr);
+    ierr = VecSetFromOptions(*vector);
+    CHKERRV(ierr);
 
     ierr = VecGetSize(*vector, &n);
     CHKERRV(ierr);

@@ -13,8 +13,8 @@
  * @brief Unit test driver for gradient function
  * @see /tests/unit/opflow/opflow_tests.h for kernel tested by this driver
  *
- * You can pass the following option to the gradientAcopf executatable through the
- * command line (implemented using PETSc options):
+ * You can pass the following option to the gradientAcopf executatable through
+ * the command line (implemented using PETSc options):
  *
  *    ~ -netfile <data_file> : Specifies the input data file to test against.
  * Default value is `/<exago_dir>/datafiles/case9/case9mod.m`. See directory
@@ -76,7 +76,6 @@ int main(int argc, char **argv) {
   ierr = VecDuplicate(X, &grad);
   CHKERRQ(ierr);
 
-
   ierr = VecGetArray(X, &x_arr);
   CHKERRQ(ierr);
   ierr = VecGetArray(grad, &grad_arr);
@@ -84,10 +83,8 @@ int main(int argc, char **argv) {
 
   // Gradient for all generator costs should be 1
   // 10 corresponds to locations of non-zero values
-  for(int i= 0; i< nx; i++)
-  {
-    if(x_arr[i] == 10)
-    {
+  for (int i = 0; i < nx; i++) {
+    if (x_arr[i] == 10) {
       grad_arr[i] = 1.0;
     }
   }

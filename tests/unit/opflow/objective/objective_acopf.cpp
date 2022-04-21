@@ -61,7 +61,6 @@ int main(int argc, char **argv) {
   ierr = PetscOptionsGetInt(NULL, NULL, "-num_copies", &num_copies, &flg);
   CHKERRQ(ierr);
 
-
   // Set obj_value as reference solution, and run as usual
   /* Get validation data file from command line */
   ierr = PetscOptionsGetString(NULL, NULL, "-validation", validation_c_str,
