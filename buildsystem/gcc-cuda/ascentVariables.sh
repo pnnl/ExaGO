@@ -5,6 +5,7 @@ module purge
 module use -a /gpfs/wolf/proj-shared/csc359/src/cameron-spack/share/spack/modules/linux-rhel8-power9le
 
 # Load spack modules
+
 # autoconf@2.69%gcc@9.1.0 patches=35c4492,7793209,a49dd5b arch=linux-rhel8-power9le
 module load autoconf-2.69-gcc-9.1.0-vnxzsnr
 # autoconf-archive@2019.01.06%gcc@9.1.0 arch=linux-rhel8-power9le
@@ -118,7 +119,7 @@ module load cmake/3.22.2
 
 export MY_PETSC_DIR=$PETSC_DIR
 export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DCMAKE_CUDA_ARCHITECTURES=70"
-export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DEXAGO_CTEST_LAUNCH_COMMAND='jsrun -g 1'"
+export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DEXAGO_CTEST_LAUNCH_COMMAND=jsrun;-g;1"
 
 [ -f $PWD/nvblas.conf ] && rm $PWD/nvblas.conf
 cat > $PWD/nvblas.conf <<-EOD
