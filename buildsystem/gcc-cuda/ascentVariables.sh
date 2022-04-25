@@ -67,8 +67,6 @@ module load mpfr-4.1.0-gcc-9.1.0-2qjplyw
 module load ncurses-6.2-gcc-9.1.0-aa4mmvm
 # openblas@0.3.19%gcc@9.1.0~bignuma~consistent_fpcsr~ilp64+locking+pic+shared symbol_suffix=none threads=none arch=linux-rhel8-power9le
 module load openblas-0.3.19-gcc-9.1.0-c6nslyv
-# openssl@1.1.1m%gcc@9.1.0~docs certs=system arch=linux-rhel8-power9le
-module load openssl-1.1.1m-gcc-9.1.0-u6h6mbd
 # parmetis@4.0.3%gcc@9.1.0~gdb~int64~ipo+shared build_type=RelWithDebInfo patches=4f89253,50ed208,704b84f arch=linux-rhel8-power9le
 module load parmetis-4.0.3-gcc-9.1.0-nhshpa6
 # perl@5.30.1%gcc@9.1.0+cpanm+shared+threads arch=linux-rhel8-power9le
@@ -118,7 +116,7 @@ module load cmake/3.22.2
 
 export MY_PETSC_DIR=$PETSC_DIR
 export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DCMAKE_CUDA_ARCHITECTURES=70"
-export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DEXAGO_CTEST_LAUNCH_COMMAND='jsrun -g 1'"
+export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DEXAGO_CTEST_LAUNCH_COMMAND=jsrun;-n1;-g1"
 
 [ -f $PWD/nvblas.conf ] && rm $PWD/nvblas.conf
 cat > $PWD/nvblas.conf <<-EOD
