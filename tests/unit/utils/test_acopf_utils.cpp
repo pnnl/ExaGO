@@ -67,11 +67,7 @@ void readFromFile(Vec *vector, std::string file) {
 
     ierr = VecSetSizes(*vector, n, PETSC_DECIDE);
     CHKERRV(ierr);
-
     ierr = VecSetFromOptions(*vector);
-    CHKERRV(ierr);
-
-    ierr = VecGetSize(*vector, &n);
     CHKERRV(ierr);
 
     PetscInt *indices = new PetscInt[n];
