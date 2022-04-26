@@ -27,10 +27,10 @@ function doBuild {
     echo
     echo Configuring
     echo
-    cmake \
+    eval "cmake \
       -C $SRCDIR/buildsystem/gcc-cuda/cache.cmake \
-      $EXTRA_CMAKE_ARGS \
-      .. || return 1
+      $EXTRA_CMAKE_ARGS .." \
+      || return 1
   
     echo
     echo Building
