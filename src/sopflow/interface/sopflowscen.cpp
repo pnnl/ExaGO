@@ -57,8 +57,8 @@ SOPFLOWReadScenarioData_Wind_SinglePeriod(SOPFLOW sopflow,
   PetscReal pg, weight;
   int scen_num = 0;
   int genid;
-  int windgenbus[100];
-  char windgenid[100][3];
+  int windgenbus[1000];
+  char windgenid[1000][3];
   int i;
   ScenarioList *scenlist = &sopflow->scenlist;
   Scenario *scenario;
@@ -66,7 +66,7 @@ SOPFLOWReadScenarioData_Wind_SinglePeriod(SOPFLOW sopflow,
 
   PetscFunctionBegin;
 
-  ngenwind = 100; // This should be increased for larger cases (?)
+  ngenwind = 1000; // This should be increased for larger cases (?)
   fp = fopen(windgenprofile, "r");
   if (fp == NULL) {
     SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
@@ -170,8 +170,8 @@ SOPFLOWReadScenarioData_Wind_MultiPeriod(SOPFLOW sopflow,
   PetscReal pg;
   int scen_num = 0;
   int genid;
-  int windgenbus[100];
-  char windgenid[100][3];
+  int windgenbus[1000];
+  char windgenid[1000][3];
   int i;
   ScenarioList *scenlist = &sopflow->scenlist;
   Scenario *scenario;
@@ -179,7 +179,7 @@ SOPFLOWReadScenarioData_Wind_MultiPeriod(SOPFLOW sopflow,
 
   PetscFunctionBegin;
 
-  ngenwind = 100; // This should be increased for larger cases (?)
+  ngenwind = 1000; // This should be increased for larger cases (?)
   fp = fopen(windgenprofile, "r");
   if (fp == NULL) {
     SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
