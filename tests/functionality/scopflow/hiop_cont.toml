@@ -33,7 +33,7 @@ subproblem_model = 'POWER_BALANCE_HIOP'
 subproblem_solver = 'HIOP'
 num_contingencies = -1
 num_iters = 1
-obj_value = 4108.461435148055
+obj_value = 4072.4632566566206
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
@@ -42,8 +42,8 @@ description = 'case_ACTIVSg200.m with HIOP solver/4 contingencies'
 subproblem_model = 'POWER_BALANCE_HIOP'
 subproblem_solver = 'HIOP'
 num_contingencies = 4
-num_iters = 1
-obj_value = 26757.526402535495
+num_iters = 2
+obj_value = 25957.67116859898
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'

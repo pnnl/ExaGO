@@ -446,7 +446,7 @@ PetscErrorCode SOPFLOWSetContingencyData(SOPFLOW sopflow,
   ierr =
       PetscMemcpy(sopflow->ctgfile, ctgfile, PETSC_MAX_PATH_LEN * sizeof(char));
   CHKERRQ(ierr);
-
+  sopflow->ctgcfileset = PETSC_TRUE;
   PetscFunctionReturn(0);
 }
 
@@ -692,27 +692,27 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
     sopflow->ismulticontingency =
         PETSC_FALSE; // Collapse contingencies into scenarios
 
-    if (flgctgc) {
+    if (flgctgc && !sopflow->ctgcfileset) {
       /* Need to remove hard coded native format later */
       ierr = SOPFLOWSetContingencyData(sopflow, NATIVE, ctgcfile);
       CHKERRQ(ierr);
+    }
 
-      if (sopflow->Nc < 0)
-        sopflow->Nc = MAX_CONTINGENCIES;
-      else
-        sopflow->Nc += 1;
+    if (sopflow->Nc < 0)
+      sopflow->Nc = MAX_CONTINGENCIES;
+    else
+      sopflow->Nc += 1;
 
-      if (sopflow->Nc > 1) {
-        /* Create contingency list object */
-        ierr = ContingencyListCreate(sopflow->Nc, &sopflow->ctgclist);
-        CHKERRQ(ierr);
-        ierr = ContingencyListSetData(
-            sopflow->ctgclist, sopflow->ctgcfileformat, sopflow->ctgcfile);
-        CHKERRQ(ierr);
-        ierr = ContingencyListReadData(sopflow->ctgclist, &sopflow->Nc);
-        CHKERRQ(ierr);
-        sopflow->Nc += 1;
-      }
+    if (sopflow->Nc > 1) {
+      /* Create contingency list object */
+      ierr = ContingencyListCreate(sopflow->Nc, &sopflow->ctgclist);
+      CHKERRQ(ierr);
+      ierr = ContingencyListSetData(sopflow->ctgclist, sopflow->ctgcfileformat,
+                                    sopflow->ctgcfile);
+      CHKERRQ(ierr);
+      ierr = ContingencyListReadData(sopflow->ctgclist, &sopflow->Nc);
+      CHKERRQ(ierr);
+      sopflow->Nc += 1;
     } else {
       if (sopflow->Nc == -1)
         sopflow->Nc = 1;
@@ -933,6 +933,10 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
         ierr =
             PSApplyScenario(ps, sopflow->scenlist.scen[sopflow->scen_num[s]]);
         CHKERRQ(ierr);
+        /* Set scenario probability */
+        ierr =
+            OPFLOWSetWeight(sopflow->opflows[s],
+                            sopflow->scenlist.scen[sopflow->scen_num[s]].prob);
       }
 
       if (flgctgc && sopflow->flatten_contingencies && sopflow->Nc > 1) {

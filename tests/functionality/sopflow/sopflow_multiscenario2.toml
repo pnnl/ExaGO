@@ -1,0 +1,39 @@
+testsuite_name = "SOPFLOW Multiscenario Functionality tests 2"
+
+[presets]
+tolerance = 1e-3
+network = 'datafiles/case_ACTIVSg200.m'
+scenfile = 'datafiles/10_scenarios_ACTIVSg200.csv'
+multicontingency = false
+multiperiod = false
+flatten = true
+
+[[testcase]]
+description = 'datafiles/case_ACTIVSg200.m IPOPT 1scen ACPF init SOPFLOW'
+solver = 'IPOPT'
+num_scenarios = 1
+tolerance = 1.0e-03
+initialization_type = 'ACPF'
+gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
+num_iters = 42
+obj_value = 14313.141627649804
+
+[[testcase]]
+description = 'datafiles/case_ACTIVSg200.m IPOPT 2scen ACPF init SOPFLOW'
+solver = 'IPOPT'
+num_scenarios = 2
+tolerance = 1.0e-03
+initialization_type = 'ACPF'
+gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
+num_iters = 63
+obj_value = 14313.142350311331
+
+[[testcase]]
+description = 'datafiles/case_ACTIVSg200.m IPOPT 3scen ACPF init SOPFLOW'
+solver = 'IPOPT'
+num_scenarios = 3
+tolerance = 1.0e-03
+initialization_type = 'ACPF'
+gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
+num_iters = 57
+obj_value = 14313.142350311331

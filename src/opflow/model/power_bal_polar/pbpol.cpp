@@ -1358,6 +1358,9 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow, Vec X,
   ierr = VecRestoreArrayRead(X, &x);
   CHKERRQ(ierr);
 
+  /* Multiply by the weight */
+  *obj *= opflow->weight;
+
   PetscLogFlops(flps);
   PetscFunctionReturn(0);
 }
@@ -1438,6 +1441,10 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
   ierr = VecRestoreArrayRead(X, &x);
   CHKERRQ(ierr);
   ierr = VecRestoreArray(grad, &df);
+  CHKERRQ(ierr);
+
+  /* Scale the objective by the weight (probability) of the problem */
+  ierr = VecScale(grad, opflow->weight);
   CHKERRQ(ierr);
 
   PetscLogFlops(flps);
@@ -2596,6 +2603,7 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow, Vec X,
   PetscInt row[2], col[2];
   PetscScalar val[2];
   PetscScalar obj_factor = opflow->obj_factor;
+  PetscScalar weight = opflow->weight;
   PetscInt flps = 0;
 
   PetscFunctionBegin;
@@ -2640,7 +2648,8 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow, Vec X,
         row[0] = xlocglob;
         col[0] = xlocglob;
 
-        val[0] = obj_factor * 2.0 * gen->cost_alpha * ps->MVAbase * ps->MVAbase;
+        val[0] = weight * obj_factor * 2.0 * gen->cost_alpha * ps->MVAbase *
+                 ps->MVAbase;
         ierr = MatSetValues(H, 1, row, 1, col, val, ADD_VALUES);
         CHKERRQ(ierr);
         flps += 4;
@@ -2648,7 +2657,7 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow, Vec X,
         xlocglob = gen->startxpdevlocglob;
         row[0] = xlocglob;
         col[0] = xlocglob;
-        val[0] = obj_factor * 2.0;
+        val[0] = weight * obj_factor * 2.0;
         ierr = MatSetValues(H, 1, row, 1, col, val, ADD_VALUES);
         CHKERRQ(ierr);
 

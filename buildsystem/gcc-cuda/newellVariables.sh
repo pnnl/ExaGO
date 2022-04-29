@@ -83,6 +83,9 @@ module load superlu-dist-7.2.0-gcc-7.4.0-hy6qjol
 module load umpire-6.0.0-gcc-7.4.0-ncjv7xt
 # zlib@1.2.11%gcc@7.4.0+optimize+pic+shared arch=linux-rhel7-power9le
 module load zlib-1.2.11-gcc-7.4.0-vnk3szs
+# suite-sparse@5.10.1%gcc@7.4.0~cuda~graphblas~openmp+pic~tbb arch=linux-rhel7-power9le
+module load suite-sparse-5.10.1-gcc-7.4.0-btuc2bk
+
 
 # Load system modules
 module load gcc/7.4.0

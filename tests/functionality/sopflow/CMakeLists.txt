@@ -32,6 +32,29 @@ if(EXAGO_INSTALL_TESTS)
 
   exago_add_test(
     NAME
+    FUNCTIONALITY_TEST_SOPFLOW_SCENARIO2_TOML
+    DEPENDS
+    IPOPT
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:test_sopflow_functionality>
+    ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario2.toml
+  )
+
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_SOPFLOW_SCENARIO3_TOML
+    DEPENDS
+    IPOPT
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:test_sopflow_functionality>
+    ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario3.toml
+    -opflow_ignore_lineflow_constraints
+  )
+
+  exago_add_test(
+    NAME
     FUNCTIONALITY_TEST_SOPFLOW_CONTINGENCY_TOML
     DEPENDS
     IPOPT
@@ -77,6 +100,8 @@ if(EXAGO_INSTALL_TESTS)
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_raja.toml
     -no_optfile
+    -opflow_include_powerimbalance_variables
+    -opflow_ignore_lineflow_constraints
   )
 
   exago_add_test(
@@ -91,21 +116,23 @@ if(EXAGO_INSTALL_TESTS)
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_mpi_raja.toml
     -no_optfile
+    -opflow_include_powerimbalance_variables
+    -opflow_ignore_lineflow_constraints
   )
+endif()
 
-  # Disabled test for now, feature not ready yet
-  if(EXAGO_ENABLE_ALL_TESTS)
-    exago_add_test(
-      NAME
-      FUNCTIONALITY_TEST_SOPFLOW_CONTINGENCY_MULTIPERIOD_TOML
-      DEPENDS
-      IPOPT
-      COMMAND
-      ${MPICMD}
-      "-n"
-      3
-      $<TARGET_FILE:test_sopflow_functionality>
-      ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiperiod.toml
-    )
-  endif()
+# Disabled test for now, feature not ready yet
+if(EXAGO_ENABLE_ALL_TESTS)
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_SOPFLOW_CONTINGENCY_MULTIPERIOD_TOML
+    DEPENDS
+    IPOPT
+    COMMAND
+    ${MPICMD}
+    "-n"
+    3
+    $<TARGET_FILE:test_sopflow_functionality>
+    ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiperiod.toml
+  )
 endif()

@@ -4,7 +4,8 @@ testsuite_name = "SOPFLOW Multiscenario Functionality Tests on GPU"
 tolerance = 1e-3
 multicontingency = false
 multiperiod = false
-flatten = true
+flatten = false
+ignore_lineflow_constraints = true
 
 [[testcase]]
 description = 'datafiles/case_ACTIVSg200.m HIOP RAJA 10scen SOPFLOW'
@@ -16,7 +17,43 @@ initialization_type = 'ACPF'
 subproblem_solver = 'HIOP'
 subproblem_model = 'PBPOLRAJAHIOP'
 compute_mode = 'GPU'
-ignore_lineflow_constraints = true
 verbosity_level = 3
 num_iters = 0
 obj_value = 0.0
+
+[[testcase]]
+description = 'datafiles/case9/case9mod_gen3_wind.m HIOP RAJA 10scen SOPFLOW with 2 contingencies MPI'
+network = 'datafiles/case9/case9mod_gen3_wind.m'
+scenfile = 'datafiles/case9/10_scenarios_9bus.csv'
+contingencies = 'datafiles/case9/case9.cont'
+solver = 'HIOP'
+num_scenarios = 3
+multicontingency = true
+flatten = true
+num_contingencies = 2
+initialization_type = 'ACPF'
+subproblem_solver = 'HIOP'
+subproblem_model = 'PBPOLRAJAHIOP'
+compute_mode = 'GPU'
+verbosity_level = 3
+num_iters = 0
+obj_value = 0.0
+
+[[testcase]]
+description = 'datafiles/case9/case9mod_gen3_wind.m HIOP RAJA 10scen SOPFLOW with 5 contingencies MPI'
+network = 'datafiles/case9/case9mod_gen3_wind.m'
+scenfile = 'datafiles/case9/10_scenarios_9bus.csv'
+contingencies = 'datafiles/case9/case9.cont'
+solver = 'HIOP'
+num_scenarios = 3
+multicontingency = true
+flatten = true
+num_contingencies = 5
+initialization_type = 'ACPF'
+subproblem_solver = 'HIOP'
+subproblem_model = 'PBPOLRAJAHIOP'
+compute_mode = 'GPU'
+verbosity_level = 3
+num_iters = 0
+obj_value = 0.0
+

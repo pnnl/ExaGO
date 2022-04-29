@@ -366,6 +366,7 @@ PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLHIOP(OPFLOW opflow,
   int isobj_gencost = opflow->obj_gencost;
   double MVAbase = ps->MVAbase;
   double powerimbal_penalty = opflow->powerimbalance_penalty;
+  double weight = opflow->weight;
 
   PetscFunctionBegin;
 
@@ -403,7 +404,7 @@ PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLHIOP(OPFLOW opflow,
           loadparams->loadloss_penalty[i] * ps->MVAbase * (Pdloss + Qdloss);
     }
   }
-  *obj = obj_val;
+  *obj = weight * obj_val;
   ierr = PetscLogFlops(genparams->ngenON * 8.0);
   CHKERRQ(ierr);
 
@@ -424,6 +425,7 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLHIOP(OPFLOW opflow,
   int isobj_gencost = opflow->obj_gencost;
   double MVAbase = ps->MVAbase;
   double powerimbal_penalty = opflow->powerimbalance_penalty;
+  double weight = opflow->weight;
 
   PetscFunctionBegin;
 
@@ -434,13 +436,13 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLHIOP(OPFLOW opflow,
   if (opflow->include_powerimbalance_variables) {
     for (int i = 0; i < busparams->nbus; i++) {
       grad[busparams->xidxpimb[i]] =
-          busparams->powerimbalance_penalty[i] * ps->MVAbase;
+          weight * busparams->powerimbalance_penalty[i] * ps->MVAbase;
       grad[busparams->xidxpimb[i] + 1] =
-          busparams->powerimbalance_penalty[i] * ps->MVAbase * 1.0;
+          weight * busparams->powerimbalance_penalty[i] * ps->MVAbase * 1.0;
       grad[busparams->xidxpimb[i] + 2] =
-          busparams->powerimbalance_penalty[i] * ps->MVAbase;
+          weight * busparams->powerimbalance_penalty[i] * ps->MVAbase;
       grad[busparams->xidxpimb[i] + 3] =
-          busparams->powerimbalance_penalty[i] * ps->MVAbase;
+          weight * busparams->powerimbalance_penalty[i] * ps->MVAbase;
     }
   }
 
@@ -449,7 +451,7 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLHIOP(OPFLOW opflow,
     for (i = 0; i < genparams->ngenON; i++) {
       double Pg = x[genparams->xidx[i]] * MVAbase;
       grad[genparams->xidx[i]] =
-          isobj_gencost * MVAbase *
+          weight * isobj_gencost * MVAbase *
           (2.0 * genparams->cost_alpha[i] * Pg + genparams->cost_beta[i]);
     }
   }
@@ -460,9 +462,10 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLHIOP(OPFLOW opflow,
     for (i = 0; i < loadparams->nload; i++) {
       Pdloss = x[loadparams->xidx[i]];
       Qdloss = x[loadparams->xidx[i] + 1];
-      grad[loadparams->xidx[i]] = loadparams->loadloss_penalty[i] * ps->MVAbase;
+      grad[loadparams->xidx[i]] =
+          weight * loadparams->loadloss_penalty[i] * ps->MVAbase;
       grad[loadparams->xidx[i] + 1] =
-          loadparams->loadloss_penalty[i] * ps->MVAbase;
+          weight * loadparams->loadloss_penalty[i] * ps->MVAbase;
     }
   }
 
@@ -705,6 +708,7 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLHIOP(OPFLOW opflow,
   int isobj_gencost = opflow->obj_gencost;
   double MVAbase = ps->MVAbase;
   double powerimbal_penalty = opflow->powerimbalance_penalty;
+  double weight = opflow->weight;
   PetscInt flps = 0;
   int loc;
 
@@ -734,7 +738,7 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLHIOP(OPFLOW opflow,
       /* Generator contributions */
       for (i = 0; i < genparams->ngenON; i++) {
         loc = genparams->hesssp_idx[i];
-        MHSS[loc] = isobj_gencost * obj_factor * 2.0 *
+        MHSS[loc] = weight * isobj_gencost * obj_factor * 2.0 *
                     genparams->cost_alpha[i] * MVAbase * MVAbase;
       }
     } else if (opflow->objectivetype == NO_OBJ) {

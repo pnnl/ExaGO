@@ -648,9 +648,11 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
     ierr = OPFLOWIgnoreLineflowConstraints(
         scopflow->opflow0, scopflow->ignore_lineflow_constraints);
     CHKERRQ(ierr);
-    ierr = OPFLOWSetModel(scopflow->opflow0, scopflow->subproblem_model);
+    /* Base-case problem model should be POWER_BALANCE_POLAR */
+    ierr = OPFLOWSetModel(scopflow->opflow0, OPFLOWMODEL_PBPOL);
     CHKERRQ(ierr);
-    ierr = OPFLOWSetSolver(scopflow->opflow0, scopflow->subproblem_solver);
+    /* Base-case problem solver should be IPOPT */
+    ierr = OPFLOWSetSolver(scopflow->opflow0, OPFLOWSOLVER_IPOPT);
     CHKERRQ(ierr);
     ierr = OPFLOWReadMatPowerData(scopflow->opflow0, scopflow->netfile);
     CHKERRQ(ierr);
