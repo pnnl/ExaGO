@@ -35,7 +35,7 @@ num_contingencies = 4
 enable_powerimbalance_variables = true
 ignore_lineflow_constraints = true
 num_iters = 1
-obj_value = 26757.524918642226
+obj_value = 25957.67116859898
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
@@ -48,4 +48,4 @@ subproblem_solver = 'HIOP'
 compute_mode = 'GPU'
 num_contingencies = 4
 num_iters = 1
-obj_value = 26757.524918642288
+obj_value = 25957.67116859898

@@ -1076,6 +1076,7 @@ PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLRAJAHIOP(OPFLOW opflow,
   PS ps = opflow->ps;
   int isobj_gencost = opflow->obj_gencost;
   double MVAbase = ps->MVAbase;
+  double weight = opflow->weight;
 
   PetscFunctionBegin;
   //  PetscPrintf(MPI_COMM_SELF,"Entered objective function\n");
@@ -1098,8 +1099,9 @@ PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLRAJAHIOP(OPFLOW opflow,
         RAJA::RangeSegment(0, genparams->ngenON),
         RAJA_LAMBDA(RAJA::Index_type i) {
           double Pg = x_dev[xidx[i]] * MVAbase;
-          obj_val_sum += isobj_gencost * (cost_alpha[i] * Pg * Pg +
-                                          cost_beta[i] * Pg + cost_gamma[i]);
+          obj_val_sum +=
+              weight * isobj_gencost *
+              (cost_alpha[i] * Pg * Pg + cost_beta[i] * Pg + cost_gamma[i]);
         });
   }
 
@@ -1110,7 +1112,8 @@ PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLRAJAHIOP(OPFLOW opflow,
         RAJA_LAMBDA(RAJA::Index_type i) {
           double Pdloss = x_dev[l_xidx[i]];
           double Qdloss = x_dev[l_xidx[i] + 1];
-          obj_val_sum += loadloss_penalty_dev_[i] * MVAbase * (Pdloss + Qdloss);
+          obj_val_sum +=
+              weight * loadloss_penalty_dev_[i] * MVAbase * (Pdloss + Qdloss);
         });
   }
 
@@ -1125,7 +1128,7 @@ PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLRAJAHIOP(OPFLOW opflow,
           double Pimbminus = x_dev[b_xidxpimb[i] + 1];
           double Qimbplus = x_dev[b_xidxpimb[i] + 2];
           double Qimbminus = x_dev[b_xidxpimb[i] + 3];
-          obj_val_sum += powerimbalance_penalty_dev_[i] * MVAbase *
+          obj_val_sum += weight * powerimbalance_penalty_dev_[i] * MVAbase *
                          (Pimbplus + Pimbminus + Qimbplus + Qimbminus);
         });
   }
@@ -1150,6 +1153,7 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOP(OPFLOW opflow,
   PS ps = opflow->ps;
   int isobj_gencost = opflow->obj_gencost;
   double MVAbase = ps->MVAbase;
+  double weight = opflow->weight;
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
@@ -1170,7 +1174,7 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOP(OPFLOW opflow,
         RAJA::RangeSegment(0, genparams->ngenON),
         RAJA_LAMBDA(RAJA::Index_type i) {
           double Pg = x_dev[xidx[i]] * MVAbase;
-          grad_dev[xidx[i]] = isobj_gencost * MVAbase *
+          grad_dev[xidx[i]] = weight * isobj_gencost * MVAbase *
                               (2.0 * cost_alpha[i] * Pg + cost_beta[i]);
         });
   }
@@ -1182,8 +1186,8 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOP(OPFLOW opflow,
         RAJA_LAMBDA(RAJA::Index_type i) {
           double Pdloss = x_dev[l_xidx[i]];
           double Qdloss = x_dev[l_xidx[i] + 1];
-          grad_dev[l_xidx[i]] = loadloss_penalty_dev_[i] * MVAbase;
-          grad_dev[l_xidx[i] + 1] = loadloss_penalty_dev_[i] * MVAbase;
+          grad_dev[l_xidx[i]] = weight * loadloss_penalty_dev_[i] * MVAbase;
+          grad_dev[l_xidx[i] + 1] = weight * loadloss_penalty_dev_[i] * MVAbase;
         });
   }
 
@@ -1193,13 +1197,14 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOP(OPFLOW opflow,
     RAJA::forall<exago_raja_exec>(
         RAJA::RangeSegment(0, busparams->nbus),
         RAJA_LAMBDA(RAJA::Index_type i) {
-          grad_dev[b_xidxpimb[i]] = powerimbalance_penalty_dev_[i] * MVAbase;
+          grad_dev[b_xidxpimb[i]] =
+              weight * powerimbalance_penalty_dev_[i] * MVAbase;
           grad_dev[b_xidxpimb[i] + 1] =
-              powerimbalance_penalty_dev_[i] * MVAbase;
+              weight * powerimbalance_penalty_dev_[i] * MVAbase;
           grad_dev[b_xidxpimb[i] + 2] =
-              powerimbalance_penalty_dev_[i] * MVAbase;
+              weight * powerimbalance_penalty_dev_[i] * MVAbase;
           grad_dev[b_xidxpimb[i] + 3] =
-              powerimbalance_penalty_dev_[i] * MVAbase;
+              weight * powerimbalance_penalty_dev_[i] * MVAbase;
         });
   }
 
@@ -1501,6 +1506,7 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOP(
   double obj_factor = opflow->obj_factor;
   int isobj_gencost = opflow->obj_gencost;
   double MVAbase = ps->MVAbase;
+  double weight = opflow->weight;
   PetscInt flps = 0;
   //  PetscPrintf(MPI_COMM_SELF,"Entered sparse Hessian\n");
 
@@ -1541,10 +1547,10 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOP(
       RAJA::forall<exago_raja_exec>(
           RAJA::RangeSegment(0, genparams->ngenON),
           RAJA_LAMBDA(RAJA::Index_type i) {
-            MHSS_dev[hesssp_idx[i]] = isobj_gencost * obj_factor * 2.0 *
-                                      cost_alpha[i] * MVAbase * MVAbase;
+            MHSS_dev[hesssp_idx[i]] = weight * isobj_gencost * obj_factor *
+                                      2.0 * cost_alpha[i] * MVAbase * MVAbase;
           });
-      flps += 5 * genparams->ngenON;
+      flps += 6 * genparams->ngenON;
     } else if (opflow->objectivetype == NO_OBJ) {
       int *hesssp_idx = genparams->hesssp_idx_dev_;
       RAJA::forall<exago_raja_exec>(

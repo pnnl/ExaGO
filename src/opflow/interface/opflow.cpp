@@ -742,11 +742,30 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
 
   opflow->skip_options = PETSC_FALSE;
 
+  opflow->weight = 1.0;
   opflow->setupcalled = PETSC_FALSE;
 
   *opflowout = opflow;
 
   //  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Application created\n");
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWSetWeight - Set the weight (probability) for this optimal power flow
+
+  Input Parameter
++ opflow - optimal power flow object
+- weight - weighting factor for the system conditions in (0,1) (default = 1.0)
+
+  Notes:
+    This routine sets the weight for a given optimal power flow. The weight
+    is used for weighing the objective function weight*f(x). The values needs to
+be between 0 and 1 (both included)
+*/
+PetscErrorCode OPFLOWSetWeight(OPFLOW opflow, PetscScalar weight) {
+  PetscFunctionBegin;
+  opflow->weight = weight;
   PetscFunctionReturn(0);
 }
 

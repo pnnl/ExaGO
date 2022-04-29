@@ -197,6 +197,7 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
     scen_num = s;
     if (sopflow->scenfileset) {
       ierr = PSApplyScenario(ps, sopflow->scenlist.scen[s]);
+      CHKERRQ(ierr);
     }
   } else {
     if (sopflow->scenfileset) {
@@ -212,6 +213,9 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
       }
     }
   }
+
+  ierr = OPFLOWSetWeight(opflowscen, sopflow->scenlist.scen[scen_num].prob);
+  CHKERRQ(ierr);
 
   ierr = OPFLOWHasGenSetPoint(opflowscen, PETSC_TRUE);
   CHKERRQ(ierr); /* Activates ramping variables */
@@ -307,8 +311,9 @@ bool SOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int &n, double *x,
           /*
           ierr = PetscPrintf(PETSC_COMM_SELF,"Gen[%d]: Pg = %lf Pb = %lf Pt =
           %lf Pgs = %lf Ramp rate = %lf lambda = %lf\n",gen->bus_i,gen->pg,
-          gen->pb,gen->pt,gen->pgs,gen->ramp_rate_30min,lameq[gen->starteqloc+1]);CHKERRQ(ierr);
+                             gen->pb,gen->pt,gen->pgs,gen->ramp_rate_30min,lameq[gen->starteqloc+1]);CHKERRQ(ierr);
           */
+
           grad[g++] = -lameq[gen->starteqloc + 1];
         }
       } else if (gen0->status && !gen->status)

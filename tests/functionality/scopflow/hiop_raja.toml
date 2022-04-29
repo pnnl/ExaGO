@@ -1,4 +1,4 @@
-testsuite_name = "SCOPFLOW Functionality with HIOP solver"
+testsuite_name = "SCOPFLOW Functionality with HIOP solver + RAJA"
 
 [presets]
 tolerance = 1e-3
@@ -23,7 +23,7 @@ description = 'case9mod.m with HIOP solver/9 contingencies/using RAJA'
 enable_powerimbalance_variables = true
 num_contingencies = -1
 num_iters = 1
-obj_value = 4108.46045175
+obj_value = 4072.4632566566206
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
@@ -33,4 +33,4 @@ ignore_lineflow_constraints = true
 enable_powerimbalance_variables = true
 num_contingencies = 4
 num_iters = 1
-obj_value = 26757.524918642288
+obj_value = 25957.67116859898

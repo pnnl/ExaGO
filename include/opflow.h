@@ -248,6 +248,7 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetBusPowerImbalancePenalty(OPFLOW,
                                                               PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWGetBusPowerImbalancePenalty(OPFLOW,
                                                               PetscReal *);
+PETSC_EXTERN PetscErrorCode OPFLOWSetWeight(OPFLOW, PetscScalar);
 
 PETSC_EXTERN PetscErrorCode OPFLOWSkipOptions(OPFLOW, PetscBool);
 

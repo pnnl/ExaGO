@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [develop]
+- Added OPFLOWSetWeight() for setting weight/probability for an OPFLOW. This is useful for setting weights for OPFLOW when used with SOPFLOW.
 
 ## [v1.4.1]
 
@@ -58,9 +59,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### SCOPFLOW
 - Fixed bugs in configuring SCOPFLOW subproblems. Added API for SCOPFLOWEnablePowerImbalanceVariables, SCOPFLOWEnablePowerImbalanceVariables, SCOPFLOWSetComputeMode and SCOPFLOWSetComputeMode.
 
+### SOPFLOW
+- Read-in weights for scenarios set through the scenario files.
+- Solve SOPFLOW with scenario weights	
+
 ### Documentation
 
 ### Testing
+
 - Added testing for python with mpi4py, but still require testing without MPI.
 - Re-enabled python tests on Ascent.
 - Convert existing smoke tests for SCOPLFOW and SOPFLOW to toml based testing.

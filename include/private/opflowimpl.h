@@ -289,6 +289,8 @@ struct _p_OPFLOW {
   void *userctx;
 
   PetscBool skip_options; /* Skip run-time options */
+
+  PetscScalar weight; /* Weight for this system condition (0,1) */
 };
 
 /* Registers all the OPFLOW models */
