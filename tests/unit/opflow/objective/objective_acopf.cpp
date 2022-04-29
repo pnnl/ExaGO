@@ -93,6 +93,7 @@ int main(int argc, char **argv) {
   ierr = OPFLOWGetSolver(opflowtest, solvername);
 
   if (strncmp(solvername, "HIOP", 64) == 0) {
+#if defined(EXAGO_ENABLE_HIOP)
     double *x_ref;
     ierr = VecGetArray(X, &x_ref);
 
@@ -145,6 +146,7 @@ int main(int argc, char **argv) {
 
     ierr = PetscFree(x_ref);
     CHKERRQ(ierr);
+#endif // End #ifdefined(EXAGO_ENABLE_HIOP)
   } else {
     fail += test.computeObjective(opflowtest, X, obj_value);
   }
@@ -154,3 +156,4 @@ int main(int argc, char **argv) {
   ExaGOFinalize();
   return fail;
 }
+
