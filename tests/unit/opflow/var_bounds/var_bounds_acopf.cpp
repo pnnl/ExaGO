@@ -81,10 +81,10 @@ int main(int argc, char **argv) {
   ierr = OPFLOWComputeVariableBounds(opflowtest, computeXl, computeXu);
   CHKERRQ(ierr);
   
-  VecView(Xl, viewer);
-  VecView(Xu, viewer);
-  VecView(computeXl, viewer);
-  VecView(computeXu, viewer);
+  VecView(Xl,PETSC_VIEWER_STDOUT_SELF);
+  VecView(Xu, PETSC_VIEWER_STDOUT_SELF);
+  VecView(computeXl, PETSC_VIEWER_STDOUT_SELF);
+  VecView(computeXu, PETSC_VIEWER_STDOUT_SELF);
   VecEqual(Xl,computeXl, &flg);
   VecEqual(Xu, computeXu, &flg2);
   if(!(flg && flg2))
