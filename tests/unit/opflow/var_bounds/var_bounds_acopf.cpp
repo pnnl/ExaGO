@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
   char help[] = "Unit tests for setting variable bounds running opflow\n";
 
   /** Use `ExaGOLogSetLoggingFileName("opflow-logfile");` to log the output. */
-  ExaGOLogSetLoggingFileName("opflow-logfile");
+  //ExaGOLogSetLoggingFileName("opflow-logfile");
   ierr = ExaGOInitialize(comm, &argc, &argv, appname, help);
   if (ierr) {
     fprintf(stderr, "Could not initialize ExaGO application %s.\n", appname);
