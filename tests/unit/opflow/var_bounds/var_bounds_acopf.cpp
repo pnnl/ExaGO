@@ -2,6 +2,8 @@
 #include <cstdio>
 #include <string>
 
+#include<unistd.h>
+
 #include <private/opflowimpl.h>
 #include <exago_config.h>
 #include <utils.h>
@@ -31,6 +33,7 @@ int main(int argc, char **argv) {
   Vec Xu;
   Vec computeXl;
   Vec computeXu;
+  IS x_is;
   int nx, nconeq, nconineq;
   PetscScalar *x_arr, *grad_arr;
   int fail = 0;
@@ -38,9 +41,6 @@ int main(int argc, char **argv) {
   std::string file;
   char appname[] = "opflow";
   MPI_Comm comm = MPI_COMM_WORLD;
-
-  PetscViewer viewer;
-  PetscViewerCreate(comm,&viewer);
 
   char help[] = "Unit tests for setting variable bounds running opflow\n";
 
@@ -75,18 +75,54 @@ int main(int argc, char **argv) {
   CHKERRQ(ierr);
   ierr = OPFLOWSetUp(opflowtest);
   CHKERRQ(ierr);
-
+  
+  
   ierr = OPFLOWGetVariableBounds(opflowtest, &Xl, &Xu);
   CHKERRQ(ierr);
+  printf("xlxu\n");
+  VecView(Xl,PETSC_VIEWER_STDOUT_SELF);
+  VecView(Xu, PETSC_VIEWER_STDOUT_SELF);
+
+  ierr = OPFLOWGetVariableBounds(opflowtest, &computeXl, &computeXu);
+  CHKERRQ(ierr);
+  printf("compute\n");
+  VecView(computeXl, PETSC_VIEWER_STDOUT_SELF);
+  VecView(computeXu, PETSC_VIEWER_STDOUT_SELF);
+
   ierr = OPFLOWComputeVariableBounds(opflowtest, computeXl, computeXu);
   CHKERRQ(ierr);
+  printf("computexlxu\n");
+  VecView(computeXl, PETSC_VIEWER_STDOUT_SELF);
+  VecView(computeXu, PETSC_VIEWER_STDOUT_SELF);
+
+/*  volatile int i = 0;
+  char hostname[256];
+  gethostname(hostname, sizeof(hostname));
+  printf("PID %d on %s ready for attach\n", getpid(), hostname);
+  fflush(stdout);
+  while (0 == i)
+      sleep(5);
+*/
   
+/*    
   VecView(Xl,PETSC_VIEWER_STDOUT_SELF);
   VecView(Xu, PETSC_VIEWER_STDOUT_SELF);
   VecView(computeXl, PETSC_VIEWER_STDOUT_SELF);
-  VecView(computeXu, PETSC_VIEWER_STDOUT_SELF);
-  VecEqual(Xl,computeXl, &flg);
-  VecEqual(Xu, computeXu, &flg2);
+  VecView(computeXu, PETSC_VIEWER_STDOUT_SELF); */
+  ierr = VecEqual(Xl,computeXl, &flg);
+  CHKERRQ(ierr);
+  printf("flag1 : %d \n", flg);
+  ierr = VecEqual(Xu, computeXu, &flg2);
+  CHKERRQ(ierr);
+  printf("flag2 : %d \n", flg2);
+  
+  ierr = VecWhichEqual(Xl, computeXl, &x_is);
+  CHKERRQ(ierr);
+  ISView(x_is, PETSC_VIEWER_STDOUT_SELF);
+  ierr = VecWhichEqual(Xu, computeXu, &x_is);
+  CHKERRQ(ierr);
+  ISView(x_is, PETSC_VIEWER_STDOUT_SELF);
+
   if(!(flg && flg2))
   {
     return fail;

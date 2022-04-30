@@ -11,9 +11,10 @@ target_include_directories(var_bounds_acopf PRIVATE ../)
 
 # Network files to run on - doing 3 and 600 bus examples.
 set(prefix ${EXAGO_DATAFILES_DIR}/unit/opflow/var_bounds/)
-set(vb_network_files OF_unittestx3.m OF_unittestx600.m)
+set(vb_network_files SVB_unittest1.m)
 # Map num_copies to a specific netfile
-set(num_copies 3 600)
+#set(num_copies 3 600)
+set(num_copies 1)
 
 list(TRANSFORM vb_network_files PREPEND ${prefix})
 
@@ -37,7 +38,8 @@ if(EXAGO_INSTALL_TESTS)
   )
     # Iterate over networks, matching network file to num_copies
     foreach(network num IN ZIP_LISTS vb_network_files num_copies)
-      get_filename_component(net ${network} NAME)
+      #      get_filename_component(net ${network} NAME)
+
       set(testname "UNIT_TESTS_VAR_BOUNDS_${net}_${solver}_${model}")
       exago_add_test(
         NAME
