@@ -9,7 +9,9 @@
 	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
 
     <link rel="stylesheet" href="leaflet/leaflet.css" />
+    <link rel="stylesheet" href="leaflet-search.min.css" />
     <script src="leaflet/leaflet.js"></script>
+    <script src="leaflet-search.min.js"></script>
     <script src="jquery-3.6.0.js"></script>
     <script src="require.js"></script>
 
@@ -29,17 +31,38 @@
 	     	L.Icon.Default.prototype.options.iconSize = [0, 0];
 	     	L.Icon.Default.prototype.options.shadowSize = [0, 0];
 
-	     	//$("input[type=checkbox]").each( function() {
-			//    alert($(this).val());
-			//});
-
 			$("input[type=checkbox]").on("change", function() {
+				zoomLevel = map.getBoundsZoom(mainLayer.getBounds());
+				//alert('#1');
+				//alert(zoomLevel);
 				loadMapGeoJSON();
 			});
+
+			$("#baseMaps").change(function() {
+			           // alert($('option:selected', $(this)).text());
+			           // alert(tileLayers[mapIndex]);
+			           mapIndex = $('option:selected', $(this)).index();
+			           zoomLevel = map.getBoundsZoom(mainLayer.getBounds());
+					   loadMapGeoJSON();
+        	});
+
+			var zoomLevel = 7;
 
 			var geodata;
 
 			var mainLayer;
+
+			var mapIndex = 0;
+
+			const tileLayers = new Array
+							   (
+							     'https://{s}.tile.jawg.io/jawg-dark/{z}/{x}/{y}{r}.png?access-token=I3QTZX5omQqBDcnEpEXK4lKBirHp5GbvgHegaaFj6C9HNsvyrTvWIcPIB0O2UCuM', //jawg dark
+							     'https://{s}.tile.jawg.io/jawg-light/{z}/{x}/{y}{r}.png?access-token=I3QTZX5omQqBDcnEpEXK4lKBirHp5GbvgHegaaFj6C9HNsvyrTvWIcPIB0O2UCuM', //jawg light
+							     'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain-labels/{z}/{x}/{y}{r}.png', //stamen terrainlabels
+							     'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', //esri worldgraycanvas
+							     'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', //cartodb positron
+							     'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png'  //cartodb positron no labels
+							   );
 
 	        var loadlayer = {"load":L.layerGroup([])};
 
@@ -86,13 +109,12 @@
 			var lineKVlevels = {};
 			var KVlevels = {};
 
-			var map = L.map('map').setView([34.37, -81.09], 7);
+			var map = L.map('map').setView([34.37, -81.09], zoomLevel);
 
 
 			var selectedKVs;
 
 
-			//L.tileLayer('https://osm-{s}.gs.mil/tiles/bright/{z}/{x}/{y}.png').addTo(map);
 			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 			function getStyle(feature, layer=null)
@@ -123,9 +145,9 @@
 				var line_loading = parseFloat(Math.abs(line.PF)/line.RATE_A);
 
 				if(line["BR_STATUS"] === 0) return 'black';
-				if(line_loading < 0.8) return 'black';
-				else if(line_loading < 0.9) return 'black';
-				else return 'black';
+				if(line_loading < 0.8) return 'green';
+				else if(line_loading < 0.9) return 'orange';
+				else return 'red';
 			}
 
 			function getLineWeight(line)
@@ -184,7 +206,10 @@
 						} else {
 							marker = new L.circleMarker(latlng, {radius: 1, fillOpacity: 0.5,color:'black'}).addTo(loadlayer.load);
 						}
+						var popup = L.popup()
+    					.setContent(feature.properties.NAME);
 
+						marker.bindPopup(popup).openPopup();
 						marker.addTo(lineKVlevels[feature.properties.KVlevels[i]]);
 					} //end for
 				} //end if
@@ -226,8 +251,10 @@
 				//}
 
 				map.remove();
-			   	map = L.map('map').setView([34.37, -81.09], 7);
-			   	L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+				//alert('#2');
+				//alert(zoomLevel);
+			   	map = L.map('map').setView([34.37, -81.09], zoomLevel);
+			   	L.tileLayer(tileLayers[mapIndex]).addTo(map);
 
 				const xhr = new XMLHttpRequest();
 				xhr.open('GET', 'http://localhost:8081/data/case_ACTIVSg500-2.json');
@@ -251,8 +278,21 @@
 
 				    mainLayer = L.geoJSON(geodata["geojsondata"],
 							  {onEachFeature: onEachFeature},).addTo(map);
+				    map.setZoom(zoomLevel);
 
 					mainLayer.setStyle({opacity: 0.0});
+
+					var searchControl = new L.Control.Search({
+						layer: mainLayer,
+						propertyName: 'NAME',
+						marker: false,
+						moveToLocation: function(latlng, title, map) {
+							var zoom = map.getBoundsZoom(mainLayer.getBounds()) + 3;
+							map.setView(latlng, zoom); // access the zoom
+						}
+					});
+
+					map.addControl( searchControl );  //inizialize search control
 
 
 					for(var gentype in genlayers)
@@ -295,6 +335,16 @@
 			<input type="checkbox" name="kvs" value="138.0" checked="checked">138.0</input>
 			<input type="checkbox" name="kvs" value="345.0" checked="checked">345.0</input>
 		</div>
+
+		<h2>Base Map</h2>
+		<select id="baseMaps">
+			<option name="JAWGdark">JAWG Dark</option>
+			<option name="JAWGlight">JAWG Light</option>
+			<option name="StamenTerr">Stamen TerrainLabels</option>
+			<option name="EsriGray">ESRI WorldGrayCanvas</option>
+			<option name="CartoPos">CartoDB Positron</option>
+			<option name="CartoPosNoLabels">CartoDB Positron No Labels</option>
+		</select>
 
 	</form>
 	<br /><br />
