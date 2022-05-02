@@ -42,6 +42,7 @@ typedef struct {
   double *qb;         /* max. reactive power gen. limits */
   double *pgs;        /* real power output setpoint */
   int *xidx;          /* starting locations in X vector */
+  int *isrenewable;   /* Is a renewable generator? */
   int *
       gidxbus; /* starting locations in constraint vector for bus constraints */
   int *geqidxgen;    /* starting locations in equality constraint vector for gen

@@ -734,6 +734,8 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
       Gen[geni].pt = Gen[geni].pt > 1e10 ? PETSC_INFINITY : Gen[geni].pt;
       Gen[geni].pb = Gen[geni].pb < -1e10 ? PETSC_NINFINITY : Gen[geni].pb;
 
+      Gen[geni].isrenewable = PETSC_FALSE;
+
       Gen[geni].initial_status = Gen[geni].status;
 
       Gen[geni].pg = Gen[geni].pg / ps->MVAbase;
@@ -831,6 +833,8 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
         Gen[genfueli].pb = 0.0; /* Set lower Pg limit to 0.0 so that wind power
                                    can be curtailed if need be */
         ps->ngenwind++;
+        ps->ngenrenew++;
+        Gen[genfueli].isrenewable = PETSC_TRUE;
       } else if (strstr(line, "ng") != NULL) {
         Gen[genfueli].genfuel_type = GENFUEL_NG;
         Gen[genfueli].ramp_rate_min = GENRAMPRATE_NG / ps->MVAbase;
@@ -843,6 +847,8 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
         Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min * 10;
         Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min * 30;
         ps->ngensolar++;
+        ps->ngenrenew++;
+        Gen[genfueli].isrenewable = PETSC_TRUE;
       } else if (strstr(line, "nuclear") != NULL) {
         Gen[genfueli].genfuel_type = GENFUEL_NUCLEAR;
         Gen[genfueli].ramp_rate_min = GENRAMPRATE_NUCLEAR / ps->MVAbase;

@@ -64,27 +64,16 @@ PetscErrorCode OPFLOWSetVariableBounds_DCOPF(OPFLOW opflow, Vec Xl, Vec Xu) {
       xu[loc] = gen->pt; /* PGmax */
       /* pb, pt are converted to p.u. in ps.c */
 
-      if (opflow->has_gensetpoint) {
+      if (opflow->has_gensetpoint && !gen->isrenewable) {
         loc = gen->startxpdevloc;
 
-        xl[loc] = gen->pb - PetscMax(gen->pt, gen->pgs);
-        xu[loc] = PetscMax(gen->pt, gen->pgs) - gen->pb;
+        xl[loc] = gen->pb - gen->pt;
+        xu[loc] = gen->pt - gen->pb;
 
         loc = gen->startxpsetloc;
 
-        if (gen->genfuel_type == GENFUEL_WIND) {
-          xl[loc] = gen->pb;
-          /* In SOPFLOW, gen->pgs set may be more than gen->pt.
-             We can use PetscMax(gen->pt,gen->pgs) to circumvent the
-             issue, but the bounds get set only once with IPOPT solver
-             for SOPFLOW. As such, this can lead to wrong results. So,
-             we set the upper bound for set-point to a large value.
-          */
-          xu[loc] = 10000.0; // PetscMax(gen->pt,gen->pgs);
-        } else {
-          xl[loc] = gen->pb;
-          xu[loc] = gen->pt;
-        }
+        xl[loc] = gen->pb;
+        xu[loc] = gen->pt;
       }
     }
 
@@ -154,7 +143,7 @@ PetscErrorCode OPFLOWSetConstraintBounds_DCOPF(OPFLOW opflow, Vec Gl, Vec Gu) {
       for (k = 0; k < ngen; k++) {
         ierr = PSBUSGetGen(bus, k, &gen);
         CHKERRQ(ierr);
-        if (!gen->status)
+        if (!gen->status || gen->isrenewable)
           continue;
         gloc = gen->starteqloc;
         gl[gloc] = gu[gloc] = 0.0;
@@ -173,7 +162,7 @@ PetscErrorCode OPFLOWSetConstraintBounds_DCOPF(OPFLOW opflow, Vec Gl, Vec Gu) {
       for (k = 0; k < bus->ngen; k++) {
         ierr = PSBUSGetGen(bus, k, &gen);
         CHKERRQ(ierr);
-        if (!gen->status)
+        if (!gen->status || gen->isrenewable)
           continue;
         gloc = gen->startineqloc;
         if (opflow->use_agc) {
@@ -283,7 +272,7 @@ PetscErrorCode OPFLOWSetInitialGuess_DCOPF(OPFLOW opflow, Vec X, Vec Lambda) {
         x[loc] = PetscMax(gen->pb, PetscMin(gen->pg, gen->pt));
       }
 
-      if (opflow->has_gensetpoint) {
+      if (opflow->has_gensetpoint && !gen->isrenewable) {
         loc = gen->startxpdevloc;
         x[loc] = 0.0;
         loc = gen->startxpsetloc;
@@ -470,7 +459,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_DCOPF(OPFLOW opflow, Vec X,
         PetscScalar Pgset;
         ierr = PSBUSGetGen(bus, k, &gen);
         CHKERRQ(ierr);
-        if (!gen->status)
+        if (!gen->status || gen->isrenewable)
           continue;
 
         Pg = x[gen->startxpowloc];
@@ -653,7 +642,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_DCOPF(OPFLOW opflow,
       for (k = 0; k < bus->ngen; k++) {
         ierr = PSBUSGetGen(bus, k, &gen);
         CHKERRQ(ierr);
-        if (!gen->status)
+        if (!gen->status || gen->isrenewable)
           continue;
 
         locglob = gen->startxpowlocglob;
@@ -735,7 +724,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_DCOPF(OPFLOW opflow, Vec X,
       for (k = 0; k < bus->ngen; k++) {
         ierr = PSBUSGetGen(bus, k, &gen);
         CHKERRQ(ierr);
-        if (!gen->status)
+        if (!gen->status || gen->isrenewable)
           continue;
 
         gloc = gen->startineqloc;
@@ -838,7 +827,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_DCOPF(OPFLOW opflow,
       for (k = 0; k < bus->ngen; k++) {
         ierr = PSBUSGetGen(bus, k, &gen);
         CHKERRQ(ierr);
-        if (!gen->status)
+        if (!gen->status || gen->isrenewable)
           continue;
 
         gloc = gen->startineqloc;
@@ -1174,7 +1163,7 @@ PetscErrorCode OPFLOWModelSetNumVariables_DCOPF(OPFLOW opflow,
         continue;
       busnvar[i] += 1; /* (1 variable for generator power Pg) */
       gen->nxpow = 1;
-      if (opflow->has_gensetpoint) {
+      if (opflow->has_gensetpoint && !gen->isrenewable) {
         gen->nxpset = 1;
         gen->nxpdev = 1;
         busnvar[i] += 2;
@@ -1243,7 +1232,7 @@ PetscErrorCode OPFLOWModelSetNumConstraints_DCOPF(OPFLOW opflow,
       CHKERRQ(ierr);
       if (!gen->status)
         continue;
-      if (opflow->has_gensetpoint) {
+      if (opflow->has_gensetpoint && !gen->isrenewable) {
         *nconeq += 2;
         gen->nconeq = 2;
         *nconineq += 0;
@@ -1339,7 +1328,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_DCOPF(OPFLOW opflow,
       for (k = 0; k < bus->ngen; k++) {
         ierr = PSBUSGetGen(bus, k, &gen);
         CHKERRQ(ierr);
-        if (!gen->status)
+        if (!gen->status || gen->isrenewable)
           continue;
 
         gloc = gen->startineqloc;
@@ -1668,7 +1657,7 @@ PetscErrorCode OPFLOWModelSetUp_DCOPF(OPFLOW opflow) {
       gen->startxpowloc = loc;
       gen->startxpowlocglob = locglob;
 
-      if (opflow->has_gensetpoint) {
+      if (opflow->has_gensetpoint && !gen->isrenewable) {
         gen->startxpdevloc = gen->startxpowloc + gen->nxpow;
         gen->startxpdevlocglob = gen->startxpowlocglob + gen->nxpow;
 

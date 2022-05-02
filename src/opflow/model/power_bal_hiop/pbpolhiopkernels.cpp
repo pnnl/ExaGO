@@ -93,7 +93,7 @@ PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLHIOP(OPFLOW opflow, double *x) {
         x[loc + 1] = PetscMax(gen->qb, PetscMin(gen->qg, gen->qt));
       }
 
-      if (opflow->has_gensetpoint) {
+      if (opflow->has_gensetpoint && !gen->isrenewable) {
         loc_nat = gen->startxpdevloc;
         loc = idxn2sd_map[loc_nat];
         x[loc] = 0.0;
@@ -160,8 +160,10 @@ PetscErrorCode OPFLOWSetConstraintBoundsArray_PBPOLHIOP(OPFLOW opflow,
 
   if (opflow->has_gensetpoint) {
     for (i = 0; i < genparams->ngenON; i++) {
-      gl[genparams->geqidxgen[i]] = gu[genparams->geqidxgen[i]] = 0.0;
-      gl[genparams->geqidxgen[i] + 1] = gu[genparams->geqidxgen[i] + 1] = 0.0;
+      if (!genparams->isrenewable[i]) {
+        gl[genparams->geqidxgen[i]] = gu[genparams->geqidxgen[i]] = 0.0;
+        gl[genparams->geqidxgen[i] + 1] = gu[genparams->geqidxgen[i] + 1] = 0.0;
+      }
     }
   }
 
@@ -204,7 +206,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLHIOP(OPFLOW opflow,
     ge[genparams->gidxbus[i] + 1] -= x[genparams->xidx[i] + 1];
 
     flps += 2;
-    if (opflow->has_gensetpoint) {
+    if (opflow->has_gensetpoint && !genparams->isrenewable[i]) {
       Pg = x[genparams->xidx[i]];
       delPg = x[genparams->xidx[i] + 2];
       Pgset = x[genparams->xidx[i] + 3];
@@ -547,14 +549,11 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLHIOP_old(OPFLOW opflow, double 
     xl[genparams->xidx[i] + 1] = genparams->qb[i];
     xu[genparams->xidx[i] + 1] = genparams->qt[i];
 
-    if (opflow->has_gensetpoint) {
+    if (opflow->has_gensetpoint && !genparams->isrenewable[i]) {
       xl[genparams->xidx[i] + 2] = genparams->pb[i] - genparams->pt[i];
       xu[genparams->xidx[i] + 2] = genparams->pt[i] - genparams->pb[i];
       xl[genparams->xidx[i] + 3] = genparams->pb[i];
-      xu[genparams->xidx[i] + 3] =
-          10000.0; // genparams->pt[i]; This is a temporary fix for now. The
-                   // proper fix is to check the generator fuel type and set it
-                   // o gen->pt if it is non-renewable and 10000.0 otherwise.
+      xu[genparams->xidx[i] + 3] = genparams->pt[i];
     }
   }
 
@@ -607,7 +606,7 @@ PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLHIOP(
       iJacS[genparams->eqjacsqbus_idx[i]] = genparams->gidxbus[i] + 1;
       jJacS[genparams->eqjacsqbus_idx[i]] = genparams->xidx[i] + 1;
 
-      if (opflow->has_gensetpoint) {
+      if (opflow->has_gensetpoint && !genparams->isrenewable[i]) {
         iJacS[genparams->eqjacspgen_idx[i]] = genparams->geqidxgen[i];
         jJacS[genparams->eqjacspgen_idx[i]] = genparams->xidx[i]; // Pg
 
@@ -652,7 +651,7 @@ PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLHIOP(
       MJacS[genparams->eqjacspbus_idx[i]] = -1.0;
       MJacS[genparams->eqjacsqbus_idx[i]] = -1.0;
 
-      if (opflow->has_gensetpoint) {
+      if (opflow->has_gensetpoint && !genparams->isrenewable[i]) {
         MJacS[genparams->eqjacspgen_idx[i]] = -1.0; // Pg
 
         MJacS[genparams->eqjacspgen_idx[i] + 1] = 1.0; // delPg

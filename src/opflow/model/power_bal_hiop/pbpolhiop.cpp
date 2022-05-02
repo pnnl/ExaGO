@@ -391,6 +391,8 @@ PetscErrorCode DestroyGenParams(OPFLOW opflow, GENParams *genparams) {
   CHKERRQ(ierr);
   ierr = PetscFree(genparams->qb);
   CHKERRQ(ierr);
+  ierr = PetscFree(genparams->isrenewable);
+  CHKERRQ(ierr);
 
   if (opflow->has_gensetpoint) {
     ierr = PetscFree(genparams->geqidxgen);
@@ -451,6 +453,8 @@ PetscErrorCode CreateGenParams(OPFLOW opflow, GENParams *genparams) {
   CHKERRQ(ierr);
   ierr = PetscCalloc1(genparams->ngenON, &genparams->qb);
   CHKERRQ(ierr);
+  ierr = PetscCalloc1(genparams->ngenON, &genparams->isrenewable);
+  CHKERRQ(ierr);
 
   ierr = PetscCalloc1(genparams->ngenON, &genparams->hesssp_idx);
   CHKERRQ(ierr);
@@ -501,13 +505,14 @@ PetscErrorCode CreateGenParams(OPFLOW opflow, GENParams *genparams) {
       genparams->pb[geni] = gen->pb;
       genparams->qt[geni] = gen->qt;
       genparams->qb[geni] = gen->qb;
-      if (opflow->has_gensetpoint) {
+      genparams->isrenewable[geni] = (int)gen->isrenewable;
+      if (opflow->has_gensetpoint && !gen->isrenewable) {
         genparams->pgs[geni] = gen->pgs;
       }
 
       genparams->xidx[geni] = opflow->idxn2sd_map[loc];
       genparams->gidxbus[geni] = gloc;
-      if (opflow->has_gensetpoint) {
+      if (opflow->has_gensetpoint && !gen->isrenewable) {
         genparams->geqidxgen[geni] = gen->starteqloc;
         genparams->gineqidxgen[geni] = gen->startineqloc;
         genparams->gbineqidxgen[geni] = opflow->nconeq + gen->startineqloc;
@@ -635,7 +640,7 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOLHIOP(OPFLOW opflow) {
       gen->pg = x[loc];
       gen->qg = x[loc + 1];
 
-      if (opflow->has_gensetpoint) {
+      if (opflow->has_gensetpoint && !gen->isrenewable) {
         gloc += gen->nconeq;
       }
     }
@@ -809,7 +814,7 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLHIOP(OPFLOW opflow) {
 
       spct += gen->nxpow;
 
-      if (opflow->has_gensetpoint) {
+      if (opflow->has_gensetpoint && !gen->isrenewable) {
         loc = gen->startxpdevloc;
         idxn2sd_map[loc] = spct;
 
@@ -933,14 +938,16 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLHIOP(OPFLOW opflow) {
         CHKERRQ(ierr);
         if (!gen->status)
           continue;
-        genparams->eqjacspgen_idx[geni + gi] = nnz_eqjacsp;
-        nnz_eqjacsp += 4; /* 4 Jacobian elements contributed to equality
-                             constrained Jacobian */
-        genparams->ineqjacspgen_idx[geni + gi] = nnz_ineqjacsp;
-        nnz_ineqjacsp += 0; /* 0 Jacobian elements contributed to inequality
+        if (!gen->isrenewable) {
+          genparams->eqjacspgen_idx[geni + gi] = nnz_eqjacsp;
+          nnz_eqjacsp += 4; /* 4 Jacobian elements contributed to equality
                                constrained Jacobian */
+          genparams->ineqjacspgen_idx[geni + gi] = nnz_ineqjacsp;
+          nnz_ineqjacsp += 0; /* 0 Jacobian elements contributed to inequality
+                                 constrained Jacobian */
+        }
         gi++;
-        nnz_hesssp += 0; /* 3 Hessian elements from inequality constraints */
+        nnz_hesssp += 0;
       }
     }
 

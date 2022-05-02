@@ -13,21 +13,21 @@ multiperiod = false
 description = 'datafiles/case9/case9mod_gen3_wind.m IPOPT 3scen contingencies SOPFLOW'
 solver = 'IPOPT'
 num_contingencies = 1
-num_iters = 22
+num_iters = 26
 obj_value = 327.938883521
 
 [[testcase]]
 description = 'datafiles/case9/case9mod_gen3_wind.m IPOPT 3scen contingencies SOPFLOW'
 solver = 'IPOPT'
 num_contingencies = 2
-num_iters = 22
+num_iters = 24
 obj_value = 327.9388835212326
 
 [[testcase]]
 description = 'datafiles/case9/case9mod_gen3_wind.m IPOPT 3scen contingencies SOPFLOW'
 solver = 'IPOPT'
 num_contingencies = 3
-num_iters = 22
+num_iters = 26
 obj_value = 327.9388835210005
 
 [[testcase]]
@@ -56,7 +56,7 @@ description = 'datafiles/case9/case9mod_gen3_wind.m IPOPT default scen contingen
 solver = 'IPOPT'
 num_contingencies = 6
 num_scenarios = 3
-num_iters = 27
+num_iters = 26
 obj_value = 327.93888352046355
 
 [[testcase]]
@@ -67,5 +67,5 @@ gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
 tolerance = 1.0e-3
 num_contingencies = 6
 num_scenarios = 3
-num_iters = 14
+num_iters = 11
 obj_value = 327.6893912446317
