@@ -420,7 +420,7 @@ PetscErrorCode SCOPFLOWUpdateOPFLOWVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu,
       for (k = 0; k < bus->ngen; k++) {
         ierr = PSBUSGetGen(bus, k, &gen);
         CHKERRQ(ierr);
-        if (!gen->status)
+        if (!gen->status || gen->isrenewable)
           continue;
         if (scopflow->mode == 0) {
           /* Only ref. bus responsible for make-up power for contingencies */

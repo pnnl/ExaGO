@@ -97,7 +97,9 @@ public:
   double *qt;         /* min. reactive power gen. limits */
   double *qb;         /* max. reactive power gen. limits */
   double *pgs;        /* real power output setpoint */
-  int *xidx;          /* starting locations in X vector */
+  int *isrenewable;   /* Is renewable generator? */
+
+  int *xidx; /* starting locations in X vector */
   int *
       gidxbus; /* starting locations in constraint vector for bus constraints */
   int *geqidxgen;    /* starting locations in equality constraint vector for gen
@@ -127,9 +129,11 @@ public:
   double *qt_dev_;         /* min. reactive power gen. limits */
   double *qb_dev_;         /* max. reactive power gen. limits */
   double *pgs_dev_;        /* real power output setpoint */
-  int *xidx_dev_;          /* starting locations in X vector */
-  int *gidxbus_dev_;       /* starting locations in constraint vector for bus
-                              constraints */
+  int *isrenewable_dev_;   /* Is renewable generator? */
+
+  int *xidx_dev_;        /* starting locations in X vector */
+  int *gidxbus_dev_;     /* starting locations in constraint vector for bus
+                            constraints */
   int *geqidxgen_dev_;   /* starting locations in equality constraint vector for
                             gen constraints */
   int *gineqidxgen_dev_; /* starting locations in inequality constraint vector

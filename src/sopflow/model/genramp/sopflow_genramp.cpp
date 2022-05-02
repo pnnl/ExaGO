@@ -271,7 +271,7 @@ PetscErrorCode SOPFLOWComputeJacobian_GENRAMP(SOPFLOW sopflow, Vec X, Mat J) {
           ierr = PSBUSGetGen(bus0, k, &gen0);
           CHKERRQ(ierr);
 
-          if (!gen->status)
+          if (!gen->status || gen->isrenewable)
             continue;
 
           loc0 = gen0->startxpowloc;
@@ -400,7 +400,7 @@ PetscErrorCode SOPFLOWComputeConstraints_GENRAMP(SOPFLOW sopflow, Vec X,
           CHKERRQ(ierr);
           ierr = PSBUSGetGen(bus0, k, &gen0);
           CHKERRQ(ierr);
-          if (!gen->status)
+          if (!gen->status || gen->isrenewable)
             continue;
           /* Update the generator set-point */
           gen->pgs = x0[gen0->startxpowloc];

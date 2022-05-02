@@ -495,7 +495,7 @@ PetscErrorCode SOPFLOWUpdateOPFLOWVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu,
       for (k = 0; k < bus->ngen; k++) {
         ierr = PSBUSGetGen(bus, k, &gen);
         CHKERRQ(ierr);
-        if (!gen->status)
+        if (!gen->status || gen->isrenewable)
           continue;
         if (sopflow->mode == 0) {
           /* Only ref. bus responsible for make-up power for contingencies */
@@ -503,25 +503,15 @@ PetscErrorCode SOPFLOWUpdateOPFLOWVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu,
             // Ref. bus can supply full output
             xl[opflow->idxn2sd_map[gen->startxpdevloc]] = gen->pb - gen->pt;
             xu[opflow->idxn2sd_map[gen->startxpdevloc]] = gen->pt - gen->pb;
-          } else if (gen->genfuel_type == GENFUEL_WIND) {
-            xl[opflow->idxn2sd_map[gen->startxpdevloc]] = -gen->ramp_rate_30min;
-            xu[opflow->idxn2sd_map[gen->startxpdevloc]] = gen->ramp_rate_30min;
           } else {
             xl[opflow->idxn2sd_map[gen->startxpdevloc]] =
                 xu[opflow->idxn2sd_map[gen->startxpdevloc]] = 0.0;
           }
         } else {
-          if (gen->genfuel_type == GENFUEL_WIND) {
-            xl[opflow->idxn2sd_map[gen->startxpdevloc]] =
-                -gen->ramp_rate_30min; // -10000.0;
-            xu[opflow->idxn2sd_map[gen->startxpdevloc]] =
-                gen->ramp_rate_30min; // 10000.0
-          } else {
-            xl[opflow->idxn2sd_map[gen->startxpdevloc]] =
-                -gen->ramp_rate_30min; // gen->pb - gen->pt
-            xu[opflow->idxn2sd_map[gen->startxpdevloc]] =
-                gen->ramp_rate_30min; // gen->pt - gen->pb
-          }
+          xl[opflow->idxn2sd_map[gen->startxpdevloc]] =
+              -gen->ramp_rate_30min; // gen->pb - gen->pt
+          xu[opflow->idxn2sd_map[gen->startxpdevloc]] =
+              gen->ramp_rate_30min; // gen->pt - gen->pb
         }
       }
     }

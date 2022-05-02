@@ -568,6 +568,7 @@ int GENParamsRajaHiop::destroy(OPFLOW opflow) {
   h_allocator_.deallocate(pb);
   h_allocator_.deallocate(qt);
   h_allocator_.deallocate(qb);
+  h_allocator_.deallocate(isrenewable);
   h_allocator_.deallocate(xidx);
   h_allocator_.deallocate(gidxbus);
   h_allocator_.deallocate(eqjacspbus_idx);
@@ -590,6 +591,7 @@ int GENParamsRajaHiop::destroy(OPFLOW opflow) {
   d_allocator_.deallocate(pb_dev_);
   d_allocator_.deallocate(qt_dev_);
   d_allocator_.deallocate(qb_dev_);
+  d_allocator_.deallocate(isrenewable_dev_);
   d_allocator_.deallocate(xidx_dev_);
   d_allocator_.deallocate(gidxbus_dev_);
   d_allocator_.deallocate(eqjacspbus_idx_dev_);
@@ -623,6 +625,7 @@ int GENParamsRajaHiop::copy(OPFLOW opflow) {
   resmgr.copy(pb_dev_, pb);
   resmgr.copy(qt_dev_, qt);
   resmgr.copy(qb_dev_, qb);
+  resmgr.copy(isrenewable_dev_, isrenewable);
 
   resmgr.copy(xidx_dev_, xidx);
   resmgr.copy(gidxbus_dev_, gidxbus);
@@ -646,6 +649,7 @@ int GENParamsRajaHiop::copy(OPFLOW opflow) {
   pb_dev_ = pb;
   qt_dev_ = qt;
   qb_dev_ = qb;
+  is_renewable_dev_ = isrenewable;
   xidx_dev_ = xidx;
   gidxbus_dev_ = gidxbus;
   eqjacspbus_idx_dev_ = eqjacspbus_idx;
@@ -688,6 +692,7 @@ int GENParamsRajaHiop::allocate(OPFLOW opflow) {
   pb = paramAlloc<double>(h_allocator_, ngenON);
   qt = paramAlloc<double>(h_allocator_, ngenON);
   qb = paramAlloc<double>(h_allocator_, ngenON);
+  isrenewable = paramAlloc<int>(h_allocator_, ngenON);
 
   xidx = paramAlloc<int>(h_allocator_, ngenON);
   gidxbus = paramAlloc<int>(h_allocator_, ngenON);
@@ -725,6 +730,7 @@ int GENParamsRajaHiop::allocate(OPFLOW opflow) {
       pb[geni] = gen->pb;
       qt[geni] = gen->qt;
       qb[geni] = gen->qb;
+      isrenewable[geni] = (int)gen->isrenewable;
       if (opflow->has_gensetpoint) {
         pgs[geni] = gen->pgs;
       }
@@ -752,6 +758,7 @@ int GENParamsRajaHiop::allocate(OPFLOW opflow) {
   pb_dev_ = paramAlloc<double>(d_allocator_, ngenON);
   qt_dev_ = paramAlloc<double>(d_allocator_, ngenON);
   qb_dev_ = paramAlloc<double>(d_allocator_, ngenON);
+  isrenewable_dev_ = paramAlloc<int>(d_allocator_, ngenON);
 
   xidx_dev_ = paramAlloc<int>(d_allocator_, ngenON);
   gidxbus_dev_ = paramAlloc<int>(d_allocator_, ngenON);
@@ -879,16 +886,19 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsArray_PBPOLRAJAHIOP(
   if (opflow->has_gensetpoint) {
     int *g_geqidxgen = genparams->geqidxgen_dev_;
     double *g_pgs = genparams->pgs_dev_;
+    int *g_isrenewable = genparams->isrenewable_dev_;
     RAJA::forall<exago_raja_exec>(
         RAJA::RangeSegment(0, genparams->ngenON),
         RAJA_LAMBDA(RAJA::Index_type i) {
           double Pg, delPg, Pgset;
-          Pg = x_dev[g_xidx[i]];
-          delPg = x_dev[g_xidx[i] + 2];
-          Pgset = x_dev[g_xidx[i] + 3];
+          if (!g_isrenewable[i]) {
+            Pg = x_dev[g_xidx[i]];
+            delPg = x_dev[g_xidx[i] + 2];
+            Pgset = x_dev[g_xidx[i] + 3];
 
-          ge_dev[g_geqidxgen[i]] = Pgset + delPg - Pg;
-          ge_dev[g_geqidxgen[i] + 1] = Pgset - g_pgs[i];
+            ge_dev[g_geqidxgen[i]] = Pgset + delPg - Pg;
+            ge_dev[g_geqidxgen[i] + 1] = Pgset - g_pgs[i];
+          }
         });
   }
 
@@ -1311,14 +1321,17 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP_old(OPFLOW opflow,
       });
 
   if (opflow->has_gensetpoint) {
+    int *g_isrenewable = genparams->isrenewable_dev_;
     /* Bounds on power deviation and set-point */
     RAJA::forall<exago_raja_exec>(
         RAJA::RangeSegment(0, genparams->ngenON),
         RAJA_LAMBDA(RAJA::Index_type i) {
-          xl_dev[idx[i] + 2] = pb[i] - pt[i];
-          xu_dev[idx[i] + 2] = pt[i] - pb[i];
-          xl_dev[idx[i] + 3] = pb[i];
-          xu_dev[idx[i] + 3] = pt[i];
+          if (!g_isrenewable[i]) {
+            xl_dev[idx[i] + 2] = pb[i] - pt[i];
+            xu_dev[idx[i] + 2] = pt[i] - pb[i];
+            xl_dev[idx[i] + 3] = pb[i];
+            xu_dev[idx[i] + 3] = pt[i];
+          }
         });
   }
 
@@ -1406,21 +1419,24 @@ PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOP(
       int *eqjacspgen_idx = genparams->eqjacspgen_idx_dev_;
       int *g_geqidxgen = genparams->geqidxgen_dev_;
       int *g_xidx = genparams->xidx_dev_;
+      int *g_isrenewable = genparams->isrenewable_dev_;
 
       RAJA::forall<exago_raja_exec>(
           RAJA::RangeSegment(0, genparams->ngenON),
           RAJA_LAMBDA(RAJA::Index_type i) {
-            iJacS_dev[eqjacspgen_idx[i]] = g_geqidxgen[i];
-            jJacS_dev[eqjacspgen_idx[i]] = g_xidx[i];
+            if (!g_isrenewable[i]) {
+              iJacS_dev[eqjacspgen_idx[i]] = g_geqidxgen[i];
+              jJacS_dev[eqjacspgen_idx[i]] = g_xidx[i];
 
-            iJacS_dev[eqjacspgen_idx[i] + 1] = g_geqidxgen[i];
-            jJacS_dev[eqjacspgen_idx[i] + 1] = g_xidx[i] + 2;
+              iJacS_dev[eqjacspgen_idx[i] + 1] = g_geqidxgen[i];
+              jJacS_dev[eqjacspgen_idx[i] + 1] = g_xidx[i] + 2;
 
-            iJacS_dev[eqjacspgen_idx[i] + 2] = g_geqidxgen[i];
-            jJacS_dev[eqjacspgen_idx[i] + 2] = g_xidx[i] + 3;
+              iJacS_dev[eqjacspgen_idx[i] + 2] = g_geqidxgen[i];
+              jJacS_dev[eqjacspgen_idx[i] + 2] = g_xidx[i] + 3;
 
-            iJacS_dev[eqjacspgen_idx[i] + 3] = g_geqidxgen[i] + 1;
-            jJacS_dev[eqjacspgen_idx[i] + 3] = g_xidx[i] + 3;
+              iJacS_dev[eqjacspgen_idx[i] + 3] = g_geqidxgen[i] + 1;
+              jJacS_dev[eqjacspgen_idx[i] + 3] = g_xidx[i] + 3;
+            }
           });
     }
 
@@ -1468,14 +1484,17 @@ PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOP(
 
     if (opflow->has_gensetpoint) {
       int *eqjacspgen_idx = genparams->eqjacspgen_idx_dev_;
+      int *g_isrenewable = genparams->isrenewable_dev_;
 
       RAJA::forall<exago_raja_exec>(
           RAJA::RangeSegment(0, genparams->ngenON),
           RAJA_LAMBDA(RAJA::Index_type i) {
-            MJacS_dev[eqjacspgen_idx[i]] = -1.0;
-            MJacS_dev[eqjacspgen_idx[i] + 1] = 1.0;
-            MJacS_dev[eqjacspgen_idx[i] + 2] = 1.0;
-            MJacS_dev[eqjacspgen_idx[i] + 3] = 1.0;
+            if (!g_isrenewable[i]) {
+              MJacS_dev[eqjacspgen_idx[i]] = -1.0;
+              MJacS_dev[eqjacspgen_idx[i] + 1] = 1.0;
+              MJacS_dev[eqjacspgen_idx[i] + 2] = 1.0;
+              MJacS_dev[eqjacspgen_idx[i] + 3] = 1.0;
+            }
           });
     }
 

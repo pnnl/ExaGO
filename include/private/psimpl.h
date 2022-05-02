@@ -244,6 +244,8 @@ struct _p_PSGEN {
   PetscInt startloc;     /* Starting location for variables */
   PetscInt starteqloc;   /* Starting location for equality constraints */
   PetscInt startineqloc; /* Starting location for inequality constraints */
+
+  PetscBool isrenewable; /* Is this a renewable generator ? */
 };
 
 /**
@@ -348,6 +350,9 @@ struct _p_PS {
   /* Number of generator types */
   PetscInt ngencoal, ngenwind, ngensolar, ngenng, ngennuclear, ngenhydro,
       ngenundefined;
+  /* Number of renewable generators (solar, wind) */
+  PetscInt ngenrenew;
+
   PSBUS bus;
   PSLOAD load;
   PSGEN gen;

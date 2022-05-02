@@ -25,7 +25,7 @@ num_scenarios = 2
 tolerance = 1.0e-03
 initialization_type = 'ACPF'
 gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
-num_iters = 63
+num_iters = 69
 obj_value = 14313.142350311331
 
 [[testcase]]
@@ -35,5 +35,5 @@ num_scenarios = 3
 tolerance = 1.0e-03
 initialization_type = 'ACPF'
 gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
-num_iters = 57
+num_iters = 72
 obj_value = 14313.142350311331

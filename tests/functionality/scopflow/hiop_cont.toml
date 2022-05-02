@@ -42,7 +42,7 @@ description = 'case_ACTIVSg200.m with HIOP solver/4 contingencies'
 subproblem_model = 'POWER_BALANCE_HIOP'
 subproblem_solver = 'HIOP'
 num_contingencies = 4
-num_iters = 2
+num_iters = 1
 obj_value = 25957.67116859898
 
 [[testcase]]

@@ -65,9 +65,9 @@ SCOPFLOWHIOPInterface::~SCOPFLOWHIOPInterface() {
 
 SCOPFLOWHIOPInterface::SCOPFLOWHIOPInterface(SCOPFLOW scopflowin) {
   int i, k, j = 0;
-  PS ps;
-  PSBUS bus;
-  PSGEN gen;
+  PS ps0;
+  PSBUS bus0;
+  PSGEN gen0;
   OPFLOW opflowbase;
 
   scopflow = scopflowin;
@@ -75,28 +75,28 @@ SCOPFLOWHIOPInterface::SCOPFLOWHIOPInterface(SCOPFLOW scopflowin) {
   rec_evaluator = NULL;
 
   opflowbase = scopflow->opflow0;
-  ps = opflowbase->ps;
+  ps0 = opflowbase->ps;
 
   /* Get the number of coupling variables */
   nxcoup = 0;
 
-  for (i = 0; i < ps->nbus; i++) {
-    bus = &ps->bus[i];
-    for (k = 0; k < bus->ngen; k++) {
-      PSBUSGetGen(bus, k, &gen);
-      if (gen->status)
+  for (i = 0; i < ps0->nbus; i++) {
+    bus0 = &ps0->bus[i];
+    for (k = 0; k < bus0->ngen; k++) {
+      PSBUSGetGen(bus0, k, &gen0);
+      if (gen0->status && !gen0->isrenewable)
         nxcoup++;
     }
   }
 
   PetscCalloc1(nxcoup, &loc_xcoup);
   /* Set the coupling indices */
-  for (i = 0; i < ps->nbus; i++) {
-    bus = &ps->bus[i];
-    for (k = 0; k < bus->ngen; k++) {
-      PSBUSGetGen(bus, k, &gen);
-      if (gen->status) {
-        loc_xcoup[j] = gen->startxpowloc; /* Location for Pg */
+  for (i = 0; i < ps0->nbus; i++) {
+    bus0 = &ps0->bus[i];
+    for (k = 0; k < bus0->ngen; k++) {
+      PSBUSGetGen(bus0, k, &gen0);
+      if (gen0->status && !gen0->isrenewable) {
+        loc_xcoup[j] = gen0->startxpowloc; /* Location for Pg */
         j++;
       }
     }
@@ -208,7 +208,7 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
       CHKERRQ(ierr);
       ierr = PSBUSGetGen(bus0, k, &gen0);
       CHKERRQ(ierr);
-      if (gen0->status) {
+      if (gen0->status && !gen0->isrenewable) {
         gen0->pgs = gen->pgs = gen->pg = x[g++];
       }
     }
@@ -268,21 +268,24 @@ bool SCOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int &n, double *x,
       CHKERRQ(ierr);
       ierr = PSBUSGetGen(bus0, k, &gen0);
       CHKERRQ(ierr);
-      if (gen0->status && gen->status) {
+      if (!gen0->status || gen0->isrenewable)
+        continue;
+
+      if (gen->status) {
         /* Get the lagrange multiplier for the generator set-point equality
            constraint x_i - x_0
            gradient is the partial derivative for it (note that it is negative)
          */
-        if (opflow->has_gensetpoint) {
-          /*	  ierr = PetscPrintf(PETSC_COMM_SELF,"Gen[%d]: Pg = %lf Pb = %lf
-           * Pt = %lf Pgs = %lf Ramp rate = %lf lambda =
-           * %lf\n",gen->bus_i,gen->pg,
-           * gen->pb,gen->pt,gen->pgs,gen->ramp_rate_30min,lameq[gen->starteqloc+1]);CHKERRQ(ierr);
-           */
-          grad[g++] = -lameq[gen->starteqloc + 1];
-        }
-      } else if (gen0->status && !gen->status)
+
+        /*	  ierr = PetscPrintf(PETSC_COMM_SELF,"Gen[%d]: Pg = %lf Pb = %lf
+         * Pt = %lf Pgs = %lf Ramp rate = %lf lambda =
+         * %lf\n",gen->bus_i,gen->pg,
+         * gen->pb,gen->pt,gen->pgs,gen->ramp_rate_30min,lameq[gen->starteqloc+1]);CHKERRQ(ierr);
+         */
+        grad[g++] = -lameq[gen->starteqloc + 1];
+      } else {
         grad[g++] = 0.0;
+      }
     }
   }
   ierr = VecRestoreArrayRead(Lambda, &lam);
@@ -438,7 +441,7 @@ PetscErrorCode SCOPFLOWSolverGetSolution_HIOP(SCOPFLOW scopflow,
           CHKERRQ(ierr);
           ierr = PSBUSGetGen(bus0, k, &gen0);
           CHKERRQ(ierr);
-          if (gen0->status) {
+          if (gen0->status && !gen0->isrenewable) {
             gen->pgs = gen0->pgs;
           }
         }

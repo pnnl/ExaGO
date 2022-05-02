@@ -273,7 +273,7 @@ PetscErrorCode SCOPFLOWComputeJacobian_GENRAMP(SCOPFLOW scopflow, Vec X,
           ierr = PSBUSGetGen(bus0, k, &gen0);
           CHKERRQ(ierr);
 
-          if (!gen->status)
+          if (!gen->status || gen->isrenewable)
             continue;
 
           loc0 = gen0->startxpowloc;
@@ -409,7 +409,7 @@ PetscErrorCode SCOPFLOWComputeConstraints_GENRAMP(SCOPFLOW scopflow, Vec X,
           CHKERRQ(ierr);
           ierr = PSBUSGetGen(bus0, k, &gen0);
           CHKERRQ(ierr);
-          if (!gen->status)
+          if (!gen->status || gen->isrenewable)
             continue;
           /* Update the generator set-point */
           gen->pgs = x0[gen0->startxpowloc];

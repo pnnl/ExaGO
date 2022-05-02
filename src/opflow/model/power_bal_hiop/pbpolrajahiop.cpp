@@ -159,7 +159,7 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOLRAJAHIOP(OPFLOW opflow) {
       gen->pg = x[loc];
       gen->qg = x[loc + 1];
 
-      if (opflow->has_gensetpoint) {
+      if (opflow->has_gensetpoint && !gen->isrenewable) {
         gloc += gen->nconeq;
       }
     }
@@ -334,7 +334,7 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOP(OPFLOW opflow) {
 
       spct += gen->nxpow;
 
-      if (opflow->has_gensetpoint) {
+      if (opflow->has_gensetpoint && !gen->isrenewable) {
         loc = gen->startxpdevloc;
         idxn2sd_map[loc] = spct;
 
@@ -459,12 +459,14 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOP(OPFLOW opflow) {
         CHKERRQ(ierr);
         if (!gen->status)
           continue;
-        genparams->eqjacspgen_idx[geni + gi] = nnz_eqjacsp;
-        nnz_eqjacsp += 4; /* 4 Jacobian elements contributed to equality
+        if (!gen->isrenewable) {
+          genparams->eqjacspgen_idx[geni + gi] = nnz_eqjacsp;
+          nnz_eqjacsp += 4; /* 4 Jacobian elements contributed to equality
                              constrained Jacobian */
-        genparams->ineqjacspgen_idx[geni + gi] = nnz_ineqjacsp;
-        nnz_ineqjacsp += 0; /* 0 Jacobian elements contributed to inequality
+          genparams->ineqjacspgen_idx[geni + gi] = nnz_ineqjacsp;
+          nnz_ineqjacsp += 0; /* 0 Jacobian elements contributed to inequality
                                constrained Jacobian */
+        }
         gi++;
         nnz_hesssp += 0; /* 3 Hessian elements from inequality constraints */
       }

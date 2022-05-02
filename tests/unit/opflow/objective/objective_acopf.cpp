@@ -156,4 +156,3 @@ int main(int argc, char **argv) {
   ExaGOFinalize();
   return fail;
 }
-
