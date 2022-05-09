@@ -125,24 +125,30 @@ int main(int argc, char **argv) {
 
   if(!(flg && flg2))
   {
-    return fail;
+    return fail + 1;
   }
 
   ierr = OPFLOWGetSolution(opflowtest, &X);
   CHKERRQ(ierr);
 
+  printf("solution: \n");
+  VecView(X, PETSC_VIEWER_STDOUT_SELF);
+  
   ierr = OPFLOWGetSizes(opflowtest, &nx, &nconeq, &nconineq);
   CHKERRQ(ierr);
 
+  printf("sizes got: \n");
   // Set Grad Based on X
   ierr = VecDuplicate(X, &grad);
   CHKERRQ(ierr);
 
+  printf("vec dup: \n");
   ierr = VecGetArray(X, &x_arr);
   CHKERRQ(ierr);
   ierr = VecGetArray(grad, &grad_arr);
   CHKERRQ(ierr);
 
+  printf("vec get: \n");
   // Gradient for all generator costs should be 1
   // 10 corresponds to locations of non-zero values
   for (int i = 0; i < nx; i++) {
@@ -151,20 +157,32 @@ int main(int argc, char **argv) {
     }
   }
 
+  printf("for loop: \n");
   ierr = VecRestoreArray(X, &x_arr);
   CHKERRQ(ierr);
   ierr = VecRestoreArray(grad, &grad_arr);
   CHKERRQ(ierr);
 
+  printf("vec restore \n");
+  
   fail += test.computeGradient(opflowtest, X, grad);
 
+  printf("compute grad \n");
+  printf("gradient:  \n");
+  
+  printf("fail: %d \n", fail);
+  
+  
   ierr = VecDestroy(&grad);
   CHKERRQ(ierr);
 
+  printf("vec destroy \n");
   ierr = OPFLOWDestroy(&opflowtest);
   CHKERRQ(ierr);
 
+  printf("opflow destroy \n");
   ExaGOFinalize();
+  printf("exago final \n");
   return fail;
 }
 
