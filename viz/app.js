@@ -39,7 +39,7 @@ ChartJS.register(RadialLinearScale, ArcElement, Tooltip, Legend);
 var casedata = {};
 casedata.geojsondata = {};
 casedata.geojsondata.type = "FeatureCollection";
-casedata.geojsondata.features = [...casedata2k.geojsondata.features,...casedata10k.geojsondata.features,...casedata70k.geojsondata.features];
+casedata.geojsondata.features = [...casedata2k.geojsondata.features];
 
 const transitionLinearInterpolator = new LinearInterpolator(['bearing']);
 const transitionFlyToInterpolator = new FlyToInterpolator(['zoom']);
