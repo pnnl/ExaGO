@@ -34,33 +34,41 @@ if(EXAGO_INSTALL_TESTS)
     RAJA
   )
 
-  if(EXAGO_ENABLE_HIOP_SPARSE)
-    exago_add_test(
-      NAME
-      FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_TOML_TESTSUITE
-      COMMAND
-      ${RUNCMD}
-      $<TARGET_FILE:test_opflow_functionality>
-      ${CMAKE_CURRENT_SOURCE_DIR}/hiopsparse_pbpol.toml
-      DEPENDS
-      HIOP_SPARSE
-    )
-  endif()
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_OPFLOW_HIOP_DCOPF_TOML
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:test_opflow_functionality>
+    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_dcopf.toml
+    DEPENDS
+    HIOP
+  )
+
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_TOML_TESTSUITE
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:test_opflow_functionality>
+    ${CMAKE_CURRENT_SOURCE_DIR}/hiopsparse_pbpol.toml
+    DEPENDS
+    HIOP_SPARSE
+  )
 
   # Note: All cartesian and/or current balance models are way behind. These
   # models should not be used and their tests should be disabled.
-  if(EXAGO_FEATURE_CARTESIAN_ACTIVE)
-    exago_add_test(
-      NAME
-      FUNCTIONALITY_TEST_OPFLOW_IPOPT_CARTESIAN_TOML_TESTSUITE
-      COMMAND
-      ${RUNCMD}
-      $<TARGET_FILE:test_opflow_functionality>
-      ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_pbcart.toml
-      DEPENDS
-      IPOPT
-    )
-  endif()
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_OPFLOW_IPOPT_CARTESIAN_TOML_TESTSUITE
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:test_opflow_functionality>
+    ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_pbcart.toml
+    DEPENDS
+    IPOPT
+    EXAGO_FEATURE_CARTESIAN_ACTIVE
+  )
 
   exago_add_test(
     NAME

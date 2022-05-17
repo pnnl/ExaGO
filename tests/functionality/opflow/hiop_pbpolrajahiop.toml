@@ -21,35 +21,9 @@ network = 'datafiles/case9/case9mod.m'
 description = 'datafiles/case9/case9mod.m base case'
 is_loadloss_active = false
 is_powerimb_active = false
-num_iters = 14
+num_iters = 11
 obj_value = 4.1444511e+03
 
-[[testcase]]
-network = 'datafiles/case9/case9mod.m'  
-description = "datafiles/case9/case9mod.m initialization DCOPF"
-is_loadloss_active =	false
-is_powerimb_active =	false
-initialization_type = "DCOPF"
-num_iters = 7
-obj_value = 4144.46075933
-
-[[testcase]]
-network = 'datafiles/case118.m'
-description = "datafiles/case118.m initialization DCOPF"
-is_loadloss_active =	false
-is_powerimb_active =	false
-initialization_type = "DCOPF"
-num_iters = 15
-obj_value = 129660.692271
-
-[[testcase]]
-network = 'datafiles/case_ACTIVSg200.m'
-description = "datafiles/case_ACTIVSg200.m initialization DCOPF"
-is_loadloss_active =	false
-is_powerimb_active =	false
-initialization_type = "DCOPF"
-num_iters = 39
-obj_value = 27564.2030874
 
 #[[testcase]]
 #network = 'datafiles/case118.m'
