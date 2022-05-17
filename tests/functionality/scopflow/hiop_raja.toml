@@ -25,12 +25,12 @@ num_contingencies = -1
 num_iters = 1
 obj_value = 4072.4632566566206
 
-[[testcase]]
-network = 'datafiles/case_ACTIVSg200.m'
-contingencies = 'datafiles/case_ACTIVSg200.cont'
-description = 'case_ACTIVSg200.m with HIOP solver/4 contingencies/using RAJA'
-ignore_lineflow_constraints = true
-enable_powerimbalance_variables = true
-num_contingencies = 4
-num_iters = 1
-obj_value = 25957.67116859898
+# [[testcase]]
+# network = 'datafiles/case_ACTIVSg200.m'
+# contingencies = 'datafiles/case_ACTIVSg200.cont'
+# description = 'case_ACTIVSg200.m with HIOP solver/4 contingencies/using RAJA'
+# ignore_lineflow_constraints = true
+# enable_powerimbalance_variables = true
+# num_contingencies = 4
+# num_iters = 1
+# obj_value = 25957.67116859898
