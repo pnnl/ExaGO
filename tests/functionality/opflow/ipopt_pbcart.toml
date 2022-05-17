@@ -18,7 +18,7 @@ initialization_type = 'MIDPOINT'
 network = 'datafiles/case9/case9mod.m'  
 is_loadloss_active =	false
 is_powerimb_active =	false
-num_iters = 21
+num_iters = 22
 obj_value = 4.144460534632e+03
 
 [[testcase]]
@@ -32,7 +32,7 @@ obj_value = 1.296606940412e+05
 network = 'datafiles/case_ACTIVSg200.m'
 is_loadloss_active =	false
 is_powerimb_active =	false
-num_iters = 80
+num_iters = 209
 obj_value = 2.755757042019e+04
 
 # -- IBCAR model
@@ -41,7 +41,7 @@ model = 'CURRENT_BALANCE_CARTESIAN'
 network = 'datafiles/case9/case9mod.m'  
 is_loadloss_active =	false
 is_powerimb_active =	false
-num_iters = 24 
+num_iters = 19
 obj_value = 4.144460534632e+03
 
 [[testcase]]
@@ -49,7 +49,7 @@ model = 'CURRENT_BALANCE_CARTESIAN'
 network = 'datafiles/case118.m'
 is_loadloss_active =	false
 is_powerimb_active =	false
-num_iters = 29 
+num_iters = 23
 obj_value = 1.296606940412e+05
 
 [[testcase]]
@@ -57,7 +57,7 @@ model = 'CURRENT_BALANCE_CARTESIAN'
 network = 'datafiles/case_ACTIVSg200.m'
 is_loadloss_active =	false
 is_powerimb_active =	false
-num_iters = 256
+num_iters = 180
 obj_value = 2.755757042019e+04
 
 # -- IBCAR2 model
@@ -66,7 +66,7 @@ model = 'CURRENT_BALANCE_CARTESIAN2'
 network = 'datafiles/case9/case9mod.m'  
 is_loadloss_active =	false
 is_powerimb_active =	false
-num_iters = 20 
+num_iters = 19
 obj_value = 4.144460534632e+03
 
 [[testcase]]
@@ -74,7 +74,7 @@ model = 'CURRENT_BALANCE_CARTESIAN2'
 network = 'datafiles/case118.m'
 is_loadloss_active =	false
 is_powerimb_active =	false
-num_iters = 36 
+num_iters = 23
 obj_value = 1.296606940412e+05
 
 [[testcase]]
@@ -82,5 +82,5 @@ model = 'CURRENT_BALANCE_CARTESIAN2'
 network = 'datafiles/case_ACTIVSg200.m'
 is_loadloss_active =	false
 is_powerimb_active =	false
-num_iters = 121
+num_iters = 155
 obj_value = 2.755757042019e+04
