@@ -23,16 +23,16 @@ verbosity_level = 3
 num_iters = 0
 obj_value = 0.0
 
-[[testcase]]
-description = 'datafiles/case9/case9mod_gen3_wind.m HIOP GPU 10 scenario SOPFLOW'
-solver = 'HIOP'
-network = 'datafiles/case9/case9mod_gen3_wind.m'
-scenfile = 'datafiles/case9/10_scenarios_9bus.csv'
-num_scenarios = -1
-initialization_type = 'ACPF'
-subproblem_solver = 'HIOP'
-subproblem_model = 'PBPOLRAJAHIOP'
-compute_mode = 'GPU'
-verbosity_level = 3
-num_iters = 0
-obj_value = 0.0
+# [[testcase]]
+# description = 'datafiles/case9/case9mod_gen3_wind.m HIOP GPU 10 scenario SOPFLOW'
+# solver = 'HIOP'
+# network = 'datafiles/case9/case9mod_gen3_wind.m'
+# scenfile = 'datafiles/case9/10_scenarios_9bus.csv'
+# num_scenarios = -1
+# initialization_type = 'ACPF'
+# subproblem_solver = 'HIOP'
+# subproblem_model = 'PBPOLRAJAHIOP'
+# compute_mode = 'GPU'
+# verbosity_level = 3
+# num_iters = 0
+# obj_value = 0.0
