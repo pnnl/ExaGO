@@ -1,4 +1,4 @@
-import React, {useRef, useState, useCallback} from 'react';
+import React, {useRef, useState, useCallback,useEffect} from 'react';
 import { createRoot } from "react-dom/client";
 import {StaticMap, Popup,Marker,_MapContext as MapContext,FullscreenControl,NavigationControl} from 'react-map-gl';
 import DeckGL from '@deck.gl/react';
@@ -44,12 +44,12 @@ const transitionFlyToInterpolator = new FlyToInterpolator(['zoom']);
 var casedata = {};
 casedata.geojsondata = {};
 casedata.geojsondata.type = "FeatureCollection";
-casedata.geojsondata.features = [...casedata2k.geojsondata.features];
-
-
+casedata.geojsondata.features = [...casedata2k.geojsondata.features,...casedata10k.geojsondata.features,...casedata70k.geojsondata.features];
 
 // Source data GeoJSON
 const geodata = casedata['geojsondata']
+
+
 
 // Get county data with loads
 function getCountyNodes(data)
@@ -130,12 +130,6 @@ function FillColor(subst)
   return [r,g,b];
 }
 
-function LineWidth(line)
-{
-  return line.properties.KV*3;
-  //return Math.abs(line.properties.PF/line.properties.RATE_A)*500;
-}
-
 // Get substation voltages
 function getPoints(data)
 {
@@ -170,8 +164,10 @@ function getGeneration(data)
       var Pg = 0.0;
       var gen_fuel;
       var ngen = 0;
+      var KV = []
       for(j=0; j < nbus; j++) {
         var bus = subst.bus[j];
+        KV.push(bus.BASE_KV);
         for(k=0; k < bus.ngen; k++) {
           var gen = bus.gen[k];
           Pg += gen.GEN_STATUS*gen.PG;
@@ -214,7 +210,7 @@ function getGeneration(data)
         else color = 'black';
         if(Pg <= minPg) minPg = Pg;
         if(Pg >= maxPg) maxPg = Pg;
-        Geni = {coordinates: data.features[i].geometry.coordinates, Pg: Pg,color:color};
+        Geni = {coordinates: data.features[i].geometry.coordinates, Pg: Pg,KVlevels: KV, color:color};
         Gens.push(Geni);
       }
     }
@@ -303,6 +299,38 @@ const loaddata = getLoad(data);
 
 const countyloaddata = getCountyNodes(data);
 
+function LineWidth(line) {
+  return line.properties.KV*3;
+  //return Math.abs(line.properties.PF/line.properties.RATE_A)*500;
+}
+
+const loads = loaddata.Loads;
+const minPd = loaddata.minPd;
+const maxPd = loaddata.maxPd;
+
+const countymaxPd = countyloaddata.maxPd;
+const countyload = countyloaddata.data;
+
+const bboxArray = bbox(data);
+const corner1 = [bboxArray[0], bboxArray[1]];
+const corner2 = [bboxArray[2], bboxArray[3]];
+const bounds = [corner1, corner2];
+
+const mapcenter = center(data);
+
+var hull = convex(data);
+
+const INITIAL_VIEW_STATE = {
+    latitude: mapcenter['geometry']['coordinates'][1],
+    longitude: mapcenter['geometry']['coordinates'][0],
+    zoom: 5,
+    maxZoom: 16,
+    pitch: 0,
+    bearing: 0,
+    bounds: [bboxArray[1], bboxArray[0],bboxArray[3],bboxArray[2]],
+    fitbounds: true
+};
+
 
 export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
 
@@ -311,34 +339,9 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
   
   const [genfiltervalue,setGenFilterValue] = useState([gendata.minPg,gendata.maxPg]);
 
-  const loads = loaddata.Loads;
-  const minPd = loaddata.minPd;
-  const maxPd = loaddata.maxPd;
-
-  const countymaxPd = countyloaddata.maxPd;
-  const countyload = countyloaddata.data;
+  const [netfiltervalue,setNetFilterValue] = useState([0,800]);
 
   const [loadfiltervalue,setLoadFilterValue] = useState([0,countyloaddata.maxPd]);
-
-  const bboxArray = bbox(data);
-  const corner1 = [bboxArray[0], bboxArray[1]];
-  const corner2 = [bboxArray[2], bboxArray[3]];
-  const bounds = [corner1, corner2];
-
-  const mapcenter = center(data);
-
-  var hull = convex(data);
-
-  const INITIAL_VIEW_STATE = {
-      latitude: mapcenter['geometry']['coordinates'][1],
-      longitude: mapcenter['geometry']['coordinates'][0],
-      zoom: 5,
-      maxZoom: 16,
-      pitch: 0,
-      bearing: 0,
-      bounds: [bboxArray[1], bboxArray[0],bboxArray[3],bboxArray[2]],
-      fitbounds: true
-  };
 
   // For zoom-in/out control
   const [initialViewState,setInitialViewState] = useState(INITIAL_VIEW_STATE);
@@ -372,7 +375,6 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
 
   const activatePopup = useCallback(() => {
     setShowPopup(showPopup => ({...showPopup,display:true}));
-    console.log(showPopup);
   },[]);
 
   const zoomToData = useCallback((info) => {
@@ -411,12 +413,10 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
      var layer = info.layer;
      var {viewport} = layer.context;
 
-     console.log(info);
      var cbounds = bbox(info.object);
      var c1 = [cbounds[0], cbounds[1]];
      var c2 = [cbounds[2], cbounds[3]];
      var countybounds = [c1, c2];
-     console.log(countybounds);
      const {longitude, latitude, zoom} = viewport.fitBounds(countybounds);
 
      setInitialViewState(viewState =>({
@@ -429,12 +429,12 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
       zoom: zoom-0.25,
       onTransitionEnd: activatePopup
     }))
-    console.log(info.object)
+
     var popup = {display:false,name:'',info:''}; // Will be displayed after transition end only
     popup.name = info.object.properties.NAME;
     popup.info = "Load: "+info.object.properties.Pd.toFixed(2)+"MW";
     setShowPopup(showPopup => ({...showPopup,...popup}));
-    console.log(showPopup);
+
    }
 });
 
@@ -455,13 +455,14 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
     setShowPopup({...showPopup,display:false});
   });
 
-  const [checked, setChecked] = useState(true);
+  const [netlayeractive, setNetLayerActive] = useState(true);
 
   const [loadlayeractive,setLoadLayerActive] = useState(false);
   const [genlayeractive,setGenLayerActive] = useState(false);
 
-  const handleChange = (event) => {
-    setChecked(event.target.checked);
+  const handleNetLayerChange = (event) => {
+    setNetLayerActive(event.target.checked);
+    setNetFilterValue([0,800]);
   };
 
   const handleLoadLayerChange = (event) => {
@@ -488,6 +489,30 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
     })))
   };
 
+  function getNetFilterValue(data) {
+    if(!data) return 10000;
+    if(data.geometry.type == 'Point') {
+      for(var i=0; i < data.properties.KVlevels.length; i++) {
+        var KV = data.properties.KVlevels[i];
+        if(netfiltervalue[0] <= KV && KV <= netfiltervalue[1]) return KV;
+      }
+    } else {
+      /* Line layer */
+      return data.properties.KV;
+    }
+    return -1; // This is beyond the range so filter will filter out this data point.
+  }
+
+  function getGenFilterValue(data) {
+    if(!data) return 10000;
+    for(var i=0; i < data.KVlevels.length; i++) {
+        var KV = data.KVlevels[i];
+        if(netfiltervalue[0] <= KV && KV <= netfiltervalue[1]) {
+          return data.Pg;
+        }
+    }
+    return 10000;
+  }
 
   const layers = [
     
@@ -495,19 +520,22 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
       id: 'geojson', 
       data: data,
       stroked: false,
-      filled: checked,
+      filled: true,
 //      extruded: true,
-      pickable: checked,
+      pickable: netlayeractive,
       pointType: 'circle',
       lineWidthScale: 3,
       getFillColor: FillColor,
       getLineColor: LineColor,
       getPointRadius: 1000,
       getLineWidth: LineWidth,
-      visible: checked,
-      onClick:zoomToData
-//      extensions: [new ClipExtension()],
- //     clipBounds: bounds,
+      visible: netlayeractive,
+      onClick:zoomToData,
+      getFilterValue: getNetFilterValue,
+      filterRange: netfiltervalue,
+
+      extensions: [new DataFilterExtension({filtersize:1})]
+
     }),
    
     new ColumnLayer({
@@ -523,10 +551,14 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
       getElevation: d => d.Pg*5,
       onClick:zoomToData,
 
-      getFilterValue: d => d.Pg,
+      getFilterValue: getGenFilterValue,
       filterRange: genfiltervalue,
 
-      extensions: [new DataFilterExtension({filtersize:1})]
+      extensions: [new DataFilterExtension({filtersize:1})],
+
+      updateTriggers: {
+        getFilterValue: netfiltervalue
+      }
 
     }),
 
@@ -558,7 +590,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
       wireframe: true,
       lineWidthMinPixels: 1,
       getPolygon: d => d.geometry.coordinates,
-      getElevation: d => d.properties.Pd*5.0,
+//      getElevation: d => d.properties.Pd*5.0,
       getFillColor: d => [255*d.properties.Pd/countymaxPd, 0, 0],
       getLineColor: [80,80,80],
       getLineWidth: d => 1,
@@ -568,8 +600,6 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
       getFilterValue: d => d.properties.Pd,
       filterRange: loadfiltervalue,
     }),
-    
-
     /*
     new HeatmapLayer({
       id:'Voltagecontour',
@@ -650,6 +680,11 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
     setLoadFilterValue(event.target.value);
   }
 
+  const handleNetRangeFilterChange = (event) => {
+    setNetFilterValue(event.target.value);
+  }
+  
+
   function valuetext(value) {
     return `${value.toFixed(2)}`;
   }
@@ -677,9 +712,16 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
       {/*<div><NavigationControl position="top-left"/></div>
       <FullscreenControl/>*/}
 
+      <HomeOutlinedIcon style={{right:0,top:0}} fontSize="large" onClick={GoHome}></HomeOutlinedIcon>
+      <br></br>
+      {<ThreeSixtyOutlinedIcon color="primary" fontSize="large" onClick={rotateCamera}>Rotate</ThreeSixtyOutlinedIcon>}
+      <br></br>
       <FullscreenControl/>
       <br></br><br></br>
       <NavigationControl/>
+      <br></br><br></br><br></br>
+
+        
 
       {
         showPopup.display && (
@@ -702,12 +744,23 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
       )}
 
     <div style={{position:"absolute", top:0, right:0, "width":150,background:"#fff",padding:"12px 12px",color:" #6b6b76",zIndex:1000}}>
-        <HomeOutlinedIcon color="primary" fontSize="large" onClick={GoHome}></HomeOutlinedIcon>
+        <Checkbox checked={netlayeractive} style={{color:"primary"}} onChange={handleNetLayerChange} />Net
         <br></br>
-        {<ThreeSixtyOutlinedIcon color="primary" fontSize="large" onClick={rotateCamera}>Rotate</ThreeSixtyOutlinedIcon>}
-        <br></br>
-        <Checkbox checked={checked} style={{color:"primary"}} onChange={handleChange} />Net
-        <br></br>
+
+        {netlayeractive && (
+          <Slider
+          style={{padding:2}}
+          value={netfiltervalue}
+          valueLabelDisplay="auto"
+          onChange={handleNetRangeFilterChange}
+          getAriaValueText={valuetext}
+          step={100}
+          min={0}
+          max={800}
+          >
+          </Slider>)
+        }
+
         <Checkbox checked={genlayeractive} style={{color:"primary"}} onChange={handleGenLayerChange} />Generation
 
         
@@ -718,6 +771,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
         valueLabelDisplay="auto"
         onChange={handleGenRangeFilterChange}
         getAriaValueText={valuetext}
+        step={100}
         min={gendata.minPg}
         max={gendata.maxPg+10}
         >
@@ -734,6 +788,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
         valueLabelDisplay="auto"
         onChange={handleLoadRangeFilterChange}
         getAriaValueText={valuetext}
+        step={100}
         min={0}
         max={countyloaddata.maxPd+10}
         >
