@@ -36,13 +36,17 @@ import { InvertColorsOff, ShopTwoOutlined } from '@mui/icons-material';
 
 ChartJS.register(RadialLinearScale, ArcElement, Tooltip, Legend);
 
+// Transition interpolators for animation
+const transitionLinearInterpolator = new LinearInterpolator(['bearing']);
+const transitionFlyToInterpolator = new FlyToInterpolator(['zoom']);
+
+
 var casedata = {};
 casedata.geojsondata = {};
 casedata.geojsondata.type = "FeatureCollection";
 casedata.geojsondata.features = [...casedata2k.geojsondata.features];
 
-const transitionLinearInterpolator = new LinearInterpolator(['bearing']);
-const transitionFlyToInterpolator = new FlyToInterpolator(['zoom']);
+
 
 // Source data GeoJSON
 const geodata = casedata['geojsondata']
@@ -173,14 +177,30 @@ function getGeneration(data)
           Pg += gen.GEN_STATUS*gen.PG;
           gen_fuel = gen.GEN_FUEL;
 
-          if(gen_fuel == 'wind') Pgwind += gen.GEN_STATUS*gen.PG;
-          else if(gen_fuel == 'solar') Pgsolar += gen.GEN_STATUS*gen.PG;
-          else if(gen_fuel == 'coal') Pgcoal += gen.GEN_STATUS*gen.PG;
-          else if(gen_fuel == 'nuclear') Pgnuclear += gen.GEN_STATUS*gen.PG;
-          else if(gen_fuel == 'hydro') Pghydro += gen.GEN_STATUS*gen.PG;
-          else if(gen_fuel == 'ng') Pgng += gen.GEN_STATUS*gen.PG;
-          else Pgother += gen.GEN_STATUS*gen.PG;
-
+          if(gen_fuel == 'wind') {
+            Pgwind += gen.GEN_STATUS*gen.PG;
+            Pgwindcap += gen.GEN_STATUS*gen.PMAX;
+          }
+          else if(gen_fuel == 'solar') {
+            Pgsolar += gen.GEN_STATUS*gen.PG;
+            Pgsolarcap += gen.GEN_STATUS*gen.PMAX;
+          }
+          else if(gen_fuel == 'coal') {
+            Pgcoal += gen.GEN_STATUS*gen.PG;
+            Pgcoalcap += gen.GEN_STATUS*gen.PMAX;
+          } else if(gen_fuel == 'nuclear') {
+            Pgnuclear += gen.GEN_STATUS*gen.PG;
+            Pgnuclearcap += gen.GEN_STATUS*gen.PMAX;
+          } else if(gen_fuel == 'hydro') {
+            Pghydro += gen.GEN_STATUS*gen.PG;
+            Pghydrocap += gen.GEN_STATUS*gen.PMAX;
+          } else if(gen_fuel == 'ng') {
+            Pgng += gen.GEN_STATUS*gen.PG;
+            Pgngcap += gen.GEN_STATUS*gen.PMAX;
+          } else {
+            Pgother += gen.GEN_STATUS*gen.PG;
+            Pgothercap += gen.GEN_STATUS*gen.PMAX;
+          }
           ngen++;
         }
       }
@@ -200,8 +220,7 @@ function getGeneration(data)
     }
   }
   
-  return {minPg:minPg,maxPg:maxPg,Gens:Gens,Pgwind: Pgwind, Pgsolar: Pgsolar, Pgnuclear: Pgnuclear,Pghydro:Pghydro,
-    Pgng:Pgng,Pgcoal:Pgcoal,Pgother:Pgother};
+  return {minPg:minPg,maxPg:maxPg,Gens:Gens,Pgwind: Pgwind, Pgsolar: Pgsolar, Pgnuclear: Pgnuclear,Pghydro:Pghydro,Pgng:Pgng,Pgcoal:Pgcoal,Pgother:Pgother,Pgwindcap: Pgwindcap, Pgsolarcap: Pgsolarcap, Pgnuclearcap: Pgnuclearcap,Pghydrocap:Pghydrocap,Pgngcap:Pgngcap,Pgcoalcap:Pgcoalcap,Pgothercap:Pgothercap};
 }
 
 // Get Load
@@ -270,30 +289,36 @@ function getContours()
   return contours;
 }
 
+var data = ExtractFirstTimeSlice(geodata);
+
+const Points = getPoints(data);
+const Voltages = Points.map(d => d.value);
+
+const Vcontour = getContours();
+
+const gendata = getGeneration(data);
+const generation = gendata.Gens;
+
+const loaddata = getLoad(data);
+
+const countyloaddata = getCountyNodes(data);
+
+
 export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
 
+  // Deck reference pointer
   const deckRef = useRef(null);
-  var data = ExtractFirstTimeSlice(ggdata);
-
-  const Points = getPoints(data);
-
-  const Voltages = Points.map(d => d.value);
-
-  const Vcontour = getContours();
-
-  const gendata = getGeneration(data);
-  const generation = gendata.Gens;
+  
   const [genfiltervalue,setGenFilterValue] = useState([gendata.minPg,gendata.maxPg]);
-
-  const loaddata = getLoad(data);
 
   const loads = loaddata.Loads;
   const minPd = loaddata.minPd;
   const maxPd = loaddata.maxPd;
 
-  const countyloaddata = getCountyNodes(data);
   const countymaxPd = countyloaddata.maxPd;
   const countyload = countyloaddata.data;
+
+  const [loadfiltervalue,setLoadFilterValue] = useState([0,countyloaddata.maxPd]);
 
   const bboxArray = bbox(data);
   const corner1 = [bboxArray[0], bboxArray[1]];
@@ -329,8 +354,8 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
     if(rotatestate) {
       setInitialViewState(viewState => ({
         ...viewState,
-        bearing: viewState.bearing + 120,
-        transitionDuration: 10000,
+        bearing: viewState.bearing - 180,
+        transitionDuration: 20000,
         transitionInterpolator:transitionLinearInterpolator,
         onTransitionEnd: rotateCamera
       }))
@@ -441,6 +466,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
 
   const handleLoadLayerChange = (event) => {
     setLoadLayerActive(event.target.checked);
+    setLoadFilterValue([0,countyloaddata.maxPd]);
 
     event.target.checked && (setInitialViewState(viewState =>({
       ...viewState,
@@ -470,7 +496,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
       data: data,
       stroked: false,
       filled: checked,
-      extruded: true,
+//      extruded: true,
       pickable: checked,
       pointType: 'circle',
       lineWidthScale: 3,
@@ -537,7 +563,10 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
       getLineColor: [80,80,80],
       getLineWidth: d => 1,
       opacity: 0.1,
-      onClick: zoomToCounty
+      onClick: zoomToCounty,
+      extensions: [new DataFilterExtension({filtersize:1})],
+      getFilterValue: d => d.properties.Pd,
+      filterRange: loadfiltervalue,
     }),
     
 
@@ -572,7 +601,15 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
   genmix.push(gendata.Pgcoal);
   genmix.push(gendata.Pgother);
 
-  console.log(genmix)
+  var genmixcap = [];
+  genmixcap.push(gendata.Pgwindcap);
+  genmixcap.push(gendata.Pgsolarcap);
+  genmixcap.push(gendata.Pgnuclearcap);
+  genmixcap.push(gendata.Pgngcap);
+  genmixcap.push(gendata.Pghydrocap);
+  genmixcap.push(gendata.Pgcoalcap);
+  genmixcap.push(gendata.Pgothercap);
+
 
   const chartdata = {
     labels: genmixlabels,
@@ -609,99 +646,103 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
     setGenFilterValue(event.target.value);
   }
 
+  const handleLoadRangeFilterChange = (event) => {
+    setLoadFilterValue(event.target.value);
+  }
+
   function valuetext(value) {
     return `${value.toFixed(2)}`;
   }
 
   
   return (
-    <><DeckGL 
-      style={{zIndex: 1}}
-      ref = {deckRef}
-      layers={layers}
-      initialViewState={initialViewState}
-      controller={true}
-//      getTooltip={Tooltip}
-//      onClick={zoomToData}
-//      onAfterRender={GoHome}
-      ContextProvider={MapContext.Provider}
-    >
+    <>
+      <DeckGL 
+        style={{zIndex: 1}}
+        ref = {deckRef}
+        layers={layers}
+        initialViewState={initialViewState}
+        controller={true}
+        ContextProvider={MapContext.Provider}
+      >
 
-    <StaticMap reuseMaps 
-    style={{zIndex: 2}}
-    mapStyle={mapStyle['pos']} 
-    preventStyleDiffing={true} 
-    initialViewState={INITIAL_VIEW_STATE}>
+      <StaticMap reuseMaps 
+        style={{zIndex: 2}}
+        mapStyle={mapStyle['pos']} 
+        preventStyleDiffing={true} 
+        initialViewState={INITIAL_VIEW_STATE}
+      >
+      </StaticMap>
 
-    {showPopup.display && (
-      <Popup style={{zIndex:3,background:"white",opacity:1}} longitude={initialViewState.longitude} latitude={initialViewState.latitude}
+      {/*<div><NavigationControl position="top-left"/></div>
+      <FullscreenControl/>*/}
+
+      <FullscreenControl/>
+      <br></br><br></br>
+      <NavigationControl/>
+
+      {
+        showPopup.display && (
+        <Popup style={{zIndex:3,background:"white",opacity:1}} longitude={initialViewState.longitude} latitude={initialViewState.latitude}
         anchor="bottom"
         offset={-100}
         onClose={() => setShowPopup({...showPopup,display:false})}><h1>{showPopup.name}</h1><h2>{showPopup.info}</h2>
-      </Popup>
-      )
-    }
+        </Popup>
+        )
+      }
+
+      </DeckGL>
     
-    </StaticMap>
 
-    {/*<div><NavigationControl position="top-left"/></div>
-    <FullscreenControl/>*/}
+    {
+        genlayeractive && (
+        <div style={{width:300, height:300, position:"absolute",right:0,bottom:0,background:"white",padding:2,zIndex:1000}}>
+        <Doughnut data={chartdata} />
+        </div>
+      )}
 
-    <FullscreenControl/>
-    <br></br><br></br>
-    <NavigationControl/>
-    
-    <div style={{position:"absolute", top:0, right:0, "width":120,background:"#fff",padding:"12px 24px",color:" #6b6b76"}}>
+    <div style={{position:"absolute", top:0, right:0, "width":150,background:"#fff",padding:"12px 12px",color:" #6b6b76",zIndex:1000}}>
+        <HomeOutlinedIcon color="primary" fontSize="large" onClick={GoHome}></HomeOutlinedIcon>
+        <br></br>
+        {<ThreeSixtyOutlinedIcon color="primary" fontSize="large" onClick={rotateCamera}>Rotate</ThreeSixtyOutlinedIcon>}
+        <br></br>
+        <Checkbox checked={checked} style={{color:"primary"}} onChange={handleChange} />Net
+        <br></br>
+        <Checkbox checked={genlayeractive} style={{color:"primary"}} onChange={handleGenLayerChange} />Generation
 
+        
+        {genlayeractive && (
+        <Slider
+        style={{padding:2}}
+        value={genfiltervalue}
+        valueLabelDisplay="auto"
+        onChange={handleGenRangeFilterChange}
+        getAriaValueText={valuetext}
+        min={gendata.minPg}
+        max={gendata.maxPg+10}
+        >
+        </Slider>)
+        }
+       
+        <br></br>
+        <Checkbox checked={loadlayeractive} style={ {color:"primary"}} onChange={handleLoadLayerChange} />Load
+        
+        {loadlayeractive && (
+        <Slider
+        style={{padding:2}}
+        value={loadfiltervalue}
+        valueLabelDisplay="auto"
+        onChange={handleLoadRangeFilterChange}
+        getAriaValueText={valuetext}
+        min={0}
+        max={countyloaddata.maxPd+10}
+        >
+        </Slider>)
+        }
   
-    <HomeOutlinedIcon color="primary" fontSize="large" onClick={GoHome}></HomeOutlinedIcon>
-    <br></br>
-  {<ThreeSixtyOutlinedIcon color="primary" fontSize="large" onClick={rotateCamera}></ThreeSixtyOutlinedIcon>}
-<br></br>
-  <Checkbox checked={checked} style={{color:"primary"}} onChange={handleChange} />Net
-    <br></br>
-    <Checkbox checked={genlayeractive} style={{color:"primary"}} onChange={handleGenLayerChange}/>Gen
+      </div>
 
-    {/*
-    {genlayeractive && (
-    <Slider
-      style={{padding:2}}
-      value={genfiltervalue}
-      valueLabelDisplay="auto"
-      onChange={handleGenRangeFilterChange}
-      getAriaValueText={valuetext}
-      min={gendata.minPg}
-      max={gendata.maxPg+10}
-    >
-    </Slider>)
-    }
-    */}
-    
-    <br></br>
-    <Checkbox checked={loadlayeractive} style={{color:"primary"}} onChange={handleLoadLayerChange} />Load
-    <br></br>
-  
-  </div>
-
-{/*
-  {genlayeractive && (
-    <div style={{width:120, position:"absolute",right:0,bottom:"50%",background:"white",padding:2,"font-size":"18"}}>
-    <div style={{background:"green",color:"white","font-size":"18"}}>Solar/Wind</div>
-    <div style={{background:"gray",color:"white",padding:2,"font-size":"18"}}>Coal</div>
-    <div style={{background:"red",color:"white",padding:2,"font-size":"18"}}>Nuclear</div>
-    <div style={{background:"orange",color:"white",padding:2,"font-size":"18"}}>Natural Gas</div>
-    <div style={{background:"blue",color:"white",padding:2,"font-size":"18"}}>Hydro</div>
-    </div>
-  )}
-  */}
-
-  {genlayeractive && (
-    <div style={{width:300, height:300, position:"absolute",right:0,bottom:0,background:"white",padding:2}}>
-      <Doughnut data={chartdata} />
-    </div>
-  )}
-
-    </DeckGL>
+      
 
     </>
 
