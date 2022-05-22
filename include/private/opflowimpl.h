@@ -21,6 +21,8 @@ extern const char *const OPFLOWObjectiveTypes[];
 
 extern const char *const OPFLOWGenBusVoltageTypes[];
 
+extern const char *const OPFLOWOutputFormatTypes[];
+
 struct _p_OPFLOWModelOps {
   PetscErrorCode (*destroy)(OPFLOW);
   PetscErrorCode (*setup)(OPFLOW);
@@ -183,6 +185,8 @@ struct _p_OPFLOW {
   OPFLOWObjectiveType objectivetype; /* OPFLOW objective */
 
   OPFLOWGenBusVoltageType genbusvoltagetype; /* OPFLOW Genbus voltage type */
+
+  OutputFormat        outputformat; /* Format for output data */
 
   PetscInt nconeq, Nconeq; /* Local and global number of equality constraints,
                               excluding ghosts! */

@@ -22,6 +22,8 @@ const char *const OPFLOWGenBusVoltageTypes[] = {"VARIABLE_WITHIN_BOUNDS",
                                                 "",
                                                 NULL};
 
+const char *const OPFLOWOutputFormatTypes[] = {"MATPOWER","CSV","JSON","OutputFormat","",NULL};
+
 void swap_dm(DM *dm1, DM *dm2) {
   DM temp = *dm1;
   *dm1 = *dm2;
@@ -58,6 +60,23 @@ PetscErrorCode OPFLOWGetLinesMonitored(OPFLOW opflow) {
       }
     }
   }
+  PetscFunctionReturn(0);
+}
+
+/*
+   OPFLOWSetOutputFormat - Sets the format for solving the solution
+
+   Input Parameters:
++  opflow - the opflow object
+-  otype  - output format type
+
+   Command-line option: -opflow_output_format
+   Notes: Must be called before OPFLOWSetUp()
+*/
+PetscErrorCode OPFLOWSetOutputFormat(OPFLOW opflow,
+                                          OutputFormat otype) {
+  PetscFunctionBegin;
+  opflow->outputformat = otype;
   PetscFunctionReturn(0);
 }
 
@@ -707,6 +726,10 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
   opflow->genbusvoltagetype = static_cast<OPFLOWGenBusVoltageType>(
       OPFLOWOptions::genbusvoltage.ToEnum(OPFLOWGenBusVoltageTypes, 3));
 
+  opflow->outputformat = static_cast<OutputFormat>(
+      OPFLOWOptions::outputformat.ToEnum(OPFLOWOutputFormatTypes, 3));
+  
+
   opflow->nmodelsregistered = opflow->nsolversregistered = 0;
   opflow->OPFLOWModelRegisterAllCalled = opflow->OPFLOWSolverRegisterAllCalled =
       PETSC_FALSE;
@@ -1092,6 +1115,26 @@ PetscErrorCode OPFLOWReadMatPowerData(OPFLOW opflow, const char netfile[]) {
 }
 
 /*
+  OPFLOWSetGICData - Sets the GIC data file
+
+  Input Parameter
++  opflow - The OPFLOW object
+-  gicfile - The name of the GIC data file
+
+  Notes: The GIC data file is only used for visualization. It contains the substation geospatial coordinates and mapping of buses to substations. See the Electric Grid Data Repository files for examples of GIC data files (given for CTIVSg cases)
+*/
+PetscErrorCode OPFLOWSetGICData(OPFLOW opflow, const char gicfile[]) {
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  /* Set GIC data file */
+  ierr = PSSetGICData(opflow->ps, gicfile);
+  CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+
+/*
    OPFLOWSetNumConstraints - Sets the number of constraints for the OPFLOW
 problem
 
@@ -1376,6 +1419,14 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
                             (PetscEnum *)&opflow->genbusvoltagetype, NULL);
     CHKERRQ(ierr);
 
+    ierr = PetscOptionsEnum(OPFLOWOptions::outputformat.opt.c_str(),
+                            OPFLOWOptions::outputformat.desc.c_str(), "",
+                            OPFLOWOutputFormatTypes,
+                            (PetscEnum)opflow->outputformat,
+                            (PetscEnum *)&opflow->outputformat, NULL);
+    CHKERRQ(ierr);
+
+    
     ierr = PetscOptionsBool(OPFLOWOptions::has_gensetpoint.opt.c_str(),
                             OPFLOWOptions::has_gensetpoint.desc.c_str(), "",
                             opflow->has_gensetpoint, &opflow->has_gensetpoint,

@@ -13,6 +13,7 @@ typedef struct _p_PSBUS *PSBUS;
 typedef struct _p_PSLOAD *PSLOAD;
 typedef struct _p_PSGEN *PSGEN;
 typedef struct _p_PSLINE *PSLINE;
+typedef struct _p_PSSUBST *PSSUBST;
 
 /*
  * Type of application that the PS is used for
@@ -30,6 +31,8 @@ typedef struct _p_PS *PS;
 
 PETSC_EXTERN PetscErrorCode PSReadMatPowerData(PS, const char[]);
 PETSC_EXTERN PetscErrorCode PSReadPSSERawData(PS, const char[]);
+PETSC_EXTERN PetscErrorCode PSSetGICData(PS, const char[]);
+
 PETSC_EXTERN PetscErrorCode PSCreate(MPI_Comm, PS *);
 PETSC_EXTERN PetscErrorCode PSDestroy(PS *);
 PETSC_EXTERN PetscErrorCode PSGENDestroy(PS);

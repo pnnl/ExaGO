@@ -334,6 +334,18 @@ typedef struct {
   PetscInt n; /* Number of connected component groups */
   PSConngroupi *ci;
 } PSConngroup;
+
+struct _p_PSSUBST {
+  PetscInt    num;    /* Substation number */
+  PetscInt    intnum; /* Internal number */
+  char        name[64]; /* Substation name */
+  PetscScalar latitude;  /* latitude */
+  PetscScalar longitude; /* longitude */
+  PetscInt    nbus; /* Number of buses */
+  PSBUS       bus[20]; /* Pointers for buses */
+};
+  
+
 /**
  * @brief private base power system data structure
  */
@@ -375,6 +387,9 @@ struct _p_PS {
   DM networkdm;         /* DM for managing the network */
 
   char net_file_name[1024];               /* Network file name */
+
+  char gic_file_name[1024];   /* GIC data file */
+  PetscBool gic_file_set;     /* Is GIC file set? */
   PetscInt nconncomp;                     /* Number of connected components */
   PSConnComp conncomp[MAXCONNECTEDCOMPS]; /* List of connected components */
 
@@ -397,6 +412,8 @@ struct _p_PS {
   PetscInt nkvlevels;    /* Number of different kV levels */
   PetscScalar *kvlevels; /* kV levels */
 
+  PSSUBST   substations;
+  PetscInt  nsubstations;
   PetscBool setupcalled; /* Is setup called on PS? */
 };
 
@@ -417,4 +434,5 @@ extern PetscErrorCode PSSetGenDispatchandStatus(PS, PetscInt, PetscInt,
                                                 PetscScalar);
 extern PetscErrorCode PSApplyScenario(PS, Scenario);
 extern PetscErrorCode PSGetKVLevels(PS, PetscInt *, const PetscScalar **);
+extern PetscErrorCode PSReadGICData(PS);
 #endif

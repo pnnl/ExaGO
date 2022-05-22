@@ -8,7 +8,7 @@
 
 #include <petsc.h>
 
-typedef enum { CSV, MATPOWER } OutputFormat;
+typedef enum { MATPOWER, CSV, JSON } OutputFormat;
 
 typedef enum { NATIVE = 0, PSSE = 1 } ContingencyFileInputFormat;
 

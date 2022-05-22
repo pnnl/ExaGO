@@ -230,6 +230,53 @@ PetscErrorCode PSSaveSolution_CSV(PS ps, const char outfile[]) {
   PetscFunctionReturn(0);
 }
 
+/* 
+   PSSaveSolution_JSON - Saves the system solution to file in JSON format
+
+  Input Parameters:
++ ps - the PS object
+- outfile  - Name of output file
+*/
+PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[])
+{
+  PetscErrorCode ierr;
+  FILE *fd;
+
+  PSBUS bus;
+  PSLOAD load;
+  PSGEN gen;
+  PSLINE line;
+  PetscScalar Pd, Qd;
+  PetscInt i, k;
+  PetscScalar MVAbase = ps->MVAbase;
+  char filename[PETSC_MAX_PATH_LEN];
+  char *tok, *tok2;
+  char sep[] = "/";
+  char ext[] = ".json";
+  char file1[PETSC_MAX_PATH_LEN];
+
+  PetscFunctionBegin;
+
+  strcpy(filename, outfile);
+  /* Add .json extension to file name */
+  ierr = PetscStrlcat(filename, ext, 256);
+  CHKERRQ(ierr);
+
+  fd = fopen(filename, "w");
+  if (fd == NULL) {
+    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
+             "Cannot open OPFLOW output file %s", outfile);
+    CHKERRQ(ierr);
+  }
+
+  if(ps->gic_file_set) {
+    ierr = PSReadGICData(ps);
+    CHKERRQ(ierr);
+  }
+  PetscFunctionReturn(0);
+}
+  
+
 /*
   PSSaveSolution - Saves the system solution to file
 
@@ -250,6 +297,8 @@ PetscErrorCode PSSaveSolution(PS ps, OutputFormat format,
   } else if (format == MATPOWER) {
     ierr = PSSaveSolution_MATPOWER(ps, outfile);
     CHKERRQ(ierr);
+  } else if (format == JSON) {
+    ierr = PSSaveSolution_JSON(ps,outfile);
   }
 
   PetscFunctionReturn(0);

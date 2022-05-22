@@ -973,3 +973,72 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
 
   PetscFunctionReturn(0);
 }
+
+/*
+  PSReadGICData - Reads GIC data
+
+Input Parameters:
+. ps - the PS object
+
+ Notes: The GIC data format should be the same as that
+        given for the Electric Grid Data repository cases.
+	The function reads the GIC data and populates the
+	substation data in PS object
+*/
+PetscErrorCode PSReadGICData(PS ps)
+{
+  PetscErrorCode ierr;
+  FILE *fp;
+  char line[MAXLINE];
+  char *out;
+  PSSUBST subst;
+  int  fieldsread=0;
+  int  subst_num,bus_num;
+
+  PetscFunctionBegin;
+
+  fp = fopen(ps->gic_file_name, "r");
+  /* Check for valid file */
+  if (fp == NULL) {
+    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN, "Cannot open gic file %s",
+             ps->gic_file_name);
+    CHKERRQ(ierr);
+  }
+  /* Skip first line */
+  out = fgets(line,MAXLINE,fp);
+  /* Allocate substation data,
+   assume number of substations = number of buses,
+   but this does not neccessarily be the case and 
+   hence we also keep track of the number of substations.
+   Usually, number of substations < number of buses */
+  ierr = PetscCalloc1(ps->Nbus,&ps->substations);CHKERRQ(ierr);
+  ps->nsubstations = 0;
+
+  for(int i =0; i < ps->maxbusnum; i++) {
+    ierr = PetscPrintf(PETSC_COMM_SELF,"%d %d\n",i,ps->busext2intmap[i]);
+  }
+  /* Start reading substation data */
+  while((out = fgets(line,MAXLINE,fp)) != NULL) {
+    if(strstr(line, "0 /") != NULL) {
+      fieldsread++;
+      continue;
+    }
+    
+    if(fieldsread == 2) break;
+
+    if(fieldsread == 0) {
+      subst = &ps->substations[ps->nsubstations];
+      sscanf(line,"%d '%[^\']' %*d %lf %lf",&subst->num,subst->name,&subst->latitude,&subst->longitude);
+      ps->nsubstations++;
+      subst->nbus = 0;
+    } else if(fieldsread == 1) {
+      sscanf(line,"%d %d",&bus_num,&subst_num);
+      subst = &ps->substations[subst_num-1];
+      subst->bus[subst->nbus++] = &ps->bus[ps->busext2intmap[bus_num]];
+    }
+  }
+  
+  fclose(fp);
+
+  PetscFunctionReturn(0);
+}
