@@ -373,6 +373,31 @@ static void PrintGenData(FILE *fd,PSBUS bus,bool trail_comma,PetscScalar MVAbase
   PrintJSONArrayEnd(fd,trail_comma);
 }
 
+static void PrintLineData(FILE *fd,PSLINE line,bool trail_comma,PetscScalar MVAbase)
+{
+  // Elementtype
+  PrintJSONString(fd,"elementtype","Branch",true);
+
+  // From bus
+  PrintJSONInt(fd,"F_BUS",line->fbus,true);
+
+  // To bus
+  PrintJSONInt(fd,"T_BUS",line->tbus,true);
+
+  // Status
+  PrintJSONInt(fd,"BR_STATUS",line->status,true);
+
+  // KV level
+  PrintJSONDouble(fd,"KV",line->kvlevel,true);
+
+  // PF,QF, PT, QT
+  PrintJSONDouble(fd,"PF",line->pf*MVAbase,true);
+  PrintJSONDouble(fd,"QF",line->qf*MVAbase,true);
+  PrintJSONDouble(fd,"PT",line->pt*MVAbase,true);
+  PrintJSONDouble(fd,"QT",line->qt*MVAbase,false);
+  
+}
+
 static void PrintBusData(FILE *fd,PSSUBST subst,bool trail_comma,PetscScalar MVAbase)
 {
   PSBUS bus;
@@ -466,8 +491,8 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[])
 
   PSBUS bus;
   PSLOAD load;
-  PSGEN gen;
   PSLINE line;
+  PSGEN gen;
   PetscScalar Pd, Qd;
   PetscInt i, k;
   PetscScalar MVAbase = ps->MVAbase;
@@ -501,6 +526,10 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[])
     ps->nsubstations = 0;
 
     for(int i=0; i < ps->Nbus; i++) {
+      PetscInt nconnlines;
+      const PSLINE *connlines;
+      PSLINE branch;
+
       subst = &ps->substations[ps->nsubstations];
       subst->num = i+1;
       snprintf(subst->name,64,"%d",ps->bus[i].bus_i);
@@ -509,8 +538,30 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[])
 	 baseless lat/long creation */
       subst->longlat[1]  = 30.0 + i/(PetscScalar)ps->Nbus*5.0;
       subst->longlat[0] = -80.0 + i/(PetscScalar)ps->Nbus*5.0;
-      subst->bus[0] = &ps->bus[i];
+      bus = &ps->bus[i];
+      subst->bus[0] = bus;
+
       ps->nsubstations++;
+
+      /* Get the connected lines to the bus */
+      PSBUSGetSupportingLines(bus,&nconnlines,&connlines);
+      for(int k=0; k < nconnlines; k++) {
+	branch = connlines[k];
+
+	const PSBUS *connbuses;
+	PSBUS busf, bust;
+
+	/* Get the connected buses to this line */
+	PSLINEGetConnectedBuses(branch, &connbuses);
+	busf = connbuses[0];
+	bust = connbuses[1];
+
+	if(bus == busf) { /* From bus */
+	  branch->subst_from = subst;
+	} else {
+	  branch->subst_to = subst;
+	}
+      }
     }
   }
 
@@ -582,6 +633,7 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[])
 
 	// Lines
 	for(i=0; i < ps->Nline; i++) {
+	  line = &ps->line[i];
         // Features
 	  PrintJSONObjectBegin(fd,NULL);                  // Feature object start
 
@@ -591,10 +643,22 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[])
 
 	      PrintJSONString(fd,"type","LineString",true);
 
+	      // Coordinates
+	      PrintJSONArrayBegin(fd,"coordinates");
+
+	        // Print from substation coordinates
+	        PrintJSONArray(fd,NULL,2,line->subst_from->longlat,true);
+	        // Print to substation coordinates
+		PrintJSONArray(fd,NULL,2,line->subst_to->longlat,false);
+		
+	      PrintJSONArrayEnd(fd,false);
+
 	    PrintJSONObjectEnd(fd,true);                        // Geometry object end
 
 	    PrintJSONObjectBegin(fd,"properties");              // Properties object start
-
+	      // Print line data
+	    PrintLineData(fd,line,false,MVAbase);
+			    
 	    PrintJSONObjectEnd(fd,false);                        // Properties object end
 	  if(i == ps->Nline-1) {
 	    PrintJSONObjectEnd(fd,false);                    // Feature object end

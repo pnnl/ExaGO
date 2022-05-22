@@ -296,6 +296,10 @@ struct _p_PSLINE {
   PetscScalar
       mult_st; /* Lagrange multiplier for to bus injection (set by OPFLOW) */
 
+  // From and to end substations (used for visualization only)
+  PSSUBST subst_from;
+  PSSUBST subst_to;
+
   /* Variable and constraint sizes and locations */
   PetscInt startloc; /**< Starting location for the variables for this line in
                         the local vector */

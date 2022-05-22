@@ -991,9 +991,13 @@ PetscErrorCode PSReadGICData(PS ps)
   FILE *fp;
   char line[MAXLINE];
   char *out;
+  PSBUS   bus;
   PSSUBST subst;
   int  fieldsread=0;
   int  subst_num,bus_num;
+  PetscInt nconnlines;
+  const PSLINE *connlines;
+  PSLINE branch;
 
   PetscFunctionBegin;
 
@@ -1031,7 +1035,28 @@ PetscErrorCode PSReadGICData(PS ps)
     } else if(fieldsread == 1) {
       sscanf(line,"%d %d",&bus_num,&subst_num);
       subst = &ps->substations[subst_num-1];
-      subst->bus[subst->nbus++] = &ps->bus[ps->busext2intmap[bus_num]];
+      bus = &ps->bus[ps->busext2intmap[bus_num]];
+      subst->bus[subst->nbus++] = bus;
+
+      /* Get the connected lines to the bus */
+      PSBUSGetSupportingLines(bus,&nconnlines,&connlines);
+      for(int k=0; k < nconnlines; k++) {
+	branch = connlines[k];
+
+	const PSBUS *connbuses;
+	PSBUS busf, bust;
+
+	/* Get the connected buses to this line */
+	PSLINEGetConnectedBuses(branch, &connbuses);
+	busf = connbuses[0];
+	bust = connbuses[1];
+
+	if(bus == busf) { /* From bus */
+	  branch->subst_from = subst;
+	} else {
+	  branch->subst_to = subst;
+	}
+      }
     }
   }
   
