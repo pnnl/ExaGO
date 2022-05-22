@@ -309,7 +309,7 @@ static void PrintJSONArrayDouble(FILE *fd,double value,bool trail_comma) {
 }
 
 
-static void PrintJSONString(FILE *fd,const char* key,char *value,bool trail_comma) {
+static void PrintJSONString(FILE *fd,const char* key,const char *value,bool trail_comma) {
   std::string str = trail_comma? ",":"";
   fprintf(fd,"%s\"%s\": \"%s\"%s\n",tabstring,key,value,str.c_str());
 }
@@ -326,6 +326,132 @@ static void PrintJSONArray(FILE *fd,const char* name,int nvals,double *values,bo
   PrintJSONArrayEnd(fd,trail_comma);
 }
 
+static void PrintGenData(FILE *fd,PSBUS bus,bool trail_comma,PetscScalar MVAbase)
+{
+  PSGEN gen;
+  bool  istrail;
+
+  PrintJSONArrayBegin(fd,"gen");
+
+  for(int i=0; i < bus->ngen; i++) {
+    PSBUSGetGen(bus,i,&gen);
+    if(i == bus->ngen-1) istrail = false;
+    else istrail = true;
+
+    PrintJSONObjectBegin(fd,NULL);
+
+      // Generator bus number
+      PrintJSONInt(fd,"GEN_BUS",bus->bus_i,true);
+
+      // Generator fuel
+      PrintJSONString(fd,"GEN_FUEL",PSGENFuelTypes[gen->genfuel_type],true);
+    
+      // Generator Pg
+      PrintJSONDouble(fd,"PG",gen->pg*MVAbase,true);
+
+      // Generator Qg
+      PrintJSONDouble(fd,"QG",gen->qg*MVAbase,true);
+
+      // Generator status
+      PrintJSONInt(fd,"GEN_STATUS",gen->status,true);
+
+      // Generator Pmax
+      PrintJSONDouble(fd,"PMAX",gen->pt*MVAbase,true);
+
+      // Generator Pmin
+      PrintJSONDouble(fd,"PMIN",gen->pb*MVAbase,true);
+
+      // Generator QMAX
+      PrintJSONDouble(fd,"QMAX",gen->qt*MVAbase,true);
+
+      // Generator QMIN
+      PrintJSONDouble(fd,"QMIN",gen->qb*MVAbase,false);
+
+    PrintJSONObjectEnd(fd,istrail);
+  }
+  
+  PrintJSONArrayEnd(fd,trail_comma);
+}
+
+static void PrintBusData(FILE *fd,PSSUBST subst,bool trail_comma,PetscScalar MVAbase)
+{
+  PSBUS bus;
+  PSLOAD load;
+  bool  istrail;
+  char  bus_name[64];
+  double Pd=0.0,Qd=0.0,Pdloss=0.0,Qdloss=0.0;
+  double Vm_avg=0.0;
+  
+  PrintJSONArrayBegin(fd,"bus");
+
+  for(int i=0; i < subst->nbus; i++) {
+    bus = subst->bus[i];
+    PrintJSONObjectBegin(fd,NULL);
+
+      // elementtype
+      PrintJSONString(fd,"elementtype","bus",true);
+
+      // bus number
+      PrintJSONInt(fd,"BUS_I",bus->bus_i,true);
+
+      // VA
+      PrintJSONDouble(fd,"VA",bus->va*180.0/PETSC_PI,true);
+
+      // VM
+      PrintJSONDouble(fd,"VM",bus->vm,true);
+      Vm_avg += bus->vm;
+      
+      // bus name
+      strcpy(bus_name,subst->name);
+      snprintf(bus_name,64," %d",i+1);
+      PrintJSONString(fd,"BUS_NAME",bus_name,true);
+
+      // Vmin
+      PrintJSONDouble(fd,"VMIN",bus->Vmin,true);
+
+      // Vmax
+      PrintJSONDouble(fd,"VMAX",bus->Vmax,true);
+
+      // Base KV
+      PrintJSONDouble(fd,"BASE_KV",bus->basekV,true);
+
+
+      // PD
+      if(bus->nload) {
+	PSBUSGetLoad(bus,0,&load);
+
+	Pd = load->pl*MVAbase;
+	Qd = load->ql*MVAbase;
+	Pdloss = load->pl_loss*MVAbase;
+	Qdloss = load->ql_loss*MVAbase;
+      }
+
+      PrintJSONDouble(fd,"PD",Pd,true);
+      PrintJSONDouble(fd,"QD",Qd,true);
+      PrintJSONDouble(fd,"PDloss",Pdloss,true);
+      PrintJSONDouble(fd,"QDloss",Qdloss,true);
+
+      // Lagrange multipliers
+      PrintJSONDouble(fd,"LAM_P",bus->mult_pmis,true);
+      PrintJSONDouble(fd,"LAM_Q",bus->mult_qmis,true);
+      
+      if(i == subst->nbus-1) istrail = false;
+      else istrail = true;
+
+      // ngen
+      PrintJSONInt(fd,"ngen",bus->ngen,true);
+      
+      PrintGenData(fd,bus,false,MVAbase);
+      
+    PrintJSONObjectEnd(fd,istrail);
+  }
+  Vm_avg /= subst->nbus;
+
+  PrintJSONArrayEnd(fd,true);
+
+  // Print Vm_avg in the substation object
+  PrintJSONDouble(fd,"Vm",Vm_avg,false);
+}
 /* 
    PSSaveSolution_JSON - Saves the system solution to file in JSON format
 
@@ -437,6 +563,18 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[])
 
 	    PrintJSONObjectBegin(fd,"properties");              // Properties object start
 
+	      // Element type
+	      PrintJSONString(fd,"elementtype","SUBSTATION",true);
+
+	      // Name
+	      PrintJSONString(fd,"NAME",ps->substations[i].name,true);
+
+	      // Number of buses
+	      PrintJSONInt(fd,"nbus",ps->substations[i].nbus,true);
+
+	      // Print the substation data
+	      PrintBusData(fd,&ps->substations[i],false,ps->MVAbase);
+	    
 	    PrintJSONObjectEnd(fd,false);                        // Properties object end
     
           PrintJSONObjectEnd(fd,true);                    // Feature object end
