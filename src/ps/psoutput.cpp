@@ -235,13 +235,18 @@ PetscErrorCode PSSaveSolution_CSV(PS ps, const char outfile[]) {
   PetscFunctionReturn(0);
 }
 
-static void PrintJSONObjectBegin(FILE *fd,const char* name)
+static void DecreaseTabLevel()
 {
-  if(name) {
-    fprintf(fd,"%s\"%s\"{\n",tabstring,name);
-  } else {
-    fprintf(fd,"%s{\n",tabstring);
-  }    
+  /* Decrease tab level */
+  tablevel--;
+  strcpy(tabstring,"");
+  for(int i = 0; i < tablevel; i++) {
+    strcat(tabstring,"\t");
+  }
+}
+
+static void IncreaseTabLevel()
+{
   /* Increase tab level */
   tablevel++;
   strcpy(tabstring,"");
@@ -250,29 +255,75 @@ static void PrintJSONObjectBegin(FILE *fd,const char* name)
   }
 }
 
+static void PrintJSONObjectBegin(FILE *fd,const char* name)
+{
+  if(name) {
+    fprintf(fd,"%s\"%s\": {\n",tabstring,name);
+  } else {
+    fprintf(fd,"%s{\n",tabstring);
+  }
+  IncreaseTabLevel();
+}
+
 static void PrintJSONObjectEnd(FILE *fd,bool trail_comma)
 {
   std::string str = trail_comma? ",":"";
 
-  /* Decrease tab level */
-  tablevel--;
-  strcpy(tabstring,"");
-  for(int i = 0; i < tablevel; i++) {
-    strcat(tabstring,"\t");
-  }
+  DecreaseTabLevel();
   
   fprintf(fd,"%s}%s\n",tabstring,str.c_str());    
 }
 
+static void PrintJSONArrayBegin(FILE *fd,const char* name)
+{
+  if(name) {
+    fprintf(fd,"%s\"%s\": [\n",tabstring,name);
+  } else {
+    fprintf(fd,"%s[\n",tabstring);
+  }
+  IncreaseTabLevel();
+}
+
+static void PrintJSONArrayEnd(FILE *fd,bool trail_comma)
+{
+  std::string str = trail_comma? ",":"";
+
+  DecreaseTabLevel();
+  
+  fprintf(fd,"%s]%s\n",tabstring,str.c_str());    
+}
 
 static void PrintJSONInt(FILE *fd,const char* key,int value,bool trail_comma) {
   std::string str = trail_comma? ",":"";
   fprintf(fd,"%s\"%s\": %d%s\n",tabstring,key,value,str.c_str());
 }
 
+static void PrintJSONDouble(FILE *fd,const char* key,double value,bool trail_comma) {
+  std::string str = trail_comma? ",":"";
+  fprintf(fd,"%s\"%s\": %lf%s\n",tabstring,key,value,str.c_str());
+}
+
+static void PrintJSONArrayDouble(FILE *fd,double value,bool trail_comma) {
+  std::string str = trail_comma? ",":"";
+  fprintf(fd,"%s%lf%s\n",tabstring,value,str.c_str());
+}
+
+
 static void PrintJSONString(FILE *fd,const char* key,char *value,bool trail_comma) {
   std::string str = trail_comma? ",":"";
   fprintf(fd,"%s\"%s\": \"%s\"%s\n",tabstring,key,value,str.c_str());
+}
+
+static void PrintJSONArray(FILE *fd,const char* name,int nvals,double *values,bool trail_comma)
+{
+  PrintJSONArrayBegin(fd,name);
+
+  for(int i=0; i < nvals-1; i++) {
+    PrintJSONArrayDouble(fd,values[i],true);
+  }
+  PrintJSONArrayDouble(fd,values[nvals-1],false);
+
+  PrintJSONArrayEnd(fd,trail_comma);
 }
 
 /* 
@@ -330,8 +381,8 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[])
       subst->nbus = 1;
       /* Linear distribution of lats and long from (30.0,-80.0) with 5 degrees deviation. This is completely random
 	 baseless lat/long creation */
-      subst->latitude  = 30.0 + i/ps->Nbus*5.0;
-      subst->longitude = -80.0 + i/ps->Nbus*5.0;
+      subst->longlat[1]  = 30.0 + i/(PetscScalar)ps->Nbus*5.0;
+      subst->longlat[0] = -80.0 + i/(PetscScalar)ps->Nbus*5.0;
       subst->bus[0] = &ps->bus[i];
       ps->nsubstations++;
     }
@@ -340,30 +391,84 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[])
   /* Begin JSON object */
   PrintJSONObjectBegin(fd,NULL);
 
-  /* Print input file name */
-  PrintJSONString(fd,"casefile",ps->net_file_name,true);
-  /* Print gic file name */
-  if(ps->gic_file_set) {
-    PrintJSONString(fd,"gicfile",ps->gic_file_name,true);
-  } else {
-    PrintJSONString(fd,"gicfile","not given",true);
-  }
+    /* Print input file name */
+    PrintJSONString(fd,"casefile",ps->net_file_name,true);
+    /* Print gic file name */
+    if(ps->gic_file_set) {
+      PrintJSONString(fd,"gicfile",ps->gic_file_name,true);
+    } else {
+      PrintJSONString(fd,"gicfile","not given",true);
+    }
   
-  /* Print number of lines */
-  PrintJSONInt(fd,"nbranch",ps->Nline,true);
+    /* Print number of lines */
+    PrintJSONInt(fd,"nbranch",ps->Nline,true);
 
-  /* Print Number of gen */
-  PrintJSONInt(fd,"ngen",ps->Ngen,true);
+    /* Print Number of gen */
+    PrintJSONInt(fd,"ngen",ps->Ngen,true);
 
-  /* Print Number of bus */
-  PrintJSONInt(fd,"nbus",ps->Nbus,true);
+    /* Print Number of bus */
+    PrintJSONInt(fd,"nbus",ps->Nbus,true);
 
-  /* Print KV levels */
-  //  PrintJSONArray(fd,"KVlevels",ps->nkvlevels,ps->kvlevels,true);
+    /* Print KV levels */
+    PrintJSONArray(fd,"KVlevels",ps->nkvlevels,ps->kvlevels,true);
   
-  /* Print output file name */
-  PrintJSONString(fd,"casejsonfile",filename,false);
+    /* Print output file name */
+    PrintJSONString(fd,"casejsonfile",filename,true);
 
+    PrintJSONObjectBegin(fd,"geojsondata");
+
+      PrintJSONString(fd,"type","FeatureCollection",true);
+
+      PrintJSONArrayBegin(fd,"features");
+
+        for(i=0; i < ps->nsubstations; i++) {
+        // Features
+	  PrintJSONObjectBegin(fd,NULL);                  // Feature object start
+
+	    PrintJSONString(fd,"type","Feature",true);
+    
+	    PrintJSONObjectBegin(fd,"geometry");                // Geometry object start
+
+	      PrintJSONString(fd,"type","Point",true);
+
+	      PrintJSONArray(fd,"coordinates",2,ps->substations[i].longlat,false);
+
+	    PrintJSONObjectEnd(fd,true);                        // Geometry object end
+
+	    PrintJSONObjectBegin(fd,"properties");              // Properties object start
+
+	    PrintJSONObjectEnd(fd,false);                        // Properties object end
+    
+          PrintJSONObjectEnd(fd,true);                    // Feature object end
+	}
+
+	// Lines
+	for(i=0; i < ps->Nline; i++) {
+        // Features
+	  PrintJSONObjectBegin(fd,NULL);                  // Feature object start
+
+	    PrintJSONString(fd,"type","Feature",true);
+    
+	    PrintJSONObjectBegin(fd,"geometry");                // Geometry object start
+
+	      PrintJSONString(fd,"type","LineString",true);
+
+	    PrintJSONObjectEnd(fd,true);                        // Geometry object end
+
+	    PrintJSONObjectBegin(fd,"properties");              // Properties object start
+
+	    PrintJSONObjectEnd(fd,false);                        // Properties object end
+	  if(i == ps->Nline-1) {
+	    PrintJSONObjectEnd(fd,false);                    // Feature object end
+	  } else {
+	    PrintJSONObjectEnd(fd,true);
+	  }
+	}
+
+
+      PrintJSONArrayEnd(fd,false); // features array end
+  
+    PrintJSONObjectEnd(fd,false); // geojsondata object end
 
   /* End of file */
   PrintJSONObjectEnd(fd,false);

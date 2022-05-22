@@ -1025,7 +1025,7 @@ PetscErrorCode PSReadGICData(PS ps)
 
     if(fieldsread == 0) {
       subst = &ps->substations[ps->nsubstations];
-      sscanf(line,"%d '%[^\']' %*d %lf %lf",&subst->num,subst->name,&subst->latitude,&subst->longitude);
+      sscanf(line,"%d '%[^\']' %*d %lf %lf",&subst->num,subst->name,&subst->longlat[1],&subst->longlat[0]);
       ps->nsubstations++;
       subst->nbus = 0;
     } else if(fieldsread == 1) {

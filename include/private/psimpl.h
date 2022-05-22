@@ -339,8 +339,7 @@ struct _p_PSSUBST {
   PetscInt    num;    /* Substation number */
   PetscInt    intnum; /* Internal number */
   char        name[64]; /* Substation name */
-  PetscScalar latitude;  /* latitude */
-  PetscScalar longitude; /* longitude */
+  PetscScalar longlat[2];  /* longitude and latitude */
   PetscInt    nbus; /* Number of buses */
   PSBUS       bus[20]; /* Pointers for buses */
 };
