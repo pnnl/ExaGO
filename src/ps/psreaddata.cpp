@@ -1014,9 +1014,6 @@ PetscErrorCode PSReadGICData(PS ps)
   ierr = PetscCalloc1(ps->Nbus,&ps->substations);CHKERRQ(ierr);
   ps->nsubstations = 0;
 
-  for(int i =0; i < ps->maxbusnum; i++) {
-    ierr = PetscPrintf(PETSC_COMM_SELF,"%d %d\n",i,ps->busext2intmap[i]);
-  }
   /* Start reading substation data */
   while((out = fgets(line,MAXLINE,fp)) != NULL) {
     if(strstr(line, "0 /") != NULL) {

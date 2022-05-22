@@ -1,5 +1,10 @@
 #include <private/psimpl.h>
 
+// These globals are used for JSON format
+static int tablevel = 0;
+
+static char tabstring[64] = "";
+
 /* Save to MATPOWER format */
 PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
   PetscErrorCode ierr;
@@ -230,6 +235,46 @@ PetscErrorCode PSSaveSolution_CSV(PS ps, const char outfile[]) {
   PetscFunctionReturn(0);
 }
 
+static void PrintJSONObjectBegin(FILE *fd,const char* name)
+{
+  if(name) {
+    fprintf(fd,"%s\"%s\"{\n",tabstring,name);
+  } else {
+    fprintf(fd,"%s{\n",tabstring);
+  }    
+  /* Increase tab level */
+  tablevel++;
+  strcpy(tabstring,"");
+  for(int i = 0; i < tablevel; i++) {
+    strcat(tabstring,"\t");
+  }
+}
+
+static void PrintJSONObjectEnd(FILE *fd,bool trail_comma)
+{
+  std::string str = trail_comma? ",":"";
+
+  /* Decrease tab level */
+  tablevel--;
+  strcpy(tabstring,"");
+  for(int i = 0; i < tablevel; i++) {
+    strcat(tabstring,"\t");
+  }
+  
+  fprintf(fd,"%s}%s\n",tabstring,str.c_str());    
+}
+
+
+static void PrintJSONInt(FILE *fd,const char* key,int value,bool trail_comma) {
+  std::string str = trail_comma? ",":"";
+  fprintf(fd,"%s\"%s\": %d%s\n",tabstring,key,value,str.c_str());
+}
+
+static void PrintJSONString(FILE *fd,const char* key,char *value,bool trail_comma) {
+  std::string str = trail_comma? ",":"";
+  fprintf(fd,"%s\"%s\": \"%s\"%s\n",tabstring,key,value,str.c_str());
+}
+
 /* 
    PSSaveSolution_JSON - Saves the system solution to file in JSON format
 
@@ -272,7 +317,59 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[])
   if(ps->gic_file_set) {
     ierr = PSReadGICData(ps);
     CHKERRQ(ierr);
+  } else {
+    PSSUBST subst;
+    /* Assume 1 bus per substation */
+    ierr = PetscCalloc1(ps->Nbus,&ps->substations);CHKERRQ(ierr);
+    ps->nsubstations = 0;
+
+    for(int i=0; i < ps->Nbus; i++) {
+      subst = &ps->substations[ps->nsubstations];
+      subst->num = i+1;
+      snprintf(subst->name,64,"%d",ps->bus[i].bus_i);
+      subst->nbus = 1;
+      /* Linear distribution of lats and long from (30.0,-80.0) with 5 degrees deviation. This is completely random
+	 baseless lat/long creation */
+      subst->latitude  = 30.0 + i/ps->Nbus*5.0;
+      subst->longitude = -80.0 + i/ps->Nbus*5.0;
+      subst->bus[0] = &ps->bus[i];
+      ps->nsubstations++;
+    }
   }
+
+  /* Begin JSON object */
+  PrintJSONObjectBegin(fd,NULL);
+
+  /* Print input file name */
+  PrintJSONString(fd,"casefile",ps->net_file_name,true);
+  /* Print gic file name */
+  if(ps->gic_file_set) {
+    PrintJSONString(fd,"gicfile",ps->gic_file_name,true);
+  } else {
+    PrintJSONString(fd,"gicfile","not given",true);
+  }
+  
+  /* Print number of lines */
+  PrintJSONInt(fd,"nbranch",ps->Nline,true);
+
+  /* Print Number of gen */
+  PrintJSONInt(fd,"ngen",ps->Ngen,true);
+
+  /* Print Number of bus */
+  PrintJSONInt(fd,"nbus",ps->Nbus,true);
+
+  /* Print KV levels */
+  //  PrintJSONArray(fd,"KVlevels",ps->nkvlevels,ps->kvlevels,true);
+  
+  /* Print output file name */
+  PrintJSONString(fd,"casejsonfile",filename,false);
+
+
+  /* End of file */
+  PrintJSONObjectEnd(fd,false);
+
+  
+  fclose(fd);
   PetscFunctionReturn(0);
 }
   
