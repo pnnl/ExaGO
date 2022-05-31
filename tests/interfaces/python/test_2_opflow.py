@@ -1,35 +1,33 @@
+import os
+import pytest
 from check_preconditions import check_preconditions
-from test_utilities import *
 import mpi4py.rc
 mpi4py.rc.threads = False
 from mpi4py import MPI  # noqa
 import exago  # noqa
+
 check_preconditions()
 
 exago_ignore = -1000000
 
 
-@exago_test
-def test_initialize():
-    '''Test calling ExaGOInitialize'''
-    comm = MPI.COMM_WORLD
-    exago.initialize("opflow", comm)
-
-
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_creating_opflow():
     '''Testing creation of opflow object'''
     opf = exago.OPFLOW()
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_get_prefix():
     '''Test retrieving datafile path'''
     path = exago.prefix()
     assert isinstance(path, str)
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_set_obj_func_ints():
     '''Testing setting objective function via integers'''
     opf = exago.OPFLOW()
@@ -43,7 +41,8 @@ def test_set_obj_func_ints():
         assert obj == types[i]
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_set_obj_func_strings():
     '''Testing setting objective function via strings'''
     opf = exago.OPFLOW()
@@ -57,7 +56,8 @@ def test_set_obj_func_strings():
         assert obj == types[i][1]
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_set_initialization_ints():
     '''Testing setting initialization type via integers'''
     opf = exago.OPFLOW()
@@ -71,7 +71,8 @@ def test_set_initialization_ints():
         assert ini == types[i]
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_set_initialization_strings():
     '''Testing setting initialization type via strings'''
     opf = exago.OPFLOW()
@@ -85,7 +86,8 @@ def test_set_initialization_strings():
         assert ini == types[i][1]
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_set_genbusvoltage_ints():
     '''Testing setting gen bus voltage type via ints'''
     opf = exago.OPFLOW()
@@ -99,7 +101,8 @@ def test_set_genbusvoltage_ints():
         assert volt == types[i]
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_set_genbusvoltage_strings():
     '''Testing setting gen bus voltage type via strings'''
     opf = exago.OPFLOW()
@@ -113,7 +116,8 @@ def test_set_genbusvoltage_strings():
         assert volt == types[i][1]
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_set_has_gensetpoint():
     '''Testing setting has gen set point'''
     opf = exago.OPFLOW()
@@ -127,10 +131,78 @@ def test_set_has_gensetpoint():
     assert b is False
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
+def test_read_mat_power_data():
+    '''Test mat power data read'''
+    opf = exago.OPFLOW()
+    path = exago.prefix()
+    opf.read_mat_power_data(os.path.join(
+        path, 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+
+
+@pytest.mark.nocomm
+@pytest.mark.MPI
+def test_set_model_and_solver():
+    '''Testing setting model'''
+    opf = exago.OPFLOW()
+    opf.set_solver("HIOP")
+    solver = opf.get_solver()
+    assert solver == "HIOP"
+    opf.set_model("POWER_BALANCE_HIOP")
+    model = opf.get_model()
+    assert model == "POWER_BALANCE_HIOP"
+    path = exago.prefix()
+    opf.read_mat_power_data(os.path.join(
+        path, 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+
+
+@pytest.mark.nocomm
+@pytest.mark.MPI
+def test_set_hiop_compute_mode():
+    '''Testing hiop compute mode'''
+    opf = exago.OPFLOW()
+    opf.set_solver("HIOP")
+    opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_compute_mode("CPU")
+    mode = opf.get_hiop_compute_mode()
+    assert mode == "CPU"
+
+
+@pytest.mark.nocomm
+@pytest.mark.MPI
+def test_set_hiop_verbosity():
+    '''Testing setting hiop verbosity level'''
+    opf = exago.OPFLOW()
+    v = 3
+    opf.set_hiop_verbosity_level(v)
+    level = opf.get_hiop_verbosity_level()
+    assert isinstance(level, int)
+    assert level == v
+
+
+@pytest.mark.nocomm
+@pytest.mark.MPI
+def test_solve_opflow():
+    '''Testing opflow solve'''
+    opf = exago.OPFLOW()
+    opf.set_solver("HIOP")
+    opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_compute_mode("CPU")
+    path = exago.prefix()
+    opf.read_mat_power_data(os.path.join(
+        path, 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
+    opf.solve()
+
+
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_obj_func():
     '''Testing objective function value'''
     opf = exago.OPFLOW()
+    opf.set_solver("HIOP")
+    opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_compute_mode("CPU")
     path = exago.prefix()
     opf.read_mat_power_data(os.path.join(
         path, 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
@@ -142,10 +214,14 @@ def test_obj_func():
     assert isinstance(obj, float)
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_convergence_status():
     '''Testing convergence status'''
     opf = exago.OPFLOW()
+    opf.set_solver("HIOP")
+    opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_compute_mode("CPU")
     path = exago.prefix()
     opf.read_mat_power_data(os.path.join(
         path, 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
@@ -158,49 +234,8 @@ def test_convergence_status():
     assert s is True
 
 
-@exago_test
-def test_set_hiop_compute_mode():
-    '''Testing hiop compute mode'''
-    opf = exago.OPFLOW()
-    opf.set_solver("HIOP")
-    opf.set_model("POWER_BALANCE_HIOP")
-    opf.set_hiop_compute_mode("CPU")
-    mode = opf.get_hiop_compute_mode()
-    assert mode == "CPU"
-
-
-@exago_test
-def test_set_hiop_verbosity():
-    '''Testing setting hiop verbosity level'''
-    opf = exago.OPFLOW()
-    v = 3
-    opf.set_hiop_verbosity_level(v)
-    level = opf.get_hiop_verbosity_level()
-    assert isinstance(level, int)
-    assert level == v
-
-
-@exago_test
-def test_set_model_and_solver():
-    '''Testing setting model'''
-    opf = exago.OPFLOW()
-    opf.set_solver("HIOP")
-    solver = opf.get_solver()
-    assert solver == "HIOP"
-    opf.set_model("POWER_BALANCE_HIOP")
-    model = opf.get_model()
-    assert model == "POWER_BALANCE_HIOP"
-    opf.set_hiop_verbosity_level(3)
-    opf.set_hiop_compute_mode("CPU")
-    path = exago.prefix()
-    opf.read_mat_power_data(os.path.join(
-        path, 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
-    opf.solve()
-    obj = opf.get_objective()
-    assert isinstance(obj, float)
-
-
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_tolerance_opflow():
     '''Testing setting tolerance in opflow object'''
     opf = exago.OPFLOW()
@@ -214,7 +249,8 @@ def test_tolerance_opflow():
     assert tol == 1e-5
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_set_loadloss_penalty_opflow():
     '''Testing setting load loss penalty in opflow object'''
     opf = exago.OPFLOW()
@@ -224,7 +260,8 @@ def test_set_loadloss_penalty_opflow():
     assert penalty == 999
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_ignore_lineflow_constraints():
     '''Testing toggling use lineflow constraints'''
     opf = exago.OPFLOW()
@@ -238,7 +275,8 @@ def test_ignore_lineflow_constraints():
     assert b is False
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_include_loadloss():
     '''Testing toggling use loadloss'''
     opf = exago.OPFLOW()
@@ -252,7 +290,8 @@ def test_include_loadloss():
     assert b is False
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_include_powerimbalance():
     '''Testing toggling use powerimbalance'''
     opf = exago.OPFLOW()
@@ -266,7 +305,8 @@ def test_include_powerimbalance():
     assert b is False
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_use_agc():
     '''Testing toggling AGC'''
     opf = exago.OPFLOW()
@@ -280,7 +320,8 @@ def test_use_agc():
     assert b is False
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_set_bus_powerimbalance_penalty_opflow():
     '''Testing setting power imbalance penalty in opflow object'''
     opf = exago.OPFLOW()
@@ -290,20 +331,8 @@ def test_set_bus_powerimbalance_penalty_opflow():
     assert p == 999
 
 
-@exago_test
-def test_solve_opflow():
-    '''Testing opflow solve'''
-    opf = exago.OPFLOW()
-    path = exago.prefix()
-    opf.read_mat_power_data(os.path.join(
-        path, 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
-    opf.set_model('POWER_BALANCE_HIOP')
-    opf.set_solver('HIOP')
-    opf.set_hiop_compute_mode("CPU")
-    opf.solve()
-
-
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_ps():
     '''Testing ps set up'''
     opf = exago.OPFLOW()
@@ -313,7 +342,8 @@ def test_ps():
     opf.set_up_ps()
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_ps_set_gen_power_limits():
     '''Testing ps set gen power limits'''
     opf = exago.OPFLOW()
@@ -328,7 +358,8 @@ def test_ps_set_gen_power_limits():
     opf.solve()
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_solution_to_ps():
     '''Testing ps solution'''
     opf = exago.OPFLOW()
@@ -344,7 +375,8 @@ def test_solution_to_ps():
     opf.solution_to_ps()
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_get_gen_dispatch():
     '''Testing ps get gen dispatch'''
     opf = exago.OPFLOW()
@@ -364,7 +396,8 @@ def test_get_gen_dispatch():
     assert isinstance(qg1set, float)
 
 
-@exago_test
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_save_solution():
     '''Testing opflow saving solve to file'''
     opf = exago.OPFLOW()
@@ -377,12 +410,3 @@ def test_save_solution():
     opf.solve()
     filepath = os.path.join(path, '..', 'tmp.output')
     opf.save_solution(exago.CSV, filepath)
-
-
-@exago_test
-def test_finalize():
-    '''Test calling ExaGOFinalize'''
-    exago.finalize()
-
-
-exago_run_all_tests(__file__)

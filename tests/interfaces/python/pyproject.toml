@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+markers = [
+    "MPI: marks tests as initialized with MPI communicator from python",
+    "nocomm: marks tests as initialized with no communicator",
+]
