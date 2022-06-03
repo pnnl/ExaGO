@@ -23,6 +23,9 @@ import { PolarArea, Doughnut } from 'react-chartjs-2';
 
 //import casedata from './data/case_ACTIVSg200.json';
 import casedata500 from './data/case_ACTIVSg500.json';
+//import casedata9 from './data/case9.json'
+import casedata200 from './data/case_ACTIVSg200.json'
+//import casedata2000 from './data/case2000_opflow.json'
 import casedata2k from './data/case_ACTIVSg2000.json';
 import casedata10k from './data/case_ACTIVSg10k.json';
 import casedata70k from './data/case_ACTIVSg70k.json';
@@ -40,7 +43,6 @@ ChartJS.register(RadialLinearScale, ArcElement, Tooltip, Legend);
 const transitionLinearInterpolator = new LinearInterpolator(['bearing']);
 const transitionFlyToInterpolator = new FlyToInterpolator(['zoom']);
 
-
 var casedata = {};
 casedata.geojsondata = {};
 casedata.geojsondata.type = "FeatureCollection";
@@ -48,8 +50,6 @@ casedata.geojsondata.features = [...casedata2k.geojsondata.features,...casedata1
 
 // Source data GeoJSON
 const geodata = casedata['geojsondata']
-
-
 
 // Get county data with loads
 function getCountyNodes(data)
@@ -64,6 +64,7 @@ function getCountyNodes(data)
 
         countydata.features[j].properties.Pd = 0.0;
         countydata.features[j].properties.Vm_avg = 0.0;
+        countydata.features[j].properties.KVlevels = [];
         var countyhassubst = false;
         var nbuscounty = 0
         for(var i=0; i < data.features.length; i++) {
@@ -75,6 +76,8 @@ function getCountyNodes(data)
               countyhassubst = true;
               var subst = data.features[i].properties;
               var nbus = subst.nbus;
+
+              countydata.features[j].properties.KVlevels = [...countydata.features[j].properties.KVlevels,...data.features[i].properties.KVlevels];
               for(var k=0; k < nbus; k++) {
                 var bus = subst.bus[k];
                 countydata.features[j].properties.Pd += bus.PD;
@@ -99,7 +102,7 @@ function getCountyNodes(data)
 function ExtractFirstTimeSlice(data)
 {
     var features = data.features.filter(function(feature) {
-	if(feature.properties.start == 0) return feature;
+	if(!("start" in feature.properties) || (feature.properties.start == 0)) return feature;
     })
     var gdata = {"type": 'FeatureCollection',"features":features};
     return gdata;
@@ -162,6 +165,7 @@ function getGeneration(data)
       var subst = data.features[i].properties;
       var nbus = subst.nbus;
       var Pg = 0.0;
+      var Pcap = 0.0;
       var gen_fuel;
       var ngen = 0;
       var KV = []
@@ -171,7 +175,8 @@ function getGeneration(data)
         for(k=0; k < bus.ngen; k++) {
           var gen = bus.gen[k];
           Pg += gen.GEN_STATUS*gen.PG;
-          gen_fuel = gen.GEN_FUEL;
+          Pcap += gen.GEN_STATUS*gen.PMAX;
+          gen_fuel = gen.GEN_FUEL.toLowerCase();
 
           if(gen_fuel == 'wind') {
             Pgwind += gen.GEN_STATUS*gen.PG;
@@ -210,7 +215,7 @@ function getGeneration(data)
         else color = 'black';
         if(Pg <= minPg) minPg = Pg;
         if(Pg >= maxPg) maxPg = Pg;
-        Geni = {coordinates: data.features[i].geometry.coordinates, Pg: Pg,KVlevels: KV, color:color};
+        Geni = {coordinates: data.features[i].geometry.coordinates, Pg: Pg,Pcap:Pcap,KVlevels: KV, color:color};
         Gens.push(Geni);
       }
     }
@@ -259,15 +264,28 @@ function fillGenColumnColor(data)
   else if(data.color == 'gray') return [128,128,128];
   else if(data.color == 'blue') return [28,163,236];
   else if(data.color == 'orange') return [255,165,0];
+  else if(data.color == 'black') return [0,0,0];
 
 }
 
-function fillVoltageColumnColor(data)
+function fillGenColumnColorCap(data)
 {
-  var Vm = data.value;
+  var color;
+
+  color = fillGenColumnColor(data);
+
+  color = [...color,255*0.3];
+
+  return color;
+}
+
+
+function getVoltageFillColor(data)
+{
+  var Vm = data.properties.Vm_avg;
   var r = Math.min(255,255*(1.1-Vm)/0.2);
-  var g = 0;
-  var b = Math.max(0,255*(Vm-0.9)/0.2);
+  var b = 0;
+  var g = Math.max(0,255*(Vm-0.9)/0.2);
 
   return [r,g,b];
 }
@@ -343,6 +361,8 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
 
   const [loadfiltervalue,setLoadFilterValue] = useState([0,countyloaddata.maxPd]);
 
+  const [voltagefiltervalue,setVoltageFilterValue] = useState([0.89,1.11]);
+
   // For zoom-in/out control
   const [initialViewState,setInitialViewState] = useState(INITIAL_VIEW_STATE);
 
@@ -375,6 +395,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
 
   const activatePopup = useCallback(() => {
     setShowPopup(showPopup => ({...showPopup,display:true}));
+
   },[]);
 
   const zoomToData = useCallback((info) => {
@@ -402,6 +423,12 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
           popup.name = info.object.properties.NAME
           popup.info = "Line Info"
         }
+        setShowPopup(showPopup => ({...showPopup,...popup}));
+      } else if(info.layer.id == "gen-column") {
+        var popup = {};
+        popup.name = "";
+        popup.info = "Gen Info";
+
         setShowPopup(showPopup => ({...showPopup,...popup}));
       }
   });
@@ -435,6 +462,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
     popup.info = "Load: "+info.object.properties.Pd.toFixed(2)+"MW";
     setShowPopup(showPopup => ({...showPopup,...popup}));
 
+
    }
 });
 
@@ -459,6 +487,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
 
   const [loadlayeractive,setLoadLayerActive] = useState(false);
   const [genlayeractive,setGenLayerActive] = useState(false);
+  const [voltagelayeractive,setVoltageLayerActive] = useState(false);
 
   const handleNetLayerChange = (event) => {
     setNetLayerActive(event.target.checked);
@@ -468,6 +497,18 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
   const handleLoadLayerChange = (event) => {
     setLoadLayerActive(event.target.checked);
     setLoadFilterValue([0,countyloaddata.maxPd]);
+
+    event.target.checked && (setInitialViewState(viewState =>({
+      ...viewState,
+      pitch: 40,
+      traansitionInterpolator:transitionFlyToInterpolator,
+      transitionDuration: 2000,
+    })))
+  };
+
+  const handleVoltageLayerChange = (event) => {
+    setVoltageLayerActive(event.target.checked);
+    setVoltageFilterValue([0.89,1.11]);
 
     event.target.checked && (setInitialViewState(viewState =>({
       ...viewState,
@@ -514,6 +555,28 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
     return 10000;
   }
 
+  function getLoadFilterValue(data) {
+    if(!data) return -10000;
+    for(var i=0; i < data.properties.KVlevels.length; i++) {
+        var KV = data.properties.KVlevels[i];
+        if(netfiltervalue[0] <= KV && KV <= netfiltervalue[1]) {
+          return data.properties.Pd;
+        }
+    }
+    return -10000;
+  }
+
+  function getVoltageFilterValue(data) {
+    if(!data) return -10000;
+    for(var i=0; i < data.properties.KVlevels.length; i++) {
+        var KV = data.properties.KVlevels[i];
+        if(netfiltervalue[0] <= KV && KV <= netfiltervalue[1]) {
+          return data.properties.Vm_avg;
+        }
+    }
+    return -10000;
+  }
+
   const layers = [
     
     new GeoJsonLayer({
@@ -538,6 +601,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
 
     }),
    
+    
     new ColumnLayer({
       id: 'gen-column',
       data: generation,
@@ -561,8 +625,32 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
       }
 
     }),
+    
+    new ColumnLayer({
+      id: 'gen-column-cap',
+      data: generation,
+      diskResolution: 50,
+      radius: 5000,
+      elevationScale: 50,
+      pickable: false, //genlayeractive,
+      visible: genlayeractive,
+      getPosition: d => d.coordinates,
+      getFillColor: fillGenColumnColorCap,
+      getElevation: d => d.Pcap*5,
+      onClick:zoomToData,
 
-    /*
+      getFilterValue: getGenFilterValue,
+      filterRange: genfiltervalue,
+
+      extensions: [new DataFilterExtension({filtersize:1})],
+
+      updateTriggers: {
+        getFilterValue: netfiltervalue
+      }
+
+    }),
+
+    /*    
     new ColumnLayer({
       id: 'load-column',
       data: loads,
@@ -574,11 +662,12 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
       getFillColor: [255,255,0],//[255, 239, 247],
       getPosition: d => d.coordinates,
 //      getFillColor: fillGenColumnColor,
-      getElevation: d => d.Pd*10,
+      getElevation: d => d.Pd*5,
       onClick:zoomToData
     }),
     */
     
+    /*
     new GeoJsonLayer({
       id: 'PolygonLayer2',
       data:countyload,
@@ -597,9 +686,68 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
       opacity: 0.1,
       onClick: zoomToCounty,
       extensions: [new DataFilterExtension({filtersize:1})],
-      getFilterValue: d => d.properties.Pd,
+      getFilterValue: getLoadFilterValue,
       filterRange: loadfiltervalue,
+
+      updateTriggers: {
+        getFilterValue: netfiltervalue
+      }
     }),
+    */
+    /*
+    new GeoJsonLayer({
+      id: 'PolygonLayer2',
+      data:countyload,
+      pickable: loadlayeractive,
+      visible: loadlayeractive,
+      stroked: true,
+      filled: true,
+      extruded: true,
+      wireframe: true,
+      lineWidthMinPixels: 1,
+      getPolygon: d => d.geometry.coordinates,
+//      getElevation: d => d.properties.Pd*5.0,
+      getFillColor: getVoltageFillColor,
+      getLineColor: [80,80,80],
+      getLineWidth: d => 1,
+      opacity: 0.1,
+      onClick: zoomToCounty,
+      extensions: [new DataFilterExtension({filtersize:1})],
+      getFilterValue: getLoadFilterValue,
+      filterRange: loadfiltervalue,
+
+      updateTriggers: {
+        getFilterValue: netfiltervalue
+      }
+    }),
+    */
+
+    new GeoJsonLayer({
+      id: 'PolygonLayer2',
+      data:countyload,
+      pickable: voltagelayeractive,
+      visible: voltagelayeractive,
+      stroked: true,
+      filled: true,
+      extruded: true,
+      wireframe: true,
+      lineWidthMinPixels: 1,
+      getPolygon: d => d.geometry.coordinates,
+//      getElevation: d => d.properties.Pd*5.0,
+      getFillColor: getVoltageFillColor,
+      getLineColor: [80,80,80],
+      getLineWidth: d => 1,
+      opacity: 0.1,
+      onClick: zoomToCounty,
+      extensions: [new DataFilterExtension({filtersize:1})],
+      getFilterValue: getVoltageFilterValue,
+      filterRange: voltagefiltervalue,
+
+      updateTriggers: {
+        getFilterValue: netfiltervalue
+      }
+    }),
+
     /*
     new HeatmapLayer({
       id:'Voltagecontour',
@@ -645,6 +793,30 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
     labels: genmixlabels,
     datasets: [
       {
+        label: 'Generation Mix Cap',
+        data: genmixcap,
+        backgroundColor: [
+          'rgba(0,255,0,0.3)',
+          'rgba(244,219,135,0.3)',
+          'rgba(255,0,0,0.3)',
+          'rgba(255,165,0,0.3)',
+          'rgba(28,163,236,0.3)',
+          'rgba(128,128,128,0.3)',
+          'rgba(0,0,0,0.3)'
+        ],
+        borderWidth: 1,
+        options: {
+          plugins: {
+            title: {
+                display: true,
+                text: 'Generation Mix Cap',
+                align: 'center',
+                position: 'top'
+            }
+          }
+        }
+      },
+      {
         label: 'Generation Mix',
         data: genmix,
         backgroundColor: [
@@ -667,7 +839,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
             }
           }
         }
-      },
+      }
     ],
   };
   
@@ -678,6 +850,10 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
 
   const handleLoadRangeFilterChange = (event) => {
     setLoadFilterValue(event.target.value);
+  }
+
+  const handleVoltageRangeFilterChange = (event) => {
+    setVoltageFilterValue(event.target.value);
   }
 
   const handleNetRangeFilterChange = (event) => {
@@ -692,8 +868,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
   
   return (
     <>
-      <DeckGL 
-        style={{zIndex: 1}}
+      <DeckGL
         ref = {deckRef}
         layers={layers}
         initialViewState={initialViewState}
@@ -701,26 +876,29 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
         ContextProvider={MapContext.Provider}
       >
 
+      
       <StaticMap reuseMaps 
-        style={{zIndex: 2}}
         mapStyle={mapStyle['pos']} 
         preventStyleDiffing={true} 
         initialViewState={INITIAL_VIEW_STATE}
       >
       </StaticMap>
 
-      {/*<div><NavigationControl position="top-left"/></div>
-      <FullscreenControl/>*/}
-
-      <HomeOutlinedIcon style={{right:0,top:0}} fontSize="large" onClick={GoHome}></HomeOutlinedIcon>
-      <br></br>
-      {<ThreeSixtyOutlinedIcon color="primary" fontSize="large" onClick={rotateCamera}>Rotate</ThreeSixtyOutlinedIcon>}
-      <br></br>
+      
       <FullscreenControl/>
       <br></br><br></br>
       <NavigationControl/>
-      <br></br><br></br><br></br>
 
+      <div style={{position:"absolute", top:100, left:0, "width":30,background:"#fff",color:" #6b6b76",zIndex:1000}}>
+      <HomeOutlinedIcon fontSize="medium" onClick={GoHome}></HomeOutlinedIcon>
+      <br></br>
+      {<ThreeSixtyOutlinedIcon fontSize="large" onClick={rotateCamera}>Rotate</ThreeSixtyOutlinedIcon>}
+      <br></br>
+      </div>
+      
+
+      {/*<div><NavigationControl position="top-left"/></div>
+      <FullscreenControl/>*/}
         
 
       {
@@ -728,22 +906,22 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
         <Popup style={{zIndex:3,background:"white",opacity:1}} longitude={initialViewState.longitude} latitude={initialViewState.latitude}
         anchor="bottom"
         offset={-100}
-        onClose={() => setShowPopup({...showPopup,display:false})}><h1>{showPopup.name}</h1><h2>{showPopup.info}</h2>
+        onClose={() => setShowPopup({...showPopup,display:false})}>
+        <h2>{showPopup.name}</h2><h3>{showPopup.info}</h3>
         </Popup>
         )
       }
 
       </DeckGL>
-    
 
-    {
+      {
         genlayeractive && (
         <div style={{width:300, height:300, position:"absolute",right:0,bottom:0,background:"white",padding:2,zIndex:1000}}>
         <Doughnut data={chartdata} />
         </div>
       )}
 
-    <div style={{position:"absolute", top:0, right:0, "width":150,background:"#fff",padding:"12px 12px",color:" #6b6b76",zIndex:1000}}>
+      <div style={{position:"absolute", top:0, right:0, "width":150,background:"#fff",padding:"12px 12px",color:" #6b6b76",zIndex:1000}}>
         <Checkbox checked={netlayeractive} style={{color:"primary"}} onChange={handleNetLayerChange} />Net
         <br></br>
 
@@ -778,6 +956,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
         </Slider>)
         }
        
+       {/*
         <br></br>
         <Checkbox checked={loadlayeractive} style={ {color:"primary"}} onChange={handleLoadLayerChange} />Load
         
@@ -794,10 +973,26 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
         >
         </Slider>)
         }
+        */}
+
+        <br></br>
+        <Checkbox checked={voltagelayeractive} style={ {color:"primary"}} onChange={handleVoltageLayerChange} />Voltage
+
+        {voltagelayeractive && (
+        <Slider
+        style={{padding:2}}
+        value={voltagefiltervalue}
+        valueLabelDisplay="auto"
+        onChange={handleVoltageRangeFilterChange}
+        getAriaValueText={valuetext}
+        step={0.01}
+        min={0.89}
+        max={1.11}
+        >
+        </Slider>)
+        }
   
       </div>
-
-      
 
     </>
 
