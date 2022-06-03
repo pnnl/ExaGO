@@ -1031,13 +1031,24 @@ PetscErrorCode PSReadGICData(PS ps)
       subst = &ps->substations[ps->nsubstations];
       sscanf(line,"%d '%[^\']' %*d %lf %lf",&subst->num,subst->name,&subst->longlat[1],&subst->longlat[0]);
       ps->nsubstations++;
-      subst->nbus = 0;
+      subst->nbus = subst->nkvlevels = 0;
     } else if(fieldsread == 1) {
+      bool found = false;
       sscanf(line,"%d %d",&bus_num,&subst_num);
       subst = &ps->substations[subst_num-1];
       bus = &ps->bus[ps->busext2intmap[bus_num]];
       subst->bus[subst->nbus++] = bus;
 
+      for(int j=0; j < subst->nkvlevels; j++) {
+	if(PetscAbsScalar(bus->basekV - subst->kvlevels[j]) < 1e-6) {
+	  found = true;
+	  break;
+	}
+      }
+      if(!found) {
+	subst->kvlevels[subst->nkvlevels++] = bus->basekV;
+      }
+	
       /* Get the connected lines to the bus */
       PSBUSGetSupportingLines(bus,&nconnlines,&connlines);
       for(int k=0; k < nconnlines; k++) {

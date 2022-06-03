@@ -346,6 +346,8 @@ struct _p_PSSUBST {
   PetscScalar longlat[2];  /* longitude and latitude */
   PetscInt    nbus; /* Number of buses */
   PSBUS       bus[20]; /* Pointers for buses */
+  PetscInt    nkvlevels;    /* Number of KV levels at this substation */
+  PetscScalar kvlevels[10]; /* Substation KV levels */
 };
   
 

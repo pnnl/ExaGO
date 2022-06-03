@@ -375,9 +375,14 @@ static void PrintGenData(FILE *fd,PSBUS bus,bool trail_comma,PetscScalar MVAbase
 
 static void PrintLineData(FILE *fd,PSLINE line,bool trail_comma,PetscScalar MVAbase)
 {
+  char line_name[64];
   // Elementtype
   PrintJSONString(fd,"elementtype","Branch",true);
 
+  // Name
+  snprintf(line_name,64,"%s -- %s",line->subst_from->name,line->subst_to->name);
+  PrintJSONString(fd,"NAME",line_name,true);
+  
   // From bus
   PrintJSONInt(fd,"F_BUS",line->fbus,true);
 
@@ -390,6 +395,9 @@ static void PrintLineData(FILE *fd,PSLINE line,bool trail_comma,PetscScalar MVAb
   // KV level
   PrintJSONDouble(fd,"KV",line->kvlevel,true);
 
+  // Rate A
+  PrintJSONDouble(fd,"RATE_A",(line->rateA > 1e5) ? 10000:line->rateA,true);
+  
   // PF,QF, PT, QT
   PrintJSONDouble(fd,"PF",line->pf*MVAbase,true);
   PrintJSONDouble(fd,"QF",line->qf*MVAbase,true);
@@ -534,12 +542,13 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[])
       subst->num = i+1;
       snprintf(subst->name,64,"%d",ps->bus[i].bus_i);
       subst->nbus = 1;
-      /* Linear distribution of lats and long from (30.0,-80.0) with 5 degrees deviation. This is completely random
-	 baseless lat/long creation */
-      subst->longlat[1]  = 30.0 + i/(PetscScalar)ps->Nbus*5.0;
-      subst->longlat[0] = -80.0 + i/(PetscScalar)ps->Nbus*5.0;
+      subst->nkvlevels = 1;
+      /* Circular distribution of lats and long from some location with .5 degrees deviation. This is completely random baseless lat/long creation */
+      subst->longlat[1]  =  35.481918  +  PetscCosScalar(i/(PetscScalar)ps->Nbus*2.0*PETSC_PI)*0.5;
+      subst->longlat[0]  = -97.508469 +  PetscSinScalar(i/(PetscScalar)ps->Nbus*2.0*PETSC_PI)*0.5;
       bus = &ps->bus[i];
       subst->bus[0] = bus;
+      subst->kvlevels[0] = bus->basekV;
 
       ps->nsubstations++;
 
@@ -622,6 +631,9 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[])
 
 	      // Number of buses
 	      PrintJSONInt(fd,"nbus",ps->substations[i].nbus,true);
+
+	      // Print KV levels
+	      PrintJSONArray(fd,"KVlevels",ps->substations[i].nkvlevels,ps->substations[i].kvlevels,true);
 
 	      // Print the substation data
 	      PrintBusData(fd,&ps->substations[i],false,ps->MVAbase);
