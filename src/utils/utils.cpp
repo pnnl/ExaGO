@@ -443,8 +443,10 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
   /* Initialize MPI communicator, if not already */
 
   MPI_Initialized(&initialized);
-  if (!initialized)
+  if (!initialized) {
+    comm = MPI_COMM_WORLD;
     MPI_Init(argc, argv);
+  }
 
   /* Set up ExaGO logger */
   ExaGOLogSetComm(comm);
@@ -455,6 +457,7 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
   }
 
   /* Call PetscInitialize without any options file */
+  PETSC_COMM_WORLD = comm;
   ierr = PetscInitialize(argc, argv, nullptr, help);
   CHKERRQ(ierr);
 
