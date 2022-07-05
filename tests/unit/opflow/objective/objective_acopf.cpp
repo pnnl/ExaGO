@@ -106,6 +106,7 @@ int main(int argc, char **argv) {
       fail += test.computeObjective(opflowtest, x_ref, obj_value);
     } else // Using model PBPOLRAJAHIOP
     {
+#if defined(EXAGO_ENABLE_RAJA)
       // Get resource manager instance
       auto &resmgr = umpire::ResourceManager::getInstance();
 
@@ -138,6 +139,7 @@ int main(int argc, char **argv) {
 
 #ifdef EXAGO_ENABLE_GPU
       d_allocator.deallocate(x_ref_dev);
+#endif
 #endif
     }
 
