@@ -537,6 +537,7 @@ PetscErrorCode OPFLOWSetUpInitPflow(OPFLOW opflow) {
   /* Set up PFLOW object. Note pflow->ps will not be set up again as it has
      been already set up by opflow
   */
+  opflow->initpflow->use_lu = PETSC_TRUE; /* Use LU factorization for linear solve */
   ierr = PFLOWSetUp(opflow->initpflow);
   CHKERRQ(ierr);
 

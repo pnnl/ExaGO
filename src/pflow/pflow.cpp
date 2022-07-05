@@ -33,6 +33,8 @@ PetscErrorCode PFLOWCreate(MPI_Comm mpicomm, PFLOW *pflowout) {
   ierr = SNESCreate(pflow->comm->type, &pflow->snes);
   CHKERRQ(ierr);
 
+  pflow->use_lu = PETSC_FALSE;
+  
   pflow->setupcalled = PETSC_FALSE;
 
   pflow->split_gen_power_within_limits = PETSC_FALSE;
@@ -1249,6 +1251,26 @@ PetscErrorCode PFLOWSetUp(PFLOW pflow) {
   ierr = SNESSetJacobian(pflow->snes, pflow->Jac, pflow->Jac, PFLOWJacobian,
                          (void *)pflow);
   CHKERRQ(ierr);
+
+  if(pflow->use_lu) {
+    KSP ksp;
+    PC  pc;
+
+    ierr = SNESGetKSP(pflow->snes,&ksp);
+    CHKERRQ(ierr);
+    ierr = KSPGetPC(ksp,&pc);
+    CHKERRQ(ierr);
+
+    /* Set LU factorization */
+    ierr = PCSetType(pc,PCLU);
+    CHKERRQ(ierr);
+    ierr = PCFactorSetShiftType(pc,MAT_SHIFT_NONZERO);
+    CHKERRQ(ierr);
+    ierr = PCFactorSetMatOrderingType(pc,MATORDERINGQMD);
+    CHKERRQ(ierr);
+
+  }
+    
 
   ierr = SNESSetFromOptions(pflow->snes);
   CHKERRQ(ierr);

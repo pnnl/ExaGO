@@ -22,7 +22,10 @@ struct _p_PFLOW {
 
   SNES snes; /**< Nonlinear solver */
 
-  PetscBool setupcalled; /* PFSetUp called? */
+  PetscBool use_lu; /* Use LU factorization for linear solve. Set when
+		       PFLOW used with OPFLOW */
+  
+  PetscBool setupcalled; /* PFlowSetUp called? */
   PetscBool converged;
 
   PetscBool
