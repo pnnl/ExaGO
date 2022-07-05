@@ -46,7 +46,7 @@ const transitionFlyToInterpolator = new FlyToInterpolator(['zoom']);
 var casedata = {};
 casedata.geojsondata = {};
 casedata.geojsondata.type = "FeatureCollection";
-casedata.geojsondata.features = [...casedata2k.geojsondata.features,...casedata10k.geojsondata.features,...casedata70k.geojsondata.features];
+casedata.geojsondata.features = [...casedata10k.geojsondata.features,...casedata2k.geojsondata.features,...casedata70k.geojsondata.features];
 
 // Source data GeoJSON
 const geodata = casedata['geojsondata']
