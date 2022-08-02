@@ -1,9 +1,10 @@
 #[[
 
-Calls find_package to search for HiOp. Requires HiOp >= 0.5.3
+Calls find_package to search for HiOp config. Requires HiOp >= 0.5.3
 
 User may set:
 - HiOp_DIR
+- HiOp_ROOT
 
 ]]
 

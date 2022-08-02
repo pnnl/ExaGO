@@ -238,7 +238,7 @@ if(EXAGO_ENABLE_OMP)
 endif()
 
 if(EXAGO_ENABLE_HIOP)
-  include(FindHiop)
+  include(ExaGOFindHiOp)
 endif(EXAGO_ENABLE_HIOP)
 
 if(EXAGO_ENABLE_RAJA)
