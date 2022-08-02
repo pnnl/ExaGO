@@ -49,7 +49,7 @@ export BUILDDIR=${BUILDDIR:-$PWD/build}
 export INSTALLDIR=${INSTALLDIR:-$PWD/install}
 export BUILD_MATRIX=${BUILD_MATRIX:-0}
 export JOB=gcc-cuda
-export VALID_JOBS=(gcc-cuda clang-omp cmake-lint cmake-lint-apply)
+export VALID_JOBS=(gcc-cuda clang-hip clang-omp cmake-lint cmake-lint-apply)
 
 echo "Paths:"
 echo "Source dir: $SRCDIR"
