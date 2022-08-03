@@ -5,6 +5,14 @@ This directory contains tools used to manage the deployment of the ExaGO codebas
 This documentation is under development. Some brief notes will be added about what platform 
 is supported by each configuration, or a short description of what the purpose is.
 
+Each folder which builds a configuration of ExaGO should have a following:
+- `build.sh` : custom build script for configuration. Usually template
+- `platformVariables.sh` : a list of spack modules and other config to set up a CMake build environment.
+- `cache.cmake` : universal CMake changes for the type of build in use
+- `platform` :
+  - `spack.yaml` : a copy of the environment used to generate platform specific environments
+  - `exagoSpack.sh` : a script to load that build of exago for use directly on command line
+
 ### clang-omp
 
 Platforms:
