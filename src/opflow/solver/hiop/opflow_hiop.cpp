@@ -432,8 +432,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
 #ifndef EXAGO_ENABLE_GPU
     hiop->mds->options->SetStringValue("mem_space", "host");
 #else
-    // TODO: replace this with "device" when supported by HiOp
-    hiop->mds->options->SetStringValue("mem_space", "um");
+    hiop->mds->options->SetStringValue("mem_space", "device");
 #endif
   }
 #endif
