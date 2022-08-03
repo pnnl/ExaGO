@@ -13,6 +13,16 @@ Each folder which builds a configuration of ExaGO should have a following:
   - `spack.yaml` : a copy of the environment used to generate platform specific environments
   - `exagoSpack.sh` : a script to load that build of exago for use directly on command line
 
+### clang-hip
+
+Platforms:
+
+- Crusher
+
+Description:
+
+Crusher clang build of exago@crusher-dev + hiop@develop
+
 ### clang-omp
 
 Platforms:
