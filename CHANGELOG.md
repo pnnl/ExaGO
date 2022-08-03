@@ -6,32 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [develop]
-- Added OPFLOWSetWeight() for setting weight/probability for an OPFLOW. This is useful for setting weights for OPFLOW when used with SOPFLOW.
-
-## [v1.4.1]
 
 ### General
+- Preparing support for Frontier, C++14, RAJA@2022 + Umpire@2022
 
 ### Build system
-- No longer set the C++ compiler to `hipcc` when building on ROCm platforms.
-- Add new CMake option `EXAGO_CTEST_LAUNCH_COMMAND` to allow users to toggle the command used to launch CTest tests
+- C++ standard changed to 14.
+- Added crusher environment. Starting trend of moving spack.yaml environments to the place where the variables are.
 
 ### PS
 
 ### PFLOW
 
 ### OPFLOW
+- Added OPFLOWSetWeight() for setting weight/probability for an OPFLOW. This is useful for setting weights for OPFLOW when used with SOPFLOW.
 
 ### TCOPFLOW
 
 ### SCOPFLOW
 
 ### Documentation
-- Document new CMake option `EXAGO_CTEST_LAUNCH_COMMAND`
+- Begun moving spack documentation into repository, and expanding buildsystem documentation.
 
 ### Testing
 
 ### Miscallenous
+
+## [v1.4.1]
+
+### Build system
+- No longer set the C++ compiler to `hipcc` when building on ROCm platforms.
+- Add new CMake option `EXAGO_CTEST_LAUNCH_COMMAND` to allow users to toggle the command used to launch CTest tests
+
+### Documentation
+- Document new CMake option `EXAGO_CTEST_LAUNCH_COMMAND`
 
 ## [v1.4.0]
 
@@ -88,33 +96,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use of Pkgconfig instead of PETSc cmake modules.
 - ExaGO depends on HiOp v0.5.3 and PETSc v3.16 and above.
 
-### PS
-
 ### PFLOW
-
 - Native Python bindings to the PFLOW ExaGO library have been added.
 
 ### OPFLOW
-
 - Replaced quadratic load loss objective with linear.
 - Native Python bindings to the PFLOW ExaGO library have been extended.
 
-### TCOPFLOW
-
 ### SCOPFLOW
 - Defaults to corrective mode of operaation
+
 ### SOPFLOW
 - Defaults to corrective mode o operation
 - Added translator for converting native .cont contingency format to .con PSSE format.	
 
 ### Documentation
-
 - Update Python documentation.
 - Add release checklist.
 - Add and extend developer guidelines.
 
 ### Testing
-
 - Improved error messages for functionality tests. Reasons for failure are printed in the TOML output.
 - First of a new suite of unit tests has been added.
 - Added unit test for new internal logging api.
@@ -123,7 +124,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Miscallenous
 - Updated case9mod_gen3_wind.m to (a) have no reactive power for wind generator, (b) tighter bounds on generator bus voltages.
 - Added case9mod_loadloss.m as a test network for non-zero load loss.
-
 
 ### OPFLOW
 - Added feature of setting selected lines to monitor 
@@ -135,16 +135,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### General
 - Added clang format utility script and formatted source code
 - Use spdlog for logging instead of hand-rolled logger
-
-### Build system
-
-### PS
-
-### PFLOW
-
-### OPFLOW
-
-### TCOPFLOW
 
 ### SCOPFLOW
 - Added new solver `HIOP` for SCOPFLOW
@@ -205,8 +195,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - PSGetGenDispatch - Get generator dispatch
 
 
-### PFLOW
-
 ### OPFLOW
 - Modified OPFLOW HIOP interface to use HIOP version 0.5.
 - Removed applications opflow-proto.c and opflow-proto2.c
@@ -223,9 +211,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - OPFLOWGetPS - Return the PS object
     - OPFLOWSetUpPS - Set up the PS object
     - OPFLOWSolutionToPS - Transfer OPFLOW solution to PS
-
-
-### TCOPFLOW
 
 ### SCOPFLOW
 - Added HIOP solver interface. Not public yet.
