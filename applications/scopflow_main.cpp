@@ -65,7 +65,17 @@ int main(int argc, char **argv) {
 
   /* Set Contingency Data file */
   if (flgctgc) {
-    ierr = SCOPFLOWSetContingencyData(scopflow, NATIVE, ctgcfile);
+    std::string ext = FileNameExtension(ctgcfile);
+    if (ext == "con") {
+      ierr = SCOPFLOWSetContingencyData(scopflow, PSSE, ctgcfile);
+    } else if (ext == "cont") {
+      ierr = SCOPFLOWSetContingencyData(scopflow, NATIVE, ctgcfile);
+    } else {
+      std::stringstream errs;
+      errs << "Unknown contingency data format: " << ctgcfile << ", (" << ext
+           << ")";
+      throw ExaGOError(errs.str().c_str());
+    }
     CHKERRQ(ierr);
   }
 

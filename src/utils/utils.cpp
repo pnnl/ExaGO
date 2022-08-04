@@ -4,6 +4,7 @@
 #include <exago_build_options.h>
 #include <iostream>
 #include <string>
+#include <regex>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
@@ -253,6 +254,30 @@ FirstExistingFile(const std::vector<std::string> &files) {
   /* No files were found to exist! Just return iterator to files.end() to follow
    * conventions in the STL. */
   return it;
+}
+
+/**
+ * @brief Finds and returns a file name extension
+ *
+ * @param[filename] string containing file name
+ *
+ * @return the part of @c filename after the last ".", if found, empty
+ * string otherwise
+ *
+ **/
+std::string FileNameExtension(const std::string &filename) {
+  std::string ext;
+  std::smatch m;
+  bool found = std::regex_search(
+      filename, m,
+      std::regex("\\.\\([^.]*\\)$", std::regex::icase | std::regex::grep));
+  if (found) {
+    ext = m.str(1);
+  } else {
+    ext = "";
+  }
+
+  return ext;
 }
 
 namespace {
