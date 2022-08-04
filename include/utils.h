@@ -224,6 +224,9 @@ bool DoesDirExist(const char *);
 std::vector<std::string>::const_iterator
 FirstExistingFile(const std::vector<std::string> &files);
 
+/** Find file name extension */
+std::string FileNameExtension(const std::string &filename);
+
 inline bool IsEqual(double value, double ref, double tolerance, double &error) {
   error = std::fabs(value - ref) / (1. + std::fabs(ref));
   return (error < tolerance);
