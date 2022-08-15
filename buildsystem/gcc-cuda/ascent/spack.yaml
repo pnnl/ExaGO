@@ -1,0 +1,81 @@
+spack:
+  specs:
+  - exago@develop+hiop+mpi+raja+cuda+ipopt+python
+    ^hiop@develop%gcc@10.2.0 +kron+cuda+mpi+sparse+cusolver+ginkgo+raja cuda_arch=70 
+    ^magma+cuda cuda_arch=70 
+    ^raja@0.14.0+cuda~examples~exercises~ipo+openmp~rocm+shared~tests cuda_arch=70 
+    ^umpire@6.0.0~c+cuda~deviceconst~examples~fortran~ipo~numa~openmp~rocm~shared cuda_arch=70 tests=none 
+    ^ipopt+coinhsl~mumps
+  view: false
+  compilers:
+  - compiler:
+      spec: gcc@9.1.0
+      modules: [gcc/9.1.0]
+      paths:
+        cc: /sw/ascent/gcc/9.1.0-3/bin/gcc
+        cxx: /sw/ascent/gcc/9.1.0-3/bin/g++
+        f77: /sw/ascent/gcc/9.1.0-3/bin/gfortran
+        fc: /sw/ascent/gcc/9.1.0-3/bin/gfortran
+      operating_system: rhel8
+      target: ppc64le
+  - compiler:
+      spec: gcc@10.2.0
+      modules: [gcc/10.2.0]
+      paths:
+        cc: /sw/ascent/gcc/10.2.0-3/bin/gcc
+        cxx: /sw/ascent/gcc/10.2.0-3/bin/g++
+        f77: /sw/ascent/gcc/10.2.0-3/bin/gfortran
+        fc: /sw/ascent/gcc/10.2.0-3/bin/gfortran
+      flags: {}
+      operating_system: rhel8
+      target: ppc64le
+      modules: []
+      environment: {}
+      extra_rpaths: []
+  packages:
+    all:
+      providers:
+        mpi: [spectrum-mpi]
+        blas: [openblas]
+        lapack: [openblas]
+    coinhsl:
+      variants: +blas
+    perl:
+      externals:
+      - spec: perl@5.30.1
+        prefix: /sw/ascent/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.1.0/perl-5.30.1-on54l56f2ipu67zkupe6nm7qyhhzn66l/
+      buildable: false
+    spectrum-mpi:
+      externals:
+      - spec: spectrum-mpi@10.4.0.3-20210112
+        modules: [spectrum-mpi/10.4.0.3-20210112]
+      buildable: false
+    python:
+      externals:
+      - spec: python@3.6.8
+        prefix: /usr
+      buildable: false
+      version: []
+      target: []
+      providers: {}
+      compiler: []
+    cuda:
+      externals:
+      - spec: cuda@11.4.2
+        modules: [cuda/11.4.2]
+      buildable: false
+    cmake:
+      externals:
+      - spec: cmake@3.22.2
+        modules: [cmake/3.22.2]
+      buildable: false
+  develop:
+    exago:
+      path: /gpfs/wolf/proj-shared/csc359/src/nicholson-exago
+      spec: exago@develop
+    hiop:
+      path: /gpfs/wolf/proj-shared/csc359/src/nicholson-hiop
+      spec: hiop@develop
+    ginkgo:
+      path: /gpfs/wolf/proj-shared/csc359/src/ginkgo
+      spec: ginkgo@glu_experimental

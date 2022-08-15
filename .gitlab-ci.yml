@@ -27,19 +27,35 @@ workflow:
       export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
 
       # Export CTESTARGS defined in variables to run correct tests for stage
-      export CTESTARGS=$CTESTARGS
+      export CTESTARGS="--output-on-failure -E Python"
 
       MY_CLUSTER="ascent" ./buildsystem/build.sh --test-only --job=gcc-cuda
       res=$?
       exit $res
+  # Only running after_script for 
   after_script:
     - |
       cd "$WORKDIR/.."
       rm -rf "$WORKDIR"
 
+  
+.ornl_python_test_script_template: &ornl_python_test_script_definition
+  script:
+    - |
+      set -xv
+      cd "$WORKDIR"
+      export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+
+      # Export CTESTARGS defined in variables to run correct tests for stage
+      export CTESTARGS="-VV -R Python"
+
+      MY_CLUSTER="ascent" ./buildsystem/build.sh --test-only --job=gcc-cuda
+      res=$?
+      exit $res
+
 .ornl_environment_template: &ornl_environment_variables
   variables:
-    SCHEDULER_PARAMETERS: "-P CSC359 -nnodes 1 -W 30"
+    SCHEDULER_PARAMETERS: "-P CSC359 -nnodes 1 -W 120"
     WORKDIR: /gpfs/wolf/proj-shared/csc359/ci/${CI_PIPELINE_ID}
 
 .pnnl_after_script_template: &pnnl_after_script_definition
@@ -178,9 +194,8 @@ Ascent Py Test:
   tags:
     - batch 
   variables:
-    CTESTARGS: "--output-on-failure -R Python"
   <<: *ornl-rules
-  <<: *ornl_test_script_definition
+  <<: *ornl_python_test_script_definition
   <<: *ornl_environment_variables
   allow_failure: true
 # ---

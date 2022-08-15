@@ -173,7 +173,7 @@ for sig in `seq 1 31`; do
   trap "cleanup $sig \$? \$LINENO" $sig
 done
 
-set -xv
+# set -xv
 
 if [[ ! -v MY_CLUSTER ]]
 then
@@ -203,9 +203,9 @@ varfile="$SRCDIR/buildsystem/$JOB/$(echo $MY_CLUSTER)Variables.sh"
 
 if [[ -f "$varfile" ]]; then
   # We don't want all the shell functions we bring into scope to be printed out
-  set -x
+  # set -x
   source "$varfile"
-  set +x
+  # set +x
   echo Sourced system-specific variables for $MY_CLUSTER
 fi
 
