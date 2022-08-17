@@ -256,7 +256,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 - Added top-level INSTALLING.md documentation
-- Added file `doc/InstallingWithSpack.md` with updated spack documentation
+- Added file `doc/installing_with_spack.md` with updated spack documentation
 - Removed outdated spack documentation
 - Removed TAO solver from README and the manual
 - Updates to the manual and README for changes to the different ExaGO features
