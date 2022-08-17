@@ -17,7 +17,7 @@
 
 ## Installing With Spack
 
-If you would like to use the Spack package manager to install ExaGO, please refer to [the ExaGO Spack documentation](./docs/InstallingWithSpack.md).
+If you would like to use the Spack package manager to install ExaGO, please refer to [the ExaGO Spack documentation](./docs/installing_with_spack.md).
 The rest of this document assumes you want to install with CMake and you already have the dependencies described in the [Dependencies section linked here](#dependencies).
 
 ## Installing From Source
