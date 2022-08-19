@@ -1,0 +1,67 @@
+# This is a Spack Environment file.
+#
+# It describes a set of packages to be installed, along with
+# configuration settings.
+spack:
+  # add package specs to the `specs` list
+  specs:
+  - exago build_type=Release
+  - raja@0.14.0 build_type=Release
+  - cub@1.12.0-rc0
+  - ipopt@3.12.10
+  - hiop@develop build_type=Release
+  - hpctoolkit
+  - tau^openmpi
+  view: false
+  concretizer:
+    unify: true
+    reuse: false
+  packages:
+    all:
+      providers:
+        mpi: [openmpi]
+      variants:
+      - +ipo
+      - build_type=Release
+    exago:
+      variants:
+      - +hiop
+      - +raja
+      - +umpire
+      - +ipopt
+      - +cuda cuda_arch=70
+      - +ipo
+    tau:
+      variants:
+      - +mpi
+    hpctoolkit:
+      variants:
+      - +cuda cuda_arch=70
+    hiop:
+      variants:
+      - +raja
+      - +ginkgo
+      - +sparse
+      - +cusolver
+    ginkgo:
+      variants:
+      - -ipo
+    ipopt:
+      variants:
+      - +coinhsl
+      - +debug~mumps
+    coinhsl:
+      buildable: true
+      version: [2015.06.23]
+    papi:
+      variants:
+      - +cuda cuda_arch=70
+    hwloc:
+      variants:
+      - +cuda cuda_arch=70
+    raja:
+      variants:
+      - ~examples
+      - ~exercises
+      buildable: true
+      version: [0.14.0]

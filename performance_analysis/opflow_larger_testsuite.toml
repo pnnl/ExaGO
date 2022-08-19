@@ -1,0 +1,116 @@
+testsuite_name = "OPFLOW Functionality"
+application = 'opflow'
+mpi_rank = 1
+iterations = 1
+
+[presets]
+#netfile ='../datafiles/case9/case9mod.m'
+netfile ='../datafiles/case_ACTIVSg200.m'
+hiop_verbosity_level = 0
+print_output = 0
+argument_list = 'log_view'
+
+[[profiler]]
+
+#[[profiler]]
+#tool = 'nvprof'
+#tool_args = '--print-gpu-trace --csv --profile-api-trace none --log-file nvprofOutput'
+
+#[[profiler]]
+#tool = 'hpcrun'
+#tool_args = '--disable-auditor -t -o profiler_dumps'
+#
+#[[profiler]]
+#tool = 'tau_exec'
+#tool_args = '-io'
+#tool_envs = 'TAU_PROFILE=1 PROFILEDIR=./profiler_dumps'
+
+#1
+[[testcase]]
+opflow_solver = 'IPOPT'
+hiop_compute_mode = 'CPU'
+opflow_model = 'POWER_BALANCE_POLAR'
+ipopt_print_level = 0
+ipopt_max_iter = 5
+
+#2
+[[testcase]]
+opflow_solver = 'IPOPT'
+hiop_compute_mode = 'CPU'
+opflow_model = 'POWER_BALANCE_POLAR'
+ipopt_print_level = 0
+ipopt_max_iter = 100
+
+#3
+[[testcase]]
+opflow_solver = 'IPOPT'
+hiop_compute_mode = 'CPU'
+opflow_model = 'POWER_BALANCE_POLAR'
+ipopt_print_level = 0
+ipopt_max_iter = 500
+
+#4
+[[testcase]]
+opflow_solver = 'HIOPSPARSE'
+hiop_compute_mode = 'CPU'
+hiop_max_iter = 5
+opflow_model = 'POWER_BALANCE_POLAR'
+
+#5
+[[testcase]]
+opflow_solver = 'HIOPSPARSE'
+hiop_compute_mode = 'CPU'
+hiop_max_iter = 100
+opflow_model = 'POWER_BALANCE_POLAR'
+
+#6
+[[testcase]]
+opflow_solver = 'HIOPSPARSE'
+hiop_compute_mode = 'CPU'
+hiop_max_iter = 500
+opflow_model = 'POWER_BALANCE_POLAR'
+
+#7
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'CPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = 5
+
+#8
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'CPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = 10
+
+#9
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'CPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = 20
+
+#10
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'GPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = 5
+hiop_verbosity_level = 0
+argument_list = 'log_view'
+
+#11
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'GPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = 10
+
+#12
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'GPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = 20
+
