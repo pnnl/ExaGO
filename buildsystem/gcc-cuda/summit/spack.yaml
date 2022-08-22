@@ -1,10 +1,11 @@
 spack:
   specs:
-  - exago@develop%gcc@10.2.0+cuda+mpi+hiop+raja+ipopt~python cuda_arch=70 build_type=Release
+  - exago@develop%gcc@10.2.0+cuda+mpi+hiop+raja+ipopt+python cuda_arch=70 build_type=Release
     ^petsc~hdf5~hypre~mumps~superlu-dist 
     ^hiop@develop+cuda+raja+sparse+mpi+deepchecking+ginkgo+cusolver cuda_arch=70 build_type=Release
     ^raja@0.14.0
     ^umpire@6.0.0
+    ^openblas
   compilers:
   - compiler:
       spec: gcc@10.2.0
@@ -30,6 +31,7 @@ spack:
       providers:
         mpi: [spectrum-mpi]
         blas: [openblas]
+        lapack: [openblas]
     python:
       externals:
       - spec: python@3.8.10
@@ -79,3 +81,6 @@ spack:
       - spec: perl@5.30.1
         modules: [perl/5.30.1]
       buildable: false
+    ginkgo:
+      version: [glu_experimental]
+      variants: +cuda cuda_arch=70
