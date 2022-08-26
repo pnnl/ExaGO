@@ -76,7 +76,7 @@ workflow:
 .pnnl_script_template: &pnnl_script_definition
   script:
     - |
-      set -xv
+      # pass --verbose to build.sh for verbose debugging
       #
       #  NOTES:  WORKDIR is on constance/marianas/newell
       #          ./      is only on the Kubernetes instance
@@ -272,33 +272,33 @@ SVC Account Cleanup:
   script:
     - cd /people/svcexasgd/ && rm -rf gitlab/*
 
-# Newell Build:
-#   stage: build
-#   variables:
-#     SLURM_Q: "newell_shared"
-#     MY_CLUSTER: "newell"
-#     OUTPUT_SUFFIX: "_build"
-#     SCRIPT_ARGS: " --build-only --job=gcc-cuda "
-#     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
-#   <<: *pnnl_tags_definition
-#   <<: *pnnl_script_definition
-#   <<: *pnnl-rules
-# 
-# Newell Test:
-#   stage: test
-#   dependencies:
-#     - 'Newell Build'
-#   variables:
-#     SLURM_Q: "newell_shared"
-#     MY_CLUSTER: "newell"
-#     CTESTARGS: "--output-on-failure -E Python"
-#     OUTPUT_SUFFIX: "_test"
-#     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-#     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
-#   <<: *pnnl_tags_definition
-#   <<: *pnnl_script_definition
-#   <<: *pnnl_after_script_definition
-#   <<: *pnnl-rules
+Newell Build:
+  stage: build
+  variables:
+    SLURM_Q: "newell_shared"
+    MY_CLUSTER: "newell"
+    OUTPUT_SUFFIX: "_build"
+    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+  <<: *pnnl_tags_definition
+  <<: *pnnl_script_definition
+  <<: *pnnl-rules
+
+Newell Test:
+  stage: test
+  dependencies:
+    - 'Newell Build'
+  variables:
+    SLURM_Q: "newell_shared"
+    MY_CLUSTER: "newell"
+    CTESTARGS: "--output-on-failure -E Python"
+    OUTPUT_SUFFIX: "_test"
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+  <<: *pnnl_tags_definition
+  <<: *pnnl_script_definition
+  <<: *pnnl_after_script_definition
+  <<: *pnnl-rules
 
 Marianas Build:
   stage: build
@@ -328,22 +328,22 @@ Marianas Test:
   <<: *pnnl_after_script_definition
   <<: *pnnl-rules
 
-# Newell Py Test:
-#   stage: test
-#   dependencies:
-#     - 'Newell Build'
-#   variables:
-#     SLURM_Q: "newell_shared"
-#     MY_CLUSTER: "newell"
-#     CTESTARGS: "--output-on-failure -R Python"
-#     OUTPUT_SUFFIX: "_test_python"
-#     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-#     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
-#   <<: *pnnl_tags_definition
-#   <<: *pnnl_script_definition
-#     # No after_script as only one test per platform cleans up
-#   <<: *pnnl-rules
-#   allow_failure: true
+Newell Py Test:
+  stage: test
+  dependencies:
+    - 'Newell Build'
+  variables:
+    SLURM_Q: "newell_shared"
+    MY_CLUSTER: "newell"
+    CTESTARGS: "--output-on-failure -R Python"
+    OUTPUT_SUFFIX: "_test_python"
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+  <<: *pnnl_tags_definition
+  <<: *pnnl_script_definition
+    # No after_script as only one test per platform cleans up
+  <<: *pnnl-rules
+  allow_failure: true
 
 Marianas Py Test:
   stage: test
