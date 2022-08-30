@@ -18,7 +18,7 @@ module load exasgd-cuda/11.5.2/gcc-10.2.0-7gofref
 # ginkgo@glu_experimental%gcc@10.2.0+cuda~develtools~full_optimizations~hwloc~ipo~oneapi+openmp~rocm+shared build_type=Release cuda_arch=70 arch=linux-rhel8-ppc64le
 module load exasgd-ginkgo/glu_experimental/cuda-11.5.2/gcc-10.2.0-4ybxcrk
 # hiop@develop%gcc@10.2.0+cuda+cusolver+deepchecking+ginkgo~ipo~jsrun~kron+mpi+raja~rocm~shared+sparse build_type=Release cuda_arch=70 arch=linux-rhel8-ppc64le
-module load exasgd-hiop/develop/cuda-11.5.2/spectrum-mpi-10.4.0.3-20210112/gcc-10.2.0-b2z6tfd
+module load exasgd-hiop/develop/cuda-11.5.2/spectrum-mpi-10.4.0.3-20210112/gcc-10.2.0-nsn5koh
 # ipopt@3.12.10%gcc@10.2.0+coinhsl~debug+metis~mumps patches=712f729 arch=linux-rhel8-ppc64le
 module load exasgd-ipopt/3.12.10/gcc-10.2.0-5x34omc
 # magma@2.6.2%gcc@10.2.0+cuda+fortran~ipo~rocm+shared build_type=Release cuda_arch=70 arch=linux-rhel8-ppc64le
