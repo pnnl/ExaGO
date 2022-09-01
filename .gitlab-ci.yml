@@ -1,4 +1,219 @@
 
+.pnnllib-gitlab-mirror-container-images:
+    # Arguments are passed in environment variables
+    # CONTAINERS - Newline seperated list of images to mirror
+    # CONTAINERS_FILE - Optional artifact filename which lists the desired images to be cached in a multiline format
+    # CONTAINER_CONVERT - define if the images must be converted to store in gitlab
+    # CONTAINER_PREFIX - extra prefix for the images. Can be used to add a string on the front of an image name or a parent directory in the repository.
+    # RETAG - Change the tag or sha of the image. to rename the image from foo:bar to foo:baz, set to "\1:baz"
+    # SOURCE_USERNAME - Optional username to use for download
+    # SOURCE_PASSWORD - Optional password to use for download
+    image: docker.io/kfox1111/misc:skopeo
+    script:
+    - |
+      set -e
+      mkdir -p /etc/gitlab-runner/certs/
+      export EXTRA_FLAGS=""
+      [ "x$CONTAINERS_FILE" != "x" ] && export CONTAINERS="$(cat $CONTAINERS_FILE)"
+      [ "x$SOURCE_USERNAME" != "x" -o "x$SOURCE_PASSWORD" != "x" ] && export EXTRA_FLAGS="--src-creds ${SOURCE_USERNAME}:${SOURCE_PASSWORD}"
+      echo "Mirroring: $CONTAINERS"
+      echo "$CONTAINERS" | while read IMAGE; do
+        [ "x$IMAGE" == "x" ] && continue
+        NEWNAME=$(echo "$IMAGE" | sed 's@.*/@@g')
+        [ "x$RETAG" == "x" ] || NEWNAME=$(echo "$NEWNAME" | sed 's/^\([^@:]*\)\([:@]\)\(.*\)/'"$RETAG"'/')
+        mkdir -p /tmp/containers/"$NEWNAME"
+        echo Mirroring "$IMAGE" to "$NEWNAME"
+        if [ "x$CONTAINER_CONVERT" != "x" ]; then
+          set +e
+          skopeo inspect \
+            docker://"${CI_REGISTRY_IMAGE}/${CONTAINER_PREFIX}$NEWNAME" \
+            --raw \
+            --cert-dir /etc/gitlab-runner/certs/ \
+            --creds "gitlab-ci-token:$CI_JOB_TOKEN" \
+            > /dev/null && echo already exists && continue
+          set -xe
+          skopeo copy $EXTRA_FLAGS \
+            --format v2s2 \
+            docker://"$IMAGE" \
+            dir:/tmp/containers/"$NEWNAME"
+          skopeo copy \
+            --dest-cert-dir /etc/gitlab-runner/certs/ \
+            --dest-creds "gitlab-ci-token:$CI_JOB_TOKEN" \
+            dir:/tmp/containers/"$NEWNAME" \
+            docker://"${CI_REGISTRY_IMAGE}/${CONTAINER_PREFIX}$NEWNAME"
+        else
+          skopeo copy \
+            docker://"$IMAGE" $EXTRA_FLAGS  \
+            --dest-cert-dir /etc/gitlab-runner/certs/ \
+            --dest-creds "gitlab-ci-token:$CI_JOB_TOKEN" \
+            docker://"${CI_REGISTRY_IMAGE}/${CONTAINER_PREFIX}$NEWNAME"
+        fi
+      done
+
+# Deprecated. switch to .pnnllib-gitlab-mirror-chart-to-repo instead
+.pnnllib-gitlab-mirror-chart-to-image:
+    # CHART - Name of the chart to mirror
+    # REPO - Repository URL to mirror from
+    # VERSION - Optional helm chart version to pull
+    # CONTAINER_PREFIX - extra prefix for the images. Can be used to add a string on the front of an image name or a parent directory in the repository.
+    # PATCH - Optional patch to apply to the chart
+    # PATCHLEVEL - Optional patch level to patch. Default 1.
+    image:
+      name: lachlanevenson/k8s-helm:v3.2.1
+      entrypoint: [""]
+    script:
+    - |
+      set -e
+
+      #Copy cert into the ca trust store so that helm chart push will work. (Alpine)
+      if [ -f /etc/gitlab-runner/certs/ca.crt ]; then
+        cat /etc/gitlab-runner/certs/ca.crt > /usr/local/share/ca-certificates/self.crt
+        update-ca-certificates
+      fi
+
+      helm repo add myrepo "$REPO"
+      helm repo update
+
+      echo Pulling chart.
+      if [ "x$VERSION" != "x" ]; then
+        helm pull myrepo/"$CHART" --untar --version "$VERSION"
+      else
+        helm pull myrepo/"$CHART" --untar
+      fi
+
+      if [ "x$PATCH" != "x" ]; then
+        echo Patching chart
+        cd "$CHART"
+        PATCHLEVEL="${PATCHLEVEL:-1}"
+        patch -p"$PATCHLEVEL" < "../$PATCH"
+        cd ..
+      fi
+      echo Uploading
+      VERSION=$(helm show chart "$CHART" | awk '/^version:/{print $2}')
+      export HELM_EXPERIMENTAL_OCI=1
+      echo "$CI_REGISTRY_PASSWORD" | helm registry login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+      helm chart save "$CHART" "$CI_REGISTRY_IMAGE$CONTAINER_PREFIX:$VERSION"
+      helm chart push "$CI_REGISTRY_IMAGE$CONTAINER_PREFIX:$VERSION"
+      echo This function is deprecated. Please switch your pipeline to use .pnnllib-gitlab-mirror-chart-to-repo instead.
+
+.pnnllib-gitlab-mirror-chart-to-repo:
+    # CHART - Name of the chart to mirror
+    # REPO - Repository URL to mirror from
+    # VERSION - Optional helm chart version to pull
+    # CONTAINER_PREFIX - extra prefix for the images. Can be used to add a string on the front of an image name or a parent directory in the repository.
+    # PATCH - Optional patch to apply to the chart
+    # PATCHLEVEL - Optional patch level to patch. Default 1.
+    image:
+      name: lachlanevenson/k8s-helm:v3.8.1
+      entrypoint: [""]
+    script:
+    - |
+      set -e
+      mkdir -p .chartmirror/charts
+      cd .chartmirror
+      #Copy cert into the ca trust store so that helm chart push will work. (Alpine)
+      if [ -f /etc/gitlab-runner/certs/ca.crt ]; then
+        cat /etc/gitlab-runner/certs/ca.crt > /usr/local/share/ca-certificates/self.crt
+        update-ca-certificates
+      fi
+      helm repo add myrepo "$REPO"
+      helm repo update
+      echo Pulling chart.
+      if [ "x$VERSION" != "x" ]; then
+        helm pull myrepo/"$CHART" --untar --version "$VERSION"
+      else
+        helm pull myrepo/"$CHART" --untar
+      fi
+      if [ "x$PATCH" != "x" ]; then
+        echo Patching chart
+        cd "$CHART"
+        PATCHLEVEL="${PATCHLEVEL:-1}"
+        patch -p"$PATCHLEVEL" < "../$PATCH"
+        cd ..
+      fi
+      echo Uploading
+      helm package "$CHART" -d charts
+      echo "${CI_JOB_TOKEN}" | helm registry login --username gitlab-ci-token --password-stdin "${CI_REGISTRY}"
+      helm push charts/* "oci://${CI_REGISTRY_IMAGE}${CONTAINER_PREFIX}"
+
+.pnnllib-gitlab-verify-new-image:
+    # Verify that the image doesn't already exist
+    # Arguments are passed in environment variables
+    # CONTAINER_PREFIX - extra prefix for the image. Can be used to add a string on the front of an image name or a parent directory in the repository.
+    # CONTAINER_TAG - The container tag to use. Defaults to $CI_COMMIT_TAG
+    image: docker.io/kfox1111/misc:skopeo
+    script:
+    - |
+        set -e
+        CONTAINER_TAG="${CONTAINER_TAG:-$CI_COMMIT_TAG}"
+        mkdir -p /etc/gitlab-runner/certs
+        skopeo inspect \
+            docker://"$CI_REGISTRY_IMAGE${CONTAINER_PREFIX}:${CONTAINER_TAG}" \
+            --raw \
+            --cert-dir /etc/gitlab-runner/certs/ \
+            --creds "gitlab-ci-token:$CI_JOB_TOKEN" \
+           > /dev/null && echo "Image already exists. Please bump version." && exit 1
+        exit 0
+
+.pnnllib-gitlab-build-container-image:
+    # Build an image using Kaniko
+    # Arguments are passed in environment variables
+    # CONTAINER_PREFIX - extra prefix for the image. Can be used to add a string on the front of an image name or a parent directory in the repository.
+    # CONTAINER_TAG - The container tag to use. Defaults to $CI_COMMIT_TAG
+    # DOCKERFILE - The name of the dockerfile to use. Defaults to Dockerfile.
+    # KANIKO_EXTRA_ARGS - Extra arguments passed to Kaniko. Example, `--build-arg MY_BUILD_VAR=foo`.
+    # HTTP_PROXY - optional, proxy to use and pass when a http proxy is needed.
+    # HTTPS_PROXY - optional, proxy to use and pass when a https proxy is needed.
+    # NO_PROXY - optional, proxy settings to use and pass when a proxy shouldn't be used
+    image:
+      name: gcr.io/kaniko-project/executor:debug
+      entrypoint: [""]
+    script:
+    - mkdir -p /kaniko/.docker
+    - |-
+      KANIKOPROXYBUILDARGS=""
+      KANIKOCFG="{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}"
+      if [ "x${HTTP_PROXY}" != "x" -o "x${HTTPS_PROXY}" != "x" ]; then
+        KANIKOCFG="${KANIKOCFG}, \"proxies\": { \"default\": { \"httpProxy\": \"${HTTP_PROXY}\", \"httpsProxy\": \"${HTTPS_PROXY}\", \"noProxy\": \"${NO_PROXY}\"}}"
+        KANIKOPROXYBUILDARGS="--build-arg http_proxy=${HTTP_PROXY} --build-arg HTTP_PROXY=${HTTP_PROXY} --build-arg no_proxy=${NO_PROXY}"
+      fi
+      KANIKOCFG="${KANIKOCFG} }"
+      echo "${KANIKOCFG}" > /kaniko/.docker/config.json
+      if [ -f /etc/gitlab-runner/certs/ca.crt ]; then
+        cat /etc/gitlab-runner/certs/ca.crt >> /kaniko/ssl/certs/ca-certificates.crt
+      fi
+      DOCKERFILE="${DOCKERFILE:-Dockerfile}"
+      CONTAINER_TAG="${CONTAINER_TAG:-$CI_COMMIT_TAG}"
+      KANIKO_EXTRA_ARGS="${KANIKO_EXTRA_ARGS:-}"
+      /kaniko/executor $KANIKOPROXYBUILDARGS --context "$CI_PROJECT_DIR" --dockerfile "$CI_PROJECT_DIR/$DOCKERFILE" --destination "$CI_REGISTRY_IMAGE${CONTAINER_PREFIX}:$CONTAINER_TAG" $KANIKO_EXTRA_ARGS
+
+.pnnllib-gitlab-load-deploy-token:
+    # Load a gitlab deploy token into Kubernetes
+    #
+    # You must have already created a deploy token with just 'read_registry'
+    # permission named 'gitlab-deploy-token', with username 'gitlab-deploy-token' as described here:
+    # https://docs.gitlab.com/ee/user/project/deploy_tokens/#creating-a-deploy-token
+    #
+    # Arguments are passed in environment variables
+    #
+    # SECRET_NAME - Which secret to load the deploy token into. Defautls to gitlab-registry-token
+    image: bitnami/kubectl:1.15.3
+    script:
+    - |
+      SECRET_NAME="${SECRET_NAME:-gitlab-registry-token}"
+      if [ "x$CI_DEPLOY_USER" == "x" -o "x$CI_DEPLOY_PASSWORD" == "x" ]; then
+        echo A valid deploy token was not found.
+        echo
+        echo This is very likely because the deploy token was not manually configured in gitlab or the configuration documentation was not followed precisely.
+        echo The config is sensitive to the username in particular being set correctly and that it is a deploy token, not a personal or project access token.
+        echo
+        echo Instructions:
+        echo Create a deploy token with just "'read_registry'" permission named "'gitlab-deploy-token'", with username "'gitlab-deploy-token'" as described here:
+        echo https://docs.gitlab.com/ee/user/project/deploy_tokens/#creating-a-deploy-token
+        exit -1
+      fi
+      kubectl create secret docker-registry "$SECRET_NAME" --docker-server="$CI_REGISTRY" --docker-username="$CI_DEPLOY_USER" --docker-password="$CI_DEPLOY_PASSWORD" --dry-run -o yaml | kubectl apply -f -
+
 # CI constraints for every branch
 workflow:
   rules:
@@ -159,8 +374,69 @@ stages:
   - test
 
 # Include PNNL GitLab stdlib
-include:
-  - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v1/gitlab-lib.yaml'
+# include:
+#   - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v1/gitlab-lib.yaml'
+
+# For Crusher CI
+.crusher-rules: &crusher-rules
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - when: never
+
+.crusher-variables: &crusher-variables
+  # Only for slurm tagged jobs...
+  variables:
+    SCHEDULER_PARAMETERS: "-N 1 -A CSC359 --time=60"
+    WORKDIR: /gpfs/alpine/csc359/proj-shared/ci/${CI_PIPELINE_ID}
+
+Crusher Build:
+  stage: build
+  tags: [crusher, shell]
+  script:
+    - mkdir -p "$WORKDIR"
+    - cp -R ./* "$WORKDIR"
+    - cd "$WORKDIR"
+    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+    - MY_CLUSTER=crusher ./buildsystem/build.sh --build-only --job=clang-hip
+    - res=$?
+    - exit $res
+  <<: *crusher-rules
+  <<: *crusher-variables
+  
+Crusher Test:
+  stage: test
+  dependencies:
+    - "Crusher Build"
+  tags: [crusher, slurm]
+  script:
+    - cd "$WORKDIR"
+    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+    - export CTESTARGS="--output-on-failure -E Python"
+    - MY_CLUSTER=crusher ./buildsystem/build.sh --test-only --job=clang-hip
+    - res=$?
+    - exit $res
+  after_script:
+    - cd "$WORKDIR/.."
+    - rm -rf "$WORKDIR"
+  <<: *crusher-rules
+  <<: *crusher-variables
+
+Crusher Python Test:
+  stage: test
+  dependencies: 
+    - "Crusher Build"
+  allow_failure: true
+  tags: [crusher, slurm]
+  script:
+    - cd "$WORKDIR"
+    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+    - export CTESTARGS="--output-on-failure -R Python"
+    - MY_CLUSTER=crusher ./buildsystem/build.sh --test-only --job=clang-hip
+    - res=$?
+    - exit $res
+  <<: *crusher-rules
+  <<: *crusher-variables
+# ---
 
 # For Ascent CI
 .ornl-rules: &ornl-rules
