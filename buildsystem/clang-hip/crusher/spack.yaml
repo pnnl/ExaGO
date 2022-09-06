@@ -1,13 +1,11 @@
 spack:
   specs:
   - exago@develop+mpi~python+raja+hiop+rocm+ipopt amdgpu_target=gfx90a
-  - hiop@develop%clang@14.0.0+sparse+mpi+raja+rocm~ginkgo+kron
+  - hiop@develop%clang@14.0.0+sparse+mpi+raja+rocm+ginkgo+kron
   - ipopt@3.12.10~metis+coinhsl~mumps
   - umpire@6.0.0~examples
   - raja@0.14.0~examples~exercises
-
-  
-    # - ginkgo@1.4.0+full_optimizations
+  - ginkgo@glu_experimental+full_optimizations
   - coinhsl@2019.05.21
   - libiconv%gcc@11.2.0
   view: false
@@ -15,7 +13,14 @@ spack:
     unify: true
     reuse: false
   config:
+    install_tree:
+      root: /gpfs/alpine/proj-shared/csc359/cameron/spack-install
     concretizer: clingo
+    build_stage: ~/spack_tmp
+  modules:
+    default:
+      roots:
+        tcl: /gpfs/alpine/proj-shared/csc359/cameron/spack-install/modules
   compilers:
   - compiler:
       spec: gcc@11.2.0
