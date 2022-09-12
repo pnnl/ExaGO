@@ -1119,8 +1119,8 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
     ierr = MatSetSizes(sopflow->Jac, sopflow->ncon, sopflow->nx, sopflow->Ncon,
                        sopflow->Nx);
     CHKERRQ(ierr);
-    ierr = MatSetFromOptions(sopflow->Jac);
-    CHKERRQ(ierr);
+    //    ierr = MatSetFromOptions(sopflow->Jac);
+    //    CHKERRQ(ierr);
     /* Assume 10% sparsity */
     ierr = MatSeqAIJSetPreallocation(sopflow->Jac,
                                      (PetscInt)(0.1 * sopflow->Nx), NULL);
