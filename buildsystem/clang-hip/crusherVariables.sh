@@ -3,7 +3,7 @@ export PROJ_DIR=/autofs/nccs-svm1_proj/csc359
 
 module purge
 
-module use -a /gpfs/alpine/proj-shared/csc359/cameron/spack_install/modules/cray-sles15-zen3/
+module use -a /gpfs/alpine/proj-shared/csc359/cameron/spack-install/modules/cray-sles15-zen3/
 
 # Spack modules
 # blt@0.4.1%clang@14.0.0 arch=cray-sles15-zen3
