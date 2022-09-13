@@ -1,6 +1,6 @@
 spack:
   specs:
-  - exago@develop+mpi~python+raja+hiop+rocm+ipopt amdgpu_target=gfx90a
+  - exago@git.crusher-dev+mpi~python+raja+hiop+rocm+ipopt amdgpu_target=gfx90a
   - hiop@develop%clang@14.0.0+sparse+mpi+raja+rocm+ginkgo+kron
   - ipopt@3.12.10~metis+coinhsl~mumps
   - umpire@6.0.0~examples
@@ -16,7 +16,7 @@ spack:
     install_tree:
       root: /gpfs/alpine/proj-shared/csc359/cameron/spack-install
     concretizer: clingo
-    build_stage: ~/spack_tmp
+    build_stage: /dev/shm
   modules:
     default:
       roots:
@@ -287,11 +287,4 @@ spack:
       externals:
       - spec: rocthrust@5.2.0
         prefix: /opt/rocm-5.2.0
-  develop:
-    hiop:
-      path: /ccs/home/rcruther/hiop-git
-      spec: hiop@develop
-    exago:
-      path: /ccs/home/rcruther/exago-git
-      spec: exago@develop
   mirrors: {}

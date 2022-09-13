@@ -10,6 +10,5 @@ mkdir -p $SPACKENV
 cp ./buildsystem/clang-hip/crusher/spack.yaml $SPACKENV
 
 spack env create -d $SPACKENV
-spack env activate $SPACKENV
+spack env activate -p $SPACKENV
 
-spack concretize -f
