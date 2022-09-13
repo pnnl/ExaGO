@@ -8,15 +8,16 @@ spack:
   - ginkgo@glu_experimental+full_optimizations
   - coinhsl@2019.05.21
   - libiconv%gcc@11.2.0
+  - petsc~hypre~superlu-dist~hdf5
   view: false
   concretizer:
     unify: true
-    reuse: false
+    reuse: true
   config:
     install_tree:
       root: /gpfs/alpine/proj-shared/csc359/cameron/spack-install
     concretizer: clingo
-    build_stage: /dev/shm
+    build_stage: ~/spack_tmp
   modules:
     default:
       roots:
@@ -100,23 +101,11 @@ spack:
       variants: +termlib
     openblas:
       variants: threads=openmp
-    petsc:
-      externals:
-      - spec: petsc@3.16.4-cpu
-        modules:
-        - petsc/3.16.4-cpu
-      buildable: false
     python:
       externals:
       - spec: python@3.9.12
         modules:
         - cray-python/3.9.12.1
-      buildable: false
-    perl:
-      externals:
-      - spec: perl@5.34.0
-        modules:
-        - perl/5.34.0
       buildable: false
     trilinos:
       variants: +amesos +amesos2 +anasazi +aztec +belos +boost +epetra +epetraext
