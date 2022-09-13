@@ -59,7 +59,9 @@ def updateHiopOptions(options, app):
                 hof_str = key + ' ' + str(hiops[key])
                 hof.write(hof_str + '\n')
         for dl in delList:
-            options.pop(dl, None)
+            # hiop_mem_space is also argument to exago
+            if not dl == 'hiop_mem_space':
+                options.pop(dl, None)
     return hiops
 
 
@@ -136,7 +138,6 @@ def doPerfMeasure(in_file):
     if "mpi_rank" in testsuite:
         mpi_cmd = [mpi_start, "-n", str(testsuite['mpi_rank'])]
     
-    print(mpi_cmd)
     profiler_cmd_list = list()
     my_env = os.environ.copy()
     if "profiler" in testsuite:
