@@ -3,14 +3,13 @@ export PROJ_DIR=/autofs/nccs-svm1_proj/csc359
 
 module purge
 
-module use -a /autofs/nccs-svm1_proj/csc359/cameron/spack/share/spack/test-modules/cray-sles15-zen3/
+module use -a /gpfs/alpine/proj-shared/csc359/cameron/spack-install/test-modules/cray-sles15-zen3/
 
 # Spack modules
 export SRCDIR=${SRCDIR:-$PWD}
-source $SRCDIR/buildsystem/clang-hip/crusher/exago.sh
+source $SRCDIR/buildsystem/clang-hip/crusher/optimized-dependencies.sh 
 
 # System modules
-
 module load rocm/5.2.0
 module load libfabric/1.15.0.0
 

@@ -7,7 +7,7 @@ module use -a /autofs/nccs-svm1_proj/csc359/cameron/spack/share/spack/test-modul
 
 # Spack modules
 export SRCDIR=${SRCDIR:-$PWD}
-source $SRCDIR/buildsystem/clang-hip/crusher/exago.sh
+source $SRCDIR/buildsystem/clang-hip/crusher/exago-optimized.sh
 
 # System modules
 

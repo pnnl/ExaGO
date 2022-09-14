@@ -1,26 +1,23 @@
 spack:
   specs:
-  - exago@develop+mpi~python+raja+hiop+rocm+ipopt amdgpu_target=gfx90a
-  - hiop@develop%clang@14.0.0+sparse+mpi+raja+rocm+ginkgo+kron
-  - ipopt@3.12.10~metis+coinhsl~mumps
-  - umpire@6.0.0~examples
-  - raja@0.14.0~examples~exercises
-  - ginkgo@glu_experimental+full_optimizations
-  - coinhsl@2019.05.21
-  - libiconv%gcc@11.2.0
+  - exago@develop%clang@14.0.0+full_optimizations amdgpu_target=gfx90a
+  - exago@develop%clang@14.0.0~full_optimizations amdgpu_target=gfx90a
   view: false
   concretizer:
-    unify: true
-    reuse: false
+    unify: when_possible
+    reuse: true
   config:
     install_tree:
       root: /gpfs/alpine/proj-shared/csc359/cameron/spack-install
     concretizer: clingo
-    build_stage: ~/spack_tmp
+    source_cache: /gpfs/alpine/proj-shared/csc359/spack-install/source-mirror
+    build_cache: /gpfs/alpine/proj-shared/csc359/spack-install/build-cache
+    misc_cache: /gpfs/alpine/proj-shared/csc359/spack-install/misc-cache
+    build_stage: /gpfs/alpine/proj-shared/csc359/spack-install/build-stage
   modules:
     default:
       roots:
-        tcl: /gpfs/alpine/proj-shared/csc359/cameron/spack-install/modules
+        tcl: /gpfs/alpine/proj-shared/csc359/cameron/spack-install/test-modules
   compilers:
   - compiler:
       spec: gcc@11.2.0
@@ -62,15 +59,26 @@ spack:
       target:
       - zen3
       variants: +mpi
+    exago:
+      require: ~python+raja+hiop+rocm+ipopt
+    hiop:
+      require: '@develop+sparse+mpi+raja+rocm+ginkgo+kron'
+    ipopt:
+      require: '@3.12.10~metis+coinhsl~mumps'
+    umpire:
+      require: '@6.0.0~examples'
+    raja:
+      require: '@0.14.0~examples~exercises'
+    ginkgo:
+      require: '@1.5.0.glu_experimental'
+    coinhsl:
+      require: '@2019.05.21'
+    libiconv:
+      require: '%gcc@11.2.0'
+    petsc:
+      require: ~hypre~superlu-dist~hdf5~metis
     binutils:
       variants: +ld +gold +headers +libiberty ~nls
-    cmake:
-      buildable: false
-      externals:
-      - spec: cmake@3.20.6
-        modules:
-        - cmake/3.20.6
-        prefix: /sw/crusher/spack-envs/base/opt/linux-sles15-x86_64/gcc-7.5.0/cmake-3.23.2-4r4mpiba7cwdw2hlakh5i7tchi64s3qd/
     elfutils:
       variants: +bzip2 ~nls +xz
     gmp:
@@ -100,23 +108,11 @@ spack:
       variants: +termlib
     openblas:
       variants: threads=openmp
-    petsc:
-      externals:
-      - spec: petsc@3.16.4-cpu
-        modules:
-        - petsc/3.16.4-cpu
-      buildable: false
     python:
       externals:
       - spec: python@3.9.12
         modules:
         - cray-python/3.9.12.1
-      buildable: false
-    perl:
-      externals:
-      - spec: perl@5.34.0
-        modules:
-        - perl/5.34.0
       buildable: false
     trilinos:
       variants: +amesos +amesos2 +anasazi +aztec +belos +boost +epetra +epetraext
@@ -287,11 +283,4 @@ spack:
       externals:
       - spec: rocthrust@5.2.0
         prefix: /opt/rocm-5.2.0
-  develop:
-    hiop:
-      path: /ccs/home/rcruther/hiop-git
-      spec: hiop@develop
-    exago:
-      path: /ccs/home/rcruther/exago-git
-      spec: exago@develop
   mirrors: {}
