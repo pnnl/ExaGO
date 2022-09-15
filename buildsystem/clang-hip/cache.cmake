@@ -48,7 +48,7 @@ set(EXAGO_ENABLE_HIOP
     CACHE BOOL ""
 )
 set(EXAGO_ENABLE_IPOPT
-    OFF
+    ON
     CACHE BOOL ""
 )
 set(EXAGO_ENABLE_MPI
@@ -74,7 +74,7 @@ set(EXAGO_RUN_TESTS
 
 message(STATUS "Enabling Python when building without Ipopt")
 set(EXAGO_ENABLE_PYTHON
-    ON
+    OFF
     CACHE BOOL ""
 )
 
