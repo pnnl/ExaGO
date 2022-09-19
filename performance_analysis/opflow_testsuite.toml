@@ -1,0 +1,48 @@
+testsuite_name = "OPFLOW Functionality"
+application = 'opflow'
+mpi_rank = 1
+iterations = 1
+
+[presets]
+#netfile ='../datafiles/case9/case9mod.m'
+netfile ='../datafiles/case_ACTIVSg200.m'
+hiop_verbosity_level = 3
+print_output = 0
+argument_list = 'log_view'
+
+[[profiler]]
+
+#[[profiler]]
+#tool = 'nvprof'
+#tool_args = '--log-file nvprofOutput'
+#
+#[[profiler]]
+#tool = 'hpcrun'
+#tool_args = '--disable-auditor -t -o profiler_dumps'
+#
+#[[profiler]]
+#tool = 'tau_exec'
+#tool_args = '-io'
+#tool_envs = 'TAU_PROFILE=1 PROFILEDIR=./profiler_dumps'
+
+##1
+#[[testcase]]
+#opflow_solver = 'IPOPT'
+#hiop_compute_mode = 'CPU'
+#opflow_model = 'POWER_BALANCE_POLAR'
+#ipopt_print_level = 0
+#ipopt_max_iter = 100
+#
+##2
+#[[testcase]]
+#opflow_solver = 'HIOPSPARSE'
+#hiop_compute_mode = 'CPU'
+#hiop_max_iter = 100
+#opflow_model = 'POWER_BALANCE_POLAR'
+
+#3
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'GPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = 20

@@ -1,0 +1,94 @@
+spack:
+  specs:
+  - exago@develop+hiop
+  - hiop@develop
+  - ginkgo@glu_experimental
+  view: false
+  concretizer:
+    unify: true
+  packages:
+    exago:
+      variants:
+      - +ipopt
+      - +hiop
+      - +raja
+      - +cuda cuda_arch=70
+    hiop:
+      variants:
+      - +deepchecking
+      - +cuda cuda_arch=70
+      - +raja
+      - +sparse
+      - +ginkgo
+    ginkgo:
+      variants:
+      - +cuda cuda_arch=70
+    ipopt:
+      variants:
+      - +debug
+      - +coinhsl
+      - ~mumps
+      version:
+      - 3.12.10
+    raja:
+      variants:
+      - ~examples
+      - ~exercises
+      - ~shared
+      - +cuda cuda_arch=70
+      version:
+      - 0.14.0
+    umpire:
+      variants:
+      - ~openmp
+      - ~examples
+      - +cuda cuda_arch=70
+      version:
+      - 6.0.0
+    magma:
+      variants:
+      - cuda_arch=70
+    python:
+      externals:
+      - spec: python@3.8.5
+        prefix: /share/apps/python/miniconda3.8
+        modules:
+        - python/miniconda3.8
+    all:
+      providers:
+        mpi:
+        - openmpi
+    openmpi:
+      externals:
+      - spec: openmpi@4.1.4%gcc@8.5.0
+        modules:
+        - openmpi/4.1.4
+        prefix: /share/apps/openmpi/4.1.4/gcc/8.5.0
+      buildable: false
+    cuda:
+      externals:
+      - spec: cuda@11.4
+        modules:
+        - cuda/11.4
+      buildable: false
+  compilers:
+  - compiler:
+      spec: gcc@8.5.0
+      paths:
+        cc: /usr/bin/gcc
+        cxx: /usr/bin/g++
+        f77: /usr/bin/gfortran
+        fc: /usr/bin/gfortran
+      flags: {}
+      operating_system: centos8
+      target: ppc64le
+      modules: []
+      environment: {}
+      extra_rpaths: []
+  develop:
+    exago:
+      path: /qfs/projects/exasgd/src/jaelyn-spack/dev-8newell/exago
+      spec: exago@develop
+    hiop:
+      path: /qfs/projects/exasgd/src/jaelyn-spack/dev-8newell/hiop
+      spec: hiop@develop

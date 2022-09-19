@@ -50,6 +50,7 @@ export INSTALLDIR=${INSTALLDIR:-$PWD/install}
 export BUILD_MATRIX=${BUILD_MATRIX:-0}
 export JOB=gcc-cuda
 export VALID_JOBS=(gcc-cuda clang-hip clang-omp cmake-lint cmake-lint-apply)
+export BUILD_VERBOSE=0
 
 echo "Paths:"
 echo "Source dir: $SRCDIR"
@@ -117,6 +118,10 @@ Options:
                     the --*-only options and just run a particular job, tests
                     will also be ran.
 
+  --verbose        Print all executed commands to the terminal. This is useful 
+                   for debugging, but it will be disabled in CI by default to 
+                   prevent hitting the job log limit.
+
 --------------------------------------------------------------------------------
 
 See ExaGO's latest developer guidelines for more information on developing
@@ -159,6 +164,10 @@ while [[ $# -gt 0 ]]; do
     usage
     exit 0
     ;;
+  --verbose|-v)
+    export BUILD_VERBOSE=1
+    shift
+    ;;
   *)
     echo "Argument $1 not recognized."
     usage
@@ -173,7 +182,14 @@ for sig in `seq 1 31`; do
   trap "cleanup $sig \$? \$LINENO" $sig
 done
 
-# set -xv
+if [ $BUILD_VERBOSE == 1 ]
+then
+  # verbose mode: print out all shell functions
+  set -xv
+else
+  # don't print out all shell functions 
+  set +x
+fi
 
 if [[ ! -v MY_CLUSTER ]]
 then
@@ -202,10 +218,7 @@ module purge
 varfile="$SRCDIR/buildsystem/$JOB/$(echo $MY_CLUSTER)Variables.sh"
 
 if [[ -f "$varfile" ]]; then
-  # We don't want all the shell functions we bring into scope to be printed out
-  # set -x
   source "$varfile"
-  # set +x
   echo Sourced system-specific variables for $MY_CLUSTER
 fi
 
@@ -225,4 +238,12 @@ fi
 
 source $SRCDIR/buildsystem/$JOB/build.sh
 doBuild
-exit $?
+EXIT_CODE=$?
+
+if [ $BUILD_VERBOSE == 1 ]
+then
+  # turn off verbosity after build script 
+  set +x
+fi
+
+exit $EXIT_CODE

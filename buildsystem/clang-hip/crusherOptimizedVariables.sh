@@ -7,10 +7,9 @@ module use -a /gpfs/alpine/proj-shared/csc359/cameron/spack-install/test-modules
 
 # Spack modules
 export SRCDIR=${SRCDIR:-$PWD}
-source $SRCDIR/buildsystem/clang-hip/crusher/exago.sh
+source $SRCDIR/buildsystem/clang-hip/crusher/optimized-dependencies.sh 
 
 # System modules
-
 module load rocm/5.2.0
 module load libfabric/1.15.0.0
 

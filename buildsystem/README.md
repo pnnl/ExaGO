@@ -31,7 +31,7 @@ Platforms:
 
 Description:
 
-newell clang build of exago@1.0.0 + hiop@0.4.0
+Newell clang build of exago@1.0.0 + hiop@0.4.0
 
 ### cmake
 
@@ -146,6 +146,10 @@ Options:
                     This run takes a significant amound of time. If you omit
                     the --*-only options and just run a particular job, tests
                     will also be ran.
+
+  --verbose        Print all executed commands to the terminal. This is useful
+                   for debugging, but it will be disabled in CI by default to
+                   prevent hitting the job log limit.
 
 --------------------------------------------------------------------------------
 

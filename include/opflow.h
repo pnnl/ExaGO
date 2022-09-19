@@ -146,6 +146,9 @@ const auto hiop_compute_mode =
 const auto hiop_verbosity_level =
     ExaGOIntOption("-hiop_verbosity_level",
                    "Set verbosity level for HiOp solver, between 0 and 12", 0);
+const auto hiop_mem_space =
+    ExaGOStringOption("-hiop_mem_space", "Set memory space for HiOp solver",
+			 "host", {"um", "device"});
 
 #ifdef EXAGO_ENABLE_IPOPT
 const auto hiop_ipopt_debug = ExaGOBoolOption(

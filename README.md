@@ -50,7 +50,7 @@ Since options may be specified in more than one location (on the command line, a
 
 ## Contributing
 
-Please see [the developer guidelines](docs/DeveloperGuidelines.md) before attempting to contribute.
+Please see [the developer guidelines](docs/developer_guidelines.md) before attempting to contribute.
 Feel free to raise an issue or contact the team if the guidelines are ambiguous or you have a particular question.
 
 ## Authors
