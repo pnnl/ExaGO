@@ -962,10 +962,11 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
         ierr = OPFLOWSetHIOPVerbosityLevel(sopflow->opflows[s],
                                            sopflow->verbosity_level);
         CHKERRQ(ierr);
-      }
+      } 
 
       ierr = OPFLOWSetUp(sopflow->opflows[s]);
       CHKERRQ(ierr);
+      
     }
 
   } else {
