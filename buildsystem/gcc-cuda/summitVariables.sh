@@ -17,8 +17,8 @@ module load exasgd-coinhsl/2015.06.23/gcc-10.2.0-btplbob
 module load exasgd-cuda/11.5.2/gcc-10.2.0-7gofref
 # ginkgo@glu_experimental%gcc@10.2.0+cuda~develtools~full_optimizations~hwloc~ipo~oneapi+openmp~rocm+shared build_type=Release cuda_arch=70 arch=linux-rhel8-ppc64le
 module load exasgd-ginkgo/glu_experimental/cuda-11.5.2/gcc-10.2.0-4ybxcrk
-# hiop@develop%gcc@10.2.0+cuda+cusolver+deepchecking+ginkgo~ipo~jsrun~kron+mpi+raja~rocm~shared+sparse build_type=Release cuda_arch=70 arch=linux-rhel8-ppc64le
-module load exasgd-hiop/develop/cuda-11.5.2/spectrum-mpi-10.4.0.3-20210112/gcc-10.2.0-nsn5koh
+# hiop@develop%gcc@10.2.0+cuda+cusolver+deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_type=Release cuda_arch=70 arch=linux-rhel8-ppc64le
+module load exasgd-hiop/develop/cuda-11.5.2/spectrum-mpi-10.4.0.3-20210112/gcc-10.2.0-fh3hlu5
 # ipopt@3.12.10%gcc@10.2.0+coinhsl~debug+metis~mumps patches=712f729 arch=linux-rhel8-ppc64le
 module load exasgd-ipopt/3.12.10/gcc-10.2.0-5x34omc
 # magma@2.6.2%gcc@10.2.0+cuda+fortran~ipo~rocm+shared build_type=Release cuda_arch=70 arch=linux-rhel8-ppc64le
@@ -75,8 +75,9 @@ export CXX=/sw/summit/gcc/10.2.0-2/bin/g++
 export FC=/sw/summit/gcc/10.2.0-2/bin/gfotran
 
 export MY_PETSC_DIR=$PETSC_DIR
-export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DCMAKE_CUDA_ARCHITECTURES=70" # -DEXAGO_ENABLE_IPOPT=ON"
+export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DCMAKE_CUDA_ARCHITECTURES=70"
 export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DEXAGO_CTEST_LAUNCH_COMMAND='jsrun -g 1 -n 1'"
+export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DCMAKE_BUILD_TYPE=Debug"
 
 [ -f $PWD/nvblas.conf ] && rm $PWD/nvblas.conf
 cat > $PWD/nvblas.conf <<-EOD
