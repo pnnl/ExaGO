@@ -964,8 +964,43 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
         CHKERRQ(ierr);
       } 
 
-      ierr = OPFLOWSetUp(sopflow->opflows[s]);
+
+      ierr = PetscCalloc1(sopflow->opflows[s]->ps->nbus, &sopflow->opflows[s]->busnvararray);
       CHKERRQ(ierr);
+      ierr = PetscCalloc1(sopflow->opflows[s]->ps->nline, &sopflow->opflows[s]->branchnvararray);
+      CHKERRQ(ierr);
+
+      /* Set up number of variables for branches and buses */
+      ierr = OPFLOWSetNumVariables(sopflow->opflows[s], sopflow->opflows[s]->busnvararray,
+                               sopflow->opflows[s]->branchnvararray, &sopflow->opflows[s]->nx);
+      CHKERRQ(ierr);
+
+      PetscInt *branchnconeq, *busnconeq;
+      ierr = PetscCalloc1(sopflow->opflows[s]->ps->nline, &branchnconeq);
+      CHKERRQ(ierr);
+      ierr = PetscCalloc1(sopflow->opflows[s]->ps->nbus, &busnconeq);
+      CHKERRQ(ierr);
+      /* Set up number of equality and inequality constraints and
+	 number of equality constraints at each bus */
+
+      /* Set number of constraints */
+      ierr = OPFLOWSetNumConstraints(sopflow->opflows[s], branchnconeq, busnconeq,
+                                 &sopflow->opflows[s]->nconeq, &sopflow->opflows[s]->nconineq);
+      CHKERRQ(ierr);
+      sopflow->opflows[s]->ncon = sopflow->opflows[s]->nconeq + sopflow->opflows[s]->nconineq;
+
+      ierr = PetscFree(branchnconeq);
+      CHKERRQ(ierr);
+      ierr = PetscFree(busnconeq);
+      CHKERRQ(ierr);
+      
+      sopflow->opflows[s]->Nx = sopflow->opflows[s]->nx;
+      sopflow->opflows[s]->Nconeq = sopflow->opflows[s]->nconeq;
+      sopflow->opflows[s]->Nconineq = sopflow->opflows[s]->nconineq;
+      sopflow->opflows[s]->Ncon = sopflow->opflows[s]->Nconeq + sopflow->opflows[s]->Nconineq;
+
+      //      ierr = OPFLOWSetUp(sopflow->opflows[s]);
+      //      CHKERRQ(ierr);
       
     }
 
