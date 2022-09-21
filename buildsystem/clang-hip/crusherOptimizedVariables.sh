@@ -17,3 +17,4 @@ export CC=/opt/rocm-5.2.0/llvm/bin/clang
 export CXX=/opt/rocm-5.2.0/llvm/bin/clang++
 export FC=/opt/rocm-5.2.0/llvm/bin/flang
 
+export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DEXAGO_CTEST_LAUNCH_COMMAND='srun'"
