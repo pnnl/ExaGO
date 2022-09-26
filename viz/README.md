@@ -25,6 +25,14 @@ The figures show the visualization of the synthetic electric grid. The data for 
 ```
 npm install
 ```
+# Copy your json input data files in the /data subfolder
+
+# Run the input (include) file generator 
+```
+python geninputfile.py myinputdatafile.json
+```
+
+# Make sure that a new module_casedata.js is generated as it is a required include file
 
 # Launch visualization
 ```

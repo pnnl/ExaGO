@@ -21,14 +21,14 @@ import {
 } from 'chart.js';
 import { PolarArea, Doughnut } from 'react-chartjs-2';
 
-//import casedata from './data/case_ACTIVSg200.json';
-import casedata500 from './data/case_ACTIVSg500.json';
-//import casedata9 from './data/case9.json'
-import casedata200 from './data/case_ACTIVSg200.json'
-//import casedata2000 from './data/case2000_opflow.json'
-import casedata2k from './data/case_ACTIVSg2000.json';
-import casedata10k from './data/case_ACTIVSg10k.json';
-import casedata70k from './data/case_ACTIVSg70k.json';
+					//import casedata from './data/case_ACTIVSg200.json';
+//import casedata500 from './data/case_ACTIVSg500.json';
+					//import casedata9 from './data/case9.json'
+//import casedata200 from './data/case_ACTIVSg200.json'
+					//import casedata2000 from './data/case2000_opflow.json'
+//import casedata2k from './data/case_ACTIVSg2000.json';
+//import casedata10k from './data/case_ACTIVSg10k.json';
+//import casedata70k from './data/case_ACTIVSg70k.json';
 import countydata from "./data/counties.json";
 
 import {center, convex, bbox} from '@turf/turf';
@@ -37,16 +37,23 @@ import { LinearInterpolator, FlyToInterpolator} from 'deck.gl';
 import { HeatmapLayer } from 'deck.gl';
 import { InvertColorsOff, ShopTwoOutlined } from '@mui/icons-material';
 
+
+//var casedata = {};
+//casedata.geojsondata = {};
+//casedata.geojsondata.type = "FeatureCollection";
+//casedata.geojsondata.features = [...casedata10k.geojsondata.features,...casedata2k.geojsondata.features,...casedata70k.geojsondata.features];
+
+var mod_casedata = require('./module_casedata.js');
+
+var casedata = {};
+
+casedata = mod_casedata.get_casedata();
+
 ChartJS.register(RadialLinearScale, ArcElement, Tooltip, Legend);
 
 // Transition interpolators for animation
 const transitionLinearInterpolator = new LinearInterpolator(['bearing']);
 const transitionFlyToInterpolator = new FlyToInterpolator(['zoom']);
-
-var casedata = {};
-casedata.geojsondata = {};
-casedata.geojsondata.type = "FeatureCollection";
-casedata.geojsondata.features = [...casedata10k.geojsondata.features,...casedata2k.geojsondata.features,...casedata70k.geojsondata.features];
 
 // Source data GeoJSON
 const geodata = casedata['geojsondata']
@@ -107,7 +114,7 @@ function ExtractFirstTimeSlice(data)
     var gdata = {"type": 'FeatureCollection',"features":features};
     return gdata;
 }
-					      
+
 const MAP_STYLE = {pos_no_label: 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json',
 pos:'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
 dark:'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'};
@@ -220,7 +227,7 @@ function getGeneration(data)
       }
     }
   }
-  
+
   return {minPg:minPg,maxPg:maxPg,Gens:Gens,Pgwind: Pgwind, Pgsolar: Pgsolar, Pgnuclear: Pgnuclear,Pghydro:Pghydro,Pgng:Pgng,Pgcoal:Pgcoal,Pgother:Pgother,Pgwindcap: Pgwindcap, Pgsolarcap: Pgsolarcap, Pgnuclearcap: Pgnuclearcap,Pghydrocap:Pghydrocap,Pgngcap:Pgngcap,Pgcoalcap:Pgcoalcap,Pgothercap:Pgothercap};
 }
 
@@ -350,11 +357,11 @@ const INITIAL_VIEW_STATE = {
 };
 
 
-export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
+export default function App({ggdata=eodatga,mapStyle = MAP_STYLE}) {
 
   // Deck reference pointer
   const deckRef = useRef(null);
-  
+
   const [genfiltervalue,setGenFilterValue] = useState([gendata.minPg,gendata.maxPg]);
 
   const [netfiltervalue,setNetFilterValue] = useState([0,800]);
@@ -372,7 +379,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
   var rotatestate = false;
   //const [rotatestate,setrotatestate] = useState(false);
 
-  const rotateCamera = useCallback(() => { 
+  const rotateCamera = useCallback(() => {
     rotatestate = !rotatestate;
     if(rotatestate) {
       setInitialViewState(viewState => ({
@@ -390,7 +397,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
 //      GoHome();
       rotatestate = false;
     }
-    
+
   }, []);
 
   const activatePopup = useCallback(() => {
@@ -435,7 +442,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
 
   const zoomToCounty = useCallback((info) => {
   if(!info) return null;
-   
+
   if(info.layer.id == 'PolygonLayer2') {
      var layer = info.layer;
      var {viewport} = layer.context;
@@ -467,10 +474,10 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
 });
 
   const GoHome = useCallback(() => {
-    if(layers[0].context == null) return;    
+    if(layers[0].context == null) return;
     var {viewport} = layers[0].context;
       const {longitude, latitude, zoom} = viewport.fitBounds(bounds);
-    
+
     setInitialViewState(viewState =>({
       ...INITIAL_VIEW_STATE,
      longitude: longitude,
@@ -578,9 +585,9 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
   }
 
   const layers = [
-    
+
     new GeoJsonLayer({
-      id: 'geojson', 
+      id: 'geojson',
       data: data,
       stroked: false,
       filled: true,
@@ -600,8 +607,8 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
       extensions: [new DataFilterExtension({filtersize:1})]
 
     }),
-   
-    
+
+
     new ColumnLayer({
       id: 'gen-column',
       data: generation,
@@ -625,7 +632,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
       }
 
     }),
-    
+
     new ColumnLayer({
       id: 'gen-column-cap',
       data: generation,
@@ -650,7 +657,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
 
     }),
 
-    /*    
+    /*
     new ColumnLayer({
       id: 'load-column',
       data: loads,
@@ -666,7 +673,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
       onClick:zoomToData
     }),
     */
-    
+
     /*
     new GeoJsonLayer({
       id: 'PolygonLayer2',
@@ -842,7 +849,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
       }
     ],
   };
-  
+
 
   const handleGenRangeFilterChange = (event) => {
     setGenFilterValue(event.target.value);
@@ -859,13 +866,13 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
   const handleNetRangeFilterChange = (event) => {
     setNetFilterValue(event.target.value);
   }
-  
+
 
   function valuetext(value) {
     return `${value.toFixed(2)}`;
   }
 
-  
+
   return (
     <>
       <DeckGL
@@ -876,15 +883,15 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
         ContextProvider={MapContext.Provider}
       >
 
-      
-      <StaticMap reuseMaps 
-        mapStyle={mapStyle['pos']} 
-        preventStyleDiffing={true} 
+
+      <StaticMap reuseMaps
+        mapStyle={mapStyle['pos']}
+        preventStyleDiffing={true}
         initialViewState={INITIAL_VIEW_STATE}
       >
       </StaticMap>
 
-      
+
       <FullscreenControl/>
       <br></br><br></br>
       <NavigationControl/>
@@ -895,11 +902,11 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
       {<ThreeSixtyOutlinedIcon fontSize="large" onClick={rotateCamera}>Rotate</ThreeSixtyOutlinedIcon>}
       <br></br>
       </div>
-      
+
 
       {/*<div><NavigationControl position="top-left"/></div>
       <FullscreenControl/>*/}
-        
+
 
       {
         showPopup.display && (
@@ -941,7 +948,7 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
 
         <Checkbox checked={genlayeractive} style={{color:"primary"}} onChange={handleGenLayerChange} />Generation
 
-        
+
         {genlayeractive && (
         <Slider
         style={{padding:2}}
@@ -955,11 +962,11 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
         >
         </Slider>)
         }
-       
+
        {/*
         <br></br>
         <Checkbox checked={loadlayeractive} style={ {color:"primary"}} onChange={handleLoadLayerChange} />Load
-        
+
         {loadlayeractive && (
         <Slider
         style={{padding:2}}
@@ -991,13 +998,13 @@ export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
         >
         </Slider>)
         }
-  
+
       </div>
 
     </>
 
 
-    
+
   );
 }
 

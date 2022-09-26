@@ -5,3 +5,4 @@ install/*
 .ubuild.json
 *__pycache__*
 *nvblas.conf
+viz/node_modules/
