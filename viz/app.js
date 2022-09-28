@@ -357,7 +357,7 @@ const INITIAL_VIEW_STATE = {
 };
 
 
-export default function App({ggdata=eodatga,mapStyle = MAP_STYLE}) {
+export default function App({ggdata=geodata,mapStyle = MAP_STYLE}) {
 
   // Deck reference pointer
   const deckRef = useRef(null);
