@@ -20,3 +20,4 @@ ignore_lineflow_constraints = true
 verbosity_level = 3
 num_iters = 0
 obj_value = 0.0
+hiop_mem_space = HOST #need API implemented for this to work

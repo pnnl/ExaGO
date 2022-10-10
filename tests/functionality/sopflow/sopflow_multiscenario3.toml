@@ -22,6 +22,7 @@ compute_mode = 'CPU'
 verbosity_level = 3
 num_iters = 0
 obj_value = 0.0
+hiop_mem_space = HOST #need API implemented for this to work
 
 [[testcase]]
 description = 'datafiles/case9/case9mod_gen3_wind.m HIOP GPU 10 scenario SOPFLOW'

@@ -18,6 +18,8 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_opflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_pbpolhiop.toml
+    -hiop_mem_space
+    HOST
     DEPENDS
     HIOP
   )
@@ -109,6 +111,8 @@ if(EXAGO_INSTALL_TESTS)
     POWER_BALANCE_HIOP
     -hiop_compute_mode
     CPU
+    -hiop_mem_space
+    HOST
     -hiop_verbosity_level
     3
     -opflow_initialization

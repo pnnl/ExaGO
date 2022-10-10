@@ -14,6 +14,7 @@ use_agc = false
 load_loss_penalty = 1000.0
 power_imbalance_penalty = 1000.0
 initialization_type = 'MIDPOINT'
+hiop_mem_space = 'HOST' #need API implemented for this to work
 
 # - HIOP solver
 # -- HIOP model

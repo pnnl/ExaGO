@@ -73,6 +73,8 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_serial.toml
+    -hiop_mem_space 
+    HOST
     -no_optfile
   )
 
