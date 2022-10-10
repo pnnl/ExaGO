@@ -34,7 +34,7 @@ subproblem_solver = 'HIOP'
 num_contingencies = -1
 num_iters = 1
 obj_value = 4072.4632566566206
-hiop_mem_space = HOST #need API implemented for this to work
+hiop_mem_space = 'HOST' #need API implemented for this to work
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
@@ -45,7 +45,7 @@ subproblem_solver = 'HIOP'
 num_contingencies = 4
 num_iters = 1
 obj_value = 25957.67116859898
-hiop_mem_space = HOST #need API implemented for this to work
+hiop_mem_space = 'HOST' #need API implemented for this to work
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'

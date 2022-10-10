@@ -36,7 +36,7 @@ enable_powerimbalance_variables = true
 ignore_lineflow_constraints = true
 num_iters = 1
 obj_value = 25957.67116859898
-hiop_mem_space = HOST #need API implemented for this to work
+hiop_mem_space = 'HOST' #need API implemented for this to work
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
