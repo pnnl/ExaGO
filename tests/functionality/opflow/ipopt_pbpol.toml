@@ -56,7 +56,7 @@ network = 'datafiles/case_ACTIVSg200.m'
 description = "datafiles/case_ACTIVSg200.m with load loss"
 is_loadloss_active =	true
 is_powerimb_active =	false
-num_iters = 173                 #usually 156 or 173
+num_iters = -1                 #usually 156 or 173
 obj_value = 27542.6776558
 
 # -- PBPOL model with power imbalance
