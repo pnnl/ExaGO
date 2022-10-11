@@ -136,9 +136,11 @@ if(EXAGO_INSTALL_TESTS)
     -opflow_solver
     HIOP
     -opflow_model
-    POWER_BALANCE_HIOP
+    PBPOLRAJAHIOP 
     -hiop_compute_mode
     GPU
+    -hiop_mem_space
+    DEVICE
     -hiop_verbosity_level
     3
     -opflow_initialization
