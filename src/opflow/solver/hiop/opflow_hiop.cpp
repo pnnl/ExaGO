@@ -420,7 +420,8 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
 #endif
 
   int verbose_level = OPFLOWOptions::hiop_verbosity_level.default_value;
-  PetscBool mode_set = PETSC_FALSE;
+  PetscBool compute_mode_set = PETSC_FALSE;
+  PetscBool mem_mode_set = PETSC_FALSE;
 
   PetscFunctionBegin;
 
@@ -432,10 +433,10 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
   ierr = PetscOptionsEnum(OPFLOWOptions::hiop_compute_mode.opt.c_str(),
                           OPFLOWOptions::hiop_compute_mode.desc.c_str(), "",
                           HIOPComputeModeChoices, (PetscEnum)compute_mode,
-                          (PetscEnum *)&compute_mode, &mode_set);
+                          (PetscEnum *)&compute_mode, &compute_mode_set);
   CHKERRQ(ierr);
-
-  if (mode_set == PETSC_FALSE) {
+  
+  if (compute_mode_set == PETSC_FALSE) {
     hiop->mds->options->SetStringValue("compute_mode",
                                        opflow->_p_hiop_compute_mode);
   } else {
@@ -451,10 +452,21 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
   ierr = PetscOptionsEnum(OPFLOWOptions::hiop_mem_space.opt.c_str(),
 			     OPFLOWOptions::hiop_mem_space.desc.c_str(), "",
 			     HIOPMemSpaceChoices, (PetscEnum)hiop->mem_space,
-			     (PetscEnum *)&hiop->mem_space, &mode_set);
+			     (PetscEnum *)&hiop->mem_space, &mem_mode_set);
   CHKERRQ(ierr);
 
-
+  if (mem_mode_set == PETSC_FALSE) {
+//    hiop->mds->options->SetStringValue("mem_space",
+//                                       opflow->_p_hiop_mem_space);
+#if EXAGO_ENABLE_GPU
+      hiop->mds->options->SetStringValue("mem_space", HIOPMemSpaceChoices[2]); //device
+# else
+      hiop->mds->options->SetStringValue("mem_space", HIOPMemSpaceChoices[0]); //host
+#endif
+  } else {
+    hiop->mds->options->SetStringValue("mem_space",
+                                       HIOPMemSpaceChoices[opflow->_p_hiop_mem_space]);
+  }
 
 #if defined(EXAGO_ENABLE_IPOPT)
   hiop->ipopt_debug =

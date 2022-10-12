@@ -1379,11 +1379,6 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
     ierr = PetscOptionsBegin(opflow->comm->type, NULL, "OPFLOW options", NULL);
     CHKERRQ(ierr);
 
-    ierr = PetscOptionsString(OPFLOWOptions::hiop_mem_space.opt.c_str(),
-                              OPFLOWOptions::hiop_mem_space.desc.c_str(), "", hiop_mem_space,
-                              hiop_mem_space, 32, &hiop_mem_space_set);
-    CHKERRQ(ierr);
-
     ierr = PetscOptionsString(OPFLOWOptions::model.opt.c_str(),
                               OPFLOWOptions::model.desc.c_str(), "", modelname,
                               modelname, 32, &modelset);
@@ -1530,9 +1525,11 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   /* Set model if CLI argument */
   if (hiop_mem_space_set) {
     if (opflow->_p_hiop_mem_space)
+    {
       //ierr = (*opflow->_p_hiop_mem_space.destroy)(opflow);
-    ierr = OPFLOWSetHIOPMemSpace(opflow, hiop_mem_space);
-    CHKERRQ(ierr);
+      ierr = OPFLOWSetHIOPMemSpace(opflow, hiop_mem_space);
+      CHKERRQ(ierr);
+    }
   } else {
     // Specify default arguments if model not set
     if (!opflow->_p_hiop_mem_space) {
