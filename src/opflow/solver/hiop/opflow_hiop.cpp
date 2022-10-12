@@ -465,7 +465,8 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
 #endif
   } else {
     hiop->mds->options->SetStringValue("mem_space",
-                                       HIOPMemSpaceChoices[opflow->_p_hiop_mem_space]);
+                                       HIOPMemSpaceChoices[hiop->mem_space]);
+//                                       HIOPMemSpaceChoices[opflow->_p_hiop_mem_space]);
   }
 
 #if defined(EXAGO_ENABLE_IPOPT)

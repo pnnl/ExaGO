@@ -23,6 +23,7 @@ struct OpflowFunctionalityTestParameters {
   std::string description = "";
   int hiop_verbosity_level = 0;
   std::string hiop_compute_mode;
+  std::string hiop_mem_space;
   std::string initialization_string = "MIDPOINT";
   OPFLOWInitializationType initialization_type;
 
@@ -54,6 +55,7 @@ struct OpflowFunctionalityTestParameters {
     set_if_found(power_imbalance_penalty, values, "power_imbalance_penalty");
     set_if_found(initialization_string, values, "initialization_type");
     set_if_found(hiop_compute_mode, values, "hiop_compute_mode");
+    set_if_found(hiop_mem_space, values, "hiop_mem_space");
 
     if (gen_bus_voltage_string == "VARIABLE_WITHIN_BOUNDS") {
       gen_bus_voltage_type = VARIABLE_WITHIN_BOUNDS;
@@ -130,6 +132,7 @@ struct OpflowFunctionalityTests
     testcase["initialization_type"] = params.initialization_type;
     testcase["hiop_compute_mode"] = params.hiop_compute_mode;
     testcase["hiop_verbosity_level"] = params.hiop_verbosity_level;
+    testcase["hiop_mem_space"] = params.hiop_mem_space;
     testcase["obj_value"] = params.expected_obj_value;
     testcase["observed_obj_value"] = params.obj_value;
     testcase["scaled_objective_value_error"] = params.error;
@@ -150,7 +153,10 @@ struct OpflowFunctionalityTests
     ierr = OPFLOWSetHIOPVerbosityLevel(opflow, params.hiop_verbosity_level);
     ExaGOCheckError(ierr);
 
-    ierr = OPFLOWSetTolerance(opflow, params.tolerance);
+    ierr = OPFLOWSetHIOPMemSpace(opflow, params.hiop_mem_space);
+    ExaGOCheckError(ierr);
+
+   ierr = OPFLOWSetTolerance(opflow, params.tolerance);
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path
