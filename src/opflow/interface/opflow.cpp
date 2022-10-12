@@ -265,12 +265,38 @@ PetscErrorCode OPFLOWGetHIOPComputeMode(OPFLOW opflow, char *mode) {
 }
 
 /*
+  OPFLOWSetHIOPMemSpace - Set memory space mode for HIOP solver
+  Input parameters
++ opflow - OPFLOW object
+- mode - mode for HIOP mem space
+
+  Command-line option: -hiop_mem_space
+*/
+PetscErrorCode OPFLOWSetHIOPMemSpace(OPFLOW opflow, const char *mode) {
+  PetscFunctionBegin;
+  strcpy(opflow->_p_hiop_mem_space, mode);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWGetHIOPMemSpace - Get memory space mode for HIOP solver
+  Input parameters
++ opflow - OPFLOW object
+- mode - mode for HIOP mem space
+*/
+PetscErrorCode OPFLOWGetHIOPMemSpace(OPFLOW opflow, char *mode) {
+  PetscFunctionBegin;
+  strcpy(mode, opflow->_p_hiop_mem_space);
+  PetscFunctionReturn(0);
+}
+
+/*
   OPFLOWSetHIOPVerbosityLevel - Set verbosity level for HIOP solver
   Input parameters
 + opflow - OPFLOW object
 - level - verbositiy level for HIOP solver
 
-  Command-line option: -hiop_compute_mode
+  Command-line option: -hiop_verbosity_level
 */
 PetscErrorCode OPFLOWSetHIOPVerbosityLevel(OPFLOW opflow, int level) {
   PetscFunctionBegin;
@@ -1339,8 +1365,8 @@ PetscErrorCode OPFLOWSetNumVariables(OPFLOW opflow, PetscInt *busnvararray,
 */
 PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   PetscErrorCode ierr;
-  char modelname[32], solvername[32];
-  PetscBool modelset = PETSC_FALSE, solverset = PETSC_FALSE;
+  char modelname[32], solvername[32], hiop_mem_space[32];
+  PetscBool modelset = PETSC_FALSE, solverset = PETSC_FALSE, hiop_mem_space_set = PETSC_FALSE;
   PS ps = opflow->ps;
   PetscInt *branchnconeq, *busnconeq;
   PetscInt sendbuf[3], recvbuf[3], i;
@@ -1351,6 +1377,11 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   /* Read run-time options */
   if (!opflow->skip_options) {
     ierr = PetscOptionsBegin(opflow->comm->type, NULL, "OPFLOW options", NULL);
+    CHKERRQ(ierr);
+
+    ierr = PetscOptionsString(OPFLOWOptions::hiop_mem_space.opt.c_str(),
+                              OPFLOWOptions::hiop_mem_space.desc.c_str(), "", hiop_mem_space,
+                              hiop_mem_space, 32, &hiop_mem_space_set);
     CHKERRQ(ierr);
 
     ierr = PetscOptionsString(OPFLOWOptions::model.opt.c_str(),
@@ -1496,6 +1527,24 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   ierr = OPFLOWCheckModelSolverCompatibility(opflow);
   CHKERRQ(ierr);
 
+  /* Set model if CLI argument */
+  if (hiop_mem_space_set) {
+    if (opflow->_p_hiop_mem_space)
+      //ierr = (*opflow->_p_hiop_mem_space.destroy)(opflow);
+    ierr = OPFLOWSetHIOPMemSpace(opflow, hiop_mem_space);
+    CHKERRQ(ierr);
+  } else {
+    // Specify default arguments if model not set
+    if (!opflow->_p_hiop_mem_space) {
+#ifdef EXAGO_ENABLE_GPU
+      //ierr = OPFLOWSetHIOPMemSpace(opflow, OPFLOWOptions::hiop_mem_space.default_value.c_str());
+      ierr = OPFLOWSetHIOPMemSpace(opflow, "device");
+#else
+      ierr = OPFLOWSetHIOPMemSpace(opflow, "host");
+#endif
+      CHKERRQ(ierr);
+    }
+  }
 
   /* Get list of monitored lines. These will be included in
      the inequality constraints for line flows

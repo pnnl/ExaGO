@@ -158,6 +158,13 @@ PYBIND11_MODULE(exago, m) {
              ExaGOCheckError(ierr);
            })
 
+      .def("set_hiop_mem_space",
+           [](_p_OPFLOW &opf, std::string mem_space) {
+             PetscErrorCode ierr;
+             ierr = OPFLOWSetHIOPMemSpace(&opf, mem_space.c_str());
+             ExaGOCheckError(ierr);
+           })
+
       .def("set_objective_type",
            [](_p_OPFLOW &opf, std::string func) {
              PetscErrorCode ierr;
@@ -392,6 +399,15 @@ PYBIND11_MODULE(exago, m) {
              ierr = OPFLOWGetHIOPComputeMode(&opf, &mode[0]);
              ExaGOCheckError(ierr);
              return mode.c_str();
+           })
+
+      .def("get_hiop_mem_space",
+           [](_p_OPFLOW &opf) -> std::string {
+             PetscErrorCode ierr;
+             std::string mem_space(PETSC_MAX_PATH_LEN, '\0');
+             ierr = OPFLOWGetHIOPMemSpace(&opf, &mem_space[0]);
+             ExaGOCheckError(ierr);
+             return mem_space.c_str();
            })
 
       .def("get_model",

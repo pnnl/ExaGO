@@ -189,6 +189,7 @@ def test_solve_opflow():
     opf.set_solver("HIOP")
     opf.set_model("POWER_BALANCE_HIOP")
     opf.set_hiop_compute_mode("CPU")
+    opf.set_hiop_mem_space("HOST")
     path = exago.prefix()
     opf.read_mat_power_data(os.path.join(
         path, 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
@@ -395,6 +396,16 @@ def test_get_gen_dispatch():
     assert isinstance(pg1set, float)
     assert isinstance(qg1set, float)
 
+@pytest.mark.nocomm
+@pytest.mark.MPI
+@pytest.mark.mem_space
+def test_hiop_mem_space():
+    '''Testing opflow saving solve to file'''
+    opf = exago.OPFLOW()
+    opf.set_hiop_mem_space("HOST")
+    mem_space = opf.get_hiop_mem_space()
+    print(mem_space)
+    assert mem_space == "HOST"
 
 @pytest.mark.nocomm
 @pytest.mark.MPI

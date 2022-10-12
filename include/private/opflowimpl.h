@@ -210,6 +210,8 @@ struct _p_OPFLOW {
   struct _p_OPFLOWModelOps modelops;
   char modelname[64];
 
+  char _p_hiop_mem_space[64];
+  
   char _p_hiop_compute_mode[64];
   int _p_hiop_verbosity_level;
 

@@ -179,6 +179,8 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetInitialGuess(OPFLOW, Vec, Vec);
 PETSC_EXTERN PetscErrorCode OPFLOWSetTolerance(OPFLOW, PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPComputeMode(OPFLOW, const char *);
 PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPComputeMode(OPFLOW, char *);
+PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPMemSpace(OPFLOW, const char *);
+PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPMemSpace(OPFLOW, char *);
 PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPVerbosityLevel(OPFLOW, int);
 PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPVerbosityLevel(OPFLOW, int *);
 PETSC_EXTERN PetscErrorCode OPFLOWGetTolerance(OPFLOW, PetscReal *);
