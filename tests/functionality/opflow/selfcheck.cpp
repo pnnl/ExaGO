@@ -153,7 +153,7 @@ struct OpflowFunctionalityTests
     ierr = OPFLOWSetHIOPVerbosityLevel(opflow, params.hiop_verbosity_level);
     ExaGOCheckError(ierr);
 
-    ierr = OPFLOWSetHIOPMemSpace(opflow, params.hiop_mem_space);
+    ierr = OPFLOWSetHIOPMemSpace(opflow, params.hiop_mem_space.c_str());
     ExaGOCheckError(ierr);
 
    ierr = OPFLOWSetTolerance(opflow, params.tolerance);
