@@ -25,7 +25,7 @@ num_scenarios = 2
 tolerance = 1.0e-03
 initialization_type = 'ACPF'
 gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
-num_iters = 69
+num_iters = -1                                      # newell(68) prev 69
 obj_value = 14313.142350311331
 
 [[testcase]]

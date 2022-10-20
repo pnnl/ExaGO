@@ -18,6 +18,8 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_opflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_pbpolhiop.toml
+    -hiop_mem_space
+    HOST
     DEPENDS
     HIOP
   )
@@ -109,6 +111,8 @@ if(EXAGO_INSTALL_TESTS)
     POWER_BALANCE_HIOP
     -hiop_compute_mode
     CPU
+    -hiop_mem_space
+    HOST
     -hiop_verbosity_level
     3
     -opflow_initialization
@@ -121,31 +125,33 @@ if(EXAGO_INSTALL_TESTS)
     HIOP
   )
 
-  exago_add_test(
-    NAME
-    OPFLOW_MONITOR_KVLEVEL_HIOP_GPU
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:app_opflow>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
-    -opflow_solver
-    HIOP
-    -opflow_model
-    POWER_BALANCE_HIOP
-    -hiop_compute_mode
-    GPU
-    -hiop_verbosity_level
-    3
-    -opflow_initialization
-    ACPF
-    -opflow_monitor_line_kvlevels
-    115.0
-    -no_optfile
-    DEPENDS
-    IPOPT
-    HIOP
-  )
+#  exago_add_test(
+#    NAME
+#    OPFLOW_MONITOR_KVLEVEL_HIOP_GPU
+#    COMMAND
+#    ${RUNCMD}
+#    $<TARGET_FILE:app_opflow>
+#    -netfile
+#    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+#    -opflow_solver
+#    HIOP
+#    -opflow_model
+#    PBPOLRAJAHIOP
+#    -hiop_compute_mode
+#    GPU
+#    -hiop_mem_space
+#    DEVICE
+#    -hiop_verbosity_level
+#    3
+#    -opflow_initialization
+#    ACPF
+#    -opflow_monitor_line_kvlevels
+#    115.0
+#    -no_optfile
+#    DEPENDS
+#    IPOPT
+#    HIOP
+#  )
 
   install(TARGETS test_opflow_functionality
           RUNTIME DESTINATION tests/functionality

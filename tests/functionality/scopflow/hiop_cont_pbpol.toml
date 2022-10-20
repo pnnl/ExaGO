@@ -1,4 +1,4 @@
-testsuite_name = "SCOPFLOW Functionality with HIOP solver"
+testsuite_name = "SCOPFLOW Functionality with HIOP solver and POWER_BALANCE_POLAR model"
 
 [presets]
 tolerance = 1e-3
@@ -24,26 +24,6 @@ description = 'case9mod.m with HIOP solver/9 contingencies'
 num_contingencies = -1
 num_iters = 1
 obj_value = 4072.4623373385125
-
-[[testcase]]
-network = 'datafiles/case9/case9mod.m'
-contingencies = 'datafiles/case9/case9.cont'
-description = 'case9mod.m with HIOP solver/HIOP subproblem solver/9 contingencies'
-subproblem_model = 'POWER_BALANCE_HIOP'
-subproblem_solver = 'HIOP'
-num_contingencies = -1
-num_iters = 1
-obj_value = 4072.4632566566206
-
-[[testcase]]
-network = 'datafiles/case_ACTIVSg200.m'
-contingencies = 'datafiles/case_ACTIVSg200.cont'
-description = 'case_ACTIVSg200.m with HIOP solver/4 contingencies'
-subproblem_model = 'POWER_BALANCE_HIOP'
-subproblem_solver = 'HIOP'
-num_contingencies = 4
-num_iters = 1
-obj_value = 25957.67116859898
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'

@@ -24,14 +24,14 @@ obj_value = 4151.35859132
 network = 'datafiles/case118.m'
 is_loadloss_active =	false
 is_powerimb_active =	false
-num_iters = 192
+num_iters = -1                  #usually 192 or 193
 obj_value = 130131.464478
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
 is_loadloss_active =	false
 is_powerimb_active =	false
-num_iters = 454
+num_iters = -1                  #usually 454 or 425
 obj_value = 27564.2030874
 
 # -- PBPOL model with load loss
@@ -48,7 +48,7 @@ network = 'datafiles/case118.m'
 description = "datafiles/case118.m with load loss"
 is_loadloss_active =	true
 is_powerimb_active =	false
-num_iters = 462
+num_iters = -1                  #usually 462 or 478
 obj_value = 130112.060868
 
 [[testcase]]
@@ -56,7 +56,7 @@ network = 'datafiles/case_ACTIVSg200.m'
 description = "datafiles/case_ACTIVSg200.m with load loss"
 is_loadloss_active =	true
 is_powerimb_active =	false
-num_iters = 156
+num_iters = -1                 #usually 156 or 173
 obj_value = 27542.6776558
 
 # -- PBPOL model with power imbalance
@@ -81,7 +81,7 @@ network = 'datafiles/case_ACTIVSg200.m'
 description = "datafiles/case_ACTIVSg200.m with power imbalance"
 is_loadloss_active =	false
 is_powerimb_active =	true
-num_iters = 96
+num_iters = -1                    #usually 95 or 96
 obj_value = 27484.2086446
 
 # -- PBPOL model with load loss and power imbalance
@@ -106,7 +106,7 @@ network = 'datafiles/case_ACTIVSg200.m'
 description = "datafiles/case_ACTIVSg200.m with power imbalance and load loss"
 is_loadloss_active =	true
 is_powerimb_active =	true
-num_iters = 197
+num_iters = -1                      #usually 197 or 173
 obj_value = 27462.6849285
 
 [[testcase]]
@@ -151,7 +151,7 @@ description = "datafiles/case118.m initialization FLATSTART"
 is_loadloss_active =	false
 is_powerimb_active =	false
 initialization_type = "FLATSTART"
-num_iters = 179
+num_iters = -1                        #usually 179 or 181
 obj_value = 130131.464478
 
 [[testcase]]
@@ -160,7 +160,7 @@ description = "datafiles/case_ACTIVSg200.m initialization FLATSTART"
 is_loadloss_active =	false
 is_powerimb_active =	false
 initialization_type = "FLATSTART"
-num_iters = 454
+num_iters = -1                        #usually 454 or 425
 obj_value = 27564.2030874
 
 [[testcase]]
@@ -214,7 +214,7 @@ description = "datafiles/case_ACTIVSg200.m use AGC"
 is_loadloss_active =	false
 is_powerimb_active =	false
 use_agc = true
-num_iters = 321
+num_iters = -1                      #usually 321 or 331
 obj_value = 27564.4857587
 
 [[testcase]]
@@ -241,7 +241,7 @@ description = "datafiles/case_ACTIVSg200.m generator bus voltage FIXED_AT_SETPOI
 is_loadloss_active =	false
 is_powerimb_active =	false
 gen_bus_voltage_type = 'FIXED_AT_SETPOINT'
-num_iters = 251
+num_iters = -1                      #usually 251 or 276
 obj_value = 27587.783425
 
 [[testcase]]

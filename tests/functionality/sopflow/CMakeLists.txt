@@ -43,13 +43,27 @@ if(EXAGO_INSTALL_TESTS)
 
   exago_add_test(
     NAME
-    FUNCTIONALITY_TEST_SOPFLOW_SCENARIO3_TOML
+    FUNCTIONALITY_TEST_SOPFLOW_SCENARIO3_PBHIOP_TOML
     DEPENDS
     IPOPT
     COMMAND
     ${RUNCMD}
     $<TARGET_FILE:test_sopflow_functionality>
-    ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario3.toml
+    ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario3_pbhiop.toml
+    -opflow_ignore_lineflow_constraints
+    -hiop_mem_space
+    HOST
+  )
+
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_SOPFLOW_SCENARIO3_RAJA_TOML
+    DEPENDS
+    IPOPT
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:test_sopflow_functionality>
+    ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario3_raja.toml
     -opflow_ignore_lineflow_constraints
   )
 
@@ -73,6 +87,8 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_serial.toml
+    -hiop_mem_space
+    HOST
     -no_optfile
   )
 

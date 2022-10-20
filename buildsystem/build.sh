@@ -49,7 +49,8 @@ export BUILDDIR=${BUILDDIR:-$PWD/build}
 export INSTALLDIR=${INSTALLDIR:-$PWD/install}
 export BUILD_MATRIX=${BUILD_MATRIX:-0}
 export JOB=gcc-cuda
-export VALID_JOBS=(gcc-cuda clang-omp cmake-lint cmake-lint-apply)
+export VALID_JOBS=(gcc-cuda clang-hip clang-omp cmake-lint cmake-lint-apply)
+export BUILD_VERBOSE=0
 
 echo "Paths:"
 echo "Source dir: $SRCDIR"
@@ -78,8 +79,8 @@ Clusters:
   on using the hostname command. If a known cluster is found, it's respective 
   script in the directory ./scripts/buildsystem will be sourced and the 
   variable MY_CLUSTER will be set. For example, on PNNL cluster Marianas, 
-  hostname marianas.pnl.gov will be matched and 
-  ./scripts/buildsystem/marianasVariables.sh will be sourced. If you would like 
+  hostname deception.pnl.gov will be matched and 
+  ./scripts/buildsystem/deceptionVariables.sh will be sourced. If you would like 
   to add a cluster, create a script
   ./scripts/buildsystem/<my cluster>Variables.sh and specify the relevant
   environment variables. If the hostname is not correctly finding your cluster,
@@ -116,6 +117,10 @@ Options:
                     This run takes a significant amound of time. If you omit
                     the --*-only options and just run a particular job, tests
                     will also be ran.
+
+  --verbose        Print all executed commands to the terminal. This is useful 
+                   for debugging, but it will be disabled in CI by default to 
+                   prevent hitting the job log limit.
 
 --------------------------------------------------------------------------------
 
@@ -159,6 +164,10 @@ while [[ $# -gt 0 ]]; do
     usage
     exit 0
     ;;
+  --verbose|-v)
+    export BUILD_VERBOSE=1
+    shift
+    ;;
   *)
     echo "Argument $1 not recognized."
     usage
@@ -173,7 +182,14 @@ for sig in `seq 1 31`; do
   trap "cleanup $sig \$? \$LINENO" $sig
 done
 
-set -xv
+if [ $BUILD_VERBOSE == 1 ]
+then
+  # verbose mode: print out all shell functions
+  set -xv
+else
+  # don't print out all shell functions 
+  set +x
+fi
 
 if [[ ! -v MY_CLUSTER ]]
 then
@@ -185,8 +201,8 @@ case $MY_CLUSTER in
   newell*)
     export MY_CLUSTER=newell
     ;;
-  dl*|marianas|*fat*)
-    export MY_CLUSTER=marianas
+  dl*|deception|*fat*)
+    export MY_CLUSTER=deception
     ;;
   *)
     echo "Cluster $MY_CLUSTER not identified - you'll have to set relevant variables manually."
@@ -202,10 +218,7 @@ module purge
 varfile="$SRCDIR/buildsystem/$JOB/$(echo $MY_CLUSTER)Variables.sh"
 
 if [[ -f "$varfile" ]]; then
-  # We don't want all the shell functions we bring into scope to be printed out
-  set -x
   source "$varfile"
-  set +x
   echo Sourced system-specific variables for $MY_CLUSTER
 fi
 
@@ -225,4 +238,12 @@ fi
 
 source $SRCDIR/buildsystem/$JOB/build.sh
 doBuild
-exit $?
+EXIT_CODE=$?
+
+if [ $BUILD_VERBOSE == 1 ]
+then
+  # turn off verbosity after build script 
+  set +x
+fi
+
+exit $EXIT_CODE

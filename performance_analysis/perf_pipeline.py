@@ -15,7 +15,7 @@ from subprocess import call, Popen, PIPE
 # 0: basic, will only print default output like execution time.
 # 1: moderate, Additionally prints ExaGO output.
 # 2: all, Additionally prints error and success messages.
-DEBUG = 0
+DEBUG = 2
 
 
 # Defining the debug level.
@@ -59,7 +59,9 @@ def updateHiopOptions(options, app):
                 hof_str = key + ' ' + str(hiops[key])
                 hof.write(hof_str + '\n')
         for dl in delList:
-            options.pop(dl, None)
+            # hiop_mem_space is also argument to exago
+            if not dl == 'hiop_mem_space':
+                options.pop(dl, None)
     return hiops
 
 
@@ -129,9 +131,13 @@ def doPerfMeasure(in_file):
         iterations = testsuite['iterations']
 
     mpi_cmd = None
-    if "mpi_rank" in testsuite:
-        mpi_cmd = ["mpiexec", "-n", str(testsuite['mpi_rank'])]
+    mpi_start = "mpiexec"
+    if "mpi_start" in testsuite:
+        mpi_start = str(testsuite['mpi_start'])
 
+    if "mpi_rank" in testsuite:
+        mpi_cmd = [mpi_start, "-n", str(testsuite['mpi_rank'])]
+    
     profiler_cmd_list = list()
     my_env = os.environ.copy()
     if "profiler" in testsuite:

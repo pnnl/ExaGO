@@ -1,4 +1,4 @@
-testsuite_name = "SCOPFLOW Functionality with HIOP solver"
+testsuite_name = "SCOPFLOW Functionality with HIOP solver and MPI"
 
 [presets]
 tolerance = 1e-3
@@ -24,18 +24,6 @@ description = 'case_ACTIVSg200.m with HIOP solver/20 contingencies/run with MPI'
 num_contingencies = 20
 num_iters = 1
 obj_value = 25957.56699323513
-
-[[testcase]]
-network = 'datafiles/case_ACTIVSg200.m'
-contingencies = 'datafiles/case_ACTIVSg200.cont'
-description = 'case_ACTIVSg200.m with HIOP solver/4 contingencies/run with MPI'
-subproblem_model = 'POWER_BALANCE_HIOP'
-subproblem_solver = 'HIOP'
-num_contingencies = 4
-enable_powerimbalance_variables = true
-ignore_lineflow_constraints = true
-num_iters = 1
-obj_value = 25957.67116859898
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'

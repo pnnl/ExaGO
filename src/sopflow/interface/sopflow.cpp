@@ -950,7 +950,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
         }
       }
 
-      /* Set subproblem parameters */
+      /* Set subproblem parameters and partial setup */
       if (issopflowsolverhiop) {
         ierr = OPFLOWSetModel(sopflow->opflows[s], sopflow->subproblem_model);
         CHKERRQ(ierr);
@@ -962,10 +962,50 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
         ierr = OPFLOWSetHIOPVerbosityLevel(sopflow->opflows[s],
                                            sopflow->verbosity_level);
         CHKERRQ(ierr);
-      }
 
-      ierr = OPFLOWSetUp(sopflow->opflows[s]);
-      CHKERRQ(ierr);
+        ierr = PetscCalloc1(sopflow->opflows[s]->ps->nbus,
+                            &sopflow->opflows[s]->busnvararray);
+        CHKERRQ(ierr);
+        ierr = PetscCalloc1(sopflow->opflows[s]->ps->nline,
+                            &sopflow->opflows[s]->branchnvararray);
+        CHKERRQ(ierr);
+
+        /* Set up number of variables for branches and buses */
+        ierr = OPFLOWSetNumVariables(
+            sopflow->opflows[s], sopflow->opflows[s]->busnvararray,
+            sopflow->opflows[s]->branchnvararray, &sopflow->opflows[s]->nx);
+        CHKERRQ(ierr);
+
+        PetscInt *branchnconeq, *busnconeq;
+        ierr = PetscCalloc1(sopflow->opflows[s]->ps->nline, &branchnconeq);
+        CHKERRQ(ierr);
+        ierr = PetscCalloc1(sopflow->opflows[s]->ps->nbus, &busnconeq);
+        CHKERRQ(ierr);
+        /* Set up number of equality and inequality constraints and
+           number of equality constraints at each bus */
+
+        /* Set number of constraints */
+        ierr = OPFLOWSetNumConstraints(sopflow->opflows[s], branchnconeq,
+                                       busnconeq, &sopflow->opflows[s]->nconeq,
+                                       &sopflow->opflows[s]->nconineq);
+        CHKERRQ(ierr);
+        sopflow->opflows[s]->ncon =
+            sopflow->opflows[s]->nconeq + sopflow->opflows[s]->nconineq;
+
+        ierr = PetscFree(branchnconeq);
+        CHKERRQ(ierr);
+        ierr = PetscFree(busnconeq);
+        CHKERRQ(ierr);
+
+        sopflow->opflows[s]->Nx = sopflow->opflows[s]->nx;
+        sopflow->opflows[s]->Nconeq = sopflow->opflows[s]->nconeq;
+        sopflow->opflows[s]->Nconineq = sopflow->opflows[s]->nconineq;
+        sopflow->opflows[s]->Ncon =
+            sopflow->opflows[s]->Nconeq + sopflow->opflows[s]->Nconineq;
+      } else {
+        ierr = OPFLOWSetUp(sopflow->opflows[s]);
+        CHKERRQ(ierr);
+      }
     }
 
   } else {
@@ -1119,7 +1159,9 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
     ierr = MatSetSizes(sopflow->Jac, sopflow->ncon, sopflow->nx, sopflow->Ncon,
                        sopflow->Nx);
     CHKERRQ(ierr);
-    ierr = MatSetFromOptions(sopflow->Jac);
+    //    ierr = MatSetFromOptions(sopflow->Jac);
+    //    CHKERRQ(ierr);
+    ierr = MatSetType(sopflow->Jac, MATSEQAIJ);
     CHKERRQ(ierr);
     /* Assume 10% sparsity */
     ierr = MatSeqAIJSetPreallocation(sopflow->Jac,
@@ -1135,8 +1177,11 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
     ierr = MatSetSizes(sopflow->Hes, sopflow->nx, sopflow->nx, sopflow->Nx,
                        sopflow->Nx);
     CHKERRQ(ierr);
-    ierr = MatSetFromOptions(sopflow->Hes);
+    ierr = MatSetType(sopflow->Hes, MATSEQAIJ);
     CHKERRQ(ierr);
+    /*    ierr = MatSetFromOptions(sopflow->Hes);
+    CHKERRQ(ierr);
+    */
     /* Assume 10% sparsity */
     ierr = MatSeqAIJSetPreallocation(sopflow->Hes,
                                      (PetscInt)(0.1 * sopflow->Nx), NULL);

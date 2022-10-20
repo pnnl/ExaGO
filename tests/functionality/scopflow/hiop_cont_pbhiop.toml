@@ -1,0 +1,37 @@
+testsuite_name = "SCOPFLOW Functionality with HIOP solver and POWER_BALANCE_HIOP model"
+
+[presets]
+tolerance = 1e-3
+network = 'datafiles/case9/case9mod.m'
+contingencies = 'datafiles/case9/case9.cont'
+solver = 'HIOP'
+model = 'GENRAMP'
+opflow_initialization = 'ACPF'
+multiperiod = false
+opflow_genbusvoltage = 'VARIABLE_WITHIN_BOUNDS'
+mode = 0 # 0 = preventive, 1 = corrective
+subproblem_model = 'POWER_BALANCE_HIOP'
+subproblem_solver = 'HIOP'
+compute_mode = 'CPU'
+enable_powerimbalance_variables = true
+verbosity_level = 3
+description = "No Description"
+hiop_mem_space = 'HOST' #need API implemented for this to work
+
+[[testcase]]
+network = 'datafiles/case9/case9mod.m'
+contingencies = 'datafiles/case9/case9.cont'
+description = 'case9mod.m with HIOP solver/HIOP subproblem solver/9 contingencies'
+num_contingencies = -1
+num_iters = 1
+obj_value = 4072.4632566566206
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+contingencies = 'datafiles/case_ACTIVSg200.cont'
+description = 'case_ACTIVSg200.m with HIOP solver/4 contingencies'
+num_contingencies = 4
+num_iters = 1
+obj_value = 25957.67116859898
+
+

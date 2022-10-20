@@ -27,6 +27,11 @@ sub tool {
     $ENV{'PYTHONPATH'} = '/qfs/projects/exasgd/src/cmake_format_newell';
     $cf = '/qfs/projects/exasgd/src/cmake_format_newell/bin/cmake-format';
   }
+  elsif ( $host =~ /marianas/s || $host =~ /deception/s ) {
+    &module( 'load', 'python/miniconda3.8' );
+    $ENV{'PYTHONPATH'} = '/qfs/projects/exasgd/marianas/format-tools';
+    $cf = '/qfs/projects/exasgd/marianas/format-tools/cmake-format';
+  }
   else {
     $cf = `which cmake-format`;
     chomp($cf);
@@ -40,6 +45,11 @@ sub tool {
 
   my $ver = `$cf --version`;
   chomp($ver);
+
+  my $config = `$cf --dump-config`;
+  if ($verbose) {
+    say "$config";
+  }
 
   say "Found cmake-format version $ver at '$cf'";
 
