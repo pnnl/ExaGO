@@ -79,7 +79,8 @@ SOPFLOWReadScenarioData_Wind_SinglePeriod(SOPFLOW sopflow,
   tok = strtok(line, sep);
   tok = strtok(NULL, sep); /* Skip first token */
   while (tok != NULL) {
-    if (strcmp(tok, "weight") == 0 || strcmp(tok, "weight\n") == 0) {
+    if (strcmp(tok, "weight") == 0 || strcmp(tok, "weight\n") == 0 ||
+        strcmp(tok, "weight\r\n") == 0) {
       tok = strtok(NULL, sep);
       continue;
     }

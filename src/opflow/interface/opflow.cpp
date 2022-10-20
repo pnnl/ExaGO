@@ -780,6 +780,13 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow) {
 
   PetscFunctionBegin;
 
+  ierr = PSDestroy(&(*opflow)->ps);
+  CHKERRQ(ierr);
+
+  if (!(*opflow)->setupcalled) {
+    PetscFunctionReturn(0);
+  }
+
   if ((*opflow)->initializationtype == OPFLOWINIT_ACPF) {
     /* Destroy objects created for initial power flow */
     ierr = PFLOWDestroy(&(*opflow)->initpflow);
@@ -854,8 +861,6 @@ PetscErrorCode OPFLOWDestroy(OPFLOW *opflow) {
   CHKERRQ(ierr);
 
   ierr = MatDestroy(&(*opflow)->Hes);
-  CHKERRQ(ierr);
-  ierr = PSDestroy(&(*opflow)->ps);
   CHKERRQ(ierr);
 
   if ((*opflow)->modelops.destroy) {
@@ -1441,6 +1446,10 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
     PetscOptionsEnd();
   }
 
+  /* Set up underlying PS object */
+  ierr = OPFLOWSetUpPS(opflow);
+  CHKERRQ(ierr);
+
   /* Set model if CLI argument */
   if (modelset) {
     if (opflow->model)
@@ -1484,10 +1493,6 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   }
   /* Once model and solver are set, we should check for compatibility */
   ierr = OPFLOWCheckModelSolverCompatibility(opflow);
-  CHKERRQ(ierr);
-
-  /* Set up underlying PS object */
-  ierr = OPFLOWSetUpPS(opflow);
   CHKERRQ(ierr);
 
   /* Get list of monitored lines. These will be included in

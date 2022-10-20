@@ -1,0 +1,74 @@
+spack:
+  specs:
+  - exago@develop+cuda+full_optimizations%gcc@8.5.0 cuda_arch=70
+  - exago@develop+cuda~full_optimizations%gcc@8.5.0 cuda_arch=70
+  view: false
+  concretizer:
+    unify: when_possible
+    reuse: true
+  config:
+    concretizer: clingo
+    install_tree:
+      root: $SPACK_INSTALL
+    source_cache: $SPACK_INSTALL/$SOURCE_CACHE
+    build_cache: $SPACK_INSTALL/build-cache
+    misc_cache: $SPACK_INSTALL/misc-cache
+    build_stage: $SPACK_INSTALL/build-stage
+  modules:
+    default:
+      roots:
+        tcl: $SPACK_INSTALL/$SPACK_MODULES
+  packages:
+    exago:
+      require: +raja+hiop+ipopt
+    hiop:
+      require: '@develop+sparse+mpi+ginkgo+kron'
+    coinhsl:
+      require: '@2019.05.21'
+    ipopt:
+      require: '@3.12.10~metis+coinhsl~mumps'
+    raja:
+      require: '@0.14.0~examples~exercises'
+    umpire:
+      require: ~openmp~examples
+    camp:
+      require: '@0.2.2'
+    petsc:
+      require: ~hypre~superlu-dist~hdf5~metis
+    python:
+      externals:
+      - spec: python@3.8.5
+        prefix: /share/apps/python/miniconda3.8
+        modules:
+        - python/miniconda3.8
+    all:
+      providers:
+        mpi:
+        - openmpi
+    openmpi:
+      externals:
+      - spec: openmpi@4.1.4%gcc@8.5.0
+        modules:
+        - openmpi/4.1.4
+        prefix: /share/apps/openmpi/4.1.4/gcc/8.5.0
+      buildable: false
+    cuda:
+      externals:
+      - spec: cuda@11.4
+        modules:
+        - cuda/11.4
+      buildable: false
+  compilers:
+  - compiler:
+      spec: gcc@8.5.0
+      paths:
+        cc: /usr/bin/gcc
+        cxx: /usr/bin/g++
+        f77: /usr/bin/gfortran
+        fc: /usr/bin/gfortran
+      flags: {}
+      operating_system: centos8
+      target: ppc64le
+      modules: []
+      environment: {}
+      extra_rpaths: []

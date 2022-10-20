@@ -22,7 +22,7 @@ if ( -e '/usr/share/Modules/init/perl.pm' ) {
 # Root of ExaGO source tree
 $root = abs_path("$path/../../../..");
 
-# Host name used to load system-specific varaibles
+# Host name used to load system-specific variables
 $host = hostname;
 
 # End-of-line character that clears all other output

@@ -808,7 +808,7 @@ PetscErrorCode PSDestroy(PS *ps) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  if (!(*ps))
+  if (!(*ps) || !(*ps)->setupcalled)
     PetscFunctionReturn(0);
 
   ierr = PSDecreaseReferenceCount(*ps);

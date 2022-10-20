@@ -231,7 +231,8 @@ struct OpflowFunctionalityTests
     /* Test num iterations */
     ierr = OPFLOWGetNumIterations(opflow, &params.numiter);
     ExaGOCheckError(ierr);
-    if (params.numiter != params.expected_num_iters) {
+    if (params.expected_num_iters != -1 &&
+        params.numiter != params.expected_num_iters) {
       num_iter_failed = true;
       params.reasons_for_failure.push_back(
           fmt::format("expected {} num iters, got {}",

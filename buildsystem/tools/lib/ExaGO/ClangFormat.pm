@@ -29,6 +29,9 @@ sub tool {
     $cf =
 '/qfs/projects/exasgd/newell/clang+llvm-10.0.1-powerpc64le-linux-rhel-7.4/bin/clang-format';
   }
+  elsif ( $host =~ /marianas/s || $host =~ /deception/s ) {
+    $cf = '/qfs/projects/exasgd/marianas/format-tools/clang-format';
+  }
   else {                                    # else just look in PATH
     $cf = `which clang-format`;
     chomp($cf);
@@ -40,14 +43,24 @@ sub tool {
     return 1;
   }
 
-  my $ver = ( split " ", `$cf --version` )[-1];
-  if ( $ver !~ /^10\./ ) {
+#  my $ver = ( split " ", `$cf --version` )[-1];
+  my $ver = `$cf --version`;
+  if ($ver =~ /(\d+)\.\d+[\.\d+]?/) {
+    $ver =  $1;
+  }
+  say "Using clang-format version $ver";
+  if ( $ver < 10 ) {
     say
 "ERROR: this script requires clang-format with major version 10, but got $ver
 Please navigate to https://releases.llvm.org/download.html, download clang 10, 
 and set the environment variable 'CLANGFORMAT=/path/to/clang-format' to the 
 appropriate clang-format executable";
     exit 1;
+  }
+
+  my $config = `$cf --dump-config`;
+  if ($verbose) {
+    say "$config";
   }
 
   say "Found clang-format version $ver at '$cf'";

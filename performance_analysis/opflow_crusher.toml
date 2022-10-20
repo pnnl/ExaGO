@@ -1,0 +1,30 @@
+mpi_start = 'srun'
+testsuite_name = "OPFLOW Functionality"
+application = 'opflow'
+mpi_rank = 1
+iterations = 1
+
+[presets]
+#netfile ='../datafiles/case9/case9mod.m'
+netfile ='../datafiles/case_ACTIVSg10k.m'
+hiop_verbosity_level = 3
+print_output = 0
+argument_list = 'log_view'
+opflow_initialization = "FROMFILE"
+opflow_ignore_lineflow_constraints = 1
+
+[[profiler]]
+
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'GPU'
+opflow_model = 'PBPOLRAJAHIOP'
+hiop_mem_space = 'device'
+hiop_max_iter = 4
+
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'GPU'
+opflow_model = 'PBPOLRAJAHIOP'
+hiop_mem_space = 'um'
+hiop_max_iter = 4

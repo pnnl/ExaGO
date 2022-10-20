@@ -60,9 +60,40 @@ if(EXAGO_INSTALL_TESTS)
     COMMAND
     ${RUNCMD}
     $<TARGET_FILE:test_scopflow_functionality>
-    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont.toml
+    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_pbpol.toml
   )
 
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_PBHIOP_TESTSUITE
+    DEPENDS
+    IPOPT
+    HIOP
+    HIOP_DISTRIBUTED
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:test_scopflow_functionality>
+    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_pbhiop.toml
+    -hiop_mem_space
+    HOST
+  )
+
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_PBHIOP_MPI_TESTSUITE
+    DEPENDS
+    IPOPT
+    HIOP
+    HIOP_DISTRIBUTED
+    COMMAND
+    ${MPICMD}
+    "-n"
+    3
+    $<TARGET_FILE:test_scopflow_functionality>
+    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_mpi_pbhiop.toml
+    -hiop_mem_space
+    HOST
+  )
   exago_add_test(
     NAME
     FUNCTIONALITY_TEST_SCOPFLOW_HIOP_MPI_TESTSUITE

@@ -1,4 +1,219 @@
 
+.pnnllib-gitlab-mirror-container-images:
+    # Arguments are passed in environment variables
+    # CONTAINERS - Newline seperated list of images to mirror
+    # CONTAINERS_FILE - Optional artifact filename which lists the desired images to be cached in a multiline format
+    # CONTAINER_CONVERT - define if the images must be converted to store in gitlab
+    # CONTAINER_PREFIX - extra prefix for the images. Can be used to add a string on the front of an image name or a parent directory in the repository.
+    # RETAG - Change the tag or sha of the image. to rename the image from foo:bar to foo:baz, set to "\1:baz"
+    # SOURCE_USERNAME - Optional username to use for download
+    # SOURCE_PASSWORD - Optional password to use for download
+    image: docker.io/kfox1111/misc:skopeo
+    script:
+    - |
+      set -e
+      mkdir -p /etc/gitlab-runner/certs/
+      export EXTRA_FLAGS=""
+      [ "x$CONTAINERS_FILE" != "x" ] && export CONTAINERS="$(cat $CONTAINERS_FILE)"
+      [ "x$SOURCE_USERNAME" != "x" -o "x$SOURCE_PASSWORD" != "x" ] && export EXTRA_FLAGS="--src-creds ${SOURCE_USERNAME}:${SOURCE_PASSWORD}"
+      echo "Mirroring: $CONTAINERS"
+      echo "$CONTAINERS" | while read IMAGE; do
+        [ "x$IMAGE" == "x" ] && continue
+        NEWNAME=$(echo "$IMAGE" | sed 's@.*/@@g')
+        [ "x$RETAG" == "x" ] || NEWNAME=$(echo "$NEWNAME" | sed 's/^\([^@:]*\)\([:@]\)\(.*\)/'"$RETAG"'/')
+        mkdir -p /tmp/containers/"$NEWNAME"
+        echo Mirroring "$IMAGE" to "$NEWNAME"
+        if [ "x$CONTAINER_CONVERT" != "x" ]; then
+          set +e
+          skopeo inspect \
+            docker://"${CI_REGISTRY_IMAGE}/${CONTAINER_PREFIX}$NEWNAME" \
+            --raw \
+            --cert-dir /etc/gitlab-runner/certs/ \
+            --creds "gitlab-ci-token:$CI_JOB_TOKEN" \
+            > /dev/null && echo already exists && continue
+          set -xe
+          skopeo copy $EXTRA_FLAGS \
+            --format v2s2 \
+            docker://"$IMAGE" \
+            dir:/tmp/containers/"$NEWNAME"
+          skopeo copy \
+            --dest-cert-dir /etc/gitlab-runner/certs/ \
+            --dest-creds "gitlab-ci-token:$CI_JOB_TOKEN" \
+            dir:/tmp/containers/"$NEWNAME" \
+            docker://"${CI_REGISTRY_IMAGE}/${CONTAINER_PREFIX}$NEWNAME"
+        else
+          skopeo copy \
+            docker://"$IMAGE" $EXTRA_FLAGS  \
+            --dest-cert-dir /etc/gitlab-runner/certs/ \
+            --dest-creds "gitlab-ci-token:$CI_JOB_TOKEN" \
+            docker://"${CI_REGISTRY_IMAGE}/${CONTAINER_PREFIX}$NEWNAME"
+        fi
+      done
+
+# Deprecated. switch to .pnnllib-gitlab-mirror-chart-to-repo instead
+.pnnllib-gitlab-mirror-chart-to-image:
+    # CHART - Name of the chart to mirror
+    # REPO - Repository URL to mirror from
+    # VERSION - Optional helm chart version to pull
+    # CONTAINER_PREFIX - extra prefix for the images. Can be used to add a string on the front of an image name or a parent directory in the repository.
+    # PATCH - Optional patch to apply to the chart
+    # PATCHLEVEL - Optional patch level to patch. Default 1.
+    image:
+      name: lachlanevenson/k8s-helm:v3.2.1
+      entrypoint: [""]
+    script:
+    - |
+      set -e
+
+      #Copy cert into the ca trust store so that helm chart push will work. (Alpine)
+      if [ -f /etc/gitlab-runner/certs/ca.crt ]; then
+        cat /etc/gitlab-runner/certs/ca.crt > /usr/local/share/ca-certificates/self.crt
+        update-ca-certificates
+      fi
+
+      helm repo add myrepo "$REPO"
+      helm repo update
+
+      echo Pulling chart.
+      if [ "x$VERSION" != "x" ]; then
+        helm pull myrepo/"$CHART" --untar --version "$VERSION"
+      else
+        helm pull myrepo/"$CHART" --untar
+      fi
+
+      if [ "x$PATCH" != "x" ]; then
+        echo Patching chart
+        cd "$CHART"
+        PATCHLEVEL="${PATCHLEVEL:-1}"
+        patch -p"$PATCHLEVEL" < "../$PATCH"
+        cd ..
+      fi
+      echo Uploading
+      VERSION=$(helm show chart "$CHART" | awk '/^version:/{print $2}')
+      export HELM_EXPERIMENTAL_OCI=1
+      echo "$CI_REGISTRY_PASSWORD" | helm registry login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+      helm chart save "$CHART" "$CI_REGISTRY_IMAGE$CONTAINER_PREFIX:$VERSION"
+      helm chart push "$CI_REGISTRY_IMAGE$CONTAINER_PREFIX:$VERSION"
+      echo This function is deprecated. Please switch your pipeline to use .pnnllib-gitlab-mirror-chart-to-repo instead.
+
+.pnnllib-gitlab-mirror-chart-to-repo:
+    # CHART - Name of the chart to mirror
+    # REPO - Repository URL to mirror from
+    # VERSION - Optional helm chart version to pull
+    # CONTAINER_PREFIX - extra prefix for the images. Can be used to add a string on the front of an image name or a parent directory in the repository.
+    # PATCH - Optional patch to apply to the chart
+    # PATCHLEVEL - Optional patch level to patch. Default 1.
+    image:
+      name: lachlanevenson/k8s-helm:v3.8.1
+      entrypoint: [""]
+    script:
+    - |
+      set -e
+      mkdir -p .chartmirror/charts
+      cd .chartmirror
+      #Copy cert into the ca trust store so that helm chart push will work. (Alpine)
+      if [ -f /etc/gitlab-runner/certs/ca.crt ]; then
+        cat /etc/gitlab-runner/certs/ca.crt > /usr/local/share/ca-certificates/self.crt
+        update-ca-certificates
+      fi
+      helm repo add myrepo "$REPO"
+      helm repo update
+      echo Pulling chart.
+      if [ "x$VERSION" != "x" ]; then
+        helm pull myrepo/"$CHART" --untar --version "$VERSION"
+      else
+        helm pull myrepo/"$CHART" --untar
+      fi
+      if [ "x$PATCH" != "x" ]; then
+        echo Patching chart
+        cd "$CHART"
+        PATCHLEVEL="${PATCHLEVEL:-1}"
+        patch -p"$PATCHLEVEL" < "../$PATCH"
+        cd ..
+      fi
+      echo Uploading
+      helm package "$CHART" -d charts
+      echo "${CI_JOB_TOKEN}" | helm registry login --username gitlab-ci-token --password-stdin "${CI_REGISTRY}"
+      helm push charts/* "oci://${CI_REGISTRY_IMAGE}${CONTAINER_PREFIX}"
+
+.pnnllib-gitlab-verify-new-image:
+    # Verify that the image doesn't already exist
+    # Arguments are passed in environment variables
+    # CONTAINER_PREFIX - extra prefix for the image. Can be used to add a string on the front of an image name or a parent directory in the repository.
+    # CONTAINER_TAG - The container tag to use. Defaults to $CI_COMMIT_TAG
+    image: docker.io/kfox1111/misc:skopeo
+    script:
+    - |
+        set -e
+        CONTAINER_TAG="${CONTAINER_TAG:-$CI_COMMIT_TAG}"
+        mkdir -p /etc/gitlab-runner/certs
+        skopeo inspect \
+            docker://"$CI_REGISTRY_IMAGE${CONTAINER_PREFIX}:${CONTAINER_TAG}" \
+            --raw \
+            --cert-dir /etc/gitlab-runner/certs/ \
+            --creds "gitlab-ci-token:$CI_JOB_TOKEN" \
+           > /dev/null && echo "Image already exists. Please bump version." && exit 1
+        exit 0
+
+.pnnllib-gitlab-build-container-image:
+    # Build an image using Kaniko
+    # Arguments are passed in environment variables
+    # CONTAINER_PREFIX - extra prefix for the image. Can be used to add a string on the front of an image name or a parent directory in the repository.
+    # CONTAINER_TAG - The container tag to use. Defaults to $CI_COMMIT_TAG
+    # DOCKERFILE - The name of the dockerfile to use. Defaults to Dockerfile.
+    # KANIKO_EXTRA_ARGS - Extra arguments passed to Kaniko. Example, `--build-arg MY_BUILD_VAR=foo`.
+    # HTTP_PROXY - optional, proxy to use and pass when a http proxy is needed.
+    # HTTPS_PROXY - optional, proxy to use and pass when a https proxy is needed.
+    # NO_PROXY - optional, proxy settings to use and pass when a proxy shouldn't be used
+    image:
+      name: gcr.io/kaniko-project/executor:debug
+      entrypoint: [""]
+    script:
+    - mkdir -p /kaniko/.docker
+    - |-
+      KANIKOPROXYBUILDARGS=""
+      KANIKOCFG="{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}"
+      if [ "x${HTTP_PROXY}" != "x" -o "x${HTTPS_PROXY}" != "x" ]; then
+        KANIKOCFG="${KANIKOCFG}, \"proxies\": { \"default\": { \"httpProxy\": \"${HTTP_PROXY}\", \"httpsProxy\": \"${HTTPS_PROXY}\", \"noProxy\": \"${NO_PROXY}\"}}"
+        KANIKOPROXYBUILDARGS="--build-arg http_proxy=${HTTP_PROXY} --build-arg HTTP_PROXY=${HTTP_PROXY} --build-arg no_proxy=${NO_PROXY}"
+      fi
+      KANIKOCFG="${KANIKOCFG} }"
+      echo "${KANIKOCFG}" > /kaniko/.docker/config.json
+      if [ -f /etc/gitlab-runner/certs/ca.crt ]; then
+        cat /etc/gitlab-runner/certs/ca.crt >> /kaniko/ssl/certs/ca-certificates.crt
+      fi
+      DOCKERFILE="${DOCKERFILE:-Dockerfile}"
+      CONTAINER_TAG="${CONTAINER_TAG:-$CI_COMMIT_TAG}"
+      KANIKO_EXTRA_ARGS="${KANIKO_EXTRA_ARGS:-}"
+      /kaniko/executor $KANIKOPROXYBUILDARGS --context "$CI_PROJECT_DIR" --dockerfile "$CI_PROJECT_DIR/$DOCKERFILE" --destination "$CI_REGISTRY_IMAGE${CONTAINER_PREFIX}:$CONTAINER_TAG" $KANIKO_EXTRA_ARGS
+
+.pnnllib-gitlab-load-deploy-token:
+    # Load a gitlab deploy token into Kubernetes
+    #
+    # You must have already created a deploy token with just 'read_registry'
+    # permission named 'gitlab-deploy-token', with username 'gitlab-deploy-token' as described here:
+    # https://docs.gitlab.com/ee/user/project/deploy_tokens/#creating-a-deploy-token
+    #
+    # Arguments are passed in environment variables
+    #
+    # SECRET_NAME - Which secret to load the deploy token into. Defautls to gitlab-registry-token
+    image: bitnami/kubectl:1.15.3
+    script:
+    - |
+      SECRET_NAME="${SECRET_NAME:-gitlab-registry-token}"
+      if [ "x$CI_DEPLOY_USER" == "x" -o "x$CI_DEPLOY_PASSWORD" == "x" ]; then
+        echo A valid deploy token was not found.
+        echo
+        echo This is very likely because the deploy token was not manually configured in gitlab or the configuration documentation was not followed precisely.
+        echo The config is sensitive to the username in particular being set correctly and that it is a deploy token, not a personal or project access token.
+        echo
+        echo Instructions:
+        echo Create a deploy token with just "'read_registry'" permission named "'gitlab-deploy-token'", with username "'gitlab-deploy-token'" as described here:
+        echo https://docs.gitlab.com/ee/user/project/deploy_tokens/#creating-a-deploy-token
+        exit -1
+      fi
+      kubectl create secret docker-registry "$SECRET_NAME" --docker-server="$CI_REGISTRY" --docker-username="$CI_DEPLOY_USER" --docker-password="$CI_DEPLOY_PASSWORD" --dry-run -o yaml | kubectl apply -f -
+
 # CI constraints for every branch
 workflow:
   rules:
@@ -14,7 +229,7 @@ workflow:
       # Do _not_ clean up WORKDIR as files are needed for testing
       set -xv
       mkdir -p "$WORKDIR"
-      cp -R ./* "$WORKDIR"
+      cp -r . "$WORKDIR"
       cd "$WORKDIR"
       export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
       MY_CLUSTER=ascent ./buildsystem/build.sh --build-only --job=gcc-cuda || exit 1
@@ -27,19 +242,35 @@ workflow:
       export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
 
       # Export CTESTARGS defined in variables to run correct tests for stage
-      export CTESTARGS=$CTESTARGS
+      export CTESTARGS="--output-on-failure -E Python"
 
       MY_CLUSTER="ascent" ./buildsystem/build.sh --test-only --job=gcc-cuda
       res=$?
       exit $res
+  # Only running after_script for 
   after_script:
     - |
       cd "$WORKDIR/.."
       rm -rf "$WORKDIR"
 
+  
+.ornl_python_test_script_template: &ornl_python_test_script_definition
+  script:
+    - |
+      set -xv
+      cd "$WORKDIR"
+      export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+
+      # Export CTESTARGS defined in variables to run correct tests for stage
+      export CTESTARGS="-VV -R Python"
+
+      MY_CLUSTER="ascent" ./buildsystem/build.sh --test-only --job=gcc-cuda
+      res=$?
+      exit $res
+
 .ornl_environment_template: &ornl_environment_variables
   variables:
-    SCHEDULER_PARAMETERS: "-P CSC359 -nnodes 1 -W 30"
+    SCHEDULER_PARAMETERS: "-P CSC359 -nnodes 1 -W 120"
     WORKDIR: /gpfs/wolf/proj-shared/csc359/ci/${CI_PIPELINE_ID}
 
 .pnnl_after_script_template: &pnnl_after_script_definition
@@ -60,26 +291,26 @@ workflow:
 .pnnl_script_template: &pnnl_script_definition
   script:
     - |
-      set -xv
+      # pass --verbose to build.sh for verbose debugging
       #
-      #  NOTES:  WORKDIR is on constance/marianas/newell
+      #  NOTES:  WORKDIR is on constance/deception/newell
       #          ./      is only on the Kubernetes instance
       #
-      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}/"
+      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}"
       if [[ ! -d "$WORKDIR" ]]; then
         # if workdir already exists, we're in the testing job
         mkdir -p "$WORKDIR"
-        cp -R ./* "$WORKDIR"
-        cp ./.cmake-format.py "$WORKDIR"
+        cp -r . "$WORKDIR"
       fi
 
-      if [[ $MY_CLUSTER = "marianas" ]]; then
+      cd "$WORKDIR"
+
+      if [[ $MY_CLUSTER = "deception" ]]; then
         export SLURM_Q=`perl ./buildsystem/pnnl/findIdleDLNodes.pl`
       else
         export SLURM_Q=`perl ./buildsystem/pnnl/findIdleNewellNodes.pl`
       fi
 
-      cd "$WORKDIR"
       # Unique output file for this stage
       output="output${OUTPUT_SUFFIX}"
       [ -f $output ] && rm $output
@@ -105,7 +336,7 @@ workflow:
       do
         if [[ "$(awk 'BEGIN{i=0}/BUILD_STATUS/{i++}END{print i}' $output)" != "0" ]]; then
           kill $tailpid
-          echo 'Last tail of build output:'
+          echo 'Last tail of build $output:'
           tail -n 200 $output
           res=$(grep BUILD_STATUS $output | tail -n 1 | cut -f2 -d':')
           break
@@ -116,19 +347,98 @@ workflow:
       rm "$WORKDIR/jobid_${jobid}"
       exit $res
 
+.pnnl_module_script_template: &pnnl_module_script_definition
+  script:
+    - |
+      set -x
+
+      # Configure git before making changes
+      git checkout -b ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+
+      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}"
+
+      mkdir -p "$WORKDIR"
+      cp -r . "$WORKDIR"
+
+      cd "$WORKDIR"
+
+      # jobid used in pnnl_after_script_template to cancel job if cancelled or
+      # timed out by gitlab through the UI
+      jobid=$(sbatch $WORKDIR/buildsystem/spack/$MY_CLUSTER/sbatch.sh)
+      export jobid=$(echo $jobid | cut -f4 -d ' ')
+
+      # Unique jobid filename for this job
+      echo $jobid > "$WORKDIR/jobid_${jobid}"
+
+      # This is hard coded into sbatch script
+      outfile=spack_install.$jobid.output
+
+      [ -f $outfile ] && rm $outfile
+      touch $outfile
+
+      tail -f $outfile &
+      tailpid=$!
+ 
+      res=1
+      while :;
+      do
+        if [[ "$(awk 'BEGIN{i=0}/BUILD_STATUS/{i++}END{print i}' $outfile)" != "0" ]]; then
+          kill $tailpid
+          echo 'Last tail of build $outfile:'
+          tail -n 200 $outfile
+          res=$(grep BUILD_STATUS $outfile | tail -n 1 | cut -f2 -d':')
+          break
+        fi
+        sleep 60
+      done
+
+      if [ "$res" -ne "0" ]; then
+        echo "Finished batch job with exit code: $res"
+        rm "$WORKDIR/jobid_${jobid}"
+        rm -rf $WORKDIR
+        set +x
+        # We want to exit early if the spack build didn't succeed.
+        exit $res;
+      fi
+        
+      # Modules are in /buildsystem/spack/$MY_CLUSTER/modules
+      # Assuming MY_CLUSTER is lower case
+      git add ./buildsystem/spack/${MY_CLUSTER}/modules/*
+
+      # Have to configure username to be able to add commits
+      git config user.name "spack-auto-module"
+      git config user.email "spack.bot@no-reply.com"
+
+      # Add commit to MR branch - message can be changed
+      git commit -m "Update ${MY_CLUSTER} spack built modules - CI AUTOMATED MESSAGE."
+
+      # Do a rebase incase another pipeline has pushed since build started
+      git pull --rebase origin ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+
+      # You will have to change this to work for non-merge requests
+      git push \
+        "https://gitlab-ci-token:${SPACK_GIT_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" \
+        ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+
+      rm -rf $WORKDIR
+      set +x
+      exit $res
+
 .pnnl_tags_template: &pnnl_tags_definition
+  image: kfox1111/slurm:deception2
   tags:
     - k8s
     - ikp
     - exasgd
     - marianas
 
-.pnnl-rules: &pnnl-rules
+.pnnl_rules: &pnnl_rules
   rules:
-    - &pnnl-rule
+    - &pnnl_rule
       if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"' # Will only apply to PNNL
 
-.pnnl-nonhpc-tags: &pnnl-nonhpc-definition
+.pnnl_nonhpc_tags: &pnnl_nonhpc_definition
+  image: ubuntu:20.04
   tags:
     - k8s
     - ikp
@@ -142,12 +452,76 @@ stages:
   - build
   - test
 
-# Include PNNL GitLab stdlib
-include:
-  - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v1/gitlab-lib.yaml'
+# For Crusher CI
+.crusher_rules: &crusher_rules
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - if: $CI_PINELINE_SOURCE == "schedule"
+    - when: never
+
+.crusher_variables: &crusher_variables
+  # Only for slurm tagged jobs...
+  variables:
+    SCHEDULER_PARAMETERS: "-N 1 -A CSC359 --time=60"
+    WORKDIR: /gpfs/alpine/csc359/proj-shared/ci/${CI_PIPELINE_ID}
+
+Crusher Build:
+  stage: build
+  tags: [crusher, shell]
+  script:
+    - mkdir -p "$WORKDIR"
+    - cp -r . "$WORKDIR"
+    - cd "$WORKDIR"
+    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+    - MY_CLUSTER=crusher ./buildsystem/build.sh --build-only --job=clang-hip
+    - res=$?
+    - exit $res
+  <<: *crusher_rules
+  <<: *crusher_variables
+  
+Crusher Test:
+  stage: test
+  dependencies:
+    - "Crusher Build"
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+  tags: [crusher, slurm]
+  script:
+    - cd "$WORKDIR"
+    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+    - export CTESTARGS="--output-on-failure -E Python"
+    - MY_CLUSTER=crusher ./buildsystem/build.sh --test-only --job=clang-hip
+    - res=$?
+    - exit $res
+  after_script:
+    - cd "$WORKDIR/.."
+    - rm -rf "$WORKDIR"
+  <<: *crusher_rules
+  <<: *crusher_variables
+
+Crusher Python Test:
+  stage: test
+  dependencies: 
+    - "Crusher Build"
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+  allow_failure: true
+  tags: [crusher, slurm]
+  script:
+    - cd "$WORKDIR"
+    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+    - export CTESTARGS="--output-on-failure -R Python"
+    - MY_CLUSTER=crusher ./buildsystem/build.sh --test-only --job=clang-hip
+    - res=$?
+    - exit $res
+  <<: *crusher_rules
+  <<: *crusher_variables
+# ---
 
 # For Ascent CI
-.ornl-rules: &ornl-rules
+.ornl_rules: &ornl_rules
   rules:
     - if: '$CI_PROJECT_PATH == "ecpcitest/exasgd/exago"'
 
@@ -155,7 +529,7 @@ Ascent Build:
   stage: build
   tags:
     - nobatch
-  <<: *ornl-rules
+  <<: *ornl_rules
   <<: *ornl_script_definition
   <<: *ornl_environment_variables
 
@@ -166,8 +540,10 @@ Ascent Test:
   tags:
     - batch
   variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
     CTESTARGS: "--output-on-failure -E Python"
-  <<: *ornl-rules
+  <<: *ornl_rules
   <<: *ornl_test_script_definition
   <<: *ornl_environment_variables
 
@@ -178,27 +554,20 @@ Ascent Py Test:
   tags:
     - batch 
   variables:
-    CTESTARGS: "--output-on-failure -R Python"
-  <<: *ornl-rules
-  <<: *ornl_test_script_definition
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+  <<: *ornl_rules
+  <<: *ornl_python_test_script_definition
   <<: *ornl_environment_variables
   allow_failure: true
 # ---
 
 # For PNNL CI
-.pnnl-nonhpc-tags: &pnnl-nonhpc-definition
-  tags:
-    - k8s
-    - ikp
-    - exasgd
-    - basic
-
 CMake Lint:
   stage: build
   allow_failure: true
-  <<: *pnnl-nonhpc-definition
-  <<: *pnnl-rules
-  image: ubuntu:20.04
+  <<: *pnnl_nonhpc_definition
+  <<: *pnnl_rules
   script:
     |
     set -x
@@ -210,9 +579,8 @@ CMake Lint:
 C++ Lint:
   stage: build
   allow_failure: true
-  <<: *pnnl-nonhpc-definition
-  <<: *pnnl-rules
-  image: ubuntu:20.04
+  <<: *pnnl_nonhpc_definition
+  <<: *pnnl_rules
   script:
     |
     set -x
@@ -223,9 +591,8 @@ C++ Lint:
 Python Lint:
   stage: build
   allow_failure: true
-  <<: *pnnl-nonhpc-definition
-  <<: *pnnl-rules
-  image: ubuntu:20.04
+  <<: *pnnl_nonhpc_definition
+  <<: *pnnl_rules
   script:
     |
     set -x
@@ -237,9 +604,8 @@ Python Lint:
 File Naming Conventions:
   stage: build
   allow_failure: true
-  <<: *pnnl-nonhpc-definition
-  <<: *pnnl-rules
-  image: ubuntu:20.04
+  <<: *pnnl_nonhpc_definition
+  <<: *pnnl_rules
   script:
     |
     set -x
@@ -249,61 +615,102 @@ File Naming Conventions:
 
 SVC Account Cleanup:
   stage: .pre
-  <<: *pnnl-rules
+  variables:
+    # Don't clone for cleanup jobs
+    GIT_STRATEGY: none
+  <<: *pnnl_rules
   <<: *pnnl_tags_definition
-  rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[cleanup\]/'
-
   script:
-    - cd /people/svcexasgd/ && rm -rf gitlab/*
+    - export WORKDIR="$HOME/gitlab/"
+    # clears directory of files more than 6 hours/360 minutes old
+    - find $WORKDIR -type d -mindepth 1 -mmin +360 -prune -print -exec rm -rf {} \; || true
+    - ls -hal $WORKDIR
 
-# Newell Build:
-#   stage: build
-#   variables:
-#     SLURM_Q: "newell_shared"
-#     MY_CLUSTER: "newell"
-#     OUTPUT_SUFFIX: "_build"
-#     SCRIPT_ARGS: " --build-only --job=gcc-cuda "
-#     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
-#   <<: *pnnl_tags_definition
-#   <<: *pnnl_script_definition
-#   <<: *pnnl-rules
-# 
-# Newell Test:
-#   stage: test
-#   dependencies:
-#     - 'Newell Build'
-#   variables:
-#     SLURM_Q: "newell_shared"
-#     MY_CLUSTER: "newell"
-#     CTESTARGS: "--output-on-failure -E Python"
-#     OUTPUT_SUFFIX: "_test"
-#     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-#     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
-#   <<: *pnnl_tags_definition
-#   <<: *pnnl_script_definition
-#   <<: *pnnl_after_script_definition
-#   <<: *pnnl-rules
+Newell Build:
+  stage: build
+  variables:
+    SLURM_Q: "newell_shared"
+    MY_CLUSTER: "newell"
+    OUTPUT_SUFFIX: "_build"
+    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+  <<: *pnnl_tags_definition
+  <<: *pnnl_script_definition
+  <<: *pnnl_rules
 
-Marianas Build:
+Newell Test:
+  stage: test
+  dependencies:
+    - 'Newell Build'
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+    SLURM_Q: "newell_shared"
+    MY_CLUSTER: "newell"
+    CTESTARGS: "--output-on-failure -E Python"
+    OUTPUT_SUFFIX: "_test"
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+  <<: *pnnl_tags_definition
+  <<: *pnnl_script_definition
+  <<: *pnnl_after_script_definition
+  <<: *pnnl_rules
+
+Newell Py Test:
+  stage: test
+  dependencies:
+    - 'Newell Build'
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+    SLURM_Q: "newell8"
+    MY_CLUSTER: "newell"
+    CTESTARGS: "--output-on-failure -R Python"
+    OUTPUT_SUFFIX: "_test_python"
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+  <<: *pnnl_tags_definition
+  <<: *pnnl_script_definition
+    # No after_script as only one test per platform cleans up
+  <<: *pnnl_rules
+  allow_failure: true
+
+Newell Module Rebuild:
+  stage: .pre
+  when: manual
+# Only for manual pipelines in MRs
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  variables:
+    GIT_STRATEGY: clone
+    MY_CLUSTER: "newell"
+    WORKDIR_SUFFIX: "spack_newell"
+  <<: *pnnl_tags_definition
+  <<: *pnnl_module_script_definition
+  <<: *pnnl_rules
+  allow_failure: true
+
+Deception Build:
   stage: build
   variables:
     SLURM_Q: "dl_shared"
-    MY_CLUSTER: "marianas"
+    MY_CLUSTER: "deception"
     OUTPUT_SUFFIX: "_build"
     SCRIPT_ARGS: " --build-only --job=gcc-cuda "
     WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
-  <<: *pnnl-rules
+  <<: *pnnl_rules
 
-Marianas Test:
+Deception Test:
   stage: test
   dependencies:
-    - 'Marianas Build'
+    - 'Deception Build'
   variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
     SLURM_Q: "dl_shared"
-    MY_CLUSTER: "marianas"
+    MY_CLUSTER: "deception"
     CTESTARGS: "--output-on-failure -E Python"
     OUTPUT_SUFFIX: "_test"
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
@@ -311,32 +718,17 @@ Marianas Test:
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
   <<: *pnnl_after_script_definition
-  <<: *pnnl-rules
+  <<: *pnnl_rules
 
-# Newell Py Test:
-#   stage: test
-#   dependencies:
-#     - 'Newell Build'
-#   variables:
-#     SLURM_Q: "newell_shared"
-#     MY_CLUSTER: "newell"
-#     CTESTARGS: "--output-on-failure -R Python"
-#     OUTPUT_SUFFIX: "_test_python"
-#     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-#     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
-#   <<: *pnnl_tags_definition
-#   <<: *pnnl_script_definition
-#     # No after_script as only one test per platform cleans up
-#   <<: *pnnl-rules
-#   allow_failure: true
-
-Marianas Py Test:
+Deception Py Test:
   stage: test
   dependencies:
-    - 'Marianas Build'
+    - 'Deception Build'
   variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
     SLURM_Q: "dl_shared"
-    MY_CLUSTER: "marianas"
+    MY_CLUSTER: "deception"
     CTESTARGS: "--output-on-failure -R Python"
     OUTPUT_SUFFIX: "_test_python"
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
@@ -344,7 +736,22 @@ Marianas Py Test:
   <<: *pnnl_tags_definition
   <<: *pnnl_script_definition
     # No after_script as only one test per platform cleans up
-  <<: *pnnl-rules
+  <<: *pnnl_rules
+  allow_failure: true
+
+Deception Module Rebuild:
+  stage: .pre
+  when: manual
+  # Only for manual pipelines in MRs
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  variables:
+    GIT_STRATEGY: clone
+    MY_CLUSTER: "deception"
+    WORKDIR_SUFFIX: "spack_deception"
+  <<: *pnnl_tags_definition
+  <<: *pnnl_module_script_definition
+  <<: *pnnl_rules
   allow_failure: true
 # ---
 

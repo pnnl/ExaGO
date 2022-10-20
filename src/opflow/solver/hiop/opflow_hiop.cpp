@@ -4,6 +4,16 @@
 #include "opflow_hiop.h"
 #include <private/opflowimpl.h>
 
+#if defined(EXAGO_ENABLE_RAJA)
+
+#include <umpire/Allocator.hpp>
+#include <umpire/ResourceManager.hpp>
+
+#include <RAJA/RAJA.hpp>
+#include <private/raja_exec_config.h>
+
+#endif
+
 typedef enum { AUTO = 0, CPU = 1, HYBRID = 2, GPU = 3 } HIOPComputeMode;
 const char *HIOPComputeModeChoices[] = {
     "auto", "cpu", "hybrid", "gpu", "HIOPComputeModeChoices", "", 0};
@@ -113,31 +123,37 @@ bool OPFLOWHIOPInterface::eval_cons(const hiop::size_type &n,
                                     const hiop::size_type *idx_cons,
                                     const double *x, bool new_x, double *cons) {
   PetscErrorCode ierr;
+  OPFLOWSolver_HIOP hiop = (OPFLOWSolver_HIOP)opflow->solver;
 
   //  PetscPrintf(MPI_COMM_SELF,"Enter eval_cons \n");
 
-  if (!num_cons)
+  if (!num_cons) {
+    hiop->cons_call++;
     return true;
+  }
 
-  if (idx_cons[0] == 0) {
+  if (hiop->cons_call % 2 == 0) {
+    /* Equality constaints */
     ierr = PetscLogEventBegin(opflow->eqconslogger, 0, 0, 0, 0);
     CHKERRQ(ierr);
-    /* Equality constaints */
+
     ierr = (*opflow->modelops.computeequalityconstraintsarray)(opflow, x, cons);
     CHKERRQ(ierr);
     ierr = PetscLogEventEnd(opflow->eqconslogger, 0, 0, 0, 0);
     CHKERRQ(ierr);
-  }
-
-  if (idx_cons[0] == opflow->nconeq && opflow->nconineq) {
-    ierr = PetscLogEventBegin(opflow->ineqconslogger, 0, 0, 0, 0);
-    CHKERRQ(ierr);
-    /* Inequality constraints */
-    ierr =
-        (*opflow->modelops.computeinequalityconstraintsarray)(opflow, x, cons);
-    CHKERRQ(ierr);
-    ierr = PetscLogEventEnd(opflow->ineqconslogger, 0, 0, 0, 0);
-    CHKERRQ(ierr);
+    hiop->cons_call++;
+  } else {
+    if (opflow->nconineq) {
+      ierr = PetscLogEventBegin(opflow->ineqconslogger, 0, 0, 0, 0);
+      CHKERRQ(ierr);
+      /* Inequality constraints */
+      ierr = (*opflow->modelops.computeinequalityconstraintsarray)(opflow, x,
+                                                                   cons);
+      CHKERRQ(ierr);
+      ierr = PetscLogEventEnd(opflow->ineqconslogger, 0, 0, 0, 0);
+      CHKERRQ(ierr);
+      hiop->cons_call++;
+    }
   }
 
   //  PetscPrintf(MPI_COMM_SELF,"Exit eval_cons \n");
@@ -167,13 +183,16 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(
     const hiop::size_type &ndense, const int &nnzJacS, int *iJacS, int *jJacS,
     double *MJacS, double *JacD) {
   PetscErrorCode ierr;
+  OPFLOWSolver_HIOP hiop = (OPFLOWSolver_HIOP)opflow->solver;
   //  PetscPrintf(MPI_COMM_SELF,"Enter eval_Jac_cons \n");
 
-  if (!num_cons)
+  if (!num_cons) {
+    hiop->cons_call++;
     return true;
+  }
 
-  /* Equality constraints */
-  if (idx_cons[0] == 0) {
+  if (hiop->cons_call % 2 == 0) {
+    /* Equality constraints */
     //    PetscPrintf(MPI_COMM_SELF,"Came here eq. \n");
 
     /* Sparse Jacobian */
@@ -183,12 +202,15 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(
 
     ierr = PetscLogEventBegin(opflow->denseeqconsjaclogger, 0, 0, 0, 0);
     CHKERRQ(ierr);
+
     /* Dense equality constraint Jacobian */
     ierr = (*opflow->modelops.computedenseequalityconstraintjacobianhiop)(
         opflow, x, JacD);
     CHKERRQ(ierr);
+
     ierr = PetscLogEventEnd(opflow->denseeqconsjaclogger, 0, 0, 0, 0);
     CHKERRQ(ierr);
+    hiop->cons_call++;
   } else {
     /* Dense inequality constraint Jacobian */
     //    PetscPrintf(MPI_COMM_SELF,"Came here ineq. \n");
@@ -206,6 +228,7 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(
       CHKERRQ(ierr);
       ierr = PetscLogEventEnd(opflow->denseineqconsjaclogger, 0, 0, 0, 0);
       CHKERRQ(ierr);
+      hiop->cons_call++;
     }
   }
   //  PetscPrintf(MPI_COMM_SELF,"Exit eval_Jac_cons \n");
@@ -275,6 +298,20 @@ void OPFLOWHIOPInterface::solution_callback(
   PetscErrorCode ierr;
   OPFLOWSolver_HIOP hiop = (OPFLOWSolver_HIOP)opflow->solver;
   PetscScalar *x, *lam, *g;
+#if defined(EXAGO_ENABLE_RAJA)
+  auto &resmgr = umpire::ResourceManager::getInstance();
+  umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
+#endif
+  /* Create temporary vectors for copying values to HOST (only used when
+   * mem-space is DEVICE */
+  double *xsol_host, *lamsol_host, *gsol_host;
+
+  if (hiop->mem_space == DEVICE) {
+    xsol_host = (double *)h_allocator_.allocate(opflow->nx * sizeof(double));
+    lamsol_host =
+        (double *)h_allocator_.allocate(opflow->ncon * sizeof(double));
+    gsol_host = (double *)h_allocator_.allocate(opflow->ncon * sizeof(double));
+  }
 
   /* Copy over solution details */
   hiop->status = status;
@@ -282,7 +319,13 @@ void OPFLOWHIOPInterface::solution_callback(
 
   ierr = VecGetArray(opflow->X, &x);
   CHKERRV(ierr);
-  spdensetonatural(xsol, x);
+  if (hiop->mem_space == DEVICE) {
+    /* Copy xsol from device to host */
+    resmgr.copy(xsol_host, (double *)xsol);
+    spdensetonatural(xsol_host, x);
+  } else {
+    spdensetonatural(xsol, x);
+  }
   ierr = VecRestoreArray(opflow->X, &x);
   CHKERRV(ierr);
 
@@ -292,14 +335,30 @@ void OPFLOWHIOPInterface::solution_callback(
     */
     ierr = VecGetArray(opflow->Lambda, &lam);
     CHKERRV(ierr);
-    ierr = PetscMemcpy(lam, (double *)lamsol,
-                       opflow->nconeq * sizeof(PetscScalar));
-    CHKERRV(ierr);
-    if (opflow->Nconineq) {
-      ierr =
-          PetscMemcpy(lam + opflow->nconeq, (double *)(lamsol + opflow->nconeq),
-                      opflow->nconineq * sizeof(PetscScalar));
+
+    if (hiop->mem_space == DEVICE) {
+      /* Copy lamsol from device to host */
+      resmgr.copy(lamsol_host, (double *)lamsol);
+
+      ierr = PetscMemcpy(lam, (double *)lamsol_host,
+                         opflow->nconeq * sizeof(PetscScalar));
       CHKERRV(ierr);
+      if (opflow->Nconineq) {
+        ierr = PetscMemcpy(lam + opflow->nconeq,
+                           (double *)(lamsol_host + opflow->nconeq),
+                           opflow->nconineq * sizeof(PetscScalar));
+        CHKERRV(ierr);
+      }
+    } else {
+      ierr = PetscMemcpy(lam, (double *)lamsol,
+                         opflow->nconeq * sizeof(PetscScalar));
+      CHKERRV(ierr);
+      if (opflow->Nconineq) {
+        ierr = PetscMemcpy(lam + opflow->nconeq,
+                           (double *)(lamsol + opflow->nconeq),
+                           opflow->nconineq * sizeof(PetscScalar));
+        CHKERRV(ierr);
+      }
     }
     ierr = VecRestoreArray(opflow->Lambda, &lam);
     CHKERRV(ierr);
@@ -309,18 +368,40 @@ void OPFLOWHIOPInterface::solution_callback(
   }
 
   if (gsol) {
-    /* Same situation as lamsol - gsol is NULL */
     ierr = VecGetArray(opflow->G, &g);
     CHKERRV(ierr);
-    ierr = PetscMemcpy(g, (double *)gsol, opflow->nconeq * sizeof(PetscScalar));
-    CHKERRV(ierr);
-    if (opflow->Nconineq) {
-      ierr = PetscMemcpy(g + opflow->nconeq, (double *)(gsol + opflow->nconeq),
-                         opflow->nconineq * sizeof(PetscScalar));
+    if (hiop->mem_space == DEVICE) {
+      /* Copy gsol from device to host */
+      resmgr.copy(gsol_host, (double *)gsol);
+
+      ierr = PetscMemcpy(g, (double *)gsol_host,
+                         opflow->nconeq * sizeof(PetscScalar));
       CHKERRV(ierr);
+      if (opflow->Nconineq) {
+        ierr = PetscMemcpy(g + opflow->nconeq,
+                           (double *)(gsol_host + opflow->nconeq),
+                           opflow->nconineq * sizeof(PetscScalar));
+        CHKERRV(ierr);
+      }
+    } else {
+      ierr =
+          PetscMemcpy(g, (double *)gsol, opflow->nconeq * sizeof(PetscScalar));
+      CHKERRV(ierr);
+      if (opflow->Nconineq) {
+        ierr =
+            PetscMemcpy(g + opflow->nconeq, (double *)(gsol + opflow->nconeq),
+                        opflow->nconineq * sizeof(PetscScalar));
+        CHKERRV(ierr);
+      }
     }
     ierr = VecRestoreArray(opflow->G, &g);
     CHKERRV(ierr);
+  }
+
+  if (hiop->mem_space == DEVICE) {
+    h_allocator_.deallocate(xsol_host);
+    h_allocator_.deallocate(lamsol_host);
+    h_allocator_.deallocate(gsol_host);
   }
 }
 
@@ -329,6 +410,15 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
   OPFLOWSolver_HIOP hiop = (OPFLOWSolver_HIOP)opflow->solver;
   PetscBool ismodelpbpolhiop, ismodelpbpolrajahiop;
   HIOPComputeMode compute_mode = AUTO;
+#if defined(HIOP_USE_RAJA)
+#ifndef EXAGO_ENABLE_GPU
+  hiop->mem_space = HOST;
+#else
+  hiop->mem_space = DEVICE;
+#endif
+  hiop->cons_call = 0;
+#endif
+
   int verbose_level = OPFLOWOptions::hiop_verbosity_level.default_value;
   PetscBool mode_set = PETSC_FALSE;
 
@@ -356,6 +446,12 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
   ierr = PetscOptionsInt(OPFLOWOptions::hiop_verbosity_level.opt.c_str(),
                          OPFLOWOptions::hiop_verbosity_level.desc.c_str(), "",
                          verbose_level, &opflow->_p_hiop_verbosity_level, NULL);
+  CHKERRQ(ierr);
+
+  ierr = PetscOptionsEnum(OPFLOWOptions::hiop_mem_space.opt.c_str(),
+                          OPFLOWOptions::hiop_mem_space.desc.c_str(), "",
+                          HIOPMemSpaceChoices, (PetscEnum)hiop->mem_space,
+                          (PetscEnum *)&hiop->mem_space, &mode_set);
   CHKERRQ(ierr);
 
 #if defined(EXAGO_ENABLE_IPOPT)
@@ -429,12 +525,8 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
 
 #if defined(HIOP_USE_RAJA)
   if (ismodelpbpolrajahiop) {
-#ifndef EXAGO_ENABLE_GPU
-    hiop->mds->options->SetStringValue("mem_space", "host");
-#else
-    // TODO: replace this with "device" when supported by HiOp
-    hiop->mds->options->SetStringValue("mem_space", "um");
-#endif
+    hiop->mds->options->SetStringValue("mem_space",
+                                       HIOPMemSpaceChoices[hiop->mem_space]);
   }
 #endif
 
@@ -521,6 +613,7 @@ PetscErrorCode OPFLOWSolverDestroy_HIOP(OPFLOW opflow) {
 
   PetscFunctionBegin;
 
+  delete hiop->solver;
   delete hiop->mds;
   delete hiop->nlp;
 

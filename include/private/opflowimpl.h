@@ -302,4 +302,12 @@ extern PetscErrorCode OPFLOWSolverRegisterAll(OPFLOW);
 /* Internal function to check model + solver compatibility */
 extern PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW);
 
+/* Internal function to set number of variables */
+extern PetscErrorCode OPFLOWSetNumVariables(OPFLOW, PetscInt *, PetscInt *,
+                                            PetscInt *);
+
+/* Internal function to set number of constraints */
+extern PetscErrorCode OPFLOWSetNumConstraints(OPFLOW, PetscInt *, PetscInt *,
+                                              PetscInt *, PetscInt *);
+
 #endif

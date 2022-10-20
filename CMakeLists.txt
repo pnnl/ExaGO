@@ -57,7 +57,7 @@ option(EXAGO_ENABLE_PETSC "Enable PETSc support" ON)
 option(EXAGO_ENABLE_MPI "Enable MPI support" ON)
 
 # Ipopt support is disabled by default
-option(EXAGO_ENABLE_IPOPT "Enable Ipopt support" OFF)
+option(EXAGO_ENABLE_IPOPT "Enable Ipopt support" ON)
 
 # HiOP support is disabled by default
 option(EXAGO_ENABLE_HIOP "Enable HiOP support" OFF)
@@ -225,7 +225,8 @@ endif()
 
 # Set install rpath to the locations where EXAGO and PETSc libraries reside.
 # TODO: Automatically skip if PETSc and EXAGO are already on system lib path.
-set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib ${PETSC_DIR}/lib)
+# set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib ${PETSC_DIR}/lib)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 
 if(EXAGO_ENABLE_IPOPT)
   set(IPOPT_ROOT_DIR CACHE PATH "Path to Ipopt installation root.")
