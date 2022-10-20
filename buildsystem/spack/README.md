@@ -52,7 +52,7 @@ This is a regular spack command, and should be run to verify what configuration
 is being built, before committing to an installation.
 
 
-4. `configure_modules.sh`
+3. `configure_modules.sh`
 
 This will build the config of ExaGO with and without optimizations, and then
 populate the related shell modules with the relevant module path, and necessary

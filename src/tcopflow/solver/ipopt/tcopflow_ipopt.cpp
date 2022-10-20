@@ -467,7 +467,7 @@ PetscErrorCode TCOPFLOWSolverCreate_IPOPT(TCOPFLOW tcopflow) {
   PetscFunctionBegin;
 
   if (tcopflow->comm->size > 1)
-    SETERRQ1(PETSC_COMM_WORLD, PETSC_ERR_SUP,
+    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_SUP,
              "IPOPT solver does not support execution in parallel\n",
              tcopflow->comm->size);
   ierr = PetscCalloc1(1, &ipopt);

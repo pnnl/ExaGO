@@ -113,7 +113,7 @@ PetscErrorCode ContingencyListReadData_Native(ContingencyList ctgclist) {
 
   fp = fopen(ctgclist->inputfile, "r");
   if (fp == NULL) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN, "Cannot open file %s",
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN, "Cannot open file %s",
              ctgclist->inputfile);
   }
 
@@ -130,8 +130,8 @@ PetscErrorCode ContingencyListReadData_Native(ContingencyList ctgclist) {
       break;
 
     if (num == PetscMax(ctgclist->Ncontinit, MAX_CONTINGENCIES)) {
-      SETERRQ2(PETSC_COMM_SELF, PETSC_ERR_SUP,
-               "Exceeding max. allowed contingencies = %d\n", num,
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
+               "Exceeding max. allowed contingencies = %d\n",
                MAX_CONTINGENCIES);
     }
     cont = &ctgclist->cont[num];
@@ -180,7 +180,7 @@ PetscErrorCode ContingencyListReadData_PSSE(ContingencyList ctgclist) {
 
   fp = fopen(ctgclist->inputfile, "r");
   if (fp == NULL) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN, "Cannot open file %s",
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN, "Cannot open file %s",
              ctgclist->inputfile);
   }
 
@@ -278,7 +278,7 @@ PetscErrorCode ContingencyListReadData(ContingencyList ctgclist, PetscInt *Nc) {
     CHKERRQ(ierr);
   } else {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-            "Unknown contingency input file format %s\n");
+            "Unknown contingency input file format\n");
   }
   *Nc = ctgclist->Ncont;
 

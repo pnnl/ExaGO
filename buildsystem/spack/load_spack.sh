@@ -8,6 +8,7 @@ fi
 
 # Need to know which platform we are configuring for
 MY_CLUSTER="${MY_CLUSTER:?MY_CLUSTER is unset. Please set manually.}"
+[[ -z $MY_CLUSTER ]] && return 1 
 
 # Use ${var,,} to convert to lower case
 # There must be an existing folder for the cluster

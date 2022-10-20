@@ -10,4 +10,4 @@
 [submodule "tpl/spack"]
 	path = tpl/spack
 	url = https://github.com/CameronRutherford/spack.git
-	branch = optimize-flags
+	branch = exago-petsc-update

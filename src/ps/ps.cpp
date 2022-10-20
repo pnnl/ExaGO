@@ -92,12 +92,12 @@ PetscErrorCode PSCheckandSetRefBus(PS ps) {
 
   if (firstpvbus == 100000000) {
 #if defined DEBUGPS
-    SETERRQ1(PETSC_COMM_SELF, 0, " ", firstpvbus);
+    SETERRQ(PETSC_COMM_SELF, 0, "Using first PV bus = %d", firstpvbus);
 #endif
   } else {
     if (ps->busext2intmap[firstpvbus] != -1) {
       ps->bus[ps->busext2intmap[firstpvbus]].ide = REF_BUS;
-      ierr = PetscPrintf(PETSC_COMM_SELF, " ", firstpvbus);
+      ierr = PetscPrintf(PETSC_COMM_SELF, "Using first PV bus = %d ", firstpvbus);
       CHKERRQ(ierr);
     }
   }
@@ -137,10 +137,10 @@ PetscErrorCode PSSetGenDispatchandStatus(PS ps, PetscInt busnum,
     PetscFunctionReturn(0); /* Not local to this processor */
   bus = &ps->bus[intbusnum];
   if (!bus->ngen) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_SUP, "No generators on bus %d", busnum);
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP, "No generators on bus %d", busnum);
   }
   if (bus->ide == ISOLATED_BUS) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_SUP, "Bus %d is isolated", busnum);
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP, "Bus %d is isolated", busnum);
   }
 
   gen = &ps->gen[bus->gidx[gennum]];
@@ -454,7 +454,7 @@ PetscErrorCode PSBUSGetGen(PSBUS bus, PetscInt gen_num, PSGEN *gen) {
 
   PetscFunctionBegin;
   if (gen_num < 0 || gen_num > bus->ngen - 1)
-    SETERRQ2(PETSC_COMM_SELF, PETSC_ERR_SUP,
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
              "Ngen at bus = %d, generator number requested %d", bus->ngen,
              gen_num);
   *gen = bus->gens[gen_num];
@@ -475,7 +475,7 @@ PetscErrorCode PSBUSGetLoad(PSBUS bus, PetscInt load_num, PSLOAD *load) {
 
   PetscFunctionBegin;
   if (load_num < 0 || load_num > bus->nload - 1)
-    SETERRQ2(PETSC_COMM_SELF, PETSC_ERR_SUP,
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
              "Nload at bus = %d, load number requested %d", bus->nload,
              load_num);
   *load = bus->loads[load_num];
@@ -1207,7 +1207,7 @@ PetscErrorCode PSSetUp(PS ps) {
         DMNetworkGetSupportingEdges(ps->networkdm, vtx[i], &nlines, &connlines);
     CHKERRQ(ierr);
     if (nlines > MAXCONNLINES)
-      SETERRQ3(PETSC_COMM_SELF, PETSC_ERR_ARG_OUTOFRANGE,
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_OUTOFRANGE,
                "%D lines connected to a bus %D exceeds max. allowed connected "
                "lines allowed %D",
                nlines, ps->bus[i].bus_i, MAXCONNLINES);
@@ -1382,7 +1382,7 @@ PetscErrorCode PSSetGenStatus(PS ps, PetscInt gbus, const char *gid,
       }
     }
   } else {
-    SETERRQ2(PETSC_COMM_SELF, 0, "No generator found on bus %d with %s id\n",
+    SETERRQ(PETSC_COMM_SELF, 0, "No generator found on bus %d with %s id\n",
              gbus, gid);
   }
 
@@ -1421,7 +1421,7 @@ PetscErrorCode PSGetGenStatus(PS ps, PetscInt gbus, const char *gid,
     if (status)
       *status = gen->status;
   } else {
-    SETERRQ2(PETSC_COMM_SELF, 0, "No generator found on bus %d with %s id\n",
+    SETERRQ(PETSC_COMM_SELF, 0, "No generator found on bus %d with %s id\n",
              gbus, gid);
   }
 
@@ -1680,7 +1680,7 @@ PetscErrorCode PSSetGenPowerLimits(PS ps, PetscInt gbus, const char *gid,
     if (qb != EXAGO_IGNORE)
       gen->qb = qb / ps->MVAbase;
   } else {
-    SETERRQ2(PETSC_COMM_SELF, 0, "No generator found on bus %d with %s id\n",
+    SETERRQ(PETSC_COMM_SELF, 0, "No generator found on bus %d with %s id\n",
              gbus, gid);
   }
 
@@ -1728,7 +1728,7 @@ PetscErrorCode PSSetGenPowerLimits(PS ps, PetscInt gbus, const char *gid,
     if (qb)
       *qb = gen->qb;
   } else {
-    SETERRQ2(PETSC_COMM_SELF, 0, "No generator found on bus %d with %s id\n",
+    SETERRQ(PETSC_COMM_SELF, 0, "No generator found on bus %d with %s id\n",
              gbus, gid);
   }
 
@@ -1767,7 +1767,7 @@ PetscErrorCode PSGetGenDispatch(PS ps, PetscInt gbus, const char *gid,
     if (qg)
       *qg = gen->qg * ps->MVAbase;
   } else {
-    SETERRQ2(PETSC_COMM_SELF, 0, "No generator found on bus %d with %s id\n",
+    SETERRQ(PETSC_COMM_SELF, 0, "No generator found on bus %d with %s id\n",
              gbus, gid);
   }
 
