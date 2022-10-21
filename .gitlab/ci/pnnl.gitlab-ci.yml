@@ -1,0 +1,384 @@
+.pnnl_after_script_template:
+  after_script:
+    - |
+      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${MY_CLUSTER}/"
+      # Iterate over possible jobid named files (jobid_%J)
+      job_ids="$WORKDIR/jobid_*"
+      for job in $job_ids
+      do
+        if [[ -f "$job" ]]; then
+          jobid=$(cat "$job")
+          scancel $jobid
+        fi
+      done
+      rm -rf $WORKDIR
+
+.pnnl_script_template:
+  script:
+    - |
+      # pass --verbose to build.sh for verbose debugging
+      #
+      #  NOTES:  WORKDIR is on constance/deception/newell
+      #          ./      is only on the Kubernetes instance
+      #
+      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}"
+      if [[ ! -d "$WORKDIR" ]]; then
+        # if workdir already exists, we're in the testing job
+        mkdir -p "$WORKDIR"
+        cp -r . "$WORKDIR"
+      fi
+
+      cd "$WORKDIR"
+
+      if [[ $MY_CLUSTER = "deception" ]]; then
+        export SLURM_Q=`perl ./buildsystem/pnnl/findIdleDLNodes.pl`
+      else
+        export SLURM_Q=`perl ./buildsystem/pnnl/findIdleNewellNodes.pl`
+      fi
+
+      # Unique output file for this stage
+      output="output${OUTPUT_SUFFIX}"
+      [ -f $output ] && rm $output
+      touch $output
+      tail -f $output &
+      tailpid=$!
+
+      # Set some directories used in the build script manually, as they
+      # can be inconsistent in gitlab pipelines
+      export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+
+      # Export CTESTARGS defined in variables to run correct tests for stage
+      export CTESTARGS=$CTESTARGS
+
+      # jobid used in pnnl_after_script_template to cancel job if cancelled or
+      # timed out by gitlab through the UI
+      jobid=$(sbatch --export=ALL -A EXASGD --gres=gpu:1 --ntasks=3 -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/buildsystem/build.sh $SCRIPT_ARGS)
+      export jobid=$(echo $jobid | cut -f4 -d' ')
+      # Unique jobid filename for this job
+      echo $jobid > "$WORKDIR/jobid_${jobid}"
+      res=1
+      while :;
+      do
+        if [[ "$(awk 'BEGIN{i=0}/BUILD_STATUS/{i++}END{print i}' $output)" != "0" ]]; then
+          kill $tailpid
+          echo 'Last tail of build $output:'
+          tail -n 200 $output
+          res=$(grep BUILD_STATUS $output | tail -n 1 | cut -f2 -d':')
+          break
+        fi
+        sleep 10
+      done
+      echo "Finished batch job with exit code: $res"
+      rm "$WORKDIR/jobid_${jobid}"
+      exit $res
+
+.pnnl_module_script_template:
+  script:
+    - |
+      set -x
+
+      # Configure git before making changes
+      git checkout -b ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+
+      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}"
+
+      mkdir -p "$WORKDIR"
+      cp -r . "$WORKDIR"
+
+      cd "$WORKDIR"
+
+      # jobid used in pnnl_after_script_template to cancel job if cancelled or
+      # timed out by gitlab through the UI
+      jobid=$(sbatch $WORKDIR/buildsystem/spack/$MY_CLUSTER/sbatch.sh)
+      export jobid=$(echo $jobid | cut -f4 -d ' ')
+
+      # Unique jobid filename for this job
+      echo $jobid > "$WORKDIR/jobid_${jobid}"
+
+      # This is hard coded into sbatch script
+      outfile=spack_install.$jobid.output
+
+      [ -f $outfile ] && rm $outfile
+      touch $outfile
+
+      tail -f $outfile &
+      tailpid=$!
+ 
+      res=1
+      while :;
+      do
+        if [[ "$(awk 'BEGIN{i=0}/BUILD_STATUS/{i++}END{print i}' $outfile)" != "0" ]]; then
+          kill $tailpid
+          echo 'Last tail of build $outfile:'
+          tail -n 200 $outfile
+          res=$(grep BUILD_STATUS $outfile | tail -n 1 | cut -f2 -d':')
+          break
+        fi
+        sleep 60
+      done
+
+      if [ "$res" -ne "0" ]; then
+        echo "Finished batch job with exit code: $res"
+        rm "$WORKDIR/jobid_${jobid}"
+        rm -rf $WORKDIR
+        set +x
+        # We want to exit early if the spack build didn't succeed.
+        exit $res;
+      fi
+        
+      # Modules are in /buildsystem/spack/$MY_CLUSTER/modules
+      # Assuming MY_CLUSTER is lower case
+      git add ./buildsystem/spack/${MY_CLUSTER}/modules/*
+
+      # Have to configure username to be able to add commits
+      git config user.name "spack-auto-module"
+      git config user.email "spack.bot@no-reply.com"
+
+      # Add commit to MR branch - message can be changed
+      git commit -m "Update ${MY_CLUSTER} spack built modules - CI AUTOMATED MESSAGE."
+
+      # Do a rebase incase another pipeline has pushed since build started
+      git pull --rebase origin ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+
+      # You will have to change this to work for non-merge requests
+      git push \
+        "https://gitlab-ci-token:${SPACK_GIT_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" \
+        ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+
+      rm -rf $WORKDIR
+      set +x
+      exit $res
+
+.pnnl_tags_template:
+  image: kfox1111/slurm:deception2
+  tags:
+    - k8s
+    - ikp
+    - exasgd
+    - marianas
+
+.pnnl_rules:
+  rules:
+    - &pnnl_rule
+      if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"' # Will only apply to PNNL
+
+.pnnl_nonhpc_tags:
+  image: ubuntu:20.04
+  tags:
+    - k8s
+    - ikp
+    - exasgd
+    - basic
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+stages:
+  - build
+  - test
+
+# For PNNL CI
+CMake Lint:
+  stage: build
+  allow_failure: true
+  extends:
+    - .pnnl_nonhpc_tags
+    - .pnnl_rules
+  script:
+    |
+    set -x
+    apt update && apt install -y python3 python3-pip perl
+    pip install cmake_format
+    ./buildsystem/tools/cmake_format.pl -v
+    exit $?
+
+C++ Lint:
+  stage: build
+  allow_failure: true
+  extends:
+    - .pnnl_nonhpc_tags
+    - .pnnl_rules
+  script:
+    |
+    set -x
+    apt update && apt install -y clang-format perl
+    ./buildsystem/tools/clang_format.pl -v
+    exit $?
+
+Python Lint:
+  stage: build
+  allow_failure: true
+  extends:
+    - .pnnl_nonhpc_tags
+    - .pnnl_rules
+  script:
+    |
+    set -x
+    apt update && apt install -y python3 python3-pip perl
+    pip install pycodestyle autopep8
+    ./buildsystem/tools/python_format.pl -v
+    exit $?
+
+File Naming Conventions:
+  stage: build
+  allow_failure: true
+  extends:
+    - .pnnl_nonhpc_tags
+    - .pnnl_rules
+  script:
+    |
+    set -x
+    apt update && apt install -y perl
+    ./buildsystem/tools/file_naming_conventions.pl
+    exit $?
+
+SVC Account Cleanup:
+  stage: .pre
+  variables:
+    # Don't clone for cleanup jobs
+    GIT_STRATEGY: none
+  extends:
+    - .pnnl_rules
+    - .pnnl_tags_template
+  script:
+    - export WORKDIR="$HOME/gitlab/"
+    # clears directory of files more than 6 hours/360 minutes old
+    - find $WORKDIR -type d -mindepth 1 -mmin +360 -prune -print -exec rm -rf {} \; || true
+    - ls -hal $WORKDIR
+
+Newell Build:
+  stage: build
+  variables:
+    SLURM_Q: "newell_shared"
+    MY_CLUSTER: "newell"
+    OUTPUT_SUFFIX: "_build"
+    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+    - .pnnl_rules
+
+Newell Test:
+  stage: test
+  dependencies:
+    - 'Newell Build'
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+    SLURM_Q: "newell_shared"
+    MY_CLUSTER: "newell"
+    CTESTARGS: "--output-on-failure -E Python"
+    OUTPUT_SUFFIX: "_test"
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+    - .pnnl_after_script_template
+    - .pnnl_rules
+
+Newell Py Test:
+  stage: test
+  dependencies:
+    - 'Newell Build'
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+    SLURM_Q: "newell8"
+    MY_CLUSTER: "newell"
+    CTESTARGS: "--output-on-failure -R Python"
+    OUTPUT_SUFFIX: "_test_python"
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+      # No after_script as only one test per platform cleans up
+    - .pnnl_rules
+  allow_failure: true
+
+Newell Module Rebuild:
+  stage: .pre
+  when: manual
+# Only for manual pipelines in MRs
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  variables:
+    GIT_STRATEGY: clone
+    MY_CLUSTER: "newell"
+    WORKDIR_SUFFIX: "spack_newell"
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_module_script_template
+    - .pnnl_rules
+  allow_failure: true
+
+Deception Build:
+  stage: build
+  variables:
+    SLURM_Q: "dl_shared"
+    MY_CLUSTER: "deception"
+    OUTPUT_SUFFIX: "_build"
+    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+    - .pnnl_rules
+
+Deception Test:
+  stage: test
+  dependencies:
+    - 'Deception Build'
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+    SLURM_Q: "dl_shared"
+    MY_CLUSTER: "deception"
+    CTESTARGS: "--output-on-failure -E Python"
+    OUTPUT_SUFFIX: "_test"
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+    - .pnnl_after_script_template
+    - .pnnl_rules
+
+Deception Py Test:
+  stage: test
+  dependencies:
+    - 'Deception Build'
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+    SLURM_Q: "dl_shared"
+    MY_CLUSTER: "deception"
+    CTESTARGS: "--output-on-failure -R Python"
+    OUTPUT_SUFFIX: "_test_python"
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+      # No after_script as only one test per platform cleans up
+    - .pnnl_rules
+  allow_failure: true
+
+Deception Module Rebuild:
+  stage: .pre
+  when: manual
+  # Only for manual pipelines in MRs
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  variables:
+    GIT_STRATEGY: clone
+    MY_CLUSTER: "deception"
+    WORKDIR_SUFFIX: "spack_deception"
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_module_script_template
+    - .pnnl_rules
+  allow_failure: true
+# ---
