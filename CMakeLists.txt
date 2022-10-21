@@ -104,10 +104,9 @@ set(EXAGO_CTEST_LAUNCH_COMMAND
 
 option(EXAGO_DISABLE_LOGGING "Disable all internal logging" OFF)
 
-# When building with HIP support, OpenMP is not supported
-if((NOT EXAGO_ENABLE_RAJA AND NOT EXAGO_ENABLE_HIOP) OR (EXAGO_ENABLE_GPU
-                                                         AND EXAGO_ENABLE_HIP)
-)
+# When building with HIP support, OpenMP is not supported Need to make sure we
+# are building with RAJA
+if(EXAGO_ENABLE_RAJA AND (NOT (EXAGO_ENABLE_GPU AND EXAGO_ENABLE_HIP)))
   set(EXAGO_ENABLE_OMP OFF)
 endif()
 
