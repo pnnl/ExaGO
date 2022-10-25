@@ -6,7 +6,7 @@
 const char *const OPFLOWInitializationTypes[] = {
     "MIDPOINT",    "FROMFILE", "ACPF",
     "FLATSTART",   "DCOPF",    "OPFLOWInitializationType",
-    "OPFLOWINIT_", NULL};
+    "OPFLOWINIT_", NULL}
 
 const char *const OPFLOWObjectiveTypes[] = {"MIN_GEN_COST",
                                             "MIN_GENSETPOINT_DEVIATION",
