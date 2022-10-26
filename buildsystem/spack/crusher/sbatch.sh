@@ -54,6 +54,7 @@ export no_proxy='localhost,127.0.0.0/8,*.ccs.ornl.gov,*.olcf.ornl.gov,*.ncrc.gov
 
 
 # Assuming that you already have a binary mirror configured
+# TODO - copy over coinhsl tarball beforehand?
 export MY_CLUSTER=crusher
 . buildsystem/spack/load_spack.sh && \
 spack develop --no-clone --path=$(pwd) exago@develop && \

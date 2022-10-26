@@ -75,8 +75,8 @@ module load hiop-develop-gcc-10.2.0-dy54uvw
 module load ipopt-3.12.10-gcc-10.2.0-c3chb6f
 # python@3.9.12%gcc@10.2.0+bz2+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tix~tkinter~ucs4+uuid+zlib patches=0d98e93,4c24573,f2fd060 arch=linux-centos7-zen2
 module load python-3.9.12-gcc-10.2.0-d4tck3b
-# petsc@3.16.6%gcc@10.2.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~tetgen~trilinos~valgrind clanguage=C arch=linux-centos7-zen2
-module load petsc-3.16.6-gcc-10.2.0-5gsowcj
+# petsc@3.18.0%gcc@10.2.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~tetgen~trilinos~valgrind clanguage=C patches=2daeca7 arch=linux-centos7-zen2
+module load petsc-3.18.0-gcc-10.2.0-tkozbjd
 # py-pip@22.1.2%gcc@10.2.0 arch=linux-centos7-zen2
 module load py-pip-22.1.2-gcc-10.2.0-2kqxny4
 # py-setuptools@65.0.0%gcc@10.2.0 arch=linux-centos7-zen2
@@ -109,5 +109,5 @@ module load py-py-1.11.0-gcc-10.2.0-meh5son
 module load py-toml-0.10.2-gcc-10.2.0-gqgcbhp
 # py-pytest@6.2.5%gcc@10.2.0 arch=linux-centos7-zen2
 module load py-pytest-6.2.5-gcc-10.2.0-qnxtpdk
-# exago@develop%gcc@10.2.0+cuda~full_optimizations+hiop~ipo+ipopt+mpi+python+raja~rocm build_type=RelWithDebInfo cuda_arch=60 dev_path=/people/svcexasgd/gitlab/17410/spack_deception arch=linux-centos7-zen2
-## module load exago-develop-gcc-10.2.0-o5soj7d
+# exago@develop%gcc@10.2.0+cuda+hiop~ipo+ipopt+mpi+python+raja~rocm build_type=RelWithDebInfo cuda_arch=60 dev_path=/people/svcexasgd/gitlab/17762/spack_deception arch=linux-centos7-zen2
+## module load exago-develop-gcc-10.2.0-2dritdp

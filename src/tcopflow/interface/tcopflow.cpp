@@ -237,7 +237,7 @@ PetscErrorCode TCOPFLOWSetModel(TCOPFLOW tcopflow, const char *modelname) {
   }
 
   if (!r)
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
              "Unknown type for TCOPFLOW Model %s", modelname);
 
   /* Null the function pointers */
@@ -287,7 +287,7 @@ PetscErrorCode TCOPFLOWSetSolver(TCOPFLOW tcopflow, const char *solvername) {
   }
 
   if (!r)
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
              "Unknown type for TCOPFLOW Solver %s", solvername);
 
   /* Initialize (Null) the function pointers */
@@ -358,9 +358,8 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow) {
 
   PetscFunctionBegin;
 
-  ierr =
-      PetscOptionsBegin(tcopflow->comm->type, NULL, "TCOPFLOW options", NULL);
-  CHKERRQ(ierr);
+  PetscOptionsBegin(tcopflow->comm->type, NULL, "TCOPFLOW options", NULL);
+
   ierr = PetscOptionsString("-tcopflow_model", "TCOPFLOW model type", "",
                             modelname, modelname, 32, NULL);
   CHKERRQ(ierr);

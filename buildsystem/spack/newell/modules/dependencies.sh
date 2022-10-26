@@ -77,8 +77,8 @@ module load hiop-develop-gcc-8.5.0-2elhbvi
 module load ipopt-3.12.10-gcc-8.5.0-wyzn5ev
 # python@3.8.5%gcc@8.5.0+bz2+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tix~tkinter~ucs4+uuid+zlib patches=0d98e93,4c24573,f2fd060 arch=linux-centos8-power9le
 module load python-3.8.5-gcc-8.5.0-xoqxryp
-# petsc@3.16.6%gcc@8.5.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~tetgen~trilinos~valgrind clanguage=C arch=linux-centos8-power9le
-module load petsc-3.16.6-gcc-8.5.0-hwv427r
+# petsc@3.18.0%gcc@8.5.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~tetgen~trilinos~valgrind clanguage=C patches=2daeca7 arch=linux-centos8-power9le
+module load petsc-3.18.0-gcc-8.5.0-olvjh3k
 # py-pip@22.1.2%gcc@8.5.0 arch=linux-centos8-power9le
 module load py-pip-22.1.2-gcc-8.5.0-huulc5x
 # py-setuptools@65.0.0%gcc@8.5.0 arch=linux-centos8-power9le

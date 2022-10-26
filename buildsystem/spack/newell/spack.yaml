@@ -1,7 +1,7 @@
 spack:
   specs:
-  - exago@develop+cuda+full_optimizations%gcc@8.5.0 cuda_arch=70
-  - exago@develop+cuda~full_optimizations%gcc@8.5.0 cuda_arch=70
+  - exago@develop+cuda%gcc@8.5.0 cuda_arch=70
+  - exago@develop+cuda%gcc@8.5.0 cuda_arch=70
   view: false
   concretizer:
     unify: when_possible
