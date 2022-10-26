@@ -22,7 +22,9 @@ If you are not compatible, state what is lacking and what are your plans on how 
 |**M8.** Provide a runtime API to return the current version number of the software. |Full|Header `exago_config.h` defines version and configuration information, and we expose various runtime APIs for software information, such as `ExaGOVersionGetVersion` and `ExaGOVersionGetReleaseDate`.|
 |**M9.** Use a limited and well-defined symbol, macro, library, and include file name space. |Full| All macros are prefixed with `EXAGO_` and headers installed under `exago/` directory. |
 |**M10.** Provide an xSDK team accessible repository (not necessarily publicly available). |Full|[Public GitLab repository linked here](https://gitlab.pnnl.gov/exasgd/frameworks/exago/). |
-|**M11.** Have no hardwired print or IO statements that cannot be turned off. |Full|Logging may be disabled with `ExaGOLogSetMinLogLevel(EXAGO_LOG_DISABLE)` or by enabling the CMake option `EXAGO_DISABLE_LOGGING` to ensure the logger is fully disabled.|
+|**M11.** Have no hardwired print or IO statements that cannot be turned off.
+|Full|Logging may be disabled with `ExaGOLogSetMinLogLevel(EXAGO_LOG_DISABLE)`
+or by enabling the CMake option `EXAGO_ENABLE_LOGGING=OFF` to ensure the logger is fully disabled.|
 |**M12.** For external dependencies, allow installing, building, and linking against an outside copy of external software. |Full| Our CMake configuration allows for discovery of external libraries. We use Spack to install and manage our dependencies, which informs our CMake-based build system of external packages.|
 |**M13.** Install headers and libraries under \<prefix\>/include and \<prefix\>/lib. |Full| Build targets are installed using CMake under the recommended directories. Search the top-level `CMakeLists.txt` file for the `include` keyword to view the directories under the installation prefix where build targets are installed.|
 |**M14.** Be buildable using 64 bit pointers. 32 bit is optional. |Full| We build using only 64 bit pointers. |
