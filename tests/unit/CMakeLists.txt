@@ -42,8 +42,13 @@ if(EXAGO_INSTALL_TESTS)
 
   string(REPLACE ";" " " MPICMD_STR "${MPICMD}")
   exago_add_test(
-    NAME UNIT_TESTS_LOGGER COMMAND
-    ${CMAKE_CURRENT_SOURCE_DIR}/run_test_logger.pl ${MPICMD_STR}
+    NAME
+    UNIT_TESTS_LOGGER
+    COMMAND
+    ${CMAKE_CURRENT_SOURCE_DIR}/run_test_logger.pl
+    ${MPICMD_STR}
     $<TARGET_FILE:test_logger>
+    DEPENDS
+    EXAGO_ENABLE_LOGGING
   )
 endif()

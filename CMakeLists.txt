@@ -102,7 +102,7 @@ set(EXAGO_CTEST_LAUNCH_COMMAND
     CACHE STRING "Command to use when launching tests"
 )
 
-option(EXAGO_DISABLE_LOGGING "Disable all internal logging" OFF)
+option(EXAGO_ENABLE_LOGGING "Enable internal logging" ON)
 
 # When building with HIP support, OpenMP is not supported Need to make sure we
 # are building with RAJA

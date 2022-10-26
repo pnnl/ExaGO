@@ -40,7 +40,7 @@
  * with the ExaGOLogSetMinLogLevel/ExaGOLogGetMinLogLevel functions.
  *
  * This logging facility will be entirely disabled at build-time if the CMake
- * variable EXAGO_DISABLE_LOGGING is enabled at configure-time.
+ * variable EXAGO_ENABLE_LOGGING is set to OFF at configure-time.
  *
  */
 
@@ -82,8 +82,6 @@ extern PetscErrorCode ExaGOLogGetMinLogLevel(int &);
 /** Set minimum loglevel for a log to be printed */
 extern PetscErrorCode ExaGOLogSetMinLogLevel(int);
 
-#if !defined(EXAGO_DISABLE_LOGGING)
-
 /**
  * @brief Implementation to log string according to ExaGO build configuration.
  * @note To log on every rank, you may use the overload which does not take a
@@ -112,6 +110,9 @@ void ExaGOLog(MPI_Comm comm, int level, std::string fmt, Args... args) {
     ierr = ExaGOLogGetLoggerName(logname);
     ExaGOCheckError(ierr);
     auto logger = spdlog::get(logname);
+#ifndef EXAGO_ENABLE_LOGGING
+    logger->set_level(spdlog::level::off);
+#endif
 
     /*
      * Because we handler our own verbosity levels, we just use `info` for all
@@ -129,13 +130,6 @@ template <typename... Args>
 void ExaGOLog(int level, std::string fmt, Args... args) {
   ExaGOLog(PETSC_COMM_SELF, level, fmt, args...);
 }
-
-#else
-
-/** If logging is disabled, logging is a no-op */
-#define ExaGOLog(...) (void)(x)
-
-#endif
 
 template <typename T> struct ExaGOOption {
   std::string opt;
