@@ -69,7 +69,7 @@ SOPFLOWReadScenarioData_Wind_SinglePeriod(SOPFLOW sopflow,
   ngenwind = 1000; // This should be increased for larger cases (?)
   fp = fopen(windgenprofile, "r");
   if (fp == NULL) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
              "Cannot open wind generation profile file %s", windgenprofile);
   }
 
@@ -91,7 +91,7 @@ SOPFLOWReadScenarioData_Wind_SinglePeriod(SOPFLOW sopflow,
     tok2 = strsep(&tok, sep2); /* Skip string "Wind" */
     sscanf(tok2, "%d", &genid);
     if (nw == ngenwind)
-      SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_SUP,
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
                "Exceeded max. number of wind generators=%d\n", ngenwind);
     snprintf(windgenid[nw], 3, "%-2d", genid);
 
@@ -183,7 +183,7 @@ SOPFLOWReadScenarioData_Wind_MultiPeriod(SOPFLOW sopflow,
   ngenwind = 1000; // This should be increased for larger cases (?)
   fp = fopen(windgenprofile, "r");
   if (fp == NULL) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
              "Cannot open wind generation profile file %s", windgenprofile);
     CHKERRQ(ierr);
   }
@@ -202,7 +202,7 @@ SOPFLOWReadScenarioData_Wind_MultiPeriod(SOPFLOW sopflow,
     tok2 = strsep(&tok, sep2); /* Skip string "Wind" */
     sscanf(tok2, "%d", &genid);
     if (nw == ngenwind)
-      SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_SUP,
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
                "Exceeded max. number of wind generators=%d\n", ngenwind);
     snprintf(windgenid[nw], 3, "%-2d", genid);
 
@@ -307,7 +307,7 @@ PetscErrorCode SOPFLOWGetNumScenarios_Native_MultiPeriod(const char scenfile[],
 
   fp = fopen(scenfile, "r");
   if (fp == NULL) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
              "Cannot open wind generation profile file %s", scenfile);
     CHKERRQ(ierr);
   }
@@ -351,7 +351,7 @@ PetscErrorCode SOPFLOWGetNumScenarios_Native_SinglePeriod(const char scenfile[],
 
   fp = fopen(scenfile, "r");
   if (fp == NULL) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
              "Cannot open wind generation profile file %s", scenfile);
     CHKERRQ(ierr);
   }

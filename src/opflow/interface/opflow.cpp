@@ -951,7 +951,7 @@ PetscErrorCode OPFLOWSetSolver(OPFLOW opflow, const char *solvername) {
   }
 
   if (!r)
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
              "Unknown type for OPFLOW Solver %s. You may need to rebuild ExaGO "
              "to support this solver.",
              solvername);
@@ -1008,7 +1008,7 @@ PetscErrorCode OPFLOWSetModel(OPFLOW opflow, const char *modelname) {
   }
 
   if (!r)
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
              "Unknown type for OPFLOW Model %s. You may need to rebuild ExaGO "
              "with the solver that supports this model.",
              modelname);
@@ -1350,8 +1350,7 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
 
   /* Read run-time options */
   if (!opflow->skip_options) {
-    ierr = PetscOptionsBegin(opflow->comm->type, NULL, "OPFLOW options", NULL);
-    CHKERRQ(ierr);
+    PetscOptionsBegin(opflow->comm->type, NULL, "OPFLOW options", NULL);
 
     ierr = PetscOptionsString(OPFLOWOptions::model.opt.c_str(),
                               OPFLOWOptions::model.desc.c_str(), "", modelname,
@@ -2752,7 +2751,7 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
   CHKERRQ(ierr);
   if (ipopt && !(ipopt_pbpol || ipopt_pbcar || ipopt_ibcar || ipopt_ibcar2 ||
                  ipopt_dcopf)) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_SUP,
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
              "OPFLOW solver IPOPT incompatible with model %s",
              opflow->modelname);
   }
@@ -2782,7 +2781,7 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
   ierr = PetscStrcmp(opflow->modelname, "DCOPF", &hiop_sparse_dcopf);
   CHKERRQ(ierr);
   if (hiop_sparse && !(hiop_sparse_pbpol || hiop_sparse_dcopf)) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_SUP,
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
              "OPFLOW solver HIOPSPARSE incompatible with model %s",
              opflow->modelname);
   }
@@ -2790,7 +2789,7 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
   PetscBool hiop_sparse = PETSC_FALSE;
 #endif // HIOP_SPARSE
   if ((hiop && !hiop_sparse) && !(hiop_pbpol || rajahiop_pbpol)) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_SUP,
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
              "OPFLOW solver HIOP incompatible with model %s",
              opflow->modelname);
   }

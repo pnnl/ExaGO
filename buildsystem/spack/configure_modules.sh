@@ -21,16 +21,17 @@ spack module tcl refresh -y && \
 	
 # We will create a new modules file, with the first line being the module path
 # Note we redirect and destroy old file
+# Only installing non-optimized version while config is not in spack develop
 echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/dependencies.sh && \
-echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/optimized-dependencies.sh && \
-echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/exago-optimized.sh && \
+#echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/optimized-dependencies.sh && \
+#echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/exago-optimized.sh && \
 echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/exago.sh && \
 
 # Now we can append to the files
-spack module tcl loads -r -x exago -x openssl exago~full_optimizations &>> $base/modules/dependencies.sh && \
-spack module tcl loads -r -x exago -x openssl exago+full_optimizations &>> $base/modules/optimized-dependencies.sh && \
-spack module tcl loads exago+full_optimizations &>> $base/modules/exago-optimized.sh && \
-spack module tcl loads exago~full_optimizations &>> $base/modules/exago.sh
+spack module tcl loads -r -x exago -x openssl exago &>> $base/modules/dependencies.sh && \
+# spack module tcl loads -r -x exago -x openssl exago &>> $base/modules/optimized-dependencies.sh && \
+# spack module tcl loads exago &>> $base/modules/exago-optimized.sh && \
+spack module tcl loads exago &>> $base/modules/exago.sh
 
 # This makes the module and installation location globally readable which isn't ideal.
 # Sticking to this avoids permission issues for other group members, but you

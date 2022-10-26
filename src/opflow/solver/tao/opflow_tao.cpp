@@ -115,7 +115,7 @@ PetscErrorCode OPFLOWSolverSolve_TAO(OPFLOW opflow) {
 
   PetscFunctionBegin;
 
-  ierr = TaoSetInitialVector(tao->nlp, opflow->X);
+  ierr = TaoSetSolution(tao->nlp, opflow->X);
   CHKERRQ(ierr);
 
   ierr = TaoSetVariableBounds(tao->nlp, opflow->Xl, opflow->Xu);
@@ -166,8 +166,8 @@ PetscErrorCode OPFLOWSolverSetUp_TAO(OPFLOW opflow) {
 
   /* Set Callback routines */
   /* Objective and gradient */
-  ierr = TaoSetObjectiveAndGradientRoutine(
-      tao->nlp, OPFLOWObjectiveandGradientFunction_TAO, (void *)opflow);
+  ierr = TaoSetObjectiveAndGradient(
+	 tao->nlp, NULL,OPFLOWObjectiveandGradientFunction_TAO, (void *)opflow);
   CHKERRQ(ierr);
 
   /* Equality Constraints */
@@ -197,7 +197,7 @@ PetscErrorCode OPFLOWSolverSetUp_TAO(OPFLOW opflow) {
   CHKERRQ(ierr);
 
   /* Set Hessian routine */
-  ierr = TaoSetHessianRoutine(tao->nlp, opflow->Hes, opflow->Hes,
+  ierr = TaoSetHessian(tao->nlp, opflow->Hes, opflow->Hes,
                               OPFLOWHessian_TAO, (void *)opflow);
   CHKERRQ(ierr);
 
@@ -215,9 +215,12 @@ PetscErrorCode OPFLOWSolverSetUp_TAO(OPFLOW opflow) {
 PetscErrorCode OPFLOWSolverGetObjective_TAO(OPFLOW opflow, PetscReal *obj) {
   PetscErrorCode ierr;
   OPFLOWSolver_TAO tao = (OPFLOWSolver_TAO)opflow->solver;
+  Vec            X;
 
   PetscFunctionBegin;
-  ierr = TaoGetObjective(tao->nlp, obj);
+  ierr = TaoGetSolution(tao->nlp,&X);
+  CHKERRQ(ierr);
+  ierr = TaoComputeObjective(tao->nlp, X, obj);
   CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -227,7 +230,7 @@ PetscErrorCode OPFLOWSolverGetSolution_TAO(OPFLOW opflow, Vec *X) {
   OPFLOWSolver_TAO tao = (OPFLOWSolver_TAO)opflow->solver;
 
   PetscFunctionBegin;
-  ierr = TaoGetSolutionVector(tao->nlp, X);
+  ierr = TaoGetSolution(tao->nlp, X);
   CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }

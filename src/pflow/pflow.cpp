@@ -1411,11 +1411,11 @@ PetscErrorCode PFLOWGetGenDispatch(PFLOW pflow, PetscInt busnum,
   if (intbusnum != -1) {
     bus = &ps->bus[intbusnum];
     if (!bus->ngen) {
-      SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_SUP, "No generators on bus %d",
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP, "No generators on bus %d",
                busnum);
     }
     if (bus->ide == ISOLATED_BUS) {
-      SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_SUP, "Bus %d is isolated", busnum);
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP, "Bus %d is isolated", busnum);
     }
     ierr = PSBUSGetGen(bus, gennum, &gen);
     CHKERRQ(ierr);
@@ -1464,11 +1464,11 @@ PetscErrorCode PFLOWSetGenDispatch(PFLOW pflow, PetscInt busnum,
   if (intbusnum != -1) {
     bus = &ps->bus[intbusnum];
     if (!bus->ngen) {
-      SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_SUP, "No generators on bus %d",
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP, "No generators on bus %d",
                busnum);
     }
     if (bus->ide == ISOLATED_BUS) {
-      SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_SUP, "Bus %d is isolated", busnum);
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP, "Bus %d is isolated", busnum);
     }
     ierr = PSBUSGetGen(bus, gennum, &gen);
     CHKERRQ(ierr);

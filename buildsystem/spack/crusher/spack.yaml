@@ -1,7 +1,7 @@
 spack:
   specs:
-  - exago@develop%clang@14.0.0+full_optimizations amdgpu_target=gfx90a
-  - exago@develop%clang@14.0.0~full_optimizations amdgpu_target=gfx90a
+  - exago@develop%clang@14.0.0 amdgpu_target=gfx90a
+  - exago@develop%clang@14.0.0 amdgpu_target=gfx90a
   view: false
   concretizer:
     unify: when_possible

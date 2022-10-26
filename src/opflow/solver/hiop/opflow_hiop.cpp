@@ -427,8 +427,8 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
   hiop->nlp = new OPFLOWHIOPInterface(opflow);
   hiop->mds = new hiop::hiopNlpMDS(*hiop->nlp);
 
-  ierr = PetscOptionsBegin(opflow->comm->type, NULL, "HIOP options", NULL);
-  CHKERRQ(ierr);
+  PetscOptionsBegin(opflow->comm->type, NULL, "HIOP options", NULL);
+
   ierr = PetscOptionsEnum(OPFLOWOptions::hiop_compute_mode.opt.c_str(),
                           OPFLOWOptions::hiop_compute_mode.desc.c_str(), "",
                           HIOPComputeModeChoices, (PetscEnum)compute_mode,
@@ -517,7 +517,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
   CHKERRQ(ierr);
 #endif
   if (!ismodelpbpolhiop && !ismodelpbpolrajahiop) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_SUP,
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
              "%s opflow model not supported with HIOP\n", opflow->modelname);
     PetscFunctionReturn(1);
     exit(0);

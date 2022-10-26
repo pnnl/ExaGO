@@ -74,7 +74,7 @@ PetscErrorCode PSIslandCheckandSetRefBus(PS ps, PetscInt isnum) {
 
   if (firstpvbus == 100000000) {
 #if defined DEBUGPS
-    SETERRQ1(PETSC_COMM_SELF, 0, " ", firstpvbus);
+    SETERRQ(PETSC_COMM_SELF, 0, " ", firstpvbus);
 #endif
   } else {
     if (ps->busext2intmap[firstpvbus] != -1) {

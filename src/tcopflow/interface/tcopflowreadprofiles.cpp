@@ -29,7 +29,7 @@ PetscErrorCode TCOPFLOWReadPloadProfile(TCOPFLOW tcopflow,
 
   fp = fopen(ploadprofile, "r");
   if (fp == NULL) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
              "Cannot open P load profile file %s", ploadprofile);
     CHKERRQ(ierr);
   }
@@ -107,7 +107,7 @@ PetscErrorCode TCOPFLOWReadQloadProfile(TCOPFLOW tcopflow,
 
   fp = fopen(qloadprofile, "r");
   if (fp == NULL) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
              "Cannot open Q load profile file %s", qloadprofile);
     CHKERRQ(ierr);
   }
@@ -188,7 +188,7 @@ PetscErrorCode TCOPFLOWReadWindGenProfile(TCOPFLOW tcopflow,
 
   fp = fopen(windgenprofile, "r");
   if (fp == NULL) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
              "Cannot open wind generation profile file %s", windgenprofile);
     CHKERRQ(ierr);
   }
