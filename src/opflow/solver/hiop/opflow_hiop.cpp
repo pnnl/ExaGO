@@ -306,12 +306,14 @@ void OPFLOWHIOPInterface::solution_callback(
    * mem-space is DEVICE */
   double *xsol_host, *lamsol_host, *gsol_host;
 
+#if defined(EXAGO_ENABLE_RAJA)
   if (hiop->mem_space == DEVICE) {
     xsol_host = (double *)h_allocator_.allocate(opflow->nx * sizeof(double));
     lamsol_host =
         (double *)h_allocator_.allocate(opflow->ncon * sizeof(double));
     gsol_host = (double *)h_allocator_.allocate(opflow->ncon * sizeof(double));
   }
+#endif
 
   /* Copy over solution details */
   hiop->status = status;
@@ -321,7 +323,9 @@ void OPFLOWHIOPInterface::solution_callback(
   CHKERRV(ierr);
   if (hiop->mem_space == DEVICE) {
     /* Copy xsol from device to host */
+#if defined(EXAGO_ENABLE_RAJA)
     resmgr.copy(xsol_host, (double *)xsol);
+#endif
     spdensetonatural(xsol_host, x);
   } else {
     spdensetonatural(xsol, x);
@@ -338,8 +342,9 @@ void OPFLOWHIOPInterface::solution_callback(
 
     if (hiop->mem_space == DEVICE) {
       /* Copy lamsol from device to host */
+#if defined(EXAGO_ENABLE_RAJA)
       resmgr.copy(lamsol_host, (double *)lamsol);
-
+#endif
       ierr = PetscMemcpy(lam, (double *)lamsol_host,
                          opflow->nconeq * sizeof(PetscScalar));
       CHKERRV(ierr);
@@ -372,8 +377,9 @@ void OPFLOWHIOPInterface::solution_callback(
     CHKERRV(ierr);
     if (hiop->mem_space == DEVICE) {
       /* Copy gsol from device to host */
+#if defined(EXAGO_ENABLE_RAJA)
       resmgr.copy(gsol_host, (double *)gsol);
-
+#endif
       ierr = PetscMemcpy(g, (double *)gsol_host,
                          opflow->nconeq * sizeof(PetscScalar));
       CHKERRV(ierr);
@@ -398,11 +404,13 @@ void OPFLOWHIOPInterface::solution_callback(
     CHKERRV(ierr);
   }
 
+#if defined(EXAGO_ENABLE_RAJA)
   if (hiop->mem_space == DEVICE) {
     h_allocator_.deallocate(xsol_host);
     h_allocator_.deallocate(lamsol_host);
     h_allocator_.deallocate(gsol_host);
   }
+#endif
 }
 
 PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
