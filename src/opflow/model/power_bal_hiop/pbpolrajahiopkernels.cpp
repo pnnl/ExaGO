@@ -649,7 +649,7 @@ int GENParamsRajaHiop::copy(OPFLOW opflow) {
   pb_dev_ = pb;
   qt_dev_ = qt;
   qb_dev_ = qb;
-  is_renewable_dev_ = isrenewable;
+  isrenewable_dev_ = isrenewable;
   xidx_dev_ = xidx;
   gidxbus_dev_ = gidxbus;
   eqjacspbus_idx_dev_ = eqjacspbus_idx;
