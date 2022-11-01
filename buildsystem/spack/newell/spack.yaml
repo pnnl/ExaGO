@@ -20,7 +20,7 @@ spack:
         tcl: $SPACK_INSTALL/$SPACK_MODULES
   packages:
     exago:
-      require: +raja+hiop+ipopt
+      require: ~raja+hiop+ipopt
     hiop:
       require: '@develop+sparse+mpi+ginkgo+kron'
     coinhsl:
