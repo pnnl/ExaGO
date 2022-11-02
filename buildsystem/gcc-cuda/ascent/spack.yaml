@@ -1,11 +1,12 @@
 spack:
   specs:
-  - exago@develop+hiop+mpi+raja+cuda+ipopt+python
+  - exago@develop+hiop+mpi+raja+cuda+ipopt+python cuda_arch=70
     ^hiop@develop%gcc@10.2.0 +kron+cuda+mpi+sparse+cusolver+ginkgo+raja cuda_arch=70 
     ^magma+cuda cuda_arch=70 
     ^raja@0.14.0+cuda~examples~exercises~ipo+openmp~rocm+shared~tests cuda_arch=70 
     ^umpire@6.0.0~c+cuda~deviceconst~examples~fortran~ipo~numa~openmp~rocm~shared cuda_arch=70 tests=none 
     ^ipopt+coinhsl~mumps
+    ^petsc@3.18.1
   view: false
   compilers:
   - compiler:
@@ -52,13 +53,9 @@ spack:
       buildable: false
     python:
       externals:
-      - spec: python@3.6.8
-        prefix: /usr
+      - spec: python@3.9.7
+        prefix: /sw/ascent/python/3.9/anaconda-base
       buildable: false
-      version: []
-      target: []
-      providers: {}
-      compiler: []
     cuda:
       externals:
       - spec: cuda@11.4.2
@@ -78,4 +75,4 @@ spack:
       spec: hiop@develop
     ginkgo:
       path: /gpfs/wolf/proj-shared/csc359/src/ginkgo
-      spec: ginkgo@glu_experimental
+      spec: ginkgo@1.5.0.glu_experimental
