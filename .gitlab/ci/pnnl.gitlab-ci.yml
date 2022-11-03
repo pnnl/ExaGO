@@ -268,7 +268,7 @@ Newell Test:
     GIT_STRATEGY: none
     SLURM_Q: "newell_shared"
     MY_CLUSTER: "newell"
-    CTESTARGS: "--output-on-failure -E Python"
+    CTESTARGS: "-VV -E Python"
     OUTPUT_SUFFIX: "_test"
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
