@@ -21,8 +21,8 @@ PetscErrorCode SOPFLOWModelRegister(SOPFLOW sopflow, const char sname[],
   }
   if (sopflow->nmodelsregistered == SOPFLOWMODELSMAX) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-             "Cannot register %s OPFLOW model, maximum limit %d reached\n",
-             sname, SOPFLOWMODELSMAX);
+            "Cannot register %s OPFLOW model, maximum limit %d reached\n",
+            sname, SOPFLOWMODELSMAX);
   }
   i = sopflow->nmodelsregistered;
   ierr = PetscStrcpy(sopflow->SOPFLOWModelList[i].name, sname);

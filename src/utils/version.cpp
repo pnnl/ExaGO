@@ -2,9 +2,11 @@
 #include <exago_config.h>
 #include <unordered_map>
 #include <utils.h>
+#if (EXAGO_ENABLE_IPOPT || EXAGO_ENABLE_HIOP)
 #include <opflow.h>
 #include <scopflow.h>
 #include <sopflow.h>
+#endif
 #include <version.h>
 
 namespace {

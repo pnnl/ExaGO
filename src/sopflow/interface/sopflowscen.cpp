@@ -70,7 +70,7 @@ SOPFLOWReadScenarioData_Wind_SinglePeriod(SOPFLOW sopflow,
   fp = fopen(windgenprofile, "r");
   if (fp == NULL) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
-             "Cannot open wind generation profile file %s", windgenprofile);
+            "Cannot open wind generation profile file %s", windgenprofile);
   }
 
   /* First line -- has the bus numbers */
@@ -92,7 +92,7 @@ SOPFLOWReadScenarioData_Wind_SinglePeriod(SOPFLOW sopflow,
     sscanf(tok2, "%d", &genid);
     if (nw == ngenwind)
       SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-               "Exceeded max. number of wind generators=%d\n", ngenwind);
+              "Exceeded max. number of wind generators=%d\n", ngenwind);
     snprintf(windgenid[nw], 3, "%-2d", genid);
 
     nw++;
@@ -184,7 +184,7 @@ SOPFLOWReadScenarioData_Wind_MultiPeriod(SOPFLOW sopflow,
   fp = fopen(windgenprofile, "r");
   if (fp == NULL) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
-             "Cannot open wind generation profile file %s", windgenprofile);
+            "Cannot open wind generation profile file %s", windgenprofile);
     CHKERRQ(ierr);
   }
 
@@ -203,7 +203,7 @@ SOPFLOWReadScenarioData_Wind_MultiPeriod(SOPFLOW sopflow,
     sscanf(tok2, "%d", &genid);
     if (nw == ngenwind)
       SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-               "Exceeded max. number of wind generators=%d\n", ngenwind);
+              "Exceeded max. number of wind generators=%d\n", ngenwind);
     snprintf(windgenid[nw], 3, "%-2d", genid);
 
     nw++;
@@ -308,7 +308,7 @@ PetscErrorCode SOPFLOWGetNumScenarios_Native_MultiPeriod(const char scenfile[],
   fp = fopen(scenfile, "r");
   if (fp == NULL) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
-             "Cannot open wind generation profile file %s", scenfile);
+            "Cannot open wind generation profile file %s", scenfile);
     CHKERRQ(ierr);
   }
 
@@ -352,7 +352,7 @@ PetscErrorCode SOPFLOWGetNumScenarios_Native_SinglePeriod(const char scenfile[],
   fp = fopen(scenfile, "r");
   if (fp == NULL) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
-             "Cannot open wind generation profile file %s", scenfile);
+            "Cannot open wind generation profile file %s", scenfile);
     CHKERRQ(ierr);
   }
 

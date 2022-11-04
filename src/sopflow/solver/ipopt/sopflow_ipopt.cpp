@@ -519,8 +519,8 @@ PetscErrorCode SOPFLOWSolverCreate_IPOPT(SOPFLOW sopflow) {
 
   if (sopflow->comm->size > 1)
     SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_SUP,
-             "IPOPT solver does not support execution in parallel\n",
-             sopflow->comm->size);
+            "IPOPT solver does not support execution in parallel\n",
+            sopflow->comm->size);
   ierr = PetscCalloc1(1, &ipopt);
   CHKERRQ(ierr);
 

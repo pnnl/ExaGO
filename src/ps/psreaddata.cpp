@@ -68,7 +68,7 @@ PetscErrorCode PSReadPSSERawData(PS ps, const char netfile[]) {
   /* Check for valid file */
   if (fp == NULL) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN, "Cannot open file %s",
-             netfile);
+            netfile);
     CHKERRQ(ierr);
   }
 
@@ -271,8 +271,8 @@ PetscErrorCode PSReadPSSERawData(PS ps, const char netfile[]) {
         internalindex = busext2intmap[shuntbus];
         if (Bus[internalindex].nshunt == 1)
           SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_OUTOFRANGE,
-                   "Bus %d: No support for more than 1 fixed shunt at bus",
-                   Bus[internalindex].bus_i);
+                  "Bus %d: No support for more than 1 fixed shunt at bus",
+                  Bus[internalindex].bus_i);
         Bus[internalindex].nshunt++;
         Bus[internalindex].gl = gshunt / ps->MVAbase;
         Bus[internalindex].bl = bshunt / ps->MVAbase;
@@ -530,7 +530,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   /* Check for valid file */
   if (fp == NULL) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN, "Cannot open file %s",
-             netfile);
+            netfile);
     CHKERRQ(ierr);
   }
 

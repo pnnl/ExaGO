@@ -1,6 +1,8 @@
 #[[ Functionality tests for ExaGO applications ]]
-add_subdirectory(opflow)
 add_subdirectory(pflow)
-add_subdirectory(tcopflow)
-add_subdirectory(scopflow)
-add_subdirectory(sopflow)
+if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
+  add_subdirectory(opflow)
+  add_subdirectory(tcopflow)
+  add_subdirectory(scopflow)
+  add_subdirectory(sopflow)
+endif()

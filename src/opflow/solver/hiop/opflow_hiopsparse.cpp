@@ -541,7 +541,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOPSPARSE(OPFLOW opflow) {
   hiop->sp = new hiop::hiopNlpSparse(*hiop->nlp);
 
   PetscOptionsBegin(opflow->comm->type, NULL, "HIOP options", NULL);
-  
+
   ierr = PetscOptionsInt("-hiop_verbosity_level",
                          "HIOP verbosity level (Integer 0 to 12)", "",
                          verbose_level, &verbose_level, NULL);
