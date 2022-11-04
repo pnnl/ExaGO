@@ -22,8 +22,8 @@ SCOPFLOWModelRegister(SCOPFLOW scopflow, const char sname[],
   }
   if (scopflow->nmodelsregistered == SCOPFLOWMODELSMAX) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-             "Cannot register %s OPFLOW model, maximum limit %d reached\n",
-             sname, SCOPFLOWMODELSMAX);
+            "Cannot register %s OPFLOW model, maximum limit %d reached\n",
+            sname, SCOPFLOWMODELSMAX);
   }
   i = scopflow->nmodelsregistered;
   ierr = PetscStrcpy(scopflow->SCOPFLOWModelList[i].name, sname);

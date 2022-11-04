@@ -97,7 +97,8 @@ PetscErrorCode PSCheckandSetRefBus(PS ps) {
   } else {
     if (ps->busext2intmap[firstpvbus] != -1) {
       ps->bus[ps->busext2intmap[firstpvbus]].ide = REF_BUS;
-      ierr = PetscPrintf(PETSC_COMM_SELF, "Using first PV bus = %d ", firstpvbus);
+      ierr =
+          PetscPrintf(PETSC_COMM_SELF, "Using first PV bus = %d ", firstpvbus);
       CHKERRQ(ierr);
     }
   }
@@ -455,8 +456,8 @@ PetscErrorCode PSBUSGetGen(PSBUS bus, PetscInt gen_num, PSGEN *gen) {
   PetscFunctionBegin;
   if (gen_num < 0 || gen_num > bus->ngen - 1)
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-             "Ngen at bus = %d, generator number requested %d", bus->ngen,
-             gen_num);
+            "Ngen at bus = %d, generator number requested %d", bus->ngen,
+            gen_num);
   *gen = bus->gens[gen_num];
   PetscFunctionReturn(0);
 }
@@ -476,8 +477,8 @@ PetscErrorCode PSBUSGetLoad(PSBUS bus, PetscInt load_num, PSLOAD *load) {
   PetscFunctionBegin;
   if (load_num < 0 || load_num > bus->nload - 1)
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-             "Nload at bus = %d, load number requested %d", bus->nload,
-             load_num);
+            "Nload at bus = %d, load number requested %d", bus->nload,
+            load_num);
   *load = bus->loads[load_num];
   PetscFunctionReturn(0);
 }
@@ -1208,9 +1209,9 @@ PetscErrorCode PSSetUp(PS ps) {
     CHKERRQ(ierr);
     if (nlines > MAXCONNLINES)
       SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_OUTOFRANGE,
-               "%D lines connected to a bus %D exceeds max. allowed connected "
-               "lines allowed %D",
-               nlines, ps->bus[i].bus_i, MAXCONNLINES);
+              "%D lines connected to a bus %D exceeds max. allowed connected "
+              "lines allowed %D",
+              nlines, ps->bus[i].bus_i, MAXCONNLINES);
     ps->bus[i].nconnlines = nlines;
     for (k = 0; k < nlines; k++)
       ps->bus[i].connlines[k] = &ps->line[connlines[k] - eStart];
@@ -1383,7 +1384,7 @@ PetscErrorCode PSSetGenStatus(PS ps, PetscInt gbus, const char *gid,
     }
   } else {
     SETERRQ(PETSC_COMM_SELF, 0, "No generator found on bus %d with %s id\n",
-             gbus, gid);
+            gbus, gid);
   }
 
   /* Update reference bus if needed */
@@ -1422,7 +1423,7 @@ PetscErrorCode PSGetGenStatus(PS ps, PetscInt gbus, const char *gid,
       *status = gen->status;
   } else {
     SETERRQ(PETSC_COMM_SELF, 0, "No generator found on bus %d with %s id\n",
-             gbus, gid);
+            gbus, gid);
   }
 
   PetscFunctionReturn(0);
@@ -1681,7 +1682,7 @@ PetscErrorCode PSSetGenPowerLimits(PS ps, PetscInt gbus, const char *gid,
       gen->qb = qb / ps->MVAbase;
   } else {
     SETERRQ(PETSC_COMM_SELF, 0, "No generator found on bus %d with %s id\n",
-             gbus, gid);
+            gbus, gid);
   }
 
   PetscFunctionReturn(0);
@@ -1729,7 +1730,7 @@ PetscErrorCode PSSetGenPowerLimits(PS ps, PetscInt gbus, const char *gid,
       *qb = gen->qb;
   } else {
     SETERRQ(PETSC_COMM_SELF, 0, "No generator found on bus %d with %s id\n",
-             gbus, gid);
+            gbus, gid);
   }
 
   PetscFunctionReturn(0);
@@ -1768,7 +1769,7 @@ PetscErrorCode PSGetGenDispatch(PS ps, PetscInt gbus, const char *gid,
       *qg = gen->qg * ps->MVAbase;
   } else {
     SETERRQ(PETSC_COMM_SELF, 0, "No generator found on bus %d with %s id\n",
-             gbus, gid);
+            gbus, gid);
   }
 
   PetscFunctionReturn(0);

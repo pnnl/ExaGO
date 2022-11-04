@@ -136,13 +136,6 @@ if(UNIX)
   set(EXAGO_MATH_LIB m)
 endif()
 
-if((NOT EXAGO_ENABLE_IPOPT) AND (NOT EXAGO_ENABLE_HIOP))
-  message(
-    FATAL_ERROR
-      "ExaGO requires at least one solver. Please enable Ipopt and/or HiOp."
-  )
-endif()
-
 # If MPI support is enabled, find MPI includes and libraries
 if(EXAGO_ENABLE_MPI)
   find_package(MPI REQUIRED COMPONENTS C CXX)
@@ -292,15 +285,19 @@ Installation of libraries, headers, and datafiles used for testing.
 #]]
 
 # EXAGO options files to install
-set(EXAGO_OPTIONS_FILES
-    options/pflowoptions
-    options/opflowoptions
-    options/scopflowoptions
-    options/sopflowoptions
-    options/tcopflowoptions
-    options/hiop.options
-    options/ipopt.opt
-)
+set(EXAGO_OPTIONS_FILES options/pflowoptions)
+
+if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
+  set(EXAGO_OPTIONS_FILES
+      ${EXAGO_OPTIONS_FILES}
+      options/opflowoptions
+      options/scopflowoptions
+      options/sopflowoptions
+      options/tcopflowoptions
+      options/hiop.options
+      options/ipopt.opt
+  )
+endif()
 
 # Install options files
 install(FILES ${EXAGO_OPTIONS_FILES} DESTINATION ${EXAGO_OPTIONS_DIR})
@@ -308,31 +305,45 @@ install(FILES ${EXAGO_OPTIONS_FILES} DESTINATION ${EXAGO_OPTIONS_DIR})
 file(INSTALL ${EXAGO_OPTIONS_FILES} DESTINATION options)
 
 # EXAGO datafiles to install
-set(EXAGO_DATA_FILES
-    ${PROJECT_SOURCE_DIR}/datafiles/case118.m
-    ${PROJECT_SOURCE_DIR}/datafiles/case118.cont
-    ${PROJECT_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
-    ${PROJECT_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
-    ${PROJECT_SOURCE_DIR}/datafiles/10_scenarios_ACTIVSg200.csv
-    ${PROJECT_SOURCE_DIR}/datafiles/10_scenarios_ACTIVSg2000.csv
+set(EXAGO_DATA_FILES ${PROJECT_SOURCE_DIR}/datafiles/case118.m
+                     ${PROJECT_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
 )
+
+if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
+  set(EXAGO_DATA_FILES
+      ${EXAGO_DATA_FILES}
+      ${PROJECT_SOURCE_DIR}/datafiles/case118.cont
+      ${PROJECT_SOURCE_DIR}/datafiles/case_ACTIVSg200.cont
+      ${PROJECT_SOURCE_DIR}/datafiles/10_scenarios_ACTIVSg200.csv
+      ${PROJECT_SOURCE_DIR}/datafiles/10_scenarios_ACTIVSg2000.csv
+  )
+endif()
 
 # Install data files
 install(FILES ${EXAGO_DATA_FILES} DESTINATION ${EXAGO_DATAFILES_DIR})
-install(DIRECTORY datafiles/unit DESTINATION ${EXAGO_DATAFILES_DIR})
+
+if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
+  install(DIRECTORY datafiles/unit DESTINATION ${EXAGO_DATAFILES_DIR})
+  install(DIRECTORY datafiles/TAMU200_scenarios
+          DESTINATION ${EXAGO_DATAFILES_DIR}
+  )
+  install(DIRECTORY datafiles/test_validation
+          DESTINATION ${EXAGO_DATAFILES_DIR}
+  )
+endif()
+
 install(DIRECTORY datafiles/case9 DESTINATION ${EXAGO_DATAFILES_DIR})
-install(DIRECTORY datafiles/TAMU200_scenarios
-        DESTINATION ${EXAGO_DATAFILES_DIR}
-)
-install(DIRECTORY datafiles/test_validation DESTINATION ${EXAGO_DATAFILES_DIR})
 
 # Install data files in build directory for testing
 file(INSTALL ${EXAGO_DATA_FILES} DESTINATION datafiles)
 file(INSTALL datafiles/case9 DESTINATION datafiles)
-file(INSTALL datafiles/TAMU200_scenarios DESTINATION datafiles)
-file(INSTALL datafiles/unit DESTINATION datafiles)
-# Custom testing data files
-file(INSTALL datafiles/test_validation DESTINATION datafiles)
+
+if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
+  file(INSTALL datafiles/TAMU200_scenarios DESTINATION datafiles)
+  file(INSTALL datafiles/unit DESTINATION datafiles)
+  # Custom testing data files
+  file(INSTALL datafiles/test_validation DESTINATION datafiles)
+endif()
 
 # EXAGO headers to install
 set(EXAGO_COMMON_INCLUDE
@@ -381,3 +392,10 @@ endif()
 
 # Build tests
 add_subdirectory(tests)
+
+if((NOT EXAGO_ENABLE_IPOPT) AND (NOT EXAGO_ENABLE_HIOP))
+  message(
+    WARNING
+      "ExaGO not configured with any optimization solver. Only PFLOW application will be available. Please enable Ipopt and/or HiOp for other applications."
+  )
+endif()

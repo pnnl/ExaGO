@@ -22,8 +22,8 @@ TCOPFLOWModelRegister(TCOPFLOW tcopflow, const char sname[],
   }
   if (tcopflow->nmodelsregistered == TCOPFLOWMODELSMAX) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-             "Cannot register %s OPFLOW model, maximum limit %d reached\n",
-             sname, TCOPFLOWMODELSMAX);
+            "Cannot register %s OPFLOW model, maximum limit %d reached\n",
+            sname, TCOPFLOWMODELSMAX);
   }
   i = tcopflow->nmodelsregistered;
   ierr = PetscStrcpy(tcopflow->TCOPFLOWModelList[i].name, sname);
