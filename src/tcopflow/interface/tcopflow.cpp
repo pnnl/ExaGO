@@ -238,7 +238,7 @@ PetscErrorCode TCOPFLOWSetModel(TCOPFLOW tcopflow, const char *modelname) {
 
   if (!r)
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
-             "Unknown type for TCOPFLOW Model %s", modelname);
+            "Unknown type for TCOPFLOW Model %s", modelname);
 
   /* Null the function pointers */
   tcopflow->modelops.destroy = 0;
@@ -288,7 +288,7 @@ PetscErrorCode TCOPFLOWSetSolver(TCOPFLOW tcopflow, const char *solvername) {
 
   if (!r)
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
-             "Unknown type for TCOPFLOW Solver %s", solvername);
+            "Unknown type for TCOPFLOW Solver %s", solvername);
 
   /* Initialize (Null) the function pointers */
   tcopflow->solverops.destroy = 0;

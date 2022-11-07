@@ -263,7 +263,7 @@ PetscErrorCode SOPFLOWSetModel(SOPFLOW sopflow, const char *modelname) {
 
   if (!r)
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
-             "Unknown type for SOPFLOW Model %s", modelname);
+            "Unknown type for SOPFLOW Model %s", modelname);
 
   /* Null the function pointers */
   sopflow->modelops.destroy = 0;
@@ -381,7 +381,7 @@ PetscErrorCode SOPFLOWSetSolver(SOPFLOW sopflow, const char *solvername) {
 
   if (!r)
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
-             "Unknown type for SOPFLOW Solver %s", solvername);
+            "Unknown type for SOPFLOW Solver %s", solvername);
 
   /* Initialize (Null) the function pointers */
   sopflow->solverops.destroy = 0;

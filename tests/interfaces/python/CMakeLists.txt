@@ -9,35 +9,35 @@ endif()
 list(TRANSFORM RUNCMD APPEND " ")
 string(CONCAT CMD ${RUNCMD} " " ${PYTEST_EXE})
 
-if(EXAGO_ENABLE_HIOP)
-  exago_add_test(
-    NAME
-    Python_pytest
-    COMMAND
-    bash
-    -c
-    "
-    export PYTHONPATH=${pythonpath}
-    cd ${PROJECT_SOURCE_DIR}/tests/interfaces/python
-    ${CMD} -m nocomm -v .
-    "
-    DEPENDS
-    HIOP
-  )
-  if(EXAGO_ENABLE_MPI)
-    exago_add_test(
-      NAME
-      Python_pytest_MPI
-      COMMAND
-      bash
-      -c
-      "
-      export PYTHONPATH=${pythonpath}
-      cd ${PROJECT_SOURCE_DIR}/tests/interfaces/python
-      ${CMD} -m MPI -v .
-      "
-      DEPENDS
-      HIOP
-    )
-  endif()
-endif()
+exago_add_test(
+  NAME
+  Python_pytest
+  COMMAND
+  bash
+  -c
+  "
+  export PYTHONPATH=${pythonpath}
+  cd ${PROJECT_SOURCE_DIR}/tests/interfaces/python
+  ${CMD} -m nocomm -v .
+  "
+  DEPENDS
+  HIOP
+  IPOPT
+)
+
+exago_add_test(
+  NAME
+  Python_pytest_MPI
+  COMMAND
+  bash
+  -c
+  "
+  export PYTHONPATH=${pythonpath}
+  cd ${PROJECT_SOURCE_DIR}/tests/interfaces/python
+  ${CMD} -m MPI -v .
+  "
+  DEPENDS
+  HIOP
+  IPOPT
+  MPI
+)

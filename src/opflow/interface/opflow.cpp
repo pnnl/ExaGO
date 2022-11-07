@@ -952,9 +952,9 @@ PetscErrorCode OPFLOWSetSolver(OPFLOW opflow, const char *solvername) {
 
   if (!r)
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
-             "Unknown type for OPFLOW Solver %s. You may need to rebuild ExaGO "
-             "to support this solver.",
-             solvername);
+            "Unknown type for OPFLOW Solver %s. You may need to rebuild ExaGO "
+            "to support this solver.",
+            solvername);
 
   /* Initialize (Null) the function pointers */
   opflow->solverops.destroy = 0;
@@ -1009,9 +1009,9 @@ PetscErrorCode OPFLOWSetModel(OPFLOW opflow, const char *modelname) {
 
   if (!r)
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
-             "Unknown type for OPFLOW Model %s. You may need to rebuild ExaGO "
-             "with the solver that supports this model.",
-             modelname);
+            "Unknown type for OPFLOW Model %s. You may need to rebuild ExaGO "
+            "with the solver that supports this model.",
+            modelname);
 
   /* Null the function pointers */
   opflow->modelops.destroy = 0;
@@ -2752,8 +2752,8 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
   if (ipopt && !(ipopt_pbpol || ipopt_pbcar || ipopt_ibcar || ipopt_ibcar2 ||
                  ipopt_dcopf)) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-             "OPFLOW solver IPOPT incompatible with model %s",
-             opflow->modelname);
+            "OPFLOW solver IPOPT incompatible with model %s",
+            opflow->modelname);
   }
 #endif
 #if defined(EXAGO_ENABLE_HIOP)
@@ -2782,16 +2782,15 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
   CHKERRQ(ierr);
   if (hiop_sparse && !(hiop_sparse_pbpol || hiop_sparse_dcopf)) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-             "OPFLOW solver HIOPSPARSE incompatible with model %s",
-             opflow->modelname);
+            "OPFLOW solver HIOPSPARSE incompatible with model %s",
+            opflow->modelname);
   }
 #else
   PetscBool hiop_sparse = PETSC_FALSE;
 #endif // HIOP_SPARSE
   if ((hiop && !hiop_sparse) && !(hiop_pbpol || rajahiop_pbpol)) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-             "OPFLOW solver HIOP incompatible with model %s",
-             opflow->modelname);
+            "OPFLOW solver HIOP incompatible with model %s", opflow->modelname);
   }
 #endif // HIOP
   PetscFunctionReturn(0);

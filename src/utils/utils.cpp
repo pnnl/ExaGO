@@ -15,9 +15,11 @@
 #include <sys/utsname.h>
 #include <version.h>
 #include <utils.h>
+#if (EXAGO_ENABLE_IPOPT || EXAGO_ENABLE_HIOP)
 #include <opflow.h>
 #include <sopflow.h>
 #include <scopflow.h>
+#endif
 
 namespace ExaGODefaultOptions {
 const auto help = ExaGOFlagOption("-help", "Print help message");
@@ -317,6 +319,7 @@ template <typename T> static inline void print(T const &opt) {
   // See comment at ExaGODefaultOptions
   // print(O::network);
 
+#if (EXAGO_ENABLE_IPOPT || EXAGO_ENABLE_HIOP)
   if (appname == "opflow") {
     print(OPFLOWOptions::model);
     print(OPFLOWOptions::solver);
@@ -404,6 +407,7 @@ template <typename T> static inline void print(T const &opt) {
   } else {
     fmt::print("Please enter a valid application name.\n");
   }
+#endif
 
   std::exit(EXIT_SUCCESS);
 }

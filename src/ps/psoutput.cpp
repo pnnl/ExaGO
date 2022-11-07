@@ -39,7 +39,7 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
   fd = fopen(filename, "w");
   if (fd == NULL) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
-             "Cannot open OPFLOW output file %s", outfile);
+            "Cannot open OPFLOW output file %s", outfile);
     CHKERRQ(ierr);
   }
 
@@ -164,7 +164,7 @@ PetscErrorCode PSSaveSolution_CSV(PS ps, const char outfile[]) {
   fp = fopen(outfile, "w");
   if (fp == NULL) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
-             "Cannot open OPFLOW output file %s", outfile);
+            "Cannot open OPFLOW output file %s", outfile);
     CHKERRQ(ierr);
   }
   fprintf(fp, "nbus,ngen,nbranch,baseMVA\n");

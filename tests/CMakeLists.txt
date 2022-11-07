@@ -14,7 +14,11 @@ if(EXAGO_RUN_TESTS)
 endif(EXAGO_RUN_TESTS)
 
 include_directories(${PROJECT_SOURCE_DIR}/tpl/toml11)
-add_subdirectory(unit)
+# TODO - ensure we can build and test with different subsets of ExaGO
+if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
+  add_subdirectory(unit)
+endif()
+
 add_subdirectory(functionality)
 
 if(EXAGO_ENABLE_PYTHON)

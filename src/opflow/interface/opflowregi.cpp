@@ -22,8 +22,8 @@ PetscErrorCode OPFLOWModelRegister(OPFLOW opflow, const char sname[],
   }
   if (opflow->nmodelsregistered == OPFLOWMODELSMAX) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-             "Cannot register %s OPFLOW model, maximum limit %d reached\n",
-             sname, OPFLOWMODELSMAX);
+            "Cannot register %s OPFLOW model, maximum limit %d reached\n",
+            sname, OPFLOWMODELSMAX);
   }
   i = opflow->nmodelsregistered;
   ierr = PetscStrcpy(opflow->OPFLOWModelList[i].name, sname);
@@ -53,8 +53,8 @@ PetscErrorCode OPFLOWSolverRegister(OPFLOW opflow, const char sname[],
   }
   if (opflow->nsolversregistered == OPFLOWSOLVERSMAX) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-             "Cannot register %s OPFLOW solver, maximum limit %d reached\n",
-             sname, OPFLOWSOLVERSMAX);
+            "Cannot register %s OPFLOW solver, maximum limit %d reached\n",
+            sname, OPFLOWSOLVERSMAX);
   }
   i = opflow->nsolversregistered;
   ierr = PetscStrcpy(opflow->OPFLOWSolverList[i].name, sname);

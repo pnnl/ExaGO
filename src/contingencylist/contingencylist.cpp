@@ -114,7 +114,7 @@ PetscErrorCode ContingencyListReadData_Native(ContingencyList ctgclist) {
   fp = fopen(ctgclist->inputfile, "r");
   if (fp == NULL) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN, "Cannot open file %s",
-             ctgclist->inputfile);
+            ctgclist->inputfile);
   }
 
   ctgclist->Ncont = -1;
@@ -131,8 +131,7 @@ PetscErrorCode ContingencyListReadData_Native(ContingencyList ctgclist) {
 
     if (num == PetscMax(ctgclist->Ncontinit, MAX_CONTINGENCIES)) {
       SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-               "Exceeding max. allowed contingencies = %d\n",
-               MAX_CONTINGENCIES);
+              "Exceeding max. allowed contingencies = %d\n", MAX_CONTINGENCIES);
     }
     cont = &ctgclist->cont[num];
     outage = &cont->outagelist[cont->noutages];
@@ -181,7 +180,7 @@ PetscErrorCode ContingencyListReadData_PSSE(ContingencyList ctgclist) {
   fp = fopen(ctgclist->inputfile, "r");
   if (fp == NULL) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN, "Cannot open file %s",
-             ctgclist->inputfile);
+            ctgclist->inputfile);
   }
 
   ctgclist->Ncont = -1;
