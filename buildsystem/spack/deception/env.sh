@@ -18,7 +18,7 @@ module load cmake/3.21.4
 # If you want to modify the module install path, edit the spack.yaml manually
 export SPACK_INSTALL=/qfs/projects/exasgd/src/ci-deception
 export SPACK_MODULES=ci-modules
-export SOURCE_CACHE=binary-mirror
+export SPACK_CACHE=/qfs/projects/exasgd/src/$(whoami)/spack-cache
 export SPACK_DISABLE_LOCAL_CONFIG=1
 export SPACK_PYTHON=/share/apps/python/miniconda3.9
 

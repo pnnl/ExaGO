@@ -31,22 +31,22 @@ module load blt-0.4.1-gcc-10.2.0-oabae2w
 module load cub-1.16.0-gcc-10.2.0-ovgrtom
 # cuda@11.4%gcc@10.2.0~allow-unsupported-compilers~dev arch=linux-centos7-zen2
 module load cuda-11.4-gcc-10.2.0-ewurpsv
-# camp@0.2.3%gcc@10.2.0+cuda~ipo+openmp~rocm~tests build_type=RelWithDebInfo cuda_arch=60 arch=linux-centos7-zen2
-module load camp-0.2.3-gcc-10.2.0-4g22t4e
+# camp@0.2.3%gcc@10.2.0+cuda~ipo+openmp~rocm~tests build_type=RelWithDebInfo cuda_arch=60,70,75,80 arch=linux-centos7-zen2
+module load camp-0.2.3-gcc-10.2.0-36lcy72
 # openblas@0.3.20%gcc@10.2.0~bignuma~consistent_fpcsr~ilp64+locking+pic+shared patches=9f12903 symbol_suffix=none threads=none arch=linux-centos7-zen2
 module load openblas-0.3.20-gcc-10.2.0-x6v3mwm
 # coinhsl@2019.05.21%gcc@10.2.0+blas arch=linux-centos7-zen2
 module load coinhsl-2019.05.21-gcc-10.2.0-gkzkws6
-# ginkgo@1.5.0.glu_experimental%gcc@10.2.0+cuda~develtools~full_optimizations~hwloc~ipo~oneapi+openmp~rocm+shared build_type=Release cuda_arch=60 arch=linux-centos7-zen2
-module load ginkgo-1.5.0.glu_experimental-gcc-10.2.0-4xzuxyp
-# magma@2.6.2%gcc@10.2.0+cuda+fortran~ipo~rocm+shared build_type=RelWithDebInfo cuda_arch=60 arch=linux-centos7-zen2
-module load magma-2.6.2-gcc-10.2.0-ioyjgr4
+# ginkgo@1.5.0.glu_experimental%gcc@10.2.0+cuda~develtools~full_optimizations~hwloc~ipo~oneapi+openmp~rocm+shared build_type=Release cuda_arch=60,70,75,80 arch=linux-centos7-zen2
+module load ginkgo-1.5.0.glu_experimental-gcc-10.2.0-x73b7k3
+# magma@2.6.2%gcc@10.2.0+cuda+fortran~ipo~rocm+shared build_type=RelWithDebInfo cuda_arch=60,70,75,80 arch=linux-centos7-zen2
+module load magma-2.6.2-gcc-10.2.0-caockkq
 # metis@5.1.0%gcc@10.2.0~gdb~int64~real64+shared build_type=Release patches=4991da9,b1225da arch=linux-centos7-zen2
 module load metis-5.1.0-gcc-10.2.0-k4z4v6l
 # openmpi@4.1.0mlx5.0%gcc@10.2.0~atomics~cuda~cxx~cxx_exceptions~gpfs~internal-hwloc~java~legacylaunchers~lustre~memchecker+romio+rsh~singularity+static+vt+wrapper-rpath fabrics=none patches=60ce20b schedulers=none arch=linux-centos7-zen2
 module load openmpi-4.1.0mlx5.0-gcc-10.2.0-ytj7jxb
-# raja@0.14.0%gcc@10.2.0+cuda~examples~exercises~ipo+openmp~rocm+shared~tests build_type=RelWithDebInfo cuda_arch=60 arch=linux-centos7-zen2
-module load raja-0.14.0-gcc-10.2.0-xenjyuf
+# raja@0.14.0%gcc@10.2.0+cuda~examples~exercises~ipo+openmp~rocm+shared~tests build_type=RelWithDebInfo cuda_arch=60,70,75,80 arch=linux-centos7-zen2
+module load raja-0.14.0-gcc-10.2.0-tyzamiy
 # libsigsegv@2.13%gcc@10.2.0 arch=linux-centos7-zen2
 module load libsigsegv-2.13-gcc-10.2.0-aj5goyi
 # m4@1.4.19%gcc@10.2.0+sigsegv patches=9dc5fbd,bfdffa7 arch=linux-centos7-zen2
@@ -67,10 +67,10 @@ module load texinfo-6.5-gcc-10.2.0-mcrbwnj
 module load mpfr-4.1.0-gcc-10.2.0-3yutkz3
 # suite-sparse@5.10.1%gcc@10.2.0~cuda~graphblas~openmp+pic~tbb arch=linux-centos7-zen2
 module load suite-sparse-5.10.1-gcc-10.2.0-add65sb
-# umpire@6.0.0%gcc@10.2.0+c+cuda~device_alloc~deviceconst~examples~fortran~ipo~numa~openmp~rocm~shared build_type=RelWithDebInfo cuda_arch=60 tests=none arch=linux-centos7-zen2
-module load umpire-6.0.0-gcc-10.2.0-s6npy7y
-# hiop@develop%gcc@10.2.0+cuda~cusolver+deepchecking~full_optimizations+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_type=RelWithDebInfo cuda_arch=60 arch=linux-centos7-zen2
-module load hiop-develop-gcc-10.2.0-dy54uvw
+# umpire@6.0.0%gcc@10.2.0+c+cuda~device_alloc~deviceconst~examples~fortran~ipo~numa~openmp~rocm~shared build_type=RelWithDebInfo cuda_arch=60,70,75,80 tests=none arch=linux-centos7-zen2
+module load umpire-6.0.0-gcc-10.2.0-lrjkuun
+# hiop@develop%gcc@10.2.0+cuda~cusolver+deepchecking~full_optimizations+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_type=RelWithDebInfo cuda_arch=60,70,75,80 arch=linux-centos7-zen2
+module load hiop-develop-gcc-10.2.0-bgzxttu
 # ipopt@3.12.10%gcc@10.2.0+coinhsl~debug~metis~mumps arch=linux-centos7-zen2
 module load ipopt-3.12.10-gcc-10.2.0-c3chb6f
 # python@3.9.12%gcc@10.2.0+bz2+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tix~tkinter~ucs4+uuid+zlib patches=0d98e93,4c24573,f2fd060 arch=linux-centos7-zen2
@@ -109,5 +109,5 @@ module load py-py-1.11.0-gcc-10.2.0-meh5son
 module load py-toml-0.10.2-gcc-10.2.0-gqgcbhp
 # py-pytest@6.2.5%gcc@10.2.0 arch=linux-centos7-zen2
 module load py-pytest-6.2.5-gcc-10.2.0-qnxtpdk
-# exago@develop%gcc@10.2.0+cuda+hiop~ipo+ipopt+mpi+python+raja~rocm build_type=RelWithDebInfo cuda_arch=60 dev_path=/people/svcexasgd/gitlab/17762/spack_deception arch=linux-centos7-zen2
-## module load exago-develop-gcc-10.2.0-2dritdp
+# exago@develop%gcc@10.2.0+cuda+hiop~ipo+ipopt+mpi+python+raja~rocm build_type=RelWithDebInfo cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/18103/spack_deception arch=linux-centos7-zen2
+## module load exago-develop-gcc-10.2.0-fgqskkw

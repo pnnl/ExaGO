@@ -4,6 +4,7 @@
 SPACK_INSTALL="${SPACK_INSTALL:?SPACK_INSTALL is unset. Make sure to source load_spack.sh first}"
 
 # Assuming MY_CLUSTER is configured
+# TODO - fix this to be POSIX standardized with tolower across all scripts
 base="./buildsystem/spack/${MY_CLUSTER,,""""}"
 
 # Printing out loaded modules for debugging...
@@ -33,6 +34,8 @@ spack module tcl loads -r -x exago -x openssl exago &>> $base/modules/dependenci
 # spack module tcl loads exago &>> $base/modules/exago-optimized.sh && \
 spack module tcl loads exago &>> $base/modules/exago.sh
 
+exit_code=$?
+
 # This makes the module and installation location globally readable which isn't ideal.
 # Sticking to this avoids permission issues for other group members, but you
 # should make sure that the install location is in a folder that is only
@@ -40,4 +43,8 @@ spack module tcl loads exago &>> $base/modules/exago.sh
 # Since we use this in CI and other users will create files we cannot chmod,
 # We need to allow this command to fail
 chmod -R ugo+wrx $SPACK_INSTALL || true
+chmod -R ugo+wrx $SPACK_CACHE || true
 
+# Should still change permissions before exiting, but should also return the exit
+# code of spack related code
+exit $exit_code
