@@ -10,10 +10,10 @@ spack:
     install_tree:
       root: $SPACK_INSTALL
     concretizer: clingo
-    source_cache: $SPACK_INSTALL/$SOURCE_CACHE
-    build_cache: $SPACK_INSTALL/build-cache
-    misc_cache: $SPACK_INSTALL/misc-cache
-    build_stage: $SPACK_INSTALL/build-stage
+    source_cache: $SPACK_CACHE/source-cache
+    build_cache: $SPACK_CACHE/build-cache
+    misc_cache: $SPACK_CACHE/misc-cache
+    build_stage: $SPACK_CACHE/build-stage
   modules:
     default:
       roots:

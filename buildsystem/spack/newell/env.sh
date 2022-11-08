@@ -16,7 +16,7 @@ module load openmpi/4.1.4
 # If you want to modify the module install path, edit the spack.yaml manually
 export SPACK_INSTALL=/qfs/projects/exasgd/src/ci-newll
 export SPACK_MODULES=ci-modules
-export SOURCE_CACHE=binary-mirror
+export SPACKE_CACHE=/qfs/projects/exasgd/src/$(whoami)/spack-cache
 export SPACK_PYTHON=/share/apps/python/miniconda3.8
 export SPACK_DISABLE_LOCAL_CONFIG=1
 
