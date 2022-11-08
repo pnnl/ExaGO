@@ -10,17 +10,18 @@ fi
 MY_CLUSTER="${MY_CLUSTER:?MY_CLUSTER is unset. Please set manually.}"
 [[ -z $MY_CLUSTER ]] && return 1 
 
+echo "$MY_CLUSTER" | awk '{print tolower($0)}'
 # Use ${var,,} to convert to lower case
 # There must be an existing folder for the cluster
-if [ ! -d "./buildsystem/spack/${MY_CLUSTER,,}" ]
+if [ ! -d "./buildsystem/spack/${MY_CLUSTER}" ]
 then
-  echo "${MY_CLUSTER,,} did not match any directories in /buildsystem/spack/"
+  echo "${MY_CLUSTER} did not match any directories in /buildsystem/spack/"
   echo "Try one of the following platforms: "
   echo $(ls -d ./buildsystem/spack/*/ | tr '\n' '\0' | xargs -0 -n 1 basename )
   return
 fi
 
-base="./buildsystem/spack/${MY_CLUSTER,,""}"
+base="./buildsystem/spack/${MY_CLUSTER}"
 
 # There needs to be an existing spack.yaml
 if [ ! -f "$base/spack.yaml" ]
