@@ -46,6 +46,7 @@ source $base/env.sh && \
 
 # Make sure SPACK_INSTALL is set, so we aren't installing somewhere undesired
 SPACK_INSTALL="${SPACK_INSTALL:?SPACK_INSTALL is unset. $base/env.sh should be edited to configure this}" && \
+SPACK_CACHE="${SPACK_CACHE:?SPACK_CACHE is unset. $base/env.sh should be edited to configure this}" && \
 
 # Load spack
 source ./tpl/spack/share/spack/setup-env.sh && \
@@ -62,6 +63,7 @@ spack env activate -p $SPACKENV && \
 # Print relevant spack config for sanity check of environment.
 echo "spack configuration will be installed into $SPACK_INSTALL" && \
 mkdir -p $SPACK_INSTALL && \
+echo "spack cache files will be installed into $SPACK_CACHE" && \
 mkdir -p $SPACK_CACHE && \
 spack config get config
 
