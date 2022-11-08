@@ -62,9 +62,6 @@ option(EXAGO_ENABLE_IPOPT "Enable Ipopt support" ON)
 # HiOP support is disabled by default
 option(EXAGO_ENABLE_HIOP "Enable HiOP support" OFF)
 
-# MPI support is enabled by default
-option(EXAGO_ENABLE_MPI "Enable MPI support" ON)
-
 # GPU support is disabled by default
 option(EXAGO_ENABLE_GPU "Enable GPU support" OFF)
 
