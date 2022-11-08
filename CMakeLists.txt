@@ -104,10 +104,22 @@ set(EXAGO_CTEST_LAUNCH_COMMAND
 
 option(EXAGO_ENABLE_LOGGING "Enable internal logging" ON)
 
-# When building with HIP support, OpenMP is not supported Need to make sure we
-# are building with RAJA
-if(EXAGO_ENABLE_RAJA AND (NOT (EXAGO_ENABLE_GPU AND EXAGO_ENABLE_HIP)))
+# When building with HIP support, OpenMP is not supported.
+if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_HIP)
   set(EXAGO_ENABLE_OMP OFF)
+endif()
+# When building without RAJA, OpenMP is not required.
+if(NOT EXAGO_ENABLE_RAJA)
+  set(EXAGO_ENABLE_OMP OFF)
+endif()
+
+# When building with OpenMP using Apple-Clang, users should be warned about
+# numerical precision issues
+if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  message(
+    WARNING
+      " When building with apple-clang built OpenMP, you will get numerical precision issues"
+  )
 endif()
 
 # Estimate number of flops per trig op
