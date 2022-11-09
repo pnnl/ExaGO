@@ -21,6 +21,10 @@ extern const char *const OPFLOWObjectiveTypes[];
 
 extern const char *const OPFLOWGenBusVoltageTypes[];
 
+typedef enum { DEFAULT = 0, HOST = 1, UM = 2, DEVICE = 3 } HIOPMemSpace;
+
+extern const char *HIOPMemSpaceChoices[];
+
 struct _p_OPFLOWModelOps {
   PetscErrorCode (*destroy)(OPFLOW);
   PetscErrorCode (*setup)(OPFLOW);
@@ -99,6 +103,10 @@ struct _p_OPFLOWModelOps {
   PetscErrorCode (*computedensehessianhiop)(OPFLOW, const double *,
                                             const double *,
                                             double *); /* Dense Hessian */
+  PetscErrorCode (*solutioncallbackhiop)(
+      OPFLOW, const double *, const double *, const double *, const double *,
+      const double *,
+      double); // Call back for final solution
 
   /* Auxillary objective,gradient and hessian functions */
   /* Some applications may require to add custom objective function values in
@@ -291,6 +299,8 @@ struct _p_OPFLOW {
   PetscBool skip_options; /* Skip run-time options */
 
   PetscScalar weight; /* Weight for this system condition (0,1) */
+
+  HIOPMemSpace mem_space; /* Memory space used with HIOP */
 };
 
 /* Registers all the OPFLOW models */
@@ -309,5 +319,9 @@ extern PetscErrorCode OPFLOWSetNumVariables(OPFLOW, PetscInt *, PetscInt *,
 /* Internal function to set number of constraints */
 extern PetscErrorCode OPFLOWSetNumConstraints(OPFLOW, PetscInt *, PetscInt *,
                                               PetscInt *, PetscInt *);
+
+extern PetscErrorCode OPFLOWNaturalToSpDense(OPFLOW, const double *, double *);
+
+extern PetscErrorCode OPFLOWSpDenseToNatural(OPFLOW, const double *, double *);
 
 #endif

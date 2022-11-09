@@ -1034,6 +1034,7 @@ PetscErrorCode OPFLOWModelCreate_PBPOLHIOP(OPFLOW opflow) {
       OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLHIOP;
   opflow->modelops.computedensehessianhiop =
       OPFLOWComputeDenseHessian_PBPOLHIOP;
+  opflow->modelops.solutioncallbackhiop = OPFLOWSolutionCallback_PBPOLHIOP;
 
   PetscFunctionReturn(0);
 }

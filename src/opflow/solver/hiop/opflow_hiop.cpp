@@ -4,41 +4,12 @@
 #include "opflow_hiop.h"
 #include <private/opflowimpl.h>
 
-#if defined(EXAGO_ENABLE_RAJA)
-
-#include <umpire/Allocator.hpp>
-#include <umpire/ResourceManager.hpp>
-
-#include <RAJA/RAJA.hpp>
-#include <private/raja_exec_config.h>
-
-#endif
-
 typedef enum { AUTO = 0, CPU = 1, HYBRID = 2, GPU = 3 } HIOPComputeMode;
 const char *HIOPComputeModeChoices[] = {
     "auto", "cpu", "hybrid", "gpu", "HIOPComputeModeChoices", "", 0};
 
-/* Converts an array xin in natural ordering to an array xout in sparse-dense
-   ordering
-*/
-void OPFLOWHIOPInterface::naturaltospdense(const double *xin, double *xout) {
-  int i;
-
-  for (i = 0; i < opflow->nx; i++) {
-    xout[opflow->idxn2sd_map[i]] = xin[i];
-  }
-}
-
-/* Converts an array xin in sparse dense ordering to an array xout in natural
-   ordering
-*/
-void OPFLOWHIOPInterface::spdensetonatural(const double *xin, double *xout) {
-  int i;
-
-  for (i = 0; i < opflow->nx; i++) {
-    xout[i] = xin[opflow->idxn2sd_map[i]];
-  }
-}
+const char *HIOPMemSpaceChoices[] = {
+    "defaut", "host", "um", "device", "HIOPMemSpaceChoices", "", 0};
 
 OPFLOWHIOPInterface::OPFLOWHIOPInterface(OPFLOW opflowin) { opflow = opflowin; }
 
@@ -297,111 +268,15 @@ void OPFLOWHIOPInterface::solution_callback(
     double obj_value) {
   PetscErrorCode ierr;
   OPFLOWSolver_HIOP hiop = (OPFLOWSolver_HIOP)opflow->solver;
-  PetscScalar *x, *lam, *g;
-#if defined(EXAGO_ENABLE_RAJA)
-  auto &resmgr = umpire::ResourceManager::getInstance();
-  umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
-#endif
-  /* Create temporary vectors for copying values to HOST (only used when
-   * mem-space is DEVICE */
-  double *xsol_host, *lamsol_host, *gsol_host;
-
-  if (hiop->mem_space == DEVICE) {
-    xsol_host = (double *)h_allocator_.allocate(opflow->nx * sizeof(double));
-    lamsol_host =
-        (double *)h_allocator_.allocate(opflow->ncon * sizeof(double));
-    gsol_host = (double *)h_allocator_.allocate(opflow->ncon * sizeof(double));
-  }
 
   /* Copy over solution details */
   hiop->status = status;
   opflow->obj = obj_value;
 
-  ierr = VecGetArray(opflow->X, &x);
-  CHKERRV(ierr);
-  if (hiop->mem_space == DEVICE) {
-    /* Copy xsol from device to host */
-    resmgr.copy(xsol_host, (double *)xsol);
-    spdensetonatural(xsol_host, x);
-  } else {
-    spdensetonatural(xsol, x);
-  }
-  ierr = VecRestoreArray(opflow->X, &x);
-  CHKERRV(ierr);
-
-  if (lamsol) {
-    /* HIOP returns a NULL for lamsol - probably lamsol needs to be added to
-     HIOP. Need to remove this condition once it is fixed
-    */
-    ierr = VecGetArray(opflow->Lambda, &lam);
+  if (opflow->modelops.solutioncallbackhiop) {
+    ierr = (*opflow->modelops.solutioncallbackhiop)(opflow, xsol, z_L, z_U,
+                                                    gsol, lamsol, obj_value);
     CHKERRV(ierr);
-
-    if (hiop->mem_space == DEVICE) {
-      /* Copy lamsol from device to host */
-      resmgr.copy(lamsol_host, (double *)lamsol);
-
-      ierr = PetscMemcpy(lam, (double *)lamsol_host,
-                         opflow->nconeq * sizeof(PetscScalar));
-      CHKERRV(ierr);
-      if (opflow->Nconineq) {
-        ierr = PetscMemcpy(lam + opflow->nconeq,
-                           (double *)(lamsol_host + opflow->nconeq),
-                           opflow->nconineq * sizeof(PetscScalar));
-        CHKERRV(ierr);
-      }
-    } else {
-      ierr = PetscMemcpy(lam, (double *)lamsol,
-                         opflow->nconeq * sizeof(PetscScalar));
-      CHKERRV(ierr);
-      if (opflow->Nconineq) {
-        ierr = PetscMemcpy(lam + opflow->nconeq,
-                           (double *)(lamsol + opflow->nconeq),
-                           opflow->nconineq * sizeof(PetscScalar));
-        CHKERRV(ierr);
-      }
-    }
-    ierr = VecRestoreArray(opflow->Lambda, &lam);
-    CHKERRV(ierr);
-  } else {
-    ierr = VecSet(opflow->Lambda, -9999.0);
-    CHKERRV(ierr);
-  }
-
-  if (gsol) {
-    ierr = VecGetArray(opflow->G, &g);
-    CHKERRV(ierr);
-    if (hiop->mem_space == DEVICE) {
-      /* Copy gsol from device to host */
-      resmgr.copy(gsol_host, (double *)gsol);
-
-      ierr = PetscMemcpy(g, (double *)gsol_host,
-                         opflow->nconeq * sizeof(PetscScalar));
-      CHKERRV(ierr);
-      if (opflow->Nconineq) {
-        ierr = PetscMemcpy(g + opflow->nconeq,
-                           (double *)(gsol_host + opflow->nconeq),
-                           opflow->nconineq * sizeof(PetscScalar));
-        CHKERRV(ierr);
-      }
-    } else {
-      ierr =
-          PetscMemcpy(g, (double *)gsol, opflow->nconeq * sizeof(PetscScalar));
-      CHKERRV(ierr);
-      if (opflow->Nconineq) {
-        ierr =
-            PetscMemcpy(g + opflow->nconeq, (double *)(gsol + opflow->nconeq),
-                        opflow->nconineq * sizeof(PetscScalar));
-        CHKERRV(ierr);
-      }
-    }
-    ierr = VecRestoreArray(opflow->G, &g);
-    CHKERRV(ierr);
-  }
-
-  if (hiop->mem_space == DEVICE) {
-    h_allocator_.deallocate(xsol_host);
-    h_allocator_.deallocate(lamsol_host);
-    h_allocator_.deallocate(gsol_host);
   }
 }
 
@@ -410,14 +285,12 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
   OPFLOWSolver_HIOP hiop = (OPFLOWSolver_HIOP)opflow->solver;
   PetscBool ismodelpbpolhiop, ismodelpbpolrajahiop;
   HIOPComputeMode compute_mode = AUTO;
-#if defined(HIOP_USE_RAJA)
 #ifndef EXAGO_ENABLE_GPU
-  hiop->mem_space = HOST;
+  opflow->mem_space = DEFAULT;
 #else
-  hiop->mem_space = DEVICE;
+  opflow->mem_space = DEVICE;
 #endif
   hiop->cons_call = 0;
-#endif
 
   int verbose_level = OPFLOWOptions::hiop_verbosity_level.default_value;
   PetscBool mode_set = PETSC_FALSE;
@@ -450,8 +323,8 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
 
   ierr = PetscOptionsEnum(OPFLOWOptions::hiop_mem_space.opt.c_str(),
                           OPFLOWOptions::hiop_mem_space.desc.c_str(), "",
-                          HIOPMemSpaceChoices, (PetscEnum)hiop->mem_space,
-                          (PetscEnum *)&hiop->mem_space, &mode_set);
+                          HIOPMemSpaceChoices, (PetscEnum)opflow->mem_space,
+                          (PetscEnum *)&opflow->mem_space, &mode_set);
   CHKERRQ(ierr);
 
 #if defined(EXAGO_ENABLE_IPOPT)
@@ -523,12 +396,10 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
     exit(0);
   }
 
-#if defined(HIOP_USE_RAJA)
   if (ismodelpbpolrajahiop) {
     hiop->mds->options->SetStringValue("mem_space",
-                                       HIOPMemSpaceChoices[hiop->mem_space]);
+                                       HIOPMemSpaceChoices[opflow->mem_space]);
   }
-#endif
 
   //  ierr = PetscPrintf(MPI_COMM_SELF,"Came in OPFLOWSetUp\n");CHKERRQ(ierr);
   hiop->solver = new hiop::hiopAlgFilterIPMNewton(hiop->mds);

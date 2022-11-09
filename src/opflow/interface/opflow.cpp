@@ -28,6 +28,35 @@ void swap_dm(DM *dm1, DM *dm2) {
   *dm2 = temp;
 }
 
+/* Converts an array xin in natural ordering to an array xout in sparse-dense
+   ordering
+   Used only with HIOP solver
+*/
+PetscErrorCode OPFLOWNaturalToSpDense(OPFLOW opflow, const double *xin,
+                                      double *xout) {
+  int i;
+
+  for (i = 0; i < opflow->nx; i++) {
+    xout[opflow->idxn2sd_map[i]] = xin[i];
+  }
+
+  PetscFunctionReturn(0);
+}
+
+/* Converts an array xin in sparse dense ordering to an array xout in natural
+   ordering
+   Used only with HIOP solver
+*/
+PetscErrorCode OPFLOWSpDenseToNatural(OPFLOW opflow, const double *xin,
+                                      double *xout) {
+  int i;
+
+  for (i = 0; i < opflow->nx; i++) {
+    xout[i] = xin[opflow->idxn2sd_map[i]];
+  }
+  PetscFunctionReturn(0);
+}
+
 /* Sets the list of lines monitored */
 PetscErrorCode OPFLOWGetLinesMonitored(OPFLOW opflow) {
   PetscErrorCode ierr;
@@ -1049,6 +1078,7 @@ PetscErrorCode OPFLOWSetModel(OPFLOW opflow, const char *modelname) {
   opflow->modelops.computedenseequalityconstraintjacobianhiop = 0;
   opflow->modelops.computedenseinequalityconstraintjacobianhiop = 0;
   opflow->modelops.computedensehessianhiop = 0;
+  opflow->modelops.solutioncallbackhiop = 0;
   opflow->modelops.computeauxobjective = 0;
   opflow->modelops.computeauxgradient = 0;
   opflow->modelops.computeauxhessian = 0;

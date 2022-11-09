@@ -96,11 +96,6 @@ private:
   OPFLOW opflow;
 };
 
-typedef enum { HOST = 0, UM = 1, DEVICE = 2 } HIOPMemSpace;
-
-const char *HIOPMemSpaceChoices[] = {
-    "host", "um", "device", "HIOPMemSpaceChoices", "", 0};
-
 typedef struct _p_OPFLOWSolver_HIOP *OPFLOWSolver_HIOP;
 
 struct _p_OPFLOWSolver_HIOP {
@@ -109,8 +104,6 @@ struct _p_OPFLOWSolver_HIOP {
   hiop::hiopSolveStatus status;
   hiop::hiopNlpMDS *mds;
   hiop::hiopAlgFilterIPMNewton *solver;
-
-  HIOPMemSpace mem_space;
 
   int cons_call; // To keep track of the constraint and Jacobian evaluation
                  // callback done by HIOP. cons_call % 2 == 0 means HIOP expects
