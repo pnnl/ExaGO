@@ -157,5 +157,10 @@ extern PetscErrorCode OPFLOWComputeDenseHessian_PBPOLHIOP(OPFLOW,
                                                           const double *,
                                                           double *);
 
+extern PetscErrorCode
+OPFLOWSolutionCallback_PBPOLHIOP(OPFLOW, const double *, const double *,
+                                 const double *, const double *, const double *,
+                                 double obj_value);
+
 #endif
 #endif

@@ -1845,4 +1845,57 @@ PetscErrorCode OPFLOWComputeDenseHessian_PBPOLHIOP(OPFLOW opflow,
 
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode OPFLOWSolutionCallback_PBPOLHIOP(
+    OPFLOW opflow, const double *xsol, const double *z_L, const double *z_U,
+    const double *gsol, const double *lamsol, double obj_value) {
+  PetscErrorCode ierr;
+  PetscScalar *x, *lam, *g;
+
+  ierr = VecGetArray(opflow->X, &x);
+  CHKERRQ(ierr);
+  OPFLOWSpDenseToNatural(opflow, xsol, x);
+  ierr = VecRestoreArray(opflow->X, &x);
+  CHKERRQ(ierr);
+
+  if (lamsol) {
+    /* HIOP returns a NULL for lamsol - probably lamsol needs to be added to
+     HIOP. Need to remove this condition once it is fixed
+    */
+    ierr = VecGetArray(opflow->Lambda, &lam);
+    CHKERRQ(ierr);
+
+    ierr = PetscMemcpy(lam, (double *)lamsol,
+                       opflow->nconeq * sizeof(PetscScalar));
+    CHKERRQ(ierr);
+    if (opflow->Nconineq) {
+      ierr =
+          PetscMemcpy(lam + opflow->nconeq, (double *)(lamsol + opflow->nconeq),
+                      opflow->nconineq * sizeof(PetscScalar));
+      CHKERRQ(ierr);
+    }
+    ierr = VecRestoreArray(opflow->Lambda, &lam);
+    CHKERRQ(ierr);
+  } else {
+    ierr = VecSet(opflow->Lambda, -9999.0);
+    CHKERRQ(ierr);
+  }
+
+  if (gsol) {
+    ierr = VecGetArray(opflow->G, &g);
+    CHKERRQ(ierr);
+    ierr = PetscMemcpy(g, (double *)gsol, opflow->nconeq * sizeof(PetscScalar));
+    CHKERRQ(ierr);
+    if (opflow->Nconineq) {
+      ierr = PetscMemcpy(g + opflow->nconeq, (double *)(gsol + opflow->nconeq),
+                         opflow->nconineq * sizeof(PetscScalar));
+      CHKERRQ(ierr);
+    }
+    ierr = VecRestoreArray(opflow->G, &g);
+    CHKERRQ(ierr);
+  }
+
+  PetscFunctionReturn(0);
+}
+
 #endif

@@ -1194,8 +1194,6 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOP(OPFLOW opflow,
     RAJA::forall<exago_raja_exec>(
         RAJA::RangeSegment(0, loadparams->nload),
         RAJA_LAMBDA(RAJA::Index_type i) {
-          double Pdloss = x_dev[l_xidx[i]];
-          double Qdloss = x_dev[l_xidx[i] + 1];
           grad_dev[l_xidx[i]] = weight * loadloss_penalty_dev_[i] * MVAbase;
           grad_dev[l_xidx[i] + 1] = weight * loadloss_penalty_dev_[i] * MVAbase;
         });
@@ -1580,7 +1578,6 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOP(
     /* Loadloss contributions - 2 contributions expected */
     if (opflow->include_loadloss_variables) {
       int *l_hesssp_idx = loadparams->hesssp_idx_dev_;
-      double *loadloss_penalty_dev_ = loadparams->loadloss_penalty_dev_;
       RAJA::forall<exago_raja_exec>(
           RAJA::RangeSegment(0, loadparams->nload),
           RAJA_LAMBDA(RAJA::Index_type i) {
@@ -2849,4 +2846,115 @@ PetscErrorCode OPFLOWComputeDenseHessian_PBPOLRAJAHIOP(OPFLOW opflow,
 
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode OPFLOWSolutionCallback_PBPOLRAJAHIOP(
+    OPFLOW opflow, const double *xsol, const double *z_L, const double *z_U,
+    const double *gsol, const double *lamsol, double obj_value) {
+  PetscErrorCode ierr;
+  PetscScalar *x, *lam, *g;
+
+  auto &resmgr = umpire::ResourceManager::getInstance();
+  umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
+
+  /* Create temporary vectors for copying values to HOST (only used when
+   * mem-space is DEVICE */
+  double *xsol_host, *lamsol_host, *gsol_host;
+
+  if (opflow->mem_space == DEVICE) {
+    xsol_host = (double *)h_allocator_.allocate(opflow->nx * sizeof(double));
+    lamsol_host =
+        (double *)h_allocator_.allocate(opflow->ncon * sizeof(double));
+    gsol_host = (double *)h_allocator_.allocate(opflow->ncon * sizeof(double));
+  }
+
+  ierr = VecGetArray(opflow->X, &x);
+  CHKERRQ(ierr);
+  if (opflow->mem_space == DEVICE) {
+    /* Copy xsol from device to host */
+    resmgr.copy(xsol_host, (double *)xsol);
+    OPFLOWSpDenseToNatural(opflow, xsol_host, x);
+  } else {
+    OPFLOWSpDenseToNatural(opflow, xsol, x);
+  }
+  ierr = VecRestoreArray(opflow->X, &x);
+  CHKERRQ(ierr);
+
+  if (lamsol) {
+    /* HIOP returns a NULL for lamsol - probably lamsol needs to be added to
+     HIOP. Need to remove this condition once it is fixed
+    */
+    ierr = VecGetArray(opflow->Lambda, &lam);
+    CHKERRQ(ierr);
+
+    if (opflow->mem_space == DEVICE) {
+      /* Copy lamsol from device to host */
+      resmgr.copy(lamsol_host, (double *)lamsol);
+
+      ierr = PetscMemcpy(lam, (double *)lamsol_host,
+                         opflow->nconeq * sizeof(PetscScalar));
+      CHKERRQ(ierr);
+      if (opflow->Nconineq) {
+        ierr = PetscMemcpy(lam + opflow->nconeq,
+                           (double *)(lamsol_host + opflow->nconeq),
+                           opflow->nconineq * sizeof(PetscScalar));
+        CHKERRQ(ierr);
+      }
+    } else {
+      ierr = PetscMemcpy(lam, (double *)lamsol,
+                         opflow->nconeq * sizeof(PetscScalar));
+      CHKERRQ(ierr);
+      if (opflow->Nconineq) {
+        ierr = PetscMemcpy(lam + opflow->nconeq,
+                           (double *)(lamsol + opflow->nconeq),
+                           opflow->nconineq * sizeof(PetscScalar));
+        CHKERRQ(ierr);
+      }
+    }
+    ierr = VecRestoreArray(opflow->Lambda, &lam);
+    CHKERRQ(ierr);
+  } else {
+    ierr = VecSet(opflow->Lambda, -9999.0);
+    CHKERRQ(ierr);
+  }
+
+  if (gsol) {
+    ierr = VecGetArray(opflow->G, &g);
+    CHKERRQ(ierr);
+    if (opflow->mem_space == DEVICE) {
+      /* Copy gsol from device to host */
+      resmgr.copy(gsol_host, (double *)gsol);
+
+      ierr = PetscMemcpy(g, (double *)gsol_host,
+                         opflow->nconeq * sizeof(PetscScalar));
+      CHKERRQ(ierr);
+      if (opflow->Nconineq) {
+        ierr = PetscMemcpy(g + opflow->nconeq,
+                           (double *)(gsol_host + opflow->nconeq),
+                           opflow->nconineq * sizeof(PetscScalar));
+        CHKERRQ(ierr);
+      }
+    } else {
+      ierr =
+          PetscMemcpy(g, (double *)gsol, opflow->nconeq * sizeof(PetscScalar));
+      CHKERRQ(ierr);
+      if (opflow->Nconineq) {
+        ierr =
+            PetscMemcpy(g + opflow->nconeq, (double *)(gsol + opflow->nconeq),
+                        opflow->nconineq * sizeof(PetscScalar));
+        CHKERRQ(ierr);
+      }
+    }
+    ierr = VecRestoreArray(opflow->G, &g);
+    CHKERRQ(ierr);
+  }
+
+  if (opflow->mem_space == DEVICE) {
+    h_allocator_.deallocate(xsol_host);
+    h_allocator_.deallocate(lamsol_host);
+    h_allocator_.deallocate(gsol_host);
+  }
+
+  PetscFunctionReturn(0);
+}
+
 #endif
