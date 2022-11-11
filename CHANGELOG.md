@@ -8,29 +8,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [develop]
 
 ### General
-- Preparing support for Frontier, C++14, RAJA@2022 + Umpire@2022
+- Preparing support for Frontier, RAJA@2022 + Umpire@2022
 
 ### Build system
-- C++ standard changed to 14.
-- Added crusher environment. Starting trend of moving spack.yaml environments to the place where the variables are.
 
 ### PS
 
 ### PFLOW
 
 ### OPFLOW
-- Added OPFLOWSetWeight() for setting weight/probability for an OPFLOW. This is useful for setting weights for OPFLOW when used with SOPFLOW.
 
 ### TCOPFLOW
 
 ### SCOPFLOW
 
 ### Documentation
-- Begun moving spack documentation into repository, and expanding buildsystem documentation.
 
 ### Testing
 
 ### Miscallenous
+
+## [v1.5.0]
+
+### General
+- OPFLOW, SOPFLOW, and SCOPFLOW can run on AMD GPUs (requires HIP)
+- C++ standard changed to 14 in preparation for supporting newest RAJA and Umpire
+- PFLOW exclusive build is enabled when building without Ipopt and HiOp
+- Python wrapper is temporarily disabled when building without Ipopt and HiOp
+
+### Build system
+- Added `EXAGO_ENABLE_LOGGING` flag to enable/disable logging
+- Add automatic module generation using Spack to GitLab pipelines for PNNL
+- Transition to tracking spack configuration for Newell, Deception and Ascent to repository
+- ExaGO now depends on Petsc 3.18.0: and HiOp 0.7.0:
+- Remove CMake OpenMP linking when compiling without RAJA
+- Refactored GitLab CI scripts into separate files and updated syntax
+- Allow building without spdlog
+
+
+### OPFLOW
+- Added OPFLOWSetWeight() for setting weight for OPFLOW. This is done
+  for using with SCOPFLOW and SOPFLOW to set the probabilities or weights
+  for scenarios and contingencies.
+- OPFLOW can run on AMD GPUs now.
+- The memory space for HIOP can be set with option `-hiop_mem_space`.
+
+### SCOPFLOW
+- Support for PTI contingency files. Use .con file extension.
+
+### SOPFLOW
+- Read-in weights for scenarios set through the scenario files.
+- Solve SOPFLOW with scenario weights
+
+### Documentation
+- Added `-hiop_memspace` option
+
+### Testing
+- Add tests for OPFLOW Objective function for a known network and reference solution
+- Convert to using pytest for Python tests
+
+### Miscallenous
+- Add template profiling scripts from SRP HPC Summer Porject
+- Update Authors
 
 ## [v1.4.1]
 
@@ -54,44 +93,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### PS
 - Added API PSCopy() to copy PS object data
 
-### PFLOW
-
 ### OPFLOW
 - DC Optimal power flow (DCOPF) implementation. Can be used as an initialization OR as an OPFLOW model.
 - Added API OPFLOWSkipOptions() for skipping options (needed for DCOPF initialization)
 - Added select monitor of lines (inequality constraints) for OPFLOW. The selection is currently based by KV levels. The user can provide KV levels to monitor via option -opflow_monitor_kvlevels or OPFLOWSetLinesMonitored() to have OPFLOW include these line flows as inequality constraints. Default is to monitor all lines.
 - Added getters for various opflow fields that were previously inaccessible.
 
-### TCOPFLOW
-
 ### SCOPFLOW
 - Fixed bugs in configuring SCOPFLOW subproblems. Added API for SCOPFLOWEnablePowerImbalanceVariables, SCOPFLOWEnablePowerImbalanceVariables, SCOPFLOWSetComputeMode and SCOPFLOWSetComputeMode.
 
 ### SOPFLOW
 - Read-in weights for scenarios set through the scenario files.
-- Solve SOPFLOW with scenario weights	
-
-### Documentation
+- Solve SOPFLOW with scenario weights
 
 ### Testing
-
 - Added testing for python with mpi4py, but still require testing without MPI.
 - Re-enabled python tests on Ascent.
 - Convert existing smoke tests for SCOPLFOW and SOPFLOW to toml based testing.
 
-### Miscallenous
-
 ## [v1.3.0]
 
 ### General
-
 - Python bindings re-released using pybind11 instead of the ctypes bindings.
 	This is required to build python bindings when shared libraries are disabled.
 - Removed -no_optfile option and searching options file in default path.  Use -optionsfile option to explicitly set the options file.
 - Updated help messages with clearer default options
 
 ### Build system
-
 - Depend on HiOp's exported cmake configuration to configure HiOp interoperation. Many CMake find package scripts have been removed as a result.
 - Use of Pkgconfig instead of PETSc cmake modules.
 - ExaGO depends on HiOp v0.5.3 and PETSc v3.16 and above.
@@ -161,14 +189,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v1.1.2]
 
 ### Documentation
-
-* Patch to bring ExaGO into full compliance with xSDK policies and update our compliance document
+- Patch to bring ExaGO into full compliance with xSDK policies and update our compliance document
 
 ## [v1.1.1]
 
 ### General
-
-* Hotfix to update versions in user manual and CMake
+- Hotfix to update versions in user manual and CMake
 
 ## [v1.1.0]
 

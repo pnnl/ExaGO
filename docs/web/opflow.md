@@ -65,6 +65,7 @@ The behavior of OPFLOW is controlled through the different options given in the 
 |-opflow_monitor_line_kvlevels|KV levels for line flows to monitor| comma separated KV levels| All models|
 |-opflow_tolerance|Optimization solver tolerance | (1e-6) | All solvers |
 |-hiop_compute_mode|Controls the `-compute_mode` option for HIOP solver, i.e., where the HIOP solver computations run|"auto" (default)<br> "cpu"<br>"hybrid"<br>"gpu"| HiOp solver only |
+|-hiop_mem_space|Controls the `-mem_space` option for HIOP solver, i.e., where the HIOP solver allocates memory|"default" (default)<br> "host"<br>"device"<br>"um"| HiOp solver only |
 |-hiop_verbosity_level|Controls the verbosity level for HIOP. 0 means no output is printed, 10 is max. output| 0 to 10 (0) See [HIOP verbosity levels](https://github.com/LLNL/hiop/blob/7e8adae9db757aed48e5c2bc448316307598258f/src/Utils/hiopLogger.hpp#L68)| HiOp solver only |
 |-hiop_tolerance| HIOP solver tolerance| (1e-6)| HiOp solver only |
 |-print_output| Print OPFLOW solution to screen| 0 or 1 (0)| All solvers |
