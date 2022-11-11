@@ -59,6 +59,12 @@ Feel free to raise an issue or contact the team if the guidelines are ambiguous 
 - Asher Mancinelli
 - Cameron Rutherford
 - Bruce Palmer
+- Jaelyn Litzinger
+- William Perkins
+- Sayef Azad Sakin
+- Joseph Macam
+- Ryan Danehy
+- Nicholson Koukpaizan
 
 ## Acknowledgement
 This package is developed as a part of [ExaSGD](https://www.exascaleproject.org/research-project/exasgd/) project under the [Exascale computing project](https://www.exascaleproject.org/).
