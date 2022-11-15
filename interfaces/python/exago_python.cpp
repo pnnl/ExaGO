@@ -6,6 +6,12 @@
 #include <private/pflowimpl.h>
 #include <opflow.h>
 #include <private/opflowimpl.h>
+#include <sopflow.h>
+#include <private/sopflowimpl.h>
+#include <scopflow.h>
+#include <private/scopflowimpl.h>
+#include <sopflow.h>
+#include <private/sopflowimpl.h>
 #include <utils.h>
 #include <string.h>
 
@@ -82,26 +88,42 @@ PYBIND11_MODULE(exago, m) {
   m.def("finalize", &ExaGOFinalize);
   m.def("prefix", &prefix);
 
-  pybind11::class_<_p_PFLOW>(m, "PFLOW")
-      .def(pybind11::init([]() {
-        PetscErrorCode ierr;
-        PFLOW pflow;
-        MPI_Comm communicator;
-        ierr = ExaGOGetSelfCommunicator(&communicator);
-        ExaGOCheckError(ierr);
-        ierr = PFLOWCreate(communicator, &pflow);
-        ExaGOCheckError(ierr);
-        return pflow;
-      }))
+  // -------------------------------------------------------------
+  // Common Types
+  // -------------------------------------------------------------
+
+  // -------------------------------------------------------------
+  //  class PFLOW_wrapper
+  // -------------------------------------------------------------
+  class PFLOW_wrapper {
+  public:
+    PFLOW pflow;
+    PFLOW_wrapper(void) {
+      PetscErrorCode ierr;
+      MPI_Comm communicator;
+      ierr = ExaGOGetSelfCommunicator(&communicator);
+      ExaGOCheckError(ierr);
+      ierr = PFLOWCreate(communicator, &pflow);
+      ExaGOCheckError(ierr);
+    }
+    ~PFLOW_wrapper(void) {
+      PetscErrorCode ierr;
+      ierr = PFLOWDestroy(&pflow);
+      ExaGOCheckError(ierr);
+    }
+  };
+
+  pybind11::class_<PFLOW_wrapper>(m, "PFLOW")
+      .def(pybind11::init())
       .def("read_mat_power_data",
-           [](_p_PFLOW &pflow, std::string filename) {
+           [](PFLOW_wrapper &w, std::string filename) {
              PetscErrorCode ierr;
-             ierr = PFLOWReadMatPowerData(&pflow, filename.c_str());
+             ierr = PFLOWReadMatPowerData(w.pflow, filename.c_str());
              ExaGOCheckError(ierr);
            })
-      .def("solve", [](_p_PFLOW &pflow) {
+      .def("solve", [](PFLOW_wrapper &w) {
         PetscErrorCode ierr;
-        ierr = PFLOWSolve(&pflow);
+        ierr = PFLOWSolve(w.pflow);
         ExaGOCheckError(ierr);
       });
 
@@ -130,36 +152,47 @@ PYBIND11_MODULE(exago, m) {
       .value("MATPOWER", MATPOWER)
       .export_values();
 
-  /* OPFLOW class */
-  pybind11::class_<_p_OPFLOW>(m, "OPFLOW")
-      .def(pybind11::init([]() {
-        PetscErrorCode ierr;
-        OPFLOW opf;
-        MPI_Comm communicator;
-        ierr = ExaGOGetSelfCommunicator(&communicator);
-        ExaGOCheckError(ierr);
-        ierr = OPFLOWCreate(communicator, &opf);
-        ExaGOCheckError(ierr);
-        return opf;
-      }))
+  // -------------------------------------------------------------
+  //  class OPFLOW_wrapper
+  // -------------------------------------------------------------
+  class OPFLOW_wrapper {
+  public:
+    OPFLOW opf;
+    OPFLOW_wrapper(void) {
+      PetscErrorCode ierr;
+      MPI_Comm communicator;
+      ierr = ExaGOGetSelfCommunicator(&communicator);
+      ExaGOCheckError(ierr);
+      ierr = OPFLOWCreate(communicator, &opf);
+      ExaGOCheckError(ierr);
+    }
+    ~OPFLOW_wrapper(void) {
+      PetscErrorCode ierr;
+      ierr = OPFLOWDestroy(&opf);
+      ExaGOCheckError(ierr);
+    }
+  };
 
+  /* OPFLOW class */
+  pybind11::class_<OPFLOW_wrapper>(m, "OPFLOW")
+      .def(pybind11::init())
       /* Setters */
       .def("set_model",
-           [](_p_OPFLOW &opf, std::string model) {
+           [](OPFLOW_wrapper &w, std::string model) {
              PetscErrorCode ierr;
-             ierr = OPFLOWSetModel(&opf, model.c_str());
+             ierr = OPFLOWSetModel(w.opf, model.c_str());
              ExaGOCheckError(ierr);
            })
 
       .def("set_solver",
-           [](_p_OPFLOW &opf, std::string solver) {
+           [](OPFLOW_wrapper &w, std::string solver) {
              PetscErrorCode ierr;
-             ierr = OPFLOWSetSolver(&opf, solver.c_str());
+             ierr = OPFLOWSetSolver(w.opf, solver.c_str());
              ExaGOCheckError(ierr);
            })
 
       .def("set_objective_type",
-           [](_p_OPFLOW &opf, std::string func) {
+           [](OPFLOW_wrapper &w, std::string func) {
              PetscErrorCode ierr;
              OPFLOWObjectiveType type;
              bool found = false;
@@ -177,12 +210,12 @@ PYBIND11_MODULE(exago, m) {
                        "Invalid value '{}' for OPFLOWObjectiveType enum", func)
                        .c_str());
              }
-             ierr = OPFLOWSetObjectiveType(&opf, type);
+             ierr = OPFLOWSetObjectiveType(w.opf, type);
              ExaGOCheckError(ierr);
            })
 
       .def("set_objective_type",
-           [](_p_OPFLOW &opf, int func) {
+           [](OPFLOW_wrapper &w, int func) {
              PetscErrorCode ierr;
              OPFLOWObjectiveType type;
              bool found = false;
@@ -199,12 +232,12 @@ PYBIND11_MODULE(exago, m) {
                        "Invalid value '{}' for OPFLOWObjectiveType enum", func)
                        .c_str());
              }
-             ierr = OPFLOWSetObjectiveType(&opf, type);
+             ierr = OPFLOWSetObjectiveType(w.opf, type);
              ExaGOCheckError(ierr);
            })
 
       .def("set_initialization_type",
-           [](_p_OPFLOW &opf, std::string init) {
+           [](OPFLOW_wrapper &w, std::string init) {
              PetscErrorCode ierr;
              OPFLOWInitializationType type;
              bool found = false;
@@ -222,12 +255,12 @@ PYBIND11_MODULE(exago, m) {
                        init)
                        .c_str());
              }
-             ierr = OPFLOWSetInitializationType(&opf, type);
+             ierr = OPFLOWSetInitializationType(w.opf, type);
              ExaGOCheckError(ierr);
            })
 
       .def("set_initialization_type",
-           [](_p_OPFLOW &opf, int init) {
+           [](OPFLOW_wrapper &w, int init) {
              PetscErrorCode ierr;
              OPFLOWInitializationType type;
              bool found = false;
@@ -245,12 +278,12 @@ PYBIND11_MODULE(exago, m) {
                        init)
                        .c_str());
              }
-             ierr = OPFLOWSetInitializationType(&opf, type);
+             ierr = OPFLOWSetInitializationType(w.opf, type);
              ExaGOCheckError(ierr);
            })
 
       .def("set_gen_bus_voltage_type",
-           [](_p_OPFLOW &opf, std::string volt) {
+           [](OPFLOW_wrapper &w, std::string volt) {
              PetscErrorCode ierr;
              OPFLOWGenBusVoltageType type;
              bool found = false;
@@ -268,12 +301,12 @@ PYBIND11_MODULE(exago, m) {
                        volt)
                        .c_str());
              }
-             ierr = OPFLOWSetGenBusVoltageType(&opf, type);
+             ierr = OPFLOWSetGenBusVoltageType(w.opf, type);
              ExaGOCheckError(ierr);
            })
 
       .def("set_gen_bus_voltage_type",
-           [](_p_OPFLOW &opf, int volt) {
+           [](OPFLOW_wrapper &w, int volt) {
              PetscErrorCode ierr;
              OPFLOWGenBusVoltageType type;
              bool found = false;
@@ -291,239 +324,241 @@ PYBIND11_MODULE(exago, m) {
                        volt)
                        .c_str());
              }
-             ierr = OPFLOWSetGenBusVoltageType(&opf, type);
+             ierr = OPFLOWSetGenBusVoltageType(w.opf, type);
              ExaGOCheckError(ierr);
            })
 
       .def("set_has_gen_set_point",
-           [](_p_OPFLOW &opf, bool setpt) {
+           [](OPFLOW_wrapper &w, bool setpt) {
              PetscErrorCode ierr;
-             ierr = OPFLOWHasGenSetPoint(&opf, (PetscBool)setpt);
+             ierr = OPFLOWHasGenSetPoint(w.opf, (PetscBool)setpt);
              ExaGOCheckError(ierr);
            })
 
       .def("set_hiop_compute_mode",
-           [](_p_OPFLOW &opf, std::string mode) {
+           [](OPFLOW_wrapper &w, std::string mode) {
              PetscErrorCode ierr;
-             ierr = OPFLOWSetHIOPComputeMode(&opf, mode.c_str());
+             ierr = OPFLOWSetHIOPComputeMode(w.opf, mode.c_str());
              ExaGOCheckError(ierr);
            })
 
       .def("set_has_loadloss",
-           [](_p_OPFLOW &opf, bool loadloss) {
+           [](OPFLOW_wrapper &w, bool loadloss) {
              PetscErrorCode ierr;
-             ierr = OPFLOWHasLoadLoss(&opf, (PetscBool)loadloss);
+             ierr = OPFLOWHasLoadLoss(w.opf, (PetscBool)loadloss);
              ExaGOCheckError(ierr);
            })
 
       .def("set_ignore_lineflow_constraints",
-           [](_p_OPFLOW &opf, bool ignore) {
+           [](OPFLOW_wrapper &w, bool ignore) {
              PetscErrorCode ierr;
-             ierr = OPFLOWIgnoreLineflowConstraints(&opf, (PetscBool)ignore);
+             ierr = OPFLOWIgnoreLineflowConstraints(w.opf, (PetscBool)ignore);
              ExaGOCheckError(ierr);
            })
 
       .def("set_has_bus_power_imbalance",
-           [](_p_OPFLOW &opf, bool powerimbalance) {
+           [](OPFLOW_wrapper &w, bool powerimbalance) {
              PetscErrorCode ierr;
-             ierr = OPFLOWHasBusPowerImbalance(&opf, (PetscBool)powerimbalance);
+             ierr =
+                 OPFLOWHasBusPowerImbalance(w.opf, (PetscBool)powerimbalance);
              ExaGOCheckError(ierr);
            })
 
       .def("set_use_agc",
-           [](_p_OPFLOW &opf, bool agc) {
+           [](OPFLOW_wrapper &w, bool agc) {
              PetscErrorCode ierr;
-             ierr = OPFLOWUseAGC(&opf, (PetscBool)agc);
+             ierr = OPFLOWUseAGC(w.opf, (PetscBool)agc);
              ExaGOCheckError(ierr);
            })
 
       .def("set_hiop_verbosity_level",
-           [](_p_OPFLOW &opf, int level) {
+           [](OPFLOW_wrapper &w, int level) {
              PetscErrorCode ierr;
-             ierr = OPFLOWSetHIOPVerbosityLevel(&opf, level);
+             ierr = OPFLOWSetHIOPVerbosityLevel(w.opf, level);
              ExaGOCheckError(ierr);
            })
 
       .def("set_loadloss_penalty",
-           [](_p_OPFLOW &opf, double p) {
+           [](OPFLOW_wrapper &w, double p) {
              PetscErrorCode ierr;
-             ierr = OPFLOWSetLoadLossPenalty(&opf, p);
+             ierr = OPFLOWSetLoadLossPenalty(w.opf, p);
              ExaGOCheckError(ierr);
            })
 
       .def("set_bus_power_imbalance_penalty",
-           [](_p_OPFLOW &opf, double p) {
+           [](OPFLOW_wrapper &w, double p) {
              PetscErrorCode ierr;
-             ierr = OPFLOWSetBusPowerImbalancePenalty(&opf, p);
+             ierr = OPFLOWSetBusPowerImbalancePenalty(w.opf, p);
              ExaGOCheckError(ierr);
            })
 
       .def("set_tolerance",
-           [](_p_OPFLOW &opf, double tol) {
+           [](OPFLOW_wrapper &w, double tol) {
              PetscErrorCode ierr;
-             ierr = OPFLOWSetTolerance(&opf, tol);
+             ierr = OPFLOWSetTolerance(w.opf, tol);
              ExaGOCheckError(ierr);
            })
 
       .def("ps_set_gen_power_limits",
-           [](_p_OPFLOW &opf, int gbus, std::string gid, double pt, double pb,
-              double qt, double qb) {
+           [](OPFLOW_wrapper &w, int gbus, std::string gid, double pt,
+              double pb, double qt, double qb) {
              PetscErrorCode ierr;
              _p_PS *ps;
-             ierr = OPFLOWGetPS(&opf, &ps);
+             ierr = OPFLOWGetPS(w.opf, &ps);
              ExaGOCheckError(ierr);
              PSSetGenPowerLimits(ps, gbus, gid.c_str(), pt, pb, qt, qb);
            })
 
       /* Getters */
       .def("get_tolerance",
-           [](_p_OPFLOW &opf) -> double {
+           [](OPFLOW_wrapper &w) -> double {
              PetscErrorCode ierr;
              double tol;
-             ierr = OPFLOWGetTolerance(&opf, &tol);
+             ierr = OPFLOWGetTolerance(w.opf, &tol);
              ExaGOCheckError(ierr);
              return tol;
            })
 
       .def("get_hiop_compute_mode",
-           [](_p_OPFLOW &opf) -> std::string {
+           [](OPFLOW_wrapper &w) -> std::string {
              PetscErrorCode ierr;
              std::string mode(PETSC_MAX_PATH_LEN, '\0');
-             ierr = OPFLOWGetHIOPComputeMode(&opf, &mode[0]);
+             ierr = OPFLOWGetHIOPComputeMode(w.opf, &mode[0]);
              ExaGOCheckError(ierr);
              return mode.c_str();
            })
 
       .def("get_model",
-           [](_p_OPFLOW &opf) -> std::string {
+           [](OPFLOW_wrapper &w) -> std::string {
              PetscErrorCode ierr;
              std::string model(PETSC_MAX_PATH_LEN, '\0');
-             ierr = OPFLOWGetModel(&opf, &model[0]);
+             ierr = OPFLOWGetModel(w.opf, &model[0]);
              ExaGOCheckError(ierr);
              return model.c_str();
            })
 
       .def("get_solver",
-           [](_p_OPFLOW &opf) -> std::string {
+           [](OPFLOW_wrapper &w) -> std::string {
              PetscErrorCode ierr;
              std::string solver(PETSC_MAX_PATH_LEN, '\0');
-             ierr = OPFLOWGetSolver(&opf, &solver[0]);
+             ierr = OPFLOWGetSolver(w.opf, &solver[0]);
              ExaGOCheckError(ierr);
              return solver.c_str();
            })
 
       .def("get_convergence_status",
-           [](_p_OPFLOW opf) -> bool {
+           [](OPFLOW_wrapper &w) -> bool {
              PetscErrorCode ierr;
              PetscBool status;
-             ierr = OPFLOWGetConvergenceStatus(&opf, &status);
+             ierr = OPFLOWGetConvergenceStatus(w.opf, &status);
              ExaGOCheckError(ierr);
              return status;
            })
 
       .def("get_objective_type",
-           [](_p_OPFLOW opf) -> OPFLOWObjectiveType {
+           [](OPFLOW_wrapper &w) -> OPFLOWObjectiveType {
              PetscErrorCode ierr;
              OPFLOWObjectiveType obj_type;
-             ierr = OPFLOWGetObjectiveType(&opf, &obj_type);
+             ierr = OPFLOWGetObjectiveType(w.opf, &obj_type);
              ExaGOCheckError(ierr);
              return obj_type;
            })
 
       .def("get_initialization_type",
-           [](_p_OPFLOW opf) -> OPFLOWInitializationType {
+           [](OPFLOW_wrapper &w) -> OPFLOWInitializationType {
              PetscErrorCode ierr;
              OPFLOWInitializationType init;
-             ierr = OPFLOWGetInitializationType(&opf, &init);
+             ierr = OPFLOWGetInitializationType(w.opf, &init);
              ExaGOCheckError(ierr);
              return init;
            })
 
       .def("get_gen_bus_voltage_type",
-           [](_p_OPFLOW &opf) -> OPFLOWGenBusVoltageType {
+           [](OPFLOW_wrapper &w) -> OPFLOWGenBusVoltageType {
              PetscErrorCode ierr;
              OPFLOWGenBusVoltageType volt;
-             ierr = OPFLOWGetGenBusVoltageType(&opf, &volt);
+             ierr = OPFLOWGetGenBusVoltageType(w.opf, &volt);
              ExaGOCheckError(ierr);
              return volt;
            })
 
       .def("get_has_gen_set_point",
-           [](_p_OPFLOW &opf) -> bool {
+           [](OPFLOW_wrapper &w) -> bool {
              PetscErrorCode ierr;
              PetscBool setpt;
-             ierr = OPFLOWGetHasGenSetPoint(&opf, &setpt);
+             ierr = OPFLOWGetHasGenSetPoint(w.opf, &setpt);
              ExaGOCheckError(ierr);
              return setpt;
            })
 
       .def("get_loadloss_penalty",
-           [](_p_OPFLOW &opf) -> double {
+           [](OPFLOW_wrapper &w) -> double {
              PetscErrorCode ierr;
              double p;
-             ierr = OPFLOWGetLoadLossPenalty(&opf, &p);
+             ierr = OPFLOWGetLoadLossPenalty(w.opf, &p);
              ExaGOCheckError(ierr);
              return p;
            })
 
       .def("get_ignore_lineflow_constraints",
-           [](_p_OPFLOW &opf) -> bool {
+           [](OPFLOW_wrapper &w) -> bool {
              PetscErrorCode ierr;
              PetscBool ig;
-             ierr = OPFLOWGetIgnoreLineflowConstraints(&opf, &ig);
+             ierr = OPFLOWGetIgnoreLineflowConstraints(w.opf, &ig);
              ExaGOCheckError(ierr);
              return ig;
            })
 
       .def("get_has_loadloss",
-           [](_p_OPFLOW &opf) -> bool {
+           [](OPFLOW_wrapper &w) -> bool {
              PetscErrorCode ierr;
              PetscBool loadloss;
-             ierr = OPFLOWGetHasLoadLoss(&opf, &loadloss);
+             ierr = OPFLOWGetHasLoadLoss(w.opf, &loadloss);
              ExaGOCheckError(ierr);
              return loadloss;
            })
 
       .def("get_has_bus_power_imbalance",
-           [](_p_OPFLOW &opf) -> bool {
+           [](OPFLOW_wrapper &w) -> bool {
              PetscErrorCode ierr;
              PetscBool powerimbalance;
-             ierr = OPFLOWGetHasBusPowerImbalance(&opf, &powerimbalance);
+             ierr = OPFLOWGetHasBusPowerImbalance(w.opf, &powerimbalance);
              ExaGOCheckError(ierr);
              return powerimbalance;
            })
 
       .def("get_use_agc",
-           [](_p_OPFLOW &opf) -> bool {
+           [](OPFLOW_wrapper &w) -> bool {
              PetscErrorCode ierr;
              PetscBool agc;
-             ierr = OPFLOWGetUseAGC(&opf, &agc);
+             ierr = OPFLOWGetUseAGC(w.opf, &agc);
              ExaGOCheckError(ierr);
              return agc;
            })
 
       .def("get_hiop_verbosity_level",
-           [](_p_OPFLOW &opf) -> int {
+           [](OPFLOW_wrapper &w) -> int {
              PetscErrorCode ierr;
              int level;
-             ierr = OPFLOWGetHIOPVerbosityLevel(&opf, &level);
+             ierr = OPFLOWGetHIOPVerbosityLevel(w.opf, &level);
              ExaGOCheckError(ierr);
              return level;
            })
 
       .def("get_bus_power_imbalance_penalty",
-           [](_p_OPFLOW &opf) -> double {
+           [](OPFLOW_wrapper &w) -> double {
              PetscErrorCode ierr;
              double p;
-             ierr = OPFLOWGetBusPowerImbalancePenalty(&opf, &p);
+             ierr = OPFLOWGetBusPowerImbalancePenalty(w.opf, &p);
              ExaGOCheckError(ierr);
+             return p;
            })
 
       .def("get_gen_dispatch",
-           [](_p_OPFLOW opf, int gbus, std::string gid) -> pybind11::tuple {
+           [](OPFLOW_wrapper &w, int gbus, std::string gid) -> pybind11::tuple {
              _p_PS *ps;
              PetscErrorCode ierr;
-             ierr = OPFLOWGetPS(&opf, &ps);
+             ierr = OPFLOWGetPS(w.opf, &ps);
              ExaGOCheckError(ierr);
              double pg;
              double qg;
@@ -533,7 +568,7 @@ PYBIND11_MODULE(exago, m) {
            })
 
       .def("get_objective_types",
-           [](_p_OPFLOW &opf) -> std::vector<OPFLOWObjectiveType> {
+           [](OPFLOW_wrapper &w) -> std::vector<OPFLOWObjectiveType> {
              std::vector<OPFLOWObjectiveType> types;
 #define OPFLOW_OBJ_DEF(x) types.push_back(x);
 #include "private/opflow_enum.def"
@@ -542,7 +577,7 @@ PYBIND11_MODULE(exago, m) {
            })
 
       .def("get_initialization_types",
-           [](_p_OPFLOW &opf) -> std::vector<OPFLOWInitializationType> {
+           [](OPFLOW_wrapper &w) -> std::vector<OPFLOWInitializationType> {
              std::vector<OPFLOWInitializationType> types;
 #define OPFLOW_INIT_DEF(x) types.push_back(x);
 #include "private/opflow_enum.def"
@@ -551,7 +586,7 @@ PYBIND11_MODULE(exago, m) {
            })
 
       .def("get_gen_bus_voltage_types",
-           [](_p_OPFLOW &opf) -> std::vector<OPFLOWGenBusVoltageType> {
+           [](OPFLOW_wrapper &w) -> std::vector<OPFLOWGenBusVoltageType> {
              std::vector<OPFLOWGenBusVoltageType> types;
 #define OPFLOW_GBV_DEF(x) types.push_back(x);
 #include "private/opflow_enum.def"
@@ -560,53 +595,672 @@ PYBIND11_MODULE(exago, m) {
            })
 
       .def("get_objective",
-           [](_p_OPFLOW &opf) -> double {
+           [](OPFLOW_wrapper &w) -> double {
              PetscErrorCode ierr;
              double obj;
-             ierr = OPFLOWGetObjective(&opf, &obj);
+             ierr = OPFLOWGetObjective(w.opf, &obj);
              ExaGOCheckError(ierr);
              return obj;
            })
 
       /* Everything else */
       .def("solve",
-           [](_p_OPFLOW &opf) {
+           [](OPFLOW_wrapper &w) {
              PetscErrorCode ierr;
-             ierr = OPFLOWSolve(&opf);
+             ierr = OPFLOWSolve(w.opf);
              ExaGOCheckError(ierr);
            })
 
       .def("print_solution",
-           [](_p_OPFLOW &opf) {
+           [](OPFLOW_wrapper &w) {
              PetscErrorCode ierr;
-             ierr = OPFLOWPrintSolution(&opf);
+             ierr = OPFLOWPrintSolution(w.opf);
              ExaGOCheckError(ierr);
            })
 
       .def("solution_to_ps",
-           [](_p_OPFLOW &opf) {
+           [](OPFLOW_wrapper &w) {
              PetscErrorCode ierr;
-             ierr = OPFLOWSolutionToPS(&opf);
+             ierr = OPFLOWSolutionToPS(w.opf);
              ExaGOCheckError(ierr);
            })
 
       .def("set_up_ps",
-           [](_p_OPFLOW &opf) {
+           [](OPFLOW_wrapper &w) {
              PetscErrorCode ierr;
-             ierr = OPFLOWSetUpPS(&opf);
+             ierr = OPFLOWSetUpPS(w.opf);
              ExaGOCheckError(ierr);
            })
 
       .def("save_solution",
-           [](_p_OPFLOW &opf, OutputFormat fmt, std::string outfile) {
+           [](OPFLOW_wrapper &w, OutputFormat fmt, std::string outfile) {
              PetscErrorCode ierr;
-             ierr = OPFLOWSaveSolution(&opf, fmt, outfile.c_str());
+             ierr = OPFLOWSaveSolution(w.opf, fmt, outfile.c_str());
              ExaGOCheckError(ierr);
            })
 
-      .def("read_mat_power_data", [](_p_OPFLOW &opf, std::string filename) {
+      .def("read_mat_power_data", [](OPFLOW_wrapper &w, std::string filename) {
         PetscErrorCode ierr;
-        ierr = OPFLOWReadMatPowerData(&opf, filename.c_str());
+        ierr = OPFLOWReadMatPowerData(w.opf, filename.c_str());
         ExaGOCheckError(ierr);
       });
+
+  // -------------------------------------------------------------
+  /* SCOPFLOW class */
+  // -------------------------------------------------------------
+
+  // -------------------------------------------------------------
+  // class SCOPFLOW_wrapper
+  //
+  // Wrap to make sure allocation and destruction is handled correctly
+  // -------------------------------------------------------------
+  class SCOPFLOW_wrapper {
+  public:
+    SCOPFLOW scopf;
+    SCOPFLOW_wrapper(void) {
+      PetscErrorCode ierr;
+      MPI_Comm communicator;
+      ierr = ExaGOGetSelfCommunicator(&communicator);
+      ExaGOCheckError(ierr);
+      ierr = SCOPFLOWCreate(communicator, &scopf);
+      ExaGOCheckError(ierr);
+    }
+    ~SCOPFLOW_wrapper(void) {
+      PetscErrorCode ierr;
+      ierr = SCOPFLOWDestroy(&scopf);
+      ExaGOCheckError(ierr);
+    }
+  };
+
+  pybind11::enum_<ContingencyFileInputFormat>(m, "ContingencyFileInputFormat")
+      .value("NATIVE", NATIVE)
+      .value("PSSE", PSSE)
+      .export_values();
+
+  pybind11::class_<SCOPFLOW_wrapper>(m, "SCOPFLOW")
+      .def(pybind11::init())
+      /* Setters */
+      .def("set_model",
+           [](SCOPFLOW_wrapper &w, std::string model) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetModel(w.scopf, model.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("set_network_data",
+           [](SCOPFLOW_wrapper &w, std::string filename) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetNetworkData(w.scopf, filename.c_str());
+             ExaGOCheckError(ierr);
+           })
+
+      .def("set_num_contingencies",
+           [](SCOPFLOW_wrapper &w, int n) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetNumContingencies(w.scopf, n);
+             ExaGOCheckError(ierr);
+           })
+      .def("set_contingency_data",
+           [](SCOPFLOW_wrapper &w, std::string filename,
+              ContingencyFileInputFormat fmt) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetContingencyData(w.scopf, fmt, filename.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("set_pload_data",
+           [](SCOPFLOW_wrapper &w, std::string filename) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetPLoadData(w.scopf, filename.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("set_qload_data",
+           [](SCOPFLOW_wrapper &w, std::string filename) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetQLoadData(w.scopf, filename.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("set_wind_gen_profile",
+           [](SCOPFLOW_wrapper &w, std::string filename) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetWindGenProfile(w.scopf, filename.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("set_time_step",
+           [](SCOPFLOW_wrapper &w, double dt) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetTimeStep(w.scopf, dt);
+             ExaGOCheckError(ierr);
+           })
+      .def("set_duration",
+           [](SCOPFLOW_wrapper &w, double d) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetDuration(w.scopf, d);
+             ExaGOCheckError(ierr);
+           })
+      .def("set_tolerance",
+           [](SCOPFLOW_wrapper &w, double tol) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetTolerance(w.scopf, tol);
+             ExaGOCheckError(ierr);
+           })
+      .def("set_verbosity_level",
+           [](SCOPFLOW_wrapper &w, int level) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetVerbosityLevel(w.scopf, level);
+             ExaGOCheckError(ierr);
+           })
+      .def("set_compute_mode",
+           [](SCOPFLOW_wrapper &w, std::string mode) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetComputeMode(w.scopf, mode.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("set_mode",
+           [](SCOPFLOW_wrapper &w, int mode) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetMode(w.scopf, mode);
+             ExaGOCheckError(ierr);
+           })
+      .def("set_solver",
+           [](SCOPFLOW_wrapper &w, std::string solver) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetSolver(w.scopf, solver.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("set_subproblem_model",
+           [](SCOPFLOW_wrapper &w, std::string model) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetSubproblemModel(w.scopf, model.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("set_subproblem_solver",
+           [](SCOPFLOW_wrapper &w, std::string solver) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetSubproblemSolver(w.scopf, solver.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("set_initialization_type",
+           [](SCOPFLOW_wrapper &w, std::string init) {
+             PetscErrorCode ierr;
+             OPFLOWInitializationType type;
+             bool found = false;
+#define OPFLOW_INIT_DEF(x)                                                     \
+  if (init == #x) {                                                            \
+    found = true;                                                              \
+    type = x;                                                                  \
+  }
+#include "private/opflow_enum.def"
+#undef OPFLOW_INIT_DEF
+             if (!found) {
+               throw ExaGOError(
+                   fmt::format(
+                       "Invalid value '{}' for OPFLOWInitializationType enum",
+                       init)
+                       .c_str());
+             }
+             ierr = SCOPFLOWSetInitilizationType(w.scopf, type);
+             ExaGOCheckError(ierr);
+           })
+      .def("set_initialization_type",
+           [](SCOPFLOW_wrapper &w, int init) {
+             PetscErrorCode ierr;
+             OPFLOWInitializationType type;
+             bool found = false;
+#define OPFLOW_INIT_DEF(x)                                                     \
+  if (init == x) {                                                             \
+    found = true;                                                              \
+    type = x;                                                                  \
+  }
+#include "private/opflow_enum.def"
+#undef OPFLOW_INIT_DEF
+             if (!found) {
+               throw ExaGOError(
+                   fmt::format(
+                       "Invalid value '{}' for SCOPFLOWInitializationType enum",
+                       init)
+                       .c_str());
+             }
+             ierr = SCOPFLOWSetInitilizationType(w.scopf, type);
+             ExaGOCheckError(ierr);
+           })
+
+      .def("set_gen_bus_voltage_type",
+           [](SCOPFLOW_wrapper &w, int volt) {
+             PetscErrorCode ierr;
+             OPFLOWGenBusVoltageType type;
+             bool found = false;
+#define OPFLOW_GBV_DEF(x)                                                      \
+  if (volt == x) {                                                             \
+    found = true;                                                              \
+    type = x;                                                                  \
+  }
+#include "private/opflow_enum.def"
+#undef OPFLOW_GBV_DEF
+             if (!found) {
+               throw ExaGOError(
+                   fmt::format(
+                       "Invalid value '{}' for SCOPFLOWGenBusVoltageType enum",
+                       volt)
+                       .c_str());
+             }
+             ierr = SCOPFLOWSetGenBusVoltageType(w.scopf, type);
+             ExaGOCheckError(ierr);
+           })
+
+      .def("set_gen_bus_voltage_type",
+           [](SCOPFLOW_wrapper &w, std::string volt) {
+             PetscErrorCode ierr;
+             OPFLOWGenBusVoltageType type;
+             bool found = false;
+#define OPFLOW_GBV_DEF(x)                                                      \
+  if (volt == #x) {                                                            \
+    found = true;                                                              \
+    type = x;                                                                  \
+  }
+#include "private/opflow_enum.def"
+#undef OPFLOW_GBV_DEF
+             if (!found) {
+               throw ExaGOError(
+                   fmt::format(
+                       "Invalid value '{}' for SCOPFLOWGenBusVoltageType enum",
+                       volt)
+                       .c_str());
+             }
+             ierr = SCOPFLOWSetGenBusVoltageType(w.scopf, type);
+             ExaGOCheckError(ierr);
+           })
+
+      .def("enable_multi_period",
+           [](SCOPFLOW_wrapper &w, bool flag) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWEnableMultiPeriod(w.scopf, (PetscBool)flag);
+             ExaGOCheckError(ierr);
+           })
+      .def("enable_power_imbalance_variables",
+           [](SCOPFLOW_wrapper &w, bool flag) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWEnablePowerImbalanceVariables(w.scopf,
+                                                          (PetscBool)flag);
+             ExaGOCheckError(ierr);
+           })
+      .def("ignore_lineflow_constraints",
+           [](SCOPFLOW_wrapper &w, bool flag) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWIgnoreLineflowConstraints(w.scopf, (PetscBool)flag);
+             ExaGOCheckError(ierr);
+           })
+
+      /* Getters */
+      .def("get_tolerance",
+           [](SCOPFLOW_wrapper &w) -> double {
+             PetscErrorCode ierr;
+             PetscReal tol;
+             ierr = SCOPFLOWGetTolerance(w.scopf, &tol);
+             ExaGOCheckError(ierr);
+             return tol;
+           })
+      .def("get_num_iterations",
+           [](SCOPFLOW_wrapper &w) -> int {
+             PetscErrorCode ierr;
+             PetscInt n;
+             ierr = SCOPFLOWGetNumIterations(w.scopf, &n);
+             ExaGOCheckError(ierr);
+             return n;
+           })
+      .def("get_convergence_status",
+           [](SCOPFLOW_wrapper &w) -> bool {
+             PetscErrorCode ierr;
+             PetscBool flag;
+             ierr = SCOPFLOWGetConvergenceStatus(w.scopf, &flag);
+             ExaGOCheckError(ierr);
+             return flag;
+           })
+      .def("get_total_objective",
+           [](SCOPFLOW_wrapper &w) -> double {
+             PetscErrorCode ierr;
+             PetscReal obj;
+             ierr = SCOPFLOWGetTotalObjective(w.scopf, &obj);
+             ExaGOCheckError(ierr);
+             return obj;
+           })
+      .def("get_base_objective",
+           [](SCOPFLOW_wrapper &w) -> double {
+             PetscErrorCode ierr;
+             PetscReal obj;
+             ierr = SCOPFLOWGetBaseObjective(w.scopf, &obj);
+             ExaGOCheckError(ierr);
+             return obj;
+           })
+
+      /* Solution */
+      .def("set_up",
+           [](SCOPFLOW_wrapper &w) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetUp(w.scopf);
+             ExaGOCheckError(ierr);
+           })
+      .def("solve",
+           [](SCOPFLOW_wrapper &w) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSolve(w.scopf);
+             ExaGOCheckError(ierr);
+           })
+
+      .def("print_solution",
+           [](SCOPFLOW_wrapper &w, int n) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWPrintSolution(w.scopf, n);
+             ExaGOCheckError(ierr);
+           })
+
+      .def("save_solution",
+           [](SCOPFLOW_wrapper &w, int n, OutputFormat fmt,
+              std::string outfile) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSaveSolution(w.scopf, n, fmt, outfile.c_str());
+             ExaGOCheckError(ierr);
+           })
+
+      ;
+
+  // -------------------------------------------------------------
+  /* SOPFLOW class */
+  // -------------------------------------------------------------
+
+  // -------------------------------------------------------------
+  // class SOPFLOW_wrapper
+  //
+  // Wrap to make sure allocation and destruction is handled correctly
+  // -------------------------------------------------------------
+  class SOPFLOW_wrapper {
+  public:
+    SOPFLOW sopf;
+    SOPFLOW_wrapper(void) {
+      PetscErrorCode ierr;
+      MPI_Comm communicator;
+      ierr = ExaGOGetSelfCommunicator(&communicator);
+      ExaGOCheckError(ierr);
+      ierr = SOPFLOWCreate(communicator, &sopf);
+      ExaGOCheckError(ierr);
+    }
+    ~SOPFLOW_wrapper(void) {
+      PetscErrorCode ierr;
+      ierr = SOPFLOWDestroy(&sopf);
+      ExaGOCheckError(ierr);
+    }
+  };
+
+  pybind11::enum_<ScenarioFileInputFormat>(m, "ScenarioFileInputFormat")
+      .value("NATIVE_SINGLEPERIOD", SOPFLOW_NATIVE_SINGLEPERIOD)
+      .value("NATIVE_MULTIPERIOD", SOPFLOW_NATIVE_MULTIPERIOD)
+      .export_values();
+
+  pybind11::enum_<ScenarioUncertaintyType>(m, "ScenarioUncertaintyType")
+      .value("NONE", NONE)
+      .value("WIND", WIND)
+      .value("LOAD", LOAD)
+      .export_values();
+
+  pybind11::class_<SOPFLOW_wrapper>(m, "SOPFLOW")
+      .def(pybind11::init())
+
+      /* Setters */
+
+      .def("set_model",
+           [](SOPFLOW_wrapper &w, std::string model) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSetModel(w.sopf, model.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("set_network_data",
+           [](SOPFLOW_wrapper &w, std::string filename) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSetNetworkData(w.sopf, filename.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("set_contingency_data",
+           [](SOPFLOW_wrapper &w, std::string filename,
+              ContingencyFileInputFormat fmt = NATIVE) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSetContingencyData(w.sopf, fmt, filename.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("set_num_contingencies",
+           [](SOPFLOW_wrapper &w, int n) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSetNumContingencies(w.sopf, n);
+             ExaGOCheckError(ierr);
+           })
+      .def("set_scenario_data",
+           [](SOPFLOW_wrapper &w, std::string filename,
+              ScenarioFileInputFormat sfmt, ScenarioUncertaintyType ut) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSetScenarioData(w.sopf, sfmt, ut, filename.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("set_num_scenarios",
+           [](SOPFLOW_wrapper &w, int n) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSetNumScenarios(w.sopf, n);
+             ExaGOCheckError(ierr);
+           })
+      .def("set_wind_gen_profile",
+           [](SOPFLOW_wrapper &w, std::string filename) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSetWindGenProfile(w.sopf, filename.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("set_time_step_and_duration",
+           [](SOPFLOW_wrapper &w, double dt, double tmax) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSetTimeStepandDuration(w.sopf, dt, tmax);
+             ExaGOCheckError(ierr);
+           })
+      .def("set_tolerance",
+           [](SOPFLOW_wrapper &w, double tol) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSetTolerance(w.sopf, tol);
+             ExaGOCheckError(ierr);
+           })
+      .def("set_subproblem_verbosity_level",
+           [](SOPFLOW_wrapper &w, int level) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSetSubproblemVerbosityLevel(w.sopf, level);
+             ExaGOCheckError(ierr);
+           })
+      .def("set_subproblem_compute_mode",
+           [](SOPFLOW_wrapper &w, std::string mode) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSetSubproblemComputeMode(w.sopf, mode.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("set_subproblem_model",
+           [](SOPFLOW_wrapper &w, std::string model) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSetSubproblemModel(w.sopf, model.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("set_subproblem_solver",
+           [](SOPFLOW_wrapper &w, std::string solver) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSetSubproblemSolver(w.sopf, solver.c_str());
+             ExaGOCheckError(ierr);
+           })
+      .def("set_solver",
+           [](SOPFLOW_wrapper &w, std::string solver) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSetSolver(w.sopf, solver.c_str());
+             ExaGOCheckError(ierr);
+           })
+
+      .def("set_initialization_type",
+           [](SOPFLOW_wrapper &w, std::string init) {
+             PetscErrorCode ierr;
+             OPFLOWInitializationType type;
+             bool found = false;
+#define OPFLOW_INIT_DEF(x)                                                     \
+  if (init == #x) {                                                            \
+    found = true;                                                              \
+    type = x;                                                                  \
+  }
+#include "private/opflow_enum.def"
+#undef OPFLOW_INIT_DEF
+             if (!found) {
+               throw ExaGOError(
+                   fmt::format(
+                       "Invalid value '{}' for OPFLOWInitializationType enum",
+                       init)
+                       .c_str());
+             }
+             ierr = SOPFLOWSetInitializationType(w.sopf, type);
+             ExaGOCheckError(ierr);
+           })
+      .def("set_initialization_type",
+           [](SOPFLOW_wrapper &w, int init) {
+             PetscErrorCode ierr;
+             OPFLOWInitializationType type;
+             bool found = false;
+#define OPFLOW_INIT_DEF(x)                                                     \
+  if (init == x) {                                                             \
+    found = true;                                                              \
+    type = x;                                                                  \
+  }
+#include "private/opflow_enum.def"
+#undef OPFLOW_INIT_DEF
+             if (!found) {
+               throw ExaGOError(
+                   fmt::format(
+                       "Invalid value '{}' for SOPFLOWInitializationType enum",
+                       init)
+                       .c_str());
+             }
+             ierr = SOPFLOWSetInitializationType(w.sopf, type);
+             ExaGOCheckError(ierr);
+           })
+      .def("set_gen_bus_voltage_type",
+           [](SOPFLOW_wrapper &w, int volt) {
+             PetscErrorCode ierr;
+             OPFLOWGenBusVoltageType type;
+             bool found = false;
+#define OPFLOW_GBV_DEF(x)                                                      \
+  if (volt == x) {                                                             \
+    found = true;                                                              \
+    type = x;                                                                  \
+  }
+#include "private/opflow_enum.def"
+#undef OPFLOW_GBV_DEF
+             if (!found) {
+               throw ExaGOError(
+                   fmt::format(
+                       "Invalid value '{}' for SOPFLOWGenBusVoltageType enum",
+                       volt)
+                       .c_str());
+             }
+             ierr = SOPFLOWSetGenBusVoltageType(w.sopf, type);
+             ExaGOCheckError(ierr);
+           })
+
+      .def("set_gen_bus_voltage_type",
+           [](SOPFLOW_wrapper &w, std::string volt) {
+             PetscErrorCode ierr;
+             OPFLOWGenBusVoltageType type;
+             bool found = false;
+#define OPFLOW_GBV_DEF(x)                                                      \
+  if (volt == #x) {                                                            \
+    found = true;                                                              \
+    type = x;                                                                  \
+  }
+#include "private/opflow_enum.def"
+#undef OPFLOW_GBV_DEF
+             if (!found) {
+               throw ExaGOError(
+                   fmt::format(
+                       "Invalid value '{}' for SOPFLOWGenBusVoltageType enum",
+                       volt)
+                       .c_str());
+             }
+             ierr = SOPFLOWSetGenBusVoltageType(w.sopf, type);
+             ExaGOCheckError(ierr);
+           })
+      .def("enable_multi_contingency",
+           [](SOPFLOW_wrapper &w, bool flag) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWEnableMultiContingency(w.sopf, (PetscBool)flag);
+             ExaGOCheckError(ierr);
+           })
+
+      /* Getters */
+
+      .def("get_num_scenarios",
+           [](SOPFLOW_wrapper &w, const std::string &filename,
+              ScenarioFileInputFormat fmt) -> int {
+             PetscErrorCode ierr;
+             PetscInt n;
+             ierr = SOPFLOWGetNumScenarios(w.sopf, fmt, filename.c_str(), &n);
+             ExaGOCheckError(ierr);
+             return n;
+           })
+      .def("get_num_iterations",
+           [](SOPFLOW_wrapper &w) -> int {
+             PetscErrorCode ierr;
+             PetscInt n;
+             ierr = SOPFLOWGetNumIterations(w.sopf, &n);
+             ExaGOCheckError(ierr);
+             return n;
+           })
+      .def("get_convergence_status",
+           [](SOPFLOW_wrapper &w) -> bool {
+             PetscErrorCode ierr;
+             PetscBool flag;
+             ierr = SOPFLOWGetConvergenceStatus(w.sopf, &flag);
+             ExaGOCheckError(ierr);
+             return flag;
+           })
+      .def("get_total_objective",
+           [](SOPFLOW_wrapper &w) -> double {
+             PetscErrorCode ierr;
+             double obj;
+             ierr = SOPFLOWGetTotalObjective(w.sopf, &obj);
+             ExaGOCheckError(ierr);
+             return obj;
+           })
+      .def("get_base_objective",
+           [](SOPFLOW_wrapper &w) -> double {
+             PetscErrorCode ierr;
+             double obj;
+             ierr = SOPFLOWGetBaseObjective(w.sopf, &obj);
+             ExaGOCheckError(ierr);
+             return obj;
+           })
+      .def("get_converged_status",
+           [](SOPFLOW_wrapper &w) -> bool {
+             PetscErrorCode ierr;
+             PetscBool flag;
+             ierr = SOPFLOWGetConvergenceStatus(w.sopf, &flag);
+             return (bool)flag;
+           })
+      .def("get_tolerance",
+           [](SOPFLOW_wrapper &w) -> double {
+             PetscErrorCode ierr;
+             double tol;
+             ierr = SOPFLOWGetTolerance(w.sopf, &tol);
+             ExaGOCheckError(ierr);
+             return tol;
+           })
+
+      /* Solution */
+
+      .def("setup",
+           [](SOPFLOW_wrapper &w) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSetUp(w.sopf);
+             ExaGOCheckError(ierr);
+           })
+      .def("solve",
+           [](SOPFLOW_wrapper &w) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSolve(w.sopf);
+             ExaGOCheckError(ierr);
+           })
+
+      ;
 }

@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### TCOPFLOW
 
 ### SCOPFLOW
+- Added Python interface for SCOPFLOW.  
+- Fixed troubles with Python instance creation and
+  destruction. Destruction of an unsolved SCOPFLOW instance no longer
+  causes a SEGV.  
+
+### SOPFLOW
+- Added Python interface for SOPFLOW. 
 
 ### Documentation
 

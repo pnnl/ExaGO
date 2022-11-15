@@ -71,7 +71,8 @@ sub tool {
 
   my $tool = "python-format";
 
-  my @dirs = ( "$root/tests/interfaces", "$root/interfaces" );
+  my @dirs = ( "$root/tests/interfaces", "$root/interfaces",
+               "$root/tests/interfaces/python" );
 
   my @fails;
 
