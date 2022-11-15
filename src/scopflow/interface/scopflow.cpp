@@ -1,3 +1,4 @@
+#include <iostream>
 #include <private/opflowimpl.h>
 #include <private/scopflowimpl.h>
 #include <private/tcopflowimpl.h>
@@ -38,6 +39,9 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout) {
   scopflow->scen = NULL;
 
   scopflow->ismultiperiod = SCOPFLOWOptions::enable_multiperiod.default_value;
+
+  scopflow->opflow0 = NULL;
+  scopflow->opflows = NULL;
 
   scopflow->solver = NULL;
   scopflow->model = NULL;
@@ -139,8 +143,10 @@ PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *scopflow) {
 
   /* Destroy TCOPFLOW or OPFLOW objects */
   if (!(*scopflow)->ismultiperiod) {
-    ierr = OPFLOWDestroy(&(*scopflow)->opflow0);
-    CHKERRQ(ierr);
+    if ((*scopflow)->opflow0 != NULL) {
+      ierr = OPFLOWDestroy(&(*scopflow)->opflow0);
+      CHKERRQ(ierr);
+    }
     for (c = 0; c < (*scopflow)->nc; c++) {
       ierr = OPFLOWDestroy(&(*scopflow)->opflows[c]);
       CHKERRQ(ierr);

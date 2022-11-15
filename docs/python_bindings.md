@@ -61,13 +61,18 @@ opf = exago.OPFLOW()
 opf.read_mat_power_data('datafiles/case9/case9mod.m')
 opf.solve()
 opf.print_solution()
+del opf
 exago.finalize()
 ```
 
 Note that the Python bindings use snake case in accordance with standard Python
 naming conventions.
 Translating between the C++ API and the Python API should be relatively
-straightforward.
+straightforward.  
+ExaGO Python instances must be destroyed, using `del`, before
+calling `exago.finalize()`, like calling `*Destroy()` with the C++
+API.  Failure to do so will cause segmentation faults or other memory
+errors.  
 
 ***If you identify components of the C++ API that you need to call from Python,
 please [open an issue on our issues page](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/issues).***
@@ -171,6 +176,79 @@ The following table assumes `opflow = exago.OPFLOW()`.
 | `OPFLOWSolutionToPS` | `opflow.solution_to_ps` | |
 | `OPFLOWSetUpPS` | `opflow.set_up_ps` | |
 
+#### SCOPFLOW
+
+The following table assumes `scopflow = exago.SCOPFLOW()`.
+
+| C++ API | Python API | Notes |
+|---|---|---|
+| `SCOPFLOW` | `exago.SCOPFLOW` class |  |
+| `ContingencyFileInputFormat` enum | `exago.ContingencyFileInputFormat` enum | More details and possible values for this enum can be found in the [next section](#enums).  Currently, this is only be used as a Python enum. A string representation is not available. |
+| `SCOPFLOWSetModel` | `set_model` |  |
+| `SCOPFLOWSetNetworkData` | `set_network_data` |  |
+| `SCOPFLOWSetNumContingencies` | `set_num_contingencies` |  |
+| `SCOPFLOWSetContingencyData` | `set_contingency_data` |  |
+| `SCOPFLOWSetPLoadData` | `set_pload_data` |  |
+| `SCOPFLOWSetQLoadData` | `set_qload_data` |  |
+| `SCOPFLOWSetWindGenProfile` | `set_wind_gen_profile` |  |
+| `SCOPFLOWSetTimeStep` | `set_time_step` |  |
+| `SCOPFLOWSetDuration` | `set_duration` |  |
+| `SCOPFLOWSetTolerance` | `set_tolerance` |  |
+| `SCOPFLOWSetVerbosityLevel` | `set_verbosity_level` |  |
+| `SCOPFLOWSetComputeMode` | `set_compute_mode` |  |
+| `SCOPFLOWSetSolver` | `set_solver` |  |
+| `SCOPFLOWSetSubproblemModel` | `set_subproblem_model` |  |
+| `SCOPFLOWSetSubproblemSolver` | `set_subproblem_solver` |  |
+| `SCOPFLOWSetInitilizationType` | `set_initialization_type` |  |
+| `SCOPFLOWSetGenBusVoltageType` | `set_gen_bus_voltage_type` |  |
+| `SCOPFLOWEnableMultiPeriod` | `enable_multi_period` |  |
+| `SCOPFLOWEnablePowerImbalanceVariables` | `enable_power_imbalance_variables` |  |
+| `SCOPFLOWIgnoreLineflowConstraints` | `ignore_lineflow_constraints` |  |
+| `SCOPFLOWGetTolerance` | `get_tolerance` |  |
+| `SCOPFLOWGetNumIterations` | `get_num_iterations` |  |
+| `SCOPFLOWGetConvergenceStatus` | `get_convergence_status` |  |
+| `SCOPFLOWGetTotalObjective` | `get_total_objective` |  |
+| `SCOPFLOWGetBaseObjective` | `get_base_objective` |  |
+| `SCOPFLOWSetUp` | `set_up` |  |
+| `SCOPFLOWSolve` | `solve` |  |
+| `SCOPFLOWPrintSolution` | `print_solution` |  |
+| `SCOPFLOWSaveSolution` | `save_solution` |  |
+
+#### SOPFLOW
+
+The following table assumes `sopflow = exago.SOPFLOW()`.
+
+| C++ API | Python API | Notes |
+|---|---|---|
+| `SCOPFLOW` | `exago.SCOPFLOW` class |  |
+| `ScenarioFileInputFormat` enum | `ScenarioFileInputFormat` enum  | More details and possible values for this enum can be found in the [next section](#enums).  Currently, this is only be used as a Python enum. A string representation is not available. |
+| `ScenarioUncertaintyType` enum | `ScenarioUncertaintyType` enum  | More details and possible values for this enum can be found in the [next section](#enums).  Currently, this is only be used as a Python enum. A string representation is not available. |
+| ` SOPFLOWSetModel` | `set_model` |  |
+| ` SOPFLOWSetNetworkData` | `set_network_data` |  |
+| ` SOPFLOWSetContingencyData` | `set_contingency_data` |  |
+| ` SOPFLOWSetNumContingencies` | `set_num_contingencies` |  |
+| ` SOPFLOWSetScenarioData` | `set_scenario_data` |  |
+| ` SOPFLOWSetNumScenarios` | `set_num_scenarios` |  |
+| ` SOPFLOWSetWindGenProfile` | `set_wind_gen_profile` |  |
+| ` SOPFLOWSetTimeStepandDuration` | `set_time_step_and_duration` |  |
+| ` SOPFLOWSetTolerance` | `set_tolerance` |  |
+| ` SOPFLOWSetSubproblemVerbosityLevel` | `set_subproblem_verbosity_level` |  |
+| ` SOPFLOWSetSubproblemComputeMode` | `set_subproblem_compute_mode` |  |
+| ` SOPFLOWSetSubproblemModel` | `set_subproblem_model` |  |
+| ` SOPFLOWSetSubproblemSolver` | `set_subproblem_solver` |  |
+| ` SOPFLOWSetSolver` | `set_solver` |  |
+| ` SOPFLOWSetInitializationType` | `set_initialization_type ` |  |
+| ` SOPFLOWSetGenBusVoltageType` | `set_gen_bus_voltage_type` |  |
+| ` SOPFLOWEnableMultiContingency` | `enable_multi_contingency` |  |
+| ` SOPFLOWGetNumScenarios` | `get_num_scenarios` |  |
+| ` SOPFLOWGetNumIterations` | `get_num_iterations` |  |
+| ` SOPFLOWGetConvergenceStatus` | `get_convergence_status` |  |
+| ` SOPFLOWGetTotalObjective` | `get_total_objective` |  |
+| ` SOPFLOWGetConvergenceStatus` | `get_converged_status` |  |
+| ` SOPFLOWGetTolerance` | `get_tolerance` |  |
+| ` SOPFLOWSetUp` | `setup` |  |
+| ` SOPFLOWSolve` | `solve` |  |
+
 ### Enums
 
 `OutputFormat` is the enum that specifies the output format in functions like `opflow.save_solution`.
@@ -198,6 +276,19 @@ OPFLOWGenBusVoltageType
 * VARIABLE_WITHIN_BOUNDS
 * FIXED_WITHIN_QBOUNDS
 * FIXED_AT_SETPOINT
+
+ContingencyFileInputFormat
+* NATIVE
+* PSSE
+
+ScenarioFileInputFormat
+* NATIVE_SINGLEPERIOD
+* NATIVE_MULTIPERIOD
+
+ScenarioUncertaintyType
+* NONE
+* WIND
+* LOAD
 
 Instances can be constructed directly through the `exago` library (i.e. `exago.OPFLOWObjectiveType.MIN_GEN_COST` or `exago.MIN_GEN_COST`)
 Setter functions for these OPFLOW configurations can take an integer, an instance of the exago enum, or a string that describes the enum (i.e. 'MIN_GEN_COST').

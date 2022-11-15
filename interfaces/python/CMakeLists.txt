@@ -8,7 +8,9 @@
 pybind11_add_module(exago exago_python.cpp)
 
 # Link against relevant exago libraries
-target_link_libraries(exago PRIVATE ExaGO::UTILS ExaGO::OPFLOW)
+target_link_libraries(
+  exago PRIVATE ExaGO::UTILS ExaGO::SOPFLOW ExaGO::SCOPFLOW ExaGO::OPFLOW
+)
 
 # Find mpi4py c headers
 include(ExaGOFindPythonModule)

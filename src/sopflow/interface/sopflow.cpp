@@ -183,24 +183,26 @@ PetscErrorCode SOPFLOWDestroy(SOPFLOW *sopflow) {
   CHKERRQ(ierr);
 
   /* Destroy scenario list */
-  for (s = 0; s < (*sopflow)->Ns; s++) {
-    for (i = 0; i < (*sopflow)->scenlist.scen[s].nforecast; i++) {
-      ierr = PetscFree((*sopflow)->scenlist.scen[s].forecastlist[i].buses);
-      CHKERRQ(ierr);
-      for (int j = 0; j < (*sopflow)->scenlist.scen[s].forecastlist[i].nele;
-           j++) {
-        ierr = PetscFree((*sopflow)->scenlist.scen[s].forecastlist[i].id[j]);
+  if ((*sopflow)->scenlist.scen != NULL) {
+    for (s = 0; s < (*sopflow)->Ns; s++) {
+      for (i = 0; i < (*sopflow)->scenlist.scen[s].nforecast; i++) {
+        ierr = PetscFree((*sopflow)->scenlist.scen[s].forecastlist[i].buses);
+        CHKERRQ(ierr);
+        for (int j = 0; j < (*sopflow)->scenlist.scen[s].forecastlist[i].nele;
+             j++) {
+          ierr = PetscFree((*sopflow)->scenlist.scen[s].forecastlist[i].id[j]);
+          CHKERRQ(ierr);
+        }
+        ierr = PetscFree((*sopflow)->scenlist.scen[s].forecastlist[i].id);
+        CHKERRQ(ierr);
+        ierr = PetscFree((*sopflow)->scenlist.scen[s].forecastlist[i].val);
         CHKERRQ(ierr);
       }
-      ierr = PetscFree((*sopflow)->scenlist.scen[s].forecastlist[i].id);
-      CHKERRQ(ierr);
-      ierr = PetscFree((*sopflow)->scenlist.scen[s].forecastlist[i].val);
-      CHKERRQ(ierr);
     }
-  }
 
-  ierr = PetscFree((*sopflow)->scenlist.scen);
-  CHKERRQ(ierr);
+    ierr = PetscFree((*sopflow)->scenlist.scen);
+    CHKERRQ(ierr);
+  }
 
   MPI_Comm_free(&(*sopflow)->subcomm);
 
