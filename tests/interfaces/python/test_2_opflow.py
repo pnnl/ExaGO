@@ -171,6 +171,16 @@ def test_set_hiop_compute_mode():
 
 @pytest.mark.nocomm
 @pytest.mark.MPI
+def test_set_hiop_mem_space():
+    '''Testing hiop memory space'''
+    opf = exago.OPFLOW()
+    opf.set_hiop_mem_space(exago.HIOPMemSpace.DEVICE)
+    mode = opf.get_hiop_mem_space()
+    assert mode == exago.HIOPMemSpace.DEVICE
+
+
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_set_hiop_verbosity():
     '''Testing setting hiop verbosity level'''
     opf = exago.OPFLOW()
@@ -188,6 +198,7 @@ def test_solve_opflow():
     opf = exago.OPFLOW()
     opf.set_solver("HIOP")
     opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_mem_space(exago.HIOPMemSpace.DEFAULT)
     opf.set_hiop_compute_mode("CPU")
     path = exago.prefix()
     opf.read_mat_power_data(os.path.join(
@@ -202,6 +213,7 @@ def test_obj_func():
     opf = exago.OPFLOW()
     opf.set_solver("HIOP")
     opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_mem_space(exago.HIOPMemSpace.DEFAULT)
     opf.set_hiop_compute_mode("CPU")
     path = exago.prefix()
     opf.read_mat_power_data(os.path.join(
@@ -221,6 +233,7 @@ def test_convergence_status():
     opf = exago.OPFLOW()
     opf.set_solver("HIOP")
     opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_mem_space(exago.HIOPMemSpace.DEFAULT)
     opf.set_hiop_compute_mode("CPU")
     path = exago.prefix()
     opf.read_mat_power_data(os.path.join(
@@ -349,6 +362,7 @@ def test_ps_set_gen_power_limits():
     opf = exago.OPFLOW()
     opf.set_solver("HIOP")
     opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_mem_space(exago.HIOPMemSpace.DEFAULT)
     opf.set_hiop_compute_mode("CPU")
     path = exago.prefix()
     opf.read_mat_power_data(os.path.join(
@@ -365,6 +379,7 @@ def test_solution_to_ps():
     opf = exago.OPFLOW()
     opf.set_solver("HIOP")
     opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_mem_space(exago.HIOPMemSpace.DEFAULT)
     opf.set_hiop_compute_mode("CPU")
     path = exago.prefix()
     opf.read_mat_power_data(os.path.join(
@@ -382,6 +397,7 @@ def test_get_gen_dispatch():
     opf = exago.OPFLOW()
     opf.set_solver("HIOP")
     opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_mem_space(exago.HIOPMemSpace.DEFAULT)
     opf.set_hiop_compute_mode("CPU")
     opf.set_hiop_verbosity_level(3)
     path = exago.prefix()
@@ -403,6 +419,7 @@ def test_save_solution():
     opf = exago.OPFLOW()
     opf.set_solver("HIOP")
     opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_mem_space(exago.HIOPMemSpace.DEFAULT)
     opf.set_hiop_compute_mode("CPU")
     path = exago.prefix()
     opf.read_mat_power_data(os.path.join(

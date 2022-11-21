@@ -132,6 +132,7 @@ The following table assumes `opflow = exago.OPFLOW()`.
 | `OPFLOWObjectiveType` enum | `exago.OPFLOWObjectiveType` enum | More details and possible values for this enum can be found in the [next section](#enums). |
 | `OPFLOWInitializationType` enum | `exago.OPFLOWInitializationType` enum | More details and possible values for this enum can be found in the [next section](#enums). |
 | `OPFLOWGenBusVoltageType` enum | `exago.OPFLOWGenBusVoltageType` enum | More details and possible values for this enum can be found in the [next section](#enums). |
+| `HIOPMemSpace` enum | `exago.HIOPMemSpace` enum | More details and possible values for this enum can be found in the [next section](#enums). Currently, this is only be used as a Python enum. A string representation is not available. |
 | `OPFLOWSetObjectiveType` | `opflow.set_objective_type` | |
 | `OPFLOWSetInitializationType` | `opflow.set_initialization_type` | |
 | `OPFLOWSetGenBusVoltageType` | `opflow.set_gen_bus_voltage_type` | |
@@ -139,6 +140,7 @@ The following table assumes `opflow = exago.OPFLOW()`.
 | `OPFLOWSetSolver` | `opflow.set_solver` | |
 | `OPFLOWHasGenSetPoint` | `opflow.set_has_gen_set_point` | |
 | `OPFLOWSetHIOPComputeMode` | `opflow.set_hiop_compute_mode` | |
+| `OPFLOWSetHIOPMemSpace` | `opflow.set_hiop_mem_space` | must use `HIOPMemSpace` enum as parameter |
 | `OPFLOWHasLoadLoss` | `opflow.set_has_loadloss` | |
 | `OPFLOWIgnoreLineflowConstraints` | `opflow.set_ignore_lineflow_constraints` | |
 | `OPFLOWHasBusPowerImbalance` | `opflow.set_has_bus_power_imbalance` | |
@@ -150,6 +152,7 @@ The following table assumes `opflow = exago.OPFLOW()`.
 | `PSSetGenPowerLimits` | `opflow.ps_set_gen_power_limits` | |
 | `OPFLOWGetTolerance` | `opflow.get_tolerance` | |
 | `OPFLOWGetHIOPComputeMode` | `opflow.get_hiop_compute_mode` | |
+| `OPFLOWGetHIOPMemSpace` | `opflow.get_hiop_mem_space` | returns `HIOPMemSpace` enum |
 | `OPFLOWGetModel` | `opflow.get_model` | |
 | `OPFLOWGetSolver` | `opflow.get_solver` | |
 | `OPFLOWGetConvergenceStatus` | `opflow.get_convergence_status` | |
@@ -254,12 +257,14 @@ The following table assumes `sopflow = exago.SOPFLOW()`.
 `OutputFormat` is the enum that specifies the output format in functions like `opflow.save_solution`.
 
 Instances can be constructed directly through the `exago` library (i.e. `exago.OutputFormat.CSV`). 
-Its possible values are:
-* CSV 
-* MATPOWER
 
 OPFLOW has several type settings that are represented by enums: `OPFLOWObjectiveType`, `OPFLOWInitializationType`, and `OPFLOWGenBusVoltageType`. 
-Possible values are as follows:
+
+The possible values for the current enums are as follows:
+
+OutputFormat
+* CSV 
+* MATPOWER
 
 OPFLOWObjectiveType
 * MIN_GEN_COST
@@ -277,6 +282,12 @@ OPFLOWGenBusVoltageType
 * FIXED_WITHIN_QBOUNDS
 * FIXED_AT_SETPOINT
 
+HIOPMemSpace
+* DEFAULT
+* HOST
+* UM
+* DEVICE
+
 ContingencyFileInputFormat
 * NATIVE
 * PSSE
@@ -290,10 +301,12 @@ ScenarioUncertaintyType
 * WIND
 * LOAD
 
-Instances can be constructed directly through the `exago` library (i.e. `exago.OPFLOWObjectiveType.MIN_GEN_COST` or `exago.MIN_GEN_COST`)
-Setter functions for these OPFLOW configurations can take an integer, an instance of the exago enum, or a string that describes the enum (i.e. 'MIN_GEN_COST').
+Note: getters for the possible values of HIOPMemSpace, ContingencyFileInputeFormat, ScenarioFileInputFormat, ScenarioUncertaintyType are not currently available
 
-The possible values for these enums can be retrieved through `opflow.get_xxx_types()` (i.e. `opflow.get_gen_bus_voltage_types()`). The `opflow.get_xxx_types` functions yield a list of the enum values.
+Instances can be constructed directly through the `exago` library (i.e. `exago.OPFLOWObjectiveType.MIN_GEN_COST` or `exago.MIN_GEN_COST`)
+Setter functions for these OPFLOW Type configurations can take an integer, an instance of the exago enum, or a string that describes the enum (i.e. 'MIN_GEN_COST'). The rest currently only accept an instance of the exago enum.
+
+The possible values for these OPFLOW Type enums can be retrieved through `opflow.get_xxx_types()` (i.e. `opflow.get_gen_bus_voltage_types()`). The `opflow.get_xxx_types` functions yield a list of the enum values.
 
 Below are some code examples of how to get and use these values. 
 
