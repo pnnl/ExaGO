@@ -107,7 +107,6 @@ module load spectrum-mpi/10.4.0.3-20210112
 module load cmake/3.22.2
 
 export MY_PETSC_DIR=$PETSC_DIR
-export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DCMAKE_CUDA_ARCHITECTURES=70 -DEXAGO_ENABLE_IPOPT=ON"
 export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DEXAGO_CTEST_LAUNCH_COMMAND='jsrun -g 1 -n 1'"
 
 [ -f $PWD/nvblas.conf ] && rm $PWD/nvblas.conf

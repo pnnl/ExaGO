@@ -99,7 +99,7 @@ set(EXAGO_CTEST_LAUNCH_COMMAND
     CACHE STRING "Command to use when launching tests"
 )
 
-option(EXAGO_ENABLE_LOGGING "Enable internal logging" ON)
+option(EXAGO_ENABLE_LOGGING "Enable internal logging" OFF)
 
 # When building with HIP support, OpenMP is not supported.
 if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_HIP)
@@ -277,9 +277,11 @@ if(EXAGO_RUN_TESTS)
   include(ExaGOTestingUtilities)
 endif()
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/tpl/spdlog/)
-# -fPIC required for spdlog for use with python wrapper
-set_property(TARGET spdlog PROPERTY POSITION_INDEPENDENT_CODE ON)
+if(EXAGO_ENABLE_LOGGING)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/tpl/spdlog/)
+  # -fPIC required for spdlog for use with python wrapper
+  set_property(TARGET spdlog PROPERTY POSITION_INDEPENDENT_CODE ON)
+endif()
 
 # Build libraries (specified in src/CMakeLists.txt)
 add_subdirectory(src)

@@ -5,11 +5,13 @@
 #include <iostream>
 #include <string>
 #include <regex>
+#ifdef EXAGO_ENABLE_LOGGING
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/fmt.h>
 #include <spdlog/fmt/bundled/color.h>
+#endif
 #include <stdarg.h>
 #include <sys/stat.h>
 #include <sys/utsname.h>
@@ -33,7 +35,7 @@ const auto options_file = ExaGOStringOption(
 
 /* Right now, these are handled in the application driver. If we want these
  * printed with the rest of the application help options, we'll have to move
- * the network file and print/save options into the applciation structures
+ * the network file and print/save options into the application structures
  * and handle them in the solve/finalize functions. For now, they will be
  * omitted from the help message. */
 // const auto network = ExaGOStringOption("-netfile", "Path to network file",
@@ -68,10 +70,17 @@ std::string ExaGOFormatOption(ExaGOOption<T> const &opt, std::size_t indent = 0,
   std::string tab = "";
   for (int i = 0; i < indent; i++)
     tab += "\t";
+#ifdef EXAGO_ENABLE_LOGGING
   return fmt::format("{0}{2} {3}\n{0}{1}{4} (type: {5})\n", tab, indentstr,
                      opt.opt,
                      fmt::format(fmt::emphasis::bold, "{}", opt.default_value),
                      opt.desc, typestr);
+#else
+  char sbuf[256];
+  sprintf(sbuf, "%s%s\n%s%s%s (type: %s)\n", tab.c_str(), opt.opt.c_str(),
+          tab.c_str(), indentstr.c_str(), opt.desc.c_str(), typestr.c_str());
+  return std::string(sbuf);
+#endif
 }
 
 template <>
@@ -80,8 +89,15 @@ std::string ExaGOFormatOption(ExaGOOption<void> const &opt, std::size_t indent,
   std::string tab = "";
   for (int i = 0; i < indent; i++)
     tab += "\t";
+#ifdef EXAGO_ENABLE_LOGGING
   return fmt::format("{0}{2}\n{0}{1}{3} (type: flag)\n", tab, indentstr,
                      opt.opt, opt.desc);
+#else
+  char sbuf[256];
+  sprintf(sbuf, "%s%s\n%s%s%s (type: flag)\n", tab.c_str(), opt.opt.c_str(),
+          tab.c_str(), indentstr.c_str(), opt.desc.c_str());
+  return std::string(sbuf);
+#endif
 }
 
 template <>
@@ -98,8 +114,15 @@ std::string ExaGOFormatOption(ExaGOStringOption const &opt, std::size_t indent,
 
   /* If the argument is optional, we have a default value which we will
    * embolden to make clear */
+#ifdef EXAGO_ENABLE_LOGGING
   values += fmt::format(fmt::emphasis::bold, "{}{}", opt.default_value,
                         (opt.possible_values.size() ? "|" : ""));
+#else
+  char sbuf[256];
+  sprintf(sbuf, "%s%s", opt.default_value,
+          (opt.possible_values.size() ? "|" : ""));
+  values += std::string(sbuf);
+#endif
   auto it = opt.possible_values.begin();
   while (it != opt.possible_values.end()) {
     values += *it;
@@ -107,8 +130,14 @@ std::string ExaGOFormatOption(ExaGOStringOption const &opt, std::size_t indent,
       values += "|";
   }
   values += (opt.possible_values.size() ? ")" : "");
+#ifdef EXAGO_ENABLE_LOGGING
   return fmt::format("{0}{2} {3}\n{1}{0}{4} (type: string)\n", tab, indentstr,
                      opt.opt, values, opt.desc);
+#else
+  sprintf(sbuf, "%s%s\n%s%s%s (type: flag)\n", tab.c_str(), opt.opt.c_str(),
+          indentstr.c_str(), tab.c_str(), opt.desc.c_str());
+  return std::string(sbuf);
+#endif
 }
 
 } // namespace
@@ -140,7 +169,9 @@ static int ExaGOLogMinLogLevel = 0;
 static MPI_Comm ExaGOLogComm = MPI_COMM_SELF;
 
 PetscErrorCode ExaGOLogIsUsingLogFile(bool *flg) {
+#ifdef EXAGO_ENABLE_LOGGING
   *flg = ExaGOLogUseFile;
+#endif
   return 0;
 }
 
@@ -149,10 +180,12 @@ PetscErrorCode ExaGOLogGetLoggerName(std::string &s) {
   return 0;
 }
 
+#ifdef EXAGO_ENABLE_LOGGING
 PetscErrorCode ExaGOGetLoggerPointer(std::shared_ptr<spdlog::logger> &logger) {
   logger = spdlog::get(ExaGOLoggerName);
   return 0;
 }
+#endif
 
 /** Set ExaGO logging communicator */
 PetscErrorCode ExaGOLogSetComm(MPI_Comm c) {
@@ -161,6 +194,7 @@ PetscErrorCode ExaGOLogSetComm(MPI_Comm c) {
 }
 
 PetscErrorCode ExaGOLogInitialize() {
+#ifdef EXAGO_ENABLE_LOGGING
   bool use_file = false;
   PetscErrorCode ierr = 0;
 
@@ -184,6 +218,7 @@ PetscErrorCode ExaGOLogInitialize() {
     logger->set_pattern("%^[ExaGO]%$ %v");
   }
   ExaGOLogIsLoggerInitialized = true;
+#endif
   return 0;
 }
 
@@ -286,8 +321,13 @@ namespace {
 template <typename T> static inline void print(T const &opt) {
   static constexpr std::size_t indent = 1;
   static const std::string indentstr = "\t";
+#ifdef EXAGO_ENABLE_LOGGING
   fmt::print(ExaGOFormatOption(opt, indent, indentstr));
   fmt::print("\n");
+#else
+  printf("%s", ExaGOFormatOption(opt, indent, indentstr).c_str());
+  printf("\n");
+#endif
 };
 } // namespace
 
@@ -307,10 +347,18 @@ template <typename T> static inline void print(T const &opt) {
 
   std::string versionstr;
   ExaGOVersionGetVersionStr(versionstr);
+#ifdef EXAGO_ENABLE_LOGGING
   fmt::print("ExaGO {} built on {}\n", versionstr, __DATE__);
+#else
+  printf("ExaGO %s built on %s\n", versionstr.c_str(), __DATE__);
+#endif
 
   const std::string appname = _appname;
+#ifdef EXAGO_ENABLE_LOGGING
   fmt::print("\nArguments for {}:\n", appname);
+#else
+  printf("\nArguments for %s:\n", appname.c_str());
+#endif
   print(ExaGODefaultOptions::help);
   print(ExaGODefaultOptions::version);
   print(ExaGODefaultOptions::config);
@@ -388,8 +436,13 @@ template <typename T> static inline void print(T const &opt) {
   } else if (appname == "tcopflow") {
     // TODO: Update to use `ExaGOOption`s for options handling command line
     // options
+#ifdef EXAGO_ENABLE_LOGGING
     fmt::print("WARNING: TCOPFLOW application is not stable and potentially "
                "very out of date.");
+#else
+    printf("WARNING: TCOPFLOW application is not stable and potentially "
+           "very out of date.");
+#endif
     fprintf(stderr, "============== Help Options for application tcopflow "
                     "==============\n");
     fprintf(stderr, " General usage: ./%s <options>\n", appname.c_str());
@@ -405,7 +458,11 @@ template <typename T> static inline void print(T const &opt) {
     fprintf(stderr, "\t -tcopflow_tolerance <1e-6|...>\n");
     fprintf(stderr, "\n");
   } else {
+#ifdef EXAGO_ENABLE_LOGGING
     fmt::print("Please enter a valid application name.\n");
+#else
+    printf("Please enter a valid application name.\n");
+#endif
   }
 #endif
 
@@ -440,7 +497,11 @@ PetscErrorCode ExaGOPrintHelpVersionInfo(int *argc, char ***argv,
       std::string vi;
       ierr = ExaGOVersionGetFullVersionInfo(vi);
       ExaGOCheckError(ierr);
+#ifdef EXAGO_ENABLE_LOGGING
       fmt::print("{}\n", vi);
+#else
+      printf("%s\n", vi.c_str());
+#endif
       std::exit(EXIT_SUCCESS);
     }
 
@@ -450,7 +511,11 @@ PetscErrorCode ExaGOPrintHelpVersionInfo(int *argc, char ***argv,
       std::string versionstr;
       ierr = ExaGOVersionGetVersionStr(versionstr);
       ExaGOCheckError(ierr);
+#ifdef EXAGO_ENABLE_LOGGING
       fmt::print("ExaGO {} built on {}\n", versionstr, __DATE__);
+#else
+      printf("ExaGO %s built on %s\n", versionstr.c_str(), __DATE__);
+#endif
       std::exit(EXIT_SUCCESS);
     }
   }
@@ -481,7 +546,11 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
   ExaGOLogSetComm(comm);
   ierr = ExaGOLogInitialize();
   if (ierr) {
+#ifdef EXAGO_ENABLE_LOGGING
     fmt::print("Could not initialize ExaGO logger.\n");
+#else
+    printf("Could not initialize ExaGO logger.\n");
+#endif
     return ierr;
   }
 

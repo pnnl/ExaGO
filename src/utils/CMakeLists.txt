@@ -10,6 +10,7 @@ set(UTILS_HEADERS ${CMAKE_SOURCE_DIR}/include/common.h
 
 set_source_files_properties(${UTILS_SRC} PROPERTIES LANGUAGE CXX)
 
+    
 exago_add_library(
   UTILS
   SOURCES
@@ -18,13 +19,13 @@ exago_add_library(
   ${UTILS_HEADERS}
   LINK_LIBRARIES
   PUBLIC
-  spdlog::spdlog
-  PUBLIC
   PkgConfig::PETSC
+  PUBLIC
+  $<$<BOOL:${EXAGO_ENABLE_LOGGING}>:spdlog::spdlog>
   PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_C>
   PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_CXX>
   OUTPUT_NAME
   exago_utils
-)
+  )

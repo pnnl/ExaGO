@@ -3,10 +3,15 @@
 #include "exago_config.h"
 #include <petsc.h>
 #include <stdexcept>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <string>
 #include <vector>
 #include <algorithm>
+#ifdef EXAGO_ENABLE_LOGGING
 #include <spdlog/spdlog.h>
+#endif
 
 /**
  *
@@ -88,7 +93,8 @@ extern PetscErrorCode ExaGOLogSetMinLogLevel(int);
  * communicator.
  */
 template <typename... Args>
-void ExaGOLog(MPI_Comm comm, int level, std::string fmt, Args... args) {
+inline void ExaGOLog(MPI_Comm comm, int level, std::string fmt, Args... args) {
+#ifdef EXAGO_ENABLE_LOGGING
 
   /* Check that the rank is 0 before logging */
   int rank;
@@ -110,9 +116,6 @@ void ExaGOLog(MPI_Comm comm, int level, std::string fmt, Args... args) {
     ierr = ExaGOLogGetLoggerName(logname);
     ExaGOCheckError(ierr);
     auto logger = spdlog::get(logname);
-#ifndef EXAGO_ENABLE_LOGGING
-    logger->set_level(spdlog::level::off);
-#endif
 
     /*
      * Because we handler our own verbosity levels, we just use `info` for all
@@ -120,6 +123,7 @@ void ExaGOLog(MPI_Comm comm, int level, std::string fmt, Args... args) {
      */
     logger->info(fmt, args...);
   }
+#endif
 }
 
 /**
@@ -127,8 +131,10 @@ void ExaGOLog(MPI_Comm comm, int level, std::string fmt, Args... args) {
  * rank.
  */
 template <typename... Args>
-void ExaGOLog(int level, std::string fmt, Args... args) {
+void inline ExaGOLog(int level, std::string fmt, Args... args) {
+#ifdef EXAGO_ENABLE_LOGGING
   ExaGOLog(PETSC_COMM_SELF, level, fmt, args...);
+#endif
 }
 
 template <typename T> struct ExaGOOption {
