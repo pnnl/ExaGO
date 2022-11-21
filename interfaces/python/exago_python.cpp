@@ -152,6 +152,13 @@ PYBIND11_MODULE(exago, m) {
       .value("MATPOWER", MATPOWER)
       .export_values();
 
+  pybind11::enum_<HIOPMemSpace>(m, "HIOPMemSpace")
+      .value("DEFAULT", DEFAULT)
+      .value("HOST", HOST)
+      .value("UM", UM)
+      .value("DEVICE", DEVICE)
+      .export_values();
+
   // -------------------------------------------------------------
   //  class OPFLOW_wrapper
   // -------------------------------------------------------------
@@ -342,6 +349,13 @@ PYBIND11_MODULE(exago, m) {
              ExaGOCheckError(ierr);
            })
 
+      .def("set_hiop_mem_space",
+           [](OPFLOW_wrapper &w, HIOPMemSpace mem_space) {
+             PetscErrorCode ierr;
+             ierr = OPFLOWSetHIOPMemSpace(w.opf, mem_space);
+             ExaGOCheckError(ierr);
+           })
+
       .def("set_has_loadloss",
            [](OPFLOW_wrapper &w, bool loadloss) {
              PetscErrorCode ierr;
@@ -426,6 +440,15 @@ PYBIND11_MODULE(exago, m) {
              ierr = OPFLOWGetHIOPComputeMode(w.opf, &mode[0]);
              ExaGOCheckError(ierr);
              return mode.c_str();
+           })
+
+      .def("get_hiop_mem_space",
+           [](OPFLOW_wrapper &w) -> HIOPMemSpace {
+             PetscErrorCode ierr;
+             HIOPMemSpace mem_space;
+             ierr = OPFLOWGetHIOPMemSpace(w.opf, &mem_space);
+             ExaGOCheckError(ierr);
+             return mem_space;
            })
 
       .def("get_model",

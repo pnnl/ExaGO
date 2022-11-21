@@ -294,6 +294,32 @@ PetscErrorCode OPFLOWGetHIOPComputeMode(OPFLOW opflow, char *mode) {
 }
 
 /*
+  OPFLOWSetHIOPMemSpace - Set mem space for HIOP solver
+  Input parameters
++ opflow - OPFLOW object
+- mem_space - memory space for HIOP solver
+
+  Command-line option: -hiop_mem_space
+*/
+PetscErrorCode OPFLOWSetHIOPMemSpace(OPFLOW opflow, HIOPMemSpace mem_space) {
+  PetscFunctionBegin;
+  opflow->mem_space = mem_space;
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWGetHIOPMemSpace - Get mem space for HIOP solver
+  Input parameters
++ opflow - OPFLOW object
+- mem_space - memory space for HIOP solver
+*/
+PetscErrorCode OPFLOWGetHIOPMemSpace(OPFLOW opflow, HIOPMemSpace *mem_space) {
+  PetscFunctionBegin;
+  *mem_space = opflow->mem_space;
+  PetscFunctionReturn(0);
+}
+
+/*
   OPFLOWSetHIOPVerbosityLevel - Set verbosity level for HIOP solver
   Input parameters
 + opflow - OPFLOW object
