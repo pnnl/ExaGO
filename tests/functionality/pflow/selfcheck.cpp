@@ -148,9 +148,16 @@ struct PflowFunctionalityTests
     if (params.expected_num_iters != -1 &&
         params.numiter != params.expected_num_iters) {
       num_iter_failed = true;
+#ifdef EXAGO_ENABLE_LOGGING
       params.reasons_for_failure.push_back(
           fmt::format("expected {} num iters, got {}",
                       params.expected_num_iters, params.numiter));
+#else
+      char sbuf[256];
+      sprintf(sbuf, "expected %d num iters, got %d", params.expected_num_iters,
+              params.numiter);
+      params.reasons_for_failure.push_back(std::string(sbuf));
+#endif
     }
 
     /* Did the current functionality test fail in any way? */

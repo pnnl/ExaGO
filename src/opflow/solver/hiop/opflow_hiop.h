@@ -15,11 +15,6 @@
 #include <IpIpoptApplication.hpp>
 #endif
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <string>
-
 #ifdef HIOP_USE_MAGMA
 #include "magma_v2.h"
 #endif

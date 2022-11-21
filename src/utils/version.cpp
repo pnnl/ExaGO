@@ -1,5 +1,6 @@
 #include <common.h>
 #include <exago_config.h>
+#include <utils.h>
 #include <unordered_map>
 #include <utils.h>
 #if (EXAGO_ENABLE_IPOPT || EXAGO_ENABLE_HIOP)
@@ -138,6 +139,7 @@ static const std::unordered_map<std::string, std::string>
 } // namespace
 
 PetscErrorCode ExaGOVersionGetFullVersionInfo(std::string &str) {
+#ifdef EXAGO_ENABLE_LOGGING
   str = fmt::format("ExaGO version {} built on {}\n", EXAGO_VERSION, __DATE__);
 
   /* Recreate configure command */
@@ -159,6 +161,27 @@ PetscErrorCode ExaGOVersionGetFullVersionInfo(std::string &str) {
         fmt::format("\t-D{}:STRING=\"{}\" {}\n", name, value,
                     (++confit == ExaGOStringConfigOptions.end() ? "" : "\\"));
   }
+#else
+  char sbuf[256];
+  sprintf(sbuf, "ExaGO version %s built on %s\n", EXAGO_VERSION, __DATE__);
+  str = std::string(sbuf);
+  for (auto const &conf_opt : ExaGOBoolConfigOptions) {
+    const auto &name = conf_opt.first;
+    const auto &is_enabled = conf_opt.second;
+    sprintf(sbuf, "\t-D%s:BOOL=%s \\\n", name.c_str(),
+            (is_enabled ? "ON" : "OFF"));
+    str += std::string(sbuf);
+  }
+  auto confit = ExaGOStringConfigOptions.begin();
+  while (confit != ExaGOStringConfigOptions.end()) {
+    const auto &name = (*confit).first;
+    const auto &value = (*confit).second;
+    /* If it's not the final option, add a newline escape */
+    sprintf(sbuf, "\t-D%s:STRING=\"%s\" %s\n", name.c_str(), value.c_str(),
+            (++confit == ExaGOStringConfigOptions.end() ? "" : "\\"));
+    str += std::string(sbuf);
+  }
+#endif
   return 0;
 }
 

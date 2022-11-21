@@ -205,10 +205,16 @@ PYBIND11_MODULE(exago, m) {
 #include "private/opflow_enum.def"
 #undef OPFLOW_OBJ_DEF
              if (!found) {
+#ifdef EXAGO_ENABLE_LOGGING
                throw ExaGOError(
                    fmt::format(
                        "Invalid value '{}' for OPFLOWObjectiveType enum", func)
                        .c_str());
+#else
+               char sbuf[256];
+               sprintf(sbuf,"Invalid value %s for OPFLOWObjectiveType enum",func.c_str());
+               throw ExaGOError(sbuf);
+#endif
              }
              ierr = OPFLOWSetObjectiveType(w.opf, type);
              ExaGOCheckError(ierr);
@@ -227,10 +233,16 @@ PYBIND11_MODULE(exago, m) {
 #include "private/opflow_enum.def"
 #undef OPFLOW_OBJ_DEF
              if (!found) {
+#ifdef EXAGO_ENABLE_LOGGING
                throw ExaGOError(
                    fmt::format(
                        "Invalid value '{}' for OPFLOWObjectiveType enum", func)
                        .c_str());
+#else
+               char sbuf[256];
+               sprintf(sbuf,"Invalid value %d for OPFLOWObjectiveType enum",func);
+               throw ExaGOError(sbuf);
+#endif
              }
              ierr = OPFLOWSetObjectiveType(w.opf, type);
              ExaGOCheckError(ierr);
@@ -249,11 +261,18 @@ PYBIND11_MODULE(exago, m) {
 #include "private/opflow_enum.def"
 #undef OPFLOW_INIT_DEF
              if (!found) {
+#ifdef EXAGO_ENABLE_LOGGING
                throw ExaGOError(
                    fmt::format(
                        "Invalid value '{}' for OPFLOWInitializationType enum",
                        init)
                        .c_str());
+#else
+               char sbuf[256];
+               sprintf(sbuf,"Invalid value %s for OPFLOWInitializationType enum",
+                   init.c_str());
+               throw ExaGOError(sbuf);
+#endif
              }
              ierr = OPFLOWSetInitializationType(w.opf, type);
              ExaGOCheckError(ierr);
@@ -272,11 +291,18 @@ PYBIND11_MODULE(exago, m) {
 #include "private/opflow_enum.def"
 #undef OPFLOW_INIT_DEF
              if (!found) {
+#ifdef EXAGO_ENABLE_LOGGING
                throw ExaGOError(
                    fmt::format(
                        "Invalid value '{}' for OPFLOWInitializationType enum",
                        init)
                        .c_str());
+#else
+               char sbuf[256];
+               sprintf(sbuf,"Invalid value %d for OPFLOWInitializationType enum",
+                   init);
+               throw ExaGOError(sbuf);
+#endif
              }
              ierr = OPFLOWSetInitializationType(w.opf, type);
              ExaGOCheckError(ierr);
@@ -295,11 +321,18 @@ PYBIND11_MODULE(exago, m) {
 #include "private/opflow_enum.def"
 #undef OPFLOW_GBV_DEF
              if (!found) {
+#ifdef EXAGO_ENABLE_LOGGING
                throw ExaGOError(
                    fmt::format(
                        "Invalid value '{}' for OPFLOWGenBusVoltageType enum",
                        volt)
                        .c_str());
+#else
+               char sbuf[256];
+               sprintf(sbuf,"Invalid value %s for OPFLOWGenBusVoltageType enum",
+                   volt.c_str());
+               throw ExaGOError(sbuf);
+#endif
              }
              ierr = OPFLOWSetGenBusVoltageType(w.opf, type);
              ExaGOCheckError(ierr);
@@ -318,11 +351,18 @@ PYBIND11_MODULE(exago, m) {
 #include "private/opflow_enum.def"
 #undef OPFLOW_GBV_DEF
              if (!found) {
+#ifdef EXAGO_ENABLE_LOGGING
                throw ExaGOError(
                    fmt::format(
                        "Invalid value '{}' for OPFLOWGenBusVoltageType enum",
                        volt)
                        .c_str());
+#else
+               char sbuf[256];
+               sprintf(sbuf,"Invalid value %d for OPFLOWGenBusVoltageType enum",
+                   volt);
+               throw ExaGOError(sbuf);
+#endif
              }
              ierr = OPFLOWSetGenBusVoltageType(w.opf, type);
              ExaGOCheckError(ierr);
@@ -791,11 +831,17 @@ PYBIND11_MODULE(exago, m) {
 #include "private/opflow_enum.def"
 #undef OPFLOW_INIT_DEF
              if (!found) {
+#ifdef EXAGO_ENABLE_LOGGING
                throw ExaGOError(
                    fmt::format(
                        "Invalid value '{}' for OPFLOWInitializationType enum",
                        init)
                        .c_str());
+#else
+               char sbuf[256];
+               sprintf(sbuf,"Invalid value %d for OPFLOWInitializationType enum",init);
+               throw ExaGOError(sbuf);
+#endif
              }
              ierr = SCOPFLOWSetInitilizationType(w.scopf, type);
              ExaGOCheckError(ierr);
@@ -813,11 +859,17 @@ PYBIND11_MODULE(exago, m) {
 #include "private/opflow_enum.def"
 #undef OPFLOW_INIT_DEF
              if (!found) {
+#ifdef EXAGO_ENABLE_LOGGING
                throw ExaGOError(
                    fmt::format(
                        "Invalid value '{}' for SCOPFLOWInitializationType enum",
                        init)
                        .c_str());
+#else
+               char sbuf[256];
+               sprintf(sbuf,"Invalid value %d for OPFLOWInitializationType enum",init);
+               throw ExaGOError(sbuf);
+#endif
              }
              ierr = SCOPFLOWSetInitilizationType(w.scopf, type);
              ExaGOCheckError(ierr);
@@ -836,11 +888,17 @@ PYBIND11_MODULE(exago, m) {
 #include "private/opflow_enum.def"
 #undef OPFLOW_GBV_DEF
              if (!found) {
+#ifdef EXAGO_ENABLE_LOGGING
                throw ExaGOError(
                    fmt::format(
                        "Invalid value '{}' for SCOPFLOWGenBusVoltageType enum",
                        volt)
                        .c_str());
+#else
+               char sbuf[256];
+               sprintf(sbuf,"Invalid value %d for OPFLOWGenBusVoltageType enum",volt);
+               throw ExaGOError(sbuf);
+#endif
              }
              ierr = SCOPFLOWSetGenBusVoltageType(w.scopf, type);
              ExaGOCheckError(ierr);
@@ -859,11 +917,17 @@ PYBIND11_MODULE(exago, m) {
 #include "private/opflow_enum.def"
 #undef OPFLOW_GBV_DEF
              if (!found) {
+#ifdef EXAGO_ENABLE_LOGGING
                throw ExaGOError(
                    fmt::format(
                        "Invalid value '{}' for SCOPFLOWGenBusVoltageType enum",
                        volt)
                        .c_str());
+#else
+               char sbuf[256];
+               sprintf(sbuf,"Invalid value %d for OPFLOWGenBusVoltageType enum",volt);
+               throw ExaGOError(sbuf);
+#endif
              }
              ierr = SCOPFLOWSetGenBusVoltageType(w.scopf, type);
              ExaGOCheckError(ierr);
@@ -1105,11 +1169,17 @@ PYBIND11_MODULE(exago, m) {
 #include "private/opflow_enum.def"
 #undef OPFLOW_INIT_DEF
              if (!found) {
+#ifdef EXAGO_ENABLE_LOGGING
                throw ExaGOError(
                    fmt::format(
                        "Invalid value '{}' for OPFLOWInitializationType enum",
                        init)
                        .c_str());
+#else
+               char sbuf[256];
+               sprintf(sbuf,"Invalid value %d for OPFLOWInitializationType enum",init);
+               throw ExaGOError(sbuf);
+#endif
              }
              ierr = SOPFLOWSetInitializationType(w.sopf, type);
              ExaGOCheckError(ierr);
@@ -1127,11 +1197,17 @@ PYBIND11_MODULE(exago, m) {
 #include "private/opflow_enum.def"
 #undef OPFLOW_INIT_DEF
              if (!found) {
+#ifdef EXAGO_ENABLE_LOGGING
                throw ExaGOError(
                    fmt::format(
                        "Invalid value '{}' for SOPFLOWInitializationType enum",
                        init)
                        .c_str());
+#else
+               char sbuf[256];
+               sprintf(sbuf,"Invalid value %d for SOPFLOWInitializationType enum",init);
+               throw ExaGOError(sbuf);
+#endif
              }
              ierr = SOPFLOWSetInitializationType(w.sopf, type);
              ExaGOCheckError(ierr);
@@ -1149,11 +1225,17 @@ PYBIND11_MODULE(exago, m) {
 #include "private/opflow_enum.def"
 #undef OPFLOW_GBV_DEF
              if (!found) {
+#ifdef EXAGO_ENABLE_LOGGING
                throw ExaGOError(
                    fmt::format(
                        "Invalid value '{}' for SOPFLOWGenBusVoltageType enum",
                        volt)
                        .c_str());
+#else
+               char sbuf[256];
+               sprintf(sbuf,"Invalid value %d for SOPFLOWGenBusVoltageType enum",volt);
+               throw ExaGOError(sbuf);
+#endif
              }
              ierr = SOPFLOWSetGenBusVoltageType(w.sopf, type);
              ExaGOCheckError(ierr);
@@ -1172,11 +1254,17 @@ PYBIND11_MODULE(exago, m) {
 #include "private/opflow_enum.def"
 #undef OPFLOW_GBV_DEF
              if (!found) {
+#ifdef EXAGO_ENABLE_LOGGING
                throw ExaGOError(
                    fmt::format(
                        "Invalid value '{}' for SOPFLOWGenBusVoltageType enum",
                        volt)
                        .c_str());
+#else
+               char sbuf[256];
+               sprintf(sbuf,"Invalid value %d for SOPFLOWGenBusVoltageType enum",volt);
+               throw ExaGOError(sbuf);
+#endif
              }
              ierr = SOPFLOWSetGenBusVoltageType(w.sopf, type);
              ExaGOCheckError(ierr);

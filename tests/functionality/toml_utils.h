@@ -1,5 +1,7 @@
 #pragma once
+#ifdef EXAGO_ENABLE_LOGGING
 #include <spdlog/fmt/fmt.h>
+#endif
 #include <exago_config.h>
 #include <iomanip>
 #include <iostream>

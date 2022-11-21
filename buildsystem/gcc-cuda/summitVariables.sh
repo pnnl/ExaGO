@@ -75,7 +75,6 @@ export CXX=/sw/summit/gcc/10.2.0-2/bin/g++
 export FC=/sw/summit/gcc/10.2.0-2/bin/gfotran
 
 export MY_PETSC_DIR=$PETSC_DIR
-export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DCMAKE_CUDA_ARCHITECTURES=70"
 export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DEXAGO_CTEST_LAUNCH_COMMAND='jsrun -g 1 -n 1'"
 
 [ -f $PWD/nvblas.conf ] && rm $PWD/nvblas.conf
