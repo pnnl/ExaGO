@@ -119,7 +119,7 @@ std::string ExaGOFormatOption(ExaGOStringOption const &opt, std::size_t indent,
                         (opt.possible_values.size() ? "|" : ""));
 #else
   char sbuf[256];
-  sprintf(sbuf, "%s%s", opt.default_value,
+  sprintf(sbuf, "%s%s", opt.default_value.c_str(),
           (opt.possible_values.size() ? "|" : ""));
   values += std::string(sbuf);
 #endif
