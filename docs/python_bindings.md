@@ -132,27 +132,26 @@ The following table assumes `opflow = exago.OPFLOW()`.
 | `OPFLOWObjectiveType` enum | `exago.OPFLOWObjectiveType` enum | More details and possible values for this enum can be found in the [next section](#enums). |
 | `OPFLOWInitializationType` enum | `exago.OPFLOWInitializationType` enum | More details and possible values for this enum can be found in the [next section](#enums). |
 | `OPFLOWGenBusVoltageType` enum | `exago.OPFLOWGenBusVoltageType` enum | More details and possible values for this enum can be found in the [next section](#enums). |
-| `HIOPMemSpace` enum | `exago.HIOPMemSpace` enum | More details and possible values for this enum can be found in the [next section](#enums). Currently, this is only be used as a Python enum. A string representation is not available. |
 | `OPFLOWSetObjectiveType` | `opflow.set_objective_type` | |
 | `OPFLOWSetInitializationType` | `opflow.set_initialization_type` | |
 | `OPFLOWSetGenBusVoltageType` | `opflow.set_gen_bus_voltage_type` | |
-| `OPFLOWSetModel` | `opflow.set_model` | |
-| `OPFLOWSetSolver` | `opflow.set_solver` | |
+| `OPFLOWSetModel` | `opflow.set_model` | options are "PBPOLRAJAHIOP", "POWER_BALANCE_HIOP", and "POWER_BALANCE_POLAR" |
+| `OPFLOWSetSolver` | `opflow.set_solver` | options are "IPOPT", "HIOP", and "HIOPSPARSE"  |
 | `OPFLOWHasGenSetPoint` | `opflow.set_has_gen_set_point` | |
-| `OPFLOWSetHIOPComputeMode` | `opflow.set_hiop_compute_mode` | |
-| `OPFLOWSetHIOPMemSpace` | `opflow.set_hiop_mem_space` | must use `HIOPMemSpace` enum as parameter |
+| `OPFLOWSetHIOPComputeMode` | `opflow.set_hiop_compute_mode` | options are "CPU" or "GPU"|
+| `OPFLOWSetHIOPMemSpace` | `opflow.set_hiop_mem_space` | options are "DEFAULT", "HOST", "UM", and "DEVICE" |
 | `OPFLOWHasLoadLoss` | `opflow.set_has_loadloss` | |
 | `OPFLOWIgnoreLineflowConstraints` | `opflow.set_ignore_lineflow_constraints` | |
 | `OPFLOWHasBusPowerImbalance` | `opflow.set_has_bus_power_imbalance` | |
 | `OPFLOWUseAGC` | `opflow.set_use_agc` | |
-| `OPFLOWSetHIOPVerbosityLevel` | `opflow.set_hiop_verbosity_level` | |
+| `OPFLOWSetHIOPVerbosityLevel` | `opflow.set_hiop_verbosity_level` | integer between 0 and 10 |
 | `OPFLOWSetLoadLossPenalty` | `opflow.set_loadloss_penalty` | |
 | `OPFLOWSetBusPowerImbalancePenalty` | `opflow.set_bus_power_imbalance_penalty` | |
 | `OPFLOWSetTolerance` | `opflow.set_tolerance` | |
 | `PSSetGenPowerLimits` | `opflow.ps_set_gen_power_limits` | |
 | `OPFLOWGetTolerance` | `opflow.get_tolerance` | |
 | `OPFLOWGetHIOPComputeMode` | `opflow.get_hiop_compute_mode` | |
-| `OPFLOWGetHIOPMemSpace` | `opflow.get_hiop_mem_space` | returns `HIOPMemSpace` enum |
+| `OPFLOWGetHIOPMemSpace` | `opflow.get_hiop_mem_space` | |
 | `OPFLOWGetModel` | `opflow.get_model` | |
 | `OPFLOWGetSolver` | `opflow.get_solver` | |
 | `OPFLOWGetConvergenceStatus` | `opflow.get_convergence_status` | |
@@ -282,12 +281,6 @@ OPFLOWGenBusVoltageType
 * FIXED_WITHIN_QBOUNDS
 * FIXED_AT_SETPOINT
 
-HIOPMemSpace
-* DEFAULT
-* HOST
-* UM
-* DEVICE
-
 ContingencyFileInputFormat
 * NATIVE
 * PSSE
@@ -301,7 +294,7 @@ ScenarioUncertaintyType
 * WIND
 * LOAD
 
-Note: getters for the possible values of HIOPMemSpace, ContingencyFileInputeFormat, ScenarioFileInputFormat, ScenarioUncertaintyType are not currently available
+Note: getters for the possible values of ContingencyFileInputeFormat, ScenarioFileInputFormat, ScenarioUncertaintyType are not currently available
 
 Instances can be constructed directly through the `exago` library (i.e. `exago.OPFLOWObjectiveType.MIN_GEN_COST` or `exago.MIN_GEN_COST`)
 Setter functions for these OPFLOW Type configurations can take an integer, an instance of the exago enum, or a string that describes the enum (i.e. 'MIN_GEN_COST'). The rest currently only accept an instance of the exago enum.

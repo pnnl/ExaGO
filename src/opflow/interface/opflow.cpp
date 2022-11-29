@@ -301,9 +301,16 @@ PetscErrorCode OPFLOWGetHIOPComputeMode(OPFLOW opflow, char *mode) {
 
   Command-line option: -hiop_mem_space
 */
-PetscErrorCode OPFLOWSetHIOPMemSpace(OPFLOW opflow, HIOPMemSpace mem_space) {
+PetscErrorCode OPFLOWSetHIOPMemSpace(OPFLOW opflow, const char *mem_space) {
   PetscFunctionBegin;
-  opflow->mem_space = mem_space;
+  if (strcmp(mem_space, "DEFAULT") == 0)
+    opflow->mem_space = static_cast<HIOPMemSpace>(0);
+  else if (strcmp(mem_space, "HOST") == 0)
+    opflow->mem_space = static_cast<HIOPMemSpace>(1);
+  else if (strcmp(mem_space, "UM") == 0)
+    opflow->mem_space = static_cast<HIOPMemSpace>(2);
+  else if (strcmp(mem_space, "DEVICE") == 0)
+    opflow->mem_space = static_cast<HIOPMemSpace>(3);
   PetscFunctionReturn(0);
 }
 
@@ -313,9 +320,16 @@ PetscErrorCode OPFLOWSetHIOPMemSpace(OPFLOW opflow, HIOPMemSpace mem_space) {
 + opflow - OPFLOW object
 - mem_space - memory space for HIOP solver
 */
-PetscErrorCode OPFLOWGetHIOPMemSpace(OPFLOW opflow, HIOPMemSpace *mem_space) {
+PetscErrorCode OPFLOWGetHIOPMemSpace(OPFLOW opflow, char *mem_space) {
   PetscFunctionBegin;
-  *mem_space = opflow->mem_space;
+  if (opflow->mem_space == 0)
+    strcpy(mem_space, "DEFAULT");
+  else if (opflow->mem_space == 1)
+    strcpy(mem_space, "HOST");
+  else if (opflow->mem_space == 2)
+    strcpy(mem_space, "UM");
+  else if (opflow->mem_space == 3)
+    strcpy(mem_space, "DEVICE");
   PetscFunctionReturn(0);
 }
 

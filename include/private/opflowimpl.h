@@ -324,7 +324,4 @@ extern PetscErrorCode OPFLOWNaturalToSpDense(OPFLOW, const double *, double *);
 
 extern PetscErrorCode OPFLOWSpDenseToNatural(OPFLOW, const double *, double *);
 
-extern PetscErrorCode OPFLOWSetHIOPMemSpace(OPFLOW, HIOPMemSpace);
-extern PetscErrorCode OPFLOWGetHIOPMemSpace(OPFLOW, HIOPMemSpace *);
-
 #endif
