@@ -152,13 +152,6 @@ PYBIND11_MODULE(exago, m) {
       .value("MATPOWER", MATPOWER)
       .export_values();
 
-  pybind11::enum_<HIOPMemSpace>(m, "HIOPMemSpace")
-      .value("DEFAULT", DEFAULT)
-      .value("HOST", HOST)
-      .value("UM", UM)
-      .value("DEVICE", DEVICE)
-      .export_values();
-
   // -------------------------------------------------------------
   //  class OPFLOW_wrapper
   // -------------------------------------------------------------
@@ -390,9 +383,9 @@ PYBIND11_MODULE(exago, m) {
            })
 
       .def("set_hiop_mem_space",
-           [](OPFLOW_wrapper &w, HIOPMemSpace mem_space) {
+           [](OPFLOW_wrapper &w, std::string mem_space) {
              PetscErrorCode ierr;
-             ierr = OPFLOWSetHIOPMemSpace(w.opf, mem_space);
+             ierr = OPFLOWSetHIOPMemSpace(w.opf, mem_space.c_str());
              ExaGOCheckError(ierr);
            })
 
@@ -483,12 +476,12 @@ PYBIND11_MODULE(exago, m) {
            })
 
       .def("get_hiop_mem_space",
-           [](OPFLOW_wrapper &w) -> HIOPMemSpace {
+           [](OPFLOW_wrapper &w) -> std::string {
              PetscErrorCode ierr;
-             HIOPMemSpace mem_space;
-             ierr = OPFLOWGetHIOPMemSpace(w.opf, &mem_space);
+             std::string mem_space(PETSC_MAX_PATH_LEN, '\0');
+             ierr = OPFLOWGetHIOPMemSpace(w.opf, &mem_space[0]);
              ExaGOCheckError(ierr);
-             return mem_space;
+             return mem_space.c_str();
            })
 
       .def("get_model",

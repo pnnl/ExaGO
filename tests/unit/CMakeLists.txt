@@ -50,5 +50,5 @@ if(EXAGO_INSTALL_TESTS)
     $<TARGET_FILE:test_logger>
     DEPENDS
     EXAGO_ENABLE_LOGGING
-    )
+  )
 endif()

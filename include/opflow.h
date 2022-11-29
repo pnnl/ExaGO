@@ -148,7 +148,7 @@ const auto hiop_verbosity_level =
                    "Set verbosity level for HiOp solver, between 0 and 12", 0);
 const auto hiop_mem_space =
     ExaGOStringOption("-hiop_mem_space", "Set memory space for HiOp solver",
-                      "host", {"um", "device"});
+                      "host", {"default", "host", "um", "device"});
 
 #ifdef EXAGO_ENABLE_IPOPT
 const auto hiop_ipopt_debug = ExaGOBoolOption(
@@ -179,6 +179,8 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetInitialGuess(OPFLOW, Vec, Vec);
 PETSC_EXTERN PetscErrorCode OPFLOWSetTolerance(OPFLOW, PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPComputeMode(OPFLOW, const char *);
 PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPComputeMode(OPFLOW, char *);
+PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPMemSpace(OPFLOW, const char *);
+PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPMemSpace(OPFLOW, char *);
 PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPVerbosityLevel(OPFLOW, int);
 PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPVerbosityLevel(OPFLOW, int *);
 PETSC_EXTERN PetscErrorCode OPFLOWGetTolerance(OPFLOW, PetscReal *);

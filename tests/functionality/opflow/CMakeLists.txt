@@ -18,8 +18,6 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_opflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_pbpolhiop.toml
-    -hiop_mem_space
-    HOST
     DEPENDS
     HIOP
   )
