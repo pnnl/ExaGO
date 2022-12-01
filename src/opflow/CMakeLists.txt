@@ -17,7 +17,7 @@ if(EXAGO_ENABLE_RAJA)
 endif()
 
 set(OPFLOW_SOLVER_SRC
-    solver/tao/opflow_tao.cpp solver/ipopt/opflow_ipopt.cpp
+    solver/ipopt/opflow_ipopt.cpp
     solver/hiop/opflow_hiop.cpp solver/hiop/opflow_hiopsparse.cpp
 )
 
