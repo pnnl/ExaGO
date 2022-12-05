@@ -37,8 +37,8 @@ module load cuda-11.4-gcc-8.5.0-kadx5rb
 module load camp-0.2.2-gcc-8.5.0-4t4eguy
 # openblas@0.3.20%gcc@8.5.0~bignuma~consistent_fpcsr~ilp64+locking+pic+shared patches=9f12903 symbol_suffix=none threads=none arch=linux-centos8-power9le
 module load openblas-0.3.20-gcc-8.5.0-dmvuekp
-# coinhsl@2019.05.21%gcc@8.5.0+blas arch=linux-centos8-power9le
-module load coinhsl-2019.05.21-gcc-8.5.0-hoy7u3p
+# coinhsl@2015.06.23%gcc@8.5.0+blas arch=linux-centos8-power9le
+module load coinhsl-2015.06.23-gcc-8.5.0-c222csf
 # ginkgo@1.5.0.glu_experimental%gcc@8.5.0+cuda~develtools~full_optimizations~hwloc~ipo~oneapi+openmp~rocm+shared build_type=Release cuda_arch=70 arch=linux-centos8-power9le
 module load ginkgo-1.5.0.glu_experimental-gcc-8.5.0-wn4lj4i
 # magma@2.6.2%gcc@8.5.0+cuda+fortran~ipo~rocm+shared build_type=RelWithDebInfo cuda_arch=70 arch=linux-centos8-power9le
@@ -71,10 +71,10 @@ module load mpfr-4.1.0-gcc-8.5.0-ko56wbz
 module load suite-sparse-5.10.1-gcc-8.5.0-yc2nlwi
 # umpire@6.0.0%gcc@8.5.0+c+cuda~device_alloc~deviceconst~examples~fortran~ipo~numa~openmp~rocm~shared build_type=RelWithDebInfo cuda_arch=70 tests=none arch=linux-centos8-power9le
 module load umpire-6.0.0-gcc-8.5.0-of53d2g
-# hiop@develop%gcc@8.5.0+cuda~cusolver+deepchecking~full_optimizations+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_type=RelWithDebInfo cuda_arch=70 arch=linux-centos8-power9le
-module load hiop-develop-gcc-8.5.0-2elhbvi
-# ipopt@3.12.10%gcc@8.5.0+coinhsl~debug~metis~mumps arch=linux-centos8-power9le
-module load ipopt-3.12.10-gcc-8.5.0-wyzn5ev
+# hiop@develop%gcc@8.5.0+cuda~cusolver~deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_type=RelWithDebInfo cuda_arch=70 arch=linux-centos8-power9le
+module load hiop-develop-gcc-8.5.0-qzbgk4t
+# ipopt@3.14.5%gcc@8.5.0+coinhsl~debug~metis~mumps arch=linux-centos8-power9le
+module load ipopt-3.14.5-gcc-8.5.0-bnxnevh
 # python@3.8.5%gcc@8.5.0+bz2+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tix~tkinter~ucs4+uuid+zlib patches=0d98e93,4c24573,f2fd060 arch=linux-centos8-power9le
 module load python-3.8.5-gcc-8.5.0-xoqxryp
 # petsc@3.18.0%gcc@8.5.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~tetgen~trilinos~valgrind clanguage=C patches=2daeca7 arch=linux-centos8-power9le
@@ -111,5 +111,5 @@ module load py-py-1.11.0-gcc-8.5.0-z3a3ktf
 module load py-toml-0.10.2-gcc-8.5.0-gvcgdkn
 # py-pytest@6.2.5%gcc@8.5.0 arch=linux-centos8-power9le
 module load py-pytest-6.2.5-gcc-8.5.0-ojhtway
-# exago@develop%gcc@8.5.0+cuda~full_optimizations+hiop~ipo+ipopt+mpi+python+raja~rocm build_type=RelWithDebInfo cuda_arch=70 dev_path=/people/svcexasgd/gitlab/17410/spack_newell arch=linux-centos8-power9le
-## module load exago-develop-gcc-8.5.0-knxr5qo
+# exago@develop%gcc@8.5.0+cuda+hiop~ipo+ipopt+mpi+python+raja~rocm build_type=RelWithDebInfo cuda_arch=70 dev_path=/people/svcexasgd/gitlab/18593/spack_newell arch=linux-centos8-power9le
+## module load exago-develop-gcc-8.5.0-w4pxwfm
