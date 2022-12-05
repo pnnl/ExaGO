@@ -109,5 +109,5 @@ module load py-py-1.11.0-gcc-10.2.0-meh5son
 module load py-toml-0.10.2-gcc-10.2.0-gqgcbhp
 # py-pytest@6.2.5%gcc@10.2.0 arch=linux-centos7-zen2
 module load py-pytest-6.2.5-gcc-10.2.0-qnxtpdk
-# exago@develop%gcc@10.2.0+cuda+hiop~ipo+ipopt+mpi+python+raja~rocm build_type=RelWithDebInfo cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/18103/spack_deception arch=linux-centos7-zen2
-## module load exago-develop-gcc-10.2.0-fgqskkw
+# exago@develop%gcc@10.2.0+cuda+hiop~ipo+ipopt+mpi+python+raja~rocm build_type=RelWithDebInfo cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/18578/spack_deception arch=linux-centos7-zen2
+## module load exago-develop-gcc-10.2.0-ovcbcmx
