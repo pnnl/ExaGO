@@ -43,6 +43,7 @@ cleanup() {
 # Assuming that you already have a binary mirror configured
 export MY_CLUSTER=newell
 cp /qfs/projects/exasgd/src/coinhsl-archive-2019.05.21.tar.gz . && \
+cp /qfs/projects/exasgd/src/coinhsl-archive-2015.06.23.tar.gz . && \
 . buildsystem/spack/load_spack.sh && \
 spack develop --no-clone --path=$(pwd) exago@develop && \
 ./buildsystem/spack/configure_modules.sh 128
