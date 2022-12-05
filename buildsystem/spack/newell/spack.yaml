@@ -24,7 +24,7 @@ spack:
     hiop:
       require: '@develop+sparse+mpi+ginkgo+kron'
     coinhsl:
-      require: '@2019.05.21'
+      require: '@2015.06.23'
     ipopt:
       require: '@3.14.5~metis+coinhsl~mumps'
     raja:
