@@ -241,6 +241,13 @@ endif()
 
 if(EXAGO_ENABLE_HIOP)
   include(ExaGOFindHiOp)
+  if(NOT TARGET RAJA)
+    # In HiOp's exported CMake configuration, there is a call to:
+    #   find_package(RAJA PATHS @RAJA_DIR@)
+    # This means the RAJA target should be defined in HiOp 0.7.0+ if hiop+raja
+    # RAJA part of ExaGO will not work if HiOp is not built with RAJA
+    message(STATUS "Warning: HiOp was built without RAJA - ExaGO RAJA module calling HiOp may not work!")
+  endif()
 endif(EXAGO_ENABLE_HIOP)
 
 if(EXAGO_ENABLE_RAJA)
