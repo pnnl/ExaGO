@@ -1,3 +1,4 @@
+#include <libgen.h>
 #include <private/psimpl.h>
 
 /* Save to MATPOWER format */
@@ -18,23 +19,45 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
   char sep[] = "/";
   char ext[] = ".m";
   char file1[PETSC_MAX_PATH_LEN];
+  char dir[PETSC_MAX_PATH_LEN];
 
   PetscFunctionBegin;
-  strcpy(file1, outfile);
-  /* Check if file has .m extension */
-  tok = strtok(file1, ext);
-  strcpy(filename, tok);
 
-  strcpy(file1, filename);
-  tok2 = strtok(file1, sep);
-  strcpy(fcn_name, file1);
-  while ((tok2 = strtok(NULL, sep)) != NULL) {
-    strcpy(fcn_name, tok2);
+  strncpy(filename, outfile, PETSC_MAX_PATH_LEN);
+  strncpy(file1, basename(filename), PETSC_MAX_PATH_LEN);
+  strncpy(filename, outfile, PETSC_MAX_PATH_LEN);
+  strncpy(dir, dirname(filename), PETSC_MAX_PATH_LEN);
+
+  /* Check if file has .m extension (find last occurance) */
+
+  tok = &file1[0];
+  tok2 = NULL;
+  while (tok != NULL) {
+    tok = strstr(tok, ext);
+    if (tok != NULL) {
+      tok2 = tok;
+      tok++;
+    }
   }
 
-  /* Add .m extension to file name */
-  ierr = PetscStrlcat(filename, ".m", 256);
-  CHKERRQ(ierr);
+  /* remove extension from file1, if found */
+
+  if (tok2 != NULL) {
+    *tok2 = (char)0;
+  }
+
+  /* use this as a function name */
+
+  strncpy(fcn_name, file1, 100);
+
+  /* re-assemble file name */
+
+  strncpy(filename, dir, PETSC_MAX_PATH_LEN);
+  ierr = PetscStrlcat(filename, sep, PETSC_MAX_PATH_LEN);
+  ierr = PetscStrlcat(filename, fcn_name, PETSC_MAX_PATH_LEN);
+  ierr = PetscStrlcat(filename, ext, PETSC_MAX_PATH_LEN);
+
+  /* save file */
 
   fd = fopen(filename, "w");
   if (fd == NULL) {
