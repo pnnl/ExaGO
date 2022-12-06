@@ -4,13 +4,26 @@
 # Install Python bindings to same installation path: install(TARGETS exago
 # DESTINATION ${EXAGO_PYTHON_SITELIB})
 
+# Assemble sources for Python interface
+set(EXAGO_PY_SRCS exago_python.cpp)
+set(EXAGO_PY_LIBS ExaGO::UTILS ExaGO::PFLOW)
+
+# The PFLOW interface is always available
+list(APPEND EXAGO_PY_SRCS exago_python_pflow.cpp)
+
+# Enable other interfaces if appropriate solvers are available
+if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
+  list(APPEND EXAGO_PY_SRCS exago_python_opflow.cpp exago_python_scopflow.cpp
+       exago_python_sopflow.cpp
+  )
+  list(APPEND EXAGO_PY_LIBS ExaGO::SOPFLOW ExaGO::SCOPFLOW ExaGO::OPFLOW)
+endif()
+
 # New true python bindings
-pybind11_add_module(exago exago_python.cpp)
+pybind11_add_module(exago ${EXAGO_PY_SRCS})
 
 # Link against relevant exago libraries
-target_link_libraries(
-  exago PRIVATE ExaGO::UTILS ExaGO::SOPFLOW ExaGO::SCOPFLOW ExaGO::OPFLOW
-)
+target_link_libraries(exago PRIVATE ${EXAGO_PY_LIBS})
 
 # Find mpi4py c headers
 include(ExaGOFindPythonModule)
