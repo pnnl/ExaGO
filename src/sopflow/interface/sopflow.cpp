@@ -545,6 +545,28 @@ SOPFLOWSetContingencyData(SOPFLOW sopflow,
   PetscFunctionReturn(0);
 }
 
+static PetscErrorCode SOPFLOWPrintOptions()
+{
+  printf("SOPFLOW Options:\n\n");
+
+  print(SOPFLOWOptions::sopflow_model);
+  print(SOPFLOWOptions::sopflow_solver);
+  print(SOPFLOWOptions::opflow_model);
+  print(SOPFLOWOptions::subproblem_model);
+  print(SOPFLOWOptions::subproblem_solver);
+  print(SOPFLOWOptions::ctgcfile);
+  print(SOPFLOWOptions::iscoupling);
+  print(SOPFLOWOptions::Ns);
+  print(SOPFLOWOptions::Nc);
+  print(SOPFLOWOptions::mode);
+  print(SOPFLOWOptions::enable_multicontingency);
+  print(SOPFLOWOptions::enable_multicontingency);
+  print(SOPFLOWOptions::tolerance);
+  print(SOPFLOWOptions::windgen);
+  
+  return 0;
+}
+
 /*
   SOPFLOWSetUp - Sets up an stochastic optimal power flow application object
 
@@ -586,6 +608,11 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
                      sizeof(opflowmodelname));
 
   PetscFunctionBegin;
+
+  if(printHelp) {
+    ierr = SOPFLOWPrintOptions();CHKERRQ(ierr);
+    std::exit(EXIT_SUCCESS);
+  }
 
   PetscOptionsBegin(sopflow->comm->type, NULL, "SOPFLOW options", NULL);
 

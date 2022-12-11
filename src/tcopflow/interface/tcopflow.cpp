@@ -337,6 +337,26 @@ PetscErrorCode TCOPFLOWSetScenario(TCOPFLOW tcopflow, Scenario *scen) {
   PetscFunctionReturn(0);
 }
 
+static PetscErrorCode TCOPFLOWPrintOptions()
+{
+  // TODO: Update to use `ExaGOOption`s for options handling command line
+  // options
+  
+  printf("TCOPFLOW Options:\n\n");
+  
+  printf("\t -netfile <netfilename>\n");
+  printf("\t -tcopflow_windgenprofile <windgenproffilename>\n");
+  printf("\t -tcopflow_ploadprofile <ploadprofile_filename>\n");
+  printf("\t -tcopflow_qloadprofile <qloadprofile_filename>\n");
+  printf("\t -tcopflow_iscoupling <0|1>\n");
+  printf("\t -opflow_ignore_lineflow_constraints <0|1>\n");
+  printf("\t -tcopflow_duration <Hours>\n");
+  printf("\t -tcopflow_dT <Minutes>\n");
+  printf("\t -tcopflow_tolerance <1e-6|...>\n");
+  
+  return 0;
+}
+  
 /*
   TCOPFLOWSetUp - Sets up an multi-period optimal power flow application object
 
@@ -357,6 +377,11 @@ PetscErrorCode TCOPFLOWSetUp(TCOPFLOW tcopflow) {
   OPFLOW opflow;
 
   PetscFunctionBegin;
+
+  if(printHelp) {
+    ierr = TCOPFLOWPrintOptions();CHKERRQ(ierr);
+    std::exit(EXIT_SUCCESS);
+  }
 
   PetscOptionsBegin(tcopflow->comm->type, NULL, "TCOPFLOW options", NULL);
 

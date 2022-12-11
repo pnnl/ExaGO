@@ -461,6 +461,29 @@ PetscErrorCode SCOPFLOWUpdateOPFLOWVariableBounds(OPFLOW opflow, Vec Xl, Vec Xu,
   }
   PetscFunctionReturn(0);
 }
+
+static PetscErrorCode SCOPFLOWPrintOptions()
+{
+  printf("SCOPFLOW Options:\n\n");
+
+  print(SCOPFLOWOptions::model);
+  print(SCOPFLOWOptions::solver);
+  print(SCOPFLOWOptions::subproblem_model);
+  print(SCOPFLOWOptions::subproblem_solver);
+  print(SCOPFLOWOptions::Nc);
+  print(SCOPFLOWOptions::mode);
+  print(SCOPFLOWOptions::enable_multiperiod);
+  
+  print(SCOPFLOWOptions::tolerance);
+  print(SCOPFLOWOptions::dT);
+  print(SCOPFLOWOptions::duration);
+  print(SCOPFLOWOptions::windgenprofile);
+  print(SCOPFLOWOptions::ploadprofile);
+  print(SCOPFLOWOptions::qloadprofile);
+  
+    return 0;
+}
+
 /*
   SCOPFLOWSetUp - Sets up an security constrained optimal power flow application
 object
@@ -500,6 +523,12 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
                      sizeof(scopflowsolvername));
 
   PetscFunctionBegin;
+
+  if(printHelp) {
+    ierr = SCOPFLOWPrintOptions();CHKERRQ(ierr);
+    std::exit(EXIT_SUCCESS);
+  }
+
 
   PetscOptionsBegin(scopflow->comm->type, NULL, "SCOPFLOW options", NULL);
 

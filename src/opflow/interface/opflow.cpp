@@ -734,6 +734,35 @@ PetscErrorCode OPFLOWComputePrePflow(OPFLOW opflow, PetscBool *converged) {
   PetscFunctionReturn(0);
 }
 
+static PetscErrorCode OPFLOWPrintOptions()
+{
+  printf("OPFLOW Options:\n\n");
+
+  print(OPFLOWOptions::model);
+  print(OPFLOWOptions::solver);
+  print(OPFLOWOptions::initialization);
+  print(OPFLOWOptions::objective);
+  print(OPFLOWOptions::genbusvoltage);
+  print(OPFLOWOptions::has_gensetpoint);
+  print(OPFLOWOptions::use_agc);
+  print(OPFLOWOptions::tolerance);
+  print(OPFLOWOptions::ignore_lineflow_constraints);
+  print(OPFLOWOptions::include_loadloss_variables);
+  print(OPFLOWOptions::loadloss_penalty);
+  print(OPFLOWOptions::include_powerimbalance_variables);
+  print(OPFLOWOptions::powerimbalance_penalty);
+  
+#ifdef EXAGO_ENABLE_HIOP
+  print(OPFLOWOptions::hiop_compute_mode);
+  print(OPFLOWOptions::hiop_verbosity_level);
+  
+#ifdef EXAGO_ENABLE_IPOPT
+  print(OPFLOWOptions::hiop_ipopt_debug);
+#endif
+#endif
+  return 0;
+}
+
 /*
   OPFLOWCreate - Creates an optimal power flow application object
 
@@ -751,6 +780,12 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
   OPFLOW opflow;
 
   PetscFunctionBegin;
+
+  if(printHelp) {
+    ierr = OPFLOWPrintOptions();CHKERRQ(ierr);
+    std::exit(EXIT_SUCCESS);
+  }
+
   ierr = PetscCalloc1(1, &opflow);
   CHKERRQ(ierr);
 
@@ -2994,3 +3029,5 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
 #endif // HIOP
   PetscFunctionReturn(0);
 };
+
+

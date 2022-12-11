@@ -17,14 +17,8 @@
 #include <sys/utsname.h>
 #include <version.h>
 #include <utils.h>
-#if (EXAGO_ENABLE_IPOPT || EXAGO_ENABLE_HIOP)
-#include <opflow.h>
-#endif
 
-#if (EXAGO_ENABLE_IPOPT)
-#include <sopflow.h>
-#include <scopflow.h>
-#endif
+PetscBool printHelp;
 
 namespace ExaGODefaultOptions {
 const auto help = ExaGOFlagOption("-help", "Print help message");
@@ -45,8 +39,6 @@ const auto options_file = ExaGOStringOption(
 //                                        "/path/to/netfile", {});
 } // namespace ExaGODefaultOptions
 
-namespace {
-
 /*
  * ExaGOOption formatting rationale:
  *
@@ -58,92 +50,6 @@ namespace {
  * 4: the description
  * 5: the type of the option
  */
-template <typename T>
-std::string ExaGOFormatOption(ExaGOOption<T> const &opt, std::size_t indent = 0,
-                              std::string indentstr = "\t") {
-  using std::is_same;
-  using U =
-      typename std::remove_reference<typename std::remove_cv<T>::type>::type;
-  std::string typestr =
-      (is_same<U, bool>::value or is_same<U, PetscBool>::value)
-          ? "bool"
-          : is_same<U, double>::value
-                ? "real"
-                : is_same<U, int>::value ? "int" : "unknown_type";
-  std::string tab = "";
-  for (int i = 0; i < indent; i++)
-    tab += "\t";
-#ifdef EXAGO_ENABLE_LOGGING
-  return fmt::format("{0}{2} {3}\n{0}{1}{4} (type: {5})\n", tab, indentstr,
-                     opt.opt,
-                     fmt::format(fmt::emphasis::bold, "{}", opt.default_value),
-                     opt.desc, typestr);
-#else
-  char sbuf[256];
-  sprintf(sbuf, "%s%s\n%s%s%s (type: %s)\n", tab.c_str(), opt.opt.c_str(),
-          tab.c_str(), indentstr.c_str(), opt.desc.c_str(), typestr.c_str());
-  return std::string(sbuf);
-#endif
-}
-
-template <>
-std::string ExaGOFormatOption(ExaGOOption<void> const &opt, std::size_t indent,
-                              std::string indentstr) {
-  std::string tab = "";
-  for (int i = 0; i < indent; i++)
-    tab += "\t";
-#ifdef EXAGO_ENABLE_LOGGING
-  return fmt::format("{0}{2}\n{0}{1}{3} (type: flag)\n", tab, indentstr,
-                     opt.opt, opt.desc);
-#else
-  char sbuf[256];
-  sprintf(sbuf, "%s%s\n%s%s%s (type: flag)\n", tab.c_str(), opt.opt.c_str(),
-          tab.c_str(), indentstr.c_str(), opt.desc.c_str());
-  return std::string(sbuf);
-#endif
-}
-
-template <>
-std::string ExaGOFormatOption(ExaGOStringOption const &opt, std::size_t indent,
-                              std::string indentstr) {
-  std::string tab = "";
-  for (int i = 0; i < indent; i++)
-    tab += "\t";
-
-  /* If there are no other possible values but just a single default value,
-   * we won't try to use parenthesis. Parens only make sense when we're
-   * demonstrating a range of possible values */
-  std::string values = (opt.possible_values.size() ? "(" : "");
-
-  /* If the argument is optional, we have a default value which we will
-   * embolden to make clear */
-#ifdef EXAGO_ENABLE_LOGGING
-  values += fmt::format(fmt::emphasis::bold, "{}{}", opt.default_value,
-                        (opt.possible_values.size() ? "|" : ""));
-#else
-  char sbuf[256];
-  sprintf(sbuf, "%s%s", opt.default_value.c_str(),
-          (opt.possible_values.size() ? "|" : ""));
-  values += std::string(sbuf);
-#endif
-  auto it = opt.possible_values.begin();
-  while (it != opt.possible_values.end()) {
-    values += *it;
-    if (++it != opt.possible_values.end())
-      values += "|";
-  }
-  values += (opt.possible_values.size() ? ")" : "");
-#ifdef EXAGO_ENABLE_LOGGING
-  return fmt::format("{0}{2} {3}\n{1}{0}{4} (type: string)\n", tab, indentstr,
-                     opt.opt, values, opt.desc);
-#else
-  sprintf(sbuf, "%s%s\n%s%s%s (type: flag)\n", tab.c_str(), opt.opt.c_str(),
-          indentstr.c_str(), tab.c_str(), opt.desc.c_str());
-  return std::string(sbuf);
-#endif
-}
-
-} // namespace
 
 static char ExaGOCurrentAppName[128];
 
@@ -320,19 +226,6 @@ std::string FileNameExtension(const std::string &filename) {
   return ext;
 }
 
-namespace {
-template <typename T> static inline void print(T const &opt) {
-  static constexpr std::size_t indent = 1;
-  static const std::string indentstr = "\t";
-#ifdef EXAGO_ENABLE_LOGGING
-  fmt::print(ExaGOFormatOption(opt, indent, indentstr));
-  fmt::print("\n");
-#else
-  printf("%s", ExaGOFormatOption(opt, indent, indentstr).c_str());
-  printf("\n");
-#endif
-};
-} // namespace
 
 /**
  * @brief Print ExaGO command-line options.
@@ -340,12 +233,8 @@ template <typename T> static inline void print(T const &opt) {
  * @pre Any explicitly managed resources are cleaned up before this is called -
  * this function will std::exit for you.
  *
- * @note the return type is PetscErrorCode even though ExaGOHelpPrintf is
- *       [[noreturn]]. This is to conform to PetscHelpPrintf, so ExaGOHelpPrintf
- *       may be set to the default help function pointer in Petsc.
  */
-[[noreturn]] PetscErrorCode ExaGOHelpPrintf(MPI_Comm comm,
-                                            const char _appname[], ...) {
+PetscErrorCode ExaGOHelpPrintf() {
   PetscErrorCode ierr;
 
   std::string versionstr;
@@ -356,122 +245,18 @@ template <typename T> static inline void print(T const &opt) {
   printf("ExaGO %s built on %s\n", versionstr.c_str(), __DATE__);
 #endif
 
-  const std::string appname = _appname;
 #ifdef EXAGO_ENABLE_LOGGING
-  fmt::print("\nArguments for {}:\n", appname);
+  fmt::print("\nExaGO options\n");
 #else
-  printf("\nArguments for %s:\n", appname.c_str());
+  printf("\nExaGO options\n");
 #endif
   print(ExaGODefaultOptions::help);
   print(ExaGODefaultOptions::version);
   print(ExaGODefaultOptions::config);
   print(ExaGODefaultOptions::options_file);
 
-  // See comment at ExaGODefaultOptions
-  // print(O::network);
+  return 0;
 
-#if (EXAGO_ENABLE_IPOPT || EXAGO_ENABLE_HIOP)
-  if (appname == "opflow") {
-    print(OPFLOWOptions::model);
-    print(OPFLOWOptions::solver);
-    print(OPFLOWOptions::initialization);
-    print(OPFLOWOptions::objective);
-    print(OPFLOWOptions::genbusvoltage);
-    print(OPFLOWOptions::has_gensetpoint);
-    print(OPFLOWOptions::use_agc);
-    print(OPFLOWOptions::tolerance);
-    print(OPFLOWOptions::ignore_lineflow_constraints);
-    print(OPFLOWOptions::include_loadloss_variables);
-    print(OPFLOWOptions::loadloss_penalty);
-    print(OPFLOWOptions::include_powerimbalance_variables);
-    print(OPFLOWOptions::powerimbalance_penalty);
-
-#ifdef EXAGO_ENABLE_HIOP
-    print(OPFLOWOptions::hiop_compute_mode);
-    print(OPFLOWOptions::hiop_verbosity_level);
-
-#ifdef EXAGO_ENABLE_IPOPT
-    print(OPFLOWOptions::hiop_ipopt_debug);
-#endif
-
-#endif
-
-    // These options are temporarily ommitted. See comment under
-    // ExaGODefaultOptions.
-    //
-    // fprintf(stderr, "\t -netfile ...\n");
-    // fprintf(stderr, "\t -print_output <0|1>\n");
-    // fprintf(stderr, "\t -save_output <0|1>\n");
-    // fprintf(stderr, "\n");
-  } else if (appname == "pflow") {
-    /* pflow application driver does not take any additional arguments */
-#if (EXAGO_ENABLE_IPOPT)
-  } else if (appname == "sopflow") {
-    print(SOPFLOWOptions::sopflow_model);
-    print(SOPFLOWOptions::sopflow_solver);
-    print(SOPFLOWOptions::opflow_model);
-    print(SOPFLOWOptions::subproblem_model);
-    print(SOPFLOWOptions::subproblem_solver);
-    print(SOPFLOWOptions::ctgcfile);
-    print(SOPFLOWOptions::iscoupling);
-    print(SOPFLOWOptions::Ns);
-    print(SOPFLOWOptions::Nc);
-    print(SOPFLOWOptions::mode);
-    print(SOPFLOWOptions::enable_multicontingency);
-    print(SOPFLOWOptions::enable_multicontingency);
-    print(SOPFLOWOptions::tolerance);
-    print(SOPFLOWOptions::windgen);
-  } else if (appname == "scopflow") {
-    print(SCOPFLOWOptions::model);
-    print(SCOPFLOWOptions::solver);
-    print(SCOPFLOWOptions::subproblem_model);
-    print(SCOPFLOWOptions::subproblem_solver);
-    print(SCOPFLOWOptions::Nc);
-    print(SCOPFLOWOptions::mode);
-    print(SCOPFLOWOptions::enable_multiperiod);
-
-    print(SCOPFLOWOptions::tolerance);
-    print(SCOPFLOWOptions::dT);
-    print(SCOPFLOWOptions::duration);
-    print(SCOPFLOWOptions::windgenprofile);
-    print(SCOPFLOWOptions::ploadprofile);
-    print(SCOPFLOWOptions::qloadprofile);
-
-  } else if (appname == "tcopflow") {
-    // TODO: Update to use `ExaGOOption`s for options handling command line
-    // options
-#ifdef EXAGO_ENABLE_LOGGING
-    fmt::print("WARNING: TCOPFLOW application is not stable and potentially "
-               "very out of date.");
-#else
-    printf("WARNING: TCOPFLOW application is not stable and potentially "
-           "very out of date.");
-#endif
-    fprintf(stderr, "============== Help Options for application tcopflow "
-                    "==============\n");
-    fprintf(stderr, " General usage: ./%s <options>\n", appname.c_str());
-    fprintf(stderr, " Options:\n");
-    fprintf(stderr, "\t -netfile <netfilename>\n");
-    fprintf(stderr, "\t -tcopflow_windgenprofile <windgenproffilename>\n");
-    fprintf(stderr, "\t -tcopflow_ploadprofile <ploadprofile_filename>\n");
-    fprintf(stderr, "\t -tcopflow_qloadprofile <qloadprofile_filename>\n");
-    fprintf(stderr, "\t -tcopflow_iscoupling <0|1>\n");
-    fprintf(stderr, "\t -opflow_ignore_lineflow_constraints <0|1>\n");
-    fprintf(stderr, "\t -tcopflow_duration <Hours>\n");
-    fprintf(stderr, "\t -tcopflow_dT <Minutes>\n");
-    fprintf(stderr, "\t -tcopflow_tolerance <1e-6|...>\n");
-    fprintf(stderr, "\n");
-#endif
-  } else {
-#ifdef EXAGO_ENABLE_LOGGING
-    fmt::print("Please enter a valid application name.\n");
-#else
-    printf("Please enter a valid application name.\n");
-#endif
-  }
-#endif
-
-  std::exit(EXIT_SUCCESS);
 }
 
 /**
@@ -495,7 +280,8 @@ PetscErrorCode ExaGOPrintHelpVersionInfo(int *argc, char ***argv,
   for (; args_it != args.end(); args_it++) {
     /* Help message */
     if (*args_it == "--help" or *args_it == "-help" or *args_it == "-h") {
-      (*PetscHelpPrintf)(MPI_COMM_NULL, (appname ? appname : ""));
+      printHelp = PETSC_TRUE;
+      ExaGOHelpPrintf();
     }
 
     if (*args_it == "-c" or *args_it == "--config" or *args_it == "-config") {
@@ -527,6 +313,12 @@ PetscErrorCode ExaGOPrintHelpVersionInfo(int *argc, char ***argv,
   return 0;
 }
 
+// This function is used to suppress printing of PETSc help
+PetscErrorCode PetscHelpPrintfNone(MPI_Comm comm,const char empty[],...)
+{
+  return 0;
+}
+
 static int initialized;
 
 PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
@@ -534,8 +326,12 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
   int i;
   PetscErrorCode ierr;
   strcpy(ExaGOCurrentAppName, appname);
-  PetscHelpPrintf = &ExaGOHelpPrintf;
 
+  // Suppress printing PETSc help
+  PetscHelpPrintf = &PetscHelpPrintfNone;
+
+  printHelp = PETSC_FALSE;
+  
   /* This will print help or version info when -h or -version options are set */
   ierr = ExaGOPrintHelpVersionInfo(argc, argv, appname);
 

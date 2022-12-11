@@ -197,6 +197,108 @@ using ExaGOIntOption = ExaGOOption<int>;
 using ExaGORealOption = ExaGOOption<double>;
 using ExaGOFlagOption = ExaGOOption<void>;
 
+template <typename T>
+inline std::string ExaGOFormatOption(ExaGOOption<T> const &opt, std::size_t indent = 0,
+                              std::string indentstr = "\t") {
+  using std::is_same;
+  using U =
+      typename std::remove_reference<typename std::remove_cv<T>::type>::type;
+  std::string typestr =
+      (is_same<U, bool>::value or is_same<U, PetscBool>::value)
+          ? "bool"
+          : is_same<U, double>::value
+                ? "real"
+                : is_same<U, int>::value ? "int" : "unknown_type";
+  std::string tab = "";
+  for (int i = 0; i < indent; i++)
+    tab += "\t";
+#ifdef EXAGO_ENABLE_LOGGING
+  return fmt::format("{0}{2} {3}\n{0}{1}{4} (type: {5})\n", tab, indentstr,
+                     opt.opt,
+                     fmt::format(fmt::emphasis::bold, "{}", opt.default_value),
+                     opt.desc, typestr);
+#else
+  char sbuf[256];
+  sprintf(sbuf, "%s%s\n%s%s%s (type: %s)\n", tab.c_str(), opt.opt.c_str(),
+          tab.c_str(), indentstr.c_str(), opt.desc.c_str(), typestr.c_str());
+  return std::string(sbuf);
+#endif
+}
+
+template <>
+inline std::string ExaGOFormatOption(ExaGOOption<void> const &opt, std::size_t indent,
+                              std::string indentstr) {
+  std::string tab = "";
+  for (int i = 0; i < indent; i++)
+    tab += "\t";
+#ifdef EXAGO_ENABLE_LOGGING
+  return fmt::format("{0}{2}\n{0}{1}{3} (type: flag)\n", tab, indentstr,
+                     opt.opt, opt.desc);
+#else
+  char sbuf[256];
+  sprintf(sbuf, "%s%s\n%s%s%s (type: flag)\n", tab.c_str(), opt.opt.c_str(),
+          tab.c_str(), indentstr.c_str(), opt.desc.c_str());
+  return std::string(sbuf);
+#endif
+}
+
+template <>
+inline std::string ExaGOFormatOption(ExaGOStringOption const &opt, std::size_t indent,
+                              std::string indentstr) {
+  std::string tab = "";
+  for (int i = 0; i < indent; i++)
+    tab += "\t";
+
+  /* If there are no other possible values but just a single default value,
+   * we won't try to use parenthesis. Parens only make sense when we're
+   * demonstrating a range of possible values */
+  std::string values = (opt.possible_values.size() ? "(" : "");
+
+  /* If the argument is optional, we have a default value which we will
+   * embolden to make clear */
+#ifdef EXAGO_ENABLE_LOGGING
+  values += fmt::format(fmt::emphasis::bold, "{}{}", opt.default_value,
+                        (opt.possible_values.size() ? "|" : ""));
+#else
+  char sbuf[256];
+  sprintf(sbuf, "%s%s", opt.default_value.c_str(),
+          (opt.possible_values.size() ? "|" : ""));
+  values += std::string(sbuf);
+#endif
+  auto it = opt.possible_values.begin();
+  while (it != opt.possible_values.end()) {
+    values += *it;
+    if (++it != opt.possible_values.end())
+      values += "|";
+  }
+  values += (opt.possible_values.size() ? ")" : "");
+#ifdef EXAGO_ENABLE_LOGGING
+  return fmt::format("{0}{2} {3}\n{1}{0}{4} (type: string)\n", tab, indentstr,
+                     opt.opt, values, opt.desc);
+#else
+  sprintf(sbuf, "%s%s\n%s%s%s (type: flag)\n", tab.c_str(), opt.opt.c_str(),
+          indentstr.c_str(), tab.c_str(), opt.desc.c_str());
+  return std::string(sbuf);
+#endif
+}
+
+template <typename T> void print(T const &opt) {
+  static constexpr std::size_t indent = 1;
+  static const std::string indentstr = "\t";
+#ifdef EXAGO_ENABLE_LOGGING
+  fmt::print(ExaGOFormatOption(opt, indent, indentstr));
+  fmt::print("\n");
+#else
+  printf("%s", ExaGOFormatOption(opt, indent, indentstr).c_str());
+  printf("\n");
+#endif
+};
+
+/*
+ * printHelp - Global flag that tells applications to print help menu and exit
+ */
+extern PetscBool printHelp;
+
 /**
  * Initialize an ExaGO application.
  *
