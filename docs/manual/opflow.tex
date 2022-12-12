@@ -203,9 +203,6 @@ When using cartesian coordinates for voltages, inequality constraints (\ref{eq:o
 
   \item \hiop~ is a high-performance optimization library that implements an interior-point algorithm for solving nonlinear optimization problems. There are two solvers available from the \hiop library: Mixed sparse-dense formulation {\opflowoption{-opflow\_solver}{HIOP}}, and sparse formulation {\opflowoption{-opflow\_solver}{HIOPSPARSE}}. The library supports execution both on the CPU and the GPU. Options: \\ CPU: {\opflowoption{-opflow\_solver}{HIOP}} {\opflowoption{-opflow\_model}{POWER\_BALANCE\_HIOP}} {\opflowoption{-hiop\_compute\_mode}{CPU}} \\ GPU: \opflowoption{-opflow\_solver}{HIOP} {\opflowoption{-opflow\_model}{PBPOLRAJAHIOP}} {\opflowoption{-hiop\_compute\_mode}{GPU}} 
 
- % \item The Toolkit for Applied Optimization (\tao) is a toolkit available through \petsc for solving optimization problems. TAO includes a interior-point algorithm that is used by OPFLOW. The TAO algorithm is fully parallel, but is less robust compared to IPOPT. Currently, the TAO solver can only be used with the power balance cartesian model. Option:\\ \opflowoption{-opflow\_solver TAO} \opflowoption{-opflow\_model POWER\_BALANCE\_CARTESIAN}
-  %The option \opflowoption{-hiop\_ipopt\_debug} can be used with the CPU option in order to use an adapter that verifies the correctness of the first and second order derivates when compared to \ipopt. This may be useful when debugging experimental changes.
-
 \end{enumerate}
 
 \section{Models}\label{sec:opflow_model}
@@ -221,8 +218,6 @@ A `model' in \exago describes the representation of the underlying physics. All 
     \hline
     Power balance with polar coordinates & \pbpol & IPOPT, HIOPSPARSE & CPU\\
     \hline
-%    Power balance with cartesian coordinates & \pbcar & IPOPT, TAO & CPU\\
-%    \hline
     Power balance with polar coordinates used with HIOP & {\pbpolhiop} & \hiop & CPU/GPU\\
     \hline
     Power balance with polar coordinates used with HIOP on GPU & {\pbpolrajahiop} & \hiop & GPU\\
@@ -331,7 +326,7 @@ See table \ref{tab:opflow_options}
     \hline
     \textbf{Objective function} & \textbf{Meaning} & \textbf{Compatibility}\\ \hline
     MIN\_GEN\_COST & Minimize generation cost & All models \\ \hline
-    MIN\_GENSETPOINT\_DEVIATION & Minimize deviation (ramp up-down) from generataor set-point & POWER\_BALANCE\_POLAR model only\\ \hline
+    MIN\_GENSETPOINT\_DEVIATION & Minimize deviation (ramp up-down) from generator set-point & POWER\_BALANCE\_POLAR model only\\ \hline
     NO\_OBJ & No objective function (only feasibility) & All models \\ \hline
   \end{tabular}
 \label{tab:opflow_objtypes}
