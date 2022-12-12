@@ -5,13 +5,6 @@
 #include <iostream>
 #include <string>
 #include <regex>
-#ifdef EXAGO_ENABLE_LOGGING
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
-#include <spdlog/fmt/fmt.h>
-#include <spdlog/fmt/bundled/color.h>
-#endif
 #include <stdarg.h>
 #include <sys/stat.h>
 #include <sys/utsname.h>
