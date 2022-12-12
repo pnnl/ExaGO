@@ -152,7 +152,7 @@ void init_exago_sopflow(pybind11::module &m) {
                        .c_str());
 #else
              char sbuf[256];
-             sprintf(sbuf,"Invalid value %d for OPFLOWInitializationType enum",init);
+             sprintf(sbuf,"Invalid value %s for OPFLOWInitializationType enum",init.c_str());
              throw ExaGOError(sbuf);
 #endif
              }
@@ -237,7 +237,7 @@ void init_exago_sopflow(pybind11::module &m) {
                        .c_str());
 #else
              char sbuf[256];
-             sprintf(sbuf,"Invalid value %d for SOPFLOWGenBusVoltageType enum",volt);
+             sprintf(sbuf,"Invalid value %s for SOPFLOWGenBusVoltageType enum",volt.c_str());
              throw ExaGOError(sbuf);
 #endif
              }
