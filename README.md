@@ -1,7 +1,7 @@
 [![pipeline status](https://gitlab.pnnl.gov/exasgd/frameworks/exago/badges/master/pipeline.svg)](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/commits/master)
 
 # <b>Exa</b>scale <b>G</b>rid <b>O</b>ptimization toolkit (ExaGO<sup>TM</sup>)
-ExaGO<sup>TM</sup> is a package for solving large-scale power grid optimization problems on parallel and distributed architectures, particularly targeted for exascale machines with heteregenous architectures (GPU). It is written in C/C++ using the [PETSc](https://www.mcs.anl.gov/petsc/) library. An overview of the package is given on this page and the different links provided. For detailed information, including the different formulations used, see the [ExaGO manual](docs/manual/manual.pdf). 
+ExaGO<sup>TM</sup> is a package for solving large-scale power grid optimization problems on parallel and distributed architectures, particularly targeted for exascale machines with heteregenous architectures (GPU). It is written in C/C++ using the [PETSc](https://www.mcs.anl.gov/petsc/) library. An overview of the package is given on this page and in the different links provided. For detailed information, including the different formulations used, see the [ExaGO manual](docs/manual/manual.pdf). 
 
 ExaGO<sup>TM</sup> includes the following applications for solving different power grid optimization problems:
 
@@ -21,6 +21,8 @@ Note that not all applications can utilize all solvers yet. The following table 
 |:------:|:---------:|:-----:|:-------:|:-------:|
 | IPOPT      | Y         |  Y     | Y       | Y       | 
 | HIOP       | Y          |       |   Y      |  Y       |
+
+Addditionally note that SCOPFLOW and SOPFLOW with HIOP solver use IPOPT to solve a portion of the problem (base problem). So one must also use IPOPT when using HIOP solver for these applications.
 
 ## Installing
 

@@ -61,7 +61,7 @@ constraint $\Delta x_c$ to restrict the  deviation of decision variables
 $x_{c,0}$ from the base-case $x_{0,0}$. The bound $\Delta x_c$ could represent here, for example, the allowable reserve for each generator.
 
 \section{Solvers}
-\scopflow supports solving the optimization problem via \ipopt, \hiop, or \emph{EMPAR}. \ipopt can solve \scopflow on single rank only. \hiop supports solving the problem in parallel using a primal-decomposition algorithm. With HIOP, one can solve the subproblem either on the CPU or GPU by selecting the appropriate subproblem model and solver (see options table below).  The \emph{EMPAR} solver does not solve the security-constrained ACOPF problem, but it only solves the base-case and the contingencies independently with \opflow. It distributes the contingencies to different processes when executed in parallel.
+\scopflow supports solving the optimization problem via \ipopt, \hiop, or \emph{EMPAR}. \ipopt can solve \scopflow on single rank only. \hiop supports solving the problem in parallel using a primal-decomposition algorithm. With HIOP, one can solve the subproblem either on the CPU or GPU by selecting the appropriate subproblem model and solver (see options table below).  However, note that \emph{ExaGO needs to be built with \ipopt even when using \hiop solver.} The \emph{EMPAR} solver does not solve the security-constrained ACOPF problem, it only solves the base-case and the contingencies independently with \opflow. It distributes the contingencies to different processes when executed in parallel.
 
 \section{Input and Output}
 To execute SCOPFLOW, the following files are required:

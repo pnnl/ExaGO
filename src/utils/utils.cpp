@@ -19,6 +19,9 @@
 #include <utils.h>
 #if (EXAGO_ENABLE_IPOPT || EXAGO_ENABLE_HIOP)
 #include <opflow.h>
+#endif
+
+#if (EXAGO_ENABLE_IPOPT)
 #include <sopflow.h>
 #include <scopflow.h>
 #endif
@@ -402,6 +405,7 @@ template <typename T> static inline void print(T const &opt) {
     // fprintf(stderr, "\n");
   } else if (appname == "pflow") {
     /* pflow application driver does not take any additional arguments */
+#if (EXAGO_ENABLE_IPOPT)
   } else if (appname == "sopflow") {
     print(SOPFLOWOptions::sopflow_model);
     print(SOPFLOWOptions::sopflow_solver);
@@ -457,6 +461,7 @@ template <typename T> static inline void print(T const &opt) {
     fprintf(stderr, "\t -tcopflow_dT <Minutes>\n");
     fprintf(stderr, "\t -tcopflow_tolerance <1e-6|...>\n");
     fprintf(stderr, "\n");
+#endif
   } else {
 #ifdef EXAGO_ENABLE_LOGGING
     fmt::print("Please enter a valid application name.\n");
