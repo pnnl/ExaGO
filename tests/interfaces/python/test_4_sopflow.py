@@ -1,4 +1,6 @@
+import tempfile
 import os
+import shutil
 import pytest
 from check_preconditions import check_preconditions
 import mpi4py.rc
@@ -59,6 +61,22 @@ def run_multicontingency(solver, nscen, ncont):
     assert isinstance(obj, float)
 
     n = sopf.get_num_iterations()
+    assert isinstance(n, int)
+
+    oname = os.path.join(tempfile.gettempdir(), "sopflow_test_solution.csv")
+    sopf.save_solution(0, exago.OutputFormat.CSV, oname)
+    assert os.path.exists(oname)
+    os.unlink(oname)
+
+    oname = os.path.join(tempfile.gettempdir(), "sopflow_test_solution.m")
+    sopf.save_solution(0, exago.OutputFormat.MATPOWER, oname)
+    assert os.path.exists(oname)
+    os.unlink(oname)
+
+    oname = os.path.join(tempfile.gettempdir(), "sopflow_test_solution_dir")
+    sopf.save_solution_all(exago.OutputFormat.MATPOWER, oname)
+    assert os.path.exists(oname)
+    shutil.rmtree(oname)
 
 
 # From sopflow_multicontingency.toml:

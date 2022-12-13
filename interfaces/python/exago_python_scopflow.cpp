@@ -48,7 +48,6 @@ void init_exago_scopflow(pybind11::module &m) {
              ierr = SCOPFLOWSetNetworkData(w.scopf, filename.c_str());
              ExaGOCheckError(ierr);
            })
-
       .def("set_num_contingencies",
            [](SCOPFLOW_wrapper &w, int n) {
              PetscErrorCode ierr;
@@ -74,6 +73,14 @@ void init_exago_scopflow(pybind11::module &m) {
              ierr = SCOPFLOWSetQLoadData(w.scopf, filename.c_str());
              ExaGOCheckError(ierr);
            })
+      .def("set_load_profiles",
+           [](SCOPFLOW_wrapper &w, const std::string &pfile,
+              const std::string &qfile) {
+             PetscErrorCode ierr;
+             ierr =
+                 SCOPFLOWSetLoadProfiles(w.scopf, pfile.c_str(), qfile.c_str());
+             ExaGOCheckError(ierr);
+           })
       .def("set_wind_gen_profile",
            [](SCOPFLOW_wrapper &w, std::string filename) {
              PetscErrorCode ierr;
@@ -90,6 +97,12 @@ void init_exago_scopflow(pybind11::module &m) {
            [](SCOPFLOW_wrapper &w, double d) {
              PetscErrorCode ierr;
              ierr = SCOPFLOWSetDuration(w.scopf, d);
+             ExaGOCheckError(ierr);
+           })
+      .def("set_time_step_and_duration",
+           [](SCOPFLOW_wrapper &w, double dt, double d) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSetTimeStepandDuration(w.scopf, dt, d);
              ExaGOCheckError(ierr);
            })
       .def("set_tolerance",
@@ -340,5 +353,10 @@ void init_exago_scopflow(pybind11::module &m) {
              ExaGOCheckError(ierr);
            })
 
-      ;
+      .def("save_solution_all",
+           [](SCOPFLOW_wrapper &w, OutputFormat fmt, std::string outdir) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSaveSolutionAll(w.scopf, fmt, outdir.c_str());
+             ExaGOCheckError(ierr);
+           });
 }

@@ -251,6 +251,31 @@ void init_exago_sopflow(pybind11::module &m) {
              ExaGOCheckError(ierr);
            })
 
+      .def("flatten_contingencies",
+           [](SOPFLOW_wrapper &w, bool flag) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWFlattenContingencies(w.sopf,
+                                                static_cast<PetscBool>(flag));
+             ExaGOCheckError(ierr);
+           })
+
+      .def("set_load_profiles",
+           [](SOPFLOW_wrapper &w, const std::string &pload,
+              const std::string &qload) {
+             PetscErrorCode ierr;
+             ierr =
+                 SOPFLOWSetLoadProfiles(w.sopf, pload.c_str(), qload.c_str());
+             ExaGOCheckError(ierr);
+           })
+
+      .def("set_ignore_lineflow_constraints",
+           [](SOPFLOW_wrapper &w, bool ignore) {
+             PetscErrorCode ierr;
+             ierr =
+                 SOPFLOWSetIgnoreLineflowConstraints(w.sopf, (PetscBool)ignore);
+             ExaGOCheckError(ierr);
+           })
+
       /* Getters */
 
       .def("get_num_scenarios",
@@ -325,5 +350,27 @@ void init_exago_sopflow(pybind11::module &m) {
              ExaGOCheckError(ierr);
            })
 
-      ;
+      .def("print_solution",
+           [](SOPFLOW_wrapper &w, int isol) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWPrintSolution(w.sopf, isol);
+             ExaGOCheckError(ierr);
+           })
+
+      .def(
+          "save_solution",
+          [](SOPFLOW_wrapper &w, int n, OutputFormat fmt, std::string outfile) {
+            PetscErrorCode ierr;
+            ierr = SOPFLOWSaveSolution(w.sopf, n, fmt, outfile.c_str());
+            ExaGOCheckError(ierr);
+          })
+
+      .def("save_solution_all",
+           [](SOPFLOW_wrapper &w, OutputFormat fmt, std::string outdir) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSaveSolutionAll(w.sopf, fmt, outdir.c_str());
+             ExaGOCheckError(ierr);
+           });
+
+  ;
 }

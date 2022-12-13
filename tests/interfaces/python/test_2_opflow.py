@@ -209,7 +209,7 @@ def test_solve_opflow():
 @pytest.mark.nocomm
 @pytest.mark.MPI
 def test_obj_func():
-    '''Testing objective function value'''
+    '''Testing objective function value and iterations'''
     opf = exago.OPFLOW()
     opf.set_solver("HIOP")
     opf.set_model("POWER_BALANCE_HIOP")
@@ -224,6 +224,8 @@ def test_obj_func():
     opf.solve()
     obj = opf.get_objective()
     assert isinstance(obj, float)
+    niter = opf.get_num_iterations()
+    assert isinstance(niter, int)
 
 
 @pytest.mark.nocomm
@@ -342,6 +344,25 @@ def test_set_bus_powerimbalance_penalty_opflow():
     p = opf.get_bus_power_imbalance_penalty()
     assert isinstance(p, float)
     assert p == 999
+
+
+@pytest.mark.nocomm
+@pytest.mark.MPI
+def test_set_weight():
+    '''Testing set_weight'''
+    opf = exago.OPFLOW()
+    opf.set_weight(0.5)
+    # There is currently no opflow.get_weight()
+
+
+@pytest.mark.nocomm
+@pytest.mark.MPI
+def test_skip_options():
+    '''Testing skip_options'''
+    opf = exago.OPFLOW()
+    opf.skip_options(True)
+    opf.skip_options(False)
+    # There is currently no query method for this
 
 
 @pytest.mark.nocomm

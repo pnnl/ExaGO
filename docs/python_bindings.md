@@ -148,6 +148,7 @@ The following table assumes `opflow = exago.OPFLOW()`.
 | `OPFLOWSetLoadLossPenalty` | `opflow.set_loadloss_penalty` | |
 | `OPFLOWSetBusPowerImbalancePenalty` | `opflow.set_bus_power_imbalance_penalty` | |
 | `OPFLOWSetTolerance` | `opflow.set_tolerance` | |
+| `OPFLOWSetWeight` | `opflow.set_weight` | |
 | `PSSetGenPowerLimits` | `opflow.ps_set_gen_power_limits` | |
 | `OPFLOWGetTolerance` | `opflow.get_tolerance` | |
 | `OPFLOWGetHIOPComputeMode` | `opflow.get_hiop_compute_mode` | |
@@ -177,6 +178,10 @@ The following table assumes `opflow = exago.OPFLOW()`.
 | `OPFLOWReadMatPowerData` | `opflow.read_mat_power_data` | |
 | `OPFLOWSolutionToPS` | `opflow.solution_to_ps` | |
 | `OPFLOWSetUpPS` | `opflow.set_up_ps` | |
+| `OPFLOWSkipOptions` | `opflow.skip_options | |
+| `OPFLOWSetLinesMonitored` | | Implemented as two different methods: | |
+| |`opflow.set_lines_monitored([...])` | Specify a list of line kvlevels (type `float`) to monitor |
+| |`opflow.set_lines_monitored(n, "file")` | Read `n` line kvlevels from a file (`n=-1` for all). |
 
 #### SCOPFLOW
 
@@ -188,6 +193,7 @@ The following table assumes `scopflow = exago.SCOPFLOW()`.
 | `ContingencyFileInputFormat` enum | `exago.ContingencyFileInputFormat` enum | More details and possible values for this enum can be found in the [next section](#enums).  Currently, this is only be used as a Python enum. A string representation is not available. |
 | `SCOPFLOWSetModel` | `set_model` |  |
 | `SCOPFLOWSetNetworkData` | `set_network_data` |  |
+| `SCOPFLOWSetLoadProfiles` | `set_load_profiles` | |
 | `SCOPFLOWSetNumContingencies` | `set_num_contingencies` |  |
 | `SCOPFLOWSetContingencyData` | `set_contingency_data` |  |
 | `SCOPFLOWSetPLoadData` | `set_pload_data` |  |
@@ -195,6 +201,7 @@ The following table assumes `scopflow = exago.SCOPFLOW()`.
 | `SCOPFLOWSetWindGenProfile` | `set_wind_gen_profile` |  |
 | `SCOPFLOWSetTimeStep` | `set_time_step` |  |
 | `SCOPFLOWSetDuration` | `set_duration` |  |
+| `SCOPFLOWSetTimeStepandDuration` | `set_time_step_and_duration` |  |
 | `SCOPFLOWSetTolerance` | `set_tolerance` |  |
 | `SCOPFLOWSetVerbosityLevel` | `set_verbosity_level` |  |
 | `SCOPFLOWSetComputeMode` | `set_compute_mode` |  |
@@ -215,6 +222,7 @@ The following table assumes `scopflow = exago.SCOPFLOW()`.
 | `SCOPFLOWSolve` | `solve` |  |
 | `SCOPFLOWPrintSolution` | `print_solution` |  |
 | `SCOPFLOWSaveSolution` | `save_solution` |  |
+| `SCOPFLOWSaveSolutionAll` | `save_solution_all` |  |
 
 #### SOPFLOW
 
@@ -241,7 +249,10 @@ The following table assumes `sopflow = exago.SOPFLOW()`.
 | ` SOPFLOWSetSolver` | `set_solver` |  |
 | ` SOPFLOWSetInitializationType` | `set_initialization_type ` |  |
 | ` SOPFLOWSetGenBusVoltageType` | `set_gen_bus_voltage_type` |  |
+| ` SOPFLOWSetLoadProfiles` | `set_load_profiles` |  |
+| ` SOPFLOWSetLoadProfiles` | `set_ignore_lineflow_constraints` |  |
 | ` SOPFLOWEnableMultiContingency` | `enable_multi_contingency` |  |
+| ` SOPFLOWFlattenContingencies` | `flatten_contingencies` | |
 | ` SOPFLOWGetNumScenarios` | `get_num_scenarios` |  |
 | ` SOPFLOWGetNumIterations` | `get_num_iterations` |  |
 | ` SOPFLOWGetConvergenceStatus` | `get_convergence_status` |  |
@@ -250,6 +261,9 @@ The following table assumes `sopflow = exago.SOPFLOW()`.
 | ` SOPFLOWGetTolerance` | `get_tolerance` |  |
 | ` SOPFLOWSetUp` | `setup` |  |
 | ` SOPFLOWSolve` | `solve` |  |
+| ` SOPFLOWPrintSolution` | `print_solution` | |
+| ` SOPFLOWSaveSolution` | `save_solution` | |
+| ` SOPFLOWSaveSolutionAll` | `save_solution_all` |  |
 
 ### Enums
 

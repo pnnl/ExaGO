@@ -120,7 +120,6 @@ PETSC_EXTERN PetscErrorCode SOPFLOWSaveSolution(SOPFLOW, PetscInt, OutputFormat,
 PETSC_EXTERN PetscErrorCode SOPFLOWSaveSolutionAll(SOPFLOW, OutputFormat,
                                                    const char[]);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetConvergenceStatus(SOPFLOW, PetscBool *);
-PETSC_EXTERN PetscErrorCode SOPFLOWGetMode(SOPFLOW, PetscInt *);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetNumIterations(SOPFLOW, PetscInt *);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetTolerance(SOPFLOW, PetscReal);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetTolerance(SOPFLOW, PetscReal *);

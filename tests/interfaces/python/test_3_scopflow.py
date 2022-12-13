@@ -1,4 +1,6 @@
+import tempfile
 import os
+import shutil
 import pytest
 from check_preconditions import check_preconditions
 import mpi4py.rc
@@ -87,6 +89,17 @@ def test_tolerance_scopflow():
 
 @pytest.mark.nocomm
 @pytest.mark.MPI
+def test_set_time_step_and_duration():
+    '''Testing setting time step, duration, and both'''
+    scopf = exago.SCOPFLOW()
+    # No getters available
+    scopf.set_time_step(1.0E-04)
+    scopf.set_duration(10.0)
+    scopf.set_time_step_and_duration(1.0E-04, 10.0)
+
+
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_set_network():
     '''Test reading network data'''
     scopf = exago.SCOPFLOW()
@@ -109,6 +122,52 @@ def test_set_contingency_data():
         os.path.join(path, 'share', 'exago',
                      'datafiles', 'case9', 'case9.cont'),
         exago.ContingencyFileInputFormat.NATIVE
+    )
+
+
+@pytest.mark.nocomm
+@pytest.mark.MPI
+def test_set_load_data():
+    '''Test reading load data'''
+    scopf = exago.SCOPFLOW()
+    path = exago.prefix()
+    scopf.set_network_data(
+        os.path.join(path, 'share', 'exago',
+                     'datafiles', 'case9', 'case9mod.m'))
+    scopf.set_contingency_data(
+        os.path.join(path, 'share', 'exago',
+                     'datafiles', 'case9', 'case9.cont'),
+        exago.ContingencyFileInputFormat.NATIVE
+    )
+    scopf.set_pload_data(
+        os.path.join(path, 'share', 'exago',
+                     'datafiles', 'case9', 'load_P.csv')
+    )
+    scopf.set_qload_data(
+        os.path.join(path, 'share', 'exago',
+                     'datafiles', 'case9', 'load_Q.csv')
+    )
+
+
+@pytest.mark.nocomm
+@pytest.mark.MPI
+def test_set_load_profiles():
+    '''Test reading load profiles'''
+    scopf = exago.SCOPFLOW()
+    path = exago.prefix()
+    scopf.set_network_data(
+        os.path.join(path, 'share', 'exago',
+                     'datafiles', 'case9', 'case9mod.m'))
+    scopf.set_contingency_data(
+        os.path.join(path, 'share', 'exago',
+                     'datafiles', 'case9', 'case9.cont'),
+        exago.ContingencyFileInputFormat.NATIVE
+    )
+    scopf.set_load_profiles(
+        os.path.join(path, 'share', 'exago',
+                     'datafiles', 'case9', 'load_P.csv'),
+        os.path.join(path, 'share', 'exago',
+                     'datafiles', 'case9', 'load_Q.csv')
     )
 
 
@@ -140,3 +199,20 @@ def test_complete_scopflow_solve():
     scopf.set_mode(0)
     scopf.set_up()
     scopf.solve()
+
+    scopf.print_solution(0)
+
+    oname = os.path.join(tempfile.gettempdir(), "scopflow_test_solution.csv")
+    scopf.save_solution(0, exago.OutputFormat.CSV, oname)
+    assert os.path.exists(oname)
+    os.unlink(oname)
+
+    oname = os.path.join(tempfile.gettempdir(), "scopflow_test_solution.m")
+    scopf.save_solution(0, exago.OutputFormat.MATPOWER, oname)
+    assert os.path.exists(oname)
+    os.unlink(oname)
+
+    oname = os.path.join(tempfile.gettempdir(), "scopflow_test_solution_dir")
+    scopf.save_solution_all(exago.OutputFormat.MATPOWER, oname)
+    assert os.path.exists(oname)
+    shutil.rmtree(oname)
