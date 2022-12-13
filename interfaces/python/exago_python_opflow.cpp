@@ -347,14 +347,44 @@ void init_exago_opflow(pybind11::module &m) {
              ExaGOCheckError(ierr);
            })
 
+      .def("set_weight",
+           [](OPFLOW_wrapper &w, double wt) {
+             PetscErrorCode ierr;
+             ierr = OPFLOWSetWeight(w.opf, wt);
+             ExaGOCheckError(ierr);
+           })
+
       .def("ps_set_gen_power_limits",
            [](OPFLOW_wrapper &w, int gbus, std::string gid, double pt,
               double pb, double qt, double qb) {
              PetscErrorCode ierr;
              _p_PS *ps;
              ierr = OPFLOWGetPS(w.opf, &ps);
-             ExaGOCheckError(ierr);
              PSSetGenPowerLimits(ps, gbus, gid.c_str(), pt, pb, qt, qb);
+             ExaGOCheckError(ierr);
+           })
+
+      .def("set_lines_monitored",
+           [](OPFLOW_wrapper &w, const std::vector<double> &kvlevels) {
+             PetscErrorCode ierr;
+             std::vector<PetscScalar> tmp(kvlevels.size());
+             std::copy(kvlevels.begin(), kvlevels.end(),
+                       std::back_inserter(tmp));
+             ierr = OPFLOWSetLinesMonitored(
+                 w.opf, static_cast<PetscInt>(kvlevels.size()), &tmp[0], NULL);
+             ExaGOCheckError(ierr);
+           })
+
+      //  Note that, at the time of writing, the C/C++ implementation
+      //  of this exists, but always fails. Leaving this here for
+      //  completeness.
+      .def("set_lines_monitored",
+           [](OPFLOW_wrapper &w, const int &nkvlevels,
+              const std::string &monitorfile) {
+             PetscErrorCode ierr;
+             ierr = OPFLOWSetLinesMonitored(w.opf, (PetscInt)nkvlevels, NULL,
+                                            monitorfile.c_str());
+             ExaGOCheckError(ierr);
            })
 
       /* Getters */
@@ -560,6 +590,15 @@ void init_exago_opflow(pybind11::module &m) {
              return obj;
            })
 
+      .def("get_num_iterations",
+           [](OPFLOW_wrapper &w) -> int {
+             PetscErrorCode ierr;
+             int n;
+             ierr = OPFLOWGetNumIterations(w.opf, &n);
+             ExaGOCheckError(ierr);
+             return n;
+           })
+
       /* Everything else */
       .def("solve",
            [](OPFLOW_wrapper &w) {
@@ -586,6 +625,13 @@ void init_exago_opflow(pybind11::module &m) {
            [](OPFLOW_wrapper &w) {
              PetscErrorCode ierr;
              ierr = OPFLOWSetUpPS(w.opf);
+             ExaGOCheckError(ierr);
+           })
+
+      .def("skip_options",
+           [](OPFLOW_wrapper &w, bool skip) {
+             PetscErrorCode ierr;
+             ierr = OPFLOWUseAGC(w.opf, (PetscBool)skip);
              ExaGOCheckError(ierr);
            })
 
