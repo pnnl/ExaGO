@@ -5,6 +5,9 @@
 #include <utils.h>
 #if (EXAGO_ENABLE_IPOPT || EXAGO_ENABLE_HIOP)
 #include <opflow.h>
+#endif
+
+#if (EXAGO_ENABLE_IPOPT)
 #include <scopflow.h>
 #include <sopflow.h>
 #endif

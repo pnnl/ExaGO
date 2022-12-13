@@ -13,10 +13,15 @@ list(APPEND EXAGO_PY_SRCS exago_python_pflow.cpp)
 
 # Enable other interfaces if appropriate solvers are available
 if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
-  list(APPEND EXAGO_PY_SRCS exago_python_opflow.cpp exago_python_scopflow.cpp
+  list(APPEND EXAGO_PY_SRCS exago_python_opflow.cpp)
+  list(APPEND EXAGO_PY_LIBS ExaGO::OPFLOW)
+endif()
+
+if(EXAGO_ENABLE_IPOPT)
+  list(APPEND EXAGO_PY_SRCS exago_python_scopflow.cpp
        exago_python_sopflow.cpp
   )
-  list(APPEND EXAGO_PY_LIBS ExaGO::SOPFLOW ExaGO::SCOPFLOW ExaGO::OPFLOW)
+  list(APPEND EXAGO_PY_LIBS ExaGO::SOPFLOW ExaGO::SCOPFLOW)
 endif()
 
 # New true python bindings

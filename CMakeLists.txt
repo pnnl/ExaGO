@@ -306,16 +306,18 @@ Installation of libraries, headers, and datafiles used for testing.
 set(EXAGO_OPTIONS_FILES options/pflowoptions)
 
 if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
-  set(EXAGO_OPTIONS_FILES
-      ${EXAGO_OPTIONS_FILES}
-      options/opflowoptions
-      options/scopflowoptions
-      options/sopflowoptions
-      options/tcopflowoptions
-      options/hiop.options
-      options/ipopt.opt
+  set(EXAGO_OPTIONS_FILES ${EXAGO_OPTIONS_FILES} options/opflowoptions
+                          options/hiop.options
   )
 endif()
+
+if(EXAGO_ENABLE_IPOPT)
+  set(EXAGO_OPTIONS_FILES
+      ${EXAGO_OPTIONS_FILES} options/scopflowoptions options/sopflowoptions
+      options/tcopflowoptions options/ipopt.opt
+  )
+endif()
+
 
 # Install options files
 install(FILES ${EXAGO_OPTIONS_FILES} DESTINATION ${EXAGO_OPTIONS_DIR})
