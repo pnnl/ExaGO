@@ -11,7 +11,7 @@ export MY_CLUSTER=newell
 module purge
 
 # Load system modules
-module load gcc/8.5.0
+module load gcc/10.2.0
 module load openmpi/4.1.4
 module load cuda/11.4
 module load python/miniconda3.8
