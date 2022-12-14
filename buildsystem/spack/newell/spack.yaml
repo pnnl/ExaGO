@@ -1,7 +1,7 @@
 spack:
   specs:
-  - exago@develop+cuda%gcc@8.5.0 cuda_arch=70
-  - exago@develop+cuda%gcc@8.5.0 cuda_arch=70
+  - exago@develop+cuda%gcc@10.2.0 cuda_arch=70
+  - exago@develop+cuda%gcc@10.2.0 cuda_arch=70
   view: false
   concretizer:
     unify: when_possible
@@ -28,7 +28,7 @@ spack:
     ipopt:
       require: '@3.12.10~metis+coinhsl~mumps'
     raja:
-      require: '~examples~exercises'
+      require: ~examples~exercises
     umpire:
       require: ~openmp~examples
     petsc:
@@ -45,10 +45,10 @@ spack:
         - openmpi
     openmpi:
       externals:
-      - spec: openmpi@4.1.4%gcc@8.5.0
+      - spec: openmpi@4.1.4%gcc@10.2.0
         modules:
         - openmpi/4.1.4
-        prefix: /share/apps/openmpi/4.1.4/gcc/8.5.0
+        prefix: /share/apps/openmpi/4.1.4/gcc/10.2.0
       buildable: false
     cuda:
       externals:
@@ -58,12 +58,38 @@ spack:
       buildable: false
   compilers:
   - compiler:
+      spec: gcc@11.2.0
+      paths:
+        cc: /share/apps/gcc/11.2.0/bin/gcc
+        cxx: /share/apps/gcc/11.2.0/bin/g++
+        f77: /share/apps/gcc/11.2.0/bin/gfortran
+        fc: /share/apps/gcc/11.2.0/bin/gfortran
+      flags: {}
+      operating_system: centos8
+      target: ppc64le
+      modules: []
+      environment: {}
+      extra_rpaths: []
+  - compiler:
       spec: gcc@8.5.0
       paths:
         cc: /usr/bin/gcc
         cxx: /usr/bin/g++
         f77: /usr/bin/gfortran
         fc: /usr/bin/gfortran
+      flags: {}
+      operating_system: centos8
+      target: ppc64le
+      modules: []
+      environment: {}
+      extra_rpaths: []
+  - compiler:
+      spec: gcc@10.2.0
+      paths:
+        cc: /share/apps/gcc/10.2.0/bin/gcc
+        cxx: /share/apps/gcc/10.2.0/bin/g++
+        f77: /share/apps/gcc/10.2.0/bin/gfortran
+        fc: /share/apps/gcc/10.2.0/bin/gfortran
       flags: {}
       operating_system: centos8
       target: ppc64le
