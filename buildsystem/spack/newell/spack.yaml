@@ -34,7 +34,7 @@ spack:
     umpire:
       require: ~openmp~examples
     petsc:
-      require: ~hypre~superlu-dist~hdf5~metis
+      require: '@3.18.0~hypre~superlu-dist~hdf5~metis'
     python:
       externals:
       - spec: python@3.8.5
