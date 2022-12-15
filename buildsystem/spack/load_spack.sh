@@ -62,6 +62,11 @@ spack env activate -p $SPACKENV && \
 # Print relevant spack config for sanity check of environment.
 echo "spack configuration will be installed into $SPACK_INSTALL" && \
 mkdir -p $SPACK_INSTALL && \
-mkdir -p $SPACK_CACHE && \
-spack config get config
+echo "cache folder for spack is $SPACK_CACHE" && \
+mkdir -p $SPACK_CACHE
+
+return_code=$?
+if [ $return_code -eq 0 ] && [ "$1" = "-v" ]; then
+ spack config get config
+fi
 

@@ -1,7 +1,7 @@
 spack:
   specs:
-  - exago@develop%clang@14.0.0 amdgpu_target=gfx90a
-  - exago@develop%clang@14.0.0 amdgpu_target=gfx90a
+  - exago@develop%clang@14.0.2 amdgpu_target=gfx90a
+  - exago@develop%clang@14.0.2 amdgpu_target=gfx90a
   view: false
   concretizer:
     unify: when_possible
@@ -35,7 +35,7 @@ spack:
       environment: {}
       extra_rpaths: []
   - compiler:
-      spec: clang@14.0.0
+      spec: clang@14.0.2
       paths:
         cc: /opt/rocm-5.4.0/llvm/bin/clang
         cxx: /opt/rocm-5.4.0/llvm/bin/clang++
@@ -68,7 +68,7 @@ spack:
     umpire:
       require: ~examples
     raja:
-      require: ~examples~exercises'
+      require: ~examples~exercises
     coinhsl:
       require: '@2019.05.21'
     libiconv:
