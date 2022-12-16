@@ -1,14 +1,13 @@
 #!/bin/bash
 
-#SBATCH -A csc359_crusher
-#SBATCH --reservation=hack4
-#SBATCH -p batch
-#SBATCH -t 240
+#SBATCH -A exasgd
+#SBATCH -p incline
 #SBATCH -N 1
-#SBATCH -c 32
-#SBATCH -J exasgd_spack_install
-#SBATCH -o spack_install.%J
-#SBATCH -e spack_install.%J
+#SBATCH -n 64
+#SBATCH -J exago_spack
+#SBATCH -o spack_install.%J.output
+#SBATCH -e spack_install.%J.output
+#SBTACH -t 240
 
 exit() {
   # Clear all trap handlers so this isn't echo'ed multiple times, potentially
@@ -42,23 +41,14 @@ cleanup() {
   exit $2
 }
 
-# Configure https proxy because spack is going to do some things with git
-export all_proxy="socks://proxy.ccs.ornl.gov:3128"
-export ftp_proxy="ftp://proxy.ccs.ornl.gov:3128"
-export http_proxy="http://proxy.ccs.ornl.gov:3128"
-export https_proxy="http://proxy.ccs.ornl.gov:3128"
-export HTTP_PROXY="http://proxy.ccs.ornl.gov:3128"
-export HTTPS_PROXY="http://proxy.ccs.ornl.gov:3128"
-export proxy="proxy.ccs.ornl.gov:3128"
-export no_proxy='localhost,127.0.0.0/8,*.ccs.ornl.gov,*.olcf.ornl.gov,*.ncrc.gov'
-
 
 # Assuming that you already have a binary mirror configured
 # TODO - copy over coinhsl tarball beforehand?
-export MY_CLUSTER=crusher
+export MY_CLUSTER=incline
+cp /qfs/projects/exasgd/src/coinhsl-archive-2019.05.21.tar.gz . && \
 . buildsystem/spack/load_spack.sh && \
 spack develop --no-clone --path=$(pwd) exago@develop && \
-buildsystem/spack/configure_modules.sh 32
+buildsystem/spack/configure_modules.sh 24
 
 EXIT_CODE=$?
 # Required to trigger trap handler
