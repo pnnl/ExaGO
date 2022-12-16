@@ -62,9 +62,18 @@ spack:
     exago:
       require: ~python+raja+hiop+rocm+ipopt
     hiop:
-      require: '@develop+sparse+mpi+raja+rocm+ginkgo+kron'
+      # Ginkgo Build error on crusher
+      # Suite-sparse giving issues on crusher, so no kron?
+      require: '@develop+sparse+mpi+raja+rocm~ginkgo+kron'
     ipopt:
       require: '@3.12.10~metis+coinhsl~mumps'
+    amdlibflame:
+      require: 'threads=openmp'
+    amdblis:
+      variants: threads=openmp
+    openblas:
+      require: '@3.20.0'
+      variants: threads=none
     umpire:
       require: ~examples
     raja:
@@ -104,8 +113,6 @@ spack:
       variants: ~wrapperrpath
     ncurses:
       variants: +termlib
-    openblas:
-      variants: threads=openmp
     python:
       externals:
       - spec: python@3.9.12
