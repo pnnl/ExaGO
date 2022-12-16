@@ -3,7 +3,7 @@
 #SBATCH -A exasgd
 #SBATCH -p incline
 #SBATCH -N 1
-#SBATCH -n 64
+#SBATCH --exclusive
 #SBATCH -J exago_spack
 #SBATCH -o spack_install.%J.output
 #SBATCH -e spack_install.%J.output
