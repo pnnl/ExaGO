@@ -10,3 +10,4 @@
 [submodule "tpl/spack"]
 	path = tpl/spack
 	url = https://github.com/CameronRutherford/spack.git
+	branch = rocm-exago-raja-dev

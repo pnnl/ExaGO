@@ -64,7 +64,7 @@ workflow:
 
       # jobid used in pnnl_after_script_template to cancel job if cancelled or
       # timed out by gitlab through the UI
-      jobid=$(sbatch --export=ALL -A EXASGD --gres=gpu:1 --ntasks=3 -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/buildsystem/build.sh $SCRIPT_ARGS)
+      jobid=$(sbatch --export=ALL -A EXASGD --gres=gpu:1 --ntasks=3 -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/buildsystem/build.sh $BUILD_TYPE $JOB_TYPE)
       export jobid=$(echo $jobid | cut -f4 -d' ')
       # Unique jobid filename for this job
       echo $jobid > "$WORKDIR/jobid_${jobid}"
@@ -208,6 +208,10 @@ variables:
     - &rule_no_ascent_rebuild
       if: '$CI_COMMIT_TITLE =~ /\[ascent-rebuild\]/'
       when: never 
+      # Only run when the commit **DOES NOT** contains "[incline-rebuild]" 
+    - &rule_no_incline_rebuild
+      if: '$CI_COMMIT_TITLE =~ /\[incline-rebuild\]/'
+      when: never
       # Only run when the commit **DOES NOT** contains "[newell-test]"
     - &rule_no_newell_test
       if: '$CI_COMMIT_TITLE =~ /\[newell-test\]/'
@@ -220,6 +224,10 @@ variables:
     - &rule_no_ascent_test
       if: '$CI_COMMIT_TITLE =~ /\[ascent-test\]/'
       when: never
+    # Only run when the commit **DOES NOT** contains "[incline-test]"
+    - &rule_no_incline_test
+      if: '$CI_COMMIT_TITLE =~ /\[incline-test\]/'
+      when: never
 
 .non_hpc_job:
   needs: []
@@ -229,9 +237,11 @@ variables:
     - *rule_no_newell_rebuild
     - *rule_no_deception_rebuild
     - *rule_no_ascent_rebuild
+    - *rule_no_incline_rebuild
     - *rule_no_newell_test
     - *rule_no_deception_test
     - *rule_no_ascent_test
+    - *rule_no_incline_test
     - *rule_1
     - *rule_2
     - *rule_3
@@ -247,7 +257,7 @@ variables:
     - .pnnl_script_template
   variables:
     OUTPUT_SUFFIX: "_build"
-    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
+    BUILD_TYPE: " --build-only "
 
 .cluster_test:
   stage: test
@@ -258,7 +268,7 @@ variables:
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    BUILD_TYPE: " --test-only "
     CTESTARGS: "--timeout 240 --output-on-failure -E Python"
     OUTPUT_SUFFIX: "_test"
 
@@ -272,7 +282,7 @@ variables:
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    BUILD_TYPE: " --test-only "
     CTESTARGS: "--timeout 240 --output-on-failure -R Python"
     OUTPUT_SUFFIX: "_test_python"
 
@@ -281,28 +291,50 @@ variables:
     - *rule_no_newell_rebuild
     - *rule_no_deception_rebuild
     - *rule_no_ascent_rebuild
+    - *rule_no_incline_rebuild
     - *rule_no_newell_test
     - *rule_no_ascent_test
+    - *rule_no_incline_test
     - *rule_1
     - *rule_2
     - *rule_3
   variables:
     MY_CLUSTER: "deception"
     WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+    JOB_TYPE: " --job=gcc-cuda "
 
 .newell:
   rules:
     - *rule_no_newell_rebuild
     - *rule_no_deception_rebuild
     - *rule_no_ascent_rebuild
+    - *rule_no_incline_rebuild
     - *rule_no_deception_test
     - *rule_no_ascent_test
+    - *rule_no_incline_test
     - *rule_1
     - *rule_2
     - *rule_3
   variables:
     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
     MY_CLUSTER: "newell"
+    JOB_TYPE: " --job=gcc-cuda "
+
+.incline:
+  rules:
+    - *rule_no_newell_rebuild
+    - *rule_no_deception_rebuild
+    - *rule_no_ascent_rebuild
+    - *rule_no_incline_rebuild
+    - *rule_no_deception_test
+    - *rule_no_ascent_test
+    - *rule_no_incline_test
+    - *rule_1
+    - *rule_2
+    - *rule_3
+  variables:
+    WORKDIR_SUFFIX: "incline-clang-hip-build"
+    MY_CLUSTER: "incline"
 
 .module_rebuild:
   needs: []
@@ -416,6 +448,13 @@ Deception Build:
     - .cluster_build
     - .deception
 
+Incline Build:
+  extends:
+    - .cluster_build
+    - .incline
+  variables:
+    JOB_TYPE: " --job=clang-hip "
+
 # -- Test Stage
 Newell Test:
   extends:
@@ -429,6 +468,13 @@ Deception Test:
     - .deception
   needs: ['Deception Build']
 
+Incline Test:
+  extends:
+    - .cluster_test
+    - .incline
+  variables:
+    JOB_TYPE: " --job=gcc-cuda "
+
 Newell Py Test:
   extends:
     - .cluster_py_test
@@ -440,6 +486,14 @@ Deception Py Test:
     - .cluster_py_test
     - .deception
   needs: ['Deception Build']
+
+Incline Py Test:
+  extends:
+    - .cluster_py_test
+    - .incline
+  needs: ['Incline Build']
+  variables:
+    JOB_TYPE: " --job=gcc-cuda "
 
 Deception Module Rebuild:
   extends: .module_rebuild
@@ -460,4 +514,15 @@ Newell Module Rebuild:
   variables:
     MY_CLUSTER: "newell"
     WORKDIR_SUFFIX: "spack_newell"
+
+Incline Module Rebuild:
+  extends: .module_rebuild
+  rules:
+    - if: '$CI_COMMIT_TITLE =~ /\[incline-rebuild\]/'
+      when: always
+    - when: manual
+  variables:
+    MY_CLUSTER: "incline"
+    WORKDIR_SUFFIX: "spack_incline"
+
 # ---

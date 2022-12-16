@@ -86,7 +86,9 @@ spack:
     hiop:
       # Currently hiprand and rocrand aren't installed on Incline,
       # So we must disable ginkgo
-      require: '@develop+sparse+mpi+raja+rocm~ginkgo+kron'
+      # Currently mpfr fails to install,
+      # So we must disable kron
+      require: '@develop+sparse+mpi+raja+rocm~ginkgo~kron'
     ipopt:
       require: '@3.12.10~metis+coinhsl~mumps'
     coinhsl:
