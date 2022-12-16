@@ -32,6 +32,8 @@
 
       if [[ $MY_CLUSTER = "deception" ]]; then
         export SLURM_Q=`perl ./buildsystem/pnnl/findIdleDLNodes.pl`
+      elif [[ $MY_CLUSTER = "incline" ]]; then
+        export SLURM_Q='incline'
       else
         export SLURM_Q=`perl ./buildsystem/pnnl/findIdleNewellNodes.pl`
       fi
@@ -249,7 +251,6 @@ SVC Account Cleanup:
 Newell Build:
   stage: build
   variables:
-    SLURM_Q: "newell_shared"
     MY_CLUSTER: "newell"
     OUTPUT_SUFFIX: "_build"
     SCRIPT_ARGS: " --build-only --job=gcc-cuda "
@@ -266,7 +267,6 @@ Newell Test:
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
-    SLURM_Q: "newell_shared"
     MY_CLUSTER: "newell"
     CTESTARGS: "--output-on-failure -E Python"
     OUTPUT_SUFFIX: "_test"
@@ -285,7 +285,6 @@ Newell Py Test:
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
-    SLURM_Q: "newell8"
     MY_CLUSTER: "newell"
     CTESTARGS: "--output-on-failure -R Python"
     OUTPUT_SUFFIX: "_test_python"
@@ -317,7 +316,6 @@ Newell Module Rebuild:
 Deception Build:
   stage: build
   variables:
-    SLURM_Q: "dl_shared"
     MY_CLUSTER: "deception"
     OUTPUT_SUFFIX: "_build"
     SCRIPT_ARGS: " --build-only --job=gcc-cuda "
@@ -334,7 +332,6 @@ Deception Test:
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
-    SLURM_Q: "dl_shared"
     MY_CLUSTER: "deception"
     CTESTARGS: "--output-on-failure -E Python"
     OUTPUT_SUFFIX: "_test"
@@ -353,7 +350,6 @@ Deception Py Test:
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
-    SLURM_Q: "dl_shared"
     MY_CLUSTER: "deception"
     CTESTARGS: "--output-on-failure -R Python"
     OUTPUT_SUFFIX: "_test_python"
@@ -376,6 +372,75 @@ Deception Module Rebuild:
     GIT_STRATEGY: clone
     MY_CLUSTER: "deception"
     WORKDIR_SUFFIX: "spack_deception"
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_module_script_template
+    - .pnnl_rules
+  allow_failure: true
+
+Incline Build:
+  # Temporary allow failure as build isn't passing
+  allow_failure: true
+  stage: build
+  variables:
+    MY_CLUSTER: "incline"
+    OUTPUT_SUFFIX: "_build"
+    SCRIPT_ARGS: " --build-only --job=clang-hip "
+    WORKDIR_SUFFIX: "incline-clang-hip-build"
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+    - .pnnl_rules
+
+Incline Test:
+  # Temporary allow failure as build isn't passing
+  allow_failure: true
+  stage: test
+  dependencies:
+    - 'Incline Build'
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+    MY_CLUSTER: "incline"
+    CTESTARGS: "--output-on-failure -E Python"
+    OUTPUT_SUFFIX: "_test"
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "incline-clang-hip-build"
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+    - .pnnl_after_script_template
+    - .pnnl_rules
+
+Incline Py Test:
+  stage: test
+  dependencies:
+    - 'Deception Build'
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+    MY_CLUSTER: "incline"
+    CTESTARGS: "--output-on-failure -R Python"
+    OUTPUT_SUFFIX: "_test_python"
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    WORKDIR_SUFFIX: "incline-clang-hip-build"
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+      # No after_script as only one test per platform cleans up
+    - .pnnl_rules
+  allow_failure: true
+
+Deception Module Rebuild:
+  stage: .pre
+  when: manual
+  # Only for manual pipelines in MRs
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  variables:
+    GIT_STRATEGY: clone
+    MY_CLUSTER: "incline"
+    WORKDIR_SUFFIX: "spack_incline"
   extends:
     - .pnnl_tags_template
     - .pnnl_module_script_template
