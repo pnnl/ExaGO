@@ -431,7 +431,7 @@ Incline Py Test:
     - .pnnl_rules
   allow_failure: true
 
-Deception Module Rebuild:
+Incline Module Rebuild:
   stage: .pre
   when: manual
   # Only for manual pipelines in MRs
