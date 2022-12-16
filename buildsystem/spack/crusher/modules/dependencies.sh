@@ -31,32 +31,38 @@ module load perl-5.36.0-clang-14.0.2-efnilou
 module load cmake-3.20.6-clang-14.0.2-2s4lu26
 # blt@0.4.1%clang@14.0.2 build_system=generic arch=linux-sles15-zen3
 module load blt-0.4.1-clang-14.0.2-64jstoj
-# hip@5.4.0%clang@14.0.2~ipo build_system=cmake build_type=Release patches=ca523f1 arch=linux-sles15-zen3
-module load hip-5.4.0-clang-14.0.2-pwib5ib
-# hsa-rocr-dev@5.4.0%clang@14.0.2+image~ipo+shared build_system=cmake build_type=Release patches=71e6851 arch=linux-sles15-zen3
-module load hsa-rocr-dev-5.4.0-clang-14.0.2-noz3nbq
-# llvm-amdgpu@5.4.0%clang@14.0.2~ipo~link_llvm_dylib~llvm_dylib~openmp+rocm-device-libs build_system=cmake build_type=Release patches=a08bbe1 arch=linux-sles15-zen3
-module load llvm-amdgpu-5.4.0-clang-14.0.2-3mfupqd
+# hip@5.2.0%clang@14.0.2~ipo build_system=cmake build_type=Release patches=959d1fe arch=linux-sles15-zen3
+module load hip-5.2.0-clang-14.0.2-bd2h4ej
+# hsa-rocr-dev@5.2.0%clang@14.0.2+image~ipo+shared build_system=cmake build_type=Release patches=71e6851 arch=linux-sles15-zen3
+module load hsa-rocr-dev-5.2.0-clang-14.0.2-2ujoy4f
+# llvm-amdgpu@5.2.0%clang@14.0.2~ipo~link_llvm_dylib~llvm_dylib~openmp+rocm-device-libs build_system=cmake build_type=Release patches=a08bbe1 arch=linux-sles15-zen3
+module load llvm-amdgpu-5.2.0-clang-14.0.2-j2ldgoy
 # camp@0.2.3%clang@14.0.2~cuda~ipo~openmp+rocm~tests amdgpu_target=gfx90a build_system=cmake build_type=RelWithDebInfo arch=linux-sles15-zen3
-module load camp-0.2.3-clang-14.0.2-a5r5kdz
+module load camp-0.2.3-clang-14.0.2-zvzuiwe
 # cray-mpich@8.1.16%gcc@11.2.0+wrappers build_system=generic arch=linux-sles15-zen3
 module load cray-mpich-8.1.16-gcc-11.2.0-52rceh6
 # coinhsl@2019.05.21%clang@14.0.2+blas build_system=autotools arch=linux-sles15-zen3
 module load coinhsl-2019.05.21-clang-14.0.2-577fc5o
-# hipblas@5.4.0%clang@14.0.2~ipo build_system=cmake build_type=Release arch=linux-sles15-zen3
-module load hipblas-5.4.0-clang-14.0.2-wuoffuc
-# hipsparse@5.4.0%clang@14.0.2~ipo build_system=cmake build_type=Release arch=linux-sles15-zen3
-module load hipsparse-5.4.0-clang-14.0.2-piqjghe
+# hipblas@5.2.0%clang@14.0.2~ipo build_system=cmake build_type=Release arch=linux-sles15-zen3
+module load hipblas-5.2.0-clang-14.0.2-qqixtuf
+# hipsparse@5.2.0%clang@14.0.2~ipo build_system=cmake build_type=Release arch=linux-sles15-zen3
+module load hipsparse-5.2.0-clang-14.0.2-7mkrl5q
+# rocprim@5.2.0%clang@14.0.2~ipo amdgpu_target=auto build_system=cmake build_type=Release arch=linux-sles15-zen3
+module load rocprim-5.2.0-clang-14.0.2-q6h7yze
+# rocrand@5.2.0%clang@14.0.2~ipo amdgpu_target=auto build_system=cmake build_type=Release patches=a35e689 arch=linux-sles15-zen3
+module load rocrand-5.2.0-clang-14.0.2-7f2icji
+# rocthrust@5.2.0%clang@14.0.2~ipo amdgpu_target=auto build_system=cmake build_type=Release arch=linux-sles15-zen3
+module load rocthrust-5.2.0-clang-14.0.2-4fj4kzx
+# ginkgo@1.5.0.glu_experimental%clang@14.0.2~cuda~develtools~full_optimizations~hwloc~ipo+mpi~oneapi+openmp+rocm+shared amdgpu_target=gfx90a build_system=cmake build_type=Debug patches=ba0956e arch=linux-sles15-zen3
+module load ginkgo-1.5.0.glu_experimental-clang-14.0.2-t3azux5
 # libflame@5.2.0%clang@14.0.2~debug+lapack2flame+shared+static build_system=autotools patches=bf75a5b,c5cae9e threads=none arch=linux-sles15-zen3
 module load libflame-5.2.0-clang-14.0.2-alv4ovq
 # magma@2.7.0%clang@14.0.2~cuda+fortran~ipo+rocm+shared amdgpu_target=gfx90a build_system=cmake build_type=RelWithDebInfo arch=linux-sles15-zen3
-module load magma-2.7.0-clang-14.0.2-pmcvrg2
+module load magma-2.7.0-clang-14.0.2-q6qrfml
 # metis@5.1.0%clang@14.0.2~gdb~int64~ipo~real64+shared build_system=cmake build_type=RelWithDebInfo patches=4991da9,93a7903 arch=linux-sles15-zen3
 module load metis-5.1.0-clang-14.0.2-og6d6pl
-# rocprim@5.4.0%clang@14.0.2~ipo amdgpu_target=auto build_system=cmake build_type=Release arch=linux-sles15-zen3
-module load rocprim-5.4.0-clang-14.0.2-uyov2zt
 # raja@0.14.0%clang@14.0.2~cuda~examples~exercises~ipo~openmp+rocm+shared~tests amdgpu_target=gfx90a build_system=cmake build_type=RelWithDebInfo arch=linux-sles15-zen3
-module load raja-0.14.0-clang-14.0.2-rljmzgw
+module load raja-0.14.0-clang-14.0.2-hdnlv2f
 # gmp@6.2.1%clang@14.0.2 build_system=autotools libs=shared,static arch=linux-sles15-zen3
 module load gmp-6.2.1-clang-14.0.2-judyqxq
 # libsigsegv@2.13%clang@14.0.2 build_system=autotools arch=linux-sles15-zen3
@@ -78,12 +84,12 @@ module load mpfr-4.1.0-clang-14.0.2-yh2d4ju
 # suite-sparse@5.13.0%clang@14.0.2~cuda~graphblas~openmp+pic build_system=generic arch=linux-sles15-zen3
 module load suite-sparse-5.13.0-clang-14.0.2-6yyi42p
 # umpire@6.0.0%clang@14.0.2+c~cuda~device_alloc~deviceconst~examples~fortran~ipo~numa~openmp+rocm+shared amdgpu_target=gfx90a build_system=cmake build_type=RelWithDebInfo tests=none arch=linux-sles15-zen3
-module load umpire-6.0.0-clang-14.0.2-kjcoeoj
-# hiop@develop%clang@14.0.2~cuda+deepchecking~ginkgo~ipo~jsrun+kron+mpi+raja+rocm~shared+sparse amdgpu_target=gfx90a build_system=cmake build_type=RelWithDebInfo arch=linux-sles15-zen3
-module load hiop-develop-clang-14.0.2-ztyfcac
+module load umpire-6.0.0-clang-14.0.2-4o5bvyt
+# hiop@develop%clang@14.0.2~cuda+deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja+rocm~shared+sparse amdgpu_target=gfx90a build_system=cmake build_type=RelWithDebInfo arch=linux-sles15-zen3
+module load hiop-develop-clang-14.0.2-zulvsjb
 # ipopt@3.12.10%clang@14.0.2+coinhsl~debug~metis~mumps build_system=autotools arch=linux-sles15-zen3
 module load ipopt-3.12.10-clang-14.0.2-3m7fado
 # petsc@3.18.2%clang@14.0.2~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~tetgen~trilinos~valgrind build_system=generic clanguage=C arch=linux-sles15-zen3
 module load petsc-3.18.2-clang-14.0.2-47vo56z
 # exago@develop%clang@14.0.2~cuda+hiop~ipo+ipopt+mpi~python+raja+rocm amdgpu_target=gfx90a build_system=cmake build_type=RelWithDebInfo arch=linux-sles15-zen3
-## module load exago-develop-clang-14.0.2-mp2a6tx
+## module load exago-develop-clang-14.0.2-nzh2yih
