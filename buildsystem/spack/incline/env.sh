@@ -2,6 +2,8 @@
 
 # Configure python
 module load python/3.7.0
+module load rocm/5.3.0
+module load cmake/3.21.4
 
 export SPACK_INSTALL=/qfs/projects/exasgd/src/ci-incline
 export SPACK_MODULES=test-modules

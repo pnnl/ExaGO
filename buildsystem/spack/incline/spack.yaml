@@ -1,7 +1,6 @@
 spack:
   specs:
-  - exago@develop amdgpu_target=gfx90a
-  - exago@develop amdgpu_target=gfx90a
+  - exago@develop%gcc@10.2.0 amdgpu_target=gfx90a
   view: false
   concretizer:
     unify: when_possible
@@ -59,12 +58,12 @@ spack:
       environment: {}
       extra_rpaths: []
   - compiler:
-      spec: rocmcc@5.3.0
+      spec: rocmcc@4.5.1
       paths:
-        cc: /opt/rocm-5.3.0/llvm/bin/amdclang
-        cxx: /opt/rocm-5.3.0/llvm/bin/amdclang++
-        f77: /opt/rocm-5.3.0/llvm/bin/amdflang
-        fc: /opt/rocm-5.3.0/llvm/bin/amdflang
+        cc: /opt/rocm-4.5.1/llvm/bin/amdclang
+        cxx: /opt/rocm-4.5.1/llvm/bin/amdclang++
+        f77: /opt/rocm-4.5.1/llvm/bin/amdflang
+        fc: /opt/rocm-4.5.1/llvm/bin/amdflang
       flags: {}
       operating_system: centos7
       target: x86_64
@@ -84,11 +83,7 @@ spack:
     exago:
       require: ~python+raja+hiop+rocm+ipopt
     hiop:
-      # Currently hiprand and rocrand aren't installed on Incline,
-      # So we must disable ginkgo
-      # Currently mpfr fails to install,
-      # So we must disable kron
-      require: '@develop+sparse+mpi+raja+rocm~ginkgo~kron'
+      require: '@0.7.1+sparse+mpi+raja+rocm~ginkgo~kron'
     ipopt:
       require: '@3.12.10~metis+coinhsl~mumps'
     coinhsl:
@@ -97,42 +92,39 @@ spack:
       require: ~examples
     raja:
       require: ~examples~exercises
+    magma:
+      require: '@2.6.2'
     petsc:
       require: ~hypre~superlu-dist~hdf5~metis
     binutils:
       variants: +ld +gold +headers +libiberty ~nls
     elfutils:
       variants: +bzip2 ~nls +xz
-    gmp:
-      buildable: false
-      externals:
-      - spec: gmp@6.2.1
-        modules:
-        - gmp/6.2.1
-    hdf5:
-      variants: +fortran +hl +shared
-      buildable: false
-      externals:
-      - spec: hdf5@1.12.1
-        modules:
-        - hdf5/1.12.1
-    libfabric:
-      buildable: false
-      externals:
-      - spec: libfabric@1.15
-        modules:
-        - libfabric/1.15.0.0
     libunwind:
       variants: +pic +xz
+    mpich:
+      variants: ~wrapperrpath
     ncurses:
       variants: +termlib
     openblas:
       variants: threads=openmp
+    openmpi:
+      externals:
+      - spec: openmpi@4.1.0
+        modules:
+        - openmpi/4.1.0
+      buildable: false
     python:
       externals:
       - spec: python@3.7.0
         modules:
         - python/3.7.0
+      buildable: false
+    perl:
+      externals:
+      - spec: perl@5.26.0
+        modules:
+        - perl/5.26.0
       buildable: false
     trilinos:
       variants: +amesos +amesos2 +anasazi +aztec +belos +boost +epetra +epetraext
@@ -141,176 +133,180 @@ spack:
         +teko +tempus +tpetra +trilinoscouplings +zoltan +zoltan2 +superlu-dist gotype=long_long
     xz:
       variants: +pic
-    openmpi:
-      buildable: false
-      externals:
-      - spec: openmpi@4.1.1
-        prefix: /share/apps/openmpi/4.1.1/gcc/8.1.0/
-        modules:
-        - openmpi/4.1.1
-    perl:
-      buildable: false
-      externals:
-      - spec: perl@5.26.0
-        modules:
-        - perl/5.26.0
-    cmake:
-      externals:
-      - spec: cmake@3.21.4
-        modules:
-        - cmake/3.21.4
-    comgr:
-      buildable: false
-      externals:
-      - spec: comgr@5.3.0
-        prefix: /opt/rocm-5.3.0/
     hip-rocclr:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: hip-rocclr@5.3.0
-        prefix: /opt/rocm-5.3.0/hip
+      - spec: hip-rocclr@4.5.1
+        prefix: /opt/rocm-4.5.1/hip
     hipblas:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: hipblas@5.3.0
-        prefix: /opt/rocm-5.3.0/
+      - spec: hipblas@4.5.1
+        prefix: /opt/rocm-4.5.1/
     hipcub:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: hipcub@5.3.0
-        prefix: /opt/rocm-5.3.0/
+      - spec: hipcub@4.5.1
+        prefix: /opt/rocm-4.5.1/
     hipfft:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: hipfft@5.3.0
-        prefix: /opt/rocm-5.3.0/
+      - spec: hipfft@4.5.1
+        prefix: /opt/rocm-4.5.1/
     hipsparse:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: hipsparse@5.3.0
-        prefix: /opt/rocm-5.3.0/
+      - spec: hipsparse@4.5.1
+        prefix: /opt/rocm-4.5.1/
     miopen-hip:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: hip-rocclr@5.3.0
-        prefix: /opt/rocm-5.3.0/
+      - spec: hip-rocclr@4.5.1
+        prefix: /opt/rocm-4.5.1/
     miopengemm:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: miopengemm@5.3.0
-        prefix: /opt/rocm-5.3.0/
+      - spec: miopengemm@4.5.1
+        prefix: /opt/rocm-4.5.1/
     rccl:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: rccl@5.3.0
-        prefix: /opt/rocm-5.3.0/
+      - spec: rccl@4.5.1
+        prefix: /opt/rocm-4.5.1/
     rocblas:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: rocblas@5.3.0
-        prefix: /opt/rocm-5.3.0/
+      - spec: rocblas@4.5.1
+        prefix: /opt/rocm-4.5.1/
     rocfft:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: rocfft@5.3.0
-        prefix: /opt/rocm-5.3.0/
+      - spec: rocfft@4.5.1
+        prefix: /opt/rocm-4.5.1/
     rocm-clang-ocl:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: rocm-clang-ocl@5.3.0
-        prefix: /opt/rocm-5.3.0/
+      - spec: rocm-clang-ocl@4.5.1
+        prefix: /opt/rocm-4.5.1/
     rocm-dbgapi:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: rocm-dbgapi@5.3.0
-        prefix: /opt/rocm-5.3.0/
+      - spec: rocm-dbgapi@4.5.1
+        prefix: /opt/rocm-4.5.1/
     rocm-debug-agent:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: rocm-debug-agent@5.3.0
-        prefix: /opt/rocm-5.3.0/
+      - spec: rocm-debug-agent@4.5.1
+        prefix: /opt/rocm-4.5.1/
     rocm-device-libs:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: rocm-device-libs@5.3.0
-        prefix: /opt/rocm-5.3.0/
+      - spec: rocm-device-libs@4.5.1
+        prefix: /opt/rocm-4.5.1/
     rocm-gdb:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: rocm-gdb@5.3.0
-        prefix: /opt/rocm-5.3.0/
+      - spec: rocm-gdb@4.5.1
+        prefix: /opt/rocm-4.5.1/
     rocm-opencl:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: rocm-opencl@5.3.0
-        prefix: /opt/rocm-5.3.0/opencl
+      - spec: rocm-opencl@4.5.1
+        prefix: /opt/rocm-4.5.1/opencl
     rocm-smi-lib:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: rocm-smi-lib@5.3.0
-        prefix: /opt/rocm-5.3.0/
+      - spec: rocm-smi-lib@4.5.1
+        prefix: /opt/rocm-4.5.1/
     hip:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: hip@5.3.0
-        prefix: /opt/rocm-5.3.0/hip
+      - spec: hip@4.5.1
+        prefix: /opt/rocm-4.5.1/hip
         extra_attributes:
           compilers:
-            c: /opt/rocm-5.3.0/llvm/bin/clang++
-            c++: /opt/rocm-5.3.0/llvm/bin/clang++
-            hip: /opt/rocm-5.3.0/hip/bin/hipcc
-            flang: /opt/rocm-5.3.0/llvm/bin/flang
+            c: /opt/rocm-4.5.1/llvm/bin/clang++
+            c++: /opt/rocm-4.5.1/llvm/bin/clang++
+            hip: /opt/rocm-4.5.1/hip/bin/hipcc
+            flang: /opt/rocm-4.5.1/llvm/bin/flang
     llvm-amdgpu:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: llvm-amdgpu@5.3.0
-        prefix: /opt/rocm-5.3.0/llvm
+      - spec: llvm-amdgpu@4.5.1
+        prefix: /opt/rocm-4.5.1/llvm
         extra_attributes:
           compilers:
-            c: /opt/rocm-5.3.0/llvm/bin/clang++
-            cxx: /opt/rocm-5.3.0/llvm/bin/clang++
+            c: /opt/rocm-4.5.1/llvm/bin/clang++
+            cxx: /opt/rocm-4.5.1/llvm/bin/clang++
     hsakmt-roct:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: hsakmt-roct@5.3.0
-        prefix: /opt/rocm-5.3.0/
+      - spec: hsakmt-roct@4.5.1
+        prefix: /opt/rocm-4.5.1/
     hsa-rocr-dev:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: hsa-rocr-dev@5.3.0
-        prefix: /opt/rocm-5.3.0/
+      - spec: hsa-rocr-dev@4.5.1
+        prefix: /opt/rocm-4.5.1/
         extra_atributes:
           compilers:
-            c: /opt/rocm-5.3.0/llvm/bin/clang++
-            cxx: /opt/rocm-5.3.0/llvm/bin/clang++
+            c: /opt/rocm-4.5.1/llvm/bin/clang++
+            cxx: /opt/rocm-4.5.1/llvm/bin/clang++
     roctracer-dev-api:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: roctracer-dev-api@5.3.0
-        prefix: /opt/rocm-5.3.0/roctracer
+      - spec: roctracer-dev-api@4.5.1
+        prefix: /opt/rocm-4.5.1/roctracer
     rocprim:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: rocprim@5.3.0
-        prefix: /opt/rocm-5.3.0
+      - spec: rocprim@4.5.1
+        prefix: /opt/rocm-4.5.1
     rocrand:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: rocrand@5.3.0
-        prefix: /opt/rocm-5.3.0
+      - spec: rocrand@4.5.1
+        prefix: /opt/rocm-4.5.1
     rocsolver:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: rocsolver@5.3.0
-        prefix: /opt/rocm-5.3.0
+      - spec: rocsolver@4.5.1
+        prefix: /opt/rocm-4.5.1
     rocsparse:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: rocsparse@5.3.0
-        prefix: /opt/rocm-5.3.0
+      - spec: rocsparse@4.5.1
+        prefix: /opt/rocm-4.5.1
     rocthrust:
       buildable: false
+      require: '@4.5.1'
       externals:
-      - spec: rocthrust@5.3.0
-        prefix: /opt/rocm-5.3.0
+      - spec: rocthrust@4.5.1
+        prefix: /opt/rocm-4.5.1
   mirrors: {}
