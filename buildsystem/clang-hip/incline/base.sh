@@ -6,6 +6,7 @@ module purge
 
 # System modules
 module load rocm/5.3.0
+module load cmake/3.21.4
 
 # Consider changing to $(which clang) as for deception
 export CC=$(which clang)
