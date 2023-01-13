@@ -74,6 +74,9 @@ spack:
     openblas:
       require: '@3.20.0'
       variants: threads=none
+    # Hard coding magma version to avoid obj value issues
+    magma:
+      require: '@2.6.2'
     umpire:
       require: ~examples
     raja:
