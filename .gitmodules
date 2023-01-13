@@ -9,5 +9,5 @@
 	url = https://github.com/pybind/pybind11.git
 [submodule "tpl/spack"]
 	path = tpl/spack
-	url = https://github.com/CameronRutherford/spack.git
-	branch = exago-petsc-update
+	url = https://github.com/jaelynlitz/spack.git
+	branch = magma-2.7

@@ -37,10 +37,10 @@ module load camp-0.2.3-gcc-10.2.0-36lcy72
 module load openblas-0.3.20-gcc-10.2.0-x6v3mwm
 # coinhsl@2019.05.21%gcc@10.2.0+blas arch=linux-centos7-zen2
 module load coinhsl-2019.05.21-gcc-10.2.0-gkzkws6
-# ginkgo@1.5.0.glu_experimental%gcc@10.2.0+cuda~develtools~full_optimizations~hwloc~ipo~oneapi+openmp~rocm+shared build_type=Release cuda_arch=60,70,75,80 arch=linux-centos7-zen2
-module load ginkgo-1.5.0.glu_experimental-gcc-10.2.0-x73b7k3
-# magma@2.6.2%gcc@10.2.0+cuda+fortran~ipo~rocm+shared build_type=RelWithDebInfo cuda_arch=60,70,75,80 arch=linux-centos7-zen2
-module load magma-2.6.2-gcc-10.2.0-caockkq
+# ginkgo@1.5.0.glu_experimental%gcc@10.2.0+cuda~develtools~full_optimizations~hwloc~ipo~mpi~oneapi+openmp~rocm+shared build_system=cmake build_type=Debug cuda_arch=60,70,75,80 arch=linux-centos7-zen2
+module load ginkgo-1.5.0.glu_experimental-gcc-10.2.0-3o5dw4r
+# magma@2.7.0%gcc@10.2.0+cuda+fortran~ipo~rocm+shared build_system=cmake build_type=RelWithDebInfo cuda_arch=60,70,75,80 arch=linux-centos7-zen2
+module load magma-2.7.0-gcc-10.2.0-ippmisj
 # metis@5.1.0%gcc@10.2.0~gdb~int64~real64+shared build_type=Release patches=4991da9,b1225da arch=linux-centos7-zen2
 module load metis-5.1.0-gcc-10.2.0-k4z4v6l
 # openmpi@4.1.0mlx5.0%gcc@10.2.0~atomics~cuda~cxx~cxx_exceptions~gpfs~internal-hwloc~java~legacylaunchers~lustre~memchecker+romio+rsh~singularity+static+vt+wrapper-rpath fabrics=none patches=60ce20b schedulers=none arch=linux-centos7-zen2
@@ -69,14 +69,14 @@ module load mpfr-4.1.0-gcc-10.2.0-3yutkz3
 module load suite-sparse-5.10.1-gcc-10.2.0-add65sb
 # umpire@6.0.0%gcc@10.2.0+c+cuda~device_alloc~deviceconst~examples~fortran~ipo~numa~openmp~rocm~shared build_type=RelWithDebInfo cuda_arch=60,70,75,80 tests=none arch=linux-centos7-zen2
 module load umpire-6.0.0-gcc-10.2.0-lrjkuun
-# hiop@develop%gcc@10.2.0+cuda~cusolver+deepchecking~full_optimizations+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_type=RelWithDebInfo cuda_arch=60,70,75,80 arch=linux-centos7-zen2
-module load hiop-develop-gcc-10.2.0-bgzxttu
+# hiop@0.7.1%gcc@10.2.0+cuda~cusolver_lu+deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=RelWithDebInfo cuda_arch=60,70,75,80 arch=linux-centos7-zen2
+module load hiop-0.7.1-gcc-10.2.0-2qkdpwg
 # ipopt@3.12.10%gcc@10.2.0+coinhsl~debug~metis~mumps arch=linux-centos7-zen2
 module load ipopt-3.12.10-gcc-10.2.0-c3chb6f
 # python@3.9.12%gcc@10.2.0+bz2+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tix~tkinter~ucs4+uuid+zlib patches=0d98e93,4c24573,f2fd060 arch=linux-centos7-zen2
 module load python-3.9.12-gcc-10.2.0-d4tck3b
-# petsc@3.18.0%gcc@10.2.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~tetgen~trilinos~valgrind clanguage=C patches=2daeca7 arch=linux-centos7-zen2
-module load petsc-3.18.0-gcc-10.2.0-tkozbjd
+# petsc@3.18.3%gcc@10.2.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~tetgen~trilinos~valgrind build_system=generic clanguage=C arch=linux-centos7-zen2
+module load petsc-3.18.3-gcc-10.2.0-sos5biy
 # py-pip@22.1.2%gcc@10.2.0 arch=linux-centos7-zen2
 module load py-pip-22.1.2-gcc-10.2.0-2kqxny4
 # py-setuptools@65.0.0%gcc@10.2.0 arch=linux-centos7-zen2
@@ -109,5 +109,5 @@ module load py-py-1.11.0-gcc-10.2.0-meh5son
 module load py-toml-0.10.2-gcc-10.2.0-gqgcbhp
 # py-pytest@6.2.5%gcc@10.2.0 arch=linux-centos7-zen2
 module load py-pytest-6.2.5-gcc-10.2.0-qnxtpdk
-# exago@develop%gcc@10.2.0+cuda+hiop~ipo+ipopt+mpi+python+raja~rocm build_type=RelWithDebInfo cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/18103/spack_deception arch=linux-centos7-zen2
-## module load exago-develop-gcc-10.2.0-fgqskkw
+# exago@develop%gcc@10.2.0+cuda+hiop~ipo+ipopt+mpi+python+raja~rocm build_system=cmake build_type=RelWithDebInfo cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/19100/spack_deception arch=linux-centos7-zen2
+## module load exago-develop-gcc-10.2.0-com52pp
