@@ -6,3 +6,4 @@ install/*
 *__pycache__*
 *nvblas.conf
 spack-env/
+coinhsl*
