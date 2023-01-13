@@ -62,9 +62,9 @@ spack:
     exago:
       require: ~python+raja+hiop+rocm+ipopt
     hiop:
-      # Ginkgo Build error on crusher
-      # Suite-sparse giving issues on crusher, so no kron?
-      require: '@develop+sparse+mpi+raja+rocm+ginkgo+kron'
+      # Ginkgo Build error on crusher with 5.4.0
+      # "error: 'hiopLinAlgFactory.hpp' file not found" for develop
+      require: '@0.7.1+sparse+mpi+raja+rocm+ginkgo+kron'
     ipopt:
       require: '@3.12.10~metis+coinhsl~mumps'
     amdlibflame:

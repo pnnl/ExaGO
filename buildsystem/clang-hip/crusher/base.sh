@@ -3,10 +3,10 @@
 export MY_CLUSTER=crusher
 export PROJ_DIR=/autofs/nccs-svm1_proj/csc359
 
-module reset
+module purge
 
 # System modules
-module load PrgEnv-gnu
+module load gcc/11.2.0
 module load rocm/5.2.0
 module load libfabric/1.15.0.0
 

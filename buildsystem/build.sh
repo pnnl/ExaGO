@@ -212,9 +212,6 @@ esac
 ulimit -s unlimited || echo 'Could not set stack size to unlimited.'
 ulimit -l unlimited || echo 'Could not set max locked memory to unlimited.'
 
-. /etc/profile.d/modules.sh
-module purge
-
 varfile="$SRCDIR/buildsystem/$JOB/$(echo $MY_CLUSTER)Variables.sh"
 
 if [[ -f "$varfile" ]]; then

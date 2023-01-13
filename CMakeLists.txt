@@ -204,6 +204,9 @@ if(EXAGO_ENABLE_GPU)
   elseif(EXAGO_ENABLE_HIP)
     set(EXAGO_HAVE_HIP 1)
     add_definitions(-DHAVE_HIP) # For hipmagma
+    # FIXME: Have to set this for some reason on Crusher
+    # set(CMAKE_CXX_COMPILER_ID "Clang")
+    message(STATUS "CMAKE_CXX_COMPILER_ID ${CMAKE_CXX_COMPILER_ID}")
     find_package(hip REQUIRED)
   else()
     message(
