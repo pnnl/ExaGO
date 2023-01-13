@@ -132,10 +132,11 @@ spack:
     cray-mpich:
       buildable: false
       externals:
-      - spec: cray-mpich@8.1.16 %gcc@11.2.0
-        prefix: /opt/cray/pe/mpich/8.1.16/ofi/gnu/9.1
+      - spec: cray-mpich@8.1.23 %gcc@11.2.0
+        prefix: /opt/cray/pe/mpich/8.1.23/ofi/gnu/9.1
         modules:
-        - cray-mpich/8.1.16
+        - PrgEnv-gnu
+        - cray-mpich/8.1.23
         - libfabric/1.15.0.0
     comgr:
       buildable: false

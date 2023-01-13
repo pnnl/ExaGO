@@ -6,6 +6,7 @@ export PROJ_DIR=/autofs/nccs-svm1_proj/csc359
 module purge
 
 # System modules
+module load PrgEnv-gnu
 module load rocm/5.2.0
 module load libfabric/1.15.0.0
 
