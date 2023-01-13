@@ -1,7 +1,7 @@
 spack:
   specs:
-  - exago@develop%clang@14.0.2 amdgpu_target=gfx90a
-  - exago@develop%clang@14.0.2 amdgpu_target=gfx90a
+  - exago@develop%clang@14.0.2 amdgpu_target=gfx90a 
+  - exago@develop%clang@14.0.2 amdgpu_target=gfx90a 
   view: false
   concretizer:
     unify: when_possible
@@ -131,6 +131,7 @@ spack:
       variants: +pic
     cray-mpich:
       buildable: false
+      require: '@8.1.23'
       externals:
       - spec: cray-mpich@8.1.23 %gcc@11.2.0
         prefix: /opt/cray/pe/mpich/8.1.23/ofi/gnu/9.1

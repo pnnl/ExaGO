@@ -1,5 +1,7 @@
 #!/bin/bash
 
+module reset
+
 # Configure python
 module load cray-python/3.9.12.1 
 

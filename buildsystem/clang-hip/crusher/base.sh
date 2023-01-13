@@ -3,7 +3,7 @@
 export MY_CLUSTER=crusher
 export PROJ_DIR=/autofs/nccs-svm1_proj/csc359
 
-module purge
+module reset
 
 # System modules
 module load PrgEnv-gnu
