@@ -216,13 +216,13 @@ struct _p_OPFLOW {
 
   void *solver; /* Solver object */
   struct _p_OPFLOWSolverOps solverops;
-  char solvername[64];
+  std::string solvername;
 
   void *model; /* Model object */
   struct _p_OPFLOWModelOps modelops;
-  char modelname[64];
+  std::string modelname;
 
-  char _p_hiop_compute_mode[64];
+  std::string _p_hiop_compute_mode;
   int _p_hiop_verbosity_level;
 
   /* List of models and solvers registered */

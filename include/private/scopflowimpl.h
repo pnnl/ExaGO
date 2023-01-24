@@ -10,6 +10,7 @@
 #include <opflow.h>
 #include <private/contingencylist.h>
 #include <private/psimpl.h>
+#include <private/opflowimpl.h>
 #include <private/scenariolist.h>
 #include <ps.h>
 #include <scopflow.h>
@@ -171,7 +172,7 @@ struct _p_SCOPFLOW {
 
   void *model; /* Model object */
   struct _p_SCOPFLOWModelOps modelops;
-  char modelname[64];
+  std::string modelname;
 
   struct _p_SCOPFLOWModelList SCOPFLOWModelList[SCOPFLOWMODELSMAX];
   PetscInt nmodelsregistered;
@@ -179,7 +180,7 @@ struct _p_SCOPFLOW {
 
   void *solver; /* Solver object */
   struct _p_SCOPFLOWSolverOps solverops;
-  char solvername[64];
+  std::string solvername;
 
   /* List of solvers registered */
   struct _p_SCOPFLOWSolverList SCOPFLOWSolverList[SCOPFLOWSOLVERSMAX];
@@ -204,10 +205,11 @@ struct _p_SCOPFLOW {
   PetscBool ignore_lineflow_constraints; /* Ignore lineflow constraints */
 
   /* Used by HIOP solver */
-  char subproblem_model[64];  /* subproblem model */
-  char subproblem_solver[64]; /* subproblem solver */
-  char compute_mode[64];
+  std::string subproblem_model;  /* subproblem model */
+  std::string subproblem_solver; /* subproblem solver */
+  std::string compute_mode;
   int verbosity_level;
+  std::string mem_space; /* Memory space used in HIOP */
 };
 
 extern PetscErrorCode SCOPFLOWModelRegisterAll(SCOPFLOW);

@@ -9,7 +9,7 @@ const char *HIOPComputeModeChoices[] = {
     "auto", "cpu", "hybrid", "gpu", "HIOPComputeModeChoices", "", 0};
 
 const char *HIOPMemSpaceChoices[] = {
-    "defaut", "host", "um", "device", "HIOPMemSpaceChoices", "", 0};
+    "default", "host", "um", "device", "HIOPMemSpaceChoices", "", 0};
 
 OPFLOWHIOPInterface::OPFLOWHIOPInterface(OPFLOW opflowin) { opflow = opflowin; }
 
@@ -310,7 +310,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
 
   if (mode_set == PETSC_FALSE) {
     hiop->mds->options->SetStringValue("compute_mode",
-                                       opflow->_p_hiop_compute_mode);
+                                       opflow->_p_hiop_compute_mode.c_str());
   } else {
     hiop->mds->options->SetStringValue("compute_mode",
                                        HIOPComputeModeChoices[compute_mode]);
@@ -381,13 +381,11 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
   hiop->mds->options->SetStringValue("scaling_type", "none");
 
   /* Error if model is not power balance hiop or power balance raja hiop */
-  ierr =
-      PetscStrcmp(opflow->modelname, OPFLOWMODEL_PBPOLHIOP, &ismodelpbpolhiop);
-  CHKERRQ(ierr);
+  ismodelpbpolhiop =
+      static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_PBPOLHIOP);
 #if defined(EXAGO_ENABLE_RAJA)
-  ierr = PetscStrcmp(opflow->modelname, OPFLOWMODEL_PBPOLRAJAHIOP,
-                     &ismodelpbpolrajahiop);
-  CHKERRQ(ierr);
+  ismodelpbpolrajahiop =
+      static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_PBPOLRAJAHIOP);
 #endif
   if (!ismodelpbpolhiop && !ismodelpbpolrajahiop) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,

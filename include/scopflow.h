@@ -60,6 +60,10 @@ const auto compute_mode =
 const auto verbosity_level = ExaGOIntOption(
     "-hiop_verbosity_level", "SCOPFLOW subproblem verbosity level",
     OPFLOWOptions::hiop_verbosity_level.default_value);
+const auto hiop_mem_space =
+    ExaGOStringOption("-hiop_mem_space", "Set memory space for HiOp solver",
+                      OPFLOWOptions::hiop_mem_space.default_value,
+                      OPFLOWOptions::hiop_mem_space.possible_values);
 #endif
 const auto iscoupling = ExaGOBoolOption(
     "-scopflow_iscoupling",
@@ -105,10 +109,10 @@ const auto duration = ExaGORealOption(
 } // namespace SCOPFLOWOptions
 
 PETSC_EXTERN PetscErrorCode SCOPFLOWEnableMultiPeriod(SCOPFLOW, PetscBool);
-PETSC_EXTERN PetscErrorCode SCOPFLOWSetModel(SCOPFLOW, const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetModel(SCOPFLOW, const std::string);
 PETSC_EXTERN PetscErrorCode SCOPFLOWModelRegister(
     SCOPFLOW, const char[], PetscErrorCode (*create)(SCOPFLOW));
-PETSC_EXTERN PetscErrorCode SCOPFLOWSetSolver(SCOPFLOW, const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetSolver(SCOPFLOW, const std::string);
 PETSC_EXTERN PetscErrorCode SCOPFLOWCreate(MPI_Comm, SCOPFLOW *);
 PETSC_EXTERN PetscErrorCode SCOPFLOWDestroy(SCOPFLOW *);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetNetworkData(SCOPFLOW, const char[]);
@@ -172,10 +176,16 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWSetTimeStepandDuration(SCOPFLOW, PetscReal,
                                                            PetscReal);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetLoadProfiles(SCOPFLOW, const char[],
                                                     const char[]);
-PETSC_EXTERN PetscErrorCode SCOPFLOWSetSubproblemModel(SCOPFLOW, const char[]);
-PETSC_EXTERN PetscErrorCode SCOPFLOWSetSubproblemSolver(SCOPFLOW, const char[]);
-PETSC_EXTERN PetscErrorCode SCOPFLOWSetComputeMode(SCOPFLOW, const char[]);
-PETSC_EXTERN PetscErrorCode SCOPFLOWSetVerbosityLevel(SCOPFLOW, PetscInt);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetSubproblemModel(SCOPFLOW,
+                                                       const std::string);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetSubproblemSolver(SCOPFLOW,
+                                                        const std::string);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetSubproblemComputeMode(SCOPFLOW,
+                                                             const std::string);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetSubproblemVerbosityLevel(SCOPFLOW,
+                                                                PetscInt);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetSubproblemMemSpace(SCOPFLOW,
+                                                          const std::string);
 PETSC_EXTERN PetscErrorCode SCOPFLOWEnablePowerImbalanceVariables(SCOPFLOW,
                                                                   PetscBool);
 PETSC_EXTERN PetscErrorCode SCOPFLOWIgnoreLineflowConstraints(SCOPFLOW,

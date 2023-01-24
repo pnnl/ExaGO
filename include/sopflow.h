@@ -78,6 +78,14 @@ const auto ctgcfile = ExaGOStringOption("-ctgcfile", "Contingency file",
 
 const auto windgen = ExaGOStringOption("-windgen", "Wind generation file",
                                        "/path/to/windgen_file", {});
+const auto verbosity_level = ExaGOIntOption(
+    "-hiop_verbosity_level", "SOPFLOW subproblem verbosity level",
+    OPFLOWOptions::hiop_verbosity_level.default_value);
+
+const auto hiop_mem_space =
+    ExaGOStringOption("-hiop_mem_space", "Set memory space for HiOp solver",
+                      OPFLOWOptions::hiop_mem_space.default_value,
+                      OPFLOWOptions::hiop_mem_space.possible_values);
 
 } // namespace SOPFLOWOptions
 
@@ -128,12 +136,16 @@ PETSC_EXTERN PetscErrorCode SOPFLOWSetTimeStepandDuration(SOPFLOW, PetscReal,
                                                           PetscReal);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetLoadProfiles(SOPFLOW, const char[],
                                                    const char[]);
-PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemModel(SOPFLOW, const char[]);
-PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemSolver(SOPFLOW, const char[]);
+PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemModel(SOPFLOW,
+                                                      const std::string);
+PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemSolver(SOPFLOW,
+                                                       const std::string);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetIgnoreLineflowConstraints(SOPFLOW,
                                                                 PetscBool);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemComputeMode(SOPFLOW,
-                                                            const char[]);
+                                                            const std::string);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemVerbosityLevel(SOPFLOW, int);
+PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemMemSpace(SOPFLOW,
+                                                         const std::string);
 
 #endif

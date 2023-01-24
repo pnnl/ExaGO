@@ -164,10 +164,10 @@ struct OpflowFunctionalityTests
     ierr = OPFLOWSetGenBusVoltageType(opflow, params.gen_bus_voltage_type);
     ExaGOCheckError(ierr);
 
-    ierr = OPFLOWSetSolver(opflow, params.solver.c_str());
+    ierr = OPFLOWSetSolver(opflow, params.solver);
     ExaGOCheckError(ierr);
 
-    ierr = OPFLOWSetModel(opflow, params.model.c_str());
+    ierr = OPFLOWSetModel(opflow, params.model);
     ExaGOCheckError(ierr);
 
     ierr = OPFLOWHasBusPowerImbalance(opflow,
@@ -198,9 +198,9 @@ struct OpflowFunctionalityTests
     ExaGOCheckError(ierr);
 
     if (params.solver == "HIOP") {
-      ierr = OPFLOWSetHIOPComputeMode(opflow, params.hiop_compute_mode.c_str());
+      ierr = OPFLOWSetHIOPComputeMode(opflow, params.hiop_compute_mode);
       ExaGOCheckError(ierr);
-      ierr = OPFLOWSetHIOPMemSpace(opflow, params.hiop_mem_space.c_str());
+      ierr = OPFLOWSetHIOPMemSpace(opflow, params.hiop_mem_space);
       ExaGOCheckError(ierr);
     }
 

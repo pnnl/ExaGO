@@ -33,6 +33,7 @@ struct ScopflowFunctionalityTestParameters {
   bool enable_powerimbalance_variables;
   bool ignore_lineflow_constraints;
   int verbosity_level;
+  std::string mem_space = "DEFAULT";
   std::string compute_mode;
 
   /* Parameters used to determine success or failure of functionality test */
@@ -70,6 +71,7 @@ struct ScopflowFunctionalityTestParameters {
     set_if_found(subproblem_model, values, "subproblem_model");
     set_if_found(compute_mode, values, "compute_mode");
     set_if_found(verbosity_level, values, "verbosity_level");
+    set_if_found(mem_space, values, "mem_space");
     set_if_found(enable_powerimbalance_variables, values,
                  "enable_powerimbalance_variables");
     set_if_found(ignore_lineflow_constraints, values,
@@ -226,7 +228,7 @@ struct ScopflowFunctionalityTests
     ierr = SCOPFLOWSetDuration(scopflow, params.duration);
     ExaGOCheckError(ierr);
 
-    ierr = SCOPFLOWSetSolver(scopflow, params.solver.c_str());
+    ierr = SCOPFLOWSetSolver(scopflow, params.solver);
     ExaGOCheckError(ierr);
 
     ierr = SCOPFLOWSetInitilizationType(
@@ -236,25 +238,26 @@ struct ScopflowFunctionalityTests
         scopflow, (OPFLOWGenBusVoltageType)params.opflow_genbusvoltage);
     ExaGOCheckError(ierr);
 
-    ierr = SCOPFLOWSetModel(scopflow, params.model.c_str());
+    ierr = SCOPFLOWSetModel(scopflow, params.model);
     ExaGOCheckError(ierr);
 
     ierr = SCOPFLOWSetMode(scopflow, (PetscInt)params.mode);
     ExaGOCheckError(ierr);
 
-    ierr =
-        SCOPFLOWSetSubproblemSolver(scopflow, params.subproblem_solver.c_str());
+    ierr = SCOPFLOWSetSubproblemSolver(scopflow, params.subproblem_solver);
     ExaGOCheckError(ierr);
 
-    ierr =
-        SCOPFLOWSetSubproblemModel(scopflow, params.subproblem_model.c_str());
+    ierr = SCOPFLOWSetSubproblemModel(scopflow, params.subproblem_model);
     ExaGOCheckError(ierr);
 
-    ierr = SCOPFLOWSetComputeMode(scopflow, params.compute_mode.c_str());
+    ierr = SCOPFLOWSetSubproblemComputeMode(scopflow, params.compute_mode);
     ExaGOCheckError(ierr);
 
-    ierr =
-        SCOPFLOWSetVerbosityLevel(scopflow, (PetscInt)params.verbosity_level);
+    ierr = SCOPFLOWSetSubproblemVerbosityLevel(
+        scopflow, (PetscInt)params.verbosity_level);
+    ExaGOCheckError(ierr);
+
+    ierr = SCOPFLOWSetSubproblemMemSpace(scopflow, params.mem_space);
     ExaGOCheckError(ierr);
 
     ierr = SCOPFLOWEnablePowerImbalanceVariables(
