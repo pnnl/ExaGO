@@ -1,7 +1,9 @@
 [![pipeline status](https://gitlab.pnnl.gov/exasgd/frameworks/exago/badges/master/pipeline.svg)](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/commits/master)
 
 # <b>Exa</b>scale <b>G</b>rid <b>O</b>ptimization toolkit (ExaGO<sup>TM</sup>)
-ExaGO<sup>TM</sup> is a package for solving large-scale power grid optimization problems on parallel and distributed architectures, particularly targeted for exascale machines with heteregenous architectures (GPU). It is written in C/C++ using the [PETSc](https://www.mcs.anl.gov/petsc/) library. An overview of the package is given on this page and in the different links provided. For detailed information, including the different formulations used, see the [ExaGO manual](docs/manual/manual.pdf). 
+![](viz/images/network_gen_load_us.png)
+
+ExaGO<sup>TM</sup> is a package for solving large-scale power grid optimization problems on parallel and distributed architectures, particularly targeted for exascale machines with heteregenous architectures (GPU). It is written in C/C++ using the [PETSc](https://www.mcs.anl.gov/petsc/) library. An overview of the package is given on this page and the different links provided. For detailed information, including the different formulations used, see the [ExaGO manual](docs/manual/manual.pdf). 
 
 ExaGO<sup>TM</sup> includes the following applications for solving different power grid optimization problems:
 
@@ -49,6 +51,9 @@ Since options may be specified in more than one location (on the command line, a
 # This uses case118.m
 ./opflow -netfile case118.m -options_file opflowoptions
 ```
+
+## Visualization (experimental)
+ExaGO has an experimental visualization to display the results of `OPFLOW` application on a map. See the [visualization README](viz/README.md) for more information.
 
 ## Contributing
 

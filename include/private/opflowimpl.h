@@ -25,6 +25,8 @@ typedef enum { DEFAULT = 0, HOST = 1, UM = 2, DEVICE = 3 } HIOPMemSpace;
 
 extern const char *HIOPMemSpaceChoices[];
 
+extern const char *const OPFLOWOutputFormatTypes[];
+
 struct _p_OPFLOWModelOps {
   PetscErrorCode (*destroy)(OPFLOW);
   PetscErrorCode (*setup)(OPFLOW);
@@ -191,6 +193,8 @@ struct _p_OPFLOW {
   OPFLOWObjectiveType objectivetype; /* OPFLOW objective */
 
   OPFLOWGenBusVoltageType genbusvoltagetype; /* OPFLOW Genbus voltage type */
+
+  OutputFormat outputformat; /* Format for output data */
 
   PetscInt nconeq, Nconeq; /* Local and global number of equality constraints,
                               excluding ghosts! */

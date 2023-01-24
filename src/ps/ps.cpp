@@ -793,6 +793,7 @@ PetscErrorCode PSCreate(MPI_Comm mpicomm, PS *psout) {
   ierr = PSIncreaseReferenceCount(ps);
   CHKERRQ(ierr);
 
+  ps->gic_file_set = PETSC_FALSE;
   ps->setupcalled = PETSC_FALSE;
 
   *psout = ps;
@@ -837,6 +838,11 @@ PetscErrorCode PSDestroy(PS *ps) {
 
   ierr = PSConnCompDestroy(*ps);
   CHKERRQ(ierr);
+
+  if ((*ps)->gic_file_set) {
+    ierr = PetscFree((*ps)->substations);
+    CHKERRQ(ierr);
+  }
 
   ierr = PetscFree((*ps)->kvlevels);
   CHKERRQ(ierr);
@@ -1855,5 +1861,29 @@ PetscErrorCode PSCopy(PS psin, PS psout) {
     lineout->mult_st = linein->mult_st;
   }
 
+  PetscFunctionReturn(0);
+}
+
+/*
+  PSSetGICData - Sets the GIC data file
+
+  Input Parameter
++  ps - The PS object
+-  gicfile - The name of the GIC data file
+
+  Notes: The GIC data file is only used for visualization. It contains the
+substation geospatial coordinates and mapping of buses to substations. See the
+Electric Grid Data Repository files for examples of GIC data files (given for
+CTIVSg cases)
+*/
+PetscErrorCode PSSetGICData(PS ps, const char gicfile[]) {
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  ierr = PetscStrcpy(ps->gic_file_name, gicfile);
+  CHKERRQ(ierr);
+
+  ps->gic_file_set = PETSC_TRUE;
   PetscFunctionReturn(0);
 }
