@@ -1,6 +1,11 @@
 #include <libgen.h>
 #include <private/psimpl.h>
 
+// These globals are used for JSON format
+static int tablevel = 0;
+
+static char tabstring[64] = "";
+
 /* Save to MATPOWER format */
 PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
   PetscErrorCode ierr;
@@ -253,6 +258,468 @@ PetscErrorCode PSSaveSolution_CSV(PS ps, const char outfile[]) {
   PetscFunctionReturn(0);
 }
 
+static void DecreaseTabLevel() {
+  /* Decrease tab level */
+  tablevel--;
+  strcpy(tabstring, "");
+  for (int i = 0; i < tablevel; i++) {
+    strcat(tabstring, "\t");
+  }
+}
+
+static void IncreaseTabLevel() {
+  /* Increase tab level */
+  tablevel++;
+  strcpy(tabstring, "");
+  for (int i = 0; i < tablevel; i++) {
+    strcat(tabstring, "\t");
+  }
+}
+
+static void PrintJSONObjectBegin(FILE *fd, const char *name) {
+  if (name) {
+    fprintf(fd, "%s\"%s\": {\n", tabstring, name);
+  } else {
+    fprintf(fd, "%s{\n", tabstring);
+  }
+  IncreaseTabLevel();
+}
+
+static void PrintJSONObjectEnd(FILE *fd, bool trail_comma) {
+  std::string str = trail_comma ? "," : "";
+
+  DecreaseTabLevel();
+
+  fprintf(fd, "%s}%s\n", tabstring, str.c_str());
+}
+
+static void PrintJSONArrayBegin(FILE *fd, const char *name) {
+  if (name) {
+    fprintf(fd, "%s\"%s\": [\n", tabstring, name);
+  } else {
+    fprintf(fd, "%s[\n", tabstring);
+  }
+  IncreaseTabLevel();
+}
+
+static void PrintJSONArrayEnd(FILE *fd, bool trail_comma) {
+  std::string str = trail_comma ? "," : "";
+
+  DecreaseTabLevel();
+
+  fprintf(fd, "%s]%s\n", tabstring, str.c_str());
+}
+
+static void PrintJSONInt(FILE *fd, const char *key, int value,
+                         bool trail_comma) {
+  std::string str = trail_comma ? "," : "";
+  fprintf(fd, "%s\"%s\": %d%s\n", tabstring, key, value, str.c_str());
+}
+
+static void PrintJSONDouble(FILE *fd, const char *key, double value,
+                            bool trail_comma) {
+  std::string str = trail_comma ? "," : "";
+  fprintf(fd, "%s\"%s\": %lf%s\n", tabstring, key, value, str.c_str());
+}
+
+static void PrintJSONArrayDouble(FILE *fd, double value, bool trail_comma) {
+  std::string str = trail_comma ? "," : "";
+  fprintf(fd, "%s%lf%s\n", tabstring, value, str.c_str());
+}
+
+static void PrintJSONString(FILE *fd, const char *key, const char *value,
+                            bool trail_comma) {
+  std::string str = trail_comma ? "," : "";
+  fprintf(fd, "%s\"%s\": \"%s\"%s\n", tabstring, key, value, str.c_str());
+}
+
+static void PrintJSONArray(FILE *fd, const char *name, int nvals,
+                           double *values, bool trail_comma) {
+  PrintJSONArrayBegin(fd, name);
+
+  for (int i = 0; i < nvals - 1; i++) {
+    PrintJSONArrayDouble(fd, values[i], true);
+  }
+  PrintJSONArrayDouble(fd, values[nvals - 1], false);
+
+  PrintJSONArrayEnd(fd, trail_comma);
+}
+
+static void PrintGenData(FILE *fd, PSBUS bus, bool trail_comma,
+                         PetscScalar MVAbase) {
+  PSGEN gen;
+  bool istrail;
+
+  PrintJSONArrayBegin(fd, "gen");
+
+  for (int i = 0; i < bus->ngen; i++) {
+    PSBUSGetGen(bus, i, &gen);
+    if (i == bus->ngen - 1)
+      istrail = false;
+    else
+      istrail = true;
+
+    PrintJSONObjectBegin(fd, NULL);
+
+    // Generator bus number
+    PrintJSONInt(fd, "GEN_BUS", bus->bus_i, true);
+
+    // Generator fuel
+    PrintJSONString(fd, "GEN_FUEL", PSGENFuelTypes[gen->genfuel_type], true);
+
+    // Generator Pg
+    PrintJSONDouble(fd, "PG", gen->pg * MVAbase, true);
+
+    // Generator Qg
+    PrintJSONDouble(fd, "QG", gen->qg * MVAbase, true);
+
+    // Generator status
+    PrintJSONInt(fd, "GEN_STATUS", gen->status, true);
+
+    // Generator Pmax
+    PrintJSONDouble(fd, "PMAX", gen->pt * MVAbase, true);
+
+    // Generator Pmin
+    PrintJSONDouble(fd, "PMIN", gen->pb * MVAbase, true);
+
+    // Generator QMAX
+    PrintJSONDouble(fd, "QMAX", gen->qt * MVAbase, true);
+
+    // Generator QMIN
+    PrintJSONDouble(fd, "QMIN", gen->qb * MVAbase, false);
+
+    PrintJSONObjectEnd(fd, istrail);
+  }
+
+  PrintJSONArrayEnd(fd, trail_comma);
+}
+
+static void PrintLineData(FILE *fd, PSLINE line, bool trail_comma,
+                          PetscScalar MVAbase) {
+  char line_name[64];
+  // Elementtype
+  PrintJSONString(fd, "elementtype", "Branch", true);
+
+  // Name
+  snprintf(line_name, 64, "%s -- %s", line->subst_from->name,
+           line->subst_to->name);
+  PrintJSONString(fd, "NAME", line_name, true);
+
+  // From bus
+  PrintJSONInt(fd, "F_BUS", line->fbus, true);
+
+  // To bus
+  PrintJSONInt(fd, "T_BUS", line->tbus, true);
+
+  // Status
+  PrintJSONInt(fd, "BR_STATUS", line->status, true);
+
+  // KV level
+  PrintJSONDouble(fd, "KV", line->kvlevel, true);
+
+  // Rate A
+  PrintJSONDouble(fd, "RATE_A", (line->rateA > 1e5) ? 10000 : line->rateA,
+                  true);
+
+  // PF,QF, PT, QT
+  PrintJSONDouble(fd, "PF", line->pf * MVAbase, true);
+  PrintJSONDouble(fd, "QF", line->qf * MVAbase, true);
+  PrintJSONDouble(fd, "PT", line->pt * MVAbase, true);
+  PrintJSONDouble(fd, "QT", line->qt * MVAbase, false);
+}
+
+static void PrintBusData(FILE *fd, PSSUBST subst, bool trail_comma,
+                         PetscScalar MVAbase) {
+  PSBUS bus;
+  PSLOAD load;
+  bool istrail;
+  char bus_name[64];
+  double Pd = 0.0, Qd = 0.0, Pdloss = 0.0, Qdloss = 0.0;
+  double Vm_avg = 0.0;
+
+  PrintJSONArrayBegin(fd, "bus");
+
+  for (int i = 0; i < subst->nbus; i++) {
+    bus = subst->bus[i];
+    PrintJSONObjectBegin(fd, NULL);
+
+    // elementtype
+    PrintJSONString(fd, "elementtype", "bus", true);
+
+    // bus number
+    PrintJSONInt(fd, "BUS_I", bus->bus_i, true);
+
+    // VA
+    PrintJSONDouble(fd, "VA", bus->va * 180.0 / PETSC_PI, true);
+
+    // VM
+    PrintJSONDouble(fd, "VM", bus->vm, true);
+    Vm_avg += bus->vm;
+
+    // bus name
+    strcpy(bus_name, subst->name);
+    snprintf(bus_name, 64, " %d", i + 1);
+    PrintJSONString(fd, "BUS_NAME", bus_name, true);
+
+    // Vmin
+    PrintJSONDouble(fd, "VMIN", bus->Vmin, true);
+
+    // Vmax
+    PrintJSONDouble(fd, "VMAX", bus->Vmax, true);
+
+    // Base KV
+    PrintJSONDouble(fd, "BASE_KV", bus->basekV, true);
+
+    // PD
+    if (bus->nload) {
+      PSBUSGetLoad(bus, 0, &load);
+
+      Pd = load->pl * MVAbase;
+      Qd = load->ql * MVAbase;
+      Pdloss = load->pl_loss * MVAbase;
+      Qdloss = load->ql_loss * MVAbase;
+    }
+
+    PrintJSONDouble(fd, "PD", Pd, true);
+    PrintJSONDouble(fd, "QD", Qd, true);
+    PrintJSONDouble(fd, "PDloss", Pdloss, true);
+    PrintJSONDouble(fd, "QDloss", Qdloss, true);
+
+    // Lagrange multipliers
+    PrintJSONDouble(fd, "LAM_P", bus->mult_pmis, true);
+    PrintJSONDouble(fd, "LAM_Q", bus->mult_qmis, true);
+
+    if (i == subst->nbus - 1)
+      istrail = false;
+    else
+      istrail = true;
+
+    // ngen
+    PrintJSONInt(fd, "ngen", bus->ngen, true);
+
+    PrintGenData(fd, bus, false, MVAbase);
+
+    PrintJSONObjectEnd(fd, istrail);
+  }
+  Vm_avg /= subst->nbus;
+
+  PrintJSONArrayEnd(fd, true);
+
+  // Print Vm_avg in the substation object
+  PrintJSONDouble(fd, "Vm", Vm_avg, false);
+}
+/*
+   PSSaveSolution_JSON - Saves the system solution to file in JSON format
+
+  Input Parameters:
++ ps - the PS object
+- outfile  - Name of output file
+*/
+PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[]) {
+  PetscErrorCode ierr;
+  FILE *fd;
+
+  PSBUS bus;
+  PSLOAD load;
+  PSLINE line;
+  PSGEN gen;
+  PetscScalar Pd, Qd;
+  PetscInt i, k;
+  PetscScalar MVAbase = ps->MVAbase;
+  char filename[PETSC_MAX_PATH_LEN];
+  char *tok, *tok2;
+  char sep[] = "/";
+  char ext[] = ".json";
+  char file1[PETSC_MAX_PATH_LEN];
+
+  PetscFunctionBegin;
+
+  strcpy(filename, outfile);
+  /* Add .json extension to file name */
+  ierr = PetscStrlcat(filename, ext, 256);
+  CHKERRQ(ierr);
+
+  fd = fopen(filename, "w");
+  if (fd == NULL) {
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
+            "Cannot open OPFLOW output file %s", outfile);
+    CHKERRQ(ierr);
+  }
+
+  if (ps->gic_file_set) {
+    ierr = PSReadGICData(ps);
+    CHKERRQ(ierr);
+  } else {
+    PSSUBST subst;
+    /* Assume 1 bus per substation */
+    ierr = PetscCalloc1(ps->Nbus, &ps->substations);
+    CHKERRQ(ierr);
+    ps->nsubstations = 0;
+
+    for (int i = 0; i < ps->Nbus; i++) {
+      PetscInt nconnlines;
+      const PSLINE *connlines;
+      PSLINE branch;
+
+      subst = &ps->substations[ps->nsubstations];
+      subst->num = i + 1;
+      snprintf(subst->name, 64, "%d", ps->bus[i].bus_i);
+      subst->nbus = 1;
+      subst->nkvlevels = 1;
+      /* Circular distribution of lats and long from some location with .5
+       * degrees deviation. This is completely random baseless lat/long creation
+       */
+      subst->longlat[1] =
+          35.481918 +
+          PetscCosScalar(i / (PetscScalar)ps->Nbus * 2.0 * PETSC_PI) * 0.5;
+      subst->longlat[0] =
+          -97.508469 +
+          PetscSinScalar(i / (PetscScalar)ps->Nbus * 2.0 * PETSC_PI) * 0.5;
+      bus = &ps->bus[i];
+      subst->bus[0] = bus;
+      subst->kvlevels[0] = bus->basekV;
+
+      ps->nsubstations++;
+
+      /* Get the connected lines to the bus */
+      PSBUSGetSupportingLines(bus, &nconnlines, &connlines);
+      for (int k = 0; k < nconnlines; k++) {
+        branch = connlines[k];
+
+        const PSBUS *connbuses;
+        PSBUS busf, bust;
+
+        /* Get the connected buses to this line */
+        PSLINEGetConnectedBuses(branch, &connbuses);
+        busf = connbuses[0];
+        bust = connbuses[1];
+
+        if (bus == busf) { /* From bus */
+          branch->subst_from = subst;
+        } else {
+          branch->subst_to = subst;
+        }
+      }
+    }
+  }
+
+  /* Begin JSON object */
+  PrintJSONObjectBegin(fd, NULL);
+
+  /* Print input file name */
+  PrintJSONString(fd, "casefile", ps->net_file_name, true);
+  /* Print gic file name */
+  if (ps->gic_file_set) {
+    PrintJSONString(fd, "gicfile", ps->gic_file_name, true);
+  } else {
+    PrintJSONString(fd, "gicfile", "not given", true);
+  }
+
+  /* Print number of lines */
+  PrintJSONInt(fd, "nbranch", ps->Nline, true);
+
+  /* Print Number of gen */
+  PrintJSONInt(fd, "ngen", ps->Ngen, true);
+
+  /* Print Number of bus */
+  PrintJSONInt(fd, "nbus", ps->Nbus, true);
+
+  /* Print KV levels */
+  PrintJSONArray(fd, "KVlevels", ps->nkvlevels, ps->kvlevels, true);
+
+  /* Print output file name */
+  PrintJSONString(fd, "casejsonfile", filename, true);
+
+  PrintJSONObjectBegin(fd, "geojsondata");
+
+  PrintJSONString(fd, "type", "FeatureCollection", true);
+
+  PrintJSONArrayBegin(fd, "features");
+
+  for (i = 0; i < ps->nsubstations; i++) {
+    // Features
+    PrintJSONObjectBegin(fd, NULL); // Feature object start
+
+    PrintJSONString(fd, "type", "Feature", true);
+
+    PrintJSONObjectBegin(fd, "geometry"); // Geometry object start
+
+    PrintJSONString(fd, "type", "Point", true);
+
+    PrintJSONArray(fd, "coordinates", 2, ps->substations[i].longlat, false);
+
+    PrintJSONObjectEnd(fd, true); // Geometry object end
+
+    PrintJSONObjectBegin(fd, "properties"); // Properties object start
+
+    // Element type
+    PrintJSONString(fd, "elementtype", "SUBSTATION", true);
+
+    // Name
+    PrintJSONString(fd, "NAME", ps->substations[i].name, true);
+
+    // Number of buses
+    PrintJSONInt(fd, "nbus", ps->substations[i].nbus, true);
+
+    // Print KV levels
+    PrintJSONArray(fd, "KVlevels", ps->substations[i].nkvlevels,
+                   ps->substations[i].kvlevels, true);
+
+    // Print the substation data
+    PrintBusData(fd, &ps->substations[i], false, ps->MVAbase);
+
+    PrintJSONObjectEnd(fd, false); // Properties object end
+
+    PrintJSONObjectEnd(fd, true); // Feature object end
+  }
+
+  // Lines
+  for (i = 0; i < ps->Nline; i++) {
+    line = &ps->line[i];
+    // Features
+    PrintJSONObjectBegin(fd, NULL); // Feature object start
+
+    PrintJSONString(fd, "type", "Feature", true);
+
+    PrintJSONObjectBegin(fd, "geometry"); // Geometry object start
+
+    PrintJSONString(fd, "type", "LineString", true);
+
+    // Coordinates
+    PrintJSONArrayBegin(fd, "coordinates");
+
+    // Print from substation coordinates
+    PrintJSONArray(fd, NULL, 2, line->subst_from->longlat, true);
+    // Print to substation coordinates
+    PrintJSONArray(fd, NULL, 2, line->subst_to->longlat, false);
+
+    PrintJSONArrayEnd(fd, false);
+
+    PrintJSONObjectEnd(fd, true); // Geometry object end
+
+    PrintJSONObjectBegin(fd, "properties"); // Properties object start
+                                            // Print line data
+    PrintLineData(fd, line, false, MVAbase);
+
+    PrintJSONObjectEnd(fd, false); // Properties object end
+    if (i == ps->Nline - 1) {
+      PrintJSONObjectEnd(fd, false); // Feature object end
+    } else {
+      PrintJSONObjectEnd(fd, true);
+    }
+  }
+
+  PrintJSONArrayEnd(fd, false); // features array end
+
+  PrintJSONObjectEnd(fd, false); // geojsondata object end
+
+  /* End of file */
+  PrintJSONObjectEnd(fd, false);
+
+  fclose(fd);
+  PetscFunctionReturn(0);
+}
+
 /*
   PSSaveSolution - Saves the system solution to file
 
@@ -273,6 +740,8 @@ PetscErrorCode PSSaveSolution(PS ps, OutputFormat format,
   } else if (format == MATPOWER) {
     ierr = PSSaveSolution_MATPOWER(ps, outfile);
     CHKERRQ(ierr);
+  } else if (format == JSON) {
+    ierr = PSSaveSolution_JSON(ps, outfile);
   }
 
   PetscFunctionReturn(0);

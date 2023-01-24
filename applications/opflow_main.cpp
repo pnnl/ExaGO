@@ -9,8 +9,7 @@ static char help[] = "User example calling OPFLOW.\n\n";
 int main(int argc, char **argv) {
   PetscErrorCode ierr;
   OPFLOW opflow;
-  OutputFormat fmt = MATPOWER;
-  char file[PETSC_MAX_PATH_LEN];
+  char file[PETSC_MAX_PATH_LEN], gicfile[PETSC_MAX_PATH_LEN];
   PetscBool flg = PETSC_FALSE, print_output = PETSC_FALSE,
             save_output = PETSC_FALSE;
   PetscLogStage stages[3];
@@ -60,6 +59,15 @@ int main(int argc, char **argv) {
     ExaGOCheckError(ierr);
   }
 
+  /* Get gic data file from command line */
+  ierr = PetscOptionsGetString(NULL, NULL, "-gicfile", gicfile,
+                               PETSC_MAX_PATH_LEN, &flg);
+  ExaGOCheckError(ierr);
+  if (flg) {
+    ierr = OPFLOWSetGICData(opflow, gicfile);
+    ExaGOCheckError(ierr);
+  }
+
   ierr = PetscLogStagePop();
   ExaGOCheckError(ierr);
 
@@ -91,7 +99,7 @@ int main(int argc, char **argv) {
   }
 
   if (save_output) {
-    ierr = OPFLOWSaveSolution(opflow, fmt, "opflowout");
+    ierr = OPFLOWSaveSolutionDefault(opflow, "opflowout");
     ExaGOCheckError(ierr);
   }
 

@@ -131,3 +131,22 @@ PetscErrorCode OPFLOWSaveSolution(OPFLOW opflow, OutputFormat format,
   CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+
+/*
+  OPFLOWSaveSolution - Saves the OPFLOW solution to file using
+                       the output format set (default MATPOWER)
+
+  Input Parameters:
++ opflow - the OPFLOW object
+- outfile  - Name of output file
+*/
+PetscErrorCode OPFLOWSaveSolutionDefault(OPFLOW opflow, const char outfile[]) {
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  ierr = OPFLOWSaveSolution(opflow, opflow->outputformat, outfile);
+  CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
