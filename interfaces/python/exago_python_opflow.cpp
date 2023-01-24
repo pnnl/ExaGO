@@ -279,14 +279,14 @@ void init_exago_opflow(pybind11::module &m) {
       .def("set_hiop_compute_mode",
            [](OPFLOW_wrapper &w, std::string mode) {
              PetscErrorCode ierr;
-             ierr = OPFLOWSetHIOPComputeMode(w.opf, mode.c_str());
+             ierr = OPFLOWSetHIOPComputeMode(w.opf, mode);
              ExaGOCheckError(ierr);
            })
 
       .def("set_hiop_mem_space",
            [](OPFLOW_wrapper &w, std::string mem_space) {
              PetscErrorCode ierr;
-             ierr = OPFLOWSetHIOPMemSpace(w.opf, mem_space.c_str());
+             ierr = OPFLOWSetHIOPMemSpace(w.opf, mem_space);
              ExaGOCheckError(ierr);
            })
 
@@ -401,7 +401,7 @@ void init_exago_opflow(pybind11::module &m) {
            [](OPFLOW_wrapper &w) -> std::string {
              PetscErrorCode ierr;
              std::string mode(PETSC_MAX_PATH_LEN, '\0');
-             ierr = OPFLOWGetHIOPComputeMode(w.opf, &mode[0]);
+             ierr = OPFLOWGetHIOPComputeMode(w.opf, &mode);
              ExaGOCheckError(ierr);
              return mode.c_str();
            })
@@ -410,7 +410,7 @@ void init_exago_opflow(pybind11::module &m) {
            [](OPFLOW_wrapper &w) -> std::string {
              PetscErrorCode ierr;
              std::string mem_space(PETSC_MAX_PATH_LEN, '\0');
-             ierr = OPFLOWGetHIOPMemSpace(w.opf, &mem_space[0]);
+             ierr = OPFLOWGetHIOPMemSpace(w.opf, &mem_space);
              ExaGOCheckError(ierr);
              return mem_space.c_str();
            })
@@ -419,7 +419,7 @@ void init_exago_opflow(pybind11::module &m) {
            [](OPFLOW_wrapper &w) -> std::string {
              PetscErrorCode ierr;
              std::string model(PETSC_MAX_PATH_LEN, '\0');
-             ierr = OPFLOWGetModel(w.opf, &model[0]);
+             ierr = OPFLOWGetModel(w.opf, &model);
              ExaGOCheckError(ierr);
              return model.c_str();
            })
@@ -428,7 +428,7 @@ void init_exago_opflow(pybind11::module &m) {
            [](OPFLOW_wrapper &w) -> std::string {
              PetscErrorCode ierr;
              std::string solver(PETSC_MAX_PATH_LEN, '\0');
-             ierr = OPFLOWGetSolver(w.opf, &solver[0]);
+             ierr = OPFLOWGetSolver(w.opf, &solver);
              ExaGOCheckError(ierr);
              return solver.c_str();
            })

@@ -57,7 +57,7 @@ PYBIND11_MODULE(exago, m) {
   extern void init_exago_opflow(pybind11::module & m);
   init_exago_opflow(m);
 #endif
-  
+
 #if defined(EXAGO_ENABLE_IPOPT)
   extern void init_exago_scopflow(pybind11::module & m);
   init_exago_scopflow(m);

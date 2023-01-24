@@ -39,12 +39,8 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout) {
   sopflow->model = NULL;
 
   /* Default subproblemmodel and solver */
-  (void)std::strncpy(sopflow->subproblem_model,
-                     SOPFLOWOptions::subproblem_model.default_value.c_str(),
-                     sizeof(sopflow->subproblem_model));
-  (void)std::strncpy(sopflow->subproblem_solver,
-                     SOPFLOWOptions::subproblem_model.default_value.c_str(),
-                     sizeof(sopflow->subproblem_solver));
+  sopflow->subproblem_model = SOPFLOWOptions::subproblem_model.default_value;
+  sopflow->subproblem_solver = SOPFLOWOptions::subproblem_model.default_value;
 
   sopflow->mode = SOPFLOWOptions::mode.default_value;
 
@@ -75,7 +71,7 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout) {
 
 #if defined(EXAGO_ENABLE_HIOP)
   /* HIOP options */
-  strcpy(sopflow->compute_mode, "auto");
+  sopflow->compute_mode = "auto";
   sopflow->verbosity_level = 0;
 #endif
 
@@ -570,10 +566,14 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
   PetscBool flgctgc = PETSC_FALSE;
   PetscBool flgwindgen = PETSC_FALSE;
   PetscBool issopflowsolverhiop;
+  PetscBool flg;
 
   char opflowmodelname[max_model_name_len];
   char sopflowsolvername[max_solver_name_len];
   char sopflowmodelname[max_model_name_len];
+  char sopflowsubproblemmodelname[max_model_name_len];
+  char sopflowsubproblemsolvername[max_solver_name_len];
+  char sopflowsubproblemmemspace[PETSC_MAX_PATH_LEN];
 
   (void)std::strncpy(sopflowmodelname,
                      SOPFLOWOptions::sopflow_model.default_value.c_str(),
@@ -602,15 +602,19 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
   ierr =
       PetscOptionsString(SOPFLOWOptions::subproblem_model.opt.c_str(),
                          SOPFLOWOptions::subproblem_model.desc.c_str(), "",
-                         sopflow->subproblem_model, sopflow->subproblem_model,
-                         max_model_name_len, NULL);
+                         sopflow->subproblem_model.c_str(),
+                         sopflowsubproblemmodelname, max_model_name_len, &flg);
   CHKERRQ(ierr);
-  ierr =
-      PetscOptionsString(SOPFLOWOptions::subproblem_solver.opt.c_str(),
-                         SOPFLOWOptions::subproblem_solver.desc.c_str(), "",
-                         sopflow->subproblem_solver, sopflow->subproblem_solver,
-                         max_solver_name_len, NULL);
+  if (flg)
+    sopflow->subproblem_model = sopflowsubproblemmodelname;
+  ierr = PetscOptionsString(SOPFLOWOptions::subproblem_solver.opt.c_str(),
+                            SOPFLOWOptions::subproblem_solver.desc.c_str(), "",
+                            sopflow->subproblem_solver.c_str(),
+                            sopflowsubproblemsolvername, max_solver_name_len,
+                            &flg);
   CHKERRQ(ierr);
+  if (flg)
+    sopflow->subproblem_solver = sopflowsubproblemsolvername;
 
   ierr = PetscOptionsBool(SOPFLOWOptions::iscoupling.opt.c_str(),
                           SOPFLOWOptions::iscoupling.desc.c_str(), "",
@@ -654,6 +658,14 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
                           SOPFLOWOptions::tolerance.desc.c_str(), "",
                           sopflow->tolerance, &sopflow->tolerance, NULL);
   CHKERRQ(ierr);
+  ierr =
+      PetscOptionsString(SOPFLOWOptions::hiop_mem_space.opt.c_str(),
+                         SOPFLOWOptions::hiop_mem_space.desc.c_str(), "",
+                         sopflow->mem_space.c_str(), sopflowsubproblemmemspace,
+                         PETSC_MAX_PATH_LEN, &flg);
+  CHKERRQ(ierr);
+  if (flg)
+    sopflow->mem_space = sopflowsubproblemmemspace;
   PetscOptionsEnd();
 
   if (sopflow->Ns == 0)
@@ -890,6 +902,9 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
     ierr = OPFLOWHasGenSetPoint(sopflow->opflow0, PETSC_TRUE);
     CHKERRQ(ierr);
 
+    ierr = OPFLOWSetHIOPMemSpace(sopflow->opflow0, sopflow->mem_space);
+    CHKERRQ(ierr);
+
     ierr = OPFLOWSetUp(sopflow->opflow0);
     CHKERRQ(ierr);
 
@@ -963,6 +978,8 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
         CHKERRQ(ierr);
         ierr = OPFLOWSetHIOPVerbosityLevel(sopflow->opflows[s],
                                            sopflow->verbosity_level);
+        CHKERRQ(ierr);
+        ierr = OPFLOWSetHIOPMemSpace(sopflow->opflows[s], sopflow->mem_space);
         CHKERRQ(ierr);
 
         ierr = PetscCalloc1(sopflow->opflows[s]->ps->nbus,
@@ -1453,10 +1470,9 @@ PetscErrorCode SOPFLOWSetLoadProfiles(SOPFLOW sopflow,
   Notes: This is used with HIOP solver only
 */
 PetscErrorCode SOPFLOWSetSubproblemModel(SOPFLOW sopflow,
-                                         const char modelname[]) {
-  PetscErrorCode ierr;
-  ierr = PetscStrcpy(sopflow->subproblem_model, modelname);
-  CHKERRQ(ierr);
+                                         const std::string modelname) {
+  PetscFunctionBegin;
+  sopflow->subproblem_model = modelname;
   PetscFunctionReturn(0);
 }
 
@@ -1472,10 +1488,9 @@ PetscErrorCode SOPFLOWSetSubproblemModel(SOPFLOW sopflow,
   Notes: This is used with HIOP solver only
 */
 PetscErrorCode SOPFLOWSetSubproblemSolver(SOPFLOW sopflow,
-                                          const char solvername[]) {
-  PetscErrorCode ierr;
-  ierr = PetscStrcpy(sopflow->subproblem_solver, solvername);
-  CHKERRQ(ierr);
+                                          const std::string solvername) {
+  PetscFunctionBegin;
+  sopflow->subproblem_solver = solvername;
   PetscFunctionReturn(0);
 }
 
@@ -1491,10 +1506,9 @@ PetscErrorCode SOPFLOWSetSubproblemSolver(SOPFLOW sopflow,
   Notes: This is used with HIOP solver only
 */
 PetscErrorCode SOPFLOWSetSubproblemComputeMode(SOPFLOW sopflow,
-                                               const char mode[]) {
-  PetscErrorCode ierr;
-  ierr = PetscStrcpy(sopflow->compute_mode, mode);
-  CHKERRQ(ierr);
+                                               const std::string mode) {
+  PetscFunctionBegin;
+  sopflow->compute_mode = mode;
   PetscFunctionReturn(0);
 }
 
@@ -1510,7 +1524,25 @@ PetscErrorCode SOPFLOWSetSubproblemComputeMode(SOPFLOW sopflow,
   Notes: This is used with HIOP solver only
 */
 PetscErrorCode SOPFLOWSetSubproblemVerbosityLevel(SOPFLOW sopflow, int level) {
-  PetscErrorCode ierr;
+  PetscFunctionBegin;
   sopflow->verbosity_level = level;
+  PetscFunctionReturn(0);
+}
+
+/*
+  SOPFLOWSetSubproblemMemSpace - Set subproblem memory space
+
+  Inputs
++ sopflow - sopflow object
+- mem_space   - subproblem memory space
+
+  Option Name
+  -hiop_mem_space
+  Notes: This is used with HIOP solver only
+*/
+PetscErrorCode SOPFLOWSetSubproblemMemSpace(SOPFLOW sopflow,
+                                            const std::string mem_space) {
+  PetscFunctionBegin;
+  sopflow->mem_space = mem_space;
   PetscFunctionReturn(0);
 }

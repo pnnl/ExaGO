@@ -114,13 +114,13 @@ void init_exago_scopflow(pybind11::module &m) {
       .def("set_verbosity_level",
            [](SCOPFLOW_wrapper &w, int level) {
              PetscErrorCode ierr;
-             ierr = SCOPFLOWSetVerbosityLevel(w.scopf, level);
+             ierr = SCOPFLOWSetSubproblemVerbosityLevel(w.scopf, level);
              ExaGOCheckError(ierr);
            })
       .def("set_compute_mode",
            [](SCOPFLOW_wrapper &w, std::string mode) {
              PetscErrorCode ierr;
-             ierr = SCOPFLOWSetComputeMode(w.scopf, mode.c_str());
+             ierr = SCOPFLOWSetSubproblemComputeMode(w.scopf, mode.c_str());
              ExaGOCheckError(ierr);
            })
       .def("set_mode",

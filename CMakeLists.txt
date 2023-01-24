@@ -321,7 +321,6 @@ if(EXAGO_ENABLE_IPOPT)
   )
 endif()
 
-
 # Install options files
 install(FILES ${EXAGO_OPTIONS_FILES} DESTINATION ${EXAGO_OPTIONS_DIR})
 # Install options file to binary dir for testing

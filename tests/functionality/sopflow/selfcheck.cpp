@@ -34,6 +34,7 @@ struct SopflowFunctionalityTestParameters {
   bool ignore_lineflow_constraints = false;
   std::string compute_mode = "auto";
   int verbosity_level = 0;
+  std::string mem_space = "DEFAULT";
   bool flatten = true;
 
   /* Parameters used to determine success or failure of functionality test */
@@ -63,6 +64,7 @@ struct SopflowFunctionalityTestParameters {
                  "ignore_lineflow_constraints");
     set_if_found(verbosity_level, values, "verbosity_level");
     set_if_found(compute_mode, values, "compute_mode");
+    set_if_found(mem_space, values, "mem_space");
 
     // Multi-contingency SOPFLOW settings
     set_if_found(multicontingency, values, "multicontingency");
@@ -220,19 +222,20 @@ struct SopflowFunctionalityTests
     ierr = SOPFLOWSetGenBusVoltageType(sopflow, params.gen_bus_voltage_type);
     ExaGOCheckError(ierr);
 
-    ierr = SOPFLOWSetSubproblemModel(sopflow, params.subproblem_model.c_str());
+    ierr = SOPFLOWSetSubproblemModel(sopflow, params.subproblem_model);
     ExaGOCheckError(ierr);
 
-    ierr =
-        SOPFLOWSetSubproblemSolver(sopflow, params.subproblem_solver.c_str());
+    ierr = SOPFLOWSetSubproblemSolver(sopflow, params.subproblem_solver);
+    ExaGOCheckError(ierr);
+
+    ierr = SOPFLOWSetSubproblemMemSpace(sopflow, params.mem_space);
     ExaGOCheckError(ierr);
 
     ierr = SOPFLOWSetIgnoreLineflowConstraints(
         sopflow, (PetscBool)params.ignore_lineflow_constraints);
     ExaGOCheckError(ierr);
 
-    ierr =
-        SOPFLOWSetSubproblemComputeMode(sopflow, params.compute_mode.c_str());
+    ierr = SOPFLOWSetSubproblemComputeMode(sopflow, params.compute_mode);
     ExaGOCheckError(ierr);
 
     ierr = SOPFLOWSetSubproblemVerbosityLevel(sopflow, params.verbosity_level);

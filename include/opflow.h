@@ -160,10 +160,10 @@ const auto hiop_ipopt_debug = ExaGOBoolOption(
 
 } // namespace OPFLOWOptions
 
-PETSC_EXTERN PetscErrorCode OPFLOWSetModel(OPFLOW, const char[]);
-PETSC_EXTERN PetscErrorCode OPFLOWGetModel(OPFLOW, char *);
-PETSC_EXTERN PetscErrorCode OPFLOWSetSolver(OPFLOW, const char[]);
-PETSC_EXTERN PetscErrorCode OPFLOWGetSolver(OPFLOW, char *);
+PETSC_EXTERN PetscErrorCode OPFLOWSetModel(OPFLOW, const std::string);
+PETSC_EXTERN PetscErrorCode OPFLOWGetModel(OPFLOW, std::string *);
+PETSC_EXTERN PetscErrorCode OPFLOWSetSolver(OPFLOW, const std::string);
+PETSC_EXTERN PetscErrorCode OPFLOWGetSolver(OPFLOW, std::string *);
 PETSC_EXTERN PetscErrorCode
 OPFLOWModelRegister(OPFLOW, const char[], PetscErrorCode (*create)(OPFLOW));
 PETSC_EXTERN PetscErrorCode
@@ -177,10 +177,10 @@ PETSC_EXTERN PetscErrorCode OPFLOWCreateMatrix(OPFLOW, Mat *);
 PETSC_EXTERN PetscErrorCode OPFLOWSolve(OPFLOW);
 PETSC_EXTERN PetscErrorCode OPFLOWSetInitialGuess(OPFLOW, Vec, Vec);
 PETSC_EXTERN PetscErrorCode OPFLOWSetTolerance(OPFLOW, PetscReal);
-PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPComputeMode(OPFLOW, const char *);
-PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPComputeMode(OPFLOW, char *);
-PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPMemSpace(OPFLOW, const char *);
-PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPMemSpace(OPFLOW, char *);
+PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPComputeMode(OPFLOW, const std::string);
+PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPComputeMode(OPFLOW, std::string *);
+PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPMemSpace(OPFLOW, const std::string);
+PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPMemSpace(OPFLOW, std::string *);
 PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPVerbosityLevel(OPFLOW, int);
 PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPVerbosityLevel(OPFLOW, int *);
 PETSC_EXTERN PetscErrorCode OPFLOWGetTolerance(OPFLOW, PetscReal *);

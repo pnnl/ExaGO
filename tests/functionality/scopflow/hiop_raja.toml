@@ -15,6 +15,7 @@ subproblem_model = 'PBPOLRAJAHIOP'
 subproblem_solver = 'HIOP'
 compute_mode = 'GPU'
 verbosity_level = 3
+mem_space = 'DEFAULT'
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'
@@ -34,3 +35,14 @@ enable_powerimbalance_variables = true
 num_contingencies = 4
 num_iters = 1
 obj_value = 25957.67116859898
+
+[[testcase]]
+network = 'datafiles/case_ACTIVSg200.m'
+contingencies = 'datafiles/case_ACTIVSg200.cont'
+description = 'case_ACTIVSg200.m with HIOP solver/4 contingencies/using RAJA and DEVICE memory space'
+ignore_lineflow_constraints = true
+enable_powerimbalance_variables = true
+num_contingencies = 4
+num_iters = 1
+obj_value = 25957.67116859898
+mem_space = 'DEVICE'
