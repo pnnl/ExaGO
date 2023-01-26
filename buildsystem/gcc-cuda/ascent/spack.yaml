@@ -5,7 +5,7 @@ spack:
     ^magma+cuda cuda_arch=70 
     ^raja@0.14.0+cuda~examples~exercises~ipo+openmp~rocm+shared~tests cuda_arch=70 
     ^umpire@6.0.0~c+cuda~deviceconst~examples~fortran~ipo~numa~openmp~rocm~shared cuda_arch=70 tests=none 
-    ^ipopt+coinhsl~mumps
+    ^ipopt@3.12.10+coinhsl~mumps
     ^petsc@3.18.1
   view: false
   compilers:

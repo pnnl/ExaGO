@@ -31,8 +31,8 @@ module load exasgd-hdf5/1.12.2/spectrum-mpi-10.4.0.3-20210112/gcc-10.2.0-yh642ea
 module load exasgd-hiop/develop/cuda-11.4.2/spectrum-mpi-10.4.0.3-20210112/gcc-10.2.0-ucuclxs
 # hypre@2.24.0%gcc@10.2.0~complex~cuda~debug+fortran~gptune~int64~internal-superlu~mixedint+mpi~openmp~rocm+shared~superlu-dist~unified-memory arch=linux-rhel8-power9le
 module load exasgd-hypre/2.24.0/spectrum-mpi-10.4.0.3-20210112/gcc-10.2.0-oybqs3s
-# ipopt@3.14.5%gcc@10.2.0+coinhsl~debug~metis~mumps arch=linux-rhel8-power9le
-module load exasgd-ipopt/3.14.5/gcc-10.2.0-c2xr2hv
+# ipopt@3.12.10%gcc@10.2.0+coinhsl~debug~metis~mumps build_system=autotools arch=linux-rhel8-power9le
+module load exasgd-ipopt/3.12.10/gcc-10.2.0-i4gqiqg
 # libiconv@1.16%gcc@10.2.0 libs=shared,static arch=linux-rhel8-power9le
 module load exasgd-libiconv/1.16/gcc-10.2.0-cpn6euq
 # magma@2.6.2%gcc@10.2.0+cuda+fortran~ipo~rocm+shared build_type=RelWithDebInfo cuda_arch=70 arch=linux-rhel8-power9le
