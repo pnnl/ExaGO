@@ -1,0 +1,4 @@
+#!/bin/sh
+
+PASSWORD=${ASCENT_PUSH_MIRROR_PAT}
+exec echo "$PASSWORD"

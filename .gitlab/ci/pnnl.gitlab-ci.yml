@@ -1,3 +1,15 @@
+include:
+  - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v1/gitlab-lib.yaml'
+
+# CI constraints for every branch
+workflow:
+  rules:
+      # Only run if source is an open merge request or a branch push
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+      when: never
+    - if: '$CI_COMMIT_BRANCH'
+
 .pnnl_after_script_template:
   after_script:
     - |
@@ -163,7 +175,6 @@
       if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"' # Will only apply to PNNL
 
 .pnnl_nonhpc_tags:
-  image: ubuntu:20.04
   tags:
     - k8s
     - ikp
@@ -179,8 +190,12 @@ stages:
 
 # For PNNL CI
 CMake Lint:
+  image: ubuntu:20.04
   stage: build
   allow_failure: true
+  variables:
+  # Don't clone submodules for jobs that don't need submodules
+    GIT_SUBMODULE_STRATEGY: none
   extends:
     - .pnnl_nonhpc_tags
     - .pnnl_rules
@@ -193,8 +208,12 @@ CMake Lint:
     exit $?
 
 C++ Lint:
+  image: ubuntu:20.04
   stage: build
   allow_failure: true
+  variables:
+  # Don't clone submodules for jobs that don't need submodules
+    GIT_SUBMODULE_STRATEGY: none
   extends:
     - .pnnl_nonhpc_tags
     - .pnnl_rules
@@ -206,8 +225,12 @@ C++ Lint:
     exit $?
 
 Python Lint:
+  image: ubuntu:20.04
   stage: build
   allow_failure: true
+  variables:
+  # Don't clone submodules for jobs that don't need submodules
+    GIT_SUBMODULE_STRATEGY: none
   extends:
     - .pnnl_nonhpc_tags
     - .pnnl_rules
@@ -220,8 +243,12 @@ Python Lint:
     exit $?
 
 File Naming Conventions:
+  image: ubuntu:20.04
   stage: build
   allow_failure: true
+  variables:
+  # Don't clone submodules for jobs that don't need submodules
+    GIT_SUBMODULE_STRATEGY: none
   extends:
     - .pnnl_nonhpc_tags
     - .pnnl_rules
@@ -233,6 +260,7 @@ File Naming Conventions:
     exit $?
 
 SVC Account Cleanup:
+  image: ubuntu:20.04
   stage: .pre
   variables:
     # Don't clone for cleanup jobs
@@ -245,6 +273,29 @@ SVC Account Cleanup:
     # clears directory of files more than 6 hours/360 minutes old
     - find $WORKDIR -type d -mindepth 1 -mmin +360 -prune -print -exec rm -rf {} \; || true
     - ls -hal $WORKDIR
+
+Ascent Push Mirror:
+  image: mrnonz/alpine-git-curl:alpine3.16
+  stage: .pre
+  variables:
+  # Don't clone submodules for jobs that don't need submodules
+    GIT_SUBMODULE_STRATEGY: none
+  # We only want Ascent CI for MRs
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  extends:
+    - .pnnl_rules
+    - .pnnl_nonhpc_tags
+  script:
+    - git --version
+    - curl --version
+    - git checkout -b ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+    - git config --global credential.username ${ASCENT_PUSH_MIRROR_USER}
+    - git config --global core.askPass ./.gitlab/ci/ascent-cred-helper.sh
+    - git config --global credential.helper cache
+    - git remote add ascent https://code.ornl.gov/ecpcitest/exasgd/exago.git
+    - git push --tags --force -o ci.skip --prune ascent ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+    - "curl -X POST --fail -F token=${ASCENT_CI_TRIGGER_TOKEN} -F ref=${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} https://code.ornl.gov/api/v4/projects/7381/trigger/pipeline"
 
 Newell Build:
   stage: build
@@ -268,7 +319,7 @@ Newell Test:
     GIT_STRATEGY: none
     SLURM_Q: "newell_shared"
     MY_CLUSTER: "newell"
-    CTESTARGS: "--output-on-failure -E Python"
+    CTESTARGS: "--timeout 120 --output-on-failure -E Python"
     OUTPUT_SUFFIX: "_test"
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
@@ -287,7 +338,7 @@ Newell Py Test:
     GIT_STRATEGY: none
     SLURM_Q: "newell8"
     MY_CLUSTER: "newell"
-    CTESTARGS: "--output-on-failure -R Python"
+    CTESTARGS: "--timeout 120 --output-on-failure -R Python"
     OUTPUT_SUFFIX: "_test_python"
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
@@ -336,7 +387,7 @@ Deception Test:
     GIT_STRATEGY: none
     SLURM_Q: "dl_shared"
     MY_CLUSTER: "deception"
-    CTESTARGS: "--output-on-failure -E Python"
+    CTESTARGS: "--timeout 120 --output-on-failure -E Python"
     OUTPUT_SUFFIX: "_test"
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
     WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
@@ -355,7 +406,7 @@ Deception Py Test:
     GIT_STRATEGY: none
     SLURM_Q: "dl_shared"
     MY_CLUSTER: "deception"
-    CTESTARGS: "--output-on-failure -R Python"
+    CTESTARGS: "--timeout 120 --output-on-failure -R Python"
     OUTPUT_SUFFIX: "_test_python"
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
     WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
