@@ -42,8 +42,8 @@ exit_code=$?
 # accessible to group members
 # Since we use this in CI and other users will create files we cannot chmod,
 # We need to allow this command to fail
-chmod -R ugo+wrx $SPACK_INSTALL || true
-chmod -R ugo+wrx $SPACK_CACHE || true
+chmod -R ugo+wrx $SPACK_INSTALL > /dev/null 2>&1
+chmod -R ugo+wrx $SPACK_CACHE > /dev/null 2>&1
 
 # Should still change permissions before exiting, but should also return the exit
 # code of spack related code
