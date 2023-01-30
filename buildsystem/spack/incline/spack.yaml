@@ -1,6 +1,6 @@
 spack:
   specs:
-  - exago@develop%rocmcc@4.5.1 amdgpu_target=gfx90a
+  - exago@develop%gcc@10.2.0 amdgpu_target=gfx90a
   view: false
   concretizer:
     unify: when_possible
