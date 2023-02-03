@@ -4,11 +4,10 @@ include:
 # CI constraints for every branch
 workflow:
   rules:
-      # Only run if source is an open merge request or a branch push
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - when: always
+      # Don't run in both a PR and a branch push
     - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
       when: never
-    - if: '$CI_COMMIT_BRANCH'
 
 .pnnl_after_script_template:
   after_script:
@@ -192,18 +191,21 @@ workflow:
 
 .deception_test_rules:
   rules:
+    - when: always
       # Only run when the commit **DOES NOT** contains "[newell-test]"
     - if: '$CI_COMMIT_TITLE =~ /\[newell-test\]/'
       when: never
 
 .newell_test_rules:
   rules:
+    - when: always
     # Only run when the commit **DOES NOT** contains "[deception-test]"
     - if: '$CI_COMMIT_TITLE =~ /\[deception-test\]/'
       when: never
 
 .ascent_test_rules:
   rules:
+    - when: always
      # Only run when the commit **DOES NOT** contains "[ascent-test]"
     - if: '$CI_COMMIT_TITLE =~ /\[ascent-test\]/'
       when: never
