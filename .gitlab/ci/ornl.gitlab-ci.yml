@@ -12,7 +12,7 @@
 .crusher_rules:
   rules:
     - if: $CI_PIPELINE_SOURCE == "web"
-    - if: $CI_PINELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
     - when: never
 
 .crusher_variables:

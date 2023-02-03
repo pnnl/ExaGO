@@ -185,17 +185,26 @@ workflow:
       # Only run when the commit **DOES NOT** contains "[deception-rebuild]"
     - if: '$CI_COMMIT_TITLE =~ /\[deception-rebuild\]/'
       when: never
+      # Only run when the commit **DOES NOT** contains "[ascent-rebuild]" 
+    - if: '$CI_COMMIT_TITLE =~ /\[ascent-rebuild\]/'
+      when: never 
 
 .deception_test_rules:
   rules:
       # Only run when the commit **DOES NOT** contains "[newell-test]"
     - if: '$CI_COMMIT_TITLE =~ /\[newell-test\]/'
       when: never
+     # Only run when the commit **DOES NOT** contains "[ascent-test]"
+    - if: '$CI_COMMIT_TITLE =~ /\[ascent-test\]/'
+      when: never
 
 .newell_test_rules:
   rules:
     # Only run when the commit **DOES NOT** contains "[deception-test]"
     - if: '$CI_COMMIT_TITLE =~ /\[deception-test\]/'
+      when: never
+     # Only run when the commit **DOES NOT** contains "[ascent-test]"
+    - if: '$CI_COMMIT_TITLE =~ /\[ascent-test\]/'
       when: never
 
 variables:
@@ -300,9 +309,15 @@ Ascent Push Mirror:
   stage: .pre 
   extends: 
     - .pnnl_nonhpc_tags
-    - .skip_during_module_rebuild_rules
     - .newell_test_rules
     - .deception_test_rules
+  rules:
+      # Only run when the commit **DOES NOT** contains "[newell-rebuild]"
+    - if: '$CI_COMMIT_TITLE =~ /\[newell-rebuild\]/'
+      when: never
+      # Only run when the commit **DOES NOT** contains "[deception-rebuild]"
+    - if: '$CI_COMMIT_TITLE =~ /\[deception-rebuild\]/'
+      when: never
   variables:
     # Don't need to check out submodules as we aren't using them 
     GIT_SUBMODULE_STRATEGY: none
