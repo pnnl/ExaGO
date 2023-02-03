@@ -162,17 +162,13 @@ workflow:
       exit $res
 
 .pnnl_tags_template:
+  # This image allows you to connect to SLURM
   image: kfox1111/slurm:deception2
   tags:
     - k8s
     - ikp
     - exasgd
     - marianas
-
-.pnnl_rules:
-  rules:
-    - &pnnl_rule
-      if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"' # Will only apply to PNNL
 
 .pnnl_nonhpc_tags:
   tags:
@@ -184,90 +180,84 @@ workflow:
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
+.non_hpc_job:
+  needs: []
+  allow_failure: true
+  stage: test
+  extends: .pnnl_nonhpc_tags
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+
+
+.cluster_build:
+  needs: []
+  stage: build
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+  variables:
+    OUTPUT_SUFFIX: "_build"
+    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
+
+.cluster_test:
+  stage: test
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+    - .pnnl_after_script_template
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    CTESTARGS: "--timeout 120 --output-on-failure -E Python"
+    OUTPUT_SUFFIX: "_test"
+
+.cluster_py_test:
+  stage: test
+  allow_failure: true
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+      # No after_script as only one test per platform cleans up
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+    CTESTARGS: "--timeout 120 --output-on-failure -R Python"
+    OUTPUT_SUFFIX: "_test_python"
+
+.deception:
+  variables:
+    MY_CLUSTER: "deception"
+    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+
+.newell:
+  variables:
+    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+    MY_CLUSTER: "newell"
+
+.module_rebuild:
+  needs: []
+  stage: build
+  when: manual
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_module_script_template
+  allow_failure: true
+
 stages:
+  - admin
   - build
   - test
 
-# For PNNL CI
-CMake Lint:
-  image: ubuntu:20.04
-  stage: build
-  allow_failure: true
-  variables:
-  # Don't clone submodules for jobs that don't need submodules
-    GIT_SUBMODULE_STRATEGY: none
-  extends:
-    - .pnnl_nonhpc_tags
-    - .pnnl_rules
-  script:
-    |
-    set -x
-    apt update && apt install -y python3 python3-pip perl
-    pip install cmake_format
-    ./buildsystem/tools/cmake_format.pl -v
-    exit $?
-
-C++ Lint:
-  image: ubuntu:20.04
-  stage: build
-  allow_failure: true
-  variables:
-  # Don't clone submodules for jobs that don't need submodules
-    GIT_SUBMODULE_STRATEGY: none
-  extends:
-    - .pnnl_nonhpc_tags
-    - .pnnl_rules
-  script:
-    |
-    set -x
-    apt update && apt install -y clang-format perl
-    ./buildsystem/tools/clang_format.pl -v
-    exit $?
-
-Python Lint:
-  image: ubuntu:20.04
-  stage: build
-  allow_failure: true
-  variables:
-  # Don't clone submodules for jobs that don't need submodules
-    GIT_SUBMODULE_STRATEGY: none
-  extends:
-    - .pnnl_nonhpc_tags
-    - .pnnl_rules
-  script:
-    |
-    set -x
-    apt update && apt install -y python3 python3-pip perl
-    pip install pycodestyle autopep8
-    ./buildsystem/tools/python_format.pl -v
-    exit $?
-
-File Naming Conventions:
-  image: ubuntu:20.04
-  stage: build
-  allow_failure: true
-  variables:
-  # Don't clone submodules for jobs that don't need submodules
-    GIT_SUBMODULE_STRATEGY: none
-  extends:
-    - .pnnl_nonhpc_tags
-    - .pnnl_rules
-  script:
-    |
-    set -x
-    apt update && apt install -y perl
-    ./buildsystem/tools/file_naming_conventions.pl
-    exit $?
-
+# -- Pre Stage
 SVC Account Cleanup:
   image: ubuntu:20.04
-  stage: .pre
+  stage: admin 
+  extends: .pnnl_tags_template
   variables:
-    # Don't clone for cleanup jobs
+    # Don't clone for cleanup job
     GIT_STRATEGY: none
-  extends:
-    - .pnnl_rules
-    - .pnnl_tags_template
   script:
     - export WORKDIR="$HOME/gitlab/"
     # clears directory of files more than 6 hours/360 minutes old
@@ -276,16 +266,11 @@ SVC Account Cleanup:
 
 Ascent Push Mirror:
   image: mrnonz/alpine-git-curl:alpine3.16
-  stage: .pre
+  stage: admin
+  extends: .pnnl_nonhpc_tags
   variables:
-  # Don't clone submodules for jobs that don't need submodules
+    # Don't need to check out submodules as we aren't using them 
     GIT_SUBMODULE_STRATEGY: none
-  # We only want Ascent CI for MRs
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-  extends:
-    - .pnnl_rules
-    - .pnnl_nonhpc_tags
   script:
     - git --version
     - curl --version
@@ -297,139 +282,93 @@ Ascent Push Mirror:
     - git push --tags --force -o ci.skip --prune ascent ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
     - "curl -X POST --fail -F token=${ASCENT_CI_TRIGGER_TOKEN} -F ref=${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} https://code.ornl.gov/api/v4/projects/7381/trigger/pipeline"
 
+# -- Build Stage
+CMake Lint:
+  image: ubuntu:20.04
+  extends: .non_hpc_job
+  script:
+    |
+    set -x
+    apt update && apt install -y python3 python3-pip perl
+    pip install cmake_format
+    ./buildsystem/tools/cmake_format.pl -v
+    exit $?
+
+C++ Lint:
+  image: ubuntu:20.04
+  extends: .non_hpc_job
+  script:
+    |
+    set -x
+    apt update && apt install -y clang-format perl
+    ./buildsystem/tools/clang_format.pl -v
+    exit $?
+
+Python Lint:
+  image: ubuntu:20.04
+  extends: .non_hpc_job
+  script:
+    |
+    set -x
+    apt update && apt install -y python3 python3-pip perl
+    pip install pycodestyle autopep8
+    ./buildsystem/tools/python_format.pl -v
+    exit $?
+
+File Naming Conventions:
+  image: ubuntu:20.04
+  extends: .non_hpc_job
+  script:
+    |
+    set -x
+    apt update && apt install -y perl
+    ./buildsystem/tools/file_naming_conventions.pl
+    exit $?
+
 Newell Build:
-  stage: build
-  variables:
-    SLURM_Q: "newell_shared"
-    MY_CLUSTER: "newell"
-    OUTPUT_SUFFIX: "_build"
-    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
   extends:
-    - .pnnl_tags_template
-    - .pnnl_script_template
-    - .pnnl_rules
-
-Newell Test:
-  stage: test
-  dependencies:
-    - 'Newell Build'
-  variables:
-    # Don't clone for test jobs
-    GIT_STRATEGY: none
-    SLURM_Q: "newell_shared"
-    MY_CLUSTER: "newell"
-    CTESTARGS: "--timeout 120 --output-on-failure -E Python"
-    OUTPUT_SUFFIX: "_test"
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
-  extends:
-    - .pnnl_tags_template
-    - .pnnl_script_template
-    - .pnnl_after_script_template
-    - .pnnl_rules
-
-Newell Py Test:
-  stage: test
-  dependencies:
-    - 'Newell Build'
-  variables:
-    # Don't clone for test jobs
-    GIT_STRATEGY: none
-    SLURM_Q: "newell8"
-    MY_CLUSTER: "newell"
-    CTESTARGS: "--timeout 120 --output-on-failure -R Python"
-    OUTPUT_SUFFIX: "_test_python"
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
-  extends:
-    - .pnnl_tags_template
-    - .pnnl_script_template
-      # No after_script as only one test per platform cleans up
-    - .pnnl_rules
-  allow_failure: true
-
-Newell Module Rebuild:
-  stage: .pre
-  when: manual
-# Only for manual pipelines in MRs
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-  variables:
-    GIT_STRATEGY: clone
-    MY_CLUSTER: "newell"
-    WORKDIR_SUFFIX: "spack_newell"
-  extends:
-    - .pnnl_tags_template
-    - .pnnl_module_script_template
-    - .pnnl_rules
-  allow_failure: true
+    - .cluster_build
+    - .newell
 
 Deception Build:
-  stage: build
-  variables:
-    SLURM_Q: "dl_shared"
-    MY_CLUSTER: "deception"
-    OUTPUT_SUFFIX: "_build"
-    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
   extends:
-    - .pnnl_tags_template
-    - .pnnl_script_template
-    - .pnnl_rules
+    - .cluster_build
+    - .deception
+
+# -- Test Stage
+Newell Test:
+  extends:
+    - .cluster_test
+    - .newell
+  needs: ['Newell Build']
 
 Deception Test:
-  stage: test
-  dependencies:
-    - 'Deception Build'
-  variables:
-    # Don't clone for test jobs
-    GIT_STRATEGY: none
-    SLURM_Q: "dl_shared"
-    MY_CLUSTER: "deception"
-    CTESTARGS: "--timeout 120 --output-on-failure -E Python"
-    OUTPUT_SUFFIX: "_test"
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
   extends:
-    - .pnnl_tags_template
-    - .pnnl_script_template
-    - .pnnl_after_script_template
-    - .pnnl_rules
+    - .cluster_test
+    - .deception
+  needs: ['Deception Build']
+
+Newell Py Test:
+  extends:
+    - .cluster_py_test
+    - .newell
+  needs: ['Newell Build']
 
 Deception Py Test:
-  stage: test
-  dependencies:
-    - 'Deception Build'
-  variables:
-    # Don't clone for test jobs
-    GIT_STRATEGY: none
-    SLURM_Q: "dl_shared"
-    MY_CLUSTER: "deception"
-    CTESTARGS: "--timeout 120 --output-on-failure -R Python"
-    OUTPUT_SUFFIX: "_test_python"
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
   extends:
-    - .pnnl_tags_template
-    - .pnnl_script_template
-      # No after_script as only one test per platform cleans up
-    - .pnnl_rules
-  allow_failure: true
+    - .cluster_py_test
+    - .deception
+  needs: ['Deception Build']
 
 Deception Module Rebuild:
-  stage: .pre
-  when: manual
-  # Only for manual pipelines in MRs
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  extends: .module_rebuild
   variables:
-    GIT_STRATEGY: clone
     MY_CLUSTER: "deception"
     WORKDIR_SUFFIX: "spack_deception"
-  extends:
-    - .pnnl_tags_template
-    - .pnnl_module_script_template
-    - .pnnl_rules
-  allow_failure: true
+
+Newell Module Rebuild:
+  extends: .module_rebuild
+  variables:
+    MY_CLUSTER: "newell"
+    WORKDIR_SUFFIX: "spack_newell"
 # ---
