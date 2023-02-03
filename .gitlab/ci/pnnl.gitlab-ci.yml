@@ -147,7 +147,7 @@ workflow:
       git config user.email "spack.bot@no-reply.com"
 
       # Add commit to MR branch - message can be changed
-      git commit -m "Update ${MY_CLUSTER} spack built modules - CI AUTOMATED MESSAGE."
+      git commit -m "Update ${MY_CLUSTER} CI spack tcl modules - [${MY_CLUSTER}-test]"
 
       # Do a rebase incase another pipeline has pushed since build started
       git pull --rebase origin ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
@@ -177,6 +177,27 @@ workflow:
     - exasgd
     - basic
 
+.skip_during_module_rebuild_rules:
+  rules:
+      # Only run when the commit **DOES NOT** contains "[newell-rebuild]"
+    - if: '$CI_COMMIT_TITLE =~ /\[newell-rebuild\]/'
+      when: never
+      # Only run when the commit **DOES NOT** contains "[deception-rebuild]"
+    - if: '$CI_COMMIT_TITLE =~ /\[deception-rebuild\]/'
+      when: never
+
+.deception_test_rules:
+  rules:
+      # Only run when the commit **DOES NOT** contains "[newell-test]"
+    - if: '$CI_COMMIT_TITLE =~ /\[newell-test\]/'
+      when: never
+
+.newell_test_rules:
+  rules:
+    # Only run when the commit **DOES NOT** contains "[deception-test]"
+    - if: '$CI_COMMIT_TITLE =~ /\[deception-test\]/'
+      when: never
+
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
@@ -184,10 +205,13 @@ variables:
   needs: []
   allow_failure: true
   stage: test
-  extends: .pnnl_nonhpc_tags
+  extends: 
+    - .pnnl_nonhpc_tags
+    - .skip_during_module_rebuild_rules
+    - .deception_test_rules
+    - .newell_test_rules
   variables:
     GIT_SUBMODULE_STRATEGY: none
-
 
 .cluster_build:
   needs: []
@@ -195,6 +219,7 @@ variables:
   extends:
     - .pnnl_tags_template
     - .pnnl_script_template
+    - .skip_during_module_rebuild_rules 
   variables:
     OUTPUT_SUFFIX: "_build"
     SCRIPT_ARGS: " --build-only --job=gcc-cuda "
@@ -205,6 +230,7 @@ variables:
     - .pnnl_tags_template
     - .pnnl_script_template
     - .pnnl_after_script_template
+    - .skip_during_module_rebuild_rules
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
@@ -219,6 +245,7 @@ variables:
     - .pnnl_tags_template
     - .pnnl_script_template
       # No after_script as only one test per platform cleans up
+    - .skip_during_module_rebuild_rules
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
@@ -230,30 +257,34 @@ variables:
   variables:
     MY_CLUSTER: "deception"
     WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+  extends:
+    - .deception_test_rules
 
 .newell:
   variables:
     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
     MY_CLUSTER: "newell"
+  extends:
+    - .newell_test_rules
 
 .module_rebuild:
   needs: []
   stage: build
-  when: manual
   extends:
     - .pnnl_tags_template
     - .pnnl_module_script_template
+    - .newell_test_rules
+    - .deception_test_rules
   allow_failure: true
 
 stages:
-  - admin
   - build
   - test
 
 # -- Pre Stage
 SVC Account Cleanup:
   image: ubuntu:20.04
-  stage: admin 
+  stage: .pre 
   extends: .pnnl_tags_template
   variables:
     # Don't clone for cleanup job
@@ -266,8 +297,12 @@ SVC Account Cleanup:
 
 Ascent Push Mirror:
   image: mrnonz/alpine-git-curl:alpine3.16
-  stage: admin
-  extends: .pnnl_nonhpc_tags
+  stage: .pre 
+  extends: 
+    - .pnnl_nonhpc_tags
+    - .skip_during_module_rebuild_rules
+    - .newell_test_rules
+    - .deception_test_rules
   variables:
     # Don't need to check out submodules as we aren't using them 
     GIT_SUBMODULE_STRATEGY: none
@@ -361,13 +396,25 @@ Deception Py Test:
   needs: ['Deception Build']
 
 Deception Module Rebuild:
-  extends: .module_rebuild
+  extends: 
+    - .module_rebuild
+  rules:
+    # Only run when the commit contains "[deception-rebuild]"
+    - if: '$CI_COMMIT_TITLE =~ /\[deception-rebuild\]/'
+      when: always
+    - when: never
   variables:
     MY_CLUSTER: "deception"
     WORKDIR_SUFFIX: "spack_deception"
 
 Newell Module Rebuild:
-  extends: .module_rebuild
+  extends: 
+    - .module_rebuild
+  rules:
+    # Only run when the commit contains "[newell-rebuild]"
+    - if: '$CI_COMMIT_TITLE =~ /\[newell-rebuild\]/'
+      when: always
+    - when: never
   variables:
     MY_CLUSTER: "newell"
     WORKDIR_SUFFIX: "spack_newell"
