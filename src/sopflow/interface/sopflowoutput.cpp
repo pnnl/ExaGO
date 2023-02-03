@@ -101,10 +101,15 @@ PetscErrorCode SOPFLOWPrintSolution(SOPFLOW sopflow, PetscInt scen_num) {
                            ? "YES"
                            : "NO");
     CHKERRQ(ierr);
-    if (sopflow->flatten_contingencies || sopflow->ismulticontingency ||
-        (sopflow->Nc - 1)) {
+    if (sopflow->ismulticontingency || sopflow->flatten_contingencies) {
+      int nc;
+      if (sopflow->flatten_contingencies) {
+        nc = sopflow->Nc - 1;
+      } else {
+        nc = sopflow->Nc;
+      }
       ierr = PetscPrintf(sopflow->comm->type, "%-35s %d\n",
-                         "Contingencies per scenario", sopflow->Nc - 1);
+                         "Contingencies per scenario", nc);
       CHKERRQ(ierr);
     }
 
