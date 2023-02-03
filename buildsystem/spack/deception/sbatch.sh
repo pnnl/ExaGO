@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -A exasgd
-#SBATCH -p slurm
+#SBATCH -p short
 #SBATCH -N 1
 #SBATCH -n 64
 #SBATCH -J exago_spack
