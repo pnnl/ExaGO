@@ -721,7 +721,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
       if (sopflow->Nc == -1)
         sopflow->Nc = 1;
     }
-  } else {
+  } else if (!sopflow->ismulticontingency) {
     sopflow->Nc = 1;
   }
 
