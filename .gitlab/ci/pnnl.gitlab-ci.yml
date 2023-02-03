@@ -194,15 +194,15 @@ workflow:
       # Only run when the commit **DOES NOT** contains "[newell-test]"
     - if: '$CI_COMMIT_TITLE =~ /\[newell-test\]/'
       when: never
-     # Only run when the commit **DOES NOT** contains "[ascent-test]"
-    - if: '$CI_COMMIT_TITLE =~ /\[ascent-test\]/'
-      when: never
 
 .newell_test_rules:
   rules:
     # Only run when the commit **DOES NOT** contains "[deception-test]"
     - if: '$CI_COMMIT_TITLE =~ /\[deception-test\]/'
       when: never
+
+.ascent_test_rules:
+  rules:
      # Only run when the commit **DOES NOT** contains "[ascent-test]"
     - if: '$CI_COMMIT_TITLE =~ /\[ascent-test\]/'
       when: never
@@ -219,6 +219,7 @@ variables:
     - .skip_during_module_rebuild_rules
     - .deception_test_rules
     - .newell_test_rules
+    - .ascent_test_rules
   variables:
     GIT_SUBMODULE_STRATEGY: none
 
@@ -229,6 +230,7 @@ variables:
     - .pnnl_tags_template
     - .pnnl_script_template
     - .skip_during_module_rebuild_rules 
+    - .ascent_test_rules
   variables:
     OUTPUT_SUFFIX: "_build"
     SCRIPT_ARGS: " --build-only --job=gcc-cuda "
@@ -240,6 +242,7 @@ variables:
     - .pnnl_script_template
     - .pnnl_after_script_template
     - .skip_during_module_rebuild_rules
+    - .ascent_test_rules
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
@@ -255,6 +258,7 @@ variables:
     - .pnnl_script_template
       # No after_script as only one test per platform cleans up
     - .skip_during_module_rebuild_rules
+    - .ascent_test_rules
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
@@ -284,6 +288,7 @@ variables:
     - .pnnl_module_script_template
     - .newell_test_rules
     - .deception_test_rules
+    - .ascent_test_rules
   allow_failure: true
 
 stages:
