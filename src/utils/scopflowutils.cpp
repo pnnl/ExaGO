@@ -29,7 +29,7 @@ int find_char(char token, char *string, int start) {
  * @param string character string being searched
  * @param start index of first character being checked
  * @return index of first character that does not match token after start
- * character. Return -1 if no character does not match token
+ * character. Return -1 if no character matches token
  */
 int find_first_not_of(char token, char *string, int start) {
   int len = strlen(string);
@@ -129,7 +129,7 @@ char **blankTokenizer(const char *str, int *numtok, int maxtokens,
     slen--;
   /* Replace any tabs with blank spaces */
   for (i = 0; i < slen; i++) {
-    if (strcpy[i] == '\t') {
+    if (str[i] == '\t') {
       strcpy[i] = ' ';
     } else {
       strcpy[i] = str[i];

@@ -197,9 +197,15 @@ struct ScopflowFunctionalityTests
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to contingency file
+    std::string ext = FileNameExtension(params.contingencies);
     resolve_datafiles_path(params.contingencies);
-    ierr = SCOPFLOWSetContingencyData(scopflow, NATIVE,
-                                      params.contingencies.c_str());
+    if (ext == "con") {
+      ierr = SCOPFLOWSetContingencyData(scopflow, PSSE,
+                                        params.contingencies.c_str());
+    } else {
+      ierr = SCOPFLOWSetContingencyData(scopflow, NATIVE,
+                                        params.contingencies.c_str());
+    }
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path

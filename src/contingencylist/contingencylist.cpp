@@ -216,14 +216,17 @@ PetscErrorCode ContingencyListReadData_PSSE(ContingencyList ctgclist) {
           outage->prob = 0.01;
           cont->noutages++;
         } else if (!strcmp(tokens[0], "OPEN")) {
+          int offset = 6;
           cont = &ctgclist->cont[numCont];
           outage = &cont->outagelist[cont->noutages];
           outage->num = numCont;
           outage->type = (OutageType)two;
           outage->bus = 0;
           outage->fbus = atoi(tokens[4]);
-          outage->tbus = atoi(tokens[6]);
-          strcpy(equipid, tokens[8]);
+          if (tokens[offset] == "BUS")
+            offset++;
+          outage->tbus = atoi(tokens[offset]);
+          strcpy(equipid, tokens[offset + 2]);
           clean2Char(equipid);
           ierr = PetscMemcpy(outage->id, equipid, 3 * sizeof(char));
           CHKERRQ(ierr);
@@ -232,6 +235,7 @@ PetscErrorCode ContingencyListReadData_PSSE(ContingencyList ctgclist) {
           cont->noutages++;
         } else {
           free(tokens);
+          printf("Contingency parsing failure on line: (%s)\n", line);
           SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
                   "Cannot Identify contingency\n");
         }
