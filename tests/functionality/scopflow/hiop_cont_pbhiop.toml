@@ -27,6 +27,14 @@ num_iters = 1
 obj_value = 4072.4632566566206
 
 [[testcase]]
+network = 'datafiles/case9/case9mod.m'
+contingencies = 'datafiles/case9/case9_pw.con'
+description = 'case9mod.m with HIOP solver/HIOP subproblem solver/9 PSSE format contingencies'
+num_contingencies = -1
+num_iters = 1
+obj_value = 4072.4632566566206
+
+[[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
 contingencies = 'datafiles/case_ACTIVSg200.cont'
 description = 'case_ACTIVSg200.m with HIOP solver/4 contingencies'
