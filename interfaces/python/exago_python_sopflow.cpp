@@ -365,10 +365,24 @@ void init_exago_sopflow(pybind11::module &m) {
             ExaGOCheckError(ierr);
           })
 
+      .def("save_solution_default",
+           [](SOPFLOW_wrapper &w, int n, std::string outfile) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSaveSolutionDefault(w.sopf, n, outfile.c_str());
+             ExaGOCheckError(ierr);
+           })
+
       .def("save_solution_all",
            [](SOPFLOW_wrapper &w, OutputFormat fmt, std::string outdir) {
              PetscErrorCode ierr;
              ierr = SOPFLOWSaveSolutionAll(w.sopf, fmt, outdir.c_str());
+             ExaGOCheckError(ierr);
+           })
+
+      .def("save_solution_all_default",
+           [](SOPFLOW_wrapper &w, std::string outdir) {
+             PetscErrorCode ierr;
+             ierr = SOPFLOWSaveSolutionAllDefault(w.sopf, outdir.c_str());
              ExaGOCheckError(ierr);
            });
 

@@ -36,8 +36,8 @@ The different variables used in \opflow formulation are described in Table \ref{
     \hline
     $\thetai$ & Bus voltage angle & -$\pi \le \thetai \le \pi$ & 
     \begin{itemize}[noitemsep,topsep=0pt,leftmargin=*] 
-    	\item Used with power balance polar model (\option{\opflowmodel~\pbpol}) 
-	\item $\thetai$ is unbounded, except reference bus angle $\thetarefi$ which is fixed to 0 
+        \item Used with power balance polar model (\option{\opflowmodel~\pbpol}) 
+        \item $\thetai$ is unbounded, except reference bus angle $\thetarefi$ which is fixed to 0 
     \end{itemize} \\
     \hline
     $\vi$ & Bus voltage magnitude & $\vmini \le \vi \le \vmaxi$ & \begin{itemize}[noitemsep,topsep=0pt,leftmargin=*] \item Used with power balance polar model (\option{\opflowmodel~\pbpol})\item $\vmini = \vmaxi = \vseti$ if fixed generator set point voltage option is active (\option{\opflowgensetpoint}) \end{itemize} \\
@@ -273,6 +273,7 @@ See table \ref{tab:opflow_options}
     -netfile & Network file name & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod.m}{case9mod.m}) & \\ \hline
     -print\_output & Print output to screen & 0 or 1 (0) & All solvers\\ \hline
     -save\_output & Save output to file & 0 or 1 (0) & All solvers \\ \hline
+    -opflow\_output\_format & Solution file format & See Table~\ref{tab:opflow_output_format} (MATPOWER) & All solvers \\ \hline
     -opflow\_model & Representation of network balance equations and bus voltages & See Table \ref{sec:opflow_model} (POWER\_BALANCE\_POLAR) & \\ \hline
     -opflow\_solver & Optimization solver & See section \ref{sec:opflow_solvers} & \\ \hline
     -opflow\_initialization & Type of initialization & See Table \ref{tab:opflow_initializations} (MIDPOINT) & All solvers \\ \hline
@@ -289,6 +290,20 @@ See table \ref{tab:opflow_options}
     -opflow\_tolerance & Optimization solver tolerance & real (1e-6) & All solvers \\ \hline 
   \end{tabular}
   \label{tab:opflow_options}
+\end{table}
+
+\begin{table}[!htbp]
+  \centering
+  \caption{OPFLOW solution output formats}
+  \label{tab:opflow_output_format}
+  \begin{tabular}{|c|l|}
+    \hline
+    \textbf{Format name} & \textbf{Description} \\ \hline
+    MATPOWER & Matlab format compatible with MATPOWER \\ \hline
+    CSV & Custom comma separated variable format \\ \hline
+    JSON & Javascript object notation, used for visualization \\ \hline
+    MINIMAL & Simple text file containing minimal information. \\ \hline
+  \end{tabular}
 \end{table}
 
 \begin{table}[!htbp]
@@ -678,3 +693,4 @@ Gen      Status     Fuel     Pg       Qg       Pmin     Pmax     Qmin     Qmax
 3          1    UNDEFINED   242.50    45.19    10.00   270.00  -300.00   300.00
 [ExaGO] Finalizing opflow application.
 \end{lstlisting}
+
