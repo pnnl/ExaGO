@@ -22,17 +22,17 @@ spack:
     exago:
       require: +raja+hiop+ipopt
     hiop:
-      require: '@develop+sparse+mpi+ginkgo+kron'
+      require: +sparse+mpi+ginkgo+kron
+    magma:
+      require: '@2.6.2'
     coinhsl:
       require: '@2019.05.21'
     ipopt:
       require: '@3.12.10~metis+coinhsl~mumps'
     raja:
-      require: '@0.14.0~examples~exercises'
+      require: ~examples~exercises
     umpire:
       require: ~openmp~examples
-    camp:
-      require: '@0.2.2'
     petsc:
       require: ~hypre~superlu-dist~hdf5~metis
     python:

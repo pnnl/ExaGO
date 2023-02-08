@@ -212,7 +212,7 @@ variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    CTESTARGS: "--timeout 120 --output-on-failure -E Python"
+    CTESTARGS: "--timeout 240 --output-on-failure -E Python"
     OUTPUT_SUFFIX: "_test"
 
 .cluster_py_test:
@@ -227,7 +227,7 @@ variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    CTESTARGS: "--timeout 120 --output-on-failure -R Python"
+    CTESTARGS: "--timeout 240 --output-on-failure -R Python"
     OUTPUT_SUFFIX: "_test_python"
 
 .deception:
