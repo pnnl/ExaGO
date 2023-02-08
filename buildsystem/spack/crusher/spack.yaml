@@ -61,14 +61,16 @@ spack:
       variants: +mpi
     exago:
       require: ~python+raja+hiop+rocm+ipopt
+    magma:
+      require: '@2.6.2'
     hiop:
-      require: '@develop+sparse+mpi+raja+rocm+ginkgo+kron'
+      require: +sparse+mpi+raja+rocm+ginkgo+kron
     ipopt:
       require: '@3.12.10~metis+coinhsl~mumps'
     umpire:
-      require: '@6.0.0~examples'
+      require: ~examples
     raja:
-      require: '@0.14.0~examples~exercises'
+      require: ~examples~exercises
     ginkgo:
       require: '@1.5.0.glu_experimental'
     coinhsl:
