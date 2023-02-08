@@ -102,7 +102,8 @@ See table \ref{tab:scopflow_options}. In addition, all \opflow options in Table 
     -netfile & Network file name & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod_gen3_wind.m}{case9mod\_gen3\_wind.m}) &\\ \hline
     -ctgcfile & Contingency file name & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9.cont}{case9.cont}) &\\ \hline
     -print\_output & Print output to screen & 0 or 1 (0) &\\ \hline
-    -save\_output & Save output to directory & 0 or 1 (0) &\\ \hline
+    -save\_output & Save output to directory & 0 or 1 (0) & Format determined by OPFLOW option. \\ \hline
+    -scopflow\_output\_directory & Output directory path & ``scopflowout'' & \\ \hline
     -scopflow\_solver & Set solver for scopflow & IPOPT, HIOP, or EMPAR (IPOPT) &\\ \hline
     -scopflow\_subproblem\_solver & Set solver for subproblem & IPOPT or HIOP (IPOPT) &Only when using HIOP solver for SCOPFLOW \\ \hline
     -scopflow\_subproblem\_model & Set model for subproblem & See OPFLOW chapter &Only when using HIOP solver for SCOPFLOW \\ \hline
@@ -473,3 +474,4 @@ Gen      Status     Fuel     Pg       Qg       Pmin     Pmax     Qmin     Qmax
 3          1    UNDEFINED    80.21   -23.47    10.00   270.00  -300.00   300.00
 [ExaGO] Finalizing scopflow application.
 \end{lstlisting}
+

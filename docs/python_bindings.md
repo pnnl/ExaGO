@@ -222,7 +222,9 @@ The following table assumes `scopflow = exago.SCOPFLOW()`.
 | `SCOPFLOWSolve` | `solve` |  |
 | `SCOPFLOWPrintSolution` | `print_solution` |  |
 | `SCOPFLOWSaveSolution` | `save_solution` |  |
+| `SCOPFLOWSaveSolutionDefault` | `save_solution_default` |  |
 | `SCOPFLOWSaveSolutionAll` | `save_solution_all` |  |
+| `SCOPFLOWSaveSolutionAllDefault` | `save_solution_all_default` |  |
 
 #### SOPFLOW
 

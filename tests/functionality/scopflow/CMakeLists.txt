@@ -138,4 +138,32 @@ if(EXAGO_INSTALL_TESTS)
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_raja.toml
   )
+
+  foreach(fmt "MATPOWER" "CSV" "JSON" "MINIMAL")
+    set(tname "SCOPFLOW_SOLUTION_OUTPUT_${fmt}")
+    exago_add_test(
+      NAME
+      "${tname}"
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:app_scopflow>
+      -netfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod.m
+      -ctgcfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9.cont
+      -scopflow_solver
+      IPOPT
+      -scopflow_Nc
+      -1
+      -save_output
+      1
+      -opflow_output_format
+      "${fmt}"
+      -scopflow_output_directory
+      "scopflowout_${fmt}"
+      DEPENDS
+      IPOPT
+    )
+  endforeach()
+
 endif()

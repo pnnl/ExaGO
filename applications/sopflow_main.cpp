@@ -10,6 +10,8 @@ int main(int argc, char **argv) {
   SOPFLOW sopflow;
   char file[PETSC_MAX_PATH_LEN];
   char scenfile[PETSC_MAX_PATH_LEN];
+  char outputdir[PETSC_MAX_PATH_LEN];
+  PetscBool outputdir_set;
   PetscBool flg = PETSC_FALSE, flgscen = PETSC_FALSE;
   PetscBool print_output = PETSC_FALSE, save_output = PETSC_FALSE;
   PetscLogStage stages[3];
@@ -27,6 +29,12 @@ int main(int argc, char **argv) {
   CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL, NULL, "-save_output", &save_output, NULL);
   CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL, NULL, "-sopflow_output_directory",
+                               outputdir, PETSC_MAX_PATH_LEN, &outputdir_set);
+  CHKERRQ(ierr);
+  if (!outputdir_set) {
+    strcpy(outputdir, "sopflowout");
+  }
 
   /* Register stages for profiling application code sections */
   ierr = PetscLogStageRegister("Reading Data", &stages[0]);
@@ -104,7 +112,7 @@ int main(int argc, char **argv) {
 
   /* Save solution */
   if (save_output) {
-    ierr = SOPFLOWSaveSolutionAll(sopflow, MATPOWER, "sopflowout");
+    ierr = SOPFLOWSaveSolutionAllDefault(sopflow, outputdir);
     CHKERRQ(ierr);
   }
 

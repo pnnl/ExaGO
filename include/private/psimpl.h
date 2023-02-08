@@ -397,6 +397,7 @@ struct _p_PS {
   PetscInt nconncomp;                     /* Number of connected components */
   PSConnComp conncomp[MAXCONNECTEDCOMPS]; /* List of connected components */
 
+  PetscBool opflow_converged; /* OPFLOW converged? */
   PetscReal opflowobj; /* OPFLOW objective value used when printing to file */
 
   /* Used by OPFLOW */

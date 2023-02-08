@@ -22,8 +22,8 @@ const char *const OPFLOWGenBusVoltageTypes[] = {"VARIABLE_WITHIN_BOUNDS",
                                                 "",
                                                 NULL};
 
-const char *const OPFLOWOutputFormatTypes[] = {"MATPOWER",     "CSV", "JSON",
-                                               "OutputFormat", "",    NULL};
+const char *const OPFLOWOutputFormatTypes[] = {
+    "MATPOWER", "CSV", "JSON", "MINIMAL", "OutputFormat", "", NULL};
 
 void swap_dm(DM *dm1, DM *dm2) {
   DM temp = *dm1;
@@ -798,7 +798,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
       OPFLOWOptions::genbusvoltage.ToEnum(OPFLOWGenBusVoltageTypes, 3));
 
   opflow->outputformat = static_cast<OutputFormat>(
-      OPFLOWOptions::outputformat.ToEnum(OPFLOWOutputFormatTypes, 3));
+      OPFLOWOptions::outputformat.ToEnum(OPFLOWOutputFormatTypes, 4));
 
   opflow->nmodelsregistered = opflow->nsolversregistered = 0;
   opflow->OPFLOWModelRegisterAllCalled = opflow->OPFLOWSolverRegisterAllCalled =
@@ -2601,6 +2601,7 @@ PetscErrorCode OPFLOWGetConvergenceStatus(OPFLOW opflow, PetscBool *status) {
 */
 PetscErrorCode OPFLOWSolutionToPS(OPFLOW opflow) {
   PetscErrorCode ierr;
+  PetscBool conv_status;
 
   PetscFunctionBegin;
 
@@ -2608,6 +2609,10 @@ PetscErrorCode OPFLOWSolutionToPS(OPFLOW opflow) {
 
   /* Save the objective to PS */
   opflow->ps->opflowobj = opflow->obj;
+
+  /* Save convergence status to PS */
+  ierr = OPFLOWGetConvergenceStatus(opflow, &conv_status);
+  opflow->ps->opflow_converged = conv_status;
 
   opflow->solutiontops = PETSC_TRUE;
   PetscFunctionReturn(0);

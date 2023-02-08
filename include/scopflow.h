@@ -164,8 +164,12 @@ PETSC_EXTERN PetscErrorCode SCOPFLOWGetSolution(SCOPFLOW, PetscInt, Vec *);
 PETSC_EXTERN PetscErrorCode SCOPFLOWPrintSolution(SCOPFLOW, PetscInt);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSaveSolution(SCOPFLOW, PetscInt,
                                                  OutputFormat, const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSaveSolutionDefault(SCOPFLOW, PetscInt,
+                                                        const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSaveSolutionAll(SCOPFLOW, OutputFormat,
                                                     const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSaveSolutionAllDefault(SCOPFLOW,
+                                                           const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetConvergenceStatus(SCOPFLOW, PetscBool *);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetMode(SCOPFLOW, PetscInt);
 PETSC_EXTERN PetscErrorCode SCOPFLOWGetNumIterations(SCOPFLOW, PetscInt *);

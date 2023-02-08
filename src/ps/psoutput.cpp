@@ -721,6 +721,40 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[]) {
 }
 
 /*
+   PSSaveSolution_MINIMAL - Saves minimal solution information to file
+  Input Parameters:
++ ps - the PS object
+- outfile  - Name of output file
+*/
+PetscErrorCode PSSaveSolution_MINIMAL(PS ps, const char outfile[]) {
+  PetscErrorCode ierr;
+  FILE *fd;
+  char filename[PETSC_MAX_PATH_LEN];
+  char ext[] = ".txt";
+
+  PetscFunctionBegin;
+
+  strcpy(filename, outfile);
+  /* Add extension to file name */
+  ierr = PetscStrlcat(filename, ext, 256);
+  CHKERRQ(ierr);
+
+  fd = fopen(filename, "w");
+  if (fd == NULL) {
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
+            "Cannot open OPFLOW output file %s", outfile);
+    CHKERRQ(ierr);
+  }
+
+  fprintf(fd, "Converged: %s\n", ps->opflow_converged ? "Yes" : "No");
+  fprintf(fd, "Objective: %g\n", ps->opflowobj);
+
+  fclose(fd);
+
+  PetscFunctionReturn(0);
+}
+
+/*
   PSSaveSolution - Saves the system solution to file
 
   Input Parameters:
@@ -742,6 +776,10 @@ PetscErrorCode PSSaveSolution(PS ps, OutputFormat format,
     CHKERRQ(ierr);
   } else if (format == JSON) {
     ierr = PSSaveSolution_JSON(ps, outfile);
+    CHKERRQ(ierr);
+  } else if (format == MINIMAL) {
+    ierr = PSSaveSolution_MINIMAL(ps, outfile);
+    CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);

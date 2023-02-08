@@ -125,8 +125,12 @@ PETSC_EXTERN PetscErrorCode SOPFLOWGetSolution(SOPFLOW, PetscInt, Vec *);
 PETSC_EXTERN PetscErrorCode SOPFLOWPrintSolution(SOPFLOW, PetscInt);
 PETSC_EXTERN PetscErrorCode SOPFLOWSaveSolution(SOPFLOW, PetscInt, OutputFormat,
                                                 const char[]);
+PETSC_EXTERN PetscErrorCode SOPFLOWSaveSolutionDefault(SOPFLOW, PetscInt,
+                                                       const char[]);
 PETSC_EXTERN PetscErrorCode SOPFLOWSaveSolutionAll(SOPFLOW, OutputFormat,
                                                    const char[]);
+PETSC_EXTERN PetscErrorCode SOPFLOWSaveSolutionAllDefault(SOPFLOW,
+                                                          const char[]);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetConvergenceStatus(SOPFLOW, PetscBool *);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetNumIterations(SOPFLOW, PetscInt *);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetTolerance(SOPFLOW, PetscReal);

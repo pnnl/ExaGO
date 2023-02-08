@@ -123,6 +123,27 @@ if(EXAGO_INSTALL_TESTS)
     HIOP
   )
 
+  foreach(fmt "MATPOWER" "CSV" "JSON" "MINIMAL")
+    set(tname "OPFLOW_SOLUTION_OUTPUT_${fmt}")
+    exago_add_test(
+      NAME
+      "${tname}"
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:app_opflow>
+      -netfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod.m
+      -opflow_solver
+      IPOPT
+      -opflow_output_format
+      "${fmt}"
+      -save_output
+      1
+      DEPENDS
+      IPOPT
+    )
+  endforeach()
+
   # exago_add_test( NAME OPFLOW_MONITOR_KVLEVEL_HIOP_GPU COMMAND ${RUNCMD}
   # $<TARGET_FILE:app_opflow> -netfile
   # ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m -opflow_solver HIOP

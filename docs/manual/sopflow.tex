@@ -96,6 +96,8 @@ the output files have the file name format \texttt{t_z} where z is the time-step
     -netfile & Network file name & string 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod_gen3_wind.m}{case9mod\_gen3\_wind.m}) &\\ \hline
     -scenfile & Scenario file name & string 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/10scenarios_9bus.csv}{case9/10scenarios\_9bus.csv}) &\\ \hline
     -ctgcfile & Contingency file name & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9.cont}{case9.cont}) &\\ \hline
+    -save\_output & Save output to directory & 0 or 1 (0) & Format determined by OPFLOW option. \\ \hline
+    -sopflow\_output\_directory & Output directory path & ``sopflowout'' & \\ \hline
     -sopflow\_mode & Operation mode: Preventive or corrective & 0 or 1 (0) &\\ \hline
     -sopflow\_solver & Set solver for sopflow & IPOPT, HIOP, or  EMPAR &\\ \hline
     -sopflow\_subproblem\_solver & Set solver for subproblem & IPOPT or HIOP (IPOPT) &Only when using HIOP solver for SOPFLOW \\ \hline
@@ -365,3 +367,4 @@ Gen      Status     Fuel     Pg       Qg       Pmin     Pmax     Qmin     Qmax
 3          1    UNDEFINED    75.00   -23.36    10.00    85.00  -300.00   300.00
 [ExaGO] Finalizing sopflow application.
 \end{lstlisting}
+

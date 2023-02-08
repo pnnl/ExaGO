@@ -287,3 +287,133 @@ PetscErrorCode ContingencyListReadData(ContingencyList ctgclist, PetscInt *Nc) {
 
   PetscFunctionReturn(0);
 }
+
+/**
+ *
+ * @brief Writes contingency data to the specified (open) file using a PSSE-like
+ * format
+ *
+ * @param[in] Contingency identifier
+ * @param[in] Contingency data
+ * @param[in] open file descriptor
+ */
+static PetscErrorCode ContingencyWriteData_PSSE(int id, Contingency *con,
+                                                FILE *fd) {
+  int i;
+  PetscErrorCode ierr = 0;
+
+  PetscFunctionBegin;
+
+  fprintf(fd, "CONTINGENCY %d\n", id);
+  for (i = 0; i < con->noutages; ++i) {
+    switch (con->outagelist[i].type) {
+    case (GEN_OUTAGE):
+      fprintf(fd, "REMOVE UNIT %s FROM BUS %d\n", con->outagelist[i].id,
+              con->outagelist[i].bus);
+      break;
+    case (BR_OUTAGE):
+      fprintf(fd, "OPEN BRANCH %s FROM BUS %d TO %d CIRCUIT 1\n",
+              con->outagelist[i].id, con->outagelist[i].fbus,
+              con->outagelist[i].tbus);
+      break;
+    case (TR_OUTAGE):
+    case (LOAD_OUTAGE):
+    default:
+      /* these are not used anywhere else in ExaGO, AFAICT */
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_OUTOFRANGE,
+              "Unimplemented contingency type (%d)", con->outagelist[i].type);
+      CHKERRQ(ierr);
+      break;
+    }
+  }
+  fprintf(fd, "END\n");
+  PetscFunctionReturn(0);
+}
+
+/**
+ *
+ * @brief Writes contingency data to the specified (open) file using
+ * the "native" format
+ *
+ * @param[in] Contingency identifier
+ * @param[in] Contingency data
+ * @param[in] open file descriptor
+ */
+static PetscErrorCode ContingencyWriteData_NATIVE(int id, Contingency *con,
+                                                  FILE *fd) {
+  int i;
+  PetscErrorCode ierr = 0;
+
+  PetscFunctionBegin;
+
+  for (i = 0; i < con->noutages; ++i) {
+    Outage *outage;
+    outage = &con->outagelist[i];
+    fprintf(fd, "%d,%d,%d,%d,%d,'%s',%d,%lf", outage->num, (int)outage->type,
+            outage->bus, outage->fbus, outage->tbus, outage->id, outage->status,
+            outage->prob);
+  }
+  PetscFunctionReturn(0);
+}
+
+/*
+ * @brief Write contingency data with the specifed format to an open file
+ *
+ * @param[in] contingency data
+ * @param[in] contingency identifier
+ * @param[in] contingency format to use
+ * @param[in] open file descriptor
+ */
+PetscErrorCode ContingencyWriteData(Contingency *con, int id,
+                                    ContingencyFileInputFormat fmt, FILE *fd) {
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  if (fmt == NATIVE) {
+    ContingencyWriteData_NATIVE(id, con, fd);
+  } else if (fmt == PSSE) {
+    ContingencyWriteData_PSSE(id, con, fd);
+  } else {
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
+            "Unknown contingency input file format\n");
+  }
+  PetscFunctionReturn(0);
+}
+
+/*
+ * @brief Append some contingency information to a MINIMAL  solution output
+ *
+ * @param[in] Contingincy data
+ * @param[in] Contingency identifier
+ * @param[in] Format to use
+ * @param[in] File to append (".txt" added to name)
+ */
+
+PetscErrorCode ContigencyAppendMinimal(Contingency *thecon, int cont_num,
+                                       ContingencyFileInputFormat fmt,
+                                       const char outfile[]) {
+  PetscErrorCode ierr = 0;
+  FILE *fd;
+  char filename[PETSC_MAX_PATH_LEN];
+  char ext[] = ".txt";
+
+  PetscFunctionBegin;
+
+  /* FIXME: This repeats code in PSSaveSolution_MINIMAL */
+
+  strcpy(filename, outfile);
+  /* Add extension to file name */
+  ierr = PetscStrlcat(filename, ext, 256);
+  CHKERRQ(ierr);
+
+  fd = fopen(filename, "a");
+  if (fd == NULL) {
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
+            "Cannot (re)open output file %s", filename);
+    CHKERRQ(ierr);
+  }
+  ierr = ContingencyWriteData(thecon, cont_num, fmt, fd);
+  CHKERRQ(ierr);
+  fclose(fd);
+  PetscFunctionReturn(0);
+}

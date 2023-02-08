@@ -117,13 +117,9 @@ const auto genbusvoltage = ExaGOStringOption(
         "FIXED_WITHIN_QBOUNDS",
         "FIXED_AT_SETPOINT",
     });
-const auto outputformat =
-    ExaGOStringOption("-opflow_output_format",
-                      "Type of OPFLOW solution output format", "MATPOWER",
-                      {
-                          "MATPOWER",
-                          "JSON",
-                      });
+const auto outputformat = ExaGOStringOption(
+    "-opflow_output_format", "Type of OPFLOW solution output format",
+    "MATPOWER", {"MATPOWER", "JSON", "CSV", "MINIMAL"});
 
 const auto has_gensetpoint =
     ExaGOBoolOption("-opflow_has_gensetpoint",

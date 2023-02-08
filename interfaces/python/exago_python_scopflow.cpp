@@ -353,10 +353,24 @@ void init_exago_scopflow(pybind11::module &m) {
              ExaGOCheckError(ierr);
            })
 
+      .def("save_solution_default",
+           [](SCOPFLOW_wrapper &w, int n, std::string outfile) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSaveSolutionDefault(w.scopf, n, outfile.c_str());
+             ExaGOCheckError(ierr);
+           })
+
       .def("save_solution_all",
            [](SCOPFLOW_wrapper &w, OutputFormat fmt, std::string outdir) {
              PetscErrorCode ierr;
              ierr = SCOPFLOWSaveSolutionAll(w.scopf, fmt, outdir.c_str());
+             ExaGOCheckError(ierr);
+           })
+
+      .def("save_solution_all_default",
+           [](SCOPFLOW_wrapper &w, std::string outdir) {
+             PetscErrorCode ierr;
+             ierr = SCOPFLOWSaveSolutionAllDefault(w.scopf, outdir.c_str());
              ExaGOCheckError(ierr);
            });
 }

@@ -72,6 +72,8 @@ void init_exago_opflow(pybind11::module &m) {
   pybind11::enum_<OutputFormat>(m, "OutputFormat")
       .value("CSV", CSV)
       .value("MATPOWER", MATPOWER)
+      .value("MINIMAL", MINIMAL)
+      .value("JSON", JSON)
       .export_values();
 
   /* OPFLOW class */
