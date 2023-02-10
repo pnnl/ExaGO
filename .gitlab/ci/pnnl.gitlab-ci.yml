@@ -5,10 +5,11 @@ include:
 workflow:
   rules:
       # Only run if source is an open merge request or a branch push
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_OPEN_MERGE_REQUESTS
       when: never
-    - if: '$CI_COMMIT_BRANCH'
+    - if: $CI_COMMIT_BRANCH
+
 
 .pnnl_after_script_template:
   after_script:
@@ -271,6 +272,10 @@ Ascent Push Mirror:
   image: mrnonz/alpine-git-curl:alpine3.16
   stage: .pre
   extends: .pnnl_nonhpc_tags
+  rules:
+    - if: ($CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME== "develop")
+      when: never
+    - if: $CI_MERGE_REQUEST_IID
   variables:
     # Don't need to check out submodules as we aren't using them 
     GIT_SUBMODULE_STRATEGY: none
