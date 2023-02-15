@@ -20,16 +20,13 @@ flexibility.
 Whenever an update to the ExaGO spack submodule reference is made, it may render
 any existing installations unusable due to changes in the hashing algorithm.
 
-## Using the .pre pipelines in GitLab PRs
+## Using the automatic pipelines in GitLab PRs
 
-Whenever a new PR is created, you can manually run a set of GitLab pipelines that will
-automatically generate updated spack modules and push changes to
-the branch that triggered the pipeline to use the newly generated modules. This commit 
-will trigger new pipelines on each platform, so you may want to manually cancel CI on
-platforms that were already tested in the pipeline that created the new modules.
+Spack modules are automatically rebuilt via CI pipelines for a cluster when a commit message includes `[<clustername>-rebuild]` where `<clustername>` is one of the following [newell, deception, ascent].
 
-- TODO: add commit messages to each module update to only run pipeline on updated platform
+See the [developer guidelines](./docs/developer_guidelines.md) for a general workflow outline.
 
+Once a build is finished, a new commit is pushed to the branch with a commit message with `[<clustername>-test]`, where tests are run only for that platform. If you want all of CI to be re-run after a specific platform test, you may have to push another empty commit, or re-run CI manually.
 ## General Workflow
 
 Run scripts in the following order to install using spack for a supported platform.

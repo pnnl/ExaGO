@@ -10,4 +10,3 @@
 [submodule "tpl/spack"]
 	path = tpl/spack
 	url = https://github.com/spack/spack.git
-	branch = develop
