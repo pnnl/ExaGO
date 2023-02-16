@@ -69,8 +69,8 @@ module load mpfr-4.1.0-gcc-10.2.0-3yutkz3
 module load suite-sparse-5.10.1-gcc-10.2.0-add65sb
 # umpire@6.0.0%gcc@10.2.0+c+cuda~device_alloc~deviceconst~examples~fortran~ipo~numa~openmp~rocm~shared build_type=RelWithDebInfo cuda_arch=60,70,75,80 tests=none arch=linux-centos7-zen2
 module load umpire-6.0.0-gcc-10.2.0-lrjkuun
-# hiop@0.7.1%gcc@10.2.0+cuda~cusolver_lu+deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=RelWithDebInfo cuda_arch=60,70,75,80 arch=linux-centos7-zen2
-module load hiop-0.7.1-gcc-10.2.0-ltkjwpm
+# hiop@develop%gcc@10.2.0+cuda~cusolver_lu+deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=RelWithDebInfo cuda_arch=60,70,75,80 arch=linux-centos7-zen2
+module load hiop-develop-gcc-10.2.0-gztxdw7
 # ipopt@3.12.10%gcc@10.2.0+coinhsl~debug~metis~mumps arch=linux-centos7-zen2
 module load ipopt-3.12.10-gcc-10.2.0-c3chb6f
 # python@3.9.12%gcc@10.2.0+bz2+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tix~tkinter~ucs4+uuid+zlib patches=0d98e93,4c24573,f2fd060 arch=linux-centos7-zen2
