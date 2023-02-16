@@ -93,7 +93,7 @@ for each time-period. The subdirectories have the naming convention
 
 \section{Options}
 See table \ref{tab:scopflow_options}. In addition, all \opflow options in Table \ref{tab:opflow_options} and \tcopflow options in Table \ref{tab:tcopflow_options} can be used.
-\begin{table}[!htbp]
+\begin{table}[H]
   \caption{SCOPFLOW options}
   \small
   \begin{tabular}{|p{0.3\textwidth}|p{0.2\textwidth}|p{0.3\textwidth}|p{0.2\textwidth}|}
@@ -104,17 +104,19 @@ See table \ref{tab:scopflow_options}. In addition, all \opflow options in Table 
     -print\_output & Print output to screen & 0 or 1 (0) &\\ \hline
     -save\_output & Save output to directory & 0 or 1 (0) & Format determined by OPFLOW option. \\ \hline
     -scopflow\_output\_directory & Output directory path & ``scopflowout'' & \\ \hline
+    -scopflow\_model & SCOPFLOW model type & GENRAMP, GENRAMPT (GENRAMP) & \\ \hline
     -scopflow\_solver & Set solver for scopflow & IPOPT, HIOP, or EMPAR (IPOPT) &\\ \hline
     -scopflow\_subproblem\_solver & Set solver for subproblem & IPOPT or HIOP (IPOPT) &Only when using HIOP solver for SCOPFLOW \\ \hline
     -scopflow\_subproblem\_model & Set model for subproblem & See OPFLOW chapter &Only when using HIOP solver for SCOPFLOW \\ \hline
     -scopflow\_Nc & Number of contingencies & int (0. Passing -1 results in all contingencies in the file used) &\\ \hline
     -scopflow\_mode & Operation mode: Preventive or corrective & 0 or 1 (0) &\\ \hline
     -scopflow\_enable\_multiperiod & Multi-period SCOPFLOW & 0 or 1 (0) & IPOPT solver only\\ \hline
-    -scopflow\_pload\_profile & Real power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_P.csv}{load\_P.csv}) &\\ \hline
-    -scopflow\_qload\_profile & Reactive power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_Q.csv}{load\_Q.csv}) &\\ \hline
+    -scopflow\_ploadprofile & Real power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_P.csv}{load\_P.csv}) &\\ \hline
+    -scopflow\_qloadprofile & Reactive power load profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/load_Q.csv}{load\_Q.csv}) &\\ \hline
     -scopflow\_windgenprofile & Wind generation profile & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/scenarios_9bus.csv}{case9/scenarios\_9bus.csv}) &\\ \hline
     -scopflow\_dT & Length of time-step (minutes) & double (5.0) &\\ \hline
     -scopflow\_duration & Total duration (hours) & double (0.5) &\\ \hline 
+    -scopflow\_tolerance & Optimization solver tolerance & double (1e-6) &\\ \hline 
   \end{tabular}
   \label{tab:scopflow_options}
 \end{table}

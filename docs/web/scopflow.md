@@ -34,6 +34,7 @@ The current version has several options available for SCOPFLOW. These options ca
 |-netfile| Name of network file in MATPOWER format| ([case9mod.m](../../datafiles/case9/case9mod.m))|  4096 characters max. |
 |-ctgcfile| Name of contingency list file | ([case9.cont](../../datafiles/case9/case9.cont)) | 4096 characters max. Uses a native format for describing contingencies. See [scopflow.h](../../include/scopflow.h)|
 |-scopflow_Nc | Number of contingencies || With this option set, SCOPFLOW will only pick up the first Nc contingencies in the contingency file. To select all contingencies, use `Nc = -1` |
+|-scopflow_model | SCOPFLOW model type | GENRAMP, GENRAMPT (GENRAMP) |  |
 |-scopflow_solver | Optimization solver | (Ipopt), HiOp, or EMPAR | See the note below on solvers |
 |-scopflow_mode | Mode of operation | 0 or 1 (0) | See the note below on mode of operation |
 |-scopflow_subproblem_solver | Optimization solver for the subproblem when using HiOp solver| Ipopt or HiOp (Ipopt) | See [opflow](opflow.md) page for description of solvers |
@@ -42,7 +43,7 @@ The current version has several options available for SCOPFLOW. These options ca
 |-scopflow_tolerance|Optimization solver tolerance | (1e-6) | All solvers |
 |-scopflow_enable_multiperiod | Include multi-period | 0 or 1 (0)| Only compatible with Ipopt solver |
 |-scopflow_duration| Duration for multi-period run in hours| | Only when multi-period is enabled |
-|-scopflow_dt| Time-step for multi-period run in minutes| | Only when multi-period is enabled |
+|-scopflow_dT| Time-step for multi-period run in minutes| | Only when multi-period is enabled |
 |-scopflow_ploadprofile| Active power load profile filename| | Only when multi-period is enabled |
 |-scopflow_qloadprofile| Reactive power load profile filename| | Only when multi-period is enabled |
 |-scopflow_windgenprofile| Wind generation profile filename| | Only when multi-period is enabled |

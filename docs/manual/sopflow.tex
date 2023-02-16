@@ -81,29 +81,32 @@ the output files have the file name format \texttt{t_z} where z is the time-step
 
 \section{Usage}
 \begin{lstlisting}
-    ./sopflow -netfile <netfilename>  -scenfile <scenfilename> \
+    ./sopflow -netfile <netfilename>  -windgen <wind_scenario_filename> \
     [-sopflow_enable_multicontingency 1] <sopflowoptions>
 \end{lstlisting}
 
 \section{Options}
 
-\begin{table}[!htbp]
+\begin{table}[H]
   \caption{SOPFLOW options}
   \small
   \begin{tabular}{|p{0.3\textwidth}|p{0.2\textwidth}|p{0.3\textwidth}|p{0.2\textwidth}|}
     \hline
     \textbf{Option} & \textbf{Meaning} & \textbf{Values (Default value)} & \textbf{Compatibility} \\ \hline
     -netfile & Network file name & string 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod_gen3_wind.m}{case9mod\_gen3\_wind.m}) &\\ \hline
-    -scenfile & Scenario file name & string 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/10scenarios_9bus.csv}{case9/10scenarios\_9bus.csv}) &\\ \hline
+    -windgen & Scenario file name & string 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/10scenarios_9bus.csv}{case9/10scenarios\_9bus.csv}) &\\ \hline
     -ctgcfile & Contingency file name & string (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9.cont}{case9.cont}) &\\ \hline
     -save\_output & Save output to directory & 0 or 1 (0) & Format determined by OPFLOW option. \\ \hline
     -sopflow\_output\_directory & Output directory path & ``sopflowout'' & \\ \hline
     -sopflow\_mode & Operation mode: Preventive or corrective & 0 or 1 (0) &\\ \hline
-    -sopflow\_solver & Set solver for sopflow & IPOPT, HIOP, or  EMPAR &\\ \hline
+    -sopflow\_model & Set model for SOPFLOW & GENRAMP, GENRAMPC (GENRAMP) &\\ \hline
+    -sopflow\_solver & Set solver for SOPFLOW & IPOPT, HIOP, or  EMPAR &\\ \hline
     -sopflow\_subproblem\_solver & Set solver for subproblem & IPOPT or HIOP (IPOPT) &Only when using HIOP solver for SOPFLOW \\ \hline
     -sopflow\_subproblem\_model & Set model for subproblem & See OPFLOW chapter &Only when using HIOP solver for SOPFLOW \\ \hline
     -sopflow\_enable\_multicontingency & Multi-contingency SOPFLOW & 0 or 1 (0) &\\ \hline
+    -sopflow\_flatten\_contingencies & Flatten contingencies for SOPFLOW & 0 or 1 (1) &\\ \hline
     -sopflow\_Ns & Number of scenarios & int (Default 0. Use -1 to select all scenarios from the scenario file) &\\ \hline
+    -sopflow\_Nc & Number of contingencies & int (0. Passing -1 results in all contingencies in the file used) &\\ \hline
   \end{tabular}
   \label{tab:sopflow_options}
 \end{table}
@@ -116,7 +119,7 @@ Some \sopflow example runs are provided with some sample output. Options are the
 Example using the \ipopt solver:
 
 \begin{lstlisting}
-bin/sopflow -netfile $EXAGO_DIR/datafiles/case9/case9mod.m -scenfile $EXAGO_DIR/datafiles/case9/10_scenarios_9bus.csv -sopflow_Ns 4 -sopflow_enable_multicontingency 0 -sopflow_solver IPOPT -print_output
+bin/sopflow -netfile $EXAGO_DIR/datafiles/case9/case9mod.m -windgen $EXAGO_DIR/datafiles/case9/10_scenarios_9bus.csv -sopflow_Ns 4 -sopflow_enable_multicontingency 0 -sopflow_solver IPOPT -print_output
 [ExaGO] SOPFLOW: Application created
 Rank[0],s = 0, scen_num = 0
 Rank[0],s = 1, scen_num = 1
@@ -233,7 +236,7 @@ Gen      Status     Fuel     Pg       Qg       Pmin     Pmax     Qmin     Qmax
 Example using the \emph{IPOPT} solver with multicontingency enabled:
 
 \begin{lstlisting}
-bin/sopflow -netfile $EXAGO_DIR/datafiles/case9/case9mod.m -scenfile $EXAGO_DIR/datafiles/case9/10_scenarios_9bus.csv -sopflow_Ns 4 -sopflow_enable_multicontingency 1 -sopflow_solver IPOPT -print_output -sopflow_Nc 4 -ctgcfile $EXAGO_DIR/datafiles/case9/case9.cont -sopflow_Nc 4
+bin/sopflow -netfile $EXAGO_DIR/datafiles/case9/case9mod.m -windgen $EXAGO_DIR/datafiles/case9/10_scenarios_9bus.csv -sopflow_Ns 4 -sopflow_enable_multicontingency 1 -sopflow_solver IPOPT -print_output -sopflow_Nc 4 -ctgcfile $EXAGO_DIR/datafiles/case9/case9.cont -sopflow_Nc 4
 [ExaGO] SOPFLOW: Application created
 Rank[0],s = 0, scen_num = 0, cont_num = 0
 Rank[0],s = 1, scen_num = 0, cont_num = 1
