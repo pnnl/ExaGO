@@ -37,8 +37,10 @@ The current version has several options available for SOPFLOW. These options can
 |  Option Name | Description | Values (Default value) | Compatibility |
 |:-----|:----|:-----|:-----|
 |-netfile| Name of network file in MATPOWER format| ([case9mod.m](../../datafiles/case9/case9mod.m))|  4096 characters max. |
-|-scenfile| Name of scenario list file | ([10_scenarios_9bus.csv](../../datafiles/case9/10scenarios_9bus.csv)) | 4096 characters max. Uses a native format for describing scenarios. See [10_scenarios_9bus.csv](../../datafiles/case9/10scenarios_9bus.csv)|
+|-windgen| Name of wind scenario list file | ([10_scenarios_9bus.csv](../../datafiles/case9/10scenarios_9bus.csv)) | 4096 characters max. Uses a native format for describing scenarios. See [10_scenarios_9bus.csv](../../datafiles/case9/10scenarios_9bus.csv)|
+|-ctgcfile| Name of contingency list file | |4096 characters max. Uses a native format for describing contingencies. |
 |-sopflow_Ns | Number of scenarios || With this option set, SOPFLOW will only pick up the first Ns scenarios in the scenario file. To select all scenarios, use `Ns = -1` |
+|-sopflow_model | SOPFLOW model type | GENRAMP, GENRAMPC (GENRAMP) | |
 |-sopflow_solver | Optimization solver | (Ipopt), HiOp, or EMPAR | See the note below on solvers |
 |-sopflow_mode | Mode of operation | 0 or 1 (0) | See the note below on mode of operation |
 |-sopflow_subproblem_solver | Optimization solver for the subproblem when using HiOp solver| Ipopt or HiOp (Ipopt) | See [opflow](opflow.md) page for description of solvers |
