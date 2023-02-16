@@ -22,7 +22,7 @@ spack:
     exago:
       require: +raja+hiop+ipopt
     hiop:
-      require: +sparse+mpi+ginkgo+kron
+      require: '@develop+sparse+mpi+ginkgo+kron'
     magma:
       require: '@2.6.2'
     coinhsl:

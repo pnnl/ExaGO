@@ -71,8 +71,8 @@ module load mpfr-4.1.0-gcc-8.5.0-ko56wbz
 module load suite-sparse-5.10.1-gcc-8.5.0-yc2nlwi
 # umpire@6.0.0%gcc@8.5.0+c+cuda~device_alloc~deviceconst~examples~fortran~ipo~numa~openmp~rocm~shared build_system=cmake build_type=RelWithDebInfo cuda_arch=70 tests=none arch=linux-centos8-power9le
 module load umpire-6.0.0-gcc-8.5.0-mftt44d
-# hiop@0.7.1%gcc@8.5.0+cuda~cusolver_lu+deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=RelWithDebInfo cuda_arch=70 arch=linux-centos8-power9le
-module load hiop-0.7.1-gcc-8.5.0-f5umzfk
+# hiop@develop%gcc@8.5.0+cuda~cusolver_lu+deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=RelWithDebInfo cuda_arch=70 arch=linux-centos8-power9le
+module load hiop-develop-gcc-8.5.0-fchxtgc
 # ipopt@3.12.10%gcc@8.5.0+coinhsl~debug~metis~mumps arch=linux-centos8-power9le
 module load ipopt-3.12.10-gcc-8.5.0-wyzn5ev
 # python@3.8.5%gcc@8.5.0+bz2+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tix~tkinter~ucs4+uuid+zlib patches=0d98e93,4c24573,f2fd060 arch=linux-centos8-power9le
