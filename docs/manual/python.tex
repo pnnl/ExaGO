@@ -1,0 +1,468 @@
+\chapter{Python Bindings}\label{chap:python}
+
+The \exago Python bindings are a wrapper around the C++ API to provide an interface to \exago in Python. This interface aims to provide equivalent functionality between the \exago C++ API and the Python API.
+
+The wrapper uses an object-oriented API slightly different from the C++ API. The C++ API uses the application type in uppercase as the prefix for its methods, where they are native methods in Python. \exago Python instances must be destroyed, using del, before calling exago.finalize(), like calling *Destroy() with the C++ API.  Failure to do so will cause segmentation faults or other memory errors. In section \ref{sec:python-func-tables}, are tables that detail the mappings between functions and objects in the Python vs C++.
+
+\section{Code Comparison}\label{sec:python-code-comp}
+
+Below is a comparison of what solving an OPF looks like through the C++ and Python APIs.
+
+C++:
+
+\begin{lstlisting}
+#include <opflow.h>
+#include <exago_config.h>
+
+static char help[] = "User example calling OPFLOW.\n";
+static char appname[] = "opflow";
+
+int main(int argc, char** argv) {
+
+  /* Initialize ExaGO application */
+  PetscErrorCode ierr;
+  OPFLOW opflow;
+  MPI.Comm comm = MPI.COMM_WORLD;
+  ierr = ExaGOInitialize(comm, &argc, &argv, appname, help);
+
+  /* Create OPFLOW object */
+  ierr = OPFLOWCreate(comm, &opflow);
+  ExaGOCheckError(ierr);
+
+  /* Read network data */
+  ierr = OPFLOWReadMatPowerData(opflow, "datafiles/case9/case9mod.m");
+  ExaGOCheckError(ierr);
+
+  /* Solve */
+  ierr = OPFLOWSolve(opflow);
+  ExaGOCheckError(ierr);
+
+  /* Print solution */
+  ierr = OPFLOWPrintSolution(opflow);
+  ExaGOCheckError(ierr);
+
+  /* Destroy OPFLOW object */
+  ierr = OPFLOWDestroy(&opflow);
+  ExaGOCheckError(ierr);
+
+  /* Clean up resources */
+  ExaGOFinalize();
+
+  return 0;
+}
+\end{lstlisting}
+
+Python:
+
+\begin{lstlisting}
+import exago
+exago.initialize("opflow")
+opf = exago.OPFLOW()
+opf.read_mat_power_data('datafiles/case9/case9mod.m')
+opf.solve()
+opf.print_solution()
+del opf
+exago.finalize()
+\end{lstlisting}
+
+\section{Building with MPI}
+
+ExaGO depends on mpi4py when running through the Python interface. When running \exago, you may need to disable threading through mpi4py before importing exago:
+
+\begin{lstlisting}
+import mpi4py.rc
+mpi4py.rc.threads = False
+from mpi4py import MPI
+import exago
+comm = MPI.COMM_WORLD
+exago.initialize("app", comm)
+# ...
+exago.finalize()
+\end{lstlisting}
+
+Additionally linting tools may re-order your imports, and so you may need to add appropriate comments (\texttt{\# noqa}) in order to avoid this:
+
+\begin{lstlisting}
+import mpi4py.rc
+mpi4py.rc.threads = False
+from mpi4py import MPI # noqa
+import exago # noqa
+\end{lstlisting}
+
+\section{Bindings Tables}\label{sec:python-func-tables}
+
+\subsection{ExaGO} 
+
+{ \footnotesize
+  \begin{longtable}{|>{\ttfamily}p{0.3\textwidth}|>{\ttfamily}p{0.3\textwidth}|p{0.4\textwidth}|}
+    \caption{\exago Python Bindings}
+    \label{table:exago-python-bindings } \\
+    \hline
+    \textbf{\textrm{C++ API}} & \textbf{\textrm{Python API}} & \textbf{Notes}\\ [0.5ex]  
+    \hline
+    \endfirsthead
+    \endhead
+    ExaGOInitialize & exago.initialize & ~\\
+    \hline
+    ExaGOFinalize & exago.finalize & ~\\
+    \hline
+     & exago\_prefix & Returns the path to the installation directory of ExaGO (for finding mat power data files, etc) \\
+    \hline
+    OutputFormat enum & exago.OutputFormat enum & Output format type for functions like save\_solution\_ Possible values for this enum can be found in \ref{sec:python-enum} \\
+    \hline
+\end{longtable}
+}
+
+\subsection{PFLOW} 
+
+The functions in the following table could be called by a pflow object (i.e. \texttt{pflow = exago.PFLOW(); pflow.solve();}).
+
+{ \footnotesize
+  \begin{longtable}{|>{\ttfamily}p{0.35\textwidth}|>{\ttfamily}p{0.35\textwidth}|p{0.3\textwidth}|}
+    \caption{PFLOW Python Bindings}
+    \label{table:pflow-python-bindings } \\
+    \hline
+    \textbf{\textrm{C++ API}} & \textbf{\textrm{Python API}} & \textbf{Notes}\\ [0.5ex]  
+    \hline
+    \endfirsthead
+    \endhead
+    PFLOW & exago.PFLOW class & ~\\
+    \hline
+    PFLOWReadMatPowerData & read\_mat\_power\_data & ~\\
+    \hline
+    PFLOWSolve & solve & ~\\
+    \hline
+\end{longtable}
+}
+
+\subsection{OPFLOW} 
+
+The functions in the following table could be called by a opflow object (i.e. \texttt{opflow = exago.OPFLOW(); opflow.solve();}).
+
+{ \footnotesize
+  \begin{longtable}{|>{\ttfamily}p{0.37\textwidth}|>{\ttfamily}p{0.33\textwidth}|p{0.3\textwidth}|}
+    \caption{OPFLOW Python Bindings}
+    \label{table:opflow-python-bindings } \\
+    \hline
+    \textbf{\textrm{C++ API}} & \textbf{\textrm{Python API}} & \textbf{Notes}\\ [0.5ex]  
+    \hline
+    \endfirsthead
+    \caption{OPFLOW Python Bindings (cont.)} \\
+    \hline
+    \textbf{\textrm{C++ API}} & \textbf{\textrm{Python API}} & \textbf{Notes}\\ [0.5ex]  
+    \hline
+    \endhead
+    OPFLOW & exago.OPFLOW class &  ~\\
+    \hline
+    OPFLOWObjectiveType enum & exago.OPFLOWObjectiveType enum & More details and possible values for this enum can be found in \ref{sec:python-enum} ~\\
+    \hline
+    OPFLOWInitializationType enum & exago.OPFLOWInitializationType enum & More details and possible values for this enum can be found in \ref{sec:python-enum} ~\\
+    \hline
+    OPFLOWGenBusVoltageType enum & exago.OPFLOWGenBusVoltageType enum & More details and possible values for this enum can be found in \ref{sec:python-enum} ~\\
+    \hline
+    OPFLOWSetObjectiveType & set\_objective\_type & ~\\
+    \hline
+    OPFLOWSetInitializationType & set\_initialization\_type & ~\\
+    \hline
+    OPFLOWSetGenBusVoltageType & set\_gen\_bus\_voltage\_type & ~\\
+    \hline
+    OPFLOWSetModel & set\_model & options are "PBPOLRAJAHIOP", "POWER\_BALANCE\_HIOP", and "POWER\_BALANCE\_POLAR" ~\\
+    \hline
+    OPFLOWSetSolver & set\_solver & options are "IPOPT", "HIOP", and "HIOPSPARSE" ~\\
+    \hline
+    OPFLOWHasGenSetPoint & set\_has\_gen\_set\_point & ~\\
+    \hline
+    OPFLOWSetHIOPComputeMode & set\_hiop\_compute\_mode & options are "CPU" or "GPU" ~\\
+    \hline
+    OPFLOWSetHIOPMemSpace & set\_hiop\_mem\_space & options are "DEFAULT", "HOST", "UM", and "DEVICE" ~\\
+    \hline
+    OPFLOWHasLoadLoss & set\_has\_load\_loss & ~\\
+    \hline
+    OPFLOWIgnoreLineflowConstraints & set\_ignore\_lineflow\_constraints & ~\\
+    \hline
+    OPFLOWHasBusPowerImbalance & set\_has\_bus\_power\_imbalance & ~\\
+    \hline
+    OPFLOWUseAGC & set\_use\_agc & ~\\
+    \hline
+    OPFLOWSetHIOPVerbosityLevel & set\_hiop\_verbosity\_level & integer between 0 and 10 ~\\
+    \hline
+    OPFLOWSetLoadLossPenalty & set\_loadloss\_penalty & ~\\
+    \hline
+    OPFLOWSetBusPowerImbalancePenalty & set\_bus\_power\_imbalance\_penalty & ~\\
+    \hline
+    OPFLOWSetTolerance & set\_tolerance & ~\\
+    \hline
+    OPFLOWSetWeight & set\_weight & ~\\
+    \hline
+    PSSetGenPowerLimits & ps\_set\_gen\_power\_limits & ~\\
+    \hline
+    OPFLOWGetTolerance & get\_tolerance & ~\\
+    \hline
+    OPFLOWGetHIOPComputeMode & get\_hiop\_compute\_mode & ~\\
+    \hline
+    OPFLOWGetHIOPMemSpace & get\_hiop\_mem\_space & ~\\
+    \hline
+    OPFLOWGetModel & get\_model & ~\\
+    \hline
+    OPFLOWGetSolver & get\_solver & ~\\
+    \hline
+    OPFLOWGetConvergenceStatus & get\_convergence\_status & ~\\
+    \hline
+    OPFLOWGetObjectiveType & get\_objective\_type & ~\\
+    \hline
+    OPFLOWGetInitializationType & get\_initialization\_type & ~\\
+    \hline
+    OPFLOWGetGenBusVoltageType & get\_gen\_bus\_voltage\_type & ~\\
+    \hline
+    OPFLOWGetHasGenSetPoint & get\_has\_gen\_set\_point & ~\\
+    \hline
+    OPFLOWGetLoadlossPenalty & get\_loadloss\_penalty & ~\\
+    \hline
+    OPFLOWGetIgnoreLineflowConstraints & get\_ignore\_lineflow\_constraints & ~\\
+    \hline
+    OPFLOWGetHasLoadloss & get\_has\_loadloss & ~\\
+    \hline
+    OPFLOWGetHasBusPowerImbalance & get\_has\_bus\_power\_imbalance & ~\\
+    \hline
+    OPFLOWGetUseAGC & get\_use\_agc & ~\\
+    \hline
+    OPFLOWGetHIOPVerbosityLevel & get\_hiop\_verbosity\_level & ~\\
+    \hline
+    OPFLOWGetBusPowerImbalancePenalty & get\_bus\_power\_imbalance\_penalty & ~\\
+    \hline
+    PSGetGenDispatch & get\_gen\_dispatch & ~\\
+    \hline
+    OPFLOWGetObjectiveTypes & get\_objective\_types & ~\\
+    \hline
+    OPFLOWGetInitializationTypes & get\_initialization\_types & ~\\
+    \hline
+    OPFLOWGetGenBusVoltage & get\_gen\_bus\_voltage & ~\\
+    \hline
+    OPFLOWGetObjective & get\_objective & ~\\
+    \hline
+    OPFLOWSolve & solve & ~\\
+    \hline
+    OPFLOWPrintSolution & print\_solution & ~\\
+    \hline
+    OPFLOWSaveSolution & save\_solution & ~\\
+    \hline
+    OPFLOWReadMatPowerData & read\_mat\_power\_data & ~\\
+    \hline
+    OPFLOWSolutionToPS & solution\_to\_ps & ~\\
+    \hline
+    OPFLOWSetUpPS & set\_up\_ps & ~\\
+    \hline
+    OPFLOWSkipOptions & skip\_options & ~\\
+    \hline
+    OPFLOWSetLinesMonitored & set\_lines\_monitored & implemented as two different methods ~\\
+    \hline
+    & set\_lines\_monitored([...]) & Specify a list of line kvlevels (type float) to monitor ~\\
+    \hline
+    & set\_lines\_monitored(n, "file") & Read n line kvlevels from a file (n=-1 for all)\_  ~\\
+    \hline
+\end{longtable}
+}
+
+\subsection{SCOPFLOW}  
+
+The functions in the following table could be called by a scopflow object (i.e. \texttt{scopflow = exago.SCOPFLOW(); scopflow.solve();})
+
+{ \footnotesize
+  \begin{longtable}{|>{\ttfamily}p{0.4\textwidth}|>{\ttfamily}p{0.35\textwidth}|p{0.25\textwidth}|}
+    \caption{SCOPFLOW Python Bindings}\label{table:scopflow-python-bindings} \\ 
+    \hline
+    \textbf{\textrm{C++ API}} & \textbf{\textrm{Python API}} & \textbf{Notes}\\ [0.5ex]  
+    \hline
+    \endfirsthead
+    \caption{SCOPFLOW Python Bindings (cont.)} \\ 
+    \hline
+    \textbf{\textrm{C++ API}} & \textbf{\textrm{Python API}} & \textbf{Notes}\\ [0.5ex]  
+    \hline
+    \endhead
+    SCOPFLOW & exago.SCOPFLOW class &  \\ \hline
+    ContingencyFileInputFormat enum & exago.ContingencyFileInputFormat enum & More details and possible values for this enum can be found in the \ref{sec:python-enum}.  Currently, this is only be used as a Python enum. A string representation is not available. \\ \hline
+    SCOPFLOWSetModel & set\_model &  \\ \hline
+    SCOPFLOWSetNetworkData & set\_network\_data &  \\ \hline
+    SCOPFLOWSetLoadProfiles & set\_load\_profiles & \\ \hline
+    SCOPFLOWSetNumContingencies & set\_num\_contingencies &  \\ \hline
+    SCOPFLOWSetContingencyData & set\_contingency\_data &  \\ \hline
+    SCOPFLOWSetPLoadData & set\_pload\_data &  \\ \hline
+    SCOPFLOWSetQLoadData & set\_qload\_data &  \\ \hline
+    SCOPFLOWSetWindGenProfile & set\_wind\_gen\_profile &  \\ \hline
+    SCOPFLOWSetTimeStep & set\_time\_step &  \\ \hline
+    SCOPFLOWSetDuration & set\_duration &  \\ \hline
+    SCOPFLOWSetTimeStepandDuration & set\_time\_step\_and\_duration &  \\ \hline
+    SCOPFLOWSetTolerance & set\_tolerance &  \\ \hline
+    SCOPFLOWSetVerbosityLevel & set\_verbosity\_level &  \\ \hline
+    SCOPFLOWSetComputeMode & set\_compute\_mode &  \\ \hline
+    SCOPFLOWSetSolver & set\_solver &  \\ \hline
+    SCOPFLOWSetSubproblemModel & set\_subproblem\_model &  \\ \hline
+    SCOPFLOWSetSubproblemSolver & set\_subproblem\_solver &  \\ \hline
+    SCOPFLOWSetInitilizationType & set\_initialization\_type &  \\ \hline
+    SCOPFLOWSetGenBusVoltageType & set\_gen\_bus\_voltage\_type &  \\ \hline
+    SCOPFLOWEnableMultiPeriod & enable\_multi\_period &  \\ \hline
+    SCOPFLOWEnablePowerImbalanceVariables & enable\_power\_imbalance\_variables &  \\ \hline
+    SCOPFLOWIgnoreLineflowConstraints & ignore\_lineflow\_constraints &  \\ \hline
+    SCOPFLOWGetTolerance & get\_tolerance &  \\ \hline
+    SCOPFLOWGetNumIterations & get\_num\_iterations &  \\ \hline
+    SCOPFLOWGetConvergenceStatus & get\_convergence\_status &  \\ \hline
+    SCOPFLOWGetTotalObjective & get\_total\_objective &  \\ \hline
+    SCOPFLOWGetBaseObjective & get\_base\_objective &  \\ \hline
+    SCOPFLOWSetUp & set\_up &  \\ \hline
+    SCOPFLOWSolve & solve &  \\ \hline
+    SCOPFLOWPrintSolution & print\_solution &  \\ \hline
+    SCOPFLOWSaveSolution & save\_solution &  \\ \hline
+    SCOPFLOWSaveSolutionDefault & save\_solution\_default &  \\ \hline
+    SCOPFLOWSaveSolutionAll & save\_solution\_all &  \\ \hline
+    SCOPFLOWSaveSolutionAllDefault & save\_solution\_all\_default &  \\ \hline
+
+    \hline
+  \end{longtable}
+}
+\subsection{SOPFLOW} 
+
+The functions in the following table could be called by a sopflow object (i.e. \texttt{sopflow = exago.SOPFLOW(); sopflow.solve();})
+
+
+{ \footnotesize
+  \begin{longtable}{|>{\ttfamily}p{0.37\textwidth}|>{\ttfamily}p{0.33\textwidth}|p{0.3\textwidth}|}
+    \caption{SOPFLOW Python Bindings}
+    \label{table:sopflow-python-bindings } \\
+    \hline
+    \textbf{\textrm{C++ API}} & \textbf{\textrm{Python API}} & \textbf{Notes}\\ [0.5ex]  
+    \hline
+    \endfirsthead
+    \caption{SOPFLOW Python Bindings (cont.)} \\
+    \hline
+    \textbf{\textrm{C++ API}} & \textbf{\textrm{Python API}} & \textbf{Notes}\\ [0.5ex]  
+    \hline
+    \endhead
+    SCOPFLOW & exago.SCOPFLOW class &  \\ \hline
+    ScenarioFileInputFormat enum & ScenarioFileInputFormat enum  & More details and possible values for this enum can be found in \ref{sec:python-enum}. Currently, this is only be used as a Python enum. A string representation is not available. \\ \hline
+    ScenarioUncertaintyType enum & ScenarioUncertaintyType enum  &
+    More details and possible values for this enum can be found in the
+    \ref{sec:python-enum}. Currently, this is only be used as a Python enum. A string representation is not available. \\ \hline
+    SOPFLOWSetModel & set\_model &  \\ \hline
+    SOPFLOWSetNetworkData & set\_network\_data &  \\ \hline
+    SOPFLOWSetContingencyData & set\_contingency\_data &  \\ \hline
+    SOPFLOWSetNumContingencies & set\_num\_contingencies &  \\ \hline
+    SOPFLOWSetScenarioData & set\_scenario\_data &  \\ \hline
+    SOPFLOWSetNumScenarios & set\_num\_scenarios &  \\ \hline
+    SOPFLOWSetWindGenProfile & set\_wind\_gen\_profile &  \\ \hline
+    SOPFLOWSetTimeStepandDuration & set\_time\_step\_and\_duration &  \\ \hline
+    SOPFLOWSetTolerance & set\_tolerance &  \\ \hline
+    SOPFLOWSetSubproblemVerbosityLevel & set\_subproblem\_verbosity\_level &  \\ \hline
+    SOPFLOWSetSubproblemComputeMode & set\_subproblem\_compute\_mode &  \\ \hline
+    SOPFLOWSetSubproblemModel & set\_subproblem\_model &  \\ \hline
+    SOPFLOWSetSubproblemSolver & set\_subproblem\_solver &  \\ \hline
+    SOPFLOWSetSolver & set\_solver &  \\ \hline
+    SOPFLOWSetInitializationType & set\_initialization\_type  &  \\ \hline
+    SOPFLOWSetGenBusVoltageType & set\_gen\_bus\_voltage\_type &  \\ \hline
+    SOPFLOWSetLoadProfiles & set\_load\_profiles &  \\ \hline
+    SOPFLOWSetLoadProfiles & set\_ignore\_lineflow\_constraints &  \\ \hline
+    SOPFLOWEnableMultiContingency & enable\_multi\_contingency &  \\ \hline
+    SOPFLOWFlattenContingencies & flatten\_contingencies & \\ \hline
+    SOPFLOWGetNumScenarios & get\_num\_scenarios &  \\ \hline
+    SOPFLOWGetNumIterations & get\_num\_iterations &  \\ \hline
+    SOPFLOWGetConvergenceStatus & get\_convergence\_status &  \\ \hline
+    SOPFLOWGetTotalObjective & get\_total\_objective &  \\ \hline
+    SOPFLOWGetConvergenceStatus & get\_converged\_status &  \\ \hline
+    SOPFLOWGetTolerance & get\_tolerance &  \\ \hline
+    SOPFLOWSetUp & setup &  \\ \hline
+    SOPFLOWSolve & solve &  \\ \hline
+    SOPFLOWPrintSolution & print\_solution & \\ \hline
+    SOPFLOWSaveSolution & save\_solution & \\ \hline
+    SOPFLOWSaveSolutionAll & save\_solution\_all &  \\ \hline
+
+    \hline
+\end{longtable}
+}
+
+\section{Enums} \label{sec:python-enum}
+
+The enums in \exago serve as integer mapped values for certain settings within the application. Several type settings, OPFLOWObjectiveType, OPFLOWInitializationType, and OPFLOWGenBusVoltageType, are specific to OPFLOW. 
+
+Instances can be constructed directly through the \exago library (i.e. \texttt{exago.OutputFormat.CSV}). The possible values for the current enums are as follows:
+
+\begin{center}
+  \makebox[0cm]
+  { \footnotesize
+\begin{tabular}{ |>{\ttfamily}p{0.32\textwidth}|>{\ttfamily}p{0.32\textwidth}|>{\ttfamily}p{0.32\textwidth}|  }
+ \hline
+ \multicolumn{3}{|c|}{\textrm{Possible Values}} \\
+ \hline
+ \textbf{OPFLOWObjectiveType} & \textbf{OPFLOWInitializationType} & \textbf{OPFLOWGenBusVoltageType} \\
+ \hline
+ - MIN\_GEN\_COST & - OPFLOWINIT\_FROMFILE & - VARIABLE\_WITHIN\_BOUNDS \\
+ - MIN\_GENSETPOINT\_DEVIATION & - OPFLOWINIT\_MIDPOINT & - FIXED\_WITHIN\_QBOUNDS \\
+ - NO\_OBJ & - OPFLOWINIT\_ACPF & - FIXED\_AT\_SETPOINT\\
+  & - OPFLOW\_FLATSTART & \\
+ \hline
+\end{tabular}
+}
+\end{center}
+
+\begin{center}
+  \makebox[0cm]
+  { \footnotesize
+\begin{tabular}{ |>{\ttfamily}p{0.14\textwidth}|>{\ttfamily}p{0.30\textwidth}|>{\ttfamily}p{0.27\textwidth}|>{\ttfamily}p{0.26\textwidth}|  }
+ \hline
+ \multicolumn{4}{|c|}{\textrm{Possible Values}} \\
+ \hline
+ \textbf{OutputFormat} & \textbf{ContingencyFileInputFormat} & \textbf{ScenarioFileInputFormat} & \textbf{ScenarioUncertaintyType} \\
+ \hline
+ - CSV & - NATIVE & - NATIVE\_SINGLEPERIOD & - NONE \\
+ - MATPOWER & - PSSE & - NATIVE\_MULTIPERIOD & - WIND \\
+ - JSON &  &  & - LOAD \\
+ - MINIMAL &  &  &  \\
+ \hline
+\end{tabular}
+}
+\end{center}
+
+Note: getters for the possible values of ContingencyFileInputeFormat, ScenarioFileInputFormat, ScenarioUncertaintyType are not currently available.
+
+Instances can be constructed directly through the exago library (i.e. \texttt{exago.OPFLOWObjectiveType. MIN\_GEN\_COST} or \texttt{exago.MIN\_GEN\_COST})
+
+Setter functions for these OPFLOW Type configurations can take an integer, an instance of the exago enum, or a string that describes the enum (i.e. 'MIN\_GEN\_COST'). The rest currently only accept an instance of the exago enum. The possible values for these OPFLOW Type enums can be retrieved through opflow.get\_xxx\_types() (i.e. opflow.get\_gen\_bus\_voltage\_types()). The opflow.get\_xxx\_types functions yield a list of the enum values.
+
+The next section covers some code examples on how to get and use these values.
+
+\subsection{Code Examples}
+
+\subsubsection{Set with a string}
+\begin{lstlisting}
+>>> opflow.set_initialization_type('OPFLOWINIT_FROMFILE')
+>>> opflow.get_initialization_type()
+OPFLOWInitializationType.OPFLOWINIT_FROMFILE
+\end{lstlisting}
+
+\subsubsection{Set with an integer}
+\begin{lstlisting}
+>>> opflow.set_initialization_type(1)
+>>> opflow.get_initialization_type()
+OPFLOWInitializationType.OPFLOWINIT_FROMFILE
+\end{lstlisting}
+
+
+\subsubsection{Set with an enum instance}
+\begin{lstlisting}
+>>> opflow.set_initialization_type(exago.OPFLOWInitializationType.OPFLOWINIT_FROMFILE)
+>>> opflow.get_initialization_type()
+OPFLOWInitializationType.OPFLOWINIT_FROMFILE
+\end{lstlisting}
+
+\subsubsection{Set via getter function}
+\begin{lstlisting}
+>>> types = opflow.get_objective_types()
+[<OPFLOWObjectiveType.MIN_GEN_COST: 0>, <OPFLOWObjectiveType.MIN_GENSETPOINT_DEVIATION: 1>, <OPFLOWObjectiveType.NO_OBJ: 2>]
+>>> opflow.set_objective_type(types[0])
+>>> opflow.get_objective_type()
+OPFLOWObjectiveType.MIN_GEN_COST
+\end{lstlisting}
+
+\section{History}
+
+\exago pre v1.1 had optional Python bindings, implemented with ctypes, that could be enabled. \hiop, a critical dependency, updated to Umpire v6 when GPU and RAJA options were enabled. Because Umpire after v6 ships with CUDA device code, a final device link step was required for any other libraries or executables. This drastically complicated the ctypes Python bindings, which relied on calling out to the shared library directly.
+
+\exago v1.2.1 was the first version to ship Python bindings that used Pybind11, which creates a shared library directly importable from Python, which simplified the user experience and made it possible to call \exago from Python when only static libraries are generated.

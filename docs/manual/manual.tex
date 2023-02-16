@@ -27,7 +27,7 @@
   postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
 }
 %\usepackage[classicReIm]{kpfonts}
-\usepackage[dvips]{graphicx} %%% use 'pdftex' instead of 'dvips' for PDF output
+\usepackage{graphicx} %%% use 'pdftex' instead of 'dvips' for PDF output
 \usepackage{xcolor}
 \usepackage{xspace}
 \usepackage{fancyvrb}
@@ -59,7 +59,7 @@
 %\renewcommand{\Re}{\R}
 %\newcommand{\Comment}[1]{}
 
-\newcommand{\exagoversion}{1.5.0}
+\newcommand{\exagoversion}{1.5.1 }
 
 % Sets and accessors
 \newcommand{\Jgen}{J^\text{gen}}
@@ -185,6 +185,8 @@
 \newcommand{\scopflow}{\hyperref[chap:scopflow]{SCOPFLOW}\xspace}
 \newcommand{\tcopflow}{\hyperref[chap:tcopflow]{TCOPFLOW} \xspace}
 \newcommand{\sopflow}{\hyperref[chap:sopflow]{SOPFLOW} \xspace}
+\newcommand{\python}{\hyperref[chap:python]{Python Wrapper} \xspace}
+
 
 % Miscallenous
 \newcommand{\todo}{\textbf{{\textcolor{red}{\Large{**---To be completed---**}}}}}
@@ -207,7 +209,7 @@
 \noindent {\Large{\it Version \exagoversion}}
 
 %\vspace*{0.5in}
-%\noindent {\bf Shrirang Abhyankar, Asher Mancinelli, Bruce Palmer, Slaven Peles, Cameron Rutherford}
+%\noindent {\bf Shrirang Abhyankar, Asher Mancinelli, Bruce Palmer, Slaven Peles, Cameron Rutherford, Jaelyn Litzinger, Ryan Danehy, William Perkins, Sayef Azad Sakin, Joseph Macam, Nicholson Koukpaizan}
 
 %\vspace*{4in}
 %\noindent {\includegraphics[scale=0.3]{figures/DOE_logo.eps}}
@@ -238,6 +240,8 @@
 
 \input{sopflow.tex}
 
+\input{python.tex}
+
 %\input{pflow.tex}
 
 \begin{appendices}
@@ -250,3 +254,8 @@
 \bibliography{manual-bib}
 
 \end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
