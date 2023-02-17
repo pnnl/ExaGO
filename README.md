@@ -1,4 +1,4 @@
-[![pipeline status](https://gitlab.pnnl.gov/exasgd/frameworks/exago/badges/master/pipeline.svg)](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/commits/master)
+[![pipeline status](https://gitlab.pnnl.gov/%{project_path}/badges/%{default_branch}/pipeline.svg)](https://gitlab.pnnl.gov/%{project_path}/-/commits/%{default_branch})
 
 # <b>Exa</b>scale <b>G</b>rid <b>O</b>ptimization toolkit (ExaGO<sup>TM</sup>)
 <!--![](viz/images/network_gen_load_us.png)-->
