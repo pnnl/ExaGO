@@ -1,6 +1,5 @@
-[![pipeline status](https://gitlab.pnnl.gov/exasgd/frameworks/exago/badges/master/pipeline.svg)](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/commits/master)
+# <b>Exa</b>scale <b>G</b>rid <b>O</b>ptimization toolkit (ExaGO<sup>TM</sup>) [![pipeline status](https://gitlab.pnnl.gov/exasgd/frameworks/exago/badges/develop/pipeline.svg)](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/commits/develop)
 
-# <b>Exa</b>scale <b>G</b>rid <b>O</b>ptimization toolkit (ExaGO<sup>TM</sup>)
 <!--![](viz/images/network_gen_load_us.png)-->
 <img src="viz/images/network_gen_load_us.png">
 <img src="docs/manual/figures/three_in_one.png">

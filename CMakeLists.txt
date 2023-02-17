@@ -6,7 +6,7 @@ Preamble
 
 cmake_minimum_required(VERSION 3.18)
 
-project(ExaGO VERSION "1.5.0")
+project(ExaGO VERSION "1.5.1")
 
 set(CMAKE_CXX_STANDARD 14)
 # Enable setting Mac OS X rpath
