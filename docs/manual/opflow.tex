@@ -84,7 +84,7 @@ Needs option \opflowoption{\opflowobjective}{\mingensetpointdeviation}
 C_{dev}(\Delta p^{\text{g}}) = \sum_{\jinJgen} ({\Deltapj}^2)
 \label{eq:opf_obj_mingensetpointdev}
 \end{equation}
-This feature is only supported with IPOPT solver.
+This feature is only supported with Ipopt solver.
 
 \subsubsection{Load loss $C(\Delta p^{\text{l}},\Delta q^{\text{l}})$}
 This term gets added to the objective when  \option{\opflowincludeloadloss} option is active. 
@@ -581,7 +581,7 @@ Gen      Status     Fuel     Pg       Qg       Pmin     Pmax     Qmin     Qmax
 [ExaGO] Finalizing opflow application.
 \end{lstlisting}
 
-Example with HIOP solver on GPU with load loss activated. In this example, the load at bus 5 is
+Example with HiOp solver on GPU with load loss activated. In this example, the load at bus 5 is
 increased to 750 MW leading to an infeasible power flow. Activating the load loss causes shedding
 of load at bus 5 and as a result makes the optimization converge.
 
