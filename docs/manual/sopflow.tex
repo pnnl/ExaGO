@@ -42,7 +42,7 @@ For multi time-period, we use ramping constraints on the generator real power ou
 \sopflow can be run in two modes: preventive and corrective. In the preventive mode, generator real power output is fixed to the base-case values for generators at PV bus(es). In this mode, the generators at the reference bus provide/absorb any deficit/surplus power. The corrective mode allows deviation of the PV and PQ generator real power from the base-case dispatch constrained by its 30-min. ramp rate capability. Note that the preventive/corrective mode is only applied at the first step $t_0$. In the successive time-steps, the generator dispatch is dictated by the previous step dispatch and the ramp limits.
 
 \section{Solvers}
-\sopflow supports solving the optimization problem via \ipopt, \hiop, or \emph{EMPAR}. \ipopt can solve \sopflow on single rank only. \hiop supports solving the problem in parallel using a primal-decomposition algorithm. With HIOP, one can solve the subproblem either on the CPU or GPU by selecting the appropriate subproblem model and solver (see options table below). However, note that \emph{ExaGO needs to be built with \ipopt even when using \hiop solver.} The \emph{EMPAR} solver does not solve the stochastic ACOPF problem, but it only solves the base-case and the stochastic scenarios independently with \opflow. It distributes the scenarios and contingencies to different processes when executed in parallel. Table \ref{tab:sopflow_solvers} lists the compatibility of the different solvers for different variations of \sopflow.
+\sopflow supports solving the optimization problem via \ipopt, \hiop, or \emph{EMPAR}. \ipopt can solve \sopflow on single rank only. \hiop supports solving the problem in parallel using a primal-decomposition algorithm. With HiOp, one can solve the subproblem either on the CPU or GPU by selecting the appropriate subproblem model and solver (see options table below). However, note that \emph{ExaGO needs to be built with \ipopt even when using \hiop solver.} The \emph{EMPAR} solver does not solve the stochastic ACOPF problem, but it only solves the base-case and the stochastic scenarios independently with \opflow. It distributes the scenarios and contingencies to different processes when executed in parallel. Table \ref{tab:sopflow_solvers} lists the compatibility of the different solvers for different variations of \sopflow.
 
 \begin{center}
 \begin{table}[!htbp]
@@ -101,8 +101,8 @@ the output files have the file name format \texttt{t_z} where z is the time-step
     -sopflow\_mode & Operation mode: Preventive or corrective & 0 or 1 (0) &\\ \hline
     -sopflow\_model & Set model for SOPFLOW & GENRAMP, GENRAMPC (GENRAMP) &\\ \hline
     -sopflow\_solver & Set solver for SOPFLOW & IPOPT, HIOP, or  EMPAR &\\ \hline
-    -sopflow\_subproblem\_solver & Set solver for subproblem & IPOPT or HIOP (IPOPT) &Only when using HIOP solver for SOPFLOW \\ \hline
-    -sopflow\_subproblem\_model & Set model for subproblem & See OPFLOW chapter &Only when using HIOP solver for SOPFLOW \\ \hline
+    -sopflow\_subproblem\_solver & Set solver for subproblem & IPOPT or HIOP (IPOPT) &Only when using HiOp solver for SOPFLOW \\ \hline
+    -sopflow\_subproblem\_model & Set model for subproblem & See OPFLOW chapter &Only when using HiOp solver for SOPFLOW \\ \hline
     -sopflow\_enable\_multicontingency & Multi-contingency SOPFLOW & 0 or 1 (0) &\\ \hline
     -sopflow\_flatten\_contingencies & Flatten contingencies for SOPFLOW & 0 or 1 (1) &\\ \hline
     -sopflow\_Ns & Number of scenarios & int (Default 0. Use -1 to select all scenarios from the scenario file) &\\ \hline

@@ -16,17 +16,17 @@ ExaGO<sup>TM</sup> includes the following applications for solving different pow
 
 ExaGO<sup>TM</sup> applications are interfaced with the following optimization solver packaages:
 
-- [IPOPT](https://github.com/coin-or/Ipopt) is a popular optimization package for solving nonlinear optimization problems that uses an interior-point algorithm.
+- [Ipopt](https://github.com/coin-or/Ipopt) is a popular optimization package for solving nonlinear optimization problems that uses an interior-point algorithm.
 - [HiOp](https://github.com/LLNL/hiop) is a HPC package for optimization. ExaGO interfaces with two of its solvers -- a mixed sparse-dense interior-point solver (NewtonMDS) and a sparse interior-point solver (HiOPSparse). NewtonMDS  allows execution of the optimization either on CPU and GPU. The sparse HiOp solver is currently supported on CPU only.
 
 Note that not all applications can utilize all solvers yet. The following table lists the solver-application compatibility.
 
-|  Solver    | OPFLOW  | TCOPFLOW | SCOPLOW | SOPFLOW |
+|  Solver   | OPFLOW  | TCOPFLOW | SCOPLOW | SOPFLOW |
 |:------:|:---------:|:-----:|:-------:|:-------:|
-| IPOPT      | Y         |  Y     | Y       | Y       | 
-| HIOP       | Y          |       |   Y      |  Y       |
+| Ipopt      | Y         |  Y     | Y       | Y       | 
+| HiOp       | Y          |       |   Y      |  Y       |
 
-Addditionally note that SCOPFLOW and SOPFLOW with HIOP solver use IPOPT to solve a portion of the problem (base problem). So one must also use IPOPT when using HIOP solver for these applications.
+Additionally, note that SCOPFLOW and SOPFLOW with HiOp solver use Ipopt to solve a portion of the problem (base problem). So one must also configure with Ipopt when using HiOp solver for these applications.
 
 ## Installing
 

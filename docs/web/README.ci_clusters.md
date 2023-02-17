@@ -186,7 +186,7 @@ In case the PETSc dependency is not automatically found, you can specify it usin
 $ cmake ../exago -DPETSC_DIR=<petsc_install_dir> -DPETSC_ARCH=<petsc_arch>
 ```
 
-To use IPOPT with ExaGO, set:
+To use Ipopt with ExaGO, set:
 ```
 cmake ../exago -DEXAGO_ENABLE_IPOPT=ON
 ```
@@ -195,7 +195,7 @@ own Ipopt build, you will most likely need to specify its location like this:
 ```
 cmake ../exago -DEXAGO_ENABLE_IPOPT=ON -DIPOPT_DIR=<ipopt_install_dir>
 ```
-Similar to IPOPT, the corresponding flags for HiOp are `EXAGO_ENABLE_HIOP`
+Similar to Ipopt, the corresponding flags for HiOp are `EXAGO_ENABLE_HIOP`
 and `HIOP_DIR`.
 ```
 cmake ../exago -DEXAGO_ENABLE_HIOP=ON -DHIOP_DIR=<hiop_install_dir>
