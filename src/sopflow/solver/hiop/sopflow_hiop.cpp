@@ -367,6 +367,8 @@ double SOPFLOWHIOPInterface::get_objective() {
     CHKERRQ(ierr);
     return obj;
   }
+
+  throw ExaGOError("sopflow->sstart != 0 and so no objective value to return");
 }
 
 PetscErrorCode SOPFLOWSolverSolve_HIOP(SOPFLOW sopflow) {
