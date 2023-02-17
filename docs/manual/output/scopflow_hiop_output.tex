@@ -1,0 +1,188 @@
+bin/scopflow -netfile $EXAGO_DIR/datafiles/case9/case9mod.m -ctgcfile $EXAGO_DIR/datafiles/case9/case9.cont -scopflow_Nc 4 -scopflow_solver IPOPT -print_output -scopflow_solver HIOP -scopflow_subproblem_solver IPOPT -scopflow_subproblem_model POWER_BALANCE_POLAR
+[ExaGO] SCOPFLOW: Application created
+[ExaGO] SCOPFLOW running with 5 subproblems (base case + 4 contingencies)
+[ExaGO] SCOPFLOW: Using HIOP solver
+Failed to read option file 'hiop_pridec.options'. Hiop will use default options.
+[ExaGO] SCOPFLOW: Setup completed
+total number of recourse problems  4
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit http://projects.coin-or.org/Ipopt
+******************************************************************************
+
+This is Ipopt version 3.12.10, running with linear solver ma27.
+
+Number of nonzeros in equality constraint Jacobian...:      114
+Number of nonzeros in inequality constraint Jacobian.:       72
+Number of nonzeros in Lagrangian Hessian.............:       96
+
+Total number of variables............................:       24
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:       16
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:       18
+Total number of inequality constraints...............:       18
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:       18
+        inequality constraints with only upper bounds:        0
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  1.0318125e+04 1.80e+00 1.00e+02  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+   1  7.7157691e+03 1.17e+00 1.03e+02  -1.0 1.08e+00    -  6.27e-01 3.50e-01f  1
+   2  7.6608235e+03 1.15e+00 1.01e+02  -1.0 6.28e+00    -  1.20e-02 1.37e-02f  1
+   3  7.4466686e+03 1.09e+00 3.06e+02  -1.0 3.74e+00    -  4.15e-03 5.81e-02f  1
+   4  5.4292675e+03 3.92e-01 4.83e+03  -1.0 7.34e-01    -  3.34e-03 6.40e-01f  1
+   5  4.5792834e+03 2.24e-01 1.51e+03  -1.0 6.46e-01   2.0 8.77e-03 7.37e-01f  1
+   6  4.2907579e+03 1.20e-02 3.57e+02  -1.0 3.36e-01    -  5.37e-01 1.00e+00f  1
+   7  4.1690456e+03 4.40e-02 5.31e+01  -1.0 3.31e-01    -  9.22e-01 1.00e+00f  1
+   8  4.1687926e+03 4.88e-04 1.93e+00  -1.0 4.79e-02   1.5 1.00e+00 1.00e+00h  1
+   9  4.1497176e+03 1.19e-02 9.92e+00  -2.5 1.87e-01    -  8.38e-01 1.00e+00f  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  10  4.1463942e+03 1.09e-02 5.09e-01  -2.5 1.15e-01    -  8.71e-01 1.00e+00h  1
+  11  4.1449657e+03 1.47e-03 1.79e-02  -2.5 2.75e-02    -  1.00e+00 1.00e+00h  1
+  12  4.1445415e+03 6.63e-04 9.12e-02  -3.8 1.48e-02    -  1.00e+00 6.30e-01h  1
+  13  4.1444705e+03 3.43e-04 4.96e-02  -3.8 2.08e-02    -  1.00e+00 8.93e-01h  1
+  14  4.1444809e+03 4.48e-05 1.79e-04  -3.8 6.82e-03    -  1.00e+00 1.00e+00f  1
+  15  4.1444611e+03 1.96e-05 4.55e-03  -5.7 4.57e-03    -  1.00e+00 9.34e-01h  1
+  16  4.1444607e+03 6.49e-06 1.17e-05  -5.7 2.60e-03    -  1.00e+00 1.00e+00h  1
+  17  4.1444605e+03 1.19e-06 2.07e-06  -7.0 1.11e-03    -  1.00e+00 1.00e+00h  1
+  18  4.1444605e+03 1.58e-07 3.29e-07  -7.0 4.06e-04    -  1.00e+00 1.00e+00h  1
+
+Number of Iterations....: 18
+
+                                   (scaled)                 (unscaled)
+Objective...............:   9.2925122354655841e+01    4.1444604570176507e+03
+Dual infeasibility......:   3.2927387965389691e-07    1.4685615032563802e-05
+Constraint violation....:   2.6639677713768961e-08    2.6639677713768961e-08
+Complementarity.........:   4.7840038622596930e-07    2.1336657225678232e-05
+Overall NLP error.......:   4.7840038622596930e-07    2.1336657225678232e-05
+
+
+Number of objective function evaluations             = 19
+Number of objective gradient evaluations             = 19
+Number of equality constraint evaluations            = 19
+Number of inequality constraint evaluations          = 19
+Number of equality constraint Jacobian evaluations   = 19
+Number of inequality constraint Jacobian evaluations = 19
+Number of Lagrangian Hessian evaluations             = 18
+Total CPU secs in IPOPT (w/o function evaluations)   =      0.027
+Total CPU secs in NLP function evaluations           =      0.002
+
+EXIT: Optimal Solution Found.
+This is Ipopt version 3.12.10, running with linear solver ma27.
+
+Number of nonzeros in equality constraint Jacobian...:      118
+Number of nonzeros in inequality constraint Jacobian.:       64
+Number of nonzeros in Lagrangian Hessian.............:      141
+
+Total number of variables............................:       30
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:       22
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:       24
+Total number of inequality constraints...............:       16
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:       16
+        inequality constraints with only upper bounds:        0
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  0.0000000e+00 1.80e+00 0.00e+00  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+   1  0.0000000e+00 1.41e+00 3.55e+01  -1.0 9.96e-01    -  6.48e-01 2.16e-01h  1
+   2  0.0000000e+00 1.36e+00 5.74e+01  -1.0 3.86e+00    -  3.79e-03 3.37e-02f  1
+   3  0.0000000e+00 1.12e+00 3.23e+02  -1.0 1.01e+00    -  1.98e-02 1.76e-01f  1
+   4  0.0000000e+00 4.03e-01 7.31e+02  -1.0 7.32e-01    -  2.71e-02 9.03e-01f  1
+   5  0.0000000e+00 8.41e-02 1.58e+02  -1.0 6.95e-01    -  4.70e-01 8.52e-01h  1
+   6  0.0000000e+00 4.93e-03 3.36e+01  -1.0 1.85e-01    -  1.00e+00 1.00e+00f  1
+   7  0.0000000e+00 2.20e-02 2.50e+01  -1.0 6.50e-01    -  4.45e-01 2.50e-01h  3
+   8  0.0000000e+00 1.07e-01 5.13e+00  -1.0 3.57e-01   0.0 1.00e+00 1.00e+00h  1
+   9  0.0000000e+00 1.07e-01 4.86e+00  -1.7 9.45e-01    -  3.30e-01 1.98e-01h  2
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  10  0.0000000e+00 9.21e-03 3.47e+00  -1.7 1.17e-01  -0.5 8.84e-01 1.00e+00h  1
+  11  0.0000000e+00 2.70e-02 9.88e-01  -1.7 1.67e-01    -  1.00e+00 1.00e+00h  1
+  12  0.0000000e+00 8.46e-03 1.62e-01  -1.7 1.58e-01  -1.0 1.00e+00 1.00e+00h  1
+  13  0.0000000e+00 7.11e-04 1.09e-01  -2.5 4.58e-02  -1.4 1.00e+00 1.00e+00h  1
+  14  0.0000000e+00 1.11e-01 9.70e-02  -2.5 1.43e+00    -  1.00e+00 1.00e+00H  1
+  15  0.0000000e+00 2.40e-02 5.99e-02  -2.5 2.27e-01  -1.9 1.00e+00 1.00e+00h  1
+  16  0.0000000e+00 3.45e-02 2.41e-01  -2.5 3.69e-01    -  5.82e-01 1.00e+00h  1
+  17  0.0000000e+00 1.85e-02 1.46e-01  -2.5 3.58e-01    -  1.00e+00 1.00e+00h  1
+  18  0.0000000e+00 8.37e-03 2.78e-02  -2.5 9.85e-02    -  1.00e+00 1.00e+00h  1
+  19  0.0000000e+00 6.33e-06 5.45e-04  -3.8 6.81e-03    -  1.00e+00 1.00e+00h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  20  0.0000000e+00 1.42e-07 2.95e-06  -5.7 1.02e-03    -  1.00e+00 1.00e+00h  1
+  21  0.0000000e+00 1.44e-06 1.25e-07  -7.0 3.43e-03    -  1.00e+00 1.00e+00h  1
+
+Number of Iterations....: 21
+
+                                   (scaled)                 (unscaled)
+Objective...............:   0.0000000000000000e+00    0.0000000000000000e+00
+Dual infeasibility......:   1.2466133995485293e-07    1.2466133995485293e-07
+Constraint violation....:   1.8383034489088956e-07    1.8383034489088956e-07
+Complementarity.........:   1.0156847334169061e-07    1.0156847334169061e-07
+Overall NLP error.......:   1.8383034489088956e-07    1.8383034489088956e-07
+
+
+Number of objective function evaluations             = 28
+Number of objective gradient evaluations             = 22
+Number of equality constraint evaluations            = 28
+Number of inequality constraint evaluations          = 28
+Number of equality constraint Jacobian evaluations   = 22
+Number of inequality constraint Jacobian evaluations = 22
+Number of Lagrangian Hessian evaluations             = 21
+Total CPU secs in IPOPT (w/o function evaluations)   =      0.032
+Total CPU secs in NLP function evaluations           =      0.003
+
+EXIT: Optimal Solution Found.
+
+...
+...
+
+=============================================================
+Security-Constrained Optimal Power Flow
+=============================================================
+Number of contingencies             4
+Multi-period contingencies?         NO
+Solver                              HIOP
+Initialization                      MIDPOINT
+Load loss allowed                   NO
+Power imbalance allowed             NO
+Ignore line flow constraints        NO
+
+
+Convergence status                  CONVERGED
+Objective value (base)              4144.46
+
+----------------------------------------------------------------------
+Bus        Pd      Qd      Vm      Va      mult_Pmis      mult_Qmis      Pslack         Qslack        
+----------------------------------------------------------------------
+1         0.00    0.00   1.100   0.000      2102.91         0.00         0.00         0.00
+2         0.00    0.00   1.095   3.928      2059.18        -0.00         0.00         0.00
+3         0.00    0.00   1.087   2.120      2065.15        -0.00         0.00         0.00
+4         0.00    0.00   1.097  -1.993      2103.16         0.08         0.00         0.00
+5        75.00   50.00   1.079  -3.060      2113.45         7.29         0.00         0.00
+6        90.00   30.00   1.087  -3.927      2129.85         1.62         0.00         0.00
+7         0.00    0.00   1.100   0.535      2059.57        -0.04         0.00         0.00
+8       100.00   35.00   1.089  -1.720      2079.34         2.99         0.00         0.00
+9         0.00    0.00   1.100  -0.135      2065.43        -0.09         0.00         0.00
+
+----------------------------------------------------------------------------------------
+From       To       Status     Sft      Stf     Slim     mult_Sf  mult_St 
+----------------------------------------------------------------------------------------
+1          4          1       73.18    72.98   380.00    -0.00    -0.00
+2          7          1      114.18   114.68   250.00    -0.00    -0.00
+3          9          1       83.57    84.60   300.00    -0.00    -0.00
+4          5          1       29.68    40.50   250.00    -0.00    -0.00
+4          6          1       44.86    46.03   250.00    -0.00    -0.00
+5          7          1       51.29    49.04   250.00    -0.00    -0.00
+6          9          1       48.94    51.43   150.00    -0.00    -0.00
+7          8          1       66.61    68.11   250.00    -0.00    -0.00
+8          9          1       38.86    34.15   150.00    -0.00    -0.00
+
+----------------------------------------------------------------------------------------
+Gen      Status     Fuel     Pg       Qg       Pmin     Pmax     Qmin     Qmax  
+----------------------------------------------------------------------------------------
+1          1    UNDEFINED    72.86     6.79    10.00   350.00  -300.00   300.00
+2          1    UNDEFINED   114.07    -5.13    10.00   300.00  -300.00   300.00
+3          1    UNDEFINED    80.21   -23.47    10.00   270.00  -300.00   300.00
+[ExaGO] Finalizing scopflow application.

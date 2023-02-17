@@ -1,0 +1,211 @@
+./bin/opflow -opflow_solver HIOP -opflow_model POWER_BALANCE_HIOP -netfile $EXAGO_DIR/datafiles/case9/case9mod.m -opflow_initialization ACPF -hiop_compute CPU -hiop_verbosity_level 3 -print_output
+[ExaGO] Creating OPFlow
+
+[Warning] Detected 1 fixed variables out of a total of 24.
+===============
+Hiop SOLVER
+===============
+Using 1 MPI ranks.
+---------------
+Problem Summary
+---------------
+Total number of variables: 24
+     lower/upper/lower_and_upper bounds: 16 / 16 / 16
+Total number of equality constraints: 18
+Total number of inequality constraints: 18
+     lower/upper/lower_and_upper bounds: 18 / 18 / 18
+iter    objective     inf_pr     inf_du   lg(mu)  alpha_du   alpha_pr linesrch
+   0  4.6670737e+03 3.714e-11  2.891e+03  -1.00  0.000e+00  0.000e+00  -(-)
+   1  4.6431205e+03 3.373e-04  2.791e+03  -1.00  3.013e-01  3.498e-02  1(f)
+   2  4.4461241e+03 6.595e-02  2.105e+03  -1.00  4.910e-01  2.467e-01  1(s)
+   3  4.1942969e+03 6.464e-02  5.808e+02  -1.00  5.986e-01  8.573e-01  1(s)
+   4  4.1615434e+03 8.234e-03  1.159e+02  -1.00  7.556e-01  1.000e+00  1(s)
+   5  4.1471588e+03 4.414e-03  1.291e+02  -1.00  1.000e+00  1.000e+00  1(s)
+   6  4.1441777e+03 2.959e-02  7.889e+01  -1.00  4.818e-01  4.030e-01  1(s)
+   7  4.1448270e+03 7.926e-03  4.949e+01  -1.00  1.000e+00  1.000e+00  1(s)
+   8  4.1448562e+03 1.506e-03  2.576e-01  -1.00  1.000e+00  1.000e+00  1(s)
+   9  4.1444966e+03 3.576e-04  2.859e+00  -3.82  9.631e-01  6.968e-01  1(s)
+iter    objective     inf_pr     inf_du   lg(mu)  alpha_du   alpha_pr linesrch
+  10  4.1444617e+03 1.671e-04  2.747e+00  -3.82  9.520e-01  7.537e-01  1(s)
+  11  4.1444597e+03 5.733e-05  1.190e-01  -3.82  9.716e-01  1.000e+00  1(s)
+  12  4.1444610e+03 6.929e-06  5.005e-04  -3.82  1.000e+00  1.000e+00  1(s)
+  13  4.1444605e+03 1.681e-06  1.400e-04  -5.73  1.000e+00  1.000e+00  1(h)
+  14  4.1444605e+03 2.574e-07  2.377e-05  -5.73  1.000e+00  1.000e+00  1(h)
+  15  4.1444604e+03 1.411e-08  1.319e-06  -5.73  1.000e+00  1.000e+00  1(h)
+  16  4.1444604e+03 2.396e-10  2.047e-08  -7.00  1.000e+00  1.000e+00  1(h)
+Successfull termination.
+Total time 0.933 sec 
+Hiop internal time:     total 0.932 sec     avg iter 0.058 sec 
+    internal total std dev across ranks 0.000 percent
+Fcn/deriv time:     total=0.001 sec  ( obj=0.000 grad=0.000 cons=0.000 Jac=0.000 Hess=0.001) 
+    Fcn/deriv total std dev across ranks 0.000 percent
+Fcn/deriv #: obj 18 grad 18 eq cons 18 ineq cons 18 eq Jac 18 ineq Jac 18
+Total KKT time 0.931 sec 
+update init 0.848sec     update linsys 0.000 sec     fact 0.071 sec 
+solve rhs-manip 0.000 sec     triangular solve 0.012 sec 
+
+=============================================================
+Optimal Power Flow
+=============================================================
+Model                               POWER_BALANCE_HIOP
+Solver                              HIOP
+Objective                           MIN_GEN_COST
+Initialization                      ACPF
+Gen. bus voltage mode               VARIABLE_WITHIN_BOUNDS
+Load loss allowed                   NO
+Power imbalance allowed             NO
+Ignore line flow constraints        NO
+
+Number of variables                 24
+Number of equality constraints      18
+Number of inequality constraints    18
+
+Convergence status                  CONVERGED
+Objective value                     4144.46
+
+----------------------------------------------------------------------
+Bus        Pd      Qd      Vm      Va      mult_Pmis      mult_Qmis      Pslack         Qslack        
+----------------------------------------------------------------------
+1         0.00    0.00   1.100  -0.000      2102.91         0.00         0.00         0.00
+2         0.00    0.00   1.095   3.928      2059.18        -0.00         0.00         0.00
+3         0.00    0.00   1.087   2.120      2065.15        -0.00         0.00         0.00
+4         0.00    0.00   1.097  -1.993      2103.17         0.07         0.00         0.00
+5        75.00   50.00   1.079  -3.060      2113.46         7.29         0.00         0.00
+6        90.00   30.00   1.087  -3.927      2129.85         1.62         0.00         0.00
+7         0.00    0.00   1.100   0.535      2059.57        -0.04         0.00         0.00
+8       100.00   35.00   1.089  -1.720      2079.34         2.99         0.00         0.00
+9         0.00    0.00   1.100  -0.135      2065.43        -0.09         0.00         0.00
+
+----------------------------------------------------------------------------------------
+From       To       Status     Sft      Stf     Slim     mult_Sf  mult_St 
+----------------------------------------------------------------------------------------
+1          4          1       73.18    72.98   380.00    -0.00    -0.00
+2          7          1      114.18   114.68   250.00    -0.00    -0.00
+3          9          1       83.58    84.61   300.00    -0.00    -0.00
+4          5          1       29.69    40.50   250.00    -0.00    -0.00
+4          6          1       44.86    46.03   250.00    -0.00    -0.00
+5          7          1       51.29    49.04   250.00    -0.00    -0.00
+6          9          1       48.94    51.43   150.00    -0.00    -0.00
+7          8          1       66.61    68.11   250.00    -0.00    -0.00
+8          9          1       38.87    34.15   150.00    -0.00    -0.00
+
+----------------------------------------------------------------------------------------
+Gen      Status     Fuel     Pg       Qg       Pmin     Pmax     Qmin     Qmax  
+----------------------------------------------------------------------------------------
+1          1    UNDEFINED    72.86     6.80    10.00   350.00  -300.00   300.00
+2          1    UNDEFINED   114.07    -5.13    10.00   300.00  -300.00   300.00
+3          1    UNDEFINED    80.21   -23.48    10.00   270.00  -300.00   300.00
+[ExaGO] Finalizing opflow application.
+\end{lstlisting}
+
+Example with HIOP solver on GPU with load loss activated. In this example, the load at bus 5 is
+increased to 750 MW leading to an infeasible power flow. Activating the load loss causes shedding
+of load at bus 5 and as a result makes the optimization converge.
+
+\begin{lstlisting}
+./opflow -opflow_solver HIOP -opflow_model PBPOLRAJAHIOP -netfile $EXAGO_DIR/datafiles/case9/case9mod_loadloss.m -hiop_compute_mode GPU -hiop_verbosity_level 3 -print_output -opflow_include_loadloss_variables
+[ExaGO] Creating OPFlow
+
+[Warning] Detected 1 fixed variables out of a total of 30.
+===============
+Hiop SOLVER
+===============
+Using 1 MPI ranks.
+---------------
+Problem Summary
+---------------
+Total number of variables: 30
+     lower/upper/lower_and_upper bounds: 22 / 22 / 22
+Total number of equality constraints: 18
+Total number of inequality constraints: 18
+     lower/upper/lower_and_upper bounds: 18 / 18 / 18
+iter    objective     inf_pr     inf_du   lg(mu)  alpha_du   alpha_pr linesrch
+   0  1.4867531e+04 7.490e+00  1.000e+05  -1.00  0.000e+00  0.000e+00  -(-)
+   1  1.3403771e+04 7.490e+00  1.000e+05  -1.00  2.729e-04  1.702e-05  1(s)
+   2  1.1742043e+04 7.489e+00  9.993e+04  -1.00  5.655e-03  1.102e-04  1(s)
+   3  1.0453140e+04 7.484e+00  8.993e+04  -1.00  1.258e-01  6.948e-04  1(s)
+   4  1.0933710e+04 7.247e+00  8.722e+04  -1.00  3.011e-02  3.073e-02  1(s)
+   5  1.2262728e+04 6.691e+00  1.217e+05  -1.00  3.642e-04  7.537e-02  1(s)
+   6  1.2718100e+04 6.509e+00  1.303e+05  -1.00  2.837e-04  2.663e-02  1(s)
+   7  1.2721404e+04 6.508e+00  1.302e+05  -1.00  1.583e-02  1.930e-04  1(s)
+   8  1.6122803e+04 5.696e+00  7.620e+04  -1.00  1.954e-03  1.492e-01  1(S)
+   9  1.6366303e+04 5.692e+00  7.616e+04  -1.00  9.924e-02  8.075e-04  1(s)
+iter    objective     inf_pr     inf_du   lg(mu)  alpha_du   alpha_pr linesrch
+  10  1.7501119e+04 5.671e+00  7.587e+04  -1.00  3.082e-03  3.708e-03  1(s)
+  11  1.7624878e+04 5.668e+00  8.682e+04  -1.00  9.630e-02  3.944e-04  1(s)
+  12  2.2838548e+04 5.575e+00  8.354e+04  -1.00  1.071e-03  1.646e-02  1(s)
+  ...
+  ...
+  47  7.4002786e+05 5.392e-03  5.252e+05  -1.00  1.365e-04  4.401e-03  1(s)
+  48  7.4002761e+05 5.391e-03  5.332e+05  -1.00  2.888e-02  1.880e-03  1(s)
+  49  7.4003537e+05 3.310e-03  4.892e+05  -1.00  3.124e-03  1.000e+00  1(s)
+iter    objective     inf_pr     inf_du   lg(mu)  alpha_du   alpha_pr linesrch
+  50  7.4002879e+05 3.234e-03  3.147e+05  -1.00  1.000e+00  2.273e-02  1(s)
+  51  7.4003883e+05 1.340e-05  2.982e+03  -1.00  6.601e-01  1.000e+00  1(s)
+  52  7.4003471e+05 3.828e-04  1.015e+01  -1.00  1.000e+00  1.000e+00  1(f)
+  53  7.4003556e+05 2.461e-08  2.164e-01  -3.82  9.883e-01  1.000e+00  1(h)
+  54  7.4003556e+05 2.665e-14  5.489e-07  -5.73  1.000e+00  1.000e+00  1(f)
+Successfull termination.
+Total time 1.527 sec 
+Hiop internal time:     total 1.465 sec     avg iter 0.027 sec 
+    internal total std dev across ranks 0.000 percent
+Fcn/deriv time:     total=0.052 sec  ( obj=0.009 grad=0.003 cons=0.012 Jac=0.011 Hess=0.018) 
+    Fcn/deriv total std dev across ranks 0.000 percent
+Fcn/deriv #: obj 97 grad 56 eq cons 97 ineq cons 97 eq Jac 56 ineq Jac 56
+Total KKT time 1.249 sec 
+update init 0.773sec     update linsys 0.029 sec     fact 0.237 sec 
+solve rhs-manip 0.172 sec     triangular solve 0.038 sec 
+
+=============================================================
+Optimal Power Flow
+=============================================================
+Model                               PBPOLRAJAHIOP
+Solver                              HIOP
+Objective                           MIN_GEN_COST
+Initialization                      MIDPOINT
+Gen. bus voltage mode               VARIABLE_WITHIN_BOUNDS
+Load loss allowed                   YES
+Load loss penalty ($)               1000.
+Power imbalance allowed             NO
+Ignore line flow constraints        NO
+
+Number of variables                 30
+Number of equality constraints      18
+Number of inequality constraints    18
+
+Convergence status                  CONVERGED
+Objective value                     740035.56
+
+----------------------------------------------------------------------
+Bus        Pd      Qd      Vm      Va      mult_Pmis      mult_Qmis      Pslack         Qslack        
+----------------------------------------------------------------------
+1         0.00    0.00   1.100   0.000      4182.05         0.00         0.00         0.00
+2         0.00    0.00   1.100  12.398      4028.36         0.00         0.00         0.00
+3         0.00    0.00   1.100  16.811      6041.35         0.00         0.00         0.00
+4         0.00    0.00   1.021  -4.918      5930.37     19899.38         0.00         0.00
+5       417.50  109.68   0.900 -15.480    100000.00    100000.00         0.00         0.00
+6        90.00   30.00   1.018  -2.414      7827.64     16824.43         0.00         0.00
+7         0.00    0.00   1.052   5.271     19366.68     29169.45         0.00         0.00
+8       100.00   35.00   1.053   5.150     15594.67     21709.27         0.00         0.00
+9         0.00    0.00   1.083   9.964      7193.17      9437.04         0.00         0.00
+
+----------------------------------------------------------------------------------------
+From       To       Status     Sft      Stf     Slim     mult_Sf  mult_St 
+----------------------------------------------------------------------------------------
+1          4          1      230.52   213.89   380.00    -0.00    -0.00
+2          7          1      250.00   239.12   250.00  2404.19     0.00
+3          9          1      246.68   242.96   300.00     0.00     0.00
+4          5          1      250.00   227.52   250.00 14113.38     0.00
+4          6          1       47.20    50.98   250.00    -0.00    -0.00
+5          7          1      210.17   239.03   250.00     0.00     0.00
+6          9          1      137.83   144.52   150.00     0.00     0.00
+7          8          1       10.10     7.53   250.00    -0.00    -0.00
+8          9          1      100.92    98.82   150.00    -0.00    -0.00
+
+----------------------------------------------------------------------------------------
+Gen      Status     Fuel     Pg       Qg       Pmin     Pmax     Qmin     Qmax  
+----------------------------------------------------------------------------------------
+1          1    UNDEFINED   167.37   158.52    10.00   350.00  -300.00   300.00
+2          1    UNDEFINED   229.90    98.21    10.00   300.00  -300.00   300.00
+3          1    UNDEFINED   242.50    45.19    10.00   270.00  -300.00   300.00
+[ExaGO] Finalizing opflow application.
