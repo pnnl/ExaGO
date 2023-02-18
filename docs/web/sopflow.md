@@ -46,7 +46,7 @@ The current version has several options available for SOPFLOW. These options can
 |-sopflow_subproblem_solver | Optimization solver for the subproblem when using HiOp solver| Ipopt or HiOp (Ipopt) | See [opflow](opflow.md) page for description of solvers |
 |-sopflow_subproblem_model | Model for the subproblem when using HiOp solver| (POWER_BALANCE_POLAR) | See [opflow](opflow.md) page for available models |
 |-sopflow_tolerance|Optimization solver tolerance | (1e-6) | All solvers |
-|-scopflow_enable_multicontingency | Each scenario has multiple contingencies | 0 or 1 (0)| |
+|-sopflow_enable_multicontingency | Each scenario has multiple contingencies | 0 or 1 (0)| |
 |-sopflow_Nc | Number of contingencies || With this option set, SOPFLOW will only pick up the first Nc contingencies in the contingency file. To select all contingencies, use `Nc = -1` |
 |-sopflow_flatten_contingencies | Flattens out the scenario-contingency structure |0 or 1 (0)| Only used when multi-contingency is enabled |
 |-print_output| Print SOPFLOW solution to screen| 0 or 1 (0)| All solvers |
