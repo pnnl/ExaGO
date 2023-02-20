@@ -332,7 +332,7 @@ double SCOPFLOWHIOPInterface::get_objective() {
     CHKERRQ(ierr);
     return obj;
   }
-  
+
   throw ExaGOError("scopflow->cstart != 0 so no obj value to return");
 }
 

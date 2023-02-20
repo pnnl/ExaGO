@@ -225,7 +225,6 @@ variables:
   needs: []
   allow_failure: true
   stage: test
-  retry: 2
   rules:
     - *rule_no_newell_rebuild
     - *rule_no_deception_rebuild
@@ -243,7 +242,6 @@ variables:
 .cluster_build:
   needs: []
   stage: build
-  retry: 2
   extends:
     - .pnnl_tags_template
     - .pnnl_script_template
@@ -253,7 +251,6 @@ variables:
 
 .cluster_test:
   stage: test
-  retry: 2
   extends:
     - .pnnl_tags_template
     - .pnnl_script_template
@@ -267,7 +264,6 @@ variables:
 
 .cluster_py_test:
   stage: test
-  retry: 2
   allow_failure: true
   extends:
     - .pnnl_tags_template
@@ -310,8 +306,6 @@ variables:
 
 .module_rebuild:
   needs: []
-  # Rebuilding in parallel causes issues, so retry a few times...
-  retry: 2
   stage: build
   extends:
     - .pnnl_tags_template
@@ -325,7 +319,6 @@ stages:
 # -- Pre Stage
 SVC Account Cleanup:
   resource_group: cleanup
-  retry: 2
   allow_failure: true
   image: ubuntu:20.04
   stage: .pre

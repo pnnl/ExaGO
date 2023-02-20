@@ -8,7 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [develop]
 
 ### General
-- Preparing support for Frontier, RAJA@2022 + Umpire@2022
 
 ### Build system
 
@@ -21,19 +20,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### TCOPFLOW
 
 ### SCOPFLOW
-- Added Python interface for SCOPFLOW.  
-- Fixed troubles with Python instance creation and
-  destruction. Destruction of an unsolved SCOPFLOW instance no longer
-  causes a SEGV.  
 
 ### SOPFLOW
-- Added Python interface for SOPFLOW. 
 
 ### Documentation
 
 ### Testing
 
 ### Miscallenous
+
+## [1.5.1]
+
+### General
+- Removed TAO solver support
+- Various fixes for matpower input and PSSE/PowerWorld contingency files
+- Support minimal builds without HiOp/Ipopt for OPFLOW/PFLOW only builds
+- Added preliminary visualization frontend to ExaGO
+
+### Build system
+- Moved to classes for Python wrapper development to enable builds without all solvers enabled
+- Allowed disabling of spdlog
+- Fixed CMake bugs for MacOS and builds without RAJA.
+- Disable SCOPFLOW/SOPFLOW when HiOp/Ipopt is disabled as appropriate.
+  
+### OPFLOW
+- Add minimal output format for OPFLOW solutions
+### SCOPFLOW
+- Added Python interface for SCOPFLOW.  
+- Fixed troubles with Python instance creation and destruction. Destruction of an unsolved SCOPFLOW instance no longer causes a SEGV.  
+
+### SOPFLOW
+- Added Python interface for SOPFLOW.
+
+### Documentation
+- Updated ExaGO user manual with latest development activities
+
+### Testing
+- Enabled Ipopt on all testing platforms (Deception)
+- Fully support memory space configuration for HiOp in testing
+- Added Ascent pipeline status to GitLab for MRs only, using a push mirror instead of pull mirror
+- CI was substantially re-factored, with ability to re-build testing dependencies at PNNL through commit messages.
+  
+### Miscallenous
+- Updated issue and MR templates
+- Updated main README with viz and graphics, and fix pipeline status badge
 
 ## [v1.5.0]
 
@@ -54,9 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ### OPFLOW
-- Added OPFLOWSetWeight() for setting weight for OPFLOW. This is done
-  for using with SCOPFLOW and SOPFLOW to set the probabilities or weights
-  for scenarios and contingencies.
+- Added OPFLOWSetWeight() for setting weight for OPFLOW. This is done for using with SCOPFLOW and SOPFLOW to set the probabilities or weights for scenarios and contingencies.
 - OPFLOW can run on AMD GPUs now.
 - The memory space for HIOP can be set with option `-hiop_mem_space`.
 
@@ -75,7 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Convert to using pytest for Python tests
 
 ### Miscallenous
-- Add template profiling scripts from SRP HPC Summer Porject
+- Add template profiling scripts from SRP HPC Summer Project
 - Update Authors
 
 ## [v1.4.1]
