@@ -111,5 +111,5 @@ module load py-py-1.11.0-gcc-8.5.0-z3a3ktf
 module load py-toml-0.10.2-gcc-8.5.0-gvcgdkn
 # py-pytest@6.2.5%gcc@8.5.0 arch=linux-centos8-power9le
 module load py-pytest-6.2.5-gcc-8.5.0-ojhtway
-# exago@develop%gcc@8.5.0+cuda+hiop~ipo+ipopt+mpi+python+raja~rocm build_system=cmake build_type=RelWithDebInfo cuda_arch=70 dev_path=/people/svcexasgd/gitlab/19610/spack_newell arch=linux-centos8-power9le
-## module load exago-develop-gcc-8.5.0-nw34u5i
+# exago@develop%gcc@8.5.0+cuda+hiop~ipo+ipopt+logging+mpi+python+raja~rocm build_system=cmake build_type=RelWithDebInfo cuda_arch=70 dev_path=/people/svcexasgd/gitlab/19744/spack_newell arch=linux-centos8-power9le
+## module load exago-develop-gcc-8.5.0-h55nyj3
