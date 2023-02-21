@@ -2874,7 +2874,7 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
                  ipopt_dcopf)) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
             "OPFLOW solver IPOPT incompatible with model %s",
-            opflow->modelname);
+            opflow->modelname.c_str());
   }
 #endif
 #if defined(EXAGO_ENABLE_HIOP)

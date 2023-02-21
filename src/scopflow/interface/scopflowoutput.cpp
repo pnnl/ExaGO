@@ -93,7 +93,7 @@ PetscErrorCode SCOPFLOWPrintSolution(SCOPFLOW scopflow, PetscInt cont_num) {
     CHKERRQ(ierr);
 
     ierr = PetscPrintf(scopflow->comm->type, "%-35s %s\n", "Solver",
-                       scopflow->solvername);
+                       scopflow->solvername.c_str());
     CHKERRQ(ierr);
 
     ierr = PetscPrintf(scopflow->comm->type, "%-35s %s\n", "Initialization",

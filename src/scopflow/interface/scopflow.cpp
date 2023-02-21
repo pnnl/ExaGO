@@ -263,7 +263,7 @@ PetscErrorCode SCOPFLOWSetModel(SCOPFLOW scopflow,
 
   if (!r)
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
-            "Unknown type for SCOPFLOW Model %s", modelname);
+            "Unknown type for SCOPFLOW Model %s", modelname.c_str());
 
   /* Null the function pointers */
   scopflow->modelops.destroy = 0;
@@ -313,7 +313,7 @@ PetscErrorCode SCOPFLOWSetSolver(SCOPFLOW scopflow,
 
   if (!r)
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
-            "Unknown type for SCOPFLOW Solver %s", solvername);
+            "Unknown type for SCOPFLOW Solver %s", solvername.c_str());
 
   /* Initialize (Null) the function pointers */
   scopflow->solverops.destroy = 0;

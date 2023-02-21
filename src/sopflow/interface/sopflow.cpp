@@ -658,6 +658,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
                           SOPFLOWOptions::tolerance.desc.c_str(), "",
                           sopflow->tolerance, &sopflow->tolerance, NULL);
   CHKERRQ(ierr);
+#ifdef EXAGO_ENABLE_HIOP
   ierr =
       PetscOptionsString(SOPFLOWOptions::hiop_mem_space.opt.c_str(),
                          SOPFLOWOptions::hiop_mem_space.desc.c_str(), "",
@@ -666,6 +667,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
   CHKERRQ(ierr);
   if (flg)
     sopflow->mem_space = sopflowsubproblemmemspace;
+#endif
   PetscOptionsEnd();
 
   if (sopflow->Ns == 0)
