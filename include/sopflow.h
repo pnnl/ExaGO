@@ -78,6 +78,8 @@ const auto ctgcfile = ExaGOStringOption("-ctgcfile", "Contingency file",
 
 const auto windgen = ExaGOStringOption("-windgen", "Wind generation file",
                                        "/path/to/windgen_file", {});
+
+#ifdef EXAGO_ENABLE_HIOP
 const auto verbosity_level = ExaGOIntOption(
     "-hiop_verbosity_level", "SOPFLOW subproblem verbosity level",
     OPFLOWOptions::hiop_verbosity_level.default_value);
@@ -86,7 +88,7 @@ const auto hiop_mem_space =
     ExaGOStringOption("-hiop_mem_space", "Set memory space for HiOp solver",
                       OPFLOWOptions::hiop_mem_space.default_value,
                       OPFLOWOptions::hiop_mem_space.possible_values);
-
+#endif
 } // namespace SOPFLOWOptions
 
 PETSC_EXTERN PetscErrorCode SOPFLOWEnableMultiContingency(SOPFLOW, PetscBool);
