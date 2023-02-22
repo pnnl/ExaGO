@@ -204,6 +204,9 @@ case $MY_CLUSTER in
   dl*|deception|*fat*)
     export MY_CLUSTER=deception
     ;;
+  incline*|dmi*)
+    export MY_CLUSTER=incline
+    ;;
   *)
     echo "Cluster $MY_CLUSTER not identified - you'll have to set relevant variables manually."
     ;;
