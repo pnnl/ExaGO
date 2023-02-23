@@ -3,11 +3,11 @@
 export MY_CLUSTER=crusher
 export PROJ_DIR=/autofs/nccs-svm1_proj/csc359
 
-module purge
+module reset
 
 # System modules
-module load rocm/5.2.0
-module load libfabric/1.15.0.0
+# module load rocm/5.2.0
+# module load libfabric/1.15.0.0
 
 # Consider changing to $(which clang) as for deception
 export CC=/opt/rocm-5.2.0/llvm/bin/clang
