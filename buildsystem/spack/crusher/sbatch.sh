@@ -1,7 +1,6 @@
 #!/bin/bash
 
-#SBATCH -A csc359_crusher
-#SBATCH --reservation=hack4
+#SBATCH -A CSC359_crusher
 #SBATCH -p batch
 #SBATCH -t 240
 #SBATCH -N 1
