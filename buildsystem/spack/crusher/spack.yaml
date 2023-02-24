@@ -1,7 +1,7 @@
 spack:
   specs:
-  - exago@develop%clang@14.0.0 amdgpu_target=gfx90a
-  - exago@develop%clang@14.0.0 amdgpu_target=gfx90a
+  - exago@develop%cce@14.0.2 amdgpu_target=gfx90a
+  - hiop@develop
   view: false
   concretizer:
     unify: when_possible
@@ -20,37 +20,61 @@ spack:
         tcl: $SPACK_INSTALL/$SPACK_MODULES
   compilers:
   - compiler:
-      spec: gcc@11.2.0
+      spec: cce@14.0.2
       paths:
-        cc: gcc
-        cxx: g++
-        f77: gfortran
-        fc: gfortran
-      flags: {}
-      operating_system: sles15
-      target: any
-      modules:
-      - PrgEnv-gnu
-      - gcc/11.2.0
-      environment: {}
-      extra_rpaths: []
-  - compiler:
-      spec: clang@14.0.0
-      paths:
-        cc: /opt/rocm-5.2.0/llvm/bin/clang
-        cxx: /opt/rocm-5.2.0/llvm/bin/clang++
-        hip: /opt/rocm-5.2.0/hip/bin/hipcc
-        f77: /opt/rocm-5.2.0/llvm/bin/flang
-        fc: /opt/rocm-5.2.0/llvm/bin/flang
-        flang: /opt/rocm-5.2.0/llvm/bin/flang
+        cc: /opt/cray/pe/craype/2.7.16/bin/cc
+        cxx: /opt/cray/pe/craype/2.7.16/bin/CC
+        f77: /opt/cray/pe/craype/2.7.16/bin/ftn
+        fc: /opt/cray/pe/craype/2.7.16/bin/ftn
       flags: {}
       operating_system: sles15
       target: x86_64
-      modules: [rocm/5.2.0]
+      modules:
+      - PrgEnv-cray/8.3.3
+      - amd/5.2.0
+      environment: {}
+      extra_rpaths: []
+  - compiler:
+      spec: clang@14.0.2
+      paths:
+        cc: /opt/cray/pe/cce/14.0.2/cce-clang/x86_64/bin/clang
+        cxx: /opt/cray/pe/cce/14.0.2/cce-clang/x86_64/bin/clang++
+        f77: null
+        fc: null
+      flags: {}
+      operating_system: sles15
+      target: x86_64
+      modules: []
+      environment: {}
+      extra_rpaths: []
+  - compiler:
+      spec: gcc@7.5.0
+      paths:
+        cc: /usr/bin/gcc
+        cxx: /usr/bin/g++
+        f77: /usr/bin/gfortran
+        fc: /usr/bin/gfortran
+      flags: {}
+      operating_system: sles15
+      target: x86_64
+      modules: []
+      environment: {}
+      extra_rpaths: []
+  - compiler:
+      spec: gcc@11.2.0
+      paths:
+        cc: /opt/cray/pe/gcc/11.2.0/bin/gcc
+        cxx: /opt/cray/pe/gcc/11.2.0/bin/g++
+        f77: /opt/cray/pe/gcc/11.2.0/bin/gfortran
+        fc: /opt/cray/pe/gcc/11.2.0/bin/gfortran
+      flags: {}
+      operating_system: sles15
+      target: x86_64
+      modules: []
+      environment: {}
+      extra_rpaths: []
   packages:
     all:
-      compiler:
-      - gcc@11.2.0
       providers:
         blas:
         - openblas
@@ -61,16 +85,24 @@ spack:
       variants: +mpi
     exago:
       require: ~python+raja+hiop+rocm+ipopt
-    magma:
-      require: '@2.6.2'
     hiop:
       require: +sparse+mpi+raja+rocm+ginkgo+kron
     ipopt:
-      require: '@3.12.10~metis+coinhsl~mumps'
+      require: '%gcc@11.2.0@3.12.10~metis+coinhsl~mumps'
     umpire:
-      require: ~examples
+      buildable: false
+      variants: ~examples
+      externals:
+      - spec: umpire@6.0.0
+        modules:
+        - umpire/6.0.0
     raja:
-      require: ~examples~exercises
+      buildable: false
+      variants: ~examples~exercises
+      externals:
+      - spec: raja@0.14.0
+        modules:
+        - raja/0.14.0
     ginkgo:
       require: '@1.5.0.glu_experimental'
     coinhsl:
@@ -78,11 +110,17 @@ spack:
     libiconv:
       require: '%gcc@11.2.0'
     petsc:
-      require: ~hypre~superlu-dist~hdf5~metis
+      require: ~hypre~superlu-dist~hdf5~metis+batch
     binutils:
       variants: +ld +gold +headers +libiberty ~nls
     elfutils:
       variants: +bzip2 ~nls +xz
+    diffutils:
+      buildable: false
+      externals:
+      - spec: diffutils@3.8%cce@14.0.2
+        modules:
+        - diffutils/3.8
     gmp:
       buildable: false
       externals:
@@ -104,33 +142,42 @@ spack:
         - libfabric/1.15.0.0
     libunwind:
       variants: +pic +xz
-    mpich:
-      variants: ~wrapperrpath
     ncurses:
       variants: +termlib
     openblas:
-      variants: threads=openmp
+      externals:
+      - spec: openblas@0.3.17
+        modules:
+        - openblas/0.3.17
+      buildable: false
     python:
       externals:
       - spec: python@3.9.12
         modules:
         - cray-python/3.9.12.1
       buildable: false
-    trilinos:
-      variants: +amesos +amesos2 +anasazi +aztec +belos +boost +epetra +epetraext
-        +ifpack +ifpack2 +intrepid +intrepid2 +isorropia +kokkos +ml +minitensor +muelu
-        +nox +piro +phalanx +rol +rythmos +sacado +stk +shards +shylu +stokhos +stratimikos
-        +teko +tempus +tpetra +trilinoscouplings +zoltan +zoltan2 +superlu-dist gotype=long_long
+    magma:
+      externals:
+      - spec: magma@2.6.2
+        prefix: /sw/crusher/spack-envs/base/opt/cray-sles15-zen3/cce-14.0.2/magma-2.6.2-c64ytq4sdkzgee2jsvgf7okglafjs6nq
+      buildable: false
+    perl:
+      externals:
+      - spec: perl@5.34.0
+        modules:
+        - perl/5.34.0
+      buildable: false
     xz:
       variants: +pic
     cray-mpich:
       buildable: false
       externals:
-      - spec: cray-mpich@8.1.16 %gcc@11.2.0
-        prefix: /opt/cray/pe/mpich/8.1.16/ofi/gnu/9.1
+      - spec: cray-mpich@8.1.23
+        prefix: /opt/cray/pe/mpich/8.1.23/ofi/amd/5.0
         modules:
-        - cray-mpich/8.1.16
-        - libfabric/1.15.0.0
+        - PrgEnv-cray/8.3.3
+        - cray-mpich/8.1.23
+        - amd/5.2.0
     comgr:
       buildable: false
       externals:
