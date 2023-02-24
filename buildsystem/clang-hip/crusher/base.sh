@@ -6,12 +6,13 @@ export PROJ_DIR=/autofs/nccs-svm1_proj/csc359
 module reset
 
 # System modules
-# module load rocm/5.2.0
-# module load libfabric/1.15.0.0
+module load PrgEnv-amd/8.3.3
+module load amd/5.2.0
+module load cray-mpich/8.1.23
 
 # Consider changing to $(which clang) as for deception
-export CC=/opt/rocm-5.2.0/llvm/bin/clang
-export CXX=/opt/rocm-5.2.0/llvm/bin/clang++
-export FC=/opt/rocm-5.2.0/llvm/bin/flang
+export CC=$(which cc)
+export CXX=$(which CC)
+export FC=$(which ftn)
 
 export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DEXAGO_CTEST_LAUNCH_COMMAND='srun'"
