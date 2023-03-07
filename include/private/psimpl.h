@@ -350,6 +350,23 @@ struct _p_PSSUBST {
   PetscScalar kvlevels[10]; /* Substation KV levels */
 };
 
+/* Struct to save system summary stats */
+typedef struct {
+  PetscInt Nbus;             /* Number of buses */
+  PetscInt Ngen;             /* Number of generators */
+  PetscInt NgenON;           /* Number of committed generators */
+  PetscInt Nline;            /* Number of lines */
+  PetscInt NlineON;          /* Number of lines ON */
+  PetscInt Nload;            /* Number of loads */
+  PetscScalar total_pgencap; /* Total active generation capacity */
+
+  PetscScalar total_genON[2];  /* Total generation online [MW, MVAr] */
+  PetscScalar total_pgencapON; /* Total generation capacity online */
+
+  PetscScalar total_load[2];     /* Total demand [MW, MVAr] */
+  PetscScalar total_loadshed[2]; /* Total demand shed [MW, MVar] */
+} PSSystemSummary;
+
 /**
  * @brief private base power system data structure
  */
@@ -419,6 +436,9 @@ struct _p_PS {
 
   PSSUBST substations;
   PetscInt nsubstations;
+
+  PSSystemSummary sys_info;
+
   PetscBool setupcalled; /* Is setup called on PS? */
 };
 
