@@ -172,6 +172,24 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
   }
   fprintf(fd, "];\n");
 
+  /* Solution summary info */
+  fprintf(fd, "\n%%%% summary data\n");
+  fprintf(fd, "%ssummary_stats = [\n", prefix);
+  fprintf(fd, "%%\tNbus\tNgen\tNgenON\tNline\tNlineON\tNload\tGenPCap\tGenTotalP"
+              "\tGenTota"
+              "lQ\tGenPCapON\tLoadTotP\tLoadTotalQ\tLoadShedP\tLoadShedQ\n");
+  fprintf(fd,
+          "\t%d\t%d\t%d\t%d\t%d\t%d\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%."
+          "9g\t%.9g\n",
+          ps->sys_info.Nbus, ps->sys_info.Ngen, ps->sys_info.NgenON,
+          ps->sys_info.Nline, ps->sys_info.NlineON, ps->sys_info.Nload,
+          ps->sys_info.total_pgencap, ps->sys_info.total_genON[0],
+          ps->sys_info.total_genON[1], ps->sys_info.total_pgencapON,
+          ps->sys_info.total_load[0], ps->sys_info.total_load[1],
+          ps->sys_info.total_loadshed[0], ps->sys_info.total_loadshed[1]);
+
+  fprintf(fd, "];\n");
+
   fclose(fd);
   PetscFunctionReturn(0);
 }
@@ -711,7 +729,24 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[]) {
 
   PrintJSONArrayEnd(fd, false); // features array end
 
-  PrintJSONObjectEnd(fd, false); // geojsondata object end
+  PrintJSONObjectEnd(fd, true); // geojsondata object end
+
+  PrintJSONObjectBegin(fd, "summary"); // System summary object start
+
+  PrintJSONInt(fd, "NBUS", ps->sys_info.Nbus, true);
+  PrintJSONInt(fd, "NGEN", ps->sys_info.Ngen, true);
+  PrintJSONInt(fd, "NGENON", ps->sys_info.NgenON, true);
+  PrintJSONInt(fd, "NLINE", ps->sys_info.Nline, true);
+  PrintJSONInt(fd, "NLINEON", ps->sys_info.NlineON, true);
+  PrintJSONInt(fd, "NLOAD", ps->sys_info.Nload, true);
+
+  PrintJSONDouble(fd, "GENCAP", ps->sys_info.total_pgencap, true);
+  PrintJSONArray(fd, "GENON", 2, &ps->sys_info.total_genON[0], true);
+  PrintJSONDouble(fd, "GENCAPON", ps->sys_info.total_pgencapON, true);
+  PrintJSONArray(fd, "LOAD", 2, &ps->sys_info.total_load[0], true);
+  PrintJSONArray(fd, "LOADSHED", 2, &ps->sys_info.total_loadshed[0], false);
+
+  PrintJSONObjectEnd(fd, false); // System summary object start
 
   /* End of file */
   PrintJSONObjectEnd(fd, false);
@@ -748,6 +783,22 @@ PetscErrorCode PSSaveSolution_MINIMAL(PS ps, const char outfile[]) {
 
   fprintf(fd, "Converged: %s\n", ps->opflow_converged ? "Yes" : "No");
   fprintf(fd, "Objective: %g\n", ps->opflowobj);
+
+  fprintf(fd, "Summary: \n");
+  fprintf(fd, "\tBuses: %d\n", ps->sys_info.Nbus);
+  fprintf(fd, "\tGenerators: %d\n", ps->sys_info.Ngen);
+  fprintf(fd, "\tGenerators ON: %d\n", ps->sys_info.NgenON);
+  fprintf(fd, "\tLines: %d\n", ps->sys_info.Nline);
+  fprintf(fd, "\tLines ON: %d\n", ps->sys_info.NlineON);
+  fprintf(fd, "\tLoads: %d\n", ps->sys_info.Nload);
+  fprintf(fd, "\tGeneration Capacity: %.9g\n", ps->sys_info.total_pgencap);
+  fprintf(fd, "\tTotal Generation Online P, Q: %9g, %9g\n",
+          ps->sys_info.total_genON[0], ps->sys_info.total_genON[1]);
+  fprintf(fd, "\tGeneration Capacity ON: %.9g\n", ps->sys_info.total_pgencapON);
+  fprintf(fd, "\tTotal Load P, Q: %9g, %9g\n", ps->sys_info.total_load[0],
+          ps->sys_info.total_load[1]);
+  fprintf(fd, "\tTotal Load Shed P, Q: %9g, %9g\n",
+          ps->sys_info.total_loadshed[0], ps->sys_info.total_loadshed[1]);
 
   fclose(fd);
 
