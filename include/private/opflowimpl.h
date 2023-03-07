@@ -328,4 +328,6 @@ extern PetscErrorCode OPFLOWNaturalToSpDense(OPFLOW, const double *, double *);
 
 extern PetscErrorCode OPFLOWSpDenseToNatural(OPFLOW, const double *, double *);
 
+extern PetscErrorCode OPFLOWSetSummaryStats(OPFLOW);
+
 #endif
