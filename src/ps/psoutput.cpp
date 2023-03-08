@@ -175,9 +175,10 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
   /* Solution summary info */
   fprintf(fd, "\n%%%% summary data\n");
   fprintf(fd, "%ssummary_stats = [\n", prefix);
-  fprintf(fd, "%%\tNbus\tNgen\tNgenON\tNline\tNlineON\tNload\tGenPCap\tGenTotalP"
-              "\tGenTota"
-              "lQ\tGenPCapON\tLoadTotP\tLoadTotalQ\tLoadShedP\tLoadShedQ\n");
+  fprintf(fd,
+          "%%\tNbus\tNgen\tNgenON\tNline\tNlineON\tNload\tGenPCap\tGenTotalP"
+          "\tGenTota"
+          "lQ\tGenPCapON\tLoadTotP\tLoadTotalQ\tLoadShedP\tLoadShedQ\n");
   fprintf(fd,
           "\t%d\t%d\t%d\t%d\t%d\t%d\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%."
           "9g\t%.9g\n",

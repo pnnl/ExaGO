@@ -144,12 +144,33 @@ if(EXAGO_INSTALL_TESTS)
     )
   endforeach()
 
-  # exago_add_test( NAME OPFLOW_MONITOR_KVLEVEL_HIOP_GPU COMMAND ${RUNCMD}
-  # $<TARGET_FILE:app_opflow> -netfile
-  # ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m -opflow_solver HIOP
-  # -opflow_model PBPOLRAJAHIOP -hiop_compute_mode GPU -hiop_mem_space DEVICE
-  # -hiop_verbosity_level 3 -opflow_initialization ACPF
-  # -opflow_monitor_line_kvlevels 115.0 -no_optfile DEPENDS IPOPT HIOP )
+  exago_add_test(
+    NAME
+    OPFLOW_MONITOR_KVLEVEL_HIOP_GPU
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:app_opflow>
+    -netfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+    -opflow_solver
+    HIOP
+    -opflow_model
+    PBPOLRAJAHIOP
+    -hiop_compute_mode
+    GPU
+    -hiop_mem_space
+    DEVICE
+    -hiop_verbosity_level
+    3
+    -opflow_initialization
+    ACPF
+    -opflow_monitor_line_kvlevels
+    115.0
+    -no_optfile
+    DEPENDS
+    IPOPT
+    HIOP
+  )
 
   install(TARGETS test_opflow_functionality
           RUNTIME DESTINATION tests/functionality
