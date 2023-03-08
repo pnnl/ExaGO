@@ -6,9 +6,13 @@ export PROJ_DIR=/autofs/nccs-svm1_proj/csc359
 module reset
 
 # System modules
-module load PrgEnv-amd/8.3.3
-module load amd/5.2.0
-module load cray-mpich/8.1.23
+module load PrgEnv-cray
+module load craype-x86-trento
+module load craype-accel-amd-gfx90a
+module load cce/15.0.0
+module load rocm/5.4.0
+module load cray-mpich
+module load libfabric
 
 # Consider changing to $(which clang) as for deception
 export CC=$(which cc)

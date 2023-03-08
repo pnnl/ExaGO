@@ -1,11 +1,11 @@
 spack:
   specs:
-  - exago@develop%cce@14.0.2 amdgpu_target=gfx90a
-  - hiop@develop
+  - exago@develop%cce@15.0.0-rocm5.2.0 ~python+raja+hiop+rocm+ipopt amdgpu_target=gfx90a
+  - hiop@develop%cce@15.0.0-rocm5.2.0 +sparse+mpi+raja+rocm+ginkgo+kron
   view: false
   concretizer:
-    unify: when_possible
-    reuse: true
+    unify: false
+    reuse: false
   config:
     install_tree:
       root: $SPACK_INSTALL
@@ -20,146 +20,69 @@ spack:
         tcl: $SPACK_INSTALL/$SPACK_MODULES
   compilers:
   - compiler:
-      spec: cce@14.0.2
+      spec: cce@15.0.0-rocm5.2.0
       paths:
-        cc: /opt/cray/pe/craype/2.7.16/bin/cc
-        cxx: /opt/cray/pe/craype/2.7.16/bin/CC
-        f77: /opt/cray/pe/craype/2.7.16/bin/ftn
-        fc: /opt/cray/pe/craype/2.7.16/bin/ftn
+        cc: /opt/cray/pe/cce/15.0.0/bin/craycc
+        cxx: /opt/cray/pe/cce/15.0.0/bin/crayCC
+        f77: /opt/cray/pe/cce/15.0.0/bin/crayftn
+        fc: /opt/cray/pe/cce/15.0.0/bin/crayftn
       flags: {}
       operating_system: sles15
-      target: x86_64
-      modules:
-      - PrgEnv-cray/8.3.3
-      - amd/5.2.0
-      environment: {}
-      extra_rpaths: []
-  - compiler:
-      spec: clang@14.0.2
-      paths:
-        cc: /opt/cray/pe/cce/14.0.2/cce-clang/x86_64/bin/clang
-        cxx: /opt/cray/pe/cce/14.0.2/cce-clang/x86_64/bin/clang++
-        f77: null
-        fc: null
-      flags: {}
-      operating_system: sles15
-      target: x86_64
+      target: any
       modules: []
-      environment: {}
-      extra_rpaths: []
-  - compiler:
-      spec: gcc@7.5.0
-      paths:
-        cc: /usr/bin/gcc
-        cxx: /usr/bin/g++
-        f77: /usr/bin/gfortran
-        fc: /usr/bin/gfortran
-      flags: {}
-      operating_system: sles15
-      target: x86_64
-      modules: []
-      environment: {}
+      environment:
+        prepend_path:
+          LD_LIBRARY_PATH: /opt/cray/libfabric/1.15.0.0/lib64
+          CMAKE_PREFIX_PATH: /opt/cray/pe/cce/15.0.0/cce-clang/x86_64/lib/cmake/llvm:/opt/cray/pe/cce/15.0.0/cce-clang/x86_64/lib
+          LIBRARY_PATH: /sw/crusher/spack-envs/base/opt/linux-sles15-x86_64/gcc-7.5.0/libdrm-2.4.100-pfkmlde4xlayzc4iqeflcm257i7o3jsn/lib
       extra_rpaths: []
   - compiler:
       spec: gcc@11.2.0
       paths:
-        cc: /opt/cray/pe/gcc/11.2.0/bin/gcc
-        cxx: /opt/cray/pe/gcc/11.2.0/bin/g++
-        f77: /opt/cray/pe/gcc/11.2.0/bin/gfortran
-        fc: /opt/cray/pe/gcc/11.2.0/bin/gfortran
+        cc: gcc
+        cxx: g++
+        f77: gfortran
+        fc: gfortran
       flags: {}
       operating_system: sles15
-      target: x86_64
-      modules: []
+      target: any
+      modules:
+      - PrgEnv-gnu
+      - gcc/11.2.0
       environment: {}
       extra_rpaths: []
   packages:
     all:
+      require: '%cce@15.0.0'
       providers:
-        blas:
-        - openblas
-        mpi:
-        - cray-mpich
-      target:
-      - zen3
-      variants: +mpi
-    exago:
-      require: ~python+raja+hiop+rocm+ipopt
-    hiop:
-      require: +sparse+mpi+raja+rocm+ginkgo+kron
+        blas: [openblas]
+        mpi: [cray-mpich]
+      target: [zen3]
+      variants: +mpi+rocm
     ipopt:
-      require: '%gcc@11.2.0@3.12.10~metis+coinhsl~mumps'
-    umpire:
-      buildable: false
-      variants: ~examples
-      externals:
-      - spec: umpire@6.0.0
-        modules:
-        - umpire/6.0.0
-    raja:
-      buildable: false
-      variants: ~examples~exercises
-      externals:
-      - spec: raja@0.14.0
-        modules:
-        - raja/0.14.0
+      require: '@3.12.10~metis+coinhsl~mumps'
     ginkgo:
       require: '@1.5.0.glu_experimental'
     coinhsl:
       require: '@2019.05.21'
+    magma:
+      require: '@2.6.2'
+    openblas:
+      require: '%gcc'
     libiconv:
-      require: '%gcc@11.2.0'
+      require: '%gcc'
     petsc:
       require: ~hypre~superlu-dist~hdf5~metis+batch
-    binutils:
-      variants: +ld +gold +headers +libiberty ~nls
-    elfutils:
-      variants: +bzip2 ~nls +xz
-    diffutils:
+    cray-mpich:
       buildable: false
       externals:
-      - spec: diffutils@3.8%cce@14.0.2
-        modules:
-        - diffutils/3.8
-    gmp:
-      buildable: false
-      externals:
-      - spec: gmp@6.2.1
-        modules:
-        - gmp/6.2.1
-    hdf5:
-      variants: +fortran +hl +shared
-      buildable: false
-      externals:
-      - spec: hdf5@1.12.1
-        modules:
-        - hdf5/1.12.1
-    libfabric:
-      buildable: false
-      externals:
-      - spec: libfabric@1.15
-        modules:
-        - libfabric/1.15.0.0
-    libunwind:
-      variants: +pic +xz
-    ncurses:
-      variants: +termlib
-    openblas:
-      externals:
-      - spec: openblas@0.3.17
-        modules:
-        - openblas/0.3.17
-      buildable: false
+      - spec: cray-mpich@8.1.23 %cce
+        prefix: /opt/cray/pe/mpich/8.1.23/ofi/crayclang/10.0
     python:
       externals:
       - spec: python@3.9.12
         modules:
         - cray-python/3.9.12.1
-      buildable: false
-    magma:
-      externals:
-      - spec: magma@2.6.2
-        prefix: /sw/crusher/spack-envs/base/opt/cray-sles15-zen3/cce-14.0.2/magma-2.6.2-c64ytq4sdkzgee2jsvgf7okglafjs6nq
       buildable: false
     perl:
       externals:
@@ -167,17 +90,7 @@ spack:
         modules:
         - perl/5.34.0
       buildable: false
-    xz:
-      variants: +pic
-    cray-mpich:
-      buildable: false
-      externals:
-      - spec: cray-mpich@8.1.23
-        prefix: /opt/cray/pe/mpich/8.1.23/ofi/amd/5.0
-        modules:
-        - PrgEnv-cray/8.3.3
-        - cray-mpich/8.1.23
-        - amd/5.2.0
+    # ROCm 5.2.0
     comgr:
       buildable: false
       externals:
@@ -238,6 +151,11 @@ spack:
       externals:
       - spec: rocm-clang-ocl@5.2.0
         prefix: /opt/rocm-5.2.0/
+    rocm-cmake:
+      buildable: false
+      externals:
+      - spec: rocm-cmake@5.2.0
+        prefix: /opt/rocm-5.2.0/
     rocm-dbgapi:
       buildable: false
       externals:
@@ -272,22 +190,12 @@ spack:
       buildable: false
       externals:
       - spec: hip@5.2.0
-        prefix: /opt/rocm-5.2.0/hip
-        extra_attributes:
-          compilers:
-            c: /opt/rocm-5.2.0/llvm/bin/clang++
-            c++: /opt/rocm-5.2.0/llvm/bin/clang++
-            hip: /opt/rocm-5.2.0/hip/bin/hipcc
-            flang: /opt/rocm-5.2.0/llvm/bin/flang
+        prefix: /opt/rocm-5.2.0
     llvm-amdgpu:
       buildable: false
       externals:
       - spec: llvm-amdgpu@5.2.0
         prefix: /opt/rocm-5.2.0/llvm
-        extra_attributes:
-          compilers:
-            c: /opt/rocm-5.2.0/llvm/bin/clang++
-            cxx: /opt/rocm-5.2.0/llvm/bin/clang++
     hsakmt-roct:
       buildable: false
       externals:
@@ -298,10 +206,6 @@ spack:
       externals:
       - spec: hsa-rocr-dev@5.2.0
         prefix: /opt/rocm-5.2.0/
-        extra_atributes:
-          compilers:
-            c: /opt/rocm-5.2.0/llvm/bin/clang++
-            cxx: /opt/rocm-5.2.0/llvm/bin/clang++
     roctracer-dev-api:
       buildable: false
       externals:
@@ -316,6 +220,11 @@ spack:
       buildable: false
       externals:
       - spec: rocrand@5.2.0
+        prefix: /opt/rocm-5.2.0
+    hipsolver:
+      buildable: false
+      externals:
+      - spec: hipsolver@5.2.0
         prefix: /opt/rocm-5.2.0
     rocsolver:
       buildable: false
@@ -332,4 +241,8 @@ spack:
       externals:
       - spec: rocthrust@5.2.0
         prefix: /opt/rocm-5.2.0
-  mirrors: {}
+    rocprofiler-dev:
+      buildable: false
+      externals:
+      - spec: rocprofiler-dev@5.2.0
+        prefix: /opt/rocm-5.2.0
