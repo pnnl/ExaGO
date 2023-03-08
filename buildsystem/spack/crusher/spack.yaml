@@ -1,7 +1,7 @@
 spack:
   specs:
   - exago@develop%cce@15.0.0-rocm5.2.0 ~python+raja+hiop+rocm+ipopt amdgpu_target=gfx90a
-  - hiop@develop%cce@15.0.0-rocm5.2.0 +sparse+mpi+raja+rocm+ginkgo+kron
+  - hiop@develop%cce@15.0.0-rocm5.2.0 +sparse+mpi+raja+rocm+ginkgo+kron amdgpu_target=gfx90a 
   view: false
   concretizer:
     unify: false
@@ -53,12 +53,11 @@ spack:
       extra_rpaths: []
   packages:
     all:
-      require: '%cce@15.0.0'
+      require: '%cce'
       providers:
         blas: [openblas]
         mpi: [cray-mpich]
       target: [zen3]
-      variants: +mpi+rocm
     ipopt:
       require: '@3.12.10~metis+coinhsl~mumps'
     ginkgo:
@@ -90,7 +89,6 @@ spack:
         modules:
         - perl/5.34.0
       buildable: false
-    # ROCm 5.2.0
     comgr:
       buildable: false
       externals:
