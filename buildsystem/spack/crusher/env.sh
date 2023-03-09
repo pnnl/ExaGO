@@ -6,13 +6,13 @@ module reset
 module load cray-python/3.9.12.1 
 
 # Configure base modules
-module load PrgEnv-cray
+module load PrgEnv-cray/8.3.3
 module load craype-x86-trento
 module load craype-accel-amd-gfx90a
-module load cce/15.0.0
-module load rocm/5.4.0
+module load cce/14.0.2
+module load rocm/5.2.0
 module load cray-mpich/8.1.23
-module load libfabric
+module load libfabric/1.15.0.0
 
 BASE=/gpfs/alpine/proj-shared/csc359/$(whoami)
 
