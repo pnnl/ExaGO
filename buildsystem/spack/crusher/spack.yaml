@@ -1,69 +1,26 @@
 spack:
   specs:
-  - exago@develop%cce@15.0.0-rocm5.2.0 ~python+raja+hiop+rocm+ipopt amdgpu_target=gfx90a
-  - hiop@develop%cce@15.0.0-rocm5.2.0 +sparse+mpi+raja+rocm+ginkgo+kron amdgpu_target=gfx90a 
+  - exago@develop%cce@14.0.2-rocm5.2.0 ^hiop@develop
   view: false
   concretizer:
     unify: false
     reuse: false
-  config:
-    install_tree:
-      root: $SPACK_INSTALL
-    concretizer: clingo
-    source_cache: $SPACK_CACHE/source-cache
-    build_cache: $SPACK_CACHE/build-cache
-    misc_cache: $SPACK_CACHE/misc-cache
-    build_stage: $SPACK_CACHE/build-stage
-  modules:
-    default:
-      roots:
-        tcl: $SPACK_INSTALL/$SPACK_MODULES
-  compilers:
-  - compiler:
-      spec: cce@15.0.0-rocm5.2.0
-      paths:
-        cc: /opt/cray/pe/cce/15.0.0/bin/craycc
-        cxx: /opt/cray/pe/cce/15.0.0/bin/crayCC
-        f77: /opt/cray/pe/cce/15.0.0/bin/crayftn
-        fc: /opt/cray/pe/cce/15.0.0/bin/crayftn
-      flags: {}
-      operating_system: sles15
-      target: any
-      modules: []
-      environment:
-        prepend_path:
-          LD_LIBRARY_PATH: /opt/cray/libfabric/1.15.0.0/lib64
-          CMAKE_PREFIX_PATH: /opt/cray/pe/cce/15.0.0/cce-clang/x86_64/lib/cmake/llvm:/opt/cray/pe/cce/15.0.0/cce-clang/x86_64/lib
-          LIBRARY_PATH: /sw/crusher/spack-envs/base/opt/linux-sles15-x86_64/gcc-7.5.0/libdrm-2.4.100-pfkmlde4xlayzc4iqeflcm257i7o3jsn/lib
-      extra_rpaths: []
-  - compiler:
-      spec: gcc@11.2.0
-      paths:
-        cc: gcc
-        cxx: g++
-        f77: gfortran
-        fc: gfortran
-      flags: {}
-      operating_system: sles15
-      target: any
-      modules:
-      - PrgEnv-gnu
-      - gcc/11.2.0
-      environment: {}
-      extra_rpaths: []
   packages:
     all:
-      require: '%cce'
       providers:
         blas: [openblas]
         mpi: [cray-mpich]
       target: [zen3]
+    exago:
+      require: '~python+raja+hiop+rocm+ipopt amdgpu_target=gfx90a'
+    hiop:
+      require: '+sparse+mpi+raja+rocm+ginkgo+kron amdgpu_target=gfx90a'
     ipopt:
       require: '@3.12.10~metis+coinhsl~mumps'
     ginkgo:
       require: '@1.5.0.glu_experimental'
     coinhsl:
-      require: '@2019.05.21'
+      require: '@2019.05.21%gcc'
     magma:
       require: '@2.6.2'
     openblas:
@@ -71,7 +28,8 @@ spack:
     libiconv:
       require: '%gcc'
     petsc:
-      require: ~hypre~superlu-dist~hdf5~metis+batch
+      # For some reason PETSc requires fortran...
+      require: '~hypre~superlu-dist~hdf5~metis+batch'
     cray-mpich:
       buildable: false
       externals:
@@ -89,6 +47,13 @@ spack:
         modules:
         - perl/5.34.0
       buildable: false
+    libfabric:
+      buildable: false
+      externals:
+      - spec: libfabric@1.15
+        modules:
+        - libfabric/1.15.0.0
+    # ROCm 5.2.0
     comgr:
       buildable: false
       externals:
@@ -244,3 +209,53 @@ spack:
       externals:
       - spec: rocprofiler-dev@5.2.0
         prefix: /opt/rocm-5.2.0
+  compilers:
+  - compiler:
+      spec: cce@14.0.2-rocm5.2.0
+      paths:
+        cc: /opt/cray/pe/cce/14.0.2/bin/craycc
+        cxx: /opt/cray/pe/cce/14.0.2/bin/crayCC
+        f77: /opt/cray/pe/cce/14.0.2/bin/crayftn
+        fc: /opt/cray/pe/cce/14.0.2/bin/crayftn
+      operating_system: sles15
+      target: any
+      modules:
+        - PrgEnv-cray/8.3.3
+        - craype-x86-trento
+        - craype-accel-amd-gfx90a
+        - cce/14.0.2
+        - rocm/5.2.0
+        - cray-mpich/8.1.23
+        - libfabric/1.15.0.0
+      environment:
+        append_path:
+          PKG_CONFIG_PATH: /usr/lib64/pkgconfig
+        prepend_path:
+          LD_LIBRARY_PATH: /opt/cray/libfabric/1.15.0.0/lib64
+          CMAKE_PREFIX_PATH: /opt/cray/pe/cce/14.0.2/cce-clang/x86_64/lib/cmake/llvm:/opt/cray/pe/cce/14.0.2/cce-clang/x86_64/lib
+          LIBRARY_PATH: /sw/crusher/spack-envs/base/opt/linux-sles15-x86_64/gcc-7.5.0/libdrm-2.4.100-pfkmlde4xlayzc4iqeflcm257i7o3jsn/lib
+  - compiler:
+      spec: gcc@11.2.0
+      paths:
+        cc: gcc
+        cxx: g++
+        f77: gfortran
+        fc: gfortran
+      operating_system: sles15
+      target: any
+      modules:
+      - PrgEnv-gnu
+      - gcc/11.2.0
+  config:
+    install_tree:
+      root: $SPACK_INSTALL
+    concretizer: clingo
+    source_cache: $SPACK_CACHE/source-cache
+    build_cache: $SPACK_CACHE/build-cache
+    misc_cache: $SPACK_CACHE/misc-cache
+    build_stage: $SPACK_CACHE/build-stage
+  modules:
+    default:
+      roots:
+        tcl: $SPACK_INSTALL/$SPACK_MODULES
+
