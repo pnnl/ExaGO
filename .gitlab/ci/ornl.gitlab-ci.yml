@@ -4,24 +4,6 @@
     SCHEDULER_PARAMETERS: "-P CSC359 -nnodes 1 -W 120"
     WORKDIR: /gpfs/wolf/proj-shared/csc359/ci/${CI_PIPELINE_ID}
 
-.ornl_rules:
-  rules:
-    - if: $CI_PROJECT_PATH == "ecpcitest/exasgd/exago"
-
-# Crusher Variables
-.crusher_rules:
-  rules:
-    # Only run if we are running manually or through a schedule
-    - if: $CI_PIPELINE_SOURCE == "web"
-    - if: $CI_PIPELINE_SOURCE == "schedule"
-    - when: never
-
-.crusher_variables:
-  # Only for slurm tagged jobs...
-  variables:
-    SCHEDULER_PARAMETERS: "-N 1 -A CSC359 --time=60"
-    WORKDIR: /gpfs/alpine/csc359/proj-shared/ci/${CI_PIPELINE_ID}
-
 .ornl_script_template:
   script:
     # Do _not_ clean up WORKDIR as files are needed for testing
@@ -57,65 +39,6 @@
     - MY_CLUSTER="ascent" ./buildsystem/build.sh --test-only --job=gcc-cuda
     - res=$?
     - exit $res
-
-# Crusher Jobs
-Crusher Build:
-  stage: build
-  tags: [crusher, shell]
-  script:
-    - mkdir -p "$WORKDIR"
-    - cp -r . "$WORKDIR"
-    - cd "$WORKDIR"
-    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
-    - MY_CLUSTER=crusher ./buildsystem/build.sh --build-only --job=clang-hip
-    - res=$?
-    - exit $res
-  extends:
-    - .crusher_rules
-    - .crusher_variables
-  
-Crusher Test:
-  stage: test
-  dependencies:
-    - "Crusher Build"
-  variables:
-    # Don't clone for test jobs
-    GIT_STRATEGY: none
-  tags: [crusher, slurm]
-  script:
-    - cd "$WORKDIR"
-    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
-    - export CTESTARGS="--output-on-failure -E Python"
-    - MY_CLUSTER=crusher ./buildsystem/build.sh --test-only --job=clang-hip
-    - res=$?
-    - exit $res
-  after_script:
-    - cd "$WORKDIR/.."
-    - rm -rf "$WORKDIR"
-  extends:
-    - .crusher_rules
-    - .crusher_variables
-
-Crusher Python Test:
-  stage: test
-  dependencies: 
-    - "Crusher Build"
-  variables:
-    # Don't clone for test jobs
-    GIT_STRATEGY: none
-  allow_failure: true
-  tags: [crusher, slurm]
-  script:
-    - cd "$WORKDIR"
-    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
-    - export CTESTARGS="--output-on-failure -R Python"
-    - MY_CLUSTER=crusher ./buildsystem/build.sh --test-only --job=clang-hip
-    - res=$?
-    - exit $res
-  extends:
-    - .crusher_rules
-    - .crusher_variables
-# ---
 
 # For Ascent CI
 Ascent Build:
