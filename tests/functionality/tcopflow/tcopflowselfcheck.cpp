@@ -182,7 +182,7 @@ PetscErrorCode ExaGOSelfcheckTCOPFLOW(TCOPFLOW tcopflow) {
 
   // Printing config makes greping for solutions/results easier
   char config[PETSC_MAX_PATH_LEN];
-  sprintf(config, "%s+%s+%s+%s+%s+%s+%d+%d+%d+%d", ans->networkname,
+  sprintf(config, "%s+%s+%s+%s+%s+%s+%d+%f+%f+%d", ans->networkname,
           ans->modelinit, ans->genbusvoltage, ans->windgenname,
           ans->qloadprofile, ans->ploadprofile, ans->iscoupling, ans->dt,
           ans->duration, ans->lineflow_constraints);

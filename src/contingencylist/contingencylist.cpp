@@ -223,7 +223,7 @@ PetscErrorCode ContingencyListReadData_PSSE(ContingencyList ctgclist) {
           outage->type = (OutageType)two;
           outage->bus = 0;
           outage->fbus = atoi(tokens[4]);
-          if (tokens[offset] == "BUS")
+          if (!strcmp(tokens[offset], "BUS"))
             offset++;
           outage->tbus = atoi(tokens[offset]);
           strcpy(equipid, tokens[offset + 2]);
