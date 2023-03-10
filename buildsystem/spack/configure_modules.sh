@@ -12,6 +12,7 @@ module list
 
 # This assumes that we are installing from a binary mirror, and don't want to fetch files
 # Make sure to use binary_mirror.sh if this is failing
+spack develop --path=$(pwd) exago@develop && \
 spack concretize -f && \
 spack install --fail-fast -j $1 && \
 
