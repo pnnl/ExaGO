@@ -16,16 +16,14 @@ spack:
     hiop:
       require: '+sparse+mpi+raja+rocm+ginkgo+kron amdgpu_target=gfx90a'
     ipopt:
-      require: '@3.12.10~metis+coinhsl~mumps'
+      require: '@3.12.10~metis+coinhsl~mumps+debug'
     ginkgo:
-      require: '@1.5.0.glu_experimental'
+      require: '@1.5.0.glu_experimental~openmp'
     coinhsl:
-      require: '@2019.05.21%gcc'
+      require: '@2019.05.21'
     magma:
       require: '@2.6.2'
     openblas:
-      require: '%gcc'
-    libiconv:
       require: '%gcc'
     petsc:
       # For some reason PETSc requires fortran...

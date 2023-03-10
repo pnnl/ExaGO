@@ -14,10 +14,10 @@ module load rocm/5.2.0
 module load cray-mpich/8.1.23
 module load libfabric/1.15.0.0
 
-BASE=/gpfs/alpine/proj-shared/csc359/$(whoami)
+BASE=/ccs/proj/csc359/$(whoami)
 
-export SPACK_INSTALL=/gpfs/alpine/proj-shared/csc359/cameron/spack-install
-export SPACK_MODULES=test-modules
+export SPACK_INSTALL=/ccs/proj/csc359/spack-install
+export SPACK_MODULES=modules
 export SPACK_CACHE=$BASE/spack-cache
 export SPACK_MIRROR=$BASE/spack-mirror
 export SPACK_PYTHON=$CRAY_PYTHON_PREFIX
