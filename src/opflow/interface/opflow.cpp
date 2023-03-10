@@ -2982,14 +2982,14 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
   if (hiop_sparse && !(hiop_sparse_pbpol || hiop_sparse_dcopf)) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
             "OPFLOW solver HIOPSPARSE incompatible with model %s",
-            opflow->modelname);
+            opflow->modelname.c_str());
   }
 #else
   PetscBool hiop_sparse = PETSC_FALSE;
 #endif // HIOP_SPARSE
   if ((hiop && !hiop_sparse) && !(hiop_pbpol || rajahiop_pbpol)) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-            "OPFLOW solver HIOP incompatible with model %s", opflow->modelname);
+            "OPFLOW solver HIOP incompatible with model %s", opflow->modelname.c_str());
   }
 #endif // HIOP
   PetscFunctionReturn(0);
