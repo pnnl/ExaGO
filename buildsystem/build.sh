@@ -204,16 +204,19 @@ case $MY_CLUSTER in
   dl*|deception|*fat*)
     export MY_CLUSTER=deception
     ;;
+  crusher)
+    export MY_CLUSTER=crusher
+    ;; 
   *)
-    echo "Cluster $MY_CLUSTER not identified - you'll have to set relevant variables manually."
+    echo "${MY_CLUSTER} did not match any directories in /buildsystem/spack/"
+    echo "Try one of the following platforms: "
+    echo $(ls -d ./buildsystem/spack/*/ | tr '\n' '\0' | xargs -0 -n 1 basename )
+    exit 1 
     ;;
 esac
 
 ulimit -s unlimited || echo 'Could not set stack size to unlimited.'
 ulimit -l unlimited || echo 'Could not set max locked memory to unlimited.'
-
-. /etc/profile.d/modules.sh
-module purge
 
 varfile="$SRCDIR/buildsystem/$JOB/$(echo $MY_CLUSTER)Variables.sh"
 
