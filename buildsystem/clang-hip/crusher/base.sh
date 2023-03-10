@@ -15,8 +15,8 @@ module load cray-mpich/8.1.23
 module load libfabric/1.15.0.0
 
 # Consider changing to $(which clang) as for deception
-export CC=$(which cc)
-export CXX=$(which CC)
-export FC=$(which ftn)
+export CC=$(which craycc)
+export CXX=$(which crayCC)
+export FC=$(which crayftn)
 
 export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DEXAGO_CTEST_LAUNCH_COMMAND='srun'"

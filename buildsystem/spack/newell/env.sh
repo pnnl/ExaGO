@@ -1,6 +1,7 @@
 #!/bin/bash
 
 . /etc/profile.d/modules.sh
+module purge
 
 # Load system python
 module load python/miniconda3.8
