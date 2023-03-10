@@ -838,6 +838,36 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
   opflow->weight = 1.0;
   opflow->setupcalled = PETSC_FALSE;
 
+  /* Register events for logging */
+  ierr = PetscLogEventRegister("OPFLOWObj", 0, &opflow->objlogger);
+  CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWGrad", 0, &opflow->gradlogger);
+  CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWEqCons", 0, &opflow->eqconslogger);
+  CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWIneqCons", 0, &opflow->ineqconslogger);
+  CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWEqConsJac", 0, &opflow->eqconsjaclogger);
+  CHKERRQ(ierr);
+  ierr =
+      PetscLogEventRegister("OPFLOWIneqConsJac", 0, &opflow->ineqconsjaclogger);
+  CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWHess", 0, &opflow->hesslogger);
+  CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWSolve", 0, &opflow->solvelogger);
+  CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWDenseHess", 0, &opflow->densehesslogger);
+  CHKERRQ(ierr);
+  ierr =
+      PetscLogEventRegister("OPFLOWSparseHess", 0, &opflow->sparsehesslogger);
+  CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWDenseIneqConsJac", 0,
+                               &opflow->denseineqconsjaclogger);
+  CHKERRQ(ierr);
+  ierr = PetscLogEventRegister("OPFLOWDenseEqConsJac", 0,
+                               &opflow->denseeqconsjaclogger);
+  CHKERRQ(ierr);
+
   *opflowout = opflow;
 
   //  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Application created\n");
@@ -1823,36 +1853,6 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   }
   //  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Setup
   //  completed\n");CHKERRQ(ierr);
-
-  /* Register events for logging */
-  ierr = PetscLogEventRegister("OPFLOWObj", 0, &opflow->objlogger);
-  CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("OPFLOWGrad", 0, &opflow->gradlogger);
-  CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("OPFLOWEqCons", 0, &opflow->eqconslogger);
-  CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("OPFLOWIneqCons", 0, &opflow->ineqconslogger);
-  CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("OPFLOWEqConsJac", 0, &opflow->eqconsjaclogger);
-  CHKERRQ(ierr);
-  ierr =
-      PetscLogEventRegister("OPFLOWIneqConsJac", 0, &opflow->ineqconsjaclogger);
-  CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("OPFLOWHess", 0, &opflow->hesslogger);
-  CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("OPFLOWSolve", 0, &opflow->solvelogger);
-  CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("OPFLOWDenseHess", 0, &opflow->densehesslogger);
-  CHKERRQ(ierr);
-  ierr =
-      PetscLogEventRegister("OPFLOWSparseHess", 0, &opflow->sparsehesslogger);
-  CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("OPFLOWDenseIneqConsJac", 0,
-                               &opflow->denseineqconsjaclogger);
-  CHKERRQ(ierr);
-  ierr = PetscLogEventRegister("OPFLOWDenseEqConsJac", 0,
-                               &opflow->denseeqconsjaclogger);
-  CHKERRQ(ierr);
 
   /* Compute area participation factors */
   ierr = PSComputeParticipationFactors(ps);
