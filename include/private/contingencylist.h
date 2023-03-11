@@ -45,6 +45,8 @@ struct _p_ContingencyList {
   Contingency *cont;  /* Contingencies */
   char inputfile[PETSC_MAX_PATH_LEN];         /* input file */
   ContingencyFileInputFormat inputfileformat; /* format of input file */
+
+  PetscLogEvent readctgcdatalogger; /* Profile for reading contingency data */
 };
 
 typedef struct _p_ContingencyList *ContingencyList;

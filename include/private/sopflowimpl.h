@@ -221,6 +221,9 @@ struct _p_SOPFLOW {
   std::string compute_mode;
   int verbosity_level;
   std::string mem_space; /* Memory space used with HIOP */
+
+  /** @brief Events for logging/profiling */
+  PetscLogEvent readscendatalogger; /* Profiler for reading scenario data */
 };
 
 extern PetscErrorCode SOPFLOWModelRegisterAll(SOPFLOW);

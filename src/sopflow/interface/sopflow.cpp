@@ -78,6 +78,11 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout) {
   sopflow->scenfileset = PETSC_FALSE;
   sopflow->scenunctype = NONE;
   sopflow->setupcalled = PETSC_FALSE;
+
+  /* Register events for logging */
+  ierr = PetscLogEventRegister("SOPFLOWReadScen", 0, &sopflow->readscendatalogger);
+  CHKERRQ(ierr);
+
   *sopflowout = sopflow;
 
   ExaGOLog(EXAGO_LOG_INFO, "{}", "SOPFLOW: Application created");

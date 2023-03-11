@@ -22,6 +22,10 @@ PetscErrorCode ContingencyListCreate(PetscInt Nc, ContingencyList *ctgclist) {
   for (c = 0; c < Nc; c++)
     ctgclistout->cont->noutages = 0;
   ctgclistout->Ncontinit = Nc;
+
+  ierr = PetscLogEventRegister("CtgcListRead", 0, &ctgclistout->readctgcdatalogger);
+  CHKERRQ(ierr);
+
   *ctgclist = ctgclistout;
   PetscFunctionReturn(0);
 }
@@ -273,6 +277,8 @@ PetscErrorCode ContingencyListReadData(ContingencyList ctgclist, PetscInt *Nc) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
+  ierr = PetscLogEventBegin(ctgclist->readctgcdatalogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
   if (ctgclist->inputfileformat == NATIVE) {
     ierr = ContingencyListReadData_Native(ctgclist);
     CHKERRQ(ierr);
@@ -284,7 +290,8 @@ PetscErrorCode ContingencyListReadData(ContingencyList ctgclist, PetscInt *Nc) {
             "Unknown contingency input file format\n");
   }
   *Nc = ctgclist->Ncont;
-
+  ierr = PetscLogEventEnd(ctgclist->readctgcdatalogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

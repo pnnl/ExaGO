@@ -276,6 +276,8 @@ PetscErrorCode SOPFLOWReadScenarioData(SOPFLOW sopflow,
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
+  ierr = PetscLogEventBegin(sopflow->readscendatalogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
   if (sopflow->scenunctype == WIND) {
     if (scenfileformat == SOPFLOW_NATIVE_SINGLEPERIOD) {
       ierr = SOPFLOWReadScenarioData_Wind_SinglePeriod(sopflow, scenfile);
@@ -285,6 +287,8 @@ PetscErrorCode SOPFLOWReadScenarioData(SOPFLOW sopflow,
       CHKERRQ(ierr);
     }
   }
+  ierr = PetscLogEventEnd(sopflow->readscendatalogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
