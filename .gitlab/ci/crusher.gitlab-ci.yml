@@ -3,18 +3,25 @@ stages:
   - build
   - test
 
-.crusher_rules:
+workflow:
   rules:
     # Only run if we are running manually or through a schedule
     - if: $CI_PIPELINE_SOURCE == "web"
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - when: never
 
-.crusher_variables:
+.crusher_build_variables:
   extends: .crusher_rules
-  # Only for slurm tagged jobs...
   variables:
-    SCHEDULER_PARAMETERe: "-N 1 -A CSC359_crusher --time=60"
+    WORKDIR: /gpfs/alpine/csc359/proj-shared/ci/${CI_PIPELINE_ID}
+
+.crusher_test_variables:
+  extends: .crusher_rules
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+    # Only for slurm tagged jobs...
+    SCHEDULER_PARAMETERS: "-N 1 -A CSC359_crusher --time=60"
     WORKDIR: /gpfs/alpine/csc359/proj-shared/ci/${CI_PIPELINE_ID}
 
 # Crusher Jobs
@@ -29,14 +36,11 @@ Crusher Build:
     - MY_CLUSTER=crusher ./buildsystem/build.sh --build-only --job=clang-hip
     - res=$?
     - exit $res
-  extends: .crusher_variables
+  extends: .crusher_build_variables
   
 Crusher Test:
   stage: test
   dependencies: ["Crusher Build"]
-  variables:
-    # Don't clone for test jobs
-    GIT_STRATEGY: none
   tags: [crusher, slurm]
   script:
     - cd "$WORKDIR"
@@ -49,7 +53,7 @@ Crusher Test:
   after_script:
     - cd "$WORKDIR/.."
     - rm -rf "$WORKDIR"
-  extends: .crusher_variables
+  extends: .crusher_test_variables
 
 Crusher Python Test:
   stage: test
@@ -66,7 +70,7 @@ Crusher Python Test:
     - MY_CLUSTER=crusher ./buildsystem/build.sh --test-only --job=clang-hip
     - res=$?
     - exit $res
-  extends: .crusher_variables
+  extends: .crusher_test_variables
 # ---
 
 # Reporting Crusher Status to PNNL
@@ -74,7 +78,6 @@ Crusher Python Test:
   variables:
     GIT_STRATEGY: none
   tags: [crusher, shell]
-  extends: .crusher_variables
   script:
     # For complete details on the GitLab API please see:
     # https://docs.gitlab.com/ee/api/commits.html#post-the-build-status-to-a-commit

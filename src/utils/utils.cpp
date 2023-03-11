@@ -65,11 +65,10 @@ std::string ExaGOFormatOption(ExaGOOption<T> const &opt, std::size_t indent = 0,
   using U =
       typename std::remove_reference<typename std::remove_cv<T>::type>::type;
   std::string typestr =
-      (is_same<U, bool>::value or is_same<U, PetscBool>::value)
-          ? "bool"
-          : is_same<U, double>::value
-                ? "real"
-                : is_same<U, int>::value ? "int" : "unknown_type";
+      (is_same<U, bool>::value or is_same<U, PetscBool>::value) ? "bool"
+      : is_same<U, double>::value                               ? "real"
+      : is_same<U, int>::value                                  ? "int"
+                               : "unknown_type";
   std::string tab = "";
   for (int i = 0; i < indent; i++)
     tab += "\t";

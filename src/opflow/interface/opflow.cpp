@@ -2989,7 +2989,8 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
 #endif // HIOP_SPARSE
   if ((hiop && !hiop_sparse) && !(hiop_pbpol || rajahiop_pbpol)) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-            "OPFLOW solver HIOP incompatible with model %s", opflow->modelname.c_str());
+            "OPFLOW solver HIOP incompatible with model %s",
+            opflow->modelname.c_str());
   }
 #endif // HIOP
   PetscFunctionReturn(0);
