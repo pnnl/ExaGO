@@ -3,10 +3,9 @@ stages:
   - build
   - test
 
-.ornl_script_template:
+.ornl_build_script_template:
   variables:
     WORKDIR: /gpfs/wolf/proj-shared/csc359/ci/${CI_PIPELINE_ID}
-  extends: .ornl_environment_template
   script:
     # Do _not_ clean up WORKDIR as files are needed for testing
     - set -xv
@@ -56,13 +55,12 @@ stages:
 Ascent Build:
   stage: build
   tags: ['nobatch']
-  extends: .ornl_script_template
+  extends: .ornl_build_script_template
 
 Ascent Test:
   stage: test
   dependencies: ['Ascent Build']
   tags: ['batch']
-  variables:
   extends: .ornl_test_script_template
 
 Ascent Py Test:
