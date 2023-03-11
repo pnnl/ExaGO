@@ -1053,6 +1053,8 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
       ierr = SCOPFLOWSetNetworkData(sopflow->scopflows[s], sopflow->netfile);
       CHKERRQ(ierr);
       /* Set contingency data */
+      ierr = SCOPFLOWSetNumContingencies(sopflow->scopflows[s], sopflow->Nc);
+      CHKERRQ(ierr);
       /* Should not set hard coded native format */
 
       ierr = SCOPFLOWSetContingencyData(sopflow->scopflows[s], NATIVE,

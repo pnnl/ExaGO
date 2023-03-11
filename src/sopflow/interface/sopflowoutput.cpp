@@ -53,6 +53,8 @@ PetscErrorCode SOPFLOWPrintSolution(SOPFLOW sopflow, PetscInt scen_num) {
 
         opflow = scopflow->opflows[0];
 
+        ierr = OPFLOWComputeObjective(opflow, opflow->X, &opflow->obj);
+
         ierr = VecPlaceArray(opflow->X, x);
         CHKERRQ(ierr);
         ierr = VecPlaceArray(opflow->Lambda, lambda);
@@ -106,7 +108,7 @@ PetscErrorCode SOPFLOWPrintSolution(SOPFLOW sopflow, PetscInt scen_num) {
       if (sopflow->flatten_contingencies) {
         nc = sopflow->Nc - 1;
       } else {
-        nc = sopflow->Nc;
+        nc = sopflow->scopflows[0]->Nc;
       }
       ierr = PetscPrintf(sopflow->comm->type, "%-35s %d\n",
                          "Contingencies per scenario", nc);
