@@ -11,12 +11,10 @@ workflow:
     - when: never
 
 .crusher_build_variables:
-  extends: .crusher_rules
   variables:
     WORKDIR: /gpfs/alpine/csc359/proj-shared/ci/${CI_PIPELINE_ID}
 
 .crusher_test_variables:
-  extends: .crusher_rules
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
