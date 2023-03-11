@@ -29,8 +29,7 @@ Crusher Build:
   
 Crusher Test:
   stage: test
-  dependencies:
-    - "Crusher Build"
+  dependencies: ["Crusher Build"]
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
@@ -50,8 +49,7 @@ Crusher Test:
 
 Crusher Python Test:
   stage: test
-  dependencies: 
-    - "Crusher Build"
+  dependencies: ["Crusher Build"]
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
@@ -72,8 +70,7 @@ Crusher Python Test:
   variables:
     GIT_STRATEGY: none
   tags: [crusher, shell]
-  extends:
-    - .crusher_variables
+  extends: .crusher_variables
   script:
     # For complete details on the GitLab API please see:
     # https://docs.gitlab.com/ee/api/commits.html#post-the-build-status-to-a-commit
@@ -83,18 +80,15 @@ Crusher Python Test:
     name: reporting-gitlab
 
 pending:
-  extends:
-  - .report-status
+  extends: .report-status
   stage: .pre
 
 success:
-  extends:
-  - .report-status
+  extends: .report-status
   stage: .post
 
 failed:
-  extends:
-  - .report-status
+  extends: .report-status
   rules:
     - when: on_failure
 # ---
