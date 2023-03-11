@@ -1,6 +1,6 @@
 spack:
   specs:
-  - exago@develop%gcc@11.2.0 ^hiop@develop ^cray-mpich
+  - exago@develop%cce@14.0.2-rocm5.2.0 ^hiop@develop ^openblas%gcc
   view: false
   concretizer:
     unify: when_possible
@@ -16,16 +16,16 @@ spack:
     hiop:
       require: '+sparse+mpi+raja+rocm+ginkgo+kron amdgpu_target=gfx90a'
     ipopt:
-      require: '@3.12.10~metis+coinhsl~mumps+debug'
-    # Pin OpenBlas version for consistent test results.
-    openblas:
-      require: '@0.3.20'
+      require: '@3.12.10~metis+coinhsl~mumps %gcc'
     ginkgo:
       require: '@1.5.0.glu_experimental~openmp'
     coinhsl:
       require: '@2019.05.21'
     magma:
       require: '@2.6.2'
+    # Pin OpenBlas version for consistent test results.
+    openblas:
+      require: '@0.3.20%gcc threads=none'
     petsc:
       # For some reason PETSc requires fortran...
       require: '~hypre~superlu-dist~hdf5~metis+batch'
