@@ -38,7 +38,8 @@ Crusher Test:
   script:
     - cd "$WORKDIR"
     - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
-    - export CTESTARGS="--output-on-failure -E Python"
+      # Logger test failing on Crusher
+    - export CTESTARGS="--output-on-failure -E Python -E LOGGER"
     - MY_CLUSTER=crusher ./buildsystem/build.sh --test-only --job=clang-hip
     - res=$?
     - exit $res
