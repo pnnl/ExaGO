@@ -35,6 +35,7 @@ PetscErrorCode SCOPFLOWPrintSolution(SCOPFLOW scopflow, PetscInt cont_num) {
         ierr = SCOPFLOWGetConstraintMultipliers(scopflow, cont_num,
                                                 &opflow->Lambda);
         CHKERRQ(ierr);
+        ierr = OPFLOWComputeObjective(opflow, opflow->X, &opflow->obj);
         ierr = OPFLOWSolutionToPS(opflow);
         CHKERRQ(ierr);
       }
@@ -378,6 +379,7 @@ PetscErrorCode SCOPFLOWSaveSolutionAllBase(SCOPFLOW scopflow,
         ierr = SCOPFLOWGetConstraintMultipliers(scopflow, scopflow->cstart + c,
                                                 &opflow->Lambda);
         CHKERRQ(ierr);
+        ierr = OPFLOWComputeObjective(opflow, opflow->X, &opflow->obj);
         ierr = OPFLOWSolutionToPS(opflow);
         CHKERRQ(ierr);
       }

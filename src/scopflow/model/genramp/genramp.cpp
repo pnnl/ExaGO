@@ -554,6 +554,8 @@ PetscErrorCode SCOPFLOWComputeGradient_GENRAMP(SCOPFLOW scopflow, Vec X,
   PetscInt i;
   PetscScalar *x, *xi, *grad, *gradi;
 
+  PetscFunctionBegin;
+
   ierr = VecGetArray(X, &x);
   CHKERRQ(ierr);
   ierr = VecGetArray(Grad, &grad);

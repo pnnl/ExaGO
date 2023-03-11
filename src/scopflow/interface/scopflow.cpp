@@ -797,7 +797,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
         CHKERRQ(ierr);
         ierr = OPFLOWSetSolver(scopflow->opflows[c], OPFLOWSOLVER_IPOPT);
         CHKERRQ(ierr);
-        ierr = OPFLOWSetObjectiveType(scopflow->opflows[c], NO_OBJ);
+        //	ierr = OPFLOWSetObjectiveType(scopflow->opflows[c], NO_OBJ);
         CHKERRQ(ierr);
         ierr = OPFLOWSetUpdateVariableBoundsFunction(
             scopflow->opflows[c], SCOPFLOWUpdateOPFLOWVariableBounds,
