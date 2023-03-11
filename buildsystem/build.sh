@@ -197,6 +197,9 @@ then
 fi
 
 # Correctly identify clusters based on hostname
+# Valid cluster suggestions are spack based,
+# however you can have any job with a valid:
+# buildsystem/<job-name>/<platform>Variables.sh
 case $MY_CLUSTER in
   newell*)
     export MY_CLUSTER=newell
@@ -204,9 +207,15 @@ case $MY_CLUSTER in
   dl*|deception|*fat*)
     export MY_CLUSTER=deception
     ;;
-  crusher)
+  crusher*)
     export MY_CLUSTER=crusher
     ;; 
+  ascent*)
+    export MY_CLUSTER=ascent
+    ;;
+  summit*)
+    export MY_CLUSTER=summit
+    ;;
   *)
     echo "${MY_CLUSTER} did not match any directories in /buildsystem/spack/"
     echo "Try one of the following platforms: "

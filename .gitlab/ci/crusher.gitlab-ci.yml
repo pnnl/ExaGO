@@ -10,7 +10,7 @@
   extends: .crusher_rules
   # Only for slurm tagged jobs...
   variables:
-    SCHEDULER_PARAMETERS: "-N 1 -A CSC359 --time=60"
+    SCHEDULER_PARAMETERe: "-N 1 -A CSC359_crusher --time=60"
     WORKDIR: /gpfs/alpine/csc359/proj-shared/ci/${CI_PIPELINE_ID}
 
 # Crusher Jobs
@@ -87,7 +87,8 @@ success:
   extends: .report-status
   stage: .post
 
-failed:
+failure:
+  stage: .post
   extends: .report-status
   rules:
     - when: on_failure

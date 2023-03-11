@@ -90,7 +90,8 @@ success:
   extends: .report-status
   stage: .post
 
-failed:
+failure:
   extends: .report-status
+  stage: .post
   rules: 
   - when: on_failure
