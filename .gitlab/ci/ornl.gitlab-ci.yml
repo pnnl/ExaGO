@@ -1,4 +1,8 @@
 # Ascent Variables
+stages:
+  - build
+  - test
+
 .ornl_environment_template:
   variables:
     SCHEDULER_PARAMETERS: "-P CSC359 -nnodes 1 -W 120"
@@ -86,11 +90,16 @@ pending:
   extends: .report-status
   stage: .pre
 
+# Post running status to show builds at least passed, tests are running
+running:
+  extends: .report-status
+  stage: test
+
 success:
   extends: .report-status
   stage: .post
 
-failure:
+failed:
   extends: .report-status
   stage: .post
   rules: 

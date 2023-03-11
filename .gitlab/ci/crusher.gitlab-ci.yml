@@ -1,4 +1,8 @@
 # Crusher Variables
+stages:
+  - build
+  - test
+
 .crusher_rules:
   rules:
     # Only run if we are running manually or through a schedule
@@ -83,11 +87,16 @@ pending:
   extends: .report-status
   stage: .pre
 
+# Post running status to show builds at least passed, tests are running
+running:
+  extends: .report-status
+  stage: test
+
 success:
   extends: .report-status
   stage: .post
 
-failure:
+failed:
   stage: .post
   extends: .report-status
   rules:
