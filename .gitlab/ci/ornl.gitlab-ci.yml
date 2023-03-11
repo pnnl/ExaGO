@@ -5,6 +5,7 @@
     WORKDIR: /gpfs/wolf/proj-shared/csc359/ci/${CI_PIPELINE_ID}
 
 .ornl_script_template:
+  extends: .ornl_environment_template
   script:
     # Do _not_ clean up WORKDIR as files are needed for testing
     - set -xv
@@ -24,7 +25,7 @@
     - MY_CLUSTER="ascent" ./buildsystem/build.sh --test-only --job=gcc-cuda
     - res=$?
     - exit $res
-  # Only running after_script for 
+  # Only running after_script for
   after_script:
     - cd "$WORKDIR/.."
     - rm -rf "$WORKDIR"
@@ -43,41 +44,27 @@
 # For Ascent CI
 Ascent Build:
   stage: build
-  tags:
-    - nobatch
-  extends:
-    - .ornl_rules
-    - .ornl_script_template
-    - .ornl_environment_template
+  tags: ['nobatch']
+  extends: .ornl_script_template
 
 Ascent Test:
   stage: test
-  dependencies:
-    - 'Ascent Build'
-  tags:
-    - batch
+  dependencies: ['Ascent Build']
+  tags: ['batch']
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
     CTESTARGS: "--output-on-failure -E Python"
-  extends:
-    - .ornl_rules
-    - .ornl_test_script_template
-    - .ornl_environment_template
+  extends: .ornl_test_script_template
 
 Ascent Py Test:
   stage: test
-  dependencies:
-    - 'Ascent Build'
-  tags:
-    - batch 
+  dependencies: ['Ascent Build']
+  tags: ['batch']
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
-  extends:
-    - .ornl_rules
-    - .ornl_python_test_script_template
-    - .ornl_environment_template
+  extends: .ornl_python_test_script_template
   allow_failure: true
 # ---
 
@@ -85,11 +72,8 @@ Ascent Py Test:
 .report-status:
   variables:
     GIT_STRATEGY: none
-  tags:
-    - nobatch
-  extends:
-    - .ornl_rules
-    - .ornl_environment_template
+  tags: ['nobatch']
+  extends: .ornl_environment_template
   script:
     # For complete details on the GitLab API please see:
     # https://docs.gitlab.com/ee/api/commits.html#post-the-build-status-to-a-commit
@@ -99,18 +83,14 @@ Ascent Py Test:
     name: reporting-gitlab
 
 pending:
-  extends:
-  - .report-status
+  extends: .report-status
   stage: .pre
 
 success:
-  extends:
-  - .report-status
+  extends: .report-status
   stage: .post
 
 failed:
-  extends:
-  - .report-status
-  rules:
-    - when: on_failure
-# ---
+  extends: .report-status
+  rules: 
+  - when: on_failure
