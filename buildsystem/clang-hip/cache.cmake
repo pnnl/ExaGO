@@ -78,4 +78,10 @@ set(EXAGO_ENABLE_PYTHON
     CACHE BOOL ""
 )
 
+message(STATUS "Enabling Logging")
+set(EXAGO_ENABLE_LOGGING
+    ON
+    CACHE BOOL ""
+)
+
 message(STATUS "Done setting initial CMake cache")

@@ -49,6 +49,6 @@ if(EXAGO_INSTALL_TESTS)
     ${MPICMD_STR}
     $<TARGET_FILE:test_logger>
     DEPENDS
-    EXAGO_ENABLE_LOGGING
+    LOGGING
   )
 endif()

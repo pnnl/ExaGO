@@ -99,7 +99,7 @@ set(EXAGO_CTEST_LAUNCH_COMMAND
     CACHE STRING "Command to use when launching tests"
 )
 
-option(EXAGO_ENABLE_LOGGING "Enable internal logging" OFF)
+option(EXAGO_ENABLE_LOGGING "Enable internal logging" ON)
 
 # When building with HIP support, OpenMP is not supported.
 if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_HIP)
