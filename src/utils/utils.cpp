@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 #include <regex>
+#include <filesystem>
+namespace fs = std::filesystem;
 #ifdef EXAGO_ENABLE_LOGGING
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -246,6 +248,7 @@ bool DoesFileExist(const char *pth) {
   struct stat path_stat;
   stat(pth, &path_stat);
   return S_ISREG(path_stat.st_mode);
+ 
 }
 
 /**
