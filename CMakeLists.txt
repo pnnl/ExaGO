@@ -8,7 +8,8 @@ cmake_minimum_required(VERSION 3.18)
 
 project(ExaGO VERSION "1.5.1")
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS "-std=c++17")
 # Enable setting Mac OS X rpath
 set(CMAKE_MACOSX_RPATH 1)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
