@@ -1,11 +1,10 @@
 spack:
   specs:
-  - exago@develop+cuda%gcc@10.2.0 cuda_arch=70
-  - exago@develop+cuda%gcc@10.2.0 cuda_arch=70
+  - exago@develop+cuda%gcc@10.2.0 cuda_arch=70 ^openssl@1.1.1k
   view: false
   concretizer:
     unify: when_possible
-    reuse: true
+    reuse: false
   config:
     concretizer: clingo
     install_tree:
@@ -19,10 +18,19 @@ spack:
       roots:
         tcl: $SPACK_INSTALL/$SPACK_MODULES
   packages:
+    openssl:
+      buildable: false
+      externals:
+      - spec: openssl@1.1.1n
+        prefix: /share/apps/python/miniconda3.8
+      - spec: openssl@1.1.1k
+        prefix: /usr
     exago:
       require: +raja+hiop+ipopt
     hiop:
       require: '@develop%gcc@10.2.0+sparse+mpi+ginkgo+kron'
+    ginkgo:
+      require: ^cmake@3.24.2
     magma:
       require: '@2.6.2'
     coinhsl:
@@ -37,6 +45,8 @@ spack:
       require: '@6.0.0~openmp~examples'
     petsc:
       require: ~hypre~superlu-dist~hdf5~metis
+    cmake:
+      require: '@3.24.2'
     python:
       externals:
       - spec: python@3.8.5
