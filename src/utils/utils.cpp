@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 #include <regex>
+#include <filesystem>
+namespace fs = std::filesystem;
 #ifdef EXAGO_ENABLE_LOGGING
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -237,35 +239,29 @@ PetscErrorCode ExaGOLogSetMinLogLevel(int l) {
 
 /**
  * @brief Checks whether or not a directory entry can be opened at the given
- * path using only POSIX standard C system calls
+ * path using the std::filesystem library. 
  *
  * @param[in] pth filepath to stat
  * @see stat
  **/
 bool DoesFileExist(const char *pth) {
-  struct stat path_stat;
-  stat(pth, &path_stat);
-  return S_ISREG(path_stat.st_mode);
+  fs::path file_path = pth;
+  return fs::exists(file_path);
 }
 
 /**
  * @brief Checks whether or not a directory entry can be opened at the given
- * path using only POSIX standard C system calls.
+ * path using the std::filesystem library.
  *
  * @param[in] path path to verify is statable
- * @return 0 if pth==nullptr or pth cannot be opened as directory with syscall
+ * @return 0 if does not exist 
  *         1 else
  *
  * @see opendir
  **/
 bool DoesDirExist(const char *pth) {
-  if (pth == nullptr)
-    return false;
-  DIR *dp;
-  dp = opendir(pth);
-  if (dp == nullptr)
-    return false;
-  return true;
+  fs::path file_path = pth;
+  return fs::exists(file_path); 
 }
 
 /**
