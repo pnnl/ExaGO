@@ -10,9 +10,9 @@ module load PrgEnv-gnu-amd/8.3.3
 module load amd-mixed/5.2.0
 module load craype-x86-trento
 module load craype-accel-amd-gfx90a
-module load gcc/11.2.0
+module load gcc/12.2.0
 module load cray-mpich/8.1.23
-module load libfabric/1.15.0.0
+module load libfabric/1.15.2.0
 
 # Consider changing to $(which clang) as for deception
 # While our stack is using the gcc toolchain,

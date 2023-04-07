@@ -9,10 +9,10 @@ module load cray-python/3.9.12.1
 module load PrgEnv-gnu/8.3.3
 module load craype-x86-trento
 module load craype-accel-amd-gfx90a
-module load gcc/11.2.0
+module load gcc/12.2.0
 module load rocm/5.2.0
 module load cray-mpich/8.1.23
-module load libfabric/1.15.0.0
+module load libfabric/1.15.2.0
 
 BASE=/ccs/proj/csc359/$(whoami)
 

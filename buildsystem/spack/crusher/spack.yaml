@@ -1,6 +1,6 @@
 spack:
   specs:
-  - exago@develop%gcc@11.2.0 ^hiop@develop ^cray-mpich
+  - exago@develop%gcc@12.2.0 ^hiop@develop ^cray-mpich
   view: false
   concretizer:
     unify: when_possible
@@ -12,9 +12,9 @@ spack:
         mpi: [cray-mpich]
       target: [zen3]
     exago:
-      require: '~python+raja+hiop+rocm+ipopt amdgpu_target=gfx90a'
+      require: ~python+raja+hiop+rocm+ipopt amdgpu_target=gfx90a
     hiop:
-      require: '+sparse+mpi+raja+rocm+ginkgo+kron amdgpu_target=gfx90a'
+      require: +sparse+mpi+raja+rocm+ginkgo+kron amdgpu_target=gfx90a
     ipopt:
       require: '@3.12.10~metis+coinhsl~mumps+debug'
     # Pin OpenBlas version for consistent test results.
@@ -27,8 +27,7 @@ spack:
     magma:
       require: '@2.6.2'
     petsc:
-      # For some reason PETSc requires fortran...
-      require: '~hypre~superlu-dist~hdf5~metis+batch'
+      require: ~hypre~superlu-dist~hdf5~metis+batch
     cray-mpich:
       buildable: false
       externals:
@@ -36,7 +35,7 @@ spack:
         prefix: /opt/cray/pe/mpich/8.1.23/ofi/crayclang/10.0
         modules:
         - cray-mpich/8.1.23
-        - libfabric/1.15.0.0
+        - libfabric/1.15.2.0
     python:
       externals:
       - spec: python@3.9.12
@@ -52,9 +51,9 @@ spack:
     libfabric:
       buildable: false
       externals:
-      - spec: libfabric@1.15
+      - spec: libfabric@1.15.2.0
         modules:
-        - libfabric/1.15.0.0
+        - libfabric/1.15.2.0
     # ROCm 5.2.0
     comgr:
       buildable: false
@@ -213,7 +212,7 @@ spack:
         prefix: /opt/rocm-5.2.0
   compilers:
   - compiler:
-      spec: gcc@11.2.0
+      spec: gcc@12.2.0
       paths:
         cc: gcc
         cxx: g++
@@ -223,7 +222,7 @@ spack:
       target: any
       modules:
       - PrgEnv-gnu
-      - gcc/11.2.0
+      - gcc/12.2.0
   config:
     install_tree:
       root: $SPACK_INSTALL
@@ -236,4 +235,3 @@ spack:
     default:
       roots:
         tcl: $SPACK_INSTALL/$SPACK_MODULES
-
