@@ -272,7 +272,7 @@ See table \ref{tab:opflow_options}
     \textbf{Option} & \textbf{Meaning} & \textbf{Values (Default value)} & \textbf{Compatibility}\\ \hline
     -netfile & Network file name & string $<$ 4096 characters (\href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/master/datafiles/case9/case9mod.m}{case9mod.m}) & \\ \hline
     -print\_output & Print output to screen & 0 or 1 (0) & All solvers\\ \hline
-    -save\_output & Save output to file & 0 or 1 (0) & All solvers \\ \hline
+    -save\_output & Save output to file & base file name (no output) & All solvers \\ \hline
     -opflow\_output\_format & Solution file format & See Table~\ref{tab:opflow_output_format} (MATPOWER) & All solvers \\ \hline
     -opflow\_model & Representation of network balance equations and bus voltages & See Table \ref{sec:opflow_model} (POWER\_BALANCE\_POLAR) & \\ \hline
     -opflow\_solver & Optimization solver & See section \ref{sec:opflow_solvers} & \\ \hline
@@ -693,3 +693,4 @@ Gen      Status     Fuel     Pg       Qg       Pmin     Pmax     Qmin     Qmax
 3          1    UNDEFINED   242.50    45.19    10.00   270.00  -300.00   300.00
 [ExaGO] Finalizing opflow application.
 \end{lstlisting}
+
