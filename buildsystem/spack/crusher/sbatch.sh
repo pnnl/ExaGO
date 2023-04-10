@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH -A CSC359_crusher
+#SBATCH -A CSC359
 #SBATCH -p batch
-#SBATCH -t 240
+#SBATCH -t 100
 #SBATCH -N 1
 #SBATCH -c 32
 #SBATCH -J exasgd_spack_install
@@ -56,7 +56,6 @@ export no_proxy='localhost,127.0.0.0/8,*.ccs.ornl.gov,*.olcf.ornl.gov,*.ncrc.gov
 # TODO - copy over coinhsl tarball beforehand?
 export MY_CLUSTER=crusher
 . buildsystem/spack/load_spack.sh && \
-spack develop --no-clone --path=$(pwd) exago@develop && \
 buildsystem/spack/configure_modules.sh 32
 
 EXIT_CODE=$?
