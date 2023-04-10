@@ -11,8 +11,9 @@
 # Crusher Variables
 .crusher_rules:
   rules:
+    # Only run if we are running manually or through a schedule
     - if: $CI_PIPELINE_SOURCE == "web"
-    - if: $CI_PINELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
     - when: never
 
 .crusher_variables:
