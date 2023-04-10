@@ -9,7 +9,7 @@ module reset
 module load PrgEnv-amd
 module load craype-accel-amd-gfx90a
 module load amd/5.2.0
-module load libfabric/1.15.0.0
+module load libfabric
 
 # Consider changing to $(which clang) as for deception
 export CC=/opt/rocm-5.2.0/llvm/bin/amdclang
