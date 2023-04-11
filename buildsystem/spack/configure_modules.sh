@@ -31,6 +31,11 @@ echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/
 echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/exago.sh && \
 
 # Now we can append to the files
+# It's a minor miracle that installing exago w/ different
+# HiOp versions that different exago dev_path installs have
+# different modules...
+# TODO: would be to automatically get spack to pull the same
+# 	git version as the branch being developed locally
 spack module tcl loads -r -x exago build_type=RelWithDebInfo -x openssl exago &>> $base/modules/dependencies.sh && \
 spack module tcl loads -r -x exago -x openssl exago build_type=Release &>> $base/modules/optimized-dependencies.sh && \
 spack module tcl loads exago build_type=Release &>> $base/modules/exago-optimized.sh && \
