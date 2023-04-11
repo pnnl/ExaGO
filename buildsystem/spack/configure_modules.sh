@@ -26,14 +26,14 @@ spack module tcl refresh -y && \
 # Note we redirect and destroy old file
 # Only installing non-optimized version while config is not in spack develop
 echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/dependencies.sh && \
-#echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/optimized-dependencies.sh && \
-#echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/exago-optimized.sh && \
+echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/optimized-dependencies.sh && \
+echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/exago-optimized.sh && \
 echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/exago.sh && \
 
 # Now we can append to the files
 spack module tcl loads -r -x exago -x openssl exago &>> $base/modules/dependencies.sh && \
-# spack module tcl loads -r -x exago -x openssl exago &>> $base/modules/optimized-dependencies.sh && \
-# spack module tcl loads exago &>> $base/modules/exago-optimized.sh && \
+spack module tcl loads -r -x exago -x openssl exago &>> $base/modules/optimized-dependencies.sh && \
+spack module tcl loads exago &>> $base/modules/exago-optimized.sh && \
 spack module tcl loads exago &>> $base/modules/exago.sh
 
 exit_code=$?

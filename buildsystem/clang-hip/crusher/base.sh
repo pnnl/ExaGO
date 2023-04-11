@@ -11,7 +11,15 @@ module load amd-mixed/5.2.0
 module load craype-x86-trento
 module load craype-accel-amd-gfx90a
 module load gcc/12.2.0
-module load cray-mpich/8.1.23
+# Loaded through spack based module:
+# - See ./buildsystem/spack/crusher/modules/dependencies.sh
+#
+# TODO: Figure out way to exclude MPI based on an abstract spec, as cray-mpich != openmpi
+#	That way we could load MPI here. Also need to find way to only store this in one place...
+#		- Perhaps through spack external find...
+#		- Or spack scripting
+#
+# module load cray-mpich/8.1.23
 module load libfabric/1.15.2.0
 
 # Consider changing to $(which clang) as for deception

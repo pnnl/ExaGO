@@ -1,12 +1,14 @@
 spack:
   specs:
-  - exago@develop%gcc@12.2.0 ^hiop@develop ^cray-mpich
+  - exago@develop%gcc@12.2.0 build_type=Release ^hiop@git.develop=0.7.2
+  - exago@develop%gcc@12.2.0 build_type=RelWithDebInfo ^hiop@git.develop=0.7.2
   view: false
   concretizer:
     unify: when_possible
-    reuse: false
+    reuse: true
   packages:
     all:
+      compiler: [gcc@12.2.0]
       providers:
         blas: [openblas]
         mpi: [cray-mpich]
