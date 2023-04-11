@@ -31,10 +31,10 @@ echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/
 echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/exago.sh && \
 
 # Now we can append to the files
-spack module tcl loads -r -x exago -x openssl exago &>> $base/modules/dependencies.sh && \
-spack module tcl loads -r -x exago -x openssl exago &>> $base/modules/optimized-dependencies.sh && \
-spack module tcl loads exago &>> $base/modules/exago-optimized.sh && \
-spack module tcl loads exago &>> $base/modules/exago.sh
+spack module tcl loads -r -x exago build_type=RelWithDebInfo -x openssl exago &>> $base/modules/dependencies.sh && \
+spack module tcl loads -r -x exago -x openssl exago build_type=Release &>> $base/modules/optimized-dependencies.sh && \
+spack module tcl loads exago build_type=Release &>> $base/modules/exago-optimized.sh && \
+spack module tcl loads exago build_type=RelWithDebInfo &>> $base/modules/exago.sh
 
 exit_code=$?
 

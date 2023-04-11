@@ -56,7 +56,7 @@ export no_proxy='localhost,127.0.0.0/8,*.ccs.ornl.gov,*.olcf.ornl.gov,*.ncrc.gov
 # TODO - copy over coinhsl tarball beforehand?
 export MY_CLUSTER=crusher
 . buildsystem/spack/load_spack.sh && \
-buildsystem/spack/configure_modules.sh 32
+buildsystem/spack/configure_modules.sh 12
 
 EXIT_CODE=$?
 # Required to trigger trap handler
