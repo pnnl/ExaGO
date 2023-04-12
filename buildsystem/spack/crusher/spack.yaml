@@ -18,7 +18,7 @@ spack:
       target: x86_64
       modules:
       - PrgEnv-amd
-      - cray-mpich/8.1.17
+      - cray-mpich/8.1.23
       - amd/5.2.0
       - craype-accel-amd-gfx90a
       - libfabric
