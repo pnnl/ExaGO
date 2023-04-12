@@ -10,7 +10,7 @@ module load PrgEnv-amd
 module load craype-x86-trento
 module load craype-accel-amd-gfx90a
 module load amd/5.2.0
-module load cray-mpich
+module load cray-mpich/8.1.25
 module load libfabric
 
 BASE=/ccs/proj/csc359/$(whoami)

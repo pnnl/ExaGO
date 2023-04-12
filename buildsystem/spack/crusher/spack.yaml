@@ -18,7 +18,7 @@ spack:
       target: x86_64
       modules:
       - PrgEnv-amd
-      - cray-mpich/8.1.23
+      - cray-mpich/8.1.25
       - amd/5.2.0
       - craype-accel-amd-gfx90a
       - libfabric
@@ -58,11 +58,11 @@ spack:
     cray-mpich:
       buildable: false
       externals:
-      - spec: cray-mpich@8.1.23 %clang@14.0.0-rocm5.2.0
-        prefix: /opt/cray/pe/mpich/8.1.23/ofi/amd/5.0
+      - spec: cray-mpich@8.1.25 %clang@14.0.0-rocm5.2.0
+        prefix: /opt/cray/pe/mpich/8.1.25/ofi/amd/5.0
         modules:
         - PrgEnv-amd
-        - cray-mpich/8.1.23
+        - cray-mpich/8.1.25
         - libfabric
         - craype-accel-amd-gfx90a
     python:
