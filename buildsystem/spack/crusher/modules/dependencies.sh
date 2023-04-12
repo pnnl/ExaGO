@@ -89,8 +89,8 @@ module load mpfr-4.2.0-gcc-12.2.0-t6szsnf
 module load suite-sparse-5.13.0-gcc-12.2.0-fb7dtqq
 # umpire@6.0.0%gcc@12.2.0+c~cuda~device_alloc~deviceconst+examples~fortran~ipo~numa~openmp+rocm+shared amdgpu_target=gfx90a build_system=cmake build_type=RelWithDebInfo generator=make tests=none arch=linux-sles15-zen3
 module load umpire-6.0.0-gcc-12.2.0-lroaukw
-# hiop@git.mpi-nonblock-fix=0.7.2%gcc@12.2.0~cuda+deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja+rocm~shared+sparse amdgpu_target=gfx90a build_system=cmake build_type=RelWithDebInfo generator=make arch=linux-sles15-zen3
-module load hiop-git.mpi-nonblock-fix=0.7.2-gcc-12.2.0-ebahl2r
+# hiop@git.develop.pcr=0.7.2%gcc@12.2.0~cuda+deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja+rocm~shared+sparse amdgpu_target=gfx90a build_system=cmake build_type=RelWithDebInfo generator=make arch=linux-sles15-zen3
+module load hiop-git.develop.pcr=0.7.2-gcc-12.2.0-gmklfmb
 # ipopt@3.12.10%gcc@12.2.0+coinhsl+debug~metis~mumps build_system=autotools arch=linux-sles15-zen3
 module load ipopt-3.12.10-gcc-12.2.0-natgn77
 # python@3.9.12%gcc@12.2.0+bz2+crypt+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tkinter+uuid+zlib build_system=generic patches=0d98e93,4c24573,f2fd060 arch=linux-sles15-zen3
@@ -98,7 +98,7 @@ module load python-3.9.12-gcc-12.2.0-wcaect6
 # petsc@3.18.6%gcc@12.2.0~X+batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~tetgen~trilinos~valgrind build_system=generic clanguage=C arch=linux-sles15-zen3
 module load petsc-3.18.6-gcc-12.2.0-a6l4ghx
 # exago@develop%gcc@12.2.0~cuda+hiop~ipo+ipopt+logging+mpi~python+raja+rocm amdgpu_target=gfx90a build_system=cmake build_type=RelWithDebInfo dev_path=/ccs/home/rcruther/exago-git generator=make arch=linux-sles15-zen3
-## module load exago-develop-gcc-12.2.0-oho65ml
+## module load exago-develop-gcc-12.2.0-tx47vfi
 # camp@0.2.3%gcc@12.2.0~cuda~ipo~openmp+rocm~tests amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
 module load camp-0.2.3-gcc-12.2.0-36e4p4t
 # ginkgo@1.5.0.glu_experimental%gcc@12.2.0~cuda~develtools~full_optimizations~hwloc~ipo~mpi~oneapi~openmp+rocm+shared amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make patches=ba0956e arch=linux-sles15-zen3
@@ -109,7 +109,7 @@ module load magma-2.6.2-gcc-12.2.0-gmnuwn4
 module load raja-0.14.0-gcc-12.2.0-qtf27vk
 # umpire@6.0.0%gcc@12.2.0+c~cuda~device_alloc~deviceconst+examples~fortran~ipo~numa~openmp+rocm+shared amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make tests=none arch=linux-sles15-zen3
 module load umpire-6.0.0-gcc-12.2.0-el2erch
-# hiop@git.mpi-nonblock-fix=0.7.2%gcc@12.2.0~cuda~deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja+rocm~shared+sparse amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
-module load hiop-git.mpi-nonblock-fix=0.7.2-gcc-12.2.0-6pbnbpz
+# hiop@git.develop.pcr=0.7.2%gcc@12.2.0~cuda~deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja+rocm~shared+sparse amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
+module load hiop-git.develop.pcr=0.7.2-gcc-12.2.0-kaiqv2p
 # exago@develop%gcc@12.2.0~cuda+hiop~ipo+ipopt+logging+mpi~python+raja+rocm amdgpu_target=gfx90a build_system=cmake build_type=Release dev_path=/ccs/home/rcruther/exago-git generator=make arch=linux-sles15-zen3
-## module load exago-develop-gcc-12.2.0-bbvahte
+## module load exago-develop-gcc-12.2.0-5ks3orc

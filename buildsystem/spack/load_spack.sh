@@ -53,7 +53,7 @@ source ./tpl/spack/share/spack/setup-env.sh && \
 # Use existing environment
 SPACKENV=$(pwd)/spack-env-$MY_CLUSTER && \
 mkdir -p $SPACKENV && \
-rm -rf $SPACK_ENV/* && \
+rm -rf $SPACKENV/* && \
 cp $base/spack.yaml $SPACKENV && \
 
 # Use a directory based environment, and decorate command line

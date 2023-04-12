@@ -1,7 +1,7 @@
 spack:
   specs:
-  - exago@develop%gcc@12.2.0 build_type=Release ^hiop@git.mpi-nonblock-fix=0.7.2
-  - exago@develop%gcc@12.2.0 build_type=RelWithDebInfo ^hiop@git.mpi-nonblock-fix=0.7.2
+  - exago@develop%gcc@12.2.0 build_type=Release ^hiop@git.develop.pcr=0.7.2
+  - exago@develop%gcc@12.2.0 build_type=RelWithDebInfo ^hiop@git.develop.pcr=0.7.2
   view: false
   concretizer:
     unify: when_possible
