@@ -6,5 +6,6 @@ install/*
 *__pycache__*
 *nvblas.conf
 spack-*
+spack_*
 .vscode/
 coinhsl-*
