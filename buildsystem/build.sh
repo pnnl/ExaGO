@@ -201,6 +201,9 @@ case $MY_CLUSTER in
   newell*)
     export MY_CLUSTER=newell
     ;;
+  incline*|dmi*)
+    export MY_CLUSTER=incline
+    ;;
   dl*|deception|*fat*)
     export MY_CLUSTER=deception
     ;;
@@ -218,8 +221,11 @@ module purge
 varfile="$SRCDIR/buildsystem/$JOB/$(echo $MY_CLUSTER)Variables.sh"
 
 if [[ -f "$varfile" ]]; then
-  source "$varfile"
-  echo Sourced system-specific variables for $MY_CLUSTER
+  # source varfile without stderr or stout if it exists, error if failure
+  set -xv
+  source $varfile || { echo "Could not source $varfile"; exit 1; }
+  # source $varfile 2>/dev/null || { echo "Could not source $varfile"; exit 1; }
+  set +xv
 fi
 
 # module list

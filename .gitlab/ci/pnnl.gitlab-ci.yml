@@ -44,6 +44,8 @@ workflow:
 
       if [[ $MY_CLUSTER = "deception" ]]; then
         export SLURM_Q=`perl ./buildsystem/pnnl/findIdleDLNodes.pl`
+      elif [[ $MY_CLUSTER = "incline" ]]; then
+        export SLURM_Q="incline"
       else
         export SLURM_Q=`perl ./buildsystem/pnnl/findIdleNewellNodes.pl`
       fi
@@ -64,7 +66,7 @@ workflow:
 
       # jobid used in pnnl_after_script_template to cancel job if cancelled or
       # timed out by gitlab through the UI
-      jobid=$(sbatch --export=ALL -A EXASGD --gres=gpu:1 --ntasks=3 -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/buildsystem/build.sh $SCRIPT_ARGS)
+      jobid=$(sbatch --export=ALL -A EXASGD $SLURM_ARGS -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/buildsystem/build.sh $SCRIPT_ARGS)
       export jobid=$(echo $jobid | cut -f4 -d' ')
       # Unique jobid filename for this job
       echo $jobid > "$WORKDIR/jobid_${jobid}"
@@ -204,6 +206,10 @@ variables:
     - &rule_no_deception_rebuild
       if: '$CI_COMMIT_TITLE =~ /\[deception-rebuild\]/'
       when: never
+      # Only run when the commit **DOES NOT** contains "[incline-rebuild]"
+    - &rule_no_incline_rebuild
+      if: '$CI_COMMIT_TITLE =~ /\[incline-rebuild\]/'
+      when: never
       # Only run when the commit **DOES NOT** contains "[ascent-rebuild]" 
     - &rule_no_ascent_rebuild
       if: '$CI_COMMIT_TITLE =~ /\[ascent-rebuild\]/'
@@ -215,6 +221,10 @@ variables:
     # Only run when the commit **DOES NOT** contains "[deception-test]"
     - &rule_no_deception_test
       if: '$CI_COMMIT_TITLE =~ /\[deception-test\]/'
+      when: never
+    # Only run when the commit **DOES NOT** contains "[incline-test]"
+    - &rule_no_incline_test
+      if: '$CI_COMMIT_TITLE =~ /\[incline-test\]/'
       when: never
      # Only run when the commit **DOES NOT** contains "[ascent-test]"
     - &rule_no_ascent_test
@@ -229,9 +239,11 @@ variables:
     - *rule_no_newell_rebuild
     - *rule_no_deception_rebuild
     - *rule_no_ascent_rebuild
+    - *rule_no_incline_rebuild
     - *rule_no_newell_test
     - *rule_no_deception_test
     - *rule_no_ascent_test
+    - *rule_no_incline_test
     - *rule_1
     - *rule_2
     - *rule_3
@@ -258,7 +270,6 @@ variables:
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
     CTESTARGS: "--timeout 240 --output-on-failure -E Python"
     OUTPUT_SUFFIX: "_test"
 
@@ -269,10 +280,10 @@ variables:
     - .pnnl_tags_template
     - .pnnl_script_template
       # No after_script as only one test per platform cleans up
+      # Since python test should finish first, we let other test cleanup
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
     CTESTARGS: "--timeout 240 --output-on-failure -R Python"
     OUTPUT_SUFFIX: "_test_python"
 
@@ -281,7 +292,9 @@ variables:
     - *rule_no_newell_rebuild
     - *rule_no_deception_rebuild
     - *rule_no_ascent_rebuild
+    - *rule_no_incline_rebuild
     - *rule_no_newell_test
+    - *rule_no_incline_test
     - *rule_no_ascent_test
     - *rule_1
     - *rule_2
@@ -289,13 +302,16 @@ variables:
   variables:
     MY_CLUSTER: "deception"
     WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+    SLURM_ARGS: " --gres=gpu:1 --ntasks=3 "
 
 .newell:
   rules:
     - *rule_no_newell_rebuild
     - *rule_no_deception_rebuild
     - *rule_no_ascent_rebuild
+    - *rule_no_incline_rebuild
     - *rule_no_deception_test
+    - *rule_no_incline_test
     - *rule_no_ascent_test
     - *rule_1
     - *rule_2
@@ -303,6 +319,24 @@ variables:
   variables:
     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
     MY_CLUSTER: "newell"
+    SLURM_ARGS: " --gres=gpu:1 --ntasks=3 "
+
+.incline:
+  rules:
+    - *rule_no_newell_rebuild
+    - *rule_no_deception_rebuild
+    - *rule_no_ascent_rebuild
+    - *rule_no_incline_rebuild
+    - *rule_no_newell_test
+    - *rule_no_deception_test
+    - *rule_no_ascent_test
+    - *rule_1
+    - *rule_2
+    - *rule_3
+  variables:
+    WORKDIR_SUFFIX: "x86_64-clang-hip-build"
+    MY_CLUSTER: "incline"
+    SLURM_ARGS: " --exclusive --ntasks-per-gpu=3 "
 
 .module_rebuild:
   needs: []
@@ -343,8 +377,10 @@ Ascent Push Mirror:
   # Don't run if we are building/testing for another platform and not ascent
     - *rule_no_deception_rebuild
     - *rule_no_newell_rebuild
+    - *rule_no_incline_rebuild
     - *rule_no_deception_test
     - *rule_no_newell_test
+    - *rule_no_incline_test
   # Don't run on develop/main, as this is broken for non-merge-request branhces
     - if: ($CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME== "develop")
       when: never
@@ -410,37 +446,73 @@ Newell Build:
   extends:
     - .cluster_build
     - .newell
+  variables:
+    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
 
 Deception Build:
   extends:
     - .cluster_build
     - .deception
+  variables:
+    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
+
+Incline Build:
+  extends:
+    - .cluster_build
+    - .incline
+  variables:
+    SCRIPT_ARGS: " --build-only --job=clang-hip "
 
 # -- Test Stage
 Newell Test:
   extends:
     - .cluster_test
     - .newell
+  variables:
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
   needs: ['Newell Build']
 
 Deception Test:
   extends:
     - .cluster_test
     - .deception
+  variables:
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
   needs: ['Deception Build']
 
+Incline Test:
+  extends:
+    - .cluster_test
+    - .incline
+  variables:
+    SCRIPT_ARGS: " --test-only --job=clang-hip "
+  needs: ['Incline Build']
+     
 Newell Py Test:
   extends:
     - .cluster_py_test
     - .newell
+  variables:
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
   needs: ['Newell Build']
 
 Deception Py Test:
   extends:
     - .cluster_py_test
     - .deception
+  variables:
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
   needs: ['Deception Build']
 
+Incline Py Test:
+  extends:
+    - .cluster_py_test
+    - .incline
+  variables:
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+  needs: ['Incline Build']
+
+# -- .pre stage / deploy
 Deception Module Rebuild:
   extends: .module_rebuild
   rules:
@@ -460,4 +532,15 @@ Newell Module Rebuild:
   variables:
     MY_CLUSTER: "newell"
     WORKDIR_SUFFIX: "spack_newell"
+
+Incline Module Rebuild:
+  extends: .module_rebuild
+  rules:
+    - if: $CI_COMMIT_TITLE =~ /\[incline-rebuild\]/
+      when: always
+    - when: manual
+  variables:
+    MY_CLUSTER: "incline"
+    WORKDIR_SUFFIX: "spack_incline"
+
 # ---
