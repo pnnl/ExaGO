@@ -111,6 +111,27 @@ if(EXAGO_INSTALL_TESTS)
 
   exago_add_test(
     NAME
+    FUNCTIONALITY_TEST_SCOPFLOW_HIOPSPARSE_MPI_TESTSUITE
+    DEPENDS
+    IPOPT
+    HIOP
+    HIOP_DISTRIBUTED
+    COMMAND
+    ${MPICMD}
+    "-n"
+    3
+    $<TARGET_FILE:test_scopflow_functionality>
+    ${CMAKE_CURRENT_SOURCE_DIR}/hiopsparse_cont_pbpol.toml
+  )
+  set_tests_properties(
+    FUNCTIONALITY_TEST_SCOPFLOW_HIOPSPARSE_MPI_TESTSUITE
+    PROPERTIES
+    TIMEOUT
+    180
+  )
+
+  exago_add_test(
+    NAME
     FUNCTIONALITY_TEST_SCOPFLOW_HIOP_SERIAL_TESTSUITE
     DEPENDS
     IPOPT
