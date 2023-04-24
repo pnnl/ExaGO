@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <filesystem>
 #ifdef EXAGO_ENABLE_LOGGING
 #include <spdlog/spdlog.h>
 #endif
