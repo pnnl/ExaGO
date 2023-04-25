@@ -8,8 +8,10 @@ cmake_minimum_required(VERSION 3.18)
 
 project(ExaGO VERSION "1.5.1")
 
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "-std=c++17")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -lstdc++fs ")
+set(CUDA_NVCC_FLAGS "-std=c++17")
 # Enable setting Mac OS X rpath
 set(CMAKE_MACOSX_RPATH 1)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
@@ -189,7 +191,7 @@ if(EXAGO_ENABLE_GPU)
     find_package(CUDA REQUIRED)
 
     if(NOT DEFINED CMAKE_CUDA_STANDARD)
-      set(CMAKE_CUDA_STANDARD 11)
+      set(CMAKE_CUDA_STANDARD 17)
       set(CMAKE_CUDA_STANDARD_REQUIRED ON)
     endif()
 
