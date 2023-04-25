@@ -327,9 +327,10 @@ install(FILES ${EXAGO_OPTIONS_FILES} DESTINATION ${EXAGO_OPTIONS_DIR})
 file(INSTALL ${EXAGO_OPTIONS_FILES} DESTINATION options)
 
 # EXAGO datafiles to install
-set(EXAGO_DATA_FILES ${PROJECT_SOURCE_DIR}/datafiles/case118.m
-                     ${PROJECT_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
-                     ${PROJECT_SOURCE_DIR}/datafiles/case_ACTIVSg10k.m
+set(EXAGO_DATA_FILES
+    ${PROJECT_SOURCE_DIR}/datafiles/case118.m
+    ${PROJECT_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+    ${PROJECT_SOURCE_DIR}/datafiles/case_ACTIVSg10k.m
 )
 
 if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
