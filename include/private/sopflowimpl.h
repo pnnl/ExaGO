@@ -215,6 +215,9 @@ struct _p_SOPFLOW {
   char ctgcfile[PETSC_MAX_PATH_LEN]; /* Contingency file */
   ContingencyFileInputFormat ctgcfileformat;
 
+  PetscBool issolver_ipopt;
+  PetscBool issolver_hiop;
+
   // Only used for HIOP solver
   std::string subproblem_model;
   std::string subproblem_solver;
