@@ -55,7 +55,7 @@ spack:
     magma:
       require: '@2.6.2'
     petsc:
-      require: ~hypre~superlu-dist~hdf5~metis
+      require: ~hypre~superlu-dist~hdf5~metis+int64
     cray-mpich:
       buildable: false
       externals:

@@ -95,7 +95,7 @@ module load hiop-0.7.2.mpi-fix-clang-14.0.0-rocm5.2.0-4vqvung
 module load ipopt-3.12.10-clang-14.0.0-rocm5.2.0-vwpnmnj
 # python@3.9.12%clang@14.0.0-rocm5.2.0+bz2+crypt+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tkinter+uuid+zlib build_system=generic patches=0d98e93,4c24573,f2fd060 arch=linux-sles15-zen3
 module load python-3.9.12-clang-14.0.0-rocm5.2.0-w7cxnlm
-# petsc@3.18.6%clang@14.0.0-rocm5.2.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~tetgen~trilinos~valgrind build_system=generic clanguage=C arch=linux-sles15-zen3
-module load petsc-3.18.6-clang-14.0.0-rocm5.2.0-cvg6mic
+# petsc@3.18.6%clang@14.0.0-rocm5.2.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre+int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~tetgen~trilinos~valgrind build_system=generic clanguage=C arch=linux-sles15-zen3
+module load petsc-3.18.6-clang-14.0.0-rocm5.2.0-zt3tbep
 # exago@develop%clang@14.0.0-rocm5.2.0~cuda+hiop~ipo+ipopt+logging+mpi~python+raja+rocm amdgpu_target=gfx90a build_system=cmake build_type=RelWithDebInfo dev_path=/lustre/orion/scratch/nkouk/csc359/exago-frontier-amd generator=make arch=linux-sles15-zen3
 ## module load exago-develop-clang-14.0.0-rocm5.2.0-igdhdq4
