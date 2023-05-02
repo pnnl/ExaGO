@@ -46,18 +46,22 @@ source $base/env.sh && \
 
 # Make sure SPACK_INSTALL is set, so we aren't installing somewhere undesired
 SPACK_INSTALL="${SPACK_INSTALL:?SPACK_INSTALL is unset. $base/env.sh should be edited to configure this}" && \
+SPACK_MIRROR="${SPACK_MIRROR:?SPACK_MODULES is unset. $base/env.sh should be edited to configure this}" && \
 
 # Load spack
 source ./tpl/spack/share/spack/setup-env.sh && \
 
-# Use existing environment
+# Create directory for environment
 SPACKENV=$(pwd)/spack-env-$MY_CLUSTER && \
 mkdir -p $SPACKENV && \
-rm -rf $SPACKENV/* && \
-cp $base/spack.yaml $SPACKENV && \
+# Remove old config
+rm $SPACKENV/spack.yaml && \
 
 # Use a directory based environment, and decorate command line
 spack env create -d $SPACKENV && \
+
+# Use git version of config
+cp $base/spack.yaml $SPACKENV && \
 spack env activate -p $SPACKENV && \
 
 # Print relevant spack config for sanity check of environment.
