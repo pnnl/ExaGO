@@ -25,6 +25,7 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
   char ext[] = ".m";
   char file1[PETSC_MAX_PATH_LEN];
   char dir[PETSC_MAX_PATH_LEN];
+  bool gen_fuel_defined;
 
   PetscFunctionBegin;
 
@@ -171,6 +172,65 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
     }
   }
   fprintf(fd, "];\n");
+
+  /* generator fuel info */
+
+  /* only output fuel type if it is defined */
+
+  gen_fuel_defined = false;
+  for (i = 0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+    for (k = 0; k < bus->ngen; k++) {
+      ierr = PSBUSGetGen(bus, k, &gen);
+      CHKERRQ(ierr);
+      PetscInt gfuel = gen->genfuel_type;
+      if (gfuel != GENFUEL_UNDEFINED) {
+        gen_fuel_defined = true;
+        break;
+      }
+    }
+  }
+
+  if (gen_fuel_defined) {
+    fprintf(fd, "\n%%%% generator fuel type\n");
+    fprintf(fd, "mpc.genfuel = {\n");
+    for (i = 0; i < ps->nbus; i++) {
+      bus = &ps->bus[i];
+      for (k = 0; k < bus->ngen; k++) {
+        ierr = PSBUSGetGen(bus, k, &gen);
+        CHKERRQ(ierr);
+        PetscInt gfuel = gen->genfuel_type;
+        switch (gfuel) {
+        case GENFUEL_COAL:
+          fprintf(fd, "\t\"coal\"");
+          break;
+        case GENFUEL_WIND:
+          fprintf(fd, "\t\"wind\"");
+          break;
+        case GENFUEL_SOLAR:
+          fprintf(fd, "\t\"solar\"");
+          break;
+        case GENFUEL_NG:
+          fprintf(fd, "\t\"ng\"");
+          break;
+        case GENFUEL_NUCLEAR:
+          fprintf(fd, "\t\"nuclear\"");
+          break;
+        case GENFUEL_HYDRO:
+          fprintf(fd, "\t\"hydro\"");
+          break;
+        case GENFUEL_UNDEFINED:
+        default:
+          SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
+                  "Generator fuel type (%d) not understod", gfuel);
+          CHKERRQ(ierr);
+          break;
+        }
+        fprintf(fd, ";\n");
+      }
+    }
+    fprintf(fd, "\n};\n");
+  }
 
   /* Solution summary info */
   fprintf(fd, "\n%%%% summary data\n");
