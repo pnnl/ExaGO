@@ -45,6 +45,8 @@ workflow:
 
       if [[ $MY_CLUSTER = "deception" ]]; then
         export SLURM_Q=`perl ./buildsystem/pnnl/findIdleDLNodes.pl`
+      elif [[ $MY_CLUSTER = "incline " ]]; then
+        export SLURM_Q="incline"
       else
         export SLURM_Q=`perl ./buildsystem/pnnl/findIdleNewellNodes.pl`
       fi
