@@ -1,10 +1,11 @@
 spack:
   specs:
-  - exago@develop%gcc@10.2.0 amdgpu_target=gfx90a
+  - exago@develop%clang@15.0.0-rocm5.3.0 build_type=Release ^hiop@git.develop=0.7.2
+  - exago@develop%clang@15.0.0-rocm5.3.0 build_type=RelWithDebInfo ^hiop@git.develop=0.7.2
   view: false
   concretizer:
-    unify: when_possible
-    reuse: true
+    unify: false
+    reuse: false
   config:
     install_tree:
       root: $SPACK_INSTALL
@@ -19,26 +20,14 @@ spack:
         tcl: $SPACK_INSTALL/$SPACK_MODULES
   compilers:
   - compiler:
-      spec: gcc@10.2.0
+      spec: clang@15.0.0-rocm5.3.0
       paths:
-        cc: /share/apps/gcc/10.2.0/bin/gcc
-        cxx: /share/apps/gcc/10.2.0/bin/g++
-        f77: /share/apps/gcc/10.2.0/bin/gfortran
-        fc: /share/apps/gcc/10.2.0/bin/gfortran
-      flags: {}
-      operating_system: centos7
-      target: x86_64
-      modules: []
-      environment: {}
-      extra_rpaths: []
-  - compiler:
-      spec: gcc@4.8.5
-      paths:
-        cc: /usr/bin/gcc
-        cxx: /usr/bin/g++
-        f77: /usr/bin/gfortran
-        fc: /usr/bin/gfortran
-      flags: {}
+        cc: /opt/rocm-5.3.0/llvm/bin/amdclang
+        cxx: /opt/rocm-5.3.0/llvm/bin/amdclang++
+        f77: /share/apps/gcc/8.4.0/bin/gfortran
+        fc: /share/apps/gcc/8.4.0/bin/gfortran
+      flags:
+        cxxflags: --gcc-toolchain=/share/apps/gcc/8.4.0/
       operating_system: centos7
       target: x86_64
       modules: []
@@ -57,35 +46,25 @@ spack:
       modules: []
       environment: {}
       extra_rpaths: []
-  - compiler:
-      spec: rocmcc@5.3.0
-      paths:
-        cc: /opt/rocm-5.3.0/llvm/bin/amdclang
-        cxx: /opt/rocm-5.3.0/llvm/bin/amdclang++
-        f77: /opt/rocm-5.3.0/llvm/bin/amdflang
-        fc: /opt/rocm-5.3.0/llvm/bin/amdflang
-      flags: {}
-      operating_system: centos7
-      target: x86_64
-      modules: []
-      environment: {}
-      extra_rpaths: []
   packages:
     all:
+      compiler: [clang@15.0.0-rocm5.3.0]
       providers:
-        blas:
-        - openblas
-        mpi:
-        - openmpi
-      target:
-      - zen3
-      variants: +mpi
+        blas: [openblas]
+        mpi: [openmpi]
+      target: [zen3]
     exago:
-      require: ~python+raja+hiop+rocm+ipopt
+      require: ~python+raja+hiop+rocm+ipopt amdgpu_target=gfx908
+    # Build without Ginkgo for the moment due to ROCm errors
+    # TODO - repro and document w/ Ginkgo devs
     hiop:
-      require: '@0.7.1+sparse+mpi+raja+rocm~ginkgo~kron'
+    # require: +sparse+mpi+raja+rocm~ginkgo+kron
+      require: +sparse+mpi+raja+rocm+ginkgo+kron
     ipopt:
       require: '@3.12.10~metis+coinhsl~mumps'
+    # Pin version of OpenBlas for testing results
+    openblas:
+      require: '@0.3.20%gcc@8.4.0'
     coinhsl:
       require: '@2019.05.21'
     umpire:
@@ -95,24 +74,20 @@ spack:
     magma:
       require: '@2.6.2'
     petsc:
-      require: ~hypre~superlu-dist~hdf5~metis
+      require: ~hypre ~superlu-dist ~hdf5 ~metis
     binutils:
       variants: +ld +gold +headers +libiberty ~nls
     elfutils:
       variants: +bzip2 ~nls +xz
     libunwind:
       variants: +pic +xz
-    mpich:
-      variants: ~wrapperrpath
     ncurses:
       variants: +termlib
-    openblas:
-      variants: threads=openmp
     openmpi:
       externals:
-      - spec: openmpi@4.1.0
-        modules:
-        - openmpi/4.1.0
+      - spec: openmpi@4.1.4
+        prefix: /share/apps/openmpi/4.1.4/gcc/8.4.0
+        modules: [ openmpi/4.1.4 ]
       buildable: false
     python:
       externals:
@@ -126,82 +101,74 @@ spack:
         modules:
         - perl/5.26.0
       buildable: false
-    trilinos:
-      variants: +amesos +amesos2 +anasazi +aztec +belos +boost +epetra +epetraext
-        +ifpack +ifpack2 +intrepid +intrepid2 +isorropia +kokkos +ml +minitensor +muelu
-        +nox +piro +phalanx +rol +rythmos +sacado +stk +shards +shylu +stokhos +stratimikos
-        +teko +tempus +tpetra +trilinoscouplings +zoltan +zoltan2 +superlu-dist gotype=long_long
-    xz:
-      variants: +pic
+    # ROCm 5.3.0
+    comgr:
+      buildable: false
+      externals:
+      - spec: comgr@5.3.0
+        prefix: /opt/rocm-5.3.0/
     hip-rocclr:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: hip-rocclr@5.3.0
         prefix: /opt/rocm-5.3.0/hip
     hipblas:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: hipblas@5.3.0
         prefix: /opt/rocm-5.3.0/
     hipcub:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: hipcub@5.3.0
         prefix: /opt/rocm-5.3.0/
     hipfft:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: hipfft@5.3.0
         prefix: /opt/rocm-5.3.0/
     hipsparse:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: hipsparse@5.3.0
         prefix: /opt/rocm-5.3.0/
     miopen-hip:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: hip-rocclr@5.3.0
         prefix: /opt/rocm-5.3.0/
     miopengemm:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: miopengemm@5.3.0
         prefix: /opt/rocm-5.3.0/
     rccl:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: rccl@5.3.0
         prefix: /opt/rocm-5.3.0/
     rocblas:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: rocblas@5.3.0
         prefix: /opt/rocm-5.3.0/
     rocfft:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: rocfft@5.3.0
         prefix: /opt/rocm-5.3.0/
     rocm-clang-ocl:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: rocm-clang-ocl@5.3.0
         prefix: /opt/rocm-5.3.0/
+    rocm-cmake:
+      buildable: false
+      externals:
+      - spec: rocm-cmake@5.3.0
+        prefix: /opt/rocm-5.3.0/
     rocm-dbgapi:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: rocm-dbgapi@5.3.0
         prefix: /opt/rocm-5.3.0/
@@ -213,19 +180,16 @@ spack:
         prefix: /opt/rocm-5.3.0/
     rocm-device-libs:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: rocm-device-libs@5.3.0
         prefix: /opt/rocm-5.3.0/
     rocm-gdb:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: rocm-gdb@5.3.0
         prefix: /opt/rocm-5.3.0/
     rocm-opencl:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: rocm-opencl@5.3.0
         prefix: /opt/rocm-5.3.0/opencl
@@ -237,59 +201,43 @@ spack:
         prefix: /opt/rocm-5.3.0/
     hip:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: hip@5.3.0
         prefix: /opt/rocm-5.3.0/hip
-        extra_attributes:
-          compilers:
-            c: /opt/rocm-5.3.0/llvm/bin/clang++
-            c++: /opt/rocm-5.3.0/llvm/bin/clang++
-            hip: /opt/rocm-5.3.0/hip/bin/hipcc
-            flang: /opt/rocm-5.3.0/llvm/bin/flang
     llvm-amdgpu:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: llvm-amdgpu@5.3.0
         prefix: /opt/rocm-5.3.0/llvm
-        extra_attributes:
-          compilers:
-            c: /opt/rocm-5.3.0/llvm/bin/clang++
-            cxx: /opt/rocm-5.3.0/llvm/bin/clang++
     hsakmt-roct:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: hsakmt-roct@5.3.0
         prefix: /opt/rocm-5.3.0/
     hsa-rocr-dev:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: hsa-rocr-dev@5.3.0
         prefix: /opt/rocm-5.3.0/
-        extra_atributes:
-          compilers:
-            c: /opt/rocm-5.3.0/llvm/bin/clang++
-            cxx: /opt/rocm-5.3.0/llvm/bin/clang++
     roctracer-dev-api:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: roctracer-dev-api@5.3.0
         prefix: /opt/rocm-5.3.0/roctracer
     rocprim:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: rocprim@5.3.0
         prefix: /opt/rocm-5.3.0
     rocrand:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: rocrand@5.3.0
+        prefix: /opt/rocm-5.3.0
+    hipsolver:
+      buildable: false
+      externals:
+      - spec: hipsolver@5.3.0
         prefix: /opt/rocm-5.3.0
     rocsolver:
       buildable: false
@@ -299,13 +247,16 @@ spack:
         prefix: /opt/rocm-5.3.0
     rocsparse:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: rocsparse@5.3.0
         prefix: /opt/rocm-5.3.0
     rocthrust:
       buildable: false
-      require: '@5.3.0'
       externals:
       - spec: rocthrust@5.3.0
+        prefix: /opt/rocm-5.3.0
+    rocprofiler-dev:
+      buildable: false
+      externals:
+      - spec: rocprofiler-dev@5.3.0
         prefix: /opt/rocm-5.3.0

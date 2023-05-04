@@ -23,8 +23,8 @@ spack install --fail-fast -j $1 && \
 spack module tcl refresh -y && \
 	
 # We will create a new modules file, with the first line being the module path
+mkdir -p $base/modules && \
 # Note we redirect and destroy old file
-# Only installing non-optimized version while config is not in spack develop
 echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/dependencies.sh && \
 echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/optimized-dependencies.sh && \
 echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/exago-optimized.sh && \

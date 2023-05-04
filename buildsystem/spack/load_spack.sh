@@ -55,7 +55,8 @@ source ./tpl/spack/share/spack/setup-env.sh && \
 SPACKENV=$(pwd)/spack-env-$MY_CLUSTER && \
 mkdir -p $SPACKENV && \
 # Remove old config
-rm $SPACKENV/spack.yaml && \
+(rm -f $SPACKENV/spack.yaml || true) && \
+(rm -f $SPACKENV/spack.lock || true) && \
 
 # Use a directory based environment, and decorate command line
 spack env create -d $SPACKENV && \
@@ -76,4 +77,3 @@ mkdir -p $SPACK_MIRROR
 if [ $? -eq 0 ] && [ "$1" = "-v" ]; then
   spack config get config
 fi
-

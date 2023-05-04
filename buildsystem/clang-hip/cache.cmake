@@ -7,12 +7,8 @@ set(CMAKE_INSTALL_PREFIX
     CACHE PATH ""
 )
 
-set(arch gfx90a)
-message(STATUS "Using initial AMD GPU target architecture of ${arch}")
-set(AMDGPU_TARGETS
-    ${arch}
-    CACHE STRING ""
-)
+message(STATUS "Using AMD GPU target architecture of ${AMDGPU_TARGETS}")
+
 
 message(STATUS "Just building static libraries for now.")
 set(EXAGO_BUILD_SHARED
