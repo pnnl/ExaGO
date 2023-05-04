@@ -33,6 +33,7 @@ workflow:
       #  NOTES:  WORKDIR is on constance/deception/newell
       #          ./      is only on the Kubernetes instance
       #
+      set -x
       export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}"
       if [[ ! -d "$WORKDIR" ]]; then
         # if workdir already exists, we're in the testing job
@@ -82,6 +83,7 @@ workflow:
       done
       echo "Finished batch job with exit code: $res"
       rm "$WORKDIR/jobid_${jobid}"
+      set +x
       exit $res
 
 .pnnl_module_script_template:
