@@ -1,5 +1,7 @@
 #!/bin/bash
 
+. /etc/profile.d/modules.sh
+
 module purge
 
 # MPI module is finnicky on incline
@@ -23,3 +25,4 @@ export CXX=$(which clang++)
 export FC=$(which gfortran)
 
 export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DAMDGPU_TARGETS='gfx908'"
+
