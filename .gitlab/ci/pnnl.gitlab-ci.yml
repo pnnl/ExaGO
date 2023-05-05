@@ -336,7 +336,7 @@ variables:
   variables:
     WORKDIR_SUFFIX: "x86_64-clang-hip-build"
     MY_CLUSTER: "incline"
-    SLURM_ARGS: " -N 1 --ntasks=3 "
+    SLURM_ARGS: " --exclusive "
 
 .module_rebuild:
   needs: []
