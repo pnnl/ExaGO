@@ -33,7 +33,6 @@ workflow:
       #  NOTES:  WORKDIR is on constance/deception/newell
       #          ./      is only on the Kubernetes instance
       #
-      set -x
       export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}"
       if [[ ! -d "$WORKDIR" ]]; then
         # if workdir already exists, we're in the testing job
@@ -67,7 +66,7 @@ workflow:
 
       # jobid used in pnnl_after_script_template to cancel job if cancelled or
       # timed out by gitlab through the UI
-      jobid=$(sbatch --export=ALL -A EXASGD --gres=gpu:1 --ntasks=3 -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/buildsystem/build.sh $SCRIPT_ARGS)
+      jobid=$(sbatch --export=ALL -A EXASGD $SLURM_ARGS -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/buildsystem/build.sh $SCRIPT_ARGS)
       export jobid=$(echo $jobid | cut -f4 -d' ')
       # Unique jobid filename for this job
       echo $jobid > "$WORKDIR/jobid_${jobid}"
@@ -85,7 +84,6 @@ workflow:
       done
       echo "Finished batch job with exit code: $res"
       rm "$WORKDIR/jobid_${jobid}"
-      set +x
       exit $res
 
 .pnnl_module_script_template:
@@ -304,6 +302,7 @@ variables:
   variables:
     MY_CLUSTER: "deception"
     WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+    SLURM_ARGS: " --gres=gpu:1 --ntasks=3 "
 
 .newell:
   rules:
@@ -320,6 +319,7 @@ variables:
   variables:
     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
     MY_CLUSTER: "newell"
+    SLURM_ARGS: " --gres=gpu:1 --ntasks=3 "
 
 .incline:
   rules:
@@ -336,6 +336,7 @@ variables:
   variables:
     WORKDIR_SUFFIX: "x86_64-clang-hip-build"
     MY_CLUSTER: "incline"
+    SLURM_ARGS: " -N 1 --ntasks=3 "
 
 .module_rebuild:
   needs: []
