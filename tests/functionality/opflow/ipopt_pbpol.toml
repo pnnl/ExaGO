@@ -250,8 +250,8 @@ description = "Test for non-zero load loss"
 is_loadloss_active =	true
 is_powerimb_active =	false
 gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
-num_iters = 31 
-obj_value = 740035.563036
+num_iters = 36 
+obj_value = 750051.591173
 
 [[testcase]]
 network = 'datafiles/case9/case9mod_loadloss.m'  
