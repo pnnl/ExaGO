@@ -180,8 +180,8 @@ description = "Test for non-zero load loss with HiOP MDS (CPU)"
 is_loadloss_active =	true
 is_powerimb_active =	false
 gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
-num_iters = 50
-obj_value = 740035.564325
+num_iters = 64
+obj_value = 750051.592445
 
 #[[testcase]]
 #network = 'datafiles/case_ACTIVSg200.m'

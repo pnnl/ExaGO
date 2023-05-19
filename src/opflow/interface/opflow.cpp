@@ -1622,6 +1622,27 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
     ierr = OPFLOWGetLinesMonitored(opflow);
     CHKERRQ(ierr);
   }
+  if (opflow->include_loadloss_variables) {
+    int l, nload;
+    int i, nbus;
+    PS ps;
+    PSBUS bus;
+    PSLOAD load;
+
+    ierr = OPFLOWGetPS(opflow, &ps);
+    CHKERRQ(ierr);
+
+    for (i = 0; i < ps->nbus; i++) {
+      bus = &(ps->bus[i]);
+      for (l = 0; l < bus->nload; l++) {
+        ierr = PSBUSGetLoad(bus, l, &load);
+        CHKERRQ(ierr);
+        if (load->loss_cost == BOGUSLOSSCOST) {
+          load->loss_cost = opflow->loadloss_penalty;
+        }
+      }
+    }
+  }
 
   ierr = PetscCalloc1(ps->nbus, &opflow->busnvararray);
   CHKERRQ(ierr);
@@ -1951,7 +1972,6 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X, Vec Lambda) {
 */
 PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
   PetscErrorCode ierr;
-
   PetscFunctionBegin;
 
   if (!opflow->setupcalled) {
@@ -2702,6 +2722,8 @@ PetscErrorCode OPFLOWSetUpPS(OPFLOW opflow) {
   PetscFunctionBegin;
   ierr = PSSetUp(opflow->ps);
   CHKERRQ(ierr);
+  /* set individual load costs if necessary */
+
   PetscFunctionReturn(0);
 }
 
@@ -2982,14 +3004,24 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
   if (hiop_sparse && !(hiop_sparse_pbpol || hiop_sparse_dcopf)) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
             "OPFLOW solver HIOPSPARSE incompatible with model %s",
-            opflow->modelname);
+            (opflow->modelname).c_str());
   }
 #else
   PetscBool hiop_sparse = PETSC_FALSE;
 #endif // HIOP_SPARSE
   if ((hiop && !hiop_sparse) && !(hiop_pbpol || rajahiop_pbpol)) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-            "OPFLOW solver HIOP incompatible with model %s", opflow->modelname);
+            "OPFLOW solver HIOP incompatible with model %s",
+            (opflow->modelname).c_str());
+  }
+  /* FIXME: The PBPOLRAJAHIOP has trouble with individual load
+     shedding, so avoid using when load shedding is enabled */
+  if (opflow->include_loadloss_variables) {
+    if (rajahiop_pbpol) {
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
+              "OPFLOW load shedding incompatible with model %s",
+              (opflow->modelname).c_str());
+    }
   }
 #endif // HIOP
   PetscFunctionReturn(0);
