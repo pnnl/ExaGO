@@ -360,7 +360,7 @@ PetscErrorCode CreateLoadParams(OPFLOW opflow, LOADParams *loadparams) {
 
       loadparams->pl[loadi] = load->pl;
       loadparams->ql[loadi] = load->ql;
-      loadparams->loadloss_penalty[loadi] = opflow->loadloss_penalty;
+      loadparams->loadloss_penalty[loadi] = load->loss_cost;
 
       loadparams->xidx[loadi] = opflow->idxn2sd_map[loc];
       loadparams->gidx[loadi] = bus->starteqloc;

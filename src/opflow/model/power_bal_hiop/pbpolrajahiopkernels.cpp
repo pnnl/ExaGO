@@ -533,7 +533,7 @@ int LOADParamsRajaHiop::allocate(OPFLOW opflow) {
       ql[loadi] = load->ql;
       if (opflow->include_loadloss_variables) {
         loc = load->startxloadlossloc;
-        loadloss_penalty[loadi] = opflow->loadloss_penalty;
+        loadloss_penalty[loadi] = load->loss_cost;
         xidx[loadi] = opflow->idxn2sd_map[loc];
       }
       gidx[loadi] = bus->starteqloc;
@@ -1253,6 +1253,7 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP(OPFLOW opflow,
   PetscFunctionReturn(0);
 }
 
+#if 0
 // Note: This kernel (and all the kernels for this model assume that the data
 // has been already allocated on the device. xl_dev and xu_dev are pointers to
 // arrays on the GPU
@@ -1357,6 +1358,7 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP_old(OPFLOW opflow,
 
   PetscFunctionReturn(0);
 }
+#endif
 
 PetscErrorCode OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOP(
     OPFLOW opflow, const double *x_dev, int *iJacS_dev, int *jJacS_dev,
