@@ -22,6 +22,11 @@
 #define MAXCONNECTEDCOMPS 64
 
 /**
+ * @brief A bogus value for load loss cost
+ */
+#define BOGUSLOSSCOST -1234.0
+
+/**
  * @brief private bus data struct
  */
 struct _p_PSBUS {
@@ -136,6 +141,10 @@ struct _p_PSLOAD {
 
   PetscScalar pl_loss; /* Real power load loss */
   PetscScalar ql_loss; /* Reactive power load loss */
+
+  PetscScalar loss_cost; /* Cost for the load..used in load shedding */
+  PetscScalar loss_frac; /* Fraction of allowed load shed */
+
   /* Variable, constraint sizes and locations */
 
   PetscInt nxloadloss; /* Number of variables for load loss */

@@ -505,14 +505,16 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   PetscInt br_start_line = -1, br_end_line = -1;
   PetscInt gencost_start_line = -1, gencost_end_line = -1;
   PetscInt genfuel_start_line = -1, genfuel_end_line = -1;
+  PetscInt loadcost_start_line = -1, loadcost_end_line = -1;
   /* Number of blank lines in bus, gen, br, gencost, and genfuel branch arrays
    */
   PetscInt bus_nblank_lines = 0, gen_nblank_lines = 0;
   PetscInt br_nblank_lines = 0, gencost_nblank_lines = 0;
   PetscInt genfuel_nblank_lines = 0;
+  PetscInt loadcost_nblank_lines = 0;
   char line[MAXLINE];
   PetscInt loadi = 0, geni = 0, bri = 0, busi = 0, gencosti = 0, genfueli = 0,
-           i;
+           loadcosti = 0, i;
   PetscInt extbusnum, bustype_i;
   PetscScalar Pd, Qd;
   PetscInt intbusnum;
@@ -557,6 +559,11 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
     if (strstr(line, "mpc.gencost") != NULL)
       gencost_start_line =
           line_counter + 1; /* Gen cost data starts from next line */
+    if (strstr(line, "mpc.loadcost") != NULL) {
+      loadcost_start_line =
+          line_counter + 1; /* Load cost data starts from next line */
+    }
+
     if (strstr(line, "mpc.genfuel") != NULL) {
       genfuel_start_line =
           line_counter + 1; /* Gen fuel data starts from next line */
@@ -576,6 +583,8 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
         br_end_line = line_counter;
       if (gencost_start_line != -1 && gencost_end_line == -1)
         gencost_end_line = line_counter;
+      if (loadcost_start_line != -1 && loadcost_end_line == -1)
+        loadcost_end_line = line_counter;
     }
 
     if (bus_start_line != -1 && bus_end_line == -1) {
@@ -595,6 +604,11 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
     if (gencost_start_line != -1 && gencost_end_line == -1) {
       if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
         gencost_nblank_lines++;
+    }
+
+    if (loadcost_start_line != -1 && loadcost_end_line == -1) {
+      if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
+        loadcost_nblank_lines++;
     }
 
     if (genfuel_start_line != -1 && genfuel_end_line == -1) {
@@ -695,6 +709,9 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
         Load[loadi].status = 1;
         Load[loadi].pl = Pd / ps->MVAbase;
         Load[loadi].ql = Qd / ps->MVAbase;
+        /* Some defaults for load shed */
+        Load[loadi].loss_frac = 1.0;
+        Load[loadi].loss_cost = BOGUSLOSSCOST;
         Load[loadi].area = Bus[busi].area;
         Load[loadi].internal_i = busi;
 
@@ -813,6 +830,16 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
              &Gen[gencosti].cost_ncoeffs, &Gen[gencosti].cost_alpha,
              &Gen[gencosti].cost_beta, &Gen[gencosti].cost_gamma);
       gencosti++;
+    }
+
+    /* Read load cost data */
+    if (i >= loadcost_start_line && i < loadcost_end_line) {
+      if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
+        continue;
+      sscanf(line, "%lf %lf", &Load[loadcosti].loss_frac,
+             &Load[loadcosti].loss_cost);
+      Load[loadcosti].loss_frac /= 100; /* Convert to fraction */
+      loadcosti++;
     }
 
     /* Read generator fuel data */
