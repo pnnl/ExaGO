@@ -640,10 +640,6 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
            "SCOPFLOW running with {:d} subproblems (base case + {:d} "
            "contingencies)",
            scopflow->nc, scopflow->nc - 1);
-  //  ExaGOLogUseEveryRank(PETSC_TRUE);
-  //  ExaGOLog(EXAGO_LOG_INFO,"Rank %d has %d contingencies, range [%d --
-  //  %d]\n",scopflow->comm->rank,scopflow->nc,scopflow->cstart,scopflow->cend);
-  //  ExaGOLogUseEveryRank(PETSC_FALSE);
 
   /* Set model */
   if (!scopflow->ismultiperiod) {
