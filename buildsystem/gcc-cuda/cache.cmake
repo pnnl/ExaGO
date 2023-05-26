@@ -16,11 +16,11 @@ set(CMAKE_CUDA_ARCHITECTURES
 
 message(STATUS "Building static libraries only since HiOp is static.")
 set(EXAGO_BUILD_SHARED
-    OFF
+    ON
     CACHE BOOL ""
 )
 set(EXAGO_BUILD_STATIC
-    ON
+    OFF
     CACHE BOOL ""
 )
 
