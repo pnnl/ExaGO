@@ -806,7 +806,7 @@ PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLRAJAHIOPSPARSE(OPFLOW opflow,
   //  ierr = PetscPrintf(MPI_COMM_SELF,"Entered
   //  OPFLOWInitialization\n");CHKERRQ(ierr);
   // Do initialization on Host
-  ierr = (*opflow->modelops.setinitialguess)(opflow, opflow->X);
+  ierr = (*opflow->modelops.setinitialguess)(opflow, opflow->X, opflow->Lambda);
   CHKERRQ(ierr);
   ierr = VecGetArray(opflow->X, &x);
   CHKERRQ(ierr);
