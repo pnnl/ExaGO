@@ -9,14 +9,15 @@
 /* Initialization is done on the host through this function. Copying over values
  * to the device is done in OPFLOWSetInitialGuessArray_PBPOLRAJAHIOPSPARSE
  */
-extern PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW, Vec);
+extern PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW, Vec, Vec);
 
-PetscErrorCode OPFLOWSetInitialGuess_PBPOLRAJAHIOPSPARSE(OPFLOW opflow, Vec X) {
+PetscErrorCode OPFLOWSetInitialGuess_PBPOLRAJAHIOPSPARSE(OPFLOW opflow, Vec X,
+                                                         Vec Lambda) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
 
-  ierr = OPFLOWSetInitialGuess_PBPOL(opflow, X);
+  ierr = OPFLOWSetInitialGuess_PBPOL(opflow, X, Lambda);
   CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
