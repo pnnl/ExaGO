@@ -16,8 +16,8 @@ if(EXAGO_ENABLE_RAJA)
   )
   if(EXAGO_ENABLE_HIOP_SPARSE)
     set(OPFLOW_FORM_SRC
-        ${OPFLOW_FORM_SRC} model/power-bal-hiop/pbpolrajahiopsparse.cpp
-        model/power-bal-hiop/pbpolrajahiopsparsekernels.cpp
+        ${OPFLOW_FORM_SRC} model/power_bal_hiop/pbpolrajahiopsparse.cpp
+        model/power_bal_hiop/pbpolrajahiopsparsekernels.cpp
     )
   endif()
 endif()
