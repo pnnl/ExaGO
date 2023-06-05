@@ -336,7 +336,7 @@ variables:
   variables:
     WORKDIR_SUFFIX: "x86_64-clang-hip-build"
     MY_CLUSTER: "incline"
-    SLURM_ARGS: " --exclusive "
+    SLURM_ARGS: " --exclusive --ntasks-per-gpu=3 "
 
 .module_rebuild:
   needs: []
