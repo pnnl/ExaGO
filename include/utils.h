@@ -133,7 +133,7 @@ inline void ExaGOLog(MPI_Comm comm, int level, std::string fmt, Args... args) {
 template <typename... Args>
 void inline ExaGOLog(int level, std::string fmt, Args... args) {
 #ifdef EXAGO_ENABLE_LOGGING
-  ExaGOLog(PETSC_COMM_SELF, level, fmt, args...);
+  ExaGOLog(PETSC_COMM_WORLD, level, fmt, args...);
 #endif
 }
 

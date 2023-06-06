@@ -183,8 +183,13 @@ struct ScopflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     SCOPFLOW scopflow;
+    int rank;
 
-    std::cout << "Test Description: " << params.description << std::endl;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+    if (rank == 0) {
+      std::cout << "Test Description: " << params.description << std::endl;
+    }
     ierr = SCOPFLOWCreate(params.comm, &scopflow);
     ExaGOCheckError(ierr);
 
