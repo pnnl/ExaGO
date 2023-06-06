@@ -108,8 +108,13 @@ struct PflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     PFLOW pflow;
+    int rank;
 
-    std::cout << "Test Description: " << params.description << std::endl;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+    if (rank == 0) {
+      std::cout << "Test Description: " << params.description << std::endl;
+    }
     ierr = PFLOWCreate(params.comm, &pflow);
     ExaGOCheckError(ierr);
 

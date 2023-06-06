@@ -158,6 +158,10 @@ public:
   }
 
   void print_report() {
+    int rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+    if (rank != 0)
+      return;
     ExaGOLog(verbosity(), "{:d} / {:d} tests failed.\n", failures(),
              total_tests());
     if (failures()) {
