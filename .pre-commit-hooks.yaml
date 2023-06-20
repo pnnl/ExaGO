@@ -1,0 +1,11 @@
+---
+# This file tells https://pre-commit.com/
+# which hooks are provided by this repo
+# for use by other git repos.
+
+- id: clang-format
+  name: clang-format
+  entry: cmake-pc-clang-format-hook
+  description: Formats C/CPP code
+  files: \.(c|c\+\+m|cc|ccm|cpp|cppm|cu|cxx|cxxm|h|hpp|hxx|ixx|m|mxx)$
+  language: python

@@ -5,7 +5,7 @@
 <img src="docs/manual/figures/three_in_one.png">
 
 
-ExaGO<sup>TM</sup> is a package for solving large-scale  power grid optimization problems on parallel and distributed architectures, particularly targeted for exascale machines with heteregenous architectures (GPU). Combinations of stochastic, contingency-constrained, multiperiod ACOPF problems can be solved with ExaGO. The package is written in C/C++ with python bindings available for python-based applications. An overview of the package is given on this page. For extended information, including the modeling details and formulations, see the [ExaGO manual](docs/manual/manual.pdf). 
+ExaGO<sup>TM</sup> is a package for solving large-scale  power grid optimization problems on parallel and distributed architectures, particularly targeted for exascale machines with heteregenous architectures (GPU). Combinations of stochastic, contingency-constrained, multiperiod ACOPF problems can be solved with ExaGO. The package is written in C/C++ with python bindings available for python-based applications. An overview of the package is given on this page. For extended information, including the modeling details and formulations, see the [ExaGO manual](docs/manual/manual.pdf).
 
 ExaGO<sup>TM</sup> includes the following applications for solving different power grid optimization problems:
 
@@ -23,7 +23,7 @@ Note that not all applications can utilize all solvers yet. The following table 
 
 |  Solver   | OPFLOW  | TCOPFLOW | SCOPLOW | SOPFLOW |
 |:------:|:---------:|:-----:|:-------:|:-------:|
-| Ipopt      | Y         |  Y     | Y       | Y       | 
+| Ipopt      | Y         |  Y     | Y       | Y       |
 | HiOp       | Y          |       |   Y      |  Y       |
 
 Additionally, note that SCOPFLOW and SOPFLOW with HiOp solver use Ipopt to solve a portion of the problem (base problem). So one must also configure with Ipopt when using HiOp solver for these applications.
