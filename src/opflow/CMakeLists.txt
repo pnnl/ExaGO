@@ -11,8 +11,10 @@ set(OPFLOW_FORM_SRC
 
 # Build RAJA/Umpire modules if RAJA and Umpire are enabled
 if(EXAGO_ENABLE_RAJA)
-  set(OPFLOW_FORM_SRC ${OPFLOW_FORM_SRC} model/power_bal_hiop/pbpolrajahiop.cpp
-                      model/power_bal_hiop/pbpolrajahiopkernels.cpp
+  set(OPFLOW_FORM_SRC
+      ${OPFLOW_FORM_SRC} model/power_bal_hiop/pbpolrajahiop.cpp
+      model/power_bal_hiop/pbpolrajahiopkernels.cpp
+      model/power_bal_hiop/paramsrajahiop.cpp
   )
   if(EXAGO_ENABLE_HIOP_SPARSE)
     set(OPFLOW_FORM_SRC
