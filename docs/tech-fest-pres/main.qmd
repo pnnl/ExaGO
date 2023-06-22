@@ -1,0 +1,38 @@
+---
+title: "DevOps for ExaScale - ExaSGD's journey"
+author: "Cameron Rutherford"
+title-slide-attributes:
+  data-background-image: /images/techfest2023-background.png
+  data-background-opacity: "0.6"
+format:
+  revealjs:
+    theme: example.scss
+    logo: /images/pnnl-logo.png
+    footer: TechFest 2023
+    scrollable: true
+    smaller: true
+    incremental: true
+execute:
+  enabled: false
+jupyter: python3
+---
+
+
+abstract:
+Software Engineering can be difficult enough in the simplest cases, even without attempting to deploy to the world’s largest supercomputers.
+These large-scale computing platforms undergo rapid developments, deployments, and updates that add complexity to the management of large software stacks.
+Within the ExaSGD software stack,DevOps best practices have been implemented in order to support a large, multi-lab project, as well as managing changing requirements throughout the development lifecycle.
+
+In this talk, we will cover all the aspects of Software Engineering within ExaSGD: 
+
+-GitLab & GitHub pipelines for Continuous Integration and Testing
+-Dependency Management and deployment using Spack on various novel hardware architectures
+-Linting and Tooling that aid in proliferation of development best practices for all developers
+-Scaling and Profiling code at Exascale on various hardware backends
+-Interfacing with various languages like C/C++, Python, and Javascript to aid in usability
+
+# Spack & Dependency Management (Sayef)
+# GitLab CI / CD & GitHub pipelines (Cameron GitHub)
+# Linting / Tooling and DevOps tools (Jaya GitLab)
+# Scaling / Profiling and Running at 9k nodes (Sayef + Cameron)
+# Language interoperability between C, Python and JS (Cameron + Jaya)
