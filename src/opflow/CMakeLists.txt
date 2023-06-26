@@ -40,7 +40,6 @@ if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_CUDA)
     model/power_bal_hiop/pbpolrajahiopkernels.cpp
     model/power_bal_hiop/pbpolrajahiopsparsekernels.cpp
     PROPERTIES LANGUAGE CUDA 
-    PROPERTIES LANGUAGE
   )
 endif()
 
