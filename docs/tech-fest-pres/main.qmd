@@ -18,7 +18,8 @@ jupyter: python3
 ---
 
 
-abstract:
+# abstract
+
 Software Engineering can be difficult enough in the simplest cases, even without attempting to deploy to the world’s largest supercomputers.
 These large-scale computing platforms undergo rapid developments, deployments, and updates that add complexity to the management of large software stacks.
 Within the ExaSGD software stack,DevOps best practices have been implemented in order to support a large, multi-lab project, as well as managing changing requirements throughout the development lifecycle.
@@ -31,7 +32,13 @@ In this talk, we will cover all the aspects of Software Engineering within ExaSG
 -Scaling and Profiling code at Exascale on various hardware backends
 -Interfacing with various languages like C/C++, Python, and Javascript to aid in usability
 
-# Spack & Dependency Management (Sayef)
+## Spack & Dependency Management (Sayef)
+- What is Spack
+- Basic installation
+- Package management
+- Compiler Configuration
+- Exago with Spack
+
 # GitLab CI / CD & GitHub pipelines (Cameron GitHub)
 # Linting / Tooling and DevOps tools (Jaya GitLab)
 # Scaling / Profiling and Running at 9k nodes (Sayef + Cameron)
