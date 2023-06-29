@@ -56,7 +56,7 @@ spack:
       version: [3.12.10]
       variants: +coinhsl+metis~mumps
     coinhsl:
-      variants: +blas
+      require: '@2019.05.21+blas'
     cuda:
       externals:
       - spec: cuda@11.5.2

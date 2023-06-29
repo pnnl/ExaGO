@@ -49,10 +49,10 @@ export HTTPS_PROXY="http://proxy.ccs.ornl.gov:3128"
 export proxy="proxy.ccs.ornl.gov:3128"
 export no_proxy='localhost,127.0.0.0/8,*.ccs.ornl.gov,*.olcf.ornl.gov,*.ncrc.gov'
 
-
 # Assuming that you already have a binary mirror configured
-# TODO - copy over coinhsl tarball beforehand?
 export MY_CLUSTER=summit
+
+cp /ccs/proj/csc359/sayefsakin/coinhsl-2019.05.21.tar.gz . && \
 . buildsystem/spack/load_spack.sh && \
 spack develop --no-clone --path=$(pwd) exago@develop && \
 buildsystem/spack/configure_modules.sh 32
