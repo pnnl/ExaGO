@@ -41,5 +41,8 @@ In this talk, we will cover all the aspects of Software Engineering within ExaSG
 
 # GitLab CI / CD & GitHub pipelines (Cameron GitHub)
 # Linting / Tooling and DevOps tools (Jaya GitLab)
+  - current linting (clang format, python format, file naming conventions, cmake format), run in CI pipelines for checking, can run manually to make in place changes
+  - transition to precommit for linting 
 # Scaling / Profiling and Running at 9k nodes (Sayef + Cameron)
 # Language interoperability between C, Python and JS (Cameron + Jaya)
+  - python wrapper
