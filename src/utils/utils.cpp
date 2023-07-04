@@ -580,7 +580,7 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
 
 PetscErrorCode ExaGOFinalize() {
   PetscFunctionBegin;
-  ExaGOLog(EXAGO_LOG_INFO, "Finalizing {} application.", ExaGOCurrentAppName);
+  //  ExaGOLog(EXAGO_LOG_INFO, "Finalizing {} application.", ExaGOCurrentAppName);
   bool flg;
   ExaGOLogIsUsingLogFile(&flg);
   if (flg) {

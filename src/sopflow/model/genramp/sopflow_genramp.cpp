@@ -19,7 +19,6 @@ PetscErrorCode SOPFLOWSetVariableBounds_GENRAMP(SOPFLOW sopflow, Vec Xl,
   OPFLOW opflow;
   PetscScalar *xl, *xu, *xli, *xui;
   PetscInt i;
-
   PetscFunctionBegin;
 
   ierr = VecGetArray(Xl, &xl);
@@ -162,7 +161,6 @@ PetscErrorCode SOPFLOWSetInitialGuess_GENRAMP(SOPFLOW sopflow, Vec X) {
   OPFLOW opflow;
   PetscScalar *x, *xi, *xl, *xu, *xli, *xui;
   PetscInt i;
-
   PetscFunctionBegin;
 
   ierr = VecGetArray(X, &x);

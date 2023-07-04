@@ -1,0 +1,105 @@
+# Crusher Variables
+stages:
+  - build
+  - test
+
+workflow:
+  rules:
+    # Only run if we are running manually or through a schedule
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - when: never
+
+.crusher_build_variables:
+  variables:
+    WORKDIR: /gpfs/alpine/csc359/proj-shared/ci/${CI_PIPELINE_ID}
+
+.crusher_test_variables:
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+    # Only for slurm tagged jobs...
+    SCHEDULER_PARAMETERS: "-N 1 -A CSC359_crusher --time=60"
+    WORKDIR: /gpfs/alpine/csc359/proj-shared/ci/${CI_PIPELINE_ID}
+
+# Crusher Jobs
+Crusher Build:
+  stage: build
+  tags: [crusher, shell]
+  script:
+    - mkdir -p "$WORKDIR"
+    - cp -r . "$WORKDIR"
+    - cd "$WORKDIR"
+    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+    - MY_CLUSTER=crusher ./buildsystem/build.sh --build-only --job=clang-hip
+    - res=$?
+    - exit $res
+  extends: .crusher_build_variables
+  
+Crusher Test:
+  stage: test
+  dependencies: ["Crusher Build"]
+  tags: [crusher, slurm]
+  script:
+    - cd "$WORKDIR"
+    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+      # Logger test failing on Crusher
+    - export CTESTARGS="--output-on-failure -E Python"
+    - MY_CLUSTER=crusher ./buildsystem/build.sh --test-only --job=clang-hip
+    - res=$?
+    - exit $res
+  after_script:
+    - cd "$WORKDIR/.."
+    - rm -rf "$WORKDIR"
+  extends: .crusher_test_variables
+
+Crusher Python Test:
+  stage: test
+  dependencies: ["Crusher Build"]
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+  allow_failure: true
+  tags: [crusher, slurm]
+  script:
+    - cd "$WORKDIR"
+    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+    - export CTESTARGS="--output-on-failure -R Python"
+    - MY_CLUSTER=crusher ./buildsystem/build.sh --test-only --job=clang-hip
+    - res=$?
+    - exit $res
+  extends: .crusher_test_variables
+# ---
+
+# Reporting Crusher Status to PNNL
+.report-status:
+  variables:
+    GIT_STRATEGY: none
+  tags: [crusher, shell]
+  script:
+    # For complete details on the GitLab API please see:
+    # https://docs.gitlab.com/ee/api/commits.html#post-the-build-status-to-a-commit
+    # Make sure to create the token with Developer level access and API scope
+    - curl -X POST -H @${GITLAB_CURL_HEADERS} https://gitlab.pnnl.gov/api/v4/projects/251/statuses/${CI_COMMIT_SHA}?state=${CI_JOB_NAME}\&name=Crusher\&target_url=${CI_PIPELINE_URL}
+  environment:
+    name: reporting-gitlab
+
+pending:
+  extends: .report-status
+  stage: .pre
+
+# Post running status to show builds at least passed, tests are running
+running:
+  extends: .report-status
+  stage: test
+
+success:
+  extends: .report-status
+  stage: .post
+
+failed:
+  stage: .post
+  extends: .report-status
+  rules:
+    - when: on_failure
+# ---

@@ -12,7 +12,9 @@ module list
 
 # This assumes that we are installing from a binary mirror, and don't want to fetch files
 # Make sure to use binary_mirror.sh if this is failing
-spack install -j $1 && \
+spack develop --path=$(pwd) exago@develop && \
+spack concretize -f && \
+spack install --fail-fast -j $1 && \
 
 # This deletes the previous modules that are installed
 # Either use a different module path than other users, or deal with frequent updates

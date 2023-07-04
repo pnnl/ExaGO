@@ -3011,17 +3011,7 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
 #endif // HIOP_SPARSE
   if ((hiop && !hiop_sparse) && !(hiop_pbpol || rajahiop_pbpol)) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-            "OPFLOW solver HIOP incompatible with model %s",
-            (opflow->modelname).c_str());
-  }
-  /* FIXME: The PBPOLRAJAHIOP has trouble with individual load
-     shedding, so avoid using when load shedding is enabled */
-  if (opflow->include_loadloss_variables) {
-    if (rajahiop_pbpol) {
-      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-              "OPFLOW load shedding incompatible with model %s",
-              (opflow->modelname).c_str());
-    }
+            "OPFLOW solver HIOP incompatible with model %s", (opflow->modelname).c_str());
   }
 #endif // HIOP
   PetscFunctionReturn(0);

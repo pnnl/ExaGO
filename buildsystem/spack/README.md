@@ -20,6 +20,10 @@ flexibility.
 Whenever an update to the ExaGO spack submodule reference is made, it may render
 any existing installations unusable due to changes in the hashing algorithm.
 
+### Crusher/Froniter Note
+
+NB: Sometimes you may want to configure /buildsystem/spack/platform/env.sh to have spack temporary store change between the platform. For example, Crusher and Frontier share binary installs, but have different temporary file systems. So you build and install with MY_CLUSTER=crusher, but you store files on Orion/Alpine depending on if you are on Frontier/Crusher
+
 ## Using the automatic pipelines in GitLab PRs
 
 Spack modules are automatically rebuilt via CI pipelines for a cluster when a commit message includes `[<clustername>-rebuild]` where `<clustername>` is one of the following [newell, deception, ascent].

@@ -120,6 +120,7 @@ int main(int argc, char **argv) {
   ierr = SOPFLOWDestroy(&sopflow);
   CHKERRQ(ierr);
 
+  MPI_Barrier(PETSC_COMM_WORLD);
   ExaGOFinalize();
   // PetscFinalize();
   return 0;
