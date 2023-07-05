@@ -216,6 +216,9 @@ case $MY_CLUSTER in
   summit*)
     export MY_CLUSTER=summit
     ;;
+  frontier*)
+    export MY_CLUSTER=frontier
+    ;;
   *)
     echo "${MY_CLUSTER} did not match any directories in /buildsystem/spack/"
     echo "Try one of the following platforms: "
