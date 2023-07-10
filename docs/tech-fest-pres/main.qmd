@@ -45,4 +45,17 @@ In this talk, we will cover all the aspects of Software Engineering within ExaSG
   - transition to precommit for linting 
 # Scaling / Profiling and Running at 9k nodes (Sayef + Cameron)
 # Language interoperability between C, Python and JS (Cameron + Jaya)
-  - python wrapper
+  - ExaGO's code base is based in C++
+  - 
+  The ExaGO Python bindings use an object-oriented API slightly different from the C++ API.
+The C++ API uses the application type in uppercase as the prefix for its methods, where they are native methods in Python.
+pybind11 + pytest
+
+This year, we have introduced new Python bindings for ExaGO using pybind11 for the wrapper and pytest for the test suite. 
+We have achieved coverage of the main OPFLOW functionality and use mpi4py to allow the Python module to interact with MPI.
+The Spack package is aware of these bindings and will install the Python dependencies when the appropriate options are enabled.
+To configure our testing for the Python bindings, we used pytest as a testing framework and then ran these tests within CMake. 
+This way, the dozens of unit tests for each Python application supported only show up as one test in any ctest run. 
+We test two ways - one with MPI initialized in Python and the other with MPI initialized through ExaGO’s initialization function.
+These pipelines are run independently from the C++ tests in GitLab CI pipelines and allow the development of the more experimental Python wrapper to go along with core C++ work without interrupting the success of CI pipelines. 
+added coverage of the SOPFLOW and SCOPFLOW applications in the Python wrapper, and so this testing infrastructure choice further supported parallel development.
