@@ -1,28 +1,40 @@
 ---
 title: "DevOps for ExaScale - ExaSGD's journey"
-author: "Cameron Rutherford"
+author: 
+ - Jaya Preethi Mohan
+ - Sayef Azad Sakin
+ - Jaelyn Litzinger
+ - Cameron Rutherford
 title-slide-attributes:
   data-background-image: /images/techfest2023-background.png
   data-background-opacity: "0.6"
+filters:
+  - include-code-files
 format:
-  revealjs:
-    theme: example.scss
-    logo: /images/pnnl-logo.png
-    footer: TechFest 2023
-    scrollable: true
-    smaller: true
-    incremental: true
-execute:
-  enabled: false
-jupyter: python3
+  pptx:
+    reference-doc: template.pptx
+    slide-level: 2
+    toc: true
+    toc-depth: 2
+#  revealjs:
+#    theme: example.scss
+#    logo: /images/pnnl-logo.png
+#    footer: TechFest 2023
+#    scrollable: true
+#    smaller: true
+#    incremental: true
 ---
 
 
 # abstract
 
+## Para 1
+
 Software Engineering can be difficult enough in the simplest cases, even without attempting to deploy to the world’s largest supercomputers.
 These large-scale computing platforms undergo rapid developments, deployments, and updates that add complexity to the management of large software stacks.
 Within the ExaSGD software stack,DevOps best practices have been implemented in order to support a large, multi-lab project, as well as managing changing requirements throughout the development lifecycle.
+
+## Para 1
 
 In this talk, we will cover all the aspects of Software Engineering within ExaSGD: 
 
@@ -32,30 +44,80 @@ In this talk, we will cover all the aspects of Software Engineering within ExaSG
 -Scaling and Profiling code at Exascale on various hardware backends
 -Interfacing with various languages like C/C++, Python, and Javascript to aid in usability
 
-## Spack & Dependency Management (Sayef)
+# Spack & Dependency Management (Sayef)
+
+:::: {.columns}
+
+::: {.column}
+Here is some text about Spack
+:::
+
+::: {.column}
+```{.YAML include="../../buildsystem/spack/deception/spack.yaml" start-line=0 end-line=10}
+```
+:::
+
+::::1
+
+## Slide 1
 - What is Spack
 - Basic installation
 - Package management
 - Compiler Configuration
 - Exago with Spack
 
+## Slide 2
+
+![ExaGO Spack Graph](images/exago_graph.png)
+
 # GitLab CI / CD & GitHub pipelines (Cameron GitHub)
+
+## Test Slide
+Hello!
+
+This is some text
+
 # Linting / Tooling and DevOps tools (Jaya GitLab)
+
   - current linting (clang format, python format, file naming conventions, cmake format), run in CI pipelines for checking, can run manually to make in place changes
   - transition to precommit for linting 
+
 # Scaling / Profiling and Running at 9k nodes (Sayef + Cameron)
+There will be more text here!
+
 # Language interoperability between C, Python and JS (Cameron + Jaya)
+
   - ExaGO's code base is based in C++
   - 
   The ExaGO Python bindings use an object-oriented API slightly different from the C++ API.
 The C++ API uses the application type in uppercase as the prefix for its methods, where they are native methods in Python.
 pybind11 + pytest
 
+# Slide 2
+
 This year, we have introduced new Python bindings for ExaGO using pybind11 for the wrapper and pytest for the test suite. 
 We have achieved coverage of the main OPFLOW functionality and use mpi4py to allow the Python module to interact with MPI.
+
+---
+
+## Test 9
+
 The Spack package is aware of these bindings and will install the Python dependencies when the appropriate options are enabled.
 To configure our testing for the Python bindings, we used pytest as a testing framework and then ran these tests within CMake. 
+
+## Slide 3
+
 This way, the dozens of unit tests for each Python application supported only show up as one test in any ctest run. 
 We test two ways - one with MPI initialized in Python and the other with MPI initialized through ExaGO’s initialization function.
 These pipelines are run independently from the C++ tests in GitLab CI pipelines and allow the development of the more experimental Python wrapper to go along with core C++ work without interrupting the success of CI pipelines. 
+
+## Slide 4
+
 added coverage of the SOPFLOW and SCOPFLOW applications in the Python wrapper, and so this testing infrastructure choice further supported parallel development.
+
+---
+
+::: {.notes}
+Speaker notes go here.
+:::
+---
