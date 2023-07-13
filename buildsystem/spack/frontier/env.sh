@@ -10,6 +10,7 @@ module load craype-accel-amd-gfx90a
 module load amd/5.2.0
 module load cray-mpich/8.1.23
 module load libfabric
+module load gcc/12.2.0
 
 export SPACK_INSTALL=$PROJWORK/csc359/$(whoami)/spack-install
 export SPACK_MODULES=test-modules

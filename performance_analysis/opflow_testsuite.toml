@@ -1,11 +1,13 @@
+mpi_start = 'srun'
+mpi_args = '-A csc359 -N 1 -p batch -t 3'
 testsuite_name = "OPFLOW Functionality"
 application = 'opflow'
-mpi_rank = 1
+#mpi_rank = 1
 iterations = 1
 
 [presets]
-#netfile ='../datafiles/case9/case9mod.m'
-netfile ='../datafiles/case_ACTIVSg200.m'
+#netfile ='datafiles/case9/case9mod.m'
+netfile ='datafiles/case_ACTIVSg200.m'
 hiop_verbosity_level = 3
 print_output = 0
 argument_list = 'log_view'
@@ -24,16 +26,16 @@ argument_list = 'log_view'
 #tool = 'tau_exec'
 #tool_args = '-io'
 #tool_envs = 'TAU_PROFILE=1 PROFILEDIR=./profiler_dumps'
-
+#
 ##1
 #[[testcase]]
 #opflow_solver = 'IPOPT'
 #hiop_compute_mode = 'CPU'
 #opflow_model = 'POWER_BALANCE_POLAR'
-#ipopt_print_level = 0
+#ipopt_print_level = 1
 #ipopt_max_iter = 100
 #
-##2
+#2
 #[[testcase]]
 #opflow_solver = 'HIOPSPARSE'
 #hiop_compute_mode = 'CPU'
@@ -44,5 +46,12 @@ argument_list = 'log_view'
 [[testcase]]
 opflow_solver = 'HIOP'
 hiop_compute_mode = 'GPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = 20
+
+#4
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'CPU'
 opflow_model = 'POWER_BALANCE_HIOP'
 hiop_max_iter = 20

@@ -131,12 +131,15 @@ def doPerfMeasure(in_file):
         iterations = testsuite['iterations']
 
     mpi_cmd = None
-    mpi_start = "mpiexec"
-    if "mpi_start" in testsuite:
-        mpi_start = str(testsuite['mpi_start'])
-
-    if "mpi_rank" in testsuite:
-        mpi_cmd = [mpi_start, "-n", str(testsuite['mpi_rank'])]
+#    mpi_start = "mpiexec"
+#    if "mpi_start" in testsuite:
+#        mpi_start = str(testsuite['mpi_start'])
+#
+#    if 'mpi_args' in testsuite:
+#        mpi_cmd = [mpi_start]
+#        mpi_cmd.extend(testsuite['mpi_args'].split())
+#    if "mpi_rank" in testsuite:
+#        mpi_cmd = [mpi_start, "-n", str(testsuite['mpi_rank'])]
     
     profiler_cmd_list = list()
     my_env = os.environ.copy()
@@ -205,7 +208,9 @@ def doPerfMeasure(in_file):
             printDebug(2, '----')
 
             exago_success_run = False
-            suc_str = 'Finalizing ' + app_name + ' application.'
+            #suc_str = 'Finalizing ' + app_name + ' application.'
+            suc_str = 'Successfull termination.'
+            alt_suc_str = 'Maximum number of iterations reached.'
             ON_POSIX = 'posix' in sys.builtin_module_names
 
             time_lists = list()
@@ -227,6 +232,8 @@ def doPerfMeasure(in_file):
                         if petSCTime > -1:
                             petsc_time.append(petSCTime)
                         if exago_success_run is False and suc_str in line:
+                            exago_success_run = True
+                        if exago_success_run is False and alt_suc_str in line:
                             exago_success_run = True
                         timeStarted = time.time()
 

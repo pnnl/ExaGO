@@ -6,7 +6,7 @@ iterations = 1
 
 [presets]
 #netfile ='../datafiles/case9/case9mod.m'
-netfile ='../datafiles/case_ACTIVSg10k.m'
+netfile ='datafiles/case_ACTIVSg10k.m'
 hiop_verbosity_level = 3
 print_output = 0
 argument_list = 'log_view'

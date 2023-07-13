@@ -69,28 +69,28 @@ module load gmp-6.2.1-clang-14.0.0-rocm5.2.0-kg2hbzh
 module load autoconf-archive-2023.02.20-clang-14.0.0-rocm5.2.0-orly6oh
 # bzip2@1.0.8%clang@14.0.0-rocm5.2.0~debug~pic+shared build_system=generic arch=linux-sles15-zen3
 module load bzip2-1.0.8-clang-14.0.0-rocm5.2.0-b723tqw
-# xz@5.4.1%clang@14.0.0-rocm5.2.0~pic build_system=autotools libs=shared,static arch=linux-sles15-zen3
-module load xz-5.4.1-clang-14.0.0-rocm5.2.0-o3qiabh
+# xz@5.4.1%clang@14.0.0-rocm5.2.0+pic build_system=autotools libs=shared,static arch=linux-sles15-zen3
+module load xz-5.4.1-clang-14.0.0-rocm5.2.0-qevbdxw
 # libxml2@2.10.3%clang@14.0.0-rocm5.2.0~python build_system=autotools arch=linux-sles15-zen3
-module load libxml2-2.10.3-clang-14.0.0-rocm5.2.0-ufp6wmo
+module load libxml2-2.10.3-clang-14.0.0-rocm5.2.0-hl7upri
 # pigz@2.7%clang@14.0.0-rocm5.2.0 build_system=makefile arch=linux-sles15-zen3
 module load pigz-2.7-clang-14.0.0-rocm5.2.0-iu4dbhw
 # zstd@1.5.4%clang@14.0.0-rocm5.2.0~ipo+programs build_system=cmake build_type=RelWithDebInfo compression=none generator=make libs=shared,static arch=linux-sles15-zen3
 module load zstd-1.5.4-clang-14.0.0-rocm5.2.0-5eihosk
 # tar@1.34%clang@14.0.0-rocm5.2.0 build_system=autotools zip=pigz arch=linux-sles15-zen3
-module load tar-1.34-clang-14.0.0-rocm5.2.0-k3g2siv
+module load tar-1.34-clang-14.0.0-rocm5.2.0-7gelyrc
 # gettext@0.21.1%clang@14.0.0-rocm5.2.0+bzip2+curses+git~libunistring+libxml2+tar+xz build_system=autotools arch=linux-sles15-zen3
-module load gettext-0.21.1-clang-14.0.0-rocm5.2.0-ufzfnox
+module load gettext-0.21.1-clang-14.0.0-rocm5.2.0-utxwwfw
 # texinfo@7.0%clang@14.0.0-rocm5.2.0 build_system=autotools arch=linux-sles15-zen3
-module load texinfo-7.0-clang-14.0.0-rocm5.2.0-whajhlf
+module load texinfo-7.0-clang-14.0.0-rocm5.2.0-icabcyo
 # mpfr@4.2.0%clang@14.0.0-rocm5.2.0 build_system=autotools libs=shared,static arch=linux-sles15-zen3
-module load mpfr-4.2.0-clang-14.0.0-rocm5.2.0-5rzq6x7
+module load mpfr-4.2.0-clang-14.0.0-rocm5.2.0-lqwcw5i
 # suite-sparse@5.13.0%clang@14.0.0-rocm5.2.0~cuda~graphblas~openmp+pic build_system=generic arch=linux-sles15-zen3
-module load suite-sparse-5.13.0-clang-14.0.0-rocm5.2.0-ztu2tcm
+module load suite-sparse-5.13.0-clang-14.0.0-rocm5.2.0-rtlmtqf
 # umpire@6.0.0%clang@14.0.0-rocm5.2.0+c~cuda~device_alloc~deviceconst~examples~fortran~ipo~numa~openmp+rocm+shared amdgpu_target=gfx90a build_system=cmake build_type=RelWithDebInfo generator=make tests=none arch=linux-sles15-zen3
 module load umpire-6.0.0-clang-14.0.0-rocm5.2.0-2mpfeoa
 # hiop@0.7.1%clang@14.0.0-rocm5.2.0~cuda+deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja+rocm~shared+sparse amdgpu_target=gfx90a build_system=cmake build_type=RelWithDebInfo generator=make arch=linux-sles15-zen3
-module load hiop-0.7.1-clang-14.0.0-rocm5.2.0-6a776pn
+module load hiop-0.7.1-clang-14.0.0-rocm5.2.0-lkfqgli
 # ipopt@3.12.10%clang@14.0.0-rocm5.2.0+coinhsl~debug~metis~mumps build_system=autotools arch=linux-sles15-zen3
 module load ipopt-3.12.10-clang-14.0.0-rocm5.2.0-cips3gf
 # python@3.9.12%clang@14.0.0-rocm5.2.0+bz2+crypt+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tkinter+uuid+zlib build_system=generic patches=0d98e93,4c24573,f2fd060 arch=linux-sles15-zen3
@@ -98,4 +98,4 @@ module load python-3.9.12-clang-14.0.0-rocm5.2.0-w7cxnlm
 # petsc@3.18.6%clang@14.0.0-rocm5.2.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~tetgen~trilinos~valgrind build_system=generic clanguage=C arch=linux-sles15-zen3
 module load petsc-3.18.6-clang-14.0.0-rocm5.2.0-x2vp3h6
 # exago@develop%clang@14.0.0-rocm5.2.0~cuda+hiop~ipo+ipopt+logging+mpi~python+raja+rocm amdgpu_target=gfx90a build_system=cmake build_type=RelWithDebInfo dev_path=/ccs/home/sayefsakin/exago generator=make arch=linux-sles15-zen3
-## module load exago-develop-clang-14.0.0-rocm5.2.0-pqqzypa
+## module load exago-develop-clang-14.0.0-rocm5.2.0-elfzdlb

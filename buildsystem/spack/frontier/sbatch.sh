@@ -2,12 +2,14 @@
 
 #SBATCH -A csc359
 #SBATCH -p batch
-#SBATCH -t 40
+#SBATCH -t 60
 #SBATCH -N 1
 #SBATCH -c 1
 #SBATCH -J exasgd_spack_install
 #SBATCH -o spack_install.%J
 #SBATCH -e spack_install.%J
+#SBATCH --mail-user=sayefsakin@gmail.com
+#SBATCH --mail-type=ALL
 
 exit() {
   # Clear all trap handlers so this isn't echo'ed multiple times, potentially
