@@ -10,3 +10,5 @@ spack-*
 coinhsl-*
 docs/tech-fest-pres/main_files/*
 docs/tech-fest-pres/main.html
+docs/tech-fest-pres/_spack_dependency_files/*
+docs/tech-fest-pres/_spack_dependency.html
