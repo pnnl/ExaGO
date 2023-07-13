@@ -103,23 +103,23 @@ Here is some text about Spack
 
 ## Linting @ExaSGD Devops workflows
 
-  1 current linting (clang format, python format, file naming conventions, cmake format), run in CI pipelines for checking, can run manually to make in place changes. 
+1. current linting (clang format, python format, file naming conventions, cmake format), run in CI pipelines for checking, can run manually to make in place changes. 
 
-  2 Transition to precommit for linting influnces various capabilities and ease of working. 
+1. Transition to precommit for linting influnces various capabilities and ease of working. 
 
-  3 Pre-commit testing detects the  presence of bugs on configuration and the other project source files. 
+1. Pre-commit testing detects the  presence of bugs on configuration and the other project source files. 
 
-  4 It can be applied to the linting formats (clang format, python format, file naming conventions, cmake format). 
+1. It can be applied to the linting formats (clang format, python format, file naming conventions, cmake format). 
 
 ## Language interoperability between C, Python and JS (Cameron + Jaya)
 
-1 Language interoperability refers to a combination of different programming languages to select the most suitable programming language for efficiency. 
+1. Language interoperability refers to a combination of different programming languages to select the most suitable programming language for efficiency. 
 
-2 Due to the limitations and difference in different programming languages the language interoperability becomes challenging in certain times. 
+1. Due to the limitations and difference in different programming languages the language interoperability becomes challenging in certain times. 
 
-3 C, Python and Java Script are the programming languages considered for the language interoperability in ExaSGD project. 
+1. C, Python and Java Script are the programming languages considered for the language interoperability in ExaSGD project. 
 
-4 Python wrapper can interact with modules consists of C, Java Script and Python scripts in the working directory. 
+1. Python wrapper can interact with modules consists of C, Java Script and Python scripts in the working directory. 
 
 
 # Scaling / Profiling and Running at 9k nodes (Sayef + Cameron)
