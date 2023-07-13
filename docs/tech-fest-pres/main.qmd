@@ -16,13 +16,13 @@ format:
     slide-level: 2
     toc: true
     toc-depth: 2
-#  revealjs:
-#    theme: example.scss
-#    logo: /images/pnnl-logo.png
-#    footer: TechFest 2023
-#    scrollable: true
-#    smaller: true
-#    incremental: true
+  # revealjs:
+  #   theme: example.scss
+  #   logo: /images/pnnl-logo.png
+  #   footer: TechFest 2023
+  #   scrollable: true
+  #   smaller: true
+  #   incremental: true
 ---
 
 
@@ -59,16 +59,34 @@ Here is some text about Spack
 
 ::::1
 
-## Slide 1
-- What is Spack
-- Basic installation
-- Package management
-- Compiler Configuration
-- Exago with Spack
+## HPC or cloud based applications has lots of dependencies {.scrollable}
+
+- ExaGO depends directly on 55 packages with 598 other packages.
+- Total interdependencies among the packages amounts to 5480, depending on platforms, compilers and other software configurations.
 
 ## Slide 2
 
-![ExaGO Spack Graph](images/exago_graph.png)
+![ExaGO packages Dependencies](figures/exago_graph.png)
+
+## Package managers
+
+- source code to binary for reproducibility and performance
+- portable binary
+- compiler and runtime libraries
+- Spack manages dependencies
+
+## Useful Spack commands
+
+- edit packages
+- spec
+- concretize
+- install
+
+## Some other Spack features
+
+- Environments
+- Mirrors (with E4S.)
+- Binary hashes, reuse
 
 # GitLab CI / CD & GitHub pipelines (Cameron GitHub)
 
