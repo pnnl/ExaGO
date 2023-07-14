@@ -8,7 +8,10 @@ install/*
 spack-*
 .vscode/
 coinhsl-*
-docs/tech-fest-pres/main_files/*
-docs/tech-fest-pres/main.html
-docs/tech-fest-pres/_spack_dependency_files/*
-docs/tech-fest-pres/_spack_dependency.html
+*DS_Store*
+/docs/tech-fest-pres/*.html
+/docs/tech-fest-pres/*.pdf
+/docs/tech-fest-pres/*~*
+/docs/tech-fest-pres/main_files
+/docs/tech-fest-pres/main.pptx
+
