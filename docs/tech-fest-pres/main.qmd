@@ -13,84 +13,118 @@ filters:
 format:
   pptx:
     reference-doc: template.pptx
-    slide-level: 2
+    slide-level: 3
     toc: true
     toc-depth: 2
-  # revealjs:
-  #   theme: example.scss
-  #   logo: /images/pnnl-logo.png
-  #   footer: TechFest 2023
-  #   scrollable: true
-  #   smaller: true
-  #   incremental: true
 ---
 
+## Introduction
 
-# abstract
+### Who are we?
 
-## Para 1
+- Jaya Preethi Moore
+- Sayef Azad Sakin
+- Cameron Rutherford
 
-Software Engineering can be difficult enough in the simplest cases, even without attempting to deploy to the world’s largest supercomputers.
-These large-scale computing platforms undergo rapid developments, deployments, and updates that add complexity to the management of large software stacks.
-Within the ExaSGD software stack,DevOps best practices have been implemented in order to support a large, multi-lab project, as well as managing changing requirements throughout the development lifecycle.
+### What is ExaGO?
 
-## Para 1
-
-In this talk, we will cover all the aspects of Software Engineering within ExaSGD: 
-
--GitLab & GitHub pipelines for Continuous Integration and Testing
--Dependency Management and deployment using Spack on various novel hardware architectures
--Linting and Tooling that aid in proliferation of development best practices for all developers
--Scaling and Profiling code at Exascale on various hardware backends
--Interfacing with various languages like C/C++, Python, and Javascript to aid in usability
-
-# Spack & Dependency Management (Sayef)
-
-:::: {.columns}
+::::{.columns}
 
 ::: {.column}
-Here is some text about Spack
+ExaGO can take networks as large as the continental US...
+
+![](../../viz/images/network_us.png){width=4in fig-align="left"}
 :::
+
+::: {.column}
+... and generate information about loads/generators/renewables
+
+![](../../viz/images/network_gen_us.png){width=4in fig-align="right}
+:::
+
+::::
+
+### SCOPFLOW (Security Constrained OPFlow)
+
+![](../../viz/images/network_gen_load_us.png){width=4in fig-align="right"}
+
+### What is DevOps?
+
+DevOps is complicated!
+
+![](https://www.qentelli.com/sites/default/files/styles/insights_cover_846x479_/public/2021-04/Comprehensive%20List%20of%20DevOps%20Tools%202021.png?itok=f1JzPoT3){width=2in fig-align="left"}
+
+
+### Exascale? ExaGO? ExaSGD?
+
+::::{.columns}
+
+::: {.column}
+
+TODO - add video in slides manually.
+
+{{< video https://www.youtube.com/watch?v=HmQjMEPhfDM start="11" >}}
+
+Assembly video of Frontier, #1 on the top 500. [https://www.top500.org/lists/top500/2023/06/](https://www.top500.org/lists/top500/2023/06/)
+:::
+
+::: {.column}
+ExaSGD requires ExaGO to be built with a variety of dependencies, and to run on anywhere from a Mac to the world's largest computer.
+:::
+
+::::
+
+## Spack & Dependency Management (Sayef)
+
+### HPC or cloud based applications has lots of dependencies {.scrollable}
+
+- ExaGO depends directly on 55 packages with 598 other packages.
+- Total interdependencies among the packages amounts to 5480, depending on platforms, compilers and other software configurations.
+
+### Graph of dependencies is a nightmare
+
+![ExaGO packages Dependencies](images/exago_graph.png)
+
+### GitLab CI/CD Helps
+
+:::: {.columns}
 
 ::: {.column}
 ```{.YAML include="../../buildsystem/spack/deception/spack.yaml" start-line=0 end-line=10}
 ```
 :::
 
-::::1
+::: {.column}
+Here is some the spack spec install of exago in GitLab CI/CD. These pipelines are invaluable in automating the testing and deployment of our code.
+:::
 
-## HPC or cloud based applications has lots of dependencies {.scrollable}
+::::
 
-- ExaGO depends directly on 55 packages with 598 other packages.
-- Total interdependencies among the packages amounts to 5480, depending on platforms, compilers and other software configurations.
-
-## Slide 2
-
-![ExaGO packages Dependencies](figures/exago_graph.png)
-
-## Package managers
+### Package managers
 
 - source code to binary for reproducibility and performance
 - portable binary
 - compiler and runtime libraries
 - Spack manages dependencies
 
-## Useful Spack commands
+### Useful Spack commands
 
 - edit packages
 - spec
 - concretize
 - install
 
-## Some other Spack features
+### Some other Spack features
 
 - Environments
 - Mirrors (with E4S.)
 - Binary hashes, reuse
 
-# GitLab CI / CD & GitHub pipelines (Cameron GitHub)
+### Spack supported profiling efforts
 
-## Linting / Tooling and DevOps tools (Jaya GitLab)
+- TODO
+
+## Linting / Tooling (Jaya)
 
 1. Linting is a code analysis process to check for potential erros and compliance issues. 
 
@@ -101,63 +135,103 @@ Here is some text about Spack
 1. These tools enhances devops workflows with software code testing, bug identification, maintainance and colloboration. 
 
 
-## Linting @ExaSGD Devops workflows
+### Linting @ExaSGD Devops workflows
 
-  1 current linting (clang format, python format, file naming conventions, cmake format), run in CI pipelines for checking, can run manually to make in place changes. 
+1. current linting (clang format, python format, file naming conventions, cmake format), run in CI pipelines for checking, can run manually to make in place changes. 
 
-  2 Transition to precommit for linting influnces various capabilities and ease of working. 
+1. Transition to precommit for linting influnces various capabilities and ease of working. 
 
-  3 Pre-commit testing detects the  presence of bugs on configuration and the other project source files. 
+1. Pre-commit testing detects the  presence of bugs on configuration and the other project source files. 
 
-  4 It can be applied to the linting formats (clang format, python format, file naming conventions, cmake format). 
+1. It can be applied to the linting formats (clang format, python format, file naming conventions, cmake format). 
 
-## Language interoperability between C, Python and JS (Cameron + Jaya)
+### Pre-commit
+- TODO
 
-1 Language interoperability refers to a combination of different programming languages to select the most suitable programming language for efficiency. 
+### Documentation
+- TODO
 
-2 Due to the limitations and difference in different programming languages the language interoperability becomes challenging in certain times. 
+## CMake, buildsystems, and our C/Python/JS Stack (Cameron)
 
-3 C, Python and Java Script are the programming languages considered for the language interoperability in ExaSGD project. 
+1. Language interoperability refers to a combination of different programming languages to select the most suitable programming language for efficiency. 
 
-4 Python wrapper can interact with modules consists of C, Java Script and Python scripts in the working directory. 
+1. Due to the limitations and difference in different programming languages the language interoperability becomes challenging in certain times. 
 
+1. C, Python and Java Script are the programming languages considered for the language interoperability in ExaSGD project. 
 
-# Scaling / Profiling and Running at 9k nodes (Sayef + Cameron)
-There will be more text here!
+1. Python wrapper can interact with modules consists of C, Java Script and Python scripts in the working directory. 
 
-# Language interoperability between C, Python and JS (Cameron + Jaya)
+### Language interoperability between C, Python and JS (Cameron)
 
-  - ExaGO's code base is based in C++
-  - 
-  The ExaGO Python bindings use an object-oriented API slightly different from the C++ API.
-The C++ API uses the application type in uppercase as the prefix for its methods, where they are native methods in Python.
+- ExaGO's code base is based in C++
+- The ExaGO Python bindings use an object-oriented API slightly different from the C++ API.
+- The C++ API uses the application type in uppercase as the prefix for its methods, where they are native methods in Python.
 pybind11 + pytest
 
-# Slide 2
+### Slide 2
 
 This year, we have introduced new Python bindings for ExaGO using pybind11 for the wrapper and pytest for the test suite. 
 We have achieved coverage of the main OPFLOW functionality and use mpi4py to allow the Python module to interact with MPI.
 
----
-
-## Test 9
+### Test 9
 
 The Spack package is aware of these bindings and will install the Python dependencies when the appropriate options are enabled.
 To configure our testing for the Python bindings, we used pytest as a testing framework and then ran these tests within CMake. 
 
-## Slide 3
+### Slide 3
 
 This way, the dozens of unit tests for each Python application supported only show up as one test in any ctest run. 
 We test two ways - one with MPI initialized in Python and the other with MPI initialized through ExaGO’s initialization function.
 These pipelines are run independently from the C++ tests in GitLab CI pipelines and allow the development of the more experimental Python wrapper to go along with core C++ work without interrupting the success of CI pipelines. 
 
-## Slide 4
+### Slide 4
 
 added coverage of the SOPFLOW and SCOPFLOW applications in the Python wrapper, and so this testing infrastructure choice further supported parallel development.
 
----
 
+### Cloud application / Frontend + LLM
+
+- Some notes from Sichen with screenshots of progress, and rough arch outline?
+
+###
 ::: {.notes}
-Speaker notes go here.
+Any Questions?
 :::
----
+
+## Template Slides (Section Header)
+
+### Two Content
+
+::::{.columns}
+
+::: {.column}
+![US Network](../../viz/images/network_us.png){width=2in fig-align="left" fig-alt="Here is a visualization generated by ExaGO"}
+:::
+
+::: {.column}
+Put the larger image in the first element, and the smaller text in the second.
+:::
+
+::::
+
+### Comparison
+
+::::{.columns}
+
+::: {.column}
+Test
+:::
+
+::: {.column}
+Test 123
+
+![US Network](../../viz/images/network_us.png){width=2in fig-align="left" fig-alt="Here is a visualization generated by ExaGO"}
+:::
+
+::::
+
+### Content With Caption
+
+Content with caption? Note the empty line between the two, and the (caption on top?)
+
+![](../../viz/images/network_us.png){width=2in fig-align="left" fig-alt="Here is a visualization generated by ExaGO"}
