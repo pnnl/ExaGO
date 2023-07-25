@@ -67,12 +67,8 @@ workflow:
       # jobid used in pnnl_after_script_template to cancel job if cancelled or
       # timed out by gitlab through the UI
 
-      jobid=0
-      if [[ $MY_CLUSTER = "incline" ]]; then
-        jobid=$(srun --export=ALL -A EXASGD $SLURM_ARGS -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/buildsystem/build.sh $SCRIPT_ARGS)
-      else
-        jobid=$(sbatch --export=ALL -A EXASGD $SLURM_ARGS -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/buildsystem/build.sh $SCRIPT_ARGS)
-      fi
+
+      jobid=$(srun --export=ALL -A EXASGD $SLURM_ARGS -p $SLURM_Q -o $output -e $output -t 3:00:00 $WORKDIR/buildsystem/build.sh $SCRIPT_ARGS)
 
       export jobid=$(echo $jobid | cut -f4 -d' ')
       # Unique jobid filename for this job
