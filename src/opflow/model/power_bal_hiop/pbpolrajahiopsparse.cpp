@@ -206,8 +206,8 @@ extern PetscErrorCode OPFLOWModelSetUp_PBPOL(OPFLOW);
 
 PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
   PetscErrorCode ierr;
-  PbpolModelRajaHiopSparse *pbpolrajahiopsparse =
-      reinterpret_cast<PbpolModelRajaHiopSparse *>(opflow->model);
+  PbpolModelRajaHiop *pbpolrajahiopsparse =
+      reinterpret_cast<PbpolModelRajaHiop *>(opflow->model);
 
   PetscFunctionBegin;
 
@@ -219,10 +219,10 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
   ierr = pbpolrajahiopsparse->lineparams.allocate(opflow);
   ierr = pbpolrajahiopsparse->loadparams.allocate(opflow);
 
-  BUSParamsRajahiopsparse *busparams = &pbpolrajahiopsparse->busparams;
-  GENParamsRajahiopsparse *genparams = &pbpolrajahiopsparse->genparams;
-  LOADParamsRajahiopsparse *loadparams = &pbpolrajahiopsparse->loadparams;
-  LINEParamsRajahiopsparse *lineparams = &pbpolrajahiopsparse->lineparams;
+  BUSParamsRajaHiop *busparams = &pbpolrajahiopsparse->busparams;
+  GENParamsRajaHiop *genparams = &pbpolrajahiopsparse->genparams;
+  LOADParamsRajaHiop *loadparams = &pbpolrajahiopsparse->loadparams;
+  LINEParamsRajaHiop *lineparams = &pbpolrajahiopsparse->lineparams;
 
   /* Need to compute the number of nonzeros in equality, inequality constraint
    * Jacobians and Hessian */
@@ -241,8 +241,8 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
 
 PetscErrorCode OPFLOWModelDestroy_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
   PetscErrorCode ierr;
-  PbpolModelRajaHiopSparse *pbpolrajahiopsparse =
-      reinterpret_cast<PbpolModelRajaHiopSparse *>(opflow->model);
+  PbpolModelRajaHiop *pbpolrajahiopsparse =
+      reinterpret_cast<PbpolModelRajaHiop *>(opflow->model);
 
   PetscFunctionBegin;
   pbpolrajahiopsparse->destroy(opflow);
@@ -269,7 +269,7 @@ PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
 
   PetscFunctionBegin;
 
-  PbpolModelRajaHiopSparse *pbpol = new PbpolModelRajaHiopSparse(opflow);
+  PbpolModelRajaHiop *pbpol = new PbpolModelRajaHiop(opflow);
 
   opflow->model = pbpol;
 

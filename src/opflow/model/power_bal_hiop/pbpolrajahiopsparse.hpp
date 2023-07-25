@@ -7,6 +7,7 @@
 #define _PBPOLRAJAHIOPSPARSE_H
 
 #include <opflow.h>
+#include "paramsrajahiop.h"
 
 struct _p_FormPBPOLRAJAHIOPSPARSE {};
 typedef struct _p_FormPBPOLRAJAHIOPSPARSE *PBPOLRAJAHIOPSPARSE;
