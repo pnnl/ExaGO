@@ -38,8 +38,8 @@ set_source_files_properties(${OPFLOW_SRC} PROPERTIES LANGUAGE CXX)
 if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_CUDA)
   set_source_files_properties(
     model/power_bal_hiop/pbpolrajahiopkernels.cpp
-    model/power_bal_hiop/pbpolrajahiopsparsekernels.cpp
-    PROPERTIES LANGUAGE CUDA 
+    model/power_bal_hiop/pbpolrajahiopsparsekernels.cpp PROPERTIES LANGUAGE
+                                                                   CUDA
   )
 endif()
 
