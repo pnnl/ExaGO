@@ -502,15 +502,20 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
           -1; /* xx_end_line points to the next line after the record ends */
   PetscInt gen_start_line = -1, gen_end_line = -1;
   PetscInt br_start_line = -1, br_end_line = -1;
+  PetscInt dcline_start_line = -1, dcline_end_line = -1;
   PetscInt gencost_start_line = -1, gencost_end_line = -1;
   PetscInt genfuel_start_line = -1, genfuel_end_line = -1;
   PetscInt loadcost_start_line = -1, loadcost_end_line = -1;
   /* Number of blank lines in bus, gen, br, gencost, and genfuel branch arrays
    */
   PetscInt bus_nblank_lines = 0, gen_nblank_lines = 0;
-  PetscInt br_nblank_lines = 0;
+  PetscInt br_nblank_lines = 0, gencost_nblank_lines = 0;
+  PetscInt dcline_nblank_lines = 0;
+  PetscInt genfuel_nblank_lines = 0;
+  PetscInt loadcost_nblank_lines = 0;
+
   char line[MAXLINE];
-  PetscInt loadi = 0, geni = 0, bri = 0, busi = 0, gencosti = 0, genfueli = 0,
+  PetscInt loadi = 0, geni = 0, bri = 0, dclinei = 0, busi = 0, gencosti = 0, genfueli = 0,
            loadcosti = 0, i;
   PetscInt extbusnum, bustype_i;
   PetscScalar Pd, Qd;
@@ -521,7 +526,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   PetscFunctionBegin;
 
   if (ps->comm->type != PETSC_COMM_SELF && ps->comm->rank != 0) {
-    ps->Nline = ps->Nbus = ps->Ngen = ps->Nload = 0;
+    ps->Nline = ps->Nbus = ps->Ngen = ps->Nload = ps->Ndcline = 0;
     PetscFunctionReturn(0);
   }
 
@@ -553,6 +558,8 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
           line_counter + 1; /* Generator data starts from next line */
     if (strstr(line, "mpc.branch") != NULL)
       br_start_line = line_counter + 1; /* Branch data starts from next line */
+    if (strstr(line, "mpc.dcline") != NULL && dcline_start_line == -1)
+      dcline_start_line = line_counter + 1; /* DC line data starts from next line */
     if (strstr(line, "mpc.gencost") != NULL)
       gencost_start_line =
           line_counter + 1; /* Gen cost data starts from next line */
@@ -578,6 +585,8 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
         gen_end_line = line_counter;
       if (br_start_line != -1 && br_end_line == -1)
         br_end_line = line_counter;
+      if (dcline_start_line != -1 && dcline_end_line == -1)
+        dcline_end_line = line_counter;
       if (gencost_start_line != -1 && gencost_end_line == -1)
         gencost_end_line = line_counter;
       if (loadcost_start_line != -1 && loadcost_end_line == -1)
@@ -598,6 +607,27 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
         br_nblank_lines++;
     }
 
+    if (dcline_start_line != -1 && dcline_end_line == -1) {
+      if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
+        dcline_nblank_lines++;
+    }
+
+
+    if (gencost_start_line != -1 && gencost_end_line == -1) {
+      if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
+        gencost_nblank_lines++;
+    }
+
+    if (loadcost_start_line != -1 && loadcost_end_line == -1) {
+      if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
+        loadcost_nblank_lines++;
+    }
+
+    if (genfuel_start_line != -1 && genfuel_end_line == -1) {
+      if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
+        genfuel_nblank_lines++;
+    }
+
     /* Count the number of pq loads */
     if (bus_start_line != -1 && line_counter >= bus_start_line &&
         bus_end_line == -1) {
@@ -614,6 +644,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   ps->Nbus = ps->nbus = bus_end_line - bus_start_line - bus_nblank_lines;
   ps->Ngen = ps->ngen = gen_end_line - gen_start_line - gen_nblank_lines;
   ps->Nline = ps->nline = br_end_line - br_start_line - br_nblank_lines;
+  ps->Ndcline = ps->ndcline = dcline_end_line - dcline_start_line - dcline_nblank_lines;
   ps->nload = ps->Nload;
   ps->NgenON = 0;
   ps->NlineON = 0;
@@ -621,8 +652,8 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
 #if defined DEBUGPS
   ierr = PetscPrintf(
       PETSC_COMM_SELF,
-      "System summary : Nbuses = %d, Ngen = %d, Nload = %d, Nbranch = %d\n",
-      ps->Nbus, ps->Ngen, ps->Nload, ps->Nline);
+      "System summary : Nbuses = %d, Ngen = %d, Nload = %d, Nbranch = %d, Ndcline = %d\n",
+      ps->Nbus, ps->Ngen, ps->Nload, ps->Nline, ps->Ndcline);
   CHKERRQ(ierr);
 #endif
   ierr = PetscCalloc1(ps->Nbus, &ps->bus);
@@ -631,7 +662,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   CHKERRQ(ierr);
   ierr = PetscCalloc1(ps->Nload, &ps->load);
   CHKERRQ(ierr);
-  ierr = PetscCalloc1(ps->Nline, &ps->line);
+  ierr = PetscCalloc1(ps->Nline + ps->Ndcline, &ps->line); /* Includes space for DC lines */
   CHKERRQ(ierr);
   Bus = ps->bus;
   Gen = ps->gen;
@@ -975,8 +1006,51 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
         Branch[bri].bdc = (1 / X) / tap;
         Branch[bri].pshift = -(1 / X) * shift;
       }
+      Branch[bri].isdcline = PETSC_FALSE;
       bri++;
     }
+
+    /* DC lines */
+    if (i >= dcline_start_line && i < dcline_end_line) {
+      if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
+        continue;
+      sscanf(line, "%d %d %d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+             &Branch[bri].fbus, &Branch[bri].tbus, &Branch[bri].status,
+	     &Branch[bri].pf, &Branch[bri].pt, &Branch[bri].qf,
+	     &Branch[bri].qt, &Branch[bri].Vf, &Branch[bri].Vt,
+	     &Branch[bri].pmin, &Branch[bri].pmax, &Branch[bri].qminf,
+	     &Branch[bri].qmaxf, &Branch[bri].qmint, &Branch[bri].qmaxt,
+	     &Branch[bri].loss0, &Branch[bri].loss1);
+
+      Branch[bri].isdcline = PETSC_TRUE;
+      ps->Nline++;
+      ps->nline++;
+      if (Branch[bri].status) {
+        ps->NlineON++;
+	ps->nlineON++;
+	ps->NdclineON++;
+	ps->ndclineON++;
+      }
+
+      intbusnum = busext2intmap[Branch[bri].fbus];
+      Branch[bri].internal_i = intbusnum;
+
+      intbusnum = busext2intmap[Branch[bri].tbus];
+      Branch[bri].internal_j = intbusnum;
+
+      PetscInt lineididx = 0;
+      for (linenum = 0; linenum < bri - 1; linenum++) {
+        if (Branch[bri].internal_i == Branch[linenum].internal_i &&
+            Branch[bri].internal_j == Branch[linenum].internal_j)
+          lineididx += 1;
+      }
+
+      /* MatPower does not have ids for lines. Using bri+1 as the id */
+      snprintf(Branch[bri].ckt, 3, "%-2d", 1 + lineididx);
+
+      bri++;
+    }
+    
   }
   fclose(fp);
 
