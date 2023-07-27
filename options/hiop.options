@@ -8,7 +8,8 @@ compute_mode gpu
 verbosity_level 0
 mu0 1e-1
 fixed_var relax
-tolerance 1e-6
+#tolerance 1e-6
+max_iter 20
 
 linsol_mode forcequick
 #linsol_mode speculative
