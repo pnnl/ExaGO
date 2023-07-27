@@ -9,6 +9,7 @@ verbosity_level 3
 mu0 1e-1
 fixed_var relax
 #tolerance 1e-6
+max_iter 20
 
 scaling_type none
 bound_relax_perturb 1e-4
