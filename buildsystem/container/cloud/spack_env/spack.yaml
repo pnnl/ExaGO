@@ -1,0 +1,11 @@
+spack:
+  specs:
+    - cmake@3.26.3 arch=linux-amzn2-x86_64_v3
+    # - exago~mpi~hiop~ipopt+python
+  mirrors:
+    spack: https://binaries.spack.io/v0.20.1
+  container:
+    format: docker
+    images:
+      os: "amazonlinux:2"
+      spack: v0.20.1
