@@ -6,8 +6,6 @@ application = 'opflow'
 iterations = 1
 
 [presets]
-#netfile ='datafiles/case9/case9mod.m'
-netfile ='datafiles/case_ACTIVSg200.m'
 hiop_verbosity_level = 3
 print_output = 0
 argument_list = 'log_view'
@@ -15,6 +13,7 @@ argument_list = 'log_view'
 [[profiler]]
 
 [[testcase]]
+netfile ='datafiles/case9/case9mod.m datafiles/case_ACTIVSg200.m'
 opflow_solver = 'HIOP'
 hiop_compute_mode = 'CPU GPU'
 opflow_model = 'POWER_BALANCE_HIOP'

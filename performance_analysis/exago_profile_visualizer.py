@@ -20,19 +20,7 @@ def printDebug(level, log_str):
             print('Auto Profiler Visualizer Log ======> ', end='')
         print(log_str)
         
-def parsePickleFile(in_file):
-    testsuite = toml.load(in_file)
-    if 'application' not in testsuite:
-        printDebug(0, "Please provide application")
-    if 'presets' not in testsuite:
-        printDebug(0, "Please provide presets")
-
-    app_name = testsuite['application']
-    preset_params = testsuite['presets']
-    testsuite_name = "sample_testsuite"
-    if 'testsuite_name' in testsuite:
-        testsuite_name = testsuite['testsuite_name']
-    
+def convertPklToJson(testsuite_name):
     t_file = testsuite_name + '.pkl'
     if os.path.exists(t_file):
         results_data = []
@@ -45,16 +33,32 @@ def parsePickleFile(in_file):
         with open(testsuite_name + ".json", "w") as outfile:
             json.dump(results_data, outfile)
     else:
-        printDebug(0, in_file + ' not found')
+        printDebug(0, testsuite_name + ' not found')
+
+def parsePickleFile(in_file):
+    testsuite = toml.load(in_file)
+    if 'application' not in testsuite:
+        printDebug(0, "Please provide application")
+    if 'presets' not in testsuite:
+        printDebug(0, "Please provide presets")
+
+    app_name = testsuite['application']
+    preset_params = testsuite['presets']
+    testsuite_name = "sample_testsuite"
+    if 'testsuite_name' in testsuite:
+        testsuite_name = testsuite['testsuite_name']
+    convertPklToJson(testsuite_name)
+
     
 
 if __name__ == '__main__':
-    in_file = "sample_testsuite.toml"
-    if len(sys.argv) > 1:
-        in_file = sys.argv[1]
-    else:
-        printDebug(0, 'No toml file provided. Using default file: ' + in_file)
-    if os.path.exists(in_file):
-        parsePickleFile(in_file)
-    else:
-        printDebug(0, in_file + ' not found')
+    convertPklToJson('OPFLOW_frontier_profiling')
+    # in_file = "sample_testsuite.toml"
+    # if len(sys.argv) > 1:
+    #     in_file = sys.argv[1]
+    # else:
+    #     printDebug(0, 'No toml file provided. Using default file: ' + in_file)
+    # if os.path.exists(in_file):
+    #     parsePickleFile(in_file)
+    # else:
+    #     printDebug(0, in_file + ' not found')
