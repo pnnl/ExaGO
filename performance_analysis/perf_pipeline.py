@@ -226,6 +226,8 @@ def doPerfMeasure(in_file):
 
             exago_success_run = False
             suc_str = 'Finalizing ' + app_name + ' application.'
+            suc_str_term = 'Successfull termination.'
+            alt_suc_str_term = 'Maximum number of iterations reached.'
             ON_POSIX = 'posix' in sys.builtin_module_names
 
             time_lists = list()
@@ -247,6 +249,10 @@ def doPerfMeasure(in_file):
                         if petSCTime > -1:
                             petsc_time.append(petSCTime)
                         if exago_success_run is False and suc_str in line:
+                            exago_success_run = True
+                        if exago_success_run is False and suc_str_term in line:
+                            exago_success_run = True
+                        if exago_success_run is False and alt_suc_str_term in line:
                             exago_success_run = True
                         timeStarted = time.time()
 

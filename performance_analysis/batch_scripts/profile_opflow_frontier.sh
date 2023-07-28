@@ -3,7 +3,7 @@
 #SBATCH -A csc359
 #SBATCH -p batch
 
-#SBATCH -t 10
+#SBATCH -t 0:20:00
 #SBATCH -N 1
 #SBATCH -c 1
 #SBATCH -n 1
@@ -20,4 +20,4 @@ source buildsystem/clang-hip/frontier/base.sh
 source buildsystem/spack/frontier/modules/dependencies.sh
 source buildsystem/spack/frontier/modules/exago.sh
 
-python3 performance_analysis/perf_pipeline.py performance_analysis/opflow_testsuite.toml
+python3 performance_analysis/perf_pipeline.py performance_analysis/opflow_testsuite_frontier.toml
