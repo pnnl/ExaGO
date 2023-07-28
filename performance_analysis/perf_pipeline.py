@@ -104,17 +104,19 @@ def printTimingInfo(params,
                    avg_petsc_str + " seconds")
 
     if 'max_iter' in hiop_options:
-        hiop_avg_time = str(round(avg_tm / hiop_options['max_iter'], 5))
+        hiop_avg_time = str(round(avg_tm / int(hiop_options['max_iter']), 5))
         solver_name = params[app_name + '_solver']
         printDebug(0, "Total " + solver_name + " iterations: " +
                    str(hiop_options['max_iter']) + ", Average time per " +
                    solver_name + " iteration: " + hiop_avg_time + " seconds")
         if len(petsc_time) > 0:
-            p_avg_time = str(round(avg_petsc / hiop_options['max_iter'], 5))
+            p_avg_time = str(round(avg_petsc / int(hiop_options['max_iter']), 5))
             printDebug(0, "PETSc reported Solve time per iteration: "
                        + p_avg_time)
 
 # writing results to a python pickle file
+# Used pickle format, since I needed to append to the file
+# Also for a larger run, this script could terminate in the middle and generated pickle file would still be here.
 def dumpResultsToFile(testsuite_name, params, hiop_options, time_lists, petsc_time, app_name):
     write_filename = testsuite_name + ".pkl"
     dict_dump = dict()
@@ -126,6 +128,69 @@ def dumpResultsToFile(testsuite_name, params, hiop_options, time_lists, petsc_ti
     dict_dump['profiling_time'] = time.strftime('%m/%d/%Y %H:%M:%S')
     with open(write_filename,'ab+') as fp:
         pickle.dump(dict_dump, fp)
+
+def flattenNestedTestCases(params):
+    c_tests = dict()
+    keysList = list(params.keys())
+    row_length = len(keysList)
+    commands_list = list()
+    def traversingNestingDict(row_check):
+        if row_check == row_length:
+            commands_list.append(copy.deepcopy(c_tests))
+            return
+        if isinstance(params[keysList[row_check]], str):
+            t_envs = params[keysList[row_check]].split()
+        else:
+            t_envs = [params[keysList[row_check]]]
+        for env in t_envs:
+            c_tests[keysList[row_check]] = env
+            traversingNestingDict(row_check+1)
+
+    traversingNestingDict(0)
+    return commands_list
+    
+def executeCommandAndMeasureTime(command, my_env, iterations, app_name, tool_name):
+    exago_success_run = False
+    suc_str = 'Finalizing ' + app_name + ' application.'
+    suc_str_term = 'Successfull termination.'
+    alt_suc_str_term = 'Maximum number of iterations reached.'
+    ON_POSIX = 'posix' in sys.builtin_module_names
+
+    time_lists = list()
+    petsc_time = list()
+    for i in range(iterations):
+        timeStarted = time.time()
+        timeDelta = 0
+
+        input_fd, output_fd = os.pipe()
+        proc = Popen(command, stdout=output_fd,
+                        universal_newlines=True, bufsize=1,
+                        env=my_env, close_fds=ON_POSIX)
+        os.close(output_fd)
+        with io.open(input_fd, 'r', buffering=1) as ff:
+            for line in ff:
+                timeDelta = timeDelta + time.time() - timeStarted
+                printDebug(1, line.rstrip())
+                petSCTime = getSolveTimeFromPetsc(line, app_name)
+                if petSCTime > -1:
+                    petsc_time.append(petSCTime)
+                if exago_success_run is False and suc_str in line:
+                    exago_success_run = True
+                if exago_success_run is False and suc_str_term in line:
+                    exago_success_run = True
+                if exago_success_run is False and alt_suc_str_term in line:
+                    exago_success_run = True
+                timeStarted = time.time()
+
+        if exago_success_run:
+            printDebug(2, app_name + " runs successfully")
+            time_lists.append(timeDelta)
+            printDebug(2, "Total measured time with " +
+                        tool_name + ": " + str(round(timeDelta, 5)) +
+                        " seconds.")
+        else:
+            printDebug(0, app_name + " did NOT run with " + tool_name)
+    return time_lists, petsc_time
 
 # doing automated performance measurement
 # this will read from TOML file, parse it, and populate
@@ -194,80 +259,41 @@ def doPerfMeasure(in_file):
 
     test_number = 1
     for tests in testsuite['testcase']:
-        printDebug(0, "For testcase " + str(test_number))
-        test_number = test_number + 1
         for profiler_cmd in profiler_cmd_list:
-            command = list()
-            if mpi_cmd is not None:
-                command.extend(mpi_cmd)
+            tests_list = flattenNestedTestCases(tests)
+            for each_test in tests_list:
+                command = list()
+                if mpi_cmd is not None:
+                    command.extend(mpi_cmd)
 
-            tool_name = 'no tool'
-            if profiler_cmd:
-                tool_name = profiler_cmd[0]
-                command.extend(profiler_cmd)
+                tool_name = 'no tool'
+                if profiler_cmd:
+                    tool_name = profiler_cmd[0]
+                    command.extend(profiler_cmd)
 
-            command.append(app_name)
-            params = dict()
-            params = copy.deepcopy(preset_params)
-            params.update(tests)
-            hiop_options = updateHiopOptions(params, app_name)
+                command.append(app_name)
+                params = dict()
+                params = copy.deepcopy(preset_params)
+                params.update(each_test)
+                hiop_options = updateHiopOptions(params, app_name)
 
-            for key in params:
-                if key == 'argument_list':
-                    cls = params[key].split()
-                    for cl in cls:
-                        command.append('-' + cl)
-                else:
-                    command.append('-' + key)
-                    command.append(str(params[key]))
+                for key in params:
+                    if key == 'argument_list':
+                        cls = params[key].split()
+                        for cl in cls:
+                            command.append('-' + cl)
+                    else:
+                        command.append('-' + key)
+                        command.append(str(params[key]))
 
-            printDebug(2, command)
-            printDebug(2, '----')
-
-            exago_success_run = False
-            suc_str = 'Finalizing ' + app_name + ' application.'
-            suc_str_term = 'Successfull termination.'
-            alt_suc_str_term = 'Maximum number of iterations reached.'
-            ON_POSIX = 'posix' in sys.builtin_module_names
-
-            time_lists = list()
-            petsc_time = list()
-            for i in range(iterations):
-                timeStarted = time.time()
-                timeDelta = 0
-
-                input_fd, output_fd = os.pipe()
-                proc = Popen(command, stdout=output_fd,
-                             universal_newlines=True, bufsize=1,
-                             env=my_env, close_fds=ON_POSIX)
-                os.close(output_fd)
-                with io.open(input_fd, 'r', buffering=1) as ff:
-                    for line in ff:
-                        timeDelta = timeDelta + time.time() - timeStarted
-                        printDebug(1, line.rstrip())
-                        petSCTime = getSolveTimeFromPetsc(line, app_name)
-                        if petSCTime > -1:
-                            petsc_time.append(petSCTime)
-                        if exago_success_run is False and suc_str in line:
-                            exago_success_run = True
-                        if exago_success_run is False and suc_str_term in line:
-                            exago_success_run = True
-                        if exago_success_run is False and alt_suc_str_term in line:
-                            exago_success_run = True
-                        timeStarted = time.time()
-
-                if exago_success_run:
-                    printDebug(2, app_name + " runs successfully")
-                    time_lists.append(timeDelta)
-                    printDebug(2, "Total measured time with " +
-                               tool_name + ": " + str(round(timeDelta, 5)) +
-                               " seconds.")
-                else:
-                    printDebug(0, app_name + " did NOT run with " + tool_name)
-            printTimingInfo(params, hiop_options,
-                            time_lists, petsc_time,
-                            app_name, tool_name)
-            dumpResultsToFile(testsuite_name, params, hiop_options, time_lists, petsc_time, app_name)
+                printDebug(0, "For testcase " + str(test_number))
+                test_number = test_number + 1
+                printDebug(2, command)
+                printDebug(2, '----')
+                time_lists, petsc_time = executeCommandAndMeasureTime(command, my_env, iterations, app_name, tool_name)
+                if len(time_lists) > 0:
+                    printTimingInfo(params, hiop_options, time_lists, petsc_time, app_name, tool_name)
+                    dumpResultsToFile(testsuite_name, params, hiop_options, time_lists, petsc_time, app_name)
 
 def parsePickleFileToJSON(in_file):
     testsuite = toml.load(in_file)
@@ -293,6 +319,7 @@ def parsePickleFileToJSON(in_file):
                 pass
         with open(testsuite_name + ".json", "w") as outfile:
             json.dump(results_data, outfile)
+        os.system('rm ' + t_file)
     else:
         printDebug(0, in_file + ' not found')
 
@@ -307,6 +334,7 @@ if __name__ == '__main__':
         printDebug(0, 'No toml file provided. Using default file: ' + in_file)
     if os.path.exists(in_file):
         doPerfMeasure(in_file)
+        # converting it to JSON for easy readability
         parsePickleFileToJSON(in_file)
     else:
         printDebug(0, in_file + ' not found')
