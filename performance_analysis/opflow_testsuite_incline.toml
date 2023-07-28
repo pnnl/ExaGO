@@ -1,0 +1,29 @@
+mpi_start = 'srun'
+mpi_args = '-A EXASGD -N 1 -p incline -t 2:00:00'
+testsuite_name = "OPFLOW_incline_ACTIVSg200"
+application = 'opflow'
+#mpi_rank = 1
+iterations = 1
+
+[presets]
+#netfile ='datafiles/case9/case9mod.m'
+netfile ='datafiles/case_ACTIVSg200.m'
+hiop_verbosity_level = 3
+print_output = 0
+argument_list = 'log_view'
+
+[[profiler]]
+
+#1
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'CPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = 20
+
+#2
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'CPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = 50

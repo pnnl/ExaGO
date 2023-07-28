@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import json
+import pickle
 import toml
 import sys
 import shutil
@@ -15,7 +17,7 @@ from subprocess import call, Popen, PIPE
 # 0: basic, will only print default output like execution time.
 # 1: moderate, Additionally prints ExaGO output.
 # 2: all, Additionally prints error and success messages.
-DEBUG = 2
+DEBUG = 1
 
 
 # Defining the debug level.
@@ -112,6 +114,18 @@ def printTimingInfo(params,
             printDebug(0, "PETSc reported Solve time per iteration: "
                        + p_avg_time)
 
+# writing results to a python pickle file
+def dumpResultsToFile(testsuite_name, params, hiop_options, time_lists, petsc_time, app_name):
+    write_filename = testsuite_name + ".pkl"
+    dict_dump = dict()
+    dict_dump = copy.deepcopy(params)
+    dict_dump['application'] = app_name
+    dict_dump.update(hiop_options)
+    dict_dump['petsc_solve_time'] = sum(petsc_time) / len(petsc_time)
+    dict_dump['total_solve_time'] = sum(time_lists) / len(time_lists)
+    dict_dump['profiling_time'] = time.strftime('%m/%d/%Y %H:%M:%S')
+    with open(write_filename,'ab+') as fp:
+        pickle.dump(dict_dump, fp)
 
 # doing automated performance measurement
 # this will read from TOML file, parse it, and populate
@@ -126,6 +140,9 @@ def doPerfMeasure(in_file):
 
     app_name = testsuite['application']
     preset_params = testsuite['presets']
+    testsuite_name = "sample_testsuite"
+    if 'testsuite_name' in testsuite:
+        testsuite_name = testsuite['testsuite_name']
     iterations = 1
     if 'iterations' in testsuite:
         iterations = testsuite['iterations']
@@ -208,9 +225,7 @@ def doPerfMeasure(in_file):
             printDebug(2, '----')
 
             exago_success_run = False
-            #suc_str = 'Finalizing ' + app_name + ' application.'
-            suc_str = 'Successfull termination.'
-            alt_suc_str = 'Maximum number of iterations reached.'
+            suc_str = 'Finalizing ' + app_name + ' application.'
             ON_POSIX = 'posix' in sys.builtin_module_names
 
             time_lists = list()
@@ -233,8 +248,6 @@ def doPerfMeasure(in_file):
                             petsc_time.append(petSCTime)
                         if exago_success_run is False and suc_str in line:
                             exago_success_run = True
-                        if exago_success_run is False and alt_suc_str in line:
-                            exago_success_run = True
                         timeStarted = time.time()
 
                 if exago_success_run:
@@ -248,7 +261,34 @@ def doPerfMeasure(in_file):
             printTimingInfo(params, hiop_options,
                             time_lists, petsc_time,
                             app_name, tool_name)
+            dumpResultsToFile(testsuite_name, params, hiop_options, time_lists, petsc_time, app_name)
 
+def parsePickleFileToJSON(in_file):
+    testsuite = toml.load(in_file)
+    if 'application' not in testsuite:
+        printDebug(0, "Please provide application")
+    if 'presets' not in testsuite:
+        printDebug(0, "Please provide presets")
+
+    app_name = testsuite['application']
+    preset_params = testsuite['presets']
+    testsuite_name = "sample_testsuite"
+    if 'testsuite_name' in testsuite:
+        testsuite_name = testsuite['testsuite_name']
+    
+    t_file = testsuite_name + '.pkl'
+    if os.path.exists(t_file):
+        results_data = []
+        with open(t_file, 'rb') as fp:
+            try:
+                while True:
+                    results_data.append(pickle.load(fp))
+            except EOFError:
+                pass
+        with open(testsuite_name + ".json", "w") as outfile:
+            json.dump(results_data, outfile)
+    else:
+        printDebug(0, in_file + ' not found')
 
 # Main file. This checks if a file name is provided
 # if not it will try to read the default file
@@ -261,5 +301,6 @@ if __name__ == '__main__':
         printDebug(0, 'No toml file provided. Using default file: ' + in_file)
     if os.path.exists(in_file):
         doPerfMeasure(in_file)
+        parsePickleFileToJSON(in_file)
     else:
         printDebug(0, in_file + ' not found')
