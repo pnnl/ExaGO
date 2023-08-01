@@ -34,8 +34,8 @@ sed -i "" "s|$INSTALL_SOFTWARE_NOTE|$COIN_COPY\n\n$INSTALL_SOFTWARE_NOTE|" Docke
 # THIS ONLY WORKS ON MAC!!!
 sed -i "" "s/spack install/spack buildcache keys --install --trust \&\& spack install/g" Dockerfile
 
-# sed -i "" "s|CMD \[ \"/bin/bash\" \]|CMD \[ \"yum -y install libgomp\", \"yum -y install libgfortran\", \"/bin/bash\" \]|" Dockerfile
-# echo "CMD [ \"yum -y install libgomp\", \"yum -y install libgfortran\" ]" >> Dockerfile
+sed -i "" "s|CMD \[ \"/bin/bash\" \]|\nRUN yum -y install libgomp \&\& yum -y install libgfortran|" Dockerfile
+echo "CMD [ \"/bin/bash\" ]" >> Dockerfile
 
 echo "Dockerfile created"
 # Build Docker image with Amazon Linux
