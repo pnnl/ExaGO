@@ -1,0 +1,39 @@
+spack:
+  specs:
+    # - cmake@3.26.3 arch=linux-amzn2-x86_64_v3
+    - exago@develop
+  concretizer:
+    unify: when_possible
+    reuse: true
+  mirrors:
+    spack: https://binaries.spack.io/v0.20.1
+  container:
+    format: docker
+    images:
+      os: "amazonlinux:2"
+      spack: v0.20.1
+  packages:
+    exago:
+      require: +raja+hiop+ipopt
+    hiop:
+      require: '@develop+sparse+mpi+ginkgo+kron'
+    magma:
+      require: '@2.6.2'
+    coinhsl:
+      require: '@2019.05.21'
+    ipopt:
+      require: '@3.12.10~metis+coinhsl~mumps'
+    raja:
+      require: ~examples~exercises
+    umpire:
+      require: ~openmp~examples
+    petsc:
+      require: ~hypre~superlu-dist~hdf5~metis
+    python:
+      require: '@3.9.12'
+    all:
+      compiler:
+      - gcc@11.2.0
+      providers:
+        mpi:
+        - openmpi
