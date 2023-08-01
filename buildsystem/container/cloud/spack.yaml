@@ -2,6 +2,7 @@ spack:
   specs:
     # - cmake@3.26.3 arch=linux-amzn2-x86_64_v3
     - exago@develop
+    - py-notebook
   concretizer:
     unify: when_possible
     reuse: true
@@ -12,11 +13,15 @@ spack:
     images:
       os: "amazonlinux:2"
       spack: v0.20.1
+    os_packages:
+      final:
+      - libgomp
+      - libgfortran
   packages:
     exago:
       require: +raja+hiop+ipopt
     hiop:
-      require: '@develop+sparse+mpi+ginkgo+kron'
+      require: '@develop+sparse+mpi~ginkgo+kron'
     magma:
       require: '@2.6.2'
     coinhsl:

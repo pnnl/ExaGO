@@ -34,8 +34,9 @@ sed -i "" "s|$INSTALL_SOFTWARE_NOTE|$COIN_COPY\n\n$INSTALL_SOFTWARE_NOTE|" Docke
 # THIS ONLY WORKS ON MAC!!!
 sed -i "" "s/spack install/spack buildcache keys --install --trust \&\& spack install/g" Dockerfile
 
-sed -i "" "s|CMD \[ \"/bin/bash\" \]|\nRUN yum -y install libgomp \&\& yum -y install libgfortran|" Dockerfile
-echo "CMD [ \"/bin/bash\" ]" >> Dockerfile
+# sed -i "" "s|CMD \[ \"/bin/bash\" \]|\nRUN yum -y install libgomp \&\& yum -y install libgfortran|" Dockerfile
+# echo "CMD [ \"/bin/bash\" ]" >> Dockerfile
+# jupyter notebook --ip 0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
 
 echo "Dockerfile created"
 # Build Docker image with Amazon Linux
@@ -43,7 +44,7 @@ IMG_TAG=amazonlinux_image
 docker build --progress plain -t $IMG_TAG .
 echo "Docker image '$IMG_TAG' built."
 # Run Docker container
-docker run --rm -i -t $IMG_TAG
+docker run --rm -i -t -p 8888:8888 $IMG_TAG
 echo "Docker container ran successfully."
 
 cd -
