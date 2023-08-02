@@ -1,0 +1,5 @@
+#!/bin/bash
+
+export erun="opflow -netfile ../datafiles/case_ACTIVSg200.m -print_output 1 -log_view -opflow_initialization FROMFILE -opflow_ignore_lineflow_constraints 1 -opflow_solver HIOP -opflow_model PBPOLRAJAHIOP -hiop_mem_space device"
+echo "running opflow"
+rocprof --sys-trace -o opflow_200.csv ${erun}

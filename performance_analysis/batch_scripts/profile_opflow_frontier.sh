@@ -3,11 +3,13 @@
 #SBATCH -A csc359
 #SBATCH -p batch
 
-#SBATCH -t 0:20:00
+#SBATCH -t 2:00:00
 #SBATCH -N 1
 #SBATCH -c 1
 #SBATCH -n 1
 #SBATCH --gpu-bind=closest
+#SBATCH --gpus-per-task=1
+#SBATCH --cpus-per-task=1
 
 #SBATCH -J exasgd_opflow_profiling
 #SBATCH -o profile_opflow_frontier_batch.%J

@@ -1,0 +1,1 @@
+srun -A csc359 -N 1 -p batch -n 1 -t 3 -o opflow_srun_test opflow -netfile ../datafiles/case_ACTIVSg200.m -print_output 0 -log_view -opflow_solver HIOP -opflow_model POWER_BALANCE_HIOP

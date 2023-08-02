@@ -1,13 +1,11 @@
 mpi_start = 'srun'
-mpi_args = '-A csc359 -N 1 -p batch -t 0:20:00'
-testsuite_name = "OPFLOW_Functionality"
+mpi_args = '-A csc359 -N 1 -p batch -t 2:00:00 --gpus-per-task=1 --cpus-per-task=1'
+testsuite_name = "OPFLOW_frontier_profiling"
 application = 'opflow'
 #mpi_rank = 1
 iterations = 1
 
 [presets]
-#netfile ='datafiles/case9/case9mod.m'
-netfile ='datafiles/case_ACTIVSg200.m'
 hiop_verbosity_level = 3
 print_output = 0
 argument_list = 'log_view'
@@ -16,14 +14,9 @@ argument_list = 'log_view'
 
 #1
 [[testcase]]
+netfile ='datafiles/case_ACTIVSg2000.m'
 opflow_solver = 'HIOP'
 hiop_compute_mode = 'CPU'
 opflow_model = 'POWER_BALANCE_HIOP'
-hiop_max_iter = 20
+hiop_max_iter = '500'
 
-#2
-[[testcase]]
-opflow_solver = 'HIOP'
-hiop_compute_mode = 'CPU'
-opflow_model = 'POWER_BALANCE_HIOP'
-hiop_max_iter = 50
