@@ -1,0 +1,466 @@
+Running "module reset". Resetting modules to system default. The following $MODULEPATH directories have been removed: None
+
+Lmod is automatically replacing "cce/15.0.0" with "amd/5.3.0".
+
+
+Lmod is automatically replacing "PrgEnv-cray/8.3.3" with "PrgEnv-amd/8.3.3".
+
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) cray-mpich/8.1.23
+
+
+The following have been reloaded with a version change:
+  1) amd/5.3.0 => amd/5.2.0
+
+
+The following have been reloaded with a version change:
+  1) cray-mpich/8.1.23 => cray-mpich/8.1.25
+
+Failed to read option file 'hiop_fr.options'. Hiop will use default options.
+Auto Profiler Log ======> For testcase 1
+[ExaGO] Creating OPFlow
+
+[Warning] Hiop will ignore value 'auto' set for option 'compute_mode' at runtime since this option is already specified in the option file.
+[Warning] Hiop will ignore value '0' set for option 'verbosity_level' at runtime since this option is already specified in the option file.
+[Warning] Detected 1 fixed variables out of a total of 476.
+===============
+Hiop SOLVER
+===============
+Using 1 MPI ranks.
+---------------
+Problem Summary
+---------------
+Total number of variables: 476
+     lower/upper/lower_and_upper bounds: 277 / 277 / 277
+Total number of equality constraints: 400
+Total number of inequality constraints: 490
+     lower/upper/lower_and_upper bounds: 490 / 490 / 490
+iter    objective     inf_pr     inf_du   lg(mu)  alpha_du   alpha_pr linesrch
+   0  4.0417248e+04 3.699e+00  2.322e+03  -1.00  0.000e+00  0.000e+00  -(-)
+   1  3.8736643e+04 3.695e+00  2.319e+03  -1.00  1.328e-03  1.308e-03  1(s)
+   2  3.8320137e+04 3.689e+00  2.316e+03  -1.00  8.553e-04  1.571e-03  1(s)
+   3  3.7670495e+04 3.682e+00  2.312e+03  -1.00  1.417e-03  2.003e-03  1(s)
+   4  3.7501975e+04 3.669e+00  2.286e+03  -1.00  2.196e-02  3.335e-03  1(s)
+   5  3.6429919e+04 3.629e+00  2.260e+03  -1.00  1.127e-02  1.094e-02  1(s)
+   6  3.6096353e+04 3.591e+00  2.186e+03  -1.00  9.403e-02  1.071e-02  1(s)
+   7  3.5511492e+04 3.425e+00  3.470e+03  -1.00  3.461e-01  4.604e-02  1(s)
+   8  3.5414659e+04 3.420e+00  3.929e+03  -1.00  1.549e-03  1.168e-03  1(s)
+   9  3.5216589e+04 3.343e+00  3.481e+03  -1.00  2.280e-03  2.239e-02  1(s)
+iter    objective     inf_pr     inf_du   lg(mu)  alpha_du   alpha_pr linesrch
+  10  3.4883502e+04 3.264e+00  3.059e+03  -1.00  6.807e-03  2.360e-02  1(s)
+  11  3.4347726e+04 3.156e+00  2.991e+03  -1.00  1.459e-03  3.310e-02  1(s)
+  12  3.4292164e+04 3.129e+00  2.969e+03  -1.00  2.577e-02  8.475e-03  1(s)
+  13  3.4186682e+04 3.083e+00  2.936e+03  -1.00  3.983e-02  1.475e-02  1(s)
+  14  3.4116849e+04 2.992e+00  2.931e+03  -1.00  8.184e-02  2.954e-02  1(s)
+  15  3.3895406e+04 2.702e+00  3.310e+03  -1.00  1.594e-02  9.684e-02  1(s)
+  16  3.3877456e+04 2.688e+00  3.287e+03  -1.00  4.210e-03  5.361e-03  1(s)
+  17  3.3696046e+04 2.580e+00  3.318e+03  -1.00  9.531e-03  3.991e-02  1(s)
+  18  3.3464804e+04 2.441e+00  3.322e+03  -1.00  9.278e-03  5.360e-02  1(s)
+  19  3.3172636e+04 2.252e+00  2.908e+03  -1.00  3.058e-02  7.749e-02  1(s)
+iter    objective     inf_pr     inf_du   lg(mu)  alpha_du   alpha_pr linesrch
+  20  3.2760844e+04 1.940e+00  2.738e+03  -1.00  4.595e-02  1.383e-01  1(s)
+Maximum number of iterations reached.
+Total time 1.268s
+Hiop internal time:     total 1.255s      avg iter 0.063s
+    internal total std dev across ranks 0.000 percent
+Fcn/deriv time:     total=0.018s  ( obj=0.000 grad=0.000 cons=0.001 Jac=0.005 Hess=0.012)
+    Fcn/deriv total std dev across ranks 0.000 percent
+Fcn/deriv #: obj 22 grad 22 eq cons 22 ineq cons 22 eq Jac 22 ineq Jac 22
+Total KKT time 1.247s
+	update init 0.009s     update linsys 0.055s     fact 1.118s
+	solve rhs-manip 0.001s    inner solve 0.052s    resid 0.016s    IR 34.500iters
+
+****************************************************************************************************************************************************************
+***                                WIDEN YOUR WINDOW TO 160 CHARACTERS.  Use 'enscript -r -fCourier9' to print this document                                 ***
+****************************************************************************************************************************************************************
+
+------------------------------------------------------------------ PETSc Performance Summary: ------------------------------------------------------------------
+
+opflow on a  named frontier05884 with 1 processor, by sayefsakin Thu Jul 27 22:16:08 2023
+Using Petsc Release Version 3.18.6, Mar 30, 2023
+
+                         Max       Max/Min     Avg       Total
+Time (sec):           4.226e+00     1.000   4.226e+00
+Objects:              6.300e+01     1.000   6.300e+01
+Flops:                4.029e+07     1.000   4.029e+07  4.029e+07
+Flops/sec:            9.534e+06     1.000   9.534e+06  9.534e+06
+MPI Msg Count:        0.000e+00     0.000   0.000e+00  0.000e+00
+MPI Msg Len (bytes):  0.000e+00     0.000   0.000e+00  0.000e+00
+MPI Reductions:       0.000e+00     0.000
+
+Flop counting convention: 1 flop = 1 real number operation of type (multiply/divide/add/subtract)
+                            e.g., VecAXPY() for real vectors of length N --> 2N flops
+                            and VecAXPY() for complex vectors of length N --> 8N flops
+
+Summary of Stages:   ----- Time ------  ----- Flop ------  --- Messages ---  -- Message Lengths --  -- Reductions --
+                        Avg     %Total     Avg     %Total    Count   %Total     Avg         %Total    Count   %Total
+ 0:      Main Stage: 3.1739e-03   0.1%  0.0000e+00   0.0%  0.000e+00   0.0%  0.000e+00        0.0%  0.000e+00   0.0%
+ 1:    Reading Data: 9.0154e-03   0.2%  0.0000e+00   0.0%  0.000e+00   0.0%  0.000e+00        0.0%  0.000e+00   0.0%
+ 2:          Set up: 2.9452e+00  69.7%  0.0000e+00   0.0%  0.000e+00   0.0%  0.000e+00        0.0%  0.000e+00   0.0%
+ 3:           Solve: 1.2682e+00  30.0%  4.0288e+07 100.0%  0.000e+00   0.0%  0.000e+00        0.0%  0.000e+00   0.0%
+
+------------------------------------------------------------------------------------------------------------------------
+See the 'Profiling' chapter of the users' manual for details on interpreting output.
+Phase summary info:
+   Count: number of times phase was executed
+   Time and Flop: Max - maximum over all processors
+                  Ratio - ratio of maximum to minimum over all processors
+   Mess: number of messages sent
+   AvgLen: average message length (bytes)
+   Reduct: number of global reductions
+   Global: entire computation
+   Stage: stages of a computation. Set stages with PetscLogStagePush() and PetscLogStagePop().
+      %T - percent time in this phase         %F - percent flop in this phase
+      %M - percent messages in this phase     %L - percent message lengths in this phase
+      %R - percent reductions in this phase
+   Total Mflop/s: 10e-6 * (sum of flop over all processors)/(max time over all processors)
+------------------------------------------------------------------------------------------------------------------------
+Event                Count      Time (sec)     Flop                              --- Global ---  --- Stage ----  Total
+                   Max Ratio  Max     Ratio   Max  Ratio  Mess   AvgLen  Reduct  %T %F %M %L %R  %T %F %M %L %R Mflop/s
+------------------------------------------------------------------------------------------------------------------------
+
+--- Event Stage 0: Main Stage
+
+
+--- Event Stage 1: Reading Data
+
+
+--- Event Stage 2: Set up
+
+DMCreateMat            1 1.0 3.1696e-03 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+DMPlexBuFrCeLi         1 1.0 1.9016e-03 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+DMPlexStratify         1 1.0 9.5012e-04 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+DMPlexSymmetrize       1 1.0 1.4478e-05 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+DMPlexPrealloc         1 1.0 2.5672e-03 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+DMNtLayoutSetUp        1 1.0 5.2594e-03 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+DMNtSetUp              1 1.0 1.6586e-04 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+SFSetGraph             1 1.0 1.5100e-07 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+VecSet                 2 1.0 1.4927e-04 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+MatAssemblyBegin       1 1.0 3.3100e-07 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+MatAssemblyEnd         1 1.0 1.0735e-04 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+
+--- Event Stage 3: Solve
+
+OPFLOWGrad            22 1.0 5.5000e-06 1.0 5.02e+03 1.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0   912
+OPFLOWEqCons          22 1.0 4.2521e-04 1.0 9.63e+05 1.0 0.0e+00 0.0e+00 0.0e+00  0  2  0  0  0   0  2  0  0  0  2264
+OPFLOWIneqCons        22 1.0 4.0194e-04 1.0 1.03e+06 1.0 0.0e+00 0.0e+00 0.0e+00  0  3  0  0  0   0  3  0  0  0  2575
+OPFLOWSolve            1 1.0 1.2682e+00 1.0 4.03e+07 1.0 0.0e+00 0.0e+00 0.0e+00 30 100  0  0  0 100 100  0  0  0    32
+OPFLOWDenseHess       21 1.0 1.2308e-02 1.0 3.03e+07 1.0 0.0e+00 0.0e+00 0.0e+00  0 75  0  0  0   1 75  0  0  0  2459
+OPFLOWSparseHess      21 1.0 4.6000e-06 1.0 3.99e+03 1.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0   867
+OPFLOWDenseIneqConsJac      22 1.0 2.5697e-03 1.0 4.34e+06 1.0 0.0e+00 0.0e+00 0.0e+00  0 11  0  0  0   0 11  0  0  0  1691
+OPFLOWDenseEqConsJac      22 1.0 2.0822e-03 1.0 3.67e+06 1.0 0.0e+00 0.0e+00 0.0e+00  0  9  0  0  0   0  9  0  0  0  1761
+------------------------------------------------------------------------------------------------------------------------
+
+Object Type          Creations   Destructions. Reports information only for process 0.
+
+--- Event Stage 0: Main Stage
+
+    Distributed Mesh     0              2
+            DM Label     0              2
+           Index Set     0              4
+   IS L to G Mapping     0              1
+             Section     0              5
+   Star Forest Graph     0              5
+     Discrete System     0              2
+           Weak Form     0              2
+    GraphPartitioner     0              1
+              Vector     0             14
+              Matrix     0              3
+              Viewer     1              0
+
+--- Event Stage 1: Reading Data
+
+
+--- Event Stage 2: Set up
+
+    Distributed Mesh     2              0
+            DM Label     2              0
+           Index Set    10              6
+   IS L to G Mapping     1              0
+             Section    15             10
+   Star Forest Graph     7              2
+     Discrete System     2              0
+           Weak Form     2              0
+    GraphPartitioner     1              0
+              Vector    17              3
+              Matrix     3              0
+
+--- Event Stage 3: Solve
+
+========================================================================================================================
+Average time to get PetscTime(): 3.01e-08
+#PETSc Option Table entries:
+-log_view
+-netfile datafiles/case_ACTIVSg200.m
+-opflow_model POWER_BALANCE_HIOP
+-opflow_solver HIOP
+-print_output 0
+#End of PETSc Option Table entries
+Compiled without FORTRAN kernels
+Compiled with full precision matrices (default)
+sizeof(short) 2 sizeof(int) 4 sizeof(long) 8 sizeof(void*) 8 sizeof(PetscScalar) 8 sizeof(PetscInt) 4
+Configure options: --prefix=/lustre/orion/proj-shared/csc359/sayefsakin/spack-install/linux-sles15-zen3/clang-14.0.0-rocm5.2.0/petsc-3.18.6-x2vp3h6yfkxac23xjabse4455nzf3f45 --with-ssl=0 --download-c2html=0 --download-sowing=0 --download-hwloc=0 --with-make-exec=make --with-cc=/opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/bin/mpicc --with-cxx=/opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/bin/mpicxx --with-fc=/opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/bin/mpif90 --with-precision=double --with-scalar-type=real --with-shared-libraries=1 --with-debugging=0 --with-openmp=0 --with-64-bit-indices=0 --with-blaslapack-lib=/lustre/orion/proj-shared/csc359/sayefsakin/spack-install/linux-sles15-zen3/clang-14.0.0-rocm5.2.0/openblas-0.3.20-qphkv5qzud65a5duvaqxi5zvb5rc4lzf/lib/libopenblas.so --with-x=0 --with-clanguage=C --with-cuda=0 --with-hip=0 --with-metis=0 --with-hypre=0 --with-parmetis=0 --with-kokkos=0 --with-kokkos-kernels=0 --with-superlu_dist=0 --with-ptscotch=0 --with-suitesparse=0 --with-hdf5=0 --with-zlib=0 --with-mumps=0 --with-trilinos=0 --with-fftw=0 --with-valgrind=0 --with-gmp=0 --with-libpng=0 --with-giflib=0 --with-mpfr=0 --with-netcdf=0 --with-pnetcdf=0 --with-moab=0 --with-random123=0 --with-exodusii=0 --with-cgns=0 --with-memkind=0 --with-p4est=0 --with-saws=0 --with-yaml=0 --with-hwloc=0 --with-libjpeg=0 --with-scalapack=0 --with-strumpack=0 --with-mmg=0 --with-parmmg=0 --with-tetgen=0
+-----------------------------------------
+Libraries compiled on 2023-07-04 20:14:54 on frontier01532
+Machine characteristics: Linux-5.14.21-150400.24.46_12.0.72-cray_shasta_c-x86_64-with-glibc2.31
+Using PETSc directory: /lustre/orion/proj-shared/csc359/sayefsakin/spack-install/linux-sles15-zen3/clang-14.0.0-rocm5.2.0/petsc-3.18.6-x2vp3h6yfkxac23xjabse4455nzf3f45
+Using PETSc arch:
+-----------------------------------------
+
+Using C compiler: /opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/bin/mpicc  -fPIC -Wall -Wwrite-strings -Wno-unknown-pragmas -fstack-protector -Qunused-arguments -fvisibility=hidden -g -O3
+Using Fortran compiler: /opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/bin/mpif90  -fPIC -O
+-----------------------------------------
+
+Using include paths: -I/lustre/orion/proj-shared/csc359/sayefsakin/spack-install/linux-sles15-zen3/clang-14.0.0-rocm5.2.0/petsc-3.18.6-x2vp3h6yfkxac23xjabse4455nzf3f45/include
+-----------------------------------------
+
+Using C linker: /opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/bin/mpicc
+Using Fortran linker: /opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/bin/mpif90
+Using libraries: -Wl,-rpath,/lustre/orion/proj-shared/csc359/sayefsakin/spack-install/linux-sles15-zen3/clang-14.0.0-rocm5.2.0/petsc-3.18.6-x2vp3h6yfkxac23xjabse4455nzf3f45/lib -L/lustre/orion/proj-shared/csc359/sayefsakin/spack-install/linux-sles15-zen3/clang-14.0.0-rocm5.2.0/petsc-3.18.6-x2vp3h6yfkxac23xjabse4455nzf3f45/lib -lpetsc -Wl,-rpath,/lustre/orion/proj-shared/csc359/sayefsakin/spack-install/linux-sles15-zen3/clang-14.0.0-rocm5.2.0/openblas-0.3.20-qphkv5qzud65a5duvaqxi5zvb5rc4lzf/lib -L/lustre/orion/proj-shared/csc359/sayefsakin/spack-install/linux-sles15-zen3/clang-14.0.0-rocm5.2.0/openblas-0.3.20-qphkv5qzud65a5duvaqxi5zvb5rc4lzf/lib -Wl,-rpath,/opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/lib -L/opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/lib -Wl,-rpath,/usr/lib64/gcc/x86_64-suse-linux/7 -L/usr/lib64/gcc/x86_64-suse-linux/7 -Wl,-rpath,/usr/x86_64-suse-linux/lib -L/usr/x86_64-suse-linux/lib -Wl,-rpath,/opt/rocm-5.2.0/llvm/lib -L/opt/rocm-5.2.0/llvm/lib -lopenblas -lpthread -lm -lstdc++ -ldl -lmpifort_amd -lmpi_amd -lflangmain -lpgmath -lflang -lflangrti -lompstub -lm -lrt -lpthread -lgcc_s -lstdc++ -ldl
+-----------------------------------------
+
+Auto Profiler Log ======> With no tool Total Iterations: 1, CPU Average time per testcase: 6.40778 seconds, std: 0.0
+Auto Profiler Log ======> PETSc reported Solve Time per testcase: 1.2682 seconds
+Auto Profiler Log ======> Total HIOP iterations: 20, Average time per HIOP iteration: 0.32039 seconds
+Auto Profiler Log ======> PETSc reported Solve time per iteration: 0.06341
+Auto Profiler Log ======> For testcase 2
+[ExaGO] Creating OPFlow
+
+[Warning] Hiop will ignore value 'auto' set for option 'compute_mode' at runtime since this option is already specified in the option file.
+[Warning] Hiop will ignore value '0' set for option 'verbosity_level' at runtime since this option is already specified in the option file.
+[Warning] Detected 1 fixed variables out of a total of 476.
+===============
+Hiop SOLVER
+===============
+Using 1 MPI ranks.
+---------------
+Problem Summary
+---------------
+Total number of variables: 476
+     lower/upper/lower_and_upper bounds: 277 / 277 / 277
+Total number of equality constraints: 400
+Total number of inequality constraints: 490
+     lower/upper/lower_and_upper bounds: 490 / 490 / 490
+iter    objective     inf_pr     inf_du   lg(mu)  alpha_du   alpha_pr linesrch
+   0  4.0417248e+04 3.699e+00  2.322e+03  -1.00  0.000e+00  0.000e+00  -(-)
+   1  3.8736643e+04 3.695e+00  2.319e+03  -1.00  1.328e-03  1.308e-03  1(s)
+   2  3.8320137e+04 3.689e+00  2.316e+03  -1.00  8.553e-04  1.571e-03  1(s)
+   3  3.7670495e+04 3.682e+00  2.312e+03  -1.00  1.417e-03  2.003e-03  1(s)
+   4  3.7501975e+04 3.669e+00  2.286e+03  -1.00  2.196e-02  3.335e-03  1(s)
+   5  3.6429919e+04 3.629e+00  2.260e+03  -1.00  1.127e-02  1.094e-02  1(s)
+   6  3.6096353e+04 3.591e+00  2.186e+03  -1.00  9.403e-02  1.071e-02  1(s)
+   7  3.5511492e+04 3.425e+00  3.470e+03  -1.00  3.461e-01  4.604e-02  1(s)
+   8  3.5414659e+04 3.420e+00  3.929e+03  -1.00  1.549e-03  1.168e-03  1(s)
+   9  3.5216589e+04 3.343e+00  3.481e+03  -1.00  2.280e-03  2.239e-02  1(s)
+iter    objective     inf_pr     inf_du   lg(mu)  alpha_du   alpha_pr linesrch
+  10  3.4883502e+04 3.264e+00  3.059e+03  -1.00  6.807e-03  2.360e-02  1(s)
+  11  3.4347726e+04 3.156e+00  2.991e+03  -1.00  1.459e-03  3.310e-02  1(s)
+  12  3.4292164e+04 3.129e+00  2.969e+03  -1.00  2.577e-02  8.475e-03  1(s)
+  13  3.4186682e+04 3.083e+00  2.936e+03  -1.00  3.983e-02  1.475e-02  1(s)
+  14  3.4116849e+04 2.992e+00  2.931e+03  -1.00  8.184e-02  2.954e-02  1(s)
+  15  3.3895406e+04 2.702e+00  3.310e+03  -1.00  1.594e-02  9.684e-02  1(s)
+  16  3.3877456e+04 2.688e+00  3.287e+03  -1.00  4.210e-03  5.361e-03  1(s)
+  17  3.3696046e+04 2.580e+00  3.318e+03  -1.00  9.531e-03  3.991e-02  1(s)
+  18  3.3464804e+04 2.441e+00  3.322e+03  -1.00  9.278e-03  5.360e-02  1(s)
+  19  3.3172636e+04 2.252e+00  2.908e+03  -1.00  3.058e-02  7.749e-02  1(s)
+iter    objective     inf_pr     inf_du   lg(mu)  alpha_du   alpha_pr linesrch
+  20  3.2760844e+04 1.940e+00  2.738e+03  -1.00  4.595e-02  1.383e-01  1(s)
+  21  3.2745706e+04 1.930e+00  2.723e+03  -1.00  5.004e-03  5.375e-03  1(s)
+  22  3.2638348e+04 1.846e+00  2.651e+03  -1.00  7.181e-02  4.358e-02  1(s)
+  23  3.2609319e+04 1.820e+00  2.448e+03  -1.00  8.104e-02  1.381e-02  1(s)
+  24  3.2550205e+04 1.773e+00  2.398e+03  -1.00  2.863e-02  2.582e-02  1(s)
+  25  3.2522131e+04 1.754e+00  2.361e+03  -1.00  1.335e-02  1.117e-02  1(s)
+  26  3.2402427e+04 1.685e+00  1.922e+03  -1.00  4.238e-02  3.999e-02  1(s)
+  27  3.2126753e+04 1.468e+00  2.139e+03  -1.00  6.983e-02  1.291e-01  1(s)
+  28  3.2118963e+04 1.465e+00  2.047e+03  -1.00  3.687e-03  2.190e-03  1(s)
+  29  3.2083941e+04 1.443e+00  1.987e+03  -1.00  2.331e-02  1.564e-02  1(s)
+iter    objective     inf_pr     inf_du   lg(mu)  alpha_du   alpha_pr linesrch
+  30  3.2068038e+04 1.436e+00  1.841e+03  -1.00  1.167e-03  5.843e-03  1(s)
+  31  3.2061154e+04 1.433e+00  1.834e+03  -1.00  8.604e-03  2.219e-03  1(s)
+  32  3.2046764e+04 1.427e+00  1.799e+03  -1.00  2.470e-04  4.543e-03  1(s)
+  33  3.1992788e+04 1.385e+00  1.757e+03  -1.00  8.218e-02  2.945e-02  1(s)
+  34  3.1870745e+04 1.274e+00  2.050e+03  -1.00  3.673e-02  8.042e-02  1(s)
+  35  3.1863202e+04 1.271e+00  2.039e+03  -1.00  1.890e-03  2.495e-03  1(s)
+  36  3.1822804e+04 1.239e+00  1.986e+03  -1.00  3.758e-03  2.513e-02  1(s)
+  37  3.1810783e+04 1.235e+00  1.956e+03  -1.00  2.429e-05  3.598e-03  1(s)
+  38  3.1664894e+04 1.099e+00  2.257e+03  -1.00  7.040e-02  1.101e-01  1(s)
+  39  3.1643105e+04 1.083e+00  2.219e+03  -1.00  7.895e-02  1.531e-02  1(s)
+iter    objective     inf_pr     inf_du   lg(mu)  alpha_du   alpha_pr linesrch
+  40  3.1630943e+04 1.078e+00  2.200e+03  -1.00  3.621e-03  4.707e-03  1(s)
+  41  3.1630605e+04 1.077e+00  2.200e+03  -1.00  9.991e-03  2.107e-04  1(s)
+  42  3.1629979e+04 1.077e+00  2.199e+03  -1.00  3.071e-03  2.347e-04  1(s)
+  43  3.1629353e+04 1.076e+00  2.198e+03  -1.00  3.894e-04  5.135e-04  1(s)
+  44  3.1629203e+04 1.076e+00  2.198e+03  -1.00  9.060e-03  9.290e-05  1(s)
+  45  3.1628693e+04 1.076e+00  2.197e+03  -1.00  1.803e-03  1.786e-04  1(s)
+  46  3.1627601e+04 1.076e+00  2.192e+03  -1.00  2.067e-06  1.817e-04  1(s)
+  47  3.1624421e+04 1.074e+00  2.187e+03  -1.00  3.984e-02  2.161e-03  1(s)
+Minimum step size reached. The problem may be locally infeasible or the gradient inaccurate. Will try to restore feasibility.
+  48  3.1624402e+04 1.074e+00  4.504e+04  -1.00  1.000e+00  1.000e+00  0(R)
+  49  3.0597836e+04 7.035e-01  4.503e+04  -1.00  6.333e-04  3.309e-02  1(s)
+iter    objective     inf_pr     inf_du   lg(mu)  alpha_du   alpha_pr linesrch
+  50  3.0427170e+04 7.005e-01  4.459e+04  -1.00  9.289e-03  4.273e-03  1(s)
+Maximum number of iterations reached.
+Total time 2.726s
+Hiop internal time:     total 2.647s      avg iter 0.053s
+    internal total std dev across ranks 0.000 percent
+Fcn/deriv time:     total=0.046s  ( obj=0.000 grad=0.000 cons=0.004 Jac=0.012 Hess=0.031)
+    Fcn/deriv total std dev across ranks 0.000 percent
+Fcn/deriv #: obj 92 grad 52 eq cons 94 ineq cons 94 eq Jac 55 ineq Jac 55
+Total KKT time 2.639s
+	update init 0.015s     update linsys 0.114s     fact 2.290s
+	solve rhs-manip 0.003s    inner solve 0.162s    resid 0.056s    IR 123.500iters
+
+****************************************************************************************************************************************************************
+***                                WIDEN YOUR WINDOW TO 160 CHARACTERS.  Use 'enscript -r -fCourier9' to print this document                                 ***
+****************************************************************************************************************************************************************
+
+------------------------------------------------------------------ PETSc Performance Summary: ------------------------------------------------------------------
+
+opflow on a  named frontier05884 with 1 processor, by sayefsakin Thu Jul 27 22:16:12 2023
+Using Petsc Release Version 3.18.6, Mar 30, 2023
+
+                         Max       Max/Min     Avg       Total
+Time (sec):           2.819e+00     1.000   2.819e+00
+Objects:              6.300e+01     1.000   6.300e+01
+Flops:                1.036e+08     1.000   1.036e+08  1.036e+08
+Flops/sec:            3.674e+07     1.000   3.674e+07  3.674e+07
+MPI Msg Count:        0.000e+00     0.000   0.000e+00  0.000e+00
+MPI Msg Len (bytes):  0.000e+00     0.000   0.000e+00  0.000e+00
+MPI Reductions:       0.000e+00     0.000
+
+Flop counting convention: 1 flop = 1 real number operation of type (multiply/divide/add/subtract)
+                            e.g., VecAXPY() for real vectors of length N --> 2N flops
+                            and VecAXPY() for complex vectors of length N --> 8N flops
+
+Summary of Stages:   ----- Time ------  ----- Flop ------  --- Messages ---  -- Message Lengths --  -- Reductions --
+                        Avg     %Total     Avg     %Total    Count   %Total     Avg         %Total    Count   %Total
+ 0:      Main Stage: 5.0223e-04   0.0%  0.0000e+00   0.0%  0.000e+00   0.0%  0.000e+00        0.0%  0.000e+00   0.0%
+ 1:    Reading Data: 5.5712e-03   0.2%  0.0000e+00   0.0%  0.000e+00   0.0%  0.000e+00        0.0%  0.000e+00   0.0%
+ 2:          Set up: 8.6063e-02   3.1%  0.0000e+00   0.0%  0.000e+00   0.0%  0.000e+00        0.0%  0.000e+00   0.0%
+ 3:           Solve: 2.7264e+00  96.7%  1.0355e+08 100.0%  0.000e+00   0.0%  0.000e+00        0.0%  0.000e+00   0.0%
+
+------------------------------------------------------------------------------------------------------------------------
+See the 'Profiling' chapter of the users' manual for details on interpreting output.
+Phase summary info:
+   Count: number of times phase was executed
+   Time and Flop: Max - maximum over all processors
+                  Ratio - ratio of maximum to minimum over all processors
+   Mess: number of messages sent
+   AvgLen: average message length (bytes)
+   Reduct: number of global reductions
+   Global: entire computation
+   Stage: stages of a computation. Set stages with PetscLogStagePush() and PetscLogStagePop().
+      %T - percent time in this phase         %F - percent flop in this phase
+      %M - percent messages in this phase     %L - percent message lengths in this phase
+      %R - percent reductions in this phase
+   Total Mflop/s: 10e-6 * (sum of flop over all processors)/(max time over all processors)
+------------------------------------------------------------------------------------------------------------------------
+Event                Count      Time (sec)     Flop                              --- Global ---  --- Stage ----  Total
+                   Max Ratio  Max     Ratio   Max  Ratio  Mess   AvgLen  Reduct  %T %F %M %L %R  %T %F %M %L %R Mflop/s
+------------------------------------------------------------------------------------------------------------------------
+
+--- Event Stage 0: Main Stage
+
+
+--- Event Stage 1: Reading Data
+
+
+--- Event Stage 2: Set up
+
+DMCreateMat            1 1.0 3.4090e-04 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+DMPlexBuFrCeLi         1 1.0 1.0930e-04 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+DMPlexStratify         1 1.0 6.6869e-05 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+DMPlexSymmetrize       1 1.0 1.3236e-05 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+DMPlexPrealloc         1 1.0 2.8831e-04 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+DMNtLayoutSetUp        1 1.0 3.1637e-04 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+DMNtSetUp              1 1.0 1.8367e-04 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+SFSetGraph             1 1.0 1.1000e-07 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+VecSet                 2 1.0 4.5890e-06 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+MatAssemblyBegin       1 1.0 8.0000e-08 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+MatAssemblyEnd         1 1.0 1.5470e-05 1.0 0.00e+00 0.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0     0
+
+--- Event Stage 3: Solve
+
+OPFLOWGrad            52 1.0 1.2482e-05 1.0 1.19e+04 1.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0   950
+OPFLOWEqCons          94 1.0 1.8032e-03 1.0 4.11e+06 1.0 0.0e+00 0.0e+00 0.0e+00  0  4  0  0  0   0  4  0  0  0  2281
+OPFLOWIneqCons        94 1.0 1.7152e-03 1.0 4.42e+06 1.0 0.0e+00 0.0e+00 0.0e+00  0  4  0  0  0   0  4  0  0  0  2578
+OPFLOWSolve            1 1.0 2.7264e+00 1.0 1.04e+08 1.0 0.0e+00 0.0e+00 0.0e+00 97 100  0  0  0 100 100  0  0  0    38
+OPFLOWDenseHess       52 1.0 3.0492e-02 1.0 7.49e+07 1.0 0.0e+00 0.0e+00 0.0e+00  1 72  0  0  0   1 72  0  0  0  2458
+OPFLOWSparseHess      52 1.0 1.2109e-05 1.0 9.88e+03 1.0 0.0e+00 0.0e+00 0.0e+00  0  0  0  0  0   0  0  0  0  0   816
+OPFLOWDenseIneqConsJac      55 1.0 6.5425e-03 1.0 1.09e+07 1.0 0.0e+00 0.0e+00 0.0e+00  0 10  0  0  0   0 10  0  0  0  1660
+OPFLOWDenseEqConsJac      55 1.0 5.3094e-03 1.0 9.17e+06 1.0 0.0e+00 0.0e+00 0.0e+00  0  9  0  0  0   0  9  0  0  0  1726
+------------------------------------------------------------------------------------------------------------------------
+
+Object Type          Creations   Destructions. Reports information only for process 0.
+
+--- Event Stage 0: Main Stage
+
+    Distributed Mesh     0              2
+            DM Label     0              2
+           Index Set     0              4
+   IS L to G Mapping     0              1
+             Section     0              5
+   Star Forest Graph     0              5
+     Discrete System     0              2
+           Weak Form     0              2
+    GraphPartitioner     0              1
+              Vector     0             14
+              Matrix     0              3
+              Viewer     1              0
+
+--- Event Stage 1: Reading Data
+
+
+--- Event Stage 2: Set up
+
+    Distributed Mesh     2              0
+            DM Label     2              0
+           Index Set    10              6
+   IS L to G Mapping     1              0
+             Section    15             10
+   Star Forest Graph     7              2
+     Discrete System     2              0
+           Weak Form     2              0
+    GraphPartitioner     1              0
+              Vector    17              3
+              Matrix     3              0
+
+--- Event Stage 3: Solve
+
+========================================================================================================================
+Average time to get PetscTime(): 3e-08
+#PETSc Option Table entries:
+-log_view
+-netfile datafiles/case_ACTIVSg200.m
+-opflow_model POWER_BALANCE_HIOP
+-opflow_solver HIOP
+-print_output 0
+#End of PETSc Option Table entries
+Compiled without FORTRAN kernels
+Compiled with full precision matrices (default)
+sizeof(short) 2 sizeof(int) 4 sizeof(long) 8 sizeof(void*) 8 sizeof(PetscScalar) 8 sizeof(PetscInt) 4
+Configure options: --prefix=/lustre/orion/proj-shared/csc359/sayefsakin/spack-install/linux-sles15-zen3/clang-14.0.0-rocm5.2.0/petsc-3.18.6-x2vp3h6yfkxac23xjabse4455nzf3f45 --with-ssl=0 --download-c2html=0 --download-sowing=0 --download-hwloc=0 --with-make-exec=make --with-cc=/opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/bin/mpicc --with-cxx=/opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/bin/mpicxx --with-fc=/opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/bin/mpif90 --with-precision=double --with-scalar-type=real --with-shared-libraries=1 --with-debugging=0 --with-openmp=0 --with-64-bit-indices=0 --with-blaslapack-lib=/lustre/orion/proj-shared/csc359/sayefsakin/spack-install/linux-sles15-zen3/clang-14.0.0-rocm5.2.0/openblas-0.3.20-qphkv5qzud65a5duvaqxi5zvb5rc4lzf/lib/libopenblas.so --with-x=0 --with-clanguage=C --with-cuda=0 --with-hip=0 --with-metis=0 --with-hypre=0 --with-parmetis=0 --with-kokkos=0 --with-kokkos-kernels=0 --with-superlu_dist=0 --with-ptscotch=0 --with-suitesparse=0 --with-hdf5=0 --with-zlib=0 --with-mumps=0 --with-trilinos=0 --with-fftw=0 --with-valgrind=0 --with-gmp=0 --with-libpng=0 --with-giflib=0 --with-mpfr=0 --with-netcdf=0 --with-pnetcdf=0 --with-moab=0 --with-random123=0 --with-exodusii=0 --with-cgns=0 --with-memkind=0 --with-p4est=0 --with-saws=0 --with-yaml=0 --with-hwloc=0 --with-libjpeg=0 --with-scalapack=0 --with-strumpack=0 --with-mmg=0 --with-parmmg=0 --with-tetgen=0
+-----------------------------------------
+Libraries compiled on 2023-07-04 20:14:54 on frontier01532
+Machine characteristics: Linux-5.14.21-150400.24.46_12.0.72-cray_shasta_c-x86_64-with-glibc2.31
+Using PETSc directory: /lustre/orion/proj-shared/csc359/sayefsakin/spack-install/linux-sles15-zen3/clang-14.0.0-rocm5.2.0/petsc-3.18.6-x2vp3h6yfkxac23xjabse4455nzf3f45
+Using PETSc arch:
+-----------------------------------------
+
+Using C compiler: /opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/bin/mpicc  -fPIC -Wall -Wwrite-strings -Wno-unknown-pragmas -fstack-protector -Qunused-arguments -fvisibility=hidden -g -O3
+Using Fortran compiler: /opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/bin/mpif90  -fPIC -O
+-----------------------------------------
+
+Using include paths: -I/lustre/orion/proj-shared/csc359/sayefsakin/spack-install/linux-sles15-zen3/clang-14.0.0-rocm5.2.0/petsc-3.18.6-x2vp3h6yfkxac23xjabse4455nzf3f45/include
+-----------------------------------------
+
+Using C linker: /opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/bin/mpicc
+Using Fortran linker: /opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/bin/mpif90
+Using libraries: -Wl,-rpath,/lustre/orion/proj-shared/csc359/sayefsakin/spack-install/linux-sles15-zen3/clang-14.0.0-rocm5.2.0/petsc-3.18.6-x2vp3h6yfkxac23xjabse4455nzf3f45/lib -L/lustre/orion/proj-shared/csc359/sayefsakin/spack-install/linux-sles15-zen3/clang-14.0.0-rocm5.2.0/petsc-3.18.6-x2vp3h6yfkxac23xjabse4455nzf3f45/lib -lpetsc -Wl,-rpath,/lustre/orion/proj-shared/csc359/sayefsakin/spack-install/linux-sles15-zen3/clang-14.0.0-rocm5.2.0/openblas-0.3.20-qphkv5qzud65a5duvaqxi5zvb5rc4lzf/lib -L/lustre/orion/proj-shared/csc359/sayefsakin/spack-install/linux-sles15-zen3/clang-14.0.0-rocm5.2.0/openblas-0.3.20-qphkv5qzud65a5duvaqxi5zvb5rc4lzf/lib -Wl,-rpath,/opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/lib -L/opt/cray/pe/mpich/8.1.25/ofi/amd/5.0/lib -Wl,-rpath,/usr/lib64/gcc/x86_64-suse-linux/7 -L/usr/lib64/gcc/x86_64-suse-linux/7 -Wl,-rpath,/usr/x86_64-suse-linux/lib -L/usr/x86_64-suse-linux/lib -Wl,-rpath,/opt/rocm-5.2.0/llvm/lib -L/opt/rocm-5.2.0/llvm/lib -lopenblas -lpthread -lm -lstdc++ -ldl -lmpifort_amd -lmpi_amd -lflangmain -lpgmath -lflang -lflangrti -lompstub -lm -lrt -lpthread -lgcc_s -lstdc++ -ldl
+-----------------------------------------
+
+Auto Profiler Log ======> With no tool Total Iterations: 1, CPU Average time per testcase: 2.96811 seconds, std: 0.0
+Auto Profiler Log ======> PETSc reported Solve Time per testcase: 2.7264 seconds
+Auto Profiler Log ======> Total HIOP iterations: 50, Average time per HIOP iteration: 0.05936 seconds
+Auto Profiler Log ======> PETSc reported Solve time per iteration: 0.05453

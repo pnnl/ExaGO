@@ -389,7 +389,7 @@ PetscErrorCode OPFLOWSolverSetUp_HIOP(OPFLOW opflow) {
 #endif
   if (!ismodelpbpolhiop && !ismodelpbpolrajahiop) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-            "%s opflow model not supported with HIOP\n", opflow->modelname);
+            "%s opflow model not supported with HIOP\n", (opflow->modelname).c_str());
     PetscFunctionReturn(1);
     exit(0);
   }

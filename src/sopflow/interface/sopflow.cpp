@@ -80,7 +80,10 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout) {
   sopflow->setupcalled = PETSC_FALSE;
   *sopflowout = sopflow;
 
-  ExaGOLog(EXAGO_LOG_INFO, "{}", "SOPFLOW: Application created");
+  MPI_Barrier(sopflow->comm->type);
+  if(!sopflow->comm->rank) {
+    ierr = PetscPrintf(PETSC_COMM_SELF,"SOPFLOW: Application created\n");CHKERRQ(ierr);
+  }
   PetscFunctionReturn(0);
 }
 
@@ -96,31 +99,31 @@ PetscErrorCode SOPFLOWDestroy(SOPFLOW *sopflow) {
 
   PetscFunctionBegin;
 
-  /* Solution vector */
-  ierr = VecDestroy(&(*sopflow)->X);
-  CHKERRQ(ierr);
-  ierr = VecDestroy(&(*sopflow)->gradobj);
-  CHKERRQ(ierr);
+  if((*sopflow)->issolver_ipopt) {
+    /* Solution vector */
+    ierr = VecDestroy(&(*sopflow)->X);
+    CHKERRQ(ierr);
+    ierr = VecDestroy(&(*sopflow)->gradobj);
+    CHKERRQ(ierr);
 
-  /* Lower and upper bounds on X */
-  ierr = VecDestroy(&(*sopflow)->Xl);
-  CHKERRQ(ierr);
-  ierr = VecDestroy(&(*sopflow)->Xu);
-  CHKERRQ(ierr);
+    /* Lower and upper bounds on X */
+    ierr = VecDestroy(&(*sopflow)->Xl);
+    CHKERRQ(ierr);
+    ierr = VecDestroy(&(*sopflow)->Xu);
+    CHKERRQ(ierr);
 
-  /* Constraints vector */
-  ierr = VecDestroy(&(*sopflow)->G);
-  CHKERRQ(ierr);
+    /* Constraints vector */
+    ierr = VecDestroy(&(*sopflow)->G);
+    CHKERRQ(ierr);
 
-  ierr = VecDestroy(&(*sopflow)->Gl);
-  CHKERRQ(ierr);
-  ierr = VecDestroy(&(*sopflow)->Gu);
-  CHKERRQ(ierr);
-  ierr = VecDestroy(&(*sopflow)->Lambda);
-  CHKERRQ(ierr);
+    ierr = VecDestroy(&(*sopflow)->Gl);
+    CHKERRQ(ierr);
+    ierr = VecDestroy(&(*sopflow)->Gu);
+    CHKERRQ(ierr);
+    ierr = VecDestroy(&(*sopflow)->Lambda);
+    CHKERRQ(ierr);
 
-  /* Jacobian of constraints and Hessian */
-  if ((*sopflow)->comm->size == 1) {
+    /* Jacobian of constraints and Hessian */
     ierr = MatDestroy(&(*sopflow)->Jac);
     CHKERRQ(ierr);
     ierr = MatDestroy(&(*sopflow)->Hes);
@@ -565,7 +568,6 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
   char windgen[PETSC_MAX_PATH_LEN];
   PetscBool flgctgc = PETSC_FALSE;
   PetscBool flgwindgen = PETSC_FALSE;
-  PetscBool issopflowsolverhiop;
   PetscBool flg;
 
   char opflowmodelname[max_model_name_len];
@@ -801,8 +803,14 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
     sopflow->send = send[sopflow->comm->rank];
 
     MPI_Barrier(sopflow->comm->type);
-    ExaGOLog(EXAGO_LOG_INFO, "SOPFLOW running with %d scenarios\n",
-             sopflow->Ns);
+    if(!sopflow->comm->rank) {
+      ierr = PetscPrintf(PETSC_COMM_SELF,"SOPFLOW running with %d scenarios\n",
+			 sopflow->Ns);CHKERRQ(ierr);
+    }
+    //  ExaGOLogUseEveryRank(PETSC_TRUE);
+    //  ExaGOLog(EXAGO_LOG_INFO,"Rank %d scenario range [%d --
+    //  %d]\n",sopflow->comm->rank,sopflow->sstart,sopflow->send);
+    //  ExaGOLogUseEveryRank(PETSC_FALSE);
 
     /* Create subcommunicators to manage scopflows */
     MPI_Comm_split(sopflow->comm->type, color[sopflow->comm->rank],
@@ -835,18 +843,20 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
       for (s = 0; s < sopflow->ns; s++) {
         sopflow->scen_num[s] = (sopflow->sstart + s) / sopflow->Nc;
         sopflow->cont_num[s] = (sopflow->sstart + s) % sopflow->Nc;
-        ierr = PetscPrintf(PETSC_COMM_SELF,
+	/*        ierr = PetscPrintf(PETSC_COMM_SELF,
                            "Rank[%d],s = %d, scen_num = %d, cont_num = %d\n",
                            sopflow->comm->rank, sopflow->sstart + s,
                            sopflow->scen_num[s], sopflow->cont_num[s]);
+	*/
       }
     } else {
       for (s = 0; s < sopflow->ns; s++) {
         sopflow->scen_num[s] = sopflow->sstart + s;
-
+	/*
         ierr = PetscPrintf(PETSC_COMM_SELF, "Rank[%d],s = %d, scen_num = %d\n",
                            sopflow->comm->rank, sopflow->sstart + s,
                            sopflow->scen_num[s]);
+	*/
       }
     }
   }
@@ -866,17 +876,19 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
       ierr = (*sopflow->solverops.destroy)(sopflow);
     ierr = SOPFLOWSetSolver(sopflow, sopflowsolvername);
     CHKERRQ(ierr);
-    ExaGOLog(EXAGO_LOG_INFO, "SOPFLOW: Using {} solver\n", sopflowsolvername);
+    //    ExaGOLog(EXAGO_LOG_INFO, "SOPFLOW: Using {} solver\n", sopflowsolvername);
   } else {
     if (!sopflow->solver) {
       ierr = SOPFLOWSetSolver(sopflow, SOPFLOWSOLVER_IPOPT);
       CHKERRQ(ierr);
-      ExaGOLog(EXAGO_LOG_INFO, "SOPFLOW: Using {} solver\n",
-               SOPFLOWSOLVER_IPOPT);
+      //      ExaGOLog(EXAGO_LOG_INFO, "SOPFLOW: Using {} solver\n",
+      //               SOPFLOWSOLVER_IPOPT);
     }
   }
 
-  ierr = PetscStrcmp(sopflow->solvername, "HIOP", &issopflowsolverhiop);
+  ierr = PetscStrcmp(sopflow->solvername, "HIOP", &sopflow->issolver_hiop);
+  CHKERRQ(ierr);
+  ierr = PetscStrcmp(sopflow->solvername, "IPOPT", &sopflow->issolver_ipopt);
   CHKERRQ(ierr);
 
   if (!sopflow->ismulticontingency) {
@@ -966,7 +978,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
       }
 
       /* Set subproblem parameters and partial setup */
-      if (issopflowsolverhiop) {
+      if (sopflow->issolver_hiop) {
         ierr = OPFLOWSetModel(sopflow->opflows[s], sopflow->subproblem_model);
         CHKERRQ(ierr);
         ierr = OPFLOWSetSolver(sopflow->opflows[s], sopflow->subproblem_solver);
@@ -1138,40 +1150,40 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
     }
   }
 
-  /* Create vector X */
-  ierr = VecCreate(sopflow->comm->type, &sopflow->X);
-  CHKERRQ(ierr);
-  ierr = VecSetSizes(sopflow->X, sopflow->nx, PETSC_DECIDE);
-  CHKERRQ(ierr);
-  ierr = VecSetFromOptions(sopflow->X);
-  CHKERRQ(ierr);
-  ierr = VecGetSize(sopflow->X, &sopflow->Nx);
-  CHKERRQ(ierr);
-
-  ierr = VecDuplicate(sopflow->X, &sopflow->Xl);
-  CHKERRQ(ierr);
-  ierr = VecDuplicate(sopflow->X, &sopflow->Xu);
-  CHKERRQ(ierr);
-  ierr = VecDuplicate(sopflow->X, &sopflow->gradobj);
-  CHKERRQ(ierr);
-
-  /* vector for constraints */
-  ierr = VecCreate(sopflow->comm->type, &sopflow->G);
-  CHKERRQ(ierr);
-  ierr = VecSetSizes(sopflow->G, sopflow->ncon, PETSC_DECIDE);
-  CHKERRQ(ierr);
-  ierr = VecSetFromOptions(sopflow->G);
-  CHKERRQ(ierr);
-  ierr = VecGetSize(sopflow->G, &sopflow->Ncon);
-  CHKERRQ(ierr);
-
-  /* Constraint bounds vectors  */
-  ierr = VecDuplicate(sopflow->G, &sopflow->Gl);
-  CHKERRQ(ierr);
-  ierr = VecDuplicate(sopflow->G, &sopflow->Gu);
-  CHKERRQ(ierr);
-
-  if (sopflow->comm->size == 1) {
+  if(sopflow->issolver_ipopt) {
+    /* Create vector X */
+    ierr = VecCreate(sopflow->comm->type, &sopflow->X);
+    CHKERRQ(ierr);
+    ierr = VecSetSizes(sopflow->X, sopflow->nx, PETSC_DECIDE);
+    CHKERRQ(ierr);
+    ierr = VecSetFromOptions(sopflow->X);
+    CHKERRQ(ierr);
+    ierr = VecGetSize(sopflow->X, &sopflow->Nx);
+    CHKERRQ(ierr);
+    
+    ierr = VecDuplicate(sopflow->X, &sopflow->Xl);
+    CHKERRQ(ierr);
+    ierr = VecDuplicate(sopflow->X, &sopflow->Xu);
+    CHKERRQ(ierr);
+    ierr = VecDuplicate(sopflow->X, &sopflow->gradobj);
+    CHKERRQ(ierr);
+    
+    /* vector for constraints */
+    ierr = VecCreate(sopflow->comm->type, &sopflow->G);
+    CHKERRQ(ierr);
+    ierr = VecSetSizes(sopflow->G, sopflow->ncon, PETSC_DECIDE);
+    CHKERRQ(ierr);
+    ierr = VecSetFromOptions(sopflow->G);
+    CHKERRQ(ierr);
+    ierr = VecGetSize(sopflow->G, &sopflow->Ncon);
+    CHKERRQ(ierr);
+    
+    /* Constraint bounds vectors  */
+    ierr = VecDuplicate(sopflow->G, &sopflow->Gl);
+    CHKERRQ(ierr);
+    ierr = VecDuplicate(sopflow->G, &sopflow->Gu);
+    CHKERRQ(ierr);
+    
     /* Constraint Jacobian */
     ierr = MatCreate(sopflow->comm->type, &sopflow->Jac);
     CHKERRQ(ierr);
@@ -1187,9 +1199,9 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
                                      (PetscInt)(0.1 * sopflow->Nx), NULL);
     CHKERRQ(ierr);
     ierr =
-        MatSetOption(sopflow->Jac, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+      MatSetOption(sopflow->Jac, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
     CHKERRQ(ierr);
-
+    
     /* Hessian */
     ierr = MatCreate(sopflow->comm->type, &sopflow->Hes);
     CHKERRQ(ierr);
@@ -1208,17 +1220,21 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
     ierr =
         MatSetOption(sopflow->Hes, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
     CHKERRQ(ierr);
-  }
 
-  /* Lagrangian multipliers */
-  ierr = VecDuplicate(sopflow->G, &sopflow->Lambda);
-  CHKERRQ(ierr);
+    /* Lagrangian multipliers */
+    ierr = VecDuplicate(sopflow->G, &sopflow->Lambda);
+    CHKERRQ(ierr);
+  }
 
   ierr = (*sopflow->solverops.setup)(sopflow);
   CHKERRQ(ierr);
-  ExaGOLog(EXAGO_LOG_INFO, "{}", "SOPFLOW: Setup completed");
 
   sopflow->setupcalled = PETSC_TRUE;
+
+  MPI_Barrier(sopflow->comm->type);
+  if(!sopflow->comm->rank) {
+    ierr = PetscPrintf(PETSC_COMM_SELF,"SOPFLOW: Setup completed\n");CHKERRQ(ierr);
+  }
   PetscFunctionReturn(0);
 }
 
@@ -1230,7 +1246,6 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
 */
 PetscErrorCode SOPFLOWSolve(SOPFLOW sopflow) {
   PetscErrorCode ierr;
-  PetscBool issolver_ipopt;
 
   PetscFunctionBegin;
 
@@ -1238,10 +1253,7 @@ PetscErrorCode SOPFLOWSolve(SOPFLOW sopflow) {
     ierr = SOPFLOWSetUp(sopflow);
   }
 
-  ierr = PetscStrcmp(sopflow->solvername, "IPOPT", &issolver_ipopt);
-  CHKERRQ(ierr);
-
-  if (issolver_ipopt) {
+  if (sopflow->issolver_ipopt) {
     /* Set bounds on variables */
     if (sopflow->modelops.setvariablebounds) {
       ierr = (*sopflow->modelops.setvariablebounds)(sopflow, sopflow->Xl,

@@ -1,4 +1,4 @@
-message(STATUS "Loading CMake cache for a GCC+CUDA+MPI build")
+message(STATUS "Loading CMake cache for a GCC+HIP+MPI build")
 
 set(prefix ${CMAKE_SOURCE_DIR}/install)
 message(STATUS "Setting initial installation prefix to ${prefix}")
@@ -7,14 +7,14 @@ set(CMAKE_INSTALL_PREFIX
     CACHE PATH ""
 )
 
-set(arch 60)
-message(STATUS "Using initial cuda architecture of ${arch}")
-set(CMAKE_CUDA_ARCHITECTURES
+set(arch gfx90a)
+message(STATUS "Using initial AMD GPU target architecture of ${arch}")
+set(AMDGPU_TARGETS
     ${arch}
     CACHE STRING ""
 )
 
-message(STATUS "Building static libraries only since HiOp is static.")
+message(STATUS "Just building static libraries for now.")
 set(EXAGO_BUILD_SHARED
     OFF
     CACHE BOOL ""
@@ -30,7 +30,7 @@ set(CMAKE_BUILD_TYPE
     CACHE STRING ""
 )
 
-message(STATUS "Enabling GPU, HiOp, MPI, PETSC, and RAJA")
+message(STATUS "Enabling GPU (HIP), HiOp, MPI, PETSC, and RAJA")
 set(EXAGO_ENABLE_GPU
     ON
     CACHE BOOL ""
@@ -72,9 +72,15 @@ set(EXAGO_RUN_TESTS
     CACHE BOOL ""
 )
 
-message(STATUS "Enabling Python when building without Ipopt")
+message(STATUS "Disabling Python when building with Ipopt on Crusher")
 set(EXAGO_ENABLE_PYTHON
     OFF
+    CACHE BOOL ""
+)
+
+message(STATUS "Enabling Logging")
+set(EXAGO_ENABLE_LOGGING
+    ON
     CACHE BOOL ""
 )
 

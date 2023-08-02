@@ -3,12 +3,25 @@
 
 #Hessian analytical_exact
 #KKTLinsys auto
-compute_mode cpu
+compute_mode gpu
 
-verbosity_level 3
+verbosity_level 0
 mu0 1e-1
 fixed_var relax
 #tolerance 1e-6
+max_iter 20
+
+linsol_mode forcequick
+#linsol_mode speculative
+
+#mem_space device
+#callback_mem_space device
 
 scaling_type none
-bound_relax_perturb 1e-4
+#bound_relax_perturb 1e-6
+
+ir_outer_maxit 0
+
+#print_options short
+
+time_kkt on

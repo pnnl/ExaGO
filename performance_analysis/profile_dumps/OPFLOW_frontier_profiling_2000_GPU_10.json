@@ -1,0 +1,1 @@
+[{"print_output": 0, "argument_list": "log_view", "netfile": "datafiles/case_ACTIVSg2000.m", "opflow_solver": "HIOP", "opflow_model": "POWER_BALANCE_HIOP", "application": "opflow", "verbosity_level": 3, "compute_mode": "GPU", "max_iter": "10", "petsc_solve_time": 53.05, "total_solve_time": 58.13858413696289, "profiling_time": "07/30/2023 00:31:58"}]

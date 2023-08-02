@@ -97,6 +97,9 @@ PetscErrorCode PSCheckandSetRefBus(PS ps) {
   } else {
     if (ps->busext2intmap[firstpvbus] != -1) {
       ps->bus[ps->busext2intmap[firstpvbus]].ide = REF_BUS;
+      ierr =
+          PetscPrintf(PETSC_COMM_SELF, "Using first PV bus = %d ", firstpvbus);
+      CHKERRQ(ierr);
     }
   }
 

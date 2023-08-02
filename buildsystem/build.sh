@@ -197,29 +197,50 @@ then
 fi
 
 # Correctly identify clusters based on hostname
+# Valid cluster suggestions are spack based,
+# however you can have any job with a valid:
+# buildsystem/<job-name>/<platform>Variables.sh
 case $MY_CLUSTER in
   newell*)
     export MY_CLUSTER=newell
     ;;
+  incline*|dmi*)
+    export MY_CLUSTER=incline
+    ;;
   dl*|deception|*fat*)
     export MY_CLUSTER=deception
     ;;
+  crusher*)
+    export MY_CLUSTER=crusher
+    ;; 
+  ascent*)
+    export MY_CLUSTER=ascent
+    ;;
+  summit*)
+    export MY_CLUSTER=summit
+    ;;
+  frontier*)
+    export MY_CLUSTER=frontier
+    ;;
   *)
-    echo "Cluster $MY_CLUSTER not identified - you'll have to set relevant variables manually."
+    echo "${MY_CLUSTER} did not match any directories in /buildsystem/spack/"
+    echo "Try one of the following platforms: "
+    echo $(ls -d ./buildsystem/spack/*/ | tr '\n' '\0' | xargs -0 -n 1 basename )
+    exit 1 
     ;;
 esac
 
 ulimit -s unlimited || echo 'Could not set stack size to unlimited.'
 ulimit -l unlimited || echo 'Could not set max locked memory to unlimited.'
 
-. /etc/profile.d/modules.sh
-module purge
-
 varfile="$SRCDIR/buildsystem/$JOB/$(echo $MY_CLUSTER)Variables.sh"
 
 if [[ -f "$varfile" ]]; then
-  source "$varfile"
-  echo Sourced system-specific variables for $MY_CLUSTER
+  # source varfile without stderr or stout if it exists, error if failure
+  set -xv
+  source $varfile || { echo "Could not source $varfile"; exit 1; }
+  # source $varfile 2>/dev/null || { echo "Could not source $varfile"; exit 1; }
+  set +xv
 fi
 
 # module list
