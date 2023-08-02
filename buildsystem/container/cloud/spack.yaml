@@ -2,7 +2,8 @@ spack:
   specs:
     # - cmake@3.26.3 arch=linux-amzn2-x86_64_v3
     - exago@develop
-    - py-notebook
+    - py-jupyterlab
+    - py-pip
   concretizer:
     unify: when_possible
     reuse: true
@@ -17,6 +18,11 @@ spack:
       final:
       - libgomp
       - libgfortran
+    extra_instructions:
+      final: |
+        ADD datafiles.tar /home/
+        ADD perf.tar /home/
+        ADD perf_installation.sh /home/
   packages:
     exago:
       require: +raja+hiop+ipopt
