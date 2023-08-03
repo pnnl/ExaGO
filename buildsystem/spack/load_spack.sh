@@ -46,7 +46,6 @@ source $base/env.sh && \
 
 # Make sure SPACK_INSTALL is set, so we aren't installing somewhere undesired
 SPACK_INSTALL="${SPACK_INSTALL:?SPACK_INSTALL is unset. $base/env.sh should be edited to configure this}" && \
-SPACK_MIRROR="${SPACK_MIRROR:?SPACK_MODULES is unset. $base/env.sh should be edited to configure this}" && \
 
 # Load spack
 source ./tpl/spack/share/spack/setup-env.sh && \
@@ -70,20 +69,9 @@ echo "spack configuration will be installed into $SPACK_INSTALL" && \
 mkdir -p $SPACK_INSTALL && \
 echo "spack cache will be in $SPACK_CACHE" && \
 mkdir -p $SPACK_CACHE && \
-echo "spack mirror will be in $SPACK_MIRROR" && \
-mkdir -p $SPACK_MIRROR
 
 # Print config if configured successfully
 if [ $? -eq 0 ] && [ "$1" = "-v" ]; then
   spack config get config
 fi
 
-=======
-echo "spack mirror will be in $SPACK_MIRROR" && \
-mkdir -p $SPACK_MIRROR
-
-# Print config if configured successfully
-if [ $? -eq 0 ] && [ "$1" = "-v" ]; then
-  spack config get config
-fi
->>>>>>> 358ae41... Add scripts from incline-dev branch.
