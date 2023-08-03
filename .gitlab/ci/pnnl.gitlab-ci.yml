@@ -184,6 +184,11 @@ workflow:
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
+  GIT_DEPTH: 1
+  KUBERNETES_HELPER_CPU_REQUEST: 100m
+  KUBERNETES_HELPER_CPU_LIMIT: 500m
+  KUBERNETES_HELPER_MEMORY_REQUEST: 256Mi
+  KUBERNETES_HELPER_MEMORY_LIMIT: 256Mi
 
 # https://stackoverflow.com/questions/67009007
 # We have to use YAML anchors for rules here
