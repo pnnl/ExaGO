@@ -370,8 +370,8 @@ SVC Account Cleanup:
     GIT_STRATEGY: none
   script:
     - export WORKDIR="$HOME/gitlab/"
-    # clears directory of files more than 6 hours/360 minutes old
-    - find $WORKDIR -type d -mindepth 1 -mmin +360 -prune -print -exec rm -rf {} \; || true
+    # clears directory of files more than 2 hours/120 minutes old
+    - find $WORKDIR -type d -mindepth 1 -mmin +120 -prune -print -exec rm -rf {} \; || true
     - ls -hal $WORKDIR
 
 Ascent Push Mirror:
