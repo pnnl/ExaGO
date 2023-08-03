@@ -19,7 +19,6 @@ spack env activate -p $SPACK_ENV
 echo "Activated spack directory based environment"
 
 cp spack.yaml $SPACK_ENV/
-cp perf_installation.sh $SPACK_ENV/
 
 cd $SPACK_ENV
 #create a docker file
@@ -37,7 +36,7 @@ sed -i "" "s/spack install/spack buildcache keys --install --trust \&\& spack in
 
 # sed -i "" "s|CMD \[ \"/bin/bash\" \]|\nRUN yum -y install libgomp \&\& yum -y install libgfortran|" Dockerfile
 # echo "CMD [ \"/bin/bash\" ]" >> Dockerfile
-# jupyter notebook --ip 0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
+# jupyter lab --ip 0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
 
 # copy the contents of the datafile
 pushd ../../../../ && tar -cvf datafiles.tar datafiles && popd && mv ../../../../datafiles.tar .

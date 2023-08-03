@@ -22,7 +22,6 @@ spack:
       final: |
         ADD datafiles.tar /home/
         ADD perf.tar /home/
-        ADD perf_installation.sh /home/
   packages:
     exago:
       require: +raja+hiop+ipopt

@@ -1,0 +1,27 @@
+testsuite_name = "OPFLOW_cloud_profiling"
+application = 'opflow'
+#mpi_rank = 1
+iterations = 1
+
+[presets]
+hiop_verbosity_level = 3
+print_output = 0
+argument_list = 'log_view'
+
+[[profiler]]
+
+#1
+[[testcase]]
+netfile ='../datafiles/case_ACTIVSg200.m'
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'CPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = '10 15 20'
+
+#2
+[[testcase]]
+netfile ='../datafiles/case_ACTIVSg200.m'
+opflow_solver = 'IPOPT'
+hiop_compute_mode = 'CPU'
+opflow_model = 'POWER_BALANCE_POLAR'
+hiop_max_iter = '10 15 20'
