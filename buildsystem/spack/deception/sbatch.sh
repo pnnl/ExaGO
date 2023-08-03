@@ -44,7 +44,6 @@ cleanup() {
 export MY_CLUSTER=deception
 cp /qfs/projects/exasgd/src/coinhsl-archive-2019.05.21.tar.gz . && \
 . buildsystem/spack/load_spack.sh && \
-spack develop --no-clone --path=$(pwd) exago@develop && \
 ./buildsystem/spack/configure_modules.sh 64
 
 EXIT_CODE=$?

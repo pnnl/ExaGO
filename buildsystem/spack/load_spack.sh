@@ -52,6 +52,8 @@ source ./tpl/spack/share/spack/setup-env.sh && \
 
 # Clean out spack just in-case
 spack clean -fm && \
+# Update spack config in case versions have changed...
+spack config update config && \
 
 # Create directory for environment
 SPACKENV=$(pwd)/spack-env-$MY_CLUSTER && \
