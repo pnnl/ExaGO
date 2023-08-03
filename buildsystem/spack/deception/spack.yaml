@@ -2,6 +2,7 @@ spack:
   specs:
     - exago@develop+cuda%gcc@10.2.0 cuda_arch=60,70,75,80
     - exago@develop+cuda%gcc@10.2.0 cuda_arch=60,70,75,80
+    - podman
   view: false
   concretizer:
     unify: when_possible
