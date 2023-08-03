@@ -50,6 +50,9 @@ SPACK_INSTALL="${SPACK_INSTALL:?SPACK_INSTALL is unset. $base/env.sh should be e
 # Load spack
 source ./tpl/spack/share/spack/setup-env.sh && \
 
+# Clean out spack just in-case
+spack clean -fm && \
+
 # Create directory for environment
 SPACKENV=$(pwd)/spack-env-$MY_CLUSTER && \
 mkdir -p $SPACKENV && \
