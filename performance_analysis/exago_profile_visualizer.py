@@ -3,6 +3,8 @@ import os
 import pickle
 import sys
 import toml
+import matplotlib.pyplot as plt
+import pandas as pd
 
 #
 # Print Debug levels
@@ -49,16 +51,39 @@ def parsePickleFile(in_file):
         testsuite_name = testsuite['testsuite_name']
     convertPklToJson(testsuite_name)
 
-    
+def visualizeProfiledData(in_file):
+    profiledData = json.load(open(in_file, 'r'))
+    ## BAR GRAPH ##
+    xAxis = []
+    cpu_values = []
+    gpu_values = []
+    xGroups = ['CPU', 'GPU']
+    for e_data in profiledData:
+        if e_data['opflow_model'] == 'POWER_BALANCE_HIOP' and \
+        e_data['netfile'] == 'datafiles/case_ACTIVSg200.m':
+            if e_data['compute_mode'] == 'CPU':
+                cpu_values.append(e_data['petsc_solve_time'])
+                xAxis.append(e_data['max_iter'])
+            else:
+                gpu_values.append(e_data['petsc_solve_time'])
+
+    df = pd.DataFrame({'CPU': cpu_values,
+                    'GPU': gpu_values}, index=xAxis)
+    ax = df.plot.bar(rot=0, color={"CPU": "green", "GPU": "red"})
+
+    plt.show()
+
+
+
 
 if __name__ == '__main__':
-    convertPklToJson('OPFLOW_frontier_profiling')
-    # in_file = "sample_testsuite.toml"
-    # if len(sys.argv) > 1:
-    #     in_file = sys.argv[1]
-    # else:
-    #     printDebug(0, 'No toml file provided. Using default file: ' + in_file)
-    # if os.path.exists(in_file):
-    #     parsePickleFile(in_file)
-    # else:
-    #     printDebug(0, in_file + ' not found')
+    # convertPklToJson('OPFLOW_frontier_profiling')
+    in_file = "profile_dumps/OPFLOW_frontier_profiling_2000.json"
+    if len(sys.argv) > 1:
+        in_file = sys.argv[1]
+    else:
+        printDebug(0, 'No JSON file provided. Using default file: ' + in_file)
+    if os.path.exists(in_file):
+        visualizeProfiledData(in_file)
+    else:
+        printDebug(0, in_file + ' not found')
