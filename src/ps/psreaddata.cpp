@@ -136,7 +136,7 @@ PetscErrorCode PSReadPSSERawData(PS ps, const char netfile[]) {
   ps->Ngen = ps->ngen = Ngenerator;
   ps->Nline = ps->nline = Nline + Ntransformer;
   ps->NgenON = 0;
-  ps->NlineON = 0;
+  ps->nlineON = ps->NlineON = 0;
 
 #if defined DEBUGPS
   ierr = PetscPrintf(
@@ -649,7 +649,8 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   ps->Ndcline = ps->ndcline = dcline_end_line - dcline_start_line - dcline_nblank_lines;
   ps->nload = ps->Nload;
   ps->NgenON = 0;
-  ps->NlineON = 0;
+  ps->nlineON = ps->NlineON = 0;
+  ps->ndclineON = ps->NdclineON = 0;
 
 #if defined DEBUGPS
   ierr = PetscPrintf(
@@ -926,8 +927,10 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
              &Branch[bri].x, &Branch[bri].b, &Branch[bri].rateA,
              &Branch[bri].rateB, &Branch[bri].rateC, &Branch[bri].tapratio,
              &Branch[bri].phaseshift, &Branch[bri].status);
-      if (Branch[bri].status)
+      if (Branch[bri].status) {
+	ps->nlineON++;
         ps->NlineON++;
+      }
       if (!Branch[bri].tapratio)
         Branch[bri].tapratio = 1.0;
       Branch[bri].phaseshift *= PETSC_PI / 180.0;
