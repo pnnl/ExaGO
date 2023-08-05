@@ -772,8 +772,11 @@ PetscErrorCode PSCreate(MPI_Comm mpicomm, PS *psout) {
   ps->Ngen = -1;
   ps->NgenON = -1;
   ps->Nline = -1;
+  ps->Ndcline = -1;
   ps->nlineON = -1;
+  ps->ndclineON = -1;
   ps->NlineON = -1;
+  ps->NdclineON = -1;
   ps->Nload = -1;
   ps->refct = 0;
   ps->app = NULL;
@@ -1068,9 +1071,9 @@ PetscErrorCode PSSetUp(PS ps) {
       CHKERRQ(ierr);
     }
 
-    /* Broadcast global Nbus,Ngen,Nbranch, Nload,and maxbusnum to all processors
+    /* Broadcast global Nbus,Ngen,Nbranch, Nload,Ndcline, and maxbusnum to all processors
      */
-    PetscInt temp[8];
+    PetscInt temp[9];
     /* Pack variables */
     temp[0] = ps->Nbus;
     temp[1] = ps->Ngen;
@@ -1080,6 +1083,7 @@ PetscErrorCode PSSetUp(PS ps) {
     temp[5] = ps->NgenON;
     temp[6] = ps->NlineON;
     temp[7] = ps->Nref;
+    temp[8] = ps->Ndcline;
     ierr = MPI_Bcast(temp, 8, MPI_INT, 0, ps->comm->type);
     CHKERRQ(ierr);
     /* Unpack */
@@ -1091,6 +1095,7 @@ PetscErrorCode PSSetUp(PS ps) {
     ps->NgenON = temp[5];
     ps->NlineON = temp[6];
     ps->Nref = temp[7];
+    ps->Ndcline = temp[8];
 
     /* Recreate busext2intmap..this will map the local bus numbers to external
      * numbers */
@@ -1099,7 +1104,7 @@ PetscErrorCode PSSetUp(PS ps) {
     for (i = 0; i < ps->maxbusnum + 1; i++)
       ps->busext2intmap[i] = -1;
 
-    ps->ngen = ps->nload = ps->ngenON = ps->nlineON = 0;
+    ps->ngen = ps->nload = ps->ndcline = ps->ngenON = ps->nlineON = ps->ndclineON = 0;
     /* Get the local number of gens and loads */
     for (i = 0; i < nv; i++) {
       ierr = DMNetworkGetNumComponents(ps->networkdm, vtx[i], &numComponents);
@@ -1133,6 +1138,10 @@ PetscErrorCode PSSetUp(PS ps) {
       ierr = PetscMemcpy(&ps->line[i], component, sizeof(struct _p_PSLINE));
       CHKERRQ(ierr);
       ps->nlineON += ps->line[i].status;
+      if(ps->line[i].isdcline) {
+	ps->ndcline++;
+	ps->ndclineON += ps->line[i].status;
+      }
     }
     PetscInt genj = 0, loadj = 0;
     PetscInt genctr, loadctr;
@@ -1170,6 +1179,7 @@ PetscErrorCode PSSetUp(PS ps) {
     ps->nload = ps->Nload;
     ps->ngenON = ps->NgenON;
     ps->nlineON = ps->NlineON;
+    ps->ndclineON = ps->NdclineON;
   }
 
   /* Set up
@@ -1178,8 +1188,9 @@ PetscErrorCode PSSetUp(PS ps) {
      (c) incident generators at bus
      (d) incident loads at bus
      (e) kv levels for lines
-     (e) sets the starting location for the variables for this bus in the given
+     (f) sets the starting location for the variables for this bus in the given
      application state vector
+     (g) marks from and to buses for DC lines (ON) as PV buses
   */
   PetscInt eStart, eEnd, vStart, vEnd;
   PetscInt nlines, k;
@@ -1279,6 +1290,25 @@ PetscErrorCode PSSetUp(PS ps) {
   /* Get KV levels */
   ierr = PSGetKVLevels(ps, &ps->nkvlevels, (const PetscScalar **)&ps->kvlevels);
   CHKERRQ(ierr);
+
+  PSLINE line;
+  /* Mark DC line ends as PV buses */
+  for(i = 0; i < ps->nline; i++) {
+    line = &ps->line[i];
+    if(!line->isdcline) continue;
+    if(!line->status) continue;
+
+    const PSBUS *connbuses;
+    PSBUS busf, bust;
+    /* Get the connected buses */
+    ierr = PSLINEGetConnectedBuses(line,&connbuses);
+    CHKERRQ(ierr);
+    busf = connbuses[0];
+    bust = connbuses[1];
+    busf->ide = PV_BUS;
+    bust->ide = PV_BUS;
+    
+    
   //  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d Came
   //  here\n",ps->comm->rank);CHKERRQ(ierr);
   ps->setupcalled = PETSC_TRUE;
