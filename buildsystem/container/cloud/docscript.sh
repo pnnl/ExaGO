@@ -36,7 +36,7 @@ sed -i "" "s/spack install/spack buildcache keys --install --trust \&\& spack in
 
 # sed -i "" "s|CMD \[ \"/bin/bash\" \]|\nRUN yum -y install libgomp \&\& yum -y install libgfortran|" Dockerfile
 # echo "CMD [ \"/bin/bash\" ]" >> Dockerfile
-# jupyter lab --ip 0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
+# jupyter lab --ip 0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password='' --ServerApp.root_dir='/home/performance_analysis'
 
 # copy the contents of the datafile
 pushd ../../../../ && tar -cvf datafiles.tar datafiles && popd && mv ../../../../datafiles.tar .
