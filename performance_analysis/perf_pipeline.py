@@ -70,7 +70,7 @@ def updateHiopOptions(options, app):
 # Using regex to find the OPFLOWSolve line from the PETSc log
 def getSolveTimeFromPetsc(line, appName):
     pr = '^(OPFLOWSolve)\\s+(\\d+)\\s+(\\d+\\.\\d+)\\s+(\\d+\\.\\d+e[+-]\\d+)'
-    if appName.casefold() == 'opflow':
+    if appName.casefold() == 'opflow' or appName.casefold() == 'sopflow':
         solver_line_parser = re.compile(pr)
         solver_line_match = solver_line_parser.match(line)
         if solver_line_match is not None:
@@ -148,18 +148,31 @@ def flattenNestedTestCases(params):
 
     traversingNestingDict(0)
     return commands_list
-    
+ 
+def checkAppStartCondition(app_name, line):
+    sopflow_start_string = 'SOPFLOW: Application created'
+    opflow_start_string = '[ExaGO] Creating OPFlow'
+    if app_name.casefold() == 'sopflow':
+        if sopflow_start_string in line:
+            return True
+        else:
+            return False
+    elif app_name.casefold() == 'opflow':
+        if opflow_start_string in line:
+            return True
+        else:
+            return False
+    is_app_started = True
+
 def executeCommandAndMeasureTime(command, my_env, iterations, app_name, tool_name):
-    exago_success_run = False
     suc_str = 'Finalizing ' + app_name + ' application.'
-    suc_str_term = 'Successfull termination.'
+    suc_str_term = '-log_view'
     alt_suc_str_term = 'Maximum number of iterations reached.'
     ON_POSIX = 'posix' in sys.builtin_module_names
 
     time_lists = list()
     petsc_time = list()
     for i in range(iterations):
-        timeStarted = time.time()
         timeDelta = 0
 
         input_fd, output_fd = os.pipe()
@@ -167,22 +180,31 @@ def executeCommandAndMeasureTime(command, my_env, iterations, app_name, tool_nam
                         universal_newlines=True, bufsize=1,
                         env=my_env, close_fds=ON_POSIX)
         os.close(output_fd)
+        totalPetSCTime = 0.0
+        exago_success_run = False
+        is_app_started = False
         with io.open(input_fd, 'r', buffering=1) as ff:
             for line in ff:
-                timeDelta = timeDelta + time.time() - timeStarted
-                printDebug(1, line.rstrip())
-                petSCTime = getSolveTimeFromPetsc(line, app_name)
-                if petSCTime > -1:
-                    petsc_time.append(petSCTime)
-                if exago_success_run is False and suc_str in line:
-                    exago_success_run = True
-                if exago_success_run is False and suc_str_term in line:
-                    exago_success_run = True
-                if exago_success_run is False and alt_suc_str_term in line:
-                    exago_success_run = True
-                timeStarted = time.time()
+                if is_app_started is False:
+                    is_app_started = checkAppStartCondition(app_name, line)
+                    if is_app_started is True: # its important to keep this nested
+                        timeStarted = time.time()
+                else:
+                    timeDelta = timeDelta + time.time() - timeStarted
+                    printDebug(1, line.rstrip())
+                    petSCTime = getSolveTimeFromPetsc(line, app_name)
+                    if float(petSCTime) > -1:
+                        totalPetSCTime = totalPetSCTime + float(petSCTime)
+                    if exago_success_run is False and suc_str in line:
+                        exago_success_run = True
+                    if exago_success_run is False and suc_str_term in line:
+                        exago_success_run = True
+                    if exago_success_run is False and alt_suc_str_term in line:
+                        exago_success_run = True
+                    timeStarted = time.time()
 
         if exago_success_run:
+            petsc_time.append(totalPetSCTime)
             printDebug(2, app_name + " runs successfully")
             time_lists.append(timeDelta)
             printDebug(2, "Total measured time with " +
@@ -213,13 +235,13 @@ def doPerfMeasure(in_file):
         iterations = testsuite['iterations']
 
     mpi_cmd = None
-#    mpi_start = "mpiexec"
-#    if "mpi_start" in testsuite:
-#        mpi_start = str(testsuite['mpi_start'])
-#
-#    if 'mpi_args' in testsuite:
-#        mpi_cmd = [mpi_start]
-#        mpi_cmd.extend(testsuite['mpi_args'].split())
+    mpi_start = "mpiexec"
+    if "mpi_start" in testsuite:
+        mpi_start = str(testsuite['mpi_start'])
+
+    if 'mpi_args' in testsuite:
+        mpi_cmd = [mpi_start]
+        mpi_cmd.extend(testsuite['mpi_args'].split())
 #    if "mpi_rank" in testsuite:
 #        mpi_cmd = [mpi_start, "-n", str(testsuite['mpi_rank'])]
     
@@ -321,7 +343,7 @@ def parsePickleFileToJSON(in_file):
             json.dump(results_data, outfile)
         os.system('rm ' + t_file)
     else:
-        printDebug(0, in_file + ' not found')
+        printDebug(0, t_file + ' not found')
 
 # Main file. This checks if a file name is provided
 # if not it will try to read the default file

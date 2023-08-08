@@ -1,1 +1,22 @@
-srun -A csc359 -N 1 -p batch -n 1 -t 3 -o opflow_srun_test opflow -netfile ../datafiles/case_ACTIVSg200.m -print_output 0 -log_view -opflow_solver HIOP -opflow_model POWER_BALANCE_HIOP
+#!/bin/bash
+#srun -A csc359 -N 1 -p batch -n 1 -t 3 -o opflow_srun_test opflow -netfile ../datafiles/case_ACTIVSg200.m -print_output 0 -log_view -opflow_solver HIOP -opflow_model POWER_BALANCE_HIOP
+
+sopflow -print_output 1 -log_view \
+-netfile datafiles/case_ACTIVSg200.m \
+-scenfile datafiles/10_scenarios_ACTIVSg200.csv \
+-ctgfile datafiles/case_ACTIVSg200.cont \
+-sopflow_Ns 10 -sopflow_Nc 9999 \
+-opflow_initialization FROMFILE \
+-opflow_ignore_lineflow_constraints 1 \
+-opflow_include_powerimbalance_variables 0 \
+-opflow_include_loadloss_variables 0 \
+-opflow_tolerance 1e-06 \
+-sopflow_flatten_contingencies 1 \
+-save_output 1 \
+-sopflow_output_directory performance_analysis/profile_dumps \
+-hiop_mem_space DEVICE \
+-opflow_output_format MINIMAL \
+-sopflow_solver HIOP \
+-sopflow_subproblem_solver HIOP \
+-sopflow_subproblem_model PBPOLRAJAHIOP \
+-sopflow_enable_multicontingency 0 \
