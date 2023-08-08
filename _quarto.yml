@@ -1,0 +1,41 @@
+project:
+  title: "exago"
+  type: website
+  output-dir: public
+  resources: 
+    - quarto/*
+
+toc: true
+number-sections: true
+
+format:
+  html: 
+    default: true
+    toc: true
+
+website:
+  title: "ExaGO"
+  sidebar:
+    title: "ExaGO"
+    logo: quarto/exago_logo.png
+    style: "docked"
+    search: true
+    background: rgb(215,121,0)
+    tools:
+    # TODO Tech Fest itself, confluence, and our HPC Docs / help email
+      - icon: gitlab
+        href: https://gitlab.pnnl.gov/techfest/techfest-2023/hpc-mlops
+    contents:
+      - section: "Intro"
+        contents:
+          - CHANGELOG.md
+          - INSTALL.md
+          - SUPPORT.md
+      - section: "Docs"
+        contents:
+          - docs/developer_guidelines.md
+          - docs/exago_policy_compatibility.md
+          - docs/installing_with_spack.md
+          - docs/python_bindings.md
+          - docs/release_checklist.md
+

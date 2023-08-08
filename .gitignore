@@ -8,3 +8,5 @@ install/*
 spack-*
 .vscode/
 coinhsl-*
+
+/.quarto/
