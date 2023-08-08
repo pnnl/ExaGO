@@ -16,7 +16,7 @@ format:
 website:
   title: "ExaGO"
   sidebar:
-    title: "ExaGO"
+    title: "Exascale Grid Optimization Toolkit"
     logo: quarto/exago_logo.png
     style: "docked"
     search: true
@@ -24,7 +24,9 @@ website:
     tools:
     # TODO Tech Fest itself, confluence, and our HPC Docs / help email
       - icon: gitlab
-        href: https://gitlab.pnnl.gov/techfest/techfest-2023/hpc-mlops
+        href: https://gitlab.pnnl.gov/exasgd/frameworks/exago
+      - icon: github
+        href: https://github.com/pnnl/ExaGO
     contents:
       - section: "Intro"
         contents:
