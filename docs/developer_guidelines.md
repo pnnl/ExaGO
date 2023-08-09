@@ -118,9 +118,12 @@ Otherwise, your MR must pass our continuous integration pipelines before being m
 
 CI tests rely on Spack generated tcl modules in order to build and test ExaGO on target platforms.
 In order to rebuild the modules for a given platform to update CI environments, you must do the following in an active MR (this workflow does not work in branches):
-1. Update the spack submodule in [/tpl/spack](./tpl) to point to your desired spack commit. This may be necessary when incoporating new software versions, or when undertaking spack development.
-1. Update the relevant `spack.yaml(s)` in [/buildsystem/spack/](./buildsystem/spack/) for each platform that you are building for. Currently only [Newell, Deception, Ascent] support automatic re-building.
-1. Add a commit to to your MR with `[<clusterame>-rebuild]` where `<clustername>` is replaced by and desired platform. Add multiple `[<clusterame>-rebuild]` into the commit message for each platform you want to rebuild for. 
+
+1. Update the spack submodule in [/tpl/spack](../tpl) to point to your desired spack commit. This may be necessary when incoporating new software versions, or when undertaking spack development.
+
+2. Update the relevant `spack.yaml(s)` in [/buildsystem/spack/](../buildsystem/spack/) for each platform that you are building for. Currently only [Newell, Deception, Ascent] support automatic re-building.
+
+3. Add a commit to to your MR with `[<clusterame>-rebuild]` where `<clustername>` is replaced by and desired platform. Add multiple `[<clusterame>-rebuild]` into the commit message for each platform you want to rebuild for. 
 
 This should be done semi-regularly in order to incorporate new versions of packages, and to update ExaGO's `package.py` with any new conflicts found in spack's develop branch.
 
@@ -138,7 +141,7 @@ Each MR should usually have a corresponding issue.
 
 #### P014: Follow the Release Checklist
 
-[The release checklist is linked here. Refer to this document for release documentation.](/docs/release_checklist.md)
+[The release checklist is linked here. Refer to this document for release documentation.](./release_checklist.md)
 
 #### P024: Changelog
 

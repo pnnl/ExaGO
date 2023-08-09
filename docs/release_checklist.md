@@ -38,7 +38,7 @@ Before tagging, `CHANGELOG.md` must be updated such that the items under the `de
 
 ### CMake version
 
-Before merging `develop`->`master` ensure that the version number in the project definition in main [CMakeLists.txt](./CMakeLists.txt) is upated in accordance with the planned upcoming release.
+Before merging `develop`->`master` ensure that the version number in the project definition in main [CMakeLists.txt](../CMakeLists.txt) is upated in accordance with the planned upcoming release.
 
 ### Spack
 
