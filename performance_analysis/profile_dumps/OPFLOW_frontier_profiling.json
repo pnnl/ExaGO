@@ -1,0 +1,1 @@
+[{"print_output": 0, "argument_list": "log_view", "netfile": "datafiles/case_ACTIVSg200.m", "opflow_solver": "HIOP", "opflow_model": "POWER_BALANCE_HIOP", "application": "opflow", "verbosity_level": 3, "compute_mode": "CPU", "max_iter": "500", "petsc_solve_time": 13.715, "total_solve_time": 13.961268663406372, "profiling_time": "08/07/2023 20:25:04"}]

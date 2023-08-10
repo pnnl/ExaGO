@@ -1,8 +1,28 @@
 #!/bin/bash
-#srun -A csc359 -N 1 -p batch -n 1 -t 3 -o opflow_srun_test opflow -netfile ../datafiles/case_ACTIVSg200.m -print_output 0 -log_view -opflow_solver HIOP -opflow_model POWER_BALANCE_HIOP
-srun -A csc359 -N 1 -n 8 -c 1 --gpus-per-task=1 --gpu-bind=closest \
--p batch -t 0:30:00 --pty --job-name=exago_perf_run \
-/mnt/bb/sayefsakin/sopflow -print_output 1 -log_view \
+
+#SBATCH --nodes=4
+#SBATCH -n 16
+#SBATCH --job-name=exago_4
+#SBATCH --gpu-bind=closest
+#SBATCH --gpus-per-task=1
+#SBATCH --cpus-per-task=1
+#SBATCH --output=profile_frontier_4.%J
+#SBATCH --time=0:30:00
+#SBATCH --error=profile_frontier_4.%J
+#SBATCH -A CSC359
+#SBATCH -p batch
+#SBATCH -C nvme
+
+#SBATCH --mail-type=END
+#SBATCH --mail-user=sayefsakin@gmail.com
+
+source buildsystem/clang-hip/frontierVariables.sh
+source buildsystem/spack/frontier/modules/exago.sh
+
+
+srun -A csc359 -N 4 -n 16 -c 1 --gpus-per-task=1 --gpu-bind=closest \
+-p batch -t 0:30:00 --job-name=exago_perf_run \
+sopflow -print_output 1 -log_view \
 -netfile datafiles/case_ACTIVSg200.m \
 -scenfile datafiles/10_scenarios_ACTIVSg200.csv \
 -ctgfile datafiles/case_ACTIVSg200.cont \

@@ -17,7 +17,7 @@ from subprocess import call, Popen, PIPE
 # 0: basic, will only print default output like execution time.
 # 1: moderate, Additionally prints ExaGO output.
 # 2: all, Additionally prints error and success messages.
-DEBUG = 1
+DEBUG = 2
 
 
 # Defining the debug level.
@@ -117,12 +117,17 @@ def printTimingInfo(params,
 # writing results to a python pickle file
 # Used pickle format, since I needed to append to the file
 # Also for a larger run, this script could terminate in the middle and generated pickle file would still be here.
-def dumpResultsToFile(testsuite_name, params, hiop_options, time_lists, petsc_time, app_name):
+def dumpResultsToFile(testsuite_name, params, hiop_options, time_lists, petsc_time, c_ranks, app_name):
     write_filename = testsuite_name + ".pkl"
     dict_dump = dict()
     dict_dump = copy.deepcopy(params)
     dict_dump['application'] = app_name
     dict_dump.update(hiop_options)
+
+    if c_ranks == -1:
+        c_ranks = 1
+    dict_dump['total_ranks'] = c_ranks
+
     dict_dump['petsc_solve_time'] = sum(petsc_time) / len(petsc_time)
     dict_dump['total_solve_time'] = sum(time_lists) / len(time_lists)
     dict_dump['profiling_time'] = time.strftime('%m/%d/%Y %H:%M:%S')
@@ -164,6 +169,16 @@ def checkAppStartCondition(app_name, line):
             return False
     is_app_started = True
 
+def getTotalRanks(app_name, line):
+    if app_name.casefold() == 'sopflow' and 'total ranks' in line:
+        pr = '^(total ranks)\\s+(\\d+)'
+        rank_line_parser = re.compile(pr)
+        rank_line_match = rank_line_parser.match(line)
+        if rank_line_match is not None:
+            printDebug(2, 'solver line found')
+            return int(rank_line_match.group(2))
+    return -1
+
 def executeCommandAndMeasureTime(command, my_env, iterations, app_name, tool_name):
     suc_str = 'Finalizing ' + app_name + ' application.'
     suc_str_term = '-log_view'
@@ -172,6 +187,7 @@ def executeCommandAndMeasureTime(command, my_env, iterations, app_name, tool_nam
 
     time_lists = list()
     petsc_time = list()
+    total_reported_ranks = -1
     for i in range(iterations):
         timeDelta = 0
 
@@ -192,9 +208,13 @@ def executeCommandAndMeasureTime(command, my_env, iterations, app_name, tool_nam
                 else:
                     timeDelta = timeDelta + time.time() - timeStarted
                     printDebug(1, line.rstrip())
+
                     petSCTime = getSolveTimeFromPetsc(line, app_name)
                     if float(petSCTime) > -1:
                         totalPetSCTime = totalPetSCTime + float(petSCTime)
+                    
+                    if total_reported_ranks == -1:
+                        total_reported_ranks = getTotalRanks(app_name, line)
                     if exago_success_run is False and suc_str in line:
                         exago_success_run = True
                     if exago_success_run is False and suc_str_term in line:
@@ -212,7 +232,7 @@ def executeCommandAndMeasureTime(command, my_env, iterations, app_name, tool_nam
                         " seconds.")
         else:
             printDebug(0, app_name + " did NOT run with " + tool_name)
-    return time_lists, petsc_time
+    return time_lists, petsc_time, total_reported_ranks
 
 # doing automated performance measurement
 # this will read from TOML file, parse it, and populate
@@ -275,9 +295,9 @@ def doPerfMeasure(in_file):
                     printDebug(2, 'profile dir set')
         printDebug(2, profiler_cmd_list)
 
-    if shutil.which(app_name) is None:
-        printDebug(0, app_name + ' not installed')
-        return
+    #if shutil.which(app_name) is None:
+    #    printDebug(0, app_name + ' not installed')
+    #    return
 
     test_number = 1
     for tests in testsuite['testcase']:
@@ -293,7 +313,7 @@ def doPerfMeasure(in_file):
                     tool_name = profiler_cmd[0]
                     command.extend(profiler_cmd)
 
-                command.append(app_name)
+                command.append('/mnt/bb/sayefsakin/' + app_name)
                 params = dict()
                 params = copy.deepcopy(preset_params)
                 params.update(each_test)
@@ -312,10 +332,10 @@ def doPerfMeasure(in_file):
                 test_number = test_number + 1
                 printDebug(2, command)
                 printDebug(2, '----')
-                time_lists, petsc_time = executeCommandAndMeasureTime(command, my_env, iterations, app_name, tool_name)
+                time_lists, petsc_time, c_ranks = executeCommandAndMeasureTime(command, my_env, iterations, app_name, tool_name)
                 if len(time_lists) > 0:
                     printTimingInfo(params, hiop_options, time_lists, petsc_time, app_name, tool_name)
-                    dumpResultsToFile(testsuite_name, params, hiop_options, time_lists, petsc_time, app_name)
+                    dumpResultsToFile(testsuite_name, params, hiop_options, time_lists, petsc_time, c_ranks, app_name)
 
 def parsePickleFileToJSON(in_file):
     testsuite = toml.load(in_file)
@@ -341,7 +361,7 @@ def parsePickleFileToJSON(in_file):
                 pass
         with open(testsuite_name + ".json", "w") as outfile:
             json.dump(results_data, outfile)
-        os.system('rm ' + t_file)
+        #os.system('rm ' + t_file)
     else:
         printDebug(0, t_file + ' not found')
 

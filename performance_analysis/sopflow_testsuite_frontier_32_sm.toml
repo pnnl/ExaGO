@@ -1,0 +1,41 @@
+mpi_start = 'srun'
+mpi_args = '-N 32 -n 256 -c 7 --gpus-per-task=1 --gpu-bind=closest'
+testsuite_name = "SOPFLOW_frontier_ACTIVSg2000_kpp2"
+application = 'sopflow'
+iterations = 1
+
+[presets]
+hiop_verbosity_level = 0
+print_output = 0
+argument_list = 'log_view'
+
+[[profiler]]
+
+[[testcase]]
+netfile = 'datafiles/case_ACTIVSg2000.m'
+scenfile = 'datafiles/10_scenarios_ACTIVSg2000.csv'
+ctgcfile = 'datafiles/case_ACTIVSg2000.cont'
+sopflow_Ns = 10
+sopflow_Nc = 400
+sopflow_solver = 'HIOP'
+sopflow_subproblem_model = 'PBPOLRAJAHIOP'
+sopflow_subproblem_solver = 'HIOP'
+hiop_compute_mode = 'GPU'
+hiop_mem_space = 'DEVICE'
+opflow_initialization = 'FROMFILE'
+opflow_ignore_lineflow_constraints = 1
+opflow_include_powerimbalance_variables = 0
+opflow_include_loadloss_variables = 0
+opflow_tolerance = 1e-6
+opflow_output_format = 'MINIMAL'
+sopflow_enable_multicontingency = 1
+sopflow_flatten_contingencies = 1
+save_output = 1
+sopflow_output_directory = 'sopflow_case200_8_dumps'
+hiop_mu0 = 1e-1
+hiop_fixed_var = 'relax'
+hiop_tolerance = 1e-6
+hiop_linsol_mode = 'forcequick'
+hiop_scaling_type = 'none'
+hiop_ir_outer_maxit = 0
+hiop_time_kkt = 'on'
