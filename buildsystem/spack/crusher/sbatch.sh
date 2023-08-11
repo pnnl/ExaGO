@@ -1,8 +1,9 @@
 #!/bin/bash
 
-#SBATCH -A CSC359
+#SBATCH -A csc359_crusher
+#SBATCH --reservation=hack4
 #SBATCH -p batch
-#SBATCH -t 100
+#SBATCH -t 240
 #SBATCH -N 1
 #SBATCH -c 32
 #SBATCH -J exasgd_spack_install

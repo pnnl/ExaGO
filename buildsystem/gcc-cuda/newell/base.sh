@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. /etc/profile.d/modules.sh
+source /etc/profile.d/modules.sh
 
 export OMP_CANCELLATION=true
 export OMP_PROC_BIND=true

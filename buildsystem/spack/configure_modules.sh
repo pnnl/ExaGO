@@ -12,9 +12,7 @@ module list
 
 # This assumes that we are installing from a binary mirror, and don't want to fetch files
 # Make sure to use binary_mirror.sh if this is failing
-spack develop --path=$(pwd) exago@develop && \
-spack concretize -f && \
-spack install --fail-fast -j $1 && \
+spack install -j $1 && \
 
 # This deletes the previous modules that are installed
 # Either use a different module path than other users, or deal with frequent updates
@@ -23,8 +21,8 @@ spack install --fail-fast -j $1 && \
 spack module tcl refresh -y && \
 	
 # We will create a new modules file, with the first line being the module path
-mkdir -p $base/modules && \
 # Note we redirect and destroy old file
+# Only installing non-optimized version while config is not in spack develop
 echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/dependencies.sh && \
 #echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/optimized-dependencies.sh && \
 #echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/exago-optimized.sh && \

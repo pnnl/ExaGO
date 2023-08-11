@@ -1,5 +1,6 @@
 #!/bin/bash
-. /etc/profile.d/modules.sh
+source /etc/profile.d/modules.sh
+export MY_CLUSTER=deception
 
 module purge
 
