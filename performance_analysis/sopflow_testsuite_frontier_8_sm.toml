@@ -3,6 +3,7 @@ mpi_args = '-N 8 -n 64 -c 7 --gpus-per-task=1 --gpu-bind=closest'
 testsuite_name = "SOPFLOW_frontier_ACTIVSg2000_kpp2"
 application = 'sopflow'
 iterations = 1
+app_path = '/mnt/bb/sayefsakin/'
 
 [presets]
 hiop_verbosity_level = 0

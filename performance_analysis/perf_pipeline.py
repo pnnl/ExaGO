@@ -253,6 +253,9 @@ def doPerfMeasure(in_file):
     iterations = 1
     if 'iterations' in testsuite:
         iterations = testsuite['iterations']
+    app_path = ''
+    if 'app_path' in testsuite:
+        app_path = testsuite['app_path']
 
     mpi_cmd = None
     mpi_start = "mpiexec"
@@ -295,9 +298,9 @@ def doPerfMeasure(in_file):
                     printDebug(2, 'profile dir set')
         printDebug(2, profiler_cmd_list)
 
-    #if shutil.which(app_name) is None:
-    #    printDebug(0, app_name + ' not installed')
-    #    return
+    if shutil.which(app_path + app_name) is None:
+        printDebug(0, app_name + ' not installed')
+        return
 
     test_number = 1
     for tests in testsuite['testcase']:
@@ -313,7 +316,7 @@ def doPerfMeasure(in_file):
                     tool_name = profiler_cmd[0]
                     command.extend(profiler_cmd)
 
-                command.append('/mnt/bb/sayefsakin/' + app_name)
+                command.append(app_path + app_name)
                 params = dict()
                 params = copy.deepcopy(preset_params)
                 params.update(each_test)
