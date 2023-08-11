@@ -65,10 +65,7 @@ opflow_model = 'POWER_BALANCE_HIOP'
 hiop_max_iter = '10 15 20'
 ```
 
-<details>
-  <summary>
-    This will generate six testcases as follows,
-  </summary>
+This will generate six testcases as follows,
 ```yaml
 [[testcase]]
 opflow_solver = 'HIOP'
@@ -106,7 +103,6 @@ hiop_compute_mode = 'GPU'
 opflow_model = 'POWER_BALANCE_HIOP'
 hiop_max_iter = '20'
 ```
-</details>
 
 To set HIOP and IPOPT parameters, add `hiop_` and `ipopt_` before each key. For example,
 ```yaml
