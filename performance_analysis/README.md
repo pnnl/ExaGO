@@ -195,6 +195,8 @@ The output file is a JSON file with the name provided in the `testsuite_name` ar
 
 Note that, a temporary pickle file will also get generated. This helps to retain the results, in situations like the job gets terminated, a testcase fails, or accidentally not changing the `testsuite_name` for a different run.
 
+The Jupyter notebook files in [here](./exago_profiler.ipynb) and [here](./strong_weak_scaling.ipynb) contain some example on how the generated JSON file could be utilized to make charts for reporting or presentation.
+
 ### Analyzing Performance Tools Output
 If the profiler tool is configured to print measurements in the standard output (for example, not providing `--log-file` or `--quiet` argument to `nvprof`), those output logs from the tool will directly be printed in the standard output (even in the basic mode with `DEBUG=0`). If specific output file is defined for the profiler tool, that output file can further be investigated to conduct more in-detailed analysis. For example, with the following setting,
 
