@@ -24,9 +24,11 @@ Note that, the script could be executed from any directory, considering relative
 ### Configuring TOML file
 By default, the following keys should be provided in the TOML file:
 
-- `testsuite_name` : Value could be any customized string for naming this testsuite.
-- `application` : A string with an ExaGO application name, ex. `opflow` or `scopflow`.
-- `mpi_rank` : An integer with the number of mpi ranks
+- `mpi_start` : Command for initiating MPI jobs. For example: `mpiexec`, `srun`.
+- `mpi_args` : Command line arguments (space separated if multiple) relevant for the MPI jobs. For example: `-N 8 -n 64` means MPI job with 8 nodes and 64 ranks.
+- `testsuite_name` : Value could be any customized string for naming this testsuite. The results will be put in a JSON file with this name.
+- `application` : A string with an ExaGO application name, for example: `opflow`, `scopflow`.
+- `app_path` : Absolute path of the ExaGO executable. Use back slash '/' at the end. For example: `~/exago/install/bin/`.
 - `iterations`: Number of times each testcase should be run. This is **NOT** hiop or ipopt iterations.
 
 #### Providing ExaGO arguments
@@ -52,7 +54,59 @@ opflow_solver = 'IPOPT'
 opflow_model = 'POWER_BALANCE_POLAR'
 ```
 
-Here, the keys for `presets` and `testcases` are merged into a single dictionary. Therefore, values for duplicate keys in `presets` will get overwritten with what is defined in `testcase`. Single ExaGO arguments (without any value) like `log_view` should be provided with key `argument_list` and values as string with space separated arguments. Note that, to show execution time reported by the PETSc log (for example OPFLOWSolve), the `log_view` argument will also enable collecting that value.
+Here, the keys for `presets` and `testcases` are merged into a single dictionary. Therefore, values for duplicate keys in `presets` will get overwritten with what is defined in `testcase`. Single ExaGO arguments (without any value) like `log_view` must be provided with key `argument_list` and values as string with space separated arguments. Note that, to show execution time reported by the PETSc log (for example OPFLOWSolve), the `log_view` argument will also enable collecting that value.
+
+To generate testcases using multiple values of a single argument, provide the values as a space separted string as follows,
+```yaml
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'CPU GPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = '10 15 20'
+```
+
+<details>
+  <summary>
+    This will generate six testcases as follows,
+  </summary>
+```yaml
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'CPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = '10'
+
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'CPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = '15'
+
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'CPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = '20'
+
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'GPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = '10'
+
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'GPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = '15'
+
+[[testcase]]
+opflow_solver = 'HIOP'
+hiop_compute_mode = 'GPU'
+opflow_model = 'POWER_BALANCE_HIOP'
+hiop_max_iter = '20'
+```
+</details>
 
 To set HIOP and IPOPT parameters, add `hiop_` and `ipopt_` before each key. For example,
 ```yaml
@@ -106,13 +160,13 @@ This will run ExaGO with
 ### What is being executed
 This will run **ExaGO** application as a subprocess with each testcase by the defined number of `iterations` with each profiler, as follows:
 ```shell
-mpiexec -n <mpi_rank> <profiler.tool> <profiler.tool_args> <application> <presets> <testcase>
+<mpi_start> <mpi_args> <profiler.tool> <profiler.tool_args> <app_path + application> <presets> <testcase>
 ```
 
 If a blank array table with `[[profiler]]` is used, it will execute the following as a subprocess,
 
 ```shell
-mpiexec -n <mpi_rank> <application> <presets> <testcase>
+<mpi_start> <mpi_args> <app_path + application> <presets> <testcase>
 ```
 It allows running ExaGO in a set of configurations without any profiler tool.
 
@@ -135,6 +189,15 @@ PETSc reported Solve time per iteration: <time>
 The total wall-clock time of the subprocess is measured. Then, it is divided by the `iteration` number and reported in the first line of the output along with the standard deviation. If `log_view` is enabled, the reported *OPFLOWSolve* time is fetched from the output log of PETSc. Then, it is divided by the `iteration` number and reported in the second line of the output. If `hiop_max_iter` or `ipopt_max_iter` is defined, the measured wall-clock time is divided by `max_iter` and reported in the third line. In the fourth line, the PETSc reported *OPFLOWSolve* time is divided by the `max_iter` and reported if `log_view` is enabled.
 
 Note that, the total measured wall-clock time should always be higher than the PETSc reported *OPFLOWSolve* time. Measured wall-clock time from an execution of ExaGO consists of Main Stage, Reading Data, Set up, and Solve stages. Whereas, *OPFLOWSolve* time reports time spent on the Solve stage.
+
+### Output File
+The output file is a JSON file with the name provided in the `testsuite_name` argument. This contains an array of results for each testcases. For each testcase, the arguments and values are printed directly as a `key: value`. Additionally, it prints the following information,
+
+- `total_ranks` : Number of ranks reported by the log_view.
+- `petsc_solve_time` : OPFLOWSolve reported by the PetSC log_view. It adds the time reported from any stage (like “Set Up” and “Solve”). For multi-iteration runs, it prints the average time.
+- `total_solve_time` : Execution time measured with python's time library. For multi-iteration runs, it prints the average time.
+
+Note that, a temporary pickle file will also get generated. This helps to retain the results, in situations like the job gets terminated, a testcase fails, or accidentally not changing the `testsuite_name` for a different run.
 
 ### Analyzing Performance Tools Output
 If the profiler tool is configured to print measurements in the standard output (for example, not providing `--log-file` or `--quiet` argument to `nvprof`), those output logs from the tool will directly be printed in the standard output (even in the basic mode with `DEBUG=0`). If specific output file is defined for the profiler tool, that output file can further be investigated to conduct more in-detailed analysis. For example, with the following setting,
