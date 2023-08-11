@@ -18,6 +18,8 @@ Each folder which builds a configuration of ExaGO should have a following:
 Platforms:
 
 - Crusher
+- Frontier
+- Incline
 
 Description:
 
