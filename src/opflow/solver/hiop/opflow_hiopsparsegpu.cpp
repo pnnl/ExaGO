@@ -3,19 +3,19 @@
 #if defined(EXAGO_ENABLE_HIOP_SPARSE)
 
 #include <private/opflowimpl.h>
-#include "opflow-hiopsparsenew.hpp"
+#include "opflow_hiopsparsegpu.hpp"
 
-OPFLOWHIOPSPARSENEWInterface::OPFLOWHIOPSPARSENEWInterface(OPFLOW opflowin) {
+OPFLOWHIOPSPARSEGPUInterface::OPFLOWHIOPSPARSEGPUInterface(OPFLOW opflowin) {
   opflow = opflowin;
 }
 
-bool OPFLOWHIOPSPARSENEWInterface::get_prob_sizes(long long &n, long long &m) {
+bool OPFLOWHIOPSPARSEGPUInterface::get_prob_sizes(hiop::size_type &n, hiop::size_type &m) {
   n = opflow->nx;
   m = opflow->ncon;
   return true;
 }
 
-bool OPFLOWHIOPSPARSENEWInterface::get_vars_info(const long long &n,
+bool OPFLOWHIOPSPARSEGPUInterface::get_vars_info(const hiop::size_type &n,
                                                  double *xlow, double *xupp,
                                                  NonlinearityType *type) {
   PetscErrorCode ierr;
@@ -31,7 +31,7 @@ bool OPFLOWHIOPSPARSENEWInterface::get_vars_info(const long long &n,
   return true;
 }
 
-bool OPFLOWHIOPSPARSENEWInterface::get_cons_info(const long long &m,
+bool OPFLOWHIOPSPARSEGPUInterface::get_cons_info(const hiop::size_type &m,
                                                  double *clow, double *cupp,
                                                  NonlinearityType *type) {
   PetscInt i;
@@ -46,9 +46,9 @@ bool OPFLOWHIOPSPARSENEWInterface::get_cons_info(const long long &m,
   return true;
 }
 
-bool OPFLOWHIOPSPARSENEWInterface::get_sparse_blocks_info(
-    int &nx, int &nnz_sparse_Jaceq, int &nnz_sparse_Jacineq,
-    int &nnz_sparse_Hess_Lagr) {
+bool OPFLOWHIOPSPARSEGPUInterface::get_sparse_blocks_info(
+							  hiop::size_type &nx, hiop::size_type &nnz_sparse_Jaceq, hiop::size_type &nnz_sparse_Jacineq,
+							  hiop::size_type &nnz_sparse_Hess_Lagr) {
   PetscErrorCode ierr;
   PetscScalar *xl, *xu, *gl, *gu;
   MatInfo info_eq, info_ineq, info_hes;
@@ -98,7 +98,7 @@ bool OPFLOWHIOPSPARSENEWInterface::get_sparse_blocks_info(
   return true;
 }
 
-bool OPFLOWHIOPSPARSENEWInterface::eval_f(const long long &n, const double *x,
+bool OPFLOWHIOPSPARSEGPUInterface::eval_f(const hiop::size_type &n, const double *x,
                                           bool new_x, double &obj_value) {
   PetscErrorCode ierr;
   PetscScalar *xarr;
@@ -112,14 +112,14 @@ bool OPFLOWHIOPSPARSENEWInterface::eval_f(const long long &n, const double *x,
   return true;
 }
 
-bool OPFLOWHIOPSPARSENEWInterface::eval_cons(
-    const long long &n, const long long &m, const long long &num_cons,
-    const long long *idx_cons, const double *x, bool new_x, double *cons) {
+bool OPFLOWHIOPSPARSEGPUInterface::eval_cons(
+    const hiop::size_type &n, const hiop::size_type &m, const hiop::size_type &num_cons,
+    const hiop::size_type *idx_cons, const double *x, bool new_x, double *cons) {
   return false;
 }
 
-bool OPFLOWHIOPSPARSENEWInterface::eval_cons(const long long &n,
-                                             const long long &m,
+bool OPFLOWHIOPSPARSEGPUInterface::eval_cons(const hiop::size_type &n,
+                                             const hiop::size_type &m,
                                              const double *x, bool new_x,
                                              double *cons) {
   PetscErrorCode ierr;
@@ -141,7 +141,7 @@ bool OPFLOWHIOPSPARSENEWInterface::eval_cons(const long long &n,
   return true;
 }
 
-bool OPFLOWHIOPSPARSENEWInterface::eval_grad_f(const long long &n,
+bool OPFLOWHIOPSPARSEGPUInterface::eval_grad_f(const hiop::size_type &n,
                                                const double *x, bool new_x,
                                                double *gradf) {
   PetscErrorCode ierr;
@@ -152,18 +152,18 @@ bool OPFLOWHIOPSPARSENEWInterface::eval_grad_f(const long long &n,
   return true;
 }
 
-bool OPFLOWHIOPSPARSENEWInterface::eval_Jac_cons(
-    const long long &n, const long long &m, const long long &num_cons,
-    const long long *idx_cons, const double *x, bool new_x, const int &nnzJacS,
-    int *iJacS, int *jJacS, double *MJacS) {
+bool OPFLOWHIOPSPARSEGPUInterface::eval_Jac_cons(
+    const hiop::size_type &n, const hiop::size_type &m, const hiop::size_type &num_cons,
+    const hiop::size_type *idx_cons, const double *x, bool new_x, const hiop::size_type &nnzJacS,
+    hiop::index_type *iJacS, hiop::index_type *jJacS, double *MJacS) {
   return false;
 }
 
-bool OPFLOWHIOPSPARSENEWInterface::eval_Jac_cons(const long long &n,
-                                                 const long long &m,
+bool OPFLOWHIOPSPARSEGPUInterface::eval_Jac_cons(const hiop::size_type &n,
+                                                 const hiop::size_type &m,
                                                  const double *x, bool new_x,
-                                                 const int &nnzJacS, int *iRow,
-                                                 int *jCol, double *values) {
+                                                 const hiop::size_type &nnzJacS, hiop::index_type *iRow,
+                                                 hiop::index_type *jCol, double *values) {
   PetscErrorCode ierr;
   PetscInt *iRowstart = iRow, *jColstart = jCol;
   PetscInt roffset, coffset;
@@ -226,58 +226,15 @@ bool OPFLOWHIOPSPARSENEWInterface::eval_Jac_cons(const long long &n,
       }
     }
   } else {
-    ierr = VecPlaceArray(opflow->X, x);
-    CHKERRQ(ierr);
-    /* Compute equality constraint jacobian */
-    ierr = (*opflow->modelops.computeequalityconstraintjacobian)(
-        opflow, opflow->X, opflow->Jac_Ge);
-    CHKERRQ(ierr);
 
-    ierr = MatGetSize(opflow->Jac_Ge, &nrow, &ncol);
-    CHKERRQ(ierr);
-    /* Copy over values */
-    for (i = 0; i < nrow; i++) {
-      ierr = MatGetRow(opflow->Jac_Ge, i, &nvals, &cols, &vals);
-      CHKERRQ(ierr);
-      for (j = 0; j < nvals; j++) {
-        values[j] = vals[j];
-      }
-      values += nvals;
-      ierr = MatRestoreRow(opflow->Jac_Ge, i, &nvals, &cols, &vals);
-      CHKERRQ(ierr);
-    }
-
-    if (opflow->Nconineq) {
-      /* Compute inequality constraint jacobian */
-      ierr = (*opflow->modelops.computeinequalityconstraintjacobian)(
-          opflow, opflow->X, opflow->Jac_Gi);
-      CHKERRQ(ierr);
-
-      ierr = MatGetSize(opflow->Jac_Gi, &nrow, &ncol);
-      CHKERRQ(ierr);
-
-      /* Copy over values */
-      for (i = 0; i < nrow; i++) {
-        ierr = MatGetRow(opflow->Jac_Gi, i, &nvals, &cols, &vals);
-        CHKERRQ(ierr);
-        for (j = 0; j < nvals; j++) {
-          values[j] = vals[j];
-        }
-        values += nvals;
-        ierr = MatRestoreRow(opflow->Jac_Gi, i, &nvals, &cols, &vals);
-        CHKERRQ(ierr);
-      }
-    }
-    ierr = VecResetArray(opflow->X);
-    CHKERRQ(ierr);
   }
   return true;
 }
 
-bool OPFLOWHIOPSPARSENEWInterface::eval_Hess_Lagr(
-    const long long &n, const long long &m, const double *x, bool new_x,
+bool OPFLOWHIOPSPARSEGPUInterface::eval_Hess_Lagr(
+    const hiop::size_type &n, const hiop::size_type &m, const double *x, bool new_x,
     const double &obj_factor, const double *lambda, bool new_lambda,
-    const int &nnzHSS, int *iRow, int *jCol, double *values) {
+    const hiop::size_type &nnzHSS, hiop::index_type *iRow, hiop::index_type *jCol, double *values) {
   PetscErrorCode ierr;
   PetscInt nrow;
   PetscInt nvals;
@@ -318,52 +275,13 @@ bool OPFLOWHIOPSPARSENEWInterface::eval_Hess_Lagr(
     }
 
   } else {
-    ierr = VecPlaceArray(opflow->X, x);
-    CHKERRQ(ierr);
-    ierr = VecPlaceArray(opflow->Lambdae, lambda);
-    CHKERRQ(ierr);
-    if (opflow->Nconineq) {
-      ierr = VecPlaceArray(opflow->Lambdai, lambda + opflow->nconeq);
-      CHKERRQ(ierr);
-    }
 
-    /* Compute Hessian */
-    ierr = (*opflow->modelops.computehessian)(
-        opflow, opflow->X, opflow->Lambdae, opflow->Lambdai, opflow->Hes);
-    CHKERRQ(ierr);
-
-    /* Copy over values */
-    ierr = MatGetSize(opflow->Hes, &nrow, &nrow);
-    CHKERRQ(ierr);
-    for (i = 0; i < nrow; i++) {
-      ierr = MatGetRow(opflow->Hes, i, &nvals, &cols, &vals);
-      CHKERRQ(ierr);
-      ctr = 0;
-      for (j = 0; j < nvals; j++) {
-        if (cols[j] >= i) { /* Upper triangle values (same as lower triangle) */
-          values[ctr] = vals[j];
-          ctr++;
-        }
-      }
-      values += ctr;
-      ierr = MatRestoreRow(opflow->Hes, i, &nvals, &cols, &vals);
-      CHKERRQ(ierr);
-    }
-
-    ierr = VecResetArray(opflow->X);
-    CHKERRQ(ierr);
-    ierr = VecResetArray(opflow->Lambdae);
-    CHKERRQ(ierr);
-    if (opflow->Nconineq) {
-      ierr = VecResetArray(opflow->Lambdai);
-      CHKERRQ(ierr);
-    }
   }
 
   return true;
 }
 
-bool OPFLOWHIOPSPARSENEWInterface::get_starting_point(const long long &global_n,
+bool OPFLOWHIOPSPARSEGPUInterface::get_starting_point(const hiop::size_type &global_n,
                                                       double *x0) {
   PetscErrorCode ierr;
   const PetscScalar *xarr;
@@ -375,12 +293,12 @@ bool OPFLOWHIOPSPARSENEWInterface::get_starting_point(const long long &global_n,
   return true;
 }
 
-void OPFLOWHIOPSPARSENEWInterface::solution_callback(
+void OPFLOWHIOPSPARSEGPUInterface::solution_callback(
     hiop::hiopSolveStatus status, int n, const double *xsol, const double *z_L,
     const double *z_U, int m, const double *gsol, const double *lamsol,
     double obj_value) {
   PetscErrorCode ierr;
-  OPFLOWSolver_HIOPSPARSENEW hiop = (OPFLOWSolver_HIOPSPARSENEW)opflow->solver;
+  OPFLOWSolver_HIOPSPARSEGPU hiop = (OPFLOWSolver_HIOPSPARSEGPU)opflow->solver;
   PetscScalar *x, *lam, *g;
 
   /* Copy over solution details */
@@ -420,30 +338,31 @@ void OPFLOWHIOPSPARSENEWInterface::solution_callback(
   }
 }
 
-bool OPFLOWHIOPSPARSENEWInterface::iterate_callback(
-    int iter, double obj_value, int n, const double *x, const double *z_L,
-    const double *z_U, int m, const double *g, const double *lambda,
-    double inf_pr, double inf_du, double mu, double alpha_du, double alpha_pr,
+bool OPFLOWHIOPSPARSEGPUInterface::iterate_callback(
+    int iter, double obj_value, double logbar_obj_value, int n, const double *x,
+    const double *z_L, const double *z_U, int m_ineq, const double *s, int m,
+    const double *g, const double *lambda, double inf_pr, double inf_du,
+    double onenorm_pr_, double mu, double alpha_du, double alpha_pr,
     int ls_trials) {
   opflow->numits = iter;
   return true;
 }
 
-PetscErrorCode OPFLOWSolverSetUp_HIOPSPARSENEW(OPFLOW opflow) {
+PetscErrorCode OPFLOWSolverSetUp_HIOPSPARSEGPU(OPFLOW opflow) {
   PetscErrorCode ierr;
-  OPFLOWSolver_HIOPSPARSENEW hiop = (OPFLOWSolver_HIOPSPARSENEW)opflow->solver;
+  OPFLOWSolver_HIOPSPARSEGPU hiop = (OPFLOWSolver_HIOPSPARSEGPU)opflow->solver;
   PetscBool flg1;
   int verbose_level = 3;
 
   PetscFunctionBegin;
 
-  hiop->nlp = new OPFLOWHIOPSPARSENEWInterface(opflow);
+  hiop->nlp = new OPFLOWHIOPSPARSEGPUInterface(opflow);
   hiop->sp = new hiop::hiopNlpSparse(*hiop->nlp);
 
   hiop->ipopt_debug = PETSC_FALSE;
 
-  ierr = PetscOptionsBegin(opflow->comm->type, NULL, "HIOP options", NULL);
-  CHKERRQ(ierr);
+  PetscOptionsBegin(opflow->comm->type, NULL, "HIOP options", NULL);
+
   ierr = PetscOptionsInt("-hiop_verbosity_level",
                          "HIOP verbosity level (Integer 0 to 12)", "",
                          verbose_level, &verbose_level, NULL);
@@ -503,20 +422,20 @@ PetscErrorCode OPFLOWSolverSetUp_HIOPSPARSENEW(OPFLOW opflow) {
   hiop->solver = new hiop::hiopAlgFilterIPMNewton(hiop->sp);
 
   /* Error if model is not power balance hiop */
-  ierr = PetscStrcmp(opflow->modelname, OPFLOWMODEL_PBPOL, &flg1);
+  ierr = PetscStrcmp(opflow->modelname.c_str(), OPFLOWMODEL_PBPOLRAJAHIOPSPARSE, &flg1);
   CHKERRQ(ierr);
   if (!flg1) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-            "Only power balance polar model allowed\n Run with -opflow_model "
-            "POWER_BALANCE_POLAR\n");
+            "Only PBPOLRAJAHIOPSPARSE model allowed with solver HIOPSPARSEGPU \n Run with -opflow_model "
+            "PBPOLRAJAHIOPSPARSE\n");
     exit(1);
   }
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSolverSolve_HIOPSPARSENEW(OPFLOW opflow) {
-  OPFLOWSolver_HIOPSPARSENEW hiop = (OPFLOWSolver_HIOPSPARSENEW)opflow->solver;
+PetscErrorCode OPFLOWSolverSolve_HIOPSPARSEGPU(OPFLOW opflow) {
+  OPFLOWSolver_HIOPSPARSEGPU hiop = (OPFLOWSolver_HIOPSPARSEGPU)opflow->solver;
 
   PetscFunctionBegin;
 #if defined(EXAGO_ENABLE_IPOPT)
@@ -546,9 +465,9 @@ PetscErrorCode OPFLOWSolverSolve_HIOPSPARSENEW(OPFLOW opflow) {
 }
 
 PetscErrorCode
-OPFLOWSolverGetConvergenceStatus_HIOPSPARSENEW(OPFLOW opflow,
+OPFLOWSolverGetConvergenceStatus_HIOPSPARSEGPU(OPFLOW opflow,
                                                PetscBool *status) {
-  OPFLOWSolver_HIOPSPARSENEW hiop = (OPFLOWSolver_HIOPSPARSENEW)opflow->solver;
+  OPFLOWSolver_HIOPSPARSEGPU hiop = (OPFLOWSolver_HIOPSPARSEGPU)opflow->solver;
 
   PetscFunctionBegin;
   if (hiop->status < 3)
@@ -560,38 +479,39 @@ OPFLOWSolverGetConvergenceStatus_HIOPSPARSENEW(OPFLOW opflow,
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSolverGetObjective_HIOPSPARSENEW(OPFLOW opflow,
+PetscErrorCode OPFLOWSolverGetObjective_HIOPSPARSEGPU(OPFLOW opflow,
                                                       PetscReal *obj) {
   PetscFunctionBegin;
   *obj = opflow->obj;
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSolverGetSolution_HIOPSPARSENEW(OPFLOW opflow, Vec *X) {
+PetscErrorCode OPFLOWSolverGetSolution_HIOPSPARSEGPU(OPFLOW opflow, Vec *X) {
   PetscFunctionBegin;
   *X = opflow->X;
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSolverGetConstraints_HIOPSPARSENEW(OPFLOW opflow, Vec *G) {
+PetscErrorCode OPFLOWSolverGetConstraints_HIOPSPARSEGPU(OPFLOW opflow, Vec *G) {
   PetscFunctionBegin;
   *G = opflow->G;
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSolverGetConstraintMultipliers_HIOPSPARSENEW(OPFLOW opflow,
+PetscErrorCode OPFLOWSolverGetConstraintMultipliers_HIOPSPARSEGPU(OPFLOW opflow,
                                                                   Vec *Lambda) {
   PetscFunctionBegin;
   *Lambda = opflow->Lambda;
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSolverDestroy_HIOPSPARSENEW(OPFLOW opflow) {
+PetscErrorCode OPFLOWSolverDestroy_HIOPSPARSEGPU(OPFLOW opflow) {
   PetscErrorCode ierr;
-  OPFLOWSolver_HIOPSPARSENEW hiop = (OPFLOWSolver_HIOPSPARSENEW)opflow->solver;
+  OPFLOWSolver_HIOPSPARSEGPU hiop = (OPFLOWSolver_HIOPSPARSEGPU)opflow->solver;
 
   PetscFunctionBegin;
 
+  delete hiop->solver;
   delete hiop->sp;
   delete hiop->nlp;
 
@@ -601,9 +521,9 @@ PetscErrorCode OPFLOWSolverDestroy_HIOPSPARSENEW(OPFLOW opflow) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSolverCreate_HIOPSPARSENEW(OPFLOW opflow) {
+PetscErrorCode OPFLOWSolverCreate_HIOPSPARSEGPU(OPFLOW opflow) {
   PetscErrorCode ierr;
-  OPFLOWSolver_HIOPSPARSENEW hiop;
+  OPFLOWSolver_HIOPSPARSEGPU hiop;
 
   PetscFunctionBegin;
   ierr = PetscCalloc1(1, &hiop);
@@ -611,16 +531,16 @@ PetscErrorCode OPFLOWSolverCreate_HIOPSPARSENEW(OPFLOW opflow) {
 
   opflow->solver = hiop;
 
-  opflow->solverops.setup = OPFLOWSolverSetUp_HIOPSPARSENEW;
-  opflow->solverops.solve = OPFLOWSolverSolve_HIOPSPARSENEW;
-  opflow->solverops.destroy = OPFLOWSolverDestroy_HIOPSPARSENEW;
-  opflow->solverops.getobjective = OPFLOWSolverGetObjective_HIOPSPARSENEW;
+  opflow->solverops.setup = OPFLOWSolverSetUp_HIOPSPARSEGPU;
+  opflow->solverops.solve = OPFLOWSolverSolve_HIOPSPARSEGPU;
+  opflow->solverops.destroy = OPFLOWSolverDestroy_HIOPSPARSEGPU;
+  opflow->solverops.getobjective = OPFLOWSolverGetObjective_HIOPSPARSEGPU;
   opflow->solverops.getconvergencestatus =
-      OPFLOWSolverGetConvergenceStatus_HIOPSPARSENEW;
-  opflow->solverops.getsolution = OPFLOWSolverGetSolution_HIOPSPARSENEW;
-  opflow->solverops.getconstraints = OPFLOWSolverGetConstraints_HIOPSPARSENEW;
+      OPFLOWSolverGetConvergenceStatus_HIOPSPARSEGPU;
+  opflow->solverops.getsolution = OPFLOWSolverGetSolution_HIOPSPARSEGPU;
+  opflow->solverops.getconstraints = OPFLOWSolverGetConstraints_HIOPSPARSEGPU;
   opflow->solverops.getconstraintmultipliers =
-      OPFLOWSolverGetConstraintMultipliers_HIOPSPARSENEW;
+      OPFLOWSolverGetConstraintMultipliers_HIOPSPARSEGPU;
 
   PetscFunctionReturn(0);
 }
