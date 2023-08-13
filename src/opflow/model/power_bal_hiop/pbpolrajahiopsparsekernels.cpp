@@ -8,23 +8,12 @@
 #include <umpire/ResourceManager.hpp>
 
 #include <RAJA/RAJA.hpp>
+#include <private/raja_exec_config.h>
 
 #include <private/psimpl.h>
 #include <private/opflowimpl.h>
 #include "pbpolrajahiopsparsekernels.hpp"
 #include "pbpolrajahiopsparse.hpp"
-
-#ifdef EXAGO_ENABLE_GPU
-using exago_raja_exec = RAJA::cuda_exec<128>;
-using exago_raja_reduce = RAJA::cuda_reduce;
-using exago_raja_atomic = RAJA::cuda_atomic;
-#define RAJA_LAMBDA [=] __device__
-#else
-using exago_raja_exec = RAJA::omp_parallel_for_exec;
-using exago_raja_reduce = RAJA::omp_reduce;
-using exago_raja_atomic = RAJA::omp_atomic;
-#define RAJA_LAMBDA [=]
-#endif
 
 PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLRAJAHIOPSPARSE(OPFLOW opflow,
                                                               double *x0_dev) {
@@ -54,44 +43,62 @@ PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLRAJAHIOPSPARSE(OPFLOW opflow,
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OPFLOWSetConstraintBoundsArray_PBPOLRAJAHIOPSPARSE(
-    OPFLOW opflow, double *gl_dev, double *gu_dev) {
-  PbpolModelRajaHiop *pbpolrajahiopsparse =
-      reinterpret_cast<PbpolModelRajaHiop *>(opflow->model);
-  LINEParamsRajaHiop *lineparams = &pbpolrajahiopsparse->lineparams;
-  PS ps = opflow->ps;
-  double MVAbase = ps->MVAbase;
+PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOPSPARSE(
+    OPFLOW opflow, double *xl_dev, double *xu_dev) {
+  PetscErrorCode ierr;
+  double *xl, *xu;
+  auto &resmgr = umpire::ResourceManager::getInstance();
 
   PetscFunctionBegin;
 
-  //  PetscPrintf(MPI_COMM_SELF,"Entered Constraint Bounds\n");
+  // Compute variable bounds on the host
+  ierr = (*opflow->modelops.setvariablebounds)(opflow,opflow->Xl,opflow->Xu);CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->Xl, &xl);
+  CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->Xu, &xu);
+  CHKERRQ(ierr);
 
-  /* Equality constraints (all zeros) */
+  // Copy host to device
+  umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
+  registerWith(xl, opflow->nx, resmgr, h_allocator_);
+  registerWith(xu, opflow->nx, resmgr, h_allocator_);
+  resmgr.copy(xl_dev, xl);
+  resmgr.copy(xu_dev, xu);
+
+  ierr = VecRestoreArray(opflow->Xl, &xl);
+  CHKERRQ(ierr);
+  ierr = VecRestoreArray(opflow->Xu, &xu);
+  CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OPFLOWSetConstraintBoundsArray_PBPOLRAJAHIOPSPARSE(OPFLOW opflow, double *gl_dev, double *gu_dev) {
+
+  PetscErrorCode ierr;
+  double *gl,*gu;
   auto &resmgr = umpire::ResourceManager::getInstance();
-  resmgr.memset(gl_dev, 0, opflow->ncon * sizeof(double));
-  resmgr.memset(gu_dev, 0, opflow->ncon * sizeof(double));
 
-  /* Inequality constraint bounds */
-  int *linelimidx = lineparams->linelimidx_dev_;
-  int *gbineqidx = lineparams->gbineqidx_dev_;
-  double *rateA = lineparams->rateA_dev_;
+  PetscFunctionBegin;
 
-  if (lineparams->nlinelim) {
-    // PetscPrintf(PETSC_COMM_SELF,"nlinelim = %d ineq =
-    // %d\n",lineparams->nlinelim,opflow->nconineq);
-    RAJA::forall<exago_raja_exec>(
-        RAJA::RangeSegment(0, lineparams->nlinelim),
-        RAJA_LAMBDA(RAJA::Index_type i) {
-          int j = linelimidx[i];
-          gl_dev[gbineqidx[i]] = 0.0;
-          gu_dev[gbineqidx[i]] = (rateA[j] / MVAbase) * (rateA[j] / MVAbase);
-          gl_dev[gbineqidx[i] + 1] = 0.0;
-          gu_dev[gbineqidx[i] + 1] =
-              (rateA[j] / MVAbase) * (rateA[j] / MVAbase);
-        });
-  }
+  // Calculate constraint bounds on host
+  ierr = (*opflow->modelops.setconstraintbounds)(opflow,opflow->Gl,opflow->Gu);
+  CHKERRQ(ierr);
 
-  //  PetscPrintf(MPI_COMM_SELF,"Exit Constraint Bounds\n");
+  ierr = VecGetArray(opflow->Gl,&gl);CHKERRQ(ierr);
+  ierr = VecGetArray(opflow->Gu,&gu);CHKERRQ(ierr);
+
+  umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
+  registerWith(gl, opflow->ncon, resmgr, h_allocator_);
+  registerWith(gu, opflow->ncon, resmgr, h_allocator_);
+
+  // Copy from host to device
+  resmgr.copy(gl_dev, gl);
+  resmgr.copy(gu_dev, gu);
+
+  ierr = VecRestoreArray(opflow->Gl,&gl);CHKERRQ(ierr);
+  ierr = VecRestoreArray(opflow->Gu,&gu);CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -449,135 +456,6 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOPSPARSE(
   ierr = PetscLogFlops(genparams->ngenON * 6.0);
   CHKERRQ(ierr);
   //  PetscPrintf(MPI_COMM_SELF,"Exit gradient function\n");
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode OPFLOWSetVariableBoundsArray_old_PBPOLRAJAHIOPSPARSE(
-    OPFLOW opflow, double *xl_dev, double *xu_dev) {
-  PetscErrorCode ierr;
-  double *xl, *xu;
-  auto &resmgr = umpire::ResourceManager::getInstance();
-
-  PetscFunctionBegin;
-
-  // The bounds have been already computed on the host, get their pointers
-  ierr = VecGetArray(opflow->Xl, &xl);
-  CHKERRQ(ierr);
-  ierr = VecGetArray(opflow->Xu, &xu);
-  CHKERRQ(ierr);
-
-  // Copy host to device
-  umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
-  registerWith(xl, opflow->nx, resmgr, h_allocator_);
-  registerWith(xu, opflow->nx, resmgr, h_allocator_);
-  resmgr.copy(xl_dev, xl);
-  resmgr.copy(xu_dev, xu);
-
-  ierr = VecRestoreArray(opflow->Xl, &xl);
-  CHKERRQ(ierr);
-  ierr = VecRestoreArray(opflow->Xu, &xu);
-  CHKERRQ(ierr);
-
-  PetscFunctionReturn(0);
-}
-
-// Note: This kernel (and all the kernels for this model assume that the data
-// has been already allocated on the device. xl_dev and xu_dev are pointers to
-// arrays on the GPU
-PetscErrorCode
-OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOPSPARSE(OPFLOW opflow, double *xl_dev,
-                                                 double *xu_dev) {
-  PbpolModelRajaHiop *pbpolrajahiopsparse =
-      reinterpret_cast<PbpolModelRajaHiop *>(opflow->model);
-  BUSParamsRajaHiop *busparams = &pbpolrajahiopsparse->busparams;
-  GENParamsRajaHiop *genparams = &pbpolrajahiopsparse->genparams;
-  LOADParamsRajaHiop *loadparams = &pbpolrajahiopsparse->loadparams;
-
-  PetscFunctionBegin;
-  //  PetscPrintf(MPI_COMM_SELF,"Entered variable bounds\n");
-  int *xidx = busparams->xidx_dev_;
-  int *ispvpq = busparams->ispvpq_dev_;
-  int *isref = busparams->isref_dev_;
-  int *isisolated = busparams->isisolated_dev_;
-  double *va = busparams->va_dev_;
-  double *vm = busparams->vm_dev_;
-  double *vmin = busparams->vmin_dev_;
-  double *vmax = busparams->vmax_dev_;
-  int *b_xidxpimb = busparams->xidxpimb_dev_;
-  int include_powerimbalance_variables =
-      opflow->include_powerimbalance_variables;
-
-  /* Bounds for bus voltages */
-  RAJA::forall<exago_raja_exec>(
-      RAJA::RangeSegment(0, busparams->nbus) /* index set here */,
-      RAJA_LAMBDA(RAJA::Index_type i) {
-        xl_dev[xidx[i]] = ispvpq[i] * PETSC_NINFINITY + isisolated[i] * va[i] +
-                          isref[i] * va[i] * PETSC_PI / 180.0;
-        xu_dev[xidx[i]] = ispvpq[i] * PETSC_INFINITY + isisolated[i] * va[i] +
-                          isref[i] * va[i] * PETSC_PI / 180.0;
-
-        xl_dev[xidx[i] + 1] =
-            isref[i] * vmin[i] + ispvpq[i] * vmin[i] + isisolated[i] * vm[i];
-        xu_dev[xidx[i] + 1] =
-            isref[i] * vmax[i] + ispvpq[i] * vmax[i] + isisolated[i] * vm[i];
-        /* Bounds for Power Imbalance Variables (second bus variables) */
-        if (include_powerimbalance_variables) {
-          xl_dev[b_xidxpimb[i]] = xl_dev[b_xidxpimb[i] + 1] = PETSC_NINFINITY;
-          xu_dev[b_xidxpimb[i]] = xu_dev[b_xidxpimb[i] + 1] = PETSC_INFINITY;
-        }
-      });
-
-  int *idx = genparams->xidx_dev_;
-  double *pb = genparams->pb_dev_;
-  double *pt = genparams->pt_dev_;
-  double *qb = genparams->qb_dev_;
-  double *qt = genparams->qt_dev_;
-
-  /* Generator lower and upper bounds on variables */
-  RAJA::forall<exago_raja_exec>(
-      RAJA::RangeSegment(0, genparams->ngenON),
-      RAJA_LAMBDA(RAJA::Index_type i) {
-        xl_dev[idx[i]] = pb[i];
-        xu_dev[idx[i]] = pt[i];
-        xl_dev[idx[i] + 1] = qb[i];
-        xu_dev[idx[i] + 1] = qt[i];
-      });
-
-  if (opflow->has_gensetpoint) {
-    /* Bounds on power deviation and set-point */
-    RAJA::forall<exago_raja_exec>(
-        RAJA::RangeSegment(0, genparams->ngenON),
-        RAJA_LAMBDA(RAJA::Index_type i) {
-          xl_dev[idx[i] + 2] = pb[i] - pt[i];
-          xu_dev[idx[i] + 2] = pt[i] - pb[i];
-          xl_dev[idx[i] + 3] = pb[i];
-          xu_dev[idx[i] + 3] = pt[i];
-        });
-  }
-
-  /* Load loss lower and upper bounds */
-  if (opflow->include_loadloss_variables) {
-    int *l_xidx = loadparams->xidx_dev_; // Min/Max;
-    RAJA::forall<exago_raja_exec>(
-        RAJA::RangeSegment(0, loadparams->nload),
-        RAJA_LAMBDA(RAJA::Index_type i) {
-          xl_dev[l_xidx[i]] = 0;
-          xu_dev[l_xidx[i]] = 0;
-          xl_dev[l_xidx[i] + 1] = 0;
-          xu_dev[l_xidx[i] + 1] = 0;
-          RAJA::atomicMin<exago_raja_atomic>(&xl_dev[l_xidx[i]],
-                                             loadparams->pl_dev_[i]);
-          RAJA::atomicMax<exago_raja_atomic>(&xu_dev[l_xidx[i]],
-                                             loadparams->pl_dev_[i]);
-          RAJA::atomicMin<exago_raja_atomic>(&xl_dev[l_xidx[i] + 1],
-                                             loadparams->ql_dev_[i]);
-          RAJA::atomicMax<exago_raja_atomic>(&xu_dev[l_xidx[i] + 1],
-                                             loadparams->ql_dev_[i]);
-        });
-  }
-
-  //  PetscPrintf(MPI_COMM_SELF,"Exit variable bounds\n");
 
   PetscFunctionReturn(0);
 }

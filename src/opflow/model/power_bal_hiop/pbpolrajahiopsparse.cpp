@@ -269,18 +269,21 @@ PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
 
   PetscFunctionBegin;
 
-  PbpolModelRajaHiop *pbpol = new PbpolModelRajaHiop(opflow);
+  PbpolModelRajaHiop *pbpolrajahiopsparse = new PbpolModelRajaHiop(opflow);
 
-  opflow->model = pbpol;
+  opflow->model = pbpolrajahiopsparse;
 
-  opflow->spdnordering = PETSC_TRUE;
+  /* PBPOLRAJAHIOPSPARSE models only support VARIABLE_WITHIN_BOUNDS opflow->genbusvoltagetype
+   */
+  opflow->genbusvoltagetype = VARIABLE_WITHIN_BOUNDS;
+
+  opflow->spdnordering = PETSC_FALSE;
 
   /* Inherit Ops */
   opflow->modelops.destroy = OPFLOWModelDestroy_PBPOLRAJAHIOPSPARSE;
   opflow->modelops.setnumvariables = OPFLOWModelSetNumVariables_PBPOL;
   opflow->modelops.setnumconstraints = OPFLOWModelSetNumConstraints_PBPOL;
-  opflow->modelops.setvariablebounds =
-      OPFLOWSetVariableBounds_PBPOLRAJAHIOPSPARSE;
+  opflow->modelops.setvariablebounds = OPFLOWSetVariableBounds_PBPOLRAJAHIOPSPARSE;
   opflow->modelops.setvariableboundsarray =
       OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOPSPARSE;
   opflow->modelops.setconstraintbounds =
@@ -300,23 +303,13 @@ PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
       OPFLOWComputeGradientArray_PBPOLRAJAHIOPSPARSE;
   opflow->modelops.solutiontops = OPFLOWSolutionToPS_PBPOLRAJAHIOPSPARSE;
   opflow->modelops.setup = OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE;
-  opflow->modelops.computeequalityconstraintjacobian =
-      OPFLOWComputeEqualityConstraintJacobian_PBPOL;
-  opflow->modelops.computeinequalityconstraintjacobian =
-      OPFLOWComputeInequalityConstraintJacobian_PBPOL;
   opflow->modelops.computesparseequalityconstraintjacobianhiop =
       OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE;
   opflow->modelops.computesparseinequalityconstraintjacobianhiop =
       OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE;
   opflow->modelops.computesparsehessianhiop =
       OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE;
-  opflow->modelops.computedenseequalityconstraintjacobianhiop =
-      OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE;
-  opflow->modelops.computedenseinequalityconstraintjacobianhiop =
-      OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE;
-  opflow->modelops.computedensehessianhiop =
-      OPFLOWComputeDenseHessian_PBPOLRAJAHIOPSPARSE;
-  opflow->modelops.computehessian = OPFLOWComputeHessian_PBPOL;
+  opflow->modelops.solutioncallbackhiop = OPFLOWSolutionCallback_PBPOLRAJAHIOP;
 
   PetscFunctionReturn(0);
 }
