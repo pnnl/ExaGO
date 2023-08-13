@@ -8,9 +8,7 @@
 #include <umpire/Allocator.hpp>
 #include <umpire/ResourceManager.hpp>
 
-#include <opflow.h>
 #include "pbpolrajahiopsparse.hpp"
-#include "paramsrajahiop.h"
 
 /**
 

@@ -6,11 +6,8 @@
 #ifndef _PBPOLRAJAHIOPSPARSE_H
 #define _PBPOLRAJAHIOPSPARSE_H
 
-#include <opflow.h>
+#include "pbpolrajahiop.h"
 #include "paramsrajahiop.h"
-
-struct _p_FormPBPOLRAJAHIOPSPARSE {};
-typedef struct _p_FormPBPOLRAJAHIOPSPARSE *PBPOLRAJAHIOPSPARSE;
 
 extern PetscErrorCode
 OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOPSPARSE(OPFLOW, double *, double *);
