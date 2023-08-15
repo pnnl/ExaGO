@@ -101,7 +101,6 @@ bool OPFLOWHIOPSPARSEGPUInterface::get_sparse_blocks_info(
 bool OPFLOWHIOPSPARSEGPUInterface::eval_f(const hiop::size_type &n, const double *x,
                                           bool new_x, double &obj_value) {
   PetscErrorCode ierr;
-  PetscScalar *xarr;
 
   obj_value = 0.0;
 
@@ -112,9 +111,12 @@ bool OPFLOWHIOPSPARSEGPUInterface::eval_f(const hiop::size_type &n, const double
   return true;
 }
 
-bool OPFLOWHIOPSPARSEGPUInterface::eval_cons(
-    const hiop::size_type &n, const hiop::size_type &m, const hiop::size_type &num_cons,
-    const hiop::size_type *idx_cons, const double *x, bool new_x, double *cons) {
+bool OPFLOWHIOPSPARSEGPUInterface::eval_cons(const hiop::size_type &n,
+                                          const hiop::size_type &m,
+                                          const hiop::size_type &num_cons,
+                                          const hiop::size_type *idx_cons,
+                                          const double *x, bool new_x,
+                                          double *cons) {
   return false;
 }
 
@@ -124,17 +126,23 @@ bool OPFLOWHIOPSPARSEGPUInterface::eval_cons(const hiop::size_type &n,
                                              double *cons) {
   PetscErrorCode ierr;
 
-  ierr = VecPlaceArray(opflow->X, x);
-  CHKERRQ(ierr);
-
   /* Equality constaints */
+  ierr = PetscLogEventBegin(opflow->eqconslogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
+  
   ierr = (*opflow->modelops.computeequalityconstraintsarray)(opflow, x, cons);
+  CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->eqconslogger, 0, 0, 0, 0);
   CHKERRQ(ierr);
 
   if (opflow->nconineq) {
+    ierr = PetscLogEventBegin(opflow->ineqconslogger, 0, 0, 0, 0);
+    CHKERRQ(ierr);
     /* Inequality constraints */
-    ierr = (*opflow->modelops.computeinequalityconstraintsarray)(
-        opflow, x, cons + opflow->nconeq);
+    ierr = (*opflow->modelops.computeinequalityconstraintsarray)(opflow, x,
+								 cons + opflow->nconeq);
+    CHKERRQ(ierr);
+    ierr = PetscLogEventEnd(opflow->ineqconslogger, 0, 0, 0, 0);
     CHKERRQ(ierr);
   }
 
@@ -146,7 +154,11 @@ bool OPFLOWHIOPSPARSEGPUInterface::eval_grad_f(const hiop::size_type &n,
                                                double *gradf) {
   PetscErrorCode ierr;
 
+  ierr = PetscLogEventBegin(opflow->gradlogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
   ierr = (*opflow->modelops.computegradientarray)(opflow, x, gradf);
+  CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->gradlogger, 0, 0, 0, 0);
   CHKERRQ(ierr);
 
   return true;
@@ -165,69 +177,12 @@ bool OPFLOWHIOPSPARSEGPUInterface::eval_Jac_cons(const hiop::size_type &n,
                                                  const hiop::size_type &nnzJacS, hiop::index_type *iRow,
                                                  hiop::index_type *jCol, double *values) {
   PetscErrorCode ierr;
-  PetscInt *iRowstart = iRow, *jColstart = jCol;
-  PetscInt roffset, coffset;
-  PetscInt nrow, ncol;
-  PetscInt nvals;
-  const PetscInt *cols;
-  const PetscScalar *vals;
-  PetscInt i, j;
 
-  if (iRow != 0 && jCol != 0) {
-    /* Set locations only */
+  /* Sparse Jacobian */
+  ierr = (*opflow->modelops.computesparseequalityconstraintjacobianhiop)(
+           opflow, x, iRow, jCol, values);
+  CHKERRQ(ierr);
 
-    roffset = 0;
-    coffset = 0;
-
-    /* Equality constrained Jacobian */
-    ierr = (*opflow->modelops.computeequalityconstraintjacobian)(
-        opflow, opflow->X, opflow->Jac_Ge);
-    CHKERRQ(ierr);
-
-    ierr = MatGetSize(opflow->Jac_Ge, &nrow, &ncol);
-    CHKERRQ(ierr);
-
-    /* Copy over locations to triplet format */
-    for (i = 0; i < nrow; i++) {
-      ierr = MatGetRow(opflow->Jac_Ge, i, &nvals, &cols, &vals);
-      CHKERRQ(ierr);
-      for (j = 0; j < nvals; j++) {
-        iRowstart[j] = roffset + i;
-        jColstart[j] = coffset + cols[j];
-      }
-      /* Increment iRow,jCol pointers */
-      iRowstart += nvals;
-      jColstart += nvals;
-      ierr = MatRestoreRow(opflow->Jac_Ge, i, &nvals, &cols, &vals);
-      CHKERRQ(ierr);
-    }
-
-    if (opflow->Nconineq) {
-      /* Inequality constrained Jacobian */
-      roffset = opflow->nconeq;
-
-      ierr = (*opflow->modelops.computeinequalityconstraintjacobian)(
-          opflow, opflow->X, opflow->Jac_Gi);
-      CHKERRQ(ierr);
-
-      ierr = MatGetSize(opflow->Jac_Gi, &nrow, &ncol);
-      CHKERRQ(ierr);
-      /* Copy over locations to triplet format */
-      for (i = 0; i < nrow; i++) {
-        ierr = MatGetRow(opflow->Jac_Gi, i, &nvals, &cols, &vals);
-        CHKERRQ(ierr);
-        for (j = 0; j < nvals; j++) {
-          iRowstart[j] = roffset + i;
-          jColstart[j] = coffset + cols[j];
-        }
-        /* Increment iRow,jCol pointers */
-        iRowstart += nvals;
-        jColstart += nvals;
-      }
-    }
-  } else {
-
-  }
   return true;
 }
 
@@ -245,38 +200,14 @@ bool OPFLOWHIOPSPARSEGPUInterface::eval_Hess_Lagr(
 
   opflow->obj_factor = obj_factor;
 
-  if (iRow != NULL && jCol != NULL) {
-    ierr = (*opflow->modelops.computehessian)(
-        opflow, opflow->X, opflow->Lambdae, opflow->Lambdai, opflow->Hes);
-    CHKERRQ(ierr);
-    ierr = MatGetSize(opflow->Hes, &nrow, &nrow);
-    CHKERRQ(ierr);
-
-    /* Copy over locations to triplet format */
-    /* Note that HIOP requires a upper triangular Hessian as oppposed
-       to IPOPT which requires a lower triangular Hessian
-    */
-    for (i = 0; i < nrow; i++) {
-      ierr = MatGetRow(opflow->Hes, i, &nvals, &cols, &vals);
-      CHKERRQ(ierr);
-      ctr = 0;
-      for (j = 0; j < nvals; j++) {
-        if (cols[j] >= i) { /* upper triangle */
-          /* save as upper triangle locations */
-          iRow[ctr] = i;
-          jCol[ctr] = cols[j];
-          ctr++;
-        }
-      }
-      iRow += ctr;
-      jCol += ctr;
-      ierr = MatRestoreRow(opflow->Hes, i, &nvals, &cols, &vals);
-      CHKERRQ(ierr);
-    }
-
-  } else {
-
-  }
+  /* Compute sparse hessian */
+  ierr = PetscLogEventBegin(opflow->sparsehesslogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
+  ierr = (*opflow->modelops.computesparsehessianhiop)(opflow, x, lambda, iRow,
+                                                      jCol, values);
+  CHKERRQ(ierr);
+  ierr = PetscLogEventEnd(opflow->sparsehesslogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
 
   return true;
 }
