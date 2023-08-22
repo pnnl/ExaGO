@@ -122,6 +122,9 @@ PetscErrorCode OPFLOWSaveSolution(OPFLOW opflow, OutputFormat format,
 
   PetscFunctionBegin;
 
+  ierr = PetscLogEventBegin(opflow->outputlogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
+
   if (!opflow->solutiontops) {
     ierr = OPFLOWSolutionToPS(opflow);
     CHKERRQ(ierr);
@@ -129,6 +132,10 @@ PetscErrorCode OPFLOWSaveSolution(OPFLOW opflow, OutputFormat format,
 
   ierr = PSSaveSolution(opflow->ps, format, outfile);
   CHKERRQ(ierr);
+
+  ierr = PetscLogEventEnd(opflow->outputlogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 

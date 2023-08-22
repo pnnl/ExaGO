@@ -793,6 +793,9 @@ PetscErrorCode PSCreate(MPI_Comm mpicomm, PS *psout) {
   ps->gic_file_set = PETSC_FALSE;
   ps->setupcalled = PETSC_FALSE;
 
+  ps->solve_real_time = 0.0;
+  ps->solve_cpu_time = 0.0;
+
   *psout = ps;
   PetscFunctionReturn(0);
 }

@@ -292,7 +292,11 @@ struct _p_OPFLOW {
   PetscLogEvent objlogger, gradlogger, eqconslogger, ineqconslogger,
       eqconsjaclogger, ineqconsjaclogger, hesslogger, solvelogger,
       densehesslogger, sparsehesslogger, denseineqconsjaclogger,
-      denseeqconsjaclogger;
+      denseeqconsjaclogger, outputlogger;
+
+  /** @brief OPFLOWSolve time */
+  PetscLogDouble solve_real_time;
+  PetscLogDouble solve_cpu_time;
 
   /** @brief number of nonzeros used with HiOP MDS */
   PetscInt nnz_eqjacsp, nnz_ineqjacsp, nnz_hesssp;
