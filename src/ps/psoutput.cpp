@@ -264,8 +264,11 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
           ps->sys_info.total_genON[1], ps->sys_info.total_pgencapON,
           ps->sys_info.total_load[0], ps->sys_info.total_load[1],
           ps->sys_info.total_loadshed[0], ps->sys_info.total_loadshed[1]);
-
   fprintf(fd, "];\n");
+
+  fprintf(fd, "\n%%%% solve time\n");
+  fprintf(fd, "%ssolve_time = %.5g;\n", prefix, ps->solve_real_time);
+  fprintf(fd, "%ssolve_cpu_time = %.5g;\n", prefix, ps->solve_cpu_time);
 
   fclose(fd);
   PetscFunctionReturn(0);
@@ -821,7 +824,10 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[]) {
   PrintJSONArray(fd, "GENON", 2, &ps->sys_info.total_genON[0], true);
   PrintJSONDouble(fd, "GENCAPON", ps->sys_info.total_pgencapON, true);
   PrintJSONArray(fd, "LOAD", 2, &ps->sys_info.total_load[0], true);
-  PrintJSONArray(fd, "LOADSHED", 2, &ps->sys_info.total_loadshed[0], false);
+  PrintJSONArray(fd, "LOADSHED", 2, &ps->sys_info.total_loadshed[0], true);
+
+  PrintJSONDouble(fd, "SolveRealTime", ps->solve_real_time, true);
+  PrintJSONDouble(fd, "SolveCPUTime", ps->solve_cpu_time, true);
 
   PrintJSONObjectEnd(fd, false); // System summary object start
 
@@ -876,6 +882,8 @@ PetscErrorCode PSSaveSolution_MINIMAL(PS ps, const char outfile[]) {
           ps->sys_info.total_load[1]);
   fprintf(fd, "\tTotal Load Shed P, Q: %9g, %9g\n",
           ps->sys_info.total_loadshed[0], ps->sys_info.total_loadshed[1]);
+  fprintf(fd, "\tSolve Time: %5g\n", ps->solve_real_time);
+  fprintf(fd, "\tSolve CPU Time: %5g\n", ps->solve_cpu_time);
 
   fclose(fd);
 

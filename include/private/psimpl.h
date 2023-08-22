@@ -449,6 +449,9 @@ struct _p_PS {
   PSSystemSummary sys_info;
 
   PetscBool setupcalled; /* Is setup called on PS? */
+
+  PetscLogDouble solve_real_time;
+  PetscLogDouble solve_cpu_time;
 };
 
 extern PetscErrorCode PSCheckTopology(PS);

@@ -296,9 +296,11 @@ PetscErrorCode SOPFLOWSaveSolution(SOPFLOW sopflow, PetscInt scen_num,
 
   PetscErrorCode ierr;
   PetscFunctionBegin;
+
   ierr =
       SOPFLOWSaveSolutionBase(sopflow, scen_num, PETSC_FALSE, format, outfile);
   CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -350,6 +352,9 @@ static PetscErrorCode SOPFLOWSaveSolutionAllBase(SOPFLOW sopflow,
   bool is_minimal_output;
 
   PetscFunctionBegin;
+
+  ierr = PetscLogEventBegin(sopflow->outputlogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
 
   if (!sopflow->comm->rank) {
     ierr = PetscMkdir(outdir);
@@ -429,6 +434,10 @@ static PetscErrorCode SOPFLOWSaveSolutionAllBase(SOPFLOW sopflow,
       CHKERRQ(ierr);
     }
   }
+
+  ierr = PetscLogEventEnd(sopflow->outputlogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -447,8 +456,10 @@ PetscErrorCode SOPFLOWSaveSolutionAll(SOPFLOW sopflow, OutputFormat format,
                                       const char outdir[]) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
+
   ierr = SOPFLOWSaveSolutionAllBase(sopflow, PETSC_FALSE, format, outdir);
   CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -467,7 +478,9 @@ PetscErrorCode SOPFLOWSaveSolutionAllDefault(SOPFLOW sopflow,
                                              const char outdir[]) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
+
   ierr = SOPFLOWSaveSolutionAllBase(sopflow, PETSC_TRUE, MATPOWER, outdir);
   CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }

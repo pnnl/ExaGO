@@ -190,6 +190,10 @@ static PetscErrorCode SCOPFLOWSaveSolutionBase(SCOPFLOW scopflow,
   bool is_minimal_output;
 
   PetscFunctionBegin;
+
+  ierr = PetscLogEventBegin(scopflow->outputlogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
+
   if (!scopflow->ismultiperiod) {
     opflow = scopflow->opflows[cont_num];
   } else {
@@ -223,6 +227,9 @@ static PetscErrorCode SCOPFLOWSaveSolutionBase(SCOPFLOW scopflow,
                                    cont_num, PSSE, outfile);
     CHKERRQ(ierr);
   }
+
+  ierr = PetscLogEventEnd(scopflow->outputlogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -293,6 +300,9 @@ PetscErrorCode SCOPFLOWSaveSolutionAllBase(SCOPFLOW scopflow,
   bool is_minimal_output;
 
   PetscFunctionBegin;
+
+  ierr = PetscLogEventBegin(scopflow->outputlogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
 
   if (!scopflow->comm->rank) {
     ierr = PetscMkdir(outdir);
@@ -410,6 +420,10 @@ PetscErrorCode SCOPFLOWSaveSolutionAllBase(SCOPFLOW scopflow,
       }
     }
   }
+
+  ierr = PetscLogEventEnd(scopflow->outputlogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
