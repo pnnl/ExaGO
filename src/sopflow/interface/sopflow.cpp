@@ -14,6 +14,7 @@
 */
 PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout) {
   PetscErrorCode ierr;
+  PetscClassId sopflow_classid;
   SOPFLOW sopflow;
 
   PetscFunctionBegin;
@@ -74,6 +75,18 @@ PetscErrorCode SOPFLOWCreate(MPI_Comm mpicomm, SOPFLOW *sopflowout) {
   sopflow->compute_mode = "auto";
   sopflow->verbosity_level = 0;
 #endif
+
+  sopflow_classid = 0;
+  ierr = PetscClassIdRegister("SOPFLOW", &sopflow_classid);
+  CHKERRQ(ierr);
+
+  sopflow->outputlogger = 0;
+  ierr = PetscLogEventRegister("SOPFLOWSaveSolution", sopflow_classid,
+                               &sopflow->outputlogger);
+  CHKERRQ(ierr);
+
+  ierr = PetscLogEventActivate(sopflow->outputlogger);
+  CHKERRQ(ierr);
 
   sopflow->scenfileset = PETSC_FALSE;
   sopflow->scenunctype = NONE;

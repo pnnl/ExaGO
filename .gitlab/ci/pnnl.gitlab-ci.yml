@@ -184,7 +184,6 @@ variables:
   KUBERNETES_HELPER_MEMORY_REQUEST: 512Mi
   KUBERNETES_HELPER_MEMORY_LIMIT: 512Mi
 
-
 # https://stackoverflow.com/questions/67009007
 # We have to use YAML anchors for rules here
 # Rules are also evaluated sequentially, so you need to be careful about

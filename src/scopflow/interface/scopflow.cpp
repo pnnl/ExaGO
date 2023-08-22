@@ -14,6 +14,7 @@
  */
 PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout) {
   PetscErrorCode ierr;
+  PetscClassId scopflow_classid;
   SCOPFLOW scopflow;
 
   PetscFunctionBegin;
@@ -92,6 +93,15 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout) {
   scopflow->compute_mode = SCOPFLOWOptions::compute_mode.default_value.c_str();
   scopflow->verbosity_level = SCOPFLOWOptions::verbosity_level.default_value;
 #endif
+
+  scopflow_classid = 0;
+  ierr = PetscClassIdRegister("SCOPFLOW", &scopflow_classid);
+  CHKERRQ(ierr);
+
+  scopflow->outputlogger = 0;
+  ierr = PetscLogEventRegister("SCOPFLOWSaveSolution", scopflow_classid,
+                               &scopflow->outputlogger);
+  CHKERRQ(ierr);
 
   scopflow->setupcalled = PETSC_FALSE;
   *scopflowout = scopflow;

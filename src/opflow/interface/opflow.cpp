@@ -1875,6 +1875,12 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
                                &opflow->denseeqconsjaclogger);
   CHKERRQ(ierr);
 
+  ierr = PetscLogEventRegister("OPFLOWSaveSolution", 0, &opflow->outputlogger);
+  CHKERRQ(ierr);
+
+  opflow->solve_real_time = 0.0;
+  opflow->solve_cpu_time = 0.0;
+
   /* Compute area participation factors */
   ierr = PSComputeParticipationFactors(ps);
   CHKERRQ(ierr);
@@ -1972,7 +1978,14 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X, Vec Lambda) {
 */
 PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
   PetscErrorCode ierr;
+  PetscLogDouble real1 = 0.0, real2 = 0.0;
+  PetscLogDouble cpu1 = 0.0, cpu2 = 0.0;
   PetscFunctionBegin;
+
+  ierr = PetscTime(&real1);
+  CHKERRQ(ierr);
+  ierr = PetscGetCPUTime(&cpu1);
+  CHKERRQ(ierr);
 
   if (!opflow->setupcalled) {
     ierr = OPFLOWSetUp(opflow);
@@ -1987,6 +2000,14 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
   CHKERRQ(ierr);
 
   //  ierr = VecView(opflow->X,0);CHKERRQ(ierr);
+
+  ierr = PetscTime(&real2);
+  CHKERRQ(ierr);
+  ierr = PetscGetCPUTime(&cpu2);
+  CHKERRQ(ierr);
+
+  opflow->solve_real_time = real2 - real1;
+  opflow->solve_cpu_time = cpu2 - cpu1;
 
   PetscFunctionReturn(0);
 }
@@ -2937,6 +2958,9 @@ PetscErrorCode OPFLOWSetSummaryStats(OPFLOW opflow) {
 
   sys_info->total_loadshed[0] = Pdshed_tot * MVAbase;
   sys_info->total_loadshed[1] = Qdshed_tot * MVAbase;
+
+  ps->solve_real_time = opflow->solve_real_time;
+  ps->solve_cpu_time = opflow->solve_cpu_time;
 
   PetscFunctionReturn(0);
 }

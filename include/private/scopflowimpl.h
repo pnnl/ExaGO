@@ -210,6 +210,9 @@ struct _p_SCOPFLOW {
   std::string compute_mode;
   int verbosity_level;
   std::string mem_space; /* Memory space used in HIOP */
+
+  /** @brief Logging events that apply to interface */
+  PetscLogEvent outputlogger;
 };
 
 extern PetscErrorCode SCOPFLOWModelRegisterAll(SCOPFLOW);
