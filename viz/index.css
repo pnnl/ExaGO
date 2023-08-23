@@ -1,0 +1,34 @@
+.css-15v22id-MuiAccordionDetails-root{
+    padding: 1px 20px 2px !important
+}
+
+/* chat window style */
+.rcw-conversation-container{
+    height: 75vh;
+}
+
+.rcw-messages-container{
+    height: 60vh !important;
+    max-height: 1000px !important;
+}
+
+.rcw-widget-container{
+    bottom: 0px !important ;
+    left: 0px!important;
+    right: auto!important;
+    max-width: 450px;
+   
+}
+
+.rcw-launcher {
+    align-self: flex-start !important;
+    background-color: #74a9cf !important;
+}
+
+.rcw-conversation-container .rcw-header{
+    background-color: #74a9cf !important;
+}
+
+.rcw-client .rcw-message-text{
+    background-color: #74a9cf !important; 
+}

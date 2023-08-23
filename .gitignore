@@ -8,3 +8,7 @@ install/*
 spack-*
 .vscode/
 coinhsl-*
+node_modules
+.env
+package-lock.json
+config.py

@@ -9,23 +9,31 @@ const CONFIG = {
   },
 
   output: {
-    library: 'App'
+    library: 'App',
+    // sourceMapFilename: '[name].js.map'
   },
+
+  devtool: 'source-map',
 
   module: {
     rules: [
       {
         // Transpile ES6 to ES5 with babel
         // Remove if your app does not use JSX or you don't need to support old browsers
-        test: /\.js$/,
+        test:  /\.js$|jsx/, 
         loader: 'babel-loader',
         exclude: [/node_modules/],
         options: {
-          presets: ['@babel/preset-react']
+          presets: ['@babel/preset-react'],
+          
         }
       }
     ]
-  }
+  },
+  resolve: {
+    extensions: ['.js', '.jsx']
+}
+
 };
 
 // This line enables bundling against src in this repo rather than installed module
