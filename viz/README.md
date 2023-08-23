@@ -11,7 +11,7 @@ ExaGO has an experimental visualization platform for visualizing the results of 
 
 ## Installation
 ExaGO visualization uses the following tools to generate the visuals.
-- [Node.js](https://nodejs.org/en/)
+- [Node.js@v16.13.0](https://nodejs.org/es/blog/release/v16.13.0)
 - Facebook's [React](https://reactjs.org/) framework
 - Uber's [Deck.gl](https://deck.gl/docs) visualization
 - [React-map-gl](https://visgl.github.io/react-map-gl/) framework
@@ -19,7 +19,7 @@ ExaGO visualization uses the following tools to generate the visuals.
 
 Before launching the visualization, one needs to install these packages. This can be done with the following two steps:
 1. Install [Node.js](https://nodejs.org/en/)
-2. Do `npm install` in this directory (`viz/data`)to install all the dependencies.
+2. Do `npm install` in this directory (`viz`)to install all the dependencies.
 
 ## Preparing input data files for visualization
 The visualization uses a `JSON` formatted file as an input. This `JSON` file has a specific structure (To do: explain structure for the file) and there are several sample files for different network in the `data` subdirectory.
@@ -48,15 +48,90 @@ npm start
 This will open a webpage with the visualization of the given network. 
 
 The figures show the visualization of the synthetic electric grid. The data for developing this visualization was created by merging the synthetic dataset for the [Eastern](https://electricgrids.engr.tamu.edu/electric-grid-test-cases/activsg70k/), [Western](https://electricgrids.engr.tamu.edu/electric-grid-test-cases/activsg10k/), and [Texas](https://electricgrids.engr.tamu.edu/electric-grid-test-cases/activsg2000/) interconnects from the [Electric Grid Test Case Repository](https://electricgrids.engr.tamu.edu/)
-### 2D synthetic grid network display
-![](images/network_us.png)
+### 2D synthetic US western grid network display
+![](images/network_viz.PNG)
 
-### 2.5D synthetic grid network display with generation overlapped and doughnut chart for generataion mix
-![](images/network_gen_us.png)
+### 2D synthetic US western grid tranmission line flow display
+![](images/flow_viz.PNG)
 
-### 2.5D synthetic grid displaying load profile by counties
-![](images/network_load_us.png)
+### 2.5D synthetic US western grid network display with generation overlapped and doughnut chart for generataion mix
+![](images/generation_viz.PNG)
 
-### 2.5D synthetic grid displaying network, generation, and load
-![](images/network_gen_load_us.png)
+### 2.5D synthetic US western grid displaying load profile by counties
+![](images/load_viz.PNG)
 
+### 2.5D synthetic US western grid displaying network, flow, generation, and load
+![](images/all_viz.PNG)
+
+## ChatGrid
+ChatGrid is a natural language query tool for ExaGO visualizations. It is powered by OpenAI GPT-3.5-Turbo and Langchain. ChatGrid allows users to query on ExaGO visualizations through natural language and returns text summaries and visual outputs as answers. The following flow chart shows the architecture design of ChatGrid.
+![](images/chatgrid_arch.png)
+
+### Dependencies
+ChatGrid is built upon the following services and tools. 
+- [OpenAI LLMs](https://platform.openai.com/docs/models/overview)
+- [Langchain@0.0.233](https://python.langchain.com/docs/get_started/introduction.html) framework
+- [PostGreSQL](https://www.postgresql.org/download/) database
+- [Flask](https://flask.palletsprojects.com/en/2.3.x/) framework 
+
+### Preparing the database for query
+Behind the scenes, LLM translates natural language queries into SQL queries to retrieve data from a database. As the power grid network is a typical geospatial dataset, we choose PostgreSQl + PostGIS database for the convenience of conducting spatial queries. Please follow the steps below to set up your PostgreSQL database that contains the power grid network dataset. 
+
+1. Convert data formats. 
+
+    First, we need to convert the ExaGO output `.json` files to `.csv` files. The difference between the two data formats is that JSON stores attributes and values as dictionary pairs but CSV stores attributes and values as tables. You can write your own script for this conversion or use the provided script. 
+
+    To use the provided script, first copy the ExaGO output `.json` file to the `viz/data` subdirectory and simply run the following script in the `viz/data` subdirectory (replace the example filename with your json filename). This will output three CSV files: `generation.csv`, `bus.csv`, and `tranmission_line.csv`.
+    ```
+    python dataprocess.py case_ACTIVSg10k.json
+    ```
+    
+2. Download PostgreSQL database from this [link](https://www.postgresql.org/download/) and install it. 
+
+3. Create a PostgreSQL database and import the `.csv` files to it.
+
+    There are many ways to do that. If you are not familiar with SQL commands, you can use `pgAdmin 4` (a GUI management program of PostgreSQL database, usually installed along with PostgreSQL) and follow [this instruction](https://learnsql.com/blog/how-to-import-csv-to-postgresql/) to import the `.csv` files (e.g., generation.csv, bus.csv, tranmission_line.csv, counties.csv, US states.csv) to PostgreSQL database.
+
+    Note: 
+
+      a. Please write down your username, password, database name and keep them in a safe place. You will need this information to connect to the database later. 
+
+      b. Please be informative and accurate about your table names, and attribute names. Because this information can help LLM understand the dataset and performs better when dealing with user queries.
+
+      c. Include US state and county information in your database to support spatial queries that related to state or county.   
+    
+
+4. Connect to your database.
+
+    Create the `config.py` file in the `viz/backend` subdirectory and paste the following script into it (replace `YOUR_DATABASE_PASSWORD` with your own database password )
+
+    ```
+    sql_key = "YOUR_DATABASE_PASSWORD"
+    ```
+
+    Note: Please make sure you use exactly the same file name (i.e., `config.py`) and key name (i.e., 'sql_key') as indicated. 
+
+### Getting your OpenAI API key
+ChatGrid uses GPT models from OpenAI to process natural language queries. To use LLMs from OpenAI, you first need to go to [OpenAI's Platform website](https://platform.openai.com) and sign in with an OpenAI account. Click your profile icon at the top-right corner of the page and select "View API Keys." Click "Create New Secret Key" to generate a new API key. Open the `config.py` file you just created in the `viz/backend` subdirectory and add the following script into it (replace `YOUR_OPENAI_KEY` with your own OpenAI API key)
+
+```
+openai_key = "YOUR_OPENAI_KEY"
+```
+
+<!-- data script -->
+<!-- installation: pip install -r requirements.txt in the backend directory-->
+### Launch backend
+ChatGrid uses Flask to host the service of receiving user queries and returning the data output and text summaries to update the visualizations on the frontend. Please follow the steps below to run the backend server.
+
+1. Go to the `viz/backend` subdirectory and use the `pip install -r requirements.txt` command to install all the Python dependencies.
+2. run the following command in the `viz/backend` subdirectory
+    ```
+    python server.py
+    ```
+    This will start the backend server for receiving user queries, processing it by LLM and returning data outputs to the frontend. 
+
+Now open the chat window on the frontend, type your queries, and enjoy ChatGrid!
+![](images/chatgrid_case.png)
+
+### Optional: model configuration 
+If you would like to test different LLMs with ChatGrid, you can specify the `model_name="YOUR_LLM_MODEL"` in the `viz/backend/sqlchain.py` file. 
