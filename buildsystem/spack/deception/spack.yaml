@@ -1,17 +1,14 @@
 spack:
   specs:
-    - exago@develop+cuda%gcc@10.2.0 cuda_arch=60,70,75,80
-    - exago@develop+cuda%gcc@10.2.0 cuda_arch=60,70,75,80
+    - exago@develop+cuda%gcc@9.1.0 cuda_arch=60,70,75,80
   view: false
   concretizer:
-    unify: when_possible
-    reuse: true
+    reuse: false
   config:
     concretizer: clingo
     install_tree:
       root: $SPACK_INSTALL
     source_cache: $SPACK_CACHE/source-cache
-    build_cache: $SPACK_CACHE/build-cache
     misc_cache: $SPACK_CACHE/misc-cache
     build_stage: $SPACK_CACHE/build-stage
   modules:
@@ -45,12 +42,33 @@ spack:
       providers:
         mpi:
         - openmpi
+        zlib-api:
+        - zlib
+    cmake:
+      externals:
+      - spec: cmake@3.26.3
+        modules:
+        - cmake/3.26.3 
+      buildable: false
+    git:
+      externals:
+      - spec: git@2.37.3
+        modules:
+        - git/2.37.3 
+        prefix: /share/apps/git/2.37.3
+      buildable: false
+    perl:
+      externals:
+      - spec: perl@5.26.0
+        modules:
+        - perl/5.26.0
+      buildable: false
     openmpi:
       externals:
       - spec: openmpi@4.1.0mlx5.0
         modules:
         - openmpi/4.1.0mlx5.0
-        prefix: /share/apps/openmpi/4.1.0mlx5.0/gcc/10.2.0
+        prefix: /share/apps/openmpi/4.1.0mlx5.0/gcc/9.1.0
       buildable: false
     cuda:
       externals:
@@ -73,12 +91,12 @@ spack:
       environment: {}
       extra_rpaths: []
   - compiler:
-      spec: gcc@10.2.0
+      spec: gcc@9.1.0
       paths:
-        cc: /share/apps/gcc/10.2.0/bin/gcc
-        cxx: /share/apps/gcc/10.2.0/bin/g++
-        f77: /share/apps/gcc/10.2.0/bin/gfortran
-        fc: /share/apps/gcc/10.2.0/bin/gfortran
+        cc: /share/apps/gcc/9.1.0/bin/gcc
+        cxx: /share/apps/gcc/9.1.0/bin/g++
+        f77: /share/apps/gcc/9.1.0/bin/gfortran
+        fc: /share/apps/gcc/9.1.0/bin/gfortran
       flags: {}
       operating_system: centos7
       target: x86_64
