@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### General
 
 ### Build system
+- Add CI on Incline with Spack module pipelines (AMD / HIP GPU machine at PNNL)
 
 ### PS
 
