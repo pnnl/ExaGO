@@ -1,16 +1,16 @@
 #!/bin/bash
-source /etc/profile.d/modules.sh
-export MY_CLUSTER=deception
+. /etc/profile.d/modules.sh
 
 module purge
 
 # Load system modules
-module load gcc/10.2.0
+module load gcc/9.1.0
 module load openmpi/4.1.0mlx5.0
 module load cuda/11.4
-module load python/miniconda3.8
 
-source /share/apps/python/miniconda3.8/etc/profile.d/conda.sh
+# System Python
+module load python/miniconda3.9
+source /share/apps/python/miniconda3.9/etc/profile.d/conda.sh
 
 export CC=$(which gcc) CXX=$(which g++) FC=$(which gfortran)
 

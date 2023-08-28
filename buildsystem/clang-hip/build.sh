@@ -49,6 +49,13 @@ function doBuild {
     echo
     echo Testing
     echo
+    if [ $MY_CLUSTER == 'incline' ]
+    then
+    unset ROCR_VISIBLE_DEVICES
+    unset CUDA_VISIBLE_DEVICES
+    unset GPU_DEVICE_ORDINAL
+    fi
+    echo "Using the following as CTESTARGS: $CTESTARGS"
     ctest $CTESTARGS || return 1
     popd
   fi

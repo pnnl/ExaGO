@@ -35,6 +35,10 @@ if(EXAGO_INSTALL_TESTS)
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/empar_cont.toml
   )
+  set_tests_properties(
+    FUNCTIONALITY_TEST_SCOPFLOW_EMPAR_CONT_TESTSUITE PROPERTIES LABELS
+                                                                "incline-skip"
+  )
 
   if(EXAGO_ENABLE_ALL_TESTS)
     exago_add_test(
@@ -77,6 +81,10 @@ if(EXAGO_INSTALL_TESTS)
     -hiop_mem_space
     HOST
   )
+  set_tests_properties(
+    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_PBHIOP_TESTSUITE PROPERTIES LABELS
+                                                              "newell-skip"
+  )
 
   exago_add_test(
     NAME
@@ -108,6 +116,10 @@ if(EXAGO_INSTALL_TESTS)
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_mpi.toml
   )
+  set_tests_properties(
+    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_MPI_TESTSUITE PROPERTIES LABELS
+                                                              "incline-skip"
+  )
 
   exago_add_test(
     NAME
@@ -123,6 +135,10 @@ if(EXAGO_INSTALL_TESTS)
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_serial.toml
   )
+  set_tests_properties(
+    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_SERIAL_TESTSUITE PROPERTIES LABELS
+                                                                 "incline-skip"
+  )
 
   exago_add_test(
     NAME
@@ -137,6 +153,10 @@ if(EXAGO_INSTALL_TESTS)
     3
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_raja.toml
+  )
+  set_tests_properties(
+    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_RAJA_TESTSUITE PROPERTIES LABELS
+                                                               "incline-skip"
   )
 
   foreach(fmt "MATPOWER" "CSV" "JSON" "MINIMAL")

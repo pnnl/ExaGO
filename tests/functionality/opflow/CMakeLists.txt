@@ -22,6 +22,11 @@ if(EXAGO_INSTALL_TESTS)
     HIOP
   )
 
+  set_tests_properties(
+    FUNCTIONALITY_TEST_OPFLOW_HIOP_TOML_TESTSUITE
+    PROPERTIES LABELS "incline-skip;deception-skip;newell-skip"
+  )
+
   exago_add_test(
     NAME
     FUNCTIONALITY_TEST_OPFLOW_RAJAHIOP_TOML_TESTSUITE
@@ -33,19 +38,25 @@ if(EXAGO_INSTALL_TESTS)
     HIOP
     RAJA
   )
+  set_tests_properties(
+    FUNCTIONALITY_TEST_OPFLOW_RAJAHIOP_TOML_TESTSUITE
+    PROPERTIES LABELS "incline-skip;deception-skip;newell-skip"
+  )
 
-  if(EXAGO_ENABLE_HIOP_SPARSE)
-    exago_add_test(
-      NAME
-      FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_TOML_TESTSUITE
-      COMMAND
-      ${RUNCMD}
-      $<TARGET_FILE:test_opflow_functionality>
-      ${CMAKE_CURRENT_SOURCE_DIR}/hiopsparse_pbpol.toml
-      DEPENDS
-      HIOP_SPARSE
-    )
-  endif()
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_TOML_TESTSUITE
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:test_opflow_functionality>
+    ${CMAKE_CURRENT_SOURCE_DIR}/hiopsparse_pbpol.toml
+    DEPENDS
+    HIOP_SPARSE
+  )
+  set_tests_properties(
+    FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_TOML_TESTSUITE
+    PROPERTIES LABELS "incline-skip;deception-skip;newell-skip"
+  )
 
   # Note: All cartesian and/or current balance models are way behind. These
   # models should not be used and their tests should be disabled.

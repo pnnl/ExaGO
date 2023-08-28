@@ -51,4 +51,5 @@ if(EXAGO_INSTALL_TESTS)
     DEPENDS
     EXAGO_ENABLE_LOGGING
   )
+  set_tests_properties(UNIT_TESTS_LOGGER PROPERTIES LABELS "incline-skip")
 endif()

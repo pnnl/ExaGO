@@ -1,17 +1,14 @@
 spack:
   specs:
   - exago@develop+cuda%gcc@8.5.0 cuda_arch=70
-  - exago@develop+cuda%gcc@8.5.0 cuda_arch=70
   view: false
   concretizer:
-    unify: when_possible
-    reuse: true
+    reuse: false
   config:
     concretizer: clingo
     install_tree:
       root: $SPACK_INSTALL
     source_cache: $SPACK_CACHE/source-cache
-    build_cache: $SPACK_CACHE/build-cache
     misc_cache: $SPACK_CACHE/misc-cache
     build_stage: $SPACK_CACHE/build-stage
   modules:

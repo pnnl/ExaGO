@@ -21,12 +21,18 @@ spack install -j $1 && \
 spack module tcl refresh -y && \
 	
 # We will create a new modules file, with the first line being the module path
+mkdir -p $base/modules && \
 # Note we redirect and destroy old file
-# Only installing non-optimized version while config is not in spack develop
-echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/dependencies.sh && \
-#echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/optimized-dependencies.sh && \
-#echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/exago-optimized.sh && \
-echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$(spack arch) &> $base/modules/exago.sh && \
+arch=$(spack arch) && \
+if [ $MY_CLUSTER == "incline" ]; then
+  # Trim the last character (see #464 on GitLab)
+  arch=${arch::-1} 
+fi && \
+echo Arch for module path being used is $arch && \
+echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$arch &> $base/modules/dependencies.sh && \
+#echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$arch &> $base/modules/optimized-dependencies.sh && \
+#echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$arch &> $base/modules/exago-optimized.sh && \
+echo module use -a $SPACK_INSTALL/$SPACK_MODULES/$arch &> $base/modules/exago.sh && \
 
 # Now we can append to the files
 spack module tcl loads -r -x exago -x openssl exago &>> $base/modules/dependencies.sh && \
