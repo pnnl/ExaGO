@@ -1,4 +1,4 @@
-function mpc = t_case9_dcline
+function mpc = case9_dcline
 %T_CASE9_DCLINE   Same as T_CASE9_OPFV2 with addition of DC line data.
 %   Please see CASEFORMAT for details on the case file format.
 %
@@ -60,9 +60,10 @@ mpc.gencost = [
 ];
 
 %%-----  DC Line Data  -----
+%% Change 30-4 Vf to 1.0 from 1.01 to match with gen set-point voltage
 %	fbus	tbus	status	Pf	Pt	Qf	Qt	Vf	Vt	Pmin	Pmax	QminF	QmaxF	QminT	QmaxT	loss0	loss1
 mpc.dcline = [
-	30	4	1	10	8.9	0	0	1.01	1	1	10	-10	10	-10	10	1	0.01;
+	30	4	1	10	8.9	0	0	1	1	1	10	-10	10	-10	10	1	0.01;
 	7	9	1	2	1.96	0	0	1	1	2	10	0	0	0	0	0	0;
 	5	8	0	0	0	0	0	1	1	1	10	-10	10	-10	10	0	0;
 	5	9	1	10	9.5	0	0	1	0.98	0	10	-10	10	-10	10	0	0.05;
