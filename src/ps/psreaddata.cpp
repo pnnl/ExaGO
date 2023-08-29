@@ -1031,7 +1031,6 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
 	     &Branch[bri].qmaxf, &Branch[bri].qmint, &Branch[bri].qmaxt,
 	     &Branch[bri].loss0, &Branch[bri].loss1);
 
-      Branch[bri].pt /= ps->MVAbase;
       Branch[bri].pf /= ps->MVAbase;
       Branch[bri].pmin /= ps->MVAbase;
       Branch[bri].pmax /= ps->MVAbase;
