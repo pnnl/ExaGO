@@ -766,3 +766,35 @@ int GENParamsRajaHiop::allocate(OPFLOW opflow) {
 #endif
   return 0;
 }
+
+void PbpolModelRajaHiop::destroy(OPFLOW opflow) {
+  loadparams.destroy(opflow);
+  lineparams.destroy(opflow);
+  busparams.destroy(opflow);
+  genparams.destroy(opflow);
+
+#ifdef EXAGO_ENABLE_GPU
+  if(i_jaceq != NULL) {
+    // These arrays get allocated only with sparse GPU model. For other models, they are
+    // not allocated. Hence, this business of checking if the array is NULL
+
+    auto &resmgr = umpire::ResourceManager::getInstance();
+    umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
+
+    h_allocator_.deallocate(i_jaceq);
+    h_allocator_.deallocate(j_jaceq);
+    h_allocator_.deallocate(val_jaceq);
+
+    h_allocator_.deallocate(i_hess);
+    h_allocator_.deallocate(j_hess);
+    h_allocator_.deallocate(val_hess);
+
+    if(opflow->nconineq) {
+      h_allocator_.deallocate(i_jacineq);
+      h_allocator_.deallocate(j_jacineq);
+      h_allocator_.deallocate(val_jacineq);
+    }
+  }
+#endif
+}
+

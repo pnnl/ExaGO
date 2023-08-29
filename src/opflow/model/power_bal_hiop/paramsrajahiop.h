@@ -233,14 +233,13 @@ struct _p_FormPBPOLRAJAHIOP {};
 typedef struct _p_FormPBPOLRAJAHIOP *PBPOLRAJAHIOP;
 
 struct PbpolModelRajaHiop : public _p_FormPBPOLRAJAHIOP {
-  PbpolModelRajaHiop(OPFLOW opflow) {}
-
-  void destroy(OPFLOW opflow) {
-    loadparams.destroy(opflow);
-    lineparams.destroy(opflow);
-    busparams.destroy(opflow);
-    genparams.destroy(opflow);
+  PbpolModelRajaHiop(OPFLOW opflow) {
+    i_jaceq = j_jaceq = i_jacineq = j_jacineq = NULL;
+    i_hess = j_hess = NULL;
+    val_jaceq = val_jacineq = val_hess = NULL;
   }
+
+  void destroy(OPFLOW opflow);
 
   ~PbpolModelRajaHiop() {}
 
@@ -248,4 +247,10 @@ struct PbpolModelRajaHiop : public _p_FormPBPOLRAJAHIOP {
   LOADParamsRajaHiop loadparams;
   LINEParamsRajaHiop lineparams;
   BUSParamsRajaHiop busparams;
+
+  // Arrays to store Jacobian and Hessian indices and entries on CPU (used with GPU sparse model)
+  int *i_jaceq,*j_jaceq; // Row and column indices for equality constrained Jacobian
+  int *i_jacineq, *j_jacineq; // Row and column indices for inequality constrained Jacobain
+  int *i_hess, *j_hess; // Row and column indices for hessian
+  double *val_jaceq,*val_jacineq,*val_hess; // values for equality, inequality jacobians and hessian
 };

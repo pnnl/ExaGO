@@ -66,7 +66,7 @@ bool OPFLOWHIOPSPARSEGPUInterface::get_sparse_blocks_info(
   ierr = MatGetInfo(opflow->Jac_Ge, MAT_LOCAL, &info_eq);
   CHKERRQ(ierr);
 
-  nnz_sparse_Jaceq = info_eq.nz_used;
+  nnz_sparse_Jaceq = opflow->nnz_eqjacsp = info_eq.nz_used;
 
   nnz_sparse_Jacineq = 0;
   if (opflow->Nconineq) {
@@ -80,7 +80,7 @@ bool OPFLOWHIOPSPARSEGPUInterface::get_sparse_blocks_info(
     ierr = MatGetInfo(opflow->Jac_Gi, MAT_LOCAL, &info_ineq);
     CHKERRQ(ierr);
 
-    nnz_sparse_Jacineq = info_ineq.nz_used;
+    nnz_sparse_Jacineq = opflow->nnz_ineqjacsp = info_ineq.nz_used;
   }
 
   /* Compute non-zeros for Hessian */
@@ -94,6 +94,8 @@ bool OPFLOWHIOPSPARSEGPUInterface::get_sparse_blocks_info(
   CHKERRQ(ierr);
 
   nnz_sparse_Hess_Lagr = (info_hes.nz_used - opflow->nx) / 2 + opflow->nx;
+
+  opflow->nnz_hesssp = nnz_sparse_Hess_Lagr;
 
   return true;
 }
@@ -167,44 +169,44 @@ bool OPFLOWHIOPSPARSEGPUInterface::eval_grad_f(const hiop::size_type &n,
 bool OPFLOWHIOPSPARSEGPUInterface::eval_Jac_cons(
     const hiop::size_type &n, const hiop::size_type &m, const hiop::size_type &num_cons,
     const hiop::size_type *idx_cons, const double *x, bool new_x, const hiop::size_type &nnzJacS,
-    hiop::index_type *iJacS, hiop::index_type *jJacS, double *MJacS) {
+    hiop::index_type *iJacS_dev, hiop::index_type *jJacS_dev, double *MJacS_dev) {
   return false;
 }
 
 bool OPFLOWHIOPSPARSEGPUInterface::eval_Jac_cons(const hiop::size_type &n,
                                                  const hiop::size_type &m,
                                                  const double *x, bool new_x,
-                                                 const hiop::size_type &nnzJacS, hiop::index_type *iRow,
-                                                 hiop::index_type *jCol, double *values) {
+                                                 const hiop::size_type &nnzJacS, hiop::index_type *iJacS_dev,
+                                                 hiop::index_type *jJacS_dev, double *MJacS_dev) {
   PetscErrorCode ierr;
 
   /* Sparse Jacobian */
   ierr = (*opflow->modelops.computesparseequalityconstraintjacobianhiop)(
-           opflow, x, iRow, jCol, values);
+           opflow, x, iJacS_dev, jJacS_dev, MJacS_dev);
   CHKERRQ(ierr);
+
+  if (opflow->nconineq) {
+    /* Sparse Inequality constraint Jacobian */
+    ierr = (*opflow->modelops.computesparseinequalityconstraintjacobianhiop)(opflow, x, iJacS_dev, jJacS_dev, MJacS_dev);
+    CHKERRQ(ierr);
+  }
 
   return true;
 }
 
 bool OPFLOWHIOPSPARSEGPUInterface::eval_Hess_Lagr(
-    const hiop::size_type &n, const hiop::size_type &m, const double *x, bool new_x,
-    const double &obj_factor, const double *lambda, bool new_lambda,
-    const hiop::size_type &nnzHSS, hiop::index_type *iRow, hiop::index_type *jCol, double *values) {
+    const hiop::size_type &n, const hiop::size_type &m, const double *x_dev, bool new_x,
+    const double &obj_factor, const double *lambda_dev, bool new_lambda,
+    const hiop::size_type &nnzHSS, hiop::index_type *iHSS_dev, hiop::index_type *jHSS_dev, double *MHSS_dev) {
   PetscErrorCode ierr;
-  PetscInt nrow;
-  PetscInt nvals;
-  const PetscInt *cols;
-  const PetscScalar *vals;
-  PetscInt i, j;
-  PetscInt ctr = 0;
 
   opflow->obj_factor = obj_factor;
 
   /* Compute sparse hessian */
   ierr = PetscLogEventBegin(opflow->sparsehesslogger, 0, 0, 0, 0);
   CHKERRQ(ierr);
-  ierr = (*opflow->modelops.computesparsehessianhiop)(opflow, x, lambda, iRow,
-                                                      jCol, values);
+  ierr = (*opflow->modelops.computesparsehessianhiop)(opflow, x_dev, lambda_dev, iHSS_dev,
+                                                      jHSS_dev, MHSS_dev);
   CHKERRQ(ierr);
   ierr = PetscLogEventEnd(opflow->sparsehesslogger, 0, 0, 0, 0);
   CHKERRQ(ierr);
@@ -335,15 +337,18 @@ PetscErrorCode OPFLOWSolverSetUp_HIOPSPARSEGPU(OPFLOW opflow) {
   }
 #endif
 
-  // hiop->sp->options->SetNumericValue("fixed_var_perturb",1.0e-6);
-  // hiop->sp->options->SetStringValue("mem_space","host");
+  hiop->sp->options->SetStringValue("mem_space","device");
+  hiop->sp->options->SetStringValue("compute_mode", "gpu");
 
-  hiop->sp->options->SetStringValue("dualsUpdateType", "linear");
   hiop->sp->options->SetStringValue("dualsInitialization", "zero");
+  hiop->sp->options->SetStringValue("duals_init", "zero");
+
+  hiop->sp->options->SetStringValue("fact_acceptor", "inertia_free");
+  hiop->sp->options->SetStringValue("linsol_mode", "speculative");
   hiop->sp->options->SetStringValue("fixed_var", "relax");
   hiop->sp->options->SetStringValue("Hessian", "analytical_exact");
   hiop->sp->options->SetStringValue("KKTLinsys", "xdycyd");
-  hiop->sp->options->SetStringValue("compute_mode", "cpu");
+
   hiop->sp->options->SetIntegerValue("verbosity_level", verbose_level);
   hiop->sp->options->SetNumericValue("mu0", 1e-1);
   hiop->sp->options->SetNumericValue("tolerance", opflow->tolerance);
