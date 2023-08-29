@@ -1304,9 +1304,9 @@ PetscErrorCode PSSetUp(PS ps) {
     CHKERRQ(ierr);
     busf = connbuses[0];
     bust = connbuses[1];
-    busf->ide = PV_BUS;
-    bust->ide = PV_BUS;
-    
+    if(busf->ide != REF_BUS || busf->ide != PV_BUS) busf->ide = PV_BUS;
+    if(bust->ide != REF_BUS || bust->ide != PV_BUS) bust->ide = PV_BUS;
+  }
     
   //  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d Came
   //  here\n",ps->comm->rank);CHKERRQ(ierr);

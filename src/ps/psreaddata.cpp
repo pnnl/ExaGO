@@ -1025,6 +1025,16 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
 	     &Branch[bri].qmaxf, &Branch[bri].qmint, &Branch[bri].qmaxt,
 	     &Branch[bri].loss0, &Branch[bri].loss1);
 
+      Branch[bri].pt /= ps->MVAbase;
+      Branch[bri].pf /= ps->MVAbase;
+      Branch[bri].pmin /= ps->MVAbase;
+      Branch[bri].pmax /= ps->MVAbase;
+      Branch[bri].qminf /= ps->MVAbase;
+      Branch[bri].qmaxf /= ps->MVAbase;
+      Branch[bri].qmint /= ps->MVAbase;
+      Branch[bri].qmaxt /= ps->MVAbase;
+      Branch[bri].loss0 /= ps->MVAbase;
+
       Branch[bri].isdcline = PETSC_TRUE;
       ps->Nline++;
       ps->nline++;
