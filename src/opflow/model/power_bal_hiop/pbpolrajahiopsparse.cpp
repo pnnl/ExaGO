@@ -303,10 +303,13 @@ PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
       OPFLOWComputeGradientArray_PBPOLRAJAHIOPSPARSE;
   opflow->modelops.solutiontops = OPFLOWSolutionToPS_PBPOLRAJAHIOPSPARSE;
   opflow->modelops.setup = OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE;
+  opflow->modelops.computeequalityconstraintjacobian = OPFLOWComputeEqualityConstraintJacobian_PBPOL;
   opflow->modelops.computesparseequalityconstraintjacobianhiop =
       OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE;
+  opflow->modelops.computeinequalityconstraintjacobian = OPFLOWComputeInequalityConstraintJacobian_PBPOL;
   opflow->modelops.computesparseinequalityconstraintjacobianhiop =
       OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE;
+  opflow->modelops.computehessian = OPFLOWComputeHessian_PBPOL;
   opflow->modelops.computesparsehessianhiop =
       OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE;
   opflow->modelops.solutioncallbackhiop = OPFLOWSolutionCallback_PBPOLRAJAHIOP;

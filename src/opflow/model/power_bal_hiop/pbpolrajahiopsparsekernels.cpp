@@ -600,9 +600,9 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
     // Create arrays on host to store i,j, and val arrays
     umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
 
-    pbpolrajahiopsparse->i_jaceq = (int*)(h_allocator_.allocate(opflow->nnz_ineqjacsp*sizeof(int)));
-    pbpolrajahiopsparse->j_jaceq = (int*)(h_allocator_.allocate(opflow->nnz_ineqjacsp*sizeof(int)));
-    pbpolrajahiopsparse->val_jaceq = (double*)(h_allocator_.allocate(opflow->nnz_ineqjacsp*sizeof(double)));
+    pbpolrajahiopsparse->i_jaceq = (int*)(h_allocator_.allocate(opflow->nnz_eqjacsp*sizeof(int)));
+    pbpolrajahiopsparse->j_jaceq = (int*)(h_allocator_.allocate(opflow->nnz_eqjacsp*sizeof(int)));
+    pbpolrajahiopsparse->val_jaceq = (double*)(h_allocator_.allocate(opflow->nnz_eqjacsp*sizeof(double)));
 
     iRowstart = pbpolrajahiopsparse->i_jaceq;
     jColstart = pbpolrajahiopsparse->j_jaceq;
