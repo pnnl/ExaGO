@@ -584,13 +584,13 @@ PetscErrorCode PFLOWFunction(SNES snes, Vec X, Vec F, void *ctx) {
       } else if(line->isdcline) {
 	/* DC line */
 	if(bus == busf) { /* From bus */
-	  farr[locf] += -line->pf;
+	  farr[locf] += line->pf;
 	  farr[locf+1] += Vmf - line->Vf;
 	} else {
 	  /* To bus */
 	  double loss;
 	  loss = line->loss0 + line->loss1*line->pf;
-	  farr[loct] += line->pf - loss;
+	  farr[loct] -= line->pf - loss;
 	  farr[loct+1] += Vmt - line->Vt;
 	}
       } else {
@@ -825,7 +825,9 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow) {
 
   for (i = 0; i < ps->nline; i++) {
     line = &ps->line[i];
-    line->pf = line->qf = line->pt = line->qt = 0.0;
+    if(!line->isdcline) {
+      line->pf = line->qf = line->pt = line->qt = 0.0;
+    }
   }
 
   for (i = 0; i < ps->nbus; i++) {
@@ -891,15 +893,6 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow) {
       line = connlines[k];
       if (!line->status)
         continue;
-      PetscScalar Gff, Bff, Gft, Bft, Gtf, Btf, Gtt, Btt;
-      Gff = line->yff[0];
-      Bff = line->yff[1];
-      Gft = line->yft[0];
-      Bft = line->yft[1];
-      Gtf = line->ytf[0];
-      Btf = line->ytf[1];
-      Gtt = line->ytt[0];
-      Btt = line->ytt[1];
 
       const PSBUS *connbuses;
       PSBUS busf, bust;
@@ -923,22 +916,45 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow) {
       thetaft = thetaf - thetat;
       thetatf = thetat - thetaf;
 
-      if (bus == busf) {
-        line->pf = Gff * Vmf * Vmf +
-                   Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-        line->qf = -Bff * Vmf * Vmf +
-                   Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-        Pnet += line->pf;
-        Qnet += line->qf;
-      } else {
-        line->pt = Gtt * Vmt * Vmt +
-                   Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-        line->qt = -Btt * Vmt * Vmt +
-                   Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-        Pnet += line->pt;
-        Qnet += line->qt;
+      if(!line->isdcline) {
+	PetscScalar Gff, Bff, Gft, Bft, Gtf, Btf, Gtt, Btt;
+	Gff = line->yff[0];
+	Bff = line->yff[1];
+	Gft = line->yft[0];
+	Bft = line->yft[1];
+	Gtf = line->ytf[0];
+	Btf = line->ytf[1];
+	Gtt = line->ytt[0];
+	Btt = line->ytt[1];
+	
+	
+	if (bus == busf) {
+	  line->pf = Gff * Vmf * Vmf +
+	    Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+	  line->qf = -Bff * Vmf * Vmf +
+	    Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+	  Pnet += line->pf;
+	  Qnet += line->qf;
+	} else {
+	  line->pt = Gtt * Vmt * Vmt +
+	    Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+	  line->qt = -Btt * Vmt * Vmt +
+	    Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+	  Pnet += line->pt;
+	  Qnet += line->qt;
+	}
+	flps += 18 + 2 * (EXAGO_FLOPS_SINOP + EXAGO_FLOPS_COSOP);
+      } else if(line->isdcline) {
+	if(bus == busf) {
+	  Pnet += line->pf;
+	} else {
+	  double loss;
+	  loss = line->loss0 + line->loss1*line->pf;
+	  line->pt = (line->pf - loss);
+
+	  Pnet += line->pt;
+	}
       }
-      flps += 18 + 2 * (EXAGO_FLOPS_SINOP + EXAGO_FLOPS_COSOP);
     }
     flps += 2 * nconnlines;
 
@@ -1165,7 +1181,7 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow) {
                        "%-6d %-6d %-4d %7.2f %7.2f %7.2f %7.2f %7.3f %7.3f\n",
                        pflow->comm->rank, bus->bus_i, bus->ide, Pd, Qd,
                        pqgenarr[loc] * ps->MVAbase,
-                       pqgenarr[loc + 1] * ps->MVAbase, bus->vm, bus->va);
+                       pqgenarr[loc + 1] * ps->MVAbase, bus->vm, bus->va*180.0/PETSC_PI);
     CHKERRQ(ierr);
   }
   MPI_Barrier(pflow->comm->type);

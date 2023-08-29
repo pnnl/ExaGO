@@ -64,7 +64,7 @@ mpc.gencost = [
 %	fbus	tbus	status	Pf	Pt	Qf	Qt	Vf	Vt	Pmin	Pmax	QminF	QmaxF	QminT	QmaxT	loss0	loss1
 mpc.dcline = [
 	30	4	1	10	8.9	0	0	1	1	1	10	-10	10	-10	10	1	0.01;
-	7	9	1	2	1.96	0	0	1	1	2	10	0	0	0	0	0	0;
+	7	9	1	2	1.96	0	0	1	0.98	2	10	0	0	0	0	0	0;
 	5	8	0	0	0	0	0	1	1	1	10	-10	10	-10	10	0	0;
 	5	9	1	10	9.5	0	0	1	0.98	0	10	-10	10	-10	10	0	0.05;
 ];

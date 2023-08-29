@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
   PetscLogStagePop();
 
   /* Update line flows, Pgen, Qgen, and other parameters */
-  //  ierr = PFLOWPostSolve(pflow);CHKERRQ(ierr);
+  ierr = PFLOWPostSolve(pflow);CHKERRQ(ierr);
 
   /* Destroy PFLOW object */
   ierr = PFLOWDestroy(&pflow);
