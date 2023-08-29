@@ -178,7 +178,7 @@ PetscErrorCode PFLOWJacobian(SNES snes, Vec X, Mat J, Mat Jpre, void *ctx) {
   Vec localX;
   const PetscScalar *xarr;
   PetscBool ghostbus;
-  PetscInt i, k;
+  PetscInt i, j,k;
   PetscInt flps = 0;
 
   PetscFunctionBegin;
@@ -233,13 +233,20 @@ PetscErrorCode PFLOWJacobian(SNES snes, Vec X, Mat J, Mat Jpre, void *ctx) {
       val[0] = 0.0;
       val[1] = 2 * Vm * bus->gl;
       val[2] = 0.0;
+      val[3] = 0.0;
       flps += 2;
       if (bus->ide != PV_BUS) {
         val[3] =
             -2 * Vm * bus->bl; /* Partial derivative for shunt contribution */
         flps += 2;
-      } else
-        val[3] = 1.0; /* Partial derivative of voltage magnitude constraint */
+      } else {
+	for(j = 0; j < bus->ngen; j++) {
+	  PSGEN gen;
+	  ierr = PSBUSGetGen(bus,j, &gen);
+	  CHKERRQ(ierr);
+	  if(gen->status) val[3] += 1.0; /* Partial derivative of voltage magnitude constraint */
+	}
+      }
       ierr = MatSetValues(J, 2, row, 2, col, val, ADD_VALUES);
       CHKERRQ(ierr);
     }
@@ -257,16 +264,6 @@ PetscErrorCode PFLOWJacobian(SNES snes, Vec X, Mat J, Mat Jpre, void *ctx) {
       line = connlines[k];
       if (!line->status)
         continue;
-      PetscScalar Gff, Bff, Gft, Bft, Gtf, Btf, Gtt, Btt;
-      Gff = line->yff[0];
-      Bff = line->yff[1];
-      Gft = line->yft[0];
-      Bft = line->yft[1];
-      Gtf = line->ytf[0];
-      Btf = line->ytf[1];
-      Gtt = line->ytt[0];
-      Btt = line->ytt[1];
-
       const PSBUS *connbuses;
       PSBUS busf, bust;
       PetscInt locglobf, locglobt, locf, loct;
@@ -295,66 +292,97 @@ PetscErrorCode PFLOWJacobian(SNES snes, Vec X, Mat J, Mat Jpre, void *ctx) {
       thetaft = thetaf - thetat;
       thetatf = thetat - thetaf;
       flps += 2;
-
-      if (bus == busf) {
-        if (bus->ide != REF_BUS) {
-          row[0] = locglobf;
-          col[0] = locglobf;
-          col[1] = locglobf + 1;
-          col[2] = locglobt;
-          col[3] = locglobt + 1;
-          val[0] = Vmf * Vmt * (-Gft * sin(thetaft) + Bft * cos(thetaft));
-          val[1] =
-              2 * Gff * Vmf + Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-          val[2] = Vmf * Vmt * (Gft * sin(thetaft) - Bft * cos(thetaft));
-          val[3] = Vmf * (Gft * cos(thetaft) + Bft * sin(thetaft));
-          flps += 21 + (4 * EXAGO_FLOPS_SINOP) + (4 * EXAGO_FLOPS_COSOP);
-          ierr = MatSetValues(J, 1, row, 4, col, val, ADD_VALUES);
-          CHKERRQ(ierr);
-
-          if (bus->ide != PV_BUS) {
-            row[0] = locglobf + 1;
-            val[0] = Vmf * Vmt * (Bft * sin(thetaft) + Gft * cos(thetaft));
-            val[1] = -2 * Bff * Vmf +
-                     Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-            val[2] = Vmf * Vmt * (-Bft * sin(thetaft) - Gft * cos(thetaft));
-            val[3] = Vmf * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-            flps += 21 + (4 * EXAGO_FLOPS_SINOP) + (4 * EXAGO_FLOPS_COSOP);
-            ierr = MatSetValues(J, 1, row, 4, col, val, ADD_VALUES);
-            CHKERRQ(ierr);
-          }
-        }
-      } else {
-        if (bus->ide != REF_BUS) {
-          row[0] = locglobt;
-          col[0] = locglobt;
-          col[1] = locglobt + 1;
-          col[2] = locglobf;
-          col[3] = locglobf + 1;
-          val[0] = Vmt * Vmf * (-Gtf * sin(thetatf) + Btf * cos(thetatf));
-          val[1] =
+      
+      if(!line->isdcline) {
+	PetscScalar Gff, Bff, Gft, Bft, Gtf, Btf, Gtt, Btt;
+	Gff = line->yff[0];
+	Bff = line->yff[1];
+	Gft = line->yft[0];
+	Bft = line->yft[1];
+	Gtf = line->ytf[0];
+	Btf = line->ytf[1];
+	Gtt = line->ytt[0];
+	Btt = line->ytt[1];
+	
+	
+	if (bus == busf) {
+	  if (bus->ide != REF_BUS) {
+	    row[0] = locglobf;
+	    col[0] = locglobf;
+	    col[1] = locglobf + 1;
+	    col[2] = locglobt;
+	    col[3] = locglobt + 1;
+	    val[0] = Vmf * Vmt * (-Gft * sin(thetaft) + Bft * cos(thetaft));
+	    val[1] =
+	      2 * Gff * Vmf + Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+	    val[2] = Vmf * Vmt * (Gft * sin(thetaft) - Bft * cos(thetaft));
+	    val[3] = Vmf * (Gft * cos(thetaft) + Bft * sin(thetaft));
+	    flps += 21 + (4 * EXAGO_FLOPS_SINOP) + (4 * EXAGO_FLOPS_COSOP);
+	    ierr = MatSetValues(J, 1, row, 4, col, val, ADD_VALUES);
+	    CHKERRQ(ierr);
+	    
+	    if (bus->ide != PV_BUS) {
+	      row[0] = locglobf + 1;
+	      val[0] = Vmf * Vmt * (Bft * sin(thetaft) + Gft * cos(thetaft));
+	      val[1] = -2 * Bff * Vmf +
+		Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+	      val[2] = Vmf * Vmt * (-Bft * sin(thetaft) - Gft * cos(thetaft));
+	      val[3] = Vmf * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+	      flps += 21 + (4 * EXAGO_FLOPS_SINOP) + (4 * EXAGO_FLOPS_COSOP);
+	      ierr = MatSetValues(J, 1, row, 4, col, val, ADD_VALUES);
+	      CHKERRQ(ierr);
+	    }
+	  }
+	} else {
+	  if (bus->ide != REF_BUS) {
+	    row[0] = locglobt;
+	    col[0] = locglobt;
+	    col[1] = locglobt + 1;
+	    col[2] = locglobf;
+	    col[3] = locglobf + 1;
+	    val[0] = Vmt * Vmf * (-Gtf * sin(thetatf) + Btf * cos(thetatf));
+	    val[1] =
               2 * Gtt * Vmt + Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-          val[2] = Vmt * Vmf * (Gtf * sin(thetatf) - Btf * cos(thetatf));
-          val[3] = Vmt * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-          flps += 21 + (4 * EXAGO_FLOPS_SINOP) + (4 * EXAGO_FLOPS_COSOP);
-          ierr = MatSetValues(J, 1, row, 4, col, val, ADD_VALUES);
-          CHKERRQ(ierr);
-
-          if (bus->ide != PV_BUS) {
-            row[0] = locglobt + 1;
-            val[0] = Vmt * Vmf * (Btf * sin(thetatf) + Gtf * cos(thetatf));
-            val[1] = -2 * Btt * Vmt +
-                     Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-            val[2] = Vmt * Vmf * (-Btf * sin(thetatf) - Gtf * cos(thetatf));
-            val[3] = Vmt * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-            flps += 21 + (4 * EXAGO_FLOPS_SINOP) + (4 * EXAGO_FLOPS_COSOP);
-            ierr = MatSetValues(J, 1, row, 4, col, val, ADD_VALUES);
-            CHKERRQ(ierr);
-          }
-        }
+	    val[2] = Vmt * Vmf * (Gtf * sin(thetatf) - Btf * cos(thetatf));
+	    val[3] = Vmt * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+	    flps += 21 + (4 * EXAGO_FLOPS_SINOP) + (4 * EXAGO_FLOPS_COSOP);
+	    ierr = MatSetValues(J, 1, row, 4, col, val, ADD_VALUES);
+	    CHKERRQ(ierr);
+	    
+	    if (bus->ide != PV_BUS) {
+	      row[0] = locglobt + 1;
+	      val[0] = Vmt * Vmf * (Btf * sin(thetatf) + Gtf * cos(thetatf));
+	      val[1] = -2 * Btt * Vmt +
+		Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+	      val[2] = Vmt * Vmf * (-Btf * sin(thetatf) - Gtf * cos(thetatf));
+	      val[3] = Vmt * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+	      flps += 21 + (4 * EXAGO_FLOPS_SINOP) + (4 * EXAGO_FLOPS_COSOP);
+	      ierr = MatSetValues(J, 1, row, 4, col, val, ADD_VALUES);
+	      CHKERRQ(ierr);
+	    }
+	  }
+	}
+      } else if(line->isdcline) {
+	/* DC line */
+	if(bus == busf) {
+	  row[0] = locglobf+1;
+	  col[0] = locglobf+1;
+	  val[0] = 1.0;
+	  ierr = MatSetValues(J,1,row,1,col,val,ADD_VALUES);
+	  CHKERRQ(ierr);
+	} else {
+	  row[0] = locglobt+1;
+	  col[0] = locglobt+1;
+	  val[0] = 1.0;
+	  ierr = MatSetValues(J,1,row,1,col,val,ADD_VALUES);
+	  CHKERRQ(ierr);
+	}
+      } else {
+	/* For future use */
       }
     }
   }
+    
 
   ierr = VecRestoreArrayRead(localX, &xarr);
   CHKERRQ(ierr);
@@ -460,7 +488,7 @@ PetscErrorCode PFLOWFunction(SNES snes, Vec X, Vec F, void *ctx) {
         farr[loc] -= gen->pg;
         flps += 1;
         if (bus->ide == PV_BUS) {
-          farr[loc + 1] = Vm - gen->vs;
+          farr[loc + 1] += Vm - gen->vs;
           flps += 1;
         } else {
           farr[loc + 1] -= gen->qg;
@@ -496,27 +524,18 @@ PetscErrorCode PFLOWFunction(SNES snes, Vec X, Vec F, void *ctx) {
       line = connlines[k];
       if (!line->status)
         continue;
-      PetscScalar Gff, Bff, Gft, Bft, Gtf, Btf, Gtt, Btt;
-      Gff = line->yff[0];
-      Bff = line->yff[1];
-      Gft = line->yft[0];
-      Bft = line->yft[1];
-      Gtf = line->ytf[0];
-      Btf = line->ytf[1];
-      Gtt = line->ytt[0];
-      Btt = line->ytt[1];
 
       const PSBUS *connbuses;
       PSBUS busf, bust;
-      PetscInt locf, loct;
-      PetscScalar thetaf, Vmf, thetat, Vmt, thetaft, thetatf;
-
       /* Get the connected buses to this line */
       ierr = PSLINEGetConnectedBuses(line, &connbuses);
       CHKERRQ(ierr);
       busf = connbuses[0];
       bust = connbuses[1];
 
+      PetscInt locf, loct;
+      PetscScalar thetaf, Vmf, thetat, Vmt, thetaft, thetatf;
+      
       ierr = PSBUSGetVariableLocation(busf, &locf);
       CHKERRQ(ierr);
       ierr = PSBUSGetVariableLocation(bust, &loct);
@@ -525,36 +544,62 @@ PetscErrorCode PFLOWFunction(SNES snes, Vec X, Vec F, void *ctx) {
       Vmf = xarr[locf + 1];
       thetat = xarr[loct];
       Vmt = xarr[loct + 1];
-      thetaft = thetaf - thetat;
-      thetatf = thetat - thetaf;
+      
+      if(!line->isdcline) {
+	PetscScalar Gff, Bff, Gft, Bft, Gtf, Btf, Gtt, Btt;
+	Gff = line->yff[0];
+	Bff = line->yff[1];
+	Gft = line->yft[0];
+	Bft = line->yft[1];
+	Gtf = line->ytf[0];
+	Btf = line->ytf[1];
+	Gtt = line->ytt[0];
+	Btt = line->ytt[1];
 
-      if (bus == busf) {
-        if (busf->ide != REF_BUS) {
-          farr[locf] += Gff * Vmf * Vmf +
-                        Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-          flps += 9 + EXAGO_FLOPS_SINOP + EXAGO_FLOPS_COSOP;
-        }
-        if (busf->ide != PV_BUS && busf->ide != REF_BUS) {
-          farr[locf + 1] +=
+	thetaft = thetaf - thetat;
+	thetatf = thetat - thetaf;
+	
+	if (bus == busf) {
+	  if (busf->ide != REF_BUS) {
+	    farr[locf] += Gff * Vmf * Vmf +
+	      Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+	    flps += 9 + EXAGO_FLOPS_SINOP + EXAGO_FLOPS_COSOP;
+	  }
+	  if (busf->ide != PV_BUS && busf->ide != REF_BUS) {
+	    farr[locf + 1] +=
               -Bff * Vmf * Vmf +
               Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-          flps += 9 + EXAGO_FLOPS_SINOP + EXAGO_FLOPS_COSOP;
-        }
-      } else {
-        if (bust->ide != REF_BUS) {
-          farr[loct] += Gtt * Vmt * Vmt +
-                        Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-          flps += 9 + EXAGO_FLOPS_SINOP + EXAGO_FLOPS_COSOP;
-        }
-        if (bust->ide != PV_BUS && bust->ide != REF_BUS) {
-          farr[loct + 1] +=
+	    flps += 9 + EXAGO_FLOPS_SINOP + EXAGO_FLOPS_COSOP;
+	  }
+	} else {
+	  if (bust->ide != REF_BUS) {
+	    farr[loct] += Gtt * Vmt * Vmt +
+	      Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+	    flps += 9 + EXAGO_FLOPS_SINOP + EXAGO_FLOPS_COSOP;
+	  }
+	  if (bust->ide != PV_BUS && bust->ide != REF_BUS) {
+	    farr[loct + 1] +=
               -Btt * Vmt * Vmt +
               Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-          flps += 9 + EXAGO_FLOPS_SINOP + EXAGO_FLOPS_COSOP;
-        }
+	    flps += 9 + EXAGO_FLOPS_SINOP + EXAGO_FLOPS_COSOP;
+	  }
+	}
+      } else if(line->isdcline) {
+	/* DC line */
+	if(bus == busf) { /* From bus */
+	  farr[locf] += -line->pf;
+	  farr[locf+1] += Vmf - line->Vf;
+	} else {
+	  /* To bus */
+	  double loss;
+	  loss = line->loss0 + line->loss1*line->pf;
+	  farr[loct] += line->pf - loss;
+	  farr[loct+1] += Vmt - line->Vt;
+	}
+      } else {
+	/* For future use */
       }
     }
-    flps += 2 * nconnlines; // for the two flops line: 447,448
   }
 
   ierr = VecRestoreArrayRead(localX, &xarr);
