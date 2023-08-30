@@ -83,7 +83,7 @@ if(EXAGO_INSTALL_TESTS)
   )
   set_tests_properties(
     FUNCTIONALITY_TEST_SCOPFLOW_HIOP_PBHIOP_TESTSUITE PROPERTIES LABELS
-                                                              "newell-skip"
+                                                              "newell-skip;deception-skip"
   )
 
   exago_add_test(
@@ -137,7 +137,7 @@ if(EXAGO_INSTALL_TESTS)
   )
   set_tests_properties(
     FUNCTIONALITY_TEST_SCOPFLOW_HIOP_SERIAL_TESTSUITE PROPERTIES LABELS
-                                                                 "incline-skip"
+                                                                 "incline-skip;deception-skip"
   )
 
   exago_add_test(
@@ -156,7 +156,7 @@ if(EXAGO_INSTALL_TESTS)
   )
   set_tests_properties(
     FUNCTIONALITY_TEST_SCOPFLOW_HIOP_RAJA_TESTSUITE PROPERTIES LABELS
-                                                               "incline-skip"
+                                                               "incline-skip;deception-skip"
   )
 
   foreach(fmt "MATPOWER" "CSV" "JSON" "MINIMAL")
