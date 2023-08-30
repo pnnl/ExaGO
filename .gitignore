@@ -14,3 +14,6 @@ package-lock.json
 config.py
 spack_*
 hiop/
+.DS_Store
+venv
+cdk.out
