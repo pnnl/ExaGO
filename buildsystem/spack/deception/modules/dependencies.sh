@@ -26,7 +26,7 @@ module load metis/5.1.0-gcc-9.1.0-udgx3yo
 # openmpi@=4.1.0mlx5.0%gcc@=9.1.0~atomics~cuda~cxx~cxx_exceptions~gpfs~internal-hwloc~internal-pmix~java~legacylaunchers~lustre~memchecker~openshmem~orterunprefix+romio+rsh~singularity+static+vt+wrapper-rpath build_system=autotools fabrics=none patches=60ce20b schedulers=none arch=linux-centos7-zen2
 module load openmpi/4.1.0mlx5.0-gcc-9.1.0-vj5ufod
 # raja@=0.14.0%gcc@=9.1.0+cuda~examples~exercises~ipo+openmp~rocm+shared~tests build_system=cmake build_type=Release cuda_arch=60,70,75,80 generator=make arch=linux-centos7-zen2
-module load raja/0.14.0-gcc-9.1.0-ipshfzz
+module load raja/0.14.0-gcc-9.1.0-wejwisx
 # libiconv@=1.17%gcc@=9.1.0 build_system=autotools libs=shared,static arch=linux-centos7-zen2
 module load libiconv/1.17-gcc-9.1.0-eblp5jq
 # diffutils@=3.9%gcc@=9.1.0 build_system=autotools arch=linux-centos7-zen2
@@ -72,9 +72,9 @@ module load mpfr/4.2.0-gcc-9.1.0-2awgp36
 # suite-sparse@=5.13.0%gcc@=9.1.0~cuda~graphblas~openmp+pic build_system=generic arch=linux-centos7-zen2
 module load suite-sparse/5.13.0-gcc-9.1.0-nkckjbh
 # umpire@=6.0.0%gcc@=9.1.0+c+cuda~device_alloc~deviceconst~examples~fortran~ipo~numa~openmp~rocm~shared build_system=cmake build_type=Release cuda_arch=60,70,75,80 generator=make tests=none arch=linux-centos7-zen2
-module load umpire/6.0.0-gcc-9.1.0-xatfwgg
+module load umpire/6.0.0-gcc-9.1.0-5vahkdz
 # hiop@=develop%gcc@=9.1.0+cuda~cusolver_lu~deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=Debug cuda_arch=60,70,75,80 generator=make arch=linux-centos7-zen2
-module load hiop/develop-gcc-9.1.0-ckigwru
+module load hiop/develop-gcc-9.1.0-qd7jmsa
 # ipopt@=3.12.10%gcc@=9.1.0+coinhsl~debug~metis~mumps build_system=autotools arch=linux-centos7-zen2
 module load ipopt/3.12.10-gcc-9.1.0-7wrss4c
 # python@=3.9.12%gcc@=9.1.0+bz2+crypt+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tkinter+uuid+zlib build_system=generic patches=0d98e93,4c24573,f2fd060 arch=linux-centos7-zen2
@@ -125,5 +125,5 @@ module load py-hatch-vcs/0.3.0-gcc-9.1.0-6oqozlx
 module load py-iniconfig/2.0.0-gcc-9.1.0-sgl3yio
 # py-pytest@=7.3.2%gcc@=9.1.0 build_system=python_pip arch=linux-centos7-zen2
 module load py-pytest/7.3.2-gcc-9.1.0-l2fdgby
-# exago@=develop%gcc@=9.1.0+cuda+hiop~ipo+ipopt+logging+mpi+python+raja~rocm build_system=cmake build_type=MinSizeRel cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/22351/spack_deception generator=make arch=linux-centos7-zen2
-## module load exago/develop-gcc-9.1.0-a2fztay
+# exago@=develop%gcc@=9.1.0+cuda+hiop~ipo+ipopt+logging+mpi+python+raja~rocm build_system=cmake build_type=MinSizeRel cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/22365/spack_deception generator=make arch=linux-centos7-zen2
+## module load exago/develop-gcc-9.1.0-c6ve7ft
