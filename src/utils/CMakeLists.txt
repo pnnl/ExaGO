@@ -28,3 +28,6 @@ exago_add_library(
   OUTPUT_NAME
   exago_utils
 )
+
+# Going to have this target supply/propogate compiler flags and see if that works
+target_compile_options(UTILS PUBLIC "$<$<CONFIG:DEBUG>:-Wall;-Wextra;-Wpedantic;-Werror>")
