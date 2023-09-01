@@ -13,7 +13,8 @@ if(EXAGO_RUN_TESTS)
   message(STATUS "Configuring tests")
 endif(EXAGO_RUN_TESTS)
 
-include_directories(${PROJECT_SOURCE_DIR}/tpl/toml11)
+# Add system here to ensure compiler errors in toml are ignored
+include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/tpl/toml11)
 # TODO - ensure we can build and test with different subsets of ExaGO
 if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
   add_subdirectory(unit)
