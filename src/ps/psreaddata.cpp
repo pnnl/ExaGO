@@ -480,6 +480,20 @@ PetscErrorCode PSReadPSSERawData(PS ps, const char netfile[]) {
   PetscFunctionReturn(0);
 }
 
+/* Returns true if busum is in the isolated_buses list */
+PetscBool BusIsIsolated(PetscInt busnum,PetscInt nisolated_buses,PetscInt *isolated_buses)
+{
+  PetscInt i;
+
+  for(i = 0; i < nisolated_buses; i++) {
+    if(isolated_buses[i] == busnum) {
+      return PETSC_TRUE;
+    }
+  }
+
+  return PETSC_FALSE;
+}
+
 /*
   PSReadMatPowerData - Reads the MATPOWER data file and populates the PS object
 
@@ -506,6 +520,10 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   PetscInt gencost_start_line = -1, gencost_end_line = -1;
   PetscInt genfuel_start_line = -1, genfuel_end_line = -1;
   PetscInt loadcost_start_line = -1, loadcost_end_line = -1;
+
+  /* Number of lines for each data */
+  PetscInt bus_numlines, gen_numlines,br_numlines,dcline_numlines;
+  PetscInt gencost_numlines,genfuel_numlines,load_numlines=0;
   /* Number of blank lines in bus, gen, br, gencost, and genfuel branch arrays
    */
   PetscInt bus_nblank_lines = 0, gen_nblank_lines = 0;
@@ -522,6 +540,9 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   PetscInt intbusnum;
   char *str;
   char *out;
+  PetscInt buff_num=1;
+  PetscInt *temp_buff;   /* buffer to hold 10 isolated buses, gets resized later */
+
 
   PetscFunctionBegin;
 
@@ -529,6 +550,9 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
     ps->Nline = ps->Nbus = ps->Ngen = ps->Nload = ps->Ndcline = 0;
     PetscFunctionReturn(0);
   }
+
+  ps->nisolated_buses=0;
+  ierr = PetscCalloc1(10,&ps->isolated_buses);CHKERRQ(ierr);
 
   fp = fopen(netfile, "r");
   /* Check for valid file */
@@ -634,8 +658,23 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
     if (bus_start_line != -1 && line_counter >= bus_start_line &&
         bus_end_line == -1) {
       sscanf(line, "%d %d %lf %lf", &extbusnum, &bustype_i, &Pd, &Qd);
+      if(bustype_i == ISOLATED_BUS) { /* Isolated bus */
+	/* put it in the isolated_buses array for later work */
+	ps->isolated_buses[ps->nisolated_buses++] = extbusnum;
+	if(ps->nisolated_buses == buff_num*10) {
+	  /* Reached buffer max, need to allocate more size */
+	  buff_num++;
+	  ierr = PetscCalloc1(buff_num*10,&temp_buff);CHKERRQ(ierr);
+	  /* Copy over isolated_buses to temp_buff */
+	  ierr = PetscMemcpy(temp_buff,ps->isolated_buses,(buff_num-1)*10*sizeof(PetscInt));
+	  ierr = PetscFree(ps->isolated_buses);CHKERRQ(ierr);
+	  /* Updated pointer to isolated_buses */
+	  ps->isolated_buses = temp_buff;
+	}
+      }
+
       if (!((Pd == 0.0) && (Qd == 0.0)))
-        ps->Nload++;
+        load_numlines++;
       if (extbusnum > ps->maxbusnum)
         ps->maxbusnum = extbusnum;
     }
@@ -643,36 +682,29 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   }
   fclose(fp);
 
-  ps->Nbus = ps->nbus = bus_end_line - bus_start_line - bus_nblank_lines;
-  ps->Ngen = ps->ngen = gen_end_line - gen_start_line - gen_nblank_lines;
-  ps->Nline = ps->nline = br_end_line - br_start_line - br_nblank_lines;
-  ps->Ndcline = ps->ndcline = dcline_end_line - dcline_start_line - dcline_nblank_lines;
-  ps->nload = ps->Nload;
+  bus_numlines = bus_end_line - bus_start_line - bus_nblank_lines;
+  gen_numlines = gen_end_line - gen_start_line - gen_nblank_lines;
+  br_numlines = br_end_line - br_start_line - br_nblank_lines;
+  dcline_numlines = dcline_end_line - dcline_start_line - dcline_nblank_lines;
+  
   ps->NgenON = 0;
   ps->nlineON = ps->NlineON = 0;
   ps->ndclineON = ps->NdclineON = 0;
 
-#if defined DEBUGPS
-  ierr = PetscPrintf(
-      PETSC_COMM_SELF,
-      "System summary : Nbuses = %d, Ngen = %d, Nload = %d, Nbranch = %d, Ndcline = %d\n",
-      ps->Nbus, ps->Ngen, ps->Nload, ps->Nline, ps->Ndcline);
+  ierr = PetscCalloc1(bus_numlines, &ps->bus);
   CHKERRQ(ierr);
-#endif
-  ierr = PetscCalloc1(ps->Nbus, &ps->bus);
+  ierr = PetscCalloc1(gen_numlines, &ps->gen);
   CHKERRQ(ierr);
-  ierr = PetscCalloc1(ps->Ngen, &ps->gen);
+  ierr = PetscCalloc1(load_numlines, &ps->load);
   CHKERRQ(ierr);
-  ierr = PetscCalloc1(ps->Nload, &ps->load);
-  CHKERRQ(ierr);
-  ierr = PetscCalloc1(ps->Nline + ps->Ndcline, &ps->line); /* Includes space for DC lines */
+  ierr = PetscCalloc1(br_numlines + dcline_numlines, &ps->line); /* Includes space for DC lines */
   CHKERRQ(ierr);
   Bus = ps->bus;
   Gen = ps->gen;
   Load = ps->load;
   Branch = ps->line;
 
-  for (i = 0; i < ps->Nbus; i++) {
+  for (i = 0; i < bus_numlines; i++) {
     ps->bus[i].ngen = ps->bus[i].nload = ps->bus[i].ngenON = ps->bus[i].nshunt =
         0;
     ps->bus[i].qrange = ps->bus[i].qmintot = ps->bus[i].Pgtot =
@@ -690,6 +722,13 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   for (i = 0; i < ps->maxbusnum + 1; i++)
     busext2intmap[i] = -1;
 
+
+  ps->Nbus = ps->nbus = 0;
+  ps->Nline = ps->nline = 0;
+  ps->Nload = ps->nload = 0;
+  ps->Ngen = ps->ngen = 0;
+  ps->Ndcline = ps->ndcline = 0;
+  
   fp = fopen(netfile, "r");
   /* Reading data */
   for (i = 0; i < line_counter; i++) {
@@ -704,6 +743,11 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
              &Bus[busi].bl, &Bus[busi].area, &Bus[busi].vm, &Bus[busi].va,
              &Bus[busi].basekV, &Bus[busi].zone, &Bus[busi].Vmax,
              &Bus[busi].Vmin);
+
+      if(Bus[busi].ide == ISOLATED_BUS) continue; /* Skip isolated bus */
+
+      ps->nbus++;
+      ps->Nbus++;
 
       Bus[busi].Vmax = Bus[busi].Vmax == 0 ? 1.1 : Bus[busi].Vmax;
       Bus[busi].Vmin = Bus[busi].Vmin == 0 ? 0.9 : Bus[busi].Vmin;
@@ -721,6 +765,9 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
       Bus[busi].nshunt++;
 
       if (!((Pd == 0.0) && (Qd == 0.0))) {
+	ps->nload++;
+	ps->Nload++;
+	
         Load[loadi].bus_i = Bus[busi].bus_i;
         Load[loadi].status = 1;
         Load[loadi].pl = Pd / ps->MVAbase;
@@ -742,6 +789,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
                   "Exceeded maximum number of loads allowed at bus");
         loadi++;
       }
+      Bus[busi].nconnlines = 0;
       busi++;
     }
 
@@ -760,6 +808,10 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
              &Gen[geni].ramp_rate_10min, &Gen[geni].ramp_rate_30min,
              &Gen[geni].ramp_rate_min_mvar, &Gen[geni].apf);
 
+      if(BusIsIsolated(Gen[geni].bus_i,ps->nisolated_buses,ps->isolated_buses)) continue; /* Skip generator at isolated bus */
+      ps->ngen++;
+      ps->Ngen++;
+      
       intbusnum = busext2intmap[Gen[geni].bus_i];
 
       Gen[geni].qt = Gen[geni].qt > 1e10 ? PETSC_INFINITY : Gen[geni].qt;
@@ -927,6 +979,12 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
              &Branch[bri].x, &Branch[bri].b, &Branch[bri].rateA,
              &Branch[bri].rateB, &Branch[bri].rateC, &Branch[bri].tapratio,
              &Branch[bri].phaseshift, &Branch[bri].status);
+
+      if((BusIsIsolated(Branch[bri].fbus,ps->nisolated_buses,ps->isolated_buses)) ||
+	 (BusIsIsolated(Branch[bri].tbus,ps->nisolated_buses,ps->isolated_buses))) continue; /* Skip branch connected to isolated bus */
+      ps->nline++;
+      ps->Nline++;
+	  
       if (Branch[bri].status) {
 	ps->nlineON++;
         ps->NlineON++;
@@ -956,6 +1014,10 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
       intbusnum = busext2intmap[Branch[bri].tbus];
       Branch[bri].internal_j = intbusnum;
 
+      /* Update number of connected lines for the from and to bus */
+      Bus[Branch[bri].internal_i].nconnlines++;
+      Bus[Branch[bri].internal_j].nconnlines++;
+      
       PetscInt lineididx = 0;
       for (linenum = 0; linenum < bri - 1; linenum++) {
         if (Branch[bri].internal_i == Branch[linenum].internal_i &&
@@ -1031,6 +1093,11 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
 	     &Branch[bri].qmaxf, &Branch[bri].qmint, &Branch[bri].qmaxt,
 	     &Branch[bri].loss0, &Branch[bri].loss1);
 
+      if((BusIsIsolated(Branch[bri].fbus,ps->nisolated_buses,ps->isolated_buses)) ||
+	 (BusIsIsolated(Branch[bri].tbus,ps->nisolated_buses,ps->isolated_buses))) continue; /* Skip branch connected to isolated bus */
+      ps->ndcline++;
+      ps->Ndcline++;
+      
       Branch[bri].pf /= ps->MVAbase;
       Branch[bri].pmin /= ps->MVAbase;
       Branch[bri].pmax /= ps->MVAbase;
@@ -1056,6 +1123,10 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
       intbusnum = busext2intmap[Branch[bri].tbus];
       Branch[bri].internal_j = intbusnum;
 
+      /* Update number of connected lines for the from and to bus */
+      Bus[Branch[bri].internal_i].nconnlines++;
+      Bus[Branch[bri].internal_j].nconnlines++;
+
       PetscInt lineididx = 0;
       for (linenum = 0; linenum < bri - 1; linenum++) {
         if (Branch[bri].internal_i == Branch[linenum].internal_i &&
@@ -1070,6 +1141,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
     }
     
   }
+
   fclose(fp);
 
   PetscFunctionReturn(0);
