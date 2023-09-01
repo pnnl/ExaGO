@@ -1363,6 +1363,13 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP_old(OPFLOW opflow,
 PetscErrorCode OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOP(
     OPFLOW opflow, const double *x_dev, int *iJacS_dev, int *jJacS_dev,
     double *MJacS_dev) {
+  //empty function...
+  (void)opflow;
+  (void)x_dev;
+  (void)iJacS_dev;
+  (void)jJacS_dev;
+  (void)MJacS_dev;
+
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
@@ -1370,6 +1377,7 @@ PetscErrorCode OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOP(
 PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOP(
     OPFLOW opflow, const double *x_dev, int *iJacS_dev, int *jJacS_dev,
     double *MJacS_dev) {
+  (void)x_dev;
   PbpolModelRajaHiop *pbpolrajahiop =
       reinterpret_cast<PbpolModelRajaHiop *>(opflow->model);
   GENParamsRajaHiop *genparams = &pbpolrajahiop->genparams;
@@ -1516,6 +1524,8 @@ PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOP(
 PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOP(
     OPFLOW opflow, const double *x_dev, const double *lambda_dev, int *iHSS_dev,
     int *jHSS_dev, double *MHSS_dev) {
+  (void)x_dev;
+  (void)lambda_dev;
   PbpolModelRajaHiop *pbpolrajahiop =
       reinterpret_cast<PbpolModelRajaHiop *>(opflow->model);
   PetscErrorCode ierr;
@@ -2852,6 +2862,10 @@ PetscErrorCode OPFLOWComputeDenseHessian_PBPOLRAJAHIOP(OPFLOW opflow,
 PetscErrorCode OPFLOWSolutionCallback_PBPOLRAJAHIOP(
     OPFLOW opflow, const double *xsol, const double *z_L, const double *z_U,
     const double *gsol, const double *lamsol, double obj_value) {
+  (void)z_L;
+  (void)z_U;
+  (void)obj_value;
+  
   PetscErrorCode ierr;
   PetscScalar *x, *lam, *g;
 
