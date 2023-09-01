@@ -153,16 +153,16 @@ template <> struct ExaGOOption<void> {
 };
 
 template <> struct ExaGOOption<std::string> {
-  std::string default_value;
-  std::string desc;
   std::string opt;
+  std::string desc;
+  std::string default_value;
   std::vector<std::string> possible_values;
 
-  ExaGOOption(std::string const &opt, std::string const &desc,
-              std::string const &default_value,
+  ExaGOOption(std::string const &_opt, std::string const &_desc,
+              std::string const &_default_value,
               std::vector<std::string> const &possible_values)
-      : opt{opt}, desc{desc}, possible_values{possible_values},
-        default_value{default_value} {}
+      : opt{_opt.c_str()}, desc{_desc}, default_value{_default_value}, possible_values{possible_values}
+         {}
 
   /**
    * \brief Get the enum value of a stringy enum option.

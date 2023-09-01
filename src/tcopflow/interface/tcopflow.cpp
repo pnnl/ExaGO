@@ -749,7 +749,6 @@ PetscErrorCode TCOPFLOWGetTolerance(TCOPFLOW tcopflow, PetscReal *tol) {
  * @param[out] iter     Number of iterations
  */
 PetscErrorCode TCOPFLOWGetNumIterations(TCOPFLOW tcopflow, PetscInt *iter) {
-  PetscErrorCode ierr;
   *iter = tcopflow->numiter;
   PetscFunctionReturn(0);
 }

@@ -8,6 +8,8 @@
 /* IPOPT callback functions */
 Bool eval_tcopflow_f(PetscInt n, PetscScalar *x, Bool new_x,
                      PetscScalar *obj_value, UserDataPtr user_data) {
+  (void)n;
+  (void)new_x;
   PetscErrorCode ierr;
   TCOPFLOW tcopflow = (TCOPFLOW)user_data;
 
@@ -27,6 +29,8 @@ Bool eval_tcopflow_f(PetscInt n, PetscScalar *x, Bool new_x,
 Bool eval_tcopflow_grad_f(PetscInt n, PetscScalar *x, Bool new_x,
                           PetscScalar *grad_f, UserDataPtr user_data) {
 
+  (void)n;
+  (void)new_x;
   PetscErrorCode ierr;
   TCOPFLOW tcopflow = (TCOPFLOW)user_data;
 
@@ -47,6 +51,9 @@ Bool eval_tcopflow_grad_f(PetscInt n, PetscScalar *x, Bool new_x,
 
 Bool eval_tcopflow_g(PetscInt n, PetscScalar *x, Bool new_x, PetscInt m,
                      PetscScalar *g, UserDataPtr user_data) {
+  (void)n;
+  (void)new_x;
+  (void)m;
   PetscErrorCode ierr;
   TCOPFLOW tcopflow = (TCOPFLOW)user_data;
 
@@ -69,6 +76,11 @@ Bool eval_tcopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x, PetscInt m,
                          PetscInt nele_jac, PetscInt *iRow, PetscInt *jCol,
                          PetscScalar *values, UserDataPtr user_data) {
 
+  (void)n;
+  (void)new_x;
+  (void)m;
+  (void)nele_jac;
+  
   PetscErrorCode ierr;
   TCOPFLOW tcopflow = (TCOPFLOW)user_data;
   PetscInt *iRowstart = iRow, *jColstart = jCol;
@@ -140,6 +152,12 @@ Bool eval_tcopflow_h(PetscInt n, PetscScalar *x, Bool new_x,
                      Bool new_lambda, PetscInt nele_hess, PetscInt *iRow,
                      PetscInt *jCol, PetscScalar *values,
                      UserDataPtr user_data) {
+  (void)n;
+  (void)new_x;
+  (void)m;
+  (void)new_lambda;
+  (void)nele_hess;
+
   PetscErrorCode ierr;
   PetscInt nrow;
   TCOPFLOW tcopflow = (TCOPFLOW)user_data;
@@ -234,6 +252,18 @@ Bool TCOPFLOWSolverMonitor_IPOPT(Index alg_mod, Index iter_count,
                                  Number regularization_size, Number alpha_du,
                                  Number alpha_pr, Index ls_trials,
                                  UserDataPtr user_data) {
+  (void)alg_mod;
+  (void)obj_value;
+  (void)inf_pr;
+  (void)inf_du;
+  (void)mu;
+  (void)d_norm;
+  (void)regularization_size;
+  (void)alpha_du;
+  (void)alpha_pr;
+  (void)ls_trials;
+  (void)user_data;
+
   TCOPFLOW tcopflow = (TCOPFLOW)user_data;
   tcopflow->numiter = iter_count;
   return 1;
@@ -351,6 +381,8 @@ PetscErrorCode TCOPFLOWSolverDestroy_IPOPT(TCOPFLOW tcopflow) {
 }
 
 PetscErrorCode TCOPFLOWSolverSetUp_IPOPT(TCOPFLOW tcopflow) {
+  //empty function...
+  (void)tcopflow;
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
@@ -468,8 +500,7 @@ PetscErrorCode TCOPFLOWSolverCreate_IPOPT(TCOPFLOW tcopflow) {
 
   if (tcopflow->comm->size > 1)
     SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_SUP,
-            "IPOPT solver does not support execution in parallel\n",
-            tcopflow->comm->size);
+            "IPOPT solver does not support execution in parallel\n");
   ierr = PetscCalloc1(1, &ipopt);
   CHKERRQ(ierr);
 

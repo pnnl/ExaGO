@@ -11,7 +11,6 @@ extern const char *HIOPMemSpaceChoices[];
 
 PetscErrorCode SCOPFLOWBaseAuxObjectiveFunction(OPFLOW opflow, const double *x,
                                                 double *obj, void *ctx) {
-  PetscErrorCode ierr;
   SCOPFLOW scopflow = (SCOPFLOW)ctx;
   SCOPFLOWSolver_HIOP hiop = (SCOPFLOWSolver_HIOP)scopflow->solver;
 
@@ -26,7 +25,6 @@ PetscErrorCode SCOPFLOWBaseAuxObjectiveFunction(OPFLOW opflow, const double *x,
 
 PetscErrorCode SCOPFLOWBaseAuxGradientFunction(OPFLOW opflow, const double *x,
                                                double *grad, void *ctx) {
-  PetscErrorCode ierr;
   SCOPFLOW scopflow = (SCOPFLOW)ctx;
   SCOPFLOWSolver_HIOP hiop = (SCOPFLOWSolver_HIOP)scopflow->solver;
 
@@ -40,6 +38,7 @@ PetscErrorCode SCOPFLOWBaseAuxGradientFunction(OPFLOW opflow, const double *x,
 
 PetscErrorCode SCOPFLOWBaseAuxHessianFunction(OPFLOW opflow, const double *x,
                                               Mat Hess, void *ctx) {
+  (void)x;
   PetscErrorCode ierr;
   SCOPFLOW scopflow = (SCOPFLOW)ctx;
   SCOPFLOWSolver_HIOP hiop = (SCOPFLOWSolver_HIOP)scopflow->solver;
@@ -109,8 +108,11 @@ SCOPFLOWHIOPInterface::SCOPFLOWHIOPInterface(SCOPFLOW scopflowin) {
 hiop::hiopSolveStatus SCOPFLOWHIOPInterface::solve_master(
     hiop::hiopVector &xvec, const bool &include_r, const double &rval,
     const double *grad, const double *hess, const char *master_options_file) {
+  (void)rval;
+  (void)grad;
+  (void)hess;
+  (void)master_options_file;
   double *x = xvec.local_data();
-  PetscErrorCode ierr;
   double obj;
   OPFLOW opflow;
   Vec X;
@@ -120,13 +122,12 @@ hiop::hiopSolveStatus SCOPFLOWHIOPInterface::solve_master(
   opflow = scopflow->opflow0;
 
   //  printf("Rank[%d]:Enter solve_master\n",scopflow->comm->rank);
-  ierr = OPFLOWSolve(opflow);
-  ierr = OPFLOWGetObjective(opflow, &obj);
-  ierr = OPFLOWGetSolution(opflow, &X);
-  ierr = VecGetArrayRead(X, &xsol);
-  ierr = PetscMemcpy(x, xsol, opflow->nx * sizeof(double));
-  ierr = VecRestoreArrayRead(X, &xsol);
-
+  OPFLOWSolve(opflow);
+  OPFLOWGetObjective(opflow, &obj);
+  OPFLOWGetSolution(opflow, &X);
+  VecGetArrayRead(X, &xsol);
+  PetscMemcpy(x, xsol, opflow->nx * sizeof(double));
+  VecRestoreArrayRead(X, &xsol);
   //  printf("Rank[%d]:Exit solve_master\n",scopflow->comm->rank);
 
   return hiop::Solve_Success;
@@ -154,7 +155,7 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
   PS ps, ps0;
   PSBUS bus, bus0;
   PSGEN gen, gen0;
-  PetscInt i, k, j, g = 0;
+  PetscInt i, k, g = 0;
   PetscInt cont_num = idx + 1;
 
   //  printf("[Rank %d] contingency %d Came in recourse objective
@@ -239,6 +240,10 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
 
 bool SCOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int &n, double *x,
                                             hiop::hiopVector &gradvec) {
+  (void)idx;
+  (void)n;
+  (void)x;
+
   PetscErrorCode ierr;
   double *grad = gradvec.local_data();
   OPFLOW opflow;
@@ -246,13 +251,14 @@ bool SCOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int &n, double *x,
   PS ps, ps0;
   PSBUS bus, bus0;
   PSGEN gen, gen0;
-  PetscInt i, k, j, g = 0;
+  PetscInt i, k, g = 0;
   const PetscScalar *lam, *lameq;
   Vec Lambda;
-  PetscInt cont_num = idx + 1;
 
+  // PetscInt cont_num = idx + 1;
   // printf("[Rank %d] contingency %d Came in recourse gradient
   // function\n",scopflow->comm->rank,cont_num);
+
   opflow0 = scopflow->opflow0;
   opflow = opflowctgc;
 
@@ -338,7 +344,6 @@ double SCOPFLOWHIOPInterface::get_objective() {
 
 PetscErrorCode SCOPFLOWSolverSolve_HIOP(SCOPFLOW scopflow) {
   PetscErrorCode ierr;
-  PetscInt c;
   SCOPFLOWSolver_HIOP hiop = (SCOPFLOWSolver_HIOP)scopflow->solver;
 
   PetscFunctionBegin;

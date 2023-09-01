@@ -210,6 +210,7 @@ PetscErrorCode OPFLOWSetVariableandConstraintBounds_DCOPF(OPFLOW opflow, Vec Xl,
 }
 
 PetscErrorCode OPFLOWSetInitialGuess_DCOPF(OPFLOW opflow, Vec X, Vec Lambda) {
+  (void)Lambda;
   PetscErrorCode ierr;
   PS ps = opflow->ps;
   const PetscScalar *xl, *xu;
@@ -331,7 +332,6 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_DCOPF(OPFLOW opflow, Vec X,
   const PSLINE *connlines;
   const PetscScalar *x;
   double flps = 0.0;
-  PetscScalar delP = 0.0;
 
   PetscFunctionBegin;
   ierr = VecSet(Ge, 0.0);
@@ -500,16 +500,14 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_DCOPF(OPFLOW opflow,
                                                              Vec X, Mat Je) {
   PetscErrorCode ierr;
   PetscInt i, k, row[2], col[4], gidx, flps = 0;
-  PetscInt nconnlines, locglob, loc, locglobf, locglobt, locf, loct;
-  PetscScalar val[8], Bdc, Pshift;
-  PetscScalar thetaf, thetat, thetaft, thetatf;
+  PetscInt nconnlines, locglob, locglobf, locglobt;
+  PetscScalar val[8], Bdc;
   PS ps = opflow->ps;
   PSBUS bus;
   PSLINE line;
   PSBUS busf, bust;
   PSGEN gen;
   PSLOAD load;
-  DM networkdm = ps->networkdm;
   const PSLINE *connlines;
   const PSBUS *connbuses;
   const PetscScalar *xarr;
@@ -528,7 +526,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_DCOPF(OPFLOW opflow,
 
     row[0] = gidx;
 
-    loc = bus->startxVloc;
+    //loc = bus->startxVloc;
     locglob = bus->startxVlocglob;
 
     col[0] = locglob;
@@ -591,7 +589,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_DCOPF(OPFLOW opflow,
       if (!line->status)
         continue;
       Bdc = line->bdc;
-      Pshift = line->pshift;
+      //Pshift = line->pshift;
 
       /* Get the connected buses to this line */
       ierr = PSLINEGetConnectedBuses(line, &connbuses);
@@ -599,16 +597,16 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_DCOPF(OPFLOW opflow,
       busf = connbuses[0];
       bust = connbuses[1];
 
-      locf = busf->startxVloc;
-      loct = bust->startxVloc;
+      //locf = busf->startxVloc;
+      //loct = bust->startxVloc;
 
       locglobf = busf->startxVlocglob;
       locglobt = bust->startxVlocglob;
 
-      thetaf = xarr[locf];
-      thetat = xarr[loct];
-      thetaft = thetaf - thetat;
-      thetatf = thetat - thetaf;
+      //thetaf = xarr[locf];
+      //thetat = xarr[loct];
+      //thetaft = thetaf - thetat;
+      //thetatf = thetat - thetaf;
 
       if (bus == busf) {
         col[0] = locglobf;
@@ -706,8 +704,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_DCOPF(OPFLOW opflow, Vec X,
   PSGEN gen;
   const PetscScalar *x;
   double flps = 0.0;
-  PetscScalar Pg, delP, delPg, Pgs;
-  PetscInt xloc;
+  PetscScalar Pg, delP, delPg;
 
   PetscFunctionBegin;
   ierr = VecSet(Gi, 0.0);
@@ -794,14 +791,11 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_DCOPF(OPFLOW opflow,
   PetscInt rstart, rend;
   PetscInt gloc, xlocf, xloct;
   PetscScalar val[4];
-  PetscScalar Bdc, Pshift;
-  PetscScalar thetaf, thetat, thetaft, thetatf;
-  PetscScalar Pf, Pt;
+  PetscScalar Bdc;
   PetscScalar dPf_dthetaf, dPf_dthetat;
   PetscScalar dPt_dthetaf, dPt_dthetat;
 
   PS ps = opflow->ps;
-  MPI_Comm comm = opflow->comm->type;
   PSLINE line;
   PSBUS busf, bust;
   const PSBUS *connbuses;
@@ -809,7 +803,6 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_DCOPF(OPFLOW opflow,
   PSGEN gen;
   const PetscScalar *x;
   PetscScalar Pg, delPg, delP;
-  PetscInt xloc, loc;
 
   PetscFunctionBegin;
   ierr = MatZeroEntries(Ji);
@@ -874,7 +867,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_DCOPF(OPFLOW opflow,
       gloc = line->startineqloc;
 
       Bdc = line->bdc;
-      Pshift = line->pshift;
+      //Pshift = line->pshift;
 
       ierr = PSLINEGetConnectedBuses(line, &connbuses);
       CHKERRQ(ierr);
@@ -884,10 +877,10 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_DCOPF(OPFLOW opflow,
       xlocf = busf->startxVloc;
       xloct = bust->startxVloc;
 
-      thetaf = x[xlocf];
-      thetat = x[xloct];
-      thetaft = thetaf - thetat;
-      thetatf = thetat - thetaf;
+      //thetaf = x[xlocf];
+      //thetat = x[xloct];
+      //thetaft = thetaf - thetat;
+      //thetatf = thetat - thetaf;
 
       dPf_dthetaf = Bdc;
       dPf_dthetat = -Bdc;
@@ -930,6 +923,10 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_DCOPF(OPFLOW opflow,
 }
 
 PetscErrorCode OPFLOWComputeConstraints_DCOPF(OPFLOW opflow, Vec X, Vec G) {
+  // This function is completely empty
+  (void)opflow;
+  (void)X;
+  (void)G;
   PetscFunctionBegin;
 
   PetscFunctionReturn(0);
@@ -1021,7 +1018,6 @@ PetscErrorCode OPFLOWComputeGradient_DCOPF(OPFLOW opflow, Vec X, Vec grad) {
   PetscInt i;
   PSBUS bus;
   PSGEN gen;
-  PSLOAD load;
   PetscInt loc;
   PetscInt k;
   PetscScalar Pg;
@@ -1037,7 +1033,6 @@ PetscErrorCode OPFLOWComputeGradient_DCOPF(OPFLOW opflow, Vec X, Vec grad) {
     bus = &ps->bus[i];
 
     if (opflow->include_powerimbalance_variables) {
-      PetscScalar Pimb, Qimb;
       loc = bus->startxpimbloc;
 
       df[loc] = opflow->powerimbalance_penalty * ps->MVAbase;
@@ -1069,14 +1064,13 @@ PetscErrorCode OPFLOWComputeGradient_DCOPF(OPFLOW opflow, Vec X, Vec grad) {
 
     if (opflow->include_loadloss_variables) {
       PSLOAD load;
-      PetscScalar Pdloss;
       for (k = 0; k < bus->nload; k++) {
         ierr = PSBUSGetLoad(bus, k, &load);
         CHKERRQ(ierr);
         if (!load->status)
           continue;
         loc = load->startxloadlossloc;
-        Pdloss = x[loc];
+        //Pdloss = x[loc];
         df[loc] = opflow->loadloss_penalty * ps->MVAbase;
         flps += 1.0;
       }
@@ -1110,7 +1104,7 @@ PetscErrorCode OPFLOWModelSetNumVariables_DCOPF(OPFLOW opflow,
                                                 PetscInt *busnvar,
                                                 PetscInt *branchnvar,
                                                 PetscInt *nx) {
-  PetscInt i, ngen, nload, k;
+  PetscInt i, ngen, k;
   PS ps = opflow->ps;
   PSBUS bus;
   PSGEN gen;
@@ -1198,6 +1192,9 @@ PetscErrorCode OPFLOWModelSetNumConstraints_DCOPF(OPFLOW opflow,
                                                   PetscInt *busnconeq,
                                                   PetscInt *nconeq,
                                                   PetscInt *nconineq) {
+  
+  (void)branchnconeq;
+  (void)busnconeq;
   PetscInt i, k, ngen;
   PS ps = opflow->ps;
   PSBUS bus;
@@ -1275,7 +1272,12 @@ equality constraints function part
 PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_DCOPF(OPFLOW opflow,
                                                              Vec X, Vec Lambda,
                                                              Mat H) {
-  PetscErrorCode ierr;
+
+  // Function is empty
+  (void)opflow;
+  (void)X;
+  (void)Lambda;
+  (void)H;
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
@@ -1300,11 +1302,6 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_DCOPF(OPFLOW opflow,
   PetscErrorCode ierr;
   PS ps = opflow->ps;
   PetscInt i, k, flps = 0;
-  PSLINE line;
-  const PSBUS *connbuses;
-  PetscInt xloc;
-  PetscInt xlocf, xloct, xlocglobf, xlocglobt;
-  PSBUS busf, bust;
   const PetscScalar *x;
   const PetscScalar *lambda;
   PetscInt gloc;
@@ -1312,8 +1309,6 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_DCOPF(OPFLOW opflow,
   PetscScalar val[12];
   PSBUS bus;
   PSGEN gen;
-  PetscScalar Pg, delPg, delP;
-  PetscInt xlocglob, loc;
 
   PetscFunctionBegin;
 
@@ -1334,9 +1329,9 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_DCOPF(OPFLOW opflow,
         gloc = gen->startineqloc;
 
         if (opflow->use_agc) {
-          Pg = x[gen->startxpowloc];
-          delPg = x[gen->startxpdevloc];
-          delP = x[ps->startxloc];
+          //Pg = x[gen->startxpowloc];
+          //delPg = x[gen->startxpdevloc];
+          //delP = x[ps->startxloc];
 
           //	  df1_dPg = gen->apf*delP - delPg;
           // 	  df2_dPg = gen->apf*delP - delPg;
@@ -1452,6 +1447,7 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_DCOPF(OPFLOW opflow, Vec X,
 
 PetscErrorCode OPFLOWComputeHessian_DCOPF(OPFLOW opflow, Vec X, Vec Lambdae,
                                           Vec Lambdai, Mat H) {
+  (void)Lambdae;
   PetscErrorCode ierr;
   PetscFunctionBegin;
   ierr = MatZeroEntries(H);
@@ -1488,7 +1484,7 @@ PetscErrorCode OPFLOWSolutionToPS_DCOPF(OPFLOW opflow) {
   PetscInt loc, gloc = 0;
   PetscScalar Bdc, Pshift;
   PetscScalar thetaf, thetat, thetaft, thetatf;
-  PetscScalar Pf, Qf, Pt, Qt;
+  PetscScalar Pf, Pt;
   PSBUS busf, bust;
   const PSBUS *connbuses;
   PetscInt xlocf, xloct;

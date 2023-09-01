@@ -15,7 +15,6 @@ nkv - number of kv levels found
 kv  - kv levels
 */
 PetscErrorCode PSGetKVLevels(PS ps, PetscInt *nkv, const PetscScalar **kv) {
-  PetscErrorCode ierr;
   PetscInt i, j;
   PSBUS bus;
   PetscScalar buskV;
@@ -1215,8 +1214,8 @@ PetscErrorCode PSSetUp(PS ps) {
     CHKERRQ(ierr);
     if (nlines > MAXCONNLINES)
       SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_OUTOFRANGE,
-              "%D lines connected to a bus %D exceeds max. allowed connected "
-              "lines allowed %D",
+              "%d lines connected to a bus %d exceeds max. allowed connected "
+              "lines allowed %d",
               nlines, ps->bus[i].bus_i, MAXCONNLINES);
     ps->bus[i].nconnlines = nlines;
     for (k = 0; k < nlines; k++)
@@ -1528,7 +1527,7 @@ PetscErrorCode PSApplyContingency(PS ps, Contingency ctgc) {
 }
 
 PetscErrorCode PSApplyScenario(PS ps, Scenario scenario) {
-  PetscInt i, j, k;
+  PetscInt i, j;
   Forecast *forecast;
   PSGEN gen;
   PetscErrorCode ierr;
@@ -1666,7 +1665,6 @@ PetscErrorCode PSSetGenPowerLimits(PS ps, PetscInt gbus, const char *gid,
                                    PetscScalar qt, PetscScalar qb) {
   PetscErrorCode ierr;
   PSGEN gen;
-  PSBUS bus;
 
   PetscFunctionBegin;
   if (!ps->setupcalled)
@@ -1714,7 +1712,6 @@ PetscErrorCode PSSetGenPowerLimits(PS ps, PetscInt gbus, const char *gid,
                                    PetscScalar *qt, PetscScalar *qb) {
   PetscErrorCode ierr;
   PSGEN gen;
-  PSBUS bus;
 
   PetscFunctionBegin;
   if (!ps->setupcalled)
@@ -1761,7 +1758,6 @@ PetscErrorCode PSGetGenDispatch(PS ps, PetscInt gbus, const char *gid,
                                 PetscScalar *pg, PetscScalar *qg) {
   PetscErrorCode ierr;
   PSGEN gen;
-  PSBUS bus;
 
   PetscFunctionBegin;
 

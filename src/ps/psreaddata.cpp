@@ -1084,12 +1084,12 @@ PetscErrorCode PSReadGICData(PS ps) {
         branch = connlines[k];
 
         const PSBUS *connbuses;
-        PSBUS busf, bust;
+        PSBUS busf;//, bust;
 
         /* Get the connected buses to this line */
         PSLINEGetConnectedBuses(branch, &connbuses);
         busf = connbuses[0];
-        bust = connbuses[1];
+        //bust = connbuses[1];
 
         if (bus == busf) { /* From bus */
           branch->subst_from = subst;

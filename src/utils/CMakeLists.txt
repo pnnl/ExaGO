@@ -30,4 +30,11 @@ exago_add_library(
 )
 
 # Going to have this target supply/propogate compiler flags and see if that works
-target_compile_options(UTILS PUBLIC "$<$<CONFIG:DEBUG>:-Wall;-Wextra;-Wpedantic;-Werror>")
+set(COMPILE_OPTIONS "$<$<CONFIG:DEBUG>:-Wall;-Wextra;-Wpedantic;-Werror>")
+if(EXAGO_BUILD_SHARED)
+  target_compile_options(UTILS_shared PUBLIC ${COMPILE_OPTIONS})
+endif()
+if(EXAGO_BUILD_STATIC)
+  target_compile_options(UTILS_static PUBLIC ${COMPILE_OPTIONS})
+endif()
+

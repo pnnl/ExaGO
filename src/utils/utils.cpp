@@ -90,7 +90,7 @@ template <>
 std::string ExaGOFormatOption(ExaGOOption<void> const &opt, std::size_t indent,
                               std::string indentstr) {
   std::string tab = "";
-  for (int i = 0; i < indent; i++)
+  for (std::size_t i = 0; i < indent; i++)
     tab += "\t";
 #ifdef EXAGO_ENABLE_LOGGING
   return fmt::format("{0}{2}\n{0}{1}{3} (type: flag)\n", tab, indentstr,
@@ -107,7 +107,7 @@ template <>
 std::string ExaGOFormatOption(ExaGOStringOption const &opt, std::size_t indent,
                               std::string indentstr) {
   std::string tab = "";
-  for (int i = 0; i < indent; i++)
+  for (std::size_t i = 0; i < indent; i++)
     tab += "\t";
 
   /* If there are no other possible values but just a single default value,
@@ -331,7 +331,7 @@ template <typename T> static inline void print(T const &opt) {
   printf("%s", ExaGOFormatOption(opt, indent, indentstr).c_str());
   printf("\n");
 #endif
-};
+}
 } // namespace
 
 /**
@@ -346,9 +346,11 @@ template <typename T> static inline void print(T const &opt) {
  */
 [[noreturn]] PetscErrorCode ExaGOHelpPrintf(MPI_Comm comm,
                                             const char _appname[], ...) {
-  PetscErrorCode ierr;
 
+  // Need this to show comm as used to compiler , as only relevant when used in PETSc
+  (void)comm;
   std::string versionstr;
+
   ExaGOVersionGetVersionStr(versionstr);
 #ifdef EXAGO_ENABLE_LOGGING
   fmt::print("ExaGO {} built on {}\n", versionstr, __DATE__);
@@ -531,7 +533,7 @@ static int initialized;
 
 PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
                                char *appname, char *help) {
-  int i;
+
   PetscErrorCode ierr;
   strcpy(ExaGOCurrentAppName, appname);
   PetscHelpPrintf = &ExaGOHelpPrintf;

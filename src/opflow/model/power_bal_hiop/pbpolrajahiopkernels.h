@@ -255,7 +255,7 @@ private:
 };
 
 struct PbpolModelRajaHiop : public _p_FormPBPOLRAJAHIOP {
-  PbpolModelRajaHiop(OPFLOW opflow) {}
+  PbpolModelRajaHiop(OPFLOW opflow) { (void)opflow; }
 
   void destroy(OPFLOW opflow) {
     loadparams.destroy(opflow);

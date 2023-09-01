@@ -167,6 +167,8 @@ PetscErrorCode PFLOWCreateMatrix(PFLOW pflow, Mat *mat) {
 
 */
 PetscErrorCode PFLOWJacobian(SNES snes, Vec X, Mat J, Mat Jpre, void *ctx) {
+  (void)Jpre;
+  (void)snes;
   PetscErrorCode ierr;
   PFLOW pflow = (PFLOW)ctx;
   PS ps = pflow->ps;
@@ -379,6 +381,7 @@ PetscErrorCode PFLOWJacobian(SNES snes, Vec X, Mat J, Mat Jpre, void *ctx) {
 
 */
 PetscErrorCode PFLOWFunction(SNES snes, Vec X, Vec F, void *ctx) {
+  (void)snes;
   PetscErrorCode ierr;
   PFLOW pflow = (PFLOW)ctx;
   PS ps = pflow->ps;

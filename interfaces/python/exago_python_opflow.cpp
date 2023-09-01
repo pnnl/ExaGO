@@ -558,6 +558,7 @@ void init_exago_opflow(pybind11::module &m) {
 
       .def("get_objective_types",
            [](OPFLOW_wrapper &w) -> std::vector<OPFLOWObjectiveType> {
+             (void)w;
              std::vector<OPFLOWObjectiveType> types;
 #define OPFLOW_OBJ_DEF(x) types.push_back(x);
 #include "private/opflow_enum.def"
@@ -567,6 +568,7 @@ void init_exago_opflow(pybind11::module &m) {
 
       .def("get_initialization_types",
            [](OPFLOW_wrapper &w) -> std::vector<OPFLOWInitializationType> {
+             (void)w;
              std::vector<OPFLOWInitializationType> types;
 #define OPFLOW_INIT_DEF(x) types.push_back(x);
 #include "private/opflow_enum.def"
@@ -576,6 +578,7 @@ void init_exago_opflow(pybind11::module &m) {
 
       .def("get_gen_bus_voltage_types",
            [](OPFLOW_wrapper &w) -> std::vector<OPFLOWGenBusVoltageType> {
+             (void)w;
              std::vector<OPFLOWGenBusVoltageType> types;
 #define OPFLOW_GBV_DEF(x) types.push_back(x);
 #include "private/opflow_enum.def"

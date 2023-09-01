@@ -12,6 +12,7 @@ extern PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLHIOP(OPFLOW, double *);
 
 PetscErrorCode OPFLOWSetInitialGuess_PBPOLRAJAHIOP(OPFLOW opflow, Vec X,
                                                    Vec Lambda) {
+  (void)Lambda;
   PetscErrorCode ierr;
   double *x;
 
@@ -252,10 +253,8 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOP(OPFLOW opflow) {
   PSBUS bus;
   PSGEN gen;
   PSLOAD load;
-  PSLINE line;
   PetscInt i, k;
-  PetscInt loc, locglob;
-  PetscInt eqloc = 0, ineqloc = 0;
+  PetscInt loc;
 
   PetscFunctionBegin;
 
@@ -381,7 +380,6 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOP(OPFLOW opflow) {
   BUSParamsRajaHiop *busparams = &pbpolrajahiop->busparams;
   GENParamsRajaHiop *genparams = &pbpolrajahiop->genparams;
   LOADParamsRajaHiop *loadparams = &pbpolrajahiop->loadparams;
-  LINEParamsRajaHiop *lineparams = &pbpolrajahiop->lineparams;
   int geni = 0, loadi = 0, gi;
   int nnz_eqjacsp = 0;
   int nnz_ineqjacsp = 0;
@@ -490,7 +488,6 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOP(OPFLOW opflow) {
 }
 
 PetscErrorCode OPFLOWModelDestroy_PBPOLRAJAHIOP(OPFLOW opflow) {
-  PetscErrorCode ierr;
   PbpolModelRajaHiop *pbpolrajahiop =
       reinterpret_cast<PbpolModelRajaHiop *>(opflow->model);
 
@@ -510,8 +507,6 @@ extern PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW, PetscInt *,
                                                          PetscInt *);
 
 PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOP(OPFLOW opflow) {
-  PetscErrorCode ierr;
-
   PetscFunctionBegin;
 
   PbpolModelRajaHiop *pbpol = new PbpolModelRajaHiop(opflow);

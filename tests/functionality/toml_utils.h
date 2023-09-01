@@ -68,7 +68,7 @@ void fmt_comment(std::ostream &summary, int col_width, std::string key,
           << "\n";
 }
 
-static std::string bool2str(bool b) { return (b ? "true" : "false"); };
+// static std::string bool2str(bool b) { return (b ? "true" : "false"); }
 
 /**
  *  Context manager for functionality tests for ExaGO applications.

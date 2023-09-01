@@ -18,6 +18,7 @@ static const ExaGOSelfcheckTCOPFLOWAnswer
 PetscErrorCode
 ExaGOSelfcheckTCOPFLOWFindAnswer(TCOPFLOW tcopflow,
                                  ExaGOSelfcheckTCOPFLOWAnswer *ans) {
+  (void)tcopflow;
   PetscErrorCode ierr;
   PetscBool flg;
 
@@ -132,7 +133,6 @@ ExaGOSelfcheckTCOPFLOWFindAnswer(TCOPFLOW tcopflow,
     return PETSC_TRUE;
   }
 
-  int i;
   for (int i = 0; i < EXAGOSelfcheckTCOPFLOWNumAnswers; i++) {
     const ExaGOSelfcheckTCOPFLOWAnswer *ians =
         &ExaGOSelfcheckTCOPFLOWAnswers[i];
@@ -180,13 +180,6 @@ PetscErrorCode ExaGOSelfcheckTCOPFLOW(TCOPFLOW tcopflow) {
     return ierr;
   }
 
-  // Printing config makes greping for solutions/results easier
-  char config[PETSC_MAX_PATH_LEN];
-  sprintf(config, "%s+%s+%s+%s+%s+%s+%d+%d+%d+%d", ans->networkname,
-          ans->modelinit, ans->genbusvoltage, ans->windgenname,
-          ans->qloadprofile, ans->ploadprofile, ans->iscoupling, ans->dt,
-          ans->duration, ans->lineflow_constraints);
-
   // Check for convergence
   PetscBool conv_status = PETSC_FALSE;
   ierr = TCOPFLOWGetConvergenceStatus(tcopflow, &conv_status);
@@ -194,8 +187,11 @@ PetscErrorCode ExaGOSelfcheckTCOPFLOW(TCOPFLOW tcopflow) {
   if (conv_status == PETSC_FALSE) {
     fail++;
     ExaGOLog(EXAGO_LOG_ERROR,
-             "ExaGO TCOPFLOW %s functionality test failed to converge.\n",
-             config);
+             "ExaGO TCOPFLOW %s+%s+%s+%s+%s+%s+%d+%f+%f+%d functionality test failed to converge.\n",
+             ans->networkname,
+          ans->modelinit, ans->genbusvoltage, ans->windgenname,
+          ans->qloadprofile, ans->ploadprofile, ans->iscoupling, ans->dt,
+          ans->duration, ans->lineflow_constraints);
   }
 
   // Compare objective value
@@ -206,13 +202,16 @@ PetscErrorCode ExaGOSelfcheckTCOPFLOW(TCOPFLOW tcopflow) {
   if (!IsEqual(obj_value, ans->objective, tolerance, error)) {
     fail++;
     ExaGOLog(EXAGO_LOG_ERROR,
-             "ExaGO SOPFLOW %s functionality test failed to match expected "
+             "ExaGO SOPFLOW %s+%s+%s+%s+%s+%s+%d+%f+%f+%d functionality test failed to match expected "
              "objective value:\n"
              "%-30s%.12e\n"
              "%-30s%.12e\n"
              "%-30s%.12e\n"
              "%-30s%.12e\n",
-             config, "Expected:", ans->objective, "Actual:", obj_value,
+             ans->networkname,
+          ans->modelinit, ans->genbusvoltage, ans->windgenname,
+          ans->qloadprofile, ans->ploadprofile, ans->iscoupling, ans->dt,
+          ans->duration, ans->lineflow_constraints, "Expected:", ans->objective, "Actual:", obj_value,
              "Tolerance:", tolerance, "Scaled Error:", error);
   }
 
@@ -222,10 +221,13 @@ PetscErrorCode ExaGOSelfcheckTCOPFLOW(TCOPFLOW tcopflow) {
   if (ans->numiter != numiter) {
     fail++;
     ExaGOLog(EXAGO_LOG_ERROR,
-             "ExaGO TCOPFLOW %s functionality test failed to match expected "
+             "ExaGO TCOPFLOW %s+%s+%s+%s+%s+%s+%d+%f+%f+%d functionality test failed to match expected "
              "number of iterations:\n"
              "expected=%d actual=%d",
-             config, ans->numiter, numiter);
+             ans->networkname,
+          ans->modelinit, ans->genbusvoltage, ans->windgenname,
+          ans->qloadprofile, ans->ploadprofile, ans->iscoupling, ans->dt,
+          ans->duration, ans->lineflow_constraints, ans->numiter, numiter);
   }
 
   ExaGOLog(EXAGO_LOG_INFO, "%s: selfcheck returning %s.", __func__,

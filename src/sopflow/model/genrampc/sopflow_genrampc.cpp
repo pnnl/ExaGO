@@ -180,7 +180,6 @@ PetscErrorCode SOPFLOWSetVariableandConstraintBounds_GENRAMPC(SOPFLOW sopflow,
 PetscErrorCode SOPFLOWSetInitialGuess_GENRAMPC(SOPFLOW sopflow, Vec X) {
   PetscErrorCode ierr;
   SCOPFLOW scopflow;
-  OPFLOW opflow;
   PetscScalar *x, *xi, *xl, *xu, *xli, *xui;
   PetscInt i;
   PetscFunctionBegin;
@@ -462,7 +461,6 @@ PetscErrorCode SOPFLOWComputeBaseObjective_GENRAMPC(SOPFLOW sopflow, Vec X,
                                                     PetscScalar *obj) {
   PetscErrorCode ierr;
   SCOPFLOW scopflow;
-  PetscInt i;
   PetscScalar *xi;
   PetscScalar scopflowobj = 0.0;
   PetscScalar *x;
@@ -572,6 +570,7 @@ PetscErrorCode SOPFLOWComputeGradient_GENRAMPC(SOPFLOW sopflow, Vec X,
 PetscErrorCode SOPFLOWModelSetNumVariablesandConstraints_GENRAMPC(
     SOPFLOW sopflow, PetscInt *nxi, PetscInt *ngi, PetscInt *nconeqcoup,
     PetscInt *nconineqcoup) {
+  (void)nconeqcoup;
   PetscInt s, ngenON;
   SCOPFLOW scopflow;
   OPFLOW opflow;
