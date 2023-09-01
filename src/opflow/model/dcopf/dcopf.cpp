@@ -526,7 +526,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_DCOPF(OPFLOW opflow,
 
     row[0] = gidx;
 
-    //loc = bus->startxVloc;
+    // loc = bus->startxVloc;
     locglob = bus->startxVlocglob;
 
     col[0] = locglob;
@@ -589,7 +589,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_DCOPF(OPFLOW opflow,
       if (!line->status)
         continue;
       Bdc = line->bdc;
-      //Pshift = line->pshift;
+      // Pshift = line->pshift;
 
       /* Get the connected buses to this line */
       ierr = PSLINEGetConnectedBuses(line, &connbuses);
@@ -597,16 +597,16 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_DCOPF(OPFLOW opflow,
       busf = connbuses[0];
       bust = connbuses[1];
 
-      //locf = busf->startxVloc;
-      //loct = bust->startxVloc;
+      // locf = busf->startxVloc;
+      // loct = bust->startxVloc;
 
       locglobf = busf->startxVlocglob;
       locglobt = bust->startxVlocglob;
 
-      //thetaf = xarr[locf];
-      //thetat = xarr[loct];
-      //thetaft = thetaf - thetat;
-      //thetatf = thetat - thetaf;
+      // thetaf = xarr[locf];
+      // thetat = xarr[loct];
+      // thetaft = thetaf - thetat;
+      // thetatf = thetat - thetaf;
 
       if (bus == busf) {
         col[0] = locglobf;
@@ -867,7 +867,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_DCOPF(OPFLOW opflow,
       gloc = line->startineqloc;
 
       Bdc = line->bdc;
-      //Pshift = line->pshift;
+      // Pshift = line->pshift;
 
       ierr = PSLINEGetConnectedBuses(line, &connbuses);
       CHKERRQ(ierr);
@@ -877,10 +877,10 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_DCOPF(OPFLOW opflow,
       xlocf = busf->startxVloc;
       xloct = bust->startxVloc;
 
-      //thetaf = x[xlocf];
-      //thetat = x[xloct];
-      //thetaft = thetaf - thetat;
-      //thetatf = thetat - thetaf;
+      // thetaf = x[xlocf];
+      // thetat = x[xloct];
+      // thetaft = thetaf - thetat;
+      // thetatf = thetat - thetaf;
 
       dPf_dthetaf = Bdc;
       dPf_dthetat = -Bdc;
@@ -1070,7 +1070,7 @@ PetscErrorCode OPFLOWComputeGradient_DCOPF(OPFLOW opflow, Vec X, Vec grad) {
         if (!load->status)
           continue;
         loc = load->startxloadlossloc;
-        //Pdloss = x[loc];
+        // Pdloss = x[loc];
         df[loc] = opflow->loadloss_penalty * ps->MVAbase;
         flps += 1.0;
       }
@@ -1192,7 +1192,7 @@ PetscErrorCode OPFLOWModelSetNumConstraints_DCOPF(OPFLOW opflow,
                                                   PetscInt *busnconeq,
                                                   PetscInt *nconeq,
                                                   PetscInt *nconineq) {
-  
+
   (void)branchnconeq;
   (void)busnconeq;
   PetscInt i, k, ngen;
@@ -1329,9 +1329,9 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_DCOPF(OPFLOW opflow,
         gloc = gen->startineqloc;
 
         if (opflow->use_agc) {
-          //Pg = x[gen->startxpowloc];
-          //delPg = x[gen->startxpdevloc];
-          //delP = x[ps->startxloc];
+          // Pg = x[gen->startxpowloc];
+          // delPg = x[gen->startxpdevloc];
+          // delP = x[ps->startxloc];
 
           //	  df1_dPg = gen->apf*delP - delPg;
           // 	  df2_dPg = gen->apf*delP - delPg;

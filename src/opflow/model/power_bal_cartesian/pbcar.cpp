@@ -234,7 +234,7 @@ PetscErrorCode OPFLOWSetVariableandConstraintBounds_PBCAR(OPFLOW opflow, Vec Xl,
 
 PetscErrorCode OPFLOWSetInitialGuess_PBCAR(OPFLOW opflow, Vec X, Vec Lambda) {
   (void)Lambda;
-  
+
   PetscErrorCode ierr;
   PS ps = opflow->ps;
   const PetscScalar *xl, *xu;
@@ -1145,7 +1145,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBCAR(OPFLOW opflow,
 }
 
 PetscErrorCode OPFLOWComputeConstraints_PBCAR(OPFLOW opflow, Vec X, Vec G) {
-  //empty function
+  // empty function
   (void)opflow;
   (void)X;
   (void)G;

@@ -1261,7 +1261,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,
 }
 
 PetscErrorCode OPFLOWComputeConstraints_PBPOL(OPFLOW opflow, Vec X, Vec G) {
-  //empty function
+  // empty function
   (void)opflow;
   (void)X;
   (void)G;
@@ -1454,7 +1454,7 @@ PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW opflow,
                                                 PetscInt *busnvar,
                                                 PetscInt *branchnvar,
                                                 PetscInt *nx) {
-  PetscInt i, ngen , k;
+  PetscInt i, ngen, k;
   PS ps = opflow->ps;
   PSBUS bus;
   PSGEN gen;
@@ -2047,9 +2047,9 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow,
         gloc = gen->startineqloc;
 
         if (opflow->use_agc) {
-          //Pg = x[gen->startxpowloc];
-          //delPg = x[gen->startxpdevloc];
-          //delP = x[ps->startxloc];
+          // Pg = x[gen->startxpowloc];
+          // delPg = x[gen->startxpdevloc];
+          // delP = x[ps->startxloc];
 
           //	  df1_dPg = gen->apf*delP - delPg;
           // 	  df2_dPg = gen->apf*delP - delPg;
@@ -2090,8 +2090,8 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow,
       if (bus->ide == PV_BUS || bus->ide == REF_BUS) {
         gloc = bus->startineqloc;
         xloc = bus->startxVloc;
-        //xlocglob = bus->startxVlocglob;
-        //V = x[xloc + 1];
+        // xlocglob = bus->startxVlocglob;
+        // V = x[xloc + 1];
 
         Q = 0;
         Qmax = 0;
@@ -2106,7 +2106,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow,
           Q = Q + Qg;
           Qmax = Qmax + gen->qt;
           Qmin = Qmin + gen->qb;
-          //Vset = gen->vs;
+          // Vset = gen->vs;
 
           row[0] = loc + 1;
           col[0] = xloc + 1;

@@ -80,7 +80,7 @@ Bool eval_tcopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x, PetscInt m,
   (void)new_x;
   (void)m;
   (void)nele_jac;
-  
+
   PetscErrorCode ierr;
   TCOPFLOW tcopflow = (TCOPFLOW)user_data;
   PetscInt *iRowstart = iRow, *jColstart = jCol;
@@ -381,7 +381,7 @@ PetscErrorCode TCOPFLOWSolverDestroy_IPOPT(TCOPFLOW tcopflow) {
 }
 
 PetscErrorCode TCOPFLOWSolverSetUp_IPOPT(TCOPFLOW tcopflow) {
-  //empty function...
+  // empty function...
   (void)tcopflow;
   PetscFunctionBegin;
   PetscFunctionReturn(0);

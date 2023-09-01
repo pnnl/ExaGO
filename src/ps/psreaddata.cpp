@@ -30,7 +30,6 @@ PetscErrorCode PSReadPSSERawData(PS ps, const char netfile[]) {
   PetscInt Ngenerator = 0;
   PetscInt Nline = 0;
   PetscInt Ntransformer = 0;
-  PetscInt Nshunt = 0;
   // Case Identification Data
   PetscInt IC = 0;
   PetscScalar SBASE = 100.0;
@@ -111,7 +110,7 @@ PetscErrorCode PSReadPSSERawData(PS ps, const char netfile[]) {
       Nload++;
       break;
     case 2:
-      Nshunt++;
+      // Nshunt++;
       break;
     case 3:
       Ngenerator++;
@@ -509,9 +508,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   /* Number of blank lines in bus, gen, br, gencost, and genfuel branch arrays
    */
   PetscInt bus_nblank_lines = 0, gen_nblank_lines = 0;
-  PetscInt br_nblank_lines = 0, gencost_nblank_lines = 0;
-  PetscInt genfuel_nblank_lines = 0;
-  PetscInt loadcost_nblank_lines = 0;
+  PetscInt br_nblank_lines = 0;
   char line[MAXLINE];
   PetscInt loadi = 0, geni = 0, bri = 0, busi = 0, gencosti = 0, genfueli = 0,
            loadcosti = 0, i;
@@ -599,21 +596,6 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
     if (br_start_line != -1 && br_end_line == -1) {
       if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
         br_nblank_lines++;
-    }
-
-    if (gencost_start_line != -1 && gencost_end_line == -1) {
-      if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
-        gencost_nblank_lines++;
-    }
-
-    if (loadcost_start_line != -1 && loadcost_end_line == -1) {
-      if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
-        loadcost_nblank_lines++;
-    }
-
-    if (genfuel_start_line != -1 && genfuel_end_line == -1) {
-      if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
-        genfuel_nblank_lines++;
     }
 
     /* Count the number of pq loads */
@@ -1084,12 +1066,12 @@ PetscErrorCode PSReadGICData(PS ps) {
         branch = connlines[k];
 
         const PSBUS *connbuses;
-        PSBUS busf;//, bust;
+        PSBUS busf; //, bust;
 
         /* Get the connected buses to this line */
         PSLINEGetConnectedBuses(branch, &connbuses);
         busf = connbuses[0];
-        //bust = connbuses[1];
+        // bust = connbuses[1];
 
         if (bus == busf) { /* From bus */
           branch->subst_from = subst;

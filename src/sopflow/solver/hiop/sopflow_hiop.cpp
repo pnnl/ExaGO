@@ -38,7 +38,7 @@ PetscErrorCode SOPFLOWBaseAuxGradientFunction(OPFLOW opflow, const double *x,
 PetscErrorCode SOPFLOWBaseAuxHessianFunction(OPFLOW opflow, const double *x,
                                              Mat Hess, void *ctx) {
   (void)x;
-  
+
   PetscErrorCode ierr;
   SOPFLOW sopflow = (SOPFLOW)ctx;
   SOPFLOWSolver_HIOP hiop = (SOPFLOWSolver_HIOP)sopflow->solver;

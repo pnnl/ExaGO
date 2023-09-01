@@ -1096,7 +1096,9 @@ PetscErrorCode OPFLOWComputeObjective_IBCAR(OPFLOW opflow, Vec X,
   PetscInt loc;
   PetscInt k;
   PetscScalar Pg;
+  // Flops are calculated but never stored...
   PetscInt flps = 0;
+  (void)flps;
 
   PetscFunctionBegin;
 
@@ -1168,7 +1170,9 @@ PetscErrorCode OPFLOWComputeGradient_IBCAR(OPFLOW opflow, Vec X, Vec grad) {
   PetscInt loc;
   PetscInt k;
   PetscScalar Pg;
+  // flps are calculated but not used...
   PetscInt flps = 0;
+  (void)flps;
 
   PetscFunctionBegin;
   ierr = VecGetArrayRead(X, &x);
@@ -1372,7 +1376,9 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,
   PetscInt row[12], col[12];
   PetscScalar val[12];
   PetscScalar Vr, Vi, Vm2, Vm4, Vm6;
+  // flps are calculated but not used...
   PetscInt flps = 0;
+  (void)flps;
 
   PetscFunctionBegin;
 

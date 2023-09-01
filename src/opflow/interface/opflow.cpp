@@ -2849,8 +2849,6 @@ PetscErrorCode OPFLOWIgnoreLineflowConstraints(OPFLOW opflow, PetscBool set) {
 PetscErrorCode OPFLOWSetLinesMonitored(OPFLOW opflow, PetscInt nkvlevels,
                                        const PetscScalar *kvlevels,
                                        const char *monitorfile) {
-  PetscErrorCode ierr;
-
   PetscFunctionBegin;
 
   if (monitorfile != NULL) {
@@ -2860,19 +2858,18 @@ PetscErrorCode OPFLOWSetLinesMonitored(OPFLOW opflow, PetscInt nkvlevels,
 
   if (nkvlevels < 0) {
     opflow->nlinekvmon = opflow->ps->nkvlevels;
-    ierr = PetscMemcpy(opflow->linekvmon, opflow->ps->kvlevels,
-                       opflow->nlinekvmon * sizeof(PetscScalar));
+    PetscMemcpy(opflow->linekvmon, opflow->ps->kvlevels,
+                opflow->nlinekvmon * sizeof(PetscScalar));
   } else if (nkvlevels == 0) {
     opflow->ignore_lineflow_constraints = PETSC_TRUE;
     opflow->nlinekvmon = 0;
     opflow->linesmon = NULL;
   } else {
     opflow->nlinekvmon = nkvlevels;
-    ierr = PetscMemcpy(opflow->linekvmon, kvlevels,
-                       nkvlevels * sizeof(PetscScalar));
+    PetscMemcpy(opflow->linekvmon, kvlevels, nkvlevels * sizeof(PetscScalar));
   }
 
-  PetscFunctionReturn(ierr);
+  PetscFunctionReturn(0);
 }
 
 /*

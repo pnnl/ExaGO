@@ -669,8 +669,8 @@ PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLHIOP(
 
 PetscErrorCode OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLHIOP(
     OPFLOW opflow, const double *x, int *iJacS, int *jJacS, double *MJacS) {
-  
-  //empty function
+
+  // empty function
   (void)opflow;
   (void)x;
 

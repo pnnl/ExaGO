@@ -494,14 +494,15 @@ static void PrintGenData(FILE *fd, PSBUS bus, bool trail_comma,
 
 static void PrintLineData(FILE *fd, PSLINE line, bool trail_comma,
                           PetscScalar MVAbase) {
-  // unused 
+  // unused
   (void)trail_comma;
   std::string line_name;
   // Elementtype
   PrintJSONString(fd, "elementtype", "Branch", true);
 
   // Name
-  line_name = std::string(line->subst_from->name) + " -- " + std::string(line->subst_to->name);
+  line_name = std::string(line->subst_from->name) + " -- " +
+              std::string(line->subst_to->name);
 
   PrintJSONString(fd, "NAME", line_name.c_str(), true);
 
@@ -530,7 +531,7 @@ static void PrintLineData(FILE *fd, PSLINE line, bool trail_comma,
 
 static void PrintBusData(FILE *fd, PSSUBST subst, bool trail_comma,
                          PetscScalar MVAbase) {
-  // unused 
+  // unused
   (void)trail_comma;
   PSBUS bus;
   PSLOAD load;
@@ -685,12 +686,12 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[]) {
         branch = connlines[k];
 
         const PSBUS *connbuses;
-        PSBUS busf;//, bust;
+        PSBUS busf; //, bust;
 
         /* Get the connected buses to this line */
         PSLINEGetConnectedBuses(branch, &connbuses);
         busf = connbuses[0];
-        //bust = connbuses[1];
+        // bust = connbuses[1];
 
         if (bus == busf) { /* From bus */
           branch->subst_from = subst;

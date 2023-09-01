@@ -148,7 +148,7 @@ PetscErrorCode SOPFLOWSolverGetConstraintMultipliers_EMPAR(SOPFLOW sopflow,
 
 PetscErrorCode SOPFLOWSolverGetConvergenceStatus_EMPAR(SOPFLOW sopflow,
                                                        PetscBool *status) {
-  //empty or noop...
+  // empty or noop...
   (void)sopflow;
 
   PetscFunctionBegin;

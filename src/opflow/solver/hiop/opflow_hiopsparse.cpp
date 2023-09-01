@@ -163,7 +163,7 @@ bool OPFLOWHIOPSPARSEInterface::eval_cons(const hiop::size_type &n,
                                           const hiop::size_type *idx_cons,
                                           const double *x, bool new_x,
                                           double *cons) {
-  //empty function...
+  // empty function...
   (void)n;
   (void)m;
   (void)num_cons;
@@ -254,7 +254,7 @@ bool OPFLOWHIOPSPARSEInterface::eval_Jac_cons(
     const hiop::size_type &num_cons, const hiop::size_type *idx_cons,
     const double *x, bool new_x, const hiop::size_type &nnzJacS,
     hiop::index_type *iJacS, hiop::index_type *jJacS, double *MJacS) {
-  //empty function
+  // empty function
   (void)n;
   (void)m;
   (void)num_cons;
@@ -569,7 +569,7 @@ bool OPFLOWHIOPSPARSEInterface::iterate_callback(
     const double *g, const double *lambda, double inf_pr, double inf_du,
     double onenorm_pr_, double mu, double alpha_du, double alpha_pr,
     int ls_trials) {
-  
+
   (void)obj_value;
   (void)logbar_obj_value;
   (void)n;

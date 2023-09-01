@@ -1363,7 +1363,7 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLRAJAHIOP_old(OPFLOW opflow,
 PetscErrorCode OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOP(
     OPFLOW opflow, const double *x_dev, int *iJacS_dev, int *jJacS_dev,
     double *MJacS_dev) {
-  //empty function...
+  // empty function...
   (void)opflow;
   (void)x_dev;
   (void)iJacS_dev;
@@ -2865,7 +2865,7 @@ PetscErrorCode OPFLOWSolutionCallback_PBPOLRAJAHIOP(
   (void)z_L;
   (void)z_U;
   (void)obj_value;
-  
+
   PetscErrorCode ierr;
   PetscScalar *x, *lam, *g;
 

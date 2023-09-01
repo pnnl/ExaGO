@@ -347,7 +347,8 @@ template <typename T> static inline void print(T const &opt) {
 [[noreturn]] PetscErrorCode ExaGOHelpPrintf(MPI_Comm comm,
                                             const char _appname[], ...) {
 
-  // Need this to show comm as used to compiler , as only relevant when used in PETSc
+  // Need this to show comm as used to compiler , as only relevant when used in
+  // PETSc
   (void)comm;
   std::string versionstr;
 

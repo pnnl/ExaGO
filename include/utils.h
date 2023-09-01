@@ -93,9 +93,12 @@ extern PetscErrorCode ExaGOLogSetMinLogLevel(int);
  * communicator.
  */
 template <typename... Args>
-inline void ExaGOLog(MPI_Comm comm, int level, std::string fmt, Args... args) {
+inline void ExaGOLog(MPI_Comm comm, int level, std::string fmt,
+                     [[gnu::unused]] Args... args) {
+  (void)comm;
+  (void)level;
+  (void)fmt;
 #ifdef EXAGO_ENABLE_LOGGING
-
   /* Check that the rank is 0 before logging */
   int rank;
   int ierr = MPI_Comm_rank(comm, &rank);
@@ -131,7 +134,9 @@ inline void ExaGOLog(MPI_Comm comm, int level, std::string fmt, Args... args) {
  * rank.
  */
 template <typename... Args>
-void inline ExaGOLog(int level, std::string fmt, Args... args) {
+void inline ExaGOLog(int level, std::string fmt, [[gnu::unused]] Args... args) {
+  (void)level;
+  (void)fmt;
 #ifdef EXAGO_ENABLE_LOGGING
   ExaGOLog(PETSC_COMM_WORLD, level, fmt, args...);
 #endif
@@ -161,8 +166,8 @@ template <> struct ExaGOOption<std::string> {
   ExaGOOption(std::string const &_opt, std::string const &_desc,
               std::string const &_default_value,
               std::vector<std::string> const &possible_values)
-      : opt{_opt.c_str()}, desc{_desc}, default_value{_default_value}, possible_values{possible_values}
-         {}
+      : opt{_opt.c_str()}, desc{_desc}, default_value{_default_value},
+        possible_values{possible_values} {}
 
   /**
    * \brief Get the enum value of a stringy enum option.

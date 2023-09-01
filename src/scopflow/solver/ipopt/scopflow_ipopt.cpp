@@ -384,7 +384,7 @@ PetscErrorCode SCOPFLOWSolverDestroy_IPOPT(SCOPFLOW scopflow) {
 }
 
 PetscErrorCode SCOPFLOWSolverSetUp_IPOPT(SCOPFLOW scopflow) {
-  //empty function..
+  // empty function..
   (void)scopflow;
   PetscFunctionBegin;
   PetscFunctionReturn(0);
