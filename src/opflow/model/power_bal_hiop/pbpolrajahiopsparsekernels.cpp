@@ -490,9 +490,12 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
       pbpolrajahiopsparse->j_jacineq = (int*)(h_allocator_.allocate(opflow->nnz_ineqjacsp*sizeof(int)));
       pbpolrajahiopsparse->val_jacineq = (double*)(h_allocator_.allocate(opflow->nnz_ineqjacsp*sizeof(double)));
 
-      iRowstart = pbpolrajahiopsparse->i_jaceq;
-      jColstart = pbpolrajahiopsparse->j_jaceq;
+      iRowstart = pbpolrajahiopsparse->i_jacineq;
+      jColstart = pbpolrajahiopsparse->j_jacineq;
 
+      /* Inequality constraints start after equality constraints
+	 Hence the offset
+      */
       roffset = opflow->nconeq;
 
       ierr = (*opflow->modelops.computeinequalityconstraintjacobian)(opflow, opflow->X, opflow->Jac_Gi);
@@ -547,7 +550,7 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
       ierr = MatGetSize(opflow->Jac_Gi, &nrow, &ncol);
       CHKERRQ(ierr);
 
-      values = pbpolrajahiopsparse->val_jacineq+opflow->nnz_eqjacsp;
+      values = pbpolrajahiopsparse->val_jacineq;
       /* Copy over values */
       for (i = 0; i < nrow; i++) {
         ierr = MatGetRow(opflow->Jac_Gi, i, &nvals, &cols, &vals);
@@ -654,7 +657,7 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
     ierr = MatGetSize(opflow->Jac_Ge, &nrow, &ncol);
     CHKERRQ(ierr);
 
-    values = pbpolrajahiopsparse->val_jacineq;
+    values = pbpolrajahiopsparse->val_jaceq;
 
     /* Copy over values */
     for (i = 0; i < nrow; i++) {
