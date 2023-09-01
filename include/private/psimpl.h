@@ -416,6 +416,9 @@ struct _p_PS {
       ngenundefined;
   /* Number of renewable generators (solar, wind) */
   PetscInt ngenrenew;
+  /* Number of isolated buses */
+  PetscInt nisolated_buses,Nisolated_buses;
+  PetscInt *isolated_buses; /* Array to hold isolated buses */
 
   PSBUS bus;
   PSLOAD load;
