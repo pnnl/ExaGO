@@ -20,7 +20,7 @@ module load exasgd-cuda/11.4.2/gcc-10.2.0-yf564wn
 # diffutils@3.8%gcc@10.2.0 arch=linux-rhel8-power9le
 module load exasgd-diffutils/3.8/gcc-10.2.0-n2gttub
 # ginkgo@1.5.0.glu_experimental%gcc@10.2.0+cuda~develtools~full_optimizations~hwloc~ipo~oneapi+openmp~rocm+shared build_system=cmake build_type=Debug cuda_arch=70 dev_path=/gpfs/wolf/proj-shared/csc359/src/ginkgo arch=linux-rhel8-power9le
-module load exasgd-ginkgo/1.5.0.glu_experimental/cuda-11.4.2/gcc-10.2.0-h4v5snw
+module load exasgd-ginkgo/1.5.0.glu_experimental/cuda-11.4.2/gcc-10.2.0-hqp5lj3
 # gmp@6.2.1%gcc@10.2.0 libs=shared,static arch=linux-rhel8-power9le
 module load exasgd-gmp/6.2.1/gcc-10.2.0-6oxkdwz
 # gnuconfig@2021-08-14%gcc@10.2.0 arch=linux-rhel8-power9le
@@ -28,7 +28,7 @@ module load exasgd-gnuconfig/2021-08-14/gcc-10.2.0-j2pelq3
 # hdf5@1.12.2%gcc@10.2.0~cxx~fortran~hl~ipo~java+mpi+shared~szip~threadsafe+tools api=default build_type=RelWithDebInfo arch=linux-rhel8-power9le
 module load exasgd-hdf5/1.12.2/spectrum-mpi-10.4.0.3-20210112/gcc-10.2.0-yh642ea
 # hiop@develop%gcc@10.2.0+cuda+cusolver+deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=RelWithDebInfo cuda_arch=70 dev_path=/gpfs/wolf/proj-shared/csc359/src/nicholson-hiop arch=linux-rhel8-power9le
-module load exasgd-hiop/develop/cuda-11.4.2/spectrum-mpi-10.4.0.3-20210112/gcc-10.2.0-ucuclxs
+module load exasgd-hiop/develop/cuda-11.4.2/spectrum-mpi-10.4.0.3-20210112/gcc-10.2.0-5xqybw4
 # hypre@2.24.0%gcc@10.2.0~complex~cuda~debug+fortran~gptune~int64~internal-superlu~mixedint+mpi~openmp~rocm+shared~superlu-dist~unified-memory arch=linux-rhel8-power9le
 module load exasgd-hypre/2.24.0/spectrum-mpi-10.4.0.3-20210112/gcc-10.2.0-oybqs3s
 # ipopt@3.12.10%gcc@10.2.0+coinhsl~debug~metis~mumps build_system=autotools arch=linux-rhel8-power9le
