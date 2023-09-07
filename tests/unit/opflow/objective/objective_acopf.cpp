@@ -87,12 +87,12 @@ int main(int argc, char **argv) {
 
   // If we are using HIOP, need to convert X
   // The string lengths must be 65
-  char modelname[64];
-  char solvername[64];
-  ierr = OPFLOWGetModel(opflowtest, modelname);
-  ierr = OPFLOWGetSolver(opflowtest, solvername);
+  std::string modelname;
+  std::string solvername;
+  ierr = OPFLOWGetModel(opflowtest, &modelname);
+  ierr = OPFLOWGetSolver(opflowtest, &solvername);
 
-  if (strncmp(solvername, "HIOP", 64) == 0) {
+  if (solvername == "HIOP") {
 #if defined(EXAGO_ENABLE_HIOP)
     double *x_ref;
     ierr = VecGetArray(X, &x_ref);
@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
     CHKERRQ(ierr);
 
     // If we are running using the CPU model, nothing needs to be done
-    if (strncmp(modelname, "POWER_BALANCE_HIOP", 64) == 0) {
+    if (modelname == "POWER_BALANCE_HIOP") {
       fail += test.computeObjective(opflowtest, x_ref, obj_value);
     } else // Using model PBPOLRAJAHIOP
     {

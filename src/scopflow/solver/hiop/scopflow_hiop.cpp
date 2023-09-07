@@ -7,6 +7,8 @@
 #include <private/scopflowimpl.h>
 #include <private/tcopflowimpl.h>
 
+extern const char *HIOPMemSpaceChoices[];
+
 PetscErrorCode SCOPFLOWBaseAuxObjectiveFunction(OPFLOW opflow, const double *x,
                                                 double *obj, void *ctx) {
   PetscErrorCode ierr;
@@ -166,7 +168,7 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
   CHKERRQ(ierr);
   ierr = OPFLOWSetSolver(opflowctgc, scopflow->subproblem_solver);
   CHKERRQ(ierr);
-  if (!strcmp(scopflow->subproblem_solver, "HIOP")) {
+  if (scopflow->subproblem_solver == "HIOP") {
     ierr = OPFLOWSetHIOPComputeMode(opflowctgc, scopflow->compute_mode);
     CHKERRQ(ierr);
     ierr = OPFLOWSetHIOPVerbosityLevel(opflowctgc, scopflow->verbosity_level);
@@ -330,6 +332,8 @@ double SCOPFLOWHIOPInterface::get_objective() {
     CHKERRQ(ierr);
     return obj;
   }
+
+  throw ExaGOError("scopflow->cstart != 0 so no obj value to return");
 }
 
 PetscErrorCode SCOPFLOWSolverSolve_HIOP(SCOPFLOW scopflow) {

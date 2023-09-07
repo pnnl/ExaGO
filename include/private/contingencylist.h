@@ -55,5 +55,11 @@ extern PetscErrorCode ContingencyListSetData(ContingencyList,
 extern PetscErrorCode ContingencyListCreate(PetscInt, ContingencyList *);
 extern PetscErrorCode ContingencyListDestroy(ContingencyList *);
 extern PetscErrorCode ContingencyListReadData(ContingencyList, PetscInt *);
+extern PetscErrorCode ContingencyWriteData(Contingency *con, int id,
+                                           ContingencyFileInputFormat fmt,
+                                           FILE *fd);
+extern PetscErrorCode ContigencyAppendMinimal(Contingency *thecon, int cont_num,
+                                              ContingencyFileInputFormat fmt,
+                                              const char outfile[]);
 
 #endif

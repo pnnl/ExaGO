@@ -33,6 +33,7 @@ struct ScopflowFunctionalityTestParameters {
   bool enable_powerimbalance_variables;
   bool ignore_lineflow_constraints;
   int verbosity_level;
+  std::string mem_space = "DEFAULT";
   std::string compute_mode;
 
   /* Parameters used to determine success or failure of functionality test */
@@ -70,6 +71,7 @@ struct ScopflowFunctionalityTestParameters {
     set_if_found(subproblem_model, values, "subproblem_model");
     set_if_found(compute_mode, values, "compute_mode");
     set_if_found(verbosity_level, values, "verbosity_level");
+    set_if_found(mem_space, values, "mem_space");
     set_if_found(enable_powerimbalance_variables, values,
                  "enable_powerimbalance_variables");
     set_if_found(ignore_lineflow_constraints, values,
@@ -181,8 +183,13 @@ struct ScopflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     SCOPFLOW scopflow;
+    int rank;
 
-    std::cout << "Test Description: " << params.description << std::endl;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+    if (rank == 0) {
+      std::cout << "Test Description: " << params.description << std::endl;
+    }
     ierr = SCOPFLOWCreate(params.comm, &scopflow);
     ExaGOCheckError(ierr);
 
@@ -195,9 +202,15 @@ struct ScopflowFunctionalityTests
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to contingency file
+    std::string ext = FileNameExtension(params.contingencies);
     resolve_datafiles_path(params.contingencies);
-    ierr = SCOPFLOWSetContingencyData(scopflow, NATIVE,
-                                      params.contingencies.c_str());
+    if (ext == "con") {
+      ierr = SCOPFLOWSetContingencyData(scopflow, PSSE,
+                                        params.contingencies.c_str());
+    } else {
+      ierr = SCOPFLOWSetContingencyData(scopflow, NATIVE,
+                                        params.contingencies.c_str());
+    }
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path
@@ -226,7 +239,7 @@ struct ScopflowFunctionalityTests
     ierr = SCOPFLOWSetDuration(scopflow, params.duration);
     ExaGOCheckError(ierr);
 
-    ierr = SCOPFLOWSetSolver(scopflow, params.solver.c_str());
+    ierr = SCOPFLOWSetSolver(scopflow, params.solver);
     ExaGOCheckError(ierr);
 
     ierr = SCOPFLOWSetInitilizationType(
@@ -236,25 +249,26 @@ struct ScopflowFunctionalityTests
         scopflow, (OPFLOWGenBusVoltageType)params.opflow_genbusvoltage);
     ExaGOCheckError(ierr);
 
-    ierr = SCOPFLOWSetModel(scopflow, params.model.c_str());
+    ierr = SCOPFLOWSetModel(scopflow, params.model);
     ExaGOCheckError(ierr);
 
     ierr = SCOPFLOWSetMode(scopflow, (PetscInt)params.mode);
     ExaGOCheckError(ierr);
 
-    ierr =
-        SCOPFLOWSetSubproblemSolver(scopflow, params.subproblem_solver.c_str());
+    ierr = SCOPFLOWSetSubproblemSolver(scopflow, params.subproblem_solver);
     ExaGOCheckError(ierr);
 
-    ierr =
-        SCOPFLOWSetSubproblemModel(scopflow, params.subproblem_model.c_str());
+    ierr = SCOPFLOWSetSubproblemModel(scopflow, params.subproblem_model);
     ExaGOCheckError(ierr);
 
-    ierr = SCOPFLOWSetComputeMode(scopflow, params.compute_mode.c_str());
+    ierr = SCOPFLOWSetSubproblemComputeMode(scopflow, params.compute_mode);
     ExaGOCheckError(ierr);
 
-    ierr =
-        SCOPFLOWSetVerbosityLevel(scopflow, (PetscInt)params.verbosity_level);
+    ierr = SCOPFLOWSetSubproblemVerbosityLevel(
+        scopflow, (PetscInt)params.verbosity_level);
+    ExaGOCheckError(ierr);
+
+    ierr = SCOPFLOWSetSubproblemMemSpace(scopflow, params.mem_space);
     ExaGOCheckError(ierr);
 
     ierr = SCOPFLOWEnablePowerImbalanceVariables(
@@ -291,10 +305,20 @@ struct ScopflowFunctionalityTests
     if (!IsEqual(params.obj_value, params.expected_obj_value, params.tolerance,
                  params.error)) {
       obj_failed = true;
+#ifdef EXAGO_ENABLE_LOGGING
       params.reasons_for_failure.push_back(fmt::format(
           "expected objective value={} actual objective value={} tol={} err={}",
           params.expected_obj_value, params.obj_value, params.tolerance,
           params.error));
+#else
+      char sbuf[256];
+      sprintf(
+          sbuf,
+          "expected objective value=%e actual objective value=%e tol=%e err=%e",
+          params.expected_obj_value, params.obj_value, params.tolerance,
+          params.error);
+      params.reasons_for_failure.push_back(std::string(sbuf));
+#endif
     }
 
     /* Test num iterations */
@@ -303,9 +327,16 @@ struct ScopflowFunctionalityTests
     if (params.expected_num_iters != -1 &&
         params.numiter != params.expected_num_iters) {
       num_iter_failed = true;
+#ifdef EXAGO_ENABLE_LOGGING
       params.reasons_for_failure.push_back(
           fmt::format("expected {} num iters, got {}",
                       params.expected_num_iters, params.numiter));
+#else
+      char sbuf[256];
+      sprintf(sbuf, "expected %d num iters, got %d", params.expected_num_iters,
+              params.numiter);
+      params.reasons_for_failure.push_back(std::string(sbuf));
+#endif
     }
 
     /* Did the current functionality test fail in any way? */

@@ -10,9 +10,9 @@ multiperiod = false
 subproblem_solver = 'HIOP'
 subproblem_model = 'POWER_BALANCE_HIOP'
 compute_mode = 'CPU'
+mem_space = 'DEFAULT'
 flatten = true
 ignore_lineflow_constraints = true
-hiop_mem_space = 'HOST' #need API implemented for this to work
 
 [[testcase]]
 description = 'datafiles/case9/case9mod_gen3_wind.m HIOP CPU 10 scenario SOPFLOW'
@@ -23,5 +23,15 @@ initialization_type = 'ACPF'
 verbosity_level = 3
 num_iters = 0
 obj_value = 0.0
+mem_space = 'HOST'
 
-
+[[testcase]]
+description = 'datafiles/case9/case9mod_gen3_wind.m HIOP GPU 10 scenario SOPFLOW'
+network = 'datafiles/case9/case9mod_gen3_wind.m'
+scenfile = 'datafiles/case9/10_scenarios_9bus.csv'
+num_scenarios = -1
+initialization_type = 'ACPF'
+verbosity_level = 3
+num_iters = 0
+obj_value = 0.0
+mem_space = 'DEVICE'

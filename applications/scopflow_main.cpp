@@ -9,6 +9,8 @@ int main(int argc, char **argv) {
   SCOPFLOW scopflow;
   char file[PETSC_MAX_PATH_LEN];
   char ctgcfile[PETSC_MAX_PATH_LEN];
+  char outputdir[PETSC_MAX_PATH_LEN];
+  PetscBool outputdir_set;
   PetscBool flg = PETSC_FALSE, flgctgc = PETSC_FALSE,
             ismultiperiod = PETSC_TRUE;
   PetscBool print_output = PETSC_FALSE, save_output = PETSC_FALSE;
@@ -27,6 +29,12 @@ int main(int argc, char **argv) {
   CHKERRQ(ierr);
   ierr = PetscOptionsGetBool(NULL, NULL, "-save_output", &save_output, NULL);
   CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL, NULL, "-scopflow_output_directory",
+                               outputdir, PETSC_MAX_PATH_LEN, &outputdir_set);
+  CHKERRQ(ierr);
+  if (!outputdir_set) {
+    strcpy(outputdir, "scopflowout");
+  }
 
   /* Register stages for profiling application code sections */
   ierr = PetscLogStageRegister("Reading Data", &stages[0]);
@@ -113,7 +121,7 @@ int main(int argc, char **argv) {
 
   /* Save solution */
   if (save_output) {
-    ierr = SCOPFLOWSaveSolutionAll(scopflow, MATPOWER, "scopflowout");
+    ierr = SCOPFLOWSaveSolutionAllDefault(scopflow, outputdir);
     CHKERRQ(ierr);
   }
 

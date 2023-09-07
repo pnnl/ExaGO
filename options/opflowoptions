@@ -3,73 +3,15 @@
 #-netfile share/exago/datafiles/case118.m
 #-netfile share/exago/datafiles/case5.m
 
-# Select Solver (IPOPT,TAO, HIOP)
+# Select Solver (IPOPT,HIOP)
 #-opflow_solver IPOPT
 
 # Select model
 #-opflow_model POWER_BALANCE_POLAR
 
-#-------------------------
-# Options for TAO solver
-#--------------------------
--opflow_tao_type pdipm  # Primal-Dual Interior Point Method (PDIPM)
--opflow_tao_max_funcs 100000
--opflow_tao_max_it 200
-# PDIPM SNES Solver Options
-#-opflow_snes_fd
--opflow_snes_max_it 200
--opflow_snes_max_funcs 100000
-#-opflow_snes_monitor
-
-# PDIPM SNES-KSP Solver Options
--opflow_pc_type lu
--opflow_pc_factor_mat_ordering_type qmd
--opflow_pc_factor_shift_type NONZERO
-#-opflow_pc_factor_mat_solver_type superlu_dist
-#-opflow_ksp_error_if_not_converged
-#-opflow_ksp_monitor
-
-# Tao tolerances
--opflow_tao_catol 1e-6 
--opflow_tao_crtol 1e-6 
--opflow_tao_grtol 1e-6
--opflow_tao_gatol 1e-6
-
-# Convergence monitor
-#-opflow_tao_monitor
-
-# Convergence status
--opflow_tao_converged_reason
-
-#-opflow_tao_pdipm_solve_reduced_kkt # Solve PDIPM with reduced KKT system using Schur-complement
-#-opflow_pc_type fieldsplit
--opflow_pc_fieldsplit_type schur
--opflow_pc_fieldsplit_schur_precondition full
--opflow_pc_fieldsplit_schur_fact_type full
-
-# Options for tuning fieldsplit Schur complement solver
--opflow_fieldsplit_primal_ksp_type gmres
--opflow_fieldsplit_primal_pc_type lu
--opflow_fieldsplit_primal_pc_factor_shift_type NONZERO
--opflow_fieldsplit_primal_ksp_rtol 1e-10
--opflow_fieldsplit_primal_ksp_atol 1e-8
--opflow_fieldsplit_primal_pc_factor_mat_ordering_type qmd
--opflow_fieldsplit_primal_pc_factor_mat_solver_type petsc
-
--opflow_fieldsplit_dual_ksp_type gmres
--opflow_fieldsplit_dual_pc_type lu
--opflow_fieldsplit_dual_pc_factor_shift_type NONZERO
--opflow_fieldsplit_dual_pc_factor_mat_solver_type petsc
--opflow_fieldsplit_dual_ksp_rtol 1e-10
--opflow_fieldsplit_dual_ksp_atol 1e-8
-
 # performance
 #-------------
 #-log_view
-
-#Partitioner (requires parmetis package)
-#-petscpartitioner_type simple
--petscpartitioner_type parmetis
 
 #options
 # Display options left

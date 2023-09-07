@@ -5,4 +5,10 @@ install/*
 .ubuild.json
 *__pycache__*
 *nvblas.conf
-spack-env/
+spack-*
+.vscode/
+coinhsl-*
+node_modules
+.env
+package-lock.json
+config.py

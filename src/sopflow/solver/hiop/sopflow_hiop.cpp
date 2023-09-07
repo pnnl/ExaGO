@@ -6,6 +6,8 @@
 #include <private/opflowimpl.h>
 #include <private/sopflowimpl.h>
 
+extern const char *HIOPMemSpaceChoices[];
+
 PetscErrorCode SOPFLOWBaseAuxObjectiveFunction(OPFLOW opflow, const double *x,
                                                double *obj, void *ctx) {
   PetscErrorCode ierr;
@@ -174,9 +176,8 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
   CHKERRQ(ierr);
   ierr = OPFLOWSetSolver(opflowscen, sopflow->subproblem_solver);
   CHKERRQ(ierr);
-  ierr =
-      PetscStrcmp(sopflow->subproblem_solver, "HIOP", &issubproblemsolver_hiop);
-  CHKERRQ(ierr);
+  issubproblemsolver_hiop =
+      static_cast<PetscBool>(sopflow->subproblem_solver == "HIOP");
   if (issubproblemsolver_hiop) {
     ierr = OPFLOWSetHIOPComputeMode(opflowscen, sopflow->compute_mode);
     CHKERRQ(ierr);
@@ -366,6 +367,8 @@ double SOPFLOWHIOPInterface::get_objective() {
     CHKERRQ(ierr);
     return obj;
   }
+
+  throw ExaGOError("sopflow->sstart != 0 and so no objective value to return");
 }
 
 PetscErrorCode SOPFLOWSolverSolve_HIOP(SOPFLOW sopflow) {

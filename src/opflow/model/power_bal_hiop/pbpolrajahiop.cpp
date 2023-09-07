@@ -560,6 +560,7 @@ PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOP(OPFLOW opflow) {
       OPFLOWComputeDenseInequalityConstraintJacobian_PBPOLRAJAHIOP;
   opflow->modelops.computedensehessianhiop =
       OPFLOWComputeDenseHessian_PBPOLRAJAHIOP;
+  opflow->modelops.solutioncallbackhiop = OPFLOWSolutionCallback_PBPOLRAJAHIOP;
 
   PetscFunctionReturn(0);
 }

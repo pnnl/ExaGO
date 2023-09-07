@@ -104,8 +104,8 @@ For the vast majority of cases, just use the clang-format configuration.
 
 [This widely referenced article on commit messages](https://chris.beams.io/posts/git-commit/#imperative)
 goes into greater detail and describes other best practices that are also recommended.
-The commit message should read like: _If applied, this commit will <commit message>_.
-*Merge request titles should also follow the same conventions.*
+The commit message should read: `If applied, this commit will <commit message>`.
+**Merge request titles should also follow the same conventions.**
 
 ### Merge Request Conventions
 
@@ -113,6 +113,16 @@ The commit message should read like: _If applied, this commit will <commit messa
 
 If your merge request changes only documentation, you may add `[skip ci]` to your commit message to skip CI.
 Otherwise, your MR must pass our continuous integration pipelines before being merged.
+
+#### P029: Spack based CI/CD
+
+CI tests rely on Spack generated tcl modules in order to build and test ExaGO on target platforms.
+In order to rebuild the modules for a given platform to update CI environments, you must do the following in an active MR (this workflow does not work in branches):
+1. Update the spack submodule in [/tpl/spack](./tpl) to point to your desired spack commit. This may be necessary when incoporating new software versions, or when undertaking spack development.
+1. Update the relevant `spack.yaml(s)` in [/buildsystem/spack/](./buildsystem/spack/) for each platform that you are building for. Currently only [Newell, Deception, Ascent] support automatic re-building.
+1. Add a commit to to your MR with `[<clusterame>-rebuild]` where `<clustername>` is replaced by and desired platform. Add multiple `[<clusterame>-rebuild]` into the commit message for each platform you want to rebuild for. 
+
+This should be done semi-regularly in order to incorporate new versions of packages, and to update ExaGO's `package.py` with any new conflicts found in spack's develop branch.
 
 #### P012: Patches Should Be Small
 
@@ -204,3 +214,4 @@ You may also run `buildsystem/tools/cmake_format.pl -i`.
 1. [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 1. [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 1. [xSDK Project](https://xsdk.info/policies/)
+1. [Working with Submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules)

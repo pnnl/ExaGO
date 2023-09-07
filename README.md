@@ -1,30 +1,36 @@
-[![pipeline status](https://gitlab.pnnl.gov/exasgd/frameworks/exago/badges/master/pipeline.svg)](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/commits/master)
+# <b>Exa</b>scale <b>G</b>rid <b>O</b>ptimization toolkit (ExaGO<sup>TM</sup>) [![pipeline status](https://gitlab.pnnl.gov/exasgd/frameworks/exago/badges/develop/pipeline.svg)](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/commits/develop)
 
-# <b>Exa</b>scale <b>G</b>rid <b>O</b>ptimization toolkit (ExaGO<sup>TM</sup>)
-ExaGO<sup>TM</sup> is a package for solving large-scale power grid optimization problems on parallel and distributed architectures, particularly targeted for exascale machines with heteregenous architectures (GPU). It is written in C/C++ using the [PETSc](https://www.mcs.anl.gov/petsc/) library. An overview of the package is given on this page and the different links provided. For detailed information, including the different formulations used, see the [ExaGO manual](docs/manual/manual.pdf). 
+<!--![](viz/images/network_gen_load_us.png)-->
+<img src="viz/images/network_gen_load_us.png">
+<img src="docs/manual/figures/three_in_one.png">
+
+
+ExaGO<sup>TM</sup> is a package for solving large-scale  power grid optimization problems on parallel and distributed architectures, particularly targeted for exascale machines with heteregenous architectures (GPU). Combinations of stochastic, contingency-constrained, multiperiod ACOPF problems can be solved with ExaGO. The package is written in C/C++ with python bindings available for python-based applications. An overview of the package is given on this page. For extended information, including the modeling details and formulations, see the [ExaGO manual](docs/manual/manual.pdf). 
 
 ExaGO<sup>TM</sup> includes the following applications for solving different power grid optimization problems:
 
 - [OPFLOW](docs/web/opflow.md) solves an AC optimal power flow either on CPU and GPU
 - [TCOPFLOW](docs/web/tcopflow.md) solves a multi-period optimal power flow
-- [SCOPFLOW](docs/web/scopflow.md) solves a multi-period security-constrained (contingency-constrained) optimal power
-- [SOPFLOW](docs/web/sopflow.md) solves a stochastic security-constrained multi-period optimal power flow
+- [SCOPFLOW](docs/web/scopflow.md) solves a security-constrained (contingency-constrained) optimal power. Both single-period and multi-period problems can be solved.
+- [SOPFLOW](docs/web/sopflow.md) solves a stochastic optimal power flow with (optional) security constraints for single and multiple periods.
 
-ExaGO<sup>TM</sup> applications can use the following optimization packaages:
+ExaGO<sup>TM</sup> applications are interfaced with the following optimization solver packaages:
 
-- [IPOPT](https://github.com/coin-or/Ipopt) is a popular optimization package for solving nonlinear optimization problems that uses an interior-point algorithm.
+- [Ipopt](https://github.com/coin-or/Ipopt) is a popular optimization package for solving nonlinear optimization problems that uses an interior-point algorithm.
 - [HiOp](https://github.com/LLNL/hiop) is a HPC package for optimization. ExaGO interfaces with two of its solvers -- a mixed sparse-dense interior-point solver (NewtonMDS) and a sparse interior-point solver (HiOPSparse). NewtonMDS  allows execution of the optimization either on CPU and GPU. The sparse HiOp solver is currently supported on CPU only.
 
 Note that not all applications can utilize all solvers yet. The following table lists the solver-application compatibility.
 
-|  Solver    | OPFLOW  | TCOPFLOW | SCOPLOW | SOPFLOW |
+|  Solver   | OPFLOW  | TCOPFLOW | SCOPLOW | SOPFLOW |
 |:------:|:---------:|:-----:|:-------:|:-------:|
-| IPOPT      | Y         |  Y     | Y       | Y       | 
-| HIOP       | Y          |       |   Y      |  Y       |
+| Ipopt      | Y         |  Y     | Y       | Y       | 
+| HiOp       | Y          |       |   Y      |  Y       |
+
+Additionally, note that SCOPFLOW and SOPFLOW with HiOp solver use Ipopt to solve a portion of the problem (base problem). So one must also configure with Ipopt when using HiOp solver for these applications.
 
 ## Installing
 
-See [INSTALL.md](./INSTALL.md) for information on acquiring, building and installing ExaGO.
+Details installation instructions are given at [INSTALL.md](./INSTALL.md) for information on acquiring, building and installing ExaGO.
 
 ## Usage
 Instructions for executing the different ExaGO<sup>TM</sup> applications is given below.
@@ -48,6 +54,9 @@ Since options may be specified in more than one location (on the command line, a
 ./opflow -netfile case118.m -options_file opflowoptions
 ```
 
+## Visualization (experimental)
+ExaGO has an experimental visualization to display the results of `OPFLOW` application on a map. See the [visualization README](viz/README.md) for more information.
+
 ## Contributing
 
 Please see [the developer guidelines](docs/developer_guidelines.md) before attempting to contribute.
@@ -59,6 +68,12 @@ Feel free to raise an issue or contact the team if the guidelines are ambiguous 
 - Asher Mancinelli
 - Cameron Rutherford
 - Bruce Palmer
+- Jaelyn Litzinger
+- William Perkins
+- Sayef Azad Sakin
+- Joseph Macam
+- Ryan Danehy
+- Nicholson Koukpaizan
 
 ## Acknowledgement
 This package is developed as a part of [ExaSGD](https://www.exascaleproject.org/research-project/exasgd/) project under the [Exascale computing project](https://www.exascaleproject.org/).

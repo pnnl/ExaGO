@@ -9,6 +9,23 @@ endif()
 list(TRANSFORM RUNCMD APPEND " ")
 string(CONCAT CMD ${RUNCMD} " " ${PYTEST_EXE})
 
+# Set up a list of test to run based on current configuration
+set(TEST_FILES "test_0_initialize.py")
+
+# The PFLOW API should always be available, so let's test it
+string(APPEND TEST_FILES " " "test_1_pflow.py")
+
+# The OPFLOW API tests are currently written only for HiOP
+if(EXAGO_ENABLE_HIOP)
+  string(APPEND TEST_FILES " " "test_2_opflow.py")
+endif()
+
+# The SCOPFLOW and SOPFLOW API tests are currently written only for IPOPT
+if(EXAGO_ENABLE_IPOPT)
+  string(APPEND TEST_FILES " " "test_3_scopflow.py" " " "test_4_sopflow.py")
+endif()
+string(APPEND TEST_FILES " " "test_9_finalize.py")
+
 exago_add_test(
   NAME
   Python_pytest
@@ -18,11 +35,8 @@ exago_add_test(
   "
   export PYTHONPATH=${pythonpath}
   cd ${PROJECT_SOURCE_DIR}/tests/interfaces/python
-  ${CMD} -m nocomm -v .
+  ${CMD} -m nocomm -v ${TEST_FILES}
   "
-  DEPENDS
-  HIOP
-  IPOPT
 )
 
 exago_add_test(
@@ -34,10 +48,8 @@ exago_add_test(
   "
   export PYTHONPATH=${pythonpath}
   cd ${PROJECT_SOURCE_DIR}/tests/interfaces/python
-  ${CMD} -m MPI -v .
+  ${CMD} -m MPI -v ${TEST_FILES}
   "
   DEPENDS
-  HIOP
-  IPOPT
   MPI
 )

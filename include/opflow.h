@@ -117,6 +117,10 @@ const auto genbusvoltage = ExaGOStringOption(
         "FIXED_WITHIN_QBOUNDS",
         "FIXED_AT_SETPOINT",
     });
+const auto outputformat = ExaGOStringOption(
+    "-opflow_output_format", "Type of OPFLOW solution output format",
+    "MATPOWER", {"MATPOWER", "JSON", "CSV", "MINIMAL"});
+
 const auto has_gensetpoint =
     ExaGOBoolOption("-opflow_has_gensetpoint",
                     "Use set-points for generator real power", PETSC_FALSE);
@@ -148,7 +152,7 @@ const auto hiop_verbosity_level =
                    "Set verbosity level for HiOp solver, between 0 and 12", 0);
 const auto hiop_mem_space =
     ExaGOStringOption("-hiop_mem_space", "Set memory space for HiOp solver",
-                      "host", {"um", "device"});
+                      "host", {"default", "host", "um", "device"});
 
 #ifdef EXAGO_ENABLE_IPOPT
 const auto hiop_ipopt_debug = ExaGOBoolOption(
@@ -160,10 +164,10 @@ const auto hiop_ipopt_debug = ExaGOBoolOption(
 
 } // namespace OPFLOWOptions
 
-PETSC_EXTERN PetscErrorCode OPFLOWSetModel(OPFLOW, const char[]);
-PETSC_EXTERN PetscErrorCode OPFLOWGetModel(OPFLOW, char *);
-PETSC_EXTERN PetscErrorCode OPFLOWSetSolver(OPFLOW, const char[]);
-PETSC_EXTERN PetscErrorCode OPFLOWGetSolver(OPFLOW, char *);
+PETSC_EXTERN PetscErrorCode OPFLOWSetModel(OPFLOW, const std::string);
+PETSC_EXTERN PetscErrorCode OPFLOWGetModel(OPFLOW, std::string *);
+PETSC_EXTERN PetscErrorCode OPFLOWSetSolver(OPFLOW, const std::string);
+PETSC_EXTERN PetscErrorCode OPFLOWGetSolver(OPFLOW, std::string *);
 PETSC_EXTERN PetscErrorCode
 OPFLOWModelRegister(OPFLOW, const char[], PetscErrorCode (*create)(OPFLOW));
 PETSC_EXTERN PetscErrorCode
@@ -171,14 +175,18 @@ OPFLOWSolverRegister(OPFLOW, const char[], PetscErrorCode (*create)(OPFLOW));
 PETSC_EXTERN PetscErrorCode OPFLOWCreate(MPI_Comm, OPFLOW *);
 PETSC_EXTERN PetscErrorCode OPFLOWDestroy(OPFLOW *);
 PETSC_EXTERN PetscErrorCode OPFLOWReadMatPowerData(OPFLOW, const char[]);
+PETSC_EXTERN PetscErrorCode OPFLOWSetGICData(OPFLOW, const char[]);
+
 PETSC_EXTERN PetscErrorCode OPFLOWSetUp(OPFLOW);
 PETSC_EXTERN PetscErrorCode OPFLOWCreateGlobalVector(OPFLOW, Vec *);
 PETSC_EXTERN PetscErrorCode OPFLOWCreateMatrix(OPFLOW, Mat *);
 PETSC_EXTERN PetscErrorCode OPFLOWSolve(OPFLOW);
 PETSC_EXTERN PetscErrorCode OPFLOWSetInitialGuess(OPFLOW, Vec, Vec);
 PETSC_EXTERN PetscErrorCode OPFLOWSetTolerance(OPFLOW, PetscReal);
-PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPComputeMode(OPFLOW, const char *);
-PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPComputeMode(OPFLOW, char *);
+PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPComputeMode(OPFLOW, const std::string);
+PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPComputeMode(OPFLOW, std::string *);
+PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPMemSpace(OPFLOW, const std::string);
+PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPMemSpace(OPFLOW, std::string *);
 PETSC_EXTERN PetscErrorCode OPFLOWSetHIOPVerbosityLevel(OPFLOW, int);
 PETSC_EXTERN PetscErrorCode OPFLOWGetHIOPVerbosityLevel(OPFLOW, int *);
 PETSC_EXTERN PetscErrorCode OPFLOWGetTolerance(OPFLOW, PetscReal *);
@@ -221,7 +229,7 @@ PETSC_EXTERN PetscErrorCode OPFLOWComputeHessian(OPFLOW, Vec, Vec, PetscScalar,
 PETSC_EXTERN PetscErrorCode OPFLOWPrintSolution(OPFLOW);
 PETSC_EXTERN PetscErrorCode OPFLOWSaveSolution(OPFLOW, OutputFormat,
                                                const char[]);
-
+PETSC_EXTERN PetscErrorCode OPFLOWSaveSolutionDefault(OPFLOW, const char[]);
 PETSC_EXTERN PetscErrorCode OPFLOWGetVariableOrdering(OPFLOW, int **);
 PETSC_EXTERN PetscErrorCode OPFLOWGetSizes(OPFLOW, int *, int *, int *);
 
@@ -236,6 +244,7 @@ PETSC_EXTERN PetscErrorCode OPFLOWGetUseAGC(OPFLOW, PetscBool *);
 
 PETSC_EXTERN PetscErrorCode OPFLOWSetGenBusVoltageType(OPFLOW,
                                                        OPFLOWGenBusVoltageType);
+PETSC_EXTERN PetscErrorCode OPFLOWSetOutputFormat(OPFLOW, OutputFormat);
 PETSC_EXTERN PetscErrorCode
 OPFLOWGetGenBusVoltageType(OPFLOW, OPFLOWGenBusVoltageType *);
 PETSC_EXTERN PetscErrorCode

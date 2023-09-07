@@ -23,6 +23,7 @@ struct OpflowFunctionalityTestParameters {
   std::string description = "";
   int hiop_verbosity_level = 0;
   std::string hiop_compute_mode;
+  std::string hiop_mem_space;
   std::string initialization_string = "MIDPOINT";
   OPFLOWInitializationType initialization_type;
 
@@ -54,6 +55,7 @@ struct OpflowFunctionalityTestParameters {
     set_if_found(power_imbalance_penalty, values, "power_imbalance_penalty");
     set_if_found(initialization_string, values, "initialization_type");
     set_if_found(hiop_compute_mode, values, "hiop_compute_mode");
+    set_if_found(hiop_mem_space, values, "hiop_mem_space");
 
     if (gen_bus_voltage_string == "VARIABLE_WITHIN_BOUNDS") {
       gen_bus_voltage_type = VARIABLE_WITHIN_BOUNDS;
@@ -129,6 +131,7 @@ struct OpflowFunctionalityTests
     testcase["power_imbalance_penalty"] = params.power_imbalance_penalty;
     testcase["initialization_type"] = params.initialization_type;
     testcase["hiop_compute_mode"] = params.hiop_compute_mode;
+    testcase["hiop_mem_space"] = params.hiop_mem_space;
     testcase["hiop_verbosity_level"] = params.hiop_verbosity_level;
     testcase["obj_value"] = params.expected_obj_value;
     testcase["observed_obj_value"] = params.obj_value;
@@ -142,8 +145,13 @@ struct OpflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     OPFLOW opflow;
+    int rank;
 
-    std::cout << "Test Description: " << params.description << std::endl;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+    if (rank == 0) {
+      std::cout << "Test Description: " << params.description << std::endl;
+    }
     ierr = OPFLOWCreate(params.comm, &opflow);
     ExaGOCheckError(ierr);
 
@@ -161,10 +169,10 @@ struct OpflowFunctionalityTests
     ierr = OPFLOWSetGenBusVoltageType(opflow, params.gen_bus_voltage_type);
     ExaGOCheckError(ierr);
 
-    ierr = OPFLOWSetSolver(opflow, params.solver.c_str());
+    ierr = OPFLOWSetSolver(opflow, params.solver);
     ExaGOCheckError(ierr);
 
-    ierr = OPFLOWSetModel(opflow, params.model.c_str());
+    ierr = OPFLOWSetModel(opflow, params.model);
     ExaGOCheckError(ierr);
 
     ierr = OPFLOWHasBusPowerImbalance(opflow,
@@ -195,7 +203,9 @@ struct OpflowFunctionalityTests
     ExaGOCheckError(ierr);
 
     if (params.solver == "HIOP") {
-      ierr = OPFLOWSetHIOPComputeMode(opflow, params.hiop_compute_mode.c_str());
+      ierr = OPFLOWSetHIOPComputeMode(opflow, params.hiop_compute_mode);
+      ExaGOCheckError(ierr);
+      ierr = OPFLOWSetHIOPMemSpace(opflow, params.hiop_mem_space);
       ExaGOCheckError(ierr);
     }
 
@@ -222,10 +232,20 @@ struct OpflowFunctionalityTests
     if (!IsEqual(params.obj_value, params.expected_obj_value, params.tolerance,
                  params.error)) {
       obj_failed = true;
+#ifdef EXAGO_ENABLE_LOGGING
       params.reasons_for_failure.push_back(fmt::format(
           "expected objective value={} actual objective value={} tol={} err={}",
           params.expected_obj_value, params.obj_value, params.tolerance,
           params.error));
+#else
+      char sbuf[256];
+      sprintf(
+          sbuf,
+          "expected objective value=%e actual objective value=%e tol=%e err=%e",
+          params.expected_obj_value, params.obj_value, params.tolerance,
+          params.error);
+      params.reasons_for_failure.push_back(std::string(sbuf));
+#endif
     }
 
     /* Test num iterations */
@@ -234,9 +254,16 @@ struct OpflowFunctionalityTests
     if (params.expected_num_iters != -1 &&
         params.numiter != params.expected_num_iters) {
       num_iter_failed = true;
+#ifdef EXAGO_ENABLE_LOGGING
       params.reasons_for_failure.push_back(
           fmt::format("expected {} num iters, got {}",
                       params.expected_num_iters, params.numiter));
+#else
+      char sbuf[256];
+      sprintf(sbuf, "expected %d num iters, got %d", params.expected_num_iters,
+              params.numiter);
+      params.reasons_for_failure.push_back(std::string(sbuf));
+#endif
     }
 
     /* Did the current functionality test fail in any way? */

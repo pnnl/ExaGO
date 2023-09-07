@@ -7,12 +7,7 @@ set(CMAKE_INSTALL_PREFIX
     CACHE PATH ""
 )
 
-set(arch 60)
-message(STATUS "Using initial cuda architecture of ${arch}")
-set(CMAKE_CUDA_ARCHITECTURES
-    ${arch}
-    CACHE STRING ""
-)
+message(STATUS "Using AMD GPU target architecture of ${AMDGPU_TARGETS}")
 
 message(STATUS "Building static libraries only since HiOp is static.")
 set(EXAGO_BUILD_SHARED

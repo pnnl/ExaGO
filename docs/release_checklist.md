@@ -6,6 +6,7 @@ This document outlines the required checks performed before and after a release 
 
 Ensure all continuous integration pipelines are passing. 
 As per P025, all CI pipelines should pass before an MR is merged.
+As per P029, ensure Spack environments are re-built in CI semi frequently, especially before a release.
 This is especially important when merging `develop` -> `master`.
 Ensure all pipelines are passing before a release.
 
@@ -45,3 +46,4 @@ Update the Spack package for ExaGO.
 Modify the ExaGO spack package and build the newest version on at least one CI or target platform, and ensure that all went smoothly.
 Spack PRs sometimes take a long time to get reviewed, so it's important to get the PR opened quickly.
 
+Once a release is made, and the Spack PR is merged, make sure to update the ExaGO spack submodule and rebuild CI per P029.

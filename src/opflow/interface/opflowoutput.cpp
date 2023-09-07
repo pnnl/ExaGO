@@ -30,11 +30,11 @@ PetscErrorCode OPFLOWPrintSolution(OPFLOW opflow) {
       opflow->comm->type,
       "=============================================================\n");
   CHKERRQ(ierr);
-  ierr =
-      PetscPrintf(opflow->comm->type, "%-35s %s\n", "Model", opflow->modelname);
+  ierr = PetscPrintf(opflow->comm->type, "%-35s %s\n", "Model",
+                     opflow->modelname.c_str());
   CHKERRQ(ierr);
   ierr = PetscPrintf(opflow->comm->type, "%-35s %s\n", "Solver",
-                     opflow->solvername);
+                     opflow->solvername.c_str());
   CHKERRQ(ierr);
   ierr = PetscPrintf(opflow->comm->type, "%-35s %s\n", "Objective",
                      OPFLOWObjectiveTypes[opflow->objectivetype]);
@@ -122,6 +122,9 @@ PetscErrorCode OPFLOWSaveSolution(OPFLOW opflow, OutputFormat format,
 
   PetscFunctionBegin;
 
+  ierr = PetscLogEventBegin(opflow->outputlogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
+
   if (!opflow->solutiontops) {
     ierr = OPFLOWSolutionToPS(opflow);
     CHKERRQ(ierr);
@@ -129,5 +132,28 @@ PetscErrorCode OPFLOWSaveSolution(OPFLOW opflow, OutputFormat format,
 
   ierr = PSSaveSolution(opflow->ps, format, outfile);
   CHKERRQ(ierr);
+
+  ierr = PetscLogEventEnd(opflow->outputlogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWSaveSolution - Saves the OPFLOW solution to file using
+                       the output format set (default MATPOWER)
+
+  Input Parameters:
++ opflow - the OPFLOW object
+- outfile  - Name of output file
+*/
+PetscErrorCode OPFLOWSaveSolutionDefault(OPFLOW opflow, const char outfile[]) {
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  ierr = OPFLOWSaveSolution(opflow, opflow->outputformat, outfile);
+  CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }

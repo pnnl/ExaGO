@@ -70,7 +70,7 @@ contingencies = 'datafiles/case9/case9.cont'
 description = 'case9mod.m with IPOPT/7 contingencies'
 num_contingencies = 7
 num_iters = -1                        #different on newell(15) vs crusher/marianas(24)
-obj_value = 4.14446070461e+03
+obj_value = 4149.62788881
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'
@@ -78,7 +78,7 @@ contingencies = 'datafiles/case9/case9.cont'
 description = 'case9mod.m with IPOPT/8 contingencies'
 num_contingencies = 8
 num_iters = -1                        #different on newell(13) vs crusher/marianas(43)
-obj_value = 4.14446056529e+03
+obj_value = 4171.370249571828
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'
@@ -86,4 +86,4 @@ contingencies = 'datafiles/case9/case9.cont'
 description = 'case9mod.m with IPOPT/9 contingencies'
 num_contingencies = 9
 num_iters = -1                        #different on newell(13) vs crusher/marianas(35)
-obj_value = 4.14446056529e+03
+obj_value = 4170.2805335

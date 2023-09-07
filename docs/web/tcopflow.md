@@ -14,6 +14,8 @@ TCOPFLOW solves a multi-period AC optimal power flow problem with the objective 
 
 Here, $`N_t`$ is the number of timesteps. Each time-step has a full AC optimal power flow formulation with equality constraints $`g(x_t)`$, inequality $`h(x_t)`$ and the lower/upper bounds $`x^-, x^+`$. Additionally, the temporal coupling constraints, given by the last equation, need to be satisfied. The temporal coupling constraints in TCOPFLOW are the generator real power output ramping limits between successive time-steps.
 
+### Dependency
+ExaGO must be built with Ipopt for this application.
 
 ### Usage
 TCOPFLOW is executed via

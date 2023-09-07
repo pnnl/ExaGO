@@ -79,6 +79,16 @@ const auto ctgcfile = ExaGOStringOption("-ctgcfile", "Contingency file",
 const auto windgen = ExaGOStringOption("-windgen", "Wind generation file",
                                        "/path/to/windgen_file", {});
 
+#ifdef EXAGO_ENABLE_HIOP
+const auto verbosity_level = ExaGOIntOption(
+    "-hiop_verbosity_level", "SOPFLOW subproblem verbosity level",
+    OPFLOWOptions::hiop_verbosity_level.default_value);
+
+const auto hiop_mem_space =
+    ExaGOStringOption("-hiop_mem_space", "Set memory space for HiOp solver",
+                      OPFLOWOptions::hiop_mem_space.default_value,
+                      OPFLOWOptions::hiop_mem_space.possible_values);
+#endif
 } // namespace SOPFLOWOptions
 
 PETSC_EXTERN PetscErrorCode SOPFLOWEnableMultiContingency(SOPFLOW, PetscBool);
@@ -117,10 +127,13 @@ PETSC_EXTERN PetscErrorCode SOPFLOWGetSolution(SOPFLOW, PetscInt, Vec *);
 PETSC_EXTERN PetscErrorCode SOPFLOWPrintSolution(SOPFLOW, PetscInt);
 PETSC_EXTERN PetscErrorCode SOPFLOWSaveSolution(SOPFLOW, PetscInt, OutputFormat,
                                                 const char[]);
+PETSC_EXTERN PetscErrorCode SOPFLOWSaveSolutionDefault(SOPFLOW, PetscInt,
+                                                       const char[]);
 PETSC_EXTERN PetscErrorCode SOPFLOWSaveSolutionAll(SOPFLOW, OutputFormat,
                                                    const char[]);
+PETSC_EXTERN PetscErrorCode SOPFLOWSaveSolutionAllDefault(SOPFLOW,
+                                                          const char[]);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetConvergenceStatus(SOPFLOW, PetscBool *);
-PETSC_EXTERN PetscErrorCode SOPFLOWGetMode(SOPFLOW, PetscInt *);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetNumIterations(SOPFLOW, PetscInt *);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetTolerance(SOPFLOW, PetscReal);
 PETSC_EXTERN PetscErrorCode SOPFLOWGetTolerance(SOPFLOW, PetscReal *);
@@ -129,12 +142,16 @@ PETSC_EXTERN PetscErrorCode SOPFLOWSetTimeStepandDuration(SOPFLOW, PetscReal,
                                                           PetscReal);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetLoadProfiles(SOPFLOW, const char[],
                                                    const char[]);
-PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemModel(SOPFLOW, const char[]);
-PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemSolver(SOPFLOW, const char[]);
+PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemModel(SOPFLOW,
+                                                      const std::string);
+PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemSolver(SOPFLOW,
+                                                       const std::string);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetIgnoreLineflowConstraints(SOPFLOW,
                                                                 PetscBool);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemComputeMode(SOPFLOW,
-                                                            const char[]);
+                                                            const std::string);
 PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemVerbosityLevel(SOPFLOW, int);
+PETSC_EXTERN PetscErrorCode SOPFLOWSetSubproblemMemSpace(SOPFLOW,
+                                                         const std::string);
 
 #endif

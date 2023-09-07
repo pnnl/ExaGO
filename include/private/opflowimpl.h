@@ -21,6 +21,12 @@ extern const char *const OPFLOWObjectiveTypes[];
 
 extern const char *const OPFLOWGenBusVoltageTypes[];
 
+typedef enum { DEFAULT = 0, HOST = 1, UM = 2, DEVICE = 3 } HIOPMemSpace;
+
+extern const char *HIOPMemSpaceChoices[];
+
+extern const char *const OPFLOWOutputFormatTypes[];
+
 struct _p_OPFLOWModelOps {
   PetscErrorCode (*destroy)(OPFLOW);
   PetscErrorCode (*setup)(OPFLOW);
@@ -99,6 +105,10 @@ struct _p_OPFLOWModelOps {
   PetscErrorCode (*computedensehessianhiop)(OPFLOW, const double *,
                                             const double *,
                                             double *); /* Dense Hessian */
+  PetscErrorCode (*solutioncallbackhiop)(
+      OPFLOW, const double *, const double *, const double *, const double *,
+      const double *,
+      double); // Call back for final solution
 
   /* Auxillary objective,gradient and hessian functions */
   /* Some applications may require to add custom objective function values in
@@ -184,6 +194,8 @@ struct _p_OPFLOW {
 
   OPFLOWGenBusVoltageType genbusvoltagetype; /* OPFLOW Genbus voltage type */
 
+  OutputFormat outputformat; /* Format for output data */
+
   PetscInt nconeq, Nconeq; /* Local and global number of equality constraints,
                               excluding ghosts! */
   PetscInt nconineq,
@@ -204,13 +216,13 @@ struct _p_OPFLOW {
 
   void *solver; /* Solver object */
   struct _p_OPFLOWSolverOps solverops;
-  char solvername[64];
+  std::string solvername;
 
   void *model; /* Model object */
   struct _p_OPFLOWModelOps modelops;
-  char modelname[64];
+  std::string modelname;
 
-  char _p_hiop_compute_mode[64];
+  std::string _p_hiop_compute_mode;
   int _p_hiop_verbosity_level;
 
   /* List of models and solvers registered */
@@ -280,7 +292,11 @@ struct _p_OPFLOW {
   PetscLogEvent objlogger, gradlogger, eqconslogger, ineqconslogger,
       eqconsjaclogger, ineqconsjaclogger, hesslogger, solvelogger,
       densehesslogger, sparsehesslogger, denseineqconsjaclogger,
-      denseeqconsjaclogger;
+      denseeqconsjaclogger, outputlogger;
+
+  /** @brief OPFLOWSolve time */
+  PetscLogDouble solve_real_time;
+  PetscLogDouble solve_cpu_time;
 
   /** @brief number of nonzeros used with HiOP MDS */
   PetscInt nnz_eqjacsp, nnz_ineqjacsp, nnz_hesssp;
@@ -291,6 +307,8 @@ struct _p_OPFLOW {
   PetscBool skip_options; /* Skip run-time options */
 
   PetscScalar weight; /* Weight for this system condition (0,1) */
+
+  HIOPMemSpace mem_space; /* Memory space used with HIOP */
 };
 
 /* Registers all the OPFLOW models */
@@ -309,5 +327,11 @@ extern PetscErrorCode OPFLOWSetNumVariables(OPFLOW, PetscInt *, PetscInt *,
 /* Internal function to set number of constraints */
 extern PetscErrorCode OPFLOWSetNumConstraints(OPFLOW, PetscInt *, PetscInt *,
                                               PetscInt *, PetscInt *);
+
+extern PetscErrorCode OPFLOWNaturalToSpDense(OPFLOW, const double *, double *);
+
+extern PetscErrorCode OPFLOWSpDenseToNatural(OPFLOW, const double *, double *);
+
+extern PetscErrorCode OPFLOWSetSummaryStats(OPFLOW);
 
 #endif

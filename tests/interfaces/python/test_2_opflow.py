@@ -171,6 +171,16 @@ def test_set_hiop_compute_mode():
 
 @pytest.mark.nocomm
 @pytest.mark.MPI
+def test_set_hiop_mem_space():
+    '''Testing hiop memory space'''
+    opf = exago.OPFLOW()
+    opf.set_hiop_mem_space("DEVICE")
+    mode = opf.get_hiop_mem_space()
+    assert mode == "DEVICE"
+
+
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_set_hiop_verbosity():
     '''Testing setting hiop verbosity level'''
     opf = exago.OPFLOW()
@@ -188,6 +198,7 @@ def test_solve_opflow():
     opf = exago.OPFLOW()
     opf.set_solver("HIOP")
     opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_mem_space("DEFAULT")
     opf.set_hiop_compute_mode("CPU")
     path = exago.prefix()
     opf.read_mat_power_data(os.path.join(
@@ -198,10 +209,11 @@ def test_solve_opflow():
 @pytest.mark.nocomm
 @pytest.mark.MPI
 def test_obj_func():
-    '''Testing objective function value'''
+    '''Testing objective function value and iterations'''
     opf = exago.OPFLOW()
     opf.set_solver("HIOP")
     opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_mem_space("DEFAULT")
     opf.set_hiop_compute_mode("CPU")
     path = exago.prefix()
     opf.read_mat_power_data(os.path.join(
@@ -212,6 +224,8 @@ def test_obj_func():
     opf.solve()
     obj = opf.get_objective()
     assert isinstance(obj, float)
+    niter = opf.get_num_iterations()
+    assert isinstance(niter, int)
 
 
 @pytest.mark.nocomm
@@ -221,6 +235,7 @@ def test_convergence_status():
     opf = exago.OPFLOW()
     opf.set_solver("HIOP")
     opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_mem_space("DEFAULT")
     opf.set_hiop_compute_mode("CPU")
     path = exago.prefix()
     opf.read_mat_power_data(os.path.join(
@@ -333,6 +348,25 @@ def test_set_bus_powerimbalance_penalty_opflow():
 
 @pytest.mark.nocomm
 @pytest.mark.MPI
+def test_set_weight():
+    '''Testing set_weight'''
+    opf = exago.OPFLOW()
+    opf.set_weight(0.5)
+    # There is currently no opflow.get_weight()
+
+
+@pytest.mark.nocomm
+@pytest.mark.MPI
+def test_skip_options():
+    '''Testing skip_options'''
+    opf = exago.OPFLOW()
+    opf.skip_options(True)
+    opf.skip_options(False)
+    # There is currently no query method for this
+
+
+@pytest.mark.nocomm
+@pytest.mark.MPI
 def test_ps():
     '''Testing ps set up'''
     opf = exago.OPFLOW()
@@ -349,6 +383,7 @@ def test_ps_set_gen_power_limits():
     opf = exago.OPFLOW()
     opf.set_solver("HIOP")
     opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_mem_space("DEFAULT")
     opf.set_hiop_compute_mode("CPU")
     path = exago.prefix()
     opf.read_mat_power_data(os.path.join(
@@ -365,6 +400,7 @@ def test_solution_to_ps():
     opf = exago.OPFLOW()
     opf.set_solver("HIOP")
     opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_mem_space("DEFAULT")
     opf.set_hiop_compute_mode("CPU")
     path = exago.prefix()
     opf.read_mat_power_data(os.path.join(
@@ -382,6 +418,7 @@ def test_get_gen_dispatch():
     opf = exago.OPFLOW()
     opf.set_solver("HIOP")
     opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_mem_space("DEFAULT")
     opf.set_hiop_compute_mode("CPU")
     opf.set_hiop_verbosity_level(3)
     path = exago.prefix()
@@ -403,6 +440,7 @@ def test_save_solution():
     opf = exago.OPFLOW()
     opf.set_solver("HIOP")
     opf.set_model("POWER_BALANCE_HIOP")
+    opf.set_hiop_mem_space("DEFAULT")
     opf.set_hiop_compute_mode("CPU")
     path = exago.prefix()
     opf.read_mat_power_data(os.path.join(

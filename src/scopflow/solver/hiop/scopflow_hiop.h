@@ -7,11 +7,7 @@
 #ifndef SCOPFLOWHIOP_HPP
 #define SCOPFLOWHIOP_HPP
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <scopflow.h>
-#include <string>
 
 #include <hiopAlgPrimalDecomp.hpp>
 #include <hiopInterfacePrimalDecomp.hpp>

@@ -38,7 +38,7 @@ PetscErrorCode TCOPFLOWPrintSolution(TCOPFLOW tcopflow, PetscInt t_num) {
       "=============================================================\n");
   CHKERRQ(ierr);
   ierr = PetscPrintf(tcopflow->comm->type, "%-35s %s\n", "OPFLOW Model",
-                     opflow->modelname);
+                     opflow->modelname.c_str());
   CHKERRQ(ierr);
   ierr = PetscPrintf(tcopflow->comm->type, "%-35s %s\n", "Solver",
                      tcopflow->solvername);

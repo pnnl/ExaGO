@@ -21,12 +21,13 @@ int main(int argc, char **argv) {
   // The corresponding script will search for XXX and ensure this message is
   // only logged one time per run, no matter how many processes it's launched
   // with
-  ExaGOLog(comm, 10, "XXX: {}",
+  ExaGOLog(10, "XXX: {}",
            "This message should only be printed on a single rank");
 
   // The same script will ensure this message occurs as many times as processes
   // the executable is launched with
-  ExaGOLog(10, "YYY: {}", "This message should be printed on every rank");
+  ExaGOLog(MPI_COMM_SELF, 10, "YYY: {}",
+           "This message should be printed on every rank");
 
   ExaGOFinalize();
   return 0;

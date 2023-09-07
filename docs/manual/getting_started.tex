@@ -1,7 +1,7 @@
 \section{System requirements}
 
 \exago is currently only built on 64b OSX and Linux machines, compiled with GCC $>= 7.3$.
-We build \exago on Intel and IBM Power9 architectures.
+We build \exago on Intel, AMD, and IBM Power9 architectures.
 
 \section{Prerequisites}
 
@@ -18,7 +18,7 @@ For example, \texttt{/path/to/cuda} is a placeholder for a path to a valid \text
 
 \section{Dependencies}
 
-\exago has the dependencies listed in table \ref{tab:deps}. The versions of dependencies listed are those we have tested with, though newer version may also be compatible.
+\exago at version \exagoversion has the dependencies listed in table \ref{tab:deps}. The versions of dependencies listed are those we have tested with, though newer version may also be compatible.
 
 \begin{table}[h]
   \caption{\label{tab:deps}Dependency Table}
@@ -28,13 +28,13 @@ For example, \texttt{/path/to/cuda} is a placeholder for a path to a valid \text
     \hline
     \petsc & 3.16.x & \checkmark & Core dependency \\ \hline
     \cmake & 3.18 & \checkmark & Only a build dependency \\ \hline
-    MPI & 3.1.3 & & Only tested with \texttt{openmpi} and \texttt{spectrummpi} \\ \hline
+    MPI & 4.1 & & Only tested with \texttt{openmpi} and \texttt{spectrummpi} \\ \hline
     \ipopt & 3.12 & & \\ \hline
-    \hiop & 0.5.1 & & Prefer dynamically linked \\ \hline
+    \hiop & 0.7.1 & & Prefer dynamically linked \\ \hline
     \raja & 0.14.0 & & \\ \hline
-    \href{https://github.com/LLNL/umpire}{Umpire \cite{umpire}} & 6.0..0 & & Only when RAJA is enabled \\ \hline
+    \href{https://github.com/LLNL/umpire}{Umpire \cite{umpire}} & 6.0.0 & & Only when RAJA is enabled \\ \hline
     \magma & 2.6.1 & & Only when GPU acceleration is enabled \\ \hline
-    \cuda & 10.2.89 through 11.1& & Only when GPU acceleration is enabled \\
+    \cuda &  11.4 & & Only when GPU acceleration is enabled \\
     \hline
   \end{tabular}
   
@@ -52,12 +52,11 @@ Some end-to-end examples in this document will use system-specific modules and a
 For example, the modules needed to build and run \exago on Newell, an IBM Power9 PNNL cluster, are as follows:
 
 \begin{lstlisting}[language=bash]
-> module load gcc/7.4.0
-> module load openmpi/3.1.5
-> module load cuda/10.2
-> module load magma/2.5.2_cuda10.2
-> module load metis/5.1.0
-> module load cmake/3.16.4
+> module load gcc/8.5.0
+> module load openmpi/4.1.4
+> module load cuda/11.4
+> module load python/miniconda3.8
+> module load cmake/3.19.6
 \end{lstlisting}
 
 \subsection{Additional Notes on GPU Accelerators}
@@ -131,12 +130,11 @@ similar modules (with different version numbers) are likely to be available on
 other platforms.
 
 \begin{lstlisting}[language=bash,caption={\exago build with all options enabled}]
-> module load gcc/7.4.0
-> module load cmake/3.16.4
-> module load openmpi/3.1.5
-> module load magma/2.5.2_cuda10.2
-> module load metis/5.1.0
-> module load cuda/10.2
+> module load gcc/8.5.0
+> module load openmpi/4.1.4
+> module load cuda/11.4
+> module load python/miniconda3.8
+> module load cmake/3.19.6
 > git clone https://gitlab.pnnl.gov/exasgd/frameworks/exago.git exago
 > export EXAGODIR=$PWD/exago
 > cd $EXAGODIR

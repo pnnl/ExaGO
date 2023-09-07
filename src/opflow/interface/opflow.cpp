@@ -22,10 +22,44 @@ const char *const OPFLOWGenBusVoltageTypes[] = {"VARIABLE_WITHIN_BOUNDS",
                                                 "",
                                                 NULL};
 
+const char *const OPFLOWOutputFormatTypes[] = {
+    "MATPOWER", "CSV", "JSON", "MINIMAL", "OutputFormat", "", NULL};
+
 void swap_dm(DM *dm1, DM *dm2) {
   DM temp = *dm1;
   *dm1 = *dm2;
   *dm2 = temp;
+}
+
+/* Converts an array xin in natural ordering to an array xout in sparse-dense
+   ordering
+   Used only with HIOP solver
+*/
+PetscErrorCode OPFLOWNaturalToSpDense(OPFLOW opflow, const double *xin,
+                                      double *xout) {
+  int i;
+
+  PetscFunctionBegin;
+  for (i = 0; i < opflow->nx; i++) {
+    xout[opflow->idxn2sd_map[i]] = xin[i];
+  }
+
+  PetscFunctionReturn(0);
+}
+
+/* Converts an array xin in sparse dense ordering to an array xout in natural
+   ordering
+   Used only with HIOP solver
+*/
+PetscErrorCode OPFLOWSpDenseToNatural(OPFLOW opflow, const double *xin,
+                                      double *xout) {
+  int i;
+
+  PetscFunctionBegin;
+  for (i = 0; i < opflow->nx; i++) {
+    xout[i] = xin[opflow->idxn2sd_map[i]];
+  }
+  PetscFunctionReturn(0);
 }
 
 /* Sets the list of lines monitored */
@@ -58,6 +92,22 @@ PetscErrorCode OPFLOWGetLinesMonitored(OPFLOW opflow) {
       }
     }
   }
+  PetscFunctionReturn(0);
+}
+
+/*
+   OPFLOWSetOutputFormat - Sets the format for solving the solution
+
+   Input Parameters:
++  opflow - the opflow object
+-  otype  - output format type
+
+   Command-line option: -opflow_output_format
+   Notes: Must be called before OPFLOWSetUp()
+*/
+PetscErrorCode OPFLOWSetOutputFormat(OPFLOW opflow, OutputFormat otype) {
+  PetscFunctionBegin;
+  opflow->outputformat = otype;
   PetscFunctionReturn(0);
 }
 
@@ -246,9 +296,9 @@ PetscErrorCode OPFLOWGetBusPowerImbalancePenalty(OPFLOW opflow,
 
   Command-line option: -hiop_compute_mode
 */
-PetscErrorCode OPFLOWSetHIOPComputeMode(OPFLOW opflow, const char *mode) {
+PetscErrorCode OPFLOWSetHIOPComputeMode(OPFLOW opflow, const std::string mode) {
   PetscFunctionBegin;
-  strcpy(opflow->_p_hiop_compute_mode, mode);
+  opflow->_p_hiop_compute_mode = mode;
   PetscFunctionReturn(0);
 }
 
@@ -258,9 +308,50 @@ PetscErrorCode OPFLOWSetHIOPComputeMode(OPFLOW opflow, const char *mode) {
 + opflow - OPFLOW object
 - mode - mode for HIOP solver
 */
-PetscErrorCode OPFLOWGetHIOPComputeMode(OPFLOW opflow, char *mode) {
+PetscErrorCode OPFLOWGetHIOPComputeMode(OPFLOW opflow, std::string *mode) {
   PetscFunctionBegin;
-  strcpy(mode, opflow->_p_hiop_compute_mode);
+  *mode = opflow->_p_hiop_compute_mode;
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWSetHIOPMemSpace - Set mem space for HIOP solver
+  Input parameters
++ opflow - OPFLOW object
+- mem_space - memory space for HIOP solver
+
+  Command-line option: -hiop_mem_space
+*/
+PetscErrorCode OPFLOWSetHIOPMemSpace(OPFLOW opflow,
+                                     const std::string mem_space) {
+  PetscFunctionBegin;
+  if (mem_space == "DEFAULT")
+    opflow->mem_space = static_cast<HIOPMemSpace>(0);
+  else if (mem_space == "HOST")
+    opflow->mem_space = static_cast<HIOPMemSpace>(1);
+  else if (mem_space == "UM")
+    opflow->mem_space = static_cast<HIOPMemSpace>(2);
+  else if (mem_space == "DEVICE")
+    opflow->mem_space = static_cast<HIOPMemSpace>(3);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWGetHIOPMemSpace - Get mem space for HIOP solver
+  Input parameters
++ opflow - OPFLOW object
+- mem_space - memory space for HIOP solver
+*/
+PetscErrorCode OPFLOWGetHIOPMemSpace(OPFLOW opflow, std::string *mem_space) {
+  PetscFunctionBegin;
+  if (opflow->mem_space == 0)
+    *mem_space = "DEFAULT";
+  else if (opflow->mem_space == 1)
+    *mem_space = "HOST";
+  else if (opflow->mem_space == 2)
+    *mem_space = "UM";
+  else if (opflow->mem_space == 3)
+    *mem_space = "DEVICE";
   PetscFunctionReturn(0);
 }
 
@@ -289,6 +380,7 @@ PetscErrorCode OPFLOWGetHIOPVerbosityLevel(OPFLOW opflow, int *level) {
   *level = opflow->_p_hiop_verbosity_level;
   PetscFunctionReturn(0);
 }
+
 /*
   OPFLOWHasGenSetPoint - Use gen. set point in the OPFLOW formulation
 
@@ -672,10 +764,8 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
   ierr = PSSetApplication(opflow->ps, opflow, APP_ACOPF);
   CHKERRQ(ierr);
 
-  (void)std::strncpy(opflow->modelname, OPFLOWOptions::model.opt.c_str(),
-                     sizeof(opflow->modelname));
-  (void)std::strncpy(opflow->solvername, OPFLOWOptions::solver.opt.c_str(),
-                     sizeof(opflow->solvername));
+  opflow->modelname = OPFLOWOptions::model.opt;
+  opflow->solvername = OPFLOWOptions::solver.opt;
 
   opflow->Nconeq = opflow->nconeq = -1;
   opflow->Nconineq = opflow->nconineq = -1;
@@ -707,6 +797,9 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
   opflow->genbusvoltagetype = static_cast<OPFLOWGenBusVoltageType>(
       OPFLOWOptions::genbusvoltage.ToEnum(OPFLOWGenBusVoltageTypes, 3));
 
+  opflow->outputformat = static_cast<OutputFormat>(
+      OPFLOWOptions::outputformat.ToEnum(OPFLOWOutputFormatTypes, 4));
+
   opflow->nmodelsregistered = opflow->nsolversregistered = 0;
   opflow->OPFLOWModelRegisterAllCalled = opflow->OPFLOWSolverRegisterAllCalled =
       PETSC_FALSE;
@@ -737,7 +830,7 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
   opflow->nlinesmon = 0;
   opflow->linesmon = NULL;
 
-  strcpy(opflow->_p_hiop_compute_mode, "auto");
+  opflow->_p_hiop_compute_mode = "auto";
   opflow->_p_hiop_verbosity_level = 0;
 
   opflow->skip_options = PETSC_FALSE;
@@ -936,13 +1029,14 @@ PetscErrorCode OPFLOWGetTolerance(OPFLOW opflow, PetscReal *tol) {
 
   Note: must be called before OPFLOWSetUp
 */
-PetscErrorCode OPFLOWSetSolver(OPFLOW opflow, const char *solvername) {
+PetscErrorCode OPFLOWSetSolver(OPFLOW opflow, const std::string solvername) {
   PetscErrorCode ierr, (*r)(OPFLOW) = NULL;
   PetscInt i;
   PetscFunctionBegin;
   PetscBool match;
   for (i = 0; i < opflow->nsolversregistered; i++) {
-    ierr = PetscStrcmp(opflow->OPFLOWSolverList[i].name, solvername, &match);
+    ierr = PetscStrcmp(opflow->OPFLOWSolverList[i].name, solvername.c_str(),
+                       &match);
     CHKERRQ(ierr);
     if (match) {
       r = opflow->OPFLOWSolverList[i].create;
@@ -954,15 +1048,14 @@ PetscErrorCode OPFLOWSetSolver(OPFLOW opflow, const char *solvername) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
             "Unknown type for OPFLOW Solver %s. You may need to rebuild ExaGO "
             "to support this solver.",
-            solvername);
+            solvername.c_str());
 
   /* Initialize (Null) the function pointers */
   opflow->solverops.destroy = 0;
   opflow->solverops.solve = 0;
   opflow->solverops.setup = 0;
 
-  ierr = PetscStrcpy(opflow->solvername, solvername);
-  CHKERRQ(ierr);
+  opflow->solvername = solvername;
   /* Call the underlying implementation constructor */
   ierr = (*r)(opflow);
   CHKERRQ(ierr);
@@ -977,10 +1070,9 @@ PetscErrorCode OPFLOWSetSolver(OPFLOW opflow, const char *solvername) {
 + opflow - opflow application object
 - solvername - name of the solver
 */
-PetscErrorCode OPFLOWGetSolver(OPFLOW opflow, char *solvername) {
-  PetscErrorCode ierr;
-  ierr = PetscStrcpy(solvername, opflow->solvername);
-  CHKERRQ(ierr);
+PetscErrorCode OPFLOWGetSolver(OPFLOW opflow, std::string *solvername) {
+  PetscFunctionBegin;
+  *solvername = opflow->solvername;
   PetscFunctionReturn(0);
 }
 
@@ -993,13 +1085,14 @@ PetscErrorCode OPFLOWGetSolver(OPFLOW opflow, char *solvername) {
 
   Note: must be called before OPFLOWSetUp
 */
-PetscErrorCode OPFLOWSetModel(OPFLOW opflow, const char *modelname) {
+PetscErrorCode OPFLOWSetModel(OPFLOW opflow, const std::string modelname) {
   PetscErrorCode ierr, (*r)(OPFLOW) = NULL;
   PetscInt i;
   PetscFunctionBegin;
   PetscBool match;
   for (i = 0; i < opflow->nmodelsregistered; i++) {
-    ierr = PetscStrcmp(opflow->OPFLOWModelList[i].name, modelname, &match);
+    ierr =
+        PetscStrcmp(opflow->OPFLOWModelList[i].name, modelname.c_str(), &match);
     CHKERRQ(ierr);
     if (match) {
       r = opflow->OPFLOWModelList[i].create;
@@ -1011,7 +1104,7 @@ PetscErrorCode OPFLOWSetModel(OPFLOW opflow, const char *modelname) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
             "Unknown type for OPFLOW Model %s. You may need to rebuild ExaGO "
             "with the solver that supports this model.",
-            modelname);
+            modelname.c_str());
 
   /* Null the function pointers */
   opflow->modelops.destroy = 0;
@@ -1049,12 +1142,12 @@ PetscErrorCode OPFLOWSetModel(OPFLOW opflow, const char *modelname) {
   opflow->modelops.computedenseequalityconstraintjacobianhiop = 0;
   opflow->modelops.computedenseinequalityconstraintjacobianhiop = 0;
   opflow->modelops.computedensehessianhiop = 0;
+  opflow->modelops.solutioncallbackhiop = 0;
   opflow->modelops.computeauxobjective = 0;
   opflow->modelops.computeauxgradient = 0;
   opflow->modelops.computeauxhessian = 0;
 
-  ierr = PetscStrcpy(opflow->modelname, modelname);
-  CHKERRQ(ierr);
+  opflow->modelname = modelname;
   /* Call the underlying implementation constructor */
   ierr = (*r)(opflow);
   CHKERRQ(ierr);
@@ -1069,10 +1162,9 @@ PetscErrorCode OPFLOWSetModel(OPFLOW opflow, const char *modelname) {
 + opflow - opflow application object
 - modelname - name of the model
 */
-PetscErrorCode OPFLOWGetModel(OPFLOW opflow, char *modelname) {
-  PetscErrorCode ierr;
-  ierr = PetscStrcpy(modelname, opflow->modelname);
-  CHKERRQ(ierr);
+PetscErrorCode OPFLOWGetModel(OPFLOW opflow, std::string *modelname) {
+  PetscFunctionBegin;
+  *modelname = opflow->modelname;
   PetscFunctionReturn(0);
 }
 
@@ -1093,6 +1185,28 @@ PetscErrorCode OPFLOWReadMatPowerData(OPFLOW opflow, const char netfile[]) {
   CHKERRQ(ierr);
   //  ierr = PetscPrintf(opflow->comm->type,"OPFLOW: Finished reading network
   //  data file %s\n",netfile);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  OPFLOWSetGICData - Sets the GIC data file
+
+  Input Parameter
++  opflow - The OPFLOW object
+-  gicfile - The name of the GIC data file
+
+  Notes: The GIC data file is only used for visualization. It contains the
+substation geospatial coordinates and mapping of buses to substations. See the
+Electric Grid Data Repository files for examples of GIC data files (given for
+CTIVSg cases)
+*/
+PetscErrorCode OPFLOWSetGICData(OPFLOW opflow, const char gicfile[]) {
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  /* Set GIC data file */
+  ierr = PSSetGICData(opflow->ps, gicfile);
+  CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -1380,6 +1494,13 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
                             (PetscEnum *)&opflow->genbusvoltagetype, NULL);
     CHKERRQ(ierr);
 
+    ierr = PetscOptionsEnum(OPFLOWOptions::outputformat.opt.c_str(),
+                            OPFLOWOptions::outputformat.desc.c_str(), "",
+                            OPFLOWOutputFormatTypes,
+                            (PetscEnum)opflow->outputformat,
+                            (PetscEnum *)&opflow->outputformat, NULL);
+    CHKERRQ(ierr);
+
     ierr = PetscOptionsBool(OPFLOWOptions::has_gensetpoint.opt.c_str(),
                             OPFLOWOptions::has_gensetpoint.desc.c_str(), "",
                             opflow->has_gensetpoint, &opflow->has_gensetpoint,
@@ -1500,6 +1621,27 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   if (!opflow->ignore_lineflow_constraints) {
     ierr = OPFLOWGetLinesMonitored(opflow);
     CHKERRQ(ierr);
+  }
+  if (opflow->include_loadloss_variables) {
+    int l, nload;
+    int i, nbus;
+    PS ps;
+    PSBUS bus;
+    PSLOAD load;
+
+    ierr = OPFLOWGetPS(opflow, &ps);
+    CHKERRQ(ierr);
+
+    for (i = 0; i < ps->nbus; i++) {
+      bus = &(ps->bus[i]);
+      for (l = 0; l < bus->nload; l++) {
+        ierr = PSBUSGetLoad(bus, l, &load);
+        CHKERRQ(ierr);
+        if (load->loss_cost == BOGUSLOSSCOST) {
+          load->loss_cost = opflow->loadloss_penalty;
+        }
+      }
+    }
   }
 
   ierr = PetscCalloc1(ps->nbus, &opflow->busnvararray);
@@ -1733,6 +1875,12 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
                                &opflow->denseeqconsjaclogger);
   CHKERRQ(ierr);
 
+  ierr = PetscLogEventRegister("OPFLOWSaveSolution", 0, &opflow->outputlogger);
+  CHKERRQ(ierr);
+
+  opflow->solve_real_time = 0.0;
+  opflow->solve_cpu_time = 0.0;
+
   /* Compute area participation factors */
   ierr = PSComputeParticipationFactors(ps);
   CHKERRQ(ierr);
@@ -1830,8 +1978,14 @@ PetscErrorCode OPFLOWSetInitialGuess(OPFLOW opflow, Vec X, Vec Lambda) {
 */
 PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
   PetscErrorCode ierr;
-
+  PetscLogDouble real1 = 0.0, real2 = 0.0;
+  PetscLogDouble cpu1 = 0.0, cpu2 = 0.0;
   PetscFunctionBegin;
+
+  ierr = PetscTime(&real1);
+  CHKERRQ(ierr);
+  ierr = PetscGetCPUTime(&cpu1);
+  CHKERRQ(ierr);
 
   if (!opflow->setupcalled) {
     ierr = OPFLOWSetUp(opflow);
@@ -1846,6 +2000,14 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
   CHKERRQ(ierr);
 
   //  ierr = VecView(opflow->X,0);CHKERRQ(ierr);
+
+  ierr = PetscTime(&real2);
+  CHKERRQ(ierr);
+  ierr = PetscGetCPUTime(&cpu2);
+  CHKERRQ(ierr);
+
+  opflow->solve_real_time = real2 - real1;
+  opflow->solve_cpu_time = cpu2 - cpu1;
 
   PetscFunctionReturn(0);
 }
@@ -2480,6 +2642,7 @@ PetscErrorCode OPFLOWGetConvergenceStatus(OPFLOW opflow, PetscBool *status) {
 */
 PetscErrorCode OPFLOWSolutionToPS(OPFLOW opflow) {
   PetscErrorCode ierr;
+  PetscBool conv_status;
 
   PetscFunctionBegin;
 
@@ -2487,6 +2650,12 @@ PetscErrorCode OPFLOWSolutionToPS(OPFLOW opflow) {
 
   /* Save the objective to PS */
   opflow->ps->opflowobj = opflow->obj;
+
+  /* Save convergence status to PS */
+  ierr = OPFLOWGetConvergenceStatus(opflow, &conv_status);
+  opflow->ps->opflow_converged = conv_status;
+
+  ierr = OPFLOWSetSummaryStats(opflow);
 
   opflow->solutiontops = PETSC_TRUE;
   PetscFunctionReturn(0);
@@ -2574,6 +2743,8 @@ PetscErrorCode OPFLOWSetUpPS(OPFLOW opflow) {
   PetscFunctionBegin;
   ierr = PSSetUp(opflow->ps);
   CHKERRQ(ierr);
+  /* set individual load costs if necessary */
+
   PetscFunctionReturn(0);
 }
 
@@ -2712,6 +2883,88 @@ PetscErrorCode OPFLOWSetLinesMonitored(OPFLOW opflow, PetscInt nkvlevels,
   PetscFunctionReturn(0);
 }
 
+/*
+  OPFLOWSetSummaryStats - Sets the summary stats for the OPFLOW run
+
+  Inputs:
+. opflow - the OPFLOW object
+*/
+PetscErrorCode OPFLOWSetSummaryStats(OPFLOW opflow) {
+  PS ps = opflow->ps;
+  PSSystemSummary *sys_info = &ps->sys_info;
+  PetscInt i, k, l;
+  PSBUS bus;
+  PSGEN gen;
+  PSLOAD load;
+  PetscScalar Pgcap_tot;                /* Total generation capacity  */
+  PetscScalar PgcapON_tot;              /* Total generation capacity online */
+  PetscScalar PgON_tot, QgON_tot = 0.0; /* Total online generation */
+  PetscScalar Pd_tot, Qd_tot;           /* Total load */
+  PetscScalar Pdshed_tot, Qdshed_tot;   /* Total load shed */
+  PetscErrorCode ierr;
+  PetscScalar MVAbase = ps->MVAbase;
+
+  PetscFunctionBegin;
+
+  sys_info->Nbus = ps->Nbus;
+  sys_info->Ngen = ps->Ngen;
+  sys_info->NgenON = ps->NgenON;
+  sys_info->Nline = ps->Nline;
+  sys_info->NlineON = ps->NlineON;
+  sys_info->Nload = ps->Nload;
+
+  sys_info->total_genON[0] = sys_info->total_genON[1] = 0.0;
+  sys_info->total_pgencap = sys_info->total_pgencapON = 0.0;
+  sys_info->total_load[0] = sys_info->total_load[1] = 0.0;
+  sys_info->total_loadshed[0] = sys_info->total_loadshed[1] = 0.0;
+
+  PgON_tot = QgON_tot = Pgcap_tot = PgcapON_tot = Pd_tot = Qd_tot = Pdshed_tot =
+      Qdshed_tot = 0.0;
+
+  for (i = 0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+
+    /* Total generation */
+    for (k = 0; k < bus->ngen; k++) {
+      ierr = PSBUSGetGen(bus, k, &gen);
+      CHKERRQ(ierr);
+      if (gen->status) {
+        PgON_tot += gen->pg;
+        QgON_tot += gen->qg;
+
+        PgcapON_tot += gen->pt;
+      }
+      Pgcap_tot += gen->pt;
+    }
+
+    /* Total load and load shed */
+    for (l = 0; l < bus->nload; l++) {
+      ierr = PSBUSGetLoad(bus, l, &load);
+      CHKERRQ(ierr);
+      Pd_tot += load->pl;
+      Qd_tot += load->ql;
+
+      Pdshed_tot += load->pl_loss;
+      Qdshed_tot += load->ql_loss;
+    }
+  }
+  sys_info->total_genON[0] = PgON_tot * MVAbase;
+  sys_info->total_genON[1] = QgON_tot * MVAbase;
+  sys_info->total_pgencap = Pgcap_tot * MVAbase;
+  sys_info->total_pgencapON = PgcapON_tot * MVAbase;
+
+  sys_info->total_load[0] = Pd_tot * MVAbase;
+  sys_info->total_load[1] = Qd_tot * MVAbase;
+
+  sys_info->total_loadshed[0] = Pdshed_tot * MVAbase;
+  sys_info->total_loadshed[1] = Qdshed_tot * MVAbase;
+
+  ps->solve_real_time = opflow->solve_real_time;
+  ps->solve_cpu_time = opflow->solve_cpu_time;
+
+  PetscFunctionReturn(0);
+}
+
 /**
  * @brief Gets ignore_lineflow_constraints
  *
@@ -2737,36 +2990,29 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
 #if defined(EXAGO_ENABLE_IPOPT)
   PetscBool ipopt, ipopt_pbpol, ipopt_pbcar, ipopt_ibcar, ipopt_ibcar2,
       ipopt_dcopf;
-  ierr = PetscStrcmp(opflow->solvername, OPFLOWSOLVER_IPOPT, &ipopt);
-  CHKERRQ(ierr);
-  ierr = PetscStrcmp(opflow->modelname, OPFLOWMODEL_PBPOL, &ipopt_pbpol);
-  CHKERRQ(ierr);
-  ierr = PetscStrcmp(opflow->modelname, OPFLOWMODEL_PBCAR, &ipopt_pbcar);
-  CHKERRQ(ierr);
-  ierr = PetscStrcmp(opflow->modelname, OPFLOWMODEL_IBCAR, &ipopt_ibcar);
-  CHKERRQ(ierr);
-  ierr = PetscStrcmp(opflow->modelname, OPFLOWMODEL_IBCAR2, &ipopt_ibcar2);
-  CHKERRQ(ierr);
-  ierr = PetscStrcmp(opflow->modelname, "DCOPF", &ipopt_dcopf);
-  CHKERRQ(ierr);
+  ipopt = static_cast<PetscBool>(opflow->solvername == OPFLOWSOLVER_IPOPT);
+  ipopt_pbpol = static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_PBPOL);
+  ipopt_pbcar = static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_PBCAR);
+  ipopt_ibcar = static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_IBCAR);
+  ipopt_ibcar2 =
+      static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_IBCAR2);
+  ipopt_dcopf = static_cast<PetscBool>(opflow->modelname == "DCOPF");
   if (ipopt && !(ipopt_pbpol || ipopt_pbcar || ipopt_ibcar || ipopt_ibcar2 ||
                  ipopt_dcopf)) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
             "OPFLOW solver IPOPT incompatible with model %s",
-            opflow->modelname);
+            opflow->modelname.c_str());
   }
 #endif
 #if defined(EXAGO_ENABLE_HIOP)
   PetscBool hiop, hiop_pbpol;
-  ierr = PetscStrcmp(opflow->solvername, OPFLOWSOLVER_HIOP, &hiop);
-  CHKERRQ(ierr);
-  ierr = PetscStrcmp(opflow->modelname, OPFLOWMODEL_PBPOLHIOP, &hiop_pbpol);
-  CHKERRQ(ierr);
+  hiop = static_cast<PetscBool>(opflow->solvername == OPFLOWSOLVER_HIOP);
+  hiop_pbpol =
+      static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_PBPOLHIOP);
 #if defined(EXAGO_ENABLE_RAJA)
   PetscBool rajahiop_pbpol;
-  ierr = PetscStrcmp(opflow->modelname, OPFLOWMODEL_PBPOLRAJAHIOP,
-                     &rajahiop_pbpol);
-  CHKERRQ(ierr);
+  rajahiop_pbpol =
+      static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_PBPOLRAJAHIOP);
 #else
   PetscBool rajahiop_pbpol = PETSC_FALSE;
 #endif // RAJA
@@ -2774,23 +3020,32 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
   PetscBool hiop_sparse;
   PetscBool hiop_sparse_pbpol;
   PetscBool hiop_sparse_dcopf;
-  ierr = PetscStrcmp(opflow->solvername, OPFLOWSOLVER_HIOPSPARSE, &hiop_sparse);
-  CHKERRQ(ierr);
-  ierr = PetscStrcmp(opflow->modelname, OPFLOWMODEL_PBPOL, &hiop_sparse_pbpol);
-  CHKERRQ(ierr);
-  ierr = PetscStrcmp(opflow->modelname, "DCOPF", &hiop_sparse_dcopf);
-  CHKERRQ(ierr);
+  hiop_sparse =
+      static_cast<PetscBool>(opflow->solvername == OPFLOWSOLVER_HIOPSPARSE);
+  hiop_sparse_pbpol =
+      static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_PBPOL);
+  hiop_sparse_dcopf = static_cast<PetscBool>(opflow->modelname == "DCOPF");
   if (hiop_sparse && !(hiop_sparse_pbpol || hiop_sparse_dcopf)) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
             "OPFLOW solver HIOPSPARSE incompatible with model %s",
-            opflow->modelname);
+            (opflow->modelname).c_str());
   }
 #else
   PetscBool hiop_sparse = PETSC_FALSE;
 #endif // HIOP_SPARSE
   if ((hiop && !hiop_sparse) && !(hiop_pbpol || rajahiop_pbpol)) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
-            "OPFLOW solver HIOP incompatible with model %s", opflow->modelname);
+            "OPFLOW solver HIOP incompatible with model %s",
+            (opflow->modelname).c_str());
+  }
+  /* FIXME: The PBPOLRAJAHIOP has trouble with individual load
+     shedding, so avoid using when load shedding is enabled */
+  if (opflow->include_loadloss_variables) {
+    if (rajahiop_pbpol) {
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
+              "OPFLOW load shedding incompatible with model %s",
+              (opflow->modelname).c_str());
+    }
   }
 #endif // HIOP
   PetscFunctionReturn(0);

@@ -126,7 +126,7 @@ struct _p_TCOPFLOW {
 
   void *model; /* Model object */
   struct _p_TCOPFLOWModelOps modelops;
-  char modelname[64];
+  char modelname[PETSC_MAX_PATH_LEN];
 
   struct _p_TCOPFLOWModelList TCOPFLOWModelList[TCOPFLOWMODELSMAX];
   PetscInt nmodelsregistered;
@@ -134,7 +134,7 @@ struct _p_TCOPFLOW {
 
   void *solver; /* Solver object */
   struct _p_TCOPFLOWSolverOps solverops;
-  char solvername[64];
+  char solvername[PETSC_MAX_PATH_LEN];
 
   /* List of solvers registered */
   struct _p_TCOPFLOWSolverList TCOPFLOWSolverList[TCOPFLOWSOLVERSMAX];

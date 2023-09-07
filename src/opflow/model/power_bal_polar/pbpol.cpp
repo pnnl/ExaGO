@@ -113,10 +113,10 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
         if (!load->status)
           xl[loc] = xu[loc] = xl[loc + 1] = xu[loc + 1] = 0.0;
         else {
-          xl[loc] = PetscMin(0.0, load->pl);
-          xu[loc] = PetscMax(0.0, load->pl);
-          xl[loc + 1] = PetscMin(0.0, load->ql);
-          xu[loc + 1] = PetscMax(0.0, load->ql);
+          xl[loc] = PetscMin(0.0, load->pl * load->loss_frac);
+          xu[loc] = PetscMax(0.0, load->pl * load->loss_frac);
+          xl[loc + 1] = PetscMin(0.0, load->ql * load->loss_frac);
+          xu[loc + 1] = PetscMax(0.0, load->ql * load->loss_frac);
         }
       }
     }
@@ -1339,7 +1339,7 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow, Vec X,
         loc = load->startxloadlossloc;
         Pdloss = x[loc];
         Qdloss = x[loc + 1];
-        *obj += opflow->loadloss_penalty * ps->MVAbase * (Pdloss + Qdloss);
+        *obj += load->loss_cost * ps->MVAbase * (Pdloss + Qdloss);
         flps += 4.0;
       }
     }
@@ -1421,8 +1421,8 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
         loc = load->startxloadlossloc;
         Pdloss = x[loc];
         Qdloss = x[loc + 1];
-        df[loc] = opflow->loadloss_penalty * ps->MVAbase;
-        df[loc + 1] = opflow->loadloss_penalty * ps->MVAbase;
+        df[loc] = load->loss_cost * ps->MVAbase;
+        df[loc + 1] = load->loss_cost * ps->MVAbase;
         flps += 2.0;
       }
     }

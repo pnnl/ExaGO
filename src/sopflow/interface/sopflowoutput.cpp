@@ -53,6 +53,8 @@ PetscErrorCode SOPFLOWPrintSolution(SOPFLOW sopflow, PetscInt scen_num) {
 
         opflow = scopflow->opflows[0];
 
+        ierr = OPFLOWComputeObjective(opflow, opflow->X, &opflow->obj);
+
         ierr = VecPlaceArray(opflow->X, x);
         CHKERRQ(ierr);
         ierr = VecPlaceArray(opflow->Lambda, lambda);
@@ -101,10 +103,15 @@ PetscErrorCode SOPFLOWPrintSolution(SOPFLOW sopflow, PetscInt scen_num) {
                            ? "YES"
                            : "NO");
     CHKERRQ(ierr);
-    if (sopflow->flatten_contingencies || sopflow->ismulticontingency ||
-        (sopflow->Nc - 1)) {
+    if (sopflow->ismulticontingency || sopflow->flatten_contingencies) {
+      int nc;
+      if (sopflow->flatten_contingencies) {
+        nc = sopflow->Nc - 1;
+      } else {
+        nc = sopflow->scopflows[0]->Nc;
+      }
       ierr = PetscPrintf(sopflow->comm->type, "%-35s %d\n",
-                         "Contingencies per scenario", sopflow->Nc - 1);
+                         "Contingencies per scenario", nc);
       CHKERRQ(ierr);
     }
 
@@ -183,19 +190,56 @@ PetscErrorCode SOPFLOWPrintSolution(SOPFLOW sopflow, PetscInt scen_num) {
 }
 
 /*
-  SOPFLOWSaveSolution - Saves the SOPFLOW solution for the given scenario to
+   SOPFLOWAppendScenario - Appends scenario information to MINIMAL output
+
+*/
+static PetscErrorCode SOPFLOWAppendScenario(int scen_num,
+                                            const char outfile[]) {
+  PetscErrorCode ierr = 0;
+  FILE *fd;
+  char filename[PETSC_MAX_PATH_LEN];
+  char ext[] = ".txt";
+
+  PetscFunctionBegin;
+
+  /* FIXME: This repeats code in PSSaveSolution_MINIMAL */
+
+  strcpy(filename, outfile);
+  /* Add extension to file name */
+  ierr = PetscStrlcat(filename, ext, 256);
+  CHKERRQ(ierr);
+
+  fd = fopen(filename, "a");
+  if (fd == NULL) {
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
+            "Cannot (re)open output file %s", filename);
+    CHKERRQ(ierr);
+  }
+  fprintf(fd, "Scenario: %d\n", scen_num);
+  CHKERRQ(ierr);
+  fclose(fd);
+  PetscFunctionReturn(0);
+}
+
+/*
+  SOPFLOWSaveSolutionBase - Saves the SOPFLOW solution for the given scenario to
 file
 
   Input Parameters:
 + sopflow - the OPFLOW object
 . scen_num - the scenario number (0 for base case)
+. use_default_format - ignore format and let OPFLOW determine format
 . format - the output file format (csv, matpower)
 - outfile  - Name of output file
 */
-PetscErrorCode SOPFLOWSaveSolution(SOPFLOW sopflow, PetscInt scen_num,
-                                   OutputFormat format, const char outfile[]) {
+static PetscErrorCode SOPFLOWSaveSolutionBase(SOPFLOW sopflow,
+                                              PetscInt scen_num,
+                                              PetscBool use_default_format,
+                                              OutputFormat format,
+                                              const char outfile[]) {
   PetscErrorCode ierr;
   OPFLOW opflow = sopflow->opflows[scen_num];
+  bool is_minimal_output;
 
   PetscFunctionBegin;
 
@@ -208,9 +252,75 @@ PetscErrorCode SOPFLOWSaveSolution(SOPFLOW sopflow, PetscInt scen_num,
     CHKERRQ(ierr);
   }
 
-  ierr = OPFLOWSaveSolution(opflow, format, outfile);
+  if (use_default_format) {
+    ierr = OPFLOWSaveSolutionDefault(opflow, outfile);
+    is_minimal_output = (opflow->outputformat == MINIMAL);
+  } else {
+    ierr = OPFLOWSaveSolution(opflow, format, outfile);
+    is_minimal_output = (format == MINIMAL);
+  }
   CHKERRQ(ierr);
 
+  /* For MINIMAL format only, *append* scenario information to
+     OPFLOW solution output */
+  if (is_minimal_output) {
+    int snum;
+    snum = sopflow->scen_num[scen_num];
+    ierr = SOPFLOWAppendScenario(snum, outfile);
+    CHKERRQ(ierr);
+    if (sopflow->Nc > 1) {
+      int cnum;
+      Contingency *thecon;
+      cnum = sopflow->cont_num[scen_num];
+      thecon = &(sopflow->ctgclist->cont[cnum]);
+      ierr = ContigencyAppendMinimal(thecon, cnum, PSSE, outfile);
+      CHKERRQ(ierr);
+    }
+  }
+
+  PetscFunctionReturn(0);
+}
+
+/*
+  SOPFLOWSaveSolution - Saves the SOPFLOW solution for the given scenario to
+file with the specified format
+
+  Input Parameters:
++ sopflow - the OPFLOW object
+. scen_num - the scenario number (0 for base case)
+. format - the output file format (csv, matpower)
+- outfile  - Name of output file
+*/
+PetscErrorCode SOPFLOWSaveSolution(SOPFLOW sopflow, PetscInt scen_num,
+                                   OutputFormat format, const char outfile[]) {
+
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+
+  ierr =
+      SOPFLOWSaveSolutionBase(sopflow, scen_num, PETSC_FALSE, format, outfile);
+  CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+/*
+  SOPFLOWSaveSolutionDefault - Saves the SOPFLOW solution for the given scenario
+to file with the default format
+
+  Input Parameters:
++ sopflow - the OPFLOW object
+. scen_num - the scenario number (0 for base case)
+- outfile  - Name of output file
+*/
+PetscErrorCode SOPFLOWSaveSolutionDefault(SOPFLOW sopflow, PetscInt scen_num,
+                                          const char outfile[]) {
+
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr =
+      SOPFLOWSaveSolutionBase(sopflow, scen_num, PETSC_TRUE, MATPOWER, outfile);
+  CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -219,14 +329,17 @@ PetscErrorCode SOPFLOWSaveSolution(SOPFLOW sopflow, PetscInt scen_num,
 
   Input Parameters:
 + sopflow - the SOPFLOW object
+. use_default_format - ignore format and use default OPFLOW format
 . format - the output file format (csv, matpower)
 - outdir  - Name of output directory
 
   Notes:
    Save all SOPFLOW solutions (one scenario per file)
 */
-PetscErrorCode SOPFLOWSaveSolutionAll(SOPFLOW sopflow, OutputFormat format,
-                                      const char outdir[]) {
+static PetscErrorCode SOPFLOWSaveSolutionAllBase(SOPFLOW sopflow,
+                                                 PetscBool use_default_format,
+                                                 OutputFormat format,
+                                                 const char outdir[]) {
   PetscErrorCode ierr;
   SCOPFLOW scopflow;
   OPFLOW opflow;
@@ -236,8 +349,12 @@ PetscErrorCode SOPFLOWSaveSolutionAll(SOPFLOW sopflow, OutputFormat format,
   char scopflowdirname[64];
   char scopflowdir[256];
   PetscScalar *x, *lambda;
+  bool is_minimal_output;
 
   PetscFunctionBegin;
+
+  ierr = PetscLogEventBegin(sopflow->outputlogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
 
   if (!sopflow->comm->rank) {
     ierr = PetscMkdir(outdir);
@@ -266,8 +383,31 @@ PetscErrorCode SOPFLOWSaveSolutionAll(SOPFLOW sopflow, OutputFormat format,
       ierr = PetscStrlcat(outfile, filename, 256);
       CHKERRQ(ierr);
 
-      ierr = OPFLOWSaveSolution(opflow, format, outfile);
+      if (use_default_format) {
+        ierr = OPFLOWSaveSolutionDefault(opflow, outfile);
+        is_minimal_output = (opflow->outputformat == MINIMAL);
+      } else {
+        ierr = OPFLOWSaveSolution(opflow, format, outfile);
+        is_minimal_output = (format == MINIMAL);
+      }
       CHKERRQ(ierr);
+
+      /* For MINIMAL format only, *append* scenario information to
+         OPFLOW solution output */
+      if (is_minimal_output) {
+        int snum;
+        snum = sopflow->scen_num[s];
+        ierr = SOPFLOWAppendScenario(snum, outfile);
+        CHKERRQ(ierr);
+        if (sopflow->Nc > 1) {
+          int cnum;
+          Contingency *thecon;
+          cnum = sopflow->cont_num[s];
+          thecon = &(sopflow->ctgclist->cont[cnum]);
+          ierr = ContigencyAppendMinimal(thecon, cnum, PSSE, outfile);
+          CHKERRQ(ierr);
+        }
+      }
     } else {
       scopflow = sopflow->scopflows[s];
 
@@ -286,9 +426,61 @@ PetscErrorCode SOPFLOWSaveSolutionAll(SOPFLOW sopflow, OutputFormat format,
                                              &scopflow->Lambda);
       CHKERRQ(ierr);
 
-      ierr = SCOPFLOWSaveSolutionAll(scopflow, format, scopflowdir);
+      if (use_default_format) {
+        ierr = SCOPFLOWSaveSolutionAllDefault(scopflow, scopflowdir);
+      } else {
+        ierr = SCOPFLOWSaveSolutionAll(scopflow, format, scopflowdir);
+      }
       CHKERRQ(ierr);
     }
   }
+
+  ierr = PetscLogEventEnd(sopflow->outputlogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+/*
+  SOPFLOWSaveSolutionAll - Saves all SOPFLOW solutions
+
+  Input Parameters:
++ sopflow - the SOPFLOW object
+. format - the output file format (csv, matpower)
+- outdir  - Name of output directory
+
+  Notes:
+   Save all SOPFLOW solutions (one scenario per file)
+*/
+PetscErrorCode SOPFLOWSaveSolutionAll(SOPFLOW sopflow, OutputFormat format,
+                                      const char outdir[]) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+
+  ierr = SOPFLOWSaveSolutionAllBase(sopflow, PETSC_FALSE, format, outdir);
+  CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+/*
+  SOPFLOWSaveSolutionAll - Saves all SOPFLOW solutions using the default OPFLOW
+format
+
+  Input Parameters:
++ sopflow - the SOPFLOW object
+- outdir  - Name of output directory
+
+  Notes:
+   Save all SOPFLOW solutions (one scenario per file)
+*/
+PetscErrorCode SOPFLOWSaveSolutionAllDefault(SOPFLOW sopflow,
+                                             const char outdir[]) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+
+  ierr = SOPFLOWSaveSolutionAllBase(sopflow, PETSC_TRUE, MATPOWER, outdir);
+  CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }

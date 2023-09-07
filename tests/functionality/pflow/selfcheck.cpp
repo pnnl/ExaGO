@@ -108,8 +108,13 @@ struct PflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     PFLOW pflow;
+    int rank;
 
-    std::cout << "Test Description: " << params.description << std::endl;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+    if (rank == 0) {
+      std::cout << "Test Description: " << params.description << std::endl;
+    }
     ierr = PFLOWCreate(params.comm, &pflow);
     ExaGOCheckError(ierr);
 
@@ -148,9 +153,16 @@ struct PflowFunctionalityTests
     if (params.expected_num_iters != -1 &&
         params.numiter != params.expected_num_iters) {
       num_iter_failed = true;
+#ifdef EXAGO_ENABLE_LOGGING
       params.reasons_for_failure.push_back(
           fmt::format("expected {} num iters, got {}",
                       params.expected_num_iters, params.numiter));
+#else
+      char sbuf[256];
+      sprintf(sbuf, "expected %d num iters, got %d", params.expected_num_iters,
+              params.numiter);
+      params.reasons_for_failure.push_back(std::string(sbuf));
+#endif
     }
 
     /* Did the current functionality test fail in any way? */

@@ -34,6 +34,7 @@ struct SopflowFunctionalityTestParameters {
   bool ignore_lineflow_constraints = false;
   std::string compute_mode = "auto";
   int verbosity_level = 0;
+  std::string mem_space = "DEFAULT";
   bool flatten = true;
 
   /* Parameters used to determine success or failure of functionality test */
@@ -63,6 +64,7 @@ struct SopflowFunctionalityTestParameters {
                  "ignore_lineflow_constraints");
     set_if_found(verbosity_level, values, "verbosity_level");
     set_if_found(compute_mode, values, "compute_mode");
+    set_if_found(mem_space, values, "mem_space");
 
     // Multi-contingency SOPFLOW settings
     set_if_found(multicontingency, values, "multicontingency");
@@ -192,8 +194,13 @@ struct SopflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     SOPFLOW sopflow;
+    int rank;
 
-    std::cout << "Test Description: " << params.description << std::endl;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+    if (rank == 0) {
+      std::cout << "Test Description: " << params.description << std::endl;
+    }
     ierr = SOPFLOWCreate(params.comm, &sopflow);
     ExaGOCheckError(ierr);
 
@@ -220,19 +227,20 @@ struct SopflowFunctionalityTests
     ierr = SOPFLOWSetGenBusVoltageType(sopflow, params.gen_bus_voltage_type);
     ExaGOCheckError(ierr);
 
-    ierr = SOPFLOWSetSubproblemModel(sopflow, params.subproblem_model.c_str());
+    ierr = SOPFLOWSetSubproblemModel(sopflow, params.subproblem_model);
     ExaGOCheckError(ierr);
 
-    ierr =
-        SOPFLOWSetSubproblemSolver(sopflow, params.subproblem_solver.c_str());
+    ierr = SOPFLOWSetSubproblemSolver(sopflow, params.subproblem_solver);
+    ExaGOCheckError(ierr);
+
+    ierr = SOPFLOWSetSubproblemMemSpace(sopflow, params.mem_space);
     ExaGOCheckError(ierr);
 
     ierr = SOPFLOWSetIgnoreLineflowConstraints(
         sopflow, (PetscBool)params.ignore_lineflow_constraints);
     ExaGOCheckError(ierr);
 
-    ierr =
-        SOPFLOWSetSubproblemComputeMode(sopflow, params.compute_mode.c_str());
+    ierr = SOPFLOWSetSubproblemComputeMode(sopflow, params.compute_mode);
     ExaGOCheckError(ierr);
 
     ierr = SOPFLOWSetSubproblemVerbosityLevel(sopflow, params.verbosity_level);
@@ -299,10 +307,20 @@ struct SopflowFunctionalityTests
     if (!IsEqual(params.obj_value, params.expected_obj_value, params.tolerance,
                  params.error)) {
       obj_failed = true;
+#ifdef EXAGO_ENABLE_LOGGING
       params.reasons_for_failure.push_back(fmt::format(
           "expected objective value={} actual objective value={} tol={} err={}",
           params.expected_obj_value, params.obj_value, params.tolerance,
           params.error));
+#else
+      char sbuf[256];
+      sprintf(
+          sbuf,
+          "expected objective value=%e actual objective value=%e tol=%e err=%e",
+          params.expected_obj_value, params.obj_value, params.tolerance,
+          params.error);
+      params.reasons_for_failure.push_back(std::string(sbuf));
+#endif
     }
 
     /* Test num iterations */
@@ -311,9 +329,16 @@ struct SopflowFunctionalityTests
     if (params.expected_num_iters != -1 &&
         params.numiter != params.expected_num_iters) {
       num_iter_failed = true;
+#ifdef EXAGO_ENABLE_LOGGING
       params.reasons_for_failure.push_back(
           fmt::format("expected {} num iters, got {}",
                       params.expected_num_iters, params.numiter));
+#else
+      char sbuf[256];
+      sprintf(sbuf, "expected %d num iters, got %d", params.expected_num_iters,
+              params.numiter);
+      params.reasons_for_failure.push_back(std::string(sbuf));
+#endif
     }
 
     /* Did the current functionality test fail in any way? */

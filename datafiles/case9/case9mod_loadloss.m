@@ -1,5 +1,5 @@
-function mpc = case9mod
-%CASE9a    Power flow data for 9 bus, 3 generator case.
+function mpc = case9mod_loadloss
+%CASE9MOD_LOADLOSS    Power flow data for 9 bus, 3 generator case.
 %   Please see CASEFORMAT for details on the case file format.
 %
 % Based on data from Sauer and Pai's book 'Power System Dynamics and
@@ -7,6 +7,7 @@ function mpc = case9mod
 %
 % Modifications
 % Increased bus 5 load to cause load loss or power imbalance
+% Added load cost
 % Use this file to test load loss or power imbalance
 
 %% MATPOWER Case Format : Version 2
@@ -67,6 +68,14 @@ mpc.gencost = [
 	2	1500.00	0.00	3	0.11	5	150;
 	2	2000.00	0.00	3	0.085	1.2	600;
 	2	3000	0	3	0.1225	1	335;
+];
+
+%% load cost data
+% %maxallowedloadshed %loadshedcost
+mpc.loadcost = [
+		 65 1000;
+		 75 100;
+                100 10;
 ];
 
 return;

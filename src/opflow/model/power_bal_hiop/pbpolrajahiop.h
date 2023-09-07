@@ -52,5 +52,9 @@ extern PetscErrorCode OPFLOWComputeDenseHessian_PBPOLRAJAHIOP(OPFLOW,
                                                               const double *,
                                                               double *);
 
+extern PetscErrorCode
+OPFLOWSolutionCallback_PBPOLRAJAHIOP(OPFLOW, const double *, const double *,
+                                     const double *, const double *,
+                                     const double *, double);
 #endif
 #endif

@@ -7,7 +7,7 @@ set(CMAKE_INSTALL_PREFIX
     CACHE PATH ""
 )
 
-set(arch 60)
+set(arch 60;70;75;80)
 message(STATUS "Using initial cuda architecture of ${arch}")
 set(CMAKE_CUDA_ARCHITECTURES
     ${arch}
@@ -30,6 +30,12 @@ set(CMAKE_BUILD_TYPE
     CACHE STRING ""
 )
 
+message(STATUS "Enabling Logging")
+set(EXAGO_ENABLE_LOGGING
+    ON
+    CACHE BOOL ""
+)
+
 message(STATUS "Enabling GPU, HiOp, MPI, PETSC, and RAJA")
 set(EXAGO_ENABLE_GPU
     ON
@@ -44,7 +50,7 @@ set(EXAGO_ENABLE_HIOP
     CACHE BOOL ""
 )
 set(EXAGO_ENABLE_IPOPT
-    OFF
+    ON
     CACHE BOOL ""
 )
 set(EXAGO_ENABLE_MPI

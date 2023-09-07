@@ -6,7 +6,7 @@ Preamble
 
 cmake_minimum_required(VERSION 3.18)
 
-project(ExaGO VERSION "1.4.1")
+project(ExaGO VERSION "1.5.1")
 
 set(CMAKE_CXX_STANDARD 14)
 # Enable setting Mac OS X rpath
@@ -62,9 +62,6 @@ option(EXAGO_ENABLE_IPOPT "Enable Ipopt support" ON)
 # HiOP support is disabled by default
 option(EXAGO_ENABLE_HIOP "Enable HiOP support" OFF)
 
-# MPI support is enabled by default
-option(EXAGO_ENABLE_MPI "Enable MPI support" ON)
-
 # GPU support is disabled by default
 option(EXAGO_ENABLE_GPU "Enable GPU support" OFF)
 
@@ -102,12 +99,24 @@ set(EXAGO_CTEST_LAUNCH_COMMAND
     CACHE STRING "Command to use when launching tests"
 )
 
-option(EXAGO_ENABLE_LOGGING "Enable internal logging" ON)
+option(EXAGO_ENABLE_LOGGING "Enable internal logging" OFF)
 
-# When building with HIP support, OpenMP is not supported Need to make sure we
-# are building with RAJA
-if(EXAGO_ENABLE_RAJA AND (NOT (EXAGO_ENABLE_GPU AND EXAGO_ENABLE_HIP)))
+# When building with HIP support, OpenMP is not supported.
+if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_HIP)
   set(EXAGO_ENABLE_OMP OFF)
+endif()
+# When building without RAJA, OpenMP is not required.
+if(NOT EXAGO_ENABLE_RAJA)
+  set(EXAGO_ENABLE_OMP OFF)
+endif()
+
+# When building with OpenMP using Apple-Clang, users should be warned about
+# numerical precision issues
+if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  message(
+    WARNING
+      " When building with apple-clang built OpenMP, you will get numerical precision issues"
+  )
 endif()
 
 # Estimate number of flops per trig op
@@ -232,6 +241,16 @@ endif()
 
 if(EXAGO_ENABLE_HIOP)
   include(ExaGOFindHiOp)
+  if(NOT TARGET RAJA)
+    # In HiOp's exported CMake configuration, there is a call to:
+    # find_package(RAJA PATHS @RAJA_DIR@) This means the RAJA target should be
+    # defined in HiOp 0.7.0+ if hiop+raja RAJA part of ExaGO will not work if
+    # HiOp is not built with RAJA
+    message(
+      STATUS
+        "Warning: HiOp was built without RAJA - ExaGO RAJA module calling HiOp may not work!"
+    )
+  endif()
 endif(EXAGO_ENABLE_HIOP)
 
 if(EXAGO_ENABLE_RAJA)
@@ -268,9 +287,11 @@ if(EXAGO_RUN_TESTS)
   include(ExaGOTestingUtilities)
 endif()
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/tpl/spdlog/)
-# -fPIC required for spdlog for use with python wrapper
-set_property(TARGET spdlog PROPERTY POSITION_INDEPENDENT_CODE ON)
+if(EXAGO_ENABLE_LOGGING)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/tpl/spdlog/)
+  # -fPIC required for spdlog for use with python wrapper
+  set_property(TARGET spdlog PROPERTY POSITION_INDEPENDENT_CODE ON)
+endif()
 
 # Build libraries (specified in src/CMakeLists.txt)
 add_subdirectory(src)
@@ -288,14 +309,15 @@ Installation of libraries, headers, and datafiles used for testing.
 set(EXAGO_OPTIONS_FILES options/pflowoptions)
 
 if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
+  set(EXAGO_OPTIONS_FILES ${EXAGO_OPTIONS_FILES} options/opflowoptions
+                          options/hiop.options
+  )
+endif()
+
+if(EXAGO_ENABLE_IPOPT)
   set(EXAGO_OPTIONS_FILES
-      ${EXAGO_OPTIONS_FILES}
-      options/opflowoptions
-      options/scopflowoptions
-      options/sopflowoptions
-      options/tcopflowoptions
-      options/hiop.options
-      options/ipopt.opt
+      ${EXAGO_OPTIONS_FILES} options/scopflowoptions options/sopflowoptions
+      options/tcopflowoptions options/ipopt.opt
   )
 endif()
 

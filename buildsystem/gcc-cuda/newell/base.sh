@@ -13,10 +13,6 @@ module purge
 # Load system modules
 module load gcc/8.5.0
 module load openmpi/4.1.4
-module load cuda/11.4
-module load python/miniconda3.8
-
-source /share/apps/python/miniconda3.8/etc/profile.d/conda.sh
 
 [ -f $PWD/nvblas.conf ] && rm $PWD/nvblas.conf
 cat > $PWD/nvblas.conf <<-EOD

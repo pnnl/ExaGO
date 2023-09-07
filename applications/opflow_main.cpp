@@ -9,12 +9,13 @@ static char help[] = "User example calling OPFLOW.\n\n";
 int main(int argc, char **argv) {
   PetscErrorCode ierr;
   OPFLOW opflow;
-  OutputFormat fmt = MATPOWER;
-  char file[PETSC_MAX_PATH_LEN];
+  char file[PETSC_MAX_PATH_LEN], gicfile[PETSC_MAX_PATH_LEN],
+      output_name[PETSC_MAX_PATH_LEN];
   PetscBool flg = PETSC_FALSE, print_output = PETSC_FALSE,
             save_output = PETSC_FALSE;
   PetscLogStage stages[3];
   char appname[] = "opflow";
+  const char default_output_name[] = "opflowout";
   MPI_Comm comm = MPI_COMM_WORLD;
   PetscBool selfcheck = PETSC_FALSE;
 
@@ -27,7 +28,8 @@ int main(int argc, char **argv) {
 
   ierr = PetscOptionsGetBool(NULL, NULL, "-print_output", &print_output, NULL);
   ExaGOCheckError(ierr);
-  ierr = PetscOptionsGetBool(NULL, NULL, "-save_output", &save_output, NULL);
+  ierr = PetscOptionsGetString(NULL, NULL, "-save_output", &output_name[0],
+                               PETSC_MAX_PATH_LEN, &save_output);
   ExaGOCheckError(ierr);
 
   /* Register stages for profiling application code sections */
@@ -57,6 +59,15 @@ int main(int argc, char **argv) {
     ExaGOCheckError(ierr);
   } else {
     ierr = OPFLOWReadMatPowerData(opflow, "datafiles/case9/case9mod.m");
+    ExaGOCheckError(ierr);
+  }
+
+  /* Get gic data file from command line */
+  ierr = PetscOptionsGetString(NULL, NULL, "-gicfile", gicfile,
+                               PETSC_MAX_PATH_LEN, &flg);
+  ExaGOCheckError(ierr);
+  if (flg) {
+    ierr = OPFLOWSetGICData(opflow, gicfile);
     ExaGOCheckError(ierr);
   }
 
@@ -91,8 +102,18 @@ int main(int argc, char **argv) {
   }
 
   if (save_output) {
-    ierr = OPFLOWSaveSolution(opflow, fmt, "opflowout");
-    ExaGOCheckError(ierr);
+    // deal with "-save_output 0/1" (the way it used to be)
+    if (strlen(output_name) == 1 && output_name[0] == '1') {
+      strncpy(output_name, default_output_name, PETSC_MAX_PATH_LEN);
+    } else if (strlen(output_name) == 1 && output_name[0] == '0') {
+      save_output = PETSC_FALSE;
+    } else if (strlen(output_name) == 0) {
+      strncpy(output_name, default_output_name, PETSC_MAX_PATH_LEN);
+    }
+    if (save_output) {
+      ierr = OPFLOWSaveSolutionDefault(opflow, output_name);
+      ExaGOCheckError(ierr);
+    }
   }
 
   /* Destroy OPFLOW object */

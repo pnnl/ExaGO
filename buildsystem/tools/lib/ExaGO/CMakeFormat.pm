@@ -58,7 +58,7 @@ sub tool {
     "$root/tests/functionality", "$root/tests/interfaces",
     "$root/tests/unit",          "$root/buildsystem",
     "$root/CMakeLists.txt",      "$root/interfaces",
-    "$root/applications"
+    "$root/applications",        "$root/interfaces/python"
   );
 
   my @fails;

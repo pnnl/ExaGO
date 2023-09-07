@@ -7,7 +7,6 @@
 #define OPFFLOWHIOPSPARSE_HPP
 #include <hiopAlgFilterIPM.hpp>
 #include <hiopInterface.hpp>
-#include <hiopLinAlgFactory.hpp>
 #include <hiopMatrix.hpp>
 #include <hiopNlpFormulation.hpp>
 #include <opflow.h>
@@ -16,11 +15,6 @@
 #include <IpoptAdapter.hpp> // ipopt adapter from hiop
 #include <IpIpoptApplication.hpp>
 #endif
-
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <string>
 
 #ifdef HIOP_USE_MAGMA
 #include "magma_v2.h"

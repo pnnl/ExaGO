@@ -38,6 +38,6 @@ network = 'datafiles/case9/case9mod_loadloss.m'
 description = "Test for non-zero load loss with HIOP sparse solver"
 is_loadloss_active =	true
 is_powerimb_active =	false
-num_iters = 53
-obj_value = 740037.443304
+num_iters = 61
+obj_value = 750055.799408
 

@@ -8,11 +8,7 @@
 #ifndef SOPFLOWHIOP_HPP
 #define SOPFLOWHIOP_HPP
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <sopflow.h>
-#include <string>
 
 #include <hiopAlgPrimalDecomp.hpp>
 #include <hiopInterfacePrimalDecomp.hpp>

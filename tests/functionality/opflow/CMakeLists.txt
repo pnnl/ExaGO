@@ -18,10 +18,13 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_opflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_pbpolhiop.toml
-    -hiop_mem_space
-    HOST
     DEPENDS
     HIOP
+  )
+
+  set_tests_properties(
+    FUNCTIONALITY_TEST_OPFLOW_HIOP_TOML_TESTSUITE
+    PROPERTIES LABELS "incline-skip;deception-skip;newell-skip"
   )
 
   exago_add_test(
@@ -35,19 +38,25 @@ if(EXAGO_INSTALL_TESTS)
     HIOP
     RAJA
   )
+  set_tests_properties(
+    FUNCTIONALITY_TEST_OPFLOW_RAJAHIOP_TOML_TESTSUITE
+    PROPERTIES LABELS "incline-skip;deception-skip;newell-skip"
+  )
 
-  if(EXAGO_ENABLE_HIOP_SPARSE)
-    exago_add_test(
-      NAME
-      FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_TOML_TESTSUITE
-      COMMAND
-      ${RUNCMD}
-      $<TARGET_FILE:test_opflow_functionality>
-      ${CMAKE_CURRENT_SOURCE_DIR}/hiopsparse_pbpol.toml
-      DEPENDS
-      HIOP_SPARSE
-    )
-  endif()
+  exago_add_test(
+    NAME
+    FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_TOML_TESTSUITE
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:test_opflow_functionality>
+    ${CMAKE_CURRENT_SOURCE_DIR}/hiopsparse_pbpol.toml
+    DEPENDS
+    HIOP_SPARSE
+  )
+  set_tests_properties(
+    FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_TOML_TESTSUITE
+    PROPERTIES LABELS "incline-skip;deception-skip;newell-skip"
+  )
 
   # Note: All cartesian and/or current balance models are way behind. These
   # models should not be used and their tests should be disabled.
@@ -124,6 +133,27 @@ if(EXAGO_INSTALL_TESTS)
     IPOPT
     HIOP
   )
+
+  foreach(fmt "MATPOWER" "CSV" "JSON" "MINIMAL")
+    set(tname "OPFLOW_SOLUTION_OUTPUT_${fmt}")
+    exago_add_test(
+      NAME
+      "${tname}"
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:app_opflow>
+      -netfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case9/case9mod.m
+      -opflow_solver
+      IPOPT
+      -opflow_output_format
+      "${fmt}"
+      -save_output
+      1
+      DEPENDS
+      IPOPT
+    )
+  endforeach()
 
   # exago_add_test( NAME OPFLOW_MONITOR_KVLEVEL_HIOP_GPU COMMAND ${RUNCMD}
   # $<TARGET_FILE:app_opflow> -netfile

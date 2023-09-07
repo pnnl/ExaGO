@@ -1,3 +1,15 @@
+include:
+  - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v1/gitlab-lib.yaml'
+
+# CI constraints for every branch
+workflow:
+  rules:
+      # Only run if source is an open merge request or a branch push
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
 .pnnl_after_script_template:
   after_script:
     - |
@@ -32,6 +44,8 @@
 
       if [[ $MY_CLUSTER = "deception" ]]; then
         export SLURM_Q=`perl ./buildsystem/pnnl/findIdleDLNodes.pl`
+      elif [[ $MY_CLUSTER = "incline" ]]; then
+        export SLURM_Q="incline"
       else
         export SLURM_Q=`perl ./buildsystem/pnnl/findIdleNewellNodes.pl`
       fi
@@ -48,11 +62,12 @@
       export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
 
       # Export CTESTARGS defined in variables to run correct tests for stage
+      echo $CTESTARGS being used as testing args
       export CTESTARGS=$CTESTARGS
 
       # jobid used in pnnl_after_script_template to cancel job if cancelled or
       # timed out by gitlab through the UI
-      jobid=$(sbatch --export=ALL -A EXASGD --gres=gpu:1 --ntasks=3 -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/buildsystem/build.sh $SCRIPT_ARGS)
+      jobid=$(sbatch --export=ALL -A EXASGD $SLURM_ARGS -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/buildsystem/build.sh $SCRIPT_ARGS)
       export jobid=$(echo $jobid | cut -f4 -d' ')
       # Unique jobid filename for this job
       echo $jobid > "$WORKDIR/jobid_${jobid}"
@@ -135,7 +150,7 @@
       git config user.email "spack.bot@no-reply.com"
 
       # Add commit to MR branch - message can be changed
-      git commit -m "Update ${MY_CLUSTER} spack built modules - CI AUTOMATED MESSAGE."
+      git commit -m "Update ${MY_CLUSTER} spack built tcl modules - [${MY_CLUSTER}-test]"
 
       # Do a rebase incase another pipeline has pushed since build started
       git pull --rebase origin ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
@@ -150,6 +165,7 @@
       exit $res
 
 .pnnl_tags_template:
+  # This image allows you to connect to SLURM
   image: kfox1111/slurm:deception2
   tags:
     - k8s
@@ -157,13 +173,7 @@
     - exasgd
     - marianas
 
-.pnnl_rules:
-  rules:
-    - &pnnl_rule
-      if: '$CI_PROJECT_ROOT_NAMESPACE == "exasgd"' # Will only apply to PNNL
-
 .pnnl_nonhpc_tags:
-  image: ubuntu:20.04
   tags:
     - k8s
     - ikp
@@ -172,18 +182,232 @@
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
+  KUBERNETES_HELPER_CPU_REQUEST: 100m
+  KUBERNETES_HELPER_CPU_LIMIT: 500m
+  KUBERNETES_HELPER_MEMORY_REQUEST: 512Mi
+  KUBERNETES_HELPER_MEMORY_LIMIT: 512Mi
+
+# https://stackoverflow.com/questions/67009007
+# We have to use YAML anchors for rules here
+# Rules are also evaluated sequentially, so you need to be careful about
+# the order in which these rules are included in child jobs - list "never" rules before other rules
+.rules:
+  rules:
+      # --
+      # Only run if source is an open merge request or a branch push
+    - &rule_1
+      if: $CI_MERGE_REQUEST_IID
+    - &rule_2
+      if: $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - &rule_3
+      if: $CI_COMMIT_BRANCH 
+      # -- 
+      # Only run when the commit **DOES NOT** contains "[newell-rebuild]"
+    - &rule_no_newell_rebuild
+      if: '$CI_COMMIT_TITLE =~ /\[newell-rebuild\]/'
+      when: never
+      # Only run when the commit **DOES NOT** contains "[deception-rebuild]"
+    - &rule_no_deception_rebuild
+      if: '$CI_COMMIT_TITLE =~ /\[deception-rebuild\]/'
+      when: never
+      # Only run when the commit **DOES NOT** contains "[incline-rebuild]"
+    - &rule_no_incline_rebuild
+      if: '$CI_COMMIT_TITLE =~ /\[incline-rebuild\]/'
+      when: never
+      # Only run when the commit **DOES NOT** contains "[ascent-rebuild]" 
+    - &rule_no_ascent_rebuild
+      if: '$CI_COMMIT_TITLE =~ /\[ascent-rebuild\]/'
+      when: never 
+      # Only run when the commit **DOES NOT** contains "[newell-test]"
+    - &rule_no_newell_test
+      if: '$CI_COMMIT_TITLE =~ /\[newell-test\]/'
+      when: never
+    # Only run when the commit **DOES NOT** contains "[deception-test]"
+    - &rule_no_deception_test
+      if: '$CI_COMMIT_TITLE =~ /\[deception-test\]/'
+      when: never
+    # Only run when the commit **DOES NOT** contains "[incline-test]"
+    - &rule_no_incline_test
+      if: '$CI_COMMIT_TITLE =~ /\[incline-test\]/'
+      when: never
+     # Only run when the commit **DOES NOT** contains "[ascent-test]"
+    - &rule_no_ascent_test
+      if: '$CI_COMMIT_TITLE =~ /\[ascent-test\]/'
+      when: never
+
+.non_hpc_job:
+  needs: []
+  allow_failure: true
+  stage: test
+  rules:
+    - *rule_no_newell_rebuild
+    - *rule_no_deception_rebuild
+    - *rule_no_ascent_rebuild
+    - *rule_no_incline_rebuild
+    - *rule_no_newell_test
+    - *rule_no_deception_test
+    - *rule_no_ascent_test
+    - *rule_no_incline_test
+    - *rule_1
+    - *rule_2
+    - *rule_3
+  extends: .pnnl_nonhpc_tags
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+
+.cluster_build:
+  needs: []
+  stage: build
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+  variables:
+    OUTPUT_SUFFIX: "_build"
+    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
+
+.cluster_test:
+  stage: test
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+    - .pnnl_after_script_template
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+    CTESTARGS: "--timeout 240 --output-on-failure -E Python"
+    OUTPUT_SUFFIX: "_test"
+
+.cluster_py_test:
+  stage: test
+  allow_failure: true
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+      # No after_script as only one test per platform cleans up
+      # Since python test should finish first, we let other test cleanup
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+    CTESTARGS: "--timeout 240 --output-on-failure -R Python"
+    OUTPUT_SUFFIX: "_test_python"
+
+.deception:
+  rules:
+    - *rule_no_newell_rebuild
+    - *rule_no_deception_rebuild
+    - *rule_no_ascent_rebuild
+    - *rule_no_incline_rebuild
+    - *rule_no_newell_test
+    - *rule_no_incline_test
+    - *rule_no_ascent_test
+    - *rule_1
+    - *rule_2
+    - *rule_3
+  variables:
+    MY_CLUSTER: "deception"
+    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+    SLURM_ARGS: " --gres=gpu:1 --ntasks=3 "
+
+.newell:
+  rules:
+    - *rule_no_newell_rebuild
+    - *rule_no_deception_rebuild
+    - *rule_no_ascent_rebuild
+    - *rule_no_incline_rebuild
+    - *rule_no_deception_test
+    - *rule_no_incline_test
+    - *rule_no_ascent_test
+    - *rule_1
+    - *rule_2
+    - *rule_3
+  variables:
+    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+    MY_CLUSTER: "newell"
+    SLURM_ARGS: " --gres=gpu:1 --ntasks=3 "
+
+.incline:
+  rules:
+    - *rule_no_newell_rebuild
+    - *rule_no_deception_rebuild
+    - *rule_no_ascent_rebuild
+    - *rule_no_incline_rebuild
+    - *rule_no_newell_test
+    - *rule_no_deception_test
+    - *rule_no_ascent_test
+    - *rule_1
+    - *rule_2
+    - *rule_3
+  variables:
+    WORKDIR_SUFFIX: "x86_64-clang-hip-build"
+    MY_CLUSTER: "incline"
+    SLURM_ARGS: " --exclusive --ntasks=3 "
+
+.module_rebuild:
+  needs: []
+  stage: build
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_module_script_template
+  allow_failure: true
 
 stages:
   - build
   - test
 
-# For PNNL CI
-CMake Lint:
-  stage: build
+# -- Pre Stage
+SVC Account Cleanup:
+  resource_group: cleanup
   allow_failure: true
-  extends:
-    - .pnnl_nonhpc_tags
-    - .pnnl_rules
+  image: ubuntu:20.04
+  stage: .pre
+  extends: .pnnl_tags_template
+  variables:
+    # Don't clone for cleanup job
+    GIT_STRATEGY: none
+  script:
+    - export WORKDIR="$HOME/gitlab/"
+    # clears directory of files more than 6 hours/360 minutes old
+    - find $WORKDIR -type d -mindepth 1 -mmin +360 -prune -print -exec rm -rf {} \; || true
+    - ls -hal $WORKDIR
+
+Ascent Push Mirror:
+  image: mrnonz/alpine-git-curl:alpine3.16
+  stage: .pre
+  extends: .pnnl_nonhpc_tags
+  rules:
+  # Run if explicitly running for Ascent
+    - if: '$CI_COMMIT_TITLE =~ /\[ascent-test\]/'
+    - if: '$CI_COMMIT_TITLE =~ /\[ascent-rebuild\]/'
+  # Don't run if we are building/testing for another platform and not ascent
+    - *rule_no_deception_rebuild
+    - *rule_no_newell_rebuild
+    - *rule_no_incline_rebuild
+    - *rule_no_deception_test
+    - *rule_no_newell_test
+    - *rule_no_incline_test
+  # Don't run on develop/main, as this is broken for non-merge-request branhces
+    - if: ($CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME== "develop")
+      when: never
+    - if: $CI_MERGE_REQUEST_IID
+  variables:
+    # Don't need to check out submodules as we aren't using them 
+    GIT_SUBMODULE_STRATEGY: none
+  script:
+    - git --version
+    - curl --version
+    - git checkout -b ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+    - git config --global credential.username ${ASCENT_PUSH_MIRROR_USER}
+    - git config --global core.askPass ./.gitlab/ci/ascent-cred-helper.sh
+    - git config --global credential.helper cache
+    - git remote add ascent https://code.ornl.gov/ecpcitest/exasgd/exago.git
+    - git push --tags --force -o ci.skip --prune ascent ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+    - "curl -X POST --fail -F token=${ASCENT_CI_TRIGGER_TOKEN} -F ref=${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} https://code.ornl.gov/api/v4/projects/7381/trigger/pipeline"
+
+# -- Build Stage
+CMake Lint:
+  image: ubuntu:20.04
+  extends: .non_hpc_job
   script:
     |
     set -x
@@ -193,11 +417,8 @@ CMake Lint:
     exit $?
 
 C++ Lint:
-  stage: build
-  allow_failure: true
-  extends:
-    - .pnnl_nonhpc_tags
-    - .pnnl_rules
+  image: ubuntu:20.04
+  extends: .non_hpc_job
   script:
     |
     set -x
@@ -206,11 +427,8 @@ C++ Lint:
     exit $?
 
 Python Lint:
-  stage: build
-  allow_failure: true
-  extends:
-    - .pnnl_nonhpc_tags
-    - .pnnl_rules
+  image: ubuntu:20.04
+  extends: .non_hpc_job
   script:
     |
     set -x
@@ -220,11 +438,8 @@ Python Lint:
     exit $?
 
 File Naming Conventions:
-  stage: build
-  allow_failure: true
-  extends:
-    - .pnnl_nonhpc_tags
-    - .pnnl_rules
+  image: ubuntu:20.04
+  extends: .non_hpc_job
   script:
     |
     set -x
@@ -232,153 +447,108 @@ File Naming Conventions:
     ./buildsystem/tools/file_naming_conventions.pl
     exit $?
 
-SVC Account Cleanup:
-  stage: .pre
-  variables:
-    # Don't clone for cleanup jobs
-    GIT_STRATEGY: none
-  extends:
-    - .pnnl_rules
-    - .pnnl_tags_template
-  script:
-    - export WORKDIR="$HOME/gitlab/"
-    # clears directory of files more than 6 hours/360 minutes old
-    - find $WORKDIR -type d -mindepth 1 -mmin +360 -prune -print -exec rm -rf {} \; || true
-    - ls -hal $WORKDIR
-
 Newell Build:
-  stage: build
+  extends:
+    - .cluster_build
+    - .newell
   variables:
-    SLURM_Q: "newell_shared"
-    MY_CLUSTER: "newell"
-    OUTPUT_SUFFIX: "_build"
     SCRIPT_ARGS: " --build-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
-  extends:
-    - .pnnl_tags_template
-    - .pnnl_script_template
-    - .pnnl_rules
-
-Newell Test:
-  stage: test
-  dependencies:
-    - 'Newell Build'
-  variables:
-    # Don't clone for test jobs
-    GIT_STRATEGY: none
-    SLURM_Q: "newell_shared"
-    MY_CLUSTER: "newell"
-    CTESTARGS: "--output-on-failure -E Python"
-    OUTPUT_SUFFIX: "_test"
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
-  extends:
-    - .pnnl_tags_template
-    - .pnnl_script_template
-    - .pnnl_after_script_template
-    - .pnnl_rules
-
-Newell Py Test:
-  stage: test
-  dependencies:
-    - 'Newell Build'
-  variables:
-    # Don't clone for test jobs
-    GIT_STRATEGY: none
-    SLURM_Q: "newell8"
-    MY_CLUSTER: "newell"
-    CTESTARGS: "--output-on-failure -R Python"
-    OUTPUT_SUFFIX: "_test_python"
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
-  extends:
-    - .pnnl_tags_template
-    - .pnnl_script_template
-      # No after_script as only one test per platform cleans up
-    - .pnnl_rules
-  allow_failure: true
-
-Newell Module Rebuild:
-  stage: .pre
-  when: manual
-# Only for manual pipelines in MRs
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-  variables:
-    GIT_STRATEGY: clone
-    MY_CLUSTER: "newell"
-    WORKDIR_SUFFIX: "spack_newell"
-  extends:
-    - .pnnl_tags_template
-    - .pnnl_module_script_template
-    - .pnnl_rules
-  allow_failure: true
 
 Deception Build:
-  stage: build
-  variables:
-    SLURM_Q: "dl_shared"
-    MY_CLUSTER: "deception"
-    OUTPUT_SUFFIX: "_build"
-    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
   extends:
-    - .pnnl_tags_template
-    - .pnnl_script_template
-    - .pnnl_rules
+    - .cluster_build
+    - .deception
+  variables:
+    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
+
+Incline Build:
+  extends:
+    - .cluster_build
+    - .incline
+  variables:
+    SCRIPT_ARGS: " --build-only --job=clang-hip "
+
+# -- Test Stage
+Newell Test:
+  extends:
+    - .cluster_test
+    - .newell
+  variables:
+    CTESTARGS: " --timeout 240 --output-on-failure -E Python -LE newell-skip "
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+  needs: ['Newell Build']
 
 Deception Test:
-  stage: test
-  dependencies:
-    - 'Deception Build'
-  variables:
-    # Don't clone for test jobs
-    GIT_STRATEGY: none
-    SLURM_Q: "dl_shared"
-    MY_CLUSTER: "deception"
-    CTESTARGS: "--output-on-failure -E Python"
-    OUTPUT_SUFFIX: "_test"
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
   extends:
-    - .pnnl_tags_template
-    - .pnnl_script_template
-    - .pnnl_after_script_template
-    - .pnnl_rules
+    - .cluster_test
+    - .deception
+  variables:
+    CTESTARGS: " --timeout 240 --output-on-failure -E Python -LE deception-skip "
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+  needs: ['Deception Build']
+
+Incline Test:
+  extends:
+    - .cluster_test
+    - .incline
+  variables:
+    SCRIPT_ARGS: " --test-only --job=clang-hip "
+    CTESTARGS: " --timeout 240 --output-on-failure -E Python -LE incline-skip "
+  needs: ['Incline Build']
+     
+Newell Py Test:
+  extends:
+    - .cluster_py_test
+    - .newell
+  variables:
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+  needs: ['Newell Build']
 
 Deception Py Test:
-  stage: test
-  dependencies:
-    - 'Deception Build'
-  variables:
-    # Don't clone for test jobs
-    GIT_STRATEGY: none
-    SLURM_Q: "dl_shared"
-    MY_CLUSTER: "deception"
-    CTESTARGS: "--output-on-failure -R Python"
-    OUTPUT_SUFFIX: "_test_python"
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
   extends:
-    - .pnnl_tags_template
-    - .pnnl_script_template
-      # No after_script as only one test per platform cleans up
-    - .pnnl_rules
-  allow_failure: true
-
-Deception Module Rebuild:
-  stage: .pre
-  when: manual
-  # Only for manual pipelines in MRs
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - .cluster_py_test
+    - .deception
   variables:
-    GIT_STRATEGY: clone
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+  needs: ['Deception Build']
+
+Incline Py Test:
+  extends:
+    - .cluster_py_test
+    - .incline
+  variables:
+    SCRIPT_ARGS: " --test-only --job=clang-hip "
+  needs: ['Incline Build']
+
+# -- .pre stage / deploy
+Deception Module Rebuild:
+  extends: .module_rebuild
+  rules:
+    - if: '$CI_COMMIT_TITLE =~ /\[deception-rebuild\]/'
+      when: always
+    - when: manual
+  variables:
     MY_CLUSTER: "deception"
     WORKDIR_SUFFIX: "spack_deception"
-  extends:
-    - .pnnl_tags_template
-    - .pnnl_module_script_template
-    - .pnnl_rules
-  allow_failure: true
+
+Newell Module Rebuild:
+  extends: .module_rebuild
+  rules:
+    - if: '$CI_COMMIT_TITLE =~ /\[newell-rebuild\]/'
+      when: always
+    - when: manual
+  variables:
+    MY_CLUSTER: "newell"
+    WORKDIR_SUFFIX: "spack_newell"
+
+Incline Module Rebuild:
+  extends: .module_rebuild
+  rules:
+    - if: $CI_COMMIT_TITLE =~ /\[incline-rebuild\]/
+      when: always
+    - when: manual
+  variables:
+    MY_CLUSTER: "incline"
+    WORKDIR_SUFFIX: "spack_incline"
+
 # ---
