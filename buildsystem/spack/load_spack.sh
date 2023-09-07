@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # Enforce running from ExaGO root dir
 if [[ ! -f $PWD/buildsystem/build.sh ]]; then
@@ -53,10 +53,7 @@ source ./tpl/spack/share/spack/setup-env.sh && \
 
 # Create directory for environment
 SPACKENV=$(pwd)/spack-env-$MY_CLUSTER && \
-mkdir -p $SPACKENV && \
-# Remove old config
-(rm -f $SPACKENV/spack.yaml || true) && \
-(rm -f $SPACKENV/spack.lock || true) && \
+( rm -rfd $SPACKENV || true ) && \
 
 # Use a directory based environment, and decorate command line
 spack env create -d $SPACKENV && \

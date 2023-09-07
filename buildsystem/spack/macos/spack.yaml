@@ -1,0 +1,34 @@
+spack:
+  specs:
+    - exago@develop~mpi+raja+hiop+ipopt ^hiop@develop+ginkgo+sparse+kron
+  view: false
+  concretizer:
+    reuse: false
+  config:
+    concretizer: clingo
+    install_tree:
+      root: $SPACK_INSTALL
+    source_cache: $SPACK_CACHE/source-cache
+    misc_cache: $SPACK_CACHE/misc-cache
+    build_stage: $SPACK_CACHE/build-stage
+  modules:
+    default:
+      roots:
+        tcl: $SPACK_INSTALL/$SPACK_MODULES
+  packages:
+    all:
+      require: '%gcc'
+    python:
+      require: '%apple-clang'
+    magma:
+      require: '@2.6.2'
+    coinhsl:
+      require: '@2019.05.21'
+    ipopt:
+      require: '@3.12.10~metis+coinhsl~mumps'
+    raja:
+      require: ~examples~exercises
+    umpire:
+      require: ~openmp~examples
+    petsc:
+      require: ~hypre~superlu-dist~hdf5~metis

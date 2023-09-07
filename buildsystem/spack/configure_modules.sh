@@ -7,8 +7,9 @@ SPACK_INSTALL="${SPACK_INSTALL:?SPACK_INSTALL is unset. Make sure to source load
 # TODO - fix this to be POSIX standardized with tolower across all scripts
 base="./buildsystem/spack/${MY_CLUSTER,,""""}"
 
-# Printing out loaded modules for debugging...
-module list
+if [ $MY_CLUSTER != "macos" ]; then
+  module list
+fi && \
 
 # This assumes that we are installing from a binary mirror, and don't want to fetch files
 # Make sure to use binary_mirror.sh if this is failing
