@@ -120,6 +120,17 @@ public:
     }
   }
 
+  std::string set_file_name(char *name) {
+    std::string str(name);
+    int idx = str.find_last_of('/');
+    int len = str.length();
+    str.erase(0, idx + 1);
+    idx = str.find_last_of('.');
+    len = str.length();
+    str.erase(idx, len - idx);
+    return str;
+  }
+
   /** For each testcase in a given test suite, ensure the options are internally
    * consistent. Throw if invalid - we don't want to attempt to keep running
    * if the test suite is ill-formed.
@@ -151,6 +162,14 @@ public:
     total_num_tests_++;
   }
 
+  virtual inline void warning() {
+    ExaGOLog(verbosity(), "{}", "-- WARNING");
+    auto testcase = create_failing_testcase(test_parameters());
+    warning_testcases_.push_back(testcase);
+    warnings_++;
+    total_num_tests_++;
+  }
+
   /* Callback for each passing test */
   virtual inline void pass() {
     total_num_tests_++;
@@ -162,8 +181,8 @@ public:
     MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
     if (rank != 0)
       return;
-    ExaGOLog(verbosity(), "{:d} / {:d} tests failed.\n", failures(),
-             total_tests());
+    ExaGOLog(verbosity(), "{:d} / {:d} tests failed. {:d} warnings \n",
+             failures(), total_tests(), warnings());
     if (failures()) {
       ExaGOLog(verbosity(), "{}", "Summary of failing functionality tests:");
       std::cout.precision(12);
@@ -179,8 +198,38 @@ public:
     }
   }
 
+  void print_warning(std::string filename, std::string name) {
+    if (warnings()) {
+      warning_stream.precision(12);
+      warning_stream
+          << std::flush
+          << "[ExaGO] Summary of functionality tests with warnings for\n"
+          << name << ":\n"
+          << "###########################################################"
+             "#####################\n"
+          << "# Begin auto-generated TOML test suite\n"
+          << warning_testsuite() << "# End auto-generated TOML test suite\n"
+          << "###########################################################"
+             "#####################\n"
+          << "\n";
+      // extract final filename from string
+      std::string file = filename;
+      filename = ("../");
+      filename.append(file);
+      int rank;
+      MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+      if (rank == 0) {
+        std::ofstream fout;
+        fout.open(filename.c_str());
+        fout << warning_stream.str() << std::endl;
+        fout.close();
+      }
+    }
+  }
+
   /* Return number of failures encountered thus far */
   inline const std::size_t &failures() const { return failures_; }
+  inline const std::size_t &warnings() const { return warnings_; }
   inline const std::size_t &total_tests() const { return total_num_tests_; }
 
 private:
@@ -198,6 +247,16 @@ private:
     testsuite["testcase"] = failing_testcases_;
     return testsuite;
   }
+  /* Output stream to write the test suite of warnings to */
+  toml::value warning_testsuite() {
+    toml::table testsuite;
+    std::stringstream desc;
+    desc << "Auto-generated test suite based on testsuite with name '"
+         << testsuite_name() << "'";
+    testsuite["testsuite_name"] = desc.str();
+    testsuite["testcase"] = warning_testcases_;
+    return testsuite;
+  }
 
   /* Verbosity used by calls to ExaGOLog in methods of this structure. */
   inline int verbosity() const { return logging_verbosity_; }
@@ -210,9 +269,12 @@ private:
 private:
   toml::value failing_testsuite_;
   std::vector<toml::value> failing_testcases_;
-  std::size_t failures_{0}, total_num_tests_{0};
+  toml::value warning_testsuite_;
+  std::vector<toml::value> warning_testcases_;
+  std::size_t failures_{0}, warnings_{0}, total_num_tests_{0};
   int logging_verbosity_;
   std::string testsuite_name_{""};
   toml::value testcases_;
   toml::value testsuite_;
+  std::stringstream warning_stream;
 };

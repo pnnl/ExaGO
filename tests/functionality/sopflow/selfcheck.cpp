@@ -20,8 +20,10 @@ struct SopflowFunctionalityTestParameters {
   int num_contingencies = 0;
   int num_scenarios;
   double tolerance;
+  double warning_tolerance = 0.01;
   double duration;
   double dT;
+  int iter_range;
   int mode;
   bool multiperiod;
   bool multicontingency;
@@ -47,6 +49,7 @@ struct SopflowFunctionalityTestParameters {
   int numiter;
   PetscBool conv_status = PETSC_FALSE;
   std::vector<std::string> reasons_for_failure;
+  std::vector<std::string> warnings;
 
   /* Assign all member variables from a toml map if values are found */
   void assign_from(toml::value values) {
@@ -56,6 +59,7 @@ struct SopflowFunctionalityTestParameters {
     set_if_found(scenfile, values, "scenfile");
     set_if_found(num_scenarios, values, "num_scenarios");
     set_if_found(tolerance, values, "tolerance");
+    set_if_found(warning_tolerance, values, "warning_tolerance");
     set_if_found(initialization_string, values, "initialization_type");
     set_if_found(gen_bus_voltage_string, values, "gen_bus_voltage_type");
     set_if_found(subproblem_solver, values, "subproblem_solver");
@@ -65,6 +69,7 @@ struct SopflowFunctionalityTestParameters {
     set_if_found(verbosity_level, values, "verbosity_level");
     set_if_found(compute_mode, values, "compute_mode");
     set_if_found(mem_space, values, "mem_space");
+    set_if_found(iter_range, values, "iter_range");
 
     // Multi-contingency SOPFLOW settings
     set_if_found(multicontingency, values, "multicontingency");
@@ -176,6 +181,8 @@ struct SopflowFunctionalityTests
     testcase["observed_obj_value"] = params.obj_value;
     testcase["scaled_objective_value_error"] = params.error;
     testcase["tolerance"] = params.tolerance;
+    testcase["warning_tolerance"] = params.warning_tolerance;
+    testcase["iter_range"] = params.iter_range;
     testcase["did_sopflow_converge"] = params.conv_status;
 
     testcase["multiperiod"] = params.multiperiod;
@@ -187,6 +194,7 @@ struct SopflowFunctionalityTests
       testcase["windgen"] = params.windgen;
     }
     testcase["reasons_for_failure"] = params.reasons_for_failure;
+    testcase["warnings"] = params.warnings;
 
     return testcase;
   }
@@ -290,8 +298,11 @@ struct SopflowFunctionalityTests
     /* Possible ways for a funcitonality test to fail */
     bool converge_failed = false;
     bool obj_failed = false;
+    bool obj_warning = false;
     bool num_iter_failed = false;
+    bool num_iter_warning = false;
     params.reasons_for_failure.clear();
+    params.warnings.clear();
 
     /* Test convergence status */
     ierr = SOPFLOWGetConvergenceStatus(sopflow, &params.conv_status);
@@ -306,21 +317,42 @@ struct SopflowFunctionalityTests
     ExaGOCheckError(ierr);
     if (!IsEqual(params.obj_value, params.expected_obj_value, params.tolerance,
                  params.error)) {
-      obj_failed = true;
+      if (!IsEqual(params.obj_value, params.expected_obj_value,
+                   params.warning_tolerance, params.error)) {
+        obj_failed = true;
 #ifdef EXAGO_ENABLE_LOGGING
-      params.reasons_for_failure.push_back(fmt::format(
-          "expected objective value={} actual objective value={} tol={} err={}",
-          params.expected_obj_value, params.obj_value, params.tolerance,
-          params.error));
+        params.reasons_for_failure.push_back(
+            fmt::format("expected objective value={} actual objective value={} "
+                        "tol={} err={}",
+                        params.expected_obj_value, params.obj_value,
+                        params.tolerance, params.error));
 #else
-      char sbuf[256];
-      sprintf(
-          sbuf,
-          "expected objective value=%e actual objective value=%e tol=%e err=%e",
-          params.expected_obj_value, params.obj_value, params.tolerance,
-          params.error);
-      params.reasons_for_failure.push_back(std::string(sbuf));
+        char sbuf[256];
+        sprintf(sbuf,
+                "expected objective value=%e actual objective value=%e tol=%e "
+                "err=%e",
+                params.expected_obj_value, params.obj_value, params.tolerance,
+                params.error);
+        params.reasons_for_failure.push_back(std::string(sbuf));
 #endif
+      } else {
+        obj_warning = true;
+#ifdef EXAGO_ENABLE_LOGGING
+        params.warnings.push_back(fmt::format(
+            "expected objective value={} actual objective value={}"
+            " tol={} warning_tol={} err={}",
+            params.expected_obj_value, params.obj_value, params.tolerance,
+            params.warning_tolerance, params.error));
+#else
+        char sbuf[256];
+        sprintf(sbuf,
+                "expected objective value=%e actual objective value=%e"
+                " tol=%e warning_tol={} err=%e",
+                params.expected_obj_value, params.obj_value, params.tolerance,
+                params.warning_tolerance, params.error);
+        params.warnings.push_back(std::string(sbuf));
+#endif
+      }
     }
 
     /* Test num iterations */
@@ -328,17 +360,32 @@ struct SopflowFunctionalityTests
     ExaGOCheckError(ierr);
     if (params.expected_num_iters != -1 &&
         params.numiter != params.expected_num_iters) {
-      num_iter_failed = true;
+      int diff = abs(params.numiter - params.expected_num_iters);
+      if (diff > params.iter_range) {
+        num_iter_failed = true;
 #ifdef EXAGO_ENABLE_LOGGING
-      params.reasons_for_failure.push_back(
-          fmt::format("expected {} num iters, got {}",
-                      params.expected_num_iters, params.numiter));
+        params.reasons_for_failure.push_back(
+            fmt::format("expected {} num iters, got {}",
+                        params.expected_num_iters, params.numiter));
 #else
-      char sbuf[256];
-      sprintf(sbuf, "expected %d num iters, got %d", params.expected_num_iters,
-              params.numiter);
-      params.reasons_for_failure.push_back(std::string(sbuf));
+        char sbuf[256];
+        sprintf(sbuf, "expected %d num iters, got %d",
+                params.expected_num_iters, params.numiter);
+        params.reasons_for_failure.push_back(std::string(sbuf));
 #endif
+      } else {
+        num_iter_warning = true;
+#ifdef EXAGO_ENABLE_LOGGING
+        params.warnings.push_back(fmt::format("expected {} num iters, got {}",
+                                              params.expected_num_iters,
+                                              params.numiter));
+#else
+        char sbuf[256];
+        sprintf(sbuf, "expected %d num iters, got %d",
+                params.expected_num_iters, params.numiter);
+        params.warnings.push_back(std::string(sbuf));
+#endif
+      }
     }
 
     /* Did the current functionality test fail in any way? */
@@ -346,8 +393,13 @@ struct SopflowFunctionalityTests
 
     if (local_fail)
       fail();
-    else
-      pass();
+    else {
+      if (num_iter_warning || obj_warning) {
+        warning();
+      } else {
+        pass();
+      }
+    }
 
     ierr = SOPFLOWDestroy(&sopflow);
     ExaGOCheckError(ierr);
@@ -359,6 +411,17 @@ int main(int argc, char **argv) {
     std::cerr << "Pass path to test cases TOML file as the first argument to "
               << "this test driver.\n";
     std::exit(1);
+  }
+
+  std::string name;
+  if (argc > 1) {
+    std::string str(argv[1]);
+    int idx = str.find_last_of('/');
+    str.erase(0, idx + 1);
+    name = "Test from TOML file sopflow/";
+    name.append(str);
+  } else {
+    name = "UNAMED SOPFLOW TEST";
   }
 
   PetscErrorCode ierr;
@@ -373,6 +436,9 @@ int main(int argc, char **argv) {
   SopflowFunctionalityTests test{std::string(argv[1])};
   test.run_all_test_cases();
   test.print_report();
+  std::string filename = test.set_file_name(argv[1]);
+  filename.append(".warning");
+  test.print_warning(filename, name);
 
   ExaGOFinalize();
   return test.failures();
