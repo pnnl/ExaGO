@@ -6,6 +6,7 @@ model = 'POWER_BALANCE_HIOP'
 hiop_verbosity_level = 12
 hiop_compute_mode = 'CPU'
 tolerance = 1e-3
+warning_tolerance = 0.01
 gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
 has_gen_set_point = false
 is_loadloss_active = false
@@ -24,6 +25,7 @@ description = 'datafiles/case9/case9mod.m base case'
 is_loadloss_active = false
 is_powerimb_active = false
 num_iters = 11
+iter_range = 20
 obj_value = 4.1444511e+03
 
 [[testcase]]
@@ -32,6 +34,7 @@ description = 'datafiles/case118.m base case'
 is_loadloss_active = false
 is_powerimb_active = false
 num_iters = 27
+iter_range = 15
 obj_value = 129660.692271
 
 #[[testcase]]
@@ -49,6 +52,7 @@ is_loadloss_active = false
 is_powerimb_active = false
 has_gen_set_point = true
 num_iters = 27
+iter_range = 15
 obj_value = 129660.692271
 
 
@@ -59,6 +63,7 @@ description = 'datafiles/case9/case9mod.m with load loss'
 is_loadloss_active = true
 is_powerimb_active = false
 num_iters = 13
+iter_range = 20
 obj_value = 4143.89073747
 
 [[testcase]]
@@ -67,6 +72,7 @@ description = 'datafiles/case118.m with load loss'
 is_loadloss_active = true
 is_powerimb_active = false
 num_iters = 25
+iter_range = 15
 obj_value = 129641.339495
 
 #[[testcase]]
@@ -84,6 +90,7 @@ description = 'datafiles/case9/case9mod.m with power imbalance'
 is_loadloss_a0tive = false
 is_powerimb_active = true
 num_iters = 10
+iter_range = 15
 obj_value = 4.1444511e+03
 
 [[testcase]]
@@ -92,6 +99,7 @@ description = 'datafiles/case118.m with power imbalance'
 is_loadloss_active = false
 is_powerimb_active = true
 num_iters = 23
+iter_range = 15
 obj_value = 1.2965990e+05
 
 #[[testcase]]
@@ -109,6 +117,7 @@ description = 'datafiles/case9/case9mod.m with load loss and power imbalance'
 is_loadloss_active = true
 is_powerimb_active = true
 num_iters = 11
+iter_range = 15
 obj_value = 4140.2727343
 
 [[testcase]]
@@ -117,6 +126,7 @@ description = 'datafiles/case118.m with load loss and power imbalance'
 is_loadloss_active = true
 is_powerimb_active = true
 num_iters = 23
+iter_range = 15
 obj_value = 129660.568745
 
 #[[testcase]]
@@ -135,6 +145,7 @@ is_loadloss_active = true
 is_powerimb_active = false
 load_loss_penalty = 15000.0
 num_iters = 10
+iter_range = 15
 obj_value = 4135.45492688
 
 [[testcase]]
@@ -144,6 +155,7 @@ is_loadloss_active = true
 is_powerimb_active = false
 load_loss_penalty = 15000.0
 num_iters = 23
+iter_range = 15
 obj_value = 129364.111953
 
 #[[testcase]]
@@ -163,6 +175,7 @@ is_loadloss_active = false
 is_powerimb_active = true
 power_imbalance_penalty = 1500.0
 num_iters = 11
+iter_range = 15
 obj_value = 4139.05896604
 
 [[testcase]]
@@ -172,6 +185,7 @@ is_loadloss_active = false
 is_powerimb_active = true
 power_imbalance_penalty = 1500.0
 num_iters = 22
+iter_range = 15
 obj_value = 1.2962914e+05
 
 [[testcase]]
@@ -181,6 +195,7 @@ is_loadloss_active =	true
 is_powerimb_active =	false
 gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
 num_iters = 64
+iter_range = 15
 obj_value = 750051.592445
 
 #[[testcase]]

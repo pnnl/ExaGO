@@ -285,6 +285,7 @@ Build libraries and testing framework.
 if(EXAGO_RUN_TESTS)
   enable_testing()
   include(ExaGOTestingUtilities)
+  configure_file(tests/CTestCustom.cmake.in CTestCustom.cmake)
 endif()
 
 if(EXAGO_ENABLE_LOGGING)
