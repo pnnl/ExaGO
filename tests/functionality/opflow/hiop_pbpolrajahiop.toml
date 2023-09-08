@@ -5,6 +5,7 @@ solver = 'HIOP'
 model = 'PBPOLRAJAHIOP'
 hiop_compute_mode = 'GPU'
 tolerance = 1e-3
+warning_tolerance = 0.01
 gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
 has_gen_set_point = false
 is_loadloss_active = false
@@ -13,6 +14,7 @@ use_agc = false
 load_loss_penalty = 1000.0
 power_imbalance_penalty = 1000.0
 initialization_type = 'MIDPOINT'
+iter_range = 0
 
 # - HIOP solver
 # -- RAJAHIOP model
@@ -21,7 +23,8 @@ network = 'datafiles/case9/case9mod.m'
 description = 'datafiles/case9/case9mod.m base case'
 is_loadloss_active = false
 is_powerimb_active = false
-num_iters = -1              #usually 10 or 11
+num_iters = 10              #usually 10 or 11
+iter_range = 1
 obj_value = 4.1444511e+03
 
 [[testcase]]
@@ -39,7 +42,8 @@ description = "datafiles/case118.m initialization DCOPF"
 is_loadloss_active =	false
 is_powerimb_active =	false
 initialization_type = "DCOPF"
-num_iters = -1              #usually 15 or 18
+num_iters = 15             #usually 15 or 18
+iter_range = 3
 obj_value = 129660.692271
 
 [[testcase]]
@@ -48,7 +52,8 @@ description = "datafiles/case_ACTIVSg200.m initialization DCOPF"
 is_loadloss_active =	false
 is_powerimb_active =	false
 initialization_type = "DCOPF"
-num_iters = -1              #usually 16 or 31
+num_iters = 16              #usually 16 or 31
+iter_range = 15
 obj_value = 27564.2030874
 
 #[[testcase]]

@@ -12,21 +12,24 @@ flatten = true
 description = 'datafiles/case_ACTIVSg200.m IPOPT 1scen SOPFLOW'
 solver = 'IPOPT'
 num_scenarios = 1
-num_iters = -1                        # newell(361) prev 290
+num_iters = 361                        # newell(361) prev 290
+iter_range = 110
 obj_value = 14316.655532892493
 
 [[testcase]]
 description = 'datafiles/case_ACTIVSg200.m IPOPT 2scen SOPFLOW'
 solver = 'IPOPT'
 num_scenarios = 2
-num_iters = -1                        # newell(129) prev 153
+num_iters = 129                        # newell(129) prev 153
+iter_range = 25
 obj_value = 14316.655814828378
 
 [[testcase]]
 description = 'datafiles/case_ACTIVSg200.m IPOPT 3scen SOPFLOW'
 solver = 'IPOPT'
 num_scenarios = 3
-num_iters = -1                        # newell(311) prev 387
+num_iters = 311                        # newell(311) prev 387
+iter_range = 100
 obj_value = 14316.655814828378
 
 # For some reason num_iters is coming back as 0 for these tests

@@ -1,0 +1,2 @@
+  set(CTEST_CUSTOM_PRE_TEST "perl @CMAKE_SOURCE_DIR@/tests/functionality/scripts/pre_test.pl @CMAKE_SOURCE_DIR@/build/tests/functionality")
+  set(CTEST_CUSTOM_POST_TEST "perl @CMAKE_SOURCE_DIR@/tests/functionality/scripts/post_test.pl @CMAKE_SOURCE_DIR@/build/tests/functionality")
