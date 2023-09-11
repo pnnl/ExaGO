@@ -51,5 +51,4 @@ if(EXAGO_INSTALL_TESTS)
     DEPENDS
     LOGGING
   )
-  
 endif()
