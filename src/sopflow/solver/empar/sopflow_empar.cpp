@@ -25,7 +25,7 @@ PetscErrorCode SOPFLOWSolverSolve_EMPAR(SOPFLOW sopflow) {
     }
   }
 
-  PetscFunctionReturn(0);
+  PetscFunctionReturn(ierr);
 }
 
 PetscErrorCode SOPFLOWSolverDestroy_EMPAR(SOPFLOW sopflow) {
@@ -148,6 +148,9 @@ PetscErrorCode SOPFLOWSolverGetConstraintMultipliers_EMPAR(SOPFLOW sopflow,
 
 PetscErrorCode SOPFLOWSolverGetConvergenceStatus_EMPAR(SOPFLOW sopflow,
                                                        PetscBool *status) {
+  // empty or noop...
+  (void)sopflow;
+
   PetscFunctionBegin;
 
   *status = PETSC_TRUE;
@@ -156,6 +159,7 @@ PetscErrorCode SOPFLOWSolverGetConvergenceStatus_EMPAR(SOPFLOW sopflow,
 }
 
 PetscErrorCode SOPFLOWSolverSetUp_EMPAR(SOPFLOW sopflow) {
+  (void)sopflow;
   PetscFunctionBegin;
 
   PetscFunctionReturn(0);

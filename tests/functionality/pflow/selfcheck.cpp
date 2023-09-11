@@ -31,19 +31,19 @@ struct PflowFunctionalityTestParameters {
 struct PflowFunctionalityTests
     : public FunctionalityTestContext<PflowFunctionalityTestParameters> {
 
+  using Params = PflowFunctionalityTestParameters;
   MPI_Comm comm;
   int nprocs;
 
   PflowFunctionalityTests(std::string testsuite_filename, MPI_Comm comm,
                           int logging_verbosity = EXAGO_LOG_INFO)
-      : comm{comm},
-        FunctionalityTestContext(testsuite_filename, logging_verbosity) {
+      : FunctionalityTestContext(testsuite_filename, logging_verbosity),
+        comm{comm} {
     auto err = MPI_Comm_size(comm, &nprocs);
     if (err)
       throw ExaGOError("Error getting MPI num ranks");
   }
 
-  using Params = PflowFunctionalityTestParameters;
   void
   ensure_options_are_consistent(toml::value testcase,
                                 toml::value presets = toml::value{}) override {
@@ -186,12 +186,10 @@ int main(int argc, char **argv) {
   }
 
   PetscErrorCode ierr;
-  OutputFormat fmt = MATPOWER;
   MPI_Comm comm = MPI_COMM_WORLD;
   char appname[] = "pflow";
-  int _argc = 0;
   ierr = ExaGOInitialize(comm, &argc, &argv, appname, help);
-
+  ExaGOCheckError(ierr);
   ExaGOLog(EXAGO_LOG_INFO, "{}", "Creating PFlow Functionality Test");
 
   PflowFunctionalityTests test{std::string(argv[1]), comm};

@@ -324,6 +324,7 @@ void init_exago_sopflow(pybind11::module &m) {
              PetscErrorCode ierr;
              PetscBool flag;
              ierr = SOPFLOWGetConvergenceStatus(w.sopf, &flag);
+             ExaGOCheckError(ierr);
              return (bool)flag;
            })
       .def("get_tolerance",

@@ -212,6 +212,7 @@ PetscErrorCode OPFLOWSetVariableandConstraintBounds_IBCAR2(OPFLOW opflow,
 }
 
 PetscErrorCode OPFLOWSetInitialGuess_IBCAR2(OPFLOW opflow, Vec X, Vec Lambda) {
+  (void)Lambda;
   PetscErrorCode ierr;
   PS ps = opflow->ps;
   const PetscScalar *xl, *xu;
@@ -1152,6 +1153,10 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR2(OPFLOW opflow,
 }
 
 PetscErrorCode OPFLOWComputeConstraints_IBCAR2(OPFLOW opflow, Vec X, Vec G) {
+  // empty function
+  (void)opflow;
+  (void)X;
+  (void)G;
   PetscFunctionBegin;
 
   PetscFunctionReturn(0);
@@ -1387,6 +1392,8 @@ PetscErrorCode OPFLOWModelSetNumConstraints_IBCAR2(OPFLOW opflow,
                                                    PetscInt *busnconeq,
                                                    PetscInt *nconeq,
                                                    PetscInt *nconineq) {
+  (void)branchnconeq;
+  (void)busnconeq;
   PetscInt i;
   PS ps = opflow->ps;
   PSBUS bus;

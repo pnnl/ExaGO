@@ -571,7 +571,7 @@ SOPFLOWSetContingencyData(SOPFLOW sopflow,
 PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
   PetscErrorCode ierr;
   PetscBool sopflowsolverset;
-  PetscInt c, s, i, j;
+  PetscInt s, i;
   PS ps;
   OPFLOW opflow;
   char ctgcfile[PETSC_MAX_PATH_LEN];
@@ -1409,7 +1409,6 @@ PetscErrorCode SOPFLOWGetConvergenceStatus(SOPFLOW sopflow, PetscBool *status) {
   SOPFLOWGetNumIterations - Returns the number of iterations for given solver
 */
 PetscErrorCode SOPFLOWGetNumIterations(SOPFLOW sopflow, PetscInt *iter) {
-  PetscErrorCode ierr;
   *iter = sopflow->numiter;
   PetscFunctionReturn(0);
 }

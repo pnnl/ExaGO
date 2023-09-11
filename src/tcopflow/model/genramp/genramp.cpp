@@ -59,6 +59,8 @@ PetscErrorCode TCOPFLOWSetVariableBounds_GENRAMP(TCOPFLOW tcopflow, Vec Xl,
 
 PetscErrorCode TCOPFLOWSetConstraintBounds_GENRAMP(TCOPFLOW tcopflow, Vec Gl,
                                                    Vec Gu) {
+  (void)Gl;
+  (void)Gu;
   PetscInt i, j, k, ctr;
   PetscErrorCode ierr;
   PetscScalar *gl, *gu, *gli, *gui;

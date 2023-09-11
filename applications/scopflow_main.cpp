@@ -11,8 +11,7 @@ int main(int argc, char **argv) {
   char ctgcfile[PETSC_MAX_PATH_LEN];
   char outputdir[PETSC_MAX_PATH_LEN];
   PetscBool outputdir_set;
-  PetscBool flg = PETSC_FALSE, flgctgc = PETSC_FALSE,
-            ismultiperiod = PETSC_TRUE;
+  PetscBool flg = PETSC_FALSE, flgctgc = PETSC_FALSE;
   PetscBool print_output = PETSC_FALSE, save_output = PETSC_FALSE;
   PetscLogStage stages[3];
   char appname[] = "scopflow";

@@ -1294,7 +1294,6 @@ private:
     int fail = 0;
     const int *cols;
     const double *vals;
-    int count = 0;
     PetscInt nrow, ncol;
     PetscErrorCode ierr;
     auto idx = [&ncol](double *mat, int r, int c) {
@@ -1313,7 +1312,6 @@ private:
                     << std::endl;
           fail++;
         }
-        count++;
       }
       ierr = MatRestoreRow(a, i, &ncols, &cols, &vals);
       CHKERRQ(ierr);
@@ -1331,7 +1329,6 @@ private:
     int fail = 0;
     const int *cols;
     const double *vals;
-    int count = 0;
     PetscInt nrow, ncol;
     PetscErrorCode ierr;
 
@@ -1347,7 +1344,6 @@ private:
                     << std::endl;
           fail++;
         }
-        count++;
       }
       ierr = MatRestoreRow(a, i, &ncols, &cols, &vals);
       CHKERRQ(ierr);

@@ -156,8 +156,6 @@ PetscErrorCode OPFLOWGetGenBusVoltageType(OPFLOW opflow,
   Notes: Should be called before OPFLOWSetUp
 */
 PetscErrorCode OPFLOWSkipOptions(OPFLOW opflow, PetscBool skip_options) {
-  PetscErrorCode ierr;
-
   PetscFunctionBegin;
   opflow->skip_options = skip_options;
   PetscFunctionReturn(0);
@@ -1623,8 +1621,6 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
     CHKERRQ(ierr);
   }
   if (opflow->include_loadloss_variables) {
-    int l, nload;
-    int i, nbus;
     PS ps;
     PSBUS bus;
     PSLOAD load;
@@ -1632,9 +1628,9 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
     ierr = OPFLOWGetPS(opflow, &ps);
     CHKERRQ(ierr);
 
-    for (i = 0; i < ps->nbus; i++) {
+    for (int i = 0; i < ps->nbus; i++) {
       bus = &(ps->bus[i]);
-      for (l = 0; l < bus->nload; l++) {
+      for (int l = 0; l < bus->nload; l++) {
         ierr = PSBUSGetLoad(bus, l, &load);
         CHKERRQ(ierr);
         if (load->loss_cost == BOGUSLOSSCOST) {
@@ -2641,9 +2637,8 @@ PetscErrorCode OPFLOWGetConvergenceStatus(OPFLOW opflow, PetscBool *status) {
   Notes: Updates the different fields in the PS struct from the OPFLOW solution
 */
 PetscErrorCode OPFLOWSolutionToPS(OPFLOW opflow) {
-  PetscErrorCode ierr;
   PetscBool conv_status;
-
+  PetscErrorCode ierr;
   PetscFunctionBegin;
 
   ierr = (*opflow->modelops.solutiontops)(opflow);
@@ -2658,7 +2653,7 @@ PetscErrorCode OPFLOWSolutionToPS(OPFLOW opflow) {
   ierr = OPFLOWSetSummaryStats(opflow);
 
   opflow->solutiontops = PETSC_TRUE;
-  PetscFunctionReturn(0);
+  PetscFunctionReturn(ierr);
 }
 
 /*
@@ -2772,8 +2767,6 @@ PetscErrorCode OPFLOWSetAuxillaryObjective(OPFLOW opflow,
                                            OPFLOWAuxGradientFunction gradfunc,
                                            OPFLOWAuxHessianFunction hessfunc,
                                            void *userctx) {
-  PetscErrorCode ierr;
-
   PetscFunctionBegin;
   opflow->modelops.computeauxobjective = objfunc;
   opflow->modelops.computeauxgradient = gradfunc;
@@ -2788,7 +2781,6 @@ PetscErrorCode OPFLOWSetAuxillaryObjective(OPFLOW opflow,
 PetscErrorCode OPFLOWSetUpdateVariableBoundsFunction(
     OPFLOW opflow, PetscErrorCode (*updatefunc)(OPFLOW, Vec, Vec, void *),
     void *ctx) {
-  PetscErrorCode ierr;
 
   PetscFunctionBegin;
   opflow->modelops.updatevariablebounds = updatefunc;
@@ -2857,8 +2849,7 @@ PetscErrorCode OPFLOWIgnoreLineflowConstraints(OPFLOW opflow, PetscBool set) {
 PetscErrorCode OPFLOWSetLinesMonitored(OPFLOW opflow, PetscInt nkvlevels,
                                        const PetscScalar *kvlevels,
                                        const char *monitorfile) {
-  PetscErrorCode ierr;
-
+  PetscErrorCode ierr = 0;
   PetscFunctionBegin;
 
   if (monitorfile != NULL) {
@@ -2870,6 +2861,7 @@ PetscErrorCode OPFLOWSetLinesMonitored(OPFLOW opflow, PetscInt nkvlevels,
     opflow->nlinekvmon = opflow->ps->nkvlevels;
     ierr = PetscMemcpy(opflow->linekvmon, opflow->ps->kvlevels,
                        opflow->nlinekvmon * sizeof(PetscScalar));
+    ExaGOCheckError(ierr);
   } else if (nkvlevels == 0) {
     opflow->ignore_lineflow_constraints = PETSC_TRUE;
     opflow->nlinekvmon = 0;
@@ -2878,9 +2870,10 @@ PetscErrorCode OPFLOWSetLinesMonitored(OPFLOW opflow, PetscInt nkvlevels,
     opflow->nlinekvmon = nkvlevels;
     ierr = PetscMemcpy(opflow->linekvmon, kvlevels,
                        nkvlevels * sizeof(PetscScalar));
+    ExaGOCheckError(ierr);
   }
 
-  PetscFunctionReturn(0);
+  PetscFunctionReturn(ierr);
 }
 
 /*
@@ -2985,7 +2978,6 @@ PetscErrorCode OPFLOWGetIgnoreLineflowConstraints(OPFLOW opflow,
  * @note Models and solvers can only be defined per what exago is built with.
  */
 PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
-  PetscErrorCode ierr;
   PetscFunctionBegin;
 #if defined(EXAGO_ENABLE_IPOPT)
   PetscBool ipopt, ipopt_pbpol, ipopt_pbcar, ipopt_ibcar, ipopt_ibcar2,
@@ -3049,4 +3041,4 @@ PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
   }
 #endif // HIOP
   PetscFunctionReturn(0);
-};
+}

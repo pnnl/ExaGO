@@ -59,9 +59,9 @@ protected:
    * relative tolerance. Uses absolute tolerancew when the reference is zero.
    *
    */
-  [[nodiscard]] static LocalOrdinalType isEqual(const RealType value,
-                                                const RealType reference,
-                                                const RealType tol = eps) {
+  [[gnu::warn_unused_result]] static LocalOrdinalType
+  isEqual(const RealType value, const RealType reference,
+          const RealType tol = eps) {
     return (std::abs(value - reference) / (one + std::abs(reference)) < tol);
   }
 

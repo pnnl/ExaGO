@@ -423,12 +423,10 @@ int main(int argc, char **argv) {
   }
 
   PetscErrorCode ierr;
-  OutputFormat fmt = MATPOWER;
   MPI_Comm comm = MPI_COMM_WORLD;
   char appname[] = "scopflow";
-  int _argc = 0;
   ierr = ExaGOInitialize(comm, &argc, &argv, appname, help);
-
+  ExaGOCheckError(ierr);
   ExaGOLog(EXAGO_LOG_INFO, "{}", "Creating SCOPFlow Functionality Test");
 
   ScopflowFunctionalityTests test{std::string(argv[1])};

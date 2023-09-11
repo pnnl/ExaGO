@@ -7,6 +7,8 @@
 /* IPOPT callback functions */
 Bool eval_opflow_f(PetscInt n, PetscScalar *x, Bool new_x,
                    PetscScalar *obj_value, UserDataPtr user_data) {
+  (void)n;
+  (void)new_x;
   PetscErrorCode ierr;
   OPFLOW opflow = (OPFLOW)user_data;
 
@@ -28,6 +30,8 @@ Bool eval_opflow_f(PetscInt n, PetscScalar *x, Bool new_x,
 
 Bool eval_opflow_grad_f(PetscInt n, PetscScalar *x, Bool new_x,
                         PetscScalar *grad_f, UserDataPtr user_data) {
+  (void)n;
+  (void)new_x;
   PetscErrorCode ierr;
   OPFLOW opflow = (OPFLOW)user_data;
 
@@ -55,6 +59,9 @@ Bool eval_opflow_grad_f(PetscInt n, PetscScalar *x, Bool new_x,
 
 Bool eval_opflow_g(PetscInt n, PetscScalar *x, Bool new_x, PetscInt m,
                    PetscScalar *g, UserDataPtr user_data) {
+  (void)n;
+  (void)new_x;
+  (void)m;
   PetscErrorCode ierr;
   OPFLOW opflow = (OPFLOW)user_data;
 
@@ -96,6 +103,10 @@ Bool eval_opflow_g(PetscInt n, PetscScalar *x, Bool new_x, PetscInt m,
 Bool eval_opflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x, PetscInt m,
                        PetscInt nele_jac, PetscInt *iRow, PetscInt *jCol,
                        PetscScalar *values, UserDataPtr user_data) {
+  (void)n;
+  (void)new_x;
+  (void)m;
+  (void)nele_jac;
 
   PetscErrorCode ierr;
   OPFLOW opflow = (OPFLOW)user_data;
@@ -227,6 +238,11 @@ Bool eval_opflow_h(PetscInt n, PetscScalar *x, Bool new_x,
                    PetscScalar obj_factor, PetscInt m, PetscScalar *lambda,
                    Bool new_lambda, PetscInt nele_hess, PetscInt *iRow,
                    PetscInt *jCol, PetscScalar *values, UserDataPtr user_data) {
+  (void)n;
+  (void)new_x;
+  (void)m;
+  (void)new_lambda;
+  (void)nele_hess;
   PetscErrorCode ierr;
   PetscInt nrow;
   OPFLOW opflow = (OPFLOW)user_data;
@@ -340,6 +356,16 @@ Bool OPFLOWSolverMonitor_IPOPT(Index alg_mod, Index iter_count,
                                Number regularization_size, Number alpha_du,
                                Number alpha_pr, Index ls_trials,
                                UserDataPtr user_data) {
+  (void)alg_mod;
+  (void)obj_value;
+  (void)inf_pr;
+  (void)inf_du;
+  (void)mu;
+  (void)d_norm;
+  (void)regularization_size;
+  (void)alpha_du;
+  (void)alpha_pr;
+  (void)ls_trials;
   OPFLOW opflow = (OPFLOW)user_data;
   opflow->numits = iter_count;
   return 1;

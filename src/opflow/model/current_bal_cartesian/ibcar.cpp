@@ -177,6 +177,7 @@ PetscErrorCode OPFLOWSetVariableandConstraintBounds_IBCAR(OPFLOW opflow, Vec Xl,
 }
 
 PetscErrorCode OPFLOWSetInitialGuess_IBCAR(OPFLOW opflow, Vec X, Vec Lambda) {
+  (void)Lambda;
   PetscErrorCode ierr;
   PS ps = opflow->ps;
   const PetscScalar *xl, *xu;
@@ -1075,6 +1076,10 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_IBCAR(OPFLOW opflow,
 }
 
 PetscErrorCode OPFLOWComputeConstraints_IBCAR(OPFLOW opflow, Vec X, Vec G) {
+  // empty function
+  (void)opflow;
+  (void)X;
+  (void)G;
   PetscFunctionBegin;
 
   PetscFunctionReturn(0);
@@ -1091,7 +1096,9 @@ PetscErrorCode OPFLOWComputeObjective_IBCAR(OPFLOW opflow, Vec X,
   PetscInt loc;
   PetscInt k;
   PetscScalar Pg;
+  // Flops are calculated but never stored...
   PetscInt flps = 0;
+  (void)flps;
 
   PetscFunctionBegin;
 
@@ -1163,7 +1170,9 @@ PetscErrorCode OPFLOWComputeGradient_IBCAR(OPFLOW opflow, Vec X, Vec grad) {
   PetscInt loc;
   PetscInt k;
   PetscScalar Pg;
+  // flps are calculated but not used...
   PetscInt flps = 0;
+  (void)flps;
 
   PetscFunctionBegin;
   ierr = VecGetArrayRead(X, &x);
@@ -1302,6 +1311,8 @@ PetscErrorCode OPFLOWModelSetNumConstraints_IBCAR(OPFLOW opflow,
                                                   PetscInt *busnconeq,
                                                   PetscInt *nconeq,
                                                   PetscInt *nconineq) {
+  (void)branchnconeq;
+  (void)busnconeq;
   PetscInt i;
   PS ps = opflow->ps;
   PSBUS bus;
@@ -1365,7 +1376,9 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_IBCAR(OPFLOW opflow,
   PetscInt row[12], col[12];
   PetscScalar val[12];
   PetscScalar Vr, Vi, Vm2, Vm4, Vm6;
+  // flps are calculated but not used...
   PetscInt flps = 0;
+  (void)flps;
 
   PetscFunctionBegin;
 

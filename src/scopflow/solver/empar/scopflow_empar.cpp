@@ -25,7 +25,7 @@ PetscErrorCode SCOPFLOWSolverSolve_EMPAR(SCOPFLOW scopflow) {
     }
   }
 
-  PetscFunctionReturn(0);
+  PetscFunctionReturn(ierr);
 }
 
 PetscErrorCode SCOPFLOWSolverDestroy_EMPAR(SCOPFLOW scopflow) {
@@ -146,6 +146,7 @@ PetscErrorCode SCOPFLOWSolverGetConstraintMultipliers_EMPAR(SCOPFLOW scopflow,
 
 PetscErrorCode SCOPFLOWSolverGetConvergenceStatus_EMPAR(SCOPFLOW scopflow,
                                                         PetscBool *status) {
+  (void)scopflow;
   PetscFunctionBegin;
 
   *status = PETSC_TRUE;
@@ -154,6 +155,7 @@ PetscErrorCode SCOPFLOWSolverGetConvergenceStatus_EMPAR(SCOPFLOW scopflow,
 }
 
 PetscErrorCode SCOPFLOWSolverSetUp_EMPAR(SCOPFLOW scopflow) {
+  (void)scopflow;
   PetscFunctionBegin;
 
   PetscFunctionReturn(0);

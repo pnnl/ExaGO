@@ -222,7 +222,6 @@ PetscErrorCode SCOPFLOWComputeJacobian_GENRAMP(SCOPFLOW scopflow, Vec X,
   const PetscScalar *vals;
   PetscInt row, col, gloc;
   PetscScalar val;
-  PetscInt flps = 0;
 
   PetscFunctionBegin;
 
