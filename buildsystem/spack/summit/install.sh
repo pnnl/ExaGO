@@ -1,3 +1,3 @@
 #!/bin/bash
 
-bsub ./buildsystem/spack/crusher/bsub.sh
+bsub ./buildsystem/spack/summit/bsub.sh
