@@ -17,7 +17,6 @@ int main(int argc, char **argv) {
   char appname[] = "opflow";
   const char default_output_name[] = "opflowout";
   MPI_Comm comm = MPI_COMM_WORLD;
-  PetscBool selfcheck = PETSC_FALSE;
 
   /** Use `ExaGOLogSetLoggingFileName("opflow-logfile");` to log the output. */
   ierr = ExaGOInitialize(comm, &argc, &argv, appname, help);

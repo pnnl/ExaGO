@@ -81,7 +81,6 @@ bool OPFLOWHIOPSPARSEInterface::get_sparse_blocks_info(
     hiop::size_type &nnz_sparse_Jacineq,
     hiop::size_type &nnz_sparse_Hess_Lagr) {
   PetscErrorCode ierr;
-  PetscScalar *xl, *xu, *gl, *gu;
   MatInfo info_eq, info_ineq, info_hes;
 
   nx = opflow->nx;
@@ -132,8 +131,10 @@ bool OPFLOWHIOPSPARSEInterface::get_sparse_blocks_info(
 bool OPFLOWHIOPSPARSEInterface::eval_f(const hiop::size_type &n,
                                        const double *x, bool new_x,
                                        double &obj_value) {
+  (void)n;
+  (void)new_x;
+
   PetscErrorCode ierr;
-  PetscScalar *xarr;
 
   obj_value = 0.0;
   ierr = VecPlaceArray(opflow->X, x);
@@ -162,6 +163,15 @@ bool OPFLOWHIOPSPARSEInterface::eval_cons(const hiop::size_type &n,
                                           const hiop::size_type *idx_cons,
                                           const double *x, bool new_x,
                                           double *cons) {
+  // empty function...
+  (void)n;
+  (void)m;
+  (void)num_cons;
+  (void)idx_cons;
+  (void)x;
+  (void)new_x;
+  (void)cons;
+
   return false;
 }
 
@@ -169,6 +179,9 @@ bool OPFLOWHIOPSPARSEInterface::eval_cons(const hiop::size_type &n,
                                           const hiop::size_type &m,
                                           const double *x, bool new_x,
                                           double *cons) {
+  (void)n;
+  (void)m;
+  (void)new_x;
   PetscErrorCode ierr;
 
   ierr = VecPlaceArray(opflow->X, x);
@@ -207,6 +220,8 @@ bool OPFLOWHIOPSPARSEInterface::eval_cons(const hiop::size_type &n,
 bool OPFLOWHIOPSPARSEInterface::eval_grad_f(const hiop::size_type &n,
                                             const double *x, bool new_x,
                                             double *gradf) {
+  (void)n;
+  (void)new_x;
   PetscErrorCode ierr;
 
   ierr = VecPlaceArray(opflow->X, x);
@@ -239,6 +254,18 @@ bool OPFLOWHIOPSPARSEInterface::eval_Jac_cons(
     const hiop::size_type &num_cons, const hiop::size_type *idx_cons,
     const double *x, bool new_x, const hiop::size_type &nnzJacS,
     hiop::index_type *iJacS, hiop::index_type *jJacS, double *MJacS) {
+  // empty function
+  (void)n;
+  (void)m;
+  (void)num_cons;
+  (void)idx_cons;
+  (void)x;
+  (void)new_x;
+  (void)nnzJacS;
+  (void)iJacS;
+  (void)jJacS;
+  (void)MJacS;
+
   return false;
 }
 
@@ -246,6 +273,11 @@ bool OPFLOWHIOPSPARSEInterface::eval_Jac_cons(
     const hiop::size_type &n, const hiop::size_type &m, const double *x,
     bool new_x, const hiop::size_type &nnzJacS, hiop::index_type *iRow,
     hiop::index_type *jCol, double *values) {
+  (void)n;
+  (void)m;
+  (void)new_x;
+  (void)nnzJacS;
+
   PetscErrorCode ierr;
   PetscInt *iRowstart = iRow, *jColstart = jCol;
   PetscInt roffset, coffset;
@@ -361,6 +393,12 @@ bool OPFLOWHIOPSPARSEInterface::eval_Hess_Lagr(
     bool new_x, const double &obj_factor, const double *lambda, bool new_lambda,
     const hiop::size_type &nnzHSS, hiop::index_type *iRow,
     hiop::index_type *jCol, double *values) {
+  (void)n;
+  (void)m;
+  (void)new_x;
+  (void)new_lambda;
+  (void)nnzHSS;
+
   PetscErrorCode ierr;
   PetscInt nrow;
   PetscInt nvals;
@@ -458,6 +496,7 @@ bool OPFLOWHIOPSPARSEInterface::eval_Hess_Lagr(
 
 bool OPFLOWHIOPSPARSEInterface::get_starting_point(
     const hiop::size_type &global_n, double *x0) {
+  (void)global_n;
   PetscErrorCode ierr;
   const PetscScalar *xarr;
 
@@ -478,6 +517,11 @@ void OPFLOWHIOPSPARSEInterface::solution_callback(
     hiop::hiopSolveStatus status, int n, const double *xsol, const double *z_L,
     const double *z_U, int m, const double *gsol, const double *lamsol,
     double obj_value) {
+  (void)n;
+  (void)z_L;
+  (void)z_U;
+  (void)m;
+
   PetscErrorCode ierr;
   OPFLOWSolver_HIOPSPARSE hiop = (OPFLOWSolver_HIOPSPARSE)opflow->solver;
   PetscScalar *x, *lam, *g;
@@ -525,6 +569,26 @@ bool OPFLOWHIOPSPARSEInterface::iterate_callback(
     const double *g, const double *lambda, double inf_pr, double inf_du,
     double onenorm_pr_, double mu, double alpha_du, double alpha_pr,
     int ls_trials) {
+
+  (void)obj_value;
+  (void)logbar_obj_value;
+  (void)n;
+  (void)x;
+  (void)z_L;
+  (void)z_U;
+  (void)m_ineq;
+  (void)s;
+  (void)m;
+  (void)g;
+  (void)lambda;
+  (void)inf_pr;
+  (void)inf_du;
+  (void)onenorm_pr_;
+  (void)mu;
+  (void)alpha_du;
+  (void)alpha_pr;
+  (void)ls_trials;
+
   opflow->numits = iter;
   return true;
 }

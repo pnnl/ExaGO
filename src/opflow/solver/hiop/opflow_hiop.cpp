@@ -74,7 +74,8 @@ bool OPFLOWHIOPInterface::get_sparse_dense_blocks_info(
 bool OPFLOWHIOPInterface::eval_f(const hiop::size_type &n, const double *x,
                                  bool new_x, double &obj_value) {
   PetscErrorCode ierr;
-
+  (void)n;
+  (void)new_x;
   //  PetscPrintf(MPI_COMM_SELF,"Enter eval_f \n");
 
   obj_value = 0.0;
@@ -93,6 +94,10 @@ bool OPFLOWHIOPInterface::eval_cons(const hiop::size_type &n,
                                     const hiop::size_type &num_cons,
                                     const hiop::size_type *idx_cons,
                                     const double *x, bool new_x, double *cons) {
+  (void)n;
+  (void)m;
+  (void)idx_cons;
+  (void)new_x;
   PetscErrorCode ierr;
   OPFLOWSolver_HIOP hiop = (OPFLOWSolver_HIOP)opflow->solver;
 
@@ -133,6 +138,8 @@ bool OPFLOWHIOPInterface::eval_cons(const hiop::size_type &n,
 
 bool OPFLOWHIOPInterface::eval_grad_f(const hiop::size_type &n, const double *x,
                                       bool new_x, double *gradf) {
+  (void)n;
+  (void)new_x;
   PetscErrorCode ierr;
   //  PetscPrintf(MPI_COMM_SELF,"Enter eval_grad_f \n");
   ierr = PetscLogEventBegin(opflow->gradlogger, 0, 0, 0, 0);
@@ -153,6 +160,13 @@ bool OPFLOWHIOPInterface::eval_Jac_cons(
     const double *x, bool new_x, const hiop::size_type &nsparse,
     const hiop::size_type &ndense, const int &nnzJacS, int *iJacS, int *jJacS,
     double *MJacS, double *JacD) {
+  (void)n;
+  (void)m;
+  (void)idx_cons;
+  (void)new_x;
+  (void)nsparse;
+  (void)ndense;
+  (void)nnzJacS;
   PetscErrorCode ierr;
   OPFLOWSolver_HIOP hiop = (OPFLOWSolver_HIOP)opflow->solver;
   //  PetscPrintf(MPI_COMM_SELF,"Enter eval_Jac_cons \n");
@@ -213,6 +227,17 @@ bool OPFLOWHIOPInterface::eval_Hess_Lagr(
     const hiop::size_type &nsparse, const hiop::size_type &ndense,
     const int &nnzHSS, int *iHSS, int *jHSS, double *MHSS, double *HDD,
     int &nnzHSD, int *iHSD, int *jHSD, double *MHSD) {
+  (void)n;
+  (void)m;
+  (void)new_x;
+  (void)new_lambda;
+  (void)nsparse;
+  (void)ndense;
+  (void)nnzHSS;
+  (void)nnzHSD;
+  (void)iHSD;
+  (void)jHSD;
+  (void)MHSD;
   PetscErrorCode ierr;
   //  PetscPrintf(MPI_COMM_SELF,"Enter eval_Hess_Lagr \n");
 
@@ -241,6 +266,7 @@ bool OPFLOWHIOPInterface::eval_Hess_Lagr(
 
 bool OPFLOWHIOPInterface::get_starting_point(const hiop::size_type &global_n,
                                              double *x0) {
+  (void)global_n;
   PetscErrorCode ierr;
   //  PetscPrintf(MPI_COMM_SELF,"Enter get_starting_point \n");
 
@@ -258,6 +284,25 @@ bool OPFLOWHIOPInterface::iterate_callback(
     const double *g, const double *lambda, double inf_pr, double inf_du,
     double mu, double onenorm_pr_, double alpha_du, double alpha_pr,
     int ls_trials) {
+  (void)obj_value;
+  (void)logbar_obj_value;
+  (void)n;
+  (void)x;
+  (void)z_L;
+  (void)z_U;
+  (void)m_ineq;
+  (void)s;
+  (void)m;
+  (void)g;
+  (void)lambda;
+  (void)inf_pr;
+  (void)inf_du;
+  (void)mu;
+  (void)onenorm_pr_;
+  (void)alpha_du;
+  (void)alpha_pr;
+  (void)ls_trials;
+
   opflow->numits = iter;
   return true;
 }
@@ -266,6 +311,8 @@ void OPFLOWHIOPInterface::solution_callback(
     hiop::hiopSolveStatus status, int n, const double *xsol, const double *z_L,
     const double *z_U, int m, const double *gsol, const double *lamsol,
     double obj_value) {
+  (void)n;
+  (void)m;
   PetscErrorCode ierr;
   OPFLOWSolver_HIOP hiop = (OPFLOWSolver_HIOP)opflow->solver;
 

@@ -529,6 +529,7 @@ PetscErrorCode SCOPFLOWComputeGradient_GENRAMPT(SCOPFLOW scopflow, Vec X,
 PetscErrorCode SCOPFLOWModelSetNumVariablesandConstraints_GENRAMPT(
     SCOPFLOW scopflow, PetscInt *nxi, PetscInt *ngi, PetscInt *nconeqcoup,
     PetscInt *nconineqcoup) {
+  (void)nconeqcoup;
   PetscInt c, ngenON;
   TCOPFLOW tcopflow;
   OPFLOW opflow;

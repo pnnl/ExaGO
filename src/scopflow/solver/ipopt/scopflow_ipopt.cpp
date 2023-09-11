@@ -9,6 +9,8 @@
 /* IPOPT callback functions */
 Bool eval_scopflow_f(PetscInt n, PetscScalar *x, Bool new_x,
                      PetscScalar *obj_value, UserDataPtr user_data) {
+  (void)n;
+  (void)new_x;
   PetscErrorCode ierr;
   SCOPFLOW scopflow = (SCOPFLOW)user_data;
 
@@ -28,6 +30,8 @@ Bool eval_scopflow_f(PetscInt n, PetscScalar *x, Bool new_x,
 Bool eval_scopflow_grad_f(PetscInt n, PetscScalar *x, Bool new_x,
                           PetscScalar *grad_f, UserDataPtr user_data) {
 
+  (void)n;
+  (void)new_x;
   PetscErrorCode ierr;
   SCOPFLOW scopflow = (SCOPFLOW)user_data;
 
@@ -48,6 +52,10 @@ Bool eval_scopflow_grad_f(PetscInt n, PetscScalar *x, Bool new_x,
 
 Bool eval_scopflow_g(PetscInt n, PetscScalar *x, Bool new_x, PetscInt m,
                      PetscScalar *g, UserDataPtr user_data) {
+  (void)n;
+  (void)new_x;
+  (void)m;
+
   PetscErrorCode ierr;
   SCOPFLOW scopflow = (SCOPFLOW)user_data;
 
@@ -69,6 +77,11 @@ Bool eval_scopflow_g(PetscInt n, PetscScalar *x, Bool new_x, PetscInt m,
 Bool eval_scopflow_jac_g(PetscInt n, PetscScalar *x, Bool new_x, PetscInt m,
                          PetscInt nele_jac, PetscInt *iRow, PetscInt *jCol,
                          PetscScalar *values, UserDataPtr user_data) {
+
+  (void)n;
+  (void)new_x;
+  (void)m;
+  (void)nele_jac;
 
   PetscErrorCode ierr;
   SCOPFLOW scopflow = (SCOPFLOW)user_data;
@@ -141,6 +154,12 @@ Bool eval_scopflow_h(PetscInt n, PetscScalar *x, Bool new_x,
                      Bool new_lambda, PetscInt nele_hess, PetscInt *iRow,
                      PetscInt *jCol, PetscScalar *values,
                      UserDataPtr user_data) {
+  (void)n;
+  (void)new_x;
+  (void)m;
+  (void)new_lambda;
+  (void)nele_hess;
+
   PetscErrorCode ierr;
   PetscInt nrow;
   SCOPFLOW scopflow = (SCOPFLOW)user_data;
@@ -235,6 +254,18 @@ Bool SCOPFLOWSolverMonitor_IPOPT(Index alg_mod, Index iter_count,
                                  Number regularization_size, Number alpha_du,
                                  Number alpha_pr, Index ls_trials,
                                  UserDataPtr user_data) {
+  (void)alg_mod;
+  (void)iter_count;
+  (void)obj_value;
+  (void)inf_pr;
+  (void)inf_du;
+  (void)mu;
+  (void)d_norm;
+  (void)regularization_size;
+  (void)alpha_du;
+  (void)alpha_pr;
+  (void)ls_trials;
+
   SCOPFLOW scopflow = (SCOPFLOW)user_data;
   scopflow->numiter = iter_count;
   return 1;
@@ -353,6 +384,8 @@ PetscErrorCode SCOPFLOWSolverDestroy_IPOPT(SCOPFLOW scopflow) {
 }
 
 PetscErrorCode SCOPFLOWSolverSetUp_IPOPT(SCOPFLOW scopflow) {
+  // empty function..
+  (void)scopflow;
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
@@ -360,7 +393,6 @@ PetscErrorCode SCOPFLOWSolverSetUp_IPOPT(SCOPFLOW scopflow) {
 PetscErrorCode SCOPFLOWSolverGetBaseObjective_IPOPT(SCOPFLOW scopflow,
                                                     PetscReal *obj) {
   PetscErrorCode ierr;
-  PetscScalar *x;
 
   PetscFunctionBegin;
   *obj = 0.0;
@@ -519,8 +551,7 @@ PetscErrorCode SCOPFLOWSolverCreate_IPOPT(SCOPFLOW scopflow) {
 
   if (scopflow->comm->size > 1)
     SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_SUP,
-            "IPOPT solver does not support execution in parallel\n",
-            scopflow->comm->size);
+            "IPOPT solver does not support execution in parallel\n");
   ierr = PetscCalloc1(1, &ipopt);
   CHKERRQ(ierr);
 

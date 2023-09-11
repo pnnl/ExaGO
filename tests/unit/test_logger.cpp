@@ -9,7 +9,10 @@
  * messages from ExaGOLogSingleRank are only logged on the root rank.
  */
 static char appname[] = "test_logger";
+
 int main(int argc, char **argv) {
+  (void)argc;
+  (void)argv;
   MPI_Comm comm = MPI_COMM_WORLD;
   PetscErrorCode ierr;
   ExaGOInitialize(comm, nullptr, nullptr, appname, nullptr);

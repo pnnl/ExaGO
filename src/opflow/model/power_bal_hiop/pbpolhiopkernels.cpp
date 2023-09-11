@@ -302,7 +302,6 @@ PetscErrorCode
 OPFLOWComputeInequalityConstraintsArray_PBPOLHIOP(OPFLOW opflow,
                                                   const double *x, double *gi) {
   PBPOLHIOP pbpolhiop = (PBPOLHIOP)opflow->model;
-  GENParams *genparams = &pbpolhiop->genparams;
   LINEParams *lineparams = &pbpolhiop->lineparams;
   PetscInt i;
   PetscInt flps = 0;
@@ -367,7 +366,6 @@ PetscErrorCode OPFLOWComputeObjectiveArray_PBPOLHIOP(OPFLOW opflow,
   double obj_val = 0.0;
   int isobj_gencost = opflow->obj_gencost;
   double MVAbase = ps->MVAbase;
-  double powerimbal_penalty = opflow->powerimbalance_penalty;
   double weight = opflow->weight;
 
   PetscFunctionBegin;
@@ -426,7 +424,6 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLHIOP(OPFLOW opflow,
   PS ps = opflow->ps;
   int isobj_gencost = opflow->obj_gencost;
   double MVAbase = ps->MVAbase;
-  double powerimbal_penalty = opflow->powerimbalance_penalty;
   double weight = opflow->weight;
 
   PetscFunctionBegin;
@@ -460,10 +457,7 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLHIOP(OPFLOW opflow,
 
   /* Loadloss gradient contributions */
   if (opflow->include_loadloss_variables) {
-    PetscScalar Pdloss, Qdloss;
     for (i = 0; i < loadparams->nload; i++) {
-      Pdloss = x[loadparams->xidx[i]];
-      Qdloss = x[loadparams->xidx[i] + 1];
       grad[loadparams->xidx[i]] =
           weight * loadparams->loadloss_penalty[i] * ps->MVAbase;
       grad[loadparams->xidx[i] + 1] =
@@ -574,12 +568,11 @@ PetscErrorCode OPFLOWSetVariableBoundsArray_PBPOLHIOP_old(OPFLOW opflow, double 
 /** Custom routines that work with HIOP interface only */
 PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLHIOP(
     OPFLOW opflow, const double *x, int *iJacS, int *jJacS, double *MJacS) {
+  (void)x;
   PBPOLHIOP pbpolhiop = (PBPOLHIOP)opflow->model;
   GENParams *genparams = &pbpolhiop->genparams;
   LOADParams *loadparams = &pbpolhiop->loadparams;
   BUSParams *busparams = &pbpolhiop->busparams;
-
-  int i;
 
   if (iJacS != NULL && jJacS != NULL) {
 
@@ -599,7 +592,7 @@ PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLHIOP(
     }
 
     /* Generator contributions */
-    for (i = 0; i < genparams->ngenON; i++) {
+    for (int i = 0; i < genparams->ngenON; i++) {
       iJacS[genparams->eqjacspbus_idx[i]] = genparams->gidxbus[i];
       jJacS[genparams->eqjacspbus_idx[i]] = genparams->xidx[i];
 
@@ -626,7 +619,7 @@ PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLHIOP(
 
     /* Loadloss contributions */
     if (opflow->include_loadloss_variables) {
-      for (i = 0; i < loadparams->nload; i++) {
+      for (int i = 0; i < loadparams->nload; i++) {
         iJacS[loadparams->jacsp_idx[i]] = loadparams->gidx[i];
         jJacS[loadparams->jacsp_idx[i]] = loadparams->xidx[i];
         iJacS[loadparams->jacsq_idx[i]] = loadparams->gidx[i] + 1;
@@ -647,7 +640,7 @@ PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLHIOP(
     }
 
     /* Generator contributions */
-    for (i = 0; i < genparams->ngenON; i++) {
+    for (int i = 0; i < genparams->ngenON; i++) {
       MJacS[genparams->eqjacspbus_idx[i]] = -1.0;
       MJacS[genparams->eqjacsqbus_idx[i]] = -1.0;
 
@@ -664,7 +657,7 @@ PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLHIOP(
 
     /* Jacobian from loadloss contribution */
     if (opflow->include_loadloss_variables) {
-      for (i = 0; i < loadparams->nload; i++) {
+      for (int i = 0; i < loadparams->nload; i++) {
         MJacS[loadparams->jacsp_idx[i]] = -1;
         MJacS[loadparams->jacsq_idx[i]] = -1;
       }
@@ -676,11 +669,10 @@ PetscErrorCode OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLHIOP(
 
 PetscErrorCode OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLHIOP(
     OPFLOW opflow, const double *x, int *iJacS, int *jJacS, double *MJacS) {
-  PBPOLHIOP pbpolhiop = (PBPOLHIOP)opflow->model;
-  GENParams *genparams = &pbpolhiop->genparams;
-  LOADParams *loadparams = &pbpolhiop->loadparams;
 
-  int i;
+  // empty function
+  (void)opflow;
+  (void)x;
 
   if (iJacS != NULL && jJacS != NULL) {
   }
@@ -696,17 +688,17 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLHIOP(OPFLOW opflow,
                                                     const double *lambda,
                                                     int *iHSS, int *jHSS,
                                                     double *MHSS) {
+  (void)x;
+  (void)lambda;
   PBPOLHIOP pbpolhiop = (PBPOLHIOP)opflow->model;
   PetscErrorCode ierr;
   GENParams *genparams = &pbpolhiop->genparams;
   LOADParams *loadparams = &pbpolhiop->loadparams;
-  BUSParams *busparams = &pbpolhiop->busparams;
   PS ps = opflow->ps;
   int i;
   double obj_factor = opflow->obj_factor;
   int isobj_gencost = opflow->obj_gencost;
   double MVAbase = ps->MVAbase;
-  double powerimbal_penalty = opflow->powerimbalance_penalty;
   double weight = opflow->weight;
   PetscInt flps = 0;
   int loc;
@@ -1064,14 +1056,11 @@ PetscErrorCode OPFLOWComputeDenseEqualityConstraintHessian_PBPOLHIOP(
   PBPOLHIOP pbpolhiop = (PBPOLHIOP)opflow->model;
   BUSParams *busparams = &pbpolhiop->busparams;
   LINEParams *lineparams = &pbpolhiop->lineparams;
-  PS ps = opflow->ps;
   int i;
   int row[16], col[16];
   double val[16];
   int nxsparse = opflow->nxsparse;
   int nxdense = opflow->nxdense;
-  double obj_factor = opflow->obj_factor;
-  double MVAbase = ps->MVAbase;
   PetscInt flps = 0;
 
   PetscFunctionBegin;
@@ -1823,13 +1812,12 @@ PetscErrorCode OPFLOWComputeDenseHessian_PBPOLHIOP(OPFLOW opflow,
                                                    const double *lambda,
                                                    double *HDD) {
   PetscErrorCode ierr;
-  int i, j;
   int nxdense = opflow->nxdense;
 
   if (!HDD)
     PetscFunctionReturn(0);
 
-  for (i = 0; i < nxdense * nxdense; i++)
+  for (int i = 0; i < nxdense * nxdense; i++)
     HDD[i] = 0.0;
 
   /* Equality constraint Hessian */
@@ -1849,6 +1837,9 @@ PetscErrorCode OPFLOWComputeDenseHessian_PBPOLHIOP(OPFLOW opflow,
 PetscErrorCode OPFLOWSolutionCallback_PBPOLHIOP(
     OPFLOW opflow, const double *xsol, const double *z_L, const double *z_U,
     const double *gsol, const double *lamsol, double obj_value) {
+  (void)z_L;
+  (void)z_U;
+  (void)obj_value;
   PetscErrorCode ierr;
   PetscScalar *x, *lam, *g;
 
