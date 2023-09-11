@@ -374,7 +374,6 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X, Vec Lambda) {
 
   PetscScalar *lambdai = lambda + opflow->nconeq;
 
-  PetscInt j = 0;
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
 
@@ -414,7 +413,6 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL(OPFLOW opflow, Vec X,
   const PSLINE *connlines;
   const PetscScalar *x;
   double flps = 0.0;
-  PetscScalar delP = 0.0;
 
   PetscFunctionBegin;
   ierr = VecSet(Ge, 0.0);
@@ -625,7 +623,6 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,
   PSBUS busf, bust;
   PSGEN gen;
   PSLOAD load;
-  DM networkdm = ps->networkdm;
   const PSLINE *connlines;
   const PSBUS *connbuses;
   const PetscScalar *xarr;
@@ -886,7 +883,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow, Vec X,
   PSGEN gen;
   const PetscScalar *x;
   double flps = 0.0;
-  PetscScalar Pg, delP, delPg, Pgs;
+  PetscScalar Pg, delP, delPg;
   PetscInt xloc;
   PetscScalar V, Vset, Q, Qmax, Qmin, Qg;
 
@@ -1036,7 +1033,6 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,
   PetscScalar dSf2_dthetaf, dSf2_dVmf, dSf2_dthetat, dSf2_dVmt;
   PetscScalar dSt2_dthetaf, dSt2_dVmf, dSt2_dthetat, dSt2_dVmt;
   PS ps = opflow->ps;
-  MPI_Comm comm = opflow->comm->type;
   PSLINE line;
   PSBUS busf, bust;
   const PSBUS *connbuses;
@@ -1265,6 +1261,10 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,
 }
 
 PetscErrorCode OPFLOWComputeConstraints_PBPOL(OPFLOW opflow, Vec X, Vec G) {
+  // empty function
+  (void)opflow;
+  (void)X;
+  (void)G;
   PetscFunctionBegin;
 
   PetscFunctionReturn(0);
@@ -1362,7 +1362,6 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
   PetscInt i;
   PSBUS bus;
   PSGEN gen;
-  PSLOAD load;
   PetscInt loc;
   PetscInt k;
   PetscScalar Pg;
@@ -1378,7 +1377,6 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
     bus = &ps->bus[i];
 
     if (opflow->include_powerimbalance_variables) {
-      PetscScalar Pimb, Qimb;
       loc = bus->startxpimbloc;
 
       df[loc] = opflow->powerimbalance_penalty * ps->MVAbase;
@@ -1412,15 +1410,12 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
 
     if (opflow->include_loadloss_variables) {
       PSLOAD load;
-      PetscScalar Pdloss, Qdloss;
       for (k = 0; k < bus->nload; k++) {
         ierr = PSBUSGetLoad(bus, k, &load);
         CHKERRQ(ierr);
         if (!load->status)
           continue;
         loc = load->startxloadlossloc;
-        Pdloss = x[loc];
-        Qdloss = x[loc + 1];
         df[loc] = load->loss_cost * ps->MVAbase;
         df[loc + 1] = load->loss_cost * ps->MVAbase;
         flps += 2.0;
@@ -1459,7 +1454,7 @@ PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW opflow,
                                                 PetscInt *busnvar,
                                                 PetscInt *branchnvar,
                                                 PetscInt *nx) {
-  PetscInt i, ngen, nload, k;
+  PetscInt i, ngen, k;
   PS ps = opflow->ps;
   PSBUS bus;
   PSGEN gen;
@@ -1547,6 +1542,8 @@ PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW opflow,
                                                   PetscInt *busnconeq,
                                                   PetscInt *nconeq,
                                                   PetscInt *nconineq) {
+  (void)branchnconeq;
+  (void)busnconeq;
   PetscInt i, k, ngen;
   PS ps = opflow->ps;
   PSBUS bus;
@@ -1645,8 +1642,6 @@ PetscErrorCode OPFLOWComputeEqualityConstraintsHessian_PBPOL(OPFLOW opflow,
   PetscInt gloc;
   PetscInt row[16], col[16];
   PetscScalar val[16];
-  PSGEN gen;
-  PetscInt ngen;
 
   PetscFunctionBegin;
 
@@ -2030,9 +2025,8 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow,
   PetscScalar val[12];
   PSBUS bus;
   PSGEN gen;
-  PetscScalar Pg, delPg, delP;
-  PetscInt xlocglob, loc;
-  PetscScalar V, Vset, Q, Qmax, Qmin, Qg;
+  PetscInt loc;
+  PetscScalar Q, Qmax, Qmin, Qg;
 
   PetscFunctionBegin;
 
@@ -2053,9 +2047,9 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow,
         gloc = gen->startineqloc;
 
         if (opflow->use_agc) {
-          Pg = x[gen->startxpowloc];
-          delPg = x[gen->startxpdevloc];
-          delP = x[ps->startxloc];
+          // Pg = x[gen->startxpowloc];
+          // delPg = x[gen->startxpdevloc];
+          // delP = x[ps->startxloc];
 
           //	  df1_dPg = gen->apf*delP - delPg;
           // 	  df2_dPg = gen->apf*delP - delPg;
@@ -2096,8 +2090,8 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow,
       if (bus->ide == PV_BUS || bus->ide == REF_BUS) {
         gloc = bus->startineqloc;
         xloc = bus->startxVloc;
-        xlocglob = bus->startxVlocglob;
-        V = x[xloc + 1];
+        // xlocglob = bus->startxVlocglob;
+        // V = x[xloc + 1];
 
         Q = 0;
         Qmax = 0;
@@ -2112,7 +2106,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow,
           Q = Q + Qg;
           Qmax = Qmax + gen->qt;
           Qmin = Qmin + gen->qb;
-          Vset = gen->vs;
+          // Vset = gen->vs;
 
           row[0] = loc + 1;
           col[0] = xloc + 1;

@@ -59,6 +59,8 @@ PetscErrorCode SOPFLOWSetVariableBounds_GENRAMP(SOPFLOW sopflow, Vec Xl,
 
 PetscErrorCode SOPFLOWSetConstraintBounds_GENRAMP(SOPFLOW sopflow, Vec Gl,
                                                   Vec Gu) {
+  (void)Gl;
+  (void)Gu;
   PetscInt i, j, k, ctr;
   PetscErrorCode ierr;
   PetscScalar *gl, *gu, *gli, *gui;
@@ -509,7 +511,6 @@ PetscErrorCode SOPFLOWComputeBaseObjective_GENRAMP(SOPFLOW sopflow, Vec X,
                                                    PetscScalar *obj) {
   PetscErrorCode ierr;
   OPFLOW opflow;
-  PetscInt i;
   PetscScalar *xi;
   PetscScalar *x;
 

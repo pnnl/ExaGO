@@ -223,7 +223,7 @@ PetscErrorCode ContingencyListReadData_PSSE(ContingencyList ctgclist) {
           outage->type = (OutageType)two;
           outage->bus = 0;
           outage->fbus = atoi(tokens[4]);
-          if (tokens[offset] == "BUS")
+          if (strcmp(tokens[offset], "BUS"))
             offset++;
           outage->tbus = atoi(tokens[offset]);
           strcpy(equipid, tokens[offset + 2]);
@@ -341,12 +341,10 @@ static PetscErrorCode ContingencyWriteData_PSSE(int id, Contingency *con,
  */
 static PetscErrorCode ContingencyWriteData_NATIVE(int id, Contingency *con,
                                                   FILE *fd) {
-  int i;
-  PetscErrorCode ierr = 0;
-
   PetscFunctionBegin;
-
-  for (i = 0; i < con->noutages; ++i) {
+  // id is unused...
+  (void)id;
+  for (int i = 0; i < con->noutages; ++i) {
     Outage *outage;
     outage = &con->outagelist[i];
     fprintf(fd, "%d,%d,%d,%d,%d,'%s',%d,%lf", outage->num, (int)outage->type,
@@ -366,7 +364,6 @@ static PetscErrorCode ContingencyWriteData_NATIVE(int id, Contingency *con,
  */
 PetscErrorCode ContingencyWriteData(Contingency *con, int id,
                                     ContingencyFileInputFormat fmt, FILE *fd) {
-  PetscErrorCode ierr;
 
   PetscFunctionBegin;
   if (fmt == NATIVE) {

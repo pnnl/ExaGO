@@ -351,12 +351,10 @@ int main(int argc, char **argv) {
   }
 
   PetscErrorCode ierr;
-  OutputFormat fmt = MATPOWER;
   MPI_Comm comm = MPI_COMM_WORLD;
   char appname[] = "opflow";
-  int _argc = 0;
   ierr = ExaGOInitialize(comm, &argc, &argv, appname, help);
-
+  ExaGOCheckError(ierr);
   ExaGOLog(EXAGO_LOG_INFO, "{}", "Creating OPFlow Functionality Test");
 
   OpflowFunctionalityTests test{std::string(argv[1])};

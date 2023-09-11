@@ -298,9 +298,8 @@ PetscErrorCode SOPFLOWGetNumScenarios_Native_MultiPeriod(const char scenfile[],
   FILE *fp;
   char line[MAXLINE];
   char *out;
-  char *tok, *tok2;
-  char sep[] = ",", sep2[] = "_";
-  PetscInt t = 0;
+  char *tok;
+  char sep[] = ",";
   int scen_num, ns = 0;
 
   PetscFunctionBegin;
@@ -343,8 +342,8 @@ PetscErrorCode SOPFLOWGetNumScenarios_Native_SinglePeriod(const char scenfile[],
   FILE *fp;
   char line[MAXLINE];
   char *out;
-  char *tok, *tok2;
-  char sep[] = ",", sep2[] = "_";
+  char *tok;
+  char sep[] = ",";
   int Nscen = 0;
 
   PetscFunctionBegin;
@@ -387,6 +386,7 @@ file
 PetscErrorCode SOPFLOWGetNumScenarios(SOPFLOW sopflow,
                                       ScenarioFileInputFormat scenfileformat,
                                       const char scenfile[], PetscInt *Ns) {
+  (void)sopflow;
   PetscErrorCode ierr;
 
   PetscFunctionBegin;

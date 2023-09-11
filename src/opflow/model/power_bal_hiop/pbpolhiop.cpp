@@ -51,7 +51,7 @@ PetscErrorCode DestroyBusParams(OPFLOW opflow, BUSParams *busparams) {
 /* Create data for buses that is used in different computations */
 PetscErrorCode CreateBusParams(OPFLOW opflow, BUSParams *busparams) {
   PS ps = opflow->ps;
-  PetscInt loc, gloc = 0;
+  PetscInt loc = 0;
   PSBUS bus;
   PetscInt i;
   PetscErrorCode ierr;
@@ -138,6 +138,7 @@ PetscErrorCode CreateBusParams(OPFLOW opflow, BUSParams *busparams) {
 }
 
 PetscErrorCode DestroyLineParams(OPFLOW opflow, LINEParams *lineparams) {
+  (void)opflow;
   PetscErrorCode ierr;
   PetscFunctionBegin;
   ierr = PetscFree(lineparams->Gff);
@@ -732,10 +733,8 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLHIOP(OPFLOW opflow) {
   PSBUS bus;
   PSGEN gen;
   PSLOAD load;
-  PSLINE line;
   PetscInt i, k;
-  PetscInt loc, locglob;
-  PetscInt eqloc = 0, ineqloc = 0;
+  PetscInt loc;
 
   PetscFunctionBegin;
 
@@ -859,7 +858,6 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLHIOP(OPFLOW opflow) {
   BUSParams *busparams = &pbpolhiop->busparams;
   GENParams *genparams = &pbpolhiop->genparams;
   LOADParams *loadparams = &pbpolhiop->loadparams;
-  LINEParams *lineparams = &pbpolhiop->lineparams;
 
   int geni = 0, loadi = 0, gi;
   int nnz_eqjacsp = 0;

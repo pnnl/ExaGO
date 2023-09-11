@@ -347,7 +347,7 @@ struct SopflowFunctionalityTests
         char sbuf[256];
         sprintf(sbuf,
                 "expected objective value=%e actual objective value=%e"
-                " tol=%e warning_tol={} err=%e",
+                " tol=%e warning_tol=%e err=%e",
                 params.expected_obj_value, params.obj_value, params.tolerance,
                 params.warning_tolerance, params.error);
         params.warnings.push_back(std::string(sbuf));
@@ -425,12 +425,10 @@ int main(int argc, char **argv) {
   }
 
   PetscErrorCode ierr;
-  OutputFormat fmt = MATPOWER;
   MPI_Comm comm = MPI_COMM_WORLD;
   char appname[] = "sopflow";
-  int _argc = 0;
   ierr = ExaGOInitialize(comm, &argc, &argv, appname, help);
-
+  ExaGOCheckError(ierr);
   ExaGOLog(EXAGO_LOG_INFO, "{}", "Creating SOPFLOW Functionality Test");
 
   SopflowFunctionalityTests test{std::string(argv[1])};

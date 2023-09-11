@@ -348,7 +348,6 @@ static PetscErrorCode SOPFLOWSaveSolutionAllBase(SOPFLOW sopflow,
   char outfile[256];
   char scopflowdirname[64];
   char scopflowdir[256];
-  PetscScalar *x, *lambda;
   bool is_minimal_output;
 
   PetscFunctionBegin;

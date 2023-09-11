@@ -28,3 +28,23 @@ exago_add_library(
   OUTPUT_NAME
   exago_utils
 )
+
+# Going to have this target supply/propogate compiler flags and see if that
+# works -Wpedantic for CUDA compile options added a significant amount of new
+# errors, so leaving out for now
+set(CUDA_COMPILE_OPTIONS
+    "$<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CONFIG:DEBUG>>:SHELL:--compiler-options -Werror,-Wall,-Wextra>"
+)
+set(CXX_COMPILE_OPTIONS
+    "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CONFIG:DEBUG>>:-Werror;-Wall;-Wextra;-Wpedantic>"
+)
+if(EXAGO_BUILD_SHARED)
+  target_compile_options(
+    UTILS_shared PUBLIC ${CUDA_COMPILE_OPTIONS} ${CXX_COMPILE_OPTIONS}
+  )
+endif()
+if(EXAGO_BUILD_STATIC)
+  target_compile_options(
+    UTILS_static PUBLIC ${CUDA_COMPILE_OPTIONS} ${CXX_COMPILE_OPTIONS}
+  )
+endif()

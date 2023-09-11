@@ -1198,7 +1198,6 @@ PetscErrorCode SCOPFLOWGetNumVariablesandConstraints(SCOPFLOW scopflow,
  * @param [in] iter pointer to solver iteration variable
  */
 PetscErrorCode SCOPFLOWGetNumIterations(SCOPFLOW scopflow, PetscInt *iter) {
-  PetscErrorCode ierr;
   *iter = scopflow->numiter;
   PetscFunctionReturn(0);
 }
