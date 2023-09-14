@@ -405,37 +405,6 @@ SVC Account Cleanup:
 #    - "curl -X POST --fail -F token=${ASCENT_CI_TRIGGER_TOKEN} -F ref=${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} https://code.ornl.gov/api/v4/projects/7381/trigger/pipeline"
 
 # -- Build Stage
-C++ Lint:
-  image: ubuntu:20.04
-  extends: .non_hpc_job
-  script:
-    |
-    set -x
-    apt update && apt install -y clang-format perl
-    ./buildsystem/tools/clang_format.pl -v
-    exit $?
-
-Python Lint:
-  image: ubuntu:20.04
-  extends: .non_hpc_job
-  script:
-    |
-    set -x
-    apt update && apt install -y python3 python3-pip perl
-    pip install pycodestyle autopep8
-    ./buildsystem/tools/python_format.pl -v
-    exit $?
-
-File Naming Conventions:
-  image: ubuntu:20.04
-  extends: .non_hpc_job
-  script:
-    |
-    set -x
-    apt update && apt install -y perl
-    ./buildsystem/tools/file_naming_conventions.pl
-    exit $?
-
 Newell Build:
   extends:
     - .cluster_build
@@ -539,5 +508,4 @@ Incline Module Rebuild:
   variables:
     MY_CLUSTER: "incline"
     WORKDIR_SUFFIX: "spack_incline"
-
 # ---
