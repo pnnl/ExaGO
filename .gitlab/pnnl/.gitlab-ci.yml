@@ -371,38 +371,38 @@ SVC Account Cleanup:
     - find $WORKDIR -type d -mindepth 1 -mmin +360 -prune -print -exec rm -rf {} \; || true
     - ls -hal $WORKDIR
 
-Ascent Push Mirror:
-  image: mrnonz/alpine-git-curl:alpine3.16
-  stage: .pre
-  extends: .pnnl_nonhpc_tags
-  rules:
-  # Run if explicitly running for Ascent
-    - if: '$CI_COMMIT_TITLE =~ /\[ascent-test\]/'
-    - if: '$CI_COMMIT_TITLE =~ /\[ascent-rebuild\]/'
-  # Don't run if we are building/testing for another platform and not ascent
-    - *rule_no_deception_rebuild
-    - *rule_no_newell_rebuild
-    - *rule_no_incline_rebuild
-    - *rule_no_deception_test
-    - *rule_no_newell_test
-    - *rule_no_incline_test
-  # Don't run on develop/main, as this is broken for non-merge-request branhces
-    - if: ($CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME== "develop")
-      when: never
-    - if: $CI_MERGE_REQUEST_IID
-  variables:
-    # Don't need to check out submodules as we aren't using them 
-    GIT_SUBMODULE_STRATEGY: none
-  script:
-    - git --version
-    - curl --version
-    - git checkout -b ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
-    - git config --global credential.username ${ASCENT_PUSH_MIRROR_USER}
-    - git config --global core.askPass ./.gitlab/ci/ascent-cred-helper.sh
-    - git config --global credential.helper cache
-    - git remote add ascent https://code.ornl.gov/ecpcitest/exasgd/exago.git
-    - git push --tags --force -o ci.skip --prune ascent ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
-    - "curl -X POST --fail -F token=${ASCENT_CI_TRIGGER_TOKEN} -F ref=${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} https://code.ornl.gov/api/v4/projects/7381/trigger/pipeline"
+#Ascent Push Mirror:
+#  image: mrnonz/alpine-git-curl:alpine3.16
+#  stage: .pre
+#  extends: .pnnl_nonhpc_tags
+#  rules:
+#  # Run if explicitly running for Ascent
+#    - if: '$CI_COMMIT_TITLE =~ /\[ascent-test\]/'
+#    - if: '$CI_COMMIT_TITLE =~ /\[ascent-rebuild\]/'
+#  # Don't run if we are building/testing for another platform and not ascent
+#    - *rule_no_deception_rebuild
+#    - *rule_no_newell_rebuild
+#    - *rule_no_incline_rebuild
+#    - *rule_no_deception_test
+#    - *rule_no_newell_test
+#    - *rule_no_incline_test
+#  # Don't run on develop/main, as this is broken for non-merge-request branhces
+#    - if: ($CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME== "develop")
+#      when: never
+#    - if: $CI_MERGE_REQUEST_IID
+#  variables:
+#    # Don't need to check out submodules as we aren't using them 
+#    GIT_SUBMODULE_STRATEGY: none
+#  script:
+#    - git --version
+#    - curl --version
+#    - git checkout -b ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+#    - git config --global credential.username ${ASCENT_PUSH_MIRROR_USER}
+#    - git config --global core.askPass ./.gitlab/ci/ascent-cred-helper.sh
+#    - git config --global credential.helper cache
+#    - git remote add ascent https://code.ornl.gov/ecpcitest/exasgd/exago.git
+#    - git push --tags --force -o ci.skip --prune ascent ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+#    - "curl -X POST --fail -F token=${ASCENT_CI_TRIGGER_TOKEN} -F ref=${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} https://code.ornl.gov/api/v4/projects/7381/trigger/pipeline"
 
 # -- Build Stage
 CMake Lint:
