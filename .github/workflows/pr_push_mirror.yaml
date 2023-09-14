@@ -15,7 +15,7 @@ jobs:
        - uses: yesolutions/mirror-action@master
        # Give actions access to some secrets
          with:
-            GIT_PUSH_ARGS: '--tags --force'
+            GIT_PUSH_ARGS: '--tags --force --push-option=ci.skip'
             REMOTE: 'https://gitlab.pnnl.gov/exasgd/frameworks/exago-github-mirror'
             GIT_USERNAME:  ${{ secrets.GIT_USER }}
             GIT_PASSWORD:  ${{ secrets.GIT_PASSWORD }}
