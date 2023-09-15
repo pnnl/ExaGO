@@ -400,3 +400,55 @@ stages:
     - ikp
     - exasgd
     - basic
+
+.deception:
+  rules:
+    - *rule_no_newell_rebuild
+    - *rule_no_deception_rebuild
+    - *rule_no_ascent_rebuild
+    - *rule_no_incline_rebuild
+    - *rule_no_newell_test
+    - *rule_no_incline_test
+    - *rule_no_ascent_test
+    - *rule_1
+    - *rule_2
+    - *rule_3
+  variables:
+    MY_CLUSTER: "deception"
+    WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
+    SLURM_ARGS: " --gres=gpu:1 --ntasks=3 "
+
+
+.newell:
+  rules:
+    - *rule_no_newell_rebuild
+    - *rule_no_deception_rebuild
+    - *rule_no_ascent_rebuild
+    - *rule_no_incline_rebuild
+    - *rule_no_deception_test
+    - *rule_no_incline_test
+    - *rule_no_ascent_test
+    - *rule_1
+    - *rule_2
+    - *rule_3
+  variables:
+    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+    MY_CLUSTER: "newell"
+    SLURM_ARGS: " --gres=gpu:1 --ntasks=3 "
+
+.incline:
+  rules:
+    - *rule_no_newell_rebuild
+    - *rule_no_deception_rebuild
+    - *rule_no_ascent_rebuild
+    - *rule_no_incline_rebuild
+    - *rule_no_newell_test
+    - *rule_no_deception_test
+    - *rule_no_ascent_test
+    - *rule_1
+    - *rule_2
+    - *rule_3
+  variables:
+    WORKDIR_SUFFIX: "x86_64-clang-hip-build"
+    MY_CLUSTER: "incline"
+    SLURM_ARGS: " --exclusive --ntasks=3 "

@@ -1,14 +1,17 @@
 trigger_deception:
   trigger:
     include:
+      - local: .gitlab/pnnl/base.gitlab-ci.yml
       - local: .gitlab/pnnl/deception.gitlab-ci.yml
   
 trigger_newell:
   trigger:
     include:
+      - local: .gitlab/pnnl/base.gitlab-ci.yml
       - local: .gitlab/pnnl/newell.gitlab-ci.yml
 
 trigger_incline:
   trigger:
     include:
+      - local: .gitlab/pnnl/base.gitlab-ci.yml
       - local: .gitlab/pnnl/incline.gitlab-ci.yml
