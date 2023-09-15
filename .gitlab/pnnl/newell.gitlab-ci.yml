@@ -1,0 +1,80 @@
+include:
+  - local: '.gitlab/pnnl/base.gitlab-ci.yml'
+
+.newell:
+  rules:
+    - *rule_no_newell_rebuild
+    - *rule_no_deception_rebuild
+    - *rule_no_ascent_rebuild
+    - *rule_no_incline_rebuild
+    - *rule_no_deception_test
+    - *rule_no_incline_test
+    - *rule_no_ascent_test
+    - *rule_1
+    - *rule_2
+    - *rule_3
+  variables:
+    WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
+    MY_CLUSTER: "newell"
+    SLURM_ARGS: " --gres=gpu:1 --ntasks=3 "
+
+Newell Build:
+  extends:
+    - .cluster_build
+    - .newell
+  variables:
+    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
+
+Newell Test:
+  extends:
+    - .cluster_test
+    - .newell
+  variables:
+    CTESTARGS: " --timeout 240 --output-on-failure -E Python -LE newell-skip "
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+  needs: ['Newell Build']
+
+Newell Py Test:
+  extends:
+    - .cluster_py_test
+    - .newell
+  variables:
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+  needs: ['Newell Build']
+
+Newell Module Rebuild:
+  extends: .module_rebuild
+  rules:
+    - if: '$CI_COMMIT_TITLE =~ /\[newell-rebuild\]/'
+      when: always
+    - when: manual
+  variables:
+    MY_CLUSTER: "newell"
+    WORKDIR_SUFFIX: "spack_newell"
+
+cleanup:
+  stage: .pre
+  extends: .SVC-Account-Cleanup
+
+pending:
+  variables:
+    MY_CLUSTER: "Newell"
+  extends:
+    - .report-pending
+  stage: .pre
+
+success:
+  variables:
+    MY_CLUSTER: "Newell"
+  extends:
+    - .report-status
+  stage: .post
+       
+failure:
+  stage: .post
+  variables:
+    MY_CLUSTER: "Newell"
+  extends:
+    - .report-status
+  rules:
+    - when: on_failure

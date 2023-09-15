@@ -1,0 +1,402 @@
+include:
+  - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v1/gitlab-lib.yaml'
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  KUBERNETES_HELPER_CPU_REQUEST: 100m
+  KUBERNETES_HELPER_CPU_LIMIT: 500m
+  KUBERNETES_HELPER_MEMORY_REQUEST: 512Mi
+  KUBERNETES_HELPER_MEMORY_LIMIT: 512Mi
+
+stages:
+  - build
+  - test
+
+# https://stackoverflow.com/questions/67009007
+# We have to use YAML anchors for rules here
+# Rules are also evaluated sequentially, so you need to be careful about
+# the order in which these rules are included in child jobs - list "never" rules before other rules
+.rules:
+  rules:
+      # --
+      # Only run if source is an open merge request or a branch push
+    - &rule_1
+      if: $CI_MERGE_REQUEST_IID
+    - &rule_2
+      if: $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - &rule_3
+      if: $CI_COMMIT_BRANCH 
+      # -- 
+      # Only run when the commit **DOES NOT** contains "[newell-rebuild]"
+    - &rule_no_newell_rebuild
+      if: '$CI_COMMIT_TITLE =~ /\[newell-rebuild\]/'
+      when: never
+      # Only run when the commit **DOES NOT** contains "[deception-rebuild]"
+    - &rule_no_deception_rebuild
+      if: '$CI_COMMIT_TITLE =~ /\[deception-rebuild\]/'
+      when: never
+      # Only run when the commit **DOES NOT** contains "[incline-rebuild]"
+    - &rule_no_incline_rebuild
+      if: '$CI_COMMIT_TITLE =~ /\[incline-rebuild\]/'
+      when: never
+      # Only run when the commit **DOES NOT** contains "[ascent-rebuild]" 
+    - &rule_no_ascent_rebuild
+      if: '$CI_COMMIT_TITLE =~ /\[ascent-rebuild\]/'
+      when: never 
+      # Only run when the commit **DOES NOT** contains "[newell-test]"
+    - &rule_no_newell_test
+      if: '$CI_COMMIT_TITLE =~ /\[newell-test\]/'
+      when: never
+    # Only run when the commit **DOES NOT** contains "[deception-test]"
+    - &rule_no_deception_test
+      if: '$CI_COMMIT_TITLE =~ /\[deception-test\]/'
+      when: never
+    # Only run when the commit **DOES NOT** contains "[incline-test]"
+    - &rule_no_incline_test
+      if: '$CI_COMMIT_TITLE =~ /\[incline-test\]/'
+      when: never
+     # Only run when the commit **DOES NOT** contains "[ascent-test]"
+    - &rule_no_ascent_test
+      if: '$CI_COMMIT_TITLE =~ /\[ascent-test\]/'
+      when: never
+
+.non_hpc_job:
+  needs: []
+  allow_failure: true
+  stage: test
+  rules:
+    - *rule_no_newell_rebuild
+    - *rule_no_deception_rebuild
+    - *rule_no_ascent_rebuild
+    - *rule_no_incline_rebuild
+    - *rule_no_newell_test
+    - *rule_no_deception_test
+    - *rule_no_ascent_test
+    - *rule_no_incline_test
+    - *rule_1
+    - *rule_2
+    - *rule_3
+  extends: .pnnl_nonhpc_tags
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
+
+.cluster_build:
+  needs: []
+  stage: build
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+  variables:
+    OUTPUT_SUFFIX: "_build"
+    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
+
+.cluster_test:
+  stage: test
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+    - .pnnl_after_script_template
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+    CTESTARGS: "--timeout 240 --output-on-failure -E Python"
+    OUTPUT_SUFFIX: "_test"
+  artifacts:
+    when: always
+    paths:
+      - partition
+
+.cluster_py_test:
+  stage: test
+  allow_failure: true
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+      # No after_script as only one test per platform cleans up
+      # Since python test should finish first, we let other test cleanup
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+    CTESTARGS: "--timeout 240 --output-on-failure -R Python"
+    OUTPUT_SUFFIX: "_test_python"
+
+.module_rebuild:
+  needs: []
+  stage: build
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_module_script_template
+  allow_failure: true
+
+.SVC-Account-Cleanup:
+  resource_group: cleanup
+  allow_failure: true
+  image: ubuntu:20.04
+  extends: .pnnl_tags_template
+  variables:
+    # Don't clone for cleanup job
+    GIT_STRATEGY: none
+  script:
+    - export WORKDIR="$HOME/gitlab/"
+    # clears directory of files more than 6 hours/360 minutes old
+    - find $WORKDIR -type d -mindepth 1 -mmin +360 -prune -print -exec rm -rf {} \; || true
+    - ls -hal $WORKDIR
+
+.pnnl_after_script_template:
+  after_script:
+    - |
+      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${MY_CLUSTER}/"
+      # Iterate over possible jobid named files (jobid_%J)
+      job_ids="$WORKDIR/jobid_*"
+      for job in $job_ids
+      do
+        if [[ -f "$job" ]]; then
+          jobid=$(cat "$job")
+          scancel $jobid
+        fi
+      done
+      rm -rf $WORKDIR
+
+.pnnl_script_template:
+  script:
+    - |
+      # pass --verbose to build.sh for verbose debugging
+      #
+      #  NOTES:  WORKDIR is on constance/deception/newell
+      #          ./      is only on the Kubernetes instance
+      #
+      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}"
+      if [[ ! -d "$WORKDIR" ]]; then
+        # if workdir already exists, we're in the testing job
+        mkdir -p "$WORKDIR"
+        cp -r . "$WORKDIR"
+      fi
+
+      cd "$WORKDIR"
+
+      if [[ $MY_CLUSTER = "deception" ]]; then
+        export SLURM_Q="dl,dl_shared,dlv,dlv_shared,a100_shared,a100_80_shared"
+      elif [[ $MY_CLUSTER = "incline" ]]; then
+        export SLURM_Q="incline"
+      else
+        export SLURM_Q="newell8"
+      fi
+
+      # Unique output file for this stage
+      output="output${OUTPUT_SUFFIX}"
+      [ -f $output ] && rm $output
+      touch $output
+      tail -f $output &
+      tailpid=$!
+
+      partition=$(squeue -j $jobid -h --format="%P")
+      export partition=$(echo $partition | cut -f2 -d'=' | cut -f1 -d' ')
+      
+      echo "Job $jobid submitted to partition $partition"
+
+      # Add partition for later if not a Python test
+      if [[ $CTESTARGS == *"-R Python"* ]]; then
+        popd
+        echo "$partition" >> ./partition
+        pushd $WORKDIR
+      fi
+
+      # Set some directories used in the build script manually, as they
+      # can be inconsistent in gitlab pipelines
+      export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+
+      # Export CTESTARGS defined in variables to run correct tests for stage
+      echo $CTESTARGS being used as testing args
+      export CTESTARGS=$CTESTARGS
+
+      # jobid used in pnnl_after_script_template to cancel job if cancelled or
+      # timed out by gitlab through the UI
+      jobid=$(sbatch --export=ALL -A EXASGD $SLURM_ARGS -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/buildsystem/build.sh $SCRIPT_ARGS)
+      export jobid=$(echo $jobid | cut -f4 -d' ')
+      # Unique jobid filename for this job
+      echo $jobid > "$WORKDIR/jobid_${jobid}"
+      res=1
+      while :;
+      do
+        if [[ "$(awk 'BEGIN{i=0}/BUILD_STATUS/{i++}END{print i}' $output)" != "0" ]]; then
+          kill $tailpid
+          echo 'Last tail of build $output:'
+          tail -n 200 $output
+          res=$(grep BUILD_STATUS $output | tail -n 1 | cut -f2 -d':')
+          break
+        fi
+        sleep 10
+      done
+      echo "Finished batch job with exit code: $res"
+      rm "$WORKDIR/jobid_${jobid}"
+      exit $res
+
+.pnnl_module_script_template:
+  script:
+    - |
+      set -x
+
+      # Configure git before making changes
+      git checkout -b ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+
+      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}"
+
+      mkdir -p "$WORKDIR"
+      cp -r . "$WORKDIR"
+
+      cd "$WORKDIR"
+
+      # jobid used in pnnl_after_script_template to cancel job if cancelled or
+      # timed out by gitlab through the UI
+      jobid=$(sbatch $WORKDIR/buildsystem/spack/$MY_CLUSTER/sbatch.sh)
+      export jobid=$(echo $jobid | cut -f4 -d ' ')
+
+      # Unique jobid filename for this job
+      echo $jobid > "$WORKDIR/jobid_${jobid}"
+
+      # This is hard coded into sbatch script
+      outfile=spack_install.$jobid.output
+
+      [ -f $outfile ] && rm $outfile
+      touch $outfile
+
+      tail -f $outfile &
+      tailpid=$!
+ 
+      res=1
+      while :;
+      do
+        if [[ "$(awk 'BEGIN{i=0}/BUILD_STATUS/{i++}END{print i}' $outfile)" != "0" ]]; then
+          kill $tailpid
+          echo 'Last tail of build $outfile:'
+          tail -n 200 $outfile
+          res=$(grep BUILD_STATUS $outfile | tail -n 1 | cut -f2 -d':')
+          break
+        fi
+        sleep 60
+      done
+
+      if [ "$res" -ne "0" ]; then
+        echo "Finished batch job with exit code: $res"
+        rm "$WORKDIR/jobid_${jobid}"
+        rm -rf $WORKDIR
+        set +x
+        # We want to exit early if the spack build didn't succeed.
+        exit $res;
+      fi
+        
+      # Modules are in /buildsystem/spack/$MY_CLUSTER/modules
+      # Assuming MY_CLUSTER is lower case
+      git add ./buildsystem/spack/${MY_CLUSTER}/modules/*
+
+      # Have to configure username to be able to add commits
+      git config user.name "spack-auto-module"
+      git config user.email "spack.bot@no-reply.com"
+
+      # Add commit to MR branch - message can be changed
+      git commit -m "Update ${MY_CLUSTER} spack built tcl modules - [${MY_CLUSTER}-test]"
+
+      # Do a rebase incase another pipeline has pushed since build started
+      git pull --rebase origin ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+
+      # You will have to change this to work for non-merge requests
+      git push \
+        "https://gitlab-ci-token:${SPACK_GIT_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" \
+        ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+
+      rm -rf $WORKDIR
+      set +x
+      exit $res
+
+.report-status:
+  image: mrnonz/alpine-git-curl:alpine3.16
+  variables:
+    GIT_STRATEGY: none
+    STATUS_PROJECT: pnnl/ExaGO
+    STATUS_NAME: NotSet
+  extends:
+  - .pnnl_nonhpc_tags
+  script:
+    - |
+      set -x
+      if [[ ! -e partition ]]; then
+        echo "No partition file found"
+        export part="none"
+      else
+        export part=$(cat partition)
+      fi
+      
+      export newell_status="ppc64le/gcc@8.5.0/cuda@11.4/v100@70"
+      export deception_status="x86_64/gcc@9.1/cuda@11.4"
+      export incline_status="arm64/clang@15/rocm@5.3.0"
+     
+      if [[ "$part" == *"newell"*  ]]; then
+        export STATUS_NAME=$newell_status
+
+      elif [[ "$part" == *"a100"*  ]]; then
+        export gpu_arch=a100@80
+        export STATUS_NAME="$deception_status/$gpu_arch"
+
+      elif [[ "$part" == *"dl"*  ]]; then
+        gpu_arch=p100@60
+        export STATUS_NAME="$deception_status/$gpu_arch"
+
+      elif [[ "$part" == *"dlv"*  ]]; then
+        gpu_arch=v100@70
+        export STATUS_NAME="$deception_status/$gpu_arch"
+        
+      elif [[ "$part" == *"dlt"*  ]]; then
+        gpu_arch=RTX2080@75
+        export STATUS_NAME="$deception_status/$gpu_arch"
+      
+      elif [[ "$part" == *"incine"* ]]; then
+        gpu_arch=MI100
+        export STATUS_NAME="$incline_status/$gpu_arch"
+        
+      else
+        echo "Unknown partition"
+        export STATUS_NAME="Unknown Partition"
+      fi
+      echo "GPU variable == $gpu_arch"
+      
+      curl -L \
+      -X POST \
+      -H @${GITHUB_CURL_HEADER}\
+       https://api.github.com/repos/${STATUS_PROJECT}/statuses/${CI_COMMIT_SHA} \
+       -d "{\"state\":\"${CI_JOB_NAME}\",\"target_url\":\"${CI_PIPELINE_URL}\",\"description\":\"${STATUS_NAME}\",\"context\":\"${MY_CLUSTER}\"}"
+  environment:
+    name: reporting-gitlab
+
+.report-pending:
+  image: mrnonz/alpine-git-curl:alpine3.16
+  variables:
+    GIT_STRATEGY: none
+    STATUS_PROJECT: pnnl/ExaGO
+  extends: .pnnl_nonhpc_tags
+  script:
+   -  |
+      set -x
+      curl -L \
+      -X POST \
+      -H @${GITHUB_CURL_HEADER}\
+       https://api.github.com/repos/${STATUS_PROJECT}/statuses/${CI_COMMIT_SHA} \
+       -d "{\"state\":\"${CI_JOB_NAME}\",\"target_url\":\"${CI_PIPELINE_URL}\",\"context\":\"${MY_CLUSTER}\"}"
+  environment:
+    name: reporting-gitlab
+
+.pnnl_tags_template:
+  # This image allows you to connect to SLURM
+  image: kfox1111/slurm:deception2
+  tags:
+    - k8s
+    - ikp
+    - exasgd
+    - marianas
+
+.pnnl_nonhpc_tags:
+  tags:
+    - k8s
+    - ikp
+    - exasgd
+    - basic
