@@ -28,10 +28,10 @@ jobs:
        # Give actions access to some secrets
          with:
             GIT_PUSH_ARGS: '--tags --force --push-option=ci.skip'
-            REMOTE: 'https://gitlab.pnnl.gov/exasgd/frameworks/exago-github-mirror'
+            REMOTE: 'https://code.ornl.gov/ecpcitest/exasgd/exago'
             GIT_USERNAME:  ${{ secrets.GIT_USER }}
-            GIT_PASSWORD:  ${{ secrets.GIT_PASSWORD }}
+            GIT_PASSWORD:  ${{ secrets.ORNL_ASCENT_GIT_PASSWORD }}
 
       #  Trigger CI pipeline since it was skipped in the above push
        - name: Trigger Pipeline
-         run: curl -X POST -F token=${{ secrets.PNNL_PIPELINE_TRIGGER }} -F ref=${{ steps.extract_branch.outputs.branch }} https://gitlab.pnnl.gov/api/v4/projects/1619/trigger/pipeline
+         run: curl -X POST -F token=${{ secrets.ORNL_ASCENT_PIPELINE_TRIGGER }} -F ref=${{ steps.extract_branch.outputs.branch }} https://gitlab.pnnl.gov/api/v4/projects/1619/trigger/pipeline
