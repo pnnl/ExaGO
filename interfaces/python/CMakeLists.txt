@@ -54,8 +54,7 @@ if(mpi4py_FOUND)
               "import pytest as p; print(p.__version__);"
       RESULT_VARIABLE _pytest_SEARCH_SUCCESS
       OUTPUT_VARIABLE _pytest_VALUES
-      ERROR_VARIABLE _pytest_ERROR_VALUE
-      OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_VARIABLE _pytest_ERROR_VALUE OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 
     # Convert the process output into a list

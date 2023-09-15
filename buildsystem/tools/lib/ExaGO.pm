@@ -12,10 +12,7 @@ use warnings;
 use v5.16;
 
 use ExaGO::Env;
-use ExaGO::ClangFormat;
-use ExaGO::CMakeFormat;
 use ExaGO::FileNamingConventions;
-use ExaGO::PythonFormat;
 
 use Exporter;
 our @ISA    = qw( Exporter );

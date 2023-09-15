@@ -4,6 +4,7 @@ from shapely.geometry import shape
 import csv
 import sys
 
+
 def getGeneration(data):
     Geni = None
     Gens = []
@@ -36,7 +37,7 @@ def getGeneration(data):
             KV = []
             for bus in subst['bus']:
                 KV.append(bus['BASE_KV'])
-                
+
                 for gen in bus['gen']:
                     Pg += gen['GEN_STATUS'] * gen['PG']
                     Pcap += gen['GEN_STATUS'] * gen['PMAX']
@@ -87,9 +88,10 @@ def getGeneration(data):
                 if Pg >= maxPg:
                     maxPg = Pg
                 geo = shape(feature["geometry"])
-                Geni = { "coordinates": geo.wkt, "Power generated": Pg, "Power capacity": Pcap, "KVlevels": set(KV), "color": color, "generation name":name, "number of buses": nbus, "generation type": gen_fuel }
+                Geni = {"coordinates": geo.wkt, "Power generated": Pg, "Power capacity": Pcap, "KVlevels": set(
+                    KV), "color": color, "generation name": name, "number of buses": nbus, "generation type": gen_fuel}
                 Gens.append(Geni)
-    
+
     keys = Gens[0].keys()
     with open('generation.csv', 'w', newline='') as output_file:
         dict_writer = csv.DictWriter(output_file, keys)
@@ -108,12 +110,12 @@ def getBus(data):
             # kvlevels = p["KVlevels"].replace("[", "{")
             # kvlevels = kvlevels.replace("]", "}")
             points.append({
-                "wkt":geo.wkt,
+                "wkt": geo.wkt,
                 "bus_name": p["NAME"],
                 "kilovolt levels": set(p["KVlevels"]),
-                "number of buses":p["nbus"],
-                "vm":p["Vm"],
-                "start":p["start"],
+                "number of buses": p["nbus"],
+                "vm": p["Vm"],
+                "start": p["start"],
             })
 
     keys = points[0].keys()
@@ -121,6 +123,7 @@ def getBus(data):
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(points)
+
 
 def getLine(data):
     # f = open('case_ACTIVSg10k line.json')
@@ -133,38 +136,36 @@ def getLine(data):
             # kvlevels = p["KVlevels"].replace("[", "{")
             # kvlevels = kvlevels.replace("]", "}")
             x = p["NAME"].split(' -- ')
-            if(p['PF']>0):
+            if (p['PF'] > 0):
                 lines.append({
-                    "wkt":geo.wkt,
-                    "flow capacity":p["RATE_A"],
-                    "pf":p["PF"],
-                    "qf":p["QF"],
-                    "pt":p["PT"],
-                    "qt":p["QT"],
+                    "wkt": geo.wkt,
+                    "flow capacity": p["RATE_A"],
+                    "pf": p["PF"],
+                    "qf": p["QF"],
+                    "pt": p["PT"],
+                    "qt": p["QT"],
                     "kilovolt": p["KV"],
                     "line_name": p["NAME"],
                     "srouce": x[0],
                     "target": x[1],
-                    "actual flow":abs(p["PF"]),
-                    
+                    "actual flow": abs(p["PF"]),
+
 
                 })
             else:
                 lines.append({
-                    "wkt":geo.wkt,
-                    "flow capacity":p["RATE_A"],
-                    "pf":p["PF"],
-                    "qf":p["QF"],
-                    "pt":p["PT"],
-                    "qt":p["QT"],
+                    "wkt": geo.wkt,
+                    "flow capacity": p["RATE_A"],
+                    "pf": p["PF"],
+                    "qf": p["QF"],
+                    "pt": p["PT"],
+                    "qt": p["QT"],
                     "kilovolt": p["KV"],
                     "line_name": p["NAME"],
                     "srouce": x[1],
                     "target": x[0],
-                    "actual flow":abs(p["PF"]),
+                    "actual flow": abs(p["PF"]),
                 })
-
-
 
     keys = lines[0].keys()
 
@@ -182,6 +183,6 @@ def main():
     getBus(data)
     getLine(data)
 
-if __name__=="__main__":
-    main()
 
+if __name__ == "__main__":
+    main()
