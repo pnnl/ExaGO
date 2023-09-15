@@ -173,10 +173,10 @@ stages:
         cp -r . "$WORKDIR"
       fi
 
-      cd "$WORKDIR"
+      pushd "$WORKDIR"
 
       if [[ $MY_CLUSTER = "deception" ]]; then
-        export SLURM_Q="dl,dl_shared,dlv,dlv_shared,a100_shared,a100_80_shared"
+        export SLURM_Q="dl,dl_shared,dlv,a100_shared,a100_80_shared,fat_shared,dlt_shared"
       elif [[ $MY_CLUSTER = "incline" ]]; then
         export SLURM_Q="incline"
       else
@@ -190,18 +190,6 @@ stages:
       tail -f $output &
       tailpid=$!
 
-      partition=$(squeue -j $jobid -h --format="%P")
-      export partition=$(echo $partition | cut -f2 -d'=' | cut -f1 -d' ')
-      
-      echo "Job $jobid submitted to partition $partition"
-
-      # Add partition for later if not a Python test
-      if [[ $CTESTARGS == *"-R Python"* ]]; then
-        popd
-        echo "$partition" >> ./partition
-        pushd $WORKDIR
-      fi
-
       # Set some directories used in the build script manually, as they
       # can be inconsistent in gitlab pipelines
       export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
@@ -214,6 +202,16 @@ stages:
       # timed out by gitlab through the UI
       jobid=$(sbatch --export=ALL -A EXASGD $SLURM_ARGS -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/buildsystem/build.sh $SCRIPT_ARGS)
       export jobid=$(echo $jobid | cut -f4 -d' ')
+
+      # Add partition for later if not a Python test
+      if [[ $CTESTARGS == *"-R Python"* ]]; then
+        partition=$(squeue -j $jobid -h --format="%P")
+        export partition=$(echo $partition | cut -f2 -d'=' | cut -f1 -d' ')
+        popd
+        echo "$partition" >> ./partition
+        pushd $WORKDIR
+      fi
+
       # Unique jobid filename for this job
       echo $jobid > "$WORKDIR/jobid_${jobid}"
       res=1
@@ -228,6 +226,7 @@ stages:
         fi
         sleep 10
       done
+      popd
       echo "Finished batch job with exit code: $res"
       rm "$WORKDIR/jobid_${jobid}"
       exit $res
