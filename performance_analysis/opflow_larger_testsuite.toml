@@ -113,4 +113,3 @@ opflow_solver = 'HIOP'
 hiop_compute_mode = 'GPU'
 opflow_model = 'POWER_BALANCE_HIOP'
 hiop_max_iter = 20
-

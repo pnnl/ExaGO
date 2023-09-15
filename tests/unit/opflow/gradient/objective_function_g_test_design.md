@@ -93,4 +93,3 @@ For N=3 residual vector of gradient is equal to vector with length of 3 where al
 <td>1 1 1 </td>
 </tr>
 </table> 
-

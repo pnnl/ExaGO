@@ -78,4 +78,3 @@ mkdir -p $SPACK_MIRROR
 if [ $? -eq 0 ] && [ "$1" = "-v" ]; then
   spack config get config
 fi
-

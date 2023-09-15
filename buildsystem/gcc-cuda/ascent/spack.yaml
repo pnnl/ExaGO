@@ -30,9 +30,6 @@ spack:
       flags: {}
       operating_system: rhel8
       target: ppc64le
-      modules: []
-      environment: {}
-      extra_rpaths: []
   packages:
     all:
       providers:

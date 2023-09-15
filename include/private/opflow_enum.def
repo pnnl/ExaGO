@@ -27,6 +27,3 @@ OPFLOW_GBV_DEF(FIXED_WITHIN_QBOUNDS) // Voltage is fixed within reactive power b
 OPFLOW_GBV_DEF(FIXED_AT_SETPOINT) // Voltage is fixed to the set-point voltage 
 
 #endif
-
-
-

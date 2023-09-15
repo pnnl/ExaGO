@@ -126,5 +126,3 @@ for i=1:10
 end
 writematrix(ResW,'cec.csv') 
             
-
-
