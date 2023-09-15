@@ -112,7 +112,7 @@ pending:
   variables:
     MY_CLUSTER: "Ascent"
   extends:
-    - .report-pending
+    - .report-status
   stage: .pre
 
 success:
