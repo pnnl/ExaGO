@@ -1,4 +1,4 @@
-name: Mirroring
+name: PNNL Mirror
 
 # triggers a github action everytime there is a push or mr
 on:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   # To test on HPC resources we must first mirror the repo and then trigger a pipeline
-  to_pnnl_gitlab:
+  push:
      # Latest Ubuntu as of Feb 2023 is 20.04
      runs-on: ubuntu-22.04
      steps:

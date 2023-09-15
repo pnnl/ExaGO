@@ -1,4 +1,4 @@
-name: Mirroring
+name: Ascent Mirror
 
 # triggers a github action everytime there is a push or mr
 on:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   # To test on HPC resources we must first mirror the repo and then trigger a pipeline
-  to_pnnl_gitlab:
+  push:
      # Latest Ubuntu as of Feb 2023 is 20.04
      runs-on: ubuntu-22.04
      steps:
@@ -34,4 +34,4 @@ jobs:
 
       #  Trigger CI pipeline since it was skipped in the above push
        - name: Trigger Pipeline
-         run: curl -X POST -F token=${{ secrets.ORNL_ASCENT_PIPELINE_TRIGGER }} -F ref=${{ steps.extract_branch.outputs.branch }} https://gitlab.pnnl.gov/api/v4/projects/1619/trigger/pipeline
+         run: curl -X POST -F token=${{ secrets.ORNL_ASCENT_PIPELINE_TRIGGER }} -F ref=${{ steps.extract_branch.outputs.branch }} https://code.ornl.gov/api/v4/projects/7381/trigger/pipeline
