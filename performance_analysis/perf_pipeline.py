@@ -137,7 +137,7 @@ def doPerfMeasure(in_file):
 
     if "mpi_rank" in testsuite:
         mpi_cmd = [mpi_start, "-n", str(testsuite['mpi_rank'])]
-    
+
     profiler_cmd_list = list()
     my_env = os.environ.copy()
     if "profiler" in testsuite:

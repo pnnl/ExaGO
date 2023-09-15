@@ -7,9 +7,12 @@ from sqlalchemy import text
 
 
 def sqlchain(input_text):
-    llm = OpenAI(openai_api_key=config.openai_key, model_name="gpt-3.5-turbo", temperature=0 , verbose=True)
-    db = SQLDatabase.from_uri(f"postgresql+psycopg2://postgres:{config.sql_key}@localhost:5432/US west power grid")
-    mydb = sqldb.create_engine(f"postgresql+psycopg2://postgres:{config.sql_key}@localhost:5432/US west power grid")
+    llm = OpenAI(openai_api_key=config.openai_key,
+                 model_name="gpt-3.5-turbo", temperature=0, verbose=True)
+    db = SQLDatabase.from_uri(
+        f"postgresql+psycopg2://postgres:{config.sql_key}@localhost:5432/US west power grid")
+    mydb = sqldb.create_engine(
+        f"postgresql+psycopg2://postgres:{config.sql_key}@localhost:5432/US west power grid")
     myconnection = mydb.connect()
 
     _CUSTOMIZE__TEMPLATE = """You are a PostgreSQL expert. Given an input question, first create a syntactically correct PostgreSQL query to run then look at the results of the query and return the answer to the input question.
@@ -26,7 +29,7 @@ def sqlchain(input_text):
     Answer: text answer
 
     """
-    MY_PROMPT_SUFFIX ="""Only use the following tables:
+    MY_PROMPT_SUFFIX = """Only use the following tables:
     {table_info}
 
     Question: {input}"""
@@ -36,8 +39,8 @@ def sqlchain(input_text):
         template=_CUSTOMIZE__TEMPLATE + MY_PROMPT_SUFFIX,
     )
 
-
-    text_chain = SQLDatabaseChain.from_llm(llm, db, verbose=True,return_intermediate_steps=True, prompt=MY_POSTGRES_PROMPT)
+    text_chain = SQLDatabaseChain.from_llm(
+        llm, db, verbose=True, return_intermediate_steps=True, prompt=MY_POSTGRES_PROMPT)
     # sql_chain = SQLDatabaseChain.from_llm(llm, db, verbose=True,return_intermediate_steps=True, return_direct=True)
 
     # ResultSet = tempr.fetchall()
@@ -48,7 +51,6 @@ def sqlchain(input_text):
     # format_instructions = output_parser.get_format_instructions()
 
     # _DEFAULT_TEMPLATE = """Given an input question, first create a syntactically correct query to run. The return of the query should always include the 'id' field. Then look at the results of the query and return the answer.
-
 
     # # Use the following format:
 
@@ -62,8 +64,6 @@ def sqlchain(input_text):
     #     input_variables=["input"], template=_DEFAULT_TEMPLATE
     # )
 
-
-
     # prompt = PromptTemplate(
     # template="Answering the following questions{query}.\n{format_instructions}",
     # input_variables=["query"],
@@ -73,9 +73,7 @@ def sqlchain(input_text):
     # _input = prompt.format(input=input_text)
     # "show me all the wind generations with capacity higher than 100 in Illinois"
     # Find the top 3 closest generations to the generation 'SPRINGFIELD 5' with capacity higher than 100 in Illinois.
-    
-    
-    
+
     text_result = ""
     query_dict = []
     try:
@@ -84,20 +82,19 @@ def sqlchain(input_text):
         text_result = output['result']
         # print(output["intermediate_steps"])
         sql_cmd = output["intermediate_steps"][1]
-        
+
         # list_output = output_parser.parse(output)
 
-    
         tempr = myconnection.execute(text(sql_cmd)).fetchall()
 
         query_dict = [dict(record._mapping) for record in tempr]
     except Exception as error:
-        if(("maximum" in error.user_message) and ("length" in error.user_message)):
+        if (("maximum" in error.user_message) and ("length" in error.user_message)):
             text_result = "Check the visualization for updated results"
             sql_cmd = error.intermediate_steps[1]
             tempr = myconnection.execute(text(sql_cmd)).fetchall()
             query_dict = [dict(record._mapping) for record in tempr]
-        elif(("Rate" in error.user_message) and ("limit" in error.user_message)):
+        elif (("Rate" in error.user_message) and ("limit" in error.user_message)):
             text_result = "Check the visualization for updated results"
             sql_cmd = error.intermediate_steps[1]
             tempr = myconnection.execute(text(sql_cmd)).fetchall()
@@ -107,17 +104,14 @@ def sqlchain(input_text):
             print(error)
             text_result = "Sorry, I can't find the answer to your question"
             query_dict = []
-   
-    
+
     # print(query_dict)
     print(text_result)
     print(sql_cmd)
     return {
         "text": text_result,
-        "result_list":query_dict
+        "result_list": query_dict
     }
 # print(list_output)
 
 # sqlchain('show me US generations that are in Texas state?')
-
-
