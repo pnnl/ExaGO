@@ -204,7 +204,7 @@ stages:
       export jobid=$(echo $jobid | cut -f4 -d' ')
 
       # Add partition for later if not a Python test
-      if [[ $CTESTARGS == *"-R Python"* ]]; then
+      if [[ $CTESTARGS == *"-E Python"* ]]; then
         partition=$(squeue -j $jobid -h --format="%P")
         export partition=$(echo $partition | cut -f2 -d'=' | cut -f1 -d' ')
         popd
