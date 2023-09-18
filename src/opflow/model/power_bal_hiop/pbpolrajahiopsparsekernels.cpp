@@ -1,4 +1,7 @@
 
+#include <iostream>
+#include <iomanip>
+
 #include <exago_config.h>
 
 #if defined(EXAGO_ENABLE_RAJA)
@@ -531,6 +534,14 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
         CHKERRQ(ierr);
       }
 
+      // Dump out the matrix indexes as a check
+      std::cout << "Nonzero indexes for Inequality Constraint Jacobian:" << std::endl;
+      for (int idx = 0; idx < opflow->nnz_ineqjacsp; ++idx) {
+        std::cout << std::setw(5) << idx << " "
+                  << std::setw(5) << pbpolrajahiopsparse->i_jacineq[idx] << " "
+                  << std::setw(5) << pbpolrajahiopsparse->j_jacineq[idx] << std::endl;
+      }
+
       // Copy over i_jacineq and j_jacineq arrays to device
       resmgr.copy(iJacS_dev + opflow->nnz_eqjacsp,
                   pbpolrajahiopsparse->i_jacineq);
@@ -648,6 +659,13 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
       CHKERRQ(ierr);
     }
 
+    std::cout << "Zero indexes for Equality Constraint Jacobian:" << std::endl;
+    for (int idx = 0; idx < opflow->nnz_eqjacsp; ++idx) {
+      std::cout << std::setw(5) << idx << " "
+                << std::setw(5) << pbpolrajahiopsparse->i_jaceq[idx] << " "
+                << std::setw(5) << pbpolrajahiopsparse->j_jaceq[idx] << std::endl;
+    }
+    
     // Copy over i_jaceq and j_jaceq arrays to device
     resmgr.copy(iJacS_dev, pbpolrajahiopsparse->i_jaceq);
     resmgr.copy(jJacS_dev, pbpolrajahiopsparse->j_jaceq);
