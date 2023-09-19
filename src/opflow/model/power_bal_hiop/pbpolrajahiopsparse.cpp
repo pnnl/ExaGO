@@ -282,7 +282,11 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
       PSLINE line = connlines[iconn];
       if (!line->status)
         continue;
-      nnz_eqjac += 8;
+
+      // each line adds 4 entries for the to bus and 4 entries for the
+      // from bus. The current bus is one of these and those entries
+      // have already been counted.
+      nnz_eqjac += 4;
     }
       
     if (opflow->has_gensetpoint) {
