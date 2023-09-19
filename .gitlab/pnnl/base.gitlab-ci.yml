@@ -297,13 +297,12 @@ stages:
       # Add commit to MR branch - message can be changed
       git commit -m "Update ${MY_CLUSTER} spack built tcl modules - [${MY_CLUSTER}-test]"
 
+      # Re-target GitHub as our remote
+      git remote set-url origin https://gitlab-ci-token:${SPACK_GIT_TOKEN}@github.com/pnnl/ExaGO.git
+      
       # Do a rebase incase another pipeline has pushed since build started
-      git pull --rebase origin ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
-
-      # You will have to change this to work for non-merge requests
-      git push \
-        "https://gitlab-ci-token:${SPACK_GIT_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" \
-        ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+      git pull --rebase origin ${CI_COMMIT_REF_NAME}
+      git push origin ${CI_COMMIT_REF_NAME}
 
       rm -rf $WORKDIR
       set +x
