@@ -319,6 +319,7 @@ stages:
   script:
     - |
       set -x
+      
       if [[ ! -e partition ]]; then
         echo "No partition file found"
         export part="none"
@@ -326,12 +327,15 @@ stages:
         export part=$(cat partition)
       fi
       
-      export newell_status="ppc64le/gcc@8.5.0/cuda@11.4/v100@70"
+      export newell_status="ppc64le/gcc@8.5/cuda@11.4/v100@70"
       export deception_status="x86_64/gcc@9.1/cuda@11.4"
-      export incline_status="arm64/clang@15/rocm@5.3.0"
+      export incline_status="arm64/clang@15.0/rocm@5.3/MIs100@gfx908"
      
       if [[ "$part" == *"newell"*  ]]; then
         export STATUS_NAME=$newell_status
+
+      elif [[ "$part" == *"incline"* ]]; then
+        export STATUS_NAME="$incline_status"
 
       elif [[ "$part" == *"a100"*  ]]; then
         export gpu_arch=a100@80
@@ -348,16 +352,11 @@ stages:
       elif [[ "$part" == *"dlt"*  ]]; then
         gpu_arch=RTX2080@75
         export STATUS_NAME="$deception_status/$gpu_arch"
-      
-      elif [[ "$part" == *"incine"* ]]; then
-        gpu_arch=MI100
-        export STATUS_NAME="$incline_status/$gpu_arch"
         
       else
         echo "Unknown partition"
         export STATUS_NAME="Unknown Partition"
       fi
-      echo "GPU variable == $gpu_arch"
       
       curl -L \
       -X POST \

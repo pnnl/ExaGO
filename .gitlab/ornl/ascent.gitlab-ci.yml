@@ -89,22 +89,21 @@ Ascent Py Test:
 # Reporting Ascent Status to PNNL
 .report-status:
   variables:
+    MY_CLUSTER: "Ascent"
     GIT_STRATEGY: none
     STATUS_PROJECT: pnnl/ExaGO
+    STATUS_NAME: ppc64le/gcc@10.2/cuda@11.4.2/v100@70
   tags:
     - nobatch
   extends:
     - .ornl_rules
     - .ornl_environment_template
   script:
-    # For complete details on the GitLab API please see:
-    # https://docs.gitlab.com/ee/api/commits.html#post-the-build-status-to-a-commit
-    # Make sure to create the token with Developer level access and API scope
     - curl -L \
       -X POST \
       -H @${GITHUB_CURL_HEADER}\
        https://api.github.com/repos/${STATUS_PROJECT}/statuses/${CI_COMMIT_SHA} \
-       -d "{\"state\":\"${CI_JOB_NAME}\",\"target_url\":\"${CI_PIPELINE_URL}\",\"description\":\"ppcle/V100\",\"context\":\"${MY_CLUSTER}\"}"
+       -d "{\"state\":\"${CI_JOB_NAME}\",\"target_url\":\"${CI_PIPELINE_URL}\",\"description\":\"${STATUS_NAME}\",\"context\":\"${MY_CLUSTER}\"}"
   environment:
     name: reporting-gitlab
 
@@ -114,6 +113,7 @@ Ascent Py Test:
   variables:
     GIT_STRATEGY: none
     STATUS_PROJECT: pnnl/ExaGO
+    MY_CLUSTER: "Ascent"
   extends:
     - .ornl_rules
     - .ornl_environment_template
@@ -129,23 +129,17 @@ Ascent Py Test:
     name: reporting-gitlab
 
 pending:
-  variables:
-    MY_CLUSTER: "Ascent"
   extends:
     - .report-pending
   stage: .pre
 
 success:
-  variables:
-    MY_CLUSTER: "Ascent"
   extends:
     - .report-status
   stage: .post
        
 failure:
   stage: .post
-  variables:
-    MY_CLUSTER: "Ascent"
   extends:
     - .report-status
   rules:
