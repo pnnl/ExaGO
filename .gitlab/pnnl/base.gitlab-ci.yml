@@ -295,6 +295,8 @@ stages:
 
 .report-status:
   image: mrnonz/alpine-git-curl:alpine3.16
+  environment:
+    name: reporting-gitlab
   variables:
     GIT_STRATEGY: none
     STATUS_PROJECT: pnnl/ExaGO
@@ -351,6 +353,8 @@ stages:
 
 .report-pending:
   image: mrnonz/alpine-git-curl:alpine3.16
+  environment:
+    name: reporting-gitlab
   variables:
     GIT_STRATEGY: none
     STATUS_PROJECT: pnnl/ExaGO
