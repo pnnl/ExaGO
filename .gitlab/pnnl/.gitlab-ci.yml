@@ -26,7 +26,6 @@ SVC-Account-Cleanup:
   resource_group: cleanup
   stage: .pre
   allow_failure: true
-  extends: .pnnl_tags_template
   variables:
     # Don't clone for cleanup job
     GIT_STRATEGY: none
