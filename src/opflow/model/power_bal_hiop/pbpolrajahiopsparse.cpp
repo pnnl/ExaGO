@@ -223,7 +223,7 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
 
   /* Need to compute the number of nonzeros in equality, inequality constraint
    * Jacobians and Hessian */
-  int nnz_eqjac = 0;
+  int nnz_eqjac = 0, nnz_ineqjac = 0;
 
   // Find nonzero entries in equality constraint Jacobian by row. Using
   // OPFLOWComputeEqualityConstraintJacobian_PBPOL() as a guide.
@@ -305,8 +305,51 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
     }
   }
 
-  printf("Equality Jacobian nonzero count: %d vs %d\n",
-         opflow->nnz_eqjacsp, nnz_eqjac);
+  printf("Equality Jacobian nonzero count: %d\n", nnz_eqjac);
+
+  if (opflow->has_gensetpoint) {
+    for (int ibus = 0; ibus < ps->nbus; ++ibus) {
+      PSBUS bus = &(ps->bus[ibus]);
+      for (int igen = 0; igen < bus->ngen; ++igen) {
+        PSGEN gen;
+        ierr = PSBUSGetGen(bus, igen, &gen);
+        CHKERRQ(ierr);
+        if (!gen->status)
+          continue;
+        genparams->ineqjacspgen_idx[igen] = nnz_ineqjac;
+        nnz_ineqjac += 6;
+      }
+    }
+  }
+
+  if (opflow->genbusvoltagetype == FIXED_WITHIN_QBOUNDS) {
+    for (int ibus = 0; ibus < ps->nbus; ++ibus) {
+      PSBUS bus = &(ps->bus[ibus]);
+      if (bus->ide == PV_BUS || bus->ide == REF_BUS) {
+        for (int igen = 0; igen < bus->ngen; ++igen) {
+        PSGEN gen;
+        ierr = PSBUSGetGen(bus, igen, &gen);
+        CHKERRQ(ierr);
+        if (!gen->status)
+          continue;
+        nnz_ineqjac += 2;
+        }
+        nnz_ineqjac += 2;
+      }
+    }
+  }
+
+  if (!opflow->ignore_lineflow_constraints) {
+    for (int iline = 0; iline < opflow->nlinesmon; ++iline) {
+      // PSLINE line = &ps->line[opflow->linesmon[iline]];
+      nnz_ineqjac += 8;
+    }
+  }
+
+  printf("Inequality Jacobian nonzero count: %d\n", nnz_ineqjac);
+
+
+  // opflow->nnz_eqjacsp = nnz_eqjac;
 
   ierr = busparams->copy(opflow);
   ierr = genparams->copy(opflow);
