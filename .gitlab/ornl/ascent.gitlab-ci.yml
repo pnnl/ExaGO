@@ -2,7 +2,7 @@
 # We have to use YAML anchors for rules here
 # Rules are also evaluated sequentially, so you need to be careful about
 # the order in which these rules are included in child jobs - list "never" rules before other rules
-.rules:
+.rules-template:
   rules:
       # --
       # Rule to fall back on...
@@ -151,7 +151,6 @@ Ascent Py Test:
     - .ascent_rules
     - .ascent_python_test_script_template
     - .ascent_environment_template
-  allow_failure: true
 # ---
 
 # Reporting Ascent Status to PNNL

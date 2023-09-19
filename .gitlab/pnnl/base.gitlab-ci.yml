@@ -110,7 +110,6 @@ stages:
 
 .cluster_py_test:
   stage: test
-  allow_failure: true
   extends:
     - .pnnl_tags_template
     - .pnnl_script_template
@@ -128,7 +127,6 @@ stages:
   extends:
     - .pnnl_tags_template
     - .pnnl_module_script_template
-  allow_failure: true
 
 .SVC-Account-Cleanup:
   resource_group: cleanup
