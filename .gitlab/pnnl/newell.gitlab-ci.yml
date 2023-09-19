@@ -32,10 +32,6 @@ Newell Module Rebuild:
     MY_CLUSTER: "newell"
     WORKDIR_SUFFIX: "spack_newell"
 
-cleanup:
-  stage: .pre
-  extends: .SVC-Account-Cleanup
-
 pending:
   variables:
     MY_CLUSTER: "Newell"

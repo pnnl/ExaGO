@@ -15,3 +15,23 @@ trigger_incline:
     include:
       - local: .gitlab/pnnl/base.gitlab-ci.yml
       - local: .gitlab/pnnl/incline.gitlab-ci.yml
+
+SVC-Account-Cleanup:
+  image: kfox1111/slurm:deception2
+  tags:
+    - k8s
+    - ikp
+    - exasgd
+    - marianas
+  resource_group: cleanup
+  stage: .pre
+  allow_failure: true
+  extends: .pnnl_tags_template
+  variables:
+    # Don't clone for cleanup job
+    GIT_STRATEGY: none
+  script:
+    - export WORKDIR="$HOME/gitlab/"
+    # clears directory of files more than 3 hours/180 minutes old
+    - find $WORKDIR -type d -mindepth 1 -mmin +180 -prune -print -exec rm -rf {} \; || true
+    - ls -hal $WORKDIR

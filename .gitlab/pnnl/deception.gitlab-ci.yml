@@ -31,10 +31,6 @@ Deception Module Rebuild:
   variables:
     MY_CLUSTER: "deception"
     WORKDIR_SUFFIX: "spack_deception"
-  
-cleanup:
-  stage: .pre
-  extends: .SVC-Account-Cleanup
 
 pending:
   variables:
