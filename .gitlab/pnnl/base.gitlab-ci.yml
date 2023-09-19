@@ -1,17 +1,6 @@
 include:
   - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v1/gitlab-lib.yaml'
 
-variables:
-  GIT_SUBMODULE_STRATEGY: recursive
-  KUBERNETES_HELPER_CPU_REQUEST: 100m
-  KUBERNETES_HELPER_CPU_LIMIT: 500m
-  KUBERNETES_HELPER_MEMORY_REQUEST: 512Mi
-  KUBERNETES_HELPER_MEMORY_LIMIT: 512Mi
-
-stages:
-  - build
-  - test
-
 # https://stackoverflow.com/questions/67009007
 # We have to use YAML anchors for rules here
 # Rules are also evaluated sequentially, so you need to be careful about
@@ -19,14 +8,9 @@ stages:
 .rules:
   rules:
       # --
-      # Only run if source is an open merge request or a branch push
-    - &rule_1
-      if: $CI_MERGE_REQUEST_IID
-    - &rule_2
-      if: $CI_OPEN_MERGE_REQUESTS
-      when: never
-    - &rule_3
-      if: $CI_COMMIT_BRANCH 
+      # Rule to fall back on...
+    - &default
+      when: always
       # -- 
       # Only run when the commit **DOES NOT** contains "[newell-rebuild]"
     - &rule_no_newell_rebuild
@@ -48,35 +32,52 @@ stages:
     - &rule_no_newell_test
       if: '$CI_COMMIT_TITLE =~ /\[newell-test\]/'
       when: never
+      # Only run when the commit **DOES** contains "[newell-test]"
+    - &rule_yes_newell_test
+      if: '$CI_COMMIT_TITLE =~ /\[newell-test\]/'
+      when: always
     # Only run when the commit **DOES NOT** contains "[deception-test]"
     - &rule_no_deception_test
       if: '$CI_COMMIT_TITLE =~ /\[deception-test\]/'
       when: never
+    # Only run when the commit **DOES** contains "[deception-test]"
+    - &rule_yes_deception_test
+      if: '$CI_COMMIT_TITLE =~ /\[deception-test\]/'
+      when: always
     # Only run when the commit **DOES NOT** contains "[incline-test]"
     - &rule_no_incline_test
       if: '$CI_COMMIT_TITLE =~ /\[incline-test\]/'
       when: never
-     # Only run when the commit **DOES NOT** contains "[ascent-test]"
+    # Only run when the commit **DOES** contains "[incline-test]"
+    - &rule_yes_incline_test
+      if: '$CI_COMMIT_TITLE =~ /\[incline-test\]/'
+      when: always
+    # Only run when the commit **DOES NOT** contains "[ascent-test]"
     - &rule_no_ascent_test
       if: '$CI_COMMIT_TITLE =~ /\[ascent-test\]/'
       when: never
+    # Only run when the commit **DOES** contains "[ascent-test]"
+    - &rule_yes_ascent_test
+      if: '$CI_COMMIT_TITLE =~ /\[ascent-test\]/'
+      when: always
+
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  KUBERNETES_HELPER_CPU_REQUEST: 100m
+  KUBERNETES_HELPER_CPU_LIMIT: 500m
+  KUBERNETES_HELPER_MEMORY_REQUEST: 512Mi
+  KUBERNETES_HELPER_MEMORY_LIMIT: 512Mi
+
+stages:
+  - build
+  - test
 
 .non_hpc_job:
   needs: []
   allow_failure: true
+  when: always
   stage: test
-  rules:
-    - *rule_no_newell_rebuild
-    - *rule_no_deception_rebuild
-    - *rule_no_ascent_rebuild
-    - *rule_no_incline_rebuild
-    - *rule_no_newell_test
-    - *rule_no_deception_test
-    - *rule_no_ascent_test
-    - *rule_no_incline_test
-    - *rule_1
-    - *rule_2
-    - *rule_3
   extends: .pnnl_nonhpc_tags
   variables:
     GIT_SUBMODULE_STRATEGY: none
@@ -329,7 +330,7 @@ stages:
       
       export newell_status="ppc64le/gcc@8.5/cuda@11.4/v100@70"
       export deception_status="x86_64/gcc@9.1/cuda@11.4"
-      export incline_status="arm64/clang@15.0/rocm@5.3/MIs100@gfx908"
+      export incline_status="arm64/clang@15.0/rocm@5.3/MI100@gfx908"
      
       if [[ "$part" == *"newell"*  ]]; then
         export STATUS_NAME=$newell_status
@@ -355,7 +356,7 @@ stages:
         
       else
         echo "Unknown partition"
-        export STATUS_NAME="Unknown Partition"
+        export STATUS_NAME="Unknown Partition/Tests Skipped"
       fi
       
       curl -L \
@@ -401,16 +402,15 @@ stages:
 
 .deception:
   rules:
-    - *rule_no_newell_rebuild
+    - *rule_yes_deception_test
     - *rule_no_deception_rebuild
-    - *rule_no_ascent_rebuild
-    - *rule_no_incline_rebuild
     - *rule_no_newell_test
+    - *rule_no_newell_rebuild
     - *rule_no_incline_test
+    - *rule_no_incline_rebuild
     - *rule_no_ascent_test
-    - *rule_1
-    - *rule_2
-    - *rule_3
+    - *rule_no_ascent_rebuild
+    - *default
   variables:
     MY_CLUSTER: "deception"
     WORKDIR_SUFFIX: "x86_64-gcc-cuda-build"
@@ -419,16 +419,15 @@ stages:
 
 .newell:
   rules:
-    - *rule_no_newell_rebuild
-    - *rule_no_deception_rebuild
-    - *rule_no_ascent_rebuild
-    - *rule_no_incline_rebuild
     - *rule_no_deception_test
+    - *rule_no_deception_rebuild
+    - *rule_yes_newell_test
+    - *rule_no_newell_rebuild
     - *rule_no_incline_test
+    - *rule_no_incline_rebuild
     - *rule_no_ascent_test
-    - *rule_1
-    - *rule_2
-    - *rule_3
+    - *rule_no_ascent_rebuild
+    - *default
   variables:
     WORKDIR_SUFFIX: "ppc64le-gcc-cuda-build"
     MY_CLUSTER: "newell"
@@ -436,16 +435,15 @@ stages:
 
 .incline:
   rules:
-    - *rule_no_newell_rebuild
-    - *rule_no_deception_rebuild
-    - *rule_no_ascent_rebuild
-    - *rule_no_incline_rebuild
-    - *rule_no_newell_test
     - *rule_no_deception_test
+    - *rule_no_deception_rebuild
+    - *rule_no_newell_test
+    - *rule_no_newell_rebuild
+    - *rule_yes_incline_test
+    - *rule_no_incline_rebuild
     - *rule_no_ascent_test
-    - *rule_1
-    - *rule_2
-    - *rule_3
+    - *rule_no_ascent_rebuild
+    - *default
   variables:
     WORKDIR_SUFFIX: "x86_64-clang-hip-build"
     MY_CLUSTER: "incline"
