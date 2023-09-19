@@ -27,7 +27,6 @@ Newell Module Rebuild:
   rules:
     - if: '$CI_COMMIT_TITLE =~ /\[newell-rebuild\]/'
       when: always
-    - when: manual
   variables:
     MY_CLUSTER: "newell"
     WORKDIR_SUFFIX: "spack_newell"

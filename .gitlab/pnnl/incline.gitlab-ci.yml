@@ -27,7 +27,6 @@ Incline Module Rebuild:
   rules:
     - if: $CI_COMMIT_TITLE =~ /\[incline-rebuild\]/
       when: always
-    - when: manual
   variables:
     MY_CLUSTER: "incline"
     WORKDIR_SUFFIX: "spack_incline"

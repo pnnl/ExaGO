@@ -27,7 +27,6 @@ Deception Module Rebuild:
   rules:
     - if: '$CI_COMMIT_TITLE =~ /\[deception-rebuild\]/'
       when: always
-    - when: manual
   variables:
     MY_CLUSTER: "deception"
     WORKDIR_SUFFIX: "spack_deception"
