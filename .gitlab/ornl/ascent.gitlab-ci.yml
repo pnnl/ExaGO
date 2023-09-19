@@ -205,6 +205,5 @@ failure:
   stage: .post
   extends: .report-status
   rules: 
-    when: 
-      - on_failure
+    - when: on_failure
 # ---
