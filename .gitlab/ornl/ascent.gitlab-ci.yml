@@ -156,6 +156,7 @@ Ascent Py Test:
 
 # Reporting Ascent Status to PNNL
 .report-status:
+  when: always
   variables:
     MY_CLUSTER: Ascent
     GIT_STRATEGY: none
@@ -175,6 +176,7 @@ Ascent Py Test:
     name: reporting-gitlab
 
 .report-pending:
+  when: always
   tags:
     - nobatch
   variables:

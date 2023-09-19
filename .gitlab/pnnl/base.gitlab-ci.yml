@@ -238,7 +238,7 @@ stages:
       set -x
 
       # Configure git before making changes
-      git checkout -b ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+      git checkout -b ${CI_COMMIT_REF_NAME}
 
       export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}"
 
