@@ -223,10 +223,86 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
 
   /* Need to compute the number of nonzeros in equality, inequality constraint
    * Jacobians and Hessian */
-  int nnz_eqjacsp = 0, nnz_ineqjacsp = 0, nnz_hesssp = 0;
-  opflow->nnz_eqjacsp = nnz_eqjacsp;
-  opflow->nnz_ineqjacsp = nnz_ineqjacsp;
-  opflow->nnz_hesssp = nnz_hesssp;
+  int nnz_eqjac = 0;
+
+  // Find nonzero entries in equality constraint Jacobian by row. Using
+  // OPFLOWComputeEqualityConstraintJacobian_PBPOL() as a guide.
+
+  PS ps = (PS)opflow->ps;
+
+  for (int ibus = 0; ibus < ps->nbus; ++ibus) {
+
+    PSBUS bus = &(ps->bus[ibus]);
+
+    // Nonzero entries used by each *bus* starts here 
+
+    // no matter what, each bus uses 2 rows and 2 columns
+    // row 1 = real, row2 = reactive
+
+    busparams->jacsp_idx[ibus] = nnz_eqjac;
+    nnz_eqjac += 2;
+    busparams->jacsq_idx[ibus] = nnz_eqjac;
+    nnz_eqjac += 2;
+    
+    if (bus->ide == ISOLATED_BUS) {
+      continue;
+    }
+      
+    if (opflow->include_powerimbalance_variables) {
+      // 2 more entries on both real and reactive
+      nnz_eqjac += 4;
+    }
+
+    for (int igen = 0; igen < bus->ngen; ++igen) {
+      PSGEN gen;
+      ierr = PSBUSGetGen(bus, igen, &gen);
+      CHKERRQ(ierr);
+      if (!gen->status)
+        continue;
+      // each active generator uses 1 real and reactive entry on each bus
+      genparams->eqjacspbus_idx[igen] = nnz_eqjac;
+      nnz_eqjac += 2;
+    }
+      
+    if (opflow->include_loadloss_variables) {
+      // each load adds one real and reactive entry on each bus row
+      for (int iload = 0; iload < bus->nload; ++iload) {
+        loadparams->jacsp_idx[iload] = nnz_eqjac;
+        nnz_eqjac += 2;
+      }
+    }
+
+    const PSLINE *connlines;
+    int nconnlines;
+    ierr = PSBUSGetSupportingLines(bus, &nconnlines, &connlines);
+    CHKERRQ(ierr);
+    
+    for (int iconn = 0; iconn < nconnlines; iconn++) {
+      // each *active* connected line uses 4 entries total in each bus row
+      PSLINE line = connlines[iconn];
+      if (!line->status)
+        continue;
+      nnz_eqjac += 8;
+    }
+      
+    if (opflow->has_gensetpoint) {
+      for (int igen = 0; igen < bus->ngen; ++igen) {
+        PSGEN gen;
+        ierr = PSBUSGetGen(bus, igen, &gen);
+        CHKERRQ(ierr);
+        
+        if (!gen->status || gen->isrenewable)
+          continue;
+
+        // each generator uses 2 rows, 3 columns real, 1 column reactive
+        genparams->eqjacspbus_idx[igen] = nnz_eqjac;
+        nnz_eqjac += 4;
+      }
+    }
+  }
+
+  printf("Equality Jacobian nonzero count: %d vs %d\n",
+         opflow->nnz_eqjacsp, nnz_eqjac);
 
   ierr = busparams->copy(opflow);
   ierr = genparams->copy(opflow);

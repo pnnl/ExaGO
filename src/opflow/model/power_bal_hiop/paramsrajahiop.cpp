@@ -21,11 +21,11 @@ int BUSParamsRajaHiop::destroy(OPFLOW opflow) {
   h_allocator_.deallocate(bl);
   h_allocator_.deallocate(xidx);
   h_allocator_.deallocate(gidx);
+  h_allocator_.deallocate(jacsp_idx);
+  h_allocator_.deallocate(jacsq_idx);
   if (opflow->include_powerimbalance_variables) {
     h_allocator_.deallocate(xidxpimb);
     h_allocator_.deallocate(powerimbalance_penalty);
-    h_allocator_.deallocate(jacsp_idx);
-    h_allocator_.deallocate(jacsq_idx);
   }
 
 #ifdef EXAGO_ENABLE_GPU
@@ -40,11 +40,11 @@ int BUSParamsRajaHiop::destroy(OPFLOW opflow) {
   d_allocator_.deallocate(bl_dev_);
   d_allocator_.deallocate(xidx_dev_);
   d_allocator_.deallocate(gidx_dev_);
+  d_allocator_.deallocate(jacsp_idx_dev_);
+  d_allocator_.deallocate(jacsq_idx_dev_);
   if (opflow->include_powerimbalance_variables) {
     d_allocator_.deallocate(xidxpimb_dev_);
     d_allocator_.deallocate(powerimbalance_penalty_dev_);
-    d_allocator_.deallocate(jacsp_idx_dev_);
-    d_allocator_.deallocate(jacsq_idx_dev_);
   }
 #endif
 
@@ -74,10 +74,10 @@ int BUSParamsRajaHiop::copy(OPFLOW opflow) {
 
   resmgr.copy(xidx_dev_, xidx);
   resmgr.copy(gidx_dev_, gidx);
+  resmgr.copy(jacsp_idx_dev_, jacsp_idx);
+  resmgr.copy(jacsq_idx_dev_, jacsq_idx);
   if (opflow->include_powerimbalance_variables) {
     resmgr.copy(xidxpimb_dev_, xidxpimb);
-    resmgr.copy(jacsp_idx_dev_, jacsp_idx);
-    resmgr.copy(jacsq_idx_dev_, jacsq_idx);
     resmgr.copy(powerimbalance_penalty_dev_, powerimbalance_penalty);
   }
 #else
@@ -126,11 +126,11 @@ int BUSParamsRajaHiop::allocate(OPFLOW opflow) {
   xidx = paramAlloc<int>(h_allocator_, nbus);
   gidx = paramAlloc<int>(h_allocator_, nbus);
 
+  jacsp_idx = paramAlloc<int>(h_allocator_, nbus);
+  jacsq_idx = paramAlloc<int>(h_allocator_, nbus);
   if (opflow->include_powerimbalance_variables) {
     xidxpimb = paramAlloc<int>(h_allocator_, nbus);
     powerimbalance_penalty = paramAlloc<double>(h_allocator_, nbus);
-    jacsp_idx = paramAlloc<int>(h_allocator_, nbus);
-    jacsq_idx = paramAlloc<int>(h_allocator_, nbus);
   }
 
   /* Memzero arrays */
@@ -194,11 +194,11 @@ int BUSParamsRajaHiop::allocate(OPFLOW opflow) {
   xidx_dev_ = paramAlloc<int>(d_allocator_, nbus);
   gidx_dev_ = paramAlloc<int>(d_allocator_, nbus);
 
+  jacsp_idx_dev_ = paramAlloc<int>(d_allocator_, nbus);
+  jacsq_idx_dev_ = paramAlloc<int>(d_allocator_, nbus);
   if (opflow->include_powerimbalance_variables) {
     xidxpimb_dev_ = paramAlloc<int>(d_allocator_, nbus);
     powerimbalance_penalty_dev_ = paramAlloc<double>(d_allocator_, nbus);
-    jacsp_idx_dev_ = paramAlloc<int>(d_allocator_, nbus);
-    jacsq_idx_dev_ = paramAlloc<int>(d_allocator_, nbus);
   }
 #endif
   return 0;
