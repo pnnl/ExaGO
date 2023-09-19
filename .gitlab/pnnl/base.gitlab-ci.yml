@@ -123,6 +123,7 @@ stages:
 
 .module_rebuild:
   needs: []
+  retry: 1
   stage: build
   extends:
     - .pnnl_tags_template
