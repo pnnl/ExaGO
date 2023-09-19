@@ -1,8 +1,8 @@
 spack:
   specs:
-  - exago@develop%gcc@10.2.0+cuda+mpi+hiop+raja+ipopt+python cuda_arch=70
+  - exago@develop%gcc@10.2.0+cuda+mpi+hiop+raja+ipopt~python cuda_arch=70
     ^petsc@3.18.0~hdf5~hypre~mumps~superlu-dist 
-    ^hiop@develop+cuda+raja+sparse+mpi+deepchecking+ginkgo+cusolver cuda_arch=70
+    ^hiop@develop+cuda+raja+sparse+mpi+deepchecking~ginkgo+cusolver_lu cuda_arch=70
     ^raja@0.14.0
     ^umpire@6.0.0
     ^openblas
@@ -59,8 +59,8 @@ spack:
       variants: +blas
     cuda:
       externals:
-      - spec: cuda@11.5.2
-        modules: [cuda/11.5.2]
+      - spec: cuda@11.4.2
+        modules: [cuda/11.4.2]
       buildable: false
     raja:
       version: [0.14.0]
