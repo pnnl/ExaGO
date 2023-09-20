@@ -65,4 +65,3 @@ mpc.genfuel = {
 	'ng';
         'wind';
 };
-

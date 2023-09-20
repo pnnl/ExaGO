@@ -8,4 +8,3 @@ export SPACK_MODULES=summit-modules
 export SPACK_CACHE=/gpfs/alpine/proj-shared/csc359/$(whoami)/spack-cache
 export SPACK_PYTHON=$OLCF_PYTHON_ANACONDA3_ROOT
 export SPACK_DISABLE_LOCAL_CONFIG=1
-

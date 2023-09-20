@@ -10,4 +10,3 @@ export SPACK_CACHE=$BASE/$(whoami)/spack-cache
 export SPACK_PYTHON=$CRAY_PYTHON_PREFIX
 export SPACK_DISABLE_LOCAL_CONFIG=1
 export SPACK_MIRROR=$BASE/mirror
-

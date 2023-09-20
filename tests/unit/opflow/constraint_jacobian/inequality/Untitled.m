@@ -336,9 +336,3 @@ for i=1:(2*Line+2*Gen)
 end
 writematrix(JW,'cicj.csv') 
             
-
-
-
-
-
-

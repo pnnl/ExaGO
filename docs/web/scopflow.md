@@ -60,4 +60,3 @@ In addition, one can solve SCOPFLOW in an embarrasingly parallel model with the 
 
 #### Mode
 Set SCOPFLOW to either run in `preventive` (0) or `corrective` (1) mode. In preventive mode, any power deficit or surplus in the contingency problem is provided by the swing bus only. In the corrective mode, in addition to the swing bus, thhe generators at PV/PQ buses contribute to the deficit/surplus. The contribution amount is decided by the optimization with the constraint that the real power dispatch for these generators should be within 30-min ramping limit. 
-

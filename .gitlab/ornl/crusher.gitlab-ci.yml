@@ -1,0 +1,70 @@
+# Crusher Variables
+.crusher_rules:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PINELINE_SOURCE == "schedule"
+    - when: never
+
+.crusher_variables:
+  # Only for slurm tagged jobs...
+  variables:
+    SCHEDULER_PARAMETERS: "-N 1 -A CSC359 --time=60"
+    WORKDIR: /gpfs/alpine/csc359/proj-shared/ci/${CI_PIPELINE_ID}
+
+# Crusher Jobs
+Crusher Build:
+  stage: build
+  tags: [crusher, shell]
+  script:
+    - mkdir -p "$WORKDIR"
+    - cp -r . "$WORKDIR"
+    - cd "$WORKDIR"
+    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+    - MY_CLUSTER=crusher ./buildsystem/build.sh --build-only --job=clang-hip
+    - res=$?
+    - exit $res
+  extends:
+    - .crusher_rules
+    - .crusher_variables
+  
+Crusher Test:
+  stage: test
+  dependencies:
+    - "Crusher Build"
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+  tags: [crusher, slurm]
+  script:
+    - cd "$WORKDIR"
+    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+    - export CTESTARGS="--output-on-failure -E Python"
+    - MY_CLUSTER=crusher ./buildsystem/build.sh --test-only --job=clang-hip
+    - res=$?
+    - exit $res
+  after_script:
+    - cd "$WORKDIR/.."
+    - rm -rf "$WORKDIR"
+  extends:
+    - .crusher_rules
+    - .crusher_variables
+
+Crusher Python Test:
+  stage: test
+  dependencies: 
+    - "Crusher Build"
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+  allow_failure: true
+  tags: [crusher, slurm]
+  script:
+    - cd "$WORKDIR"
+    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+    - export CTESTARGS="--output-on-failure -R Python"
+    - MY_CLUSTER=crusher ./buildsystem/build.sh --test-only --job=clang-hip
+    - res=$?
+    - exit $res
+  extends:
+    - .crusher_rules
+    - .crusher_variables

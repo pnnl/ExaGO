@@ -1,0 +1,210 @@
+# https://stackoverflow.com/questions/67009007
+# We have to use YAML anchors for rules here
+# Rules are also evaluated sequentially, so you need to be careful about
+# the order in which these rules are included in child jobs - list "never" rules before other rules
+.rules-template:
+  rules:
+      # --
+      # Rule to fall back on...
+    - &default
+      when: always
+      # -- 
+      # Only run when the commit **DOES NOT** contains "[newell-rebuild]"
+    - &rule_no_newell_rebuild
+      if: '$CI_COMMIT_TITLE =~ /\[newell-rebuild\]/'
+      when: never
+      # Only run when the commit **DOES NOT** contains "[deception-rebuild]"
+    - &rule_no_deception_rebuild
+      if: '$CI_COMMIT_TITLE =~ /\[deception-rebuild\]/'
+      when: never
+      # Only run when the commit **DOES NOT** contains "[incline-rebuild]"
+    - &rule_no_incline_rebuild
+      if: '$CI_COMMIT_TITLE =~ /\[incline-rebuild\]/'
+      when: never
+      # Only run when the commit **DOES NOT** contains "[ascent-rebuild]" 
+    - &rule_no_ascent_rebuild
+      if: '$CI_COMMIT_TITLE =~ /\[ascent-rebuild\]/'
+      when: never 
+      # Only run when the commit **DOES NOT** contains "[newell-test]"
+    - &rule_no_newell_test
+      if: '$CI_COMMIT_TITLE =~ /\[newell-test\]/'
+      when: never
+      # Only run when the commit **DOES** contains "[newell-test]"
+    - &rule_yes_newell_test
+      if: '$CI_COMMIT_TITLE =~ /\[newell-test\]/'
+      when: always
+    # Only run when the commit **DOES NOT** contains "[deception-test]"
+    - &rule_no_deception_test
+      if: '$CI_COMMIT_TITLE =~ /\[deception-test\]/'
+      when: never
+    # Only run when the commit **DOES** contains "[deception-test]"
+    - &rule_yes_deception_test
+      if: '$CI_COMMIT_TITLE =~ /\[deception-test\]/'
+      when: always
+    # Only run when the commit **DOES NOT** contains "[incline-test]"
+    - &rule_no_incline_test
+      if: '$CI_COMMIT_TITLE =~ /\[incline-test\]/'
+      when: never
+    # Only run when the commit **DOES** contains "[incline-test]"
+    - &rule_yes_incline_test
+      if: '$CI_COMMIT_TITLE =~ /\[incline-test\]/'
+      when: always
+    # Only run when the commit **DOES NOT** contains "[ascent-test]"
+    - &rule_no_ascent_test
+      if: '$CI_COMMIT_TITLE =~ /\[ascent-test\]/'
+      when: never
+    # Only run when the commit **DOES** contains "[ascent-test]"
+    - &rule_yes_ascent_test
+      if: '$CI_COMMIT_TITLE =~ /\[ascent-test\]/'
+      when: always
+
+# Ascent Variables
+.ascent_environment_template:
+  variables:
+    SCHEDULER_PARAMETERS: "-P CSC359 -nnodes 1 -W 120"
+    WORKDIR: /gpfs/wolf/proj-shared/csc359/ci/${CI_PIPELINE_ID}
+
+.ascent_rules:
+  rules:
+    - *rule_no_deception_test
+    - *rule_no_deception_rebuild
+    - *rule_no_newell_test
+    - *rule_no_newell_rebuild
+    - *rule_no_incline_test
+    - *rule_no_incline_rebuild
+    - *rule_yes_ascent_test
+    - *rule_no_ascent_rebuild
+    - *default
+
+.ascent_script_template:
+  script:
+    # Do _not_ clean up WORKDIR as files are needed for testing
+    - set -xv
+    - mkdir -p "$WORKDIR"
+    - cp -r . "$WORKDIR"
+    - cd "$WORKDIR"
+    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+    - MY_CLUSTER=ascent ./buildsystem/build.sh --build-only --job=gcc-cuda || exit 1
+
+.ascent_test_script_template:
+  script:
+    - set -xv
+    - cd "$WORKDIR"
+    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+      # Export CTESTARGS defined in variables to run correct tests for stage
+    - export CTESTARGS="--output-on-failure -E Python"
+    - MY_CLUSTER="ascent" ./buildsystem/build.sh --test-only --job=gcc-cuda
+    - res=$?
+    - exit $res
+  # Only running after_script for 
+  after_script:
+    - cd "$WORKDIR/.."
+    - rm -rf "$WORKDIR"
+
+.ascent_python_test_script_template:
+  script:
+    - set -xv
+    - cd "$WORKDIR"
+    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+      # Export CTESTARGS defined in variables to run correct tests for stage
+    - export CTESTARGS="-VV -R Python"
+    - MY_CLUSTER="ascent" ./buildsystem/build.sh --test-only --job=gcc-cuda
+    - res=$?
+    - exit $res
+# ---
+
+# For Ascent CI
+Ascent Build:
+  stage: build
+  tags:
+    - nobatch
+  extends:
+    - .ascent_rules
+    - .ascent_script_template
+    - .ascent_environment_template
+
+Ascent Test:
+  stage: test
+  dependencies:
+    - 'Ascent Build'
+  tags:
+    - batch
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+    CTESTARGS: "--output-on-failure -E Python"
+  extends:
+    - .ascent_rules
+    - .ascent_test_script_template
+    - .ascent_environment_template
+
+Ascent Py Test:
+  stage: test
+  dependencies:
+    - 'Ascent Build'
+  tags:
+    - batch 
+  variables:
+    # Don't clone for test jobs
+    GIT_STRATEGY: none
+  extends:
+    - .ascent_rules
+    - .ascent_python_test_script_template
+    - .ascent_environment_template
+# ---
+
+# Reporting Ascent Status to PNNL
+.report-status:
+  when: always
+  variables:
+    MY_CLUSTER: Ascent
+    GIT_STRATEGY: none
+    STATUS_PROJECT: pnnl/ExaGO
+    STATUS_NAME: ppc64le/gcc@10.2/cuda@11.4.2/v100@70
+  tags:
+    - nobatch
+  extends: .ascent_environment_template
+  script:
+    -  |
+       curl -L \
+       -X POST \
+       -H @${GITHUB_CURL_HEADER}\
+        https://api.github.com/repos/${STATUS_PROJECT}/statuses/${CI_COMMIT_SHA} \
+        -d "{\"state\":\"${CI_JOB_NAME}\",\"target_url\":\"${CI_PIPELINE_URL}\",\"description\":\"${STATUS_NAME}\",\"context\":\"${MY_CLUSTER}\"}"
+  environment:
+    name: reporting-gitlab
+
+.report-pending:
+  when: always
+  tags:
+    - nobatch
+  variables:
+    GIT_STRATEGY: none
+    STATUS_PROJECT: pnnl/ExaGO
+    MY_CLUSTER: Ascent
+  extends: .ascent_environment_template
+  script:
+   -  |
+      set -x
+      curl -L \
+      -X POST \
+      -H @${GITHUB_CURL_HEADER}\
+       https://api.github.com/repos/${STATUS_PROJECT}/statuses/${CI_COMMIT_SHA} \
+       -d "{\"state\":\"${CI_JOB_NAME}\",\"target_url\":\"${CI_PIPELINE_URL}\",\"context\":\"${MY_CLUSTER}\"}"
+  environment:
+    name: reporting-gitlab
+
+pending:
+  extends: .report-pending
+  stage: .pre
+
+success:
+  extends: .report-status
+  stage: .post
+       
+failure:
+  stage: .post
+  extends: .report-status
+  rules: 
+    - when: on_failure
+# ---

@@ -7,4 +7,3 @@ source $SRCDIR/buildsystem/gcc-cuda/newell/env.sh
 
 # Spack modules
 source $SRCDIR/buildsystem/spack/$MY_CLUSTER/modules/exago-optimized.sh
-

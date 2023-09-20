@@ -125,5 +125,5 @@ module load py-hatch-vcs/0.3.0-gcc-9.1.0-6oqozlx
 module load py-iniconfig/2.0.0-gcc-9.1.0-sgl3yio
 # py-pytest@=7.3.2%gcc@=9.1.0 build_system=python_pip arch=linux-centos7-zen2
 module load py-pytest/7.3.2-gcc-9.1.0-l2fdgby
-# exago@=develop%gcc@=9.1.0+cuda+hiop~ipo+ipopt+logging+mpi+python+raja~rocm build_system=cmake build_type=MinSizeRel cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/22351/spack_deception generator=make arch=linux-centos7-zen2
-## module load exago/develop-gcc-9.1.0-a2fztay
+# exago@=develop%gcc@=9.1.0+cuda+hiop~ipo+ipopt+logging+mpi+python+raja~rocm build_system=cmake build_type=MinSizeRel cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/22742/spack_deception generator=make arch=linux-centos7-zen2
+## module load exago/develop-gcc-9.1.0-4bxhjcq

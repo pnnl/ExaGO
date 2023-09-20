@@ -56,4 +56,3 @@ compute_mode = 'GPU'
 verbosity_level = 3
 num_iters = 0
 obj_value = 0.0
-

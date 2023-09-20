@@ -78,5 +78,3 @@ const inputText =  `List id and capacity of the top 5 generations that have the 
     //   `Find the top 3 closest points to the point id 1 with "pcap" higher than 100 in the table "point". The point coordinate infomration is in the column wkt. You can use postgis functions.`
     //   `List id of generations with connection higher than 10000 in the table power1.`;
 chatModel(inputText) 
-
-

@@ -7,4 +7,3 @@ source $SRCDIR/buildsystem/clang-hip/incline/base.sh
 
 # Spack modules
 source $SRCDIR/buildsystem/spack/incline/modules/dependencies.sh 
-

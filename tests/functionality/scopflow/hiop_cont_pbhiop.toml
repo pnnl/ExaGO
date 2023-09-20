@@ -41,5 +41,3 @@ description = 'case_ACTIVSg200.m with HIOP solver/4 contingencies'
 num_contingencies = 4
 num_iters = 1
 obj_value = 25957.67116859898
-
-

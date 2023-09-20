@@ -1,0 +1,55 @@
+Newell Build:
+  extends:
+    - .cluster_build
+    - .newell
+  variables:
+    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
+
+Newell Test:
+  extends:
+    - .cluster_test
+    - .newell
+  variables:
+    CTESTARGS: " --timeout 240 --output-on-failure -E Python -LE newell-skip "
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+  needs: ['Newell Build']
+
+Newell Py Test:
+  extends:
+    - .cluster_py_test
+    - .newell
+  variables:
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+  needs: ['Newell Build']
+
+Newell Module Rebuild:
+  extends: .module_rebuild
+  rules:
+    - if: '$CI_COMMIT_TITLE =~ /\[newell-rebuild\]/'
+      when: always
+  variables:
+    MY_CLUSTER: "newell"
+    WORKDIR_SUFFIX: "spack_newell"
+
+pending:
+  variables:
+    MY_CLUSTER: "Newell"
+  extends:
+    - .report-pending
+  stage: .pre
+
+success:
+  variables:
+    MY_CLUSTER: "Newell"
+  extends:
+    - .report-status
+  stage: .post
+       
+failure:
+  stage: .post
+  variables:
+    MY_CLUSTER: "Newell"
+  extends:
+    - .report-status
+  rules:
+    - when: on_failure

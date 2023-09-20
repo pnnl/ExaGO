@@ -43,4 +43,3 @@ is_powerimb_active =	false
 num_iters = 61
 iter_range = 15
 obj_value = 750055.799408
-

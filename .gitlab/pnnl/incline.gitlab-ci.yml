@@ -1,0 +1,55 @@
+Incline Build:
+  extends:
+    - .cluster_build
+    - .incline
+  variables:
+    SCRIPT_ARGS: " --build-only --job=clang-hip "
+
+Incline Test:
+  extends:
+    - .cluster_test
+    - .incline
+  variables:
+    SCRIPT_ARGS: " --test-only --job=clang-hip "
+    CTESTARGS: " --timeout 240 --output-on-failure -E Python -LE incline-skip "
+  needs: ['Incline Build']
+
+Incline Py Test:
+  extends:
+    - .cluster_py_test
+    - .incline
+  variables:
+    SCRIPT_ARGS: " --test-only --job=clang-hip "
+  needs: ['Incline Build']
+
+Incline Module Rebuild:
+  extends: .module_rebuild
+  rules:
+    - if: $CI_COMMIT_TITLE =~ /\[incline-rebuild\]/
+      when: always
+  variables:
+    MY_CLUSTER: "incline"
+    WORKDIR_SUFFIX: "spack_incline"
+
+pending:
+  variables:
+    MY_CLUSTER: "Incline"
+  extends:
+    - .report-pending
+  stage: .pre
+
+success:
+  variables:
+    MY_CLUSTER: "Incline"
+  extends:
+    - .report-status
+  stage: .post
+       
+failure:
+  stage: .post
+  variables:
+    MY_CLUSTER: "Incline"
+  extends:
+    - .report-status
+  rules:
+    - when: on_failure

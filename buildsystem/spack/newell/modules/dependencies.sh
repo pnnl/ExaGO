@@ -165,5 +165,5 @@ module load py-hatch-vcs/0.3.0-gcc-8.5.0-lyq3fgv
 module load py-iniconfig/2.0.0-gcc-8.5.0-6exw3my
 # py-pytest@=7.3.2%gcc@=8.5.0 build_system=python_pip arch=linux-centos8-power9le
 module load py-pytest/7.3.2-gcc-8.5.0-hafdero
-# exago@=develop%gcc@=8.5.0+cuda+hiop~ipo+ipopt+logging+mpi+python+raja~rocm build_system=cmake build_type=MinSizeRel cuda_arch=70 dev_path=/people/svcexasgd/gitlab/22353/spack_newell generator=make arch=linux-centos8-power9le
-## module load exago/develop-gcc-8.5.0-iyixljl
+# exago@=develop%gcc@=8.5.0+cuda+hiop~ipo+ipopt+logging+mpi+python+raja~rocm build_system=cmake build_type=MinSizeRel cuda_arch=70 dev_path=/people/svcexasgd/gitlab/22741/spack_newell generator=make arch=linux-centos8-power9le
+## module load exago/develop-gcc-8.5.0-dfiemk3
