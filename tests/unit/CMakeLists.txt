@@ -49,7 +49,6 @@ if(EXAGO_INSTALL_TESTS)
     ${MPICMD_STR}
     $<TARGET_FILE:test_logger>
     DEPENDS
-    EXAGO_ENABLE_LOGGING
+    LOGGING
   )
-  set_tests_properties(UNIT_TESTS_LOGGER PROPERTIES LABELS "incline-skip")
 endif()
