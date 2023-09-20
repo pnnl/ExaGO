@@ -51,4 +51,3 @@ spack develop --no-clone --path=$(pwd) exago@develop && \
 EXIT_CODE=$?
 # Required to trigger trap handler
 exit $EXIT_CODE
-

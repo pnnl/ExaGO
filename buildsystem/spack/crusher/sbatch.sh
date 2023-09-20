@@ -63,4 +63,3 @@ buildsystem/spack/configure_modules.sh 32
 EXIT_CODE=$?
 # Required to trigger trap handler
 exit $EXIT_CODE
-

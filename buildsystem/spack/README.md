@@ -128,4 +128,3 @@ with examples for `gcc-cuda/newell` and `clang-hip/crusher`.
 
 If you have an update in the ExaGO/HiOp spack package, you might need to update
 the relevant `spack.yaml` and configure module scripts for each platform.
-

@@ -1,0 +1,55 @@
+Deception Build:
+  extends:
+    - .cluster_build
+    - .deception
+  variables:
+    SCRIPT_ARGS: " --build-only --job=gcc-cuda "
+
+Deception Test:
+  extends:
+    - .cluster_test
+    - .deception
+  variables:
+    CTESTARGS: " --timeout 240 --output-on-failure -E Python -LE deception-skip "
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+  needs: ['Deception Build']
+
+Deception Py Test:
+  extends:
+    - .cluster_py_test
+    - .deception
+  variables:
+    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
+  needs: ['Deception Build']
+
+Deception Module Rebuild:
+  extends: .module_rebuild
+  rules:
+    - if: '$CI_COMMIT_TITLE =~ /\[deception-rebuild\]/'
+      when: always
+  variables:
+    MY_CLUSTER: "deception"
+    WORKDIR_SUFFIX: "spack_deception"
+
+pending:
+  variables:
+    MY_CLUSTER: "Deception"
+  extends:
+    - .report-pending
+  stage: .pre
+
+success:
+  variables:
+    MY_CLUSTER: "Deception"
+  extends:
+    - .report-status
+  stage: .post
+       
+failure:
+  stage: .post
+  variables:
+    MY_CLUSTER: "Deception"
+  extends:
+    - .report-status
+  rules:
+    - when: on_failure

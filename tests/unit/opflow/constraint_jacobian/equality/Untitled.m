@@ -266,16 +266,3 @@ end
 writematrix(JW,'cecj.csv') 
             
     
-
-
-
-
-
-
-
-
-
-
-
-
-

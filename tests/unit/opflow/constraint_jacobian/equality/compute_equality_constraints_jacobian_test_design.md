@@ -181,4 +181,3 @@ To build a Jacobian matrix when the network is being multiplied the process for 
 ![img1.png](Jacobian.jpg)
 
 ### Jacobian for N=3
-

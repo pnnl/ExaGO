@@ -410,4 +410,3 @@ ExaGO v1.2.1 was the first version to ship Python bindings that used Pybind11,
 which creates a shared library directly importable from Python, which simplified
 the user experience and made it possible to call ExaGO from Python when only 
 static libraries are generated.
-

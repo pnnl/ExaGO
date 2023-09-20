@@ -43,4 +43,3 @@ enable_powerimbalance_variables = true
 num_contingencies = -1
 num_iters = 1
 obj_value = 4072.4632566566206
-

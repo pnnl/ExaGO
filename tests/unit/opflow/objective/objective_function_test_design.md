@@ -80,4 +80,3 @@ To calculate a residual when the network is being multiplied following needs to 
 ### Residual for N=3
 
 For N=3 the residual of objective function is equal to **30**.
-

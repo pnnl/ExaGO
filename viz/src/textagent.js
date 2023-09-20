@@ -62,4 +62,3 @@ console.log(`Got output ${result.output}`);
 console.log(
   `Got intermediate steps ${JSON.stringify(result.intermediateSteps, null, 2)}`
 );
-

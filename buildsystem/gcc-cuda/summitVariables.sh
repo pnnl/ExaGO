@@ -9,4 +9,3 @@ source $SRCDIR/buildsystem/gcc-cuda/summit/base.sh
 source $SRCDIR/buildsystem/spack/$MY_CLUSTER/modules/dependencies.sh
 
 # Platform specific CMake
-

@@ -96,4 +96,3 @@ make check
 make install
 ```
 At the completion of this step, PETSc installation files will be at the location set with `--prefix` configure option. If `--prefix` option is not set then PETSc will be installed in `/usr`. In most cases, you will need root privileges (superuser) to install software in this location.
-
