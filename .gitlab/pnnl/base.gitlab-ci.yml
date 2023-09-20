@@ -293,16 +293,20 @@ stages:
       set +x
       exit $res
 
-.report-status:
+.report-job:
+  retry: 1
   image: mrnonz/alpine-git-curl:alpine3.16
+  resource_group: status
   environment:
     name: reporting-gitlab
   variables:
     GIT_STRATEGY: none
     STATUS_PROJECT: pnnl/ExaGO
     STATUS_NAME: NotSet
-  extends:
-  - .pnnl_nonhpc_tags
+  extends: .pnnl_nonhpc_tags
+    
+.report-status:
+  extends: .report-job
   script:
     - |
       set -x
@@ -352,13 +356,7 @@ stages:
        -d "{\"state\":\"${CI_JOB_NAME}\",\"target_url\":\"${CI_PIPELINE_URL}\",\"description\":\"${STATUS_NAME}\",\"context\":\"${MY_CLUSTER}\"}"
 
 .report-pending:
-  image: mrnonz/alpine-git-curl:alpine3.16
-  environment:
-    name: reporting-gitlab
-  variables:
-    GIT_STRATEGY: none
-    STATUS_PROJECT: pnnl/ExaGO
-  extends: .pnnl_nonhpc_tags
+  extends: .report-job
   script:
    -  |
       set -x
