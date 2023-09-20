@@ -25,6 +25,12 @@ set(CMAKE_BUILD_TYPE
     CACHE STRING ""
 )
 
+message(STATUS "Enabling Logging")
+set(EXAGO_ENABLE_LOGGING
+    ON
+    CACHE BOOL ""
+)
+
 message(STATUS "Enabling GPU, HiOp, MPI, PETSC, and RAJA")
 set(EXAGO_ENABLE_GPU
     ON

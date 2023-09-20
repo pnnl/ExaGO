@@ -154,7 +154,7 @@ Ascent Py Test:
 # ---
 
 # Reporting Ascent Status to PNNL
-.report-status:
+.report-job:
   when: always
   variables:
     MY_CLUSTER: Ascent
@@ -164,6 +164,13 @@ Ascent Py Test:
   tags:
     - nobatch
   extends: .ascent_environment_template
+  environment:
+    name: reporting-gitlab
+  resource_group: status
+  retry: 1
+
+.report-status:
+  extends: .report-job
   script:
     -  |
        curl -L \
@@ -175,14 +182,7 @@ Ascent Py Test:
     name: reporting-gitlab
 
 .report-pending:
-  when: always
-  tags:
-    - nobatch
-  variables:
-    GIT_STRATEGY: none
-    STATUS_PROJECT: pnnl/ExaGO
-    MY_CLUSTER: Ascent
-  extends: .ascent_environment_template
+  extends: .report-job
   script:
    -  |
       set -x
@@ -191,8 +191,6 @@ Ascent Py Test:
       -H @${GITHUB_CURL_HEADER}\
        https://api.github.com/repos/${STATUS_PROJECT}/statuses/${CI_COMMIT_SHA} \
        -d "{\"state\":\"${CI_JOB_NAME}\",\"target_url\":\"${CI_PIPELINE_URL}\",\"context\":\"${MY_CLUSTER}\"}"
-  environment:
-    name: reporting-gitlab
 
 pending:
   extends: .report-pending
