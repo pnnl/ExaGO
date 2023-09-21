@@ -1,9 +1,8 @@
 #!/bin/bash
 
-#SBATCH -A csc359_crusher
-#SBATCH --reservation=hack4
+#SBATCH -A CSC359
 #SBATCH -p batch
-#SBATCH -t 240
+#SBATCH -t 100
 #SBATCH -N 1
 #SBATCH -c 32
 #SBATCH -J exasgd_spack_install
@@ -63,3 +62,4 @@ buildsystem/spack/configure_modules.sh 32
 EXIT_CODE=$?
 # Required to trigger trap handler
 exit $EXIT_CODE
+

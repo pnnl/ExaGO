@@ -1,57 +1,111 @@
-module use -a /gpfs/alpine/proj-shared/csc359/cameron/spack-install/test-modules/cray-sles15-zen3/
-# cmake@3.20.6%clang@14.0.0~doc+ncurses+ownlibs~qt build_type=Release arch=cray-sles15-zen3
-module load cmake-3.20.6-clang-14.0.0-r3spc3q
-# cray-mpich@8.1.16%gcc@11.2.0+wrappers arch=cray-sles15-zen3
-module load cray-mpich-8.1.16-gcc-11.2.0-yfbzrpg
-# blt@0.4.1%clang@14.0.0 arch=cray-sles15-zen3
-module load blt-0.4.1-clang-14.0.0-eez6hwz
-# hip@5.2.0%clang@14.0.0~ipo build_type=Release patches=959d1fe arch=cray-sles15-zen3
-module load hip-5.2.0-clang-14.0.0-cvwypef
-# hsa-rocr-dev@5.2.0%clang@14.0.0+image~ipo+shared build_type=Release patches=71e6851 arch=cray-sles15-zen3
-module load hsa-rocr-dev-5.2.0-clang-14.0.0-mllpr5y
-# llvm-amdgpu@5.2.0%clang@14.0.0~ipo~link_llvm_dylib~llvm_dylib~openmp+rocm-device-libs build_type=Release patches=a08bbe1 arch=cray-sles15-zen3
-module load llvm-amdgpu-5.2.0-clang-14.0.0-bzexqxu
-# camp@0.2.3%clang@14.0.0~cuda~ipo+rocm~tests amdgpu_target=gfx90a build_type=RelWithDebInfo arch=cray-sles15-zen3
-module load camp-0.2.3-clang-14.0.0-gmhjhg7
-# perl@5.34.0%clang@14.0.0+cpanm+shared+threads arch=cray-sles15-zen3
-module load perl-5.34.0-clang-14.0.0-mdatxiw
-# openblas@0.3.20%clang@14.0.0~bignuma~consistent_fpcsr~ilp64+locking+pic+shared symbol_suffix=none threads=openmp arch=cray-sles15-zen3
-module load openblas-0.3.20-clang-14.0.0-4vd4qti
-# coinhsl@2019.05.21%clang@14.0.0+blas arch=cray-sles15-zen3
-module load coinhsl-2019.05.21-clang-14.0.0-zk44j3w
-# hipblas@5.2.0%clang@14.0.0~ipo build_type=Release arch=cray-sles15-zen3
-module load hipblas-5.2.0-clang-14.0.0-evzuomg
-# hipsparse@5.2.0%clang@14.0.0~ipo build_type=Release arch=cray-sles15-zen3
-module load hipsparse-5.2.0-clang-14.0.0-eth6np3
-# rocrand@5.2.0%clang@14.0.0~ipo amdgpu_target=auto build_type=Release arch=cray-sles15-zen3
-module load rocrand-5.2.0-clang-14.0.0-lvitlo3
-# rocthrust@5.2.0%clang@14.0.0~ipo build_type=Release arch=cray-sles15-zen3
-module load rocthrust-5.2.0-clang-14.0.0-x5cspi3
-# ginkgo@1.5.0.glu_experimental%clang@14.0.0~cuda~develtools~full_optimizations~hwloc~ipo~oneapi+openmp+rocm+shared amdgpu_target=gfx90a build_type=Release arch=cray-sles15-zen3
-module load ginkgo-1.5.0.glu_experimental-clang-14.0.0-efnkfv7
-# magma@2.6.2%clang@14.0.0~cuda+fortran~ipo+rocm+shared amdgpu_target=gfx90a build_type=RelWithDebInfo arch=cray-sles15-zen3
-module load magma-2.6.2-clang-14.0.0-j5phv6v
-# metis@5.1.0%clang@14.0.0~gdb~int64~real64+shared build_type=Release patches=4991da9 arch=cray-sles15-zen3
-module load metis-5.1.0-clang-14.0.0-ua6eslw
-# raja@0.14.0%clang@14.0.0~cuda~examples~exercises~ipo~openmp+rocm+shared~tests amdgpu_target=gfx90a build_type=RelWithDebInfo arch=cray-sles15-zen3
-module load raja-0.14.0-clang-14.0.0-lpvqr6p
-# suite-sparse@4.5.6%clang@14.0.0~cuda~graphblas~openmp+pic~tbb arch=cray-sles15-zen3
-module load suite-sparse-4.5.6-clang-14.0.0-kn37dfp
-# umpire@6.0.0%clang@14.0.0+c~cuda~device_alloc~deviceconst~examples~fortran~ipo~numa~openmp+rocm+shared amdgpu_target=gfx90a build_type=RelWithDebInfo tests=none arch=cray-sles15-zen3
-module load umpire-6.0.0-clang-14.0.0-3cgj2f3
-# hiop@develop%clang@14.0.0~cuda~cusolver+deepchecking~full_optimizations+ginkgo~ipo~jsrun+kron+mpi+raja+rocm~shared+sparse amdgpu_target=gfx90a build_type=RelWithDebInfo arch=cray-sles15-zen3
-module load hiop-develop-clang-14.0.0-szzb2af
-# pkgconf@1.8.0%clang@14.0.0 arch=cray-sles15-zen3
-module load pkgconf-1.8.0-clang-14.0.0-67lrujf
-# ipopt@3.12.10%clang@14.0.0+coinhsl~debug~metis~mumps arch=cray-sles15-zen3
-module load ipopt-3.12.10-clang-14.0.0-hiwa3zh
-# libiconv@1.16%gcc@11.2.0 libs=shared,static arch=cray-sles15-zen3
-module load libiconv-1.16-gcc-11.2.0-po4cjxv
-# diffutils@3.8%clang@14.0.0 arch=cray-sles15-zen3
-module load diffutils-3.8-clang-14.0.0-xels4fd
-# python@3.9.12%clang@14.0.0+bz2+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tix~tkinter~ucs4+uuid+zlib patches=0d98e93,4c24573,ebdca64,f2fd060 arch=cray-sles15-zen3
-module load python-3.9.12-clang-14.0.0-wi6ggso
-# petsc@3.16.6%clang@14.0.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~tetgen~trilinos~valgrind clanguage=C arch=cray-sles15-zen3
-module load petsc-3.16.6-clang-14.0.0-gdkl2oq
-# exago@develop%clang@14.0.0~cuda~full_optimizations+hiop~ipo+ipopt+mpi~python+raja+rocm amdgpu_target=gfx90a build_type=RelWithDebInfo dev_path=/ccs/home/rcruther/exago-git arch=cray-sles15-zen3
-## module load exago-develop-clang-14.0.0-h4srk2r
+module use -a /lustre/orion/csc359/proj-shared/nkouk/spack-install/modules/linux-sles15-zen3
+# pkgconf@=1.9.5%clang@=14.0.0-rocm5.2.0-mixed build_system=autotools arch=linux-sles15-zen3
+module load pkgconf/1.9.5-clang-14.0.0-rocm5.2.0-mixed-ywk4yys
+# nghttp2@=1.52.0%clang@=14.0.0-rocm5.2.0-mixed build_system=autotools arch=linux-sles15-zen3
+module load nghttp2/1.52.0-clang-14.0.0-rocm5.2.0-mixed-cetlhhu
+# ca-certificates-mozilla@=2023-05-30%clang@=14.0.0-rocm5.2.0-mixed build_system=generic arch=linux-sles15-zen3
+module load ca-certificates-mozilla/2023-05-30-clang-14.0.0-rocm5.2.0-mixed-q3hsdil
+# perl@=5.34.0%clang@=14.0.0-rocm5.2.0-mixed+cpanm+opcode+open+shared+threads build_system=generic arch=linux-sles15-zen3
+module load perl/5.34.0-clang-14.0.0-rocm5.2.0-mixed-a5w6vnq
+# zlib-ng@=2.1.3%clang@=14.0.0-rocm5.2.0-mixed+compat+opt build_system=autotools patches=299b958,ae9077a,b692621 arch=linux-sles15-zen3
+module load zlib-ng/2.1.3-clang-14.0.0-rocm5.2.0-mixed-ykmp64g
+# openssl@=3.1.2%clang@=14.0.0-rocm5.2.0-mixed~docs+shared build_system=generic certs=mozilla arch=linux-sles15-zen3
+## module load openssl/3.1.2-clang-14.0.0-rocm5.2.0-mixed-evjmoji
+# curl@=8.1.2%clang@=14.0.0-rocm5.2.0-mixed~gssapi~ldap~libidn2~librtmp~libssh~libssh2+nghttp2 build_system=autotools libs=shared,static tls=openssl arch=linux-sles15-zen3
+module load curl/8.1.2-clang-14.0.0-rocm5.2.0-mixed-xzheabi
+# ncurses@=6.4%clang@=14.0.0-rocm5.2.0-mixed~symlinks+termlib abi=none build_system=autotools arch=linux-sles15-zen3
+module load ncurses/6.4-clang-14.0.0-rocm5.2.0-mixed-mmodrkf
+# cmake@=3.20.6%clang@=14.0.0-rocm5.2.0-mixed~doc+ncurses+ownlibs build_system=generic build_type=Release arch=linux-sles15-zen3
+module load cmake/3.20.6-clang-14.0.0-rocm5.2.0-mixed-i7f6src
+# blt@=0.4.1%clang@=14.0.0-rocm5.2.0-mixed build_system=generic arch=linux-sles15-zen3
+module load blt/0.4.1-clang-14.0.0-rocm5.2.0-mixed-vuyoegu
+# gmake@=4.4.1%clang@=14.0.0-rocm5.2.0-mixed~guile build_system=autotools arch=linux-sles15-zen3
+module load gmake/4.4.1-clang-14.0.0-rocm5.2.0-mixed-426iiqk
+# hip@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed~cuda+rocm build_system=cmake build_type=Release generator=make patches=959d1fe,c2ee21c arch=linux-sles15-zen3
+module load hip/5.2.0-clang-14.0.0-rocm5.2.0-mixed-sw5eazs
+# hsa-rocr-dev@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed+image+shared build_system=cmake build_type=Release generator=make patches=71e6851 arch=linux-sles15-zen3
+module load hsa-rocr-dev/5.2.0-clang-14.0.0-rocm5.2.0-mixed-bra7sva
+# llvm-amdgpu@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed~link_llvm_dylib~llvm_dylib~openmp+rocm-device-libs build_system=cmake build_type=Release generator=ninja patches=a08bbe1 arch=linux-sles15-zen3
+module load llvm-amdgpu/5.2.0-clang-14.0.0-rocm5.2.0-mixed-waykj5h
+# camp@=0.2.3%clang@=14.0.0-rocm5.2.0-mixed~cuda~ipo~openmp+rocm~tests amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
+module load camp/0.2.3-clang-14.0.0-rocm5.2.0-mixed-xbbjmg3
+# cray-mpich@=8.1.25%clang@=14.0.0-rocm5.2.0-mixed+wrappers build_system=generic arch=linux-sles15-zen3
+module load cray-mpich/8.1.25-clang-14.0.0-rocm5.2.0-mixed-qd6s47h
+# openblas@=0.3.20%gcc@=12.2.0-mixed~bignuma~consistent_fpcsr~ilp64+locking+pic+shared build_system=makefile patches=9f12903 symbol_suffix=none threads=none arch=linux-sles15-zen3
+module load openblas/0.3.20-gcc-12.2.0-mixed-qtbaxxy
+# coinhsl@=2019.05.21%gcc@=12.2.0-mixed+blas build_system=autotools arch=linux-sles15-zen3
+module load coinhsl/2019.05.21-gcc-12.2.0-mixed-ldvspc2
+# hipblas@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed~cuda+rocm amdgpu_target=auto build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
+module load hipblas/5.2.0-clang-14.0.0-rocm5.2.0-mixed-qsxq2xx
+# hipfft@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed~cuda+rocm amdgpu_target=auto build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
+module load hipfft/5.2.0-clang-14.0.0-rocm5.2.0-mixed-pje75d4
+# rocm-cmake@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
+module load rocm-cmake/5.2.0-clang-14.0.0-rocm5.2.0-mixed-6ycwfrv
+# rocrand@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed~hiprand amdgpu_target=auto build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
+module load rocrand/5.2.0-clang-14.0.0-rocm5.2.0-mixed-u2xomf6
+# hiprand@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed~cuda~ipo+rocm amdgpu_target=auto build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
+module load hiprand/5.2.0-clang-14.0.0-rocm5.2.0-mixed-nds7sus
+# hipsparse@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed~cuda+rocm amdgpu_target=auto build_system=cmake build_type=Release generator=make patches=c447537 arch=linux-sles15-zen3
+module load hipsparse/5.2.0-clang-14.0.0-rocm5.2.0-mixed-vqshjsa
+# rocprim@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed amdgpu_target=auto build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
+module load rocprim/5.2.0-clang-14.0.0-rocm5.2.0-mixed-6jqmhkg
+# rocthrust@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed amdgpu_target=auto build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
+module load rocthrust/5.2.0-clang-14.0.0-rocm5.2.0-mixed-3upg7wr
+# ginkgo@=1.5.0.glu_experimental%clang@=14.0.0-rocm5.2.0-mixed~cuda~develtools~full_optimizations~hwloc~ipo~mpi~oneapi~openmp+rocm+shared amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make patches=ba0956e arch=linux-sles15-zen3
+module load ginkgo/1.5.0.glu_experimental-clang-14.0.0-rocm5.2.0-mixed-bng4xvs
+# magma@=2.6.2%clang@=14.0.0-rocm5.2.0-mixed~cuda+fortran~ipo+rocm+shared amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
+module load magma/2.6.2-clang-14.0.0-rocm5.2.0-mixed-v6gr526
+# metis@=5.1.0%clang@=14.0.0-rocm5.2.0-mixed~gdb~int64~ipo~real64+shared build_system=cmake build_type=Release generator=make patches=4991da9,93a7903 arch=linux-sles15-zen3
+module load metis/5.1.0-clang-14.0.0-rocm5.2.0-mixed-36c25vy
+# raja@=0.14.0%clang@=14.0.0-rocm5.2.0-mixed~cuda~examples~exercises~ipo~openmp+rocm+shared~tests amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
+module load raja/0.14.0-clang-14.0.0-rocm5.2.0-mixed-y475ttu
+# libiconv@=1.17%clang@=14.0.0-rocm5.2.0-mixed build_system=autotools libs=shared,static arch=linux-sles15-zen3
+module load libiconv/1.17-clang-14.0.0-rocm5.2.0-mixed-ulmz25p
+# diffutils@=3.9%clang@=14.0.0-rocm5.2.0-mixed build_system=autotools arch=linux-sles15-zen3
+module load diffutils/3.9-clang-14.0.0-rocm5.2.0-mixed-scfhpum
+# libsigsegv@=2.14%clang@=14.0.0-rocm5.2.0-mixed build_system=autotools arch=linux-sles15-zen3
+module load libsigsegv/2.14-clang-14.0.0-rocm5.2.0-mixed-dq3l7q6
+# m4@=1.4.19%clang@=14.0.0-rocm5.2.0-mixed+sigsegv build_system=autotools patches=9dc5fbd,bfdffa7 arch=linux-sles15-zen3
+module load m4/1.4.19-clang-14.0.0-rocm5.2.0-mixed-xlyimju
+# autoconf@=2.69%clang@=14.0.0-rocm5.2.0-mixed build_system=autotools patches=35c4492,7793209,a49dd5b arch=linux-sles15-zen3
+module load autoconf/2.69-clang-14.0.0-rocm5.2.0-mixed-ftql5ql
+# automake@=1.16.5%clang@=14.0.0-rocm5.2.0-mixed build_system=autotools arch=linux-sles15-zen3
+module load automake/1.16.5-clang-14.0.0-rocm5.2.0-mixed-mwefxzj
+# libtool@=2.4.7%clang@=14.0.0-rocm5.2.0-mixed build_system=autotools arch=linux-sles15-zen3
+module load libtool/2.4.7-clang-14.0.0-rocm5.2.0-mixed-hlehm77
+# gmp@=6.2.1%clang@=14.0.0-rocm5.2.0-mixed+cxx build_system=autotools libs=shared,static patches=69ad2e2 arch=linux-sles15-zen3
+module load gmp/6.2.1-clang-14.0.0-rocm5.2.0-mixed-uye2wtp
+# autoconf-archive@=2023.02.20%clang@=14.0.0-rocm5.2.0-mixed build_system=autotools arch=linux-sles15-zen3
+module load autoconf-archive/2023.02.20-clang-14.0.0-rocm5.2.0-mixed-ctrlife
+# bzip2@=1.0.8%clang@=14.0.0-rocm5.2.0-mixed~debug~pic+shared build_system=generic arch=linux-sles15-zen3
+module load bzip2/1.0.8-clang-14.0.0-rocm5.2.0-mixed-yzuivm3
+# xz@=5.4.1%clang@=14.0.0-rocm5.2.0-mixed~pic build_system=autotools libs=shared,static arch=linux-sles15-zen3
+module load xz/5.4.1-clang-14.0.0-rocm5.2.0-mixed-vds5rko
+# libxml2@=2.10.3%clang@=14.0.0-rocm5.2.0-mixed+pic~python+shared build_system=autotools arch=linux-sles15-zen3
+module load libxml2/2.10.3-clang-14.0.0-rocm5.2.0-mixed-t4sd5su
+# pigz@=2.7%clang@=14.0.0-rocm5.2.0-mixed build_system=makefile arch=linux-sles15-zen3
+module load pigz/2.7-clang-14.0.0-rocm5.2.0-mixed-2acdaog
+# zstd@=1.5.5%clang@=14.0.0-rocm5.2.0-mixed+programs build_system=makefile compression=none libs=shared,static arch=linux-sles15-zen3
+module load zstd/1.5.5-clang-14.0.0-rocm5.2.0-mixed-dct4j6t
+# tar@=1.34%clang@=14.0.0-rocm5.2.0-mixed build_system=autotools zip=pigz arch=linux-sles15-zen3
+module load tar/1.34-clang-14.0.0-rocm5.2.0-mixed-x5eyb7d
+# gettext@=0.21.1%clang@=14.0.0-rocm5.2.0-mixed+bzip2+curses+git~libunistring+libxml2+tar+xz build_system=autotools arch=linux-sles15-zen3
+module load gettext/0.21.1-clang-14.0.0-rocm5.2.0-mixed-qf5jhzc
+# texinfo@=7.0.3%clang@=14.0.0-rocm5.2.0-mixed build_system=autotools arch=linux-sles15-zen3
+module load texinfo/7.0.3-clang-14.0.0-rocm5.2.0-mixed-uv74cpk
+# mpfr@=4.2.0%clang@=14.0.0-rocm5.2.0-mixed build_system=autotools libs=shared,static arch=linux-sles15-zen3
+module load mpfr/4.2.0-clang-14.0.0-rocm5.2.0-mixed-7ytzunk
+# suite-sparse@=5.13.0%clang@=14.0.0-rocm5.2.0-mixed~cuda~graphblas~openmp+pic build_system=generic arch=linux-sles15-zen3
+module load suite-sparse/5.13.0-clang-14.0.0-rocm5.2.0-mixed-idk36ax
+# umpire@=6.0.0%clang@=14.0.0-rocm5.2.0-mixed+c~cuda~device_alloc~deviceconst~examples~fortran~ipo~numa~openmp+rocm+shared amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make tests=none arch=linux-sles15-zen3
+module load umpire/6.0.0-clang-14.0.0-rocm5.2.0-mixed-hgdq5xx
+# hiop@=0.7.2.mpi-fix%clang@=14.0.0-rocm5.2.0-mixed~cuda~deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja+rocm~shared+sparse amdgpu_target=gfx90a build_system=cmake build_type=MinSizeRel generator=make arch=linux-sles15-zen3
+module load hiop/0.7.2.mpi-fix-clang-14.0.0-rocm5.2.0-mixed-7vzuvfj
+# ipopt@=3.12.10%clang@=14.0.0-rocm5.2.0-mixed+coinhsl~debug~metis~mumps build_system=autotools arch=linux-sles15-zen3
+module load ipopt/3.12.10-clang-14.0.0-rocm5.2.0-mixed-4rq2ft7
+# python@=3.9.12%clang@=14.0.0-rocm5.2.0-mixed+bz2+crypt+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tkinter+uuid+zlib build_system=generic patches=0d98e93,4c24573,f2fd060 arch=linux-sles15-zen3
+module load python/3.9.12-clang-14.0.0-rocm5.2.0-mixed-izrixc2
+# petsc@=3.19.4%clang@=14.0.0-rocm5.2.0-mixed~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~tetgen~trilinos~valgrind build_system=generic clanguage=C memalign=none arch=linux-sles15-zen3
+module load petsc/3.19.4-clang-14.0.0-rocm5.2.0-mixed-24uvadu
+# exago@=develop%clang@=14.0.0-rocm5.2.0-mixed~cuda+hiop~ipo+ipopt+logging+mpi~python+raja+rocm amdgpu_target=gfx90a build_system=cmake build_type=MinSizeRel dev_path=/lustre/orion/scratch/nkouk/csc359/exago-frontier-amd-gfortran generator=make arch=linux-sles15-zen3
+## module load exago/develop-clang-14.0.0-rocm5.2.0-mixed-n5b7kbf
