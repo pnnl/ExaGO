@@ -1,8 +1,9 @@
 spack:
   specs:
-  - exago@develop%gcc@10.2.0+cuda+mpi+hiop+raja+ipopt~python cuda_arch=70
+  - exago@develop%gcc@10.2.0+cuda+mpi+hiop+raja+ipopt+python cuda_arch=70
     ^petsc@3.18.0~hdf5~hypre~mumps~superlu-dist 
-    ^hiop@develop+cuda+raja+sparse+mpi+deepchecking~ginkgo+cusolver_lu cuda_arch=70
+    ^hiop@0.7.2+cuda+raja+sparse+mpi+deepchecking+ginkgo+cusolver_lu cuda_arch=70
+    ^ginkgo@1.5.0.glu_experimental cuda_arch=70
     ^raja@0.14.0
     ^umpire@6.0.0
     ^openblas
