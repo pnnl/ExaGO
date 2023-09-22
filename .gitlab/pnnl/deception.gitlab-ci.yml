@@ -10,15 +10,7 @@ Deception Test:
     - .cluster_test
     - .deception
   variables:
-    CTESTARGS: " --timeout 240 --output-on-failure -E Python -LE deception-skip "
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-  needs: ['Deception Build']
-
-Deception Py Test:
-  extends:
-    - .cluster_py_test
-    - .deception
-  variables:
+    CTESTARGS: " --timeout 240 --output-on-failure -LE deception-skip "
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
   needs: ['Deception Build']
 

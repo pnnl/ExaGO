@@ -92,7 +92,7 @@
     - cd "$WORKDIR"
     - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
       # Export CTESTARGS defined in variables to run correct tests for stage
-    - export CTESTARGS="--output-on-failure -E Python"
+    - export CTESTARGS="$CTESTARGS"
     - MY_CLUSTER="ascent" ./buildsystem/build.sh --test-only --job=gcc-cuda
     - res=$?
     - exit $res
@@ -101,19 +101,6 @@
     - cd "$WORKDIR/.."
     - rm -rf "$WORKDIR"
 
-.ascent_python_test_script_template:
-  script:
-    - set -xv
-    - cd "$WORKDIR"
-    - export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
-      # Export CTESTARGS defined in variables to run correct tests for stage
-    - export CTESTARGS="-VV -R Python"
-    - MY_CLUSTER="ascent" ./buildsystem/build.sh --test-only --job=gcc-cuda
-    - res=$?
-    - exit $res
-# ---
-
-# For Ascent CI
 Ascent Build:
   stage: build
   tags:
@@ -132,28 +119,13 @@ Ascent Test:
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
-    CTESTARGS: "--output-on-failure -E Python"
+    CTESTARGS: "--output-on-failure"
   extends:
     - .ascent_rules
     - .ascent_test_script_template
     - .ascent_environment_template
 
-Ascent Py Test:
-  stage: test
-  dependencies:
-    - 'Ascent Build'
-  tags:
-    - batch 
-  variables:
-    # Don't clone for test jobs
-    GIT_STRATEGY: none
-  extends:
-    - .ascent_rules
-    - .ascent_python_test_script_template
-    - .ascent_environment_template
-# ---
-
-# Reporting Ascent Status to PNNL
+# -- Reporting Ascent Status to PNNL GitHub
 .report-job:
   when: always
   variables:

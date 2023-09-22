@@ -101,25 +101,12 @@ stages:
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
-    CTESTARGS: "--timeout 240 --output-on-failure -E Python"
+    CTESTARGS: "--timeout 240 --output-on-failure"
     OUTPUT_SUFFIX: "_test"
   artifacts:
     when: always
     paths:
       - partition
-
-.cluster_py_test:
-  stage: test
-  extends:
-    - .pnnl_tags_template
-    - .pnnl_script_template
-      # No after_script as only one test per platform cleans up
-      # Since python test should finish first, we let other test cleanup
-  variables:
-    # Don't clone for test jobs
-    GIT_STRATEGY: none
-    CTESTARGS: "--timeout 240 --output-on-failure -R Python"
-    OUTPUT_SUFFIX: "_test_python"
 
 .module_rebuild:
   needs: []
