@@ -1,0 +1,52 @@
+name: Spack Builds
+
+# Until we remove the need to clone submodules to build, this should on be in PRs
+on: [pull_request]
+
+jobs:
+  exago_spack_builds:
+    # 20.04 is a version shared by E4S cache and Spack binaries for x86_64
+    runs-on: ubuntu-20.04
+    container: spack/ubuntu-focal:latest
+    strategy:
+      matrix:
+        spack_spec:
+          - exago@develop+mpi~ipopt~hiop~logging~python~raja ^openmpi
+          - exago@develop~mpi~ipopt+hiop~logging~python~raja
+          - exago@develop~mpi~ipopt~hiop~logging~python~raja
+          - exago@develop~mpi~ipopt~hiop~logging+python~raja
+          - exago@develop~mpi~ipopt+hiop~logging~python+raja
+          - exago@develop~mpi~ipopt~hiop~logging~python+raja
+
+    name: Build ExaGO with Spack
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          # Once we move submodule deps into spack, we can do some more builds...
+          submodules: true
+
+      - name: Build Environment
+        env:
+          SPACK_SPEC: ${{ matrix.spack_spec }}
+        run: |
+          ls && pwd
+          . /opt/spack/share/spack/setup-env.sh
+          spack debug report
+          # Just use the public mirror to bootstrap concretizer
+          # https://spack.io/spack-binary-packages
+          spack mirror add spack_public_mirror https://binaries.spack.io/develop
+          spack buildcache keys --install --trust
+          # Need to create an environment to install hiop in the action's branch
+          spack env create -d ./spack-env
+          spack env activate ./spack-env
+          spack add $SPACK_SPEC target=x86_64
+          spack develop --path $(pwd) --no-clone exago@git.${github.event.pull_request.head.ref}=develop
+          # Need to add build cache before concretizing to re-use dependencies
+          # Add E4S mirror - likely relying on spack cache but nice backup
+          # https://oaciss.uoregon.edu/e4s/inventory.html
+          spack mirror add E4S https://cache.e4s.io
+          spack buildcache keys --install --trust
+          spack concretize --reuse
+          git config --global --add safe.directory $(pwd)
+          spack --stacktrace install --fail-fast
