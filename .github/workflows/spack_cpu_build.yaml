@@ -1,4 +1,4 @@
-name: Spack Builds
+name: Spack CPU Builds
 
 # Until we remove the need to clone submodules to build, this should on be in PRs
 on: [pull_request]

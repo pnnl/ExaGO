@@ -1,4 +1,4 @@
-name: Ascent Mirror
+name: ORNL Ascent Mirror
 
 # triggers a github action everytime there is a push or mr
 on:
