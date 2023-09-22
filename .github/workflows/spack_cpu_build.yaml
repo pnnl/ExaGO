@@ -41,7 +41,7 @@ jobs:
           spack env create -d ./spack-env
           spack env activate ./spack-env
           spack add $SPACK_SPEC target=x86_64
-          spack develop --path $(pwd) --no-clone exago@git.${github.event.pull_request.head.ref}=develop
+          spack develop --path $(pwd) --no-clone exago@git.${{ github.event.pull_request.head.ref}}=develop
           # Need to add build cache before concretizing to re-use dependencies
           # Add E4S mirror - likely relying on spack cache but nice backup
           # https://oaciss.uoregon.edu/e4s/inventory.html
