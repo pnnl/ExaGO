@@ -1,7 +1,7 @@
 name: pre-commit
 
 # Won't run on develop/main directly
-on: [pull_request]
+on: [push]
 
 jobs:
   pre-commit:
