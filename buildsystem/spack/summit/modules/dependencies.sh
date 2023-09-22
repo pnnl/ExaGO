@@ -5,10 +5,10 @@ module load cmake/3.21.3-gcc-10.2.0-ijmjum5
 module load blt/0.4.1-gcc-10.2.0-ymjl6ab
 # cub@=1.16.0%gcc@=10.2.0 arch=linux-rhel8-power9le
 module load cub/1.16.0-gcc-10.2.0-a5uzxeq
-# cuda@=11.5.2%gcc@=10.2.0~allow-unsupported-compilers~dev arch=linux-rhel8-power9le
-module load cuda/11.5.2-gcc-10.2.0-bzvraai
+# cuda@=11.4.2%gcc@=10.2.0~allow-unsupported-compilers~dev arch=linux-rhel8-power9le
+module load cuda/11.4.2-gcc-10.2.0-4bvhk3u
 # camp@=0.2.3%gcc@=10.2.0+cuda~ipo+openmp~rocm~tests build_type=RelWithDebInfo cuda_arch=70 arch=linux-rhel8-power9le
-module load camp/0.2.3-gcc-10.2.0-nstpohj
+module load camp/0.2.3-gcc-10.2.0-fnpymoo
 # gnuconfig@=2021-08-14%gcc@=10.2.0 arch=linux-rhel8-power9le
 module load gnuconfig/2021-08-14-gcc-10.2.0-4gsxwpk
 # gmake@=4.4.1%gcc@=10.2.0~guile build_system=autotools arch=linux-rhel8-power9le
@@ -18,13 +18,13 @@ module load openblas/0.17.0-gcc-10.2.0-qcs6vhe
 # coinhsl@=2015.06.23%gcc@=10.2.0+blas arch=linux-rhel8-power9le
 module load coinhsl/2015.06.23-gcc-10.2.0-vctp77v
 # ginkgo@=1.5.0.glu_experimental%gcc@=10.2.0+cuda~develtools~full_optimizations~hwloc~ipo~mpi~oneapi+openmp~rocm+shared build_system=cmake build_type=Release cuda_arch=70 generator=make arch=linux-rhel8-power9le
-module load ginkgo/1.5.0.glu_experimental-gcc-10.2.0-ksfasxk
+module load ginkgo/1.5.0.glu_experimental-gcc-10.2.0-4wicfxa
 # magma@=2.6.2%gcc@=10.2.0+cuda+fortran~ipo~rocm+shared build_type=Release cuda_arch=70 arch=linux-rhel8-power9le
-module load magma/2.6.2-gcc-10.2.0-uyyqm6p
+module load magma/2.6.2-gcc-10.2.0-wfpnmgj
 # metis@=5.1.0%gcc@=10.2.0~gdb~int64~real64+shared build_type=Release patches=4991da9,b1225da arch=linux-rhel8-power9le
 module load metis/5.1.0-gcc-10.2.0-lpkktw5
 # raja@=0.14.0%gcc@=10.2.0+cuda+examples+exercises~ipo+openmp~rocm+shared~tests build_type=Release cuda_arch=70 arch=linux-rhel8-power9le
-module load raja/0.14.0-gcc-10.2.0-b74uzir
+module load raja/0.14.0-gcc-10.2.0-r7kozj7
 # spectrum-mpi@=10.4.0.3-20210112%gcc@=10.2.0 arch=linux-rhel8-power9le
 module load spectrum-mpi/10.4.0.3-20210112-gcc-10.2.0-rhfl5sr
 # libiconv@=1.16%gcc@=10.2.0 libs=shared,static arch=linux-rhel8-power9le
@@ -54,9 +54,9 @@ module load mpfr/4.1.0-gcc-10.2.0-4c6rm3n
 # suite-sparse@=5.10.1%gcc@=10.2.0~cuda~graphblas~openmp+pic~tbb arch=linux-rhel8-power9le
 module load suite-sparse/5.10.1-gcc-10.2.0-kmwoegj
 # umpire@=6.0.0%gcc@=10.2.0~c+cuda~device_alloc~deviceconst+examples~fortran~ipo~numa~openmp~rocm~shared build_type=Release cuda_arch=70 tests=none arch=linux-rhel8-power9le
-module load umpire/6.0.0-gcc-10.2.0-gwb2oaf
-# hiop@=0.7.2%gcc@=10.2.0+cuda+cusolver_lu+deepchecking+ginkgo~ipo~jsrun~kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=MinSizeRel cuda_arch=70 generator=make arch=linux-rhel8-power9le
-module load hiop/0.7.2-gcc-10.2.0-5lx6f5h
+module load umpire/6.0.0-gcc-10.2.0-eaxxvet
+# hiop@=0.7.2%gcc@=10.2.0+cuda+cusolver_lu+deepchecking+ginkgo~ipo~jsrun~kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=Debug cuda_arch=70 generator=make arch=linux-rhel8-power9le
+module load hiop/0.7.2-gcc-10.2.0-qrefu5h
 # pkgconf@=1.8.0%gcc@=10.2.0 arch=linux-rhel8-power9le
 module load pkgconf/1.8.0-gcc-10.2.0-ygtljd4
 # ipopt@=3.12.10%gcc@=10.2.0+coinhsl~debug+metis~mumps arch=linux-rhel8-power9le
@@ -170,4 +170,4 @@ module load py-iniconfig/2.0.0-gcc-10.2.0-n5eln73
 # py-pytest@=7.3.2%gcc@=10.2.0 build_system=python_pip arch=linux-rhel8-power9le
 module load py-pytest/7.3.2-gcc-10.2.0-l2ofgsi
 # exago@=develop%gcc@=10.2.0+cuda+hiop~ipo+ipopt+logging+mpi+python+raja~rocm build_system=cmake build_type=Debug cuda_arch=70 dev_path=/gpfs/alpine/scratch/nkouk/csc359/ExaGO-github generator=make arch=linux-rhel8-power9le
-## module load exago/develop-gcc-10.2.0-bjkjhp5
+## module load exago/develop-gcc-10.2.0-k4i42sh
