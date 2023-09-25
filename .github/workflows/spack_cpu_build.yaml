@@ -34,11 +34,6 @@ jobs:
           ls && pwd
           . ./tpl/spack/share/spack/setup-env.sh
           spack debug report
-          # Just use the public mirror to bootstrap concretizer
-          # https://spack.io/spack-binary-packages
-          spack mirror add spack_public_mirror https://binaries.spack.io/develop
-          spack buildcache keys --install --trust
-          # Need to create an environment to install exago
           spack env create -d ./spack-env
           spack env activate ./spack-env
           spack add $SPACK_SPEC target=x86_64
