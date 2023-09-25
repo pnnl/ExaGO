@@ -16,7 +16,9 @@ jobs:
           - exago@develop~mpi~ipopt~hiop~logging~python~raja~tests
           - exago@develop+mpi~ipopt+hiop~logging~python~raja~tests ^openmpi
           - exago@develop~mpi~ipopt+hiop+logging~python+raja+tests
-          - exago@develop~mpi~ipopt+hiop~logging+python~raja+tests
+          # See #16 - +python~mpi causes issues
+        # - exago@develop~mpi~ipopt+hiop~logging+python~raja+tests
+          - exago@develop+mpi~ipopt+hiop~logging+python~raja+tests ^openmpi
 
     name: Build ExaGO with Spack
     steps:
@@ -30,14 +32,13 @@ jobs:
         env:
           SPACK_SPEC: ${{ matrix.spack_spec }}
         run: |
-          set -x
           ls && pwd
           . ./tpl/spack/share/spack/setup-env.sh
           spack debug report
           spack env create -d ./spack-env
           spack env activate ./spack-env
           spack add $SPACK_SPEC target=x86_64
-          spack -d develop --path $(pwd) --no-clone exago@develop
-          spack -d concretize --reuse
+          spack develop --path $(pwd) --no-clone exago@develop
+          spack concretize --reuse
           git config --global --add safe.directory $(pwd)
           spack --stacktrace install --fail-fast
