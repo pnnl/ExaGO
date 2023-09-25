@@ -22,10 +22,12 @@ if(EXAGO_INSTALL_TESTS)
     HIOP
   )
 
-  set_tests_properties(
-    FUNCTIONALITY_TEST_OPFLOW_HIOP_TOML_TESTSUITE
-    PROPERTIES LABELS "incline-skip;deception-skip;newell-skip"
-  )
+  if(EXAGO_ENABLE_HIOP)
+    set_tests_properties(
+      FUNCTIONALITY_TEST_OPFLOW_HIOP_TOML_TESTSUITE
+      PROPERTIES LABELS "incline-skip;deception-skip;newell-skip"
+    )
+  endif()
 
   exago_add_test(
     NAME
@@ -38,10 +40,12 @@ if(EXAGO_INSTALL_TESTS)
     HIOP
     RAJA
   )
-  set_tests_properties(
-    FUNCTIONALITY_TEST_OPFLOW_RAJAHIOP_TOML_TESTSUITE
-    PROPERTIES LABELS "incline-skip;deception-skip;newell-skip"
-  )
+  if(EXAGO_ENABLE_HIOP AND EXAGO_ENABLE_RAJA)
+    set_tests_properties(
+      FUNCTIONALITY_TEST_OPFLOW_RAJAHIOP_TOML_TESTSUITE
+      PROPERTIES LABELS "incline-skip;deception-skip;newell-skip"
+    )
+  endif()
 
   exago_add_test(
     NAME
@@ -53,10 +57,12 @@ if(EXAGO_INSTALL_TESTS)
     DEPENDS
     HIOP_SPARSE
   )
-  set_tests_properties(
-    FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_TOML_TESTSUITE
-    PROPERTIES LABELS "incline-skip;deception-skip;newell-skip"
-  )
+  if(EXAGO_ENABLE_HIOP_SPARSE)
+    set_tests_properties(
+      FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_TOML_TESTSUITE
+      PROPERTIES LABELS "incline-skip;deception-skip;newell-skip"
+    )
+  endif()
 
   # Note: All cartesian and/or current balance models are way behind. These
   # models should not be used and their tests should be disabled.

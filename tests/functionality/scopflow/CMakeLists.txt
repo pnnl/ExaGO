@@ -35,11 +35,15 @@ if(EXAGO_INSTALL_TESTS)
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/empar_cont.toml
   )
-  set_tests_properties(
-    FUNCTIONALITY_TEST_SCOPFLOW_EMPAR_CONT_TESTSUITE PROPERTIES LABELS
-                                                                "incline-skip"
-  )
 
+  if(EXAGO_ENABLE_IPOPT)
+    set_tests_properties(
+      FUNCTIONALITY_TEST_SCOPFLOW_EMPAR_CONT_TESTSUITE
+      PROPERTIES LABELS "incline-skip"
+    )
+  endif()
+
+  # Disabled test for now, feature not ready yet
   if(EXAGO_ENABLE_ALL_TESTS)
     exago_add_test(
       NAME
@@ -81,10 +85,16 @@ if(EXAGO_INSTALL_TESTS)
     -hiop_mem_space
     HOST
   )
-  set_tests_properties(
-    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_PBHIOP_TESTSUITE
-    PROPERTIES LABELS "newell-skip;deception-skip"
+
+  if(EXAGO_ENABLE_IPOPT
+     AND EXAGO_ENABLE_HIOP
+     AND EXAGO_ENABLE_HIOP_DISTRIBUTED
   )
+    set_tests_properties(
+      FUNCTIONALITY_TEST_SCOPFLOW_HIOP_PBHIOP_TESTSUITE
+      PROPERTIES LABELS "newell-skip;deception-skip"
+    )
+  endif()
 
   exago_add_test(
     NAME
@@ -116,10 +126,16 @@ if(EXAGO_INSTALL_TESTS)
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_mpi.toml
   )
-  set_tests_properties(
-    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_MPI_TESTSUITE PROPERTIES LABELS
-                                                              "incline-skip"
+
+  if(EXAGO_ENABLE_IPOPT
+     AND EXAGO_ENABLE_HIOP
+     AND EXAGO_ENABLE_HIOP_DISTRIBUTED
   )
+    set_tests_properties(
+      FUNCTIONALITY_TEST_SCOPFLOW_HIOP_MPI_TESTSUITE PROPERTIES LABELS
+                                                                "incline-skip"
+    )
+  endif()
 
   exago_add_test(
     NAME
@@ -135,10 +151,16 @@ if(EXAGO_INSTALL_TESTS)
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_serial.toml
   )
-  set_tests_properties(
-    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_SERIAL_TESTSUITE
-    PROPERTIES LABELS "incline-skip;deception-skip"
+
+  if(EXAGO_ENABLE_IPOPT
+     AND EXAGO_ENABLE_HIOP
+     AND EXAGO_ENABLE_HIOP_DISTRIBUTED
   )
+    set_tests_properties(
+      FUNCTIONALITY_TEST_SCOPFLOW_HIOP_SERIAL_TESTSUITE
+      PROPERTIES LABELS "incline-skip;deception-skip"
+    )
+  endif()
 
   exago_add_test(
     NAME
@@ -154,10 +176,16 @@ if(EXAGO_INSTALL_TESTS)
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_raja.toml
   )
-  set_tests_properties(
-    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_RAJA_TESTSUITE
-    PROPERTIES LABELS "incline-skip;deception-skip"
+
+  if(EXAGO_ENABLE_IPOPT
+     AND EXAGO_ENABLE_HIOP
+     AND EXAGO_ENABLE_HIOP_DISTRIBUTED
   )
+    set_tests_properties(
+      FUNCTIONALITY_TEST_SCOPFLOW_HIOP_RAJA_TESTSUITE
+      PROPERTIES LABELS "incline-skip;deception-skip"
+    )
+  endif()
 
   foreach(fmt "MATPOWER" "CSV" "JSON" "MINIMAL")
     set(tname "SCOPFLOW_SOLUTION_OUTPUT_${fmt}")
