@@ -64,7 +64,6 @@ if(EXAGO_INSTALL_TESTS)
     DEPENDS
     IPOPT
     HIOP
-    HIOP_DISTRIBUTED
     COMMAND
     ${RUNCMD}
     $<TARGET_FILE:test_scopflow_functionality>
@@ -77,7 +76,6 @@ if(EXAGO_INSTALL_TESTS)
     DEPENDS
     IPOPT
     HIOP
-    HIOP_DISTRIBUTED
     COMMAND
     ${RUNCMD}
     $<TARGET_FILE:test_scopflow_functionality>
@@ -86,10 +84,7 @@ if(EXAGO_INSTALL_TESTS)
     HOST
   )
 
-  if(EXAGO_ENABLE_IPOPT
-     AND EXAGO_ENABLE_HIOP
-     AND EXAGO_ENABLE_HIOP_DISTRIBUTED
-  )
+  if(EXAGO_ENABLE_IPOPT AND EXAGO_ENABLE_HIOP)
     set_tests_properties(
       FUNCTIONALITY_TEST_SCOPFLOW_HIOP_PBHIOP_TESTSUITE
       PROPERTIES LABELS "newell-skip;deception-skip"
@@ -102,7 +97,6 @@ if(EXAGO_INSTALL_TESTS)
     DEPENDS
     IPOPT
     HIOP
-    HIOP_DISTRIBUTED
     COMMAND
     ${MPICMD}
     "-n"
@@ -118,7 +112,6 @@ if(EXAGO_INSTALL_TESTS)
     DEPENDS
     IPOPT
     HIOP
-    HIOP_DISTRIBUTED
     COMMAND
     ${MPICMD}
     "-n"
@@ -127,10 +120,7 @@ if(EXAGO_INSTALL_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_mpi.toml
   )
 
-  if(EXAGO_ENABLE_IPOPT
-     AND EXAGO_ENABLE_HIOP
-     AND EXAGO_ENABLE_HIOP_DISTRIBUTED
-  )
+  if(EXAGO_ENABLE_IPOPT AND EXAGO_ENABLE_HIOP)
     set_tests_properties(
       FUNCTIONALITY_TEST_SCOPFLOW_HIOP_MPI_TESTSUITE PROPERTIES LABELS
                                                                 "incline-skip"
@@ -143,7 +133,6 @@ if(EXAGO_INSTALL_TESTS)
     DEPENDS
     IPOPT
     HIOP
-    HIOP_DISTRIBUTED
     COMMAND
     ${MPICMD}
     "-n"
@@ -152,10 +141,7 @@ if(EXAGO_INSTALL_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_serial.toml
   )
 
-  if(EXAGO_ENABLE_IPOPT
-     AND EXAGO_ENABLE_HIOP
-     AND EXAGO_ENABLE_HIOP_DISTRIBUTED
-  )
+  if(EXAGO_ENABLE_IPOPT AND EXAGO_ENABLE_HIOP)
     set_tests_properties(
       FUNCTIONALITY_TEST_SCOPFLOW_HIOP_SERIAL_TESTSUITE
       PROPERTIES LABELS "incline-skip;deception-skip"
@@ -168,7 +154,6 @@ if(EXAGO_INSTALL_TESTS)
     DEPENDS
     IPOPT
     HIOP
-    HIOP_DISTRIBUTED
     COMMAND
     ${MPICMD}
     "-n"
@@ -177,10 +162,7 @@ if(EXAGO_INSTALL_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_raja.toml
   )
 
-  if(EXAGO_ENABLE_IPOPT
-     AND EXAGO_ENABLE_HIOP
-     AND EXAGO_ENABLE_HIOP_DISTRIBUTED
-  )
+  if(EXAGO_ENABLE_IPOPT AND EXAGO_ENABLE_HIOP)
     set_tests_properties(
       FUNCTIONALITY_TEST_SCOPFLOW_HIOP_RAJA_TESTSUITE
       PROPERTIES LABELS "incline-skip;deception-skip"

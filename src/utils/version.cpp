@@ -64,14 +64,6 @@ static const std::unordered_map<std::string, bool> ExaGOBoolConfigOptions = {
 #endif
     },
     {
-        "EXAGO_ENABLE_HIOP_DISTRIBUTED",
-#ifdef EXAGO_ENABLE_HIOP_DISTRIBUTED
-        true,
-#else
-        false,
-#endif
-    },
-    {
         "EXAGO_ENABLE_HIOP_SPARSE",
 #ifdef EXAGO_ENABLE_HIOP_SPARSE
         true,
