@@ -30,6 +30,7 @@ jobs:
         env:
           SPACK_SPEC: ${{ matrix.spack_spec }}
         run: |
+          set -x
           ls && pwd
           . ./tpl/spack/share/spack/setup-env.sh
           spack debug report
@@ -37,11 +38,11 @@ jobs:
           # https://spack.io/spack-binary-packages
           spack mirror add spack_public_mirror https://binaries.spack.io/develop
           spack buildcache keys --install --trust
-          # Need to create an environment to install hiop in the action's branch
+          # Need to create an environment to install exago
           spack env create -d ./spack-env
           spack env activate ./spack-env
           spack add $SPACK_SPEC target=x86_64
-          spack develop --path $(pwd) --no-clone exago@git.${{ github.event.pull_request.head.ref}}=develop
-          spack concretize --reuse
+          spack -d develop --path $(pwd) --no-clone exago@develop
+          spack -d concretize --reuse
           git config --global --add safe.directory $(pwd)
           spack --stacktrace install --fail-fast
