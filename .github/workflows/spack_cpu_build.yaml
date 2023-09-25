@@ -7,16 +7,16 @@ jobs:
   exago_spack_builds:
     # 20.04 is a version shared by E4S cache and Spack binaries for x86_64
     runs-on: ubuntu-20.04
-    container: spack/ubuntu-focal:latest
+    # This seems redundant if we use a spack submodule?
+    # container: spack/ubuntu-focal:latest
     strategy:
       matrix:
         spack_spec:
-          - exago@develop+mpi~ipopt~hiop~logging~python~raja ^openmpi
-          - exago@develop~mpi~ipopt+hiop~logging~python~raja
-          - exago@develop~mpi~ipopt~hiop~logging~python~raja
-          - exago@develop~mpi~ipopt~hiop~logging+python~raja
-          - exago@develop~mpi~ipopt+hiop~logging~python+raja
-          - exago@develop~mpi~ipopt~hiop~logging~python+raja
+          # Minimal Build
+          - exago@develop~mpi~ipopt~hiop~logging~python~raja~tests
+          - exago@develop+mpi~ipopt+hiop~logging~python~raja~tests ^openmpi
+          - exago@develop~mpi~ipopt+hiop+logging~python+raja+tests
+          - exago@develop~mpi~ipopt~hiop~logging+python~raja+tests
 
     name: Build ExaGO with Spack
     steps:
@@ -31,7 +31,7 @@ jobs:
           SPACK_SPEC: ${{ matrix.spack_spec }}
         run: |
           ls && pwd
-          . /opt/spack/share/spack/setup-env.sh
+          source ./tpl/spack/share/spack/setup-env.sh
           spack debug report
           # Just use the public mirror to bootstrap concretizer
           # https://spack.io/spack-binary-packages
