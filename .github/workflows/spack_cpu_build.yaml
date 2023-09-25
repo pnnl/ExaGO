@@ -42,11 +42,6 @@ jobs:
           spack env activate ./spack-env
           spack add $SPACK_SPEC target=x86_64
           spack develop --path $(pwd) --no-clone exago@git.${{ github.event.pull_request.head.ref}}=develop
-          # Need to add build cache before concretizing to re-use dependencies
-          # Add E4S mirror - likely relying on spack cache but nice backup
-          # https://oaciss.uoregon.edu/e4s/inventory.html
-          spack mirror add E4S https://cache.e4s.io
-          spack buildcache keys --install --trust
           spack concretize --reuse
           git config --global --add safe.directory $(pwd)
           spack --stacktrace install --fail-fast
