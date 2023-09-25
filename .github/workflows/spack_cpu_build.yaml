@@ -31,7 +31,7 @@ jobs:
           SPACK_SPEC: ${{ matrix.spack_spec }}
         run: |
           ls && pwd
-          source ./tpl/spack/share/spack/setup-env.sh
+          . ./tpl/spack/share/spack/setup-env.sh
           spack debug report
           # Just use the public mirror to bootstrap concretizer
           # https://spack.io/spack-binary-packages
