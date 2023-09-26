@@ -413,8 +413,10 @@ if(EXAGO_ENABLE_PYTHON)
   add_subdirectory(interfaces/python)
 endif()
 
-# Build tests
-add_subdirectory(tests)
+if(EXAGO_RUN_TESTS)
+  # Build tests
+  add_subdirectory(tests)
+endif()
 
 if((NOT EXAGO_ENABLE_IPOPT) AND (NOT EXAGO_ENABLE_HIOP))
   message(

@@ -1,0 +1,45 @@
+name: Spack CPU Builds
+
+# Until we remove the need to clone submodules to build, this should on be in PRs
+on: [pull_request]
+
+jobs:
+  exago_spack_builds:
+    # 20.04 is a version shared by E4S cache and Spack binaries for x86_64
+    runs-on: ubuntu-20.04
+    # This seems redundant if we use a spack submodule?
+    container: spack/ubuntu-focal:latest
+    strategy:
+      matrix:
+        spack_spec:
+          # Minimal Build
+          - exago@develop~mpi~ipopt~hiop~logging~python~raja~tests
+          - exago@develop+mpi~ipopt+hiop~logging~python~raja~tests ^openmpi
+          # See #18 - +hiop~mpi causes issues
+        # - exago@develop~mpi~ipopt+hiop+logging~python+raja+tests
+          # See #16 - +python~mpi causes issues
+        # - exago@develop~mpi~ipopt+hiop~logging+python~raja+tests
+          - exago@develop+mpi~ipopt+hiop~logging+python~raja+tests ^openmpi
+
+    name: Build ExaGO with Spack
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          # Once we move submodule deps into spack, we can do some more builds...
+          submodules: true
+
+      - name: Build Environment
+        env:
+          SPACK_SPEC: ${{ matrix.spack_spec }}
+        run: |
+          ls && pwd
+          . ./tpl/spack/share/spack/setup-env.sh
+          spack debug report
+          spack env create -d ./spack-env
+          spack env activate ./spack-env
+          spack add $SPACK_SPEC target=x86_64
+          spack develop --path $(pwd) --no-clone exago@develop
+          spack concretize --reuse
+          git config --global --add safe.directory $(pwd)
+          spack --stacktrace install --fail-fast
