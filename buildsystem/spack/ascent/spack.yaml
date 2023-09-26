@@ -81,7 +81,7 @@ spack:
       version: [3.12.10]
       variants: +coinhsl+metis~mumps
     magma:
-      version: [2.6.1]
+      version: [2.6.2]
       variants: +cuda cuda_arch=70 build_type=Release
     raja:
       version: [0.14.0]
