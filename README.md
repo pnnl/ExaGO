@@ -1,4 +1,4 @@
-# <b>Exa</b>scale <b>G</b>rid <b>O</b>ptimization toolkit (ExaGO<sup>TM</sup>) [![pipeline status](https://gitlab.pnnl.gov/exasgd/frameworks/exago/badges/develop/pipeline.svg)](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/commits/develop)
+# <b>Exa</b>scale <b>G</b>rid <b>O</b>ptimization toolkit (ExaGO<sup>TM</sup>) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) ![PNNL GitLab Push Mirror](https://github.com/pnnl/ExaGO/actions/workflows/pnnl_mirror.yaml/badge.svg) ![ORNL Ascent GitLab Push Mirror](https://github.com/pnnl/ExaGO/actions/workflows/ornl_ascent_mirror.yaml/badge.svg) ![pre-commit GitHub Action](https://github.com/pnnl/ExaGO/actions/workflows/pre_commit.yaml/badge.svg?event=pull_request) ![Spack CPU Build](https://github.com/pnnl/ExaGO/actions/workflows/spack_cpu_build.yaml/badge.svg?event=pull_request)
 
 <!--![](viz/images/network_gen_load_us.png)-->
 <img src="viz/images/network_gen_load_us.png">

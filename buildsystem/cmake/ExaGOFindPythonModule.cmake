@@ -60,8 +60,8 @@ macro(find_python_module module)
                import ${module}; \
                print(${module}.__version__)"
       RESULT_VARIABLE _${module}_ver_status
-      OUTPUT_VARIABLE _${module}_version ERROR_QUIET
-                      OUTPUT_STRIP_TRAILING_WHITESPACE
+      OUTPUT_VARIABLE _${module}_version
+      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     if(NOT ${_${module}_ver_status})
       set(${module}_VERSION
@@ -76,8 +76,8 @@ macro(find_python_module module)
             "from pkg_resources import parse_version; \
                    print(parse_version('${${module}_VERSION}') ${_op} parse_version('${${module}_tgtver}'))"
           RESULT_VARIABLE _${module}_verenuf_status
-          OUTPUT_VARIABLE _${module}_verenuf ERROR_QUIET
-                          OUTPUT_STRIP_TRAILING_WHITESPACE
+          OUTPUT_VARIABLE _${module}_verenuf
+          ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
         )
         if(NOT ${_${module}_verenuf_status})
           if(${_${module}_verenuf} STREQUAL "True")

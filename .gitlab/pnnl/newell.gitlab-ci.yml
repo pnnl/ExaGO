@@ -10,15 +10,7 @@ Newell Test:
     - .cluster_test
     - .newell
   variables:
-    CTESTARGS: " --timeout 240 --output-on-failure -E Python -LE newell-skip "
-    SCRIPT_ARGS: " --test-only --job=gcc-cuda "
-  needs: ['Newell Build']
-
-Newell Py Test:
-  extends:
-    - .cluster_py_test
-    - .newell
-  variables:
+    CTESTARGS: " --timeout 240 --output-on-failure -LE newell-skip "
     SCRIPT_ARGS: " --test-only --job=gcc-cuda "
   needs: ['Newell Build']
 

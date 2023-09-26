@@ -11,15 +11,7 @@ Incline Test:
     - .incline
   variables:
     SCRIPT_ARGS: " --test-only --job=clang-hip "
-    CTESTARGS: " --timeout 240 --output-on-failure -E Python -LE incline-skip "
-  needs: ['Incline Build']
-
-Incline Py Test:
-  extends:
-    - .cluster_py_test
-    - .incline
-  variables:
-    SCRIPT_ARGS: " --test-only --job=clang-hip "
+    CTESTARGS: " --timeout 240 --output-on-failure -LE incline-skip "
   needs: ['Incline Build']
 
 Incline Module Rebuild:

@@ -101,25 +101,12 @@ stages:
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
-    CTESTARGS: "--timeout 240 --output-on-failure -E Python"
+    CTESTARGS: "--timeout 240 --output-on-failure"
     OUTPUT_SUFFIX: "_test"
   artifacts:
     when: always
     paths:
       - partition
-
-.cluster_py_test:
-  stage: test
-  extends:
-    - .pnnl_tags_template
-    - .pnnl_script_template
-      # No after_script as only one test per platform cleans up
-      # Since python test should finish first, we let other test cleanup
-  variables:
-    # Don't clone for test jobs
-    GIT_STRATEGY: none
-    CTESTARGS: "--timeout 240 --output-on-failure -R Python"
-    OUTPUT_SUFFIX: "_test_python"
 
 .module_rebuild:
   needs: []
@@ -189,14 +176,11 @@ stages:
       jobid=$(sbatch --export=ALL -A EXASGD $SLURM_ARGS -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/buildsystem/build.sh $SCRIPT_ARGS)
       export jobid=$(echo $jobid | cut -f4 -d' ')
 
-      # Add partition for later if not a Python test
-      if [[ $CTESTARGS == *"-E Python"* ]]; then
-        partition=$(squeue -j $jobid -h --format="%P")
-        export partition=$(echo $partition | cut -f2 -d'=' | cut -f1 -d' ')
-        popd
-        echo "$partition" >> ./partition
-        pushd $WORKDIR
-      fi
+      partition=$(squeue -j $jobid -h --format="%P")
+      export partition=$(echo $partition | cut -f2 -d'=' | cut -f1 -d' ')
+      popd
+      echo "$partition" >> ./partition
+      pushd $WORKDIR
 
       # Unique jobid filename for this job
       echo $jobid > "$WORKDIR/jobid_${jobid}"
