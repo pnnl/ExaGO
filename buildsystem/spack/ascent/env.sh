@@ -10,4 +10,3 @@ export SPACK_CACHE=$BASE/$(whoami)/spack-cache
 export SPACK_PYTHON=$OLCF_PYTHON_ANACONDA3_ROOT
 export SPACK_DISABLE_LOCAL_CONFIG=1
 export SPACK_MIRROR=$BASE/mirror
-
