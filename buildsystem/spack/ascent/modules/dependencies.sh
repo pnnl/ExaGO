@@ -80,7 +80,7 @@ module load hiop/0.7.2-gcc-10.2.0-w2p65a2
 # ipopt@=3.12.10%gcc@=10.2.0+coinhsl~debug+metis~mumps build_system=autotools arch=linux-rhel8-power9le
 module load ipopt/3.12.10-gcc-10.2.0-xlgnc6h
 # hdf5@=1.14.2%gcc@=10.2.0~cxx~fortran~hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make arch=linux-rhel8-power9le
-module load hdf5/1.14.2-gcc-10.2.0-tewj74f
+module load hdf5/1.14.2-gcc-10.2.0-xmetp6k
 # hypre@=2.28.0%gcc@=10.2.0~caliper~complex~cuda~debug+fortran~gptune~int64~internal-superlu~magma~mixedint+mpi~openmp~rocm+shared~superlu-dist~sycl~umpire~unified-memory build_system=autotools arch=linux-rhel8-power9le
 module load hypre/2.28.0-gcc-10.2.0-2wiufff
 # parmetis@=4.0.3%gcc@=10.2.0~gdb~int64~ipo+shared build_system=cmake build_type=Release generator=make patches=4f89253,50ed208,704b84f arch=linux-rhel8-power9le
@@ -90,6 +90,6 @@ module load python/3.9.7-gcc-10.2.0-st6e4ps
 # superlu-dist@=8.1.2%gcc@=10.2.0~cuda~int64~ipo~openmp~rocm+shared build_system=cmake build_type=Release generator=make arch=linux-rhel8-power9le
 module load superlu-dist/8.1.2-gcc-10.2.0-nwcc7ra
 # petsc@=3.19.4%gcc@=10.2.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib+hdf5~hpddm~hwloc+hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind+metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse+superlu-dist~tetgen~trilinos~valgrind build_system=generic clanguage=C memalign=none arch=linux-rhel8-power9le
-module load petsc/3.19.4-gcc-10.2.0-ndt2j7p
+module load petsc/3.19.4-gcc-10.2.0-23ndvpy
 # exago@=develop%gcc@=10.2.0+cuda+hiop~ipo+ipopt+logging+mpi~python+raja~rocm build_system=cmake build_type=Release cuda_arch=70 generator=make arch=linux-rhel8-power9le
-## module load exago/develop-gcc-10.2.0-2cscvf2
+## module load exago/develop-gcc-10.2.0-f7ueda3
