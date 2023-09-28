@@ -1,6 +1,7 @@
 spack:
   specs:
   - exago@develop%gcc@10.2.0+cuda+mpi+hiop+raja+ipopt+python cuda_arch=70 build_type=Release
+    ^hiop+cuda+mpi+raja+kron+sparse+ginkgo+cusolver_lu cuda_arch=70
     ^cuda@11.4.2
   view: false
   concretizer:
