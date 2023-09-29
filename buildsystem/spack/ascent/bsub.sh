@@ -49,13 +49,18 @@ export HTTPS_PROXY="http://proxy.ccs.ornl.gov:3128"
 export proxy="proxy.ccs.ornl.gov:3128"
 export no_proxy='localhost,127.0.0.0/8,*.ccs.ornl.gov,*.olcf.ornl.gov,*.ncrc.gov'
 
+echo $PATH
+which unzip
 
-# Assuming that you already have a binary mirror configured
-# TODO - copy over coinhsl tarball beforehand?
 export MY_CLUSTER=ascent
-. buildsystem/spack/load_spack.sh && \
-spack develop --no-clone --path=$(pwd) exago@develop && \
-buildsystem/spack/configure_modules.sh 32
+. buildsystem/spack/load_spack.sh &&
+spack develop --no-clone --path=$(pwd) exago@develop &&
+spack mirror add local file://$SPACK_MIRROR &&
+# This is necessary?
+spack mirror add spack-public file://$SPACK_MIRROR &&
+spack mirror list &&
+cp /gpfs/wolf/proj-shared/csc359/src/coinhsl-archive-2019.05.21.tar.gz . &&
+jsrun -n 1 -c 40 buildsystem/spack/configure_modules.sh 40
 
 EXIT_CODE=$?
 # Required to trigger trap handler

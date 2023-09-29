@@ -1,24 +1,23 @@
 spack:
   specs:
-  - exago@develop+hiop+mpi+raja+cuda+ipopt~python cuda_arch=70 build_type=Release
-    ^hiop@0.7.2+mpi+cuda+raja+kron+sparse+ginkgo+cusolver_lu cuda_arch=70
+  - exago@develop+cuda cuda_arch=70
   view: false
   concretizer:
-    unify: true
-    reuse: false
-    duplicates:
-      strategy: none
+    unify: when_possible
+    reuse: true
+  config:
+    concretizer: clingo
+    install_tree:
+      root: $SPACK_INSTALL
+    source_cache: $SPACK_CACHE/source-cache
+    build_cache: $SPACK_CACHE/build-cache
+    misc_cache: $SPACK_CACHE/misc-cache
+    url_fetch_method: curl
+  modules:
+    default:
+      roots:
+        tcl: $SPACK_INSTALL/$SPACK_MODULES
   compilers:
-  - compiler:
-      spec: gcc@9.1.0
-      modules: [gcc/9.1.0]
-      paths:
-        cc: /sw/ascent/gcc/9.1.0-3/bin/gcc
-        cxx: /sw/ascent/gcc/9.1.0-3/bin/g++
-        f77: /sw/ascent/gcc/9.1.0-3/bin/gfortran
-        fc: /sw/ascent/gcc/9.1.0-3/bin/gfortran
-      operating_system: rhel8
-      target: ppc64le
   - compiler:
       spec: gcc@10.2.0
       modules: [gcc/10.2.0]
@@ -30,24 +29,30 @@ spack:
       flags: {}
       operating_system: rhel8
       target: ppc64le
-  config:
-    concretizer: clingo
-    install_tree:
-      root: $SPACK_INSTALL
-    source_cache: $SPACK_CACHE/source-cache
-    build_cache: $SPACK_CACHE/build-cache
-    misc_cache: $SPACK_CACHE/misc-cache
-    build_stage: $SPACK_CACHE/build-stage
-  modules:
-    default:
-      roots:
-        tcl: $SPACK_INSTALL/$SPACK_MODULES
   packages:
     all:
+      permissions:
+        write: group
+        read: world
+        group: csc359
       providers:
         mpi: [spectrum-mpi]
-        blas: [openblas]
-        lapack: [openblas]
+    exago:
+      require: +raja+hiop+ipopt
+    hiop:
+      require: '@develop+sparse+mpi+ginkgo+kron'
+    coinhsl:
+      require: '@2019.05.21'
+    ipopt:
+      require: '@3.12.10+coinhsl~metis~mumps'
+    magma:
+      require: '@2.6.2'
+    raja:
+      require: ~examples~exercises
+    umpire:
+      require: ~openmp~examples
+    petsc:
+      require: ~hypre~superlu-dist~hdf5~metis
     cmake:
       externals:
       - spec: cmake@3.22.2
@@ -78,17 +83,3 @@ spack:
       - spec: spectrum-mpi@10.4.0.3-20210112
         modules: [spectrum-mpi/10.4.0.3-20210112]
       buildable: false
-    coinhsl:
-      variants: +blas
-    ipopt:
-      version: [3.12.10]
-      variants: +coinhsl+metis~mumps
-    magma:
-      version: [2.6.2]
-      variants: +cuda cuda_arch=70 build_type=Release
-    raja:
-      version: [0.14.0]
-      variants: +cuda cuda_arch=70 build_type=Release
-    umpire:
-      version: [6.0.0]
-      variants: ~c+cuda cuda_arch=70 build_type=Release
