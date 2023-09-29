@@ -11,4 +11,3 @@ export SPACK_CACHE=$BASE/spack-cache
 export SPACK_MIRROR=$BASE/spack-mirror
 export SPACK_PYTHON=$CRAY_PYTHON_PREFIX
 export SPACK_DISABLE_LOCAL_CONFIG=1
-
