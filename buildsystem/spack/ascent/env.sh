@@ -15,4 +15,3 @@ export SPACK_DISABLE_LOCAL_CONFIG=true
 export tempdir=$SPACK_CACHE
 export TMP=$SPACK_CACHE
 export TMPDIR=$SPACK_CACHE
-
