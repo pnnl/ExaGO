@@ -42,12 +42,11 @@ struct PflowFunctionalityTests
         comm{comm} {
     int my_rank;
     auto rerr = MPI_Comm_rank(comm, &my_rank);
-    if(rerr)
+    if (rerr)
       throw ExaGOError("Error getting MPI rank number");
 
     auto err = MPI_Comm_size(comm, &nprocs);
-    if (err)
-    {
+    if (err) {
       if (my_rank == logging_rank)
         throw ExaGOError("Error getting MPI num ranks");
       exit(0);
@@ -60,7 +59,7 @@ struct PflowFunctionalityTests
 
     int my_rank;
     auto err = MPI_Comm_rank(comm, &my_rank);
-    if(err)
+    if (err)
       throw ExaGOError("Error getting MPI rank number");
 
     int n_preset_procs;
@@ -68,45 +67,41 @@ struct PflowFunctionalityTests
     int n_testcase_procs = -1;
     set_if_found(n_testcase_procs, testcase, "n_procs");
 
-    if (-1 != n_testcase_procs) 
-    {
-      if (my_rank == logging_rank)
-      {
+    if (-1 != n_testcase_procs) {
+      if (my_rank == logging_rank) {
         std::stringstream errs;
-        errs << "Number of processes should be declared globally in the preset area of the test suite TOML file, not inside each testcase.\n"
-          << "Testcase: "
-          << testcase << "\nWith presets:\n" << presets;
+        errs << "Number of processes should be declared globally in the preset "
+                "area of the test suite TOML file, not inside each testcase.\n"
+             << "Testcase: " << testcase << "\nWith presets:\n"
+             << presets;
         throw ExaGOError(errs.str().c_str());
       }
       exit(0);
-    }
-    else if (nprocs != n_preset_procs)
-    {
-      if (my_rank == logging_rank)
-      {
+    } else if (nprocs != n_preset_procs) {
+      if (my_rank == logging_rank) {
         std::stringstream errs;
         errs << "PFLOW Functionality test suite found " << n_preset_procs
-          << " processes specified in the presets of the test suite TOML file, but this test is being run with "
-          << nprocs << " processes.\nTestcase: "
-          << testcase << "\nWith presets:\n" << presets;
+             << " processes specified in the presets of the test suite TOML "
+                "file, but this test is being run with "
+             << nprocs << " processes.\nTestcase: " << testcase
+             << "\nWith presets:\n"
+             << presets;
         throw ExaGOError(errs.str().c_str());
       }
-      //printf("exago finalizing on rank %d\n", my_rank);
-      //ExaGOFinalize();
+      // printf("exago finalizing on rank %d\n", my_rank);
+      // ExaGOFinalize();
       exit(0);
       return;
     }
 
     auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
-      if (!is_available)
-      {
-        if (my_rank == logging_rank)
-        {
+      if (!is_available) {
+        if (my_rank == logging_rank) {
           std::stringstream errs;
           errs << "PFLOW Test suite expected option '" << opt
-            << "' to be available, but it was not found in this testsuite"
-            << " configuration:\n";
+               << "' to be available, but it was not found in this testsuite"
+               << " configuration:\n";
           errs << testcase << "\nwith these presets:\n" << presets;
           throw ExaGOError(errs.str().c_str());
         }
@@ -141,12 +136,13 @@ struct PflowFunctionalityTests
     PFLOW pflow;
     int my_rank;
     auto err = MPI_Comm_rank(comm, &my_rank);
-    if(err)
+    if (err)
       throw ExaGOError("Error getting MPI rank number");
 
-    if(my_rank == logging_rank)
-      std::cout<<"Test Description: "<<params.description<<std::endl;
-    ierr = PFLOWCreate(params.comm,&pflow);ExaGOCheckError(ierr);
+    if (my_rank == logging_rank)
+      std::cout << "Test Description: " << params.description << std::endl;
+    ierr = PFLOWCreate(params.comm, &pflow);
+    ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.network);
@@ -224,11 +220,11 @@ int main(int argc, char **argv) {
 
   int my_rank;
   auto err = MPI_Comm_rank(comm, &my_rank);
-  if(err)
+  if (err)
     throw ExaGOError("Error getting MPI rank number");
 
-  if(my_rank == 0)
-    ExaGOLog(EXAGO_LOG_INFO,"{}","Creating PFlow Functionality Test");
+  if (my_rank == 0)
+    ExaGOLog(EXAGO_LOG_INFO, "{}", "Creating PFlow Functionality Test");
   PflowFunctionalityTests test{std::string(argv[1]), comm};
   test.run_all_test_cases();
   test.print_report();

@@ -588,14 +588,14 @@ PetscErrorCode ExaGOFinalize() {
   int my_rank;
   int logging_rank = 0;
   auto err = MPI_Comm_rank(comm, &my_rank);
-  if(err)
+  if (err)
     throw ExaGOError("Error getting MPI rank number");
   bool flg;
   ExaGOLogIsUsingLogFile(&flg);
   if (flg) {
     std::string filename;
     ExaGOLogGetLoggerName(filename);
-    if(my_rank == logging_rank)
+    if (my_rank == logging_rank)
       ExaGOLog(EXAGO_LOG_INFO, "See logfile {} for output.", filename);
   }
   PetscFinalize();
