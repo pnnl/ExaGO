@@ -595,11 +595,7 @@ PetscErrorCode ExaGOFinalize() {
   if (flg) {
     std::string filename;
     ExaGOLogGetLoggerName(filename);
-<<<<<<< HEAD
     if (my_rank == logging_rank)
-=======
-    if(my_rank == logging_rank)
->>>>>>> d762ff9... add logging rank variable
       ExaGOLog(EXAGO_LOG_INFO, "See logfile {} for output.", filename);
   }
   PetscFinalize();
