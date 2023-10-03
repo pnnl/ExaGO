@@ -35,4 +35,3 @@ initialization_type = "DCOPF"
 num_iters = 12
 iter_range = 1
 obj_value = 4.1444507e+03
-

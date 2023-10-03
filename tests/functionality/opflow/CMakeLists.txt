@@ -64,7 +64,7 @@ if(EXAGO_INSTALL_TESTS)
     )
   endif()
 
-  if (EXAGO_ENABLE_GPU) 
+  if(EXAGO_ENABLE_GPU)
     exago_add_test(
       NAME
       FUNCTIONALITY_TEST_OPFLOW_RAJAHIOP_SPARSE_GPU_TOML_TESTSUITE
@@ -75,14 +75,14 @@ if(EXAGO_INSTALL_TESTS)
       DEPENDS
       HIOP
       RAJA
-      )
+    )
     if(EXAGO_ENABLE_HIOP AND EXAGO_ENABLE_RAJA)
       set_tests_properties(
         FUNCTIONALITY_TEST_OPFLOW_RAJAHIOP_SPARSE_GPU_TOML_TESTSUITE
         PROPERTIES LABELS "incline-skip;deception-skip;newell-skip"
-        )
+      )
     endif()
-  endif (EXAGO_ENABLE_GPU)
+  endif(EXAGO_ENABLE_GPU)
 
   # Note: All cartesian and/or current balance models are way behind. These
   # models should not be used and their tests should be disabled.
