@@ -45,5 +45,3 @@ initialization_type = "DCOPF"
 num_iters = 38              #usually 16 or 31
 iter_range = 15
 obj_value = 2.7552967e+04
-
-
