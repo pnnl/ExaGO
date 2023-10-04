@@ -104,6 +104,7 @@ struct ScopflowFunctionalityTestParameters {
 
 struct ScopflowFunctionalityTests
     : public FunctionalityTestContext<ScopflowFunctionalityTestParameters> {
+<<<<<<< HEAD
 
   using Params = ScopflowFunctionalityTestParameters;
   MPI_Comm comm;
@@ -127,6 +128,29 @@ struct ScopflowFunctionalityTests
     }
   }
 
+=======
+  using Params = ScopflowFunctionalityTestParameters;
+  MPI_Comm comm;
+  int nprocs;
+  int logging_rank = 0;
+  ScopflowFunctionalityTests(std::string testsuite_filename, MPI_Comm comm,
+                             int logging_verbosity = EXAGO_LOG_INFO)
+      : FunctionalityTestContext(testsuite_filename, logging_verbosity),
+        comm{comm} {
+    int my_rank;
+    auto rerr = MPI_Comm_rank(comm, &my_rank);
+    if (rerr)
+      throw ExaGOError("Error getting MPI rank number");
+
+    auto err = MPI_Comm_size(comm, &nprocs);
+    if (err) {
+      if (my_rank == logging_rank)
+        throw ExaGOError("Error getting MPI num ranks");
+      exit(0);
+    }
+  }
+
+>>>>>>> 1d83ec0... Brought SCOPFLOW test driver in line with PFLOW driver.
   void
   ensure_options_are_consistent(toml::value testcase,
                                 toml::value presets = toml::value{}) override {
@@ -135,6 +159,7 @@ struct ScopflowFunctionalityTests
     if (err)
       throw ExaGOError("Error getting MPI rank number");
 
+<<<<<<< HEAD
 #if 0
     int n_preset_procs;
     set_if_found(n_preset_procs, presets, "n_procs");
@@ -168,18 +193,28 @@ struct ScopflowFunctionalityTests
 #endif
 
 
+=======
+>>>>>>> 1d83ec0... Brought SCOPFLOW test driver in line with PFLOW driver.
     auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
       if (!is_available) {
         if (my_rank == logging_rank) {
           std::stringstream errs;
           errs << "SCOPFLOW Test suite expected option '" << opt
+<<<<<<< HEAD
                << "' to be available, but it was not found in this testsuite"
                << " configuration:\n";
           errs << testcase << "\nwith these presets:\n" << presets;
           throw ExaGOError(errs.str().c_str());
         }
         exit(0);
+=======
+            << "' to be available, but it was not found in this testsuite"
+            << " configuration:\n";
+          errs << testcase << "\nwith these presets:\n" << presets;
+          throw ExaGOError(errs.str().c_str());
+        }
+>>>>>>> 1d83ec0... Brought SCOPFLOW test driver in line with PFLOW driver.
       }
     };
 
