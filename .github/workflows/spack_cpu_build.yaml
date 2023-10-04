@@ -13,7 +13,8 @@ jobs:
       matrix:
         spack_spec:
           # Minimal Build
-          - exago@develop~mpi~ipopt~hiop~python~raja
+           # See #18 
+        # - exago@develop~mpi~ipopt~hiop~python~raja
           - exago@develop+mpi~ipopt+hiop~python~raja ^openmpi
           # See #18 - +hiop~mpi causes issues
         # - exago@develop~mpi~ipopt+hiop~python+raja
