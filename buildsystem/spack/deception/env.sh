@@ -8,8 +8,8 @@ module load python/miniconda3.9
 source /share/apps/python/miniconda3.9/etc/profile.d/conda.sh
 
 # Load system modules
-module load gcc/9.1.0
-module load cuda/11.4
+module load gcc/11.2.0
+module load cuda/11.8
 module load openmpi/4.1.0mlx5.0
 
 # Define environment variables for where spack stores key files
