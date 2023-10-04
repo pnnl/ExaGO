@@ -345,7 +345,7 @@ struct SopflowFunctionalityTests
         ierr = SOPFLOWSetWindGenProfile(sopflow, pbuf);
         ExaGOCheckError(ierr);
         ierr =
-            SOPFLOWSetTimeStepandDuration(sopflow, params.dT, params.duration);
+          SOPFLOWSetTimeStepandDuration(sopflow, params.dT, params.duration);
         ExaGOCheckError(ierr);
         strncpy(pbuf, params.pload.c_str(), params.pload.length());
         pbuf[params.pload.length()] = '\0';
