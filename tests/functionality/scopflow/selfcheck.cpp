@@ -250,6 +250,7 @@ struct ScopflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     SCOPFLOW scopflow;
+    char pbuf[PETSC_MAX_PATH_LEN];
     int rank;
     auto err = MPI_Comm_rank(comm, &rank);
     if (err)
@@ -265,34 +266,42 @@ struct ScopflowFunctionalityTests
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.network);
-    ierr = SCOPFLOWSetNetworkData(scopflow, params.network.c_str());
+    strncpy(pbuf,params.network.c_str(),params.network.length());
+    pbuf[params.network.length()] = '\0';
+    ierr = SCOPFLOWSetNetworkData(scopflow, pbuf);
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to contingency file
     std::string ext = FileNameExtension(params.contingencies);
     resolve_datafiles_path(params.contingencies);
+    strncpy(pbuf,params.contingencies.c_str(),params.contingencies.length());
+    pbuf[params.contingencies.length()] = '\0';
     if (ext == "con") {
-      ierr = SCOPFLOWSetContingencyData(scopflow, PSSE,
-                                        params.contingencies.c_str());
+      ierr = SCOPFLOWSetContingencyData(scopflow, PSSE, pbuf);
     } else {
-      ierr = SCOPFLOWSetContingencyData(scopflow, NATIVE,
-                                        params.contingencies.c_str());
+      ierr = SCOPFLOWSetContingencyData(scopflow, NATIVE, pbuf);
     }
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.pload);
-    ierr = SCOPFLOWSetPLoadData(scopflow, params.pload.c_str());
+    strncpy(pbuf,params.pload.c_str(),params.pload.length());
+    pbuf[params.pload.length()] = '\0';
+    ierr = SCOPFLOWSetPLoadData(scopflow, pbuf);
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.qload);
-    ierr = SCOPFLOWSetQLoadData(scopflow, params.qload.c_str());
+    strncpy(pbuf,params.qload.c_str(),params.qload.length());
+    pbuf[params.qload.length()] = '\0';
+    ierr = SCOPFLOWSetQLoadData(scopflow, pbuf);
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.windgen);
-    ierr = SCOPFLOWSetWindGenProfile(scopflow, params.windgen.c_str());
+    strncpy(pbuf,params.windgen.c_str(),params.windgen.length());
+    pbuf[params.windgen.length()] = '\0';
+    ierr = SCOPFLOWSetWindGenProfile(scopflow, pbuf);
     ExaGOCheckError(ierr);
 
     // Set number of contingencies

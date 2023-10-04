@@ -136,7 +136,7 @@ if(EXAGO_INSTALL_TESTS)
     COMMAND
     ${MPICMD}
     "-n"
-    3
+    1
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_serial.toml
   )

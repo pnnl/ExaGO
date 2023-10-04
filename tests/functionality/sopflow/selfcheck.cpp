@@ -260,6 +260,7 @@ struct SopflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     SOPFLOW sopflow;
+    char pbuf[PETSC_MAX_PATH_LEN];
     int rank;
 
     auto err = MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
@@ -276,7 +277,9 @@ struct SopflowFunctionalityTests
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.network);
-    ierr = SOPFLOWSetNetworkData(sopflow, params.network.c_str());
+    strncpy(pbuf,params.network.c_str(),params.network.length());
+    pbuf[params.network.length()] = '\0';
+    ierr = SOPFLOWSetNetworkData(sopflow, pbuf);
     ExaGOCheckError(ierr);
 
     ierr = SOPFLOWSetNumScenarios(sopflow, params.num_scenarios);
@@ -284,8 +287,10 @@ struct SopflowFunctionalityTests
 
     // Prepend installation directory to scenario data
     resolve_datafiles_path(params.scenfile);
+    strncpy(pbuf,params.scenfile.c_str(),params.scenfile.length());
+    pbuf[params.scenfile.length()] = '\0';
     ierr = SOPFLOWSetScenarioData(sopflow, SOPFLOW_NATIVE_SINGLEPERIOD, WIND,
-                                  params.scenfile.c_str());
+                                  pbuf);
     ExaGOCheckError(ierr);
 
     ierr = SOPFLOWSetInitializationType(sopflow, params.initialization_type);
@@ -320,8 +325,10 @@ struct SopflowFunctionalityTests
     ExaGOCheckError(ierr);
     if (params.multicontingency) {
       resolve_datafiles_path(params.contingencies);
+      strncpy(pbuf,params.contingencies.c_str(),params.contingencies.length());
+      pbuf[params.contingencies.length()] = '\0';
       ierr = SOPFLOWSetContingencyData(sopflow, NATIVE,
-                                       params.contingencies.c_str());
+                                       pbuf);
       ExaGOCheckError(ierr);
       ierr = SOPFLOWSetNumContingencies(sopflow, params.num_contingencies);
       ExaGOCheckError(ierr);
@@ -330,16 +337,23 @@ struct SopflowFunctionalityTests
       //   ierr =
       //   SOPFLOWEnableMultiPeriod(sopflow,(PetscBool)params.multiperiod);ExaGOCheckError(ierr);
       if (params.multiperiod) {
+        char qbuf[PETSC_MAX_PATH_LEN];
         resolve_datafiles_path(params.windgen);
         resolve_datafiles_path(params.pload);
         resolve_datafiles_path(params.qload);
-        ierr = SOPFLOWSetWindGenProfile(sopflow, params.windgen.c_str());
+        strncpy(pbuf,params.windgen.c_str(),params.windgen.length());
+        pbuf[params.windgen.length()] = '\0';
+        ierr = SOPFLOWSetWindGenProfile(sopflow, pbuf);
         ExaGOCheckError(ierr);
         ierr =
-            SOPFLOWSetTimeStepandDuration(sopflow, params.dT, params.duration);
+          SOPFLOWSetTimeStepandDuration(sopflow, params.dT, params.duration);
         ExaGOCheckError(ierr);
-        ierr = SOPFLOWSetLoadProfiles(sopflow, params.pload.c_str(),
-                                      params.qload.c_str());
+        strncpy(pbuf,params.pload.c_str(),params.pload.length());
+        pbuf[params.pload.length()] = '\0';
+        strncpy(qbuf,params.qload.c_str(),params.qload.length());
+        qbuf[params.qload.length()] = '\0';
+        ierr = SOPFLOWSetLoadProfiles(sopflow, pbuf,
+            qbuf);
         ExaGOCheckError(ierr);
       }
     } else {

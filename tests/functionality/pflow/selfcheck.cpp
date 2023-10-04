@@ -132,6 +132,7 @@ struct PflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     PFLOW pflow;
+    char pbuf[PETSC_MAX_PATH_LEN];
     int my_rank;
     auto err = MPI_Comm_rank(comm, &my_rank);
     if (err)
@@ -144,11 +145,13 @@ struct PflowFunctionalityTests
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.network);
+    strncpy(pbuf,params.network.c_str(),params.network.length());
+    pbuf[params.network.length()] = '\0';
     if (strstr(params.network.c_str(), ".raw") != NULL) {
-      ierr = PFLOWReadPSSERawData(pflow, params.network.c_str());
+      ierr = PFLOWReadPSSERawData(pflow, pbuf);
       ExaGOCheckError(ierr);
     } else {
-      ierr = PFLOWReadMatPowerData(pflow, params.network.c_str());
+      ierr = PFLOWReadMatPowerData(pflow, pbuf);
       ExaGOCheckError(ierr);
     }
 
