@@ -23,13 +23,13 @@ public:
                                      const double *hess,
                                      const char *master_options_file);
 
-  bool eval_f_rterm(size_t idx, const int &n, const double *x, double &rval);
-  bool eval_grad_rterm(size_t idx, const int &n, double *x,
+  bool eval_f_rterm(hiop::size_type idx, const int &n, const double *x, double &rval);
+  bool eval_grad_rterm(hiop::size_type idx, const int &n, double *x,
                        hiop::hiopVector &grad);
 
-  size_t get_num_rterms() const;
+  hiop::size_type get_num_rterms() const;
 
-  size_t get_num_vars() const;
+  hiop::size_type get_num_vars() const;
 
   void get_solution(double *x) const;
 
