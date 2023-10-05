@@ -283,7 +283,8 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(hiop::size_type idx, const int &n,
   return true;
 }
 
-bool SOPFLOWHIOPInterface::eval_grad_rterm(hiop::size_type idx, const int &n, double *x,
+bool SOPFLOWHIOPInterface::eval_grad_rterm(hiop::size_type idx, const int &n,
+                                           double *x,
                                            hiop::hiopVector &gradvec) {
   (void)idx;
   (void)n;

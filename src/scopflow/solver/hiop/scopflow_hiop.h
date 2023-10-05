@@ -23,7 +23,8 @@ public:
                                      const double *hess,
                                      const char *master_options_file);
 
-  bool eval_f_rterm(hiop::size_type idx, const int &n, const double *x, double &rval);
+  bool eval_f_rterm(hiop::size_type idx, const int &n, const double *x,
+                    double &rval);
   bool eval_grad_rterm(hiop::size_type idx, const int &n, double *x,
                        hiop::hiopVector &grad);
 

@@ -245,7 +245,8 @@ bool SCOPFLOWHIOPInterface::eval_f_rterm(hiop::size_type idx, const int &n,
   return true;
 }
 
-bool SCOPFLOWHIOPInterface::eval_grad_rterm(hiop::size_type idx, const int &n, double *x,
+bool SCOPFLOWHIOPInterface::eval_grad_rterm(hiop::size_type idx, const int &n,
+                                            double *x,
                                             hiop::hiopVector &gradvec) {
   (void)idx;
   (void)n;
@@ -311,11 +312,11 @@ bool SCOPFLOWHIOPInterface::eval_grad_rterm(hiop::size_type idx, const int &n, d
 }
 
 hiop::size_type SCOPFLOWHIOPInterface::get_num_rterms() const {
-  return (hiop::size_type) scopflow->Nc - 1;
+  return (hiop::size_type)scopflow->Nc - 1;
 }
 
 hiop::size_type SCOPFLOWHIOPInterface::get_num_vars() const {
-  return (hiop::size_type) scopflow->opflow0->nx;
+  return (hiop::size_type)scopflow->opflow0->nx;
 }
 
 void SCOPFLOWHIOPInterface::get_solution(double *x) const {
