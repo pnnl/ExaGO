@@ -135,6 +135,39 @@ struct ScopflowFunctionalityTests
     if (err)
       throw ExaGOError("Error getting MPI rank number");
 
+#if 0
+    int n_preset_procs;
+    set_if_found(n_preset_procs, presets, "n_procs");
+    int n_testcase_procs = -1;
+    set_if_found(n_testcase_procs, testcase, "n_procs");
+
+    if (-1 != n_testcase_procs) {
+      if (my_rank == logging_rank) {
+        std::stringstream errs;
+        errs << "Number of processes should be declared globally in the preset "
+                "area of the test suite TOML file, not inside each testcase.\n"
+             << "Testcase: " << testcase << "\nWith presets:\n"
+             << presets;
+        throw ExaGOError(errs.str().c_str());
+      }
+      exit(0);
+    } else if (nprocs != n_preset_procs) {
+      if (my_rank == logging_rank) {
+        std::stringstream errs;
+        errs << "SCOPFLOW Functionality test suite found " << n_preset_procs
+             << " processes specified in the presets of the test suite TOML "
+                "file, but this test is being run with "
+             << nprocs << " processes.\nTestcase: " << testcase
+             << "\nWith presets:\n"
+             << presets;
+        throw ExaGOError(errs.str().c_str());
+      }
+      exit(0);
+      return;
+    }
+#endif
+
+
     auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
       if (!is_available) {
