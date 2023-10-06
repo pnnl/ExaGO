@@ -88,8 +88,6 @@ struct PflowFunctionalityTests
              << presets;
         throw ExaGOError(errs.str().c_str());
       }
-      // printf("exago finalizing on rank %d\n", my_rank);
-      // ExaGOFinalize();
       exit(0);
       return;
     }
