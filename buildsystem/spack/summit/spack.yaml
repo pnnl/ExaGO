@@ -1,15 +1,14 @@
 spack:
   specs:
-  - exago@develop%gcc@10.2.0+cuda+mpi+hiop+raja+ipopt+python cuda_arch=70
-    ^petsc@3.18.0~hdf5~hypre~mumps~superlu-dist 
-    ^hiop@develop+cuda+raja+sparse+mpi+deepchecking+ginkgo+cusolver cuda_arch=70
-    ^raja@0.14.0
-    ^umpire@6.0.0
-    ^openblas
+  - exago@develop%gcc@10.2.0+cuda+mpi+hiop+raja+ipopt+python cuda_arch=70 build_type=Release
+    ^hiop@0.7.2+cuda+mpi+raja+kron+sparse+ginkgo+cusolver_lu cuda_arch=70
+    ^cuda@11.4.2
   view: false
   concretizer:
-    unify: when_possible
-    reuse: true
+    unify: true
+    reuse: false
+    duplicates:
+      strategy: none
   compilers:
   - compiler:
       spec: gcc@10.2.0
@@ -59,8 +58,8 @@ spack:
       variants: +blas
     cuda:
       externals:
-      - spec: cuda@11.5.2
-        modules: [cuda/11.5.2]
+      - spec: cuda@11.4.2
+        modules: [cuda/11.4.2]
       buildable: false
     raja:
       version: [0.14.0]
@@ -69,7 +68,7 @@ spack:
       version: [6.0.0]
       variants: ~c+cuda cuda_arch=70 build_type=Release
     magma:
-      version: [2.6.1]
+      version: [2.7.2]
       variants: +cuda cuda_arch=70 build_type=Release
     cmake:
       externals:
@@ -90,4 +89,9 @@ spack:
       externals:
       - spec: perl@5.30.1
         modules: [perl/5.30.1]
+      buildable: false
+    git:
+      externals:
+      - spec: git@2.31.1
+        modules: [git/2.31.1]
       buildable: false

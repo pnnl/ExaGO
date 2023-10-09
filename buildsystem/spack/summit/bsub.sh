@@ -2,7 +2,7 @@
 
 #BSUB -P csc359
 #BSUB -W 2:00
-#BSUB --nnodes 1
+#BSUB -nnodes 1
 #BSUB -J exasgd_spack_install
 #BSUB -o spack_install.%J
 #BSUB -e spack_install.%J
