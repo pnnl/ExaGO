@@ -753,6 +753,7 @@ PetscErrorCode OPFLOWSolverDestroy_HIOPSPARSE(OPFLOW opflow) {
 
   PetscFunctionBegin;
 
+  delete hiop->solver;
   delete hiop->sp;
   delete hiop->nlp;
 
