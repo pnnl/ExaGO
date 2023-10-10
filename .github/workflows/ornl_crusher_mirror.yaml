@@ -32,6 +32,8 @@ jobs:
             GIT_USERNAME:  ${{ secrets.GIT_USER }}
             GIT_PASSWORD:  ${{ secrets.ORNL_CRUSHER_GIT_PASSWORD }}
 
-      #  Trigger CI pipeline since it was skipped in the above push
-       - name: Trigger Pipeline
-         run: curl -X POST -F token=${{ secrets.ORNL_CRUSHER_PIPELINE_TRIGGER }} -F ref=${{ steps.extract_branch.outputs.branch }} https://code.olcf.ornl.gov/api/v4/projects/48/trigger/pipeline
+  # Can only run on Crusher with web or schedule pipeline, so no way to trigger
+  #  #  Trigger CI pipeline since it was skipped in the above push
+  #   - name: Trigger Pipeline
+  #     run: curl -X POST -F token=${{ secrets.ORNL_CRUSHER_PIPELINE_TRIGGER }} -F ref=${{ steps.extract_branch.outputs.branch }} https://code.olcf.ornl.gov/api/v4/projects/48/trigger/pipeline
+
