@@ -1,5 +1,6 @@
 spack:
   specs:
+  - patch
   - exago@develop+cuda cuda_arch=70
   view: false
   concretizer:
@@ -67,6 +68,41 @@ spack:
       externals:
       - spec: openblas@0.3.17
         modules: [openblas/0.3.17-omp]
+      buildable: false
+    tar:
+      externals:
+      - spec: tar@1.34
+        modules: [tar/1.34]
+      buildable: false
+    curl:
+      externals:
+      - spec: curl@7.79.0
+        modules: [curl/7.79.0]
+      buildable: false
+    git:
+      externals:
+      - spec: git@2.35.1
+        modules: [git/2.35.1]
+      buildable: false
+    texinfo:
+      externals:
+      - spec: texinfo@6.5
+        modules: [texinfo/6.5]
+      buildable: false
+    autoconf:
+      externals:
+      - spec: autoconf@2.69
+        modules: [autoconf/2.69]
+      buildable: false
+    gmp:
+      externals:
+      - spec: gmp@6.2.1
+        modules: [gmp/6.2.1]
+      buildable: false
+    metis:
+      externals:
+      - spec: metis@5.1.0
+        modules: [metis/5.1.0]
       buildable: false
     perl:
       externals:

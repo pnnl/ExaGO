@@ -55,11 +55,19 @@ which unzip
 export MY_CLUSTER=ascent
 . buildsystem/spack/load_spack.sh &&
 spack develop --no-clone --path=$(pwd) exago@develop &&
+spack develop --clone --force FORCE --path=$(pwd)/hiop hiop@develop &&
+cd $(pwd)/hiop &&
+git submodule update --init --recursive &&
+cd - &&
 spack mirror add local file://$SPACK_MIRROR &&
 # This is necessary?
 spack mirror add spack-public file://$SPACK_MIRROR &&
 spack mirror list &&
 cp /gpfs/wolf/proj-shared/csc359/src/coinhsl-archive-2019.05.21.tar.gz . &&
+# Need to load self-installed patch since it is not available on compute nodes
+spack concretize -f &&
+spack install patch &&
+spack load patch &&
 jsrun -n 1 -c 40 buildsystem/spack/configure_modules.sh 40
 
 EXIT_CODE=$?
