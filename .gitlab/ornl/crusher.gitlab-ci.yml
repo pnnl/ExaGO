@@ -1,6 +1,6 @@
 workflow:
   rules:
-     - when: always
+    - if: '$CI_PIPELINE_SOURCE == "trigger"'
 
 # https://stackoverflow.com/questions/67009007
 # We have to use YAML anchors for rules here
