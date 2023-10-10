@@ -124,7 +124,7 @@ Crusher Test:
     STATUS_NAME: amd64/clang@14.0/rocm@5.2.0/MI100@gfx908
   tags:
     - nobatch
-  extends: .ascent_environment_template
+  extends: .crusher_variables
   environment:
     name: reporting-gitlab
   resource_group: status
