@@ -67,7 +67,7 @@ workflow:
   # Only for slurm tagged jobs...
   variables:
     SCHEDULER_PARAMETERS: "-N 1 -A CSC359 --time=60"
-    WORKDIR: /gpfs/alpine/csc359/proj-shared/ci/${CI_PIPELINE_ID}
+    WORKDIR: /lustre/orion/csc359/proj-shared/ci/${CI_PIPELINE_ID}
 
 .crusher_rules:
   rules:
