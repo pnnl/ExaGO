@@ -122,8 +122,7 @@ Crusher Test:
     GIT_STRATEGY: none
     STATUS_PROJECT: pnnl/ExaGO
     STATUS_NAME: amd64/clang@14.0/rocm@5.2.0/MI100@gfx908
-  tags:
-    - nobatch
+  tags: [crusher, shell]
   extends: .crusher_variables
   environment:
     name: reporting-gitlab
