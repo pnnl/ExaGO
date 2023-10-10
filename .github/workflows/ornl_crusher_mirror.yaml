@@ -36,4 +36,3 @@ jobs:
   #  #  Trigger CI pipeline since it was skipped in the above push
   #   - name: Trigger Pipeline
   #     run: curl -X POST -F token=${{ secrets.ORNL_CRUSHER_PIPELINE_TRIGGER }} -F ref=${{ steps.extract_branch.outputs.branch }} https://code.olcf.ornl.gov/api/v4/projects/48/trigger/pipeline
-
