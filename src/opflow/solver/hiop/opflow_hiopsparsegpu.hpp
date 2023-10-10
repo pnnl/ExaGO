@@ -3,8 +3,8 @@
 #if defined(EXAGO_ENABLE_HIOP)
 #if defined(EXAGO_ENABLE_HIOP_SPARSE)
 
-#ifndef OPFLOWHIOPSPARSE_HPP
-#define OPFFLOWHIOPSPARSE_HPP
+#ifndef OPFLOWHIOPSPARSEGPU_HPP
+#define OPFLOWHIOPSPARSEGPU_HPP
 #include <hiopAlgFilterIPM.hpp>
 #include <hiopInterface.hpp>
 #include <hiopMatrix.hpp>
@@ -16,11 +16,20 @@
 #include <IpIpoptApplication.hpp>
 #endif
 
-class OPFLOWHIOPSPARSEInterface : public hiop::hiopInterfaceSparse {
-public:
-  OPFLOWHIOPSPARSEInterface(OPFLOW);
+#include <cstdlib>
+#include <string>
+#include <cstring>
+#include <cstdio>
 
-  ~OPFLOWHIOPSPARSEInterface() {}
+#ifdef HIOP_USE_MAGMA
+#include "magma_v2.h"
+#endif
+
+class OPFLOWHIOPSPARSEGPUInterface : public hiop::hiopInterfaceSparse {
+public:
+  OPFLOWHIOPSPARSEGPUInterface(OPFLOW);
+
+  ~OPFLOWHIOPSPARSEGPUInterface() {}
 
   bool get_prob_sizes(hiop::size_type &n, hiop::size_type &m);
 
@@ -89,11 +98,11 @@ private:
   OPFLOW opflow;
 };
 
-typedef struct _p_OPFLOWSolver_HIOPSPARSE *OPFLOWSolver_HIOPSPARSE;
+typedef struct _p_OPFLOWSolver_HIOPSPARSEGPU *OPFLOWSolver_HIOPSPARSEGPU;
 
-struct _p_OPFLOWSolver_HIOPSPARSE {
+struct _p_OPFLOWSolver_HIOPSPARSEGPU {
 
-  OPFLOWHIOPSPARSEInterface *nlp;
+  OPFLOWHIOPSPARSEGPUInterface *nlp;
   hiop::hiopSolveStatus status;
   hiop::hiopNlpSparse *sp;
   hiop::hiopAlgFilterIPMNewton *solver;

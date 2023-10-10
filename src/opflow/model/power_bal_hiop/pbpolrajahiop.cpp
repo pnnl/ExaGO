@@ -509,7 +509,7 @@ extern PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW, PetscInt *,
 PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOP(OPFLOW opflow) {
   PetscFunctionBegin;
 
-  PbpolModelRajaHiop *pbpol = new PbpolModelRajaHiop(opflow);
+  PbpolModelRajaHiop *pbpol = new PbpolModelRajaHiop();
 
   opflow->model = pbpol;
 

@@ -1,10 +1,14 @@
 #include <exago_config.h>
 
 #if defined(EXAGO_ENABLE_RAJA)
+#if defined(EXAGO_ENABLE_HIOP_SPARSE)
 
 #pragma once
 
-#include "pbpolrajahiop.h"
+#include <umpire/Allocator.hpp>
+#include <umpire/ResourceManager.hpp>
+
+#include "pbpolrajahiopsparse.hpp"
 
 /**
 
@@ -24,4 +28,5 @@ void registerWith(T *ptr, SizeType N, umpire::ResourceManager &resmgr,
   resmgr.registerAllocation(ptr, record);
 }
 
-#endif // EXAGO_ENABLE_HIOP
+#endif // EXAGO_ENABLE_HIOP_SPARSE
+#endif // EXAGO_ENABLE_HIOP_RAJA
