@@ -1,6 +1,7 @@
 workflow:
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "trigger"'
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PINELINE_SOURCE == "schedule"
 
 # https://stackoverflow.com/questions/67009007
 # We have to use YAML anchors for rules here
