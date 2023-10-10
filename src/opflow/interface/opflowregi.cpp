@@ -76,9 +76,10 @@ extern PetscErrorCode OPFLOWModelCreate_PBPOLHIOP(OPFLOW);
 
 #if defined(EXAGO_ENABLE_RAJA)
 extern PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOP(OPFLOW);
+#endif
+
 #if defined(EXAGO_ENABLE_HIOP_SPARSE)
 extern PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOPSPARSE(OPFLOW);
-#endif
 #endif
 
 /*
@@ -117,11 +118,12 @@ PetscErrorCode OPFLOWModelRegisterAll(OPFLOW opflow) {
   ierr = OPFLOWModelRegister(opflow, OPFLOWMODEL_PBPOLRAJAHIOP,
                              OPFLOWModelCreate_PBPOLRAJAHIOP);
   CHKERRQ(ierr);
+#endif
+
 #if defined(EXAGO_ENABLE_HIOP_SPARSE)
   ierr = OPFLOWModelRegister(opflow, OPFLOWMODEL_PBPOLRAJAHIOPSPARSE,
                              OPFLOWModelCreate_PBPOLRAJAHIOPSPARSE);
   CHKERRQ(ierr);
-#endif
 #endif
 
   opflow->OPFLOWModelRegisterAllCalled = PETSC_TRUE;
