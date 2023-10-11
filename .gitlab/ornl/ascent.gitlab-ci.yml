@@ -163,7 +163,7 @@ Ascent-Module-Build:
     - git add ./buildsystem/spack/ascent/modules/*
     - git config user.name "spack-auto-module"
     - git config user.email "spack.bot@no-reply.com"
-    - git commit -m "Update Ascent spack built tcl modules"
+    - git commit -m "Update Ascent spack built tcl modules [ascent-test]"
     - git remote set-url origin https://gitlab-ci-token:${SPACK_GIT_TOKEN}@github.com/pnnl/ExaGO.git
     - git pull --rebase origin ${CI_COMMIT_REF_NAME}
     - git push origin ${CI_COMMIT_REF_NAME}
