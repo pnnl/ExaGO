@@ -83,6 +83,7 @@ workflow:
 
 # Crusher Jobs
 Crusher Build:
+  needs: []
   stage: build
   tags: [crusher, shell]
   script:
@@ -162,6 +163,7 @@ pending:
   stage: .pre
 
 success:
+  needs: ['Crusher Test']
   extends: .report-status
   stage: .post
        
