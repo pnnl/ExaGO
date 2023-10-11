@@ -135,7 +135,7 @@ Ascent-Module-Init:
   rules:
     - if: '$CI_COMMIT_TITLE =~ /\[ascent-rebuild\]/'
       when: always
-  stage: pre-build
+  stage: build
   tags:
     - nobatch
   script:
@@ -153,7 +153,7 @@ Ascent-Module-Build:
     - if: '$CI_COMMIT_TITLE =~ /\[ascent-rebuild\]/'
       when: always
   extends: .ascent_environment_template
-  stage: build
+  stage: test
   tags:
     - batch
   script:
