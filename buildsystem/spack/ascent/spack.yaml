@@ -1,7 +1,8 @@
 spack:
   specs:
   - patch
-  - exago@develop+cuda cuda_arch=70
+  # See #19 for python issues
+  - exago@develop+cuda~python cuda_arch=70
   view: false
   concretizer:
     unify: when_possible
@@ -41,7 +42,7 @@ spack:
     exago:
       require: +raja+hiop+ipopt
     hiop:
-      require: '@develop+sparse+mpi+ginkgo+kron'
+      require: '@develop+sparse+mpi+ginkgo+kron+cusolver_lu'
     coinhsl:
       require: '@2019.05.21'
     ipopt:
