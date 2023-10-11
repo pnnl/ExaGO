@@ -5,7 +5,7 @@ export MY_CLUSTER=ascent
 module reset
 
 # Load system modules
-module load gcc/10.2.0
+module load gcc/11.2.0
 module load spectrum-mpi/10.4.0.3-20210112
 
 export CC=$(which gcc)
