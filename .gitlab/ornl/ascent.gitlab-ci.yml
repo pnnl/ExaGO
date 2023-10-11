@@ -102,6 +102,7 @@
     - rm -rf "$WORKDIR"
 
 Ascent Build:
+  needs: []
   stage: build
   tags:
     - nobatch
@@ -112,8 +113,7 @@ Ascent Build:
 
 Ascent Test:
   stage: test
-  dependencies:
-    - 'Ascent Build'
+  needs: ['Ascent Build']
   tags:
     - batch
   variables:
