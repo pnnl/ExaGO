@@ -214,6 +214,7 @@ pending:
   stage: .pre
 
 success:
+  needs: ['Ascent Test']
   extends: .report-status
   stage: .post
        
