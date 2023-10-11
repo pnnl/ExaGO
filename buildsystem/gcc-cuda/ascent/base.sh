@@ -14,4 +14,5 @@ export FC=$(which gfortran)
 
 export MY_PETSC_DIR=$PETSC_DIR
 export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DEXAGO_CTEST_LAUNCH_COMMAND='jsrun -g 1 -n 1'"
+export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DEXAGO_ENABLE_PYTHON=OFF"
 export EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS -DLAPACK_LIBRARIES:STRING=/sw/ascent/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-10.2.0/openblas-0.3.17-6te4qwdzetkoyitdryljjstei6jw77gg/lib/libopenblas.so"
