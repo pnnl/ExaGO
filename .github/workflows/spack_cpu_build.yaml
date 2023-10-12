@@ -21,8 +21,8 @@ jobs:
           # See #16 - +python~mpi causes issues
         # - exago@develop~mpi~ipopt+hiop+python~raja
           - exago@develop+mpi~ipopt+hiop+python~raja ^openmpi
-        # Builds with hiop sparse and without Ipopt are useful for edge cases
-          - exago@develop~mpi~ipopt+hiop~python+raja ^hiop+raja+sparse
+        # Builds with hiop and without Ipopt are useful for edge cases
+          - exago@develop~mpi~ipopt+hiop~python+raja ^hiop+raja~sparse
 
     name: Build ExaGO with Spack
     steps:
