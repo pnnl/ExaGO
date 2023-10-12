@@ -12,8 +12,8 @@ jobs:
     strategy:
       matrix:
         spack_spec:
-          # Minimal Build
-           # See #18 
+          # Minimal Build(s)
+          # See #39 - ~python~mpi causes issues
         # - exago@develop~mpi~ipopt~hiop~python~raja
           - exago@develop+mpi~ipopt+hiop~python~raja ^openmpi
           # See #18 - +hiop~mpi causes issues

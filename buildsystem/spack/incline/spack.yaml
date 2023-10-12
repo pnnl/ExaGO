@@ -3,6 +3,7 @@ spack:
     - exago@develop%clang@15.0.0-rocm5.3.0 amdgpu_target=gfx908
   view: false
   concretizer:
+    unify: when_possible
     reuse: false
   config:
     install_tree:
@@ -55,7 +56,8 @@ spack:
       require: ~python+raja+hiop+rocm+ipopt 
     hiop:
     # TODO - build with Ginkgo #463
-      require: '@develop+sparse+mpi+raja+rocm~ginkgo+kron'
+    # TODO - updgrade to develop / 1.0.0 #28
+      require: '@1.0.0+sparse+mpi+raja+rocm~ginkgo+kron'
     ipopt:
       require: '@3.12.10~metis+coinhsl~mumps'
     # Pin version of OpenBlas for testing results
