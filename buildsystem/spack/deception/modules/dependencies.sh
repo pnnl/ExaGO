@@ -73,8 +73,8 @@ module load mpfr/4.2.0-gcc-9.1.0-drz5hf3
 module load suite-sparse/5.13.0-gcc-9.1.0-dtf7u2q
 # umpire@=6.0.0%gcc@=9.1.0+c+cuda~device_alloc~deviceconst~examples~fortran~ipo~numa~openmp~rocm~shared build_system=cmake build_type=Release cuda_arch=60,70,75,80 generator=make tests=none arch=linux-centos7-zen2
 module load umpire/6.0.0-gcc-9.1.0-2vvmiwu
-# hiop@=develop%gcc@=9.1.0+cuda~cusolver_lu~deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=MinSizeRel cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/23473/spack_deception/hiop generator=make arch=linux-centos7-zen2
-module load hiop/develop-gcc-9.1.0-dujbsam
+# hiop@=1.0.0%gcc@=9.1.0+cuda~cusolver_lu~deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=MinSizeRel cuda_arch=60,70,75,80 generator=make arch=linux-centos7-zen2
+module load hiop/1.0.0-gcc-9.1.0-qfpr6gn
 # ipopt@=3.12.10%gcc@=9.1.0+coinhsl~debug~metis~mumps build_system=autotools arch=linux-centos7-zen2
 module load ipopt/3.12.10-gcc-9.1.0-z2vb3e2
 # python@=3.9.12%gcc@=9.1.0+bz2+crypt+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tkinter+uuid+zlib build_system=generic patches=0d98e93,4c24573,ebdca64,f2fd060 arch=linux-centos7-zen2
@@ -125,5 +125,5 @@ module load py-hatch-vcs/0.3.0-gcc-9.1.0-kme2aly
 module load py-iniconfig/2.0.0-gcc-9.1.0-tetlhgx
 # py-pytest@=7.3.2%gcc@=9.1.0 build_system=python_pip arch=linux-centos7-zen2
 module load py-pytest/7.3.2-gcc-9.1.0-24ednh3
-# exago@=develop%gcc@=9.1.0+cuda+hiop~ipo+ipopt~logging+mpi+python+raja~rocm build_system=cmake build_type=MinSizeRel cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/23473/spack_deception generator=make arch=linux-centos7-zen2
-## module load exago/develop-gcc-9.1.0-gikxvp2
+# exago@=develop%gcc@=9.1.0+cuda+hiop~ipo+ipopt~logging+mpi+python+raja~rocm build_system=cmake build_type=MinSizeRel cuda_arch=60,70,75,80 generator=make arch=linux-centos7-zen2
+## module load exago/develop-gcc-9.1.0-yikmhnk
