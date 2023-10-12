@@ -173,7 +173,6 @@ Ascent-Module-Build:
 
 # -- Reporting Ascent Status to PNNL GitHub
 .report-job:
-  when: always
   variables:
     MY_CLUSTER: Ascent
     GIT_STRATEGY: none
