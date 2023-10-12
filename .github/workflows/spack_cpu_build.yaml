@@ -11,25 +11,29 @@ jobs:
     container: spack/ubuntu-focal:latest
     strategy:
       matrix:
+        # Minimal Build(s)
+        # Need S3 mirror to have these builds speedup
         spack_spec:
-          # Minimal Build(s)
           # See #39 - ~python~mpi causes issues
         # - exago@develop~mpi~ipopt~hiop~python~raja
+          # See #44 - +mpi~python should fail if no python in system,
+          #                       but the runner happens to have one...
           - exago@develop+mpi~ipopt+hiop~python~raja ^openmpi
           # See #18 - +hiop~mpi causes issues
         # - exago@develop~mpi~ipopt+hiop~python+raja
           # See #16 - +python~mpi causes issues
         # - exago@develop~mpi~ipopt+hiop+python~raja
           - exago@develop+mpi~ipopt+hiop+python~raja ^openmpi
-        # Builds with hiop and without Ipopt are useful for edge cases
-          - exago@develop~mpi~ipopt+hiop~python+raja ^hiop+raja~sparse
+          # See #40 - +hiop+raja~ipopt ^hiop~sparse is useful for edge cases
+          - exago@develop+mpi~ipopt+hiop~python+raja ^openmpi ^hiop+raja~sparse 
 
     name: Build ExaGO with Spack
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          # Once we move submodule deps into spack, we can do some more builds...
+          # Once we move submodule deps into spack, we can do some more builds
+          # Also need to change build script to use spack from base image
           submodules: true
 
       - name: Build Environment
