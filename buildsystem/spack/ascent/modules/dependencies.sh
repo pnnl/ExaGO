@@ -63,13 +63,83 @@ module load mpfr/4.2.0-gcc-11.2.0-kom6hev
 module load suite-sparse/5.13.0-gcc-11.2.0-nxauhvy
 # umpire@=6.0.0%gcc@=11.2.0+c+cuda~device_alloc~deviceconst~examples~fortran~ipo~numa~openmp~rocm~shared build_system=cmake build_type=Release cuda_arch=70 generator=make tests=none arch=linux-rhel8-power9le
 module load umpire/6.0.0-gcc-11.2.0-bg3pjfg
-# hiop@=develop%gcc@=11.2.0+cuda+cusolver_lu~deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=MinSizeRel cuda_arch=70 dev_path=/gpfs/wolf/proj-shared/csc359/ci/466959/hiop generator=make arch=linux-rhel8-power9le
-module load hiop/develop-gcc-11.2.0-rcgwvnh
+# hiop@=1.0.0%gcc@=11.2.0+cuda+cusolver_lu~deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=MinSizeRel cuda_arch=70 generator=make arch=linux-rhel8-power9le
+module load hiop/1.0.0-gcc-11.2.0-fc36rfn
 # ipopt@=3.12.10%gcc@=11.2.0+coinhsl~debug~metis~mumps build_system=autotools arch=linux-rhel8-power9le
 module load ipopt/3.12.10-gcc-11.2.0-7fkxunc
-# python@=3.9.7%gcc@=11.2.0+bz2+crypt+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tkinter+uuid+zlib build_system=generic patches=0d98e93,4c24573,ebdca64,f2fd060 arch=linux-rhel8-power9le
-module load python/3.9.7-gcc-11.2.0-gruthp3
+# bzip2@=1.0.8%gcc@=11.2.0~debug~pic+shared build_system=generic arch=linux-rhel8-power9le
+module load bzip2/1.0.8-gcc-11.2.0-mkrdkja
+# libmd@=1.0.4%gcc@=11.2.0 build_system=autotools arch=linux-rhel8-power9le
+module load libmd/1.0.4-gcc-11.2.0-7fmyd5e
+# libbsd@=0.11.7%gcc@=11.2.0 build_system=autotools arch=linux-rhel8-power9le
+module load libbsd/0.11.7-gcc-11.2.0-l7yvt7d
+# expat@=2.5.0%gcc@=11.2.0+libbsd build_system=autotools arch=linux-rhel8-power9le
+module load expat/2.5.0-gcc-11.2.0-v4j5xwo
+# ncurses@=6.4%gcc@=11.2.0~symlinks+termlib abi=none build_system=autotools arch=linux-rhel8-power9le
+module load ncurses/6.4-gcc-11.2.0-zer2yt3
+# readline@=8.2%gcc@=11.2.0 build_system=autotools patches=bbf97f1 arch=linux-rhel8-power9le
+module load readline/8.2-gcc-11.2.0-r2dcinw
+# gdbm@=1.23%gcc@=11.2.0 build_system=autotools arch=linux-rhel8-power9le
+module load gdbm/1.23-gcc-11.2.0-qwankyx
+# tar@=1.34%gcc@=11.2.0 build_system=autotools zip=pigz arch=linux-rhel8-power9le
+module load tar/1.34-gcc-11.2.0-2jrcbem
+# gettext@=0.21.1%gcc@=11.2.0+bzip2+curses+git~libunistring+libxml2+tar+xz build_system=autotools arch=linux-rhel8-power9le
+module load gettext/0.21.1-gcc-11.2.0-hq5nrhb
+# libffi@=3.4.4%gcc@=11.2.0 build_system=autotools arch=linux-rhel8-power9le
+module load libffi/3.4.4-gcc-11.2.0-n4x452n
+# libxcrypt@=4.4.35%gcc@=11.2.0~obsolete_api build_system=autotools patches=4885da3 arch=linux-rhel8-power9le
+module load libxcrypt/4.4.35-gcc-11.2.0-x7eom22
+# ca-certificates-mozilla@=2023-05-30%gcc@=11.2.0 build_system=generic arch=linux-rhel8-power9le
+module load ca-certificates-mozilla/2023-05-30-gcc-11.2.0-iekj6zv
+# openssl@=3.1.3%gcc@=11.2.0~docs+shared build_system=generic certs=mozilla arch=linux-rhel8-power9le
+## module load openssl/3.1.3-gcc-11.2.0-gwvthxv
+# sqlite@=3.42.0%gcc@=11.2.0+column_metadata+dynamic_extensions+fts~functions+rtree build_system=autotools arch=linux-rhel8-power9le
+module load sqlite/3.42.0-gcc-11.2.0-ycvjqs4
+# util-linux-uuid@=2.38.1%gcc@=11.2.0 build_system=autotools arch=linux-rhel8-power9le
+module load util-linux-uuid/2.38.1-gcc-11.2.0-5tjc54d
+# python@=3.11.4%gcc@=11.2.0+bz2+crypt+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tkinter+uuid+zlib build_system=generic patches=13fa8bf,b0615b2,ebdca64,f2fd060 arch=linux-rhel8-power9le
+module load python/3.11.4-gcc-11.2.0-ttme25e
 # petsc@=3.19.6%gcc@=11.2.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~tetgen~trilinos~valgrind build_system=generic clanguage=C memalign=none arch=linux-rhel8-power9le
-module load petsc/3.19.6-gcc-11.2.0-qj3xkii
-# exago@=develop%gcc@=11.2.0+cuda+hiop~ipo+ipopt~logging+mpi~python+raja~rocm build_system=cmake build_type=Debug cuda_arch=70 dev_path=/gpfs/wolf/proj-shared/csc359/ci/466959 generator=make arch=linux-rhel8-power9le
-## module load exago/develop-gcc-11.2.0-uweodnf
+module load petsc/3.19.6-gcc-11.2.0-eriyan4
+# py-pip@=23.1.2%gcc@=11.2.0 build_system=generic arch=linux-rhel8-power9le
+module load py-pip/23.1.2-gcc-11.2.0-ic7sml4
+# py-setuptools@=68.0.0%gcc@=11.2.0 build_system=generic arch=linux-rhel8-power9le
+module load py-setuptools/68.0.0-gcc-11.2.0-bvs3vhu
+# py-wheel@=0.37.1%gcc@=11.2.0 build_system=generic arch=linux-rhel8-power9le
+module load py-wheel/0.37.1-gcc-11.2.0-k4awc4n
+# py-cython@=0.29.36%gcc@=11.2.0 build_system=python_pip patches=c4369ad arch=linux-rhel8-power9le
+module load py-cython/0.29.36-gcc-11.2.0-ukkzjdw
+# py-mpi4py@=3.1.4%gcc@=11.2.0 build_system=python_pip arch=linux-rhel8-power9le
+module load py-mpi4py/3.1.4-gcc-11.2.0-vjak4q5
+# py-editables@=0.3%gcc@=11.2.0 build_system=python_pip arch=linux-rhel8-power9le
+module load py-editables/0.3-gcc-11.2.0-64km524
+# py-flit-core@=3.9.0%gcc@=11.2.0 build_system=python_pip arch=linux-rhel8-power9le
+module load py-flit-core/3.9.0-gcc-11.2.0-i75hw7u
+# py-packaging@=23.1%gcc@=11.2.0 build_system=python_pip arch=linux-rhel8-power9le
+module load py-packaging/23.1-gcc-11.2.0-gwwtxns
+# py-pathspec@=0.11.1%gcc@=11.2.0 build_system=python_pip arch=linux-rhel8-power9le
+module load py-pathspec/0.11.1-gcc-11.2.0-j3cvp7f
+# git@=2.35.1%gcc@=11.2.0+man+nls+perl+subtree~svn~tcltk build_system=autotools arch=linux-rhel8-power9le
+module load git/2.35.1-gcc-11.2.0-vpvo7mj
+# py-tomli@=2.0.1%gcc@=11.2.0 build_system=python_pip arch=linux-rhel8-power9le
+module load py-tomli/2.0.1-gcc-11.2.0-j3ewsfv
+# py-typing-extensions@=4.8.0%gcc@=11.2.0 build_system=python_pip arch=linux-rhel8-power9le
+module load py-typing-extensions/4.8.0-gcc-11.2.0-2ptsvzd
+# py-setuptools-scm@=7.1.0%gcc@=11.2.0+toml build_system=python_pip arch=linux-rhel8-power9le
+module load py-setuptools-scm/7.1.0-gcc-11.2.0-naetuvu
+# py-pluggy@=1.0.0%gcc@=11.2.0 build_system=python_pip arch=linux-rhel8-power9le
+module load py-pluggy/1.0.0-gcc-11.2.0-z4rnrss
+# py-calver@=2022.6.26%gcc@=11.2.0 build_system=python_pip arch=linux-rhel8-power9le
+module load py-calver/2022.6.26-gcc-11.2.0-c7wrei6
+# py-trove-classifiers@=2023.8.7%gcc@=11.2.0 build_system=python_pip arch=linux-rhel8-power9le
+module load py-trove-classifiers/2023.8.7-gcc-11.2.0-gig62u3
+# py-hatchling@=1.18.0%gcc@=11.2.0 build_system=python_pip arch=linux-rhel8-power9le
+module load py-hatchling/1.18.0-gcc-11.2.0-cukj4b5
+# py-hatch-vcs@=0.3.0%gcc@=11.2.0 build_system=python_pip arch=linux-rhel8-power9le
+module load py-hatch-vcs/0.3.0-gcc-11.2.0-oy5cwb2
+# py-iniconfig@=2.0.0%gcc@=11.2.0 build_system=python_pip arch=linux-rhel8-power9le
+module load py-iniconfig/2.0.0-gcc-11.2.0-zlv4gcn
+# py-pytest@=7.3.2%gcc@=11.2.0 build_system=python_pip arch=linux-rhel8-power9le
+module load py-pytest/7.3.2-gcc-11.2.0-ctedzyz
+# exago@=develop%gcc@=11.2.0+cuda+hiop~ipo+ipopt~logging+mpi+python+raja~rocm build_system=cmake build_type=Debug cuda_arch=70 dev_path=/gpfs/wolf/proj-shared/csc359/ci/467269 generator=make arch=linux-rhel8-power9le
+## module load exago/develop-gcc-11.2.0-ycftvjb
