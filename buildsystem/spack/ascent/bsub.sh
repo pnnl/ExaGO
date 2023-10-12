@@ -55,10 +55,10 @@ which unzip
 export MY_CLUSTER=ascent
 . buildsystem/spack/load_spack.sh &&
 spack develop --no-clone --path=$(pwd) exago@develop &&
-spack develop --clone --force FORCE --path=$(pwd)/hiop hiop@develop &&
-cd $(pwd)/hiop &&
-git submodule update --init --recursive &&
-cd - &&
+# spack develop --clone --force FORCE --path=$(pwd)/hiop hiop@develop &&
+# cd $(pwd)/hiop &&
+# git submodule update --init --recursive &&
+# cd - &&
 spack mirror add local file://$SPACK_MIRROR &&
 spack mirror list &&
 cp /gpfs/wolf/proj-shared/csc359/src/coinhsl-archive-2019.05.21.tar.gz . &&
