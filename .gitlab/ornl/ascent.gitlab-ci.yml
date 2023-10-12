@@ -102,6 +102,7 @@
     - rm -rf "$WORKDIR"
 
 Ascent Build:
+  needs: []
   stage: build
   tags:
     - nobatch
@@ -112,27 +113,71 @@ Ascent Build:
 
 Ascent Test:
   stage: test
-  dependencies:
-    - 'Ascent Build'
+  needs: ['Ascent Build']
   tags:
     - batch
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
-    CTESTARGS: "--output-on-failure"
+    CTESTARGS: "--output-on-failure -LE ascent-skip "
   extends:
     - .ascent_rules
     - .ascent_test_script_template
     - .ascent_environment_template
 
+# -- Spack Module Rebuilding
+
+Ascent-Module-Init:
+  needs: []
+  extends: .ascent_environment_template
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+  rules:
+    - if: '$CI_COMMIT_TITLE =~ /\[ascent-rebuild\]/'
+      when: always
+  stage: build
+  tags:
+    - nobatch
+  script:
+    - set -xv
+    - mkdir -p "$WORKDIR"
+    - cp -r . "$WORKDIR"
+    - cd "$WORKDIR"
+    - MY_CLUSTER=ascent ./buildsystem/spack/binary_mirror.sh
+    - res=$?
+    - exit $res
+
+Ascent-Module-Build:
+  needs: ["Ascent-Module-Init"]
+  rules:
+    - if: '$CI_COMMIT_TITLE =~ /\[ascent-rebuild\]/'
+      when: always
+  extends: .ascent_environment_template
+  stage: test
+  tags:
+    - batch
+  script:
+    - cd "$WORKDIR"
+    - git checkout -b ${CI_COMMIT_REF_NAME}
+    - ./buildsystem/spack/ascent/bsub.sh
+    - git add ./buildsystem/spack/ascent/modules/*
+    - git config user.name "spack-auto-module"
+    - git config user.email "spack.bot@no-reply.com"
+    - git commit -m "Update Ascent spack built tcl modules [ascent-test]"
+    - git remote set-url origin https://gitlab-ci-token:${SPACK_GIT_TOKEN}@github.com/pnnl/ExaGO.git
+    - git pull --rebase origin ${CI_COMMIT_REF_NAME}
+    - git push origin ${CI_COMMIT_REF_NAME}
+  after_script:
+    - cd "$WORKDIR/.."
+    - rm -rf "$WORKDIR"
+
 # -- Reporting Ascent Status to PNNL GitHub
 .report-job:
-  when: always
   variables:
     MY_CLUSTER: Ascent
     GIT_STRATEGY: none
     STATUS_PROJECT: pnnl/ExaGO
-    STATUS_NAME: ppc64le/gcc@10.2/cuda@11.4.2/v100@70
+    STATUS_NAME: ppc64le/gcc@11.2/cuda@11.8/v100@70
   tags:
     - nobatch
   extends: .ascent_environment_template

@@ -1,0 +1,96 @@
+spack:
+  specs:
+  - patch
+  - exago@develop+cuda cuda_arch=70
+  view: false
+  concretizer:
+    unify: when_possible
+    reuse: false
+  config:
+    concretizer: clingo
+    install_tree:
+      root: $SPACK_INSTALL
+    source_cache: $SPACK_CACHE/source-cache
+    build_cache: $SPACK_CACHE/build-cache
+    misc_cache: $SPACK_CACHE/misc-cache
+    url_fetch_method: curl
+  modules:
+    default:
+      roots:
+        tcl: $SPACK_INSTALL/$SPACK_MODULES
+  compilers:
+  - compiler:
+      spec: gcc@11.2.0
+      modules: [gcc/11.2.0]
+      paths:
+        cc: /sw/ascent/gcc/11.2.0-0/bin/gcc
+        cxx: /sw/ascent/gcc/11.2.0-0/bin/g++
+        f77: /sw/ascent/gcc/11.2.0-0/bin/gfortran
+        fc: /sw/ascent/gcc/11.2.0-0/bin/gfortran
+      flags: {}
+      operating_system: rhel8
+      target: ppc64le
+  packages:
+    all:
+      permissions:
+        write: group
+        read: world
+        group: csc359
+      providers:
+        mpi: [spectrum-mpi]
+    exago:
+      require: +raja+hiop+ipopt
+    hiop:
+      require: '@1.0.0+sparse+mpi+ginkgo+kron+cusolver_lu'
+    coinhsl:
+      require: '@2019.05.21'
+    ipopt:
+      require: '@3.12.10+coinhsl~metis~mumps'
+    magma:
+      require: '@2.6.2'
+    raja:
+      require: ~examples~exercises
+    umpire:
+      require: ~openmp~examples
+    petsc:
+      require: ~hypre~superlu-dist~hdf5~metis
+    cmake:
+      externals:
+      - spec: cmake@3.22.2
+        modules: [cmake/3.22.2]
+      buildable: false
+    tar:
+      externals:
+      - spec: tar@1.34
+        modules: [tar/1.34]
+      buildable: false
+    curl:
+      externals:
+      - spec: curl@7.79.0
+        modules: [curl/7.79.0]
+      buildable: false
+    git:
+      externals:
+      - spec: git@2.35.1
+        modules: [git/2.35.1]
+      buildable: false
+    texinfo:
+      externals:
+      - spec: texinfo@6.5
+        modules: [texinfo/6.5]
+      buildable: false
+    gmp:
+      externals:
+      - spec: gmp@6.2.1
+        modules: [gmp/6.2.1]
+      buildable: false
+    perl:
+      externals:
+      - spec: perl@5.30.1
+        prefix: /sw/ascent/spack-envs/base/opt/linux-rhel8-ppc64le/gcc-9.1.0/perl-5.30.1-on54l56f2ipu67zkupe6nm7qyhhzn66l/
+      buildable: false
+    spectrum-mpi:
+      externals:
+      - spec: spectrum-mpi@10.4.0.3-20210112
+        modules: [spectrum-mpi/10.4.0.3-20210112]
+      buildable: false

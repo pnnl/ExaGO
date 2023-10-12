@@ -8,9 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [develop]
 
 ### General
+- Transition from GitLab to GitHub
+- ExaGO now depends on HiOp 1.0.0. Next release will require HiOp 1.0.1+
 
 ### Build system
 - Add CI on Incline with Spack module pipelines (AMD / HIP GPU machine at PNNL)
+- Add Spack module pipelines to Ascent
 
 ### PS
 

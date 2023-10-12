@@ -1,12 +1,11 @@
 #!/bin/bash
-#SBATCH -A exasgd
-#SBATCH -p newell8
-#SBATCH -N 1
-#SBATCH -n 128
-#SBATCH -J exago_spack
-#SBATCH -o spack_install.%J.output
-#SBATCH -e spack_install.%J.output
-#SBTACH -t 240
+
+#BSUB -P csc359
+#BSUB -W 2:00
+#BSUB -nnodes 1
+#BSUB -J exasgd_spack_install
+#BSUB -o spack_install.%J
+#BSUB -e spack_install.%J
 
 exit() {
   # Clear all trap handlers so this isn't echo'ed multiple times, potentially
@@ -40,17 +39,34 @@ cleanup() {
   exit $2
 }
 
-# Assuming that you already have a binary mirror configured
-export MY_CLUSTER=newell
-cp /qfs/projects/exasgd/src/coinhsl-archive-2019.05.21.tar.gz . &&
+# Configure https proxy because spack is going to do some things with git
+export all_proxy="socks://proxy.ccs.ornl.gov:3128"
+export ftp_proxy="ftp://proxy.ccs.ornl.gov:3128"
+export http_proxy="http://proxy.ccs.ornl.gov:3128"
+export https_proxy="http://proxy.ccs.ornl.gov:3128"
+export HTTP_PROXY="http://proxy.ccs.ornl.gov:3128"
+export HTTPS_PROXY="http://proxy.ccs.ornl.gov:3128"
+export proxy="proxy.ccs.ornl.gov:3128"
+export no_proxy='localhost,127.0.0.0/8,*.ccs.ornl.gov,*.olcf.ornl.gov,*.ncrc.gov'
+
+echo $PATH
+which unzip
+
+export MY_CLUSTER=ascent
 . buildsystem/spack/load_spack.sh &&
-# spack clean -abm && # shouldn't run this everytime...
-# spack develop --no-clone --path=$(pwd) exago@develop &&
+spack develop --no-clone --path=$(pwd) exago@develop &&
 # spack develop --clone --force FORCE --path=$(pwd)/hiop hiop@develop &&
 # cd $(pwd)/hiop &&
 # git submodule update --init --recursive &&
 # cd - &&
-./buildsystem/spack/configure_modules.sh 128
+spack mirror add local file://$SPACK_MIRROR &&
+spack mirror list &&
+cp /gpfs/wolf/proj-shared/csc359/src/coinhsl-archive-2019.05.21.tar.gz . &&
+# Need to load self-installed patch since it is not available on compute nodes
+spack concretize -f &&
+spack install patch &&
+spack load patch &&
+jsrun -n 1 -c 40 buildsystem/spack/configure_modules.sh 40
 
 EXIT_CODE=$?
 # Required to trigger trap handler
