@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # Configure python
-module load python/3.9-anaconda3
 module load unzip/6.0
 module load autoconf/2.69
 
