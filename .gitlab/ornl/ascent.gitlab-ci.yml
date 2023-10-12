@@ -119,7 +119,7 @@ Ascent Test:
   variables:
     # Don't clone for test jobs
     GIT_STRATEGY: none
-    CTESTARGS: "--output-on-failure"
+    CTESTARGS: "--output-on-failure -LE ascent-skip "
   extends:
     - .ascent_rules
     - .ascent_test_script_template
