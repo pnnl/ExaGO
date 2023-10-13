@@ -167,7 +167,6 @@ struct ScopflowFunctionalityTests
     }
 #endif
 
-
     auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
       if (!is_available) {
@@ -266,7 +265,7 @@ struct ScopflowFunctionalityTests
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.network);
-    strncpy(pbuf,params.network.c_str(),params.network.length());
+    strncpy(pbuf, params.network.c_str(), params.network.length());
     pbuf[params.network.length()] = '\0';
     ierr = SCOPFLOWSetNetworkData(scopflow, pbuf);
     ExaGOCheckError(ierr);
@@ -274,7 +273,7 @@ struct ScopflowFunctionalityTests
     // Prepend installation directory to contingency file
     std::string ext = FileNameExtension(params.contingencies);
     resolve_datafiles_path(params.contingencies);
-    strncpy(pbuf,params.contingencies.c_str(),params.contingencies.length());
+    strncpy(pbuf, params.contingencies.c_str(), params.contingencies.length());
     pbuf[params.contingencies.length()] = '\0';
     if (ext == "con") {
       ierr = SCOPFLOWSetContingencyData(scopflow, PSSE, pbuf);
@@ -285,21 +284,21 @@ struct ScopflowFunctionalityTests
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.pload);
-    strncpy(pbuf,params.pload.c_str(),params.pload.length());
+    strncpy(pbuf, params.pload.c_str(), params.pload.length());
     pbuf[params.pload.length()] = '\0';
     ierr = SCOPFLOWSetPLoadData(scopflow, pbuf);
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.qload);
-    strncpy(pbuf,params.qload.c_str(),params.qload.length());
+    strncpy(pbuf, params.qload.c_str(), params.qload.length());
     pbuf[params.qload.length()] = '\0';
     ierr = SCOPFLOWSetQLoadData(scopflow, pbuf);
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.windgen);
-    strncpy(pbuf,params.windgen.c_str(),params.windgen.length());
+    strncpy(pbuf, params.windgen.c_str(), params.windgen.length());
     pbuf[params.windgen.length()] = '\0';
     ierr = SCOPFLOWSetWindGenProfile(scopflow, pbuf);
     ExaGOCheckError(ierr);

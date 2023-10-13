@@ -145,7 +145,7 @@ struct PflowFunctionalityTests
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.network);
-    strncpy(pbuf,params.network.c_str(),params.network.length());
+    strncpy(pbuf, params.network.c_str(), params.network.length());
     pbuf[params.network.length()] = '\0';
     if (strstr(params.network.c_str(), ".raw") != NULL) {
       ierr = PFLOWReadPSSERawData(pflow, pbuf);

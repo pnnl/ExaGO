@@ -175,7 +175,6 @@ struct SopflowFunctionalityTests
     }
 #endif
 
-
     auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
       if (!is_available) {
@@ -277,7 +276,7 @@ struct SopflowFunctionalityTests
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.network);
-    strncpy(pbuf,params.network.c_str(),params.network.length());
+    strncpy(pbuf, params.network.c_str(), params.network.length());
     pbuf[params.network.length()] = '\0';
     ierr = SOPFLOWSetNetworkData(sopflow, pbuf);
     ExaGOCheckError(ierr);
@@ -287,7 +286,7 @@ struct SopflowFunctionalityTests
 
     // Prepend installation directory to scenario data
     resolve_datafiles_path(params.scenfile);
-    strncpy(pbuf,params.scenfile.c_str(),params.scenfile.length());
+    strncpy(pbuf, params.scenfile.c_str(), params.scenfile.length());
     pbuf[params.scenfile.length()] = '\0';
     ierr = SOPFLOWSetScenarioData(sopflow, SOPFLOW_NATIVE_SINGLEPERIOD, WIND,
                                   pbuf);
@@ -325,10 +324,10 @@ struct SopflowFunctionalityTests
     ExaGOCheckError(ierr);
     if (params.multicontingency) {
       resolve_datafiles_path(params.contingencies);
-      strncpy(pbuf,params.contingencies.c_str(),params.contingencies.length());
+      strncpy(pbuf, params.contingencies.c_str(),
+              params.contingencies.length());
       pbuf[params.contingencies.length()] = '\0';
-      ierr = SOPFLOWSetContingencyData(sopflow, NATIVE,
-                                       pbuf);
+      ierr = SOPFLOWSetContingencyData(sopflow, NATIVE, pbuf);
       ExaGOCheckError(ierr);
       ierr = SOPFLOWSetNumContingencies(sopflow, params.num_contingencies);
       ExaGOCheckError(ierr);
@@ -341,19 +340,18 @@ struct SopflowFunctionalityTests
         resolve_datafiles_path(params.windgen);
         resolve_datafiles_path(params.pload);
         resolve_datafiles_path(params.qload);
-        strncpy(pbuf,params.windgen.c_str(),params.windgen.length());
+        strncpy(pbuf, params.windgen.c_str(), params.windgen.length());
         pbuf[params.windgen.length()] = '\0';
         ierr = SOPFLOWSetWindGenProfile(sopflow, pbuf);
         ExaGOCheckError(ierr);
         ierr =
-          SOPFLOWSetTimeStepandDuration(sopflow, params.dT, params.duration);
+            SOPFLOWSetTimeStepandDuration(sopflow, params.dT, params.duration);
         ExaGOCheckError(ierr);
-        strncpy(pbuf,params.pload.c_str(),params.pload.length());
+        strncpy(pbuf, params.pload.c_str(), params.pload.length());
         pbuf[params.pload.length()] = '\0';
-        strncpy(qbuf,params.qload.c_str(),params.qload.length());
+        strncpy(qbuf, params.qload.c_str(), params.qload.length());
         qbuf[params.qload.length()] = '\0';
-        ierr = SOPFLOWSetLoadProfiles(sopflow, pbuf,
-            qbuf);
+        ierr = SOPFLOWSetLoadProfiles(sopflow, pbuf, qbuf);
         ExaGOCheckError(ierr);
       }
     } else {
