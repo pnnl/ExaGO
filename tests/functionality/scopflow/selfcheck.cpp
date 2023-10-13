@@ -167,7 +167,6 @@ struct ScopflowFunctionalityTests
     }
 #endif
 
-
     auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
       if (!is_available) {
