@@ -76,7 +76,9 @@ extern PetscErrorCode OPFLOWModelCreate_PBPOLHIOP(OPFLOW);
 
 #if defined(EXAGO_ENABLE_RAJA)
 extern PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOP(OPFLOW);
+#if defined(EXAGO_ENABLE_HIOP_SPARSE)
 extern PetscErrorCode OPFLOWModelCreate_PBPOLRAJAHIOPSPARSE(OPFLOW);
+#endif
 #endif
 
 /*
