@@ -406,8 +406,8 @@ else()
   endif()
 endif()
 
-include(ExaGOCheckPython)
 if(EXAGO_ENABLE_PYTHON)
+  include(ExaGOCheckPython)
   # Build pybind11 target manually
   add_subdirectory(tpl/pybind11)
   add_subdirectory(interfaces/python)
