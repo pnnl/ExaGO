@@ -32,8 +32,8 @@ struct ScopflowFunctionalityTestParameters {
   int opflow_genbusvoltage;
   std::string subproblem_solver;
   std::string subproblem_model;
-  bool enable_powerimbalance_variables;
-  bool ignore_lineflow_constraints;
+  bool enable_powerimbalance_variables = false;
+  bool ignore_lineflow_constraints = false;
   int verbosity_level;
   std::string mem_space = "DEFAULT";
   std::string compute_mode;
