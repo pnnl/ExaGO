@@ -36,8 +36,9 @@ if(EXAGO_ENABLE_MPI)
   # Get the include directories needed
   if(mpi4py_FOUND)
     execute_process(
-      COMMAND "${Python_EXECUTABLE}" "-c"
-              "import mpi4py as m; print(m.__version__); print(m.get_include());"
+      COMMAND
+        "${Python_EXECUTABLE}" "-c"
+        "import mpi4py as m; print(m.__version__); print(m.get_include());"
       RESULT_VARIABLE _mpi4py_SEARCH_SUCCESS
       OUTPUT_VARIABLE _mpi4py_VALUES
       ERROR_VARIABLE _mpi4py_ERROR_VALUE
@@ -48,10 +49,10 @@ if(EXAGO_ENABLE_MPI)
     string(REGEX REPLACE "\n" ";" _mpi4py_VALUES ${_mpi4py_VALUES})
     list(GET _mpi4py_VALUES 0 mpi4py_VERSION)
     list(GET _mpi4py_VALUES 1 mpi4py_INCLUDE_DIRS)
-  
+
     # Make sure all directory separators are '/'
     string(REGEX REPLACE "\\\\" "/" mpi4py_INCLUDE_DIRS ${mpi4py_INCLUDE_DIRS})
-  
+
     # Get the major and minor version numbers
     string(REGEX REPLACE "\\." ";" _mpi4py_VERSION_LIST ${mpi4py_VERSION})
     list(GET _mpi4py_VERSION_LIST 0 mpi4py_VERSION_MAJOR)
@@ -63,7 +64,7 @@ if(EXAGO_ENABLE_MPI)
       mpi4py_VERSION_DECIMAL
       "(${mpi4py_VERSION_MAJOR} * 10000) + (${mpi4py_VERSION_MINOR} * 100) + ${mpi4py_VERSION_PATCH}"
     )
-    
+
     target_include_directories(exago SYSTEM PRIVATE ${mpi4py_INCLUDE_DIRS})
   endif(mpi4py_FOUND)
 endif(EXAGO_ENABLE_MPI)
@@ -71,7 +72,7 @@ endif(EXAGO_ENABLE_MPI)
 if(EXAGO_RUN_TESTS)
   # Find pytest c headers
   find_python_module(pytest REQUIRED)
-  
+
   # Get the include directories needed
   if(pytest_FOUND)
     execute_process(
@@ -86,10 +87,10 @@ if(EXAGO_RUN_TESTS)
     string(REGEX REPLACE "\n" ";" _pytest_VALUES ${_pytest_VALUES})
     list(GET _pytest_VALUES 0 pytest_VERSION)
     list(GET _pytest_VALUES 0 pytest_INCLUDE_DIRS)
-  
+
     # Make sure all directory separators are '/'
     string(REGEX REPLACE "\\\\" "/" pytest_INCLUDE_DIRS ${pytest_INCLUDE_DIRS})
-  
+
     # Get the major and minor version numbers
     string(REGEX REPLACE "\\." ";" _pytest_VERSION_LIST ${pytest_VERSION})
     list(GET _pytest_VERSION_LIST 0 pytest_VERSION_MAJOR)
