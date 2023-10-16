@@ -38,8 +38,10 @@ jobs:
           SPACK_SPEC: ${{ matrix.spack_spec }}
         run: |
           ls && pwd
-          . ./tpl/spack/share/spack/setup-env.sh
+          . /opt/spack/share/spack/setup-env.sh
           spack debug report
+          spack mirror add spack_public_mirror https://binaries.spack.io/develop
+          spack buildcache keys --install --trust
           spack env create -d ./spack-env
           spack env activate ./spack-env
           spack add $SPACK_SPEC target=x86_64
