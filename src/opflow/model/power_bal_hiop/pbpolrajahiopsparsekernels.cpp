@@ -494,6 +494,8 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
     /* Set locations only */
 
     if (opflow->Nconineq) {
+      ierr = PetscLogEventBegin(opflow->ineqconsjaclogger, 0, 0, 0, 0);
+
       // Create arrays on host to store i,j, and val arrays
       umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
 
