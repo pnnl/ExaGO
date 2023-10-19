@@ -1,4 +1,4 @@
-#import python_wrapper.exago
+# import python_wrapper.exago
 def main(event, context):
     # save event to logs
     print(event)

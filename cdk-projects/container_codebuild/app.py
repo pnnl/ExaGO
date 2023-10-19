@@ -6,7 +6,7 @@ Sample app for publishing python packages
 """
 
 import aws_cdk as cdk
-#from cdk_nag import AwsSolutionsChecks
+# from cdk_nag import AwsSolutionsChecks
 
 from codeartifact.codeartifact_stack import CodeartifactStack
 
@@ -31,6 +31,6 @@ CodeartifactStack(
     # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
 )
 
-#cdk.Aspects.of(app).add(AwsSolutionsChecks())
+# cdk.Aspects.of(app).add(AwsSolutionsChecks())
 
 app.synth()

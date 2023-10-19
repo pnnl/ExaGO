@@ -19,19 +19,19 @@ from aws_cdk import aws_codepipeline_actions as codepipeline_actions
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_kms as kms
 from aws_cdk import aws_ecr
-#from codeartifact.custom_constructs.build_and_publish_package import BuildAndPublishPackage
-#from cdk_nag import NagSuppressions
-#from cdk_nag import NagPackSuppression
+# from codeartifact.custom_constructs.build_and_publish_package import BuildAndPublishPackage
+# from cdk_nag import NagSuppressions
+# from cdk_nag import NagPackSuppression
 
 
 class CodeartifactStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
-    #edit the repo class with aws documentation 
-        repo = codecommit.Repository.from_repository_name(self,"exagocodecommitrepo",
+    # edit the repo class with aws documentation
+        repo = codecommit.Repository.from_repository_name(self, "exagocodecommitrepo",
                                                           repository_name="test_repo",
-        )
+                                                          )
 
         codeartifact_domain = codeartifact.CfnDomain(
             self,
@@ -81,11 +81,11 @@ class CodeartifactStack(Stack):
             auto_delete_objects=True,
         )
 
-        #NagSuppressions.add_resource_suppressions(
+        # NagSuppressions.add_resource_suppressions(
         #    access_logs_bucket,
         #    [NagPackSuppression(id="AwsSolutions-S1", reason="Cannot log to itself")],
         #   True
-        #)
+        # )
 
         pipeline = codepipeline.Pipeline(
             self,
@@ -108,19 +108,20 @@ class CodeartifactStack(Stack):
             stage_name="Source",
             actions=[source_action],
         )
-        #ecr_repo = ecr.Repository.from_repository_name(self, "EcrRepo", repository_name="test_repo")
-        ecr_repo = aws_ecr.Repository(self, "EcrRepo", repository_name="exago_repo")
+        # ecr_repo = ecr.Repository.from_repository_name(self, "EcrRepo", repository_name="test_repo")
+        ecr_repo = aws_ecr.Repository(
+            self, "EcrRepo", repository_name="exago_repo")
 
         run_build_exago_project = codebuild.PipelineProject(
             self,
             "RunBuildExaGO",
             environment=codebuild.BuildEnvironment(
                 privileged=True,
-                #modified compute type and amazon_linux
+                # modified compute type and amazon_linux
                 compute_type=codebuild.ComputeType.LARGE,
                 build_image=codebuild.LinuxBuildImage.AMAZON_LINUX_2_5
             ),
-    
+
             encryption_key=pipeline.artifact_bucket.encryption_key,
             build_spec=codebuild.BuildSpec.from_object({
                 "version": "0.2",
@@ -129,23 +130,23 @@ class CodeartifactStack(Stack):
                         "commands": [
                             "python3 -m venv .venv",
 
-                            #"pip3 install -r requirements-dev.txt",
+                            # "pip3 install -r requirements-dev.txt",
                         ],
                     },
                     "build": {
                         "commands": [
                             ". .venv/bin/activate",
-                            #"aws codeartifact login --tool pip --repository pip --domain aws-sample-domain",
+                            # "aws codeartifact login --tool pip --repository pip --domain aws-sample-domain",
                             "ls *",
                             "ls cdk-projects/testcont_codebuild",
                             "cd cdk-projects",
                             "cd testcont_codebuild",
                             "docker --version",
-                           #"pip3 install -r requirements.txt",
-                           "aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 305402452870.dkr.ecr.us-west-2.amazonaws.com",
-                           "docker build -t exago_repo .",
-                           "docker tag exago_repo:latest 305402452870.dkr.ecr.us-west-2.amazonaws.com/exago_repo:latest",
-                           "docker push 305402452870.dkr.ecr.us-west-2.amazonaws.com/exago_repo:latest"
+                            # "pip3 install -r requirements.txt",
+                            "aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 305402452870.dkr.ecr.us-west-2.amazonaws.com",
+                            "docker build -t exago_repo .",
+                            "docker tag exago_repo:latest 305402452870.dkr.ecr.us-west-2.amazonaws.com/exago_repo:latest",
+                            "docker push 305402452870.dkr.ecr.us-west-2.amazonaws.com/exago_repo:latest"
                         ],
                     },
                 },
@@ -174,12 +175,13 @@ class CodeartifactStack(Stack):
                     ),
                     iam.PolicyStatement(
                         effect=iam.Effect.ALLOW,
-                        resources=[pip_private_codeartifact_repository.attr_arn],
+                        resources=[
+                            pip_private_codeartifact_repository.attr_arn],
                         actions=[
                             "codeartifact:ReadFromRepository",
                             "codeartifact:GetRepositoryEndpoint",
                             "codeartifact:List*"
-                            #"ecr:GetAuthorizationToken"
+                            # "ecr:GetAuthorizationToken"
                         ],
                     ),
                     iam.PolicyStatement(
@@ -204,5 +206,3 @@ class CodeartifactStack(Stack):
                 )
             ],
         )
-
-  

@@ -27,10 +27,10 @@ class CodeartifactStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
-    #edit the repo class with aws documentation 
-        repo = codecommit.Repository.from_repository_name(self,"exagocodecommitrepo",
+    # edit the repo class with aws documentation
+        repo = codecommit.Repository.from_repository_name(self, "exagocodecommitrepo",
                                                           repository_name="test_repo",
-        )
+                                                          )
 
         codeartifact_domain = codeartifact.CfnDomain(
             self,
@@ -82,7 +82,8 @@ class CodeartifactStack(Stack):
 
         NagSuppressions.add_resource_suppressions(
             access_logs_bucket,
-            [NagPackSuppression(id="AwsSolutions-S1", reason="Cannot log to itself")],
+            [NagPackSuppression(id="AwsSolutions-S1",
+                                reason="Cannot log to itself")],
             True
         )
 
@@ -116,7 +117,7 @@ class CodeartifactStack(Stack):
                 compute_type=codebuild.ComputeType.MEDIUM,
                 build_image=codebuild.LinuxBuildImage.STANDARD_5_0
             ),
-    
+
             encryption_key=pipeline.artifact_bucket.encryption_key,
             build_spec=codebuild.BuildSpec.from_object({
                 "version": "0.2",
@@ -134,7 +135,7 @@ class CodeartifactStack(Stack):
                            "docker build -t test_repo ."
                            "docker tag test_repo:latest 305402452870.dkr.ecr.us-west-2.amazonaws.com/test_repo:latest"
                            "docker push 305402452870.dkr.ecr.us-west-2.amazonaws.com/test_repo:latest"
-                            #"pip3 install -r requirements-dev.txt",
+                            # "pip3 install -r requirements-dev.txt",
                         ],
                     },
                     "build": {
@@ -166,7 +167,8 @@ class CodeartifactStack(Stack):
                     ),
                     iam.PolicyStatement(
                         effect=iam.Effect.ALLOW,
-                        resources=[pip_private_codeartifact_repository.attr_arn],
+                        resources=[
+                            pip_private_codeartifact_repository.attr_arn],
                         actions=[
                             "codeartifact:ReadFromRepository",
                             "codeartifact:GetRepositoryEndpoint",
@@ -206,11 +208,11 @@ class CodeartifactStack(Stack):
                             "python3 -m venv .venv",
                             ". .venv/bin/activate",
                             "aws codeartifact login --tool pip --repository pip --domain aws-sample-domain",
-                             "ls *",
-                             "echo $PWD",
+                            "ls *",
+                            "echo $PWD",
                             "cd test_repo/cdk-projects/new_exago"
                             "pip3 install -r requirements.txt",
-                            #"pip3 install -r requirements-dev.txt",
+                            # "pip3 install -r requirements-dev.txt",
                         ],
                     },
                     "build": {
@@ -257,7 +259,8 @@ class CodeartifactStack(Stack):
                     ),
                     iam.PolicyStatement(
                         effect=iam.Effect.ALLOW,
-                        resources=[pip_private_codeartifact_repository.attr_arn],
+                        resources=[
+                            pip_private_codeartifact_repository.attr_arn],
                         actions=[
                             "codeartifact:ReadFromRepository",
                             "codeartifact:GetRepositoryEndpoint",
@@ -278,7 +281,6 @@ class CodeartifactStack(Stack):
                 )
             ],
         )
-
 
         NagSuppressions.add_resource_suppressions_by_path(
             self,

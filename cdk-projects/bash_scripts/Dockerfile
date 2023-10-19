@@ -119,4 +119,3 @@ RUN yum update -y && amazon-linux-extras install epel -y \
  && rm -rf /var/cache/yum  && yum clean all
 ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "/bin/bash" ]
-

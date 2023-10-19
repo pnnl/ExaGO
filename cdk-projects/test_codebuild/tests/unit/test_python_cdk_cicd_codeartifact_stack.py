@@ -9,7 +9,8 @@ from python_cdk_cicd_codeartifact.python_cdk_cicd_codeartifact_stack import Pyth
 
 def test_codecommit_created():
     app = core.App()
-    stack = PythonCdkCicdCodeartifactStack(app, "PythonCdkCicdCodeartifactStack")
+    stack = PythonCdkCicdCodeartifactStack(
+        app, "PythonCdkCicdCodeartifactStack")
     template = assertions.Template.from_stack(stack)
 
     template.has_resource_properties("AWS::CodeCommit::Repository", {
