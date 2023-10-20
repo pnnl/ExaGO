@@ -52,7 +52,4 @@ if(EXAGO_INSTALL_TESTS)
     LOGGING
   )
 
-  if(EXAGO_ENABLE_LOGGING)
-    set_tests_properties(UNIT_TESTS_LOGGER PROPERTIES LABELS "ascent-skip")
-  endif()
 endif()
