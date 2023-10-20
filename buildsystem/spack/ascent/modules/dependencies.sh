@@ -37,8 +37,6 @@ module load magma/2.6.2-gcc-11.2.0-tiugqi3
 module load metis/5.1.0-gcc-11.2.0-phx5jh2
 # raja@=0.14.0%gcc@=11.2.0+cuda~examples~exercises~ipo+openmp~rocm+shared~tests build_system=cmake build_type=Release cuda_arch=70 generator=make arch=linux-rhel8-power9le
 module load raja/0.14.0-gcc-11.2.0-6kcew5j
-# spectrum-mpi@=10.4.0.3-20210112%gcc@=11.2.0 build_system=bundle arch=linux-rhel8-power9le
-module load spectrum-mpi/10.4.0.3-20210112-gcc-11.2.0-jflmvka
 # gmp@=6.2.1%gcc@=11.2.0+cxx build_system=autotools libs=shared,static patches=69ad2e2 arch=linux-rhel8-power9le
 module load gmp/6.2.1-gcc-11.2.0-acpul5s
 # diffutils@=3.9%gcc@=11.2.0 build_system=autotools arch=linux-rhel8-power9le
