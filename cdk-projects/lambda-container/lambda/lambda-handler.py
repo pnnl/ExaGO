@@ -1,4 +1,6 @@
 import python_wrapper
+
+
 def main(event, context):
     # save event to logs
     print(event)
