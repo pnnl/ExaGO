@@ -32,7 +32,7 @@ Summarize the MR concisely
 
 Link any relevant issues. If merging into the default branch, any directly addressed issues will be closed when merging into the default branch (develop).
 
-Since GitLab is specific on language, make sure to include direct language if you want to have the issue closed:
+Since GitHub is specific on language, make sure to include direct language if you want to have the issue closed:
 - Closes #issue
 - Resolves #issue
 
