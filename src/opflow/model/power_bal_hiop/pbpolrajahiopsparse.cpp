@@ -230,7 +230,7 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
 
   PS ps = (PS)opflow->ps;
 
-  for (int ibus = 0; ibus < ps->nbus; ++ibus) {
+  for (int ibus = 0, igen = 0, iline = 0, iload = 0; ibus < ps->nbus; ++ibus) {
 
     PSBUS bus = &(ps->bus[ibus]);
 
@@ -253,20 +253,22 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
       nnz_eqjac += 4;
     }
 
-    for (int igen = 0; igen < bus->ngen; ++igen) {
+    for (int bgen = 0; bgen < bus->ngen; ++bgen) {
       PSGEN gen;
-      ierr = PSBUSGetGen(bus, igen, &gen);
+      ierr = PSBUSGetGen(bus, bgen, &gen);
       CHKERRQ(ierr);
       if (!gen->status)
         continue;
       // each active generator uses 1 real and reactive entry on each bus
-      genparams->eqjacspbus_idx[igen] = nnz_eqjac;
-      nnz_eqjac += 2;
+      genparams->eqjacspbus_idx[igen] = nnz_eqjac++;
+      genparams->eqjacsqbus_idx[igen] = nnz_eqjac++;
+      igen++;
     }
       
     if (opflow->include_loadloss_variables) {
       // each load adds one real and reactive entry on each bus row
-      for (int iload = 0; iload < bus->nload; ++iload) {
+      // NOTE: iload is a system load counter
+      for (int bload = 0; bload < bus->nload; bload++, iload++) {
         loadparams->jacsp_idx[iload] = nnz_eqjac;
         nnz_eqjac += 2;
       }
@@ -286,7 +288,22 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
       // each line adds 4 entries for the to bus and 4 entries for the
       // from bus. The current bus is one of these and those entries
       // have already been counted.
+
+      const PSBUS *connbuses;
+      ierr = PSLINEGetConnectedBuses(line, &connbuses);
+      CHKERRQ(ierr);
+      PSBUS busf = connbuses[0];
+      PSBUS bust = connbuses[1];
+
+      if (bus == busf) {
+        lineparams->geqidxf[iline] = busparams->jacsp_idx[ibus];
+      } else if (bus == bust) {
+        lineparams->geqidxt[iline] = busparams->jacsp_idx[ibus];
+      } else {
+        PetscFunctionReturn(PETSC_ERR_SUP);
+      }
       nnz_eqjac += 4;
+      iline++;
     }
       
     if (opflow->has_gensetpoint) {
@@ -305,7 +322,7 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
     }
   }
 
-  printf("Equality Jacobian nonzero count: %d\n", nnz_eqjac);
+  std::cout << "Equality Jacobian nonzero count: " << nnz_eqjac << std::endl;
 
   if (opflow->has_gensetpoint) {
     for (int ibus = 0; ibus < ps->nbus; ++ibus) {
@@ -332,7 +349,6 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
         CHKERRQ(ierr);
         if (!gen->status)
           continue;
-        nnz_ineqjac += 2;
         }
         nnz_ineqjac += 2;
       }
@@ -346,7 +362,7 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
     }
   }
 
-  printf("Inequality Jacobian nonzero count: %d\n", nnz_ineqjac);
+  std::cout << "Inequality Jacobian nonzero count: " << nnz_ineqjac << std::endl;
 
 
   // opflow->nnz_eqjacsp = nnz_eqjac;

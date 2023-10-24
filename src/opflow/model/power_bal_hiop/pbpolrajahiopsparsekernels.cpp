@@ -537,7 +537,9 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
       }
 
       // Dump out the matrix indexes as a check
-      std::cout << "Nonzero indexes for Inequality Constraint Jacobian:" << std::endl;
+      std::cout << "Nonzero indexes for Inequality Constraint Jacobian: "
+                << opflow->nnz_ineqjacsp
+                << std::endl;
       for (int idx = 0; idx < opflow->nnz_ineqjacsp; ++idx) {
         std::cout << std::setw(5) << idx << " "
                   << std::setw(5) << pbpolrajahiopsparse->i_jacineq[idx] << " "
@@ -607,6 +609,11 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
     double *MJacS_dev) {
   PbpolModelRajaHiop *pbpolrajahiopsparse =
       reinterpret_cast<PbpolModelRajaHiop *>(opflow->model);
+  GENParamsRajaHiop *genparams = &pbpolrajahiopsparse->genparams;
+  LOADParamsRajaHiop *loadparams = &pbpolrajahiopsparse->loadparams;
+  BUSParamsRajaHiop *busparams = &pbpolrajahiopsparse->busparams;
+  LINEParamsRajaHiop *lineparams = &pbpolrajahiopsparse->lineparams;
+
   PetscErrorCode ierr;
   PetscInt *iRowstart, *jColstart;
   PetscScalar *x, *values;
@@ -620,14 +627,226 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
 
   PetscFunctionBegin;
 
+  /* Using OPFLOWComputeEqualityConstraintJacobian_PBPOL() as a guide */
+
   if (MJacS_dev == NULL) {
+
     /* Set locations only */
+
+    /* Bus power imbalance contribution */
+    int *b_xidxpimb = busparams->xidxpimb_dev_;
+    int *b_gidx = busparams->gidx_dev_;
+    int *b_jacsp_idx = busparams->jacsp_idx_dev_;
+    int *b_jacsq_idx = busparams->jacsq_idx_dev_;
+
+    std::cout << "Begin with buses" << std::endl;
+
+    /* Bus shunt injections */
+    RAJA::forall<exago_raja_exec>(
+      RAJA::RangeSegment(0, busparams->nbus),
+        RAJA_LAMBDA(RAJA::Index_type i) {
+          iJacS_dev[b_jacsp_idx[i]] = b_gidx[i];
+          jJacS_dev[b_jacsp_idx[i]] = b_gidx[i];
+          iJacS_dev[b_jacsp_idx[i] + 1] = b_gidx[i];
+          jJacS_dev[b_jacsp_idx[i] + 1] = b_gidx[i] + 1;
+          
+          iJacS_dev[b_jacsq_idx[i]] = b_gidx[i] + 1;
+          jJacS_dev[b_jacsq_idx[i]] = b_gidx[i] + 1;
+          iJacS_dev[b_jacsq_idx[i] + 1] = b_gidx[i] + 1;
+          jJacS_dev[b_jacsq_idx[i] + 1] = b_gidx[i] + 2;
+      });
+
+    if (opflow->include_powerimbalance_variables) {
+      std::cout << "Bus power imbalance variables" << std::endl;
+      RAJA::forall<exago_raja_exec>(
+        RAJA::RangeSegment(0, busparams->nbus),
+          RAJA_LAMBDA(RAJA::Index_type i) {
+            iJacS_dev[b_jacsp_idx[i]] = b_gidx[i];
+            jJacS_dev[b_jacsp_idx[i]] = b_xidxpimb[i];
+            iJacS_dev[b_jacsp_idx[i] + 1] = b_gidx[i];
+            jJacS_dev[b_jacsp_idx[i] + 1] = b_xidxpimb[i] + 1;
+            
+            iJacS_dev[b_jacsq_idx[i]] = b_gidx[i] + 1;
+            jJacS_dev[b_jacsq_idx[i]] = b_xidxpimb[i] + 2;
+            iJacS_dev[b_jacsq_idx[i] + 1] = b_gidx[i] + 1;
+            jJacS_dev[b_jacsq_idx[i] + 1] = b_xidxpimb[i] + 3;
+        });
+    }
+
+    /* generation contributions */
+
+    std::cout << "Generators " << std::endl;
+    
+    int *g_gidxbus = genparams->gidxbus_dev_;
+    int *g_xidx = genparams->xidx_dev_;
+    int *eqjacspbus_idx = genparams->eqjacspbus_idx_dev_;
+    int *eqjacsqbus_idx = genparams->eqjacsqbus_idx_dev_;
+    RAJA::forall<exago_raja_exec>(
+        RAJA::RangeSegment(0, genparams->ngenON),
+        RAJA_LAMBDA(RAJA::Index_type i) {
+          iJacS_dev[eqjacspbus_idx[i]] = g_gidxbus[i];
+          jJacS_dev[eqjacspbus_idx[i]] = g_xidx[i];
+
+          iJacS_dev[eqjacsqbus_idx[i]] = g_gidxbus[i] + 1;
+          jJacS_dev[eqjacsqbus_idx[i]] = g_xidx[i] + 1;
+        });
+
+    /* Loadloss contributions */
+    
+    if (opflow->include_loadloss_variables) {
+
+      std::cout << "Load Loss" << std::endl;
+      int *l_gidx = loadparams->gidx_dev_;
+      int *l_xidx = loadparams->xidx_dev_;
+      int *l_jacsp_idx = loadparams->jacsp_idx_dev_;
+
+      RAJA::forall<exago_raja_exec>(
+          RAJA::RangeSegment(0, loadparams->nload),
+          RAJA_LAMBDA(RAJA::Index_type i) {
+            iJacS_dev[l_jacsp_idx[i]] = l_gidx[i];
+            jJacS_dev[l_jacsp_idx[i]] = l_xidx[i];
+            iJacS_dev[l_jacsp_idx[i] + 1] = l_gidx[i] + 1;
+            jJacS_dev[l_jacsp_idx[i] + 1] = l_xidx[i] + 1;
+          });
+    }
+
+    /* Connected lines */
+
+    // std::cout << "Connected Lines" << std::endl;
+    
+    // int *xidxf = lineparams->xidxf_dev_;
+    // int *xidxt = lineparams->xidxt_dev_;
+    // int *geqidxf = lineparams->geqidxf_dev_;
+    // int *geqidxt = lineparams->geqidxt_dev_;
+
+    // RAJA::forall<exago_raja_exec>(
+    //   RAJA::RangeSegment(0, lineparams->nlineON),
+    //   RAJA_LAMBDA(RAJA::Index_type i) {
+
+    //     int offset(0);
+
+    //     // from bus indexes
+    //     // indexes already computed
+    //     // iJacS_dev[geqidxf[i + offset]] = xidxf[i];
+    //     // jJacS_dev[geqidxf[i + offset]] = xidxf[i];
+    //     // offset++;
+
+    //     // iJacS_dev[geqidxf[i] + offset] = xidxf[i];
+    //     // jJacS_dev[geqidxf[i] + offset] = xidxf[i] + 1;
+    //     // offset++;
+
+    //     // iJacS_dev[geqidxf[i] + offset] = xidxf[i] + 1;
+    //     // jJacS_dev[geqidxf[i] + offset] = xidxf[i];
+    //     // offset++;
+
+    //     // iJacS_dev[geqidxf[i] + offset] = xidxf[i] + 1;
+    //     // jJacS_dev[geqidxf[i] + offset] = xidxf[i] + 1;
+    //     // offset++;
+
+    //     iJacS_dev[geqidxf[i] + offset] = xidxf[i];
+    //     jJacS_dev[geqidxf[i] + offset] = xidxt[i];
+    //     offset++;
+
+    //     iJacS_dev[geqidxf[i] + offset] = xidxf[i];
+    //     jJacS_dev[geqidxf[i] + offset] = xidxt[i] + 1;
+    //     offset++;
+
+    //     iJacS_dev[geqidxf[i] + offset] = xidxf[i] + 1;
+    //     jJacS_dev[geqidxf[i] + offset] = xidxt[i];
+    //     offset++;
+
+    //     iJacS_dev[geqidxf[i] + offset] = xidxf[i] + 1;
+    //     jJacS_dev[geqidxf[i] + offset] = xidxt[i] + 1;
+    //     offset++;
+
+    //     offset = 0;
+
+    //     // to bus indexes
+    //     // indexes already computed
+    //     // iJacS_dev[geqidxt[i + offset]] = xidxt[i];
+    //     // jJacS_dev[geqidxt[i + offset]] = xidxt[i];
+    //     // offset++;
+
+    //     // iJacS_dev[geqidxt[i] + offset] = xidxt[i];
+    //     // jJacS_dev[geqidxt[i] + offset] = xidxt[i] + 1;
+    //     // offset++;
+
+    //     // iJacS_dev[geqidxt[i] + offset] = xidxt[i] + 1;
+    //     // jJacS_dev[geqidxt[i] + offset] = xidxt[i];
+    //     // offset++;
+
+    //     // iJacS_dev[geqidxt[i] + offset] = xidxt[i] + 1;
+    //     // jJacS_dev[geqidxt[i] + offset] = xidxt[i] + 1;
+    //     // offset++;
+
+    //     iJacS_dev[geqidxt[i] + offset] = xidxt[i];
+    //     jJacS_dev[geqidxt[i] + offset] = xidxf[i];
+    //     offset++;
+
+    //     iJacS_dev[geqidxt[i] + offset] = xidxt[i];
+    //     jJacS_dev[geqidxt[i] + offset] = xidxf[i] + 1;
+    //     offset++;
+
+    //     iJacS_dev[geqidxt[i] + offset] = xidxt[i] + 1;
+    //     jJacS_dev[geqidxf[i] + offset] = xidxf[i];
+    //     offset++;
+
+    //     iJacS_dev[geqidxt[i] + offset] = xidxt[i] + 1;
+    //     jJacS_dev[geqidxt[i] + offset] = xidxf[i] + 1;
+    //     offset++;
+
+    //   });
+    
+    
+    
+    if (opflow->has_gensetpoint) {
+
+      std::cout << "Generator set point" << std::endl;
+      int *eqjacspgen_idx = genparams->eqjacspgen_idx_dev_;
+      int *g_geqidxgen = genparams->geqidxgen_dev_;
+      int *g_xidx = genparams->xidx_dev_;
+      int *g_isrenewable = genparams->isrenewable_dev_;
+
+      RAJA::forall<exago_raja_exec>(
+          RAJA::RangeSegment(0, genparams->ngenON),
+          RAJA_LAMBDA(RAJA::Index_type i) {
+            if (!g_isrenewable[i]) {
+              iJacS_dev[eqjacspgen_idx[i]] = g_geqidxgen[i];
+              jJacS_dev[eqjacspgen_idx[i]] = g_xidx[i];
+
+              iJacS_dev[eqjacspgen_idx[i] + 1] = g_geqidxgen[i];
+              jJacS_dev[eqjacspgen_idx[i] + 1] = g_xidx[i] + 2;
+
+              iJacS_dev[eqjacspgen_idx[i] + 2] = g_geqidxgen[i];
+              jJacS_dev[eqjacspgen_idx[i] + 2] = g_xidx[i] + 3;
+
+              iJacS_dev[eqjacspgen_idx[i] + 3] = g_geqidxgen[i] + 1;
+              jJacS_dev[eqjacspgen_idx[i] + 3] = g_xidx[i] + 3;
+            }
+          });
+    }
+
+    
+    // Create arrays on host to store i,j, and val arrays
+    umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
+
+    // int *itemp = (int *)(h_allocator_.allocate(opflow->nnz_eqjacsp * sizeof(int)));
+    // int *jtemp = (int *)(h_allocator_.allocate(opflow->nnz_eqjacsp * sizeof(int)));
+
+    // resmgr.copy(pbpolrajahiopsparse->i_jaceq, iJacS_dev,
+    //             opflow->nnz_eqjacsp);
+    // resmgr.copy(pbpolrajahiopsparse->j_jaceq, jJacS_dev,
+    //             opflow->nnz_eqjacsp);
+    
+    // std::cout << "Non-zero indexes for Equality Constraint Jacobian (GPU):" << std::endl;
+    // for (int idx = 0; idx < opflow->nnz_eqjacsp; ++idx) {
+    //   std::cout << std::setw(5) << idx << " "
+    //             << std::setw(5) << itemp[idx] << " "
+    //             << std::setw(5) << jtemp[idx] << std::endl;
+    // }
 
     roffset = 0;
     coffset = 0;
-
-    // Create arrays on host to store i,j, and val arrays
-    umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
 
     pbpolrajahiopsparse->i_jaceq =
         (int *)(h_allocator_.allocate(opflow->nnz_eqjacsp * sizeof(int)));
@@ -661,7 +880,7 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
       CHKERRQ(ierr);
     }
 
-    std::cout << "Zero indexes for Equality Constraint Jacobian:" << std::endl;
+    std::cout << "Non-zero indexes for Equality Constraint Jacobian:" << std::endl;
     for (int idx = 0; idx < opflow->nnz_eqjacsp; ++idx) {
       std::cout << std::setw(5) << idx << " "
                 << std::setw(5) << pbpolrajahiopsparse->i_jaceq[idx] << " "
