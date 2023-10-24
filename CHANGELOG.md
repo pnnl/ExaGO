@@ -8,12 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [develop]
 
 ### General
-- Transition from GitLab to GitHub
-- ExaGO now depends on HiOp 1.0.0. Next release will require HiOp 1.0.1+
 
 ### Build system
-- Add CI on Incline with Spack module pipelines (AMD / HIP GPU machine at PNNL)
-- Add Spack module pipelines to Ascent
 
 ### PS
 
@@ -33,6 +29,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Miscallenous
 
+
+## [1.6.0]
+
+### General
+- Added ChatGrid functionality to React frontend using Langchain, Flask, PostGreSQL and OpenAI
+- Transition from GitLab to GitHub, including CI/CD pipelines, spack package, and issues
+- ExaGO now depends on HiOp 1.0.0. Next release will require HiOp 1.0.1+ as HiOp API changed
+
+### Build system
+- Updated `DEBUG` compiler flags for `CXX` and `CUDA` builds to include `-Werror,-Wall,-Wextra` and other verbose options
+
+### OPFLOW
+- Add RAJA / HiOp sparse GPU solver support
+- Summary statistics of the optimized solution are returned in `MATPOWER`, `JSON` and `MINIMAL` OPFLOW output formats 
+- OPFLOW output filename can now be specified as argument to `-save_output` option
+- OPFLOW allows load shedding fraction and cost for individual loads.  A new variable is added to MATPOWER input to handle this
+
+### SCOPFLOW
+- Sub-problem solves are timed and those times are recorded in sub-problem output. This only works for the EMPAR and HIOP solvers. Zero times are reported when the IPOPT solver is used.
+
+### SOPFLOW
+- Sub-problem solves are timed and those times are recorded in sub-problem output. See SCOPFLOW note about solver compatibility
+
+### Documentation
+- Fixed file type displayed in GitHub GUI
+
+### Testing
+- Add Spack CPU GitHub action to test minimal exago builds with MPI enabled
+- Add additional weaker tolerance to objective value and number of iterations in functionality tests, with a warning file generated when failing strict tolerance.
+- Add CI on Incline with Spack module pipelines (AMD / HIP GPU machine at PNNL)
+- Add Spack module pipelines to Ascent, with Crusher pipelines to come in 1.6.1
+
+### Miscallenous
+- Cleaned up string output formatting and removed duplicate test output from parallel MPI tests
+
 ## [1.5.1]
 
 ### General
@@ -49,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   
 ### OPFLOW
 - Add minimal output format for OPFLOW solutions
+
 ### SCOPFLOW
 - Added Python interface for SCOPFLOW.  
 - Fixed troubles with Python instance creation and destruction. Destruction of an unsolved SCOPFLOW instance no longer causes a SEGV.  
