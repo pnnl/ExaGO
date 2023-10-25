@@ -26,14 +26,18 @@ struct ScopflowFunctionalityTestParameters {
   bool multiperiod = SCOPFLOWOptions::enable_multiperiod.default_value;
 
   /* Parameters used to modify underlying opflow */
-  std::string opflow_initialization_string = OPFLOWOptions::initialization.default_value;
+  std::string opflow_initialization_string =
+      OPFLOWOptions::initialization.default_value;
   int opflow_initialization;
-  std::string opflow_genbusvoltage_string = OPFLOWOptions::genbusvoltage.default_value;
+  std::string opflow_genbusvoltage_string =
+      OPFLOWOptions::genbusvoltage.default_value;
   int opflow_genbusvoltage;
   std::string subproblem_solver = OPFLOWOptions::solver.default_value;
   std::string subproblem_model = OPFLOWOptions::model.default_value;
-  bool enable_powerimbalance_variables = OPFLOWOptions::include_powerimbalance_variables.default_value;
-  bool ignore_lineflow_constraints = OPFLOWOptions::ignore_lineflow_constraints.default_value;
+  bool enable_powerimbalance_variables =
+      OPFLOWOptions::include_powerimbalance_variables.default_value;
+  bool ignore_lineflow_constraints =
+      OPFLOWOptions::ignore_lineflow_constraints.default_value;
   int verbosity_level = 3;
   std::string mem_space = "DEFAULT";
   std::string compute_mode = "cpu";
