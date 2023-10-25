@@ -22,8 +22,8 @@ network = 'datafiles/case_ACTIVSg200.m'
 contingencies = 'datafiles/case_ACTIVSg200.cont'
 description = 'case_ACTIVSg200.m with HIOP solver/20 contingencies/run with MPI'
 num_contingencies = 20
-num_iters = 1
-obj_value = 25957.56699172251
+num_iters = 2
+obj_value = 27557.524961865754
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'

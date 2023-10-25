@@ -11,11 +11,11 @@ struct OpflowFunctionalityTestParameters {
   std::string solver = "";
   std::string model = "";
   std::string network = "";
-  bool is_loadloss_active;
-  bool is_powerimb_active;
-  std::string gen_bus_voltage_string;
+  bool is_loadloss_active = false;
+  bool is_powerimb_active = false;
+  std::string gen_bus_voltage_string = OPFLOWOptions::genbusvoltage.default_value;
   OPFLOWGenBusVoltageType gen_bus_voltage_type;
-  double tolerance;
+  double tolerance = OPFLOWOptions::tolerance.default_value;
   double warning_tolerance = 0.01;
   int iter_range = 0;
   double has_gen_set_point;
@@ -24,8 +24,8 @@ struct OpflowFunctionalityTestParameters {
   double power_imbalance_penalty = 1000.0;
   std::string description = "";
   int hiop_verbosity_level = 0;
-  std::string hiop_compute_mode;
-  std::string hiop_mem_space;
+  std::string hiop_compute_mode = OPFLOWOptions::hiop_compute_mode.default_value;
+  std::string hiop_mem_space = OPFLOWOptions::hiop_mem_space.default_value;
   std::string initialization_string = "MIDPOINT";
   OPFLOWInitializationType initialization_type;
 
