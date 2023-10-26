@@ -230,7 +230,7 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
 
   PS ps = (PS)opflow->ps;
 
-  for (int ibus = 0, igen1 = 0, igen2 = 0, iline = 0, iload = 0; ibus < ps->nbus; ++ibus) {
+  for (int ibus = 0, igen1 = 0, igen2 = 0, iload = 0; ibus < ps->nbus; ++ibus) {
 
     PSBUS bus = &(ps->bus[ibus]);
 
@@ -275,35 +275,6 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
       }
     }
 
-    if (0) {
-    const PSLINE *connlines;
-    int nconnlines;
-    ierr = PSBUSGetSupportingLines(bus, &nconnlines, &connlines);
-    CHKERRQ(ierr);
-    
-    for (int iconn = 0; iconn < nconnlines; iconn++) {
-      // each *active* connected line uses 4 entries total in each bus row
-      PSLINE line = connlines[iconn];
-      if (!line->status)
-        continue;
-
-      // each line adds 4 entries for the to bus and 4 entries for the
-      // from bus. The current bus is one of these and those entries
-      // have already been counted.
-
-      const PSBUS *connbuses;
-      ierr = PSLINEGetConnectedBuses(line, &connbuses);
-      CHKERRQ(ierr);
-      PSBUS bust = connbuses[1];
-
-      // only count nonzeros when this is the to bus; add nonzeros for both to and from
-      if (bus == bust) {
-        lineparams->jac_idx[iline] = nnz_eqjac;
-        nnz_eqjac += 8;
-      } 
-      iline++;
-    }
-    }
       
     if (opflow->has_gensetpoint) {
       for (int bgen = 0; bgen < bus->ngen; ++bgen) {
@@ -320,6 +291,22 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
         igen2++;
       }
     }
+  }
+
+  // Go through the lines
+
+  for (int iline = 0; iline <= ps->nline; ++iline) {
+    PSLINE line = &(ps->line[iline]);
+    
+    if (!line->status)
+      continue;
+    
+    // each line adds 4 (off-diagonal) entries for the to bus and 4
+    // entries for the from bus.
+    lineparams->jacf_idx[iline] = nnz_eqjac;
+    nnz_eqjac += 4;
+    lineparams->jact_idx[iline] = nnz_eqjac;
+    nnz_eqjac += 4;
   }
 
   std::cout << "Equality Jacobian nonzero count: " << nnz_eqjac << std::endl;

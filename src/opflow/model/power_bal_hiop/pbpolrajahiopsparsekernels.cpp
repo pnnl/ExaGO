@@ -715,93 +715,62 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
 
     /* Connected lines */
 
-    // std::cout << "Connected Lines" << std::endl;
+    std::cout << "Connected Lines" << std::endl;
     
-    // int *xidxf = lineparams->xidxf_dev_;
-    // int *xidxt = lineparams->xidxt_dev_;
-    // int *jac_idx = lineparams->jac_idx_dev_;
+    int *xidxf = lineparams->xidxf_dev_;
+    int *xidxt = lineparams->xidxt_dev_;
+    int *geqidxf = lineparams->geqidxf_dev_;
+    int *geqidxt = lineparams->geqidxt_dev_;
+    int *jacf_idx = lineparams->jacf_idx_dev_;
+    int *jact_idx = lineparams->jact_idx_dev_;
 
-    // RAJA::forall<exago_raja_exec>(
-    //   RAJA::RangeSegment(0, lineparams->nlineON),
-    //   RAJA_LAMBDA(RAJA::Index_type i) {
+    RAJA::forall<exago_raja_exec>(
+      RAJA::RangeSegment(0, lineparams->nlineON),
+      RAJA_LAMBDA(RAJA::Index_type i) {
 
-    //     int offset;
+        int offset;
 
-    //     // from bus indexes
+        // from bus indexes
 
-    //     offset = 0;
+        offset = 0;
         
-    //     // indexes already computed
-    //     // iJacS_dev[geqidxf[i + offset]] = xidxf[i];
-    //     // jJacS_dev[geqidxf[i + offset]] = xidxf[i];
-    //     // offset++;
+        iJacS_dev[jacf_idx[i] + offset] = geqidxf[i];
+        jJacS_dev[jacf_idx[i] + offset] = xidxt[i];
+        offset++;
 
-    //     // iJacS_dev[geqidxf[i] + offset] = xidxf[i];
-    //     // jJacS_dev[geqidxf[i] + offset] = xidxf[i] + 1;
-    //     // offset++;
+        iJacS_dev[jacf_idx[i] + offset] = geqidxf[i];
+        jJacS_dev[jacf_idx[i] + offset] = xidxt[i] + 1;
+        offset++;
 
-    //     // iJacS_dev[geqidxf[i] + offset] = xidxf[i] + 1;
-    //     // jJacS_dev[geqidxf[i] + offset] = xidxf[i];
-    //     // offset++;
+        iJacS_dev[jacf_idx[i] + offset] = geqidxf[i] + 1;
+        jJacS_dev[jacf_idx[i] + offset] = xidxt[i];
+        offset++;
 
-    //     // iJacS_dev[geqidxf[i] + offset] = xidxf[i] + 1;
-    //     // jJacS_dev[geqidxf[i] + offset] = xidxf[i] + 1;
-    //     // offset++;
+        iJacS_dev[jacf_idx[i] + offset] = geqidxf[i] + 1;
+        jJacS_dev[jacf_idx[i] + offset] = xidxt[i] + 1;
+        offset++;
 
-    //     iJacS_dev[jac_idx[i] + offset] = xidxf[i];
-    //     jJacS_dev[jac_idx[i] + offset] = xidxt[i];
-    //     offset++;
+        // to bus indexes
 
-    //     iJacS_dev[jac_idx[i] + offset] = xidxf[i];
-    //     jJacS_dev[jac_idx[i] + offset] = xidxt[i] + 1;
-    //     offset++;
+        offset = 0;
 
-    //     iJacS_dev[jac_idx[i] + offset] = xidxf[i] + 1;
-    //     jJacS_dev[jac_idx[i] + offset] = xidxt[i];
-    //     offset++;
+        iJacS_dev[jact_idx[i] + offset] = geqidxt[i];
+        jJacS_dev[jact_idx[i] + offset] = xidxf[i];
+        offset++;
 
-    //     iJacS_dev[jac_idx[i] + offset] = xidxf[i] + 1;
-    //     jJacS_dev[jac_idx[i] + offset] = xidxt[i] + 1;
-    //     offset++;
+        iJacS_dev[jact_idx[i] + offset] = geqidxt[i];
+        jJacS_dev[jact_idx[i] + offset] = xidxf[i] + 1;
+        offset++;
 
-    //     // to bus indexes
+        iJacS_dev[jact_idx[i] + offset] = geqidxt[i] + 1;
+        jJacS_dev[jact_idx[i] + offset] = xidxf[i];
+        offset++;
 
-    //     offset = 0;
-        
-    //     // indexes already computed for bus
-    //     // iJacS_dev[geqidxt[i + offset]] = xidxt[i];
-    //     // jJacS_dev[geqidxt[i + offset]] = xidxt[i];
-    //     // offset++;
+        iJacS_dev[jact_idx[i] + offset] = geqidxt[i] + 1;
+        jJacS_dev[jact_idx[i] + offset] = xidxf[i] + 1;
+        offset++;
 
-    //     // iJacS_dev[geqidxt[i] + offset] = xidxt[i];
-    //     // jJacS_dev[geqidxt[i] + offset] = xidxt[i] + 1;
-    //     // offset++;
-
-    //     // iJacS_dev[geqidxt[i] + offset] = xidxt[i] + 1;
-    //     // jJacS_dev[geqidxt[i] + offset] = xidxt[i];
-    //     // offset++;
-
-    //     // iJacS_dev[geqidxt[i] + offset] = xidxt[i] + 1;
-    //     // jJacS_dev[geqidxt[i] + offset] = xidxt[i] + 1;
-    //     // offset++;
-
-    //     iJacS_dev[jac_idx[i] + offset] = xidxt[i];
-    //     jJacS_dev[jac_idx[i] + offset] = xidxf[i];
-    //     offset++;
-
-    //     iJacS_dev[jac_idx[i] + offset] = xidxt[i];
-    //     jJacS_dev[jac_idx[i] + offset] = xidxf[i] + 1;
-    //     offset++;
-
-    //     iJacS_dev[jac_idx[i] + offset] = xidxt[i] + 1;
-    //     jJacS_dev[jac_idx[i] + offset] = xidxf[i];
-    //     offset++;
-
-    //     iJacS_dev[jac_idx[i] + offset] = xidxt[i] + 1;
-    //     jJacS_dev[jac_idx[i] + offset] = xidxf[i] + 1;
-    //     offset++;
-
-    //   });
+      });
     
     
     
