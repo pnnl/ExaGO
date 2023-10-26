@@ -196,6 +196,9 @@ struct LINEParamsRajaHiop {
                       constraint bound */
   int *linelimidx; /* Indices for subset of lines that have finite limits */
 
+  int *jacf_idx;   /* Location number in the sparse Jacobian (from) */
+  int *jact_idx;   /* Location number in the sparse Jacobian (to) */
+
   // Device data
   double *Gff_dev_;    /* From side self conductance */
   double *Bff_dev_;    /* From side self susceptance */
@@ -218,6 +221,9 @@ struct LINEParamsRajaHiop {
                           constraint bound */
   int *
       linelimidx_dev_; /* Indices for subset of lines that have finite limits */
+
+  int *jacf_idx_dev_;   /* Location number in the sparse Jacobian (from) */
+  int *jact_idx_dev_;   /* Location number in the sparse Jacobian (to) */
 
   int allocate(OPFLOW);
   int destroy(OPFLOW);

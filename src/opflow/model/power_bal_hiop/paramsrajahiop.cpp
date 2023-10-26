@@ -226,6 +226,8 @@ int LINEParamsRajaHiop::copy(OPFLOW opflow) {
 
   resmgr.copy(geqidxf_dev_, geqidxf);
   resmgr.copy(geqidxt_dev_, geqidxt);
+  resmgr.copy(jacf_idx_dev_, jacf_idx);
+  resmgr.copy(jact_idx_dev_, jact_idx);
 
   if (opflow->nlinesmon) {
     resmgr.copy(gineqidx_dev_, gineqidx);
@@ -246,6 +248,8 @@ int LINEParamsRajaHiop::copy(OPFLOW opflow) {
   xidxt_dev_ = xidxt;
   geqidxf_dev_ = geqidxf;
   geqidxt_dev_ = geqidxt;
+  jacf_idx_dev_ = jacf_idx;
+  jact_idx_dev_ = jact_idx;
   if (opflow->nlinesmon) {
     gineqidx_dev_ = gineqidx;
     gbineqidx_dev_ = gbineqidx;
@@ -272,6 +276,8 @@ int LINEParamsRajaHiop::destroy(OPFLOW opflow) {
 
   h_allocator_.deallocate(geqidxf);
   h_allocator_.deallocate(geqidxt);
+  h_allocator_.deallocate(jacf_idx);
+  h_allocator_.deallocate(jact_idx);
 
   if (opflow->nlinesmon) {
     h_allocator_.deallocate(gineqidx);
@@ -296,6 +302,8 @@ int LINEParamsRajaHiop::destroy(OPFLOW opflow) {
 
   d_allocator_.deallocate(geqidxf_dev_);
   d_allocator_.deallocate(geqidxt_dev_);
+  d_allocator_.deallocate(jacf_idx_dev_);
+  d_allocator_.deallocate(jact_idx_dev_);
 
   if (opflow->nlinesmon) {
     d_allocator_.deallocate(gineqidx_dev_);
@@ -344,6 +352,9 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow) {
   geqidxf = paramAlloc<int>(h_allocator_, nlineON);
   geqidxt = paramAlloc<int>(h_allocator_, nlineON);
 
+  jacf_idx = paramAlloc<int>(h_allocator_, nlineON);
+  jact_idx = paramAlloc<int>(h_allocator_, nlineON);
+
   if (opflow->nlinesmon) {
     linelimidx = paramAlloc<int>(h_allocator_, nlinelim);
     gineqidx = paramAlloc<int>(h_allocator_, nlinelim);
@@ -386,6 +397,8 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow) {
     */
     geqidxf[linei] = busf->starteqloc;
     geqidxt[linei] = bust->starteqloc;
+    jacf_idx[linei] = 0;
+    jact_idx[linei] = 0;
 
     if (j < opflow->nlinesmon && opflow->linesmon[j] == i) {
       gbineqidx[j] = opflow->nconeq + line->startineqloc;
@@ -415,6 +428,9 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow) {
 
   geqidxf_dev_ = paramAlloc<int>(d_allocator_, nlineON);
   geqidxt_dev_ = paramAlloc<int>(d_allocator_, nlineON);
+
+  jacf_idx_dev_ = paramAlloc<int>(d_allocator_, nlineON);
+  jact_idx_dev_ = paramAlloc<int>(d_allocator_, nlineON);
 
   if (opflow->nconineq) {
     gineqidx_dev_ = paramAlloc<int>(d_allocator_, nlinelim);
