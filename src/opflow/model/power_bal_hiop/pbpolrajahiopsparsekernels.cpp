@@ -633,27 +633,30 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
 
     /* Set locations only */
 
+    resmgr.memset(iJacS_dev, 0, opflow->nnz_eqjacsp*sizeof(int));
+    resmgr.memset(jJacS_dev, 0, opflow->nnz_eqjacsp*sizeof(int));
+
     /* Bus power imbalance contribution */
     int *b_xidxpimb = busparams->xidxpimb_dev_;
     int *b_gidx = busparams->gidx_dev_;
+    int *b_xidx = busparams->xidx_dev_;
     int *b_jacsp_idx = busparams->jacsp_idx_dev_;
     int *b_jacsq_idx = busparams->jacsq_idx_dev_;
 
+    /* Bus */
     std::cout << "Begin with buses" << std::endl;
-
-    /* Bus shunt injections */
     RAJA::forall<exago_raja_exec>(
       RAJA::RangeSegment(0, busparams->nbus),
         RAJA_LAMBDA(RAJA::Index_type i) {
           iJacS_dev[b_jacsp_idx[i]] = b_gidx[i];
-          jJacS_dev[b_jacsp_idx[i]] = b_gidx[i];
+          jJacS_dev[b_jacsp_idx[i]] = b_xidx[i];
           iJacS_dev[b_jacsp_idx[i] + 1] = b_gidx[i];
-          jJacS_dev[b_jacsp_idx[i] + 1] = b_gidx[i] + 1;
+          jJacS_dev[b_jacsp_idx[i] + 1] = b_xidx[i] + 1;
           
           iJacS_dev[b_jacsq_idx[i]] = b_gidx[i] + 1;
-          jJacS_dev[b_jacsq_idx[i]] = b_gidx[i] + 1;
+          jJacS_dev[b_jacsq_idx[i]] = b_xidx[i];
           iJacS_dev[b_jacsq_idx[i] + 1] = b_gidx[i] + 1;
-          jJacS_dev[b_jacsq_idx[i] + 1] = b_gidx[i] + 2;
+          jJacS_dev[b_jacsq_idx[i] + 1] = b_xidx[i] + 1;
       });
 
     if (opflow->include_powerimbalance_variables) {
@@ -716,16 +719,18 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
     
     // int *xidxf = lineparams->xidxf_dev_;
     // int *xidxt = lineparams->xidxt_dev_;
-    // int *geqidxf = lineparams->geqidxf_dev_;
-    // int *geqidxt = lineparams->geqidxt_dev_;
+    // int *jac_idx = lineparams->jac_idx_dev_;
 
     // RAJA::forall<exago_raja_exec>(
     //   RAJA::RangeSegment(0, lineparams->nlineON),
     //   RAJA_LAMBDA(RAJA::Index_type i) {
 
-    //     int offset(0);
+    //     int offset;
 
     //     // from bus indexes
+
+    //     offset = 0;
+        
     //     // indexes already computed
     //     // iJacS_dev[geqidxf[i + offset]] = xidxf[i];
     //     // jJacS_dev[geqidxf[i + offset]] = xidxf[i];
@@ -743,26 +748,27 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
     //     // jJacS_dev[geqidxf[i] + offset] = xidxf[i] + 1;
     //     // offset++;
 
-    //     iJacS_dev[geqidxf[i] + offset] = xidxf[i];
-    //     jJacS_dev[geqidxf[i] + offset] = xidxt[i];
+    //     iJacS_dev[jac_idx[i] + offset] = xidxf[i];
+    //     jJacS_dev[jac_idx[i] + offset] = xidxt[i];
     //     offset++;
 
-    //     iJacS_dev[geqidxf[i] + offset] = xidxf[i];
-    //     jJacS_dev[geqidxf[i] + offset] = xidxt[i] + 1;
+    //     iJacS_dev[jac_idx[i] + offset] = xidxf[i];
+    //     jJacS_dev[jac_idx[i] + offset] = xidxt[i] + 1;
     //     offset++;
 
-    //     iJacS_dev[geqidxf[i] + offset] = xidxf[i] + 1;
-    //     jJacS_dev[geqidxf[i] + offset] = xidxt[i];
+    //     iJacS_dev[jac_idx[i] + offset] = xidxf[i] + 1;
+    //     jJacS_dev[jac_idx[i] + offset] = xidxt[i];
     //     offset++;
 
-    //     iJacS_dev[geqidxf[i] + offset] = xidxf[i] + 1;
-    //     jJacS_dev[geqidxf[i] + offset] = xidxt[i] + 1;
+    //     iJacS_dev[jac_idx[i] + offset] = xidxf[i] + 1;
+    //     jJacS_dev[jac_idx[i] + offset] = xidxt[i] + 1;
     //     offset++;
-
-    //     offset = 0;
 
     //     // to bus indexes
-    //     // indexes already computed
+
+    //     offset = 0;
+        
+    //     // indexes already computed for bus
     //     // iJacS_dev[geqidxt[i + offset]] = xidxt[i];
     //     // jJacS_dev[geqidxt[i + offset]] = xidxt[i];
     //     // offset++;
@@ -779,20 +785,20 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
     //     // jJacS_dev[geqidxt[i] + offset] = xidxt[i] + 1;
     //     // offset++;
 
-    //     iJacS_dev[geqidxt[i] + offset] = xidxt[i];
-    //     jJacS_dev[geqidxt[i] + offset] = xidxf[i];
+    //     iJacS_dev[jac_idx[i] + offset] = xidxt[i];
+    //     jJacS_dev[jac_idx[i] + offset] = xidxf[i];
     //     offset++;
 
-    //     iJacS_dev[geqidxt[i] + offset] = xidxt[i];
-    //     jJacS_dev[geqidxt[i] + offset] = xidxf[i] + 1;
+    //     iJacS_dev[jac_idx[i] + offset] = xidxt[i];
+    //     jJacS_dev[jac_idx[i] + offset] = xidxf[i] + 1;
     //     offset++;
 
-    //     iJacS_dev[geqidxt[i] + offset] = xidxt[i] + 1;
-    //     jJacS_dev[geqidxf[i] + offset] = xidxf[i];
+    //     iJacS_dev[jac_idx[i] + offset] = xidxt[i] + 1;
+    //     jJacS_dev[jac_idx[i] + offset] = xidxf[i];
     //     offset++;
 
-    //     iJacS_dev[geqidxt[i] + offset] = xidxt[i] + 1;
-    //     jJacS_dev[geqidxt[i] + offset] = xidxf[i] + 1;
+    //     iJacS_dev[jac_idx[i] + offset] = xidxt[i] + 1;
+    //     jJacS_dev[jac_idx[i] + offset] = xidxf[i] + 1;
     //     offset++;
 
     //   });
@@ -830,20 +836,18 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
     // Create arrays on host to store i,j, and val arrays
     umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
 
-    // int *itemp = (int *)(h_allocator_.allocate(opflow->nnz_eqjacsp * sizeof(int)));
-    // int *jtemp = (int *)(h_allocator_.allocate(opflow->nnz_eqjacsp * sizeof(int)));
+    int *itemp = (int *)(h_allocator_.allocate(opflow->nnz_eqjacsp * sizeof(int)));
+    int *jtemp = (int *)(h_allocator_.allocate(opflow->nnz_eqjacsp * sizeof(int)));
 
-    // resmgr.copy(pbpolrajahiopsparse->i_jaceq, iJacS_dev,
-    //             opflow->nnz_eqjacsp);
-    // resmgr.copy(pbpolrajahiopsparse->j_jaceq, jJacS_dev,
-    //             opflow->nnz_eqjacsp);
+    resmgr.copy(itemp, iJacS_dev, opflow->nnz_eqjacsp*sizeof(int));
+    resmgr.copy(jtemp, jJacS_dev, opflow->nnz_eqjacsp*sizeof(int));
     
-    // std::cout << "Non-zero indexes for Equality Constraint Jacobian (GPU):" << std::endl;
-    // for (int idx = 0; idx < opflow->nnz_eqjacsp; ++idx) {
-    //   std::cout << std::setw(5) << idx << " "
-    //             << std::setw(5) << itemp[idx] << " "
-    //             << std::setw(5) << jtemp[idx] << std::endl;
-    // }
+    std::cout << "Non-zero indexes for Equality Constraint Jacobian (GPU):" << std::endl;
+    for (int idx = 0; idx < opflow->nnz_eqjacsp; ++idx) {
+      std::cout << std::setw(5) << idx << " "
+                << std::setw(5) << itemp[idx] << " "
+                << std::setw(5) << jtemp[idx] << std::endl;
+    }
 
     roffset = 0;
     coffset = 0;

@@ -230,7 +230,7 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
 
   PS ps = (PS)opflow->ps;
 
-  for (int ibus = 0, igen = 0, iline = 0, iload = 0; ibus < ps->nbus; ++ibus) {
+  for (int ibus = 0, igen1 = 0, igen2 = 0, iline = 0, iload = 0; ibus < ps->nbus; ++ibus) {
 
     PSBUS bus = &(ps->bus[ibus]);
 
@@ -260,9 +260,9 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
       if (!gen->status)
         continue;
       // each active generator uses 1 real and reactive entry on each bus
-      genparams->eqjacspbus_idx[igen] = nnz_eqjac++;
-      genparams->eqjacsqbus_idx[igen] = nnz_eqjac++;
-      igen++;
+      genparams->eqjacspbus_idx[igen1] = nnz_eqjac++;
+      genparams->eqjacsqbus_idx[igen1] = nnz_eqjac++;
+      igen1++;
     }
       
     if (opflow->include_loadloss_variables) {
@@ -271,9 +271,11 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
       for (int bload = 0; bload < bus->nload; bload++, iload++) {
         loadparams->jacsp_idx[iload] = nnz_eqjac;
         nnz_eqjac += 2;
+        iload++;
       }
     }
 
+    if (0) {
     const PSLINE *connlines;
     int nconnlines;
     ierr = PSBUSGetSupportingLines(bus, &nconnlines, &connlines);
@@ -292,32 +294,30 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
       const PSBUS *connbuses;
       ierr = PSLINEGetConnectedBuses(line, &connbuses);
       CHKERRQ(ierr);
-      PSBUS busf = connbuses[0];
       PSBUS bust = connbuses[1];
 
-      if (bus == busf) {
-        lineparams->geqidxf[iline] = busparams->jacsp_idx[ibus];
-      } else if (bus == bust) {
-        lineparams->geqidxt[iline] = busparams->jacsp_idx[ibus];
-      } else {
-        PetscFunctionReturn(PETSC_ERR_SUP);
-      }
-      nnz_eqjac += 4;
+      // only count nonzeros when this is the to bus; add nonzeros for both to and from
+      if (bus == bust) {
+        lineparams->jac_idx[iline] = nnz_eqjac;
+        nnz_eqjac += 8;
+      } 
       iline++;
+    }
     }
       
     if (opflow->has_gensetpoint) {
-      for (int igen = 0; igen < bus->ngen; ++igen) {
+      for (int bgen = 0; bgen < bus->ngen; ++bgen) {
         PSGEN gen;
-        ierr = PSBUSGetGen(bus, igen, &gen);
+        ierr = PSBUSGetGen(bus, bgen, &gen);
         CHKERRQ(ierr);
         
         if (!gen->status || gen->isrenewable)
           continue;
 
         // each generator uses 2 rows, 3 columns real, 1 column reactive
-        genparams->eqjacspbus_idx[igen] = nnz_eqjac;
+        genparams->eqjacspbus_idx[igen2] = nnz_eqjac;
         nnz_eqjac += 4;
+        igen2++;
       }
     }
   }
