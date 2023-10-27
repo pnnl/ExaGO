@@ -627,6 +627,9 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
 
   PetscFunctionBegin;
 
+  ierr = PetscLogEventBegin(opflow->eqconsjaclogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
+
   /* Using OPFLOWComputeEqualityConstraintJacobian_PBPOL() as a guide */
 
   if (MJacS_dev == NULL) {
@@ -730,8 +733,6 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
 
         int offset;
 
-        // from bus indexes
-
         offset = 0;
         
         iJacS_dev[jacf_idx[i] + offset] = geqidxf[i];
@@ -810,14 +811,8 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
 
     resmgr.copy(itemp, iJacS_dev, opflow->nnz_eqjacsp*sizeof(int));
     resmgr.copy(jtemp, jJacS_dev, opflow->nnz_eqjacsp*sizeof(int));
-    
-    std::cout << "Non-zero indexes for Equality Constraint Jacobian (GPU):" << std::endl;
-    for (int idx = 0; idx < opflow->nnz_eqjacsp; ++idx) {
-      std::cout << std::setw(5) << idx << " "
-                << std::setw(5) << itemp[idx] << " "
-                << std::setw(5) << jtemp[idx] << std::endl;
-    }
 
+    if (1) {
     roffset = 0;
     coffset = 0;
 
@@ -852,21 +847,190 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
       ierr = MatRestoreRow(opflow->Jac_Ge, i, &nvals, &cols, &vals);
       CHKERRQ(ierr);
     }
-
+    if (0)
     std::cout << "Non-zero indexes for Equality Constraint Jacobian:" << std::endl;
     for (int idx = 0; idx < opflow->nnz_eqjacsp; ++idx) {
       std::cout << std::setw(5) << idx << " "
                 << std::setw(5) << pbpolrajahiopsparse->i_jaceq[idx] << " "
                 << std::setw(5) << pbpolrajahiopsparse->j_jaceq[idx] << std::endl;
     }
-    
+    }
     // Copy over i_jaceq and j_jaceq arrays to device
     resmgr.copy(iJacS_dev, pbpolrajahiopsparse->i_jaceq);
     resmgr.copy(jJacS_dev, pbpolrajahiopsparse->j_jaceq);
+    }
+    
   } else {
-    ierr = PetscLogEventBegin(opflow->eqconsjaclogger, 0, 0, 0, 0);
-    CHKERRQ(ierr);
 
+    // Bus Contribution
+    int *b_jacsp_idx = busparams->jacsp_idx_dev_;
+    int *b_jacsq_idx = busparams->jacsq_idx_dev_;
+    int *isisolated = busparams->isisolated_dev_;
+    int *ispvpq = busparams->ispvpq_dev_;
+    double *gl = busparams->gl_dev_;
+    double *bl = busparams->bl_dev_;
+    int *b_xidx = busparams->xidx_dev_;
+
+    RAJA::forall<exago_raja_exec>(
+        RAJA::RangeSegment(0, busparams->nbus),
+        RAJA_LAMBDA(RAJA::Index_type i) {
+          double Vm = x_dev[b_xidx[i] + 1];
+          MJacS_dev[b_jacsp_idx[i]] = isisolated[i] * 1.0 + ispvpq[i] * 0.0;
+          MJacS_dev[b_jacsp_idx[i]+1] = isisolated[i] * 0.0 + ispvpq[i] * 2 * Vm * gl[i];
+          MJacS_dev[b_jacsq_idx[i]] = 0.0;
+          MJacS_dev[b_jacsq_idx[i]+1] = isisolated[i] * 1.0 + ispvpq[i] * -2 * Vm * bl[i];
+        });
+    
+
+    // Power imbalance 
+    if (opflow->include_powerimbalance_variables) {
+      RAJA::forall<exago_raja_exec>(
+          RAJA::RangeSegment(0, busparams->nbus),
+          RAJA_LAMBDA(RAJA::Index_type i) {
+            MJacS_dev[b_jacsp_idx[i]] = 1.0;
+            MJacS_dev[b_jacsp_idx[i] + 1] = -1.0;
+            MJacS_dev[b_jacsq_idx[i]] = 1.0;
+            MJacS_dev[b_jacsq_idx[i] + 1] = -1.0;
+          });
+    }
+
+    /* Generator contributions */
+    int *eqjacspbus_idx = genparams->eqjacspbus_idx_dev_;
+    int *eqjacsqbus_idx = genparams->eqjacsqbus_idx_dev_;
+    RAJA::forall<exago_raja_exec>(
+        RAJA::RangeSegment(0, genparams->ngenON),
+        RAJA_LAMBDA(RAJA::Index_type i) {
+          MJacS_dev[eqjacspbus_idx[i]] = -1.0;
+          MJacS_dev[eqjacsqbus_idx[i]] = -1.0;
+        });
+
+    if (opflow->has_gensetpoint) {
+      int *eqjacspgen_idx = genparams->eqjacspgen_idx_dev_;
+      int *g_isrenewable = genparams->isrenewable_dev_;
+
+      RAJA::forall<exago_raja_exec>(
+          RAJA::RangeSegment(0, genparams->ngenON),
+          RAJA_LAMBDA(RAJA::Index_type i) {
+            if (!g_isrenewable[i]) {
+              MJacS_dev[eqjacspgen_idx[i]] = -1.0;
+              MJacS_dev[eqjacspgen_idx[i] + 1] = 1.0;
+              MJacS_dev[eqjacspgen_idx[i] + 2] = 1.0;
+              MJacS_dev[eqjacspgen_idx[i] + 3] = 1.0;
+            }
+          });
+    }
+
+    /* Loadloss contributions - 2 contributions expected */
+    if (opflow->include_loadloss_variables) {
+      int *l_jacsp_idx = loadparams->jacsp_idx_dev_;
+      RAJA::forall<exago_raja_exec>(
+          RAJA::RangeSegment(0, loadparams->nload),
+          RAJA_LAMBDA(RAJA::Index_type i) {
+            MJacS_dev[l_jacsp_idx[i]] = -1;
+            MJacS_dev[l_jacsp_idx[i] + 1] = -1;
+          });
+    }
+
+    // Line contributions
+
+    double *Gff = lineparams->Gff_dev_;
+    double *Gtt = lineparams->Gtt_dev_;
+    double *Gft = lineparams->Gft_dev_;
+    double *Gtf = lineparams->Gtf_dev_;
+
+    double *Bff = lineparams->Bff_dev_;
+    double *Btt = lineparams->Btt_dev_;
+    double *Bft = lineparams->Bft_dev_;
+    double *Btf = lineparams->Btf_dev_;
+
+    int *xidxf = lineparams->xidxf_dev_;
+    int *xidxt = lineparams->xidxt_dev_;
+    int *busf_idx = lineparams->busf_idx_dev_;
+    int *bust_idx = lineparams->bust_idx_dev_;
+    int *jacf_idx = lineparams->jacf_idx_dev_;
+    int *jact_idx = lineparams->jact_idx_dev_;
+    
+    RAJA::forall<exago_raja_exec>(
+        RAJA::RangeSegment(0, lineparams->nlineON),
+        RAJA_LAMBDA(RAJA::Index_type i) {
+          double thetaf = x_dev[xidxf[i]], Vmf = x_dev[xidxf[i] + 1];
+          double thetat = x_dev[xidxt[i]], Vmt = x_dev[xidxt[i] + 1];
+          double thetaft = thetaf - thetat;
+          double thetatf = thetat - thetaf;
+          int ifrom(busf_idx[i]), ito(bust_idx[i]);
+
+          // This confusing and could probably be done in a clearer
+          // way. Two indexing schemes are needed. Some line
+          // contributions (from/from, to/to) need to be added to the
+          // original bus contribution entries -- get those
+          // from the bus index list.  A separate indexing system is for
+          // the extra (to/from, from/to) entries.
+
+          // for reference, these are computed in the same order as
+          // OPFLOWComputeDenseEqualityConstraintJacobian_PBPOLRAJAHIOP()
+
+          // from bus real entries
+          
+          /* dPf_dthetaf */
+          MJacS_dev[b_jacsp_idx[ifrom]] +=
+            Vmf * Vmt * (-Gft[i] * sin(thetaft) + Bft[i] * cos(thetaft));
+          /*dPf_dVmf */
+          MJacS_dev[b_jacsp_idx[ifrom] + 1] += 2 * Gff[i] * Vmf +
+            Vmt * (Gft[i] * cos(thetaft) + Bft[i] * sin(thetaft));
+          /*dPf_dthetat */
+          MJacS_dev[jacf_idx[i] + 0] =
+            Vmf * Vmt * (Gft[i] * sin(thetaft) - Bft[i] * cos(thetaft));
+          /* dPf_dVmt */
+          MJacS_dev[jacf_idx[i] + 1] =
+            Vmf * (Gft[i] * cos(thetaft) + Bft[i] * sin(thetaft));
+
+          // from bus reactive entries
+          
+          /* dQf_dthetaf */
+          MJacS_dev[b_jacsq_idx[ifrom]] +=
+            Vmf * Vmt * (Bft[i] * sin(thetaft) + Gft[i] * cos(thetaft));
+          /* dQf_dVmf */
+          MJacS_dev[b_jacsq_idx[ifrom] + 1] += -2 * Bff[i] * Vmf +
+            Vmt * (-Bft[i] * cos(thetaft) + Gft[i] * sin(thetaft));
+          /* dQf_dthetat */
+          MJacS_dev[jacf_idx[i] + 2] =
+            Vmf * Vmt * (-Bft[i] * sin(thetaft) - Gft[i] * cos(thetaft));
+          /* dQf_dVmt */
+          MJacS_dev[jacf_idx[i] + 3] =
+             Vmf * (-Bft[i] * cos(thetaft) + Gft[i] * sin(thetaft));
+
+          // to bus real entries
+          
+          /* dPt_dthetat */
+          MJacS_dev[b_jacsp_idx[ito]] +=
+            Vmt * Vmf * (-Gtf[i] * sin(thetatf) + Btf[i] * cos(thetatf));
+          /* dPt_dVmt */
+          MJacS_dev[b_jacsp_idx[ito] + 1] += 2 * Gtt[i] * Vmt +
+            Vmf * (Gtf[i] * cos(thetatf) + Btf[i] * sin(thetatf));
+          /* dPt_dthetaf */  
+          MJacS_dev[jact_idx[i] + 0] =
+            Vmt * Vmf * (Gtf[i] * sin(thetatf) - Btf[i] * cos(thetatf));
+          /* dPt_dVmf */
+          MJacS_dev[jact_idx[i] + 1] = 
+            Vmt * (Gtf[i] * cos(thetatf) + Btf[i] * sin(thetatf));
+
+          // to bus reactive entries
+          
+          /* dQt_dthetat */
+          MJacS_dev[b_jacsq_idx[ito]] +=
+            Vmt * Vmf * (Btf[i] * sin(thetatf) + Gtf[i] * cos(thetatf));
+          /* dQt_dVmt */
+          MJacS_dev[b_jacsq_idx[ito] + 1] += -2 * Btt[i] * Vmt +
+            Vmf * (-Btf[i] * cos(thetatf) + Gtf[i] * sin(thetatf));
+          /* dQt_dthetaf */
+          MJacS_dev[jact_idx[i] + 2] =
+            Vmt * Vmf * (-Btf[i] * sin(thetatf) - Gtf[i] * cos(thetatf));
+          /* dQt_dVmf */
+          MJacS_dev[jact_idx[i] + 3] =
+            Vmt * (-Btf[i] * cos(thetatf) + Gtf[i] * sin(thetatf));
+      });
+    
+    
     ierr = VecGetArray(opflow->X, &x);
     CHKERRQ(ierr);
 
@@ -903,10 +1067,11 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
     // Copy over val_ineq to device
     resmgr.copy(MJacS_dev, pbpolrajahiopsparse->val_jaceq);
 
-    ierr = PetscLogEventEnd(opflow->eqconsjaclogger, 0, 0, 0, 0);
-    CHKERRQ(ierr);
   }
 
+  ierr = PetscLogEventEnd(opflow->eqconsjaclogger, 0, 0, 0, 0);
+  CHKERRQ(ierr);
+  
   PetscFunctionReturn(0);
 }
 
