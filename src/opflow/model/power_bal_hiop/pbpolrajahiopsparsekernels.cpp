@@ -603,6 +603,55 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
   PetscFunctionReturn(0);
 }
 
+
+// A routine to get the triplet arrays from the device and print them out
+static void
+PrintTriplets(const std::string& title, const int& n, int *i, int *j, double *v)
+{
+  auto &resmgr = umpire::ResourceManager::getInstance();
+  umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
+
+  int *itemp(NULL);
+
+  if (i != NULL) {
+    itemp = (int *)(h_allocator_.allocate(n * sizeof(int)));
+    resmgr.copy(itemp, i, n*sizeof(int));
+  }
+
+  int *jtemp(NULL);
+  if (j != 0) {
+    jtemp = (int *)(h_allocator_.allocate(n * sizeof(int)));
+    resmgr.copy(jtemp, j, n*sizeof(int));
+  }
+
+  double *vtemp(NULL);
+  if (v != NULL) {
+    vtemp = (double *)(h_allocator_.allocate(n * sizeof(double)));
+    resmgr.copy(vtemp, v, n*sizeof(double));
+  }
+
+  std::cout << title << std::endl;
+  for (int idx = 0; idx < n; ++idx) {
+    std::cout << std::setw(5) << idx << " ";
+    if (itemp != NULL) {
+      std::cout << std::setw(5) << std::right << itemp[idx] << " ";
+    }
+    if (jtemp != NULL) {
+      std::cout << std::setw(5) << std::right << jtemp[idx];
+    }
+    if (vtemp != NULL) {
+      std::cout << std::setw(12) << std::right
+                << std::scientific << std::setprecision(3)
+                << vtemp[idx];
+    }
+    std::cout << std::endl;
+  }
+  h_allocator_.deallocate(itemp);
+  h_allocator_.deallocate(jtemp);
+  if (vtemp != NULL)   h_allocator_.deallocate(vtemp);
+}
+  
+
 PetscErrorCode
 OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
     OPFLOW opflow, const double *x_dev, int *iJacS_dev, int *jJacS_dev,
@@ -630,6 +679,8 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
   ierr = PetscLogEventBegin(opflow->eqconsjaclogger, 0, 0, 0, 0);
   CHKERRQ(ierr);
 
+  umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
+  
   /* Using OPFLOWComputeEqualityConstraintJacobian_PBPOL() as a guide */
 
   if (MJacS_dev == NULL) {
@@ -802,15 +853,9 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
           });
     }
 
-    
-    // Create arrays on host to store i,j, and val arrays
-    umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
-
-    int *itemp = (int *)(h_allocator_.allocate(opflow->nnz_eqjacsp * sizeof(int)));
-    int *jtemp = (int *)(h_allocator_.allocate(opflow->nnz_eqjacsp * sizeof(int)));
-
-    resmgr.copy(itemp, iJacS_dev, opflow->nnz_eqjacsp*sizeof(int));
-    resmgr.copy(jtemp, jJacS_dev, opflow->nnz_eqjacsp*sizeof(int));
+    if (1)
+      PrintTriplets("Non-zero indexes for Equality Constraint Jacobian (GPU):",
+                    opflow->nnz_eqjacsp, iJacS_dev, jJacS_dev, NULL);
 
     if (1) {
     roffset = 0;
@@ -847,17 +892,14 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
       ierr = MatRestoreRow(opflow->Jac_Ge, i, &nvals, &cols, &vals);
       CHKERRQ(ierr);
     }
-    if (0)
-    std::cout << "Non-zero indexes for Equality Constraint Jacobian:" << std::endl;
-    for (int idx = 0; idx < opflow->nnz_eqjacsp; ++idx) {
-      std::cout << std::setw(5) << idx << " "
-                << std::setw(5) << pbpolrajahiopsparse->i_jaceq[idx] << " "
-                << std::setw(5) << pbpolrajahiopsparse->j_jaceq[idx] << std::endl;
-    }
-    }
+
     // Copy over i_jaceq and j_jaceq arrays to device
     resmgr.copy(iJacS_dev, pbpolrajahiopsparse->i_jaceq);
     resmgr.copy(jJacS_dev, pbpolrajahiopsparse->j_jaceq);
+
+    if (1)
+      PrintTriplets("Non-zero indexes for Equality Constraint Jacobian:",
+                    opflow->nnz_eqjacsp, iJacS_dev, jJacS_dev, NULL);
     }
     
   } else {
@@ -871,6 +913,7 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
     double *bl = busparams->bl_dev_;
     int *b_xidx = busparams->xidx_dev_;
 
+    // Basic bus contribution
     RAJA::forall<exago_raja_exec>(
         RAJA::RangeSegment(0, busparams->nbus),
         RAJA_LAMBDA(RAJA::Index_type i) {
@@ -894,7 +937,7 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
           });
     }
 
-    /* Generator contributions */
+    // Generator contributions 
     int *eqjacspbus_idx = genparams->eqjacspbus_idx_dev_;
     int *eqjacsqbus_idx = genparams->eqjacsqbus_idx_dev_;
     RAJA::forall<exago_raja_exec>(
@@ -1029,13 +1072,17 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
           MJacS_dev[jact_idx[i] + 3] =
             Vmt * (-Btf[i] * cos(thetatf) + Gtf[i] * sin(thetatf));
       });
+
+    if (1)
+      PrintTriplets("Equality Constraint Jacobian (GPU):",
+                    opflow->nnz_eqjacsp, iJacS_dev, jJacS_dev, MJacS_dev);
+      
     
-    
+
     ierr = VecGetArray(opflow->X, &x);
     CHKERRQ(ierr);
 
     // Copy from device to host
-    umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
     registerWith(x, opflow->nx, resmgr, h_allocator_);
     resmgr.copy((double *)x, (double *)x_dev);
 
@@ -1067,6 +1114,9 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
     // Copy over val_ineq to device
     resmgr.copy(MJacS_dev, pbpolrajahiopsparse->val_jaceq);
 
+    if (1)
+      PrintTriplets("Equality Constraint Jacobian:",
+                    opflow->nnz_eqjacsp, iJacS_dev, jJacS_dev, MJacS_dev);
   }
 
   ierr = PetscLogEventEnd(opflow->eqconsjaclogger, 0, 0, 0, 0);
