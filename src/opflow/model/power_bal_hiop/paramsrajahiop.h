@@ -196,6 +196,8 @@ struct LINEParamsRajaHiop {
                       constraint bound */
   int *linelimidx; /* Indices for subset of lines that have finite limits */
 
+  int *busf_idx;   /* From bus index */
+  int *bust_idx;   /* To bus index */
   int *jacf_idx;   /* Location number in the sparse Jacobian (from) */
   int *jact_idx;   /* Location number in the sparse Jacobian (to) */
 
@@ -222,6 +224,8 @@ struct LINEParamsRajaHiop {
   int *
       linelimidx_dev_; /* Indices for subset of lines that have finite limits */
 
+  int *busf_idx_dev_;   /* From bus index */
+  int *bust_idx_dev_;   /* To bus index */
   int *jacf_idx_dev_;   /* Location number in the sparse Jacobian (from) */
   int *jact_idx_dev_;   /* Location number in the sparse Jacobian (to) */
 
