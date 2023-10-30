@@ -1015,11 +1015,13 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
           // from bus real entries
           
           /* dPf_dthetaf */
-          MJacS_dev[b_jacsp_idx[ifrom]] +=
-            Vmf * Vmt * (-Gft[i] * sin(thetaft) + Bft[i] * cos(thetaft));
+          RAJA::atomicAdd<exago_raja_atomic>
+            (&(MJacS_dev[b_jacsp_idx[ifrom]]),
+             Vmf * Vmt * (-Gft[i] * sin(thetaft) + Bft[i] * cos(thetaft)));
           /*dPf_dVmf */
-          MJacS_dev[b_jacsp_idx[ifrom] + 1] += 2 * Gff[i] * Vmf +
-            Vmt * (Gft[i] * cos(thetaft) + Bft[i] * sin(thetaft));
+          RAJA::atomicAdd<exago_raja_atomic>
+            (&(MJacS_dev[b_jacsp_idx[ifrom] + 1]),
+             2 * Gff[i] * Vmf + Vmt * (Gft[i] * cos(thetaft) + Bft[i] * sin(thetaft)));
           /*dPf_dthetat */
           MJacS_dev[jacf_idx[i] + 0] =
             Vmf * Vmt * (Gft[i] * sin(thetaft) - Bft[i] * cos(thetaft));
@@ -1030,26 +1032,31 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
           // from bus reactive entries
           
           /* dQf_dthetaf */
-          MJacS_dev[b_jacsq_idx[ifrom]] +=
-            Vmf * Vmt * (Bft[i] * sin(thetaft) + Gft[i] * cos(thetaft));
+          RAJA::atomicAdd<exago_raja_atomic>
+            (&(MJacS_dev[b_jacsq_idx[ifrom]]),
+             Vmf * Vmt * (Bft[i] * sin(thetaft) + Gft[i] * cos(thetaft)));
           /* dQf_dVmf */
-          MJacS_dev[b_jacsq_idx[ifrom] + 1] += -2 * Bff[i] * Vmf +
-            Vmt * (-Bft[i] * cos(thetaft) + Gft[i] * sin(thetaft));
+          RAJA::atomicAdd<exago_raja_atomic>
+            (&(MJacS_dev[b_jacsq_idx[ifrom] + 1]),
+             -2 * Bff[i] * Vmf +
+             Vmt * (-Bft[i] * cos(thetaft) + Gft[i] * sin(thetaft)));
           /* dQf_dthetat */
           MJacS_dev[jacf_idx[i] + 2] =
             Vmf * Vmt * (-Bft[i] * sin(thetaft) - Gft[i] * cos(thetaft));
           /* dQf_dVmt */
           MJacS_dev[jacf_idx[i] + 3] =
-             Vmf * (-Bft[i] * cos(thetaft) + Gft[i] * sin(thetaft));
+            Vmf * (-Bft[i] * cos(thetaft) + Gft[i] * sin(thetaft));
 
           // to bus real entries
           
           /* dPt_dthetat */
-          MJacS_dev[b_jacsp_idx[ito]] +=
-            Vmt * Vmf * (-Gtf[i] * sin(thetatf) + Btf[i] * cos(thetatf));
+          RAJA::atomicAdd<exago_raja_atomic>
+             (&(MJacS_dev[b_jacsp_idx[ito]]), 
+              Vmt * Vmf * (-Gtf[i] * sin(thetatf) + Btf[i] * cos(thetatf)));
           /* dPt_dVmt */
-          MJacS_dev[b_jacsp_idx[ito] + 1] += 2 * Gtt[i] * Vmt +
-            Vmf * (Gtf[i] * cos(thetatf) + Btf[i] * sin(thetatf));
+          RAJA::atomicAdd<exago_raja_atomic> 
+            (&(MJacS_dev[b_jacsp_idx[ito] + 1]), 2 * Gtt[i] * Vmt +
+               Vmf * (Gtf[i] * cos(thetatf) + Btf[i] * sin(thetatf)));
           /* dPt_dthetaf */  
           MJacS_dev[jact_idx[i] + 0] =
             Vmt * Vmf * (Gtf[i] * sin(thetatf) - Btf[i] * cos(thetatf));
@@ -1060,11 +1067,13 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
           // to bus reactive entries
           
           /* dQt_dthetat */
-          MJacS_dev[b_jacsq_idx[ito]] +=
-            Vmt * Vmf * (Btf[i] * sin(thetatf) + Gtf[i] * cos(thetatf));
+          RAJA::atomicAdd<exago_raja_atomic> 
+             (&(MJacS_dev[b_jacsq_idx[ito]]),
+              Vmt * Vmf * (Btf[i] * sin(thetatf) + Gtf[i] * cos(thetatf)));
           /* dQt_dVmt */
-          MJacS_dev[b_jacsq_idx[ito] + 1] += -2 * Btt[i] * Vmt +
-            Vmf * (-Btf[i] * cos(thetatf) + Gtf[i] * sin(thetatf));
+          RAJA::atomicAdd<exago_raja_atomic> 
+             (&(MJacS_dev[b_jacsq_idx[ito] + 1]), -2 * Btt[i] * Vmt +
+              Vmf * (-Btf[i] * cos(thetatf) + Gtf[i] * sin(thetatf)));
           /* dQt_dthetaf */
           MJacS_dev[jact_idx[i] + 2] =
             Vmt * Vmf * (-Btf[i] * sin(thetatf) - Gtf[i] * cos(thetatf));
@@ -1078,7 +1087,7 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
                     opflow->nnz_eqjacsp, iJacS_dev, jJacS_dev, MJacS_dev);
       
     
-
+    if (1) {
     ierr = VecGetArray(opflow->X, &x);
     CHKERRQ(ierr);
 
@@ -1117,6 +1126,7 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
     if (1)
       PrintTriplets("Equality Constraint Jacobian:",
                     opflow->nnz_eqjacsp, iJacS_dev, jJacS_dev, MJacS_dev);
+    }
   }
 
   ierr = PetscLogEventEnd(opflow->eqconsjaclogger, 0, 0, 0, 0);

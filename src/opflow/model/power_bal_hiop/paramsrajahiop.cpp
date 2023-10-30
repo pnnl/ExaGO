@@ -407,8 +407,8 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow) {
     */
     geqidxf[linei] = busf->starteqloc;
     geqidxt[linei] = bust->starteqloc;
-    busf_idx[linei] = line->fbus;
-    bust_idx[linei] = line->tbus;
+    busf_idx[linei] = ps->busext2intmap[line->fbus];
+    bust_idx[linei] = ps->busext2intmap[line->tbus];
     jacf_idx[linei] = 0;
     jact_idx[linei] = 0;
 

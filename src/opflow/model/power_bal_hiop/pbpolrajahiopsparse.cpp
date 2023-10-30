@@ -302,7 +302,8 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
       continue;
     
     // each line adds 4 (off-diagonal) entries for the to bus and 4
-    // entries for the from bus.
+    // entries for the from bus.  Each line also modifies 4 existing
+    // to and from bus entries.
     lineparams->jacf_idx[iline] = nnz_eqjac;
     nnz_eqjac += 4;
     lineparams->jact_idx[iline] = nnz_eqjac;
