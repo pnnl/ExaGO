@@ -769,14 +769,19 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
               val[2] = dSf2_dthetat;
               val[3] = dSf2_dVmt;
 
-              RAJA::atomicAdd<exago_raja_atomic>
-                (&(MJacS_dev[jac_ieq_idx[i] + 0]), val[0]);
-              RAJA::atomicAdd<exago_raja_atomic>
-                (&(MJacS_dev[jac_ieq_idx[i] + 1]), val[1]);
-              RAJA::atomicAdd<exago_raja_atomic>
-                (&(MJacS_dev[jac_ieq_idx[i] + 2]), val[2]);
-              RAJA::atomicAdd<exago_raja_atomic>
-                (&(MJacS_dev[jac_ieq_idx[i] + 3]), val[3]);
+              MJacS_dev[jac_ieq_idx[i] + 0] = val[0];
+              MJacS_dev[jac_ieq_idx[i] + 1] = val[1];
+              MJacS_dev[jac_ieq_idx[i] + 2] = val[2];
+              MJacS_dev[jac_ieq_idx[i] + 3] = val[3];
+
+              // RAJA::atomicAdd<exago_raja_atomic>
+              //   (&(MJacS_dev[jac_ieq_idx[i] + 0]), val[0]);
+              // RAJA::atomicAdd<exago_raja_atomic>
+              //   (&(MJacS_dev[jac_ieq_idx[i] + 1]), val[1]);
+              // RAJA::atomicAdd<exago_raja_atomic>
+              //   (&(MJacS_dev[jac_ieq_idx[i] + 2]), val[2]);
+              // RAJA::atomicAdd<exago_raja_atomic>
+              //   (&(MJacS_dev[jac_ieq_idx[i] + 3]), val[3]);
 
               dSt2_dthetaf = dSt2_dPt * dPt_dthetaf + dSt2_dQt * dQt_dthetaf;
               dSt2_dthetat = dSt2_dPt * dPt_dthetat + dSt2_dQt * dQt_dthetat;
@@ -788,14 +793,19 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
               val[0] = dSt2_dthetaf;
               val[1] = dSt2_dVmf;
 
-              RAJA::atomicAdd<exago_raja_atomic>
-                (&(MJacS_dev[jac_ieq_idx[i] + 4]), val[0]);
-              RAJA::atomicAdd<exago_raja_atomic>
-                (&(MJacS_dev[jac_ieq_idx[i] + 5]), val[1]);
-              RAJA::atomicAdd<exago_raja_atomic>
-                (&(MJacS_dev[jac_ieq_idx[i] + 6]), val[2]);
-              RAJA::atomicAdd<exago_raja_atomic>
-                (&(MJacS_dev[jac_ieq_idx[i] + 7]), val[3]);
+              MJacS_dev[jac_ieq_idx[i] + 4] = val[0];
+              MJacS_dev[jac_ieq_idx[i] + 5] = val[1];
+              MJacS_dev[jac_ieq_idx[i] + 6] = val[2];
+              MJacS_dev[jac_ieq_idx[i] + 7] = val[3];
+
+              // RAJA::atomicAdd<exago_raja_atomic>
+              //   (&(MJacS_dev[jac_ieq_idx[i] + 4]), val[0]);
+              // RAJA::atomicAdd<exago_raja_atomic>
+              //   (&(MJacS_dev[jac_ieq_idx[i] + 5]), val[1]);
+              // RAJA::atomicAdd<exago_raja_atomic>
+              //   (&(MJacS_dev[jac_ieq_idx[i] + 6]), val[2]);
+              // RAJA::atomicAdd<exago_raja_atomic>
+              //   (&(MJacS_dev[jac_ieq_idx[i] + 7]), val[3]);
             });
 
       }
