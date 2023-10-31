@@ -683,6 +683,130 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
       ierr = PetscLogEventBegin(opflow->ineqconsjaclogger, 0, 0, 0, 0);
       CHKERRQ(ierr);
 
+      if (!opflow->ignore_lineflow_constraints) {
+        LINEParamsRajaHiop *lineparams = &pbpolrajahiopsparse->lineparams;
+        double *Gff_arr = lineparams->Gff_dev_;
+        double *Gtt_arr = lineparams->Gtt_dev_;
+        double *Gft_arr = lineparams->Gft_dev_;
+        double *Gtf_arr = lineparams->Gtf_dev_;
+        
+        double *Bff_arr = lineparams->Bff_dev_;
+        double *Btt_arr = lineparams->Btt_dev_;
+        double *Bft_arr = lineparams->Bft_dev_;
+        double *Btf_arr = lineparams->Btf_dev_;
+      
+        int *linelimidx = lineparams->linelimidx_dev_;
+        int *xidxf = lineparams->xidxf_dev_;
+        int *xidxt = lineparams->xidxt_dev_;
+        int *jac_ieq_idx = lineparams->jac_ieq_idx_dev_;
+        RAJA::forall<exago_raja_exec>(
+            RAJA::RangeSegment(0, lineparams->nlinelim),
+            RAJA_LAMBDA(RAJA::Index_type i) {
+              int j = linelimidx[i];
+              double val[4];
+              double Pf, Qf, Pt, Qt;
+              double thetaf = x_dev[xidxf[j]], Vmf = x_dev[xidxf[j] + 1];
+              double thetat = x_dev[xidxt[j]], Vmt = x_dev[xidxt[j] + 1];
+              double thetaft = thetaf - thetat;
+              double thetatf = thetat - thetaf;
+              double dSf2_dPf, dSf2_dQf, dSt2_dPt, dSt2_dQt;
+              double dPf_dthetaf, dPf_dVmf, dPf_dthetat, dPf_dVmt;
+              double dQf_dthetaf, dQf_dVmf, dQf_dthetat, dQf_dVmt;
+              double dPt_dthetaf, dPt_dVmf, dPt_dthetat, dPt_dVmt;
+              double dQt_dthetaf, dQt_dVmf, dQt_dthetat, dQt_dVmt;
+              double dSf2_dthetaf, dSf2_dVmf, dSf2_dthetat, dSf2_dVmt;
+              double dSt2_dthetaf, dSt2_dVmf, dSt2_dthetat, dSt2_dVmt;
+              double Gff = Gff_arr[j], Bff = Bff_arr[j];
+              double Gft = Gft_arr[j], Bft = Bft_arr[j];
+              double Gtf = Gtf_arr[j], Btf = Btf_arr[j];
+              double Gtt = Gtt_arr[j], Btt = Btt_arr[j];
+              
+              Pf = Gff * Vmf * Vmf +
+                Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+              Qf = -Bff * Vmf * Vmf +
+                Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+              Pt = Gtt * Vmt * Vmt +
+                Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+              Qt = -Btt * Vmt * Vmt +
+                Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+              
+              dSf2_dPf = 2 * Pf;
+              dSf2_dQf = 2 * Qf;
+              dSt2_dPt = 2 * Pt;
+              dSt2_dQt = 2 * Qt;
+              
+              dPf_dthetaf = Vmf * Vmt * (-Gft * sin(thetaft) + Bft * cos(thetaft));
+              dPf_dVmf =
+                2 * Gff * Vmf + Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+              dPf_dthetat = Vmf * Vmt * (Gft * sin(thetaft) - Bft * cos(thetaft));
+              dPf_dVmt = Vmf * (Gft * cos(thetaft) + Bft * sin(thetaft));
+              
+              dQf_dthetaf = Vmf * Vmt * (Bft * sin(thetaft) + Gft * cos(thetaft));
+              dQf_dVmf =
+                -2 * Bff * Vmf + Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+              dQf_dthetat = Vmf * Vmt * (-Bft * sin(thetaft) - Gft * cos(thetaft));
+              dQf_dVmt = Vmf * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+              
+              dPt_dthetat = Vmt * Vmf * (-Gtf * sin(thetatf) + Btf * cos(thetatf));
+              dPt_dVmt =
+                2 * Gtt * Vmt + Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+              dPt_dthetaf = Vmt * Vmf * (Gtf * sin(thetatf) - Btf * cos(thetatf));
+              dPt_dVmf = Vmt * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+              
+              dQt_dthetat = Vmt * Vmf * (Btf * sin(thetatf) + Gtf * cos(thetatf));
+              dQt_dVmt =
+                -2 * Btt * Vmt + Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+              dQt_dthetaf = Vmt * Vmf * (-Btf * sin(thetatf) - Gtf * cos(thetatf));
+              dQt_dVmf = Vmt * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+              
+              dSf2_dthetaf = dSf2_dPf * dPf_dthetaf + dSf2_dQf * dQf_dthetaf;
+              dSf2_dthetat = dSf2_dPf * dPf_dthetat + dSf2_dQf * dQf_dthetat;
+              dSf2_dVmf = dSf2_dPf * dPf_dVmf + dSf2_dQf * dQf_dVmf;
+              dSf2_dVmt = dSf2_dPf * dPf_dVmt + dSf2_dQf * dQf_dVmt;
+
+              val[0] = dSf2_dthetaf;
+              val[1] = dSf2_dVmf;
+              val[2] = dSf2_dthetat;
+              val[3] = dSf2_dVmt;
+
+              RAJA::atomicAdd<exago_raja_atomic>
+                (&(MJacS_dev[jac_ieq_idx[i] + 0]), val[0]);
+              RAJA::atomicAdd<exago_raja_atomic>
+                (&(MJacS_dev[jac_ieq_idx[i] + 1]), val[1]);
+              RAJA::atomicAdd<exago_raja_atomic>
+                (&(MJacS_dev[jac_ieq_idx[i] + 2]), val[2]);
+              RAJA::atomicAdd<exago_raja_atomic>
+                (&(MJacS_dev[jac_ieq_idx[i] + 3]), val[3]);
+
+              dSt2_dthetaf = dSt2_dPt * dPt_dthetaf + dSt2_dQt * dQt_dthetaf;
+              dSt2_dthetat = dSt2_dPt * dPt_dthetat + dSt2_dQt * dQt_dthetat;
+              dSt2_dVmf = dSt2_dPt * dPt_dVmf + dSt2_dQt * dQt_dVmf;
+              dSt2_dVmt = dSt2_dPt * dPt_dVmt + dSt2_dQt * dQt_dVmt;
+              
+              val[2] = dSt2_dthetat;
+              val[3] = dSt2_dVmt;
+              val[0] = dSt2_dthetaf;
+              val[1] = dSt2_dVmf;
+
+              RAJA::atomicAdd<exago_raja_atomic>
+                (&(MJacS_dev[jac_ieq_idx[i] + 4]), val[0]);
+              RAJA::atomicAdd<exago_raja_atomic>
+                (&(MJacS_dev[jac_ieq_idx[i] + 5]), val[1]);
+              RAJA::atomicAdd<exago_raja_atomic>
+                (&(MJacS_dev[jac_ieq_idx[i] + 6]), val[2]);
+              RAJA::atomicAdd<exago_raja_atomic>
+                (&(MJacS_dev[jac_ieq_idx[i] + 7]), val[3]);
+            });
+
+      }
+
+      if (debugmsg)
+        PrintTriplets("Inequality Constraint Jacobian (GPU):",
+                      opflow->nnz_ineqjacsp,
+                      (iJacS_dev == NULL ? NULL : iJacS_dev + opflow->nnz_eqjacsp),
+                      (jJacS_dev == NULL ? NULL : jJacS_dev + opflow->nnz_eqjacsp),
+                      MJacS_dev + opflow->nnz_eqjacsp);
+      
       if (oldhostway) {
 
       ierr = VecGetArray(opflow->X, &x);
