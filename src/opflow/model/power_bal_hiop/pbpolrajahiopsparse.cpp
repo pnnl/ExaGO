@@ -310,19 +310,25 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
     nnz_eqjac += 4;
   }
 
+  // if there are lines, non-zeros were over counted
+  if (ps->nline > 0) {
+    nnz_eqjac -= 8;
+  }
+
   std::cout << "Equality Jacobian nonzero count: " << nnz_eqjac << std::endl;
 
   if (opflow->has_gensetpoint) {
-    for (int ibus = 0; ibus < ps->nbus; ++ibus) {
+    for (int ibus = 0, igen = 0; ibus < ps->nbus; ++ibus) {
       PSBUS bus = &(ps->bus[ibus]);
-      for (int igen = 0; igen < bus->ngen; ++igen) {
+      for (int bgen = 0; bgen < bus->ngen; ++bgen) {
         PSGEN gen;
-        ierr = PSBUSGetGen(bus, igen, &gen);
+        ierr = PSBUSGetGen(bus, bgen, &gen);
         CHKERRQ(ierr);
         if (!gen->status)
           continue;
-        genparams->ineqjacspgen_idx[igen] = nnz_ineqjac;
+        genparams->ineqjacspgen_idx[igen] = nnz_eqjac + nnz_ineqjac;
         nnz_ineqjac += 6;
+        igen++;
       }
     }
   }
@@ -331,9 +337,9 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
     for (int ibus = 0; ibus < ps->nbus; ++ibus) {
       PSBUS bus = &(ps->bus[ibus]);
       if (bus->ide == PV_BUS || bus->ide == REF_BUS) {
-        for (int igen = 0; igen < bus->ngen; ++igen) {
+        for (int bgen = 0; bgen < bus->ngen; ++bgen) {
         PSGEN gen;
-        ierr = PSBUSGetGen(bus, igen, &gen);
+        ierr = PSBUSGetGen(bus, bgen, &gen);
         CHKERRQ(ierr);
         if (!gen->status)
           continue;
@@ -346,6 +352,7 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
   if (!opflow->ignore_lineflow_constraints) {
     for (int iline = 0; iline < opflow->nlinesmon; ++iline) {
       // PSLINE line = &ps->line[opflow->linesmon[iline]];
+      lineparams->jac_ieq_idx[iline] = nnz_eqjac + nnz_ineqjac;
       nnz_ineqjac += 8;
     }
   }

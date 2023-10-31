@@ -235,6 +235,7 @@ int LINEParamsRajaHiop::copy(OPFLOW opflow) {
     resmgr.copy(gineqidx_dev_, gineqidx);
     resmgr.copy(gbineqidx_dev_, gbineqidx);
     resmgr.copy(linelimidx_dev_, linelimidx);
+    resmgr.copy(jac_ieq_idx_dev_, jac_ieq_idx);
   }
 #else
   Gff_dev_ = Gff;
@@ -258,6 +259,7 @@ int LINEParamsRajaHiop::copy(OPFLOW opflow) {
     gineqidx_dev_ = gineqidx;
     gbineqidx_dev_ = gbineqidx;
     linelimidx_dev_ = linelimidx;
+    jac_ieq_idx_dev_ = jac_ieq_idx;
   }
 #endif
   return 0;
@@ -289,6 +291,7 @@ int LINEParamsRajaHiop::destroy(OPFLOW opflow) {
     h_allocator_.deallocate(gineqidx);
     h_allocator_.deallocate(gbineqidx);
     h_allocator_.deallocate(linelimidx);
+    h_allocator_.deallocate(jac_ieq_idx);
   }
 
 #ifdef EXAGO_ENABLE_GPU
@@ -317,6 +320,7 @@ int LINEParamsRajaHiop::destroy(OPFLOW opflow) {
     d_allocator_.deallocate(gineqidx_dev_);
     d_allocator_.deallocate(gbineqidx_dev_);
     d_allocator_.deallocate(linelimidx_dev_);
+    d_allocator_.deallocate(jac_ieq_idx_dev_);
   }
 #endif
 
@@ -369,6 +373,7 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow) {
     linelimidx = paramAlloc<int>(h_allocator_, nlinelim);
     gineqidx = paramAlloc<int>(h_allocator_, nlinelim);
     gbineqidx = paramAlloc<int>(h_allocator_, nlinelim);
+    jac_ieq_idx = paramAlloc<int>(h_allocator_, nlinelim);
   }
 
   PetscInt j = 0;
@@ -416,6 +421,7 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow) {
       gbineqidx[j] = opflow->nconeq + line->startineqloc;
       gineqidx[j] = line->startineqloc;
       linelimidx[j] = linei;
+      jac_ieq_idx[j] = 0;
       j++;
     }
 
@@ -450,6 +456,7 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow) {
     gineqidx_dev_ = paramAlloc<int>(d_allocator_, nlinelim);
     gbineqidx_dev_ = paramAlloc<int>(d_allocator_, nlinelim);
     linelimidx_dev_ = paramAlloc<int>(d_allocator_, nlinelim);
+    jac_ieq_idx_dev_ = paramAlloc<int>(d_allocator_, nlinelim);
   }
 #endif
   return 0;
