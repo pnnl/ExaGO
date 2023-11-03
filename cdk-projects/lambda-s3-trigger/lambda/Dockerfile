@@ -75,9 +75,9 @@ RUN mkdir /opt/spack-environment \
 &&   echo '  # TODO ' \
 &&   echo '  #   - get IPOPT working' \
 &&   echo '  #   - get Sparse CPU support working' \
-&&   echo '  - exago@1.6.0+python+mpi+hiop~ipopt ^zlib' \
-&&   echo '  mirrors:' \
-&&   echo '    spack: https://binaries.spack.io/develop' \
+&&   echo '  - exago@1.6.0+python+mpi+hiop~ipopt' \
+&&   echo '  - perl ^zlib' \
+&&   echo '  - curl ^zlib' \
 &&   echo '  concretizer:' \
 &&   echo '    unify: true' \
 &&   echo '  config:' \
@@ -85,7 +85,7 @@ RUN mkdir /opt/spack-environment \
 &&   echo '  view: /opt/views/view') > /opt/spack-environment/spack.yaml
 
 # Install the software, remove unnecessary deps
-RUN cd /opt/spack-environment && spack env activate . && spack buildcache keys --install --trust && spack install --fail-fast && spack gc -y
+RUN cd /opt/spack-environment && spack env activate . && spack install --fail-fast && spack gc -y
 
 # Strip all the binaries
 RUN find -L /opt/views/view/* -type f -exec readlink -f '{}' \; | \
