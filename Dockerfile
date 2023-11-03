@@ -119,4 +119,3 @@ RUN { \
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "/bin/bash" ]
-
