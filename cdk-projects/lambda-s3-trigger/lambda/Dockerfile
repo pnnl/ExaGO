@@ -75,7 +75,7 @@ RUN mkdir /opt/spack-environment \
 &&   echo '  # TODO ' \
 &&   echo '  #   - get IPOPT working' \
 &&   echo '  #   - get Sparse CPU support working' \
-&&   echo '  - exago@1.6.0+python+mpi+hiop~ipopt' \
+&&   echo '  - exago@1.6.0+python+mpi+hiop~ipopt ^zlib' \
 &&   echo '  mirrors:' \
 &&   echo '    spack: https://binaries.spack.io/develop' \
 &&   echo '  concretizer:' \
