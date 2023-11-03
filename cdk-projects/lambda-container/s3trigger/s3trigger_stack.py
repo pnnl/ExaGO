@@ -14,14 +14,14 @@ class S3TriggerStack(Stack):
         super().__init__(scope, id, **kwargs)
 
         ecr_repository = ecr.Repository.from_repository_name(self, "ExagoRepo",
-                                    repository_name="test_repo")  # Specify your repository name
+                                                             repository_name="test_repo")  # Specify your repository name
 
     # Define the Lambda function using a Docker container from ECR
         function = _lambda.DockerImageFunction(self, "ExagoLambdaFunction",
-                                               #environment=dict(), # dictionary of environment variables such as LAMBDA_TASK_ROOT and PYTHONPATH 
+                                               # environment=dict(), # dictionary of environment variables such as LAMBDA_TASK_ROOT and PYTHONPATH
                                                # to specify the location of the ExaGO python wrappers and lambda handler within the Docker image
                                                code=_lambda.DockerImageCode.from_ecr(repository=ecr_repository))
-    
+
     # create s3 bucket
         s3 = _s3.Bucket(self, "s3bucket")
 
