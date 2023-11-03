@@ -1,7 +1,9 @@
 #!/bin/bash
 
-cp ../../Dockerfile ./lambda
-
+ls ../..
+ls ./lambda
+cp ../../Dockerfile ./lambda/Dockerfile
+ls ./lambda
 # TODO:
 
 # 0. Get ExaGO building with `docker_bash.sh`, along with a `git submodule update --init --recursive` after a `git rebase -i develop` after a `git checkout develop && git pull`

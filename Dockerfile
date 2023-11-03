@@ -72,44 +72,20 @@ FROM bootstrap as builder
 RUN mkdir /opt/spack-environment \
 &&  (echo spack: \
 &&   echo '  specs:' \
-&&   echo '    # - cmake@3.26.3 arch=linux-amzn2-x86_64_v3' \
-&&   echo '  - exago@develop+python~mpi' \
-&&   echo '  concretizer:' \
-&&   echo '    unify: when_possible' \
-&&   echo '    reuse: true' \
+&&   echo '  # TODO ' \
+&&   echo '  #   - get IPOPT working' \
+&&   echo '  #   - get Sparse CPU support working' \
+&&   echo '  - exago@1.6.0+python+mpi+hiop~ipopt' \
 &&   echo '  mirrors:' \
 &&   echo '    spack: https://binaries.spack.io/develop' \
-&&   echo '  packages:' \
-&&   echo '    exago:' \
-&&   echo '      require: +raja+hiop+ipopt' \
-&&   echo '    hiop:' \
-&&   echo '      require: '"'"'@develop+sparse+mpi+ginkgo+kron'"'"'' \
-&&   echo '    magma:' \
-&&   echo '      require: '"'"'@2.6.2'"'"'' \
-&&   echo '    coinhsl:' \
-&&   echo '      require: '"'"'@2019.05.21'"'"'' \
-&&   echo '    ipopt:' \
-&&   echo '      require: '"'"'@3.12.10~metis+coinhsl~mumps'"'"'' \
-&&   echo '    raja:' \
-&&   echo '      require: ~examples~exercises' \
-&&   echo '    umpire:' \
-&&   echo '      require: ~openmp~examples' \
-&&   echo '    petsc:' \
-&&   echo '      require: ~hypre~superlu-dist~hdf5~metis' \
-&&   echo '    python:' \
-&&   echo '      require: '"'"'@3.9.12'"'"'' \
-&&   echo '    all:' \
-&&   echo '      compiler:' \
-&&   echo '      - gcc@11.2.0' \
-&&   echo '      providers:' \
-&&   echo '        mpi:' \
-&&   echo '        - openmpi' \
+&&   echo '  concretizer:' \
+&&   echo '    unify: true' \
 &&   echo '  config:' \
 &&   echo '    install_tree: /opt/software' \
 &&   echo '  view: /opt/views/view') > /opt/spack-environment/spack.yaml
 
 # Install the software, remove unnecessary deps
-RUN cd /opt/spack-environment && spack env activate . && spack buildcache keys --install --trust && spack install --fail-fast && spack gc -y
+RUN cd /opt/spack-environment && spack env activate . && spack install --fail-fast && spack gc -y
 
 # Strip all the binaries
 RUN find -L /opt/views/view/* -type f -exec readlink -f '{}' \; | \
@@ -143,3 +119,4 @@ RUN { \
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "/bin/bash" ]
+

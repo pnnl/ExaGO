@@ -12,7 +12,8 @@ node_modules
 .env
 package-lock.json
 config.py
-spack_*
+spack*
+*view*
 hiop/
 .DS_Store
 venv
