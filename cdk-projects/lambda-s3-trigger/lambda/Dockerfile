@@ -85,7 +85,7 @@ RUN mkdir /opt/spack-environment \
 &&   echo '  view: /opt/views/view') > /opt/spack-environment/spack.yaml
 
 # Install the software, remove unnecessary deps
-RUN cd /opt/spack-environment && spack env activate . && spack install --fail-fast && spack gc -y
+RUN cd /opt/spack-environment && spack env activate . && spack buildcache keys --install --trust && spack install --fail-fast && spack gc -y
 
 # Strip all the binaries
 RUN find -L /opt/views/view/* -type f -exec readlink -f '{}' \; | \
