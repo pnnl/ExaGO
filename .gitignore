@@ -14,6 +14,7 @@ package-lock.json
 config.py
 spack*
 *view*
+*.txt
 hiop/
 .DS_Store
 venv
