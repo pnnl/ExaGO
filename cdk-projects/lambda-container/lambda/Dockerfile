@@ -18,4 +18,7 @@ RUN pip install --upgrade pip
 
  
 # Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)
-#CMD [ "lambda_handler.main" ]
+CMD [ "lambda_handler.main" ]
+
+#ENTRYPOINT [ "executable" ]
+#WORKDIR /the/workdir/path

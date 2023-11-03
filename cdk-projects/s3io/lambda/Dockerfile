@@ -2,14 +2,8 @@ FROM public.ecr.aws/lambda/python:3.11
  
 # Copy requirements.txt
 #COPY requirements.txt ${LAMBDA_TASK_ROOT}
-
-# <SPACK DOCKER SCRIPT>
  
-ENV LAMBDA_TASK_ROOT /var/root
-RUN echo ${LAMBDA_TASK_ROOT}
-
 # Copy function code
-RUN mkdir -p ${LAMBDA_TASK_ROOT}
 COPY lambda_handler.py ${LAMBDA_TASK_ROOT}
 ADD python_wrapper ${LAMBDA_TASK_ROOT}/python_wrapper
  
@@ -22,14 +16,6 @@ ADD python_wrapper ${LAMBDA_TASK_ROOT}/python_wrapper
 RUN pip install --upgrade pip
 #RUN pip install -r ${LAMBDA_TASK_ROOT}/requirements.txt
 
-# Install the function's dependencies
-RUN pip install \
-    --target ${LAMBDA_TASK_ROOT} \
-        awslambdaric
-
-# Set runtime interface client as default command for the container runtime
-ENTRYPOINT [ "/var/lang/bin/python", "-m", "awslambdaric" ]
  
 # Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)
-WORKDIR ${LAMBDA_TASK_ROOT}
-CMD [ "lambda_handler.main" ]
+#CMD [ "lambda_handler.main" ]
