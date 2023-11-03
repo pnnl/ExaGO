@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Setting up proxy and git
-#export HTTPS_PROXY=http://proxy01.pnl.gov:3128 export https_proxy=http://proxy01.pnl.gov:3128
+#export HTTPS_PROXY=http://proxy01.pnl.gov:3128 
+export https_proxy=http://proxy01.pnl.gov:3128
 #export AWS_PROFILE=AdministratorAccess-305402452870
 
 # Configure Git credential helper
