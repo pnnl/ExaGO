@@ -79,3 +79,5 @@ RUN apt-get -yqq update && apt-get -yqq upgrade \
 ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "/bin/bash" ]
 
+# Make sure devcontainer user gets spack packages
+RUN echo "source /entrypoint.sh" >> /home/vscode/.bashrc
