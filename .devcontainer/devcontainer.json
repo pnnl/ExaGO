@@ -1,0 +1,17 @@
+{
+	"build": {
+		"dockerfile": "Dockerfile",
+		"context": ".."
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-azuretools.vscode-docker",
+				"github.vscode-github-actions",
+				"ms-toolsai.jupyter"
+			]
+		}
+	},
+	"workspaceFolder": "/home/app/",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/app/,type=bind,consistency=cached"
+}
