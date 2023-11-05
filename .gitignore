@@ -5,7 +5,7 @@ install/*
 .ubuild.json
 *__pycache__*
 *nvblas.conf
-spack-*
+spack*
 .vscode/
 coinhsl-*
 node_modules

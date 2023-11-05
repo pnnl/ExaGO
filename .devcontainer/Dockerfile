@@ -16,6 +16,7 @@ RUN mkdir /opt/spack-environment \
 &&   echo '  - ipopt@3.12.10+coinhsl~mumps+metis' \
 &&   echo '  - coinhsl@2019.05.21+blas' \
 &&   echo '  - py-jupyterlab' \
+&&   echo '  - py-ipyparallel' \
 &&   echo '  concretizer:' \
 &&   echo '    unify: true' \
 &&   echo '    reuse: true' \
@@ -28,6 +29,8 @@ RUN mkdir /opt/spack-environment \
 &&   echo '        - openmpi' \
 &&   echo '        zlib-api:' \
 &&   echo '        - zlib' \
+&&   echo '    zlib-ng:' \
+&&   echo '      buildable: false' \
 &&   echo '  config:' \
 &&   echo '    install_tree: /opt/software' \
 &&   echo '  view: /opt/views/view') > /opt/spack-environment/spack.yaml
@@ -35,8 +38,23 @@ RUN mkdir /opt/spack-environment \
 # This is manual, and required to build Ipopt
 COPY coinhsl-archive-2019.05.21.tar.gz /opt/spack-environment/coinhsl-archive-2019.05.21.tar.gz
 
+# Find external packages
+RUN cd /opt/spack-environment && spack env activate . && spack external find --all
+
 # Do this separate of install to cache keys...
-RUN spack mirror add develop https://binaries.spack.io/develop && spack buildcache keys --install --trust
+RUN cd /opt/spack-environment && spack env activate . && spack mirror add develop https://binaries.spack.io/develop && spack buildcache keys --install --trust && spack concretize -f && spack mirror create -a
+
+# Install Ipopt w/ CoinHSL (and other deps) in stages to cache builds
+RUN cd /opt/spack-environment && spack env activate . && spack install --fail-fast ipopt
+
+# Install PETSc 
+RUN cd /opt/spack-environment && spack env activate . && spack install --fail-fast petsc
+
+# Install py-jupyterlab
+RUN cd /opt/spack-environment && spack env activate . && spack install --fail-fast py-jupyterlab
+
+# Install py-ipyparallel
+RUN cd /opt/spack-environment && spack env activate . && spack install --fail-fast py-ipyparallel
 
 # Install the software, remove unnecessary deps
 RUN cd /opt/spack-environment && spack env activate . && spack install --fail-fast && spack gc -y
@@ -72,7 +90,7 @@ RUN { \
 
 
 RUN apt-get -yqq update && apt-get -yqq upgrade \
- && apt-get -yqq install gfortran \
+ && apt-get -yqq install gfortran nodejs npm \
  && rm -rf /var/lib/apt/lists/*
 ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "/bin/bash" ]
@@ -83,6 +101,19 @@ RUN echo "source /entrypoint.sh" >> /home/vscode/.bashrc
 # Install the Jupyter kernel
 RUN . /entrypoint.sh && \
        python3 -m ipykernel install \
-        --name py311-exago\
-        --display-name ExaGO \
+        --name py311-exago \
+        --display-name "ExaGO" \
         --prefix=
+
+# Install the mpi4py Jupyter kernel
+RUN . /entrypoint.sh && \
+       python3 -m ipykernel install \
+        --name py311-mpi4py-exago \
+        --display-name "ExaGO w/ MPI" \
+        --prefix=
+
+# Make modifications that are necessary to run mpi4py in kernelspec
+RUN sed -i 's/\"\/opt\/views\/view\/bin\/python3\"/\"mpiexec\", \"-n\", \"1\", \"\/opt\/views\/view\/bin\/python3\"/g' /usr/local/share/jupyter/kernels/py311-mpi4py-exago/kernel.json
+
+# Configure user for container
+USER vscode

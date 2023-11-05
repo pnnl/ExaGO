@@ -9,10 +9,12 @@
 				"ms-azuretools.vscode-docker",
 				"github.vscode-github-actions",
 				"ms-toolsai.jupyter",
-				"GitHub.copilot"
+				"GitHub.copilot",
+				"ms-vsliveshare.vsliveshare"
 			]
 		}
 	},
 	"workspaceFolder": "/home/app/",
+  	"postCreateCommand": "cd /home/app/viz && export CXX=$(which gcc) && npm install",
     "workspaceMount": "source=${localWorkspaceFolder},target=/home/app/,type=bind,consistency=cached"
 }
