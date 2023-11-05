@@ -8,7 +8,8 @@
 			"extensions": [
 				"ms-azuretools.vscode-docker",
 				"github.vscode-github-actions",
-				"ms-toolsai.jupyter"
+				"ms-toolsai.jupyter",
+				"GitHub.copilot"
 			]
 		}
 	},

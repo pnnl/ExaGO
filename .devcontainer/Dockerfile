@@ -81,3 +81,10 @@ CMD [ "/bin/bash" ]
 
 # Make sure devcontainer user gets spack packages
 RUN echo "source /entrypoint.sh" >> /home/vscode/.bashrc
+
+# Install the Jupyter kernel
+RUN . /entrypoint.sh && \
+       python3 -m ipykernel install \
+        --name py311-exago\
+        --display-name ExaGO \
+        --prefix=
