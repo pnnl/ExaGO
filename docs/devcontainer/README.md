@@ -15,4 +15,3 @@
 7. once the conatiner has build and launched, open `docs/devcontainer/tutorial.ipynb`
 8. select the (newly built) existing jupyter kernel "ExaGO"
 9. run all cells!
-
