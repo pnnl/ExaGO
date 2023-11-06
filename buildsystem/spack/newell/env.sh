@@ -7,7 +7,7 @@ module load python/miniconda3.8
 . /share/apps/python/miniconda3.8/etc/profile.d/conda.sh
 
 # Load compiler/system modules
-module load gcc/8.5.0
+module load gcc/11.2.0
 module load cuda/11.4
 module load openmpi/4.1.4
 
