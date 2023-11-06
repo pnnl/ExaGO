@@ -22,4 +22,3 @@ The build info for this container is in `.devcontainer/`. There is a Dockerfile 
 1. once the conatiner has build and launched, open `docs/devcontainer/tutorial.ipynb`
 1. select the (newly built) existing jupyter kernel "ExaGO"
 1. run all cells!
-
