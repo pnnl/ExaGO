@@ -24,8 +24,6 @@ RUN mkdir /opt/spack-environment \
 &&   echo '  packages:' \
 &&   echo '    all:' \
 &&   echo '      providers:' \
-&&   echo '        blas:' \
-&&   echo '        - intel-oneapi-mkl' \
 &&   echo '        mpi:' \
 &&   echo '        - openmpi' \
 &&   echo '        zlib-api:' \
