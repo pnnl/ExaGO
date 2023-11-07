@@ -3,6 +3,7 @@ spack:
   - exago@develop%clang@16.0.0-rocm5.6.0-mixed amdgpu_target=gfx90a
     ^coinhsl%gcc@12.2.0-mixed
     ^openblas%gcc@12.2.0-mixed
+    ^petsc%clang@14.0.0-rocm5.2.0-mixed~complex
   view: false
   concretizer:
     unify: when_possible
