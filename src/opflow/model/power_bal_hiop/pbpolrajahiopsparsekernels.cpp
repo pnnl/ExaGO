@@ -1,6 +1,9 @@
 
 #include <iostream>
 #include <iomanip>
+#include <vector>
+#include <tuple>
+#include <algorithm>
 
 #include <exago_config.h>
 
@@ -474,12 +477,79 @@ PetscErrorCode OPFLOWComputeGradientArray_PBPOLRAJAHIOPSPARSE(
   PetscFunctionReturn(0);
 }
 
-// A routine to get the triplet arrays from the device and print them out
+// A routine to sort triplet matrix indexes.  The index arrays are on
+// the device.  This sorts them on the host.  
 static void
-PrintTriplets(const std::string& title, const int& n, int *i, int *j, double *v)
+SortIndexes(const int& n, int *i_dev, int *j_dev, int *idx_perm_dev)
 {
   auto &resmgr = umpire::ResourceManager::getInstance();
   umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
+
+  std::vector< std::tuple<int, int, int> > idxvect;
+  idxvect.reserve(n);
+
+  int *itemp(NULL);
+  itemp = (int *)(h_allocator_.allocate(n * sizeof(int)));
+  resmgr.copy(itemp, i_dev, n*sizeof(int));
+
+  int *jtemp(NULL);
+  jtemp = (int *)(h_allocator_.allocate(n * sizeof(int)));
+  resmgr.copy(jtemp, j_dev, n*sizeof(int));
+
+  for (int idx = 0; idx < n; idx++) {
+    idxvect.push_back(std::make_tuple(itemp[idx], jtemp[idx], idx));
+  }
+
+  std::sort(idxvect.begin(), idxvect.end(),
+            [] (std::tuple<int,int,int> const &t1,
+                std::tuple<int,int,int> const &t2) {
+              if (std::get<0>(t1) == std::get<0>(t2)) {
+                return (std::get<1>(t1) < std::get<1>(t2));
+              } 
+              return (std::get<0>(t1) < std::get<0>(t2));
+            });
+
+  int *idx_perm;
+  idx_perm = (int *)(h_allocator_.allocate(n * sizeof(int)));
+
+  for (int idx = 0; idx < n; idx++) {
+    itemp[idx] = std::get<0>(idxvect[idx]);
+    jtemp[idx] = std::get<1>(idxvect[idx]);
+    int i(std::get<2>(idxvect[idx]));
+    idx_perm[i] = idx;
+  }
+
+  // std::cout << "Permuted Indexes: " << std::endl;
+  // for (int idx = 0; idx < n; idx++) {
+  //   std::cout << std::setw(5) << std::right << itemp[idx] << " "
+  //             << std::setw(5) << std::right << jtemp[idx] << " "
+  //             << std::setw(5) << std::right << idx_perm[idx] << " "
+  //             << std::endl;
+  // }
+  
+   resmgr.copy(i_dev, itemp, n*sizeof(int));
+   resmgr.copy(j_dev, jtemp, n*sizeof(int));
+   resmgr.copy(idx_perm_dev, idx_perm, n*sizeof(int));
+
+   h_allocator_.deallocate(itemp);
+   h_allocator_.deallocate(jtemp);
+   h_allocator_.deallocate(idx_perm);
+}
+
+// A routine to get the triplet arrays from the device and print them out
+static void
+PrintTriplets(const std::string& title, const int& n, int *iperm,
+              int *i, int *j, double *v)
+{
+  auto &resmgr = umpire::ResourceManager::getInstance();
+  umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
+
+  int *ipermtemp(NULL);
+
+  if (iperm != NULL) {
+    ipermtemp = (int *)(h_allocator_.allocate(n * sizeof(int)));
+    resmgr.copy(ipermtemp, iperm, n*sizeof(int));
+  }
 
   int *itemp(NULL);
 
@@ -503,6 +573,9 @@ PrintTriplets(const std::string& title, const int& n, int *i, int *j, double *v)
   std::cout << title << std::endl;
   for (int idx = 0; idx < n; ++idx) {
     std::cout << std::setw(5) << idx << " ";
+    if (ipermtemp != NULL) {
+      std::cout << std::setw(5) << std::right << ipermtemp[idx] << " ";
+    }
     if (itemp != NULL) {
       std::cout << std::setw(5) << std::right << itemp[idx] << " ";
     }
@@ -540,6 +613,11 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
   auto &resmgr = umpire::ResourceManager::getInstance();
 
   PetscFunctionBegin;
+
+  // Create arrays on host to store i,j, and val arrays
+  umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
+  umpire::Allocator d_allocator_ = resmgr.getAllocator("DEVICE");
+  
 
   if (MJacS_dev == NULL) {
 
@@ -611,10 +689,19 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
             });
         
       }
+
+      pbpolrajahiopsparse->idx_jacineq_dev_ =
+        (int *) d_allocator_.allocate(opflow->nnz_ineqjacsp * sizeof(int));
+
+      SortIndexes(opflow->nnz_ineqjacsp,
+                  iJacS_dev + opflow->nnz_eqjacsp,
+                  jJacS_dev + opflow->nnz_eqjacsp,
+                  pbpolrajahiopsparse->idx_jacineq_dev_);
       
       if (debugmsg)
         PrintTriplets("Nonzero indexes for Inequality Constraint Jacobian (GPU):",
                       opflow->nnz_ineqjacsp,
+                      pbpolrajahiopsparse->idx_jacineq_dev_,
                       iJacS_dev + opflow->nnz_eqjacsp,
                       jJacS_dev + opflow->nnz_eqjacsp,
                       NULL);
@@ -627,9 +714,6 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
       roffset = opflow->nconeq;
       coffset = 0;
       
-      // Create arrays on host to store i,j, and val arrays
-      umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
-
       pbpolrajahiopsparse->i_jacineq =
           (int *)(h_allocator_.allocate(opflow->nnz_ineqjacsp * sizeof(int)));
       pbpolrajahiopsparse->j_jacineq =
@@ -670,6 +754,7 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
       if (debugmsg)
         PrintTriplets("Nonzero indexes for Inequality Constraint Jacobian:",
                       opflow->nnz_ineqjacsp,
+                      NULL,
                       iJacS_dev + opflow->nnz_eqjacsp,
                       jJacS_dev + opflow->nnz_eqjacsp,
                       NULL);
@@ -682,6 +767,8 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
     if (opflow->Nconineq) {
       ierr = PetscLogEventBegin(opflow->ineqconsjaclogger, 0, 0, 0, 0);
       CHKERRQ(ierr);
+
+      int *iperm = pbpolrajahiopsparse->idx_jaceq_dev_;
 
       if (!opflow->ignore_lineflow_constraints) {
         LINEParamsRajaHiop *lineparams = &pbpolrajahiopsparse->lineparams;
@@ -774,15 +861,6 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
               MJacS_dev[jac_ieq_idx[i] + 2] = val[2];
               MJacS_dev[jac_ieq_idx[i] + 3] = val[3];
 
-              // RAJA::atomicAdd<exago_raja_atomic>
-              //   (&(MJacS_dev[jac_ieq_idx[i] + 0]), val[0]);
-              // RAJA::atomicAdd<exago_raja_atomic>
-              //   (&(MJacS_dev[jac_ieq_idx[i] + 1]), val[1]);
-              // RAJA::atomicAdd<exago_raja_atomic>
-              //   (&(MJacS_dev[jac_ieq_idx[i] + 2]), val[2]);
-              // RAJA::atomicAdd<exago_raja_atomic>
-              //   (&(MJacS_dev[jac_ieq_idx[i] + 3]), val[3]);
-
               dSt2_dthetaf = dSt2_dPt * dPt_dthetaf + dSt2_dQt * dQt_dthetaf;
               dSt2_dthetat = dSt2_dPt * dPt_dthetat + dSt2_dQt * dQt_dthetat;
               dSt2_dVmf = dSt2_dPt * dPt_dVmf + dSt2_dQt * dQt_dVmf;
@@ -798,14 +876,6 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
               MJacS_dev[jac_ieq_idx[i] + 6] = val[2];
               MJacS_dev[jac_ieq_idx[i] + 7] = val[3];
 
-              // RAJA::atomicAdd<exago_raja_atomic>
-              //   (&(MJacS_dev[jac_ieq_idx[i] + 4]), val[0]);
-              // RAJA::atomicAdd<exago_raja_atomic>
-              //   (&(MJacS_dev[jac_ieq_idx[i] + 5]), val[1]);
-              // RAJA::atomicAdd<exago_raja_atomic>
-              //   (&(MJacS_dev[jac_ieq_idx[i] + 6]), val[2]);
-              // RAJA::atomicAdd<exago_raja_atomic>
-              //   (&(MJacS_dev[jac_ieq_idx[i] + 7]), val[3]);
             });
 
       }
@@ -813,6 +883,7 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
       if (debugmsg)
         PrintTriplets("Inequality Constraint Jacobian (GPU):",
                       opflow->nnz_ineqjacsp,
+                      iperm, 
                       (iJacS_dev == NULL ? NULL : iJacS_dev + opflow->nnz_eqjacsp),
                       (jJacS_dev == NULL ? NULL : jJacS_dev + opflow->nnz_eqjacsp),
                       MJacS_dev + opflow->nnz_eqjacsp);
@@ -857,6 +928,7 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
       if (debugmsg)
         PrintTriplets("Inequality Constraint Jacobian:",
                       opflow->nnz_ineqjacsp,
+                      NULL, 
                       (iJacS_dev == NULL ? NULL : iJacS_dev + opflow->nnz_eqjacsp),
                       (jJacS_dev == NULL ? NULL : jJacS_dev + opflow->nnz_eqjacsp),
                       MJacS_dev + opflow->nnz_eqjacsp);
@@ -899,6 +971,7 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
   CHKERRQ(ierr);
 
   umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
+  umpire::Allocator d_allocator_ = resmgr.getAllocator("DEVICE");
   
   /* Using OPFLOWComputeEqualityConstraintJacobian_PBPOL() as a guide */
 
@@ -1076,9 +1149,17 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
           });
     }
 
+    pbpolrajahiopsparse->idx_jaceq_dev_ =
+      (int *) d_allocator_.allocate(opflow->nnz_eqjacsp * sizeof(int));
+
+    SortIndexes(opflow->nnz_eqjacsp, iJacS_dev, jJacS_dev,
+                pbpolrajahiopsparse->idx_jaceq_dev_);
+    
     if (debugmsg)
       PrintTriplets("Non-zero indexes for Equality Constraint Jacobian (GPU):",
-                    opflow->nnz_eqjacsp, iJacS_dev, jJacS_dev, NULL);
+                    opflow->nnz_eqjacsp,
+                    pbpolrajahiopsparse->idx_jaceq_dev_,
+                    iJacS_dev, jJacS_dev, NULL);
 
     if (oldhostway) {
     roffset = 0;
@@ -1122,7 +1203,7 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
 
     if (debugmsg)
       PrintTriplets("Non-zero indexes for Equality Constraint Jacobian:",
-                    opflow->nnz_eqjacsp, iJacS_dev, jJacS_dev, NULL);
+                    opflow->nnz_eqjacsp, NULL, iJacS_dev, jJacS_dev, NULL);
     }
     
   } else {
@@ -1135,6 +1216,8 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
     double *gl = busparams->gl_dev_;
     double *bl = busparams->bl_dev_;
     int *b_xidx = busparams->xidx_dev_;
+
+    int *iperm = pbpolrajahiopsparse->idx_jaceq_dev_;
 
     // Basic bus contribution
     RAJA::forall<exago_raja_exec>(
@@ -1307,7 +1390,7 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
 
     if (debugmsg)
       PrintTriplets("Equality Constraint Jacobian (GPU):",
-                    opflow->nnz_eqjacsp, iJacS_dev, jJacS_dev, MJacS_dev);
+                    opflow->nnz_eqjacsp, iperm, iJacS_dev, jJacS_dev, MJacS_dev);
       
     
     if (oldhostway) {
@@ -1348,7 +1431,7 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
 
     if (debugmsg)
       PrintTriplets("Equality Constraint Jacobian:",
-                    opflow->nnz_eqjacsp, iJacS_dev, jJacS_dev, MJacS_dev);
+                    opflow->nnz_eqjacsp, NULL, iJacS_dev, jJacS_dev, MJacS_dev);
     }
   }
 

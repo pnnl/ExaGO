@@ -818,10 +818,12 @@ void PbpolModelRajaHiop::destroy(OPFLOW opflow) {
 
     auto &resmgr = umpire::ResourceManager::getInstance();
     umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
+    umpire::Allocator d_allocator_ = resmgr.getAllocator("DEVICE");
 
     h_allocator_.deallocate(i_jaceq);
     h_allocator_.deallocate(j_jaceq);
     h_allocator_.deallocate(val_jaceq);
+    d_allocator_.deallocate(idx_jaceq_dev_);
 
     h_allocator_.deallocate(i_hess);
     h_allocator_.deallocate(j_hess);
@@ -831,6 +833,7 @@ void PbpolModelRajaHiop::destroy(OPFLOW opflow) {
       h_allocator_.deallocate(i_jacineq);
       h_allocator_.deallocate(j_jacineq);
       h_allocator_.deallocate(val_jacineq);
+      d_allocator_.deallocate(idx_jacineq_dev_);
     }
   }
 #endif
