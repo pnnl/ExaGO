@@ -21,16 +21,17 @@ class S3ioTriggerStack(Stack):
                                                code=_lambda.DockerImageCode.from_ecr(repository=ecr_repository))
     # create s3 bucket
         s3 = _s3.Bucket(self, "s3bucket")
-
      # Create an S3 bucket for input
-        input_bucket = s3.Bucket(self, "InputBucket",
-                                 # removal_policy=core.RemovalPolicy.DESTROY  # Optional: specify removal policy
-                                 )
+        input_bucket = _s3.Bucket(self,
+                                  "InputBucket",
+                                  bucket_name="s3in1"
+                                  )
 
         # Create an S3 bucket for output
-        output_bucket = s3.Bucket(self, "OutputBucket",
-                                  # removal_policy=core.RemovalPolicy.DESTROY  # Optional: specify removal policy
-                                  )
+        output_bucket = _s3.Bucket(self,
+                                   "OutputBucket",
+                                   bucket_name="s3out1"
+                                   )
 
     # create s3 notification for lambda function
         notification = aws_s3_notifications.LambdaDestination(function)
