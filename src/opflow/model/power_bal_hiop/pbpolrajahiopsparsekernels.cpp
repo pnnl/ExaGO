@@ -22,7 +22,7 @@
 #include "pbpolrajahiopsparse.hpp"
 
 static const bool debugmsg(true);
-static const bool oldhostway(true);
+static const bool oldhostway(false);
 
 PetscErrorCode OPFLOWSetInitialGuessArray_PBPOLRAJAHIOPSPARSE(OPFLOW opflow,
                                                               double *x0_dev) {
@@ -883,17 +883,10 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
       int *ipermout = (int *)d_allocator_.allocate(opflow->nnz_ineqjacsp*sizeof(int));
       resmgr.copy(ipermout, iperm);
 
-      double *MJacS_out = (double *)d_allocator_.allocate(opflow->nnz_ineqjacsp*sizeof(double));
-      resmgr.copy(MJacS_out, MJacS_dev + opflow->nnz_eqjacsp,
-                  opflow->nnz_ineqjacsp*sizeof(double));
-
       RAJA::stable_sort_pairs<exago_raja_exec>
         (RAJA::make_span(ipermout, opflow->nnz_ineqjacsp),
-         RAJA::make_span(MJacS_out, opflow->nnz_ineqjacsp),
+         RAJA::make_span(MJacS_dev + opflow->nnz_eqjacsp, opflow->nnz_ineqjacsp),
          RAJA::operators::less<int>{});
-
-      resmgr.copy(MJacS_dev + opflow->nnz_eqjacsp, MJacS_out, 
-                  opflow->nnz_ineqjacsp*sizeof(double));
 
       if (debugmsg)
         PrintTriplets("Inequality Constraint Jacobian (GPU):",
@@ -904,7 +897,6 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
                       MJacS_dev);
 
       d_allocator_.deallocate(ipermout);
-      d_allocator_.deallocate(MJacS_out);
       
       if (oldhostway) {
 
@@ -1409,23 +1401,16 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
     int *ipermout = (int *)d_allocator_.allocate(opflow->nnz_eqjacsp*sizeof(int));
     resmgr.copy(ipermout, iperm);
     
-    double *MJacS_out =
-      (double *)d_allocator_.allocate(opflow->nnz_eqjacsp*sizeof(double));
-    resmgr.copy(MJacS_out, MJacS_dev, opflow->nnz_eqjacsp*sizeof(double));
-    
     RAJA::stable_sort_pairs<exago_raja_exec>
       (RAJA::make_span(ipermout, opflow->nnz_eqjacsp),
-       RAJA::make_span(MJacS_out, opflow->nnz_eqjacsp),
+       RAJA::make_span(MJacS_dev, opflow->nnz_eqjacsp),
        RAJA::operators::less<int>{});
     
-    resmgr.copy(MJacS_dev, MJacS_out, opflow->nnz_eqjacsp*sizeof(double));
-
     if (debugmsg)
       PrintTriplets("Equality Constraint Jacobian (GPU):",
                     opflow->nnz_eqjacsp, iperm, iJacS_dev, jJacS_dev, MJacS_dev);
     
     d_allocator_.deallocate(ipermout);
-    d_allocator_.deallocate(MJacS_out);
     
     if (oldhostway) {
     ierr = VecGetArray(opflow->X, &x);
