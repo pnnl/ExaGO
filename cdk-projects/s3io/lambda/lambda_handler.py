@@ -13,7 +13,7 @@ def lambda_handler(event, context):
     # input_file_key = event['Records'][0]['s3']['object']['key']
 
     # Download input file -> file path should target s3 bucket file.
-    local_input_path = 'output.txt'
+    local_input_path = 'case118.m'
     s3_client.download_file(local_input_path)
 
     # Process input file using ExaGO (assuming ExaGO processing logic here)
