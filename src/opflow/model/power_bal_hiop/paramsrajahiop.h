@@ -201,6 +201,7 @@ struct LINEParamsRajaHiop {
   int *jacf_idx;   /* Location number in the sparse Jacobian (from) */
   int *jact_idx;   /* Location number in the sparse Jacobian (to) */
   int *jac_ieq_idx;/* Location number in sparse inequality Jacobian */
+  int *hesssp_idx; /* Location number in sparse Hessian */
 
   // Device data
   double *Gff_dev_;    /* From side self conductance */
@@ -230,6 +231,7 @@ struct LINEParamsRajaHiop {
   int *jacf_idx_dev_;   /* Location number in the sparse Jacobian (from) */
   int *jact_idx_dev_;   /* Location number in the sparse Jacobian (to) */
   int *jac_ieq_idx_dev_;/* Location number in sparse inequality Jacobian */
+  int *hesssp_idx_dev_; /* Location number in sparse Hessian */
 
   int allocate(OPFLOW);
   int destroy(OPFLOW);

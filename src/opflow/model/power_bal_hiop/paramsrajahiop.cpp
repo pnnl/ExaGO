@@ -23,6 +23,7 @@ int BUSParamsRajaHiop::destroy(OPFLOW opflow) {
   h_allocator_.deallocate(gidx);
   h_allocator_.deallocate(jacsp_idx);
   h_allocator_.deallocate(jacsq_idx);
+  h_allocator_.deallocate(hesssp_idx);
   if (opflow->include_powerimbalance_variables) {
     h_allocator_.deallocate(xidxpimb);
     h_allocator_.deallocate(powerimbalance_penalty);
@@ -42,6 +43,7 @@ int BUSParamsRajaHiop::destroy(OPFLOW opflow) {
   d_allocator_.deallocate(gidx_dev_);
   d_allocator_.deallocate(jacsp_idx_dev_);
   d_allocator_.deallocate(jacsq_idx_dev_);
+  d_allocator_.deallocate(hesssp_idx_dev_);
   if (opflow->include_powerimbalance_variables) {
     d_allocator_.deallocate(xidxpimb_dev_);
     d_allocator_.deallocate(powerimbalance_penalty_dev_);
@@ -76,6 +78,7 @@ int BUSParamsRajaHiop::copy(OPFLOW opflow) {
   resmgr.copy(gidx_dev_, gidx);
   resmgr.copy(jacsp_idx_dev_, jacsp_idx);
   resmgr.copy(jacsq_idx_dev_, jacsq_idx);
+  resmgr.copy(hesssp_idx_dev_, hesssp_idx);
   if (opflow->include_powerimbalance_variables) {
     resmgr.copy(xidxpimb_dev_, xidxpimb);
     resmgr.copy(powerimbalance_penalty_dev_, powerimbalance_penalty);
@@ -95,6 +98,7 @@ int BUSParamsRajaHiop::copy(OPFLOW opflow) {
   gidx_dev_ = gidx;
   jacsp_idx_dev_ = jacsp_idx;
   jacsq_idx_dev_ = jacsq_idx;
+  hesssp_idx_dev_ = hesssp_idx;
   powerimbalance_penalty_dev_ = powerimbalance_penalty;
 #endif
   return 0;
@@ -128,6 +132,7 @@ int BUSParamsRajaHiop::allocate(OPFLOW opflow) {
 
   jacsp_idx = paramAlloc<int>(h_allocator_, nbus);
   jacsq_idx = paramAlloc<int>(h_allocator_, nbus);
+  hesssp_idx = paramAlloc<int>(h_allocator_, nbus);
   if (opflow->include_powerimbalance_variables) {
     xidxpimb = paramAlloc<int>(h_allocator_, nbus);
     powerimbalance_penalty = paramAlloc<double>(h_allocator_, nbus);
@@ -196,6 +201,7 @@ int BUSParamsRajaHiop::allocate(OPFLOW opflow) {
 
   jacsp_idx_dev_ = paramAlloc<int>(d_allocator_, nbus);
   jacsq_idx_dev_ = paramAlloc<int>(d_allocator_, nbus);
+  hesssp_idx_dev_ = paramAlloc<int>(d_allocator_, nbus);
   if (opflow->include_powerimbalance_variables) {
     xidxpimb_dev_ = paramAlloc<int>(d_allocator_, nbus);
     powerimbalance_penalty_dev_ = paramAlloc<double>(d_allocator_, nbus);
@@ -230,6 +236,7 @@ int LINEParamsRajaHiop::copy(OPFLOW opflow) {
   resmgr.copy(bust_idx_dev_, bust_idx);
   resmgr.copy(jacf_idx_dev_, jacf_idx);
   resmgr.copy(jact_idx_dev_, jact_idx);
+  resmgr.copy(hesssp_idx_dev_, hesssp_idx);
 
   if (opflow->nlinesmon) {
     resmgr.copy(gineqidx_dev_, gineqidx);
@@ -255,6 +262,7 @@ int LINEParamsRajaHiop::copy(OPFLOW opflow) {
   bust_idx_dev_ = bust_idx;
   jacf_idx_dev_ = jacf_idx;
   jact_idx_dev_ = jact_idx;
+  hesssp_idx_dev_ = hesssp_idx;
   if (opflow->nlinesmon) {
     gineqidx_dev_ = gineqidx;
     gbineqidx_dev_ = gbineqidx;
@@ -286,6 +294,7 @@ int LINEParamsRajaHiop::destroy(OPFLOW opflow) {
   h_allocator_.deallocate(bust_idx);
   h_allocator_.deallocate(jacf_idx);
   h_allocator_.deallocate(jact_idx);
+  h_allocator_.deallocate(hesssp_idx);
 
   if (opflow->nlinesmon) {
     h_allocator_.deallocate(gineqidx);
@@ -315,6 +324,7 @@ int LINEParamsRajaHiop::destroy(OPFLOW opflow) {
   d_allocator_.deallocate(bust_idx_dev_);
   d_allocator_.deallocate(jacf_idx_dev_);
   d_allocator_.deallocate(jact_idx_dev_);
+  d_allocator_.deallocate(hesssp_idx_dev_);
 
   if (opflow->nlinesmon) {
     d_allocator_.deallocate(gineqidx_dev_);
@@ -368,6 +378,7 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow) {
   bust_idx = paramAlloc<int>(h_allocator_, nlineON);
   jacf_idx = paramAlloc<int>(h_allocator_, nlineON);
   jact_idx = paramAlloc<int>(h_allocator_, nlineON);
+  hesssp_idx = paramAlloc<int>(h_allocator_, nlineON);
 
   if (opflow->nlinesmon) {
     linelimidx = paramAlloc<int>(h_allocator_, nlinelim);
@@ -416,6 +427,7 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow) {
     bust_idx[linei] = ps->busext2intmap[line->tbus];
     jacf_idx[linei] = 0;
     jact_idx[linei] = 0;
+    hesssp_idx[linei] = 0;
 
     if (j < opflow->nlinesmon && opflow->linesmon[j] == i) {
       gbineqidx[j] = opflow->nconeq + line->startineqloc;
@@ -451,6 +463,7 @@ int LINEParamsRajaHiop::allocate(OPFLOW opflow) {
   bust_idx_dev_ = paramAlloc<int>(d_allocator_, nlineON);
   jacf_idx_dev_ = paramAlloc<int>(d_allocator_, nlineON);
   jact_idx_dev_ = paramAlloc<int>(d_allocator_, nlineON);
+  hesssp_idx_dev_ = paramAlloc<int>(d_allocator_, nlineON);
 
   if (opflow->nconineq) {
     gineqidx_dev_ = paramAlloc<int>(d_allocator_, nlinelim);
