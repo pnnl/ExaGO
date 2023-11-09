@@ -222,7 +222,7 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
   LINEParamsRajaHiop *lineparams = &pbpolrajahiopsparse->lineparams;
 
   /* Need to compute the number of nonzeros in equality, inequality constraint
-   * Jacobians and Hessian */
+   * Jacobians */
   int nnz_eqjac = 0, nnz_ineqjac = 0;
 
   // Find nonzero entries in equality constraint Jacobian by row. Using
@@ -360,7 +360,59 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
   std::cout << "Inequality Jacobian nonzero count: " << nnz_ineqjac << std::endl;
 
 
-  // opflow->nnz_eqjacsp = nnz_eqjac;
+  int nnz_hesssp = 0;
+
+  for (int ibus = 0; ibus < ps->nbus; ++ibus) {
+
+    // reserve 2 real and 2 reactive entries for each bus
+
+    busparams->hesssp_idx[ibus] = nnz_hesssp;
+    nnz_hesssp += 4;
+
+    if (opflow->include_powerimbalance_variables) {
+      nnz_hesssp += 2;
+    }
+
+  }
+
+  for (int i = 0, igen = 0; i < ps->ngen; ++i) {
+    PSGEN gen = &(ps->gen[i]);
+
+    if (!gen->status)
+      continue;
+
+    genparams->hesssp_idx[igen] = nnz_hesssp;
+    nnz_hesssp += 1;
+
+    if (opflow->has_gensetpoint) {
+      if (gen->isrenewable)
+        continue;
+      
+      if (opflow->use_agc) {
+        nnz_hesssp += 5;
+      }
+    }
+    if (opflow->genbusvoltagetype == FIXED_WITHIN_QBOUNDS) {
+      nnz_hesssp += 2;
+    }
+    igen++;
+  }
+
+  for (int iline=0; iline < ps->nline; ++iline) {
+    // reserve 8 entries for each line (used twice)
+    lineparams->hesssp_idx[iline] = nnz_hesssp;
+    nnz_hesssp += 8;
+  }
+
+  if (opflow->include_loadloss_variables) {
+    for (int iload = 0; iload < ps->nload; ++iload) {
+      loadparams->hesssp_idx[iload] = nnz_hesssp;
+      nnz_hesssp += 2;
+    }
+  }
+
+  std::cout << "Hessian nonzero count: " << nnz_hesssp << std::endl;
+
 
   ierr = busparams->copy(opflow);
   ierr = genparams->copy(opflow);
