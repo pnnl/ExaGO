@@ -1480,6 +1480,10 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
 
   if (iHSS_dev != NULL && jHSS_dev != NULL) {
 
+    if (debugmsg)
+      std::cout << "Official Hessian nonzero count: "
+                << opflow->nnz_hesssp << std::endl;
+    
     // Create arrays on host to store i,j, and val arrays
     umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
 
@@ -1524,8 +1528,14 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
     // Copy over i_hess and j_hess arrays to device
     resmgr.copy(iHSS_dev, pbpolrajahiopsparse->i_hess);
     resmgr.copy(jHSS_dev, pbpolrajahiopsparse->j_hess);
-  } else {
 
+    if (debugmsg) {
+      PrintTriplets("Hessian Indexes:",
+                    opflow->nnz_hesssp, iHSS_dev, jHSS_dev, NULL);
+    }
+    
+  } else {
+  
     ierr = VecGetArray(opflow->X, &x);
     CHKERRQ(ierr);
 
@@ -1603,7 +1613,13 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
 
     // Copy over val_ineq to device
     resmgr.copy(MHSS_dev, pbpolrajahiopsparse->val_hess);
-  }
+
+    if (debugmsg) {
+      PrintTriplets("Hessian Values:",
+                    opflow->nnz_hesssp, iHSS_dev, jHSS_dev, MHSS_dev);
+    }
+
+ }
 
   PetscFunctionReturn(0);
 }
