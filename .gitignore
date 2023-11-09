@@ -12,5 +12,10 @@ node_modules
 .env
 package-lock.json
 config.py
-spack_*
+spack*
+*view*
+*.txt
 hiop/
+.DS_Store
+venv
+cdk.out
