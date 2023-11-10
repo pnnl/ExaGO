@@ -39,7 +39,7 @@ RUN mkdir /opt/spack-environment \
 COPY coinhsl-archive-2019.05.21.tar.gz /opt/spack-environment/coinhsl-archive-2019.05.21.tar.gz
 
 # Find external packages
-RUN cd /opt/spack-environment && spack env activate . && spack external find --all
+RUN cd /opt/spack-environment && spack env activate . && spack external find --all --exclude python
 
 # Do this separate of install to cache keys...
 RUN cd /opt/spack-environment && spack env activate . && spack mirror add develop https://binaries.spack.io/develop && spack buildcache keys --install --trust && spack concretize -f && spack mirror create -a
@@ -90,7 +90,7 @@ RUN { \
 
 
 RUN apt-get -yqq update && apt-get -yqq upgrade \
- && apt-get -yqq install gfortran nodejs npm \
+ && apt-get -yqq install gfortran npm \
  && rm -rf /var/lib/apt/lists/*
 ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "/bin/bash" ]
@@ -117,3 +117,9 @@ RUN sed -i 's/\"\/opt\/views\/view\/bin\/python3\"/\"mpiexec\", \"-n\", \"1\", \
 
 # Configure user for container
 USER vscode
+
+# Install nvm
+RUN mkdir -p /home/vscode/nvm && cd /home/vscode/nvm && curl -O https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh
+RUN chown vscode /home/vscode/nvm/install.sh && chmod +x /home/vscode/nvm/install.sh
+
+# Install NodeJS version 16.13.0 with nvm

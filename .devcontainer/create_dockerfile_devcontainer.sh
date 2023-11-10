@@ -59,7 +59,6 @@ spack:
       - autoconf
       final:
       - gfortran
-      - nodejs
       - npm
   packages:
     all:
@@ -81,7 +80,7 @@ spack containerize > ./.devcontainer/Dockerfile
 sed -i "" "s|# Install the software|# This is manual, and required to build Ipopt\nCOPY coinhsl-archive-2019.05.21.tar.gz /opt/spack-environment/coinhsl-archive-2019.05.21.tar.gz\n\n# Install the software|" ./.devcontainer/Dockerfile
 
 # Find external packages
-sed -i "" "s|# Install the software|# Find external packages\nRUN cd /opt/spack-environment \&\& spack env activate . \&\& spack external find --all\n\n# Install the software|" ./.devcontainer/Dockerfile
+sed -i "" "s|# Install the software|# Find external packages\nRUN cd /opt/spack-environment \&\& spack env activate . \&\& spack external find --all --exclude python\n\n# Install the software|" ./.devcontainer/Dockerfile
 
 # Also trusts the build cache and create source mirror
 sed -i "" "s|# Install the software|# Do this separate of install to cache keys...\nRUN cd /opt/spack-environment \&\& spack env activate . \&\& spack mirror add develop https://binaries.spack.io/develop \&\& spack buildcache keys --install --trust \&\& spack concretize -f \&\& spack mirror create -a\n\n# Install the software|" ./.devcontainer/Dockerfile
@@ -123,3 +122,15 @@ echo "RUN sed -i 's/\\\"\/opt\/views\/view\/bin\/python3\\\"/\\\"mpiexec\\\", \\
 echo "" >> ./.devcontainer/Dockerfile
 echo "# Configure user for container" >> ./.devcontainer/Dockerfile
 echo "USER vscode" >> ./.devcontainer/Dockerfile
+
+# Install nvm for VSCode user
+echo "" >> ./.devcontainer/Dockerfile
+echo "# Install nvm" >> ./.devcontainer/Dockerfile
+echo "RUN mkdir -p /home/vscode/nvm && cd /home/vscode/nvm && curl -O https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh" >> ./.devcontainer/Dockerfile
+echo "RUN chown vscode /home/vscode/nvm/install.sh && chmod +x /home/vscode/nvm/install.sh" >> ./.devcontainer/Dockerfile
+
+# Install NodeJS version 16.13.0 with nvm
+echo "" >> ./.devcontainer/Dockerfile
+echo "# Install NodeJS version 16.13.0 with nvm" >> ./.devcontainer/Dockerfile
+#echo "RUN . /opt/nvm/nvm.sh && \\" >> ./.devcontainer/Dockerfile
+#echo "       nvm install v16.13.0" >> ./.devcontainer/Dockerfile
