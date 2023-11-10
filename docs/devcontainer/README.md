@@ -7,6 +7,10 @@
 1. open your local clone of exago in VSCode
 1. copy the CoinHSL 2019 tarball to the top level of your exago directory
 
+## Generate the container
+
+Spack is used to generate the base image, with some sed/echo commands used to fine-tune Dockerfile for use case within a Dev Container. Run `.devcontainer/create_dockerfile.sh` in order to re-generate the Dockerfile. This should be done semi-frequently whenever a spack version or exago version needs updating.
+
 ## Build Container
 
 The build info for this container is in `.devcontainer/`. There is a Dockerfile and json file associated with the configuration.

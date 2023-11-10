@@ -9,7 +9,8 @@
 				"ms-azuretools.vscode-docker",
 				"github.vscode-github-actions",
 				"ms-toolsai.jupyter",
-				"GitHub.copilot"
+				"GitHub.copilot",
+				"ms-vsliveshare.vsliveshare"
 			]
 		}
 	},

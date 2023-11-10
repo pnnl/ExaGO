@@ -5,7 +5,7 @@ install/*
 .ubuild.json
 *__pycache__*
 *nvblas.conf
-spack-*
+spack*
 .vscode/
 coinhsl-*
 node_modules
@@ -14,3 +14,4 @@ package-lock.json
 config.py
 spack_*
 hiop/
+solution
