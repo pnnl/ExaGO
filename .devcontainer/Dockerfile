@@ -90,7 +90,7 @@ RUN { \
 
 
 RUN apt-get -yqq update && apt-get -yqq upgrade \
- && apt-get -yqq install gfortran npm \
+ && apt-get -yqq install gfortran npm postgresql \
  && rm -rf /var/lib/apt/lists/*
 ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "/bin/bash" ]

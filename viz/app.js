@@ -4,7 +4,7 @@ import { StaticMap, Popup, Marker, _MapContext as MapContext, FullscreenControl,
 import { WebMercatorViewport } from '@deck.gl/core';
 import DeckGL from '@deck.gl/react';
 // import FlowMapLayer from '@flowmap.gl/core'
-import { FlowmapLayer } from '@flowmap.gl/layers'
+// import { FlowmapLayer } from '@flowmap.gl/layers'
 import { GeoJsonLayer, ColumnLayer, PolygonLayer } from '@deck.gl/layers';
 import { DataFilterExtension } from '@deck.gl/extensions';
 import Checkbox from '@mui/material/Checkbox';
@@ -739,23 +739,23 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
   const layers = [
 
-    new FlowmapLayer({
-      id: 'my-flowmap-layer',
-      data: flowdata,
-      visible: flowlayeractive,
-      animationEnabled: true, //control the animation effect of flow layer
-      colorScheme: ["rgb(0,0,255)","rgb(255,0,255)"],
-      // darkMode: true, 
-      // clusteringEnabled: false, //control the aggregate effect of flow layer
-      // adaptiveScalesEnabled: false, 
-      getFlowMagnitude: (flow) => flow.count,
-      getFlowOriginId: (flow) => flow.origin,
-      getFlowDestId: (flow) => flow.dest,
-      getLocationId: (loc) => loc.id,
-      getLocationLat: (loc) => loc.lat,
-      getLocationLon: (loc) => loc.lon,
-      
-    }),
+    // new FlowmapLayer({
+    //   id: 'my-flowmap-layer',
+    //   data: flowdata,
+    //   visible: flowlayeractive,
+    //   animationEnabled: true, //control the animation effect of flow layer
+    //   colorScheme: ["rgb(0,0,255)","rgb(255,0,255)"],
+    //   // darkMode: true, 
+    //   // clusteringEnabled: false, //control the aggregate effect of flow layer
+    //   // adaptiveScalesEnabled: false, 
+    //   getFlowMagnitude: (flow) => flow.count,
+    //   getFlowOriginId: (flow) => flow.origin,
+    //   getFlowDestId: (flow) => flow.dest,
+    //   getLocationId: (loc) => loc.id,
+    //   getLocationLat: (loc) => loc.lat,
+    //   getLocationLon: (loc) => loc.lon,
+    //   
+    // }),
 
     new GeoJsonLayer({
       id: 'geojson',

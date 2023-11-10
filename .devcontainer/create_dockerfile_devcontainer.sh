@@ -60,6 +60,7 @@ spack:
       final:
       - gfortran
       - npm
+      - postgresql
   packages:
     all:
       providers:
