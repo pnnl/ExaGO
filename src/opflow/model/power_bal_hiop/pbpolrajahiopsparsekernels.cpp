@@ -690,8 +690,10 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
         
       }
 
-      pbpolrajahiopsparse->idx_jacineq_dev_ =
-        (int *) d_allocator_.allocate(opflow->nnz_ineqjacsp * sizeof(int));
+      if (pbpolrajahiopsparse->idx_jacineq_dev_ == NULL) {
+        pbpolrajahiopsparse->idx_jacineq_dev_ =
+          (int *) d_allocator_.allocate(opflow->nnz_ineqjacsp * sizeof(int));
+      }
 
       SortIndexes(opflow->nnz_ineqjacsp,
                   iJacS_dev + opflow->nnz_eqjacsp,
@@ -713,13 +715,15 @@ OPFLOWComputeSparseInequalityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
       */
       roffset = opflow->nconeq;
       coffset = 0;
-      
-      pbpolrajahiopsparse->i_jacineq =
+
+      if (pbpolrajahiopsparse->i_jacineq == NULL) {
+        pbpolrajahiopsparse->i_jacineq =
           (int *)(h_allocator_.allocate(opflow->nnz_ineqjacsp * sizeof(int)));
-      pbpolrajahiopsparse->j_jacineq =
+        pbpolrajahiopsparse->j_jacineq =
           (int *)(h_allocator_.allocate(opflow->nnz_ineqjacsp * sizeof(int)));
-      pbpolrajahiopsparse->val_jacineq = (double *)(h_allocator_.allocate(
-          opflow->nnz_ineqjacsp * sizeof(double)));
+        pbpolrajahiopsparse->val_jacineq =
+          (double *)(h_allocator_.allocate(opflow->nnz_ineqjacsp * sizeof(double)));
+      }
 
       iRowstart = pbpolrajahiopsparse->i_jacineq;
       jColstart = pbpolrajahiopsparse->j_jacineq;
@@ -1159,8 +1163,10 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
           });
     }
 
-    pbpolrajahiopsparse->idx_jaceq_dev_ =
-      (int *) d_allocator_.allocate(opflow->nnz_eqjacsp * sizeof(int));
+    if (pbpolrajahiopsparse->idx_jaceq_dev_ == NULL) {
+      pbpolrajahiopsparse->idx_jaceq_dev_ =
+        (int *) d_allocator_.allocate(opflow->nnz_eqjacsp * sizeof(int));
+    }
 
     SortIndexes(opflow->nnz_eqjacsp, iJacS_dev, jJacS_dev,
                 pbpolrajahiopsparse->idx_jaceq_dev_);
@@ -1175,13 +1181,15 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
     roffset = 0;
     coffset = 0;
 
-    pbpolrajahiopsparse->i_jaceq =
+    if (pbpolrajahiopsparse->i_jaceq == NULL) {
+      pbpolrajahiopsparse->i_jaceq =
         (int *)(h_allocator_.allocate(opflow->nnz_eqjacsp * sizeof(int)));
-    pbpolrajahiopsparse->j_jaceq =
+      pbpolrajahiopsparse->j_jaceq =
         (int *)(h_allocator_.allocate(opflow->nnz_eqjacsp * sizeof(int)));
-    pbpolrajahiopsparse->val_jaceq =
+      pbpolrajahiopsparse->val_jaceq =
         (double *)(h_allocator_.allocate(opflow->nnz_eqjacsp * sizeof(double)));
-
+    }
+    
     iRowstart = pbpolrajahiopsparse->i_jaceq;
     jColstart = pbpolrajahiopsparse->j_jaceq;
 
@@ -1405,12 +1413,12 @@ OPFLOWComputeSparseEqualityConstraintJacobian_PBPOLRAJAHIOPSPARSE(
       (RAJA::make_span(ipermout, opflow->nnz_eqjacsp),
        RAJA::make_span(MJacS_dev, opflow->nnz_eqjacsp),
        RAJA::operators::less<int>{});
+
+    d_allocator_.deallocate(ipermout);
     
     if (debugmsg)
       PrintTriplets("Equality Constraint Jacobian (GPU):",
                     opflow->nnz_eqjacsp, iperm, iJacS_dev, jJacS_dev, MJacS_dev);
-    
-    d_allocator_.deallocate(ipermout);
     
     if (oldhostway) {
     ierr = VecGetArray(opflow->X, &x);
@@ -1480,6 +1488,9 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
   PetscInt i, j;
   PetscInt ctr = 0;
   auto &resmgr = umpire::ResourceManager::getInstance();
+
+  umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
+  umpire::Allocator d_allocator_ = resmgr.getAllocator("DEVICE");
 
   PetscFunctionBegin;
 
@@ -1628,24 +1639,34 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
           });
     }
 
+    if (pbpolrajahiopsparse->idx_hess_dev_ == NULL) {
+      pbpolrajahiopsparse->idx_hess_dev_ =
+        (int *) d_allocator_.allocate(opflow->nnz_hesssp * sizeof(int));
+    }
+
+    SortIndexes(opflow->nnz_hesssp, iHSS_dev, jHSS_dev,
+                pbpolrajahiopsparse->idx_hess_dev_);
+    
     if (debugmsg)
       PrintTriplets("Hessian Indexes (GPU):",
-                    opflow->nnz_hesssp, NULL, iHSS_dev, jHSS_dev, NULL);
+                    opflow->nnz_hesssp, pbpolrajahiopsparse->idx_hess_dev_,
+                    iHSS_dev, jHSS_dev, NULL);
     
     if (debugmsg)
       std::cout << "Official Hessian nonzero count: "
                 << opflow->nnz_hesssp << std::endl;
     
     // Create arrays on host to store i,j, and val arrays
-    umpire::Allocator h_allocator_ = resmgr.getAllocator("HOST");
 
-    pbpolrajahiopsparse->i_hess =
+    if (pbpolrajahiopsparse->i_hess == NULL) { 
+      pbpolrajahiopsparse->i_hess =
         (int *)(h_allocator_.allocate(opflow->nnz_hesssp * sizeof(int)));
-    pbpolrajahiopsparse->j_hess =
+      pbpolrajahiopsparse->j_hess =
         (int *)(h_allocator_.allocate(opflow->nnz_hesssp * sizeof(int)));
-    pbpolrajahiopsparse->val_hess =
+      pbpolrajahiopsparse->val_hess =
         (double *)(h_allocator_.allocate(opflow->nnz_hesssp * sizeof(double)));
-
+    }
+    
     iRow = pbpolrajahiopsparse->i_hess;
     jCol = pbpolrajahiopsparse->j_hess;
 
@@ -1689,7 +1710,6 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
   } else {
 
     resmgr.memset(MHSS_dev, 0, opflow->nnz_hesssp*sizeof(double));
-
 
     // Bus contributions
     
@@ -2589,11 +2609,22 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
 
     }
 
+    int *iperm = pbpolrajahiopsparse->idx_hess_dev_;
+
+    int *ipermout = (int *)d_allocator_.allocate(opflow->nnz_hesssp*sizeof(int));
+    resmgr.copy(ipermout, iperm);
+    
+    RAJA::stable_sort_pairs<exago_raja_exec>
+      (RAJA::make_span(ipermout, opflow->nnz_hesssp),
+       RAJA::make_span(MHSS_dev, opflow->nnz_hesssp),
+       RAJA::operators::less<int>{});
+
     if (debugmsg) {
       PrintTriplets("Hessian Values (GPU):",
                     opflow->nnz_hesssp, NULL, iHSS_dev, jHSS_dev, MHSS_dev);
     }
     
+    d_allocator_.deallocate(ipermout);
     
     ierr = VecGetArray(opflow->X, &x);
     CHKERRQ(ierr);

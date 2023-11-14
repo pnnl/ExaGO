@@ -251,6 +251,7 @@ struct PbpolModelRajaHiop : public _p_FormPBPOLRAJAHIOP {
     i_jaceq = j_jaceq = i_jacineq = j_jacineq = NULL;
     i_hess = j_hess = NULL;
     val_jaceq = val_jacineq = val_hess = NULL;
+    idx_jaceq_dev_ = idx_jacineq_dev_ = idx_hess_dev_ = NULL;
   }
 
   void destroy(OPFLOW opflow);
@@ -273,4 +274,5 @@ struct PbpolModelRajaHiop : public _p_FormPBPOLRAJAHIOP {
   int *i_hess, *j_hess; // Row and column indices for hessian
   double *val_jaceq, *val_jacineq,
       *val_hess; // values for equality, inequality jacobians and hessian
+  int *idx_hess_dev_; // Permuted triplet indexes for Hessian (on-device)
 };
