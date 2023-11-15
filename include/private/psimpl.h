@@ -338,6 +338,8 @@ struct _p_PSLINE {
   PetscInt nconeq;   /* Number of equality constraints */
   PetscInt nconineq; /* Number of inequality constraints */
 
+  PetscInt startxdcloc; /* Location of starting variable for dc line */
+  
   PetscInt starteqloc;   /* Starting location for equality constraints */
   PetscInt startineqloc; /* Starting location for inequality constraints */
 };

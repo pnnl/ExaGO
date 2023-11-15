@@ -1462,17 +1462,24 @@ PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW opflow,
   PSLINE line;
   PetscErrorCode ierr;
   PetscBool isghost;
+  PetscInt  monidx; // Index of monitored line
 
   PetscFunctionBegin;
 
   *nx = 0;
   /* No variables for the branches */
   for (i = 0; i < opflow->nlinesmon; i++) {
-    line = &ps->line[opflow->linesmon[i]];
-    branchnvar[i] = line->nx = 0;
-    *nx += branchnvar[i];
+    monidx = opflow->linesmon[i];
+    line = &ps->line[monidx];
+    if(!line->isdcline) {
+      branchnvar[monidx] = line->nx = 0;
+    } else if(line->isdcline) {
+      // Two variables for the DC line (injections at the two ends)
+      branchnvar[monidx] = line->nx = 2;
+    }
+    *nx += branchnvar[monidx];
   }
-
+  
   /* Variables for the buses */
   for (i = 0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
@@ -1602,9 +1609,15 @@ PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW opflow,
     for (i = 0; i < opflow->nlinesmon; i++) {
       line = &ps->line[opflow->linesmon[i]];
 
-      *nconineq += 2; /* Number of line flow constraints */
-      line->nconineq = 2;
-      line->nconeq = 0;
+      if(!line->isdcline) {
+	*nconineq += 2; /* Number of line flow constraints */
+	line->nconineq = 2;
+	line->nconeq = 0;
+      } else if(line->isdcline) {
+	*nconeq += 1;
+	line->nconeq = 1;
+	line->nconineq = 0;
+      }
     }
   }
 
@@ -2953,8 +2966,15 @@ PetscErrorCode OPFLOWModelSetUp_PBPOL(OPFLOW opflow) {
 
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
-    line->startineqloc = ineqloc;
-    ineqloc += line->nconineq;
+    if(!line->isdcline) {
+      line->startineqloc = ineqloc;
+      ineqloc += line->nconineq;
+    } else if(line->isdcline) {
+      line->starteqloc = eqloc;
+      eqloc += line->nconeq;
+      ierr = PSLINEGetVariableLocation(line,&loc);CHKERRQ(ierr);
+      line->startxdcloc = loc;
+    }
   }
 
   PetscFunctionReturn(0);
