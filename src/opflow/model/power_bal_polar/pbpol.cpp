@@ -246,11 +246,7 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBPOL(OPFLOW opflow, Vec Gl, Vec Gu) {
       gl[gloc] = gl[gloc + 1] = 0.0;
       gu[gloc] = gu[gloc + 1] =
         (line->rateA / ps->MVAbase) * (line->rateA / ps->MVAbase);
-    } else if(line->isdcline) {
-      gloc = line->starteqloc;
-      /* Equality constraint for the dcline, bounds set to 0 */
-      gl[gloc] = gu[gloc] = 0.0;
-    }
+    } 
   }
 
   ierr = VecRestoreArray(Gl, &gl);
@@ -403,9 +399,27 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X, Vec Lambda) {
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
 
-    gloc = line->startineqloc;
-    lambdai[gloc] = line->mult_sf;
-    lambdai[gloc + 1] = line->mult_st;
+    if(!line->isdcline) {
+      gloc = line->startineqloc;
+      lambdai[gloc] = line->mult_sf;
+      lambdai[gloc + 1] = line->mult_st;
+    } else if(line->isdcline) {
+      loc = line->startxdcloc;
+      
+      if (opflow->initializationtype == OPFLOWINIT_MIDPOINT ||
+          opflow->initializationtype == OPFLOWINIT_FLATSTART) {
+        x[loc] = 0.5 * (xl[loc] + xu[loc]);
+        x[loc + 1] = 0.5 * (xl[loc + 1] + xu[loc + 1]);
+	x[loc + 2] = 0.5 * (xl[loc + 2] + xu[loc + 2]);
+
+      } else if (opflow->initializationtype == OPFLOWINIT_FROMFILE ||
+                 opflow->initializationtype == OPFLOWINIT_ACPF ||
+                 opflow->initializationtype == OPFLOWINIT_DCOPF) {
+        x[loc] = PetscMax(line->pmin, PetscMin(line->pf, line->pmax));
+        x[loc + 1] = PetscMax(line->qminf, PetscMin(line->qf, line->qmaxf));
+	x[loc + 2] = PetscMax(line->qmint, PetscMin(line->qt, line->qmaxt));
+      }
+    }      
   }
 
   ierr = VecRestoreArray(X, &x);
@@ -543,53 +557,70 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL(OPFLOW opflow, Vec X,
       if (!line->status)
         continue;
 
-      Gff = line->yff[0];
-      Bff = line->yff[1];
-      Gft = line->yft[0];
-      Bft = line->yft[1];
-      Gtf = line->ytf[0];
-      Btf = line->ytf[1];
-      Gtt = line->ytt[0];
-      Btt = line->ytt[1];
-
       ierr = PSLINEGetConnectedBuses(line, &connbuses);
       CHKERRQ(ierr);
       busf = connbuses[0];
       bust = connbuses[1];
+      
+      if(!line->isdcline) {
+	Gff = line->yff[0];
+	Bff = line->yff[1];
+	Gft = line->yft[0];
+	Bft = line->yft[1];
+	Gtf = line->ytf[0];
+	Btf = line->ytf[1];
+	Gtt = line->ytt[0];
+	Btt = line->ytt[1];	
 
-      xlocf = busf->startxVloc;
-      xloct = bust->startxVloc;
+	xlocf = busf->startxVloc;
+	xloct = bust->startxVloc;
 
-      thetaf = x[xlocf];
-      Vmf = x[xlocf + 1];
-      thetat = x[xloct];
-      Vmt = x[xloct + 1];
-      thetaft = thetaf - thetat;
-      thetatf = thetat - thetaf;
+	thetaf = x[xlocf];
+	Vmf = x[xlocf + 1];
+	thetat = x[xloct];
+	Vmt = x[xloct + 1];
+	thetaft = thetaf - thetat;
+	thetatf = thetat - thetaf;
 
-      if (bus == busf) {
-        Pf = Gff * Vmf * Vmf +
-             Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-        Qf = -Bff * Vmf * Vmf +
-             Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+	if (bus == busf) {
+	  Pf = Gff * Vmf * Vmf +
+	    Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+	  Qf = -Bff * Vmf * Vmf +
+	    Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
 
-        val[0] = Pf;
-        val[1] = Qf;
-        ierr = VecSetValues(Ge, 2, row, val, ADD_VALUES);
-        CHKERRQ(ierr);
+	  val[0] = Pf;
+	  val[1] = Qf;
+	  ierr = VecSetValues(Ge, 2, row, val, ADD_VALUES);
+	  CHKERRQ(ierr);
 
-        flps += 78.0;
-      } else {
-        Pt = Gtt * Vmt * Vmt +
-             Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-        Qt = -Btt * Vmt * Vmt +
-             Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-
-        val[0] = Pt;
-        val[1] = Qt;
-        ierr = VecSetValues(Ge, 2, row, val, ADD_VALUES);
-        CHKERRQ(ierr);
-        flps += 78.0;
+	  flps += 78.0;
+	} else {
+	  Pt = Gtt * Vmt * Vmt +
+	    Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+	  Qt = -Btt * Vmt * Vmt +
+	    Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+	  
+	  val[0] = Pt;
+	  val[1] = Qt;
+	  ierr = VecSetValues(Ge, 2, row, val, ADD_VALUES);
+	  CHKERRQ(ierr);
+	  flps += 78.0;
+	}
+      } else if(line->isdcline) {
+	Pf = x[line->startxdcloc];
+	Qf = x[line->startxdcloc+1];
+	Qt = x[line->startxdcloc+2];
+	
+	if(bus == busf) {
+	  val[0] = Pf;
+	  val[1] = Qf;
+	} else {
+	  Pt = Pf - (line->loss0 + line->loss1*Pf);
+	  val[0] = -Pt;
+	  val[1] = -Qt;
+	}
+	ierr = VecSetValues(Ge, 2, row, val, ADD_VALUES);
+	CHKERRQ(ierr);
       }
     }
 
@@ -753,14 +784,6 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,
       line = connlines[k];
       if (!line->status)
         continue;
-      Gff = line->yff[0];
-      Bff = line->yff[1];
-      Gft = line->yft[0];
-      Bft = line->yft[1];
-      Gtf = line->ytf[0];
-      Btf = line->ytf[1];
-      Gtt = line->ytt[0];
-      Btt = line->ytt[1];
 
       /* Get the connected buses to this line */
       ierr = PSLINEGetConnectedBuses(line, &connbuses);
@@ -768,71 +791,101 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,
       busf = connbuses[0];
       bust = connbuses[1];
 
-      locf = busf->startxVloc;
-      loct = bust->startxVloc;
-
-      locglobf = busf->startxVlocglob;
-      locglobt = bust->startxVlocglob;
-
-      thetaf = xarr[locf];
-      Vmf = xarr[locf + 1];
-      thetat = xarr[loct];
-      Vmt = xarr[loct + 1];
-      thetaft = thetaf - thetat;
-      thetatf = thetat - thetaf;
-
-      if (bus == busf) {
-        col[0] = locglobf;
-        col[1] = locglobf + 1;
-        col[2] = locglobt;
-        col[3] = locglobt + 1;
-        /* dPf_dthetaf */
-        val[0] = Vmf * Vmt * (-Gft * sin(thetaft) + Bft * cos(thetaft));
-        /*dPf_dVmf */
-        val[1] =
+      if(!line->isdcline) {
+	Gff = line->yff[0];
+	Bff = line->yff[1];
+	Gft = line->yft[0];
+	Bft = line->yft[1];
+	Gtf = line->ytf[0];
+	Btf = line->ytf[1];
+	Gtt = line->ytt[0];
+	Btt = line->ytt[1];
+	
+	
+	locf = busf->startxVloc;
+	loct = bust->startxVloc;
+	
+	locglobf = busf->startxVlocglob;
+	locglobt = bust->startxVlocglob;
+	
+	thetaf = xarr[locf];
+	Vmf = xarr[locf + 1];
+	thetat = xarr[loct];
+	Vmt = xarr[loct + 1];
+	thetaft = thetaf - thetat;
+	thetatf = thetat - thetaf;
+	
+	if (bus == busf) {
+	  col[0] = locglobf;
+	  col[1] = locglobf + 1;
+	  col[2] = locglobt;
+	  col[3] = locglobt + 1;
+	  /* dPf_dthetaf */
+	  val[0] = Vmf * Vmt * (-Gft * sin(thetaft) + Bft * cos(thetaft));
+	  /*dPf_dVmf */
+	  val[1] =
             2 * Gff * Vmf + Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-        /*dPf_dthetat */
-        val[2] = Vmf * Vmt * (Gft * sin(thetaft) - Bft * cos(thetaft));
-        /* dPf_dVmt */
-        val[3] = Vmf * (Gft * cos(thetaft) + Bft * sin(thetaft));
-
-        /* dQf_dthetaf */
-        val[4] = Vmf * Vmt * (Bft * sin(thetaft) + Gft * cos(thetaft));
-        /* dQf_dVmf */
-        val[5] =
+	  /*dPf_dthetat */
+	  val[2] = Vmf * Vmt * (Gft * sin(thetaft) - Bft * cos(thetaft));
+	  /* dPf_dVmt */
+	  val[3] = Vmf * (Gft * cos(thetaft) + Bft * sin(thetaft));
+	  
+	  /* dQf_dthetaf */
+	  val[4] = Vmf * Vmt * (Bft * sin(thetaft) + Gft * cos(thetaft));
+	  /* dQf_dVmf */
+	  val[5] =
             -2 * Bff * Vmf + Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-        /* dQf_dthetat */
-        val[6] = Vmf * Vmt * (-Bft * sin(thetaft) - Gft * cos(thetaft));
-        /* dQf_dVmt */
-        val[7] = Vmf * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-        ierr = MatSetValues(Je, 2, row, 4, col, val, ADD_VALUES);
-        CHKERRQ(ierr);
-      } else {
-        col[0] = locglobt;
-        col[1] = locglobt + 1;
-        col[2] = locglobf;
-        col[3] = locglobf + 1;
-        /* dPt_dthetat */
-        val[0] = Vmt * Vmf * (-Gtf * sin(thetatf) + Btf * cos(thetatf));
-        /* dPt_dVmt */
-        val[1] =
+	  /* dQf_dthetat */
+	  val[6] = Vmf * Vmt * (-Bft * sin(thetaft) - Gft * cos(thetaft));
+	  /* dQf_dVmt */
+	  val[7] = Vmf * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+	  ierr = MatSetValues(Je, 2, row, 4, col, val, ADD_VALUES);
+	  CHKERRQ(ierr);
+	} else {
+	  col[0] = locglobt;
+	  col[1] = locglobt + 1;
+	  col[2] = locglobf;
+	  col[3] = locglobf + 1;
+	  /* dPt_dthetat */
+	  val[0] = Vmt * Vmf * (-Gtf * sin(thetatf) + Btf * cos(thetatf));
+	  /* dPt_dVmt */
+	  val[1] =
             2 * Gtt * Vmt + Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-        /* dPt_dthetaf */
-        val[2] = Vmt * Vmf * (Gtf * sin(thetatf) - Btf * cos(thetatf));
-        /* dPt_dVmf */
-        val[3] = Vmt * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-
-        /* dQt_dthetat */
-        val[4] = Vmt * Vmf * (Btf * sin(thetatf) + Gtf * cos(thetatf));
-        /* dQt_dVmt */
-        val[5] =
+	  /* dPt_dthetaf */
+	  val[2] = Vmt * Vmf * (Gtf * sin(thetatf) - Btf * cos(thetatf));
+	  /* dPt_dVmf */
+	  val[3] = Vmt * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+	  
+	  /* dQt_dthetat */
+	  val[4] = Vmt * Vmf * (Btf * sin(thetatf) + Gtf * cos(thetatf));
+	  /* dQt_dVmt */
+	  val[5] =
             -2 * Btt * Vmt + Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-        /* dQt_dthetaf */
-        val[6] = Vmt * Vmf * (-Btf * sin(thetatf) - Gtf * cos(thetatf));
-        /* dQt_dVmf */
-        val[7] = Vmt * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-        ierr = MatSetValues(Je, 2, row, 4, col, val, ADD_VALUES);
-        CHKERRQ(ierr);
+	  /* dQt_dthetaf */
+	  val[6] = Vmt * Vmf * (-Btf * sin(thetatf) - Gtf * cos(thetatf));
+	  /* dQt_dVmf */
+	  val[7] = Vmt * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+	  ierr = MatSetValues(Je, 2, row, 4, col, val, ADD_VALUES);
+	  CHKERRQ(ierr);
+	}
+      } else if(line->isdcline) {
+	if(bus == busf) {
+	  col[0] = line->startxdcloc;
+	  val[0] = 1.0;
+	  ierr = MatSetValues(Je, 1, row, 1, col, val, ADD_VALUES);
+
+	  col[0] = line->startxdcloc+1;
+	  val[0] = 1.0;
+	  ierr = MatSetValues(Je, 1, row+1, 1, col, val, ADD_VALUES);
+	} else {
+	  col[0] = line->startxdcloc;
+	  val[0] = -(1.0 - line->loss1);
+	  ierr = MatSetValues(Je, 1, row, 1, col, val, ADD_VALUES);
+
+	  col[0] = line->startxdcloc+2;
+	  val[0] = -1.0;
+	  ierr = MatSetValues(Je, 1, row+1, 1, col, val, ADD_VALUES); 
+	}
       }
     }
     flps += nconnlines *
@@ -984,6 +1037,8 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow, Vec X,
   if (!opflow->ignore_lineflow_constraints) {
     for (i = 0; i < opflow->nlinesmon; i++) {
       line = &ps->line[opflow->linesmon[i]];
+      
+      if(line->isdcline) continue;
 
       gloc = line->startineqloc;
 
@@ -1171,6 +1226,8 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,
   if (!opflow->ignore_lineflow_constraints) {
     for (i = 0; i < opflow->nlinesmon; i++) {
       line = &ps->line[opflow->linesmon[i]];
+
+      if(line->isdcline) continue;
 
       gloc = line->startineqloc;
 
@@ -1642,9 +1699,7 @@ PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW opflow,
 	line->nconineq = 2;
 	line->nconeq = 0;
       } else if(line->isdcline) {
-	*nconeq += 1;
-	line->nconeq = 1;
-	line->nconineq = 0;
+	line->nconeq = line->nconineq = 0;
       }
     }
   }
@@ -2172,6 +2227,8 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow,
   if (!opflow->ignore_lineflow_constraints) {
     for (i = 0; i < opflow->nlinesmon; i++) {
       line = &ps->line[opflow->linesmon[i]];
+
+      if(line->isdcline) continue;
 
       PetscScalar Gff, Bff, Gft, Bft, Gtf, Btf, Gtt, Btt;
       Gff = line->yff[0];
@@ -2836,40 +2893,47 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow) {
       continue;
     }
 
-    Gff = line->yff[0];
-    Bff = line->yff[1];
-    Gft = line->yft[0];
-    Bft = line->yft[1];
-    Gtf = line->ytf[0];
-    Btf = line->ytf[1];
-    Gtt = line->ytt[0];
-    Btt = line->ytt[1];
-
-    ierr = PSLINEGetConnectedBuses(line, &connbuses);
-    CHKERRQ(ierr);
-    busf = connbuses[0];
-    bust = connbuses[1];
-
-    xlocf = busf->startxVloc;
-    xloct = bust->startxVloc;
-
-    thetaf = x[xlocf];
-    Vmf = x[xlocf + 1];
-    thetat = x[xloct];
-    Vmt = x[xloct + 1];
-    thetaft = thetaf - thetat;
-    thetatf = thetat - thetaf;
-
-    Pf =
+    if(!line->isdcline) {
+      Gff = line->yff[0];
+      Bff = line->yff[1];
+      Gft = line->yft[0];
+      Bft = line->yft[1];
+      Gtf = line->ytf[0];
+      Btf = line->ytf[1];
+      Gtt = line->ytt[0];
+      Btt = line->ytt[1];
+      
+      ierr = PSLINEGetConnectedBuses(line, &connbuses);
+      CHKERRQ(ierr);
+      busf = connbuses[0];
+      bust = connbuses[1];
+      
+      xlocf = busf->startxVloc;
+      xloct = bust->startxVloc;
+      
+      thetaf = x[xlocf];
+      Vmf = x[xlocf + 1];
+      thetat = x[xloct];
+      Vmt = x[xloct + 1];
+      thetaft = thetaf - thetat;
+      thetatf = thetat - thetaf;
+      
+      Pf =
         Gff * Vmf * Vmf + Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-    Qf = -Bff * Vmf * Vmf +
-         Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-
-    Pt =
+      Qf = -Bff * Vmf * Vmf +
+	Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+      
+      Pt =
         Gtt * Vmt * Vmt + Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-    Qt = -Btt * Vmt * Vmt +
+      Qt = -Btt * Vmt * Vmt +
          Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+    } else if(line->isdcline) {
+      Pf = x[line->startxdcloc];
+      Qf = x[line->startxdcloc+1];
+      Qt = x[line->startxdcloc+2];
 
+      Pt = Pf - (line->loss0 + line->loss1*Pf);
+    }
     line->pf = Pf;
     line->qf = Qf;
     line->pt = Pt;
@@ -2880,6 +2944,7 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow) {
 
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
+    if(line->isdcline) continue;
     gloc = line->startineqloc;
     line->mult_sf = lambdai[gloc];
     line->mult_st = lambdai[gloc + 1];
@@ -2998,8 +3063,6 @@ PetscErrorCode OPFLOWModelSetUp_PBPOL(OPFLOW opflow) {
       line->startineqloc = ineqloc;
       ineqloc += line->nconineq;
     } else if(line->isdcline) {
-      line->starteqloc = eqloc;
-      eqloc += line->nconeq;
       ierr = PSLINEGetVariableLocation(line,&loc);CHKERRQ(ierr);
       line->startxdcloc = loc;
     }
