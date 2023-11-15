@@ -19,6 +19,7 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
   PetscInt i;
   PSBUS bus;
   PSGEN gen;
+  PSLINE line;
   PetscInt loc;
 
   PetscFunctionBegin;
@@ -29,6 +30,25 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
   ierr = VecGetArray(Xu, &xu);
   CHKERRQ(ierr);
 
+  for(i = 0; i < opflow->nlinesmon; i++) {
+    line = &ps->line[opflow->linesmon[i]];
+    if(line->isdcline) {
+      loc = line->startxdcloc;
+
+      // Bounds on PF
+      xl[loc]   = line->pmin;
+      xu[loc]   = line->pmax;
+
+      // Bounds on QF
+      xl[loc+1] = line->qminf;
+      xu[loc+1] = line->qmaxf;
+
+      // Bounds on QT
+      xl[loc+2] = line->qmint;
+      xu[loc+2] = line->qmaxt;
+    }
+  }
+  
   for (i = 0; i < ps->nbus; i++) {
     PetscInt k;
 
@@ -220,11 +240,17 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBPOL(OPFLOW opflow, Vec Gl, Vec Gu) {
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
 
-    gloc = line->startineqloc;
-    /* Line flow inequality constraints */
-    gl[gloc] = gl[gloc + 1] = 0.0;
-    gu[gloc] = gu[gloc + 1] =
+    if(!line->isdcline) {
+      gloc = line->startineqloc;
+      /* Line flow inequality constraints */
+      gl[gloc] = gl[gloc + 1] = 0.0;
+      gu[gloc] = gu[gloc + 1] =
         (line->rateA / ps->MVAbase) * (line->rateA / ps->MVAbase);
+    } else if(line->isdcline) {
+      gloc = line->starteqloc;
+      /* Equality constraint for the dcline, bounds set to 0 */
+      gl[gloc] = gu[gloc] = 0.0;
+    }
   }
 
   ierr = VecRestoreArray(Gl, &gl);
@@ -1467,15 +1493,17 @@ PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW opflow,
   PetscFunctionBegin;
 
   *nx = 0;
-  /* No variables for the branches */
+
+  /* Variables for the lines */
   for (i = 0; i < opflow->nlinesmon; i++) {
     monidx = opflow->linesmon[i];
     line = &ps->line[monidx];
     if(!line->isdcline) {
       branchnvar[monidx] = line->nx = 0;
     } else if(line->isdcline) {
-      // Two variables for the DC line (injections at the two ends)
-      branchnvar[monidx] = line->nx = 2;
+      // Three variables for the DC line
+      // P injection at from end, Q injections at from and to ends
+      branchnvar[monidx] = line->nx = 3;
     }
     *nx += branchnvar[monidx];
   }
