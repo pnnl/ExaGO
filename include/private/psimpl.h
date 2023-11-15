@@ -316,6 +316,8 @@ struct _p_PSLINE {
   mult_pmin,mult_pmax;
   PetscScalar
   mult_qminf,mult_qmaxf,mult_qmint,mult_qmaxt;
+  PetscScalar
+  mult_pf;
   /*******************/
   
   PetscScalar
