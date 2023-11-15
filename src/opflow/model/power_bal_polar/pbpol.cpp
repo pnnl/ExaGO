@@ -33,11 +33,27 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
 
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
-    if (!line->isdcline && opflow->allow_lineflow_violation) {
-      /* Bounds on slack variables */
-      loc = line->startxslackloc;
-      xl[loc] = xl[loc + 1] = 0.0;
-      xu[loc] = xu[loc + 1] = PETSC_INFINITY;
+    if (!line->isdcline) {
+      if(opflow->allow_lineflow_violation) {
+	/* Bounds on slack variables */
+	loc = line->startxslackloc;
+	xl[loc] = xl[loc + 1] = 0.0;
+	xu[loc] = xu[loc + 1] = PETSC_INFINITY;
+      }
+    } else {
+      loc = line->startxdcloc;
+
+      // Bounds on PF
+      xl[loc]   = line->pmin;
+      xu[loc]   = line->pmax;
+
+      // Bounds on QF
+      xl[loc+1] = line->qminf;
+      xu[loc+1] = line->qmaxf;
+
+      // Bounds on QT
+      xl[loc+2] = line->qmint;
+      xu[loc+2] = line->qmaxt;
     }
   }
 
@@ -86,7 +102,7 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
 
       loc += bus->nxpimb;
     }
-
+    
     /* Bounds on generator variables */
 
     for (k = 0; k < bus->ngen; k++) {
@@ -232,11 +248,17 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBPOL(OPFLOW opflow, Vec Gl, Vec Gu) {
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
 
-    gloc = line->startineqloc;
-    /* Line flow inequality constraints */
-    gl[gloc] = gl[gloc + 1] = 0.0;
-    gu[gloc] = gu[gloc + 1] =
+    if(!line->isdcline) {
+      gloc = line->startineqloc;
+      /* Line flow inequality constraints */
+      gl[gloc] = gl[gloc + 1] = 0.0;
+      gu[gloc] = gu[gloc + 1] =
         (line->rateA / ps->MVAbase) * (line->rateA / ps->MVAbase);
+    } else if(line->isdcline) {
+      gloc = line->starteqloc;
+      /* Equality constraint for the dcline, bounds set to 0 */
+      gl[gloc] = gu[gloc] = 0.0;
+    }
   }
 
   ierr = VecRestoreArray(Gl, &gl);
@@ -1542,23 +1564,25 @@ PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW opflow,
   PetscFunctionBegin;
 
   *nx = 0;
-  /* No variables for the branches */
+
+  /* Variables for the lines */
   for (i = 0; i < opflow->nlinesmon; i++) {
     monidx = opflow->linesmon[i];
     line = &ps->line[monidx];
+
     if(line->isdcline) {
-      branchnvar[monidx] = line->nx = 2;
+      branchnvar[monidx] = line->nx = 3;
     } else {
       branchnvar[monidx] = line->nx = 0;
+      if (opflow->allow_lineflow_violation) {
+	/* Two variables for line flow slacks
+	   - From side flow (Sft) and To side flow (Stf)
+	*/
+	branchnvar[monidx] += 2;
+	line->nx += 2;
+      }
     }
 
-    if (!line->isdcline && opflow->allow_lineflow_violation) {
-      /* Two variables for line flow slacks
-         - From side flow (Sft) and To side flow (Stf)
-      */
-      branchnvar[idx] += 2;
-      line->nx += 2;
-    }
     *nx += branchnvar[monidx];
   }
   
@@ -3050,7 +3074,7 @@ PetscErrorCode OPFLOWModelSetUp_PBPOL(OPFLOW opflow) {
     line = &ps->line[opflow->linesmon[i]];
     if(!line->isdcline) {
       /* Set starting location for slack variable */
-      if (!line->isdcline && opflow->allow_lineflow_violation) {
+      if(opflow->allow_lineflow_violation) {
 	line->startxslackloc = loc;
       }
       line->startineqloc = ineqloc;
