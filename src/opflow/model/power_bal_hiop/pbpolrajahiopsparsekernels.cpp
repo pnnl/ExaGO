@@ -1481,7 +1481,7 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
   PetscErrorCode ierr;
   PetscInt *iRow, *jCol;
   PetscScalar *x, *values, *lambda;
-  PetscInt nrow;
+  PetscInt nrow, ncol;
   PetscInt nvals;
   const PetscInt *cols;
   const PetscScalar *vals;
@@ -1496,6 +1496,10 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
 
   if (iHSS_dev != NULL && jHSS_dev != NULL) {
 
+    if (debugmsg)
+      std::cout << "Official Hessian nonzero count: "
+                << opflow->nnz_hesssp << std::endl;
+    
     resmgr.memset(iHSS_dev, 0, opflow->nnz_hesssp*sizeof(int));
     resmgr.memset(jHSS_dev, 0, opflow->nnz_hesssp*sizeof(int));
 
@@ -1652,10 +1656,6 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
                     opflow->nnz_hesssp, pbpolrajahiopsparse->idx_hess_dev_,
                     iHSS_dev, jHSS_dev, NULL);
     
-    if (debugmsg)
-      std::cout << "Official Hessian nonzero count: "
-                << opflow->nnz_hesssp << std::endl;
-    
     // Create arrays on host to store i,j, and val arrays
 
     if (pbpolrajahiopsparse->i_hess == NULL) { 
@@ -1673,8 +1673,14 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
     ierr = (*opflow->modelops.computehessian)(
         opflow, opflow->X, opflow->Lambdae, opflow->Lambdai, opflow->Hes);
     CHKERRQ(ierr);
-    ierr = MatGetSize(opflow->Hes, &nrow, &nrow);
+    ierr = MatGetSize(opflow->Hes, &nrow, &ncol);
     CHKERRQ(ierr);
+
+    if (debugmsg)
+      std::cout << "Official Hessian Size: "
+                << nrow << " rows x " << ncol << " cols"
+                << "(should be" << opflow->Nx << " x " << opflow->Nx << ")"
+                << std::endl;
 
     /* Copy over locations to triplet format */
     /* Note that HIOP requires a upper triangular Hessian as oppposed
