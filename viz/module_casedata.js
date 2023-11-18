@@ -3,7 +3,7 @@
 module.exports = {
 
 	get_casedata: function () {
-				var inputcasedata = require("./data/case_ACTIVSg10k.json");
+				var inputcasedata = require("./data/case200.json");
 
 				var casedata0 = {};
 				casedata0.geojsondata = {};

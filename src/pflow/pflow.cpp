@@ -2,6 +2,9 @@
 #include <private/pflowimpl.h>
 #include <private/psimpl.h>
 
+const char *const PFLOWOutputFormatTypes[] = {
+  "MATPOWER", "CSV", "JSON", "MINIMAL", "OutputFormat", "", NULL};
+
 /*
   PFLOWCreate - Creates a power flow application object
 
@@ -36,7 +39,7 @@ PetscErrorCode PFLOWCreate(MPI_Comm mpicomm, PFLOW *pflowout) {
   pflow->setupcalled = PETSC_FALSE;
 
   pflow->split_gen_power_within_limits = PETSC_FALSE;
-
+  pflow->solutiontops = PETSC_FALSE;
   *pflowout = pflow;
   PetscFunctionReturn(0);
 }
@@ -734,13 +737,13 @@ PetscErrorCode PFLOWConverged(PFLOW pflow, PetscBool *flg) {
 }
 
 /*
-  PFLOWPostSolve - Updates the buses and the branches with the solution from the
+  PFLOWSolutionToPS - Updates the buses and the branches with the solution from the
 power flow
 
   Input Parameters:
 . pflow - the PFLOW object
 */
-PetscErrorCode PFLOWPostSolve(PFLOW pflow) {
+PetscErrorCode PFLOWSolutionToPS(PFLOW pflow) {
   PetscErrorCode ierr;
   PS ps = pflow->ps;
   Vec localX, localPQgen;
@@ -902,6 +905,13 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow) {
     flps += 2;
   }
 
+  for(i = 0; i < ps->nline; i++) {
+    line = &ps->line[i];
+
+    line->sf = PetscSqrtScalar(line->pf * line->pf + line->qf * line->qf);
+    line->st = PetscSqrtScalar(line->pt * line->pt + line->qt * line->qt);
+  }
+
   ierr = VecRestoreArrayRead(localX, &xarr);
   CHKERRQ(ierr);
   ierr = DMRestoreLocalVector(ps->networkdm, &localX);
@@ -1055,150 +1065,8 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow) {
       }
     }
   }
+  pflow->solutiontops = PETSC_TRUE;
 
-#if defined PFLOW_DISPLAY_SNES_CONFIG
-  /* Print to stdout */
-  ierr = PetscPrintf(
-      pflow->comm->type,
-      "=============================================================\n");
-  CHKERRQ(ierr);
-  ierr = PetscPrintf(pflow->comm->type, "\tNonlinear solver configuration\n");
-  CHKERRQ(ierr);
-  ierr = PetscPrintf(
-      pflow->comm->type,
-      "=============================================================\n");
-  CHKERRQ(ierr);
-  ierr = SNESView(pflow->snes, 0);
-  CHKERRQ(ierr);
-  MPI_Barrier(pflow->comm->type);
-  ierr = PetscPrintf(pflow->comm->type, "\n\n");
-  CHKERRQ(ierr);
-#endif
-
-#if defined PFLOW_DISPLAY_RESULTS
-  ierr = PetscPrintf(
-      pflow->comm->type,
-      "=============================================================\n");
-  CHKERRQ(ierr);
-  ierr = PetscPrintf(pflow->comm->type, "\t\tBus data follows\n");
-  CHKERRQ(ierr);
-  ierr = PetscPrintf(
-      pflow->comm->type,
-      "=============================================================\n");
-  CHKERRQ(ierr);
-  ierr = PetscPrintf(pflow->comm->type,
-                     "%-6s %-10s %-4s %-7s %-7s %-7s %-6s %-7s %-7s\n", "Rank",
-                     "Bus #", "Type", "Pd", "Qd", "Pg", "Qg", "Vm", "Va");
-  CHKERRQ(ierr);
-  MPI_Barrier(pflow->comm->type);
-
-  for (i = 0; i < ps->nbus; i++) {
-    PSBUS bus;
-    PSLOAD load;
-    PetscInt loc;
-    PetscScalar Pd, Qd;
-    PetscBool ghostbus;
-
-    bus = &ps->bus[i];
-
-    ierr = PSBUSIsGhosted(bus, &ghostbus);
-    CHKERRQ(ierr);
-    if (ghostbus)
-      continue;
-
-    Pd = Qd = 0.0;
-    if (bus->nload) {
-      ierr = PSBUSGetLoad(bus, 0, &load);
-      CHKERRQ(ierr);
-      Pd = load->pl * ps->MVAbase;
-      Qd = load->ql * ps->MVAbase;
-    }
-
-    ierr = PSBUSGetVariableLocation(bus, &loc);
-    CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_SELF,
-                       "%-6d %-6d %-4d %7.2f %7.2f %7.2f %7.2f %7.3f %7.3f\n",
-                       pflow->comm->rank, bus->bus_i, bus->ide, Pd, Qd,
-                       pqgenarr[loc] * ps->MVAbase,
-                       pqgenarr[loc + 1] * ps->MVAbase, bus->vm, bus->va);
-    CHKERRQ(ierr);
-  }
-  MPI_Barrier(pflow->comm->type);
-  ierr = PetscPrintf(pflow->comm->type, "\n");
-  CHKERRQ(ierr);
-  ierr = PetscPrintf(
-      pflow->comm->type,
-      "=============================================================\n");
-  CHKERRQ(ierr);
-  ierr = PetscPrintf(pflow->comm->type, "\t\tBranch data follows\n");
-  CHKERRQ(ierr);
-  ierr = PetscPrintf(
-      pflow->comm->type,
-      "=============================================================\n");
-  CHKERRQ(ierr);
-  ierr = PetscPrintf(pflow->comm->type, "%-6s %-6s %-11s %-8s %-8s %-8s %-8s\n",
-                     "Rank", "From", "To", "Pf", "Qf", "Pt", "Qt");
-  CHKERRQ(ierr);
-  MPI_Barrier(pflow->comm->type);
-  for (i = 0; i < ps->nline; i++) {
-    PSLINE line;
-    line = &ps->line[i];
-    ierr = PetscPrintf(
-        PETSC_COMM_SELF, "%-6d %-6d %-6d %8.2f %8.2f %8.2f %8.2f\n",
-        pflow->comm->rank, line->fbus, line->tbus, line->pf * ps->MVAbase,
-        line->qf * ps->MVAbase, line->pt * ps->MVAbase, line->qt * ps->MVAbase);
-    CHKERRQ(ierr);
-  }
-  MPI_Barrier(pflow->comm->type);
-  ierr = PetscPrintf(pflow->comm->type, "\n");
-  CHKERRQ(ierr);
-  ierr = PetscPrintf(
-      pflow->comm->type,
-      "=============================================================\n");
-  CHKERRQ(ierr);
-  ierr = PetscPrintf(pflow->comm->type, "\t\t Generator data follows\n");
-  CHKERRQ(ierr);
-  ierr = PetscPrintf(
-      pflow->comm->type,
-      "=============================================================\n");
-  CHKERRQ(ierr);
-  ierr = PetscPrintf(
-      pflow->comm->type,
-      "%-6s %-6s %-6s %-6s %-6s %-6s %-6s %-6s %-6s %-6s %-6s %-6s\n", "Rank",
-      "Bus #", "Pg", "Qg", "Qmin", "Qmax", "Qmintot", "Qrange", "Qgbus",
-      "Pgtotal", "MVAbasetotal", "Generator MVAbase");
-  CHKERRQ(ierr);
-  MPI_Barrier(pflow->comm->type);
-  for (i = 0; i < ps->nbus; i++) {
-    PSBUS bus;
-    PetscInt loc, k;
-
-    bus = &ps->bus[i];
-    ierr = PSBUSGetVariableLocation(bus, &loc);
-    CHKERRQ(ierr);
-    ierr = PSBUSIsGhosted(bus, &ghostbus);
-    CHKERRQ(ierr);
-    if (ghostbus)
-      continue;
-
-    for (k = 0; k < bus->ngen; k++) {
-      PSGEN gen;
-      ierr = PSBUSGetGen(bus, k, &gen);
-      CHKERRQ(ierr);
-      ierr = PetscPrintf(PETSC_COMM_SELF,
-                         "%-6d %-6d %8.2f %8.2f %8.2f %8.2f %8.2f %8.2f %8.2f "
-                         "%8.2f %8.2f %8.2f\n",
-                         pflow->comm->rank, bus->bus_i, gen->pg * ps->MVAbase,
-                         gen->qg * ps->MVAbase, gen->qb * ps->MVAbase,
-                         gen->qt * ps->MVAbase, bus->qmintot * ps->MVAbase,
-                         bus->qrange * ps->MVAbase,
-                         pqgenarr[loc + 1] * ps->MVAbase,
-                         bus->Pgtot * ps->MVAbase, bus->MVAbasetot, gen->mbase);
-      CHKERRQ(ierr);
-    }
-  }
-  MPI_Barrier(pflow->comm->type);
-#endif
   ierr = VecRestoreArray(PQgen, &pqgenarr);
   CHKERRQ(ierr);
   ierr = DMRestoreLocalVector(ps->networkdm, &localPQgen);
@@ -1208,6 +1076,68 @@ PetscErrorCode PFLOWPostSolve(PFLOW pflow) {
   CHKERRQ(ierr);
   ierr = PetscLogFlops(flps);
   CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+
+  
+  PetscFunctionReturn(0);
+}
+
+/*
+  PFLOWPrintSolution - Prints PFLOW details to stdout.
+
+  Input Parameters:
++ pflow - the PFLOW object
+
+*/
+PetscErrorCode PFLOWPrintSolution(PFLOW pflow) {
+  PetscErrorCode ierr;
+  PetscBool conv_status;
+  PetscInt  its;
+
+  PetscFunctionBegin;
+  if (!pflow->solutiontops) {
+    ierr = PFLOWSolutionToPS(pflow);
+    CHKERRQ(ierr);
+  }
+
+#ifndef EXAGO_DISABLE_LOGGING
+  /* Print to stdout */
+  ierr = PetscPrintf(
+      pflow->comm->type,
+      "=============================================================\n");
+  CHKERRQ(ierr);
+  ierr = PetscPrintf(pflow->comm->type, "\t\tAC Power Flow\n");
+  CHKERRQ(ierr);
+  ierr = PetscPrintf(
+      pflow->comm->type,
+      "=============================================================\n");
+  CHKERRQ(ierr);
+
+  ierr = PetscPrintf(pflow->comm->type, "%-35s %s\n", "Solver",
+                     "Newton-Rhapson");
+  CHKERRQ(ierr);
+
+  MPI_Barrier(pflow->comm->type);
+
+  ierr = PFLOWGetConvergenceStatus(pflow, &conv_status);
+  CHKERRQ(ierr);
+  ierr = PetscPrintf(pflow->comm->type, "%-35s %s\n", "Convergence status",
+                     conv_status ? "CONVERGED" : "DID NOT CONVERGE");
+  CHKERRQ(ierr);
+
+  ierr = PFLOWGetNumIterations(pflow,&its);
+  CHKERRQ(ierr);
+  ierr = PetscPrintf(pflow->comm->type, "%-35s %-6d\n","Number of iterations",its);CHKERRQ(ierr);
+  
+  ierr = PetscPrintf(pflow->comm->type, "\n");
+  CHKERRQ(ierr);
+
+  MPI_Barrier(pflow->comm->type);
+
+  ierr = PSPrintSystemSummary(pflow->ps);
+  CHKERRQ(ierr);
+#endif
+
   PetscFunctionReturn(0);
 }
 
@@ -1227,6 +1157,19 @@ PetscErrorCode PFLOWSetUp(PFLOW pflow) {
 
   PetscFunctionBegin;
 
+  {
+    PetscOptionsBegin(pflow->comm->type, NULL, "PFLOW options", NULL);
+
+    ierr = PetscOptionsEnum("-pflow_output_format",
+			  "Type of PFLOW output format", "",
+                            PFLOWOutputFormatTypes,
+                            (PetscEnum)pflow->outputformat,
+			    (PetscEnum *)&pflow->outputformat, NULL);
+    CHKERRQ(ierr);
+
+    PetscOptionsEnd();
+  }
+  
   /* Set up PS object */
   ierr = PSSetUp(ps);
   CHKERRQ(ierr);
@@ -1594,7 +1537,106 @@ PetscErrorCode PFLOWAddBusShunt(PFLOW pflow, PetscInt busnum, PetscScalar Gs,
 */
 PetscErrorCode PFLOWGetNumIterations(PFLOW pflow, PetscInt *numiter) {
   PetscErrorCode ierr;
+  PetscFunctionBegin;
   ierr = SNESGetIterationNumber(pflow->snes, numiter);
   CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  PFLOWGetConvergenceStatus - Did PFLOW converge?
+
+  Input Parameters:
++ PFLOW - the OPFLOW object
+- status - PETSC_TRUE if converged, PETSC_FALSE otherwise
+
+  Notes: Should be called after the solve finishes
+*/
+PetscErrorCode PFLOWGetConvergenceStatus(PFLOW pflow, PetscBool *status) 
+{
+  PetscFunctionBegin;
+  *status = pflow->converged;
+  PetscFunctionReturn(0);
+}
+
+/*
+  PFLOWSetGICData - Sets the GIC data file
+
+  Input Parameter
++  pflow - The OPFLOW object
+-  gicfile - The name of the GIC data file
+
+  Notes: The GIC data file is only used for visualization. It contains the
+substation geospatial coordinates and mapping of buses to substations. See the
+Electric Grid Data Repository files for examples of GIC data files (given for
+CTIVSg cases)
+*/
+PetscErrorCode PFLOWSetGICData(PFLOW pflow, const char gicfile[]) {
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  /* Set GIC data file */
+  ierr = PSSetGICData(pflow->ps, gicfile);
+  CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/*
+  PFLOWSaveSolution - Saves the PFLOW solution to file
+
+  Input Parameters:
++ pflow - the OPFLOW object
+. format - the output file format (csv, matpower, json)
+- outfile  - Name of output file
+*/
+PetscErrorCode PFLOWSaveSolution(PFLOW pflow, OutputFormat format,
+                                  const char outfile[]) {
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  if (!pflow->solutiontops) {
+    ierr = PFLOWSolutionToPS(pflow);
+    CHKERRQ(ierr);
+  }
+
+  ierr = PSSaveSolution(pflow->ps, format, outfile);
+  CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+/*
+  PFLOWSaveSolution - Saves the OPFLOW solution to file using
+                       the output format set (default MATPOWER)
+
+  Input Parameters:
++ pflow - the OPFLOW object
+- outfile  - Name of output file
+*/
+PetscErrorCode PFLOWSaveSolutionDefault(PFLOW pflow, const char outfile[]) {
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  ierr = PFLOWSaveSolution(pflow, pflow->outputformat, outfile);
+  CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+/*
+   PFLOWSetOutputFormat - Sets the format for solving the solution
+
+   Input Parameters:
++  pflow - the pflow object
+-  otype  - output format type
+
+   Command-line option: -pflow_output_format
+   Notes: Must be called before PFLOWSetUp()
+*/
+PetscErrorCode PFLOWSetOutputFormat(PFLOW pflow, OutputFormat otype) {
+  PetscFunctionBegin;
+  pflow->outputformat = otype;
   PetscFunctionReturn(0);
 }

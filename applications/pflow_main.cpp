@@ -8,11 +8,14 @@ static char help[] =
 int main(int argc, char **argv) {
   PetscErrorCode ierr;
   PFLOW pflow;
-  char file[PETSC_MAX_PATH_LEN];
-  PetscBool flg;
+  char file[PETSC_MAX_PATH_LEN], gicfile[PETSC_MAX_PATH_LEN],
+    output_name[PETSC_MAX_PATH_LEN];
+  PetscBool flg = PETSC_FALSE, print_output = PETSC_FALSE,
+    save_output = PETSC_FALSE;
   PetscLogStage read, setup, solve;
   MPI_Comm comm = MPI_COMM_WORLD;
   char appname[] = "pflow";
+  const char default_output_name[] = "pflowout";
 
   ierr = ExaGOInitialize(comm, &argc, &argv, appname, help);
   if (ierr) {
@@ -26,6 +29,13 @@ int main(int argc, char **argv) {
   CHKERRQ(ierr);
   ierr = PetscLogStageRegister("Solve", &solve);
   CHKERRQ(ierr);
+
+  ierr = PetscOptionsGetBool(NULL, NULL, "-print_output", &print_output, NULL);
+  ExaGOCheckError(ierr);
+  ierr = PetscOptionsGetString(NULL, NULL, "-output_file", output_name,
+                               PETSC_MAX_PATH_LEN, &save_output);
+  ExaGOCheckError(ierr);
+
 
   /* Create PFLOW object */
   ierr = PFLOWCreate(PETSC_COMM_WORLD, &pflow);
@@ -50,6 +60,15 @@ int main(int argc, char **argv) {
     ierr = PFLOWReadMatPowerData(pflow, "datafiles/case9/case9mod.m");
     CHKERRQ(ierr);
   }
+
+  /* Get gic data file from command line */
+  ierr = PetscOptionsGetString(NULL, NULL, "-gicfile", gicfile,
+                               PETSC_MAX_PATH_LEN, &flg);
+  ExaGOCheckError(ierr);
+  if (flg) {
+    ierr = PFLOWSetGICData(pflow, gicfile);
+    ExaGOCheckError(ierr);
+  }
   PetscLogStagePop();
 
   ierr = PetscLogStagePush(setup);
@@ -66,9 +85,17 @@ int main(int argc, char **argv) {
   CHKERRQ(ierr);
   PetscLogStagePop();
 
-  /* Update line flows, Pgen, Qgen, and other parameters */
-  //  ierr = PFLOWPostSolve(pflow);CHKERRQ(ierr);
+  if(print_output) {
+    ierr = PFLOWPrintSolution(pflow);
+    CHKERRQ(ierr);
+  }
 
+  if (save_output) {
+    ierr = PFLOWSaveSolutionDefault(pflow, output_name);
+    ExaGOCheckError(ierr);
+  }
+
+  
   /* Destroy PFLOW object */
   ierr = PFLOWDestroy(&pflow);
   CHKERRQ(ierr);

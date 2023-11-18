@@ -18,7 +18,7 @@ PETSC_EXTERN PetscErrorCode PFLOWSetUp(PFLOW);
 PETSC_EXTERN PetscErrorCode PFLOWCreateGlobalVector(PFLOW, Vec *);
 PETSC_EXTERN PetscErrorCode PFLOWCreateMatrix(PFLOW, Mat *);
 PETSC_EXTERN PetscErrorCode PFLOWSolve(PFLOW);
-PETSC_EXTERN PetscErrorCode PFLOWPostSolve(PFLOW);
+PETSC_EXTERN PetscErrorCode PFLOWSolutionToPS(PFLOW);
 PETSC_EXTERN PetscErrorCode PFLOWConverged(PFLOW, PetscBool *);
 PETSC_EXTERN PetscErrorCode PFLOWSetLineStatus(PFLOW, PetscInt, PetscInt,
                                                const char *, PetscInt);
@@ -41,5 +41,10 @@ PETSC_EXTERN PetscErrorCode PFLOWAddBusShunt(PFLOW, PetscInt, PetscScalar,
                                              PetscScalar);
 PETSC_EXTERN PetscErrorCode PFLOWSetInitialGuess(PFLOW, Vec);
 PETSC_EXTERN PetscErrorCode PFLOWGetNumIterations(PFLOW, PetscInt *);
+PETSC_EXTERN PetscErrorCode PFLOWGetConvergenceStatus(PFLOW,PetscBool *);
+PETSC_EXTERN PetscErrorCode PFLOWPrintSolution(PFLOW);
+PETSC_EXTERN PetscErrorCode PFLOWSetGICData(PFLOW, const char[]);
+PETSC_EXTERN PetscErrorCode PFLOWSaveSolutionDefault(PFLOW, const char[]);
+PETSC_EXTERN PetscErrorCode PFLOWSetOutputFormat(PFLOW, OutputFormat);
 
 #endif

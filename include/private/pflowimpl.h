@@ -9,6 +9,8 @@
 #include <pflow.h>
 #include <ps.h>
 
+extern const char *const PFLOWOutputFormatTypes[];
+
 /**
  * @brief Private struct for power flow application
  */
@@ -24,6 +26,10 @@ struct _p_PFLOW {
 
   PetscBool setupcalled; /* PFSetUp called? */
   PetscBool converged;
+
+  OutputFormat outputformat; /* Format for output data */
+
+  PetscBool solutiontops; /* Has PS been updated with solution ? */
 
   PetscBool
       split_gen_power_within_limits; /* Splits the generator powers (after a
