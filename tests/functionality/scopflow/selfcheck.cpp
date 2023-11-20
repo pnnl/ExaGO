@@ -129,7 +129,7 @@ struct ScopflowFunctionalityTests
 
     auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
-      if (is_true_somewhere(!is_available,comm)) {
+      if (is_true_somewhere(!is_available, comm)) {
         std::stringstream errs;
         errs << "SCOPFLOW Test suite expected option '" << opt
              << "' to be available, but it was not found in this testsuite"
@@ -229,10 +229,10 @@ struct ScopflowFunctionalityTests
     resolve_datafiles_path(params.contingencies);
     if (ext == "con") {
       ierr = SCOPFLOWSetContingencyData(scopflow, PSSE,
-          params.contingencies.c_str());
+                                        params.contingencies.c_str());
     } else {
       ierr = SCOPFLOWSetContingencyData(scopflow, NATIVE,
-          params.contingencies.c_str());
+                                        params.contingencies.c_str());
     }
     ExaGOCheckError(ierr);
 

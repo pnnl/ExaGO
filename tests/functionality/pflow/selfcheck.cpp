@@ -134,7 +134,7 @@ struct PflowFunctionalityTests
       ierr = PFLOWReadPSSERawData(pflow, params.network.c_str());
       ExaGOCheckError(ierr);
     } else {
-      ierr = PFLOWReadMatPowerData(pflow,  params.network.c_str());
+      ierr = PFLOWReadMatPowerData(pflow, params.network.c_str());
       ExaGOCheckError(ierr);
     }
 

@@ -138,11 +138,11 @@ struct SopflowFunctionalityTests
 
     auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
-      if (is_true_somewhere(!is_available,comm)) {
+      if (is_true_somewhere(!is_available, comm)) {
         std::stringstream errs;
         errs << "SOPFLOW Test suite expected option '" << opt
-          << "' to be available, but it was not found in this testsuite"
-          << " configuration:\n";
+             << "' to be available, but it was not found in this testsuite"
+             << " configuration:\n";
         errs << testcase << "\nwith these presets:\n" << presets;
         throw ExaGOError(errs.str().c_str());
       }
@@ -279,7 +279,7 @@ struct SopflowFunctionalityTests
     if (params.multicontingency) {
       resolve_datafiles_path(params.contingencies);
       ierr = SOPFLOWSetContingencyData(sopflow, NATIVE,
-          params.contingencies.c_str());
+                                       params.contingencies.c_str());
       ExaGOCheckError(ierr);
       ierr = SOPFLOWSetNumContingencies(sopflow, params.num_contingencies);
       ExaGOCheckError(ierr);
@@ -297,7 +297,7 @@ struct SopflowFunctionalityTests
             SOPFLOWSetTimeStepandDuration(sopflow, params.dT, params.duration);
         ExaGOCheckError(ierr);
         ierr = SOPFLOWSetLoadProfiles(sopflow, params.pload.c_str(),
-            params.qload.c_str());
+                                      params.qload.c_str());
         ExaGOCheckError(ierr);
       }
     } else {
