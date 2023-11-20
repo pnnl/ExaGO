@@ -586,7 +586,9 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
   char sopflowmodelname[max_model_name_len];
   char sopflowsubproblemmodelname[max_model_name_len];
   char sopflowsubproblemsolvername[max_solver_name_len];
+#if defined(EXAGO_ENABLE_HIOP)
   char sopflowsubproblemmemspace[PETSC_MAX_PATH_LEN];
+#endif
 
   (void)std::strncpy(sopflowmodelname,
                      SOPFLOWOptions::sopflow_model.default_value.c_str(),

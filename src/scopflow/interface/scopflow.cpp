@@ -498,8 +498,10 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
   char scopflowmodelname[max_model_name_len];
   char scopflowsubproblemsolvername[max_solver_name_len];
   char scopflowsubproblemmodelname[max_model_name_len];
+#if defined(EXAGO_ENABLE_HIOP)
   char scopflowsubproblemmemspacename[max_model_name_len];
   char computemodename[max_model_name_len];
+#endif
   PetscBool scopflowsolverset = PETSC_FALSE;
 
   (void)std::strncpy(scopflowmodelname,
