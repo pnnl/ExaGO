@@ -360,14 +360,17 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
   std::cout << "Inequality Jacobian nonzero count: " << nnz_ineqjac << std::endl;
 
 
+  // Count non-zeros in *upper triangular* Hessian
+
   int nnz_hesssp = 0;
 
   for (int ibus = 0; ibus < ps->nbus; ++ibus) {
 
     // reserve 2 real and 2 reactive entries for each bus
+    // 3 upper triangular
 
     busparams->hesssp_idx[ibus] = nnz_hesssp;
-    nnz_hesssp += 4;
+    nnz_hesssp += 3;
 
     if (opflow->include_powerimbalance_variables) {
       nnz_hesssp += 2;
@@ -382,15 +385,16 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
       continue;
 
     genparams->hesssp_idx[igen] = nnz_hesssp;
-    nnz_hesssp += 1;
+    nnz_hesssp += 2;
 
     if (opflow->has_gensetpoint) {
       if (gen->isrenewable)
         continue;
-      
-      if (opflow->use_agc) {
-        nnz_hesssp += 5;
-      }
+
+      // later ...
+      // if (opflow->use_agc) {
+      //   nnz_hesssp += 5;
+      // }
     }
     if (opflow->genbusvoltagetype == FIXED_WITHIN_QBOUNDS) {
       nnz_hesssp += 2;
@@ -399,9 +403,18 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
   }
 
   for (int iline=0; iline < ps->nline; ++iline) {
-    // reserve 8 entries for each line (used twice)
+    PSLINE line = &(ps->line[iline]);
+
+    if (!line->status)
+      continue;
+    
     lineparams->hesssp_idx[iline] = nnz_hesssp;
-    nnz_hesssp += 8;
+
+    // 3 diagonal entries for on the from-bus rows (already defined)
+    // 3 diagonal entries for on the to-bus rows (already defined)
+    // 4 off-diagonal entries in upper part
+    nnz_hesssp += 4;
+
   }
 
   if (opflow->include_loadloss_variables) {
