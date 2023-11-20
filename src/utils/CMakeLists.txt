@@ -31,8 +31,7 @@ exago_add_library(
 
 # Going to have this target supply/propogate compiler flags and see if that
 # works -Wpedantic for CUDA compile options added a significant amount of new
-# errors, so leaving out for now
-# -Werror is problematic on MacOS
+# errors, so leaving out for now -Werror is problematic on MacOS
 if(APPLE)
   set(CUDA_COMPILE_OPTIONS
       "$<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CONFIG:DEBUG>>:SHELL:--compiler-options -Wall,-Wextra>"
