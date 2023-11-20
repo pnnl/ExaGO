@@ -113,13 +113,6 @@ if(EXAGO_INSTALL_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_mpi.toml
   )
 
-  if(EXAGO_ENABLE_IPOPT AND EXAGO_ENABLE_HIOP)
-    set_tests_properties(
-      FUNCTIONALITY_TEST_SCOPFLOW_HIOP_MPI_TESTSUITE PROPERTIES LABELS
-                                                                "incline-skip"
-    )
-  endif()
-
   exago_add_test(
     NAME
     FUNCTIONALITY_TEST_SCOPFLOW_HIOP_SERIAL_TESTSUITE
@@ -147,7 +140,7 @@ if(EXAGO_INSTALL_TESTS)
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_raja.toml
   )
-  
+
   foreach(fmt "MATPOWER" "CSV" "JSON" "MINIMAL")
     set(tname "SCOPFLOW_SOLUTION_OUTPUT_${fmt}")
     exago_add_test(
