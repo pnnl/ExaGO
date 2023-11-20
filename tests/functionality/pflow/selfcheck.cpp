@@ -34,7 +34,6 @@ struct PflowFunctionalityTests
   using Params = PflowFunctionalityTestParameters;
   MPI_Comm comm;
   int nprocs;
-  int logging_rank = 0;
 
   PflowFunctionalityTests(std::string testsuite_filename, MPI_Comm comm,
                           int logging_verbosity = EXAGO_LOG_INFO)
@@ -42,15 +41,12 @@ struct PflowFunctionalityTests
         comm{comm} {
     int my_rank;
     auto rerr = MPI_Comm_rank(comm, &my_rank);
-    if (rerr)
+    if (rerr != MPI_SUCCESS)
       throw ExaGOError("Error getting MPI rank number");
 
     auto err = MPI_Comm_size(comm, &nprocs);
-    if (err) {
-      if (my_rank == logging_rank)
-        throw ExaGOError("Error getting MPI num ranks");
-      exit(0);
-    }
+    if (err != MPI_SUCCESS)
+      throw ExaGOError("Error getting MPI num ranks");
   }
 
   void
@@ -59,7 +55,7 @@ struct PflowFunctionalityTests
 
     int my_rank;
     auto err = MPI_Comm_rank(comm, &my_rank);
-    if (err)
+    if (err != MPI_SUCCESS)
       throw ExaGOError("Error getting MPI rank number");
 
     int n_preset_procs;
@@ -67,43 +63,33 @@ struct PflowFunctionalityTests
     int n_testcase_procs = -1;
     set_if_found(n_testcase_procs, testcase, "n_procs");
 
-    if (-1 != n_testcase_procs) {
-      if (my_rank == logging_rank) {
-        std::stringstream errs;
-        errs << "Number of processes should be declared globally in the preset "
-                "area of the test suite TOML file, not inside each testcase.\n"
-             << "Testcase: " << testcase << "\nWith presets:\n"
-             << presets;
-        throw ExaGOError(errs.str().c_str());
-      }
-      exit(0);
-    } else if (nprocs != n_preset_procs) {
-      if (my_rank == logging_rank) {
-        std::stringstream errs;
-        errs << "PFLOW Functionality test suite found " << n_preset_procs
-             << " processes specified in the presets of the test suite TOML "
-                "file, but this test is being run with "
-             << nprocs << " processes.\nTestcase: " << testcase
-             << "\nWith presets:\n"
-             << presets;
-        throw ExaGOError(errs.str().c_str());
-      }
-      exit(0);
-      return;
+    if (is_true_somewhere(-1 != n_testcase_procs, comm)) {
+      std::stringstream errs;
+      errs << "Number of processes should be declared globally in the preset "
+              "area of the test suite TOML file, not inside each testcase.\n"
+           << "Testcase: " << testcase << "\nWith presets:\n"
+           << presets;
+      throw ExaGOError(errs.str().c_str());
+    } else if (is_true_somewhere(nprocs != n_preset_procs, comm)) {
+      std::stringstream errs;
+      errs << "PFLOW Functionality test suite found " << n_preset_procs
+           << " processes specified in the presets of the test suite TOML "
+              "file, but this test is being run with "
+           << nprocs << " processes.\nTestcase: " << testcase
+           << "\nWith presets:\n"
+           << presets;
+      throw ExaGOError(errs.str().c_str());
     }
 
     auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
-      if (!is_available) {
-        if (my_rank == logging_rank) {
-          std::stringstream errs;
-          errs << "PFLOW Test suite expected option '" << opt
-               << "' to be available, but it was not found in this testsuite"
-               << " configuration:\n";
-          errs << testcase << "\nwith these presets:\n" << presets;
-          throw ExaGOError(errs.str().c_str());
-        }
-        exit(0);
+      if (is_true_somewhere(!is_available, comm)) {
+        std::stringstream errs;
+        errs << "PFLOW Test suite expected option '" << opt
+             << "' to be available, but it was not found in this testsuite"
+             << " configuration:\n";
+        errs << testcase << "\nwith these presets:\n" << presets;
+        throw ExaGOError(errs.str().c_str());
       }
     };
 
@@ -132,26 +118,23 @@ struct PflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     PFLOW pflow;
-    char pbuf[PETSC_MAX_PATH_LEN];
     int my_rank;
     auto err = MPI_Comm_rank(comm, &my_rank);
-    if (err)
+    if (err != MPI_SUCCESS)
       throw ExaGOError("Error getting MPI rank number");
 
-    if (my_rank == logging_rank)
+    if (my_rank == 0)
       std::cout << "Test Description: " << params.description << std::endl;
     ierr = PFLOWCreate(params.comm, &pflow);
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.network);
-    strncpy(pbuf, params.network.c_str(), params.network.length());
-    pbuf[params.network.length()] = '\0';
     if (strstr(params.network.c_str(), ".raw") != NULL) {
-      ierr = PFLOWReadPSSERawData(pflow, pbuf);
+      ierr = PFLOWReadPSSERawData(pflow, params.network.c_str());
       ExaGOCheckError(ierr);
     } else {
-      ierr = PFLOWReadMatPowerData(pflow, pbuf);
+      ierr = PFLOWReadMatPowerData(pflow,  params.network.c_str());
       ExaGOCheckError(ierr);
     }
 
@@ -221,7 +204,7 @@ int main(int argc, char **argv) {
 
   int my_rank;
   auto err = MPI_Comm_rank(comm, &my_rank);
-  if (err)
+  if (err != MPI_SUCCESS)
     throw ExaGOError("Error getting MPI rank number");
 
   if (my_rank == 0)

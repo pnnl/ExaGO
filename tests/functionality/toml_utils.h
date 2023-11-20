@@ -68,6 +68,16 @@ void fmt_comment(std::ostream &summary, int col_width, std::string key,
           << "\n";
 }
 
+bool is_true_somewhere(bool flag, MPI_Comm comm)
+{
+  bool ret;
+  int err = MPI_Allreduce(&flag, &ret, 1, MPI_CXX_BOOL, MPI_LOR, comm);
+  if (err != MPI_SUCCESS) {
+    throw ExaGOError("Error in is_true_somewhere for MPI_Allreduce");
+  }
+  return ret;
+}
+
 // static std::string bool2str(bool b) { return (b ? "true" : "false"); }
 
 /**

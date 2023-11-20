@@ -116,22 +116,15 @@ struct SopflowFunctionalityTests
   using Params = SopflowFunctionalityTestParameters;
   MPI_Comm comm;
   int nprocs;
-  int logging_rank = 0;
 
   SopflowFunctionalityTests(std::string testsuite_filename, MPI_Comm comm,
                             int logging_verbosity = EXAGO_LOG_INFO)
       : FunctionalityTestContext(testsuite_filename, logging_verbosity),
         comm{comm} {
-    int my_rank;
-    auto rerr = MPI_Comm_rank(comm, &my_rank);
-    if (rerr)
-      throw ExaGOError("Error getting MPI rank number");
 
     auto err = MPI_Comm_size(comm, &nprocs);
-    if (err) {
-      if (my_rank == logging_rank)
-        throw ExaGOError("Error getting MPI num ranks");
-      exit(0);
+    if (err != MPI_SUCCESS) {
+      throw ExaGOError("Error getting MPI num ranks");
     }
   }
 
@@ -140,52 +133,18 @@ struct SopflowFunctionalityTests
                                 toml::value presets = toml::value{}) override {
     int my_rank;
     auto err = MPI_Comm_rank(comm, &my_rank);
-    if (err)
+    if (err != MPI_SUCCESS)
       throw ExaGOError("Error getting MPI rank number");
-
-#if 0
-    int n_preset_procs;
-    set_if_found(n_preset_procs, presets, "n_procs");
-    int n_testcase_procs = -1;
-    set_if_found(n_testcase_procs, testcase, "n_procs");
-
-    if (-1 != n_testcase_procs) {
-      if (my_rank == logging_rank) {
-        std::stringstream errs;
-        errs << "Number of processes should be declared globally in the preset "
-                "area of the test suite TOML file, not inside each testcase.\n"
-             << "Testcase: " << testcase << "\nWith presets:\n"
-             << presets;
-        throw ExaGOError(errs.str().c_str());
-      }
-      exit(0);
-    } else if (nprocs != n_preset_procs) {
-      if (my_rank == logging_rank) {
-        std::stringstream errs;
-        errs << "SOPFLOW Functionality test suite found " << n_preset_procs
-             << " processes specified in the presets of the test suite TOML "
-                "file, but this test is being run with "
-             << nprocs << " processes.\nTestcase: " << testcase
-             << "\nWith presets:\n"
-             << presets;
-        throw ExaGOError(errs.str().c_str());
-      }
-      exit(0);
-      return;
-    }
-#endif
 
     auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
-      if (!is_available) {
-        if (my_rank == logging_rank) {
-          std::stringstream errs;
-          errs << "SOPFLOW Test suite expected option '" << opt
-               << "' to be available, but it was not found in this testsuite"
-               << " configuration:\n";
-          errs << testcase << "\nwith these presets:\n" << presets;
-          throw ExaGOError(errs.str().c_str());
-        }
+      if (is_true_somewhere(!is_available,comm)) {
+        std::stringstream errs;
+        errs << "SOPFLOW Test suite expected option '" << opt
+          << "' to be available, but it was not found in this testsuite"
+          << " configuration:\n";
+        errs << testcase << "\nwith these presets:\n" << presets;
+        throw ExaGOError(errs.str().c_str());
       }
     };
 
@@ -259,14 +218,13 @@ struct SopflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     SOPFLOW sopflow;
-    char pbuf[PETSC_MAX_PATH_LEN];
     int rank;
 
     auto err = MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-    if (err)
+    if (err != MPI_SUCCESS)
       throw ExaGOError("Error getting MPI rank number");
 
-    if (rank == logging_rank)
+    if (rank == 0)
       std::cout << "Test Description: " << params.description << std::endl;
     ierr = SOPFLOWCreate(params.comm, &sopflow);
     ExaGOCheckError(ierr);
@@ -276,9 +234,7 @@ struct SopflowFunctionalityTests
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.network);
-    strncpy(pbuf, params.network.c_str(), params.network.length());
-    pbuf[params.network.length()] = '\0';
-    ierr = SOPFLOWSetNetworkData(sopflow, pbuf);
+    ierr = SOPFLOWSetNetworkData(sopflow, params.network.c_str());
     ExaGOCheckError(ierr);
 
     ierr = SOPFLOWSetNumScenarios(sopflow, params.num_scenarios);
@@ -286,10 +242,8 @@ struct SopflowFunctionalityTests
 
     // Prepend installation directory to scenario data
     resolve_datafiles_path(params.scenfile);
-    strncpy(pbuf, params.scenfile.c_str(), params.scenfile.length());
-    pbuf[params.scenfile.length()] = '\0';
     ierr = SOPFLOWSetScenarioData(sopflow, SOPFLOW_NATIVE_SINGLEPERIOD, WIND,
-                                  pbuf);
+                                  params.scenfile.c_str());
     ExaGOCheckError(ierr);
 
     ierr = SOPFLOWSetInitializationType(sopflow, params.initialization_type);
@@ -324,10 +278,8 @@ struct SopflowFunctionalityTests
     ExaGOCheckError(ierr);
     if (params.multicontingency) {
       resolve_datafiles_path(params.contingencies);
-      strncpy(pbuf, params.contingencies.c_str(),
-              params.contingencies.length());
-      pbuf[params.contingencies.length()] = '\0';
-      ierr = SOPFLOWSetContingencyData(sopflow, NATIVE, pbuf);
+      ierr = SOPFLOWSetContingencyData(sopflow, NATIVE,
+          params.contingencies.c_str());
       ExaGOCheckError(ierr);
       ierr = SOPFLOWSetNumContingencies(sopflow, params.num_contingencies);
       ExaGOCheckError(ierr);
@@ -336,22 +288,16 @@ struct SopflowFunctionalityTests
       //   ierr =
       //   SOPFLOWEnableMultiPeriod(sopflow,(PetscBool)params.multiperiod);ExaGOCheckError(ierr);
       if (params.multiperiod) {
-        char qbuf[PETSC_MAX_PATH_LEN];
         resolve_datafiles_path(params.windgen);
         resolve_datafiles_path(params.pload);
         resolve_datafiles_path(params.qload);
-        strncpy(pbuf, params.windgen.c_str(), params.windgen.length());
-        pbuf[params.windgen.length()] = '\0';
-        ierr = SOPFLOWSetWindGenProfile(sopflow, pbuf);
+        ierr = SOPFLOWSetWindGenProfile(sopflow, params.windgen.c_str());
         ExaGOCheckError(ierr);
         ierr =
             SOPFLOWSetTimeStepandDuration(sopflow, params.dT, params.duration);
         ExaGOCheckError(ierr);
-        strncpy(pbuf, params.pload.c_str(), params.pload.length());
-        pbuf[params.pload.length()] = '\0';
-        strncpy(qbuf, params.qload.c_str(), params.qload.length());
-        qbuf[params.qload.length()] = '\0';
-        ierr = SOPFLOWSetLoadProfiles(sopflow, pbuf, qbuf);
+        ierr = SOPFLOWSetLoadProfiles(sopflow, params.pload.c_str(),
+            params.qload.c_str());
         ExaGOCheckError(ierr);
       }
     } else {
@@ -504,7 +450,7 @@ int main(int argc, char **argv) {
 
   int my_rank;
   auto err = MPI_Comm_rank(comm, &my_rank);
-  if (err)
+  if (err != MPI_SUCCESS)
     throw ExaGOError("Error getting MPI rank number");
 
   if (my_rank == 0)

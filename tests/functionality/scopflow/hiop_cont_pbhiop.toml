@@ -16,7 +16,7 @@ compute_mode = 'CPU'
 enable_powerimbalance_variables = true
 verbosity_level = 3
 description = "No Description"
-hiop_mem_space = 'HOST' #need API implemented for this to work
+hiop_mem_space = 'HOST'
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'

@@ -16,7 +16,7 @@ subproblem_model = 'POWER_BALANCE_HIOP'
 subproblem_solver = 'HIOP'
 compute_mode = 'CPU'
 verbosity_level = 3
-hiop_mem_space = 'HOST' #need API implemented for this to work
+hiop_mem_space = 'HOST'
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'

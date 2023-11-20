@@ -155,7 +155,6 @@ struct OpflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     OPFLOW opflow;
-    char pbuf[PETSC_MAX_PATH_LEN];
     int rank;
 
     MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
@@ -174,9 +173,7 @@ struct OpflowFunctionalityTests
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.network);
-    strncpy(pbuf, params.network.c_str(), params.network.length());
-    pbuf[params.network.length()] = '\0';
-    ierr = OPFLOWReadMatPowerData(opflow, pbuf);
+    ierr = OPFLOWReadMatPowerData(opflow, params.network.c_str());
     ExaGOCheckError(ierr);
 
     ierr = OPFLOWSetGenBusVoltageType(opflow, params.gen_bus_voltage_type);

@@ -112,77 +112,30 @@ struct ScopflowFunctionalityTests
   using Params = ScopflowFunctionalityTestParameters;
   MPI_Comm comm;
   int nprocs;
-  int logging_rank = 0;
 
   ScopflowFunctionalityTests(std::string testsuite_filename, MPI_Comm comm,
                              int logging_verbosity = EXAGO_LOG_INFO)
       : FunctionalityTestContext(testsuite_filename, logging_verbosity),
         comm{comm} {
-    int my_rank;
-    auto rerr = MPI_Comm_rank(comm, &my_rank);
-    if (rerr)
-      throw ExaGOError("Error getting MPI rank number");
-
     auto err = MPI_Comm_size(comm, &nprocs);
-    if (err) {
-      if (my_rank == logging_rank)
-        throw ExaGOError("Error getting MPI num ranks");
-      exit(0);
+    if (err != MPI_SUCCESS) {
+      throw ExaGOError("Error getting MPI num ranks");
     }
   }
 
   void
   ensure_options_are_consistent(toml::value testcase,
                                 toml::value presets = toml::value{}) override {
-    int my_rank;
-    auto err = MPI_Comm_rank(comm, &my_rank);
-    if (err)
-      throw ExaGOError("Error getting MPI rank number");
-
-#if 0
-    int n_preset_procs;
-    set_if_found(n_preset_procs, presets, "n_procs");
-    int n_testcase_procs = -1;
-    set_if_found(n_testcase_procs, testcase, "n_procs");
-
-    if (-1 != n_testcase_procs) {
-      if (my_rank == logging_rank) {
-        std::stringstream errs;
-        errs << "Number of processes should be declared globally in the preset "
-                "area of the test suite TOML file, not inside each testcase.\n"
-             << "Testcase: " << testcase << "\nWith presets:\n"
-             << presets;
-        throw ExaGOError(errs.str().c_str());
-      }
-      exit(0);
-    } else if (nprocs != n_preset_procs) {
-      if (my_rank == logging_rank) {
-        std::stringstream errs;
-        errs << "SCOPFLOW Functionality test suite found " << n_preset_procs
-             << " processes specified in the presets of the test suite TOML "
-                "file, but this test is being run with "
-             << nprocs << " processes.\nTestcase: " << testcase
-             << "\nWith presets:\n"
-             << presets;
-        throw ExaGOError(errs.str().c_str());
-      }
-      exit(0);
-      return;
-    }
-#endif
 
     auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
-      if (!is_available) {
-        if (my_rank == logging_rank) {
-          std::stringstream errs;
-          errs << "SCOPFLOW Test suite expected option '" << opt
-               << "' to be available, but it was not found in this testsuite"
-               << " configuration:\n";
-          errs << testcase << "\nwith these presets:\n" << presets;
-          throw ExaGOError(errs.str().c_str());
-        }
-        exit(0);
+      if (is_true_somewhere(!is_available,comm)) {
+        std::stringstream errs;
+        errs << "SCOPFLOW Test suite expected option '" << opt
+             << "' to be available, but it was not found in this testsuite"
+             << " configuration:\n";
+        errs << testcase << "\nwith these presets:\n" << presets;
+        throw ExaGOError(errs.str().c_str());
       }
     };
 
@@ -253,13 +206,12 @@ struct ScopflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     SCOPFLOW scopflow;
-    char pbuf[PETSC_MAX_PATH_LEN];
     int rank;
     auto err = MPI_Comm_rank(comm, &rank);
-    if (err)
+    if (err != MPI_SUCCESS)
       throw ExaGOError("Error getting MPI rank number");
 
-    if (rank == logging_rank)
+    if (rank == 0)
       std::cout << "Test Description: " << params.description << std::endl;
     ierr = SCOPFLOWCreate(params.comm, &scopflow);
     ExaGOCheckError(ierr);
@@ -269,42 +221,34 @@ struct ScopflowFunctionalityTests
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.network);
-    strncpy(pbuf, params.network.c_str(), params.network.length());
-    pbuf[params.network.length()] = '\0';
-    ierr = SCOPFLOWSetNetworkData(scopflow, pbuf);
+    ierr = SCOPFLOWSetNetworkData(scopflow, params.network.c_str());
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to contingency file
     std::string ext = FileNameExtension(params.contingencies);
     resolve_datafiles_path(params.contingencies);
-    strncpy(pbuf, params.contingencies.c_str(), params.contingencies.length());
-    pbuf[params.contingencies.length()] = '\0';
     if (ext == "con") {
-      ierr = SCOPFLOWSetContingencyData(scopflow, PSSE, pbuf);
+      ierr = SCOPFLOWSetContingencyData(scopflow, PSSE,
+          params.contingencies.c_str());
     } else {
-      ierr = SCOPFLOWSetContingencyData(scopflow, NATIVE, pbuf);
+      ierr = SCOPFLOWSetContingencyData(scopflow, NATIVE,
+          params.contingencies.c_str());
     }
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.pload);
-    strncpy(pbuf, params.pload.c_str(), params.pload.length());
-    pbuf[params.pload.length()] = '\0';
-    ierr = SCOPFLOWSetPLoadData(scopflow, pbuf);
+    ierr = SCOPFLOWSetPLoadData(scopflow, params.pload.c_str());
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.qload);
-    strncpy(pbuf, params.qload.c_str(), params.qload.length());
-    pbuf[params.qload.length()] = '\0';
-    ierr = SCOPFLOWSetQLoadData(scopflow, pbuf);
+    ierr = SCOPFLOWSetQLoadData(scopflow, params.qload.c_str());
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path
     resolve_datafiles_path(params.windgen);
-    strncpy(pbuf, params.windgen.c_str(), params.windgen.length());
-    pbuf[params.windgen.length()] = '\0';
-    ierr = SCOPFLOWSetWindGenProfile(scopflow, pbuf);
+    ierr = SCOPFLOWSetWindGenProfile(scopflow, params.windgen.c_str());
     ExaGOCheckError(ierr);
 
     // Set number of contingencies
@@ -502,7 +446,7 @@ int main(int argc, char **argv) {
 
   int my_rank;
   auto err = MPI_Comm_rank(comm, &my_rank);
-  if (err)
+  if (err != MPI_SUCCESS)
     throw ExaGOError("Error getting MPI rank number");
 
   if (my_rank == 0)
