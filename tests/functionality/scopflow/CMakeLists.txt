@@ -147,11 +147,7 @@ if(EXAGO_INSTALL_TESTS)
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_raja.toml
   )
-  set_tests_properties(
-    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_RAJA_TESTSUITE PROPERTIES LABELS
-                                                               "incline-skip"
-  )
-
+  
   foreach(fmt "MATPOWER" "CSV" "JSON" "MINIMAL")
     set(tname "SCOPFLOW_SOLUTION_OUTPUT_${fmt}")
     exago_add_test(
