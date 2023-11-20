@@ -2672,6 +2672,15 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow, Vec X,
         // ierr = MatSetValues(H, 1, row, 1, col, val, ADD_VALUES);
         ierr = MatSetValues_and_Print(H, 1, row, 1, col, val, ADD_VALUES);
         CHKERRQ(ierr);
+
+        // Reactive power is usually not included in the objective,
+        // but let's make sure there's an entry for it
+        row[0] = xlocglob+1;
+        col[0] = xlocglob+1;
+        val[0] = 0.0;
+        // ierr = MatSetValues(H, 1, row, 1, col, val, ADD_VALUES);
+        ierr = MatSetValues_and_Print(H, 1, row, 1, col, val, ADD_VALUES);
+        CHKERRQ(ierr);
         flps += 4;
       } else if (opflow->objectivetype == MIN_GENSETPOINT_DEVIATION) {
         xlocglob = gen->startxpdevlocglob;
@@ -2682,6 +2691,14 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow, Vec X,
         ierr = MatSetValues_and_Print(H, 1, row, 1, col, val, ADD_VALUES);
         CHKERRQ(ierr);
 
+        // Reactive power is usually not included in the objective,
+        // but let's make sure there's an entry for it
+        row[0] = xlocglob+1;
+        col[0] = xlocglob+1;
+        val[0] = 0.0;
+        // ierr = MatSetValues(H, 1, row, 1, col, val, ADD_VALUES);
+        ierr = MatSetValues_and_Print(H, 1, row, 1, col, val, ADD_VALUES);
+        CHKERRQ(ierr);
         flps += 1;
       }
     }
