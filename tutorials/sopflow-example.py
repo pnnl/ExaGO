@@ -7,9 +7,9 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
 # Input files
-netfile='/Users/abhy245/software/ExaGO/datafiles/case9/case9mod.m'
-ctgcfile='/Users/abhy245/software/ExaGO/datafiles/case9/case9.cont'
-scenfile='/Users/abhy245/software/ExaGO/datafiles/case9/10_scenarios_9bus.csv'
+netfile = '/Users/abhy245/software/ExaGO/datafiles/case9/case9mod.m'
+ctgcfile = '/Users/abhy245/software/ExaGO/datafiles/case9/case9.cont'
+scenfile = '/Users/abhy245/software/ExaGO/datafiles/case9/10_scenarios_9bus.csv'
 
 # Initialize ExaGO
 exago.initialize("app", comm)
@@ -21,11 +21,11 @@ sopf = exago.SOPFLOW()
 sopf.set_network_data(netfile)
 
 # Set contingency data file and input format
-sopf.set_contingency_data(ctgcfile,exago.ContingencyFileInputFormat.NATIVE)
+sopf.set_contingency_data(ctgcfile, exago.ContingencyFileInputFormat.NATIVE)
 
 # Set scenario data
-sopf.set_scenario_data(scenfile,exago.ScenarioFileInputFormat.NATIVE_SINGLEPERIOD,
-    exago.ScenarioUncertaintyType.WIND)
+sopf.set_scenario_data(scenfile, exago.ScenarioFileInputFormat.NATIVE_SINGLEPERIOD,
+                       exago.ScenarioUncertaintyType.WIND)
 
 # Set number of scenarios, we select all (-1)
 sopf.set_num_scenarios(-1)

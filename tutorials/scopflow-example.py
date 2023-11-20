@@ -12,14 +12,14 @@ exago.initialize("app", comm)
 # Create security-constrained ACOPF (SCOPF) object
 scopf = exago.SCOPFLOW()
 
-netfile='/Users/abhy245/software/ExaGO/datafiles/case9/case9mod.m'
-ctgcfile='/Users/abhy245/software/ExaGO/datafiles/case9/case9.cont'
+netfile = '/Users/abhy245/software/ExaGO/datafiles/case9/case9mod.m'
+ctgcfile = '/Users/abhy245/software/ExaGO/datafiles/case9/case9.cont'
 
 # Set network data
 scopf.set_network_data(netfile)
 
 # Set contingency data file and input format
-scopf.set_contingency_data(ctgcfile,exago.ContingencyFileInputFormat.NATIVE)
+scopf.set_contingency_data(ctgcfile, exago.ContingencyFileInputFormat.NATIVE)
 
 # Set number of contingencies, we select all (-1)
 scopf.set_num_contingencies(-1)

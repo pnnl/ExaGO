@@ -1048,11 +1048,11 @@ PetscErrorCode PSReadGICData(PS ps) {
       sscanf(line, "%d %d", &bus_num, &subst_num);
       // This is really ugly and slow, need to fix this idx business
       int idx = -1;
-      for(int i=0; i < ps->nsubstations; i++) {
-	if(subst_num == ps->substations[i].num) {
-	  idx = i;
-	  break;
-	}
+      for (int i = 0; i < ps->nsubstations; i++) {
+        if (subst_num == ps->substations[i].num) {
+          idx = i;
+          break;
+        }
       }
       subst = &ps->substations[idx];
       bus = &ps->bus[ps->busext2intmap[bus_num]];
