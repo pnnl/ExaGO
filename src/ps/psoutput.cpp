@@ -828,9 +828,9 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[]) {
   PrintJSONArray(fd, "LOADSHED", 2, &ps->sys_info.total_loadshed[0], true);
 
   PrintJSONDouble(fd, "SolveRealTime", ps->solve_real_time, true);
-  PrintJSONDouble(fd, "SolveCPUTime", ps->solve_cpu_time, true);
+  PrintJSONDouble(fd, "SolveCPUTime", ps->solve_cpu_time, false);
 
-  PrintJSONObjectEnd(fd, false); // System summary object start
+  PrintJSONObjectEnd(fd, false); // System summary object end
 
   /* End of file */
   PrintJSONObjectEnd(fd, false);
