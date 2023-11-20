@@ -95,5 +95,5 @@ module load ipopt/3.12.10-clang-15.0.0-rocm5.3.0-7o6pau6
 module load python/3.11.4-clang-15.0.0-rocm5.3.0-hpuu3g4
 # petsc@=3.18.6%clang@=15.0.0-rocm5.3.0 cxxflags="--gcc-toolchain=/share/apps/gcc/8.4.0/" ~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~tetgen~trilinos~valgrind build_system=generic clanguage=C memalign=none arch=linux-centos7-zen
 module load petsc/3.18.6-clang-15.0.0-rocm5.3.0-42hbmrj
-# exago@=develop%clang@=15.0.0-rocm5.3.0 cxxflags="--gcc-toolchain=/share/apps/gcc/8.4.0/" ~cuda+hiop~ipo+ipopt~logging+mpi~python+raja+rocm amdgpu_target=gfx908 build_system=cmake build_type=Release dev_path=/people/svcexasgd/gitlab/23508/spack_incline generator=make arch=linux-centos7-zen
-## module load exago/develop-clang-15.0.0-rocm5.3.0-fzoncup
+# exago@=develop%clang@=15.0.0-rocm5.3.0 cxxflags="--gcc-toolchain=/share/apps/gcc/8.4.0/" ~cuda+hiop~ipo+ipopt~logging+mpi~python+raja+rocm amdgpu_target=gfx908 build_system=cmake build_type=Release dev_path=/people/svcexasgd/gitlab/25308/spack_incline generator=make arch=linux-centos7-zen
+## module load exago/develop-clang-15.0.0-rocm5.3.0-n5ll2cc
