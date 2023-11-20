@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-from aws_cdk import App
+import aws_cdk as cdk
 
 from s3lambdatrigger.s3lambdatrigger_stack import S3TriggerStack
 
-app = App()
-S3TriggerStack(app, "S3ioTriggerStack")
+app = cdk.App()
+S3TriggerStack(app, "S3TriggerStack")
 
 app.synth()

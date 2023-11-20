@@ -15,7 +15,8 @@ ADD python_wrapper ${LAMBDA_TASK_ROOT}/python_wrapper
 #RUN export http_proxy=http://proxy01.pnl.gov:3128
 RUN pip install --upgrade pip
 #RUN pip install -r ${LAMBDA_TASK_ROOT}/requirements.txt
+ENTRYPOINT ["/var/lang/bin/python", "-m", "awslambdaric"]
 
  
-# Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)
-#CMD [ "lambda_handler.main" ]
+# Set the CMD to your handler- filename. lambda_handler-function name (could also be done as a parameter override outside of the Dockerfile)
+CMD [ "lambda_handler.lambda_handler" ]
