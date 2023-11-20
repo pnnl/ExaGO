@@ -11,6 +11,8 @@
 
 Spack is used to generate the base image, with some sed/echo commands used to fine-tune Dockerfile for use case within a Dev Container. Run `.devcontainer/create_dockerfile.sh` in order to re-generate the Dockerfile. This should be done semi-frequently whenever a spack version or exago version needs updating.
 
+Note that you should not run this script from within a working devcontainer as it might be quite slow.
+
 ## Build Container
 
 The build info for this container is in `.devcontainer/`. There is a Dockerfile and json file associated with the configuration.

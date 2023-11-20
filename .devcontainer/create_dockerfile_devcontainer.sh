@@ -38,6 +38,8 @@ cat > $(pwd)/spack.yaml <<EOF
 spack:
   specs:
     - exago@1.6.0+ipopt+python+mpi
+    # This is currently a bug in Spack(?)
+    - libffi@3.4.2
     - petsc~fortran~hdf5~hypre+metis
     - ipopt@3.12.10+coinhsl~mumps+metis
     - coinhsl@2019.05.21+blas
@@ -119,19 +121,24 @@ echo "" >> ./.devcontainer/Dockerfile
 echo "# Make modifications that are necessary to run mpi4py in kernelspec" >> ./.devcontainer/Dockerfile
 echo "RUN sed -i 's/\\\"\/opt\/views\/view\/bin\/python3\\\"/\\\"mpiexec\\\", \\\"-n\\\", \\\"1\\\", \\\"\/opt\/views\/view\/bin\/python3\\\"/g' /usr/local/share/jupyter/kernels/py311-mpi4py-exago/kernel.json" >> ./.devcontainer/Dockerfile
 
-# Make sure vscode user is correct
-echo "" >> ./.devcontainer/Dockerfile
-echo "# Configure user for container" >> ./.devcontainer/Dockerfile
-echo "USER vscode" >> ./.devcontainer/Dockerfile
-
 # Install nvm for VSCode user
 echo "" >> ./.devcontainer/Dockerfile
 echo "# Install nvm" >> ./.devcontainer/Dockerfile
 echo "RUN mkdir -p /home/vscode/nvm && cd /home/vscode/nvm && curl -O https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh" >> ./.devcontainer/Dockerfile
 echo "RUN chown vscode /home/vscode/nvm/install.sh && chmod +x /home/vscode/nvm/install.sh" >> ./.devcontainer/Dockerfile
 
+# Copy viz folder into container
+echo "" >> ./.devcontainer/Dockerfile
+echo "# Copy viz folder into container" >> ./.devcontainer/Dockerfile
+echo "COPY viz /home/app/viz" >> ./.devcontainer/Dockerfile
+
 # Install NodeJS version 16.13.0 with nvm
 echo "" >> ./.devcontainer/Dockerfile
 echo "# Install NodeJS version 16.13.0 with nvm" >> ./.devcontainer/Dockerfile
-#echo "RUN . /opt/nvm/nvm.sh && \\" >> ./.devcontainer/Dockerfile
-#echo "       nvm install v16.13.0" >> ./.devcontainer/Dockerfile
+echo "WORKDIR /home/app/viz" >> ./.devcontainer/Dockerfile
+echo "RUN . /usr/local/share/nvm/nvm.sh && nvm install 16.13.0 && nvm use 16.13.0 && node --version && npm install" >> ./.devcontainer/Dockerfile
+
+# Make sure vscode user is correct
+echo "" >> ./.devcontainer/Dockerfile
+echo "# Configure user for container" >> ./.devcontainer/Dockerfile
+echo "USER vscode" >> ./.devcontainer/Dockerfile
