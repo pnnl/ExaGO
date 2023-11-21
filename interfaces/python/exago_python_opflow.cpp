@@ -22,29 +22,6 @@ public:
   }
 };
 
-/*
- * Calculate the number of types in the opflow type enums. An immediately
- * invoked lambda is used to keep the final variable const, even thought we have
- * to perform some operations to calculate that value.
- */
-constexpr int num_objective_types = 0
-#define OPFLOW_OBJ_DEF(x) +1
-#include "private/opflow_enum.def"
-#undef OPFLOW_OBJ_DEF
-    ;
-
-constexpr int num_initialization_types = 0
-#define OPFLOW_INIT_DEF(x) +1
-#include "private/opflow_enum.def"
-#undef OPFLOW_INIT_DEF
-    ;
-
-constexpr int num_gen_bus_voltage_types = 0
-#define OPFLOW_GBV(x) +1
-#include "private/opflow_enum.def"
-#undef OPFLOW_GBV_DEF
-    ;
-
 // -------------------------------------------------------------
 // init_exago_opflow
 // -------------------------------------------------------------
