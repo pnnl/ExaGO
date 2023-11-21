@@ -88,7 +88,7 @@ struct OpflowFunctionalityTests
   OpflowFunctionalityTests(std::string testsuite_filename, MPI_Comm comm,
                            int logging_verbosity = EXAGO_LOG_INFO)
       : FunctionalityTestContext(testsuite_filename, comm, logging_verbosity),
-      comm{comm} {}
+        comm{comm} {}
 
   using Params = OpflowFunctionalityTestParameters;
 

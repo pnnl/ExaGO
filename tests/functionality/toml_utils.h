@@ -290,6 +290,7 @@ private:
   toml::value testsuite_;
   std::stringstream warning_stream;
   MPI_Comm comm_;
+
 protected:
   int rank;
   int nprocs;
