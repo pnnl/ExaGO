@@ -115,12 +115,9 @@ struct ScopflowFunctionalityTests
 
   ScopflowFunctionalityTests(std::string testsuite_filename, MPI_Comm comm,
                              int logging_verbosity = EXAGO_LOG_INFO)
-      : FunctionalityTestContext(testsuite_filename, logging_verbosity),
+      : FunctionalityTestContext(testsuite_filename, comm, logging_verbosity),
         comm{comm} {
-    auto err = MPI_Comm_size(comm, &nprocs);
-    if (err != MPI_SUCCESS) {
-      throw ExaGOError("Error getting MPI num ranks");
-    }
+    nprocs = FunctionalityTestContext::nprocs;
   }
 
   void
@@ -206,14 +203,11 @@ struct ScopflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     SCOPFLOW scopflow;
-    int rank;
-    auto err = MPI_Comm_rank(comm, &rank);
-    if (err != MPI_SUCCESS)
-      throw ExaGOError("Error getting MPI rank number");
+    int rank = FunctionalityTestContext::rank;
 
     if (rank == 0)
       std::cout << "Test Description: " << params.description << std::endl;
-    ierr = SCOPFLOWCreate(params.comm, &scopflow);
+    ierr = SCOPFLOWCreate(comm, &scopflow);
     ExaGOCheckError(ierr);
 
     ierr = SCOPFLOWSetTolerance(scopflow, params.tolerance);

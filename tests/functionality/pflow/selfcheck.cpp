@@ -4,9 +4,6 @@ static char help[] = "PFLOW Functionality Tests.\n\n";
 #include <pflow.h>
 
 struct PflowFunctionalityTestParameters {
-  /* Communicator required to run funcitonality test */
-  MPI_Comm comm = MPI_COMM_WORLD;
-
   /* Parameters required to set up and test a PFlow */
   std::string network = "";
   std::string description = "";
@@ -37,26 +34,15 @@ struct PflowFunctionalityTests
 
   PflowFunctionalityTests(std::string testsuite_filename, MPI_Comm comm,
                           int logging_verbosity = EXAGO_LOG_INFO)
-      : FunctionalityTestContext(testsuite_filename, logging_verbosity),
+      : FunctionalityTestContext(testsuite_filename, comm, logging_verbosity),
         comm{comm} {
-    int my_rank;
-    auto rerr = MPI_Comm_rank(comm, &my_rank);
-    if (rerr != MPI_SUCCESS)
-      throw ExaGOError("Error getting MPI rank number");
 
-    auto err = MPI_Comm_size(comm, &nprocs);
-    if (err != MPI_SUCCESS)
-      throw ExaGOError("Error getting MPI num ranks");
+    nprocs = FunctionalityTestContext::nprocs;
   }
 
   void
   ensure_options_are_consistent(toml::value testcase,
                                 toml::value presets = toml::value{}) override {
-
-    int my_rank;
-    auto err = MPI_Comm_rank(comm, &my_rank);
-    if (err != MPI_SUCCESS)
-      throw ExaGOError("Error getting MPI rank number");
 
     int n_preset_procs;
     set_if_found(n_preset_procs, presets, "n_procs");
@@ -118,14 +104,11 @@ struct PflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     PFLOW pflow;
-    int my_rank;
-    auto err = MPI_Comm_rank(comm, &my_rank);
-    if (err != MPI_SUCCESS)
-      throw ExaGOError("Error getting MPI rank number");
+    int my_rank = FunctionalityTestContext::rank;
 
     if (my_rank == 0)
       std::cout << "Test Description: " << params.description << std::endl;
-    ierr = PFLOWCreate(params.comm, &pflow);
+    ierr = PFLOWCreate(comm, &pflow);
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path

@@ -111,12 +111,19 @@ public:
   /* Column width used when formatting failing test suite */
   static constexpr int col_width = 35;
 
-  FunctionalityTestContext(std::string testsuite_filename,
+  FunctionalityTestContext(std::string testsuite_filename, MPI_Comm comm,
                            int logging_verbosity = EXAGO_LOG_INFO)
-      : logging_verbosity_{logging_verbosity} {
+      : logging_verbosity_{logging_verbosity}, comm_{comm} {
     testsuite_ = toml::parse(testsuite_filename);
     testcases_ = toml::find(testsuite(), "testcase");
     testsuite_name_ = toml::find<std::string>(testsuite(), "testsuite_name");
+    auto err = MPI_Comm_rank(comm, &rank);
+    if (err != MPI_SUCCESS)
+      throw ExaGOError("Error getting MPI rank number");
+    err = MPI_Comm_size(comm, &nprocs);
+    if (err != MPI_SUCCESS) {
+      throw ExaGOError("Error getting MPI num ranks");
+    }
   }
 
   void run_all_test_cases() {
@@ -186,8 +193,6 @@ public:
   }
 
   void print_report() {
-    int rank;
-    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
     if (rank != 0)
       return;
     ExaGOLog(verbosity(), "{:d} / {:d} tests failed. {:d} warnings \n",
@@ -225,8 +230,6 @@ public:
       std::string file = filename;
       filename = ("../");
       filename.append(file);
-      int rank;
-      MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
       if (rank == 0) {
         std::ofstream fout;
         fout.open(filename.c_str());
@@ -286,4 +289,8 @@ private:
   toml::value testcases_;
   toml::value testsuite_;
   std::stringstream warning_stream;
+  MPI_Comm comm_;
+protected:
+  int rank;
+  int nprocs;
 };
