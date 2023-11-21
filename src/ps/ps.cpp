@@ -279,7 +279,9 @@ PetscErrorCode PSGetLine(PS ps, PetscInt fbus, PetscInt tbus, const char *id,
     ierr = PSBUSGetSupportingLines(bus, &nsupplines, &supplines);
     CHKERRQ(ierr);
     for (i = 0; i < nsupplines; i++) {
-      if (supplines[i]->fbus == fbus && supplines[i]->tbus == tbus) {
+      if ((supplines[i]->fbus == fbus && supplines[i]->tbus == tbus) ||
+          (supplines[i]->reversed_ends &
+           (supplines[i]->fbus == tbus && supplines[i]->tbus == fbus))) {
         ierr = PetscStrcmp(id, supplines[i]->ckt, &flg);
         CHKERRQ(ierr);
         if (flg) {
