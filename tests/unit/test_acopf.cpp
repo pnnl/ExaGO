@@ -70,7 +70,6 @@ int main(int argc, char **argv) {
   const bool isTestOpflowModelPBPOLRAJAHIOP = true;
   const bool isTestOpflowModelPBPOLHIOP = false;
 #else
-  const bool isTestOpflowModelPBPOLRAJAHIOP = false;
   const bool isTestOpflowModelPBPOLHIOP = true;
 #endif
   PetscErrorCode ierr;
