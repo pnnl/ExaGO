@@ -33,7 +33,7 @@ The current version has several options available for SCOPFLOW. These options ca
 |:-----|:----|:-----|:-----|
 |-netfile| Name of network file in MATPOWER format| ([case9mod.m](../../datafiles/case9/case9mod.m))|  4096 characters max. |
 |-ctgcfile| Name of contingency list file | ([case9.cont](../../datafiles/case9/case9.cont)) | 4096 characters max. Uses a native format for describing contingencies. See [scopflow.h](../../include/scopflow.h)|
-|-scopflow_Nc | Number of contingencies || With this option set, SCOPFLOW will only pick up the first Nc contingencies in the contingency file. To select all contingencies, use `Nc = -1` |
+|-scopflow_Nc | Number of contingencies || With this option set, SCOPFLOW will only pick up the first Nc contingencies in the contingency file. To select all contingencies, use `-scopflow_Nc -1` |
 |-scopflow_model | SCOPFLOW model type | GENRAMP, GENRAMPT (GENRAMP) |  |
 |-scopflow_solver | Optimization solver | (Ipopt), HiOp, or EMPAR | See the note below on solvers |
 |-scopflow_mode | Mode of operation | 0 or 1 (0) | See the note below on mode of operation |
