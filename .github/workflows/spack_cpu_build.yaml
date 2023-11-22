@@ -19,7 +19,7 @@ jobs:
         # Minimal Build(s)
         # Need S3 mirror to have these builds speedup
         spack_spec:
-          - python@3.11.4%gcc@9.4.0+bz2+crypt+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tkinter+uuid+zlib build_system=generic patches=13fa8bf,b0615b2,ebdca64,f2fd060 arch=linux-ubuntu20.04-x86_64
+          - python@3.11
           # See #39 - ~python~mpi causes issues
         # - exago@develop~mpi~ipopt~hiop~python~raja
           # See #44 - +mpi~python should fail if no python in system,
