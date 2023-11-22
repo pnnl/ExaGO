@@ -50,6 +50,9 @@ jobs:
           spack:
             specs:
             - ${{ matrix.spack_spec }}
+            concretizer:
+              unify: true
+              reuse: true
             config:
               install_tree:
                 root: /opt/spack
@@ -59,15 +62,16 @@ jobs:
                 require: target=x86_64_v2
             mirrors:
               local-buildcache: oci://ghcr.io/pnnl/ExaGO
+              spack: https://binaries.spack.io/develop
 
       - name: Concretize
         run: spack -e . concretize
       
       - name: Trust keys
-        run: spack buildcache keys --install --trust
+        run: spack -e . buildcache keys --install --trust
       
-      - name: Pull from buildcache
-        run: spack -e . buildcache pull --update-index local-buildcache && spack external find --all --exclude python
+      - name: Find external packages
+        run: spack -e . external find --all --exclude python
   
       - name: Install
         run: spack -e . install --no-check-signature
