@@ -514,6 +514,10 @@ PetscErrorCode OPFLOWInitializeDCOPF(OPFLOW opflow, PetscBool *converged) {
   ierr = OPFLOWIgnoreLineflowConstraints(dcopflow,
                                          opflow->ignore_lineflow_constraints);
   CHKERRQ(ierr);
+  ierr = OPFLOWAllowLineflowViolation(dcopflow,
+                                         opflow->allow_lineflow_violation);
+  CHKERRQ(ierr);
+
 
   ierr = OPFLOWSetTolerance(dcopflow, opflow->tolerance);
   CHKERRQ(ierr);
@@ -2871,7 +2875,7 @@ PetscErrorCode OPFLOWGetIgnoreLineflowConstraints(OPFLOW opflow,
  *
  * @note Must be called before OPFLOWSetUp
  */
-PetscErrorCode OPFLOWAllowLineFlowViolation(OPFLOW opflow, PetscBool set) {
+PetscErrorCode OPFLOWAllowLineflowViolation(OPFLOW opflow, PetscBool set) {
   PetscFunctionBegin;
   opflow->allow_lineflow_violation = set;
   PetscFunctionReturn(0);
