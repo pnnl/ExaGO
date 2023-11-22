@@ -19,7 +19,7 @@ jobs:
         # Minimal Build(s)
         # Need S3 mirror to have these builds speedup
         spack_spec:
-          - python@3.11
+          - perl
           # See #39 - ~python~mpi causes issues
         # - exago@develop~mpi~ipopt~hiop~python~raja
           # See #44 - +mpi~python should fail if no python in system,
@@ -68,7 +68,7 @@ jobs:
         run: spack -e . install --no-check-signature
   
       - name: Run tests
-        run: ./my_view/bin/python3 -c 'print("hello world")'
+        run: spack load perl && perl --version
   
       - name: Push to buildcache
         run: |
