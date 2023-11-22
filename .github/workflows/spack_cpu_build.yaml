@@ -3,6 +3,8 @@ name: Spack Ubunutu x86_64 Buildcache
 
 env:
   SPACK_COLOR: always
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 # Until we remove the need to clone submodules to build, this should on be in PRs
 on: [pull_request]
@@ -13,6 +15,7 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       packages: write
+      contents: read
     
     strategy:
       matrix:
@@ -79,7 +82,32 @@ jobs:
       - name: Install
         run: spack -e . install --no-check-signature
 
-      - name: Push to buildcache
+      # Need to build custom base image with gfortran
+      - name: Create Dockerfile heredoc
         run: |
-          spack -e . buildcache push --base-image ubuntu:22.04 --unsigned --update-index local-buildcache
+          cat << EOF > Dockerfile
+          FROM ubuntu:22.04
+          RUN apt-get update && apt-get install -y --no-install-recommends \
+              gfortran \
+              && rm -rf /var/lib/apt/lists/*
+          EOF
+      
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: pnnl/exago:ubuntu-22.04-gfortran
+
+
+      - name: Push to binaries to buildcache
+        run: |
+          spack -e . buildcache push --base-image ghcr.io/pnnl/exago:ubuntu-22.04-gfortran --unsigned --update-index local-buildcache
         if: ${{ !cancelled() }}
