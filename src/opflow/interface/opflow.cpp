@@ -811,6 +811,10 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
   /* Run-time options */
   opflow->ignore_lineflow_constraints =
       OPFLOWOptions::ignore_lineflow_constraints.default_value;
+  opflow->allow_lineflow_violation =
+    OPFLOWOptions::allow_lineflow_violation.default_value;
+  opflow->lineflow_penalty =
+    OPFLOWOptions::lineflow_penalty.default_value;
   opflow->include_loadloss_variables =
       OPFLOWOptions::include_loadloss_variables.default_value;
   opflow->include_powerimbalance_variables =
@@ -1522,12 +1526,28 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
       opflow->has_gensetpoint = PETSC_TRUE;
     }
 
+    /* Ignore line flow constraints? */
     ierr = PetscOptionsBool(
         OPFLOWOptions::ignore_lineflow_constraints.opt.c_str(),
         OPFLOWOptions::ignore_lineflow_constraints.desc.c_str(), "",
         opflow->ignore_lineflow_constraints,
         &opflow->ignore_lineflow_constraints, NULL);
     CHKERRQ(ierr);
+
+    /* Allow line flow violations ? */
+    ierr = PetscOptionsBool(
+        OPFLOWOptions::allow_lineflow_violation.opt.c_str(),
+        OPFLOWOptions::allow_lineflow_violation.desc.c_str(), "",
+        opflow->allow_lineflow_violation,
+        &opflow->allow_lineflow_violation, NULL);
+    CHKERRQ(ierr);
+
+    /* Line flow penalty */
+    ierr = PetscOptionsReal(OPFLOWOptions::lineflow_penalty.opt.c_str(),
+                            OPFLOWOptions::lineflow_penalty.desc.c_str(), "",
+                            opflow->lineflow_penalty, &opflow->lineflow_penalty,
+                            NULL);
+
     ierr =
         PetscOptionsBool(OPFLOWOptions::include_loadloss_variables.opt.c_str(),
                          OPFLOWOptions::include_loadloss_variables.desc.c_str(),
@@ -2830,6 +2850,75 @@ PetscErrorCode OPFLOWIgnoreLineflowConstraints(OPFLOW opflow, PetscBool set) {
   PetscFunctionReturn(0);
 }
 
+/**
+ * @brief Gets ignore_lineflow_constraints
+ *
+ * @param[in]  opflow the OPFLOW object.
+ * @param[out] value for opflow->ignore_lineflow_constraints.
+ */
+PetscErrorCode OPFLOWGetIgnoreLineflowConstraints(OPFLOW opflow,
+                                                  PetscBool *set) {
+  PetscFunctionBegin;
+  *set = opflow->ignore_lineflow_constraints;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Allow line flow limit violations for opflow
+ *
+ * @param[in] opflow the OPFLOW object.
+ * @param[in] set value for opflow->allow_lineflow_violation.
+ *
+ * @note Must be called before OPFLOWSetUp
+ */
+PetscErrorCode OPFLOWAllowLineFlowViolation(OPFLOW opflow, PetscBool set) {
+  PetscFunctionBegin;
+  opflow->allow_lineflow_violation = set;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Gets the value set for allow_lineflow_violation
+ *
+ * @param[in]  opflow the OPFLOW object.
+ * @param[out] value for opflow->ignore_lineflow_constraints.
+ */
+PetscErrorCode OPFLOWGetAllowLineFlowViolation(OPFLOW opflow,
+                                                  PetscBool *set) {
+  PetscFunctionBegin;
+  *set = opflow->allow_lineflow_violation;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Set penalty for line flow limit violation
+ *
+ * @param [in] opflow the OPFLOW object
+ * @param [in] line flow limit violation penalty
+ *
+ *
+ * @note Must be called before OPFLOWSetUp
+
+*/
+PetscErrorCode OPFLOWSetLineFLowPenalty(OPFLOW opflow, PetscReal penalty) {
+  PetscFunctionBegin;
+  opflow->lineflow_penalty = penalty;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * @brief Returns the penalty set for line flow limit violation
+ *
+ * @param [in] opflow the OPFLOW object
+ * @param [out] penalty set for line flow limit violation
+ */
+PetscErrorCode OPFLOWGetLineFlowPenalty(OPFLOW opflow, PetscReal *penalty) {
+  PetscFunctionBegin;
+  *penalty = opflow->lineflow_penalty;
+  PetscFunctionReturn(0);
+}
+
+
 /*
   OPFLOWMonitorLines - List of lines to monitor. The flows for these lines
                        are included as inequality constraints in OPFLOW
@@ -2897,18 +2986,6 @@ PetscErrorCode OPFLOWSetSummaryStats(OPFLOW opflow) {
   PetscFunctionReturn(0);
 }
 
-/**
- * @brief Gets ignore_lineflow_constraints
- *
- * @param[in] opflow the OPFLOW object.
- * @param[in] set value for opflow->ignore_lineflow_constraints.
- */
-PetscErrorCode OPFLOWGetIgnoreLineflowConstraints(OPFLOW opflow,
-                                                  PetscBool *set) {
-  PetscFunctionBegin;
-  *set = opflow->ignore_lineflow_constraints;
-  PetscFunctionReturn(0);
-}
 /**
  * @brief Check used internally to verify model + solver compatibility
  *
