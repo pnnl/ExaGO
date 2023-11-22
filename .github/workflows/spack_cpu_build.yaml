@@ -23,14 +23,14 @@ jobs:
         # - exago@develop~mpi~ipopt~hiop~python~raja
           # See #44 - +mpi~python should fail if no python in system,
           #                       but the runner happens to have one...
-          - exago@develop+mpi~ipopt+hiop~python~raja ^openmpi
+          - exago@1.6.0+mpi~ipopt+hiop~python~raja ^openmpi
           # See #18 - +hiop~mpi causes issues
         # - exago@develop~mpi~ipopt+hiop~python+raja
           # See #16 - +python~mpi causes issues
         # - exago@develop~mpi~ipopt+hiop+python~raja
-          - exago@develop+mpi~ipopt+hiop+python~raja ^openmpi
+          - exago@1.6.0+mpi~ipopt+hiop+python~raja ^openmpi
           # See #40 - +hiop+raja~ipopt ^hiop~sparse is useful for edge cases
-          - exago@develop+mpi~ipopt+hiop~python+raja ^openmpi ^hiop+raja~sparse 
+          - exago@1.6.0+mpi~ipopt+hiop~python+raja ^openmpi ^hiop+raja~sparse 
 
     name: Build ExaGO with Spack
     steps:
@@ -62,6 +62,12 @@ jobs:
 
       - name: Concretize
         run: spack -e . concretize
+      
+      - name: Trust keys
+        run: spack buildcache keys --install --trust
+      
+      - name: Pull from buildcache
+        run: spack -e . buildcache pull --update-index local-buildcache && spack external find --all --exclude python
   
       - name: Install
         run: spack -e . install --no-check-signature
