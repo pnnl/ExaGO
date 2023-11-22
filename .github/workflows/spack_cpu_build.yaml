@@ -68,7 +68,7 @@ jobs:
         run: spack -e . install --no-check-signature
   
       - name: Run tests
-        run: spack load perl && perl --version
+        run: . tpl/spack/share/spack/setup-env.sh && spack load ${{ matrix.spack_spec }} && ${{ matrix.spack_spec }} --version
   
       - name: Push to buildcache
         run: |
