@@ -69,6 +69,6 @@ jobs:
 
       - name: Push to buildcache
         run: |
-          spack -e . mirror set --oci-username ${{ github.actor }} --oci-password "${{ secrets.GITHUB_TOKEN }}" local-buildcache
+          spack -e . mirror set --oci-username exago-bot --oci-password "${{ secrets.GITHUB_TOKEN }}" local-buildcache
           spack -e . buildcache push --base-image ubuntu:22.04 --unsigned --update-index local-buildcache
         if: ${{ !cancelled() }}
