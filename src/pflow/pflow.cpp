@@ -3,7 +3,7 @@
 #include <private/psimpl.h>
 
 const char *const PFLOWOutputFormatTypes[] = {
-  "MATPOWER", "CSV", "JSON", "MINIMAL", "OutputFormat", "", NULL};
+    "MATPOWER", "CSV", "JSON", "MINIMAL", "OutputFormat", "", NULL};
 
 /*
   PFLOWCreate - Creates a power flow application object
@@ -737,8 +737,8 @@ PetscErrorCode PFLOWConverged(PFLOW pflow, PetscBool *flg) {
 }
 
 /*
-  PFLOWSolutionToPS - Updates the buses and the branches with the solution from the
-power flow
+  PFLOWSolutionToPS - Updates the buses and the branches with the solution from
+the power flow
 
   Input Parameters:
 . pflow - the PFLOW object
@@ -905,7 +905,7 @@ PetscErrorCode PFLOWSolutionToPS(PFLOW pflow) {
     flps += 2;
   }
 
-  for(i = 0; i < ps->nline; i++) {
+  for (i = 0; i < ps->nline; i++) {
     line = &ps->line[i];
 
     line->sf = PetscSqrtScalar(line->pf * line->pf + line->qf * line->qf);
@@ -1078,7 +1078,6 @@ PetscErrorCode PFLOWSolutionToPS(PFLOW pflow) {
   CHKERRQ(ierr);
   PetscFunctionReturn(0);
 
-  
   PetscFunctionReturn(0);
 }
 
@@ -1092,7 +1091,7 @@ PetscErrorCode PFLOWSolutionToPS(PFLOW pflow) {
 PetscErrorCode PFLOWPrintSolution(PFLOW pflow) {
   PetscErrorCode ierr;
   PetscBool conv_status;
-  PetscInt  its;
+  PetscInt its;
 
   PetscFunctionBegin;
   if (!pflow->solutiontops) {
@@ -1113,8 +1112,8 @@ PetscErrorCode PFLOWPrintSolution(PFLOW pflow) {
       "=============================================================\n");
   CHKERRQ(ierr);
 
-  ierr = PetscPrintf(pflow->comm->type, "%-35s %s\n", "Solver",
-                     "Newton-Rhapson");
+  ierr =
+      PetscPrintf(pflow->comm->type, "%-35s %s\n", "Solver", "Newton-Rhapson");
   CHKERRQ(ierr);
 
   MPI_Barrier(pflow->comm->type);
@@ -1125,10 +1124,12 @@ PetscErrorCode PFLOWPrintSolution(PFLOW pflow) {
                      conv_status ? "CONVERGED" : "DID NOT CONVERGE");
   CHKERRQ(ierr);
 
-  ierr = PFLOWGetNumIterations(pflow,&its);
+  ierr = PFLOWGetNumIterations(pflow, &its);
   CHKERRQ(ierr);
-  ierr = PetscPrintf(pflow->comm->type, "%-35s %-6d\n","Number of iterations",its);CHKERRQ(ierr);
-  
+  ierr = PetscPrintf(pflow->comm->type, "%-35s %-6d\n", "Number of iterations",
+                     its);
+  CHKERRQ(ierr);
+
   ierr = PetscPrintf(pflow->comm->type, "\n");
   CHKERRQ(ierr);
 
@@ -1160,16 +1161,15 @@ PetscErrorCode PFLOWSetUp(PFLOW pflow) {
   {
     PetscOptionsBegin(pflow->comm->type, NULL, "PFLOW options", NULL);
 
-    ierr = PetscOptionsEnum("-pflow_output_format",
-			  "Type of PFLOW output format", "",
-                            PFLOWOutputFormatTypes,
-                            (PetscEnum)pflow->outputformat,
-			    (PetscEnum *)&pflow->outputformat, NULL);
+    ierr = PetscOptionsEnum(
+        "-pflow_output_format", "Type of PFLOW output format", "",
+        PFLOWOutputFormatTypes, (PetscEnum)pflow->outputformat,
+        (PetscEnum *)&pflow->outputformat, NULL);
     CHKERRQ(ierr);
 
     PetscOptionsEnd();
   }
-  
+
   /* Set up PS object */
   ierr = PSSetUp(ps);
   CHKERRQ(ierr);
@@ -1552,8 +1552,7 @@ PetscErrorCode PFLOWGetNumIterations(PFLOW pflow, PetscInt *numiter) {
 
   Notes: Should be called after the solve finishes
 */
-PetscErrorCode PFLOWGetConvergenceStatus(PFLOW pflow, PetscBool *status) 
-{
+PetscErrorCode PFLOWGetConvergenceStatus(PFLOW pflow, PetscBool *status) {
   PetscFunctionBegin;
   *status = pflow->converged;
   PetscFunctionReturn(0);
@@ -1590,7 +1589,7 @@ PetscErrorCode PFLOWSetGICData(PFLOW pflow, const char gicfile[]) {
 - outfile  - Name of output file
 */
 PetscErrorCode PFLOWSaveSolution(PFLOW pflow, OutputFormat format,
-                                  const char outfile[]) {
+                                 const char outfile[]) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;

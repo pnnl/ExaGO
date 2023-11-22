@@ -9,9 +9,9 @@ int main(int argc, char **argv) {
   PetscErrorCode ierr;
   PFLOW pflow;
   char file[PETSC_MAX_PATH_LEN], gicfile[PETSC_MAX_PATH_LEN],
-    output_name[PETSC_MAX_PATH_LEN];
+      output_name[PETSC_MAX_PATH_LEN];
   PetscBool flg = PETSC_FALSE, print_output = PETSC_FALSE,
-    save_output = PETSC_FALSE;
+            save_output = PETSC_FALSE;
   PetscLogStage read, setup, solve;
   MPI_Comm comm = MPI_COMM_WORLD;
   char appname[] = "pflow";
@@ -34,7 +34,6 @@ int main(int argc, char **argv) {
   ierr = PetscOptionsGetString(NULL, NULL, "-output_file", output_name,
                                PETSC_MAX_PATH_LEN, &save_output);
   ExaGOCheckError(ierr);
-
 
   /* Create PFLOW object */
   ierr = PFLOWCreate(PETSC_COMM_WORLD, &pflow);
@@ -84,7 +83,7 @@ int main(int argc, char **argv) {
   CHKERRQ(ierr);
   PetscLogStagePop();
 
-  if(print_output) {
+  if (print_output) {
     ierr = PFLOWPrintSolution(pflow);
     CHKERRQ(ierr);
   }
@@ -94,7 +93,6 @@ int main(int argc, char **argv) {
     ExaGOCheckError(ierr);
   }
 
-  
   /* Destroy PFLOW object */
   ierr = PFLOWDestroy(&pflow);
   CHKERRQ(ierr);

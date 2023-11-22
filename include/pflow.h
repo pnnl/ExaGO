@@ -41,7 +41,7 @@ PETSC_EXTERN PetscErrorCode PFLOWAddBusShunt(PFLOW, PetscInt, PetscScalar,
                                              PetscScalar);
 PETSC_EXTERN PetscErrorCode PFLOWSetInitialGuess(PFLOW, Vec);
 PETSC_EXTERN PetscErrorCode PFLOWGetNumIterations(PFLOW, PetscInt *);
-PETSC_EXTERN PetscErrorCode PFLOWGetConvergenceStatus(PFLOW,PetscBool *);
+PETSC_EXTERN PetscErrorCode PFLOWGetConvergenceStatus(PFLOW, PetscBool *);
 PETSC_EXTERN PetscErrorCode PFLOWPrintSolution(PFLOW);
 PETSC_EXTERN PetscErrorCode PFLOWSetGICData(PFLOW, const char[]);
 PETSC_EXTERN PetscErrorCode PFLOWSaveSolutionDefault(PFLOW, const char[]);

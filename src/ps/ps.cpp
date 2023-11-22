@@ -1962,6 +1962,6 @@ PetscErrorCode PSComputeSummaryStats(PS ps) {
   sys_info->total_loadshed[1] = Qdshed_tot * MVAbase;
 
   MPI_Barrier(ps->comm->type);
-  
+
   PetscFunctionReturn(0);
 }

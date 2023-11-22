@@ -2882,8 +2882,7 @@ PetscErrorCode OPFLOWSetLinesMonitored(OPFLOW opflow, PetscInt nkvlevels,
   Inputs:
 . opflow - the OPFLOW object
 */
-PetscErrorCode OPFLOWSetSummaryStats(OPFLOW opflow)
-{
+PetscErrorCode OPFLOWSetSummaryStats(OPFLOW opflow) {
   PetscErrorCode ierr;
   PS ps = opflow->ps;
 
@@ -2891,7 +2890,7 @@ PetscErrorCode OPFLOWSetSummaryStats(OPFLOW opflow)
 
   ierr = PSComputeSummaryStats(ps);
   CHKERRQ(ierr);
-  
+
   ps->solve_real_time = opflow->solve_real_time;
   ps->solve_cpu_time = opflow->solve_cpu_time;
 
