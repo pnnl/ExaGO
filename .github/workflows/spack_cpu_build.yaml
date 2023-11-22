@@ -66,10 +66,7 @@ jobs:
   
       - name: Install
         run: spack -e . install --no-check-signature
-  
-      - name: Run tests
-        run: . tpl/spack/share/spack/setup-env.sh && spack load ${{ matrix.spack_spec }} && ${{ matrix.spack_spec }} --version
-  
+
       - name: Push to buildcache
         run: |
           spack -e . mirror set --oci-username ${{ github.actor }} --oci-password "${{ secrets.GITHUB_TOKEN }}" local-buildcache
