@@ -134,6 +134,12 @@ const auto tolerance =
 const auto ignore_lineflow_constraints =
     ExaGOBoolOption("-opflow_ignore_lineflow_constraints",
                     "Ignore line flow constraints?", PETSC_FALSE);
+const auto allow_lineflow_violation =
+    ExaGOBoolOption("-opflow_allow_lineflow_violation",
+                    "Allow line flow limit violation?", PETSC_FALSE);
+const auto lineflow_penalty =
+    ExaGORealOption("-opflow_lineflow_penalty", "Penalty for line flow limit violation", 1e2);
+  
 const auto include_loadloss_variables =
     ExaGOBoolOption("-opflow_include_loadloss_variables",
                     "Ignore line flow constraints?", PETSC_FALSE);
@@ -256,6 +262,12 @@ OPFLOWGetInitializationType(OPFLOW, OPFLOWInitializationType *);
 PETSC_EXTERN PetscErrorCode OPFLOWIgnoreLineflowConstraints(OPFLOW, PetscBool);
 PETSC_EXTERN PetscErrorCode OPFLOWGetIgnoreLineflowConstraints(OPFLOW,
                                                                PetscBool *);
+PETSC_EXTERN PetscErrorCode OPFLOWAllowLineflowViolation(OPFLOW, PetscBool);
+PETSC_EXTERN PetscErrorCode OPFLOWGetAllowLineflowViolation(OPFLOW,
+                                                               PetscBool *);
+PETSC_EXTERN PetscErrorCode OPFLOWSetLineFlowPenalty(OPFLOW, PetscReal);
+PETSC_EXTERN PetscErrorCode OPFLOWGetLineFlowPenalty(OPFLOW, PetscReal *);
+
 PETSC_EXTERN PetscErrorCode OPFLOWSetLoadLossPenalty(OPFLOW, PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWGetLoadLossPenalty(OPFLOW, PetscReal *);
 PETSC_EXTERN PetscErrorCode OPFLOWSetBusPowerImbalancePenalty(OPFLOW,
