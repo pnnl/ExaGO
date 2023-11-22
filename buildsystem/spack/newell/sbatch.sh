@@ -45,11 +45,13 @@ export MY_CLUSTER=newell
 cp /qfs/projects/exasgd/src/coinhsl-archive-2019.05.21.tar.gz . &&
 . buildsystem/spack/load_spack.sh &&
 # spack clean -abm && # shouldn't run this everytime...
-# spack develop --no-clone --path=$(pwd) exago@develop &&
-# spack develop --clone --force FORCE --path=$(pwd)/hiop hiop@develop &&
-# cd $(pwd)/hiop &&
-# git submodule update --init --recursive &&
-# cd - &&
+spack develop --no-clone --path=$(pwd) exago@develop &&
+mkdir hiop_dev
+spack develop --clone --force FORCE --path=$(pwd)/hiop_dev hiop@develop &&
+cd hiop_dev &&
+git submodule update --init --recursive &&
+git checkout wall-in-debug-fix && #test out patch 
+cd - &&
 ./buildsystem/spack/configure_modules.sh 128
 
 EXIT_CODE=$?
