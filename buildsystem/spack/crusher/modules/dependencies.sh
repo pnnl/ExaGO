@@ -1,4 +1,4 @@
-module use -a /lustre/orion/csc359/proj-shared/nkouk/spack-install/modules/linux-sles15-zen3
+module use -a /lustre/orion/csc359/proj-shared/nkouk/spack-install/modules/linux-sles15-x86_64
 # pkgconf@=1.9.5%clang@=16.0.0-rocm5.6.0-mixed build_system=autotools arch=linux-sles15-x86_64
 module load pkgconf/1.9.5-clang-16.0.0-rocm5.6.0-mixed-nqeqauq
 # nghttp2@=1.52.0%clang@=16.0.0-rocm5.6.0-mixed build_system=autotools arch=linux-sles15-x86_64

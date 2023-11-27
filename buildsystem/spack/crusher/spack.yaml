@@ -76,7 +76,7 @@ spack:
       providers:
         blas: [openblas]
         mpi: [cray-mpich]
-      target: [zen3]
+      target: [x86_64]
     exago:
       require: ~python+raja+hiop+rocm+ipopt
     hiop:
