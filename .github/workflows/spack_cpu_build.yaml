@@ -37,6 +37,8 @@ jobs:
               apt-get install -y --no-install-recommends \
                 software-properties-common \
                 gpg-agent \
+                openssh-client \
+                openssh-server \
               && rm -rf /var/lib/apt/lists/*
           RUN add-apt-repository ppa:ubuntu-toolchain-r/test && \
               apt-get install -y --no-install-recommends \
