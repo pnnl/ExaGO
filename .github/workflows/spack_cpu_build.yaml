@@ -5,13 +5,61 @@ env:
   SPACK_COLOR: always
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  USERNAME: exago-bot
 
 # Until we remove the need to clone submodules to build, this should on be in PRs
 on: [pull_request]
 
 jobs:
+  base_image_build:
+    runs-on: ubuntu-22.04
+    permissions:
+      packages: write
+      contents: read
+
+    name: Build Custom Base Image
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Once we move submodule deps into spack, we can do some more builds
+          # Also need to change build script to use spack from base image
+          submodules: true
+
+      # Need to build custom base image with gfortran
+      - name: Create Dockerfile heredoc
+        run: |
+          cat << EOF > Dockerfile
+          FROM ubuntu:22.04
+          LABEL oci.opencontainers.image.base.name="ubuntu-22.04-fortran"
+          RUN apt-get update && apt-get install -y --no-install-recommends \
+              gfortran \
+              && rm -rf /var/lib/apt/lists/*
+          EOF
+
+      # https://docs.github.com/en/actions/publishing-packages/publishing-docker-images
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.USERNAME }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push Docker base image
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+  
   exago_spack_builds:
-    # 20.04 is a version shared by E4S cache and Spack binaries for x86_64
     runs-on: ubuntu-22.04
     permissions:
       packages: write
@@ -19,8 +67,7 @@ jobs:
     
     strategy:
       matrix:
-        # Minimal Build(s)
-        # Need S3 mirror to have these builds speedup
+        # Minimal Build(s) - GHCR mirror speeds these up a lot!
         spack_spec:
           # See #39 - ~python~mpi causes issues
         # - exago@develop~mpi~ipopt~hiop~python~raja
@@ -68,7 +115,7 @@ jobs:
               spack: https://binaries.spack.io/develop
 
       - name: Configure GHCR mirror
-        run: spack -e . mirror set --oci-username exago-bot --oci-password "${{ secrets.GITHUB_TOKEN }}" local-buildcache
+        run: spack -e . mirror set --oci-username ${{ env.USERNAME }} --oci-password "${{ secrets.GITHUB_TOKEN }}" local-buildcache
       
       - name: Trust keys
         run: spack -e . buildcache keys --install --trust
@@ -81,32 +128,6 @@ jobs:
   
       - name: Install
         run: spack -e . install --no-check-signature
-
-      # Need to build custom base image with gfortran
-      - name: Create Dockerfile heredoc
-        run: |
-          cat << EOF > Dockerfile
-          FROM ubuntu:22.04
-          RUN apt-get update && apt-get install -y --no-install-recommends \
-              gfortran \
-              && rm -rf /var/lib/apt/lists/*
-          EOF
-
-      # https://docs.github.com/en/actions/publishing-packages/publishing-docker-images
-      - name: Log in to the Container registry
-        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
-        with:
-          context: .
-          push: true
-          tags: ubuntu-22.04-gfortran
-
 
       - name: Push to binaries to buildcache
         run: |
