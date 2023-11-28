@@ -33,7 +33,7 @@ jobs:
         run: |
           cat << EOF > Dockerfile
           FROM ubuntu:22.04
-          RUN apt-get update && apt-get install software-properties-common
+          RUN apt-get update && apt-get install  -y --no-install-recommends software-properties-common
           RUN add-apt-repository ppa:ubuntu-toolchain-r/test && \
               apt-get install -y --no-install-recommends \
                 gfortran \
