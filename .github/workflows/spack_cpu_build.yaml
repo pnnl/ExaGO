@@ -4,7 +4,8 @@ name: Spack Ubunutu x86_64 Buildcache
 env:
   SPACK_COLOR: always
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  # Our repo name contains upper case characters, so we can't use ${{ github.repository }}
+  IMAGE_NAME: exago
   USERNAME: exago-bot
   BASE_VERSION: ubuntu-22.04-fortran
 
