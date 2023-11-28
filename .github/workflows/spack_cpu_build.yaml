@@ -76,14 +76,14 @@ jobs:
         # - exago@develop~mpi~ipopt~hiop~python~raja
           # See #44 - +mpi~python should fail if no python in system,
           #                       but the runner happens to have one...
-          - exago@1.6.0+mpi~ipopt+hiop~python~raja ^openmpi
+          - exago@git.${{ env.GITHUB_HEAD_REF }}=develop+mpi~ipopt+hiop~python~raja ^openmpi
           # See #18 - +hiop~mpi causes issues
         # - exago@develop~mpi~ipopt+hiop~python+raja
           # See #16 - +python~mpi causes issues
         # - exago@develop~mpi~ipopt+hiop+python~raja
-          - exago@1.6.0+mpi~ipopt+hiop+python~raja ^openmpi
+          - exago@git.${{ env.GITHUB_HEAD_REF }}=develop+mpi~ipopt+hiop+python~raja ^openmpi
           # See #40 - +hiop+raja~ipopt ^hiop~sparse is useful for edge cases
-          - exago@1.6.0+mpi~ipopt+hiop~python+raja ^openmpi ^hiop+raja~sparse 
+          - exago@git.${{ env.GITHUB_HEAD_REF }}=develop+mpi~ipopt+hiop~python+raja ^openmpi ^hiop+raja~sparse 
 
     name: Build ExaGO with Spack
     steps:
@@ -131,8 +131,9 @@ jobs:
   
       - name: Install
         run: spack -e . install --no-check-signature
-
+      
+      # Push with force to override existing binaries...
       - name: Push to binaries to buildcache
         run: |
-          spack -e . buildcache push --base-image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BASE_VERSION }} --unsigned --update-index local-buildcache
+          spack -e . buildcache push --force --base-image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BASE_VERSION }} --unsigned --update-index local-buildcache
         if: ${{ !cancelled() }}
