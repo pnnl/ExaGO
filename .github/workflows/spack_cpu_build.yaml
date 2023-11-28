@@ -123,7 +123,7 @@ jobs:
         run: spack -e . external find --all --exclude python
       
       - name: Spack develop exago
-        run: spack -e . develop --path=$(pwd) exago@git.${{ github.head_ref }}=develop
+        run: spack -e . develop --path=$(pwd) exago@develop
 
       - name: Concretize
         run: spack -e . concretize
