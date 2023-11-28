@@ -3,7 +3,7 @@ name: Spack Ubunutu x86_64 Buildcache
 
 env:
   SPACK_COLOR: always
-  REGISTRY: ghcr.io
+  REGISTRY: ghcr.io/pnnl
   # Our repo name contains upper case characters, so we can't use ${{ github.repository }}
   IMAGE_NAME: exago
   USERNAME: exago-bot
