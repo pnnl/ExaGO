@@ -61,8 +61,18 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BASE_VERSION }}
           labels: ${{ steps.meta.outputs.labels }}
   
-  exago_spack_builds:
+  extract_branch_name:
     needs: base_image_build
+    runs-on: ubuntu-22.04
+    outputs:
+      BRANCH_NAME: ${{ env.BRANCH_NAME }}
+    steps:
+      - name: Extract branch name
+        shell: bash
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_HEAD_REF} | tr / -)" >> $GITHUB_OUTPUT
+
+  exago_spack_builds:
+    needs: extract_branch_name
     runs-on: ubuntu-22.04
     permissions:
       packages: write
@@ -76,14 +86,14 @@ jobs:
         # - exago@develop~mpi~ipopt~hiop~python~raja
           # See #44 - +mpi~python should fail if no python in system,
           #                       but the runner happens to have one...
-          - exago@git.${{ env.GITHUB_HEAD_REF }}=develop+mpi~ipopt+hiop~python~raja ^openmpi
+          - exago@git.${{ needs.extract_branch_name.outputs.BRANCH_NAME }}=develop+mpi~ipopt+hiop~python~raja ^openmpi
           # See #18 - +hiop~mpi causes issues
         # - exago@develop~mpi~ipopt+hiop~python+raja
           # See #16 - +python~mpi causes issues
         # - exago@develop~mpi~ipopt+hiop+python~raja
-          - exago@git.${{ env.GITHUB_HEAD_REF }}=develop+mpi~ipopt+hiop+python~raja ^openmpi
+          - exago@git.${{ needs.extract_branch_name.outputs.BRANCH_NAME }}=develop+mpi~ipopt+hiop+python~raja ^openmpi
           # See #40 - +hiop+raja~ipopt ^hiop~sparse is useful for edge cases
-          - exago@git.${{ env.GITHUB_HEAD_REF }}=develop+mpi~ipopt+hiop~python+raja ^openmpi ^hiop+raja~sparse 
+          - exago@git.${{ needs.extract_branch_name.outputs.BRANCH_NAME }}=develop+mpi~ipopt+hiop~python+raja ^openmpi ^hiop+raja~sparse 
 
     name: Build ExaGO with Spack
     steps:
