@@ -34,7 +34,7 @@ jobs:
           cat << EOF > Dockerfile
           FROM ubuntu:22.04
           RUN apt-get update && apt-get install -y --no-install-recommends \
-              gfortran \
+              gfortran gcc libstdc++6 \
               && rm -rf /var/lib/apt/lists/*
           EOF
 
