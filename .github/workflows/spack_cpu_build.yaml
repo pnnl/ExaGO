@@ -105,7 +105,7 @@ jobs:
             - ${{ matrix.spack_spec }}
             concretizer:
               unify: true
-              reuse: when_possible
+              reuse: dependencies
             config:
               install_tree:
                 root: /opt/spack
