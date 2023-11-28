@@ -76,14 +76,14 @@ jobs:
         # - exago@develop~mpi~ipopt~hiop~python~raja
           # See #44 - +mpi~python should fail if no python in system,
           #                       but the runner happens to have one...
-          - exago+mpi~ipopt+hiop~python~raja ^openmpi
+          - exago@develop+mpi~ipopt+hiop~python~raja ^openmpi
           # See #18 - +hiop~mpi causes issues
         # - exago@develop~mpi~ipopt+hiop~python+raja
           # See #16 - +python~mpi causes issues
         # - exago@develop~mpi~ipopt+hiop+python~raja
-          - exago+mpi~ipopt+hiop+python~raja ^openmpi
+          - exago@develop+mpi~ipopt+hiop+python~raja ^openmpi
           # See #40 - +hiop+raja~ipopt ^hiop~sparse is useful for edge cases
-          - exago+mpi~ipopt+hiop~python+raja ^openmpi ^hiop+raja~sparse 
+          - exago@develop+mpi~ipopt+hiop~python+raja ^openmpi ^hiop+raja~sparse 
 
     name: Build ExaGO with Spack
     steps:
@@ -105,7 +105,7 @@ jobs:
             - ${{ matrix.spack_spec }}
             concretizer:
               unify: true
-              reuse: true
+              reuse: when_possible
             config:
               install_tree:
                 root: /opt/spack
