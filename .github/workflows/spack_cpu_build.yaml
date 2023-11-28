@@ -102,17 +102,13 @@ jobs:
           cat << EOF > spack.yaml
           spack:
             specs:
-            - ${{ matrix.spack_spec }}
+            - ${{ matrix.spack_spec }} target=x86_64_v2
             concretizer:
-              unify: true
               reuse: dependencies
             config:
               install_tree:
                 root: /opt/spack
                 padded_length: 128
-            packages:
-              all:
-                require: target=x86_64_v2
             mirrors:
               local-buildcache: oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
               spack: https://binaries.spack.io/develop
