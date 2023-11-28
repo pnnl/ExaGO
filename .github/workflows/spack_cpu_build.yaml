@@ -6,6 +6,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   USERNAME: exago-bot
+  BASE_VERSION: ubuntu-22.04-fortran
 
 # Until we remove the need to clone submodules to build, this should on be in PRs
 on: [pull_request]
@@ -31,7 +32,7 @@ jobs:
         run: |
           cat << EOF > Dockerfile
           FROM ubuntu:22.04
-          LABEL oci.opencontainers.image.base.name="ubuntu-22.04-fortran"
+          LABEL oci.opencontainers.image.version="${{ env.BASE_VERSION }}"
           RUN apt-get update && apt-get install -y --no-install-recommends \
               gfortran \
               && rm -rf /var/lib/apt/lists/*
@@ -60,6 +61,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
   
   exago_spack_builds:
+    needs: base_image_build
     runs-on: ubuntu-22.04
     permissions:
       packages: write
@@ -111,7 +113,7 @@ jobs:
               all:
                 require: target=x86_64_v2
             mirrors:
-              local-buildcache: oci://ghcr.io/pnnl/ExaGO
+              local-buildcache: oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
               spack: https://binaries.spack.io/develop
 
       - name: Configure GHCR mirror
@@ -131,5 +133,5 @@ jobs:
 
       - name: Push to binaries to buildcache
         run: |
-          spack -e . buildcache push --base-image ghcr.io/pnnl/exago:ubuntu-22.04-gfortran --unsigned --update-index local-buildcache
+          spack -e . buildcache push --base-image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BASE_VERSION }} --unsigned --update-index local-buildcache
         if: ${{ !cancelled() }}
