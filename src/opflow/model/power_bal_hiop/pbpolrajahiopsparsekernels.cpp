@@ -1560,86 +1560,85 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
     int *xidxt = lineparams->xidxt_dev_;
     int *ln_hessp_idx = lineparams->hesssp_idx_dev_;
     int *linelimidx = lineparams->linelimidx_dev_;
-    
+
     RAJA::forall<exago_raja_exec>(
         RAJA::RangeSegment(0, lineparams->nlinelim),
         RAJA_LAMBDA(RAJA::Index_type i) {
           int off(0);
-          int j = linelimidx[i];
 
           // from-bus diagonal entries already defined
 
-          // iHSS_dev[ln_hessp_idx[i] + off] = xidxf[j]; 
-          // jHSS_dev[ln_hessp_idx[i] + off] = xidxf[j];
+          // iHSS_dev[ln_hessp_idx[i] + off] = xidxf[i]; 
+          // jHSS_dev[ln_hessp_idx[i] + off] = xidxf[i];
           // off++;
           
-          // iHSS_dev[ln_hessp_idx[i] + off] = xidxf[j];
-          // jHSS_dev[ln_hessp_idx[i] + off] = xidxf[j] + 1;
+          // iHSS_dev[ln_hessp_idx[i] + off] = xidxf[i];
+          // jHSS_dev[ln_hessp_idx[i] + off] = xidxf[i] + 1;
           // off++;
 
-          // iHSS_dev[ln_hessp_idx[i] + off] = xidxf[j] + 1;
-          // jHSS_dev[ln_hessp_idx[i] + off] = xidxf[j];
+          // iHSS_dev[ln_hessp_idx[i] + off] = xidxf[i] + 1;
+          // jHSS_dev[ln_hessp_idx[i] + off] = xidxf[i];
           // off++;
           
-          // iHSS_dev[ln_hessp_idx[i] + off] = xidxf[j] + 1;
-          // jHSS_dev[ln_hessp_idx[i] + off] = xidxf[j] + 1;
+          // iHSS_dev[ln_hessp_idx[i] + off] = xidxf[i] + 1;
+          // jHSS_dev[ln_hessp_idx[i] + off] = xidxf[i] + 1;
           // off++;
 
           // from-bus off diagonal entries only there if in upper part
-          if (xidxt[j] > xidxf[j]) {
+          if (xidxt[i] > xidxf[i]) {
             
-            iHSS_dev[ln_hessp_idx[i] + off] = xidxf[j];
-            jHSS_dev[ln_hessp_idx[i] + off] = xidxt[j];
+            iHSS_dev[ln_hessp_idx[i] + off] = xidxf[i];
+            jHSS_dev[ln_hessp_idx[i] + off] = xidxt[i];
             off++;
           
-            iHSS_dev[ln_hessp_idx[i] + off] = xidxf[j];
-            jHSS_dev[ln_hessp_idx[i] + off] = xidxt[j] + 1;
+            iHSS_dev[ln_hessp_idx[i] + off] = xidxf[i];
+            jHSS_dev[ln_hessp_idx[i] + off] = xidxt[i] + 1;
             off++;
 
-            iHSS_dev[ln_hessp_idx[i] + off] = xidxf[j] + 1;
-            jHSS_dev[ln_hessp_idx[i] + off] = xidxt[j];
+            iHSS_dev[ln_hessp_idx[i] + off] = xidxf[i] + 1;
+            jHSS_dev[ln_hessp_idx[i] + off] = xidxt[i];
             off++;
           
-            iHSS_dev[ln_hessp_idx[i] + off] = xidxf[j] + 1;
-            jHSS_dev[ln_hessp_idx[i] + off] = xidxt[j] + 1;
+            iHSS_dev[ln_hessp_idx[i] + off] = xidxf[i] + 1;
+            jHSS_dev[ln_hessp_idx[i] + off] = xidxt[i] + 1;
             off++;
           }
 
           // to-bus diagonal entries already defined
 
-          // iHSS_dev[ln_hessp_idx[i] + off] = xidxt[j];
-          // jHSS_dev[ln_hessp_idx[i] + off] = xidxt[j];
+          // iHSS_dev[ln_hessp_idx[i] + off] = xidxt[i];
+          // jHSS_dev[ln_hessp_idx[i] + off] = xidxt[i];
           // off++;
           
-          // iHSS_dev[ln_hessp_idx[i] + off] = xidxt[j];
-          // jHSS_dev[ln_hessp_idx[i] + off] = xidxt[j] + 1;
+          // iHSS_dev[ln_hessp_idx[i] + off] = xidxt[i];
+          // jHSS_dev[ln_hessp_idx[i] + off] = xidxt[i] + 1;
           // off++;
 
-          // iHSS_dev[ln_hessp_idx[i] + off] = xidxt[j] + 1;
-          // jHSS_dev[ln_hessp_idx[i] + off] = xidxt[j];
+          // iHSS_dev[ln_hessp_idx[i] + off] = xidxt[i] + 1;
+          // jHSS_dev[ln_hessp_idx[i] + off] = xidxt[i];
           // off++;
           
-          // iHSS_dev[ln_hessp_idx[i] + off] = xidxt[j] + 1;
-          // jHSS_dev[ln_hessp_idx[i] + off] = xidxt[j] + 1;
+          // iHSS_dev[ln_hessp_idx[i] + off] = xidxt[i] + 1;
+          // jHSS_dev[ln_hessp_idx[i] + off] = xidxt[i] + 1;
           // off++;
 
           // to-bus off diagonal entries only there if in upper part
-          if (xidxf[j] > xidxt[j]) {
+          if (xidxf[i] > xidxt[i]) {
 
-            iHSS_dev[ln_hessp_idx[i] + off] = xidxt[j];
-            jHSS_dev[ln_hessp_idx[i] + off] = xidxf[j];
+            iHSS_dev[ln_hessp_idx[i] + off] = xidxt[i];
+            jHSS_dev[ln_hessp_idx[i] + off] = xidxf[i];
             off++;
           
-            iHSS_dev[ln_hessp_idx[i] + off] = xidxt[j];
-            jHSS_dev[ln_hessp_idx[i] + off] = xidxf[j] + 1;
+            iHSS_dev[ln_hessp_idx[i] + off] = xidxt[i];
+            jHSS_dev[ln_hessp_idx[i] + off] = xidxf[i] + 1;
             off++;
 
-            iHSS_dev[ln_hessp_idx[i] + off] = xidxt[j] + 1;
-            jHSS_dev[ln_hessp_idx[i] + off] = xidxf[j];
+            iHSS_dev[ln_hessp_idx[i] + off] = xidxt[i] + 1;
+            jHSS_dev[ln_hessp_idx[i] + off] = xidxf[i];
             off++;
           
-            iHSS_dev[ln_hessp_idx[i] + off] = xidxt[j] + 1;
-            jHSS_dev[ln_hessp_idx[i] + off] = xidxf[j] + 1;
+            iHSS_dev[ln_hessp_idx[i] + off] = xidxt[i] + 1;
+            jHSS_dev[ln_hessp_idx[i] + off] = xidxf[i] + 1;
             off++;
           }
         });
@@ -1798,8 +1797,6 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
     int *geqidxf = lineparams->geqidxf_dev_;
     int *geqidxt = lineparams->geqidxt_dev_;
     int *ln_hessp_idx = lineparams->hesssp_idx_dev_;
-
-    if (0) {
 
     RAJA::forall<exago_raja_exec>(
         RAJA::RangeSegment(0, lineparams->nlineON),
@@ -2196,7 +2193,7 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
             MHSS_dev[l_hesssp_idx[i] + 1] = 0.0;
           });
     }
-    }    
+
     if (!opflow->ignore_lineflow_constraints) {
       int *linelimidx = lineparams->linelimidx_dev_;
       int *gineqidx = lineparams->gineqidx_dev_;
@@ -2217,7 +2214,7 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
             double Gft = Gft_arr[j], Bft = Bft_arr[j];
             double Gtf = Gtf_arr[j], Btf = Btf_arr[j];
             double Gtt = Gtt_arr[j], Btt = Btt_arr[j];
-            int fbusidx(busf_idx[i]), tbusidx(bust_idx[i]);
+            int fbusidx(busf_idx[j]), tbusidx(bust_idx[j]);
 
             Pf = Gff * Vmf * Vmf +
               Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
@@ -2470,11 +2467,11 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
             RAJA::atomicAdd<exago_raja_atomic>
               (&MHSS_dev[fbusidx + 1], val[1]);
 
-            if (xidxt[i] > xidxf[i]) {
+            if (xidxt[j] > xidxf[j]) {
               RAJA::atomicAdd<exago_raja_atomic>
-                (&MHSS_dev[ln_hessp_idx[i] + 0], val[2]);
+                (&MHSS_dev[ln_hessp_idx[j] + 0], val[2]);
               RAJA::atomicAdd<exago_raja_atomic>
-                (&MHSS_dev[ln_hessp_idx[i] + 1], val[3]);
+                (&MHSS_dev[ln_hessp_idx[j] + 1], val[3]);
             }
 
             double d2Sf2_dVmf_dthetaf, d2Sf2_dVmf_dVmf, d2Sf2_dVmf_dthetat,
@@ -2528,11 +2525,11 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
             RAJA::atomicAdd<exago_raja_atomic>
               (&MHSS_dev[fbusidx + 2], val[1]);
 
-            if (xidxt[i] > xidxf[i]) {
+            if (xidxt[j] > xidxf[j]) {
               RAJA::atomicAdd<exago_raja_atomic>
-                (&MHSS_dev[ln_hessp_idx[i] + 2], val[2]);
+                (&MHSS_dev[ln_hessp_idx[j] + 2], val[2]);
               RAJA::atomicAdd<exago_raja_atomic>
-                (&MHSS_dev[ln_hessp_idx[i] + 3], val[3]);
+                (&MHSS_dev[ln_hessp_idx[j] + 3], val[3]);
             }
 
             //    ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
@@ -2591,11 +2588,11 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
             RAJA::atomicAdd<exago_raja_atomic>
               (&MHSS_dev[tbusidx + 1], val[3]);
 
-            if (xidxf[i] > xidxt[i]) {
+            if (xidxf[j] > xidxt[j]) {
               RAJA::atomicAdd<exago_raja_atomic>
-                (&MHSS_dev[ln_hessp_idx[i] + 0], val[0]);
+                (&MHSS_dev[ln_hessp_idx[j] + 0], val[0]);
               RAJA::atomicAdd<exago_raja_atomic>
-                (&MHSS_dev[ln_hessp_idx[i] + 1], val[1]);
+                (&MHSS_dev[ln_hessp_idx[j] + 1], val[1]);
             }
             //    ierr = MatSetValues(H,1,row,4,col,val,ADD_VALUES);CHKERRQ(ierr);
 
@@ -2650,9 +2647,9 @@ PetscErrorCode OPFLOWComputeSparseHessian_PBPOLRAJAHIOPSPARSE(
               (&MHSS_dev[tbusidx + 2], val[3]);
             
             RAJA::atomicAdd<exago_raja_atomic>
-              (&MHSS_dev[ln_hessp_idx[i] + 2], val[0]);
+              (&MHSS_dev[ln_hessp_idx[j] + 2], val[0]);
             RAJA::atomicAdd<exago_raja_atomic>
-              (&MHSS_dev[ln_hessp_idx[i] + 3], val[1]);
+              (&MHSS_dev[ln_hessp_idx[j] + 3], val[1]);
           });
     }
     
