@@ -1797,15 +1797,14 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
 
   ierr = MatCreate(opflow->comm->type, &opflow->Hes);
   CHKERRQ(ierr);
-  ierr = MatSetSizes(opflow->Hes, opflow->nx, opflow->nx,
-                     opflow->Nx, opflow->Nx);
+  ierr =
+      MatSetSizes(opflow->Hes, opflow->nx, opflow->nx, opflow->Nx, opflow->Nx);
   CHKERRQ(ierr);
   ierr = MatSetFromOptions(opflow->Hes);
   CHKERRQ(ierr);
   ierr = MatSeqAIJSetPreallocation(opflow->Hes, 6, NULL);
   CHKERRQ(ierr);
-  ierr = MatSetOption(opflow->Hes, MAT_NEW_NONZERO_ALLOCATION_ERR,
-                      PETSC_FALSE);
+  ierr = MatSetOption(opflow->Hes, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
   CHKERRQ(ierr);
 
   /* Create natural to sparse dense ordering mapping (needed for some models)

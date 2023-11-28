@@ -196,12 +196,12 @@ struct LINEParamsRajaHiop {
                       constraint bound */
   int *linelimidx; /* Indices for subset of lines that have finite limits */
 
-  int *busf_idx;   /* From bus index */
-  int *bust_idx;   /* To bus index */
-  int *jacf_idx;   /* Location number in the sparse Jacobian (from) */
-  int *jact_idx;   /* Location number in the sparse Jacobian (to) */
-  int *jac_ieq_idx;/* Location number in sparse inequality Jacobian */
-  int *hesssp_idx; /* Location number in sparse Hessian */
+  int *busf_idx;    /* From bus index */
+  int *bust_idx;    /* To bus index */
+  int *jacf_idx;    /* Location number in the sparse Jacobian (from) */
+  int *jact_idx;    /* Location number in the sparse Jacobian (to) */
+  int *jac_ieq_idx; /* Location number in sparse inequality Jacobian */
+  int *hesssp_idx;  /* Location number in sparse Hessian */
 
   // Device data
   double *Gff_dev_;    /* From side self conductance */
@@ -226,12 +226,12 @@ struct LINEParamsRajaHiop {
   int *
       linelimidx_dev_; /* Indices for subset of lines that have finite limits */
 
-  int *busf_idx_dev_;   /* From bus index */
-  int *bust_idx_dev_;   /* To bus index */
-  int *jacf_idx_dev_;   /* Location number in the sparse Jacobian (from) */
-  int *jact_idx_dev_;   /* Location number in the sparse Jacobian (to) */
-  int *jac_ieq_idx_dev_;/* Location number in sparse inequality Jacobian */
-  int *hesssp_idx_dev_; /* Location number in sparse Hessian */
+  int *busf_idx_dev_;    /* From bus index */
+  int *bust_idx_dev_;    /* To bus index */
+  int *jacf_idx_dev_;    /* Location number in the sparse Jacobian (from) */
+  int *jact_idx_dev_;    /* Location number in the sparse Jacobian (to) */
+  int *jac_ieq_idx_dev_; /* Location number in sparse inequality Jacobian */
+  int *hesssp_idx_dev_;  /* Location number in sparse Hessian */
 
   int allocate(OPFLOW);
   int destroy(OPFLOW);
@@ -267,12 +267,14 @@ struct PbpolModelRajaHiop : public _p_FormPBPOLRAJAHIOP {
   // GPU sparse model)
   int *i_jaceq,
       *j_jaceq; // Row and column indices for equality constrained Jacobian
-  int *idx_jaceq_dev_; // Permuted triplet indexes for equality constrained Jacobian (on-device)
+  int *idx_jaceq_dev_; // Permuted triplet indexes for equality constrained
+                       // Jacobian (on-device)
   int *i_jacineq,
       *j_jacineq; // Row and column indices for inequality constrained Jacobain
-  int *idx_jacineq_dev_; // Permuted triplet indexes for inequality constrained Jacobian (on-device)
-  int *i_hess, *j_hess; // Row and column indices for hessian
+  int *idx_jacineq_dev_; // Permuted triplet indexes for inequality constrained
+                         // Jacobian (on-device)
+  int *i_hess, *j_hess;  // Row and column indices for hessian
   double *val_jaceq, *val_jacineq,
-      *val_hess; // values for equality, inequality jacobians and hessian
+      *val_hess;      // values for equality, inequality jacobians and hessian
   int *idx_hess_dev_; // Permuted triplet indexes for Hessian (on-device)
 };

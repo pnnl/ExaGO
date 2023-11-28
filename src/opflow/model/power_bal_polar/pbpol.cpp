@@ -1614,29 +1614,24 @@ PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW opflow,
   PetscFunctionReturn(0);
 }
 
-
-static PetscErrorCode
-MatSetValues_and_Print(char code, Mat M, int nrow, int row[], int ncol, int col[],
-                       PetscScalar val[], InsertMode mode)
-{
+static PetscErrorCode MatSetValues_and_Print(char code, Mat M, int nrow,
+                                             int row[], int ncol, int col[],
+                                             PetscScalar val[],
+                                             InsertMode mode) {
   for (int r = 0, i = 0; r < nrow; ++r) {
     for (int c = 0; c < ncol; ++c) {
       if (col[c] >= row[r]) {
-        std::cout << "M" << code << ": "
-                  << std::setw(5) << std::right << row[r] << " "
-                  << std::setw(5) << std::right << col[c]
-                  << std::setw(12) << std::right
-                  << std::scientific << std::setprecision(3)
-                  << val[i]
-                  << std::endl;
+        std::cout << "M" << code << ": " << std::setw(5) << std::right << row[r]
+                  << " " << std::setw(5) << std::right << col[c]
+                  << std::setw(12) << std::right << std::scientific
+                  << std::setprecision(3) << val[i] << std::endl;
       }
       i++;
     }
   }
   return MatSetValues(M, nrow, row, ncol, col, val, mode);
 }
-      
-  
+
 /*
   OPFLOWComputeEqualityConstraintsHessian - Computes the Hessian for the
 equality constraints function part
@@ -2096,14 +2091,16 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow,
           val[2] = gen->apf * (lambda[gloc] + lambda[gloc + 1]);
 
           // ierr = MatSetValues(H, 1, row, 3, col, val, ADD_VALUES);
-          ierr = MatSetValues_and_Print('G', H, 1, row, 3, col, val, ADD_VALUES);
+          ierr =
+              MatSetValues_and_Print('G', H, 1, row, 3, col, val, ADD_VALUES);
 
           //	  df1_ddelPg = -(Pg - gen->pt);
           //	  df2_ddelPg = gen->pb - Pg;
           row[0] = gen->startxpdevloc;
           val[0] = -lambda[gloc] - lambda[gloc + 1];
           // ierr = MatSetValues(H, 1, row, 1, col, val, ADD_VALUES);
-          ierr = MatSetValues_and_Print('G', H, 1, row, 1, col, val, ADD_VALUES);
+          ierr =
+              MatSetValues_and_Print('G', H, 1, row, 1, col, val, ADD_VALUES);
           CHKERRQ(ierr);
 
           //	  df1_ddelP = gen->apf*(Pg - gen->pt);
@@ -2111,7 +2108,8 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow,
           row[0] = ps->startxloc;
           val[0] = gen->apf * (lambda[gloc] + lambda[gloc + 1]);
           // ierr = MatSetValues(H, 1, row, 1, col, val, ADD_VALUES);
-          ierr = MatSetValues_and_Print('G', H, 1, row, 1, col, val, ADD_VALUES);
+          ierr =
+              MatSetValues_and_Print('G', H, 1, row, 1, col, val, ADD_VALUES);
           CHKERRQ(ierr);
         }
       }
@@ -2148,7 +2146,8 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow,
               lambda[gloc] +
               lambda[gloc + 1]); // lam_eq1*d2eq1_dQg_dV + lam_eq2*d2eq2_dQg_dV
           // ierr = MatSetValues(H, 1, row, 1, col, val, ADD_VALUES);
-          ierr = MatSetValues_and_Print('G', H, 1, row, 1, col, val, ADD_VALUES);
+          ierr =
+              MatSetValues_and_Print('G', H, 1, row, 1, col, val, ADD_VALUES);
           CHKERRQ(ierr);
           row[0] = xloc + 1;
           col[0] = loc + 1;
@@ -2156,7 +2155,8 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow,
               lambda[gloc] +
               lambda[gloc + 1]); // lam_eq1* d2eq1_dQg_dV + lam_eq2*d2eq2_dV_dQg
           // ierr = MatSetValues(H, 1, row, 1, col, val, ADD_VALUES);
-          ierr = MatSetValues_and_Print('G', H, 1, row, 1, col, val, ADD_VALUES);
+          ierr =
+              MatSetValues_and_Print('G', H, 1, row, 1, col, val, ADD_VALUES);
           CHKERRQ(ierr);
         }
       }
@@ -2681,8 +2681,8 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow, Vec X,
 
         // Reactive power is usually not included in the objective,
         // but let's make sure there's an entry for it
-        row[0] = xlocglob+1;
-        col[0] = xlocglob+1;
+        row[0] = xlocglob + 1;
+        col[0] = xlocglob + 1;
         val[0] = 0.0;
         // ierr = MatSetValues(H, 1, row, 1, col, val, ADD_VALUES);
         ierr = MatSetValues_and_Print('G', H, 1, row, 1, col, val, ADD_VALUES);
@@ -2699,8 +2699,8 @@ PetscErrorCode OPFLOWComputeObjectiveHessian_PBPOL(OPFLOW opflow, Vec X,
 
         // Reactive power is usually not included in the objective,
         // but let's make sure there's an entry for it
-        row[0] = xlocglob+1;
-        col[0] = xlocglob+1;
+        row[0] = xlocglob + 1;
+        col[0] = xlocglob + 1;
         val[0] = 0.0;
         // ierr = MatSetValues(H, 1, row, 1, col, val, ADD_VALUES);
         ierr = MatSetValues_and_Print('G', H, 1, row, 1, col, val, ADD_VALUES);

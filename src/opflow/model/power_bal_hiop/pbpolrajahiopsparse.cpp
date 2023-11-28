@@ -234,7 +234,7 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
 
     PSBUS bus = &(ps->bus[ibus]);
 
-    // Nonzero entries used by each *bus* starts here 
+    // Nonzero entries used by each *bus* starts here
 
     // no matter what, each bus uses 2 rows and 2 columns
     // row 1 = real, row2 = reactive
@@ -243,11 +243,11 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
     nnz_eqjac += 2;
     busparams->jacsq_idx[ibus] = nnz_eqjac;
     nnz_eqjac += 2;
-    
+
     if (bus->ide == ISOLATED_BUS) {
       continue;
     }
-      
+
     if (opflow->include_powerimbalance_variables) {
       // 2 more entries on both real and reactive
       nnz_eqjac += 4;
@@ -264,7 +264,7 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
       genparams->eqjacsqbus_idx[igen1] = nnz_eqjac++;
       igen1++;
     }
-      
+
     if (opflow->include_loadloss_variables) {
       // each load adds one real and reactive entry on each bus row
       // NOTE: iload is a system load counter
@@ -275,13 +275,12 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
       }
     }
 
-      
     if (opflow->has_gensetpoint) {
       for (int bgen = 0; bgen < bus->ngen; ++bgen) {
         PSGEN gen;
         ierr = PSBUSGetGen(bus, bgen, &gen);
         CHKERRQ(ierr);
-        
+
         if (!gen->status || gen->isrenewable)
           continue;
 
@@ -297,10 +296,10 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
 
   for (int iline = 0; iline <= ps->nline; ++iline) {
     PSLINE line = &(ps->line[iline]);
-    
+
     if (!line->status)
       continue;
-    
+
     // each line adds 4 (off-diagonal) entries for the to bus and 4
     // entries for the from bus.  Each line also modifies 4 existing
     // to and from bus entries.
@@ -338,11 +337,11 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
       PSBUS bus = &(ps->bus[ibus]);
       if (bus->ide == PV_BUS || bus->ide == REF_BUS) {
         for (int bgen = 0; bgen < bus->ngen; ++bgen) {
-        PSGEN gen;
-        ierr = PSBUSGetGen(bus, bgen, &gen);
-        CHKERRQ(ierr);
-        if (!gen->status)
-          continue;
+          PSGEN gen;
+          ierr = PSBUSGetGen(bus, bgen, &gen);
+          CHKERRQ(ierr);
+          if (!gen->status)
+            continue;
         }
         nnz_ineqjac += 2;
       }
@@ -357,8 +356,8 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
     }
   }
 
-  std::cout << "Inequality Jacobian nonzero count: " << nnz_ineqjac << std::endl;
-
+  std::cout << "Inequality Jacobian nonzero count: " << nnz_ineqjac
+            << std::endl;
 
   // Count non-zeros in *upper triangular* Hessian
 
@@ -375,7 +374,6 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
     if (opflow->include_powerimbalance_variables) {
       nnz_hesssp += 2;
     }
-
   }
 
   for (int i = 0, igen = 0; i < ps->ngen; ++i) {
@@ -402,19 +400,18 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
     igen++;
   }
 
-  for (int iline=0; iline < ps->nline; ++iline) {
+  for (int iline = 0; iline < ps->nline; ++iline) {
     PSLINE line = &(ps->line[iline]);
 
     if (!line->status)
       continue;
-    
+
     lineparams->hesssp_idx[iline] = nnz_hesssp;
 
     // 3 diagonal entries for on the from-bus rows (already defined)
     // 3 diagonal entries for on the to-bus rows (already defined)
     // 4 off-diagonal entries in upper part
     nnz_hesssp += 4;
-
   }
 
   if (opflow->include_loadloss_variables) {
@@ -425,7 +422,6 @@ PetscErrorCode OPFLOWModelSetUp_PBPOLRAJAHIOPSPARSE(OPFLOW opflow) {
   }
 
   std::cout << "Hessian nonzero count: " << nnz_hesssp << std::endl;
-
 
   ierr = busparams->copy(opflow);
   ierr = genparams->copy(opflow);
