@@ -33,8 +33,12 @@ jobs:
         run: |
           cat << EOF > Dockerfile
           FROM ubuntu:22.04
-          RUN apt-get update && apt-get install -y --no-install-recommends \
-              gfortran gcc libstdc++6 \
+          RUN add-apt-repository ppa:ubuntu-toolchain-r/test && \
+              apt-get update && \
+              apt-get install -y --no-install-recommends \
+                gfortran \
+                gcc \
+                libstdc++6 \
               && rm -rf /var/lib/apt/lists/*
           EOF
 
