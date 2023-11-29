@@ -14,17 +14,14 @@ jobs:
         # Minimal Build(s)
         # Need S3 mirror to have these builds speedup
         spack_spec:
-          # See #39 - ~python~mpi causes issues
-        # - exago@develop~mpi~ipopt~hiop~python~raja
-          # See #44 - +mpi~python should fail if no python in system,
-          #                       but the runner happens to have one...
-          - exago@develop+mpi~ipopt+hiop~python~raja ^openmpi
+          # See #39 - minimal build useful for sanity
+          - exago@develop~mpi~ipopt~hiop~python~raja
+          # See #16 / #44 - +python~mpi catches mpi4py / python config
+          - exago@develop~mpi~ipopt~hiop+python~raja
           # See #18 - +hiop~mpi causes issues
         # - exago@develop~mpi~ipopt+hiop~python+raja
-          # See #16 - +python~mpi causes issues
-        # - exago@develop~mpi~ipopt+hiop+python~raja
           - exago@develop+mpi~ipopt+hiop+python~raja ^openmpi
-          # See #40 - +hiop+raja~ipopt ^hiop~sparse is useful for edge cases
+          # See #40 - +hiop+raja~ipopt ^hiop~sparse is useful for edge cases in xSDK
           - exago@develop+mpi~ipopt+hiop~python+raja ^openmpi ^hiop+raja~sparse 
 
     name: Build ExaGO with Spack
@@ -41,8 +38,10 @@ jobs:
           SPACK_SPEC: ${{ matrix.spack_spec }}
         run: |
           ls && pwd
-          . ./tpl/spack/share/spack/setup-env.sh
+          . /opt/spack/share/spack/setup-env.sh
           spack debug report
+          spack mirror add spack_public_mirror https://binaries.spack.io/develop
+          spack buildcache keys --install --trust
           spack env create -d ./spack-env
           spack env activate ./spack-env
           spack add $SPACK_SPEC target=x86_64
