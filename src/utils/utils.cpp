@@ -17,11 +17,11 @@
 #include <sys/utsname.h>
 #include <version.h>
 #include <utils.h>
-#if (EXAGO_ENABLE_IPOPT || EXAGO_ENABLE_HIOP)
+#if defined EXAGO_ENABLE_IPOPT || defined EXAGO_ENABLE_HIOP
 #include <opflow.h>
 #endif
 
-#if (EXAGO_ENABLE_IPOPT)
+#if defined EXAGO_ENABLE_IPOPT
 #include <sopflow.h>
 #include <scopflow.h>
 #endif
@@ -373,7 +373,7 @@ template <typename T> static inline void print(T const &opt) {
   // See comment at ExaGODefaultOptions
   // print(O::network);
 
-#if (EXAGO_ENABLE_IPOPT || EXAGO_ENABLE_HIOP)
+#if defined EXAGO_ENABLE_IPOPT || defined EXAGO_ENABLE_HIOP
   if (appname == "opflow") {
     print(OPFLOWOptions::model);
     print(OPFLOWOptions::solver);
@@ -408,7 +408,7 @@ template <typename T> static inline void print(T const &opt) {
     // fprintf(stderr, "\n");
   } else if (appname == "pflow") {
     /* pflow application driver does not take any additional arguments */
-#if (EXAGO_ENABLE_IPOPT)
+#if defined EXAGO_ENABLE_IPOPT
   } else if (appname == "sopflow") {
     print(SOPFLOWOptions::sopflow_model);
     print(SOPFLOWOptions::sopflow_solver);
