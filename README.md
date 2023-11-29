@@ -32,6 +32,29 @@ Additionally, note that SCOPFLOW and SOPFLOW with HiOp solver use Ipopt to solve
 
 Details installation instructions are given at [INSTALL.md](./INSTALL.md) for information on acquiring, building and installing ExaGO.
 
+If you are a developer with access to the project, we also provide public binaries that are generated through our GitHub actions workflows documented in [README.md](.github/workflows/README.md), and with documentation about usage in the packages section of our repository. Check out a short (< 60s demo) of pulling down a version of ExaGO:
+
+[![asciicast](
+https://asciinema.org/a/KCi5TmUXc6zWDj7JYHzfSFxmw.png)](
+https://asciinema.org/a/KCi5TmUXc6zWDj7JYHzfSFxmw)
+
+## Developer Guide
+
+You can view the following helpful documentation sources:
+- [test_add.md](docs/web/test_add.md) markdown file for information on adding tets (outdated)
+- [README.md](buildsystem/README.md) for our bash / spack buildsystem used in GitHub/GitLab CI/CD
+- [README.md](buildsystem/spack/README.md) for our spack specific build scripts that support CI tcl modules on HPC target platforms
+- [README.md](docs/devcontainer/README.md) for our devcontianer configuration information (codespace support coming soon)
+- [exago_policy_compatiblility](docs/exago_policy_compatibility.md) for xSDK compatibility guidelines, and ways to enforce compliance
+- [python_bindings.md](docs/python_bindings.md) for documentation about or Python bindings
+- [README.md](performance_analysis/README.md) for information about profiling ExaGO with spack
+- [README.md](.github/workflows/README.md) for details about our GitHub actions
+
+## Vizualisation
+
+Our ChatGrid frontend deployed with React, PSQL and LangChain has documentation in [README.md](viz/README.md) as well as a pdf [README.pdf](viz/README.pdf) in the `viz` subdirectory. Several of our tutorials install this through commands in Jupyter Notebooks as well.
+
+
 ## Usage
 Instructions for executing the different ExaGO<sup>TM</sup> applications is given below.
 - [OPFLOW](docs/web/opflow.md)
@@ -39,6 +62,19 @@ Instructions for executing the different ExaGO<sup>TM</sup> applications is give
 - [SOPFLOW](docs/web/sopflow.md)
 - [SCOPFLOW](docs/web/scopflow.md)
 - [PFLOW](docs/web/pflow.md)
+
+We also provide our user manual as a pdf [manual.pdf](docs/manual/manual.pdf) -> need to update this regularly with CI / move to quarto docs.
+
+## Tutorials
+
+- If you are using a devcontainer with VSCode, the following tutorials are provided:
+    - [tutorial.ipynb](docs/devcontainer/tutorial.ipynb) for basic configuration infromation and I/O
+    - [mpi4py-tutorial.ipynb](docs/devcontainer/mpi4py-tutorial.ipynb) for mpi4py pointers and best practices
+    - [viz-tutorial.ipynb](docs/devcontainer/viz-tutorial.ipynb) for spinning up our frontend visualization with ChatGrid integration
+- Otherwise, you can check out our more in depth application tutorials in the `tutorials`subdirectory:
+    - [demo1.ipynb](tutorials/demo1.ipynb) run OPFLOW, SCOPFLOW and visualize your output
+    - [demo2.ipynb](tutorials/demo2.ipynb) run SOPFLOW on many ranks using MPI, and visualize outpu
+        - TODO - add fixes from `mpi4py` devcontainer example into this notebook to show working MPI workflow
 
 ### Options
 
