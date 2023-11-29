@@ -5,9 +5,6 @@ static char help[] = "SOPFLOW Functionality Tests.\n\n";
 #include <sopflow.h>
 
 struct SopflowFunctionalityTestParameters {
-  /* Communicator required to run funcitonality test */
-  MPI_Comm comm = MPI_COMM_WORLD;
-
   /* Parameters required to set up and test a SCOPFlow */
   std::string solver = "";
   std::string network = "";
@@ -112,17 +109,26 @@ struct SopflowFunctionalityTestParameters {
 
 struct SopflowFunctionalityTests
     : public FunctionalityTestContext<SopflowFunctionalityTestParameters> {
-  SopflowFunctionalityTests(std::string testsuite_filename,
-                            int logging_verbosity = EXAGO_LOG_INFO)
-      : FunctionalityTestContext(testsuite_filename, logging_verbosity) {}
 
   using Params = SopflowFunctionalityTestParameters;
+  MPI_Comm comm;
+  int nprocs;
+
+  SopflowFunctionalityTests(std::string testsuite_filename, MPI_Comm comm,
+                            int logging_verbosity = EXAGO_LOG_INFO)
+      : FunctionalityTestContext(testsuite_filename, comm, logging_verbosity),
+        comm{comm} {
+
+    nprocs = FunctionalityTestContext::nprocs;
+  }
+
   void
   ensure_options_are_consistent(toml::value testcase,
                                 toml::value presets = toml::value{}) override {
+
     auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
-      if (!is_available) {
+      if (is_true_somewhere(!is_available, comm)) {
         std::stringstream errs;
         errs << "SOPFLOW Test suite expected option '" << opt
              << "' to be available, but it was not found in this testsuite"
@@ -204,12 +210,13 @@ struct SopflowFunctionalityTests
     SOPFLOW sopflow;
     int rank;
 
-    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+    auto err = MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+    if (err != MPI_SUCCESS)
+      throw ExaGOError("Error getting MPI rank number");
 
-    if (rank == 0) {
+    if (rank == 0)
       std::cout << "Test Description: " << params.description << std::endl;
-    }
-    ierr = SOPFLOWCreate(params.comm, &sopflow);
+    ierr = SOPFLOWCreate(comm, &sopflow);
     ExaGOCheckError(ierr);
 
     ierr = SOPFLOWSetTolerance(sopflow, params.tolerance);
@@ -431,7 +438,15 @@ int main(int argc, char **argv) {
   ExaGOCheckError(ierr);
   ExaGOLog(EXAGO_LOG_INFO, "{}", "Creating SOPFLOW Functionality Test");
 
-  SopflowFunctionalityTests test{std::string(argv[1])};
+  int my_rank;
+  auto err = MPI_Comm_rank(comm, &my_rank);
+  if (err != MPI_SUCCESS)
+    throw ExaGOError("Error getting MPI rank number");
+
+  if (my_rank == 0)
+    ExaGOLog(EXAGO_LOG_INFO, "{}", "Creating SOPFLOW Functionality Test");
+
+  SopflowFunctionalityTests test{std::string(argv[1]), comm};
   test.run_all_test_cases();
   test.print_report();
   std::string filename = test.set_file_name(argv[1]);

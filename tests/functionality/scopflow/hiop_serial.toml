@@ -22,7 +22,7 @@ contingencies = 'datafiles/case9/case9.cont'
 description = 'case9mod.m with HIOP solver/9 contingencies'
 num_contingencies = -1
 num_iters = 1
-obj_value = 4072.4623362595667
+obj_value = 4144.460442911344
 
 [[testcase]]
 network = 'datafiles/case_ACTIVSg200.m'
@@ -30,7 +30,7 @@ contingencies = 'datafiles/case_ACTIVSg200.cont'
 description = 'case_ACTIVSg200.m with HIOP solver/20 contingencies'
 num_contingencies = 20
 num_iters = -1
-obj_value = 25957.56759147379
+obj_value = 27557.524963989952
 
 [[testcase]]
 network = 'datafiles/case9/case9mod.m'

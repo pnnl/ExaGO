@@ -4,9 +4,6 @@ static char help[] = "PFLOW Functionality Tests.\n\n";
 #include <pflow.h>
 
 struct PflowFunctionalityTestParameters {
-  /* Communicator required to run funcitonality test */
-  MPI_Comm comm = MPI_COMM_WORLD;
-
   /* Parameters required to set up and test a PFlow */
   std::string network = "";
   std::string description = "";
@@ -37,11 +34,10 @@ struct PflowFunctionalityTests
 
   PflowFunctionalityTests(std::string testsuite_filename, MPI_Comm comm,
                           int logging_verbosity = EXAGO_LOG_INFO)
-      : FunctionalityTestContext(testsuite_filename, logging_verbosity),
+      : FunctionalityTestContext(testsuite_filename, comm, logging_verbosity),
         comm{comm} {
-    auto err = MPI_Comm_size(comm, &nprocs);
-    if (err)
-      throw ExaGOError("Error getting MPI num ranks");
+
+    nprocs = FunctionalityTestContext::nprocs;
   }
 
   void
@@ -53,14 +49,14 @@ struct PflowFunctionalityTests
     int n_testcase_procs = -1;
     set_if_found(n_testcase_procs, testcase, "n_procs");
 
-    if (-1 != n_testcase_procs) {
+    if (is_true_somewhere(-1 != n_testcase_procs, comm)) {
       std::stringstream errs;
       errs << "Number of processes should be declared globally in the preset "
               "area of the test suite TOML file, not inside each testcase.\n"
            << "Testcase: " << testcase << "\nWith presets:\n"
            << presets;
       throw ExaGOError(errs.str().c_str());
-    } else if (nprocs != n_preset_procs) {
+    } else if (is_true_somewhere(nprocs != n_preset_procs, comm)) {
       std::stringstream errs;
       errs << "PFLOW Functionality test suite found " << n_preset_procs
            << " processes specified in the presets of the test suite TOML "
@@ -73,7 +69,7 @@ struct PflowFunctionalityTests
 
     auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
-      if (!is_available) {
+      if (is_true_somewhere(!is_available, comm)) {
         std::stringstream errs;
         errs << "PFLOW Test suite expected option '" << opt
              << "' to be available, but it was not found in this testsuite"
@@ -108,14 +104,11 @@ struct PflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     PFLOW pflow;
-    int rank;
+    int my_rank = FunctionalityTestContext::rank;
 
-    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-
-    if (rank == 0) {
+    if (my_rank == 0)
       std::cout << "Test Description: " << params.description << std::endl;
-    }
-    ierr = PFLOWCreate(params.comm, &pflow);
+    ierr = PFLOWCreate(comm, &pflow);
     ExaGOCheckError(ierr);
 
     // Prepend installation directory to network path
@@ -192,10 +185,16 @@ int main(int argc, char **argv) {
   ExaGOCheckError(ierr);
   ExaGOLog(EXAGO_LOG_INFO, "{}", "Creating PFlow Functionality Test");
 
+  int my_rank;
+  auto err = MPI_Comm_rank(comm, &my_rank);
+  if (err != MPI_SUCCESS)
+    throw ExaGOError("Error getting MPI rank number");
+
+  if (my_rank == 0)
+    ExaGOLog(EXAGO_LOG_INFO, "{}", "Creating PFlow Functionality Test");
   PflowFunctionalityTests test{std::string(argv[1]), comm};
   test.run_all_test_cases();
   test.print_report();
-
   ExaGOFinalize();
   return test.failures();
 }

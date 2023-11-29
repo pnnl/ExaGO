@@ -80,8 +80,6 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_pbhiop.toml
-    -hiop_mem_space
-    HOST
   )
 
   if(EXAGO_ENABLE_IPOPT AND EXAGO_ENABLE_HIOP)
@@ -103,8 +101,6 @@ if(EXAGO_INSTALL_TESTS)
     3
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_mpi_pbhiop.toml
-    -hiop_mem_space
-    HOST
   )
   exago_add_test(
     NAME
@@ -136,7 +132,7 @@ if(EXAGO_INSTALL_TESTS)
     COMMAND
     ${MPICMD}
     "-n"
-    3
+    1
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_serial.toml
   )

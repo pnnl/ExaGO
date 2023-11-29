@@ -8,35 +8,39 @@ struct ScopflowFunctionalityTestParameters {
   MPI_Comm comm = MPI_COMM_WORLD;
 
   /* Parameters required to set up and test a SCOPFlow */
-  std::string solver = "";
-  std::string model = "";
+  std::string solver = SCOPFLOWOptions::solver.default_value;
+  std::string model = SCOPFLOWOptions::model.default_value;
   std::string network = "";
   std::string contingencies = "";
   std::string pload = "";
   std::string qload = "";
   std::string windgen = "";
   std::string description = "";
-  int num_contingencies;
-  double tolerance;
+  int num_contingencies = 0;
+  double tolerance = SCOPFLOWOptions::tolerance.default_value;
   double warning_tolerance = 0.01;
   int iter_range = 0;
-  double duration;
-  double dT;
-  int mode;
-  bool multiperiod;
+  double duration = SCOPFLOWOptions::duration.default_value;
+  double dT = SCOPFLOWOptions::dT.default_value;
+  int mode = SCOPFLOWOptions::mode.default_value;
+  bool multiperiod = SCOPFLOWOptions::enable_multiperiod.default_value;
 
   /* Parameters used to modify underlying opflow */
-  std::string opflow_initialization_string;
+  std::string opflow_initialization_string =
+      OPFLOWOptions::initialization.default_value;
   int opflow_initialization;
-  std::string opflow_genbusvoltage_string;
+  std::string opflow_genbusvoltage_string =
+      OPFLOWOptions::genbusvoltage.default_value;
   int opflow_genbusvoltage;
-  std::string subproblem_solver;
-  std::string subproblem_model;
-  bool enable_powerimbalance_variables;
-  bool ignore_lineflow_constraints;
-  int verbosity_level;
+  std::string subproblem_solver = OPFLOWOptions::solver.default_value;
+  std::string subproblem_model = OPFLOWOptions::model.default_value;
+  bool enable_powerimbalance_variables =
+      OPFLOWOptions::include_powerimbalance_variables.default_value;
+  bool ignore_lineflow_constraints =
+      OPFLOWOptions::ignore_lineflow_constraints.default_value;
+  int verbosity_level = 3;
   std::string mem_space = "DEFAULT";
-  std::string compute_mode;
+  std::string compute_mode = "cpu";
 
   /* Parameters used to determine success or failure of functionality test */
   int expected_num_iters;
@@ -104,17 +108,25 @@ struct ScopflowFunctionalityTestParameters {
 
 struct ScopflowFunctionalityTests
     : public FunctionalityTestContext<ScopflowFunctionalityTestParameters> {
-  ScopflowFunctionalityTests(std::string testsuite_filename,
-                             int logging_verbosity = EXAGO_LOG_INFO)
-      : FunctionalityTestContext(testsuite_filename, logging_verbosity) {}
 
   using Params = ScopflowFunctionalityTestParameters;
+  MPI_Comm comm;
+  int nprocs;
+
+  ScopflowFunctionalityTests(std::string testsuite_filename, MPI_Comm comm,
+                             int logging_verbosity = EXAGO_LOG_INFO)
+      : FunctionalityTestContext(testsuite_filename, comm, logging_verbosity),
+        comm{comm} {
+    nprocs = FunctionalityTestContext::nprocs;
+  }
+
   void
   ensure_options_are_consistent(toml::value testcase,
                                 toml::value presets = toml::value{}) override {
+
     auto ensure_option_available = [&](const std::string &opt) {
       bool is_available = testcase.contains(opt) || presets.contains(opt);
-      if (!is_available) {
+      if (is_true_somewhere(!is_available, comm)) {
         std::stringstream errs;
         errs << "SCOPFLOW Test suite expected option '" << opt
              << "' to be available, but it was not found in this testsuite"
@@ -191,14 +203,11 @@ struct ScopflowFunctionalityTests
   void run_test_case(Params &params) override {
     PetscErrorCode ierr;
     SCOPFLOW scopflow;
-    int rank;
+    int rank = FunctionalityTestContext::rank;
 
-    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-
-    if (rank == 0) {
+    if (rank == 0)
       std::cout << "Test Description: " << params.description << std::endl;
-    }
-    ierr = SCOPFLOWCreate(params.comm, &scopflow);
+    ierr = SCOPFLOWCreate(comm, &scopflow);
     ExaGOCheckError(ierr);
 
     ierr = SCOPFLOWSetTolerance(scopflow, params.tolerance);
@@ -429,7 +438,14 @@ int main(int argc, char **argv) {
   ExaGOCheckError(ierr);
   ExaGOLog(EXAGO_LOG_INFO, "{}", "Creating SCOPFlow Functionality Test");
 
-  ScopflowFunctionalityTests test{std::string(argv[1])};
+  int my_rank;
+  auto err = MPI_Comm_rank(comm, &my_rank);
+  if (err != MPI_SUCCESS)
+    throw ExaGOError("Error getting MPI rank number");
+
+  if (my_rank == 0)
+    ExaGOLog(EXAGO_LOG_INFO, "{}", "Creating SCOPFLOW Functionality Test");
+  ScopflowFunctionalityTests test{std::string(argv[1]), comm};
   test.run_all_test_cases();
   test.print_report();
   std::string filename = test.set_file_name(argv[1]);
