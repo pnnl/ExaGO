@@ -49,6 +49,8 @@ You can view the following helpful documentation sources:
 - [python_bindings.md](docs/python_bindings.md) for documentation about or Python bindings
 - [README.md](performance_analysis/README.md) for information about profiling ExaGO with spack
 - [README.md](.github/workflows/README.md) for details about our GitHub actions
+- [README.ci_clusters.md](docs/web/README.ci_clusters.md) for CI cluster workflow documentation
+- [README.summit.md](docs/web/README.summit.md) for ORNL's Summit specific configuration
 
 ## Vizualisation
 

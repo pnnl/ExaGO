@@ -6,7 +6,7 @@ and should be considered when filling out this form.
 Please, provide information on your compability status for each mandatory policy, and if possible also for recommended policies.
 If you are not compatible, state what is lacking and what are your plans on how to achieve compliance.
 
-**Website:** https://gitlab.pnnl.gov/exasgd/frameworks/exago
+**Website:** https://github.com/pnnl/ExaGO
 
 ### Mandatory Policies
 
@@ -39,11 +39,11 @@ M2 details <a id="m2-details"></a>: optional: provide more details about approac
 
 | Policy                 |Support| Notes                   |
 |------------------------|-------|-------------------------|
-|**R1.** Have a public repository. |Full| [Public GitLab repository linked here](https://gitlab.pnnl.gov/exasgd/frameworks/exago/). |
+|**R1.** Have a public repository. |Full| [Public GitHub repository linked here](https://github.com/pnnl/ExaGO). |
 |**R2.** Possible to run test suite under valgrind in order to test for memory corruption issues. |Full| It is possible to run any of the application drivers and test drivers under Valgrind. This has only been test with the leakcheck tool, and not any of the other tools from Valgrind. |
 |**R3.** Adopt and document consistent system for error conditions/exceptions. |Full| ExaGO makes thorough use of return codes and error checking, particularly the PETSc macros such as `ERRCHKQ`. |
 |**R4.** Free all system resources acquired as soon as they are no longer needed. |Full| Memory for the model is allocated at the beginning of the program and freed at the end. ExaGO also allows for using an external solver, in which case the memory is used by a thrid-party library. These libraries (PETSc, Ipopt, and HiOp) also adequately free memory they allocate. |
 |**R5.** Provide a mechanism to export ordered list of library dependencies. |Full| ExaGO exposes two arrays, `ExaGODependencyNames` and `ExaGOIsDependencyEnabled`, allowing users to query dependency information. Only key dependencies are tracked in these arrays, such as RAJA and GPU-related dependencies. |
-|**R6.** Document versions of packages that it works with or depends upon, preferably in machine-readable form.  |Full| Our Spack packages document much of this information. Documentation in [`INSTALL.md`](INSTALL.md) and [`docs/InstallingWithSpack.md`](docs/installing_with_spack.md) contain additional information about dependencies.|
+|**R6.** Document versions of packages that it works with or depends upon, preferably in machine-readable form.  |Full| Our Spack packages document much of this information. Documentation in [`INSTALL.md`](../INSTALL.md) and [`docs/InstallingWithSpack.md`](./installing_with_spack.md) contain additional information about dependencies.|
 |**R7.** Have README, SUPPORT, LICENSE, and CHANGELOG files in top directory.  |Full| We currently have README.md, CHANGELOG.md, SUPPORT.md, and LICENSE files in root directory. |
-|**R8.** Each xSDK member package should have sufficient documentation to support use and further development.  |Full| The directory `docs/manual` contains thorough documentation in LaTeX with a prebuilt user manual PDF [linked here](docs/manual/manual.pdf). The file [`docs/DeveloperGuidelines`](./docs/developer_guidelines.md) contains documentation on software development best practices that contributors are expected to follow. `docs/web` contains markdown documentation on each of the application libraries and further documentation on some dependencies and platforms. `docs/petsc-dependencies` contains further documentation on PETSc usage. |
+|**R8.** Each xSDK member package should have sufficient documentation to support use and further development.  |Full| The directory `docs/manual` contains thorough documentation in LaTeX with a prebuilt user manual PDF [linked here](./manual/manual.pdf). The file [`docs/DeveloperGuidelines`](./developer_guidelines.md) contains documentation on software development best practices that contributors are expected to follow. `docs/web` contains markdown documentation on each of the application libraries and further documentation on some dependencies and platforms. `docs/petsc-dependencies` contains further documentation on PETSc usage. |
