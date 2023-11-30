@@ -44,7 +44,7 @@ cleanup() {
 export MY_CLUSTER=deception
 cp /qfs/projects/exasgd/src/coinhsl-archive-2019.05.21.tar.gz . &&
 . buildsystem/spack/load_spack.sh &&
-# spack clean -abm &&  # shouldn't run this everytime...
+ spack clean -abm &&  # shouldn't run this everytime...
 spack develop --no-clone --path=$(pwd) exago@develop &&
 mkdir hiop_dev
 spack develop --clone --force FORCE --path=$(pwd)/hiop_dev hiop@develop &&
