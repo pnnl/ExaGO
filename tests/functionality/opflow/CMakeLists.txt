@@ -24,8 +24,8 @@ if(EXAGO_INSTALL_TESTS)
 
   if(EXAGO_ENABLE_HIOP)
     set_tests_properties(
-      FUNCTIONALITY_TEST_OPFLOW_HIOP_TOML_TESTSUITE
-      PROPERTIES LABELS "incline-skip;ascent-skip"
+      FUNCTIONALITY_TEST_OPFLOW_HIOP_TOML_TESTSUITE PROPERTIES LABELS
+                                                               "ascent-skip"
     )
   endif()
 

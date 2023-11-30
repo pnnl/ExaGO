@@ -36,13 +36,6 @@ if(EXAGO_INSTALL_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/empar_cont.toml
   )
 
-  if(EXAGO_ENABLE_IPOPT)
-    set_tests_properties(
-      FUNCTIONALITY_TEST_SCOPFLOW_EMPAR_CONT_TESTSUITE
-      PROPERTIES LABELS "incline-skip"
-    )
-  endif()
-
   # Disabled test for now, feature not ready yet
   if(EXAGO_ENABLE_ALL_TESTS)
     exago_add_test(
