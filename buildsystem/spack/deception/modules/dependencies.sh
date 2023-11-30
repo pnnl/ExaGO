@@ -6,11 +6,11 @@ module load blt/0.4.1-gcc-9.1.0-2kcdf2y
 # cub@=2.1.0%gcc@=9.1.0 build_system=generic arch=linux-centos7-zen2
 module load cub/2.1.0-gcc-9.1.0-wx4parb
 # cuda@=11.4%gcc@=9.1.0~allow-unsupported-compilers~dev build_system=generic arch=linux-centos7-zen2
-module load cuda/11.4-gcc-9.1.0-ywfpchj
+module load cuda/11.4-gcc-9.1.0-tmrg4gr
 # gmake@=4.4.1%gcc@=9.1.0~guile build_system=generic arch=linux-centos7-zen2
 module load gmake/4.4.1-gcc-9.1.0-2hyua4w
 # camp@=0.2.3%gcc@=9.1.0+cuda~ipo+openmp~rocm~tests build_system=cmake build_type=Release cuda_arch=60,70,75,80 generator=make arch=linux-centos7-zen2
-module load camp/0.2.3-gcc-9.1.0-jonlahu
+module load camp/0.2.3-gcc-9.1.0-hyzpmsn
 # perl@=5.26.0%gcc@=9.1.0+cpanm+opcode+open+shared+threads build_system=generic patches=0eac10e,8cf4302 arch=linux-centos7-zen2
 module load perl/5.26.0-gcc-9.1.0-aca44by
 # openblas@=0.3.25%gcc@=9.1.0~bignuma~consistent_fpcsr+fortran~ilp64+locking+pic+shared build_system=makefile symbol_suffix=none threads=none arch=linux-centos7-zen2
@@ -18,15 +18,15 @@ module load openblas/0.3.25-gcc-9.1.0-edjd2fv
 # coinhsl@=2019.05.21%gcc@=9.1.0+blas build_system=autotools arch=linux-centos7-zen2
 module load coinhsl/2019.05.21-gcc-9.1.0-xttde3f
 # ginkgo@=1.5.0.glu_experimental%gcc@=9.1.0+cuda~develtools~full_optimizations~hwloc~ipo~mpi+openmp~rocm+shared~sycl build_system=cmake build_type=Release cuda_arch=60,70,75,80 generator=make arch=linux-centos7-zen2
-module load ginkgo/1.5.0.glu_experimental-gcc-9.1.0-miky7oq
+module load ginkgo/1.5.0.glu_experimental-gcc-9.1.0-byoaioj
 # magma@=2.6.2%gcc@=9.1.0+cuda+fortran~ipo~rocm+shared build_system=cmake build_type=Release cuda_arch=60,70,75,80 generator=make arch=linux-centos7-zen2
-module load magma/2.6.2-gcc-9.1.0-ehkkuvu
+module load magma/2.6.2-gcc-9.1.0-eybt5h4
 # metis@=5.1.0%gcc@=9.1.0~gdb~int64~ipo~real64+shared build_system=cmake build_type=Release generator=make patches=4991da9,93a7903,b1225da arch=linux-centos7-zen2
 module load metis/5.1.0-gcc-9.1.0-yjhcoa3
 # openmpi@=4.1.0mlx5.0%gcc@=9.1.0~atomics~cuda~cxx~cxx_exceptions~gpfs~internal-hwloc~internal-pmix~java~legacylaunchers~lustre~memchecker~openshmem~orterunprefix+romio+rsh~singularity+static+vt+wrapper-rpath build_system=autotools fabrics=none patches=60ce20b schedulers=none arch=linux-centos7-zen2
 module load openmpi/4.1.0mlx5.0-gcc-9.1.0-vj5ufod
 # raja@=0.14.0%gcc@=9.1.0+cuda~examples~exercises~ipo+openmp~plugins~rocm+shared~tests build_system=cmake build_type=Release cuda_arch=60,70,75,80 generator=make arch=linux-centos7-zen2
-module load raja/0.14.0-gcc-9.1.0-m7hxdzt
+module load raja/0.14.0-gcc-9.1.0-tq2hxbw
 # libiconv@=1.17%gcc@=9.1.0 build_system=autotools libs=shared,static arch=linux-centos7-zen2
 module load libiconv/1.17-gcc-9.1.0-ryrjbul
 # diffutils@=3.9%gcc@=9.1.0 build_system=autotools arch=linux-centos7-zen2
@@ -72,9 +72,9 @@ module load mpfr/4.2.0-gcc-9.1.0-2d5o4yj
 # suite-sparse@=5.13.0%gcc@=9.1.0~cuda~graphblas~openmp+pic build_system=generic arch=linux-centos7-zen2
 module load suite-sparse/5.13.0-gcc-9.1.0-aytsg72
 # umpire@=6.0.0%gcc@=9.1.0+c+cuda~device_alloc~deviceconst~examples~fortran~ipo~numa~openmp~rocm~shared build_system=cmake build_type=Release cuda_arch=60,70,75,80 generator=make tests=none arch=linux-centos7-zen2
-module load umpire/6.0.0-gcc-9.1.0-hi3733h
-# hiop@=develop%gcc@=9.1.0+cuda~cusolver_lu~deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=MinSizeRel cuda_arch=60,70,75,80 generator=make arch=linux-centos7-zen2
-module load hiop/develop-gcc-9.1.0-4oxqcdl
+module load umpire/6.0.0-gcc-9.1.0-zh3kabb
+# hiop@=develop%gcc@=9.1.0+cuda~cusolver_lu~deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=MinSizeRel cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/26233/spack_deception/hiop_dev generator=make arch=linux-centos7-zen2
+module load hiop/develop-gcc-9.1.0-kllcazs
 # ipopt@=3.12.10%gcc@=9.1.0+coinhsl~debug~metis~mumps build_system=autotools arch=linux-centos7-zen2
 module load ipopt/3.12.10-gcc-9.1.0-li7gpqb
 # python@=3.9.12%gcc@=9.1.0+bz2+crypt+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tkinter+uuid+zlib build_system=generic patches=0d98e93,4c24573,ebdca64,f2fd060 arch=linux-centos7-zen2
@@ -125,5 +125,5 @@ module load py-hatch-vcs/0.3.0-gcc-9.1.0-hwwyqic
 module load py-iniconfig/2.0.0-gcc-9.1.0-raa2jbg
 # py-pytest@=7.3.2%gcc@=9.1.0 build_system=python_pip arch=linux-centos7-zen2
 module load py-pytest/7.3.2-gcc-9.1.0-2nh22mh
-# exago@=develop%gcc@=9.1.0+cuda+hiop~ipo+ipopt+logging+mpi+python+raja~rocm build_system=cmake build_type=MinSizeRel cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/25700/spack_deception generator=make arch=linux-centos7-zen2
-## module load exago/develop-gcc-9.1.0-so2veou
+# exago@=develop%gcc@=9.1.0+cuda+hiop~ipo+ipopt+logging+mpi+python+raja~rocm build_system=cmake build_type=Debug cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/26233/spack_deception generator=make arch=linux-centos7-zen2
+## module load exago/develop-gcc-9.1.0-27tyuch
