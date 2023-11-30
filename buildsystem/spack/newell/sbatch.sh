@@ -50,7 +50,7 @@ mkdir hiop_dev
 spack develop --clone --force FORCE --path=$(pwd)/hiop_dev hiop@develop &&
 cd hiop_dev &&
 git submodule update --init --recursive &&
-git checkout wall-in-debug-fix && #test out patch 
+#git checkout develop && #test out patch 
 cd - &&
 ./buildsystem/spack/configure_modules.sh 128
 
