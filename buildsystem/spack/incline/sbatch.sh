@@ -7,7 +7,7 @@
 #SBATCH -J exago_spack
 #SBATCH -o spack_install.%J.output
 #SBATCH -e spack_install.%J.output
-#SBTACH -t 240
+#SBATCH -t 240
 
 exit() {
   # Clear all trap handlers so this isn't echo'ed multiple times, potentially
@@ -52,7 +52,7 @@ cd hiop_dev &&
 git submodule update --init --recursive &&
 #git checkout develop && #test out patch 
 cd - &&
-buildsystem/spack/configure_modules.sh 24
+buildsystem/spack/configure_modules.sh 20
 
 EXIT_CODE=$?
 # Required to trigger trap handler
