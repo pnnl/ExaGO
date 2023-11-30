@@ -22,13 +22,6 @@ if(EXAGO_INSTALL_TESTS)
     HIOP
   )
 
-  if(EXAGO_ENABLE_HIOP)
-    set_tests_properties(
-      FUNCTIONALITY_TEST_OPFLOW_HIOP_TOML_TESTSUITE PROPERTIES LABELS
-                                                               "ascent-skip"
-    )
-  endif()
-
   exago_add_test(
     NAME
     FUNCTIONALITY_TEST_OPFLOW_RAJAHIOP_TOML_TESTSUITE
@@ -40,12 +33,6 @@ if(EXAGO_INSTALL_TESTS)
     HIOP
     RAJA
   )
-  if(EXAGO_ENABLE_HIOP AND EXAGO_ENABLE_RAJA)
-    set_tests_properties(
-      FUNCTIONALITY_TEST_OPFLOW_RAJAHIOP_TOML_TESTSUITE
-      PROPERTIES LABELS "ascent-skip"
-    )
-  endif()
 
   exago_add_test(
     NAME
@@ -57,12 +44,6 @@ if(EXAGO_INSTALL_TESTS)
     DEPENDS
     HIOP_SPARSE
   )
-  if(EXAGO_ENABLE_HIOP_SPARSE)
-    set_tests_properties(
-      FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_TOML_TESTSUITE
-      PROPERTIES LABELS "ascent-skip"
-    )
-  endif()
 
   if(EXAGO_ENABLE_GPU)
     exago_add_test(
