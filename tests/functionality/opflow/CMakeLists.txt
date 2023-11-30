@@ -57,6 +57,13 @@ if(EXAGO_INSTALL_TESTS)
       HIOP
       RAJA
     )
+    if(EXAGO_ENABLE_HIOP AND EXAGO_ENABLE_RAJA)
+      # This test passes on Ascent...
+      set_tests_properties(
+        FUNCTIONALITY_TEST_OPFLOW_RAJAHIOP_SPARSE_GPU_TOML_TESTSUITE
+        PROPERTIES LABELS "incline-skip;"
+      )
+    endif()
   endif(EXAGO_ENABLE_GPU)
 
   # Note: All cartesian and/or current balance models are way behind. These

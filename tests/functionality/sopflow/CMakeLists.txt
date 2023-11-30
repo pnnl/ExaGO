@@ -119,6 +119,12 @@ if(EXAGO_INSTALL_TESTS)
     -opflow_include_powerimbalance_variables
     -opflow_ignore_lineflow_constraints
   )
+  if(EXAGO_ENABLE_IPOPT)
+    set_tests_properties(
+      FUNCTIONALITY_TEST_SOPFLOW_SCENARIO_RAJA_GPU_TOML
+      PROPERTIES LABELS "incline-skip"
+    )
+  endif()
 
   exago_add_test(
     NAME
