@@ -523,7 +523,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
 
   /* Number of lines for each data */
   PetscInt bus_numlines, gen_numlines,br_numlines,dcline_numlines;
-  PetscInt gencost_numlines,genfuel_numlines,load_numlines=0;
+  PetscInt load_numlines=0;
   /* Number of blank lines in bus, gen, br, gencost, and genfuel branch arrays
    */
   PetscInt bus_nblank_lines = 0, gen_nblank_lines = 0;
@@ -533,7 +533,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   PetscInt loadcost_nblank_lines = 0;
 
   char line[MAXLINE];
-  PetscInt loadi = 0, geni = 0, bri = 0, dclinei = 0, busi = 0, gencosti = 0, genfueli = 0,
+  PetscInt loadi = 0, geni = 0, bri = 0, busi = 0, gencosti = 0, genfueli = 0,
            loadcosti = 0, i;
   PetscInt extbusnum, bustype_i;
   PetscScalar Pd, Qd;
@@ -542,6 +542,8 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   char *out;
   PetscInt buff_num=1;
   PetscInt *temp_buff;   /* buffer to hold 10 isolated buses, gets resized later */
+  PetscBool bad_data = PETSC_FALSE;
+  const char bad_data_str[] = "Input Data Error: ";  
 
 
   PetscFunctionBegin;
@@ -619,37 +621,37 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
 
     if (bus_start_line != -1 && bus_end_line == -1) {
       if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
-        bus_nblank_lines++;
+        bus_nblank_lines = bus_nblank_lines + 1;
     }
     if (gen_start_line != -1 && gen_end_line == -1) {
       if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
-        gen_nblank_lines++;
+        gen_nblank_lines = gen_nblank_lines + 1;
     }
 
     if (br_start_line != -1 && br_end_line == -1) {
       if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
-        br_nblank_lines++;
+        br_nblank_lines = br_nblank_lines + 1;
     }
 
     if (dcline_start_line != -1 && dcline_end_line == -1) {
       if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
-        dcline_nblank_lines++;
+        dcline_nblank_lines = dcline_nblank_lines + 1;
     }
 
 
     if (gencost_start_line != -1 && gencost_end_line == -1) {
       if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
-        gencost_nblank_lines++;
+        gencost_nblank_lines = gencost_nblank_lines + 1;
     }
 
     if (loadcost_start_line != -1 && loadcost_end_line == -1) {
       if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
-        loadcost_nblank_lines++;
+        loadcost_nblank_lines = loadcost_nblank_lines + 1;
     }
 
     if (genfuel_start_line != -1 && genfuel_end_line == -1) {
       if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
-        genfuel_nblank_lines++;
+        genfuel_nblank_lines = genfuel_nblank_lines + 1;
     }
 
     /* Count the number of pq loads */
@@ -749,6 +751,11 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
 
       Bus[busi].Vmax = Bus[busi].Vmax == 0 ? 1.1 : Bus[busi].Vmax;
       Bus[busi].Vmin = Bus[busi].Vmin == 0 ? 0.9 : Bus[busi].Vmin;
+      /* Sanity check for voltage limits */
+      if(Bus[busi].Vmax < Bus[busi].Vmin) {
+	bad_data = PETSC_TRUE;
+	ierr = PetscPrintf(ps->comm->type,"%sVmax = %4.3f at bus %d is less than Vmin = %4.3f\n",bad_data_str,Bus[busi].Vmax,Bus[busi].bus_i,Bus[busi].Vmin);
+      }
 
       // Convert angle to radians
       Bus[busi].va *= PETSC_PI / 180.0;
@@ -870,6 +877,18 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
        */
       snprintf(Gen[geni].id, 3, "%-2d", 1 + Bus[intbusnum].ngen);
 
+      /* Sanity check for real power limits */
+      if(Gen[geni].pt < Gen[geni].pb) {
+	bad_data = PETSC_TRUE;
+	ierr = PetscPrintf(ps->comm->type,"%sPmax = %4.3f for generator with id %s at bus %d is less than Pmin = %4.3f\n",bad_data_str,Gen[geni].pt,Gen[geni].id,Gen[geni].bus_i,Gen[geni].pb);
+      }
+
+      /* Sanity check for reactive power limits */
+      if(Gen[geni].qt < Gen[geni].qb) {
+	bad_data = PETSC_TRUE;
+	ierr = PetscPrintf(ps->comm->type,"%sQmax = %4.3f for generator with id %s at bus %d is less than Qmin = %4.3f\n",bad_data_str,Gen[geni].qt,Gen[geni].id,Gen[geni].bus_i,Gen[geni].qb);
+      }
+
       Bus[intbusnum].gidx[Bus[intbusnum].ngen++] = geni;
 
       //      Bus[intbusnum].vm = Gen[geni].vs;
@@ -895,6 +914,12 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
              &Gen[gencosti].cost_startup, &Gen[gencosti].cost_shutdown,
              &Gen[gencosti].cost_ncoeffs, &Gen[gencosti].cost_alpha,
              &Gen[gencosti].cost_beta, &Gen[gencosti].cost_gamma);
+      /* Sanity check for reactive power limits */
+      if(Gen[gencosti].cost_ncoeffs != 3) {
+	bad_data = PETSC_TRUE;
+	ierr = PetscPrintf(ps->comm->type,"%sExaGO only supports quadratic cost curves. No quadratic cost curve coefficients found for generator with id %s at bus %d\n",bad_data_str,Gen[gencosti].id,Gen[gencosti].bus_i);
+      }
+
       gencosti++;
     }
 
@@ -1134,6 +1159,10 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
       bri++;
     }
     
+  }
+
+  if(bad_data) {
+    SETERRQ(ps->comm->type,0,"Found errors in input data. Please fix the suggested errors");
   }
 
   fclose(fp);

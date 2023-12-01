@@ -2738,6 +2738,7 @@ PetscErrorCode OPFLOWSetUpPS(OPFLOW opflow) {
   PetscFunctionBegin;
   ierr = PSSetUp(opflow->ps);
   CHKERRQ(ierr);
+
   /* set individual load costs if necessary */
 
   PetscFunctionReturn(0);
