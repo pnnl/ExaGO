@@ -89,13 +89,13 @@ module load mpfr/4.2.0-clang-15.0.0-rocm5.3.0-ggajnde
 module load suite-sparse/5.13.0-clang-15.0.0-rocm5.3.0-c4mkzlr
 # umpire@=6.0.0%clang@=15.0.0-rocm5.3.0 cxxflags="--gcc-toolchain=/share/apps/gcc/8.4.0/" +c~cuda~device_alloc~deviceconst~examples~fortran~ipo~numa~openmp+rocm+shared amdgpu_target=gfx908 build_system=cmake build_type=Release generator=make tests=none arch=linux-centos7-zen
 module load umpire/6.0.0-clang-15.0.0-rocm5.3.0-pffsqxh
-# hiop@=develop%clang@=15.0.0-rocm5.3.0 cxxflags="--gcc-toolchain=/share/apps/gcc/8.4.0/" ~cuda~deepchecking~ginkgo~ipo~jsrun+kron+mpi+raja+rocm~shared+sparse amdgpu_target=gfx908 build_system=cmake build_type=Release dev_path=/people/svcexasgd/gitlab/26290/spack_incline/hiop_dev generator=make arch=linux-centos7-zen
-module load hiop/develop-clang-15.0.0-rocm5.3.0-jaymqte
+# hiop@=develop%clang@=15.0.0-rocm5.3.0 cxxflags="--gcc-toolchain=/share/apps/gcc/8.4.0/" ~cuda~deepchecking~ginkgo~ipo~jsrun+kron+mpi+raja+rocm~shared+sparse amdgpu_target=gfx908 build_system=cmake build_type=Release dev_path=/people/svcexasgd/gitlab/26335/spack_incline/hiop_dev generator=make arch=linux-centos7-zen
+module load hiop/develop-clang-15.0.0-rocm5.3.0-bxpd7si
 # ipopt@=3.12.10%clang@=15.0.0-rocm5.3.0 cxxflags="--gcc-toolchain=/share/apps/gcc/8.4.0/" +coinhsl~debug~metis~mumps build_system=autotools arch=linux-centos7-zen
 module load ipopt/3.12.10-clang-15.0.0-rocm5.3.0-fyusbut
 # python@=3.11.4%clang@=15.0.0-rocm5.3.0 cxxflags="--gcc-toolchain=/share/apps/gcc/8.4.0/" +bz2+crypt+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tkinter+uuid+zlib build_system=generic patches=13fa8bf,b0615b2,ebdca64,f2fd060 arch=linux-centos7-zen
 module load python/3.11.4-clang-15.0.0-rocm5.3.0-bjornb6
-# petsc@=3.19.6%clang@=15.0.0-rocm5.3.0 cxxflags="--gcc-toolchain=/share/apps/gcc/8.4.0/" ~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~sycl~tetgen~trilinos~valgrind build_system=generic clanguage=C memalign=none arch=linux-centos7-zen
-module load petsc/3.19.6-clang-15.0.0-rocm5.3.0-y6yybjf
-# exago@=develop%clang@=15.0.0-rocm5.3.0 cxxflags="--gcc-toolchain=/share/apps/gcc/8.4.0/" ~cuda+hiop~ipo+ipopt+logging+mpi~python+raja+rocm amdgpu_target=gfx908 build_system=cmake build_type=Release dev_path=/people/svcexasgd/gitlab/26290/spack_incline generator=make arch=linux-centos7-zen
-## module load exago/develop-clang-15.0.0-rocm5.3.0-si5rxzy
+# petsc@=3.20.1%clang@=15.0.0-rocm5.3.0 cxxflags="--gcc-toolchain=/share/apps/gcc/8.4.0/" ~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~sycl~tetgen~trilinos~valgrind build_system=generic clanguage=C memalign=none arch=linux-centos7-zen
+module load petsc/3.20.1-clang-15.0.0-rocm5.3.0-qwd245y
+# exago@=develop%clang@=15.0.0-rocm5.3.0 cxxflags="--gcc-toolchain=/share/apps/gcc/8.4.0/" ~cuda+hiop~ipo+ipopt+logging+mpi~python+raja+rocm amdgpu_target=gfx908 build_system=cmake build_type=Release dev_path=/people/svcexasgd/gitlab/26335/spack_incline generator=make arch=linux-centos7-zen
+## module load exago/develop-clang-15.0.0-rocm5.3.0-q3rr7b7
