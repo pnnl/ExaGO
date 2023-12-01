@@ -76,8 +76,8 @@ RUN mkdir /opt/spack-environment \
 &&   echo '  #   - get IPOPT working' \
 &&   echo '  #   - get Sparse CPU support working' \
 &&   echo '  - exago@1.6.0+python+mpi+hiop~ipopt' \
-&&   echo '  mirrors:' \
-&&   echo '    spack: https://binaries.spack.io/develop' \
+&&   echo '  - perl ^zlib' \
+&&   echo '  - curl ^zlib' \
 &&   echo '  concretizer:' \
 &&   echo '    unify: true' \
 &&   echo '  config:' \
@@ -111,11 +111,25 @@ COPY --from=builder /opt/views /opt/views
 RUN { \
       echo '#!/bin/sh' \
       && echo '.' /opt/spack-environment/activate.sh \
-      && echo 'exec "$@"'; \
+      && echo 'python -m awslambdaric "$@"'; \
     } > /entrypoint.sh \
 && chmod a+x /entrypoint.sh \
 && ln -s /opt/views/view /opt/view
 
 
+ENV LAMBDA_TASK_ROOT /var/root
+
+# Copy function code
+RUN mkdir -p ${LAMBDA_TASK_ROOT}
+COPY lambda_handler.py ${LAMBDA_TASK_ROOT}
+
+RUN pip install --upgrade pip && \
+    pip install \
+    --target ${LAMBDA_TASK_ROOT} \
+        awslambdaric
+ 
+# Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)
+WORKDIR ${LAMBDA_TASK_ROOT}
+
 ENTRYPOINT [ "/entrypoint.sh" ]
-CMD [ "/bin/bash" ]
+CMD [ "lambda_handler.main" ]

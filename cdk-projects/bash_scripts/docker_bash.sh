@@ -37,6 +37,7 @@ cp ./cdk-projects/bash_scripts/spack.yaml $SPACK_ENV/
 
 cd $SPACK_ENV
 #create a docker file
+#change the Dockerfile in the correct dir 
 spack containerize > ../Dockerfile
 cd -
 

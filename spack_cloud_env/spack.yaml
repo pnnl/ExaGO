@@ -3,7 +3,7 @@ spack:
   # TODO 
   #   - get IPOPT working
   #   - get Sparse CPU support working
-  - exago@1.6.0+python+mpi+hiop~ipopt
+  - exago@1.6.0+python+mpi+hiop~ipopt~cuda
   container:
     images:
       os: amazonlinux:2

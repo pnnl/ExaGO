@@ -8,7 +8,7 @@ from aws_cdk import (
 from constructs import Construct
 
 
-class S3TriggerStack(Stack):
+class S3lambdaTriggerStack(Stack):
 
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
@@ -18,14 +18,12 @@ class S3TriggerStack(Stack):
 
      # Create an S3 bucket for input
         input_bucket = _s3.Bucket(self,
-                                  "InputBucket",
-                                  bucket_name="s3in6"
+                                  "InputBucket"
                                   )
 
         # Create an S3 bucket for output
         output_bucket = _s3.Bucket(self,
-                                   "OutputBucket",
-                                   bucket_name="s3out6"
+                                   "OutputBucket"
                                    )
 
         # Define the Lambda function using a Docker container from ECR
