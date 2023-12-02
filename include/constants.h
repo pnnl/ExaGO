@@ -43,6 +43,9 @@
 
 #define EXAGO_IGNORE -1000000 /* Ignore value */
 
+#define BAD_INPUT_DATA "Bad Input Data :"
+#define INCORRECT_BOUNDS "Incorrect Bounds :"
+
 /*
  * We often want a char[] with enough space to handle any solver or model name.
  * These sizes are greater than the greatest of the model or solver name,
