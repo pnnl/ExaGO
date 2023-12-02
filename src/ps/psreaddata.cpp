@@ -543,7 +543,8 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   PetscInt buff_num=1;
   PetscInt *temp_buff;   /* buffer to hold 10 isolated buses, gets resized later */
   PetscBool bad_data = PETSC_FALSE;
-  const char bad_data_str[] = "Input Data Error: ";  
+  const char bad_data_str[] = "Input Data Error: ";
+  PetscInt num_max_cost_coeffs=3; // Max. number of cost-coefficients for any generator
 
 
   PetscFunctionBegin;
@@ -678,6 +679,16 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
       if (extbusnum > ps->maxbusnum)
         ps->maxbusnum = extbusnum;
     }
+
+        /* Count the number of pq loads */
+    if (gencost_start_line != -1 && line_counter >= gencost_start_line &&
+        gencost_end_line == -1) {
+      PetscInt gencost_model,num_cost_coeffs;
+      PetscScalar cost_startup,cost_shutdown;
+      sscanf(line, "%d %lf %lf %d", &gencost_model, &cost_startup,  &cost_shutdown, &num_cost_coeffs);
+      if(num_cost_coeffs > num_max_cost_coeffs) num_max_cost_coeffs = num_cost_coeffs;
+    }
+    
     line_counter++;
   }
   fclose(fp);
@@ -728,6 +739,13 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   ps->Nload = ps->nload = 0;
   ps->Ngen = ps->ngen = 0;
   ps->Ndcline = ps->ndcline = 0;
+
+  /* Create a temp array to store the locations in mpc.gen (generators)
+     connected to isolated buses. This is used later in ignoring these
+     generators in gencost data
+  */
+  PetscInt temp_geni[200]; // Assume there are max 200 generators
+  PetscInt i_idx=-1,isol_idx=0,isol_idx2=0,isol_idx3=0;
   
   fp = fopen(netfile, "r");
   /* Reading data */
@@ -752,7 +770,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
       Bus[busi].Vmax = Bus[busi].Vmax == 0 ? 1.1 : Bus[busi].Vmax;
       Bus[busi].Vmin = Bus[busi].Vmin == 0 ? 0.9 : Bus[busi].Vmin;
       /* Sanity check for voltage limits */
-      if(Bus[busi].Vmax < Bus[busi].Vmin) {
+      if((Bus[busi].Vmax < Bus[busi].Vmin) || (Bus[busi].Vmax > 1.1) || (Bus[busi].Vmin < 0.9)) {
 	bad_data = PETSC_TRUE;
 	ierr = PetscPrintf(ps->comm->type,"%sVmax = %4.3f at bus %d is less than Vmin = %4.3f\n",bad_data_str,Bus[busi].Vmax,Bus[busi].bus_i,Bus[busi].Vmin);
       }
@@ -800,8 +818,10 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
 
     /* Read generator data */
     if (i >= gen_start_line && i < gen_end_line) {
+      i_idx += 1;
       if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
         continue;
+
       sscanf(line,
              "%d %lf %lf %lf %lf %lf %lf %d %lf %lf %lf %lf %lf %lf %lf %lf "
              "%lf %lf %lf %lf %lf",
@@ -813,7 +833,13 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
              &Gen[geni].ramp_rate_10min, &Gen[geni].ramp_rate_30min,
              &Gen[geni].ramp_rate_min_mvar, &Gen[geni].apf);
 
-      if(BusIsIsolated(Gen[geni].bus_i,ps->nisolated_buses,ps->isolated_buses)) continue; /* Skip generator at isolated bus */
+      if(BusIsIsolated(Gen[geni].bus_i,ps->nisolated_buses,ps->isolated_buses)) {
+	if(isol_idx == 200) {
+	  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_SUP,"Total number of generators at isolated buses greater than max. allowed = 200\n");
+	}
+	temp_geni[isol_idx++] = i_idx;
+      	continue; /* Skip generator at isolated bus */
+      }
       ps->ngen++;
       ps->Ngen++;
       
@@ -856,8 +882,8 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
         Gen[geni].genfuel_type = GENFUEL_UNDEFINED;
         Gen[geni].ramp_rate_min =
             GENRAMPRATE_COAL / ps->MVAbase; /* Defaults to COAL ramp rate */
-        Gen[geni].ramp_rate_10min = Gen[genfueli].ramp_rate_min * 10;
-        Gen[geni].ramp_rate_30min = Gen[genfueli].ramp_rate_min * 30;
+        Gen[geni].ramp_rate_10min = Gen[geni].ramp_rate_min * 10;
+        Gen[geni].ramp_rate_30min = Gen[geni].ramp_rate_min * 30;
       }
 
       if (Gen[geni].status) {
@@ -910,14 +936,39 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
     if (i >= gencost_start_line && i < gencost_end_line) {
       if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
         continue;
-      sscanf(line, "%d %lf %lf %d %lf %lf %lf", &Gen[gencosti].cost_model,
-             &Gen[gencosti].cost_startup, &Gen[gencosti].cost_shutdown,
-             &Gen[gencosti].cost_ncoeffs, &Gen[gencosti].cost_alpha,
-             &Gen[gencosti].cost_beta, &Gen[gencosti].cost_gamma);
-      /* Sanity check for reactive power limits */
-      if(Gen[gencosti].cost_ncoeffs != 3) {
+
+      if(temp_geni[isol_idx2] == i - gencost_start_line) {
+	isol_idx2 += 1;
+	continue;
+      }
+
+      if(num_max_cost_coeffs == 2) {
+	Gen[geni].cost_alpha = 0.0;
+	sscanf(line, "%d %lf %lf %d %lf %lf", &Gen[gencosti].cost_model,
+	       &Gen[gencosti].cost_startup, &Gen[gencosti].cost_shutdown,
+	       &Gen[gencosti].cost_ncoeffs,
+	       &Gen[gencosti].cost_beta, &Gen[gencosti].cost_gamma);
+      } else if(num_max_cost_coeffs == 3) {
+	sscanf(line, "%d %lf %lf %d %lf %lf %lf", &Gen[gencosti].cost_model,
+	       &Gen[gencosti].cost_startup, &Gen[gencosti].cost_shutdown,
+	       &Gen[gencosti].cost_ncoeffs, &Gen[gencosti].cost_alpha,
+	       &Gen[gencosti].cost_beta, &Gen[gencosti].cost_gamma);
+      } else if(num_max_cost_coeffs == 4) {
+	sscanf(line, "%d %lf %lf %d %*lf %lf %lf %lf", &Gen[gencosti].cost_model,
+	       &Gen[gencosti].cost_startup, &Gen[gencosti].cost_shutdown,
+	       &Gen[gencosti].cost_ncoeffs, &Gen[gencosti].cost_alpha,
+	       &Gen[gencosti].cost_beta, &Gen[gencosti].cost_gamma);
+      } else {
 	bad_data = PETSC_TRUE;
-	ierr = PetscPrintf(ps->comm->type,"%sExaGO only supports quadratic cost curves. No quadratic cost curve coefficients found for generator with id %s at bus %d\n",bad_data_str,Gen[gencosti].id,Gen[gencosti].bus_i);
+	ierr = PetscPrintf(ps->comm->type,"%sExaGO can only read generator cost curves upto 3rd order. More than 4 coefficients found for cost curve of cost curve for generator with id %s at bus %d\n",bad_data_str,Gen[gencosti].id,Gen[gencosti].bus_i);
+	CHKERRQ(ierr);
+      }
+
+      /* Sanity check for generator cost function */
+      if(Gen[gencosti].cost_model != 2) {
+	bad_data = PETSC_TRUE;
+	ierr = PetscPrintf(ps->comm->type,"%sExaGO only supports generator cost curves modeled as quadratic function.. No quadratic cost curve function found for generator with id %s at bus %d\n",bad_data_str,Gen[gencosti].id,Gen[gencosti].bus_i);
+	CHKERRQ(ierr);
       }
 
       gencosti++;
@@ -937,6 +988,10 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
     if (i >= genfuel_start_line && i < genfuel_end_line) {
       if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
         continue;
+      if(temp_geni[isol_idx3] == i - genfuel_start_line) {
+	isol_idx3 += 1;
+	continue;
+      }
       if (strstr(line, "coal") != NULL) {
         Gen[genfueli].genfuel_type = GENFUEL_COAL;
         Gen[genfueli].ramp_rate_min = GENRAMPRATE_COAL / ps->MVAbase;
@@ -948,8 +1003,6 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
         Gen[genfueli].ramp_rate_min = GENRAMPRATE_WIND / ps->MVAbase;
         Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min * 10;
         Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min * 30;
-        Gen[genfueli].pb = 0.0; /* Set lower Pg limit to 0.0 so that wind power
-                                   can be curtailed if need be */
         ps->ngenwind++;
         ps->ngenrenew++;
         Gen[genfueli].isrenewable = PETSC_TRUE;
@@ -1001,6 +1054,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
 
       if((BusIsIsolated(Branch[bri].fbus,ps->nisolated_buses,ps->isolated_buses)) ||
 	 (BusIsIsolated(Branch[bri].tbus,ps->nisolated_buses,ps->isolated_buses))) continue; /* Skip branch connected to isolated bus */
+      
       ps->nline++;
       ps->Nline++;
 	  
@@ -1046,6 +1100,12 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
 
       /* MatPower does not have ids for lines. Using bri+1 as the id */
       snprintf(Branch[bri].ckt, 3, "%-2d", 1 + lineididx);
+
+      if(Branch[bri].rateA < 0.0) {
+	bad_data = PETSC_TRUE;
+	ierr = PetscPrintf(ps->comm->type,"%srateA = %4.3f for line %d -- %d  with id %s is negative\n",bad_data_str,Branch[bri].rateA,Branch[bri].fbus,Branch[bri].tbus,Branch[bri].ckt);
+	CHKERRQ(ierr);
+      }
 
       /* Compute self and transfer admittances */
       PetscScalar R, X, Bc, B, G, Zm, tap, shift, tap2, tapr, tapi;
@@ -1156,13 +1216,32 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
       /* MatPower does not have ids for lines. Using bri+1 as the id */
       snprintf(Branch[bri].ckt, 3, "%-2d", 1 + lineididx);
 
+      if(Branch[bri].pmax < Branch[bri].pmin) {
+	bad_data = PETSC_TRUE;
+	ierr = PetscPrintf(ps->comm->type,"%sPmax = %4.3f for DC line %d -- %d  with id %s is less than Pmin = %4.3f\n",bad_data_str,Branch[bri].pmax,Branch[bri].fbus,Branch[bri].tbus,Branch[bri].ckt,Branch[bri].pmin);
+	CHKERRQ(ierr);
+      }
+
+      if(Branch[bri].qmaxf < Branch[bri].qminf) {
+	bad_data = PETSC_TRUE;
+	ierr = PetscPrintf(ps->comm->type,"%sQmaxf = %4.3f for DC line %d -- %d  with id %s is less than Qminf = %4.3f\n",bad_data_str,Branch[bri].qmaxf,Branch[bri].fbus,Branch[bri].tbus,Branch[bri].ckt,Branch[bri].qminf);
+	CHKERRQ(ierr);
+      }
+
+      if(Branch[bri].qmaxt < Branch[bri].qmint) {
+	bad_data = PETSC_TRUE;
+	ierr = PetscPrintf(ps->comm->type,"%sQmaxt = %4.3f for DC line %d -- %d  with id %s is less than Qmint = %4.3f\n",bad_data_str,Branch[bri].qmaxt,Branch[bri].fbus,Branch[bri].tbus,Branch[bri].ckt,Branch[bri].qmint);
+	CHKERRQ(ierr);
+      }
+
+
       bri++;
     }
     
   }
 
   if(bad_data) {
-    SETERRQ(ps->comm->type,0,"Found errors in input data. Please fix the suggested errors");
+      SETERRQ(ps->comm->type,0,"Found errors in input data. Please fix the suggested errors");
   }
 
   fclose(fp);

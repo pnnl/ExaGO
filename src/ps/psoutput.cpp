@@ -221,9 +221,7 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
           break;
         case GENFUEL_UNDEFINED:
         default:
-          SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
-                  "Generator fuel type (%d) not understod", gfuel);
-          CHKERRQ(ierr);
+	  fprintf(fd, "\t\"other\"");
           break;
         }
         fprintf(fd, ";\n");

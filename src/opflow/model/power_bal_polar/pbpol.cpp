@@ -57,8 +57,8 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
     /* Bounds on bus variables */
     loc = bus->startxVloc;
 
-    xl[loc] = PETSC_NINFINITY;
-    xu[loc] = PETSC_INFINITY;
+    xl[loc] = -PETSC_PI;
+    xu[loc] = PETSC_PI;
 
     if (opflow->genbusvoltagetype == VARIABLE_WITHIN_BOUNDS) {
       xl[loc + 1] = bus->Vmin;
@@ -105,7 +105,15 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
 
       loc = gen->startxpowloc;
 
-      xl[loc] = gen->pb;     /* PGmin */
+      /* If generator is renewable then set the lower
+	 bound to 0 so that it can be curtailed if needed
+	 Note: Do this only if we have positive Pmax (pt)
+      */
+      if(gen->isrenewable && gen->pt > gen->pb) {
+	xl[loc] = 0.0;
+      } else {
+	xl[loc] = gen->pb;     /* PGmin */
+      }
       xu[loc] = gen->pt;     /* PGmax */
       xl[loc + 1] = gen->qb; /* QGmin */
       xu[loc + 1] = gen->qt; /* QGmax */
