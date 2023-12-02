@@ -1885,3 +1885,83 @@ PetscErrorCode PSSetGICData(PS ps, const char gicfile[]) {
   ps->gic_file_set = PETSC_TRUE;
   PetscFunctionReturn(0);
 }
+
+/*
+  PSSetSummaryStats - Computes summary stats for the solution
+
+  Inputs:
+. ps - the PS object
+*/
+PetscErrorCode PSComputeSummaryStats(PS ps) {
+  PSSystemSummary *sys_info = &ps->sys_info;
+  PetscInt i, k, l;
+  PSBUS bus;
+  PSGEN gen;
+  PSLOAD load;
+  PetscScalar Pgcap_tot;                /* Total generation capacity  */
+  PetscScalar PgcapON_tot;              /* Total generation capacity online */
+  PetscScalar PgON_tot, QgON_tot = 0.0; /* Total online generation */
+  PetscScalar Pd_tot, Qd_tot;           /* Total load */
+  PetscScalar Pdshed_tot, Qdshed_tot;   /* Total load shed */
+  PetscErrorCode ierr;
+  PetscScalar MVAbase = ps->MVAbase;
+
+  PetscFunctionBegin;
+
+  sys_info->Nbus = ps->Nbus;
+  sys_info->Ngen = ps->Ngen;
+  sys_info->NgenON = ps->NgenON;
+  sys_info->Nline = ps->Nline;
+  sys_info->NlineON = ps->NlineON;
+  sys_info->Nload = ps->Nload;
+
+  sys_info->total_genON[0] = sys_info->total_genON[1] = 0.0;
+  sys_info->total_pgencap = sys_info->total_pgencapON = 0.0;
+  sys_info->total_load[0] = sys_info->total_load[1] = 0.0;
+  sys_info->total_loadshed[0] = sys_info->total_loadshed[1] = 0.0;
+
+  PgON_tot = QgON_tot = Pgcap_tot = PgcapON_tot = Pd_tot = Qd_tot = Pdshed_tot =
+      Qdshed_tot = 0.0;
+
+  for (i = 0; i < ps->nbus; i++) {
+    bus = &ps->bus[i];
+
+    /* Total generation */
+    for (k = 0; k < bus->ngen; k++) {
+      ierr = PSBUSGetGen(bus, k, &gen);
+      CHKERRQ(ierr);
+      if (gen->status) {
+        PgON_tot += gen->pg;
+        QgON_tot += gen->qg;
+
+        PgcapON_tot += gen->pt;
+      }
+      Pgcap_tot += gen->pt;
+    }
+
+    /* Total load and load shed */
+    for (l = 0; l < bus->nload; l++) {
+      ierr = PSBUSGetLoad(bus, l, &load);
+      CHKERRQ(ierr);
+      Pd_tot += load->pl;
+      Qd_tot += load->ql;
+
+      Pdshed_tot += load->pl_loss;
+      Qdshed_tot += load->ql_loss;
+    }
+  }
+  sys_info->total_genON[0] = PgON_tot * MVAbase;
+  sys_info->total_genON[1] = QgON_tot * MVAbase;
+  sys_info->total_pgencap = Pgcap_tot * MVAbase;
+  sys_info->total_pgencapON = PgcapON_tot * MVAbase;
+
+  sys_info->total_load[0] = Pd_tot * MVAbase;
+  sys_info->total_load[1] = Qd_tot * MVAbase;
+
+  sys_info->total_loadshed[0] = Pdshed_tot * MVAbase;
+  sys_info->total_loadshed[1] = Qdshed_tot * MVAbase;
+
+  MPI_Barrier(ps->comm->type);
+
+  PetscFunctionReturn(0);
+}

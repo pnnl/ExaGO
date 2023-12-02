@@ -472,4 +472,7 @@ extern PetscErrorCode PSSetGenDispatchandStatus(PS, PetscInt, PetscInt,
 extern PetscErrorCode PSApplyScenario(PS, Scenario);
 extern PetscErrorCode PSGetKVLevels(PS, PetscInt *, const PetscScalar **);
 extern PetscErrorCode PSReadGICData(PS);
+
+extern PetscErrorCode PSComputeSummaryStats(PS);
+
 #endif

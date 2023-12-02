@@ -22,9 +22,11 @@ struct OpflowFunctionalityTestParameters {
   double power_imbalance_penalty = 1000.0;
   std::string description = "";
   int hiop_verbosity_level = 0;
+#ifdef EXAGO_ENABLE_HIOP
   std::string hiop_compute_mode =
       OPFLOWOptions::hiop_compute_mode.default_value;
   std::string hiop_mem_space = OPFLOWOptions::hiop_mem_space.default_value;
+#endif
   std::string initialization_string = "MIDPOINT";
   OPFLOWInitializationType initialization_type;
 
@@ -57,8 +59,10 @@ struct OpflowFunctionalityTestParameters {
     set_if_found(load_loss_penalty, values, "load_loss_penalty");
     set_if_found(power_imbalance_penalty, values, "power_imbalance_penalty");
     set_if_found(initialization_string, values, "initialization_type");
+#if defined(EXAGO_ENABLE_HIOP)
     set_if_found(hiop_compute_mode, values, "hiop_compute_mode");
     set_if_found(hiop_mem_space, values, "hiop_mem_space");
+#endif
     set_if_found(iter_range, values, "iter_range");
 
     if (gen_bus_voltage_string == "VARIABLE_WITHIN_BOUNDS") {
@@ -138,9 +142,11 @@ struct OpflowFunctionalityTests
     testcase["load_loss_penalty"] = params.load_loss_penalty;
     testcase["power_imbalance_penalty"] = params.power_imbalance_penalty;
     testcase["initialization_type"] = params.initialization_type;
+#if defined(EXAGO_ENABLE_HIOP)
     testcase["hiop_compute_mode"] = params.hiop_compute_mode;
     testcase["hiop_mem_space"] = params.hiop_mem_space;
     testcase["hiop_verbosity_level"] = params.hiop_verbosity_level;
+#endif
     testcase["iter_range"] = params.iter_range;
     testcase["obj_value"] = params.expected_obj_value;
     testcase["observed_obj_value"] = params.obj_value;
@@ -165,8 +171,10 @@ struct OpflowFunctionalityTests
     ierr = OPFLOWCreate(comm, &opflow);
     ExaGOCheckError(ierr);
 
+#if defined(EXAGO_ENABLE_HIOP)
     ierr = OPFLOWSetHIOPVerbosityLevel(opflow, params.hiop_verbosity_level);
     ExaGOCheckError(ierr);
+#endif
 
     ierr = OPFLOWSetTolerance(opflow, params.tolerance);
     ExaGOCheckError(ierr);
@@ -211,12 +219,14 @@ struct OpflowFunctionalityTests
     ierr = OPFLOWSetUp(opflow);
     ExaGOCheckError(ierr);
 
+#if defined(EXAGO_ENABLE_HIOP)
     if (params.solver == "HIOP") {
       ierr = OPFLOWSetHIOPComputeMode(opflow, params.hiop_compute_mode);
       ExaGOCheckError(ierr);
       ierr = OPFLOWSetHIOPMemSpace(opflow, params.hiop_mem_space);
       ExaGOCheckError(ierr);
     }
+#endif
 
     ierr = OPFLOWSolve(opflow);
     ExaGOCheckError(ierr);
