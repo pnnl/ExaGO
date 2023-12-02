@@ -40,4 +40,6 @@ struct _p_PFLOW {
                                       */
 };
 
+extern PetscErrorCode PFLOWSetSummaryStats(PFLOW);
+
 #endif

@@ -698,9 +698,15 @@ PetscErrorCode PFLOWSetInitialGuess(PFLOW pflow, Vec X) {
 */
 PetscErrorCode PFLOWSolve(PFLOW pflow) {
   SNESConvergedReason reason;
+  PetscReal real1 = 0.0, real2 = 0.0;
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
+
+  ierr = PetscTime(&real1);
+  CHKERRQ(ierr);
+
+
   if (!pflow->setupcalled) {
     ierr = PFLOWSetUp(pflow);
     CHKERRQ(ierr);
@@ -720,6 +726,12 @@ PetscErrorCode PFLOWSolve(PFLOW pflow) {
   ierr = SNESGetConvergedReason(pflow->snes, &reason);
   CHKERRQ(ierr);
   pflow->converged = reason < 0 ? PETSC_FALSE : PETSC_TRUE;
+
+  ierr = PetscTime(&real2);
+  CHKERRQ(ierr);
+
+  pflow->ps->solve_real_time = real2 - real1;
+
   PetscFunctionReturn(0);
 }
 
@@ -1076,7 +1088,9 @@ PetscErrorCode PFLOWSolutionToPS(PFLOW pflow) {
   CHKERRQ(ierr);
   ierr = PetscLogFlops(flps);
   CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+
+  ierr = PFLOWSetSummaryStats(pflow);
+  CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -1128,6 +1142,9 @@ PetscErrorCode PFLOWPrintSolution(PFLOW pflow) {
   CHKERRQ(ierr);
   ierr = PetscPrintf(pflow->comm->type, "%-35s %-6d\n", "Number of iterations",
                      its);
+  CHKERRQ(ierr);
+  ierr = PetscPrintf(pflow->comm->type, "%-35s %-4.3f\n", "Solve Time (sec)",
+                     pflow->ps->solve_real_time);
   CHKERRQ(ierr);
 
   ierr = PetscPrintf(pflow->comm->type, "\n");
@@ -1637,5 +1654,23 @@ PetscErrorCode PFLOWSaveSolutionDefault(PFLOW pflow, const char outfile[]) {
 PetscErrorCode PFLOWSetOutputFormat(PFLOW pflow, OutputFormat otype) {
   PetscFunctionBegin;
   pflow->outputformat = otype;
+  PetscFunctionReturn(0);
+}
+
+/*
+  PFLOWSetSummaryStats - Sets the summary stats for the PFLOW run
+
+  Inputs:
+. pflow - the PFLOW object
+*/
+PetscErrorCode PFLOWSetSummaryStats(PFLOW pflow) {
+  PetscErrorCode ierr;
+  PS ps = pflow->ps;
+
+  PetscFunctionBegin;
+
+  ierr = PSComputeSummaryStats(ps);
+  CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
