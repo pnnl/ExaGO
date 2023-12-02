@@ -17,7 +17,6 @@ int main(int argc, char **argv) {
   char appname[] = "pflow";
   const char default_output_name[] = "pflowout";
 
-
   ierr = ExaGOInitialize(comm, &argc, &argv, appname, help);
   if (ierr) {
     fprintf(stderr, "Could not initialize ExaGO application %s\n", appname);

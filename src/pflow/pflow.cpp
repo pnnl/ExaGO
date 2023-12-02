@@ -706,7 +706,6 @@ PetscErrorCode PFLOWSolve(PFLOW pflow) {
   ierr = PetscTime(&real1);
   CHKERRQ(ierr);
 
-
   if (!pflow->setupcalled) {
     ierr = PFLOWSetUp(pflow);
     CHKERRQ(ierr);
