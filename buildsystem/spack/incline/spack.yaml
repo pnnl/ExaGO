@@ -57,7 +57,7 @@ spack:
     hiop:
     # TODO - build with Ginkgo #463
     # TODO - updgrade to develop / 1.0.0 #28
-      require: '@1.0.0+sparse+mpi+raja+rocm~ginkgo+kron'
+      require: '@develop+sparse+mpi+raja+rocm~ginkgo+kron'
     ipopt:
       require: '@3.12.10~metis+coinhsl~mumps'
     # Pin version of OpenBlas for testing results
@@ -73,7 +73,7 @@ spack:
       require: '@2.6.2'
     # See !495
     petsc:
-      require: "@3.18.6~hypre~superlu-dist~hdf5~metis"
+      require: "@3.20.1~hypre~superlu-dist~hdf5~metis"
     binutils:
       variants: +ld +gold +headers +libiberty ~nls
     elfutils:

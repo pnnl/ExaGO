@@ -7,7 +7,7 @@
 #SBATCH -J exago_spack
 #SBATCH -o spack_install.%J.output
 #SBATCH -e spack_install.%J.output
-#SBTACH -t 240
+#SBATCH -t 240
 
 exit() {
   # Clear all trap handlers so this isn't echo'ed multiple times, potentially
@@ -46,11 +46,13 @@ export MY_CLUSTER=incline
 cp /qfs/projects/exasgd/src/coinhsl-archive-2019.05.21.tar.gz . &&
 . buildsystem/spack/load_spack.sh &&
 spack develop --no-clone --path=$(pwd) exago@develop &&
-# spack develop --clone --force FORCE --path=$(pwd)/hiop hiop@develop &&
-# cd $(pwd)/hiop &&
-# git submodule update --init --recursive &&
-# cd - &&
-buildsystem/spack/configure_modules.sh 24
+mkdir hiop_dev
+spack develop --clone --force FORCE --path=$(pwd)/hiop_dev hiop@develop &&
+cd hiop_dev &&
+git submodule update --init --recursive &&
+#git checkout develop && #test out patch 
+cd - &&
+buildsystem/spack/configure_modules.sh 20
 
 EXIT_CODE=$?
 # Required to trigger trap handler

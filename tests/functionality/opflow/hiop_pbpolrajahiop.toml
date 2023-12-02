@@ -23,8 +23,8 @@ network = 'datafiles/case9/case9mod.m'
 description = 'datafiles/case9/case9mod.m base case'
 is_loadloss_active = false
 is_powerimb_active = false
-num_iters = 10              #usually 10 or 11
-iter_range = 1
+num_iters = 10              #usually 10 or 12
+iter_range = 2
 obj_value = 4.1444511e+03
 
 [[testcase]]
@@ -33,7 +33,8 @@ description = "datafiles/case9/case9mod.m initialization DCOPF"
 is_loadloss_active =	false
 is_powerimb_active =	false
 initialization_type = "DCOPF"
-num_iters = 8
+num_iters = 8               #usually 8 or 10
+iter_range = 2
 obj_value = 4144.46075933
 
 [[testcase]]
@@ -42,8 +43,8 @@ description = "datafiles/case118.m initialization DCOPF"
 is_loadloss_active =	false
 is_powerimb_active =	false
 initialization_type = "DCOPF"
-num_iters = 15             #usually 15 or 18
-iter_range = 3
+num_iters = 15             #usually 15 or 19
+iter_range = 4
 obj_value = 129660.692271
 
 [[testcase]]

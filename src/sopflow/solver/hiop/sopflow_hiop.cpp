@@ -164,7 +164,7 @@ extern PetscErrorCode SOPFLOWUpdateOPFLOWVariableBounds(OPFLOW, Vec, Vec,
 /* Note: x only holds the coupled variables which, in this case, are the
    generator real power variables for the base-case
 */
-bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
+bool SOPFLOWHIOPInterface::eval_f_rterm(hiop::size_type idx, const int &n,
                                         const double *x, double &rval) {
   (void)n;
   PetscErrorCode ierr;
@@ -283,7 +283,8 @@ bool SOPFLOWHIOPInterface::eval_f_rterm(size_t idx, const int &n,
   return true;
 }
 
-bool SOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int &n, double *x,
+bool SOPFLOWHIOPInterface::eval_grad_rterm(hiop::size_type idx, const int &n,
+                                           double *x,
                                            hiop::hiopVector &gradvec) {
   (void)idx;
   (void)n;
@@ -349,11 +350,11 @@ bool SOPFLOWHIOPInterface::eval_grad_rterm(size_t idx, const int &n, double *x,
   return true;
 }
 
-size_t SOPFLOWHIOPInterface::get_num_rterms() const {
+hiop::size_type SOPFLOWHIOPInterface::get_num_rterms() const {
   return (sopflow->Ns * sopflow->Nc) - 1;
 }
 
-size_t SOPFLOWHIOPInterface::get_num_vars() const {
+hiop::size_type SOPFLOWHIOPInterface::get_num_vars() const {
   return sopflow->opflow0->nx;
 }
 

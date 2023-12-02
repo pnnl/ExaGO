@@ -41,7 +41,7 @@ spack:
     exago:
       require: +raja+hiop+ipopt
     hiop:
-      require: '@1.0.0+sparse+mpi+ginkgo+kron+cusolver_lu'
+      require: '@develop+sparse+mpi+ginkgo+kron+cusolver_lu'
     coinhsl:
       require: '@2019.05.21'
     ipopt:

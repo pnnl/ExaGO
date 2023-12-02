@@ -59,8 +59,7 @@ spack:
     exago:
       require: ~python+raja+hiop+rocm+ipopt
     hiop:
-      require: +sparse+mpi+raja+rocm+ginkgo+kron
-      version: [0.7.2]
+      require: '@develop+sparse+mpi+raja+rocm+ginkgo+kron'
     ipopt:
       require: '@3.12.10~metis+coinhsl~mumps'
     # Pin OpenBlas version for consistent test results.
