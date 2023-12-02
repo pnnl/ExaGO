@@ -15,6 +15,8 @@ int main(int argc, char **argv) {
   PetscLogStage read, setup, solve;
   MPI_Comm comm = MPI_COMM_WORLD;
   char appname[] = "pflow";
+  const char default_output_name[] = "pflowout";
+
 
   ierr = ExaGOInitialize(comm, &argc, &argv, appname, help);
   if (ierr) {
@@ -31,7 +33,7 @@ int main(int argc, char **argv) {
 
   ierr = PetscOptionsGetBool(NULL, NULL, "-print_output", &print_output, NULL);
   ExaGOCheckError(ierr);
-  ierr = PetscOptionsGetString(NULL, NULL, "-output_file", output_name,
+  ierr = PetscOptionsGetString(NULL, NULL, "-save_output", output_name,
                                PETSC_MAX_PATH_LEN, &save_output);
   ExaGOCheckError(ierr);
 
@@ -89,8 +91,18 @@ int main(int argc, char **argv) {
   }
 
   if (save_output) {
-    ierr = PFLOWSaveSolutionDefault(pflow, output_name);
-    ExaGOCheckError(ierr);
+    // deal with "-save_output 0/1" (the way it used to be)
+    if (strlen(output_name) == 1 && output_name[0] == '1') {
+      strncpy(output_name, default_output_name, PETSC_MAX_PATH_LEN);
+    } else if (strlen(output_name) == 1 && output_name[0] == '0') {
+      save_output = PETSC_FALSE;
+    } else if (strlen(output_name) == 0) {
+      strncpy(output_name, default_output_name, PETSC_MAX_PATH_LEN);
+    }
+    if (save_output) {
+      ierr = PFLOWSaveSolutionDefault(pflow, output_name);
+      ExaGOCheckError(ierr);
+    }
   }
 
   /* Destroy PFLOW object */
