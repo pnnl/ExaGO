@@ -1,8 +1,10 @@
 FROM ghcr.io/pnnl/exago:exago-develop-x436raytwpfhkihapsbpto3jd3dpfyqg.spack
 # Copy requirements.txt
 #COPY requirements.txt ${LAMBDA_TASK_ROOT}
- 
+ #Define lambda task root
+ENV LAMBDA_TASK_ROOT /var/task
 # Copy function code
+RUN  mkdir -p ${LAMBDA_TASK_ROOT}
 COPY lambda_handler.py ${LAMBDA_TASK_ROOT}
 ADD python_wrapper ${LAMBDA_TASK_ROOT}/python_wrapper
  
@@ -18,6 +20,9 @@ RUN apt-get -yqq update && apt-get -yqq upgrade \
 RUN pip install --upgrade pip
 #RUN pip install -r ${LAMBDA_TASK_ROOT}/requirements.txt
 RUN pip install awslambdaric
+# Make port 9000 available to the world outside this container
+EXPOSE 9000
+#ADD aws-lambda-rie /usr/local/bin/aws-lambda-rie
 ENTRYPOINT ["python", "-m", "awslambdaric"]
 ENV PYTHONPATH "${PYTHONPATH}:/usr/local/lib/python3.10/dist-packages"
  

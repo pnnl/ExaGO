@@ -1,4 +1,4 @@
-import boto3
+import boto
 import subprocess
 import os
 import exago
