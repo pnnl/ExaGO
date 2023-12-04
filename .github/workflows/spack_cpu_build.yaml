@@ -1,18 +1,86 @@
-name: Spack CPU Builds
+# https://spack.readthedocs.io/en/latest/binary_caches.html#spack-build-cache-for-github-actions
+name: Spack Ubunutu x86_64 Buildcache
+
+env:
+  SPACK_COLOR: always
+  REGISTRY: ghcr.io/pnnl
+  # Our repo name contains upper case characters, so we can't use ${{ github.repository }}
+  IMAGE_NAME: exago
+  USERNAME: exago-bot
+  BASE_VERSION: ubuntu-22.04-fortran
 
 # Until we remove the need to clone submodules to build, this should on be in PRs
 on: [pull_request]
 
 jobs:
+  base_image_build:
+    runs-on: ubuntu-22.04
+    permissions:
+      packages: write
+      contents: read
+
+    name: Build Custom Base Image
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Once we move submodule deps into spack, we can do some more builds
+          # Also need to change build script to use spack from base image
+          submodules: true
+
+      # Need to build custom base image with gfortran
+      - name: Create Dockerfile heredoc
+        run: |
+          cat << EOF > Dockerfile
+          FROM ubuntu:22.04
+          RUN apt-get update && \
+              apt-get install -y --no-install-recommends \
+                software-properties-common \
+                gpg-agent \
+                openssh-client \
+                openssh-server \
+              && rm -rf /var/lib/apt/lists/*
+          RUN add-apt-repository ppa:ubuntu-toolchain-r/test && \
+              apt-get install -y --no-install-recommends \
+                gfortran \
+                gcc \
+                libstdc++6 \
+              && rm -rf /var/lib/apt/lists/*
+          EOF
+
+      # https://docs.github.com/en/actions/publishing-packages/publishing-docker-images
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.USERNAME }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          labels: org.opencontainers.image.version=${{ env.BASE_VERSION }}
+
+      - name: Build and push Docker base image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BASE_VERSION }}
+          labels: ${{ steps.meta.outputs.labels }}
+
   exago_spack_builds:
-    # 20.04 is a version shared by E4S cache and Spack binaries for x86_64
-    runs-on: ubuntu-20.04
-    # This seems redundant if we use a spack submodule?
-    container: spack/ubuntu-focal:latest
+    needs: base_image_build
+    runs-on: ubuntu-22.04
+    permissions:
+      packages: write
+      contents: read
+    
     strategy:
       matrix:
-        # Minimal Build(s)
-        # Need S3 mirror to have these builds speedup
+        # Minimal Build(s) - GHCR mirror speeds these up a lot!
         spack_spec:
           # See #39 - ~python~mpi causes issues
         # - exago@develop~mpi~ipopt~hiop~python~raja
@@ -30,23 +98,51 @@ jobs:
     name: Build ExaGO with Spack
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           # Once we move submodule deps into spack, we can do some more builds
           # Also need to change build script to use spack from base image
           submodules: true
-
-      - name: Build Environment
-        env:
-          SPACK_SPEC: ${{ matrix.spack_spec }}
+      
+      - name: Setup Spack
+        run: echo "$PWD/tpl/spack/bin" >> "$GITHUB_PATH"
+      
+      - name: Create heredoc spack.yaml
         run: |
-          ls && pwd
-          . ./tpl/spack/share/spack/setup-env.sh
-          spack debug report
-          spack env create -d ./spack-env
-          spack env activate ./spack-env
-          spack add $SPACK_SPEC target=x86_64
-          spack develop --path $(pwd) --no-clone exago@develop
-          spack concretize --reuse
-          git config --global --add safe.directory $(pwd)
-          spack --stacktrace install --fail-fast
+          cat << EOF > spack.yaml
+          spack:
+            specs:
+            - ${{ matrix.spack_spec }} target=x86_64_v2
+            concretizer:
+              reuse: dependencies
+            config:
+              install_tree:
+                root: /opt/spack
+                padded_length: 128
+            mirrors:
+              local-buildcache: oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+              spack: https://binaries.spack.io/develop
+
+      - name: Configure GHCR mirror
+        run: spack -e . mirror set --oci-username ${{ env.USERNAME }} --oci-password "${{ secrets.GITHUB_TOKEN }}" local-buildcache
+      
+      - name: Trust keys
+        run: spack -e . buildcache keys --install --trust
+      
+      - name: Find external packages
+        run: spack -e . external find --all --exclude python
+      
+      - name: Spack develop exago
+        run: spack -e . develop --path=$(pwd) exago@develop
+
+      - name: Concretize
+        run: spack -e . concretize
+  
+      - name: Install
+        run: spack -e . install --no-check-signature
+      
+      # Push with force to override existing binaries...
+      - name: Push to binaries to buildcache
+        run: |
+          spack -e . buildcache push --force --base-image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BASE_VERSION }} --unsigned --update-index local-buildcache
+        if: ${{ !cancelled() }}

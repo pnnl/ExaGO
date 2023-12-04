@@ -28,3 +28,12 @@ The build info for this container is in `.devcontainer/`. There is a Dockerfile 
 1. once the conatiner has build and launched, open `docs/devcontainer/tutorial.ipynb`
 1. select the (newly built) existing jupyter kernel "ExaGO"
 1. run all cells!
+
+## Devcontainer Quickstart
+
+A devcontainer is configured through three things here:
+- `create_dockerfile.sh` generates the Dockerfile, and needs to be run from ExaGO root with spack submodule cloned with `$ .devcontainer/create_dockerfile.sh`. Note that this currently uses sed commands that only work on Mac shell... so hopefully the Dockerfile is easy enough to fix if slightly broken, but ideally we also have CI for this.
+- `Dockerfile` which is generated from the above bash script, and defines a container with ExaGO. Currently this build takes 1.5 hours, but ideally this is cached and successfully pulled from CI builds.
+- `devcontainer.json` is unfortunately a json that forbids comments, however should be self-explanatory. You can define extensions to load here which is really helpful for common environments, and you also mount the local folder so you can play with ExaGO clone in container easily.
+
+Note - pushing/pulling from git is not supported in a devcontainer, and should be done independently.

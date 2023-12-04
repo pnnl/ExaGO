@@ -24,7 +24,7 @@ any existing installations unusable due to changes in the hashing algorithm.
 
 Spack modules are automatically rebuilt via CI pipelines for a cluster when a commit message includes `[<clustername>-rebuild]` where `<clustername>` is one of the following [newell, deception, ascent].
 
-See the [developer guidelines](./docs/developer_guidelines.md) for a general workflow outline.
+See the [developer guidelines](../../docs/developer_guidelines.md) for a general workflow outline.
 
 Once a build is finished, a new commit is pushed to the branch with a commit message with `[<clustername>-test]`, where tests are run only for that platform. If you want all of CI to be re-run after a specific platform test, you may have to push another empty commit, or re-run CI manually.
 ## General Workflow
