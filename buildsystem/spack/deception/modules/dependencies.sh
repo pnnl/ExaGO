@@ -73,14 +73,14 @@ module load mpfr/4.2.0-gcc-9.1.0-2d5o4yj
 module load suite-sparse/5.13.0-gcc-9.1.0-aytsg72
 # umpire@=6.0.0%gcc@=9.1.0+c+cuda~device_alloc~deviceconst~examples~fortran~ipo~numa~openmp~rocm~shared build_system=cmake build_type=Release cuda_arch=60,70,75,80 generator=make tests=none arch=linux-centos7-zen2
 module load umpire/6.0.0-gcc-9.1.0-zh3kabb
-# hiop@=develop%gcc@=9.1.0+cuda~cusolver_lu~deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=MinSizeRel cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/26233/spack_deception/hiop_dev generator=make arch=linux-centos7-zen2
-module load hiop/develop-gcc-9.1.0-kllcazs
+# hiop@=develop%gcc@=9.1.0+cuda~cusolver_lu~deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=MinSizeRel cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/26535/spack_deception/hiop_dev generator=make arch=linux-centos7-zen2
+module load hiop/develop-gcc-9.1.0-v5bgi52
 # ipopt@=3.12.10%gcc@=9.1.0+coinhsl~debug~metis~mumps build_system=autotools arch=linux-centos7-zen2
 module load ipopt/3.12.10-gcc-9.1.0-li7gpqb
 # python@=3.9.12%gcc@=9.1.0+bz2+crypt+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tkinter+uuid+zlib build_system=generic patches=0d98e93,4c24573,ebdca64,f2fd060 arch=linux-centos7-zen2
 module load python/3.9.12-gcc-9.1.0-a5w6cuq
-# petsc@=3.20.1%gcc@=9.1.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~sycl~tetgen~trilinos~valgrind build_system=generic clanguage=C memalign=none arch=linux-centos7-zen2
-module load petsc/3.20.1-gcc-9.1.0-llz33ok
+# petsc@=3.20.2%gcc@=9.1.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~sycl~tetgen~trilinos~valgrind build_system=generic clanguage=C memalign=none arch=linux-centos7-zen2
+module load petsc/3.20.2-gcc-9.1.0-orrankw
 # py-pip@=23.1.2%gcc@=9.1.0 build_system=generic arch=linux-centos7-zen2
 module load py-pip/23.1.2-gcc-9.1.0-pvy73ms
 # py-setuptools@=68.0.0%gcc@=9.1.0 build_system=generic arch=linux-centos7-zen2
@@ -89,8 +89,8 @@ module load py-setuptools/68.0.0-gcc-9.1.0-fef5ebz
 module load py-wheel/0.41.2-gcc-9.1.0-ycwjnxk
 # py-cython@=0.29.36%gcc@=9.1.0 build_system=python_pip patches=c4369ad arch=linux-centos7-zen2
 module load py-cython/0.29.36-gcc-9.1.0-lhxhitm
-# py-mpi4py@=3.1.4%gcc@=9.1.0 build_system=python_pip arch=linux-centos7-zen2
-module load py-mpi4py/3.1.4-gcc-9.1.0-y5dj2ru
+# py-mpi4py@=3.1.5%gcc@=9.1.0 build_system=python_pip arch=linux-centos7-zen2
+module load py-mpi4py/3.1.5-gcc-9.1.0-7xg3hnu
 # py-flit-core@=3.9.0%gcc@=9.1.0 build_system=python_pip arch=linux-centos7-zen2
 module load py-flit-core/3.9.0-gcc-9.1.0-tgih3ig
 # git@=2.37.3%gcc@=9.1.0+man+nls+perl+subtree~svn~tcltk build_system=autotools arch=linux-centos7-zen2
@@ -125,5 +125,5 @@ module load py-hatch-vcs/0.3.0-gcc-9.1.0-hwwyqic
 module load py-iniconfig/2.0.0-gcc-9.1.0-raa2jbg
 # py-pytest@=7.3.2%gcc@=9.1.0 build_system=python_pip arch=linux-centos7-zen2
 module load py-pytest/7.3.2-gcc-9.1.0-2nh22mh
-# exago@=develop%gcc@=9.1.0+cuda+hiop~ipo+ipopt+logging+mpi+python+raja~rocm build_system=cmake build_type=Debug cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/26233/spack_deception generator=make arch=linux-centos7-zen2
-## module load exago/develop-gcc-9.1.0-27tyuch
+# exago@=develop%gcc@=9.1.0+cuda+hiop~ipo+ipopt+logging+mpi+python+raja~rocm build_system=cmake build_type=MinSizeRel cuda_arch=60,70,75,80 dev_path=/people/svcexasgd/gitlab/26535/spack_deception generator=make arch=linux-centos7-zen2
+## module load exago/develop-gcc-9.1.0-tk4zxrz
