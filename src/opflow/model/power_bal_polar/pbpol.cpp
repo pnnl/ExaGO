@@ -1015,10 +1015,17 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow, Vec X,
       Sf2 = Pf * Pf + Qf * Qf;
       St2 = Pt * Pt + Qt * Qt;
 
-      g[gloc] = Sf2;
-      g[gloc + 1] = St2;
+      PetscInt loc;
+      PetscScalar xsft_slack = 0.0, xstf_slack = 0.0;
+      loc = line->startxslackloc;
+      // Slack variables for from and to side
+      xsft_slack = x[loc];
+      xstf_slack = x[loc + 1];
 
-      flps += 158.0;
+      g[gloc] = Sf2 - xsft_slack;
+      g[gloc + 1] = St2 - xstf_slack;
+
+      flps += 160.0;
     }
   }
 
@@ -1037,7 +1044,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,
   PetscInt i, k, flps = 0;
   PetscInt row[2], col[4];
   PetscInt rstart, rend;
-  PetscInt gloc, xlocf, xloct;
+  PetscInt loc, gloc, xlocf, xloct;
   PetscScalar val[4];
   PetscScalar Gff, Bff, Gft, Bft, Gtf, Btf, Gtt, Btt;
   PetscScalar Vmf, Vmt, thetaf, thetat, thetaft, thetatf;
@@ -1163,6 +1170,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,
     for (i = 0; i < opflow->nlinesmon; i++) {
       line = &ps->line[opflow->linesmon[i]];
 
+      loc = line->startxslackloc;
       gloc = line->startineqloc;
 
       Gff = line->yff[0];
@@ -1238,11 +1246,13 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,
       col[1] = xlocf + 1;
       col[2] = xloct;
       col[3] = xloct + 1;
+      col[4] = loc;
       val[0] = dSf2_dthetaf;
       val[1] = dSf2_dVmf;
       val[2] = dSf2_dthetat;
       val[3] = dSf2_dVmt;
-      ierr = MatSetValues(Ji, 1, row, 4, col, val, ADD_VALUES);
+      val[4] = -1;
+      ierr = MatSetValues(Ji, 1, row, 5, col, val, ADD_VALUES);
       CHKERRQ(ierr);
 
       dSt2_dthetaf = dSt2_dPt * dPt_dthetaf + dSt2_dQt * dQt_dthetaf;
@@ -1255,11 +1265,13 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,
       col[1] = xloct + 1;
       col[2] = xlocf;
       col[3] = xlocf + 1;
+      col[4] = loc + 1;
       val[0] = dSt2_dthetat;
       val[1] = dSt2_dVmt;
       val[2] = dSt2_dthetaf;
       val[3] = dSt2_dVmf;
-      ierr = MatSetValues(Ji, 1, row, 4, col, val, ADD_VALUES);
+      val[4] = -1;
+      ierr = MatSetValues(Ji, 1, row, 5, col, val, ADD_VALUES);
       CHKERRQ(ierr);
     }
     flps += opflow->nlinesmon *
@@ -1313,10 +1325,12 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow, Vec X,
     if(opflow->allow_lineflow_violation) {
       loc = line->startxslackloc;
       // Slack variables for from and to side
-      PetscScalar xsft_slack=0.0,xstf_slack=0.0;
+      PetscScalar xsft_slack = 0.0, xstf_slack = 0.0;
       xsft_slack = x[loc];
-      xstf_slack = x[loc+1];
+      xstf_slack = x[loc + 1];
       // ADD OBJECTIVE HERE
+      *obj += opflow->lineflow_penalty * (xsft_slack + xstf_slack);
+      flps += 2.0;
     }
   }
 
@@ -1410,6 +1424,10 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
     if(opflow->allow_lineflow_violation) {
       loc = line->startxslackloc;
       // ADD GRADIENT HERE
+      df[loc    ] = opflow->lineflowviolation_penalty
+      df[loc + 1] = opflow->lineflowviolation_penalty
+
+      flps += 0.0;
     }
   }
 
