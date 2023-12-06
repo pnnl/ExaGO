@@ -817,8 +817,8 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
       OPFLOWOptions::ignore_lineflow_constraints.default_value;
   opflow->allow_lineflow_violation =
     OPFLOWOptions::allow_lineflow_violation.default_value;
-  opflow->lineflow_penalty =
-    OPFLOWOptions::lineflow_penalty.default_value;
+  opflow->lineflow_violation_penalty =
+    OPFLOWOptions::lineflow_violation_penalty.default_value;
   opflow->include_loadloss_variables =
       OPFLOWOptions::include_loadloss_variables.default_value;
   opflow->include_powerimbalance_variables =
@@ -1547,9 +1547,9 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
     CHKERRQ(ierr);
 
     /* Line flow penalty */
-    ierr = PetscOptionsReal(OPFLOWOptions::lineflow_penalty.opt.c_str(),
-                            OPFLOWOptions::lineflow_penalty.desc.c_str(), "",
-                            opflow->lineflow_penalty, &opflow->lineflow_penalty,
+    ierr = PetscOptionsReal(OPFLOWOptions::lineflow_violation_penalty.opt.c_str(),
+                            OPFLOWOptions::lineflow_violation_penalty.desc.c_str(), "",
+                            opflow->lineflow_violation_penalty, &opflow->lineflow_violation_penalty,
                             NULL);
 
     ierr =
@@ -2904,9 +2904,9 @@ PetscErrorCode OPFLOWGetAllowLineFlowViolation(OPFLOW opflow,
  * @note Must be called before OPFLOWSetUp
 
 */
-PetscErrorCode OPFLOWSetLineFLowPenalty(OPFLOW opflow, PetscReal penalty) {
+PetscErrorCode OPFLOWSetLineFlowViolationPenalty(OPFLOW opflow, PetscReal penalty) {
   PetscFunctionBegin;
-  opflow->lineflow_penalty = penalty;
+  opflow->lineflow_violation_penalty = penalty;
   PetscFunctionReturn(0);
 }
 
@@ -2916,9 +2916,9 @@ PetscErrorCode OPFLOWSetLineFLowPenalty(OPFLOW opflow, PetscReal penalty) {
  * @param [in] opflow the OPFLOW object
  * @param [out] penalty set for line flow limit violation
  */
-PetscErrorCode OPFLOWGetLineFlowPenalty(OPFLOW opflow, PetscReal *penalty) {
+PetscErrorCode OPFLOWGetLineFlowViolationPenalty(OPFLOW opflow, PetscReal *penalty) {
   PetscFunctionBegin;
-  *penalty = opflow->lineflow_penalty;
+  *penalty = opflow->lineflow_violation_penalty;
   PetscFunctionReturn(0);
 }
 
