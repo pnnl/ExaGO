@@ -1064,7 +1064,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,
   PSGEN gen;
   const PetscScalar *x;
   PetscScalar Pg, delPg, delP;
-  PetscInt xloc, loc;
+  PetscInt xloc;
   PetscScalar V, Vset, Q, Qmax, Qmin, Qg;
 
   PetscFunctionBegin;
@@ -1329,7 +1329,7 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow, Vec X,
       xsft_slack = x[loc];
       xstf_slack = x[loc + 1];
       // ADD OBJECTIVE HERE
-      *obj += opflow->lineflow_penalty * (xsft_slack + xstf_slack);
+      *obj += opflow->lineflowviolation_penalty * (xsft_slack + xstf_slack);
       flps += 2.0;
     }
   }

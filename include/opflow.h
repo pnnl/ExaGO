@@ -137,8 +137,8 @@ const auto ignore_lineflow_constraints =
 const auto allow_lineflow_violation =
     ExaGOBoolOption("-opflow_allow_lineflow_violation",
                     "Allow line flow limit violation?", PETSC_FALSE);
-const auto lineflow_violation_penalty =
-    ExaGORealOption("-opflow_lineflow_violation_penalty", "Penalty for line flow limit violation", 1e2);
+const auto lineflowviolation_penalty =
+    ExaGORealOption("-opflow_lineflowviolation_penalty", "Penalty for line flow limit violation", 1e2);
   
 const auto include_loadloss_variables =
     ExaGOBoolOption("-opflow_include_loadloss_variables",

@@ -235,7 +235,7 @@ struct _p_OPFLOW {
 
   PetscBool ignore_lineflow_constraints; /* Ignore line flow constraints */
   PetscBool allow_lineflow_violation; /* Allow line flow violation */
-  PetscReal lineflow_violation_penalty; /* Penalty for exceeding line flow limits */
+  PetscReal lineflowviolation_penalty; /* Penalty for exceeding line flow limits */
   
   PetscBool include_loadloss_variables; /* Include variables for loadloss */
   PetscReal loadloss_penalty;
