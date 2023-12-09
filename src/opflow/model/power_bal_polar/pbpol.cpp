@@ -1424,8 +1424,8 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
     if(opflow->allow_lineflow_violation) {
       loc = line->startxslackloc;
       // ADD GRADIENT HERE
-      df[loc    ] = opflow->lineflowviolation_penalty
-      df[loc + 1] = opflow->lineflowviolation_penalty
+      df[loc    ] = opflow->lineflowviolation_penalty;
+      df[loc + 1] = opflow->lineflowviolation_penalty;
 
       flps += 0.0;
     }
