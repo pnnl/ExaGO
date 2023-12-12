@@ -27,7 +27,6 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario.toml
-    -no_optfile
   )
 
   exago_add_test(
@@ -89,7 +88,6 @@ if(EXAGO_INSTALL_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_serial.toml
     -hiop_mem_space
     HOST
-    -no_optfile
   )
 
   exago_add_test(
@@ -103,7 +101,6 @@ if(EXAGO_INSTALL_TESTS)
     3
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_parallel.toml
-    -no_optfile
   )
 
   exago_add_test(
@@ -115,7 +112,6 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_raja.toml
-    -no_optfile
     -opflow_include_powerimbalance_variables
     -opflow_ignore_lineflow_constraints
   )
@@ -137,7 +133,6 @@ if(EXAGO_INSTALL_TESTS)
     3
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_mpi_raja.toml
-    -no_optfile
     -opflow_include_powerimbalance_variables
     -opflow_ignore_lineflow_constraints
   )
