@@ -69,11 +69,14 @@ void fmt_comment(std::ostream &summary, int col_width, std::string key,
 }
 
 bool is_true_somewhere(bool flag, MPI_Comm comm) {
+  int in, out;
   bool ret;
-  int err = MPI_Allreduce(&flag, &ret, 1, MPI_CXX_BOOL, MPI_LOR, comm);
+  flag ? in = 1 : in = 0;
+  int err = MPI_Allreduce(&in, &out, 1, MPI_INT, MPI_SUM, comm);
   if (err != MPI_SUCCESS) {
     throw ExaGOError("Error in is_true_somewhere for MPI_Allreduce");
   }
+  out == 0 ? ret = false : ret = true;
   return ret;
 }
 
