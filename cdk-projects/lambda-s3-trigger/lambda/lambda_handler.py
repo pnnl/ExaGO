@@ -1,4 +1,4 @@
-import exago
+import python_wrapper
 import boto3
 import subprocess
 
