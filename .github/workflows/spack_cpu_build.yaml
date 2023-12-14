@@ -118,7 +118,7 @@ jobs:
             config:
               install_tree:
                 root: /opt/spack
-                padded_length: 128
+                padded_length: 64
             mirrors:
               local-buildcache: oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
               spack: https://binaries.spack.io/develop
