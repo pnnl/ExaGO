@@ -3,11 +3,17 @@ import os
 
 # Ensure ExaGO and other necessary libraries are imported and used as needed
 import exago
-
+# print exago location
 s3_client = boto3.client('s3')
 
 
 def lambda_handler(event, context):
+    print(f"Hello world")
+    return {'statusCode': 500, 'body': f"exago location: {os.path.abspath(exago.__file__)}"}
+
+    exago.initialize("app")
+
+    # return {'statusCode': 200, 'body': 'Processing complete.'}
     try:
         # Retrieve input file from S3
         input_bucket = event['Records'][0]['s3']['bucket']['name']
