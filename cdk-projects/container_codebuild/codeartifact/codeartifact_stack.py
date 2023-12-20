@@ -133,8 +133,9 @@ class CodeartifactStack(Stack):
                             ". .venv/bin/activate",
                             "aws codeartifact login --tool pip --repository pip --domain aws-sample-domain",
                             "ls *",
-                            "ls cdk-projects/bash_scripts",
-                            "cd cdk-projects/bash_scripts",
+                            "ls cdk-projects/s3lambda",
+                            "cd cdk-projects/s3lambda"
+                            "cd cdk-projects/s3lambda/lambda",
                             # "pip3 install -r requirements.txt",
                             "aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 305402452870.dkr.ecr.us-west-2.amazonaws.com",
                             "docker build -t test_repo .",
