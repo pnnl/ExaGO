@@ -6,12 +6,11 @@ docker container ls | tail -n +2 | awk '{print  $1}' | xargs docker container st
 docker container ls | tail -n +2 | awk '{print  $1}' | xargs docker rm -f &&
 docker images | tail -n +2 | awk '{print $3}' | xargs docker rmi -f &&
 # Build docker container locally
-docker build -t testcont:latest . --progress=plain
+docker build -t testcont:latest . --progress=plain &&
 
-export AWS_ACCESS_KEY_ID="ASIAUOG3HTODAFZBIELW"
-export AWS_SECRET_ACCESS_KEY="+E5E2/n8xlN7RUA8qgc+XCY177FTE7Er6hDTKiFG"
-export AWS_SESSION_TOKEN="IQoJb3JpZ2luX2VjEAUaCXVzLXdlc3QtMiJIMEYCIQC1J6MGbyg+5Spbf29oprGKESuE0YcTCOMlNlgiejkK9QIhAJwhTFWHTV7BYYw++YggY/g2QtwcITrIPsC8qsJmRsF9KqADCH4QABoMMzA1NDAyNDUyODcwIgwjluErR0VaJVQT8iUq/QKsv2AqwZEYK0u7IAPqVaEo+/InW64+HXK5yMXW5GAXcaQSw+LJm0CLv38TR8uMWNotOam06WvLnG0UrktqIYhYMRYs8kHBV1YSv+Xpcrbb1H2y2NLqBo75qtHLuVdZf/bJxRFmbF5uCFQlCO5ay4SFTrEYAlnOkXnZQh9Si0XfpF3h1DMFb/DGyMqgkAfnMECsXBWBa+iO0GIs0ZPfT0YE0Ub7+G+dCDT3/PKTXi98UQ7LX1LFTRXuT4aaA1GZIdxswA5kgeSMsOfvIkUH2GAOaDW1d3Jr/4j0fld/uastBHLYWKUwIeJQ2MSVxLGQPMlN6nhJRocX5oWsuigzT3c1K9tRqcIE9RhnIXVKhsT+5PTizaK7Gvv800pWGfkqcApRQrVou1AppkczamgWlWsp4DlAnQpKJ7eGGcYx/Adu6d5fZt7CWC5JrkdLBnq2b4fod7QnfTnO+t9qM8lMBxR/4Myq87biA2fWSiY9y91nib3bUc4wP6DqTE/5Oksw0IHzqwY6pQHhAM0NosHOiRd0SKaK9zFg+Q7lKmdLhADAtqhJFzRq8IQFGtsC0m+F1i+gFCEBGcYKihYWHFA3ZzU5LCnPd0Vc3xJaI1D82u6fimOIdVUApmoZANrmfHnxnN1NpHs32OJ7kYvBe3RxTlqkpj+cqgqOLQlb1EfvWphTIXhywZ0nGgZ75k08E07FoPP/RsL05hVSQMegFas5Uhaapn0XzKRRXon1ge0="
-
+export AWS_ACCESS_KEY_ID="ASIAUOG3HTODNB3AHHRI" &&
+export AWS_SECRET_ACCESS_KEY="+heBIscSdtHGnlKvQDyACrPpVYSOhwnjbyXnyXMS" &&
+export AWS_SESSION_TOKEN="IQoJb3JpZ2luX2VjEHgaCXVzLXdlc3QtMiJGMEQCIGtlJsEOmlm+/WfCuIHYHQS7A+Uw4JHsVUvHpd9/nxctAiB7P89sxdtXPgr00ndpxUsAR31hEXBDQ8rceHVBIPGAnCqpAwjx//////////8BEAEaDDMwNTQwMjQ1Mjg3MCIM3rykMlIcEP8Nbs/GKv0Crj7RjI3RzdNZ0c7J7fouXaDD/wOhbOx6p0Zbzh4jw97SjnB9AnJsDT6xCDXorVsP+ppdcvkBEcCBgBNlxFb8Bp38a4CCFSESScI/ricC4QbuZDeN+gtYOFMwbiaYlKiZ1PaKcMplHugTDBhKYG2iP02WIOVbc9mpZ+zZawdwbwA2Zqfv/wNT2dVOeCbErkcZMMxII3c3sFKmzHp0qwbSr99m+oab5p8NLKwVa9Ly2glJeshM5Pfz3ADPrtIUCKtwdltbCb4qSI9rv9TYK6MvgfnhldzAkDE9VlDuQzLDKIq+fGBeMRLc+uymGp+m1zLJZoiDDyYQh9hVzzHkrnV+5U8ESAbjnv86HQN0nwNaTEcX4LwD/6ONu4Z8N4YUCaXC0HhdGkjC5OUDucU6z9lvk2VoukEhhhsmrx+5jUbNKrebFp5udKuzTh3NGqLM8QByO967movw7uXvkjR8hgEqV9gTFJmK2XVjeP2Am2qYn36pNHSuZscy9ljeiOdUMM6PjKwGOqcB1FRysHdjMN+9Ob6nKHZaXBTYL9DRYlRwVYdwe3vgz7pHRaa9hsvuHWl3TQ9gKMOKdxVuem58JSiVVtmJaNOfbOVXNiNa7Supala5dMxN+ZkVaTyrtcvo2WWFGfl5zfK9hSmpHAF3OAdPG4HqcvhZPwvIOSGyP0FRL0tdGfkUhOuaSgNBUSGXOuUDLq8jQmjLeBRF+L3QNojSfbw7MSnzPwtjyWnB86c=" &&
 # Run the container and test with awslambdarie
 docker run -d \
     -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
@@ -20,7 +19,7 @@ docker run -d \
     -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
     -v "$HOME/.aws-lambda-rie:/aws-lambda" \
     -v "$PWD/entrypoint.sh:/entrypoint.sh" -p 9000:8080 \
-    --entrypoint /bin/bash testcont:latest /entrypoint.sh python -m awslambdaric lambda_handler.lambda_handler &&
+    --entrypoint /bin/bash testcont:latest /entrypoint.sh python3.11 -m awslambdaric lambda_handler.lambda_handler &&
 
 #Invoke S3lambda 
 curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{}'
