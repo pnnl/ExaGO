@@ -137,10 +137,10 @@ class CodeartifactStack(Stack):
                             "cd cdk-projects/s3lambda/lambda",
                             # "pip3 install -r requirements.txt",
                             "aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 305402452870.dkr.ecr.us-west-2.amazonaws.com",
-                            "docker build -t exago_repo .",
-                            "docker tag exago_repo:latest 305402452870.dkr.ecr.us-west-2.amazonaws.com/exago_repo:latest",
-                            "docker push 305402452870.dkr.ecr.us-west-2.amazonaws.com/exago_repo:latest"
-                            "aws lambda invoke --function-name ExaGOS3LambdaFunction output.txt"
+                            "docker build -t testcont .",
+                            "docker tag testcont:latest 305402452870.dkr.ecr.us-west-2.amazonaws.com/test_repo:latest",
+                            "docker push 305402452870.dkr.ecr.us-west-2.amazonaws.com/test_repo:latest"
+                            # "aws lambda invoke --function-name ExaGOS3LambdaFunction output.txt"
                         ],
                     },
                 },
