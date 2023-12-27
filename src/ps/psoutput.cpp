@@ -271,7 +271,6 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
 
   fprintf(fd, "\n%%%% solve time\n");
   fprintf(fd, "%ssolve_time = %.5g;\n", prefix, ps->solve_real_time);
-  fprintf(fd, "%ssolve_cpu_time = %.5g;\n", prefix, ps->solve_cpu_time);
 
   fclose(fd);
   PetscFunctionReturn(0);
@@ -831,7 +830,6 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[]) {
   PrintJSONArray(fd, "LOADSHED", 2, &ps->sys_info.total_loadshed[0], true);
 
   PrintJSONDouble(fd, "SolveRealTime", ps->solve_real_time, true);
-  PrintJSONDouble(fd, "SolveCPUTime", ps->solve_cpu_time, false);
 
   PrintJSONObjectEnd(fd, false); // System summary object end
 
@@ -887,7 +885,6 @@ PetscErrorCode PSSaveSolution_MINIMAL(PS ps, const char outfile[]) {
   fprintf(fd, "\tTotal Load Shed P, Q: %9g, %9g\n",
           ps->sys_info.total_loadshed[0], ps->sys_info.total_loadshed[1]);
   fprintf(fd, "\tSolve Time: %5g\n", ps->solve_real_time);
-  fprintf(fd, "\tSolve CPU Time: %5g\n", ps->solve_cpu_time);
 
   fclose(fd);
 
