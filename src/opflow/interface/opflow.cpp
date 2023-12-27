@@ -1875,7 +1875,6 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   CHKERRQ(ierr);
 
   opflow->solve_real_time = 0.0;
-  opflow->solve_cpu_time = 0.0;
 
   /* Compute area participation factors */
   ierr = PSComputeParticipationFactors(ps);
@@ -2003,7 +2002,6 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
   CHKERRQ(ierr);
 
   opflow->solve_real_time = real2 - real1;
-  opflow->solve_cpu_time = cpu2 - cpu1;
 
   PetscFunctionReturn(0);
 }
@@ -2892,7 +2890,6 @@ PetscErrorCode OPFLOWSetSummaryStats(OPFLOW opflow) {
   CHKERRQ(ierr);
 
   ps->solve_real_time = opflow->solve_real_time;
-  ps->solve_cpu_time = opflow->solve_cpu_time;
 
   PetscFunctionReturn(0);
 }
