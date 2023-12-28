@@ -2,11 +2,12 @@
 # -------------------------------------------------------------
 # file: contingency_psse_pti.py
 #
-# A hack script to convert PSS/E contingencies to ExaGO NATIVE 
+# A hack script to convert PSS/E contingencies to ExaGO NATIVE
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 
-import sys, os
+import sys
+import os
 from optparse import OptionParser
 from pyparsing import *
 import enum
@@ -16,11 +17,13 @@ import enum
 # -------------------------------------------------------------
 program = os.path.basename(sys.argv[0])
 
+
 class Outage(enum.Enum):
     GEN = 1
     BR = 2
     TR = 3
     LOAD = 4
+
 
 Name = Word(printables)
 
@@ -37,24 +40,24 @@ Remove = Keyword("REMOVE", caseless=True)
 Unit = Keyword("UNIT", caseless=True)
 
 LineOutage = (
-    Open.suppress() + Branch.suppress() + 
+    Open.suppress() + Branch.suppress() +
     From.suppress() + Bus.suppress() + intid.setName("from_bus") +
     To.suppress() + Bus.suppress() + intid.setName("to_bus") +
     Circuit.suppress() + intid.setName("circuit")
-).setParseAction(lambda t: (Outage.BR, t[0:]) ) 
+).setParseAction(lambda t: (Outage.BR, t[0:]))
 
 GenOutage = (
     Remove.suppress() + Unit.suppress() +
     intid.setName("gen") +
     From.suppress() + Bus.suppress() + intid.setName("bus")
-).setParseAction(lambda t: (Outage.GEN, t[0:]) ) 
+).setParseAction(lambda t: (Outage.GEN, t[0:]))
 
 Contingency = (
     Keyword("CONTINGENCY", caseless=True).suppress() +
     Name +
-    OneOrMore( LineOutage | GenOutage ) +
+    OneOrMore(LineOutage | GenOutage) +
     Keyword("END", caseless=True).suppress()
-).setParseAction(lambda t: { t[0] : t[1:] })
+).setParseAction(lambda t: {t[0]: t[1:]})
 
 ContingencyList = OneOrMore(Contingency)
 
@@ -109,4 +112,3 @@ for (c) in conts:
                 output.write("%d,%d,0,0," %
                              (int(typ.value), int(dat[1])))
             output.write("'1 ',1,0,0.01\n")
-                         

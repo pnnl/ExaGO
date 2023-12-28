@@ -33,6 +33,7 @@ class Outage(enum.Enum):
 # Contingency
 # -------------------------------------------------------------
 
+
 @dataclass
 class Contingency:
     num: int
