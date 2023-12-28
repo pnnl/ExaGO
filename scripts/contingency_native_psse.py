@@ -17,7 +17,6 @@ import enum
 # variable initialization
 # -------------------------------------------------------------
 program = os.path.basename(sys.argv[0])
-usage = "usage: " + program
 
 # -------------------------------------------------------------
 # Outage
@@ -33,7 +32,6 @@ class Outage(enum.Enum):
 # -------------------------------------------------------------
 # Contingency
 # -------------------------------------------------------------
-
 
 @dataclass
 class Contingency:
@@ -73,7 +71,7 @@ class Contingency:
 # -------------------------------------------------------------
 # handle command line
 # -------------------------------------------------------------
-usage = "Usage: %prog [options] file.cont ]"
+usage = "Usage: %prog [options] [file.cont]"
 parser = OptionParser(usage=usage)
 
 parser.add_option("-v", "--verbose",
@@ -93,20 +91,18 @@ else:
     output = sys.stdout
 
 
-if (len(args) < 1):
-    parser.print_help()
-    exit(3)
-
-inputfile = args[0]
+if (len(args) > 0):
+    inputfile = args[0]
+    fd = open(inputfile, newline='')
+    if fd is None:
+        sys.stderr.write("%s: %s: error: cannot open\n" % (program, inputfile))
+        exit(2)
+else:
+    fd = sys.stdin
 
 # -------------------------------------------------------------
 # main program
 # -------------------------------------------------------------
-
-fd = open(inputfile, newline='')
-if fd is None:
-    sys.stderr.write("%s: %s: error: cannot open\n" % (program, inputfile))
-    exit(2)
 
 reader = csv.reader(fd)
 l = 0
