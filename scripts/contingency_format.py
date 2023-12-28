@@ -6,7 +6,8 @@
 # A hack script to convert ExaGO NATIVE contingencies to PSS/E
 # -------------------------------------------------------------
 
-import sys, os
+import sys
+import os
 from optparse import OptionParser
 import csv
 from dataclasses import dataclass
@@ -21,6 +22,8 @@ usage = "usage: " + program
 # -------------------------------------------------------------
 # Outage
 # -------------------------------------------------------------
+
+
 class Outage(enum.Enum):
     GEN = 1
     BR = 2
@@ -30,6 +33,8 @@ class Outage(enum.Enum):
 # -------------------------------------------------------------
 # Contingency
 # -------------------------------------------------------------
+
+
 @dataclass
 class Contingency:
     num: int
@@ -63,7 +68,6 @@ class Contingency:
                 (self.fbus, self.tbus, circuit, self.num))
         f.write("%s\nOPEN BRANCH FROM BUS %d TO BUS %d CIRCUIT %d\n" %
                 (name, self.fbus, self.tbus, circuit))
-   
 
 
 # -------------------------------------------------------------
@@ -88,7 +92,7 @@ if options.output:
 else:
     output = sys.stdout
 
-    
+
 if (len(args) < 1):
     parser.print_help()
     exit(3)
@@ -118,4 +122,3 @@ for row in reader:
         int(row[6]),
         float(row[7]))
     c.WritePSSE(output)
-        

@@ -467,7 +467,6 @@ PetscErrorCode SOPFLOWSetContingencyData(SOPFLOW sopflow,
     throw ExaGOError(errs.str().c_str());
   }
   CHKERRQ(ierr);
-  
 
   ierr =
       PetscMemcpy(sopflow->ctgfile, ctgfile, PETSC_MAX_PATH_LEN * sizeof(char));
@@ -1083,9 +1082,8 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
       CHKERRQ(ierr);
       /* Should not set hard coded native format */
 
-      ierr = SCOPFLOWSetContingencyData(sopflow->scopflows[s],
-                                        sopflow->ctgcfileformat,
-                                        sopflow->ctgfile);
+      ierr = SCOPFLOWSetContingencyData(
+          sopflow->scopflows[s], sopflow->ctgcfileformat, sopflow->ctgfile);
       CHKERRQ(ierr);
       ierr = SCOPFLOWSetInitilizationType(sopflow->scopflows[s],
                                           sopflow->initialization_type);
