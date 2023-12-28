@@ -250,7 +250,7 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
     }
     fprintf(fd, "];\n");
   }
-    
+
   /* Solution summary info */
   fprintf(fd, "\n%%%% summary data\n");
   fprintf(fd, "%ssummary_stats = [\n", prefix);
