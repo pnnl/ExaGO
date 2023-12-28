@@ -539,6 +539,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
 
   ps->Nload = 0;
   ps->maxbusnum = -1;
+  ps->read_load_cost = PETSC_FALSE;
   while ((out = fgets(line, MAXLINE, fp)) != NULL) {
     if (strstr(line, "mpc.baseMVA")) {
       /* Read base MVA */
@@ -557,6 +558,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
       gencost_start_line =
           line_counter + 1; /* Gen cost data starts from next line */
     if (strstr(line, "mpc.loadcost") != NULL) {
+      ps->read_load_cost = PETSC_TRUE;
       loadcost_start_line =
           line_counter + 1; /* Load cost data starts from next line */
     }
