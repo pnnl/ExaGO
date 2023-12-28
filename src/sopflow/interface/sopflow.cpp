@@ -454,7 +454,6 @@ PetscErrorCode SOPFLOWSetContingencyData(SOPFLOW sopflow,
 
   PetscFunctionBegin;
 
-  ContingencyFileInputFormat fmt;
   std::string ext = FileNameExtension(ctgfile);
   if (ext == "con") {
     ierr = SOPFLOWSetContingencyData(sopflow, PSSE, ctgfile);
