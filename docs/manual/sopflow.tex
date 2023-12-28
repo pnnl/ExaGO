@@ -66,7 +66,8 @@ The following files are needed for executing SOPFLOW.
 \begin{itemize}
     \item \textbf{Network file:} The network file describing the network details. Only \matpower format files are currently supported.
     \item \textbf{Scenario file:} \sopflow only supports reading wind generation scenarios in a CSV format. An example of this format for the 9-bus case is \href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/tree/master/datafiles/case9/scenarios_9bus.csv}{here}.
-    \item \textbf{Contingency file:} Contingencies can be specified via PTI format file as described in chapter \ref{chap:scopflow}. The option \lstinline{-sopflow_enable_multicontingency} should be set for multi-contingency problems.
+    \item \textbf{Contingency file:} Contingencies can be specified
+      via a PTI or PSS/E format file as described in chapter \ref{chap:scopflow}. The option \lstinline{-sopflow_enable_multicontingency} should be set for multi-contingency problems.
     \item \textbf{Load data:} One file for load real power and one for reactive power. The files need to be in CSV format. An example of the format for the 9-bus case is \href{https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/tree/master/datafiles/case9}{here}.
 \end{itemize}
 
@@ -370,3 +371,8 @@ Gen      Status     Fuel     Pg       Qg       Pmin     Pmax     Qmin     Qmax
 3          1    UNDEFINED    75.00   -23.36    10.00    85.00  -300.00   300.00
 [ExaGO] Finalizing sopflow application.
 \end{lstlisting}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "manual"
+%%% End:
