@@ -824,7 +824,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
              &Load[loadcosti].loss_cost);
       Load[loadcosti].loss_frac /= 100; /* Convert to fraction */
       loadcosti++;
-    } 
+    }
 
     /* Read generator fuel data */
     if (i >= genfuel_start_line && i < genfuel_end_line) {
