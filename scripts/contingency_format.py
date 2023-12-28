@@ -61,7 +61,7 @@ class Contingency:
         circuit = 1
         name = ("L_%d-%d_%d_%d" %
                 (self.fbus, self.tbus, circuit, self.num))
-        f.write("%s\nOPEN BRANCH FROM BUS %d to BUS %d CIRCUIT %d\n" %
+        f.write("%s\nOPEN BRANCH FROM BUS %d TO BUS %d CIRCUIT %d\n" %
                 (name, self.fbus, self.tbus, circuit))
    
 
