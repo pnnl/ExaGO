@@ -8,6 +8,34 @@ RUN apt-get -yqq update \
     && apt-get -yqq purge curl \
     && rm -rf /var/lib/apt/lists/*
 
+RUN mkdir /opt/spack-environment \
+&&  (echo spack: \
+&&   echo '  specs:' \
+&&   echo '  - exago@1.6.0+ipopt+python+mpi' \
+&&   echo '    # This is currently a bug in Spack(?)' \
+&&   echo '  - libffi@3.4.2' \
+&&   echo '  - petsc~fortran~hdf5~hypre+metis' \
+&&   echo '  - ipopt@3.12.10+coinhsl~mumps+metis' \
+&&   echo '  - coinhsl@2019.05.21+blas' \
+&&   echo '  - py-jupyterlab' \
+&&   echo '  - py-ipyparallel' \
+&&   echo '  concretizer:' \
+&&   echo '    unify: true' \
+&&   echo '    reuse: true' \
+&&   echo '  mirrors:' \
+&&   echo '    spack: https://binaries.spack.io/develop' \
+&&   echo '  packages:' \
+&&   echo '    all:' \
+&&   echo '      providers:' \
+&&   echo '        mpi:' \
+&&   echo '        - openmpi' \
+&&   echo '        zlib-api:' \
+&&   echo '        - zlib' \
+&&   echo '    zlib-ng:' \
+&&   echo '      buildable: false' \
+&&   echo '  config:' \
+&&   echo '    install_tree: /opt/software' \
+&&   echo '  view: /opt/views/view') > /opt/spack-environment/spack.yaml
 
 RUN python3.11 -m pip install --upgrade pip && \
     python3.11 -m pip install awslambdaric boto3

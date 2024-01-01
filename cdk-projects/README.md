@@ -24,6 +24,44 @@ export HTTPS_PROXY=http://proxy01.pnl.gov:3128
 export https_proxy=http://proxy01.pnl.gov:3128
 ```
 
+## Proxy and Prerequesties Setup File
+The aws_proxy.sh script performs the following tasks
+
++ Proxy configuration.
++ Install the AWS Cloud Development Kit via the command line.
++ Start the Docker engine.
++ Create a python virtual environment and activate it.
++ Initialize the AWS session configuration.
+
+Execute the aws_proxy.sh script with the commands below
+
+```
+ source aws_proxy.sh
+```
+
+
+Note: Start Docker daemon application separately for any containerization tasks.
+
+## Steps to Deploy and Import ExaGO on Cloud
+
+Once the AWS session configuration is done then create a aws bootstrap environment.The cdk bootstrap command is part of the AWS Cloud Development Kit (CDK) and is used to set up the necessary resources in your AWS account for deploying CDK applications.  
+
+```
+cdk bootstrap
+```
+
+The command ``` cdk synth ``` is used to synthesize or generate AWS CloudFormation templates from the CDK application code. 
+
+```
+cdk synth
+```
+
+Deploy the CDK application with  ``` cdk deploy ``` command. 
+
+``` 
+cdk deploy 
+````
+
 ## Directory Structure
 
 Here is the output of `tree -L 2`:
@@ -33,18 +71,12 @@ Here is the output of `tree -L 2`:
 ├── README.md
 ├── aws_proxy.sh
 ├── bash_scripts
-├── code_build
 ├── container_codebuild
-├── lambda-s3-trigger
-├── new_exago
-├── spack_cloud_env
-├── test_codebuild
-└── testcont_codebuild
+├── s3lambda
 ```
 
 Contents of each directory:
 
-TODO: Have each folder have it's own small README
 
 - README.md
     - This is the document you are reading
@@ -54,22 +86,15 @@ TODO: Have each folder have it's own small README
     - docker_bash.sh
         - Used to re-generate Dockerfile with `spack.yaml`
     - Dockerfile
-        - Output from `docker_bash.sh`
+        - Output from `docker_bash.sh`   
     - spack.yaml
         - Spec of ExaGO used to generate dockerfile
-- code_build (TODO: need to delete)
+    - build-test.sh
+        - This file is to build a docker container with ExaGO base image.
+        Note : AWS credentials needs to renew for every run.
+        
 - container_codebuild
     - Contains CodeBuild pipelines to build image and push to ECR
-    - TODO:
-        - Remove duplicate requirements.txt
-        - Document need to keep:
-            - codeartifact
-            - tests
-        - Move python venv config into main `aws_proxy.sh`
-- lambda-s3-trigger (TODO: need to delete)
-    - Scripts to deploy lambda and associated s3
-- new_exago (ExaGO backend lambda + s3 trigger)
-    - Represents latest ExaGO builds/development
-- spack_cloud_env (TODO: delete in favor of bash_scripts/spack.yaml)
-- test_codebuild (TODO: need to delete)
-- testcont_codebuild (TODO: need to delete)
+
+- s3lambda 
+    - This stack is to build a local container with ExaGO and trigger s3lambda. 
