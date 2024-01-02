@@ -1,0 +1,38 @@
+name: ORNL Crusher Mirror
+
+# triggers a github action everytime there is a push or mr
+on:
+  pull_request:
+  push:
+    branches:
+      - develop
+      - main
+
+jobs:
+  # To test on HPC resources we must first mirror the repo and then trigger a pipeline
+  push:
+     # Latest Ubuntu as of Feb 2023 is 20.04
+     runs-on: ubuntu-22.04
+     steps:
+       # Action checks-out your repository under $GITHUB_WORKSPACE, so your workflow can access it.
+       - uses: actions/checkout@v1
+
+       # Necessary to get branch name independent of PR/push
+       - name: Extract branch name
+         shell: bash
+         run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+         id: extract_branch
+
+       #  Action for mirroring your commits to a different remote repository
+       - uses: yesolutions/mirror-action@master
+       # Give actions access to some secrets
+         with:
+            GIT_PUSH_ARGS: '--tags --force --push-option=ci.skip'
+            REMOTE: 'https://code.olcf.ornl.gov/ci/csc359/dev/exago'
+            GIT_USERNAME:  ${{ secrets.GIT_USER }}
+            GIT_PASSWORD:  ${{ secrets.ORNL_CRUSHER_GIT_PASSWORD }}
+
+  # Can only run on Crusher with web or schedule pipeline, so no way to trigger
+  #  #  Trigger CI pipeline since it was skipped in the above push
+  #   - name: Trigger Pipeline
+  #     run: curl -X POST -F token=${{ secrets.ORNL_CRUSHER_PIPELINE_TRIGGER }} -F ref=${{ steps.extract_branch.outputs.branch }} https://code.olcf.ornl.gov/api/v4/projects/48/trigger/pipeline
