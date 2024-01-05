@@ -47,6 +47,7 @@ npm start
 ```
 This will open a webpage with the visualization of the given network. 
 
+
 The figures show the visualization of the synthetic electric grid. The data for developing this visualization was created by merging the synthetic dataset for the [Eastern](https://electricgrids.engr.tamu.edu/electric-grid-test-cases/activsg70k/), [Western](https://electricgrids.engr.tamu.edu/electric-grid-test-cases/activsg10k/), and [Texas](https://electricgrids.engr.tamu.edu/electric-grid-test-cases/activsg2000/) interconnects from the [Electric Grid Test Case Repository](https://electricgrids.engr.tamu.edu/)
 ### 2D synthetic US western grid network display
 ![](images/network_viz.PNG)
@@ -62,6 +63,9 @@ The figures show the visualization of the synthetic electric grid. The data for 
 
 ### 2.5D synthetic US western grid displaying network, flow, generation, and load
 ![](images/all_viz.PNG)
+
+### Demo 
+See [Here](../tutorials/demo1.ipynb) 
 
 ## ChatGrid
 ChatGrid is a natural language query tool for ExaGO visualizations. It is powered by OpenAI GPT-3.5-Turbo and Langchain. ChatGrid allows users to query on ExaGO visualizations through natural language and returns text summaries and visual outputs as answers. The following flow chart shows the architecture design of ChatGrid.
@@ -103,21 +107,14 @@ Behind the scenes, LLM translates natural language queries into SQL queries to r
 
 4. Connect to your database.
 
-    Create the `config.py` file in the `viz/backend` subdirectory and paste the following script into it (replace `YOUR_DATABASE_PASSWORD` and `YOUR_DATABASE_NAME`  with your own database password and database name)
+    Open the `config.py` file in the `viz/backend` subdirectory and replace `YOUR_DATABASE_PASSWORD` and `YOUR_DATABASE_NAME`  with your own database password and database name.
 
-    ```
-    sql_key = "YOUR_DATABASE_PASSWORD"
-    database_name = "YOUR_DATABASE_NAME"
-    ```
-
-    Note: Please make sure you use exactly the same file name (i.e., `config.py`) and key name (i.e., 'sql_key') as indicated. 
 
 ### Getting your OpenAI API key
-ChatGrid uses GPT models from OpenAI to process natural language queries. To use LLMs from OpenAI, you first need to go to [OpenAI's Platform website](https://platform.openai.com) and sign in with an OpenAI account. Click your profile icon at the top-right corner of the page and select "View API Keys." Click "Create New Secret Key" to generate a new API key. Open the `config.py` file you just created in the `viz/backend` subdirectory and add the following script into it (replace `YOUR_OPENAI_KEY` with your own OpenAI API key)
+ChatGrid uses GPT models from OpenAI to process natural language queries. To use LLMs from OpenAI, you first need to go to [OpenAI's Platform website](https://platform.openai.com) and sign in with an OpenAI account. Click your profile icon at the top-right corner of the page and select "View API Keys." Click "Create New Secret Key" to generate a new API key. 
 
-```
-openai_key = "YOUR_OPENAI_KEY"
-```
+Open the `config.py` in the `viz/backend` subdirectory replace `YOUR_OPENAI_KEY` with your own OpenAI API key.
+
 
 <!-- data script -->
 <!-- installation: pip install -r requirements.txt in the backend directory-->
