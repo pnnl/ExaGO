@@ -83,7 +83,7 @@ Behind the scenes, LLM translates natural language queries into SQL queries to r
 
     To use the provided script, first copy the ExaGO output `.json` file to the `viz/data` subdirectory and simply run the following script in the `viz/data` subdirectory (replace the example filename with your json filename). This will output three CSV files: `generation.csv`, `bus.csv`, and `tranmission_line.csv`.
     ```
-    python dataprocess.py case_ACTIVSg10k.json
+    python jsontocsv.py case_ACTIVSg10k.json
     ```
     
 2. Download PostgreSQL database from this [link](https://www.postgresql.org/download/) and install it. 
@@ -103,10 +103,11 @@ Behind the scenes, LLM translates natural language queries into SQL queries to r
 
 4. Connect to your database.
 
-    Create the `config.py` file in the `viz/backend` subdirectory and paste the following script into it (replace `YOUR_DATABASE_PASSWORD` with your own database password )
+    Create the `config.py` file in the `viz/backend` subdirectory and paste the following script into it (replace `YOUR_DATABASE_PASSWORD` and `YOUR_DATABASE_NAME`  with your own database password and database name)
 
     ```
     sql_key = "YOUR_DATABASE_PASSWORD"
+    database_name = "YOUR_DATABASE_NAME"
     ```
 
     Note: Please make sure you use exactly the same file name (i.e., `config.py`) and key name (i.e., 'sql_key') as indicated. 
@@ -124,7 +125,7 @@ openai_key = "YOUR_OPENAI_KEY"
 ChatGrid uses Flask to host the service of receiving user queries and returning the data output and text summaries to update the visualizations on the frontend. Please follow the steps below to run the backend server.
 
 1. Go to the `viz/backend` subdirectory and use the `pip install -r requirements.txt` command to install all the Python dependencies.
-2. run the following command in the `viz/backend` subdirectory
+2. Run the following command in the `viz/backend` subdirectory
     ```
     python server.py
     ```

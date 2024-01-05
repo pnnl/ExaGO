@@ -10,9 +10,9 @@ def sqlchain(input_text):
     llm = OpenAI(openai_api_key=config.openai_key,
                  model_name="gpt-3.5-turbo", temperature=0, verbose=True)
     db = SQLDatabase.from_uri(
-        f"postgresql+psycopg2://postgres:{config.sql_key}@localhost:5432/US west power grid")
+        f"postgresql+psycopg2://postgres:{config.sql_key}@localhost:5432/{config.database_name}")
     mydb = sqldb.create_engine(
-        f"postgresql+psycopg2://postgres:{config.sql_key}@localhost:5432/US west power grid")
+        f"postgresql+psycopg2://postgres:{config.sql_key}@localhost:5432/{config.database_name}")
     myconnection = mydb.connect()
 
     _CUSTOMIZE__TEMPLATE = """You are a PostgreSQL expert. Given an input question, first create a syntactically correct PostgreSQL query to run then look at the results of the query and return the answer to the input question.
