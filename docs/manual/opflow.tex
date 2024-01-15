@@ -54,6 +54,8 @@ The different variables used in \opflow formulation are described in Table \ref{
     \hline
     $\Deltaqlj$ & Reactive power load loss & $0 \le \Deltaqlj \le \qlj$ & Used when load loss variable option is active (\option{\opflowincludeloadloss 1}) \\
     \hline
+    $\Deltasod$, $\Deltasdo$ & Line flow limit violations & $0 \le \Deltasod, \Deltasdo$ & Used when line flow limit violation option is active (\option{\opflowallowlineflowviolation}) \\
+    \hline
   %  Bus reactive power mismatch & $q^{mis}_i$ & Unbounded & Used when power mismatch variable option is active (\text{-opflow_include_powerimbalance_variables 1})
   %  \hline
   \end{tabular}
@@ -66,7 +68,7 @@ Power imbalance variables are non-physical (slack) variables that measure the vi
 The objective function for OPFLOW is given in (\ref{eq:opflow_obj})
 \begin{equation}
 \text{min.} ~ C_{gen}(p^{\text{g}}) + C_{dev}(\Delta p^{\text{g}}) +
-C_{loss}(\Delta p^{\text{l}},\Delta q^{\text{l}}) + C_{imb}(\Delta p^{+},\Delta p^{-},\Delta q^{+},\Delta q^{-})
+C_{loss}(\Delta p^{\text{l}},\Delta q^{\text{l}}) + C_{imb}(\Delta p^{+},\Delta p^{-},\Delta q^{+},\Delta q^{-}) + C_{lineviol}(\Deltasod, \Deltasdo)
 \label{eq:opflow_obj}
 \end{equation}
  
@@ -89,7 +91,7 @@ This feature is only supported with Ipopt solver.
 \subsubsection{Load loss $C(\Delta p^{\text{l}},\Delta q^{\text{l}})$}
 This term gets added to the objective when  \option{\opflowincludeloadloss} option is active. 
 \begin{equation}
-C_{loss}(\Delta p^{\text{l}},\Delta q^{\text{l}}) =  \sum_{\jinJload} \sigmalj({\Deltaplj} + {\Deltaqlj})
+C_{loss}(\Delta p^{\text{l}},\Delta q^{\text{l}}) =  \sum_{\jinJload}{\sigmalj({\Deltaplj} + {\Deltaqlj})}
 \label{eq:opf_obj_minloadloss}
 \end{equation}
 The load loss penalty $\sigmalj$ can be set via the option
@@ -98,11 +100,20 @@ The load loss penalty $\sigmalj$ can be set via the option
 \subsubsection{Power imbalance $C_{imb}(\Delta p^{+},\Delta p^{-},\Delta q^{+},\Delta q^{-})$}
 This term gets added to the objective when  \option{-opflow\_include_powerimbalance_variables} option is active. 
 \begin{equation}
-C_{imb}(\Delta p^{+},\Delta p^{-},\Delta q^{+},\Delta q^{-}) =  \sum_{i \in J^{bus}} \sigmai(\Delta p^{+} + \Delta p^{-} + \Delta q^{+} + \Delta q^{-})
+C_{imb}(\Delta p^{+},\Delta p^{-},\Delta q^{+},\Delta q^{-}) =  \sum_{i \in J^{bus}}{\sigmai(\Delta p^{+} + \Delta p^{-} + \Delta q^{+} + \Delta q^{-})}
 \label{eq:opf_obj_minpowerimbalance}
 \end{equation}
 The power imbalance cost $\sigmai$ can be set via the option
 \option{-opflow\_powerimbalance\_penalty}. The default is \$10,000/MW$^2$ for all buses. Though the power imbalance variables $\Delta p^{+},\Delta p^{-},\Delta q^{+},\Delta q^{-}$ are slack or non-physical, they can help in solving infeasible cases having no power flow solution, and thus provide a measure of the infeasibility. 
+
+\subsubsection{Line flow limit violation $C_{lineviol}(\Deltasod, \Deltasdo)$}
+This term gets added to the objective when  \option{\opflowallowlineflowviolation} option is active. 
+\begin{equation}
+C_{lineviol}((\Deltasod, \Deltasdo)) =  \sum_{\jinJbr}{\sigmaj(\Deltasod + \Deltasdo)}
+\label{eq:opf_obj_minlineviol}
+\end{equation}
+The line flow limit violation cost $\sigmaj$ can be set via the option
+\option{\opflowlineflowviolationpenalty}. The default is \$100/MVA$^2$ for all lines.
 
 \subsection{Equality constraints}\label{sec:opflow_eq}
 
@@ -141,8 +152,8 @@ The second equation sets the generator set-point $\pgjset$ to a fixed value $p^{
 \subsubsection{MVA flow on branches}
 MVA flow limits at origin and destination buses for each line.
 \begin{align}
-  {\pbrjod}^2 + {\qbrjod}^2 \le {\srateAj}^2,~~\jinJbr\\
-  {\pbrjdo}^2 + {\qbrjdo}^2 \le {\srateAj}^2,~~\jinJbr
+  {\pbrjod}^2 + {\qbrjod}^2 \le {\srateAj}^2 + \Deltasod,~~\jinJbr\\
+  {\pbrjdo}^2 + {\qbrjdo}^2 \le {\srateAj}^2 + \Deltasdo,~~\jinJbr
 \end{align}
 To reduce the number of inequality constraints, only lines that are in service and having MVA A rating $\srateAj$ less than 10000 MVA are considered.
 
