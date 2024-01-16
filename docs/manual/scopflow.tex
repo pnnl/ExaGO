@@ -67,7 +67,12 @@ $x_{c,0}$ from the base-case $x_{0,0}$. The bound $\Delta x_c$ could represent h
 To execute SCOPFLOW, the following files are required:
 \begin{itemize}
     \item \textbf{Network file:} The network file describing the network details. Only \matpower format files are currently supported.
-    \item \textbf{Contingency file:} The file describing the contingencies. Contingencies can be single or multiple outages. The contingency file needs to be described in PTI format.
+    \item \textbf{Contingency file:} The file describing the
+      contingencies. Contingencies can be single or multiple
+      outages. Two formats are excepted, with the format distinguished
+      by file name extension.  A contingency file in PTI format must
+      have a \texttt{.cont} extension.  A PSS/E format file must have
+      a \texttt{.con} extension.
 \end{itemize}
 If the multi-period option is chosen, then additional files describing the load and wind generation can be (optionally) set.
 \begin{itemize}

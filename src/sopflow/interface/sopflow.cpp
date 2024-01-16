@@ -454,6 +454,19 @@ PetscErrorCode SOPFLOWSetContingencyData(SOPFLOW sopflow,
 
   PetscFunctionBegin;
 
+  std::string ext = FileNameExtension(ctgfile);
+  if (ext == "con") {
+    ierr = SOPFLOWSetContingencyData(sopflow, PSSE, ctgfile);
+  } else if (ext == "cont") {
+    ierr = SOPFLOWSetContingencyData(sopflow, NATIVE, ctgfile);
+  } else {
+    std::stringstream errs;
+    errs << "Unknown contingency data format: " << ctgfile << ", (" << ext
+         << ")";
+    throw ExaGOError(errs.str().c_str());
+  }
+  CHKERRQ(ierr);
+
   ierr =
       PetscMemcpy(sopflow->ctgfile, ctgfile, PETSC_MAX_PATH_LEN * sizeof(char));
   CHKERRQ(ierr);
@@ -715,7 +728,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
 
     if (flgctgc && !sopflow->ctgcfileset) {
       /* Need to remove hard coded native format later */
-      ierr = SOPFLOWSetContingencyData(sopflow, NATIVE, ctgcfile);
+      ierr = SOPFLOWSetContingencyData(sopflow, ctgcfile);
       CHKERRQ(ierr);
     }
 
@@ -1068,8 +1081,8 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
       CHKERRQ(ierr);
       /* Should not set hard coded native format */
 
-      ierr = SCOPFLOWSetContingencyData(sopflow->scopflows[s], NATIVE,
-                                        sopflow->ctgfile);
+      ierr = SCOPFLOWSetContingencyData(
+          sopflow->scopflows[s], sopflow->ctgcfileformat, sopflow->ctgfile);
       CHKERRQ(ierr);
       ierr = SCOPFLOWSetInitilizationType(sopflow->scopflows[s],
                                           sopflow->initialization_type);
