@@ -24,7 +24,7 @@ module load python/3.7.0
 export SPACK_CC=$(which gcc)
 export SPACK_CXX=$(which g++)
 
-BASE=/qfs/projects/exasgd/src/ci-incline
+BASE=/qfs/projects/earthshot/src/incline-ci
 
 export SPACK_INSTALL=$BASE/install
 export SPACK_MODULES=modules

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -A exasgd
+#SBATCH -A earthshot 
 #SBATCH -p slurm
 #SBATCH -N 1
 #SBATCH -n 64
@@ -42,7 +42,7 @@ cleanup() {
 
 # Assuming that you already have a binary mirror configured
 export MY_CLUSTER=deception
-cp /qfs/projects/exasgd/src/coinhsl-archive-2019.05.21.tar.gz . &&
+cp /qfs/projects/earthshot/src/coinhsl-archive-2019.05.21.tar.gz . &&
 . buildsystem/spack/load_spack.sh &&
 # spack clean -abm &&  # shouldn't run this everytime...
 spack develop --no-clone --path=$(pwd) exago@develop &&

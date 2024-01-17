@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -A exasgd
+#SBATCH -A earthshot
 #SBATCH -p incline
 #SBATCH -N 1
 #SBATCH --exclusive
@@ -43,7 +43,7 @@ cleanup() {
 
 # Assuming that you already have a binary mirror configured (if you need it)
 export MY_CLUSTER=incline
-cp /qfs/projects/exasgd/src/coinhsl-archive-2019.05.21.tar.gz . &&
+cp /qfs/projects/earthshot/src/coinhsl-archive-2019.05.21.tar.gz . &&
 . buildsystem/spack/load_spack.sh &&
 spack develop --no-clone --path=$(pwd) exago@develop &&
 mkdir hiop_dev
