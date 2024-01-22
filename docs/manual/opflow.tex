@@ -46,15 +46,15 @@ The different variables used in \opflow formulation are described in Table \ref{
   %  \hline
   %  Bus voltage imaginary part & $\vimagi$ & $-\vmaxi \le \vimagi \le \vmaxi$ & Used with power balance cartesian model (\option{\opflowmodel~\pbcar})\\
   %  \hline
-    $\pmisplusi,\pmisminusi$ & Bus real power mismatch variables & $0 \le \pmisplusi,\pmisminusi \le \infty$ & Used when power mismatch variable option is active (\option{\opflowincludepowerimbalance 1}) \\
+    $\pmisplusi,\pmisminusi$ & Bus real power mismatch variables & $0 \le \pmisplusi,\pmisminusi \le \infty$ & Used when power mismatch variable option is active (\option{\opflowincludepowerimbalance}) \\
     \hline
-    $\qmisplusi,\qmisminusi$ & Bus reactive power mismatch variables & $0 \le \qmisplusi,\qmisminusi \le \infty$ & Used when power mismatch variable option is active (\option{\opflowincludepowerimbalance 1}) \\
+    $\qmisplusi,\qmisminusi$ & Bus reactive power mismatch variables & $0 \le \qmisplusi,\qmisminusi \le \infty$ & Used when power mismatch variable option is active (\option{\opflowincludepowerimbalance}) \\
     \hline
-    $\Deltaplj$ & Real power load loss & $0 \le \Deltaplj \le \plj $ & Used when load loss variable option is active (\option{\opflowincludeloadloss 1}) \\
+    $\Deltaplj$ & Real power load loss & $0 \le \Deltaplj \le \plj $ & Used when load loss variable option is active (\option{\opflowincludeloadloss}) \\
     \hline
-    $\Deltaqlj$ & Reactive power load loss & $0 \le \Deltaqlj \le \qlj$ & Used when load loss variable option is active (\option{\opflowincludeloadloss 1}) \\
+    $\Deltaqlj$ & Reactive power load loss & $0 \le \Deltaqlj \le \qlj$ & Used when load loss variable option is active (\option{\opflowincludeloadloss}) \\
     \hline
-    $\Deltasod$, $\Deltasdo$ & Line flow limit violations & $0 \le \Deltasod, \Deltasdo$ & Used when line flow limit violation option is active (\option{\opflowallowlineflowviolation}) \\
+    $\Deltasod, \Deltasdo$ & Line flow limit violations & $0 \le \Deltasod, \Deltasdo$ & Used when line flow limit violation option is active (\option{\opflowallowlineflowviolation}) \\
     \hline
   %  Bus reactive power mismatch & $q^{mis}_i$ & Unbounded & Used when power mismatch variable option is active (\text{-opflow_include_powerimbalance_variables 1})
   %  \hline
