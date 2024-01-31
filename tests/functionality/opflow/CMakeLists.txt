@@ -127,7 +127,7 @@ if(EXAGO_INSTALL_TESTS)
     POWER_BALANCE_POLAR
     -opflow_initialization
     ACPF
-    -opflow_allow_lineflow_violation 
+    -opflow_allow_lineflow_violation
     -opflow_lineflowviolation_penalty
     100
     -no_optfile

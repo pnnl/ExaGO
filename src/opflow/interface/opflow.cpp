@@ -514,10 +514,9 @@ PetscErrorCode OPFLOWInitializeDCOPF(OPFLOW opflow, PetscBool *converged) {
   ierr = OPFLOWIgnoreLineflowConstraints(dcopflow,
                                          opflow->ignore_lineflow_constraints);
   CHKERRQ(ierr);
-  ierr = OPFLOWAllowLineflowViolation(dcopflow,
-                                         opflow->allow_lineflow_violation);
+  ierr =
+      OPFLOWAllowLineflowViolation(dcopflow, opflow->allow_lineflow_violation);
   CHKERRQ(ierr);
-
 
   ierr = OPFLOWSetTolerance(dcopflow, opflow->tolerance);
   CHKERRQ(ierr);
@@ -816,9 +815,9 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
   opflow->ignore_lineflow_constraints =
       OPFLOWOptions::ignore_lineflow_constraints.default_value;
   opflow->allow_lineflow_violation =
-    OPFLOWOptions::allow_lineflow_violation.default_value;
+      OPFLOWOptions::allow_lineflow_violation.default_value;
   opflow->lineflowviolation_penalty =
-    OPFLOWOptions::lineflowviolation_penalty.default_value;
+      OPFLOWOptions::lineflowviolation_penalty.default_value;
   opflow->include_loadloss_variables =
       OPFLOWOptions::include_loadloss_variables.default_value;
   opflow->include_powerimbalance_variables =
@@ -1539,18 +1538,19 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
     CHKERRQ(ierr);
 
     /* Allow line flow violations ? */
-    ierr = PetscOptionsBool(
-        OPFLOWOptions::allow_lineflow_violation.opt.c_str(),
-        OPFLOWOptions::allow_lineflow_violation.desc.c_str(), "",
-        opflow->allow_lineflow_violation,
-        &opflow->allow_lineflow_violation, NULL);
+    ierr =
+        PetscOptionsBool(OPFLOWOptions::allow_lineflow_violation.opt.c_str(),
+                         OPFLOWOptions::allow_lineflow_violation.desc.c_str(),
+                         "", opflow->allow_lineflow_violation,
+                         &opflow->allow_lineflow_violation, NULL);
     CHKERRQ(ierr);
 
     /* Line flow penalty */
-    ierr = PetscOptionsReal(OPFLOWOptions::lineflowviolation_penalty.opt.c_str(),
-                            OPFLOWOptions::lineflowviolation_penalty.desc.c_str(), "",
-                            opflow->lineflowviolation_penalty, &opflow->lineflowviolation_penalty,
-                            NULL);
+    ierr =
+        PetscOptionsReal(OPFLOWOptions::lineflowviolation_penalty.opt.c_str(),
+                         OPFLOWOptions::lineflowviolation_penalty.desc.c_str(),
+                         "", opflow->lineflowviolation_penalty,
+                         &opflow->lineflowviolation_penalty, NULL);
 
     ierr =
         PetscOptionsBool(OPFLOWOptions::include_loadloss_variables.opt.c_str(),
@@ -2887,8 +2887,7 @@ PetscErrorCode OPFLOWAllowLineflowViolation(OPFLOW opflow, PetscBool set) {
  * @param[in]  opflow the OPFLOW object.
  * @param[out] value for opflow->ignore_lineflow_constraints.
  */
-PetscErrorCode OPFLOWGetAllowLineFlowViolation(OPFLOW opflow,
-                                                  PetscBool *set) {
+PetscErrorCode OPFLOWGetAllowLineFlowViolation(OPFLOW opflow, PetscBool *set) {
   PetscFunctionBegin;
   *set = opflow->allow_lineflow_violation;
   PetscFunctionReturn(0);
@@ -2904,7 +2903,8 @@ PetscErrorCode OPFLOWGetAllowLineFlowViolation(OPFLOW opflow,
  * @note Must be called before OPFLOWSetUp
 
 */
-PetscErrorCode OPFLOWSetLineFlowViolationPenalty(OPFLOW opflow, PetscReal penalty) {
+PetscErrorCode OPFLOWSetLineFlowViolationPenalty(OPFLOW opflow,
+                                                 PetscReal penalty) {
   PetscFunctionBegin;
   opflow->lineflowviolation_penalty = penalty;
   PetscFunctionReturn(0);
@@ -2916,12 +2916,12 @@ PetscErrorCode OPFLOWSetLineFlowViolationPenalty(OPFLOW opflow, PetscReal penalt
  * @param [in] opflow the OPFLOW object
  * @param [out] penalty set for line flow limit violation
  */
-PetscErrorCode OPFLOWGetLineFlowViolationPenalty(OPFLOW opflow, PetscReal *penalty) {
+PetscErrorCode OPFLOWGetLineFlowViolationPenalty(OPFLOW opflow,
+                                                 PetscReal *penalty) {
   PetscFunctionBegin;
   *penalty = opflow->lineflowviolation_penalty;
   PetscFunctionReturn(0);
 }
-
 
 /*
   OPFLOWMonitorLines - List of lines to monitor. The flows for these lines

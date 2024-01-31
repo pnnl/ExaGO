@@ -71,16 +71,16 @@ PetscErrorCode OPFLOWPrintSolution(OPFLOW opflow) {
                      opflow->ignore_lineflow_constraints ? "YES" : "NO");
   CHKERRQ(ierr);
 
-  ierr = PetscPrintf(opflow->comm->type, "%-35s %s\n",
-                     "Allow line flow violation",
-                     opflow->allow_lineflow_violation ? "YES" : "NO");
+  ierr =
+      PetscPrintf(opflow->comm->type, "%-35s %s\n", "Allow line flow violation",
+                  opflow->allow_lineflow_violation ? "YES" : "NO");
   CHKERRQ(ierr);
-  if(opflow->allow_lineflow_violation) {
+  if (opflow->allow_lineflow_violation) {
     ierr = PetscPrintf(opflow->comm->type, "%-35s %g\n",
                        "Line flow violation penalty ($)",
                        opflow->lineflowviolation_penalty);
     CHKERRQ(ierr);
-  }    
+  }
 
   ierr = PetscPrintf(opflow->comm->type, "\n");
   CHKERRQ(ierr);
