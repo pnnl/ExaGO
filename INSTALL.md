@@ -86,7 +86,8 @@ If you are using the HiOp solver, HiOp must be built with the same RAJA and Umpi
 
 ```console
 git clone git@github.com:pnnl/ExaGO.git
-cd exago
+cd ExaGO
+git submodule update --init --recursive
 mkdir build
 cd build
 
