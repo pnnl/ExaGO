@@ -25,8 +25,8 @@ The rest of this document assumes you want to install with CMake and you already
 ### Acquiring the Source Code
 
 ```console
-git clone [https://gitlab.pnnl.gov/exasgd/frameworks/exago.git
-](https://github.com/pnnl/ExaGO.git)
+git clone https://github.com/pnnl/ExaGO.git
+
 # Or if you have SSH keys set up:
 git clone git@github.com:pnnl/ExaGO.git
 ```
