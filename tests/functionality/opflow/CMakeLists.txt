@@ -115,6 +115,29 @@ if(EXAGO_INSTALL_TESTS)
 
   exago_add_test(
     NAME
+    OPFLOW_LINEFLOW_PENALTY
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:app_opflow>
+    -netfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+    -opflow_solver
+    IPOPT
+    -opflow_model
+    POWER_BALANCE_POLAR
+    -opflow_initialization
+    ACPF
+    -opflow_allow_lineflow_violation
+    -opflow_lineflowviolation_penalty
+    100
+    -no_optfile
+    DEPENDS
+    IPOPT
+    HIOP
+  )
+
+  exago_add_test(
+    NAME
     OPFLOW_MONITOR_KVLEVEL_HIOP_CPU
     COMMAND
     ${RUNCMD}

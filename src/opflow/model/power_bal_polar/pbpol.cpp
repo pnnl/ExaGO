@@ -1,6 +1,7 @@
 #include "pbpol.h"
 #include "exago_config.h"
 #include <private/opflowimpl.h>
+/* Testing Orestis's permission to commit. */
 
 PetscErrorCode OPFLOWModelDestroy_PBPOL(OPFLOW opflow) {
   PetscErrorCode ierr;
@@ -19,6 +20,7 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
   PetscInt i;
   PSBUS bus;
   PSGEN gen;
+  PSLINE line;
   PetscInt loc;
 
   PetscFunctionBegin;
@@ -28,6 +30,16 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
   CHKERRQ(ierr);
   ierr = VecGetArray(Xu, &xu);
   CHKERRQ(ierr);
+
+  for (i = 0; i < opflow->nlinesmon; i++) {
+    line = &ps->line[opflow->linesmon[i]];
+    if (opflow->allow_lineflow_violation) {
+      /* Bounds on slack variables */
+      loc = line->startxslackloc;
+      xl[loc] = xl[loc + 1] = 0.0;
+      xu[loc] = xu[loc + 1] = PETSC_INFINITY;
+    }
+  }
 
   for (i = 0; i < ps->nbus; i++) {
     PetscInt k;
@@ -377,6 +389,11 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X, Vec Lambda) {
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
 
+    if (opflow->allow_lineflow_violation) {
+      loc = line->startxslackloc;
+      /* Initialize slacks for line flow violations */
+      x[loc] = x[loc + 1] = 0.0;
+    }
     gloc = line->startineqloc;
     lambdai[gloc] = line->mult_sf;
     lambdai[gloc + 1] = line->mult_st;
@@ -1001,7 +1018,19 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow, Vec X,
       g[gloc] = Sf2;
       g[gloc + 1] = St2;
 
-      flps += 158.0;
+      if (opflow->allow_lineflow_violation) {
+        PetscInt loc;
+        PetscScalar xsft_slack = 0.0, xstf_slack = 0.0;
+        loc = line->startxslackloc;
+        // Slack variables for from and to side
+        xsft_slack = x[loc];
+        xstf_slack = x[loc + 1];
+
+        g[gloc] -= xsft_slack;
+        g[gloc + 1] -= xstf_slack;
+      }
+
+      flps += 160.0;
     }
   }
 
@@ -1020,7 +1049,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,
   PetscInt i, k, flps = 0;
   PetscInt row[2], col[4];
   PetscInt rstart, rend;
-  PetscInt gloc, xlocf, xloct;
+  PetscInt loc, gloc, xlocf, xloct;
   PetscScalar val[4];
   PetscScalar Gff, Bff, Gft, Bft, Gtf, Btf, Gtt, Btt;
   PetscScalar Vmf, Vmt, thetaf, thetat, thetaft, thetatf;
@@ -1040,7 +1069,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,
   PSGEN gen;
   const PetscScalar *x;
   PetscScalar Pg, delPg, delP;
-  PetscInt xloc, loc;
+  PetscInt xloc;
   PetscScalar V, Vset, Q, Qmax, Qmin, Qg;
 
   PetscFunctionBegin;
@@ -1244,6 +1273,23 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,
       val[3] = dSt2_dVmf;
       ierr = MatSetValues(Ji, 1, row, 4, col, val, ADD_VALUES);
       CHKERRQ(ierr);
+
+      if (opflow->allow_lineflow_violation) {
+        loc = line->startxslackloc;
+        row[0] = gloc;
+        col[0] = loc;
+        val[0] = -1.0;
+
+        ierr = MatSetValues(Ji, 1, row, 1, col, val, ADD_VALUES);
+        CHKERRQ(ierr);
+
+        row[0] = gloc + 1;
+        col[0] = loc + 1;
+        val[0] = -1.0;
+
+        ierr = MatSetValues(Ji, 1, row, 1, col, val, ADD_VALUES);
+        CHKERRQ(ierr);
+      }
     }
     flps += opflow->nlinesmon *
             (160 + (20 * EXAGO_FLOPS_SINOP) + (20 * EXAGO_FLOPS_COSOP));
@@ -1278,6 +1324,7 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow, Vec X,
   PetscInt i;
   PSBUS bus;
   PSGEN gen;
+  PSLINE line;
   PetscInt loc;
   PetscInt k;
   PetscScalar Pg;
@@ -1289,6 +1336,21 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow, Vec X,
   CHKERRQ(ierr);
 
   *obj = 0.0;
+
+  for (i = 0; i < opflow->nlinesmon; i++) {
+    line = &ps->line[opflow->linesmon[i]];
+    if (opflow->allow_lineflow_violation) {
+      loc = line->startxslackloc;
+      // Slack variables for from and to side
+      PetscScalar xsft_slack = 0.0, xstf_slack = 0.0;
+      xsft_slack = x[loc];
+      xstf_slack = x[loc + 1];
+
+      *obj += opflow->lineflowviolation_penalty * (xsft_slack + xstf_slack);
+      flps += 2.0;
+    }
+  }
+
   for (i = 0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
 
@@ -1362,6 +1424,7 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
   PetscInt i;
   PSBUS bus;
   PSGEN gen;
+  PSLINE line;
   PetscInt loc;
   PetscInt k;
   PetscScalar Pg;
@@ -1372,6 +1435,18 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
   CHKERRQ(ierr);
   ierr = VecGetArray(grad, &df);
   CHKERRQ(ierr);
+
+  for (i = 0; i < opflow->nlinesmon; i++) {
+    line = &ps->line[opflow->linesmon[i]];
+    if (opflow->allow_lineflow_violation) {
+      loc = line->startxslackloc;
+      // ADD GRADIENT HERE
+      df[loc] = opflow->lineflowviolation_penalty;
+      df[loc + 1] = opflow->lineflowviolation_penalty;
+
+      flps += 0.0;
+    }
+  }
 
   for (i = 0; i < ps->nbus; i++) {
     bus = &ps->bus[i];
@@ -1462,15 +1537,24 @@ PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW opflow,
   PSLINE line;
   PetscErrorCode ierr;
   PetscBool isghost;
+  PetscInt idx;
 
   PetscFunctionBegin;
 
   *nx = 0;
   /* No variables for the branches */
   for (i = 0; i < opflow->nlinesmon; i++) {
-    line = &ps->line[opflow->linesmon[i]];
-    branchnvar[i] = line->nx = 0;
-    *nx += branchnvar[i];
+    idx = opflow->linesmon[i];
+    line = &ps->line[idx];
+    branchnvar[idx] = line->nx = 0;
+    if (opflow->allow_lineflow_violation) {
+      /* Two variables for line flow slacks
+         - From side flow (Sft) and To side flow (Stf)
+      */
+      branchnvar[idx] += 2;
+      line->nx += 2;
+    }
+    *nx += branchnvar[idx];
   }
 
   /* Variables for the buses */
@@ -2953,6 +3037,14 @@ PetscErrorCode OPFLOWModelSetUp_PBPOL(OPFLOW opflow) {
 
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
+
+    ierr = PSLINEGetVariableLocation(line, &loc);
+    CHKERRQ(ierr);
+    /* Set starting location for slack variable */
+    if (opflow->allow_lineflow_violation) {
+      line->startxslackloc = loc;
+    }
+
     line->startineqloc = ineqloc;
     ineqloc += line->nconineq;
   }

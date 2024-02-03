@@ -312,6 +312,9 @@ struct _p_PSLINE {
   /* Variable and constraint sizes and locations */
   PetscInt startloc; /**< Starting location for the variables for this line in
                         the local vector */
+  PetscInt startxslackloc; /** < Starting location of slack variables used for
+                              line flow limit violation in the local vector */
+
   PetscInt startlocglob; /**< Starting location for the variables for this line
                             in the global vector */
 
