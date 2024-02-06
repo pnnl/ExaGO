@@ -69,6 +69,7 @@ extern PetscErrorCode OPFLOWModelCreate_PBCAR(OPFLOW);
 extern PetscErrorCode OPFLOWModelCreate_IBCAR(OPFLOW);
 extern PetscErrorCode OPFLOWModelCreate_IBCAR2(OPFLOW);
 extern PetscErrorCode OPFLOWModelCreate_DCOPF(OPFLOW);
+extern PetscErrorCode OPFLOWModelCreate_PBPOLUC(OPFLOW);
 
 #if defined(EXAGO_ENABLE_HIOP)
 extern PetscErrorCode OPFLOWModelCreate_PBPOLHIOP(OPFLOW);
@@ -104,8 +105,12 @@ PetscErrorCode OPFLOWModelRegisterAll(OPFLOW opflow) {
   ierr =
       OPFLOWModelRegister(opflow, OPFLOWMODEL_IBCAR2, OPFLOWModelCreate_IBCAR2);
   CHKERRQ(ierr);
-  ierr = OPFLOWModelRegister(opflow, "DCOPF", OPFLOWModelCreate_DCOPF);
+  ierr = OPFLOWModelRegister(opflow, OPFLOWMODEL_DCOPF, OPFLOWModelCreate_DCOPF);
   CHKERRQ(ierr);
+
+  ierr = OPFLOWModelRegister(opflow, OPFLOWMODEL_PBPOLUC, OPFLOWModelCreate_PBPOLUC);
+  CHKERRQ(ierr);
+
 
 #if defined(EXAGO_ENABLE_HIOP)
   ierr = OPFLOWModelRegister(opflow, OPFLOWMODEL_PBPOLHIOP,

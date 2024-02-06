@@ -233,6 +233,7 @@ struct _p_PSGEN {
   PetscInt nxpset; /* Number of generator set point variables (Pgset) */
   PetscInt nxpdev; /* Number of generator real power deviation (ramp up/down)
                       variables */
+  PetscInt nxstatus; /* Number of variables for generator status */
 
   PetscInt startxpowloc; /* Starting location for power variables */
   PetscInt
@@ -244,6 +245,8 @@ struct _p_PSGEN {
       startxpsetlocglob; /* Starting location of generator set-point variable */
   PetscInt startxpdevlocglob; /* Starting global location for power deviation
                                  variables */
+  PetscInt startxstatusloc; /* Start location of generator commitment variables */
+  PetscInt startxstatuslocglob; /* Start global location of generation commitment variables */
 
   PetscInt nx; /* Total number of variables for the gen */
 

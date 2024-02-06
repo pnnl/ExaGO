@@ -3,6 +3,7 @@ set(OPFLOW_FORM_SRC
     model/current_bal_cartesian/ibcar.cpp
     model/current_bal_cartesian/ibcar2.cpp
     model/power_bal_polar/pbpol.cpp
+    model/power_bal_polar/pbpoluc.cpp
     model/power_bal_cartesian/pbcar.cpp
     model/power_bal_hiop/pbpolhiop.cpp
     model/power_bal_hiop/pbpolhiopkernels.cpp

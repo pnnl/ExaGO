@@ -3000,16 +3000,18 @@ PetscErrorCode OPFLOWSetSummaryStats(OPFLOW opflow) {
 PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
   PetscFunctionBegin;
 #if defined(EXAGO_ENABLE_IPOPT)
-  PetscBool ipopt, ipopt_pbpol, ipopt_pbcar, ipopt_ibcar, ipopt_ibcar2,
+  PetscBool ipopt, ipopt_pbpol, ipopt_pbpol_uc,ipopt_pbcar, ipopt_ibcar, ipopt_ibcar2,
       ipopt_dcopf;
   ipopt = static_cast<PetscBool>(opflow->solvername == OPFLOWSOLVER_IPOPT);
   ipopt_pbpol = static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_PBPOL);
+  ipopt_pbpol_uc = static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_PBPOLUC);
+
   ipopt_pbcar = static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_PBCAR);
   ipopt_ibcar = static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_IBCAR);
   ipopt_ibcar2 =
       static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_IBCAR2);
   ipopt_dcopf = static_cast<PetscBool>(opflow->modelname == "DCOPF");
-  if (ipopt && !(ipopt_pbpol || ipopt_pbcar || ipopt_ibcar || ipopt_ibcar2 ||
+  if (ipopt && !(ipopt_pbpol || ipopt_pbpol_uc || ipopt_pbcar || ipopt_ibcar || ipopt_ibcar2 ||
                  ipopt_dcopf)) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
             "OPFLOW solver IPOPT incompatible with model %s",
