@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export MY_CLUSTER=crusher
-export PROJ_DIR=/autofs/nccs-svm1_proj/csc359
+export PROJ_DIR=/autofs/nccs-svm1_proj/eng145
 
 module reset
 
