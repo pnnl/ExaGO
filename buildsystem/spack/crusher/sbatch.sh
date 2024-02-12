@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -A CSC359
+#SBATCH -A ENG145
 #SBATCH -p batch
 #SBATCH -t 100
 #SBATCH -N 1

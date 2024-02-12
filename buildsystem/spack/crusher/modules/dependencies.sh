@@ -1,4 +1,4 @@
-module use -a /lustre/orion/csc359/proj-shared/nkouk/spack-install/modules/linux-sles15-zen3
+module use -a /lustre/orion/eng145/proj-shared/nkouk/spack-install/modules/linux-sles15-zen3
 # gmake@=4.4.1%clang@=14.0.0-rocm5.2.0-mixed~guile build_system=generic arch=linux-sles15-zen3
 module load gmake/4.4.1-clang-14.0.0-rocm5.2.0-mixed-7vcngsz
 # pkgconf@=1.9.5%clang@=14.0.0-rocm5.2.0-mixed build_system=autotools arch=linux-sles15-zen3
@@ -22,21 +22,15 @@ module load cmake/3.20.6-clang-14.0.0-rocm5.2.0-mixed-lilujjv
 # blt@=0.4.1%clang@=14.0.0-rocm5.2.0-mixed build_system=generic arch=linux-sles15-zen3
 module load blt/0.4.1-clang-14.0.0-rocm5.2.0-mixed-pihruyq
 # hip@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed~cuda+rocm build_system=cmake build_type=Release generator=make patches=959d1fe,c2ee21c arch=linux-sles15-zen3
-module load hip/5.2.0-clang-14.0.0-rocm5.2.0-mixed-26fjs6f
-# hsa-rocr-dev@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed+image+shared build_system=cmake build_type=Release generator=make patches=9267179 arch=linux-sles15-zen3
-module load hsa-rocr-dev/5.2.0-clang-14.0.0-rocm5.2.0-mixed-44hnkkg
+module load hip/5.2.0-clang-14.0.0-rocm5.2.0-mixed-6ftqihk
+# hsa-rocr-dev@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed~asan+image+shared build_system=cmake build_type=Release generator=make patches=9267179 arch=linux-sles15-zen3
+module load hsa-rocr-dev/5.2.0-clang-14.0.0-rocm5.2.0-mixed-p6fvpym
 # llvm-amdgpu@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed~link_llvm_dylib~llvm_dylib~openmp+rocm-device-libs build_system=cmake build_type=Release generator=ninja patches=a08bbe1 arch=linux-sles15-zen3
-module load llvm-amdgpu/5.2.0-clang-14.0.0-rocm5.2.0-mixed-5a4f3fn
+module load llvm-amdgpu/5.2.0-clang-14.0.0-rocm5.2.0-mixed-7g3i4ov
 # camp@=0.2.3%clang@=14.0.0-rocm5.2.0-mixed~cuda~ipo~openmp+rocm~tests amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
-module load camp/0.2.3-clang-14.0.0-rocm5.2.0-mixed-nbmcmee
+module load camp/0.2.3-clang-14.0.0-rocm5.2.0-mixed-5hqx2ao
 # cray-mpich@=8.1.25%clang@=14.0.0-rocm5.2.0-mixed+wrappers build_system=generic arch=linux-sles15-zen3
 module load cray-mpich/8.1.25-clang-14.0.0-rocm5.2.0-mixed-qd6s47h
-# gmake@=4.4.1%gcc@=12.2.0-mixed~guile build_system=generic arch=linux-sles15-zen3
-module load gmake/4.4.1-gcc-12.2.0-mixed-svg2oxk
-# openblas@=0.3.20%gcc@=12.2.0-mixed~bignuma~consistent_fpcsr~ilp64+locking+pic+shared build_system=makefile patches=9f12903 symbol_suffix=none threads=none arch=linux-sles15-zen3
-module load openblas/0.3.20-gcc-12.2.0-mixed-lkwa4l7
-# coinhsl@=2019.05.21%gcc@=12.2.0-mixed+blas build_system=autotools arch=linux-sles15-zen3
-module load coinhsl/2019.05.21-gcc-12.2.0-mixed-4lf6df7
 # hipblas@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed~cuda+rocm amdgpu_target=auto build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
 module load hipblas/5.2.0-clang-14.0.0-rocm5.2.0-mixed-pz2pdk4
 # hipfft@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed~cuda+rocm amdgpu_target=auto build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
@@ -52,13 +46,19 @@ module load rocrand/5.2.0-clang-14.0.0-rocm5.2.0-mixed-nwexus7
 # rocthrust@=5.2.0%clang@=14.0.0-rocm5.2.0-mixed amdgpu_target=auto build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
 module load rocthrust/5.2.0-clang-14.0.0-rocm5.2.0-mixed-3upg7wr
 # ginkgo@=1.5.0.glu_experimental%clang@=14.0.0-rocm5.2.0-mixed~cuda~develtools~full_optimizations~hwloc~ipo~mpi~openmp+rocm+shared~sycl amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make patches=ba0956e arch=linux-sles15-zen3
-module load ginkgo/1.5.0.glu_experimental-clang-14.0.0-rocm5.2.0-mixed-fo65t4m
+module load ginkgo/1.5.0.glu_experimental-clang-14.0.0-rocm5.2.0-mixed-6bembpq
+# gmake@=4.4.1%gcc@=12.2.0-mixed~guile build_system=generic arch=linux-sles15-zen3
+module load gmake/4.4.1-gcc-12.2.0-mixed-svg2oxk
+# openblas@=0.3.20%gcc@=12.2.0-mixed~bignuma~consistent_fpcsr~ilp64+locking+pic+shared build_system=makefile patches=9f12903 symbol_suffix=none threads=none arch=linux-sles15-zen3
+module load openblas/0.3.20-gcc-12.2.0-mixed-lkwa4l7
+# coinhsl@=2019.05.21%gcc@=12.2.0-mixed+blas build_system=autotools arch=linux-sles15-zen3
+module load coinhsl/2019.05.21-gcc-12.2.0-mixed-4lf6df7
 # magma@=2.6.2%clang@=14.0.0-rocm5.2.0-mixed~cuda+fortran~ipo+rocm+shared amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
-module load magma/2.6.2-clang-14.0.0-rocm5.2.0-mixed-plzqmiv
+module load magma/2.6.2-clang-14.0.0-rocm5.2.0-mixed-5v4sbqv
 # metis@=5.1.0%clang@=14.0.0-rocm5.2.0-mixed~gdb~int64~ipo~real64+shared build_system=cmake build_type=Release generator=make patches=4991da9,93a7903 arch=linux-sles15-zen3
 module load metis/5.1.0-clang-14.0.0-rocm5.2.0-mixed-3loietj
 # raja@=0.14.0%clang@=14.0.0-rocm5.2.0-mixed~cuda~examples~exercises~ipo~openmp~plugins+rocm+shared~tests amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
-module load raja/0.14.0-clang-14.0.0-rocm5.2.0-mixed-vf434zb
+module load raja/0.14.0-clang-14.0.0-rocm5.2.0-mixed-plistg5
 # libiconv@=1.17%clang@=14.0.0-rocm5.2.0-mixed build_system=autotools libs=shared,static arch=linux-sles15-zen3
 module load libiconv/1.17-clang-14.0.0-rocm5.2.0-mixed-gryio4w
 # diffutils@=3.9%clang@=14.0.0-rocm5.2.0-mixed build_system=autotools arch=linux-sles15-zen3
@@ -98,14 +98,14 @@ module load mpfr/4.2.0-clang-14.0.0-rocm5.2.0-mixed-k6y6ufe
 # suite-sparse@=5.13.0%clang@=14.0.0-rocm5.2.0-mixed~cuda~graphblas~openmp+pic build_system=generic arch=linux-sles15-zen3
 module load suite-sparse/5.13.0-clang-14.0.0-rocm5.2.0-mixed-vfmchqd
 # umpire@=6.0.0%clang@=14.0.0-rocm5.2.0-mixed+c~cuda~device_alloc~deviceconst~examples~fortran~ipo~numa~openmp+rocm+shared amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make tests=none arch=linux-sles15-zen3
-module load umpire/6.0.0-clang-14.0.0-rocm5.2.0-mixed-wbz3qxn
-# hiop@=develop%clang@=14.0.0-rocm5.2.0-mixed~cuda~deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja+rocm~shared+sparse amdgpu_target=gfx90a build_system=cmake build_type=MinSizeRel generator=make arch=linux-sles15-zen3
-module load hiop/develop-clang-14.0.0-rocm5.2.0-mixed-4tyssbz
+module load umpire/6.0.0-clang-14.0.0-rocm5.2.0-mixed-q3vler4
+# hiop@=develop%clang@=14.0.0-rocm5.2.0-mixed~cuda~deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja+rocm~shared+sparse amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
+module load hiop/develop-clang-14.0.0-rocm5.2.0-mixed-jxs7pn7
 # ipopt@=3.12.10%clang@=14.0.0-rocm5.2.0-mixed+coinhsl~debug~metis~mumps build_system=autotools arch=linux-sles15-zen3
 module load ipopt/3.12.10-clang-14.0.0-rocm5.2.0-mixed-di6sy6h
 # python@=3.9.12%clang@=14.0.0-rocm5.2.0-mixed+bz2+crypt+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tkinter+uuid+zlib build_system=generic patches=0d98e93,4c24573,ebdca64,f2fd060 arch=linux-sles15-zen3
-module load python/3.9.12-clang-14.0.0-rocm5.2.0-mixed-ylrkreb
-# petsc@=3.20.2%clang@=14.0.0-rocm5.2.0-mixed~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~sycl~tetgen~trilinos~valgrind build_system=generic clanguage=C memalign=none arch=linux-sles15-zen3
-module load petsc/3.20.2-clang-14.0.0-rocm5.2.0-mixed-kzwzivo
-# exago@=develop%clang@=14.0.0-rocm5.2.0-mixed~cuda+hiop~ipo+ipopt+logging+mpi~python+raja+rocm amdgpu_target=gfx90a build_system=cmake build_type=MinSizeRel dev_path=/lustre/orion/scratch/nkouk/csc359/ExaGO generator=make arch=linux-sles15-zen3
-## module load exago/develop-clang-14.0.0-rocm5.2.0-mixed-h3wqolf
+module load python/3.9.12-clang-14.0.0-rocm5.2.0-mixed-rmdxnw5
+# petsc@=3.20.2%clang@=14.0.0-rocm5.2.0-mixed~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~sycl~tetgen~trilinos~valgrind~zoltan build_system=generic clanguage=C memalign=none arch=linux-sles15-zen3
+module load petsc/3.20.2-clang-14.0.0-rocm5.2.0-mixed-lnhejpn
+# exago@=develop%clang@=14.0.0-rocm5.2.0-mixed~cuda+hiop~ipo+ipopt+logging+mpi~python+raja+rocm amdgpu_target=gfx90a build_system=cmake build_type=Release dev_path=/lustre/orion/scratch/nkouk/eng145/ExaGO generator=make arch=linux-sles15-zen3
+## module load exago/develop-clang-14.0.0-rocm5.2.0-mixed-stynmti
