@@ -3,9 +3,9 @@
 # Configure python
 module load cray-python/3.9.12.1 
 
-BASE=/lustre/orion/eng145/proj-shared/$(whoami)
+BASE=/lustre/orion/eng145/world-shared/$(whoami)
 
-export SPACK_INSTALL=/lustre/orion/eng145/proj-shared/nkouk/spack-install
+export SPACK_INSTALL=/lustre/orion/eng145/world-shared/spack-install
 export SPACK_MODULES=modules
 export SPACK_CACHE=$BASE/spack-cache
 export SPACK_MIRROR=$BASE/spack-mirror

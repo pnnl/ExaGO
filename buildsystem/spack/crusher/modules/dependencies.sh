@@ -1,4 +1,4 @@
-module use -a /lustre/orion/eng145/proj-shared/nkouk/spack-install/modules/linux-sles15-zen3
+module use -a /lustre/orion/eng145/world-shared/spack-install/modules/linux-sles15-zen3
 # gmake@=4.4.1%clang@=14.0.0-rocm5.2.0-mixed~guile build_system=generic arch=linux-sles15-zen3
 module load gmake/4.4.1-clang-14.0.0-rocm5.2.0-mixed-7vcngsz
 # pkgconf@=1.9.5%clang@=14.0.0-rocm5.2.0-mixed build_system=autotools arch=linux-sles15-zen3
