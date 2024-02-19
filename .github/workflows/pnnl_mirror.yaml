@@ -34,4 +34,4 @@ jobs:
 
       #  Trigger CI pipeline since it was skipped in the above push
        - name: Trigger Pipeline
-         run: curl -X POST -F token=${{ secrets.PNNL_PIPELINE_TRIGGER }} -F ref=${{ steps.extract_branch.outputs.branch }} https://gitlab.pnnl.gov/api/v4/projects/1619/trigger/pipeline
+         run: curl -X POST -F token=${{ secrets.PNNL_PIPELINE_TRIGGER }} -F ref=${{ steps.extract_branch.outputs.branch }} https://gitlab.pnnl.gov/api/v4/projects/1719/trigger/pipeline
