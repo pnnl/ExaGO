@@ -682,7 +682,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
         ps->maxbusnum = extbusnum;
     }
 
-        /* Count the number of pq loads */
+    /* Count the number of cost-coefficients */
     if (gencost_start_line != -1 && line_counter >= gencost_start_line &&
         gencost_end_line == -1) {
       PetscInt gencost_model,num_cost_coeffs;
