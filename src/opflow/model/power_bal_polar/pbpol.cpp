@@ -33,6 +33,7 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
 
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
+   
     if (!line->isdcline) {
       if(opflow->allow_lineflow_violation) {
 	/* Bounds on slack variables */
@@ -1104,18 +1105,17 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow, Vec X,
       g[gloc] = Sf2;
       g[gloc + 1] = St2;
 
-      if (!line->isdcline && opflow->allow_lineflow_violation) {
-        PetscInt loc;
-        PetscScalar xsft_slack = 0.0, xstf_slack = 0.0;
-        loc = line->startxslackloc;
-        // Slack variables for from and to side
-        xsft_slack = x[loc];
-        xstf_slack = x[loc + 1];
-
-        g[gloc] -= xsft_slack;
-        g[gloc + 1] -= xstf_slack;
+      if (opflow->allow_lineflow_violation) {
+	PetscInt loc;
+	PetscScalar xsft_slack = 0.0, xstf_slack = 0.0;
+	loc = line->startxslackloc;
+	// Slack variables for from and to side
+	xsft_slack = x[loc];
+	xstf_slack = x[loc + 1];
+	
+	g[gloc] -= xsft_slack;
+	g[gloc + 1] -= xstf_slack;
       }
-
       flps += 160.0;
     }
   }
@@ -1427,7 +1427,8 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow, Vec X,
 
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
-    if (!line->isdcline && opflow->allow_lineflow_violation) {
+    if(line->isdcline) continue;
+    if (opflow->allow_lineflow_violation) {
       loc = line->startxslackloc;
       // Slack variables for from and to side
       PetscScalar xsft_slack = 0.0, xstf_slack = 0.0;
@@ -1526,13 +1527,12 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
 
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
-    if (!line->isdcline && opflow->allow_lineflow_violation) {
+
+    if(line->isdcline) continue;
+    if (opflow->allow_lineflow_violation) {
       loc = line->startxslackloc;
-      // ADD GRADIENT HERE
       df[loc] = opflow->lineflowviolation_penalty;
       df[loc + 1] = opflow->lineflowviolation_penalty;
-
-      flps += 0.0;
     }
   }
 
