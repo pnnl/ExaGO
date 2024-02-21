@@ -1466,6 +1466,7 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow, Vec X,
       if (opflow->objectivetype == MIN_GEN_COST) {
         loc = gen->startxpowloc;
         Pg = x[loc] * ps->MVAbase;
+
         *obj +=
             gen->cost_alpha * Pg * Pg + gen->cost_beta * Pg + gen->cost_gamma;
         flps += 7.0;
