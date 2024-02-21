@@ -747,6 +747,8 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
      generators in gencost data
   */
   PetscInt temp_geni[200]; // Assume there are max 200 generators
+  for(i=0; i < 200; i++) temp_geni[i] = line_counter+1;// initialize
+  
   PetscInt i_idx=-1,isol_idx=0,isol_idx2=0,isol_idx3=0;
   
   fp = fopen(netfile, "r");
@@ -956,7 +958,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
 	       &Gen[gencosti].cost_ncoeffs, &Gen[gencosti].cost_alpha,
 	       &Gen[gencosti].cost_beta, &Gen[gencosti].cost_gamma);
       } else if(num_max_cost_coeffs == 4) {
-	sscanf(line, "%d %lf %lf %d %*lf %lf %lf %lf", &Gen[gencosti].cost_model,
+	sscanf(line, "%d %lf %lf %d %*f %lf %lf %lf", &Gen[gencosti].cost_model,
 	       &Gen[gencosti].cost_startup, &Gen[gencosti].cost_shutdown,
 	       &Gen[gencosti].cost_ncoeffs, &Gen[gencosti].cost_alpha,
 	       &Gen[gencosti].cost_beta, &Gen[gencosti].cost_gamma);
