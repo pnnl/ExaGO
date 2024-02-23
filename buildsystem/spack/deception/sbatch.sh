@@ -46,9 +46,9 @@ cp /qfs/projects/earthshot/src/coinhsl-archive-2019.05.21.tar.gz . &&
 . buildsystem/spack/load_spack.sh &&
 . buildsystem/spack/binary_mirror.sh && 
 # spack clean -abm &&  # shouldn't run this everytime...
-spack develop --no-clone --path=$(pwd) exago@develop &&
+spack -e $SPACKENV develop --no-clone --path=$(pwd) exago@develop &&
 mkdir hiop_dev
-spack develop --clone --force FORCE --path=$(pwd)/hiop_dev hiop@develop &&
+spack -e $SPACKENV develop --clone --force FORCE --path=$(pwd)/hiop_dev hiop@develop &&
 cd hiop_dev &&
 git submodule update --init --recursive &&
 #git checkout develop && #test out patch 
