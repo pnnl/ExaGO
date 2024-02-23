@@ -48,7 +48,7 @@ source $base/env.sh &&
 	source ./tpl/spack/share/spack/setup-env.sh &&
 
 	# Create directory for environment
-	SPACKENV=$(pwd)/spack-env-$MY_CLUSTER &&
+	export SPACKENV=$(pwd)/spack-env-$MY_CLUSTER &&
 	mkdir -p $SPACKENV &&
 	# Remove old config if present
 	(rm -f $SPACKENV/spack.yaml || true) &&
