@@ -11,6 +11,6 @@ spack -e $SPACKENV mirror list
 
 res=$?
 
-chmod -R ugo+wrx $SPACK_MIRROR/* &
+chmod -R ugo+wrx $SPACK_MIRROR &
 
 exit $res
