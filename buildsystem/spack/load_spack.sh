@@ -56,7 +56,7 @@ source $base/env.sh &&
 
 	# Use a directory based environment, and decorate command line
 	spack env create -d $SPACKENV $base/spack.yaml &&
-	spack env activate -p $SPACKENV &&
+	#spack env activate -p $SPACKENV &&
 
 	# Print relevant spack config for sanity check of environment.
 	echo "spack configuration will be installed into $SPACK_INSTALL" &&
@@ -67,5 +67,5 @@ source $base/env.sh &&
 
 # Print config if configured successfully
 if [ $? -eq 0 ] && [ "$1" = "-v" ]; then
-	spack config get config
+	spack -e $SPACKENV config get config
 fi
