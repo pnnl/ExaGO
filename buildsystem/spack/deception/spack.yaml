@@ -4,6 +4,7 @@ spack:
   view: false
   concretizer:
     reuse: false
+    unify: true
   config:
     concretizer: clingo
     install_tree:
