@@ -451,6 +451,8 @@ struct _p_PS {
 
   PSSystemSummary sys_info;
 
+  PetscBool read_load_cost; /* are individual load costs assigned? */
+
   PetscBool setupcalled; /* Is setup called on PS? */
 
   PetscLogDouble solve_real_time;

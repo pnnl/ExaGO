@@ -232,21 +232,24 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
     fprintf(fd, "\n};\n");
   }
 
-  /* Load cost data */
-  fprintf(fd, "\n%%%% load cost data\n");
-  fprintf(fd, "%% %%maxallowedloadshed loadshedcost\n");
-  fprintf(fd, "mpc.loadcost = [\n");
-  for (i = 0; i < ps->nbus; i++) {
-    bus = &ps->bus[i];
-    for (k = 0; k < bus->nload; k++) {
-      PSLOAD load;
-      ierr = PSBUSGetLoad(bus, k, &load);
-      CHKERRQ(ierr);
-      fprintf(fd, "%10.5g %10.5g; \n", load->loss_frac * 100.0,
-              load->loss_cost);
+  if (ps->read_load_cost) {
+
+    /* Load cost data */
+    fprintf(fd, "\n%%%% load cost data\n");
+    fprintf(fd, "%% %%maxallowedloadshed loadshedcost\n");
+    fprintf(fd, "mpc.loadcost = [\n");
+    for (i = 0; i < ps->nbus; i++) {
+      bus = &ps->bus[i];
+      for (k = 0; k < bus->nload; k++) {
+        PSLOAD load;
+        ierr = PSBUSGetLoad(bus, k, &load);
+        CHKERRQ(ierr);
+        fprintf(fd, "%10.5g %10.5g; \n", load->loss_frac * 100.0,
+                load->loss_cost);
+      }
     }
+    fprintf(fd, "];\n");
   }
-  fprintf(fd, "];\n");
 
   /* Solution summary info */
   fprintf(fd, "\n%%%% summary data\n");

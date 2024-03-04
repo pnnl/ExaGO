@@ -1644,20 +1644,22 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
     ierr = OPFLOWGetLinesMonitored(opflow);
     CHKERRQ(ierr);
   }
+
+  /* Set individual load cost parameters to the blanket values if they
+     were not read from the input network */
   if (opflow->include_loadloss_variables) {
     PS ps;
-    PSBUS bus;
-    PSLOAD load;
-
     ierr = OPFLOWGetPS(opflow, &ps);
     CHKERRQ(ierr);
 
-    for (int i = 0; i < ps->nbus; i++) {
-      bus = &(ps->bus[i]);
-      for (int l = 0; l < bus->nload; l++) {
-        ierr = PSBUSGetLoad(bus, l, &load);
-        CHKERRQ(ierr);
-        if (load->loss_cost == BOGUSLOSSCOST) {
+    if (!ps->read_load_cost) {
+      for (int i = 0; i < ps->nbus; i++) {
+        PSBUS bus = &(ps->bus[i]);
+        for (int l = 0; l < bus->nload; l++) {
+          PSLOAD load;
+          ierr = PSBUSGetLoad(bus, l, &load);
+          CHKERRQ(ierr);
+          load->loss_frac = 1.0;
           load->loss_cost = opflow->loadloss_penalty;
         }
       }
