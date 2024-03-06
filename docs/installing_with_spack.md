@@ -36,7 +36,7 @@ source /path-to-spack/share/spack/setup-env.sh
 spack compiler find
 spack install exago@develop%gcc \
   ^openmpi ^ipopt@3.12.10+coinhsl~mumps ^coinhsl+blas \
-  ^petsc@3.19+mpi~hypre~superlu-dist~mumps+shared
+  ^petsc+mpi~hypre~superlu-dist~mumps+shared
 spack load exago
 opflow -help
 ```
