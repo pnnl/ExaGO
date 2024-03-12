@@ -1644,20 +1644,22 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
     ierr = OPFLOWGetLinesMonitored(opflow);
     CHKERRQ(ierr);
   }
+
+  /* Set individual load cost parameters to the blanket values if they
+     were not read from the input network */
   if (opflow->include_loadloss_variables) {
     PS ps;
-    PSBUS bus;
-    PSLOAD load;
-
     ierr = OPFLOWGetPS(opflow, &ps);
     CHKERRQ(ierr);
 
-    for (int i = 0; i < ps->nbus; i++) {
-      bus = &(ps->bus[i]);
-      for (int l = 0; l < bus->nload; l++) {
-        ierr = PSBUSGetLoad(bus, l, &load);
-        CHKERRQ(ierr);
-        if (load->loss_cost == BOGUSLOSSCOST) {
+    if (!ps->read_load_cost) {
+      for (int i = 0; i < ps->nbus; i++) {
+        PSBUS bus = &(ps->bus[i]);
+        for (int l = 0; l < bus->nload; l++) {
+          PSLOAD load;
+          ierr = PSBUSGetLoad(bus, l, &load);
+          CHKERRQ(ierr);
+          load->loss_frac = 1.0;
           load->loss_cost = opflow->loadloss_penalty;
         }
       }
@@ -1899,7 +1901,6 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
   CHKERRQ(ierr);
 
   opflow->solve_real_time = 0.0;
-  opflow->solve_cpu_time = 0.0;
 
   /* Compute area participation factors */
   ierr = PSComputeParticipationFactors(ps);
@@ -2027,7 +2028,6 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
   CHKERRQ(ierr);
 
   opflow->solve_real_time = real2 - real1;
-  opflow->solve_cpu_time = cpu2 - cpu1;
 
   PetscFunctionReturn(0);
 }
@@ -2985,7 +2985,6 @@ PetscErrorCode OPFLOWSetSummaryStats(OPFLOW opflow) {
   CHKERRQ(ierr);
 
   ps->solve_real_time = opflow->solve_real_time;
-  ps->solve_cpu_time = opflow->solve_cpu_time;
 
   PetscFunctionReturn(0);
 }
