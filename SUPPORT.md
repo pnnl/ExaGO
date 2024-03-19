@@ -1,1 +1,1 @@
-Please submit issues at [ExaGO's GitLab issues page](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/issues) for support.
+Please submit issues at [ExaGO's GitHub issues page](https://github.com/pnnl/ExaGO/issues) for support.
