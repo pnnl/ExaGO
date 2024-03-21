@@ -19,7 +19,11 @@ ExaGO visualization uses the following tools to generate the visuals.
 
 Before launching the visualization, one needs to install these packages. This can be done with the following two steps:
 1. Install [Node.js](https://nodejs.org/en/)
-2. Do `npm install` in this directory (`viz`)to install all the dependencies.
+2. Do `npm install --legacy-peer-deps` in this directory (`viz`)to install all the dependencies.
+
+> [!WARNING]  
+> Per https://github.com/pnnl/ExaGO/issues/129 `--legacy-peer-deps` is required as an argumnet to `npm install`. This will ideally be removed once the vizualization is no longer experimnetal.
+
 
 ## Preparing input data files for visualization
 The visualization uses a `JSON` formatted file as an input. This `JSON` file has a specific structure (To do: explain structure for the file) and there are several sample files for different network in the `data` subdirectory.
