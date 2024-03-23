@@ -233,17 +233,20 @@ struct _p_PSGEN {
   PetscInt nxpset; /* Number of generator set point variables (Pgset) */
   PetscInt nxpdev; /* Number of generator real power deviation (ramp up/down)
                       variables */
+  PetscInt nxslack; /* Number of P and Q slack variables */
 
   PetscInt startxpowloc; /* Starting location for power variables */
   PetscInt
       startxpsetloc; /* Starting location of generator set-point variable */
   PetscInt startxpdevloc; /* Starting location for power deviation variables */
+  PetscInt startxslackloc; /* Starting location for P and Q slack variables */
 
   PetscInt startxpowlocglob; /* Starting global location for power variables */
   PetscInt
       startxpsetlocglob; /* Starting location of generator set-point variable */
   PetscInt startxpdevlocglob; /* Starting global location for power deviation
                                  variables */
+  PetscInt startxslacklocglob; /* Starting global location for P and Q slack variables */
 
   PetscInt nx; /* Total number of variables for the gen */
 
@@ -257,8 +260,10 @@ struct _p_PSGEN {
   PetscBool isrenewable; /* Is this a renewable generator ? */
 };
 
-/**
- * @brief private line data structure
+/**/**
+ * @brief 
+ * 
+ */
  * 17+ columns
  */
 struct _p_PSLINE {

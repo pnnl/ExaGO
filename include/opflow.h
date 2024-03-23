@@ -141,6 +141,12 @@ const auto lineflowviolation_penalty =
     ExaGORealOption("-opflow_lineflowviolation_penalty",
                     "Penalty for line flow limit violation", 1e2);
 
+const auto allow_genpower_violation =
+    ExaGOBoolOption("-opflow_allow_genpower_violation",
+                    "Allow generator P and Q limit violation?", PETSC_FALSE);
+const auto genpowerviolation_penalty =
+    ExaGORealOption("-opflow_genpowerviolation_penalty",
+                    "Penalty for generator P and Q limit violation", 1e2);
 const auto include_loadloss_variables =
     ExaGOBoolOption("-opflow_include_loadloss_variables",
                     "Ignore line flow constraints?", PETSC_FALSE);
