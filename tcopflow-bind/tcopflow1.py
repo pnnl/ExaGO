@@ -1,10 +1,13 @@
 import exago
 
+
 def initialize(appname):
     exago.initialize(appname)
 
+
 def finalize():
     exago.finalize()
+
 
 class TCOPFLOW:
     def __init__(self):
@@ -13,10 +16,10 @@ class TCOPFLOW:
     def create(self, netfile, ploadprofile=None, qloadprofile=None, windgenprofile=None):
         self.tcopflow = exago.TCOPFLOW()
         self.tcopflow.set_network_data(netfile)
-        
+
         if ploadprofile is not None or qloadprofile is not None:
             self.tcopflow.set_load_profiles(ploadprofile, qloadprofile)
-        
+
         if windgenprofile is not None:
             self.tcopflow.set_wind_gen_profiles(windgenprofile)
 
