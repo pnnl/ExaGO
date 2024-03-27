@@ -12,12 +12,12 @@ trigger_newell:
       - local: .gitlab/pnnl/base.gitlab-ci.yml
       - local: .gitlab/pnnl/newell.gitlab-ci.yml
 
-trigger_incline:
-  needs: []
-  trigger:
-    include:
-      - local: .gitlab/pnnl/base.gitlab-ci.yml
-      - local: .gitlab/pnnl/incline.gitlab-ci.yml
+#trigger_incline:
+#  needs: []
+#  trigger:
+#    include:
+#      - local: .gitlab/pnnl/base.gitlab-ci.yml
+#      - local: .gitlab/pnnl/incline.gitlab-ci.yml
 
 SVC-Account-Cleanup:
   image: kfox1111/slurm:deception2

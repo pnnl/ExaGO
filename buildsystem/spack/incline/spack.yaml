@@ -73,7 +73,7 @@ spack:
       require: '@2.6.2'
     # See !495
     petsc:
-      require: "@3.20.1~hypre~superlu-dist~hdf5~metis"
+      require: "@3.20.1~hypre~superlu-dist~hdf5~metis+batch"
     binutils:
       variants: +ld +gold +headers +libiberty ~nls
     elfutils:

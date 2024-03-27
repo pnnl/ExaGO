@@ -14,7 +14,7 @@ module load openmpi/4.1.4
 # Define environment variables for where spack stores key files
 # For now, SPACK_INSTALL is the path where everything spack related is installed
 # If you want to modify the module install path, edit the spack.yaml manually
-BASE=/qfs/projects/exasgd/src/ci-newll
+BASE=/qfs/projects/earthshot/src/newell-ci
 export SPACK_INSTALL=$BASE/spack-install
 export SPACK_MODULES=ci-modules
 export SPACK_CACHE=$BASE/../$(whoami)/spack-cache
