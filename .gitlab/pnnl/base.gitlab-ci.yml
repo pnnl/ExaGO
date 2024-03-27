@@ -21,9 +21,9 @@ include:
       if: '$CI_COMMIT_TITLE =~ /\[deception-rebuild\]/'
       when: never
       # Only run when the commit **DOES NOT** contains "[incline-rebuild]"
-    - &rule_no_incline_rebuild
-      if: '$CI_COMMIT_TITLE =~ /\[incline-rebuild\]/'
-      when: never
+#    - &rule_no_incline_rebuild
+#      if: '$CI_COMMIT_TITLE =~ /\[incline-rebuild\]/'
+#      when: never
       # Only run when the commit **DOES NOT** contains "[ascent-rebuild]" 
     - &rule_no_ascent_rebuild
       if: '$CI_COMMIT_TITLE =~ /\[ascent-rebuild\]/'
@@ -45,13 +45,13 @@ include:
       if: '$CI_COMMIT_TITLE =~ /\[deception-test\]/'
       when: always
     # Only run when the commit **DOES NOT** contains "[incline-test]"
-    - &rule_no_incline_test
-      if: '$CI_COMMIT_TITLE =~ /\[incline-test\]/'
-      when: never
+#    - &rule_no_incline_test
+#      if: '$CI_COMMIT_TITLE =~ /\[incline-test\]/'
+#      when: never
     # Only run when the commit **DOES** contains "[incline-test]"
-    - &rule_yes_incline_test
-      if: '$CI_COMMIT_TITLE =~ /\[incline-test\]/'
-      when: always
+#    - &rule_yes_incline_test
+#      if: '$CI_COMMIT_TITLE =~ /\[incline-test\]/'
+#      when: always
     # Only run when the commit **DOES NOT** contains "[ascent-test]"
     - &rule_no_ascent_test
       if: '$CI_COMMIT_TITLE =~ /\[ascent-test\]/'
@@ -372,8 +372,8 @@ stages:
     - *rule_no_deception_rebuild
     - *rule_no_newell_test
     - *rule_no_newell_rebuild
-    - *rule_no_incline_test
-    - *rule_no_incline_rebuild
+#    - *rule_no_incline_test
+#    - *rule_no_incline_rebuild
     - *rule_no_ascent_test
     - *rule_no_ascent_rebuild
     - *default
@@ -389,8 +389,8 @@ stages:
     - *rule_no_deception_rebuild
     - *rule_yes_newell_test
     - *rule_no_newell_rebuild
-    - *rule_no_incline_test
-    - *rule_no_incline_rebuild
+#    - *rule_no_incline_test
+#    - *rule_no_incline_rebuild
     - *rule_no_ascent_test
     - *rule_no_ascent_rebuild
     - *default
@@ -399,18 +399,18 @@ stages:
     MY_CLUSTER: "newell"
     SLURM_ARGS: " --gres=gpu:1 --ntasks=3 "
 
-.incline:
-  rules:
-    - *rule_no_deception_test
-    - *rule_no_deception_rebuild
-    - *rule_no_newell_test
-    - *rule_no_newell_rebuild
-    - *rule_yes_incline_test
-    - *rule_no_incline_rebuild
-    - *rule_no_ascent_test
-    - *rule_no_ascent_rebuild
-    - *default
-  variables:
-    WORKDIR_SUFFIX: "x86_64-clang-hip-build"
-    MY_CLUSTER: "incline"
-    SLURM_ARGS: " --exclusive --ntasks=3 "
+#.incline:
+#  rules:
+#    - *rule_no_deception_test
+#    - *rule_no_deception_rebuild
+#    - *rule_no_newell_test
+#    - *rule_no_newell_rebuild
+#    - *rule_yes_incline_test
+#    - *rule_no_incline_rebuild
+#    - *rule_no_ascent_test
+#    - *rule_no_ascent_rebuild
+#    - *default
+#  variables:
+#    WORKDIR_SUFFIX: "x86_64-clang-hip-build"
+#    MY_CLUSTER: "incline"
+#    SLURM_ARGS: " --exclusive --ntasks=3 "
