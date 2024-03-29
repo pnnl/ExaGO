@@ -12,6 +12,7 @@ check_preconditions()
 
 exago_ignore = -1000000
 
+
 @pytest.mark.nocomm
 @pytest.mark.MPI
 def test_creating_tcopflow():
@@ -25,6 +26,7 @@ def test_get_prefix():
     '''Test retrieving datafile path'''
     path = exago.prefix()
     assert isinstance(path, str)
+
 
 ''' example
 @pytest.mark.nocomm
