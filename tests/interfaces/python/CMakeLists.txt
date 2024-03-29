@@ -22,7 +22,16 @@ endif()
 
 # The SCOPFLOW and SOPFLOW API tests are currently written only for IPOPT
 if(EXAGO_ENABLE_IPOPT)
-  string(APPEND TEST_FILES " " "test_3_scopflow.py" " " "test_4_sopflow.py" " " "test_5_tcopflow.py")
+  string(
+    APPEND
+    TEST_FILES
+    " "
+    "test_3_scopflow.py"
+    " "
+    "test_4_sopflow.py"
+    " "
+    "test_5_tcopflow.py"
+  )
 endif()
 string(APPEND TEST_FILES " " "test_9_finalize.py")
 
