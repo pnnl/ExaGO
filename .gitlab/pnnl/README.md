@@ -10,7 +10,7 @@ The PNNL GitLab repository is a push mirror of the GitHub. So whenever a commit 
 
 1. Push mirror & pipeline trigger
 
-In `pnnl_mirror.yaml`, we use the variables `GIT_USER`, `GIT_PASSWORD`, and `PNNL_PIPELINE_TRIGGER`. `GIT_PASSWORD` and `PNNL_PIPELINE_TRIGGER` are generated in GitLab and then added to GitHub.
+In [`pnnl_mirror.yaml`](/.github/workflows/pnnl_mirror.yaml), we use the variables `GIT_USER`, `GIT_PASSWORD`, and `PNNL_PIPELINE_TRIGGER`. `GIT_PASSWORD` and `PNNL_PIPELINE_TRIGGER` are generated in GitLab and then added to GitHub.
 
 `GIT_USER` is the username of whoever will be authenticated when pushing to GitLab for the mirror action. Since we then manually trigger CI after that, and explicitly skip CI here, this name is cosmetic.
 
@@ -46,18 +46,22 @@ a) Generate token #1 (`GITLAB_MIRROR_STATUS`)
 
 Go to your GitHub profile > Settings > Developer Settings > Personal access tokens > Fine-grained tokens.
 
-Generate new token 
+Generate new token:
+```
 	resource owner = pnnl
 	select repositories = pnnl/exago
 	permissions > repository permissions > commit statuses (read and write)
 	copy this token
+```
 
-Go to GitLab > Settings > CI/CD > Variables
+Go to GitLab > Settings > CI/CD > Variables:
+```
 	add variable
 	type = file
 	do not protect/mask/expand
 	key = GITHUB_CURL_HEADER
 	Value = `Authorization: token <token value>`
+```
 
 See https://ecp-ci.gitlab.io/docs/guides/build-status-gitlab.html for more details.
 
@@ -65,19 +69,22 @@ b) Generate token #2 (`GITLAB_COMMIT`)
 
 Go to your GitHub profile > Settings > Developer Settings > Personal access tokens > Fine-grained tokens.
 
-Generate new token 
+Generate new token: 
+```
 	resource owner = pnnl
 	select repositories = pnnl/exago
 	permissions > repository permissions > contents (read and write)
-	copy this token
+	<copy this token>
+```
 
-Go to GitLab > Settings > CI/CD > Variables
+Go to GitLab > Settings > CI/CD > Variables:
+```
 		add variable
 		type = variable
 		do not protect
 		key = SPACK_GIT_TOKEN
-		paste in value field
-
+		<paste in value field>
+```
 
 ## Change path to `.gitlab-ci.yml`
 
