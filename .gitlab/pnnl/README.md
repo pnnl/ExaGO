@@ -2,7 +2,7 @@
 
 To run on our HPC clusters at PNNL while hosting our code base on GitHub, we utilize PNNL's CI/CD services on GitLab. 
 
-With GitLab premium, integration between GitHub and GitLab is included. This is how we have architected a solution with the base level GitLab offering. 
+With GitLab premium, integration between GitHub and GitLab is included. The tier of GitLab that we have does not and did not initially support this. While switching to premium would alleviate some of the burden here, our technical requirements expanded having to test on more than one cluster. This is how we have architected a solution with the base level GitLab offering. 
 
 The PNNL GitLab repository is a push mirror of the GitHub. So whenever a commit is pushed to a pull request or the `main` branch - the changes are pushed to the GitLab and a CI pipeline is triggered.
 
@@ -12,7 +12,7 @@ The PNNL GitLab repository is a push mirror of the GitHub. So whenever a commit 
 
 In `pnnl_mirror.yaml`, we use the variables `GIT_USER`, `GIT_PASSWORD`, and `PNNL_PIPELINE_TRIGGER`. `GIT_PASSWORD` and `PNNL_PIPELINE_TRIGGER` are generated in GitLab and then added to GitHub.
 
-(TODO: is GIT_USER just something you add directly into github?)
+`GIT_USER` is the username of whoever will be authenticated when pushing to GitLab for the mirror action. Since we then manually trigger CI after that, and explicitly skip CI here, this name is cosmetic.
 
 a) GIT_PASSWORD
 Go to Settings > Access Tokens. Click `Add new token`.
