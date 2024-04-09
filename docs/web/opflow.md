@@ -55,7 +55,7 @@ The behavior of OPFLOW is controlled through the different options given in the 
 |-opflow_initialization| Type of initialization| "MIDPOINT" (default)<br>"FROMFILE"<br>"ACPF"<br>"FLATSTART"<br>"DCOPF"| All solvers|
 |-opflow_ignore_lineflow_constraints| Ignore line flow constraints| 0 or 1 (0)| All models|
 |-opflow_allow_lineflow_violation| Allow line flow limit violations| 0 or 1 (0)| POWER_BALANCE_POLAR only|
-|-opflow_lineflow_penalty| Penalty for line flow limit violations| (100)| POWER_BALANCE_POLAR only|
+|-opflow_lineflowviolation_penalty| Penalty for line flow limit violations| (100)| POWER_BALANCE_POLAR only|
 |-opflow_include_loadloss_variables| Include load loss| 0 or 1 (0)| All models |
 |-opflow_include_powerimbalance_variables| Allow power imbalance at buses| 0 or 1 (0)| All models |
 |-opflow_loadloss_penalty| Penalty ($) for loss of load per load| (1000)| All models |
