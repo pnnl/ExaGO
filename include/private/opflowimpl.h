@@ -238,6 +238,10 @@ struct _p_OPFLOW {
   PetscReal
       lineflowviolation_penalty; /* Penalty for exceeding line flow limits */
 
+  PetscBool allow_genpower_violation;    /* Allow generator P and Q limit violation */
+  PetscReal
+      genpowerviolation_penalty; /* Penalty for generator P and Q limit violation */
+
   PetscBool include_loadloss_variables; /* Include variables for loadloss */
   PetscReal loadloss_penalty;
 
