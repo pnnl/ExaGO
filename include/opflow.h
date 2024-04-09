@@ -276,7 +276,13 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetLineFlowViolationPenalty(OPFLOW,
                                                               PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWGetLineFlowViolationPenalty(OPFLOW,
                                                               PetscReal *);
-
+PETSC_EXTERN PetscErrorCode OPFLOWAllowGenPowerViolation(OPFLOW, PetscBool);
+PETSC_EXTERN PetscErrorCode OPFLOWGetAllowGenPowerViolation(OPFLOW,
+                                                            PetscBool *);
+PETSC_EXTERN PetscErrorCode OPFLOWSetGenPowerViolationPenalty(OPFLOW,
+                                                              PetscReal);
+PETSC_EXTERN PetscErrorCode OPFLOWGetGenPowerViolationPenalty(OPFLOW,
+                                                              PetscReal *);
 PETSC_EXTERN PetscErrorCode OPFLOWSetLoadLossPenalty(OPFLOW, PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWGetLoadLossPenalty(OPFLOW, PetscReal *);
 PETSC_EXTERN PetscErrorCode OPFLOWSetBusPowerImbalancePenalty(OPFLOW,

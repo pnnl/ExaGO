@@ -239,14 +239,16 @@ struct _p_PSGEN {
   PetscInt
       startxpsetloc; /* Starting location of generator set-point variable */
   PetscInt startxpdevloc; /* Starting location for power deviation variables */
-  PetscInt startxslackloc; /* Starting location for P and Q slack variables */
+  PetscInt startxslackloc; /* Starting location for P and Q slack variables
+                              in the local vector */
 
   PetscInt startxpowlocglob; /* Starting global location for power variables */
   PetscInt
       startxpsetlocglob; /* Starting location of generator set-point variable */
   PetscInt startxpdevlocglob; /* Starting global location for power deviation
                                  variables */
-  PetscInt startxslacklocglob; /* Starting global location for P and Q slack variables */
+  PetscInt startxslacklocglob; /* Starting location for P and Q slack variables 
+                                  in the global vector */
 
   PetscInt nx; /* Total number of variables for the gen */
 
