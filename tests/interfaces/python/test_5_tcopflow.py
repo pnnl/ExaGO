@@ -17,7 +17,7 @@ exago_ignore = -1000000
 @pytest.mark.MPI
 def test_creating_tcopflow():
     '''Testing creation of tcopflow object'''
-    tcopf = exago.OPFLOW()
+    tcopf = exago.TCOPFLOW()
 
 
 @pytest.mark.nocomm

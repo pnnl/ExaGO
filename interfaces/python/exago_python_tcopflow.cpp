@@ -28,7 +28,22 @@ public:
 // -------------------------------------------------------------
 void init_exago_tcopflow(pybind11::module &m) {
 
-  pybind11::class_<TCOPFLOW_wrapper>(m, "TCOPFLOW").def(pybind11::init())
+  pybind11::class_<TCOPFLOW_wrapper>(m, "TCOPFLOW")
+      .def(pybind11::init())
+      .def("set_tolerance",
+           [](TCOPFLOW_wrapper &w, double tol) {
+             PetscErrorCode ierr;
+             ierr = TCOPFLOWSetTolerance(w.tcopf, tol);
+             ExaGOCheckError(ierr);
+           })
+      .def("get_tolerance",
+           [](TCOPFLOW_wrapper &w) -> double {
+             PetscErrorCode ierr;
+             double tol;
+             ierr = TCOPFLOWGetTolerance(w.tcopf, &tol);
+             ExaGOCheckError(ierr);
+             return tol;
+           });
 
       /* Setters */
 
