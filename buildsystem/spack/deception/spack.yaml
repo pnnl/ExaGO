@@ -26,7 +26,7 @@ spack:
     coinhsl:
       require: '@2019.05.21'
     ipopt:
-      require: '@3.12.10~metis+coinhsl~mumps'
+      require: '~metis+coinhsl~mumps'
     raja:
       require: ~examples~exercises
     umpire:
