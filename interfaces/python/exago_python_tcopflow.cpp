@@ -36,23 +36,22 @@ void init_exago_tcopflow(pybind11::module &m) {
              ierr = TCOPFLOWSetTolerance(w.tcopf, tol);
              ExaGOCheckError(ierr);
            })
-      .def("get_tolerance",
-           [](TCOPFLOW_wrapper &w) -> double {
-             PetscErrorCode ierr;
-             double tol;
-             ierr = TCOPFLOWGetTolerance(w.tcopf, &tol);
-             ExaGOCheckError(ierr);
-             return tol;
-           });
+      .def("get_tolerance", [](TCOPFLOW_wrapper &w) -> double {
+        PetscErrorCode ierr;
+        double tol;
+        ierr = TCOPFLOWGetTolerance(w.tcopf, &tol);
+        ExaGOCheckError(ierr);
+        return tol;
+      });
 
-      /* Setters */
+  /* Setters */
 
-      //   Example
-      //     .def("set_model",
-      //        [](SOPFLOW_wrapper &w, std::string model) {
-      //          PetscErrorCode ierr;
-      //          ierr = SOPFLOWSetModel(w.sopf, model.c_str());
-      //          ExaGOCheckError(ierr);
-      //        })
-      ;
+  //   Example
+  //     .def("set_model",
+  //        [](SOPFLOW_wrapper &w, std::string model) {
+  //          PetscErrorCode ierr;
+  //          ierr = SOPFLOWSetModel(w.sopf, model.c_str());
+  //          ExaGOCheckError(ierr);
+  //        })
+  ;
 }
