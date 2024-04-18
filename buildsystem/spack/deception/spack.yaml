@@ -24,7 +24,7 @@ spack:
     magma:
       require: '@2.6.2'
     coinhsl:
-      require: '@2019.05.21'
+      require: '@2023.11.17'
     ipopt:
       require: '~metis+coinhsl~mumps'
     raja:
