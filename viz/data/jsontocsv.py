@@ -115,7 +115,6 @@ def getBus(data):
                 "kilovolt levels": set(p["KVlevels"]),
                 "number of buses": p["nbus"],
                 "vm": p["Vm"],
-                "start": p["start"],
             })
 
     keys = points[0].keys()
