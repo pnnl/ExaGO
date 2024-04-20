@@ -310,11 +310,16 @@ struct _p_PSLINE {
   PSSUBST subst_to;
 
   /* Variable and constraint sizes and locations */
-  PetscInt startloc; /**< Starting location for the variables for this line in
-                        the local vector */
+  PetscInt nxslack;  /* Number of slack variables for the line */
+  PetscInt nxflow;   /* Number of flow variables */
+  
+  PetscInt startxflowloc; /** < Starting location of flow variables used for
+			      line flow in the local vector */
   PetscInt startxslackloc; /** < Starting location of slack variables used for
                               line flow limit violation in the local vector */
 
+  PetscInt startloc; /**< Starting location for the variables for this line in
+                        the local vector */
   PetscInt startlocglob; /**< Starting location for the variables for this line
                             in the global vector */
 
@@ -325,6 +330,8 @@ struct _p_PSLINE {
 
   PetscInt starteqloc;   /* Starting location for equality constraints */
   PetscInt startineqloc; /* Starting location for inequality constraints */
+
+  PetscBool monitor_flow; /* Flow monitored and constraint active? */
 };
 
 extern const char *const PSGENFuelTypes[];

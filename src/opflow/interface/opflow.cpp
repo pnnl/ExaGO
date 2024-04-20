@@ -83,11 +83,13 @@ PetscErrorCode OPFLOWGetLinesMonitored(OPFLOW opflow) {
   CHKERRQ(ierr);
   for (i = 0; i < ps->nline; i++) {
     line = &ps->line[i];
+    line->monitor_flow = PETSC_FALSE;
     if (!line->status || line->rateA > 1e5)
       continue;
     for (j = 0; j < opflow->nlinekvmon; j++) {
       if (PetscAbsScalar(line->kvlevel - opflow->linekvmon[j]) < 1e-5) {
         opflow->linesmon[opflow->nlinesmon++] = i;
+	line->monitor_flow = PETSC_TRUE;
         break;
       }
     }
@@ -2999,16 +3001,17 @@ PetscErrorCode OPFLOWSetSummaryStats(OPFLOW opflow) {
 PetscErrorCode OPFLOWCheckModelSolverCompatibility(OPFLOW opflow) {
   PetscFunctionBegin;
 #if defined(EXAGO_ENABLE_IPOPT)
-  PetscBool ipopt, ipopt_pbpol, ipopt_pbcar, ipopt_ibcar, ipopt_ibcar2,
+  PetscBool ipopt, ipopt_pbpol, ipopt_pbpol2, ipopt_pbcar, ipopt_ibcar, ipopt_ibcar2,
       ipopt_dcopf;
   ipopt = static_cast<PetscBool>(opflow->solvername == OPFLOWSOLVER_IPOPT);
   ipopt_pbpol = static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_PBPOL);
+  ipopt_pbpol2 = static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_PBPOL2);
   ipopt_pbcar = static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_PBCAR);
   ipopt_ibcar = static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_IBCAR);
   ipopt_ibcar2 =
       static_cast<PetscBool>(opflow->modelname == OPFLOWMODEL_IBCAR2);
   ipopt_dcopf = static_cast<PetscBool>(opflow->modelname == "DCOPF");
-  if (ipopt && !(ipopt_pbpol || ipopt_pbcar || ipopt_ibcar || ipopt_ibcar2 ||
+  if (ipopt && !(ipopt_pbpol || ipopt_pbpol2 || ipopt_pbcar || ipopt_ibcar || ipopt_ibcar2 ||
                  ipopt_dcopf)) {
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
             "OPFLOW solver IPOPT incompatible with model %s",

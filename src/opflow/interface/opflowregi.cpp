@@ -65,6 +65,7 @@ PetscErrorCode OPFLOWSolverRegister(OPFLOW opflow, const char sname[],
 }
 
 extern PetscErrorCode OPFLOWModelCreate_PBPOL(OPFLOW);
+extern PetscErrorCode OPFLOWModelCreate_PBPOL2(OPFLOW);
 extern PetscErrorCode OPFLOWModelCreate_PBCAR(OPFLOW);
 extern PetscErrorCode OPFLOWModelCreate_IBCAR(OPFLOW);
 extern PetscErrorCode OPFLOWModelCreate_IBCAR2(OPFLOW);
@@ -94,6 +95,10 @@ PetscErrorCode OPFLOWModelRegisterAll(OPFLOW opflow) {
   ierr =
       OPFLOWModelRegister(opflow, OPFLOWMODEL_PBPOL, OPFLOWModelCreate_PBPOL);
   CHKERRQ(ierr);
+  ierr =
+      OPFLOWModelRegister(opflow, OPFLOWMODEL_PBPOL2, OPFLOWModelCreate_PBPOL2);
+  CHKERRQ(ierr);
+
 #endif
   ierr =
       OPFLOWModelRegister(opflow, OPFLOWMODEL_PBCAR, OPFLOWModelCreate_PBCAR);
