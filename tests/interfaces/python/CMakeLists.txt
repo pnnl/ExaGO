@@ -57,8 +57,11 @@ exago_add_test(
   "
   export PYTHONPATH=${pythonpath}
   cd ${PROJECT_SOURCE_DIR}/tests/interfaces/python
-  ${CMD} -m MPI -v ${TEST_FILES}
+  ${CMD} -m MPI -v ${TEST_FILES} 
   "
   DEPENDS
   MPI
 )
+
+# add --capture=no flag to pytest to see full output, maybe a --full-trace too
+# ${CMD} --capture=no -m MPI -v ${TEST_FILES} 
