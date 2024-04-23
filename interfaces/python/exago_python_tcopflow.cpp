@@ -42,13 +42,11 @@ void init_exago_tcopflow(pybind11::module &m) {
              ierr = TCOPFLOWSetTolerance(w.tcopf, tol);
              ExaGOCheckError(ierr);
            })
-      .def("get_tolerance", 
-          [](TCOPFLOW_wrapper &w) -> double {
-            PetscErrorCode ierr;
-            double tol;
-            ierr = TCOPFLOWGetTolerance(w.tcopf, &tol);
-            ExaGOCheckError(ierr);
-            return tol;
+      .def("get_tolerance", [](TCOPFLOW_wrapper &w) -> double {
+        PetscErrorCode ierr;
+        double tol;
+        ierr = TCOPFLOWGetTolerance(w.tcopf, &tol);
+        ExaGOCheckError(ierr);
+        return tol;
       });
-
 }

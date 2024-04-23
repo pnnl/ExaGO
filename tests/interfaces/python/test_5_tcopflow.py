@@ -17,6 +17,8 @@ exago_ignore = -1000000
 def test_creating_tcopflow():
     tcopf = exago.TCOPFLOW()
 '''
+
+
 def run_tcopflow(solver):
     tcopf = exago.TCOPFLOW()
     path = exago.prefix()
@@ -25,9 +27,9 @@ def run_tcopflow(solver):
     tcopf.set_network_data(os.path.join(
         path, 'share', 'exago', 'datafiles', 'case9', 'case9mod_gen3_wind.m'))
     tcopf.set_solver(solver)
-    #set_time_step_and_duration
-    #set_load_profiles
-    #set_wind_gen_profiles
+    # set_time_step_and_duration
+    # set_load_profiles
+    # set_wind_gen_profiles
 
     tcopf.setup()
     tcopf.solve()
@@ -40,8 +42,8 @@ def run_tcopflow(solver):
     n = tcopf.get_num_iterations()
     assert isinstance(n, int)
 
-    #get_solution
-    #print_solution
+    # get_solution
+    # print_solution
 
     oname = os.path.join(tempfile.gettempdir(), "tcopflow_test_solution.csv")
     tcopf.save_solution(0, exago.OutputFormat.CSV, oname)
@@ -66,7 +68,6 @@ def run_tcopflow(solver):
 @pytest.mark.MPI
 def test_tcopflow_1():
     run_tcopflow('IPOPT')
-
 
 
 ''' example
