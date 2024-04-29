@@ -44,6 +44,8 @@ def test_set_model_and_solver():
     opf.read_mat_power_data(os.path.join(
         path, 'share', 'exago', 'datafiles', 'case9', 'case9mod.m'))
 '''
+
+
 @pytest.mark.nocomm
 @pytest.mark.MPI
 def test_set_tolerance():
@@ -51,6 +53,5 @@ def test_set_tolerance():
     tcopf = exago.TCOPFLOW()
     tcopf.set_tolerance(-6)
     tolerance = tcopf.get_tolerance()
-    assert isinstance (tolerance, float)
+    assert isinstance(tolerance, float)
     assert tolerance == -6
-
