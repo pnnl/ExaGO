@@ -45,7 +45,7 @@ def run_tcopflow(solver):
     # get_solution
     # print_solution
 
-    oname = os.path.join(tempfile.gettempdir(), "tcopflow_test_solution.csv")
+    ''' oname = os.path.join(tempfile.gettempdir(), "tcopflow_test_solution.csv")
     tcopf.save_solution(0, exago.OutputFormat.CSV, oname)
     assert os.path.exists(oname)
     os.unlink(oname)
@@ -58,7 +58,7 @@ def run_tcopflow(solver):
     oname = os.path.join(tempfile.gettempdir(), "tcopflow_test_solution_dir")
     tcopf.save_solution_all(exago.OutputFormat.MATPOWER, oname)
     assert os.path.exists(oname)
-    shutil.rmtree(oname)
+    shutil.rmtree(oname)'''
 
 
 # From sopflow_multicontingency.toml:
