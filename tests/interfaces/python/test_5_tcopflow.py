@@ -1,3 +1,5 @@
+import exago
+from mpi4py import MPI
 import tempfile
 import os
 import shutil
@@ -5,13 +7,10 @@ import pytest
 from check_preconditions import check_preconditions
 import mpi4py.rc
 mpi4py.rc.threads = False
-from mpi4py import MPI  
-import exago 
 
 check_preconditions()
 
 exago_ignore = -1000000
-
 
 
 def run_tcopflow(solver):
@@ -22,7 +21,7 @@ def run_tcopflow(solver):
     tcopf.set_network_data(os.path.join(
         path, 'share', 'exago', 'datafiles', 'case9', 'case9mod_gen3_wind.m'))
     tcopf.set_solver(solver)
-   
+
     tcopf.setup()
     tcopf.solve()
 
