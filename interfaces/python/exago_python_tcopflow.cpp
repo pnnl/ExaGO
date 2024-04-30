@@ -1,7 +1,7 @@
 #include "exago_python_tcopflow.hpp"
 
 // -------------------------------------------------------------
-// class SOPFLOW_wrapper
+// class TCOPFLOW_wrapper
 //
 // Wrap to make sure allocation and destruction is handled correctly
 // -------------------------------------------------------------
@@ -84,16 +84,4 @@ void init_exago_tcopflow(pybind11::module &m) {
         ExaGOCheckError(ierr);
         return n;
       });
-  /*.def("save_solution",
-        [](TCOPFLOW_wrapper &w, OutputFormat fmt, std::string outfile) {
-          PetscErrorCode ierr;
-          ierr = TCOPFLOWSaveSolution(w.tcopf, fmt, outfile.c_str());
-          ExaGOCheckError(ierr);
-        })
-.def("save_solution_all",
-    [](TCOPFLOW_wrapper &w, OutputFormat fmt, std::string outdir) {
-      PetscErrorCode ierr;
-      ierr = TCCOPFLOWSaveSolutionAll(w.tcopf, fmt, outdir.c_str());
-      ExaGOCheckError(ierr);
-    })*/
 }
