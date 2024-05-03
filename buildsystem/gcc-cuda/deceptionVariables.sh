@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export SRCDIR=${SRCDIR:-$PWD}
+SRCDIR=${SRCDIR:-$PWD}
 
 # Shared platform config
 source $SRCDIR/buildsystem/gcc-cuda/deception/base.sh
