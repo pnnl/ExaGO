@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export SRCDIR=${SRCDIR:-$PWD}
+SRCDIR=${SRCDIR:-$PWD}
 
 # Platform specific configuration
 source $SRCDIR/buildsystem/clang-hip/crusher/base.sh
