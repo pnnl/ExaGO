@@ -10,9 +10,6 @@ mpi4py.rc.threads = False
 
 check_preconditions()
 
-exago_ignore = -1000000
-
-
 def run_tcopflow(solver):
     tcopf = exago.TCOPFLOW()
     path = exago.prefix()
@@ -24,7 +21,7 @@ def run_tcopflow(solver):
 
     tcopf.setup()
     tcopf.solve()
-
+    
     assert tcopf.get_convergence_status()
 
     obj = tcopf.get_objective()

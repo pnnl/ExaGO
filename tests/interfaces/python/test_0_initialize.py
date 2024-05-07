@@ -1,10 +1,12 @@
 # test initializing exago only once
 import os
 import pytest
-from check_preconditions import check_preconditions
 import mpi4py.rc
 mpi4py.rc.threads = False
 from mpi4py import MPI  # noqa
+from check_preconditions import check_preconditions
+check_preconditions()
+import exago
 import exago  # noqa
 
 
