@@ -746,7 +746,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
      connected to isolated buses. This is used later in ignoring these
      generators in gencost data
   */
-  PetscInt temp_geni[200]; // Assume there are max 200 generators
+  PetscInt temp_geni[200]; // Assume there are max 200 generators at an isolated node
   for(i=0; i < 200; i++) temp_geni[i] = line_counter+1;// initialize
   
   PetscInt i_idx=-1,isol_idx=0,isol_idx2=0,isol_idx3=0;
