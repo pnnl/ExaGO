@@ -976,7 +976,7 @@ PetscErrorCode PSSetUp(PS ps) {
 
   /* Set up edge connectivity */
   /* Edges include true edges + dummy edges set up for isolated buses
-     These edges for isolated buses are inserted so that DMNetwork 
+     These edges for isolated buses are inserted so that DMNetwork
      correctly knows the number of vertices. DMNetwork filters out
      any nodes that do not have edges and so this messes up our network
      data layout that has these isolated buses. So, we create dummy
@@ -989,7 +989,7 @@ PetscErrorCode PSSetUp(PS ps) {
   CHKERRQ(ierr);
   /* Insert dummy edges for isolated_buses */
   //  for(i=0; i < ps->nisolated_buses; i++) {
-    /* Each dummy line is connected between bus 0 and the isolated bus */
+  /* Each dummy line is connected between bus 0 and the isolated bus */
   //    lineconn[0][2 * (Nlines+i)    ] = ps->isolated_buses[i];
   //    lineconn[0][2 * (Nlines+i) + 1] = 0;
   //  }
@@ -1085,7 +1085,8 @@ PetscErrorCode PSSetUp(PS ps) {
       CHKERRQ(ierr);
     }
 
-    /* Broadcast global Nbus,Ngen,Nbranch, Nload,Ndcline, and maxbusnum to all processors
+    /* Broadcast global Nbus,Ngen,Nbranch, Nload,Ndcline, and maxbusnum to all
+     * processors
      */
     PetscInt temp[9];
     /* Pack variables */
@@ -1118,7 +1119,8 @@ PetscErrorCode PSSetUp(PS ps) {
     for (i = 0; i < ps->maxbusnum + 1; i++)
       ps->busext2intmap[i] = -1;
 
-    ps->ngen = ps->nload = ps->ndcline = ps->ngenON = ps->nlineON = ps->ndclineON = 0;
+    ps->ngen = ps->nload = ps->ndcline = ps->ngenON = ps->nlineON =
+        ps->ndclineON = 0;
     /* Get the local number of gens and loads */
     for (i = 0; i < nv; i++) {
       ierr = DMNetworkGetNumComponents(ps->networkdm, vtx[i], &numComponents);
@@ -1152,9 +1154,9 @@ PetscErrorCode PSSetUp(PS ps) {
       ierr = PetscMemcpy(&ps->line[i], component, sizeof(struct _p_PSLINE));
       CHKERRQ(ierr);
       ps->nlineON += ps->line[i].status;
-      if(ps->line[i].isdcline) {
-	ps->ndcline++;
-	ps->ndclineON += ps->line[i].status;
+      if (ps->line[i].isdcline) {
+        ps->ndcline++;
+        ps->ndclineON += ps->line[i].status;
       }
     }
     PetscInt genj = 0, loadj = 0;
@@ -1306,36 +1308,40 @@ PetscErrorCode PSSetUp(PS ps) {
   CHKERRQ(ierr);
 
   PSLINE line;
-  /* Set up for lines 
-     - Turn off lines that are connected to isolated buses (if they are not OFF already)
+  /* Set up for lines
+     - Turn off lines that are connected to isolated buses (if they are not OFF
+     already)
      - Mark DC line ends as PV buses */
-  for(i = 0; i < ps->nline; i++) {
+  for (i = 0; i < ps->nline; i++) {
     line = &ps->line[i];
 
     const PSBUS *connbuses;
     PSBUS busf, bust;
     /* Get the connected buses */
-    ierr = PSLINEGetConnectedBuses(line,&connbuses);
+    ierr = PSLINEGetConnectedBuses(line, &connbuses);
     CHKERRQ(ierr);
     busf = connbuses[0];
     bust = connbuses[1];
 
-    if(busf->ide == ISOLATED_BUS || bust->ide == ISOLATED_BUS) {
+    if (busf->ide == ISOLATED_BUS || bust->ide == ISOLATED_BUS) {
       /* Switch off lines connected to isolated buses */
-      if(line->status) {
-	line->status = 0;
-	ps->nlineON--;
+      if (line->status) {
+        line->status = 0;
+        ps->nlineON--;
       }
     }
 
-    
-    if(!line->isdcline) continue;
-    if(!line->status) continue;
+    if (!line->isdcline)
+      continue;
+    if (!line->status)
+      continue;
 
-    if(busf->ide != REF_BUS || busf->ide != PV_BUS) busf->ide = PV_BUS;
-    if(bust->ide != REF_BUS || bust->ide != PV_BUS) bust->ide = PV_BUS;
+    if (busf->ide != REF_BUS || busf->ide != PV_BUS)
+      busf->ide = PV_BUS;
+    if (bust->ide != REF_BUS || bust->ide != PV_BUS)
+      bust->ide = PV_BUS;
   }
-    
+
   //  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d Came
   //  here\n",ps->comm->rank);CHKERRQ(ierr);
   ps->setupcalled = PETSC_TRUE;
