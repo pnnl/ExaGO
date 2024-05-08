@@ -272,3 +272,11 @@ is_powerimb_active =	true
 gen_bus_voltage_type = 'VARIABLE_WITHIN_BOUNDS'
 num_iters = 27
 obj_value = 740032.301353
+
+[[testcase]]
+network = 'datafiles/case9/case9_dcline.m'
+description = "Test for OPFLOW with DC line"
+is_loadloss_active =	false
+is_powerimb_active =	false
+num_iters = 18
+obj_value = 5312.16147

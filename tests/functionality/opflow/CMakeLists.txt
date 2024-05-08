@@ -163,6 +163,22 @@ if(EXAGO_INSTALL_TESTS)
     HIOP
   )
 
+  exago_add_test(
+    NAME
+    OPFLOW_DCLINE_TEST
+    COMMAND
+    ${RUNCMD}
+    $<TARGET_FILE:app_opflow>
+    -netfile
+    ${CMAKE_SOURCE_DIR}/datafiles/case9/case9_dcline.m
+    -opflow_solver
+    IPOPT
+    -opflow_model
+    POWER_BALANCE_POLAR
+    DEPENDS
+    IPOPT
+  )
+
   foreach(fmt "MATPOWER" "CSV" "JSON" "MINIMAL")
     set(tname "OPFLOW_SOLUTION_OUTPUT_${fmt}")
     exago_add_test(
