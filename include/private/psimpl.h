@@ -301,25 +301,23 @@ struct _p_PSLINE {
   PSBUS connbuses[2]; /**< From and to buses */
 
   /****** For DC lines **********/
-  PetscBool isdcline; /**< Is line a DC line? */
-  PetscScalar pmin; /**< lower limit on PF (MW flow at "from" end) */
-  PetscScalar pmax; /**< upper limit on PF (MW flow at "from" end) */
-  PetscScalar Vf;   /**<Voltage set-point at "from" bus (p.u.) */
-  PetscScalar Vt;   /**<Voltage set-point at "to" bus (p.u.) */
-  PetscScalar qminf; /**< lower limit on QF (MVAr flow at "from" end) */
-  PetscScalar qmaxf; /**< upper limit on QF (MVAr flow at "from" end) */
-  PetscScalar qmint; /**< lower limit on QT (MVAr flow at "to" end) */
-  PetscScalar qmaxt; /**< upper limit on QT (MVAr flow at "to" end) */
-  PetscScalar loss0,loss1; /* constant and linear term for loss function (loss = loss0 + loss1*PF) */
-                           /* loss0 given in terms of MW, loss1 is dimensionless */
-  PetscScalar
-  mult_pmin,mult_pmax;
-  PetscScalar
-  mult_qminf,mult_qmaxf,mult_qmint,mult_qmaxt;
-  PetscScalar
-  mult_pf;
+  PetscBool isdcline;       /**< Is line a DC line? */
+  PetscScalar pmin;         /**< lower limit on PF (MW flow at "from" end) */
+  PetscScalar pmax;         /**< upper limit on PF (MW flow at "from" end) */
+  PetscScalar Vf;           /**<Voltage set-point at "from" bus (p.u.) */
+  PetscScalar Vt;           /**<Voltage set-point at "to" bus (p.u.) */
+  PetscScalar qminf;        /**< lower limit on QF (MVAr flow at "from" end) */
+  PetscScalar qmaxf;        /**< upper limit on QF (MVAr flow at "from" end) */
+  PetscScalar qmint;        /**< lower limit on QT (MVAr flow at "to" end) */
+  PetscScalar qmaxt;        /**< upper limit on QT (MVAr flow at "to" end) */
+  PetscScalar loss0, loss1; /* constant and linear term for loss function (loss
+                               = loss0 + loss1*PF) */
+  /* loss0 given in terms of MW, loss1 is dimensionless */
+  PetscScalar mult_pmin, mult_pmax;
+  PetscScalar mult_qminf, mult_qmaxf, mult_qmint, mult_qmaxt;
+  PetscScalar mult_pf;
   /*******************/
-  
+
   PetscScalar
       mult_sf; /* Lagrange multiplier for from bus injection (set by OPFLOW) */
   PetscScalar
@@ -344,7 +342,7 @@ struct _p_PSLINE {
   PetscInt nconineq; /* Number of inequality constraints */
 
   PetscInt startxdcloc; /* Location of starting variable for dc line */
-  
+
   PetscInt starteqloc;   /* Starting location for equality constraints */
   PetscInt startineqloc; /* Starting location for inequality constraints */
 };
@@ -386,13 +384,13 @@ struct _p_PSSUBST {
 
 /* Struct to save system summary stats */
 typedef struct {
-  PetscInt Nbus;             /* Number of buses */
-  PetscInt Ngen;             /* Number of generators */
-  PetscInt NgenON;           /* Number of committed generators */
-  PetscInt Nline;            /* Number of lines (includes DC lines) */
-  PetscInt NlineON;          /* Number of lines ON (includes DC lines) */
-  PetscInt Ndcline;          /* Number of dc lines */
-  PetscInt NdclineON;        /* Number of dc lines ON */
+  PetscInt Nbus;      /* Number of buses */
+  PetscInt Ngen;      /* Number of generators */
+  PetscInt NgenON;    /* Number of committed generators */
+  PetscInt Nline;     /* Number of lines (includes DC lines) */
+  PetscInt NlineON;   /* Number of lines ON (includes DC lines) */
+  PetscInt Ndcline;   /* Number of dc lines */
+  PetscInt NdclineON; /* Number of dc lines ON */
 
   PetscInt Nload;            /* Number of loads */
   PetscScalar total_pgencap; /* Total active generation capacity */
@@ -409,22 +407,22 @@ typedef struct {
  */
 struct _p_PS {
   PetscScalar MVAbase; /* System base MVA */
-  PetscInt Nbus, Ngen, Nline,
-    Nload, Ndcline; /* global # of buses,gens,branches,loads, and dclines (includes elements
-                which are out of service */
-  PetscInt nbus, ngen, nline,
-    nload,ndcline;                 /* local # of buses,gens,branches,and loads */
+  PetscInt Nbus, Ngen, Nline, Nload,
+      Ndcline; /* global # of buses,gens,branches,loads, and dclines (includes
+           elements which are out of service */
+  PetscInt nbus, ngen, nline, nload,
+      ndcline;               /* local # of buses,gens,branches,and loads */
   PetscInt NlineON, nlineON; /* Number of active lines (includes DC lines) */
   PetscInt NdclineON, ndclineON; /* Number of active dc lines */
-  PetscInt NgenON, ngenON;   /* Number of active generators */
-  PetscInt Nref, nref;       /* Number of reference buses */
+  PetscInt NgenON, ngenON;       /* Number of active generators */
+  PetscInt Nref, nref;           /* Number of reference buses */
   /* Number of generator types */
   PetscInt ngencoal, ngenwind, ngensolar, ngenng, ngennuclear, ngenhydro,
       ngenundefined;
   /* Number of renewable generators (solar, wind) */
   PetscInt ngenrenew;
   /* Number of isolated buses */
-  PetscInt nisolated_buses,Nisolated_buses;
+  PetscInt nisolated_buses, Nisolated_buses;
   PetscInt *isolated_buses; /* Array to hold isolated buses */
 
   PSBUS bus;
