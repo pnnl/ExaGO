@@ -1,7 +1,9 @@
 # test only run once things here
 import pytest
-import exago
 from check_preconditions import check_preconditions
+check_preconditions()
+import exago
+
 
 check_preconditions()
 

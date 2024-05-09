@@ -3,10 +3,11 @@ import tempfile
 import os
 import shutil
 import pytest
-from check_preconditions import check_preconditions
-import exago
 import mpi4py.rc
 mpi4py.rc.threads = False
+from check_preconditions import check_preconditions
+check_preconditions()
+import exago
 
 check_preconditions()
 
