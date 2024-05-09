@@ -18,7 +18,7 @@
                              */
 #define NLOAD_AT_BUS_MAX 32 /**< Maximum number of loads allowed at a bus */
 #define NPHASE 1            /**< Per-phase analysis */
-#define MAX_KV_LEVELS 200   /**< Maximum KV levels */
+#define MAX_KV_LEVELS 200    /**< Maximum KV (voltage) levels allowed in input file */
 
 /* Fuel types for generators */
 #define GENFUEL_COAL 0      /* Coal */
@@ -42,9 +42,6 @@
 #define GENRAMPRATE_UNDEFINED 3 /* All other sources (same as coal) */
 
 #define EXAGO_IGNORE -1000000 /* Ignore value */
-
-#define BAD_INPUT_DATA "Bad Input Data :"
-#define INCORRECT_BOUNDS "Incorrect Bounds :"
 
 /*
  * We often want a char[] with enough space to handle any solver or model name.

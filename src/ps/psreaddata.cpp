@@ -527,10 +527,8 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   /* Number of blank lines in bus, gen, br, gencost, and genfuel branch arrays
    */
   PetscInt bus_nblank_lines = 0, gen_nblank_lines = 0;
-  PetscInt br_nblank_lines = 0, gencost_nblank_lines = 0;
+  PetscInt br_nblank_lines = 0;
   PetscInt dcline_nblank_lines = 0;
-  PetscInt genfuel_nblank_lines = 0;
-  PetscInt loadcost_nblank_lines = 0;
 
   char line[MAXLINE];
   PetscInt loadi = 0, geni = 0, bri = 0, busi = 0, gencosti = 0, genfueli = 0,
@@ -642,21 +640,6 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
     if (dcline_start_line != -1 && dcline_end_line == -1) {
       if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
         dcline_nblank_lines = dcline_nblank_lines + 1;
-    }
-
-    if (gencost_start_line != -1 && gencost_end_line == -1) {
-      if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
-        gencost_nblank_lines = gencost_nblank_lines + 1;
-    }
-
-    if (loadcost_start_line != -1 && loadcost_end_line == -1) {
-      if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
-        loadcost_nblank_lines = loadcost_nblank_lines + 1;
-    }
-
-    if (genfuel_start_line != -1 && genfuel_end_line == -1) {
-      if (strcmp(line, "\n") == 0 || strcmp(line, "\r\n") == 0)
-        genfuel_nblank_lines = genfuel_nblank_lines + 1;
     }
 
     /* Count the number of pq loads */
