@@ -1,7 +1,6 @@
 #include "pbpol.h"
 #include "exago_config.h"
 #include <private/opflowimpl.h>
-/* Testing Orestis's permission to commit. */
 
 PetscErrorCode OPFLOWModelDestroy_PBPOL(OPFLOW opflow) {
   PetscErrorCode ierr;
