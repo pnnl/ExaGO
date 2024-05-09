@@ -16,6 +16,9 @@ module load cuda/11.4
 module rm openmpi
 module load openmpi/4.1.0mlx5.0
 
+# Print modules for sanity
+module list
+
 # Define environment variables for where spack stores key files
 # For now, SPACK_INSTALL is the path where everything spack related is installed
 # If you want to modify the module install path, edit the spack.yaml manually
