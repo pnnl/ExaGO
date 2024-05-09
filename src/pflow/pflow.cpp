@@ -587,14 +587,14 @@ PetscErrorCode PFLOWFunction(SNES snes, Vec X, Vec F, void *ctx) {
         if (bus == busf) { /* From bus */
           farr[locf] += line->pf;
           farr[locf + 1] += Vmf - line->Vf;
-	  flps += 3;
+          flps += 3;
         } else {
           /* To bus */
           double loss;
           loss = line->loss0 + line->loss1 * line->pf;
           farr[loct] -= line->pf - loss;
           farr[loct + 1] += Vmt - line->Vt;
-	  flps += 6;
+          flps += 6;
         }
       }
     }
