@@ -1,3 +1,4 @@
+from check_preconditions import check_preconditions
 import tempfile
 import os
 import shutil
@@ -5,9 +6,8 @@ import pytest
 import mpi4py.rc
 mpi4py.rc.threads = False
 from mpi4py import MPI  # noqa
-from check_preconditions import check_preconditions
 check_preconditions()
-import exago # noqa
+import exago  # noqa
 
 
 check_preconditions()
