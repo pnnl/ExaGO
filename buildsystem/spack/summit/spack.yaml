@@ -6,7 +6,7 @@ spack:
     ^raja@0.14.0
     ^umpire@6.0.0
     ^openblas
-    ^cuda@11.7.1
+    ^cuda@11.4.2
   view: false
   concretizer:
     unify: when_possible
@@ -58,11 +58,6 @@ spack:
       variants: +coinhsl+metis~mumps
     coinhsl:
       variants: +blas
-    cuda:
-      externals:
-      - spec: cuda@11.7.1
-        modules: [cuda/11.7.1]
-      buildable: false
     raja:
       version: [0.14.0]
       variants: +cuda cuda_arch=70 build_type=Release
