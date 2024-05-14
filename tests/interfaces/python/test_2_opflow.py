@@ -1,7 +1,7 @@
 from check_preconditions import check_preconditions
 import os
 import pytest
-from mpi4py import MPI  # noqa
+import mpi4py.rc
 mpi4py.rc.threads = False
 check_preconditions()
 import exago  # noqa

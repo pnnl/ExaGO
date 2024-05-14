@@ -267,6 +267,22 @@ The following table assumes `sopflow = exago.SOPFLOW()`.
 | ` SOPFLOWSaveSolution` | `save_solution` | |
 | ` SOPFLOWSaveSolutionAll` | `save_solution_all` |  |
 
+#### TCOPFLOW
+
+The following table assumes `tcopflow = exago.TCOPFLOW()`.
+
+| C++ API | Python API | Notes |
+|---|---|---|
+| `TCCOPFLOW` | `exago.TCCOPFLOW` class |  |
+| ` TCOPFLOWSetNetworkData` | `set_network_data` |  |
+| ` TCOPFLOWSetSolver` | `set_solver` |  |
+| ` TCOPFLOWSetTolerance` | `set_tolerance` |  |
+| ` TCOPFLOWSetup` | `setup` |  |
+| ` TCOPFLOWSolve` | `solve` |  |
+| ` TCOPFLOWGetConvergenceStatus` | `get_convergence_status` |  |
+| ` TCOPFLOWGetObjective` | `get_objective` |  |
+| ` TCOPFLOWGetNumIterations` | `get_num_iterations` |  |
+
 ### Enums
 
 `OutputFormat` is the enum that specifies the output format in functions like `opflow.save_solution`.
