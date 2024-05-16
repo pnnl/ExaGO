@@ -9,6 +9,7 @@ from mpi4py import MPI  # noqa
 check_preconditions()
 import exago  # noqa
 
+
 def run_tcopflow(solver):
     tcopf = exago.TCOPFLOW()
     path = exago.prefix()
