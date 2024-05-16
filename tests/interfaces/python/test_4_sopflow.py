@@ -10,8 +10,6 @@ check_preconditions()
 import exago  # noqa
 
 
-check_preconditions()
-
 exago_ignore = -1000000
 
 # SCOPFLOW has serious destructor problems, so it can't do this

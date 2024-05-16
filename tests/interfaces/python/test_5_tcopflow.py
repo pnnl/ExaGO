@@ -1,16 +1,13 @@
-import exago
 from check_preconditions import check_preconditions
-from mpi4py import MPI
 import tempfile
 import os
 import shutil
 import pytest
 import mpi4py.rc
 mpi4py.rc.threads = False
+from mpi4py import MPI  # noqa
 check_preconditions()
-
-check_preconditions()
-
+import exago  # noqa
 
 def run_tcopflow(solver):
     tcopf = exago.TCOPFLOW()
