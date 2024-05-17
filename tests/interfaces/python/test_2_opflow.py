@@ -6,8 +6,6 @@ mpi4py.rc.threads = False
 check_preconditions()
 import exago  # noqa
 
-check_preconditions()
-
 exago_ignore = -1000000
 
 

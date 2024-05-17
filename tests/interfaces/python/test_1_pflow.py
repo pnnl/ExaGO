@@ -8,9 +8,6 @@ check_preconditions()
 import exago  # noqa
 
 
-check_preconditions()
-
-
 @pytest.mark.nocomm
 @pytest.mark.MPI
 def test_get_datafile_path():
