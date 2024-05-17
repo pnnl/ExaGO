@@ -9,9 +9,6 @@ check_preconditions()
 import exago  # noqa
 
 
-check_preconditions()
-
-
 @pytest.mark.nocomm
 def test_initialize_nocomm():
     '''Test call ExaGOInitialize without a communicator'''
