@@ -139,7 +139,7 @@ jobs:
         run: spack -e . concretize
   
       - name: Install
-        run: spack -e . install --no-check-signature
+        run: spack -e . install --no-check-signature --fail-fast
       
       # Push with force to override existing binaries...
       - name: Push to binaries to buildcache
