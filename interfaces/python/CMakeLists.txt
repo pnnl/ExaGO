@@ -18,8 +18,10 @@ if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
 endif()
 
 if(EXAGO_ENABLE_IPOPT)
-  list(APPEND EXAGO_PY_SRCS exago_python_scopflow.cpp exago_python_sopflow.cpp)
-  list(APPEND EXAGO_PY_LIBS ExaGO::SOPFLOW ExaGO::SCOPFLOW)
+  list(APPEND EXAGO_PY_SRCS exago_python_scopflow.cpp exago_python_sopflow.cpp
+       exago_python_tcopflow.cpp
+  )
+  list(APPEND EXAGO_PY_LIBS ExaGO::SOPFLOW ExaGO::SCOPFLOW ExaGO::TCOPFLOW)
 endif()
 
 # New true python bindings

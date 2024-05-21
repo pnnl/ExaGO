@@ -178,7 +178,7 @@ The following table assumes `opflow = exago.OPFLOW()`.
 | `OPFLOWReadMatPowerData` | `opflow.read_mat_power_data` | |
 | `OPFLOWSolutionToPS` | `opflow.solution_to_ps` | |
 | `OPFLOWSetUpPS` | `opflow.set_up_ps` | |
-| `OPFLOWSkipOptions` | `opflow.skip_options | |
+| `OPFLOWSkipOptions` | `opflow.skip_options` | |
 | `OPFLOWSetLinesMonitored` | | Implemented as two different methods: | |
 | |`opflow.set_lines_monitored([...])` | Specify a list of line kvlevels (type `float`) to monitor |
 | |`opflow.set_lines_monitored(n, "file")` | Read `n` line kvlevels from a file (`n=-1` for all). |
@@ -266,6 +266,32 @@ The following table assumes `sopflow = exago.SOPFLOW()`.
 | ` SOPFLOWPrintSolution` | `print_solution` | |
 | ` SOPFLOWSaveSolution` | `save_solution` | |
 | ` SOPFLOWSaveSolutionAll` | `save_solution_all` |  |
+
+#### TCOPFLOW
+
+The following table assumes `tcopflow = exago.TCOPFLOW()`.
+
+| C++ API | Python API | Notes |
+|---|---|---|
+| `TCOPFLOW` | `exago.TCOPFLOW` class |  |
+| ` TCOPFLOWSetModel` | `set_model` |  |
+| ` TCOPFLOWSetNetworkData` | `set_network_data` |  |
+| ` TCOPFLOWSetSolver` | `set_solver` |  |
+| ` TCOPFLOWSetTolerance` | `set_tolerance` |  |
+| ` TCOPFLOWSetTimeStepandDuration` | `set_timestep_and_duration` |  |
+| ` TCOPFLOWSetLoadProfiles` | `set_load_profiles` |  |
+| ` TCOPFLOWSetWindGenProfiles` | `wind_gen_profiles` |  |
+| ` TCOPFLOWSetup` | `setup` |  |
+| ` TCOPFLOWSolve` | `solve` |  |
+| ` TCOPFLOWGetConvergenceStatus` | `get_convergence_status` |  |
+| ` TCOPFLOWGetObjective` | `get_objective` |  |
+| ` TCOPFLOWGetNumIterations` | `get_num_iterations` |  |
+| ` TCOPFLOWSetTolerance` | `set_tolerance` |  |
+| ` TCOPFLOWGetTolerance` | `get_tolerance` |  |
+| ` TCOPFLOWPrintSolution` | `print_solution` |  |
+| ` TCOPFLOWSaveSolution` | `save_solution` |  |
+| ` TCOPFLOWSavesolutionAll` | `save_solution_all` || 
+
 
 ### Enums
 
