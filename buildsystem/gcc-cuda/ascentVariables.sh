@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export SRCDIR=${SRCDIR:-$PWD}
+SRCDIR=${SRCDIR:-$PWD}
 export MY_CLUSTER=ascent
 
 # Spack modules

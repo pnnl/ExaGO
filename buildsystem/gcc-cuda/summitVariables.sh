@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export SRCDIR=${SRCDIR:-$PWD}
+SRCDIR=${SRCDIR:-$PWD}
 
 # Shared system configuration
 source $SRCDIR/buildsystem/gcc-cuda/summit/base.sh
