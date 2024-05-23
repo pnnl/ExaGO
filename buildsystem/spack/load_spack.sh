@@ -10,7 +10,6 @@ fi
 MY_CLUSTER="${MY_CLUSTER:?MY_CLUSTER is unset. Please set manually.}"
 [[ -z $MY_CLUSTER ]] && return 1
 
-echo "$MY_CLUSTER" | awk '{print tolower($0)}'
 # Use ${var,,} to convert to lower case
 # There must be an existing folder for the cluster
 if [ ! -d "./buildsystem/spack/${MY_CLUSTER}" ]; then
