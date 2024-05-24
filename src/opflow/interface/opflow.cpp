@@ -1127,6 +1127,7 @@ PetscErrorCode OPFLOWSetModel(OPFLOW opflow, const std::string modelname) {
   opflow->modelops.setinitialguessarray = 0;
   opflow->modelops.computeequalityconstraints = 0;
   opflow->modelops.computeequalityconstraintsarray = 0;
+  opflow->modelops.checkconstraints = 0;
   opflow->modelops.computeinequalityconstraints = 0;
   opflow->modelops.computeinequalityconstraintsarray = 0;
   opflow->modelops.computeconstraints = 0;
@@ -2001,6 +2002,7 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
   PetscErrorCode ierr;
   PetscLogDouble real1 = 0.0, real2 = 0.0;
   PetscLogDouble cpu1 = 0.0, cpu2 = 0.0;
+  PetscBool      conv_status;
   PetscFunctionBegin;
 
   ierr = PetscTime(&real1);
@@ -2020,6 +2022,7 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
   ierr = PetscLogEventEnd(opflow->solvelogger, 0, 0, 0, 0);
   CHKERRQ(ierr);
 
+
   //  ierr = VecView(opflow->X,0);CHKERRQ(ierr);
 
   ierr = PetscTime(&real2);
@@ -2028,6 +2031,14 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
   CHKERRQ(ierr);
 
   opflow->solve_real_time = real2 - real1;
+
+  /* Get convergence status */
+  ierr = OPFLOWGetConvergenceStatus(opflow, &conv_status);
+
+  if(!conv_status || opflow->ignore_lineflow_constraints) {
+    /* Display constraints information */
+    ierr = OPFLOWCheckConstraints(opflow);
+  }
 
   PetscFunctionReturn(0);
 }
