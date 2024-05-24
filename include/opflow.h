@@ -365,4 +365,15 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetAuxillaryObjective(
 PETSC_EXTERN PetscErrorCode OPFLOWSetUpdateVariableBoundsFunction(
     OPFLOW, PetscErrorCode (*)(OPFLOW, Vec, Vec, void *), void *);
 
+/*
+  OPFLOWCheckConstraints - Displays information about OPFLOW constraints
+
+  Input Parameters:
+. opflow - the OPFLOW oject
+
+  Notes: This is called by OPFLOWSolutionToPS. If called exterenally then OPFLOWSolutionToPS() needs to be called first.
+*/
+PETSC_EXTERN PetscErrorCode OPFLOWCheckConstraints(OPFLOW opflow);
+
+
 #endif

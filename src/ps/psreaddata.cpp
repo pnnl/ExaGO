@@ -1025,6 +1025,9 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
         Gen[genfueli].ramp_rate_min = GENRAMPRATE_WIND / ps->MVAbase;
         Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min * 10;
         Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min * 30;
+	Gen[genfueli].pb = 0.0; /* Set lower Pg limit to 0.0 so that power
+                                   can be curtailed if need be */
+
         ps->ngenwind++;
         ps->ngenrenew++;
         Gen[genfueli].isrenewable = PETSC_TRUE;
