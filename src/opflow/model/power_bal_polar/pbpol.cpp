@@ -3168,6 +3168,153 @@ PetscErrorCode OPFLOWModelSetUp_PBPOL(OPFLOW opflow) {
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode OPFLOWCheckConstraints_PBPOL(OPFLOW opflow)
+{
+  PetscErrorCode ierr;
+  PS             ps=opflow->ps;
+  PSBUS          bus;
+  PSLINE         line;
+  PSGEN          gen;
+  PSLOAD         load;
+  PetscInt       i,j;
+
+  PetscFunctionBegin;
+
+    for(i = 0; i < ps->nbus; i++) {
+
+    bus = &ps->bus[i];
+
+    // Check for bus voltage bounds
+    if(bus->vm < bus->Vmin) {
+      ierr = PetscPrintf(PETSC_COMM_SELF,"Bus %d voltage lower bound not satisfied: Vm = %10.8f < Vmin = %10.8f\n",bus->bus_i,bus->vm,bus->Vmin);
+      CHKERRQ(ierr);
+    } else if(bus->vm > bus->Vmax) {
+      ierr = PetscPrintf(PETSC_COMM_SELF,"Bus %d voltage upper bound not satisfied: Vm = %10.8f > Vmax = %10.8f\n",bus->bus_i,bus->vm,bus->Vmax);
+      CHKERRQ(ierr);
+    }      
+    
+    // Check for real and reactive power generator bounds
+    for(j = 0; j < bus->ngen; j++) {
+      ierr = PSBUSGetGen(bus, j, &gen);
+      CHKERRQ(ierr);
+      if(!gen->status) continue;
+
+      PetscScalar pgmin = gen->pb;
+      if(gen->isrenewable && gen->pt > gen->pb) {
+	pgmin = 0.0;
+      } 
+
+      if(gen->pg < pgmin) {
+	ierr = PetscPrintf(PETSC_COMM_SELF,"Generator %s on bus %d real power lower bound not satisfied: Pg = %10.8f < Pgmin = %10.8f\n",gen->id,bus->bus_i,gen->pg,pgmin);
+	CHKERRQ(ierr);
+      } else if(gen->pg > gen->pt) {
+	ierr = PetscPrintf(PETSC_COMM_SELF,"Generator %s on bus %d real power uper bound not satisfied: Pg = %10.8f > Pgmax = %10.8f\n",gen->id,bus->bus_i,gen->pg,gen->pt);
+	CHKERRQ(ierr);
+      }
+
+      if(gen->qg < gen->qb) {
+	ierr = PetscPrintf(PETSC_COMM_SELF,"Generator %s on bus %d reactive power lower bound not satisfied: Qg = %10.8f < Qgmin = %10.8f\n",gen->id,bus->bus_i,gen->qg,gen->qb);
+	CHKERRQ(ierr);
+      } else if(gen->qg > gen->qt) {
+	ierr = PetscPrintf(PETSC_COMM_SELF,"Generator %s on bus %d reactive power bound not satisfied: Qg = %10.8f > Qgmax = %10.8f\n",gen->id,bus->bus_i,gen->qg,gen->qt);
+	CHKERRQ(ierr);
+      }
+    }
+    
+    /* Equality constraints */
+    PetscScalar misp = 0.0,misq = 0.0;
+    
+    misp += bus->vm*bus->vm*bus->gl;
+    misq += -bus->vm*bus->vm*bus->bl;
+    
+    if(opflow->include_powerimbalance_variables) {
+      misp += bus->pimb;
+      misq += bus->qimb;
+    }
+
+    for(j = 0; j < bus->ngen; j++) {
+      ierr = PSBUSGetGen(bus, j, &gen);
+      CHKERRQ(ierr);
+      if(!gen->status) continue;
+      
+      misp += -gen->pg;
+      misq += -gen->qg;
+    }
+    
+    for(j = 0; j < bus->nload; j++) {
+      ierr = PSBUSGetLoad(bus, j, &load);
+      CHKERRQ(ierr);
+      if(!load->status) continue;
+      
+      misp += load->pl;
+      misq += load->ql;
+      
+      if(opflow->include_loadloss_variables) {
+	misp -= load->pl_loss;
+	misq -= load->ql_loss;
+      }
+    }
+    
+    PetscInt nconnlines;
+    const PSLINE *connlines;
+    PSBUS busf;
+    const PSBUS *connbuses;
+    
+    ierr = PSBUSGetSupportingLines(bus, &nconnlines, &connlines);
+    CHKERRQ(ierr);
+    for (j = 0; j < nconnlines; j++) {
+      line = connlines[j];
+      if (!line->status)
+	continue;
+      
+      ierr = PSLINEGetConnectedBuses(line, &connbuses);
+      CHKERRQ(ierr);
+      busf = connbuses[0];
+      
+      if (bus == busf) {
+	misp += line->pf;
+	misq += line->qf;
+      } else {
+	misp += line->pt;
+	misq += line->qt;
+      }
+    }
+    
+    if(PetscAbsScalar(misp) > 1.0) {
+      ierr = PetscPrintf(PETSC_COMM_SELF,"Bus %d real power balance mismatch: %10.8f\n",bus->bus_i,misp);
+	CHKERRQ(ierr);
+    } else if(PetscAbsScalar(misq) > 1.0) {
+      ierr = PetscPrintf(PETSC_COMM_SELF,"Bus %d reactive power balance mismatch: %10.8f\n",bus->bus_i,misq);
+      CHKERRQ(ierr);
+
+    }
+  }
+  
+  /* Check for line limit violations */
+  if(!opflow->ignore_lineflow_constraints) {
+    for(i = 0; i < opflow->nlinesmon; i++) {
+      line = &ps->line[opflow->linesmon[i]];
+
+      if(line->isdcline) continue;
+
+      PetscScalar Sft,Stf;
+
+      Sft = PetscSqrtScalar(line->pf*line->pf + line->qf*line->qf);
+      Stf = PetscSqrtScalar(line->pt*line->pt + line->qt*line->qt);
+
+      if(Sft > line->rateA) {
+	ierr = PetscPrintf(PETSC_COMM_SELF,"Line %d -- %d with id %s from flow bound not satisfied: Sft = %10.8f > SrateA = %10.8f\n",line->fbus, line->tbus, line->ckt, Sft, line->rateA);
+	CHKERRQ(ierr);
+      } else if(Stf > line->rateA) {
+	ierr = PetscPrintf(PETSC_COMM_SELF,"Line %d -- %d with id %s from flow bound not satisfied: Stf = %10.8f > SrateA = %10.8f\n",line->fbus, line->tbus, line->ckt, Stf, line->rateA);
+	CHKERRQ(ierr);
+      } 
+    }
+  }
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode OPFLOWModelCreate_PBPOL(OPFLOW opflow) {
   PBPOL pbpol;
   PetscErrorCode ierr;
@@ -3193,6 +3340,8 @@ PetscErrorCode OPFLOWModelCreate_PBPOL(OPFLOW opflow) {
       OPFLOWComputeEqualityConstraints_PBPOL;
   opflow->modelops.computeinequalityconstraints =
       OPFLOWComputeInequalityConstraints_PBPOL;
+  opflow->modelops.checkconstraints =
+      OPFLOWCheckConstraints_PBPOL;
   opflow->modelops.computeequalityconstraintjacobian =
       OPFLOWComputeEqualityConstraintJacobian_PBPOL;
   opflow->modelops.computeinequalityconstraintjacobian =
