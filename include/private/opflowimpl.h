@@ -67,6 +67,7 @@ struct _p_OPFLOWModelOps {
   PetscErrorCode (*computeinequalityconstraintsarray)(
       OPFLOW, const double *, double *); /* Set equality constraints */
   PetscErrorCode (*computeconstraints)(OPFLOW, Vec, Vec);
+  PetscErrorCode (*checkconstraints)(OPFLOW); /* Check and display constraints info */
   PetscErrorCode (*computeconstraintsarray)(
       OPFLOW, double *, double *); /* Array version of compute constraints */
   PetscErrorCode (*computeequalityconstraintjacobian)(OPFLOW, Vec, Mat);
