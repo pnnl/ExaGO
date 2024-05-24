@@ -65,8 +65,8 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
     /* Bounds on bus variables */
     loc = bus->startxVloc;
 
-    xl[loc] = -PETSC_PI;
-    xu[loc] = PETSC_PI;
+    xl[loc] = PETSC_NINFINITY;
+    xu[loc] = PETSC_INFINITY;
 
     if (opflow->genbusvoltagetype == VARIABLE_WITHIN_BOUNDS) {
       xl[loc + 1] = bus->Vmin;
