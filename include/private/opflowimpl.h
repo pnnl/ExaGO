@@ -235,6 +235,7 @@ struct _p_OPFLOW {
   PetscBool OPFLOWSolverRegisterAllCalled;
 
   PetscBool ignore_lineflow_constraints; /* Ignore line flow constraints */
+  PetscBool lazy_lineflow_constraints; /* Apply line flow constraints lazily */
   PetscBool allow_lineflow_violation;    /* Allow line flow violation */
   PetscReal
       lineflowviolation_penalty; /* Penalty for exceeding line flow limits */
@@ -306,6 +307,8 @@ struct _p_OPFLOW {
 
   /** @brief user provided data struct for auxillary objective */
   void *userctx;
+
+  OPFLOW* address; /* Address for this OPFLOW object, used with lazy constraints */
 
   PetscBool skip_options; /* Skip run-time options */
 

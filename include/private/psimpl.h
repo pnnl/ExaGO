@@ -473,6 +473,10 @@ struct _p_PS {
   PetscInt nkvlevels;    /* Number of different kV levels */
   PetscScalar *kvlevels; /* kV levels */
 
+  PetscInt nlines_overloaded; /* Number of lines overloaded */
+  PetscInt *lines_overloaded; /* Indices (line numbers) for overloaded lines */
+  PetscBool has_overloaded_lines; /* False if no lines are overloaded */
+
   PSSUBST substations;
   PetscInt nsubstations;
 
