@@ -350,7 +350,7 @@ void init_exago_opflow(pybind11::module &m) {
              std::copy(kvlevels.begin(), kvlevels.end(),
                        std::back_inserter(tmp));
              ierr = OPFLOWSetLinesMonitored(
-                 w.opf, static_cast<PetscInt>(kvlevels.size()), &tmp[0], NULL);
+	     w.opf, 1, NULL, NULL,static_cast<PetscInt>(kvlevels.size()), &tmp[0], NULL);
              ExaGOCheckError(ierr);
            })
 
@@ -361,7 +361,7 @@ void init_exago_opflow(pybind11::module &m) {
            [](OPFLOW_wrapper &w, const int &nkvlevels,
               const std::string &monitorfile) {
              PetscErrorCode ierr;
-             ierr = OPFLOWSetLinesMonitored(w.opf, (PetscInt)nkvlevels, NULL,
+             ierr = OPFLOWSetLinesMonitored(w.opf, 1, NULL, NULL,(PetscInt)nkvlevels, NULL,
                                             monitorfile.c_str());
              ExaGOCheckError(ierr);
            })
