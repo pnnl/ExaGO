@@ -236,7 +236,6 @@ struct _p_OPFLOW {
 
   PetscBool ignore_lineflow_constraints; /* Ignore line flow constraints */
   PetscBool lazy_lineflow_constraints; /* Apply line flow constraints lazily */
-  PetscInt lazy_lineflow_iterations_max; /* Max. iterations for lazy lineflow implementation */
   PetscBool allow_lineflow_violation;    /* Allow line flow violation */
   PetscReal
       lineflowviolation_penalty; /* Penalty for exceeding line flow limits */
