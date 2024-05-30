@@ -137,9 +137,6 @@ const auto ignore_lineflow_constraints =
 const auto lazy_lineflow_constraints =
     ExaGOBoolOption("-opflow_lazy_lineflow_constraints",
                     "Apply line flow constraints lazily?", PETSC_FALSE);
-const auto lazy_lineflow_constraints =
-    ExaGOBoolOption("-opflow_lazy_lineflow_iterations_max",
-                    "Max. iterations for lazy lineflow implementation", 10);
 const auto allow_lineflow_violation =
     ExaGOBoolOption("-opflow_allow_lineflow_violation",
                     "Allow line flow limit violation?", PETSC_FALSE);
