@@ -2080,10 +2080,11 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
       /* Get convergence status */
       ierr = OPFLOWGetConvergenceStatus(opflow, &conv_status);
 
-      if(!conv_status || opflow->ignore_lineflow_constraints) {
-	/* Display constraints information */
-	ierr = OPFLOWCheckConstraints(opflow);
-      }
+      ierr = PetscPrintf(opflow->comm->type,"%d lines overloaded\n",nlines_overloaded);
+      CHKERRQ(ierr);
+      
+      /* Display constraints information */
+      ierr = OPFLOWCheckConstraints(opflow);
 
       /* Create new OPFLOW */
       ierr = OPFLOWCreate(opflow->comm->type,&opflow2);
