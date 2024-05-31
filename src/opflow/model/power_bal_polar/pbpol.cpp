@@ -118,12 +118,19 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
          bound to 0 so that it can be curtailed if needed
          Note: Do this only if we have positive Pmax (pt)
       */
-      if (gen->isrenewable && gen->pt > gen->pb) {
+      if (gen->isrenewable && (gen->pt > 0) ) {
         xl[loc] = 0.0;
+	xu[loc] = gen->pt;     /* PGmax */
       } else {
-        xl[loc] = gen->pb; /* PGmin */
+	if(gen->pt > gen->pb || (PetscAbsScalar(gen->pt - gen->pb) < 1e-6)) {
+	  xl[loc] = gen->pb; /* PGmin */
+	  xu[loc] = gen->pt;     /* PGmax */
+	} else {
+	  xu[loc] = gen->pb; /* PGmin */
+	  xl[loc] = gen->pt;     /* PGmax */
+	}
       }
-      xu[loc] = gen->pt;     /* PGmax */
+
       xl[loc + 1] = gen->qb; /* QGmin */
       xu[loc + 1] = gen->qt; /* QGmax */
       /* pb, pt, qb, qt are converted in p.u. in ps.c */
@@ -3024,9 +3031,9 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow) {
     } else if (line->isdcline) {
       Pf = x[line->startxdcloc];
       Qf = x[line->startxdcloc + 1];
-      Qt = x[line->startxdcloc + 2];
+      Qt = -x[line->startxdcloc + 2];
 
-      Pt = Pf - (line->loss0 + line->loss1 * Pf);
+      Pt = -1*(Pf - (line->loss0 + line->loss1 * Pf));
     }
     line->pf = Pf;
     line->qf = Qf;
@@ -3205,7 +3212,7 @@ PetscErrorCode OPFLOWCheckConstraints_PBPOL(OPFLOW opflow)
       if(!gen->status) continue;
 
       PetscScalar pgmin = gen->pb;
-      if(gen->isrenewable && gen->pt > gen->pb) {
+      if(gen->isrenewable && gen->pt > 0) {
 	pgmin = 0.0;
       } 
 
@@ -3296,15 +3303,15 @@ PetscErrorCode OPFLOWCheckConstraints_PBPOL(OPFLOW opflow)
   }
   
   /* Check for line limit violations */
-  for(i = 0; i < opflow->nlinesmon; i++) {
-    line = &ps->line[opflow->linesmon[i]];
+  for(i = 0; i < ps->nline; i++) {
+    line = &ps->line[i];
     
-    if(line->isdcline) continue;
+    if(!line->status || line->isdcline) continue;
     
     PetscScalar Sft,Stf;
     
-    Sft = PetscSqrtScalar(line->pf*line->pf + line->qf*line->qf);
-    Stf = PetscSqrtScalar(line->pt*line->pt + line->qt*line->qt);
+    Sft = ps->MVAbase*PetscSqrtScalar(line->pf*line->pf + line->qf*line->qf);
+    Stf = ps->MVAbase*PetscSqrtScalar(line->pt*line->pt + line->qt*line->qt);
     
     if(Sft > line->rateA) {
       ierr = PetscPrintf(PETSC_COMM_SELF,"Line %d -- %d with id %s from flow bound not satisfied: Sft = %10.8f > SrateA = %10.8f\n",line->fbus, line->tbus, line->ckt, Sft, line->rateA);
