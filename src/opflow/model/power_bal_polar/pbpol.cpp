@@ -30,8 +30,9 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
   ierr = VecGetArray(Xu, &xu);
   CHKERRQ(ierr);
 
-  for (i = 0; i < opflow->nlinesmon; i++) {
-    line = &ps->line[opflow->linesmon[i]];
+  for (i = 0; i < ps->nline; i++) {
+    line = &ps->line[i];
+    if(!line->status) continue;
 
     if (!line->isdcline) {
       if (opflow->allow_lineflow_violation) {
@@ -411,9 +412,17 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X, Vec Lambda) {
   }
 
   PetscScalar *lambdai = lambda + opflow->nconeq;
-
-  for (i = 0; i < opflow->nlinesmon; i++) {
+  for(i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
+    gloc = line->startineqloc;
+    lambdai[gloc] = line->mult_sf;
+    lambdai[gloc + 1] = line->mult_st;
+  }
+
+
+  for (i = 0; i < ps->nline; i++) {
+    line = &ps->line[i];
+    if(!line->status) continue;
 
     if (!line->isdcline) {
       if (opflow->allow_lineflow_violation) {
@@ -422,9 +431,6 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X, Vec Lambda) {
         x[loc] = x[loc + 1] = 0.0;
       }
 
-      gloc = line->startineqloc;
-      lambdai[gloc] = line->mult_sf;
-      lambdai[gloc + 1] = line->mult_st;
     } else if (line->isdcline) {
       loc = line->startxdcloc;
 
@@ -449,6 +455,8 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X, Vec Lambda) {
   ierr = VecRestoreArrayRead(opflow->Xl, &xl);
   CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(opflow->Xu, &xu);
+  CHKERRQ(ierr);
+  ierr = VecRestoreArray(Lambda,&lambda);
   CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
@@ -1422,8 +1430,10 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow, Vec X,
 
   *obj = 0.0;
 
-  for (i = 0; i < opflow->nlinesmon; i++) {
-    line = &ps->line[opflow->linesmon[i]];
+  for (i = 0; i < ps->nline; i++) {
+    line = &ps->line[i];
+    if(!line->status) continue;
+    
     if (line->isdcline)
       continue;
     if (opflow->allow_lineflow_violation) {
@@ -1524,8 +1534,9 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
   ierr = VecGetArray(grad, &df);
   CHKERRQ(ierr);
 
-  for (i = 0; i < opflow->nlinesmon; i++) {
-    line = &ps->line[opflow->linesmon[i]];
+  for (i = 0; i < ps->nline; i++) {
+    line = &ps->line[i];
+    if(!line->status) continue;
 
     if (line->isdcline)
       continue;
@@ -1625,31 +1636,30 @@ PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW opflow,
   PSLINE line;
   PetscErrorCode ierr;
   PetscBool isghost;
-  PetscInt monidx; // Index of monitored line
 
   PetscFunctionBegin;
 
   *nx = 0;
 
   /* Variables for the lines */
-  for (i = 0; i < opflow->nlinesmon; i++) {
-    monidx = opflow->linesmon[i];
-    line = &ps->line[monidx];
+  for (i = 0; i < ps->nline; i++) {
+    line = &ps->line[i];
+    if(!line->status) continue;
 
     if (line->isdcline) {
-      branchnvar[monidx] = line->nx = 3;
+      branchnvar[i] = line->nx = 3;
     } else {
-      branchnvar[monidx] = line->nx = 0;
+      branchnvar[i] = line->nx = 0;
       if (opflow->allow_lineflow_violation) {
         /* Two variables for line flow slacks
            - From side flow (Sft) and To side flow (Stf)
         */
-        branchnvar[monidx] += 2;
+        branchnvar[i] += 2;
         line->nx += 2;
       }
     }
 
-    *nx += branchnvar[monidx];
+    *nx += branchnvar[i];
   }
 
   /* Variables for the buses */
@@ -3142,8 +3152,10 @@ PetscErrorCode OPFLOWModelSetUp_PBPOL(OPFLOW opflow) {
     }
   }
 
-  for (i = 0; i < opflow->nlinesmon; i++) {
-    line = &ps->line[opflow->linesmon[i]];
+  for (i = 0; i < ps->nline; i++) {
+    line = &ps->line[i];
+    if(!line->status) continue;
+    
     if (!line->isdcline) {
       /* Set starting location for slack variable */
       if (opflow->allow_lineflow_violation) {
