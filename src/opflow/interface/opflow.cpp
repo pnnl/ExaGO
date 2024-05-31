@@ -2076,6 +2076,15 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
     has_overload      = opflow->ps->has_overloaded_lines;
     
     if(has_overload) {
+
+      /* Get convergence status */
+      ierr = OPFLOWGetConvergenceStatus(opflow, &conv_status);
+
+      if(!conv_status || opflow->ignore_lineflow_constraints) {
+	/* Display constraints information */
+	ierr = OPFLOWCheckConstraints(opflow);
+      }
+
       /* Create new OPFLOW */
       ierr = OPFLOWCreate(opflow->comm->type,&opflow2);
       CHKERRQ(ierr);
