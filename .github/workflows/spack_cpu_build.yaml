@@ -8,6 +8,10 @@ env:
   IMAGE_NAME: exago
   USERNAME: exago-bot
   BASE_VERSION: ubuntu-22.04-fortran
+  SPACK_CACHE: /opt/spack-cache
+  tempdir: /opt/spack-cache
+  TMP: /opt/spack-cache
+  TMPDIR: /opt/spack-cache
 
 # Until we remove the need to clone submodules to build, this should on be in PRs
 on: [pull_request]
@@ -89,12 +93,6 @@ jobs:
     permissions:
       packages: write
       contents: read
-
-    env:
-      SPACK_CACHE: /opt/spack-cache
-      tempdir: ${{ env.SPACK_CACHE }}
-      TMP: ${{ env.SPACK_CACHE }}
-      TMPDIR: ${{ env.SPACK_CACHE }}
 
     strategy:
       matrix:
