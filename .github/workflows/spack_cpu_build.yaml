@@ -7,7 +7,7 @@ env:
   # Our repo name contains upper case characters, so we can't use ${{ github.repository }}
   IMAGE_NAME: exago
   USERNAME: exago-bot
-  BASE_VERSION: ubuntu-22.04-fortran
+  BASE_VERSION: ubuntu-24.04-fortran
   SPACK_CACHE: /opt/spack-cache
   tempdir: /opt/spack-cache
   TMP: /opt/spack-cache
@@ -17,20 +17,8 @@ env:
 on: [pull_request]
 
 jobs:
-  cleanup_registry:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Cleanup
-        uses: actions/delete-package-versions@v5
-        with:
-          package-name: "exago"
-          package-type: "container"
-          min-versions-to-keep: 100
-          delete-only-untagged-versions: "true"
-          num-old-versions-to-delete: 10000
-
   base_image_build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       packages: write
       contents: read
@@ -48,7 +36,7 @@ jobs:
       - name: Create Dockerfile heredoc
         run: |
           cat << EOF > Dockerfile
-          FROM ubuntu:22.04
+          FROM ubuntu:24.04
           RUN apt-get update && \
               apt-get install -y --no-install-recommends \
                 software-properties-common \
@@ -89,7 +77,7 @@ jobs:
 
   exago_spack_builds:
     needs: base_image_build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       packages: write
       contents: read
