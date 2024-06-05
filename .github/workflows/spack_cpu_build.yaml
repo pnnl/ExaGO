@@ -13,6 +13,17 @@ env:
 on: [pull_request]
 
 jobs:
+  cleanup_registry:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Cleanup
+        uses: actions/delete-package-versions@v5
+        with: 
+          package-name: 'exago'
+          package-type: 'container'
+          min-versions-to-keep: 100
+          delete-only-untagged-versions: 'true'
+          
   base_image_build:
     runs-on: ubuntu-22.04
     permissions:
