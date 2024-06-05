@@ -18,12 +18,13 @@ jobs:
     steps:
       - name: Cleanup
         uses: actions/delete-package-versions@v5
-        with: 
-          package-name: 'exago'
-          package-type: 'container'
+        with:
+          package-name: "exago"
+          package-type: "container"
           min-versions-to-keep: 100
-          delete-only-untagged-versions: 'true'
-          
+          delete-only-untagged-versions: "true"
+          num-old-versions-to-delete: 10000
+
   base_image_build:
     runs-on: ubuntu-22.04
     permissions:
@@ -66,7 +67,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ env.USERNAME }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
@@ -88,23 +89,29 @@ jobs:
     permissions:
       packages: write
       contents: read
-    
+
+    env:
+      SPACK_CACHE: /opt/spack-cache
+      tempdir: ${{ env.SPACK_CACHE }}
+      TMP: ${{ env.SPACK_CACHE }}
+      TMPDIR: ${{ env.SPACK_CACHE }}
+
     strategy:
       matrix:
         # Minimal Build(s) - GHCR mirror speeds these up a lot!
         spack_spec:
           # See #39 - ~python~mpi causes issues
-        # - exago@develop~mpi~ipopt~hiop~python~raja
+          # - exago@develop~mpi~ipopt~hiop~python~raja
           # See #44 - +mpi~python should fail if no python in system,
           #                       but the runner happens to have one...
           - exago@develop+mpi~ipopt+hiop~python~raja ^openmpi
           # See #18 - +hiop~mpi causes issues
-        # - exago@develop~mpi~ipopt+hiop~python+raja
+          # - exago@develop~mpi~ipopt+hiop~python+raja
           # See #16 - +python~mpi causes issues
-        # - exago@develop~mpi~ipopt+hiop+python~raja
+          # - exago@develop~mpi~ipopt+hiop+python~raja
           - exago@develop+mpi~ipopt+hiop+python~raja ^openmpi
           # See #40 - +hiop+raja~ipopt ^hiop~sparse is useful for edge cases
-          - exago@develop+mpi~ipopt+hiop~python+raja ^openmpi ^hiop+raja~sparse 
+          - exago@develop+mpi~ipopt+hiop~python+raja ^openmpi ^hiop+raja~sparse
 
     name: Build ExaGO with Spack
     steps:
@@ -114,10 +121,10 @@ jobs:
           # Once we move submodule deps into spack, we can do some more builds
           # Also need to change build script to use spack from base image
           submodules: true
-      
+
       - name: Setup Spack
         run: echo "$PWD/tpl/spack/bin" >> "$GITHUB_PATH"
-      
+
       - name: Create heredoc spack.yaml
         run: |
           cat << EOF > spack.yaml
@@ -127,6 +134,10 @@ jobs:
             concretizer:
               reuse: dependencies
             config:
+              concretizer: clingo
+              source_cache: $SPACK_CACHE/source_cache
+              misc_cache: $SPACK_CACHE/misc_cache
+              build_stage: $SPACK_CACHE/build_stage
               install_tree:
                 root: /opt/spack
                 padded_length: False
@@ -136,22 +147,22 @@ jobs:
 
       - name: Configure GHCR mirror
         run: spack -e . mirror set --oci-username ${{ env.USERNAME }} --oci-password "${{ secrets.GITHUB_TOKEN }}" local-buildcache
-      
+
       - name: Trust keys
         run: spack -e . buildcache keys --install --trust
-      
+
       - name: Find external packages
         run: spack -e . external find --all --exclude python
-      
+
       - name: Spack develop exago
         run: spack -e . develop --path=$(pwd) exago@develop
 
       - name: Concretize
         run: spack -e . concretize
-  
+
       - name: Install
         run: spack -e . install --no-check-signature --fail-fast
-      
+
       # Push with force to override existing binaries...
       - name: Push to binaries to buildcache
         run: |
