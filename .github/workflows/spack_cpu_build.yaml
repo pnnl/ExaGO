@@ -130,6 +130,9 @@ jobs:
             mirrors:
               local-buildcache: oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
               spack: https://binaries.spack.io/develop
+            packages:
+              all:
+                require: "%gcc"
 
       - name: Configure GHCR mirror
         run: spack -e . mirror set --oci-username ${{ env.USERNAME }} --oci-password "${{ secrets.GITHUB_TOKEN }}" local-buildcache
