@@ -1,0 +1,35 @@
+services:
+  db:
+    container_name: postgres
+    image: postgis/postgis:latest
+    environment:
+      - POSTGRES_USER=chatgrid
+      - POSTGRES_PASSWORD=CHANGEME
+    # volumes:
+      # - ./pgdata:/var/lib/postgresql/data
+      # - ./pgdata:/var/lib/postgresql/data:z
+    # command: psql -d chatgrid CREATE TABLE bus (location geometry(Point,4326), bus_name character varying(255), kilovolt_levels double precision[], number_of_buses integer, vm double precision);
+    ports:
+      - "5432:5432"
+    # restart: always
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=chatgrid@pnnl.gov
+      - PGADMIN_DEFAULT_PASSWORD=CHANGEME
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    # restart: always
+  # web:
+    # container_name: viz
+    # image: web-visualization
+    # build:
+      # - placeholder
+    # ports: 
+      # - "80:8080"
+    # restart: always
+    # depends_on:
+      # - db
