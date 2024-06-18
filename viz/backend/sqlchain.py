@@ -1,4 +1,5 @@
-from langchain import OpenAI, SQLDatabase, SQLDatabaseChain
+from langchain import SQLDatabase, SQLDatabaseChain
+from langchain.chat_models import ChatOpenAI
 import config
 from langchain.output_parsers import CommaSeparatedListOutputParser
 from langchain.prompts import PromptTemplate, ChatPromptTemplate, HumanMessagePromptTemplate
@@ -7,7 +8,7 @@ from sqlalchemy import text
 
 
 def sqlchain(input_text):
-    llm = OpenAI(openai_api_key=config.openai_key,
+    llm = ChatOpenAI(openai_api_key=config.openai_key,
                  model_name="gpt-3.5-turbo", temperature=0, verbose=True)
     db = SQLDatabase.from_uri(
         f"postgresql+psycopg2://postgres:{config.sql_key}@localhost:5432/{config.database_name}")
