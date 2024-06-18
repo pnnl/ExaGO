@@ -5,9 +5,9 @@ services:
     environment:
       - POSTGRES_USER=chatgrid
       - POSTGRES_PASSWORD=CHANGEME
-    # volumes:
-      # - ./pgdata:/var/lib/postgresql/data
-      # - ./pgdata:/var/lib/postgresql/data:z
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+      - ./viz/data:/mnt/data
     # command: psql -d chatgrid CREATE TABLE bus (location geometry(Point,4326), bus_name character varying(255), kilovolt_levels double precision[], number_of_buses integer, vm double precision);
     ports:
       - "5432:5432"
@@ -18,6 +18,9 @@ services:
     environment:
       - PGADMIN_DEFAULT_EMAIL=chatgrid@pnnl.gov
       - PGADMIN_DEFAULT_PASSWORD=CHANGEME
+    # is this actually needed?
+    volumes:
+      - ./viz/data:/mnt/data
     ports:
       - "5050:80"
     depends_on:
