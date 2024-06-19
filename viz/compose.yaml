@@ -6,34 +6,34 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     ports:
       - "80:80"
+    restart: always
   frontend:
     container_name: node
     build: .
     ports:
       - "8080:8080"
-  db:
+    restart: always
+  database:
     container_name: postgres
     image: postgis/postgis:latest
     environment:
       - POSTGRES_USER=chatgrid
       - POSTGRES_PASSWORD=CHANGEME
     volumes:
-      - ./pgdata:/var/lib/postgresql/data
       - ./data:/mnt
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     restart: always
-  #pgadmin:
-    #container_name: pgadmin
-    #image: dpage/pgadmin4:latest
-    #environment:
-      #- PGADMIN_DEFAULT_EMAIL=chatgrid@pnnl.gov
-      #- PGADMIN_DEFAULT_PASSWORD=CHANGEME
-    #ports:
-      #- "5050:80"
-    #depends_on:
-      #- db
-    #restart: always
-  # backend:
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=chatgrid@pnnl.gov
+      - PGADMIN_DEFAULT_PASSWORD=CHANGEME
+    ports:
+      - "5050:80"
+    depends_on:
+      - database
+    restart: always
   # ollama:

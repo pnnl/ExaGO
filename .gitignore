@@ -16,5 +16,4 @@ spack_*
 hiop/
 solution
 myenv/
-pgdata/
 venv/
