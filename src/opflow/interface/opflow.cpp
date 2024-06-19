@@ -2060,10 +2060,12 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
 
   //  ierr = VecView(opflow->X,0);CHKERRQ(ierr);
   if(opflow->lazy_lineflow_constraints) {
-    OPFLOW opflow2;
-    PetscBool has_overload=PETSC_FALSE;
-    PetscInt  nlines_overloaded;
-    PetscInt  *lines_overloaded;
+    OPFLOW      opflow2;
+    PetscBool   has_overload = PETSC_FALSE;
+    PetscInt    lazy_iter = 0;
+    PetscInt    max_lazy_iter = 10;
+    PetscInt    nlines_overloaded;
+    PetscInt    *lines_overloaded;
 
     ierr = OPFLOWSolutionToPS(opflow);
     CHKERRQ(ierr);
@@ -2071,11 +2073,11 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
     /* Get Line overloads */
     ierr = OPFLOWGetLineOverloads(opflow,&opflow->ps->nlines_overloaded,&opflow->ps->lines_overloaded,&opflow->ps->has_overloaded_lines);CHKERRQ(ierr);
 
-    nlines_overloaded = opflow->ps->nlines_overloaded;
-    lines_overloaded  = opflow->ps->lines_overloaded;
     has_overload      = opflow->ps->has_overloaded_lines;
     
-    if(has_overload) {
+    while (lazy_iter++ < max_lazy_iter) && (has_overload) {
+      nlines_overloaded = opflow->ps->nlines_overloaded;
+      lines_overloaded  = opflow->ps->lines_overloaded;
 
       /* Get convergence status */
       ierr = OPFLOWGetConvergenceStatus(opflow, &conv_status);
@@ -2085,6 +2087,7 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
       
       /* Display constraints information */
       ierr = OPFLOWCheckConstraints(opflow);
+      CHKERRQ(ierr);
 
       /* Create new OPFLOW */
       ierr = OPFLOWCreate(opflow->comm->type,&opflow2);
@@ -2112,12 +2115,15 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
       CHKERRQ(ierr);
 
       ierr = OPFLOWSolve(opflow2);
+      CHKERRQ(ierr);
 
       ierr = OPFLOWDestroy(&opflow);
       CHKERRQ(ierr);
 
       *opflowaddr = opflow2;
       opflow=opflow2;
+
+      has_overload = opflow->ps->has_overloaded_lines;
     }
   }
 
