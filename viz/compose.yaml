@@ -13,6 +13,11 @@ services:
     ports:
       - "8080:8080"
     restart: always
+  backend:
+    container_name: flask
+    build: ./backend
+    ports:
+      - "5000:5000"
   database:
     container_name: postgres
     image: postgis/postgis:latest
