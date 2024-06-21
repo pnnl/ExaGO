@@ -2121,7 +2121,10 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
       CHKERRQ(ierr);
 
       *opflowaddr = opflow2;
-      opflow=opflow2;
+      opflow=opflow2; 
+      
+      /* Get Line overloads */ 
+      ierr = OPFLOWGetLineOverloads(opflow,&opflow->ps->nlines_overloaded,&opflow->ps->lines_overloaded,&opflow->ps->has_overloaded_lines);CHKERRQ(ierr);
 
       has_overload = opflow->ps->has_overloaded_lines;
     }
