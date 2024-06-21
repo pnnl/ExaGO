@@ -18,11 +18,14 @@ services:
     build: ./backend
     ports:
       - "5000:5000"
+    # links:
+    #   - "database:localhost"
+    restart: always
   database:
     container_name: postgres
     image: postgis/postgis:latest
     environment:
-      - POSTGRES_USER=chatgrid
+      - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=CHANGEME
     volumes:
       - ./data:/mnt
@@ -34,7 +37,7 @@ services:
     container_name: pgadmin
     image: dpage/pgadmin4:latest
     environment:
-      - PGADMIN_DEFAULT_EMAIL=chatgrid@pnnl.gov
+      - PGADMIN_DEFAULT_EMAIL=postgres@admin.com
       - PGADMIN_DEFAULT_PASSWORD=CHANGEME
     ports:
       - "5050:80"

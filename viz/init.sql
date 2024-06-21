@@ -1,4 +1,6 @@
 -- init.sql
+DROP EXTENSION IF EXISTS postgis_tiger_geocoder;
+
 CREATE TABLE IF NOT EXISTS bus (
     location geometry(Point,4326),
     bus_name character varying(255),
@@ -44,6 +46,7 @@ CREATE TABLE IF NOT EXISTS us_states (
     state_name character varying(100),
     census_area double precision
 );
+
 COPY bus FROM '/mnt/bus.csv' DELIMITER ',' CSV HEADER;
 COPY counties FROM '/mnt/counties.csv' DELIMITER ',' CSV HEADER;
 COPY generation FROM '/mnt/generation.csv' DELIMITER ',' CSV HEADER;

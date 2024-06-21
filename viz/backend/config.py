@@ -1,3 +1,3 @@
-sql_key = "YOUR_DATABASE_PASSWORD"
-database_name = "YOUR_DATABASE_NAME"
+sql_key = "CHANGEME"
+database_name = "postgres"
 openai_key = "YOUR_OPENAI_KEY"

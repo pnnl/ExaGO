@@ -7,8 +7,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# CMD [ "python", "./server.py" ]
-
 EXPOSE 5000
 
-CMD ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=5000"]
+CMD ["python3", "-m", "flask", "--app", "server.py",  "run", "--host=0.0.0.0"]
