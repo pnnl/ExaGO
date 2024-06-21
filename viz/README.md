@@ -32,7 +32,7 @@ First, we need to convert the ExaGO output `.json` files to `.csv` files. The di
 
 To use the provided script, first copy the ExaGO output `.json` file to the `viz/data` subdirectory and simply run the following script in the `viz/data` subdirectory (replace the example filename with your json filename). This will output three CSV files: `generation.csv`, `bus.csv`, and `tranmission_line.csv`.
 ```
-python jsontocsv.py case_ACTIVSg10k.json
+python jsontocsv.py opflowout.json
 ```
 
 ## Installation
@@ -42,19 +42,19 @@ python jsontocsv.py case_ACTIVSg10k.json
 ExaGO's visualization bundled with ChatGrid can now conveniently be installed with [Docker Compose](https://docs.docker.com/compose/). Installation instructions for Docker Compose can be found [here](https://docs.docker.com/compose/install/).
 
 After Docker Compose is installed `cd` into `ExaGO/viz` and edit the `setup.env` file with your [OpenAI API key](https://platform.openai.com/api-keys) and passwords. Then run:
-
-`sudo docker compose up --build -d`
-
+```
+sudo docker compose up --build -d
+```
 And that's it! You'll be set up and ready to go. ExaGO's visualization will be available at `localhost:8080`, and pgadmin will be available at `localhost:5050` if you need to troubleshoot the database. Consult the `setup.env` file if you have any issues logging into pgadmin or connecting to your database.
 
 To shutdown the ExaGO visualization run:
-
-`sudo docker compose down`
-
+```
+sudo docker compose down
+```
 Cached and unused docker images can take up a lot of storage space. To clean things up run:
-
-`sudo docker system prune -a`
-
+```
+sudo docker system prune -a
+```
 ### Manual Installation (Deprecated)
 ExaGO visualization uses the following tools to generate the visuals.
 - [Node.js@v16.13.0](https://nodejs.org/es/blog/release/v16.13.0)
