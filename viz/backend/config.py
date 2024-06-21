@@ -1,3 +1,5 @@
-sql_key = "CHANGEME"
+import os
+
 database_name = "postgres"
-openai_key = "YOUR_OPENAI_KEY"
+sql_key = os.getenv("POSTGRES_PASSWORD")
+openai_key = os.getenv("OPENAI_KEY")
