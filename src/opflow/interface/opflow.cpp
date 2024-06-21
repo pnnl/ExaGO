@@ -2075,7 +2075,7 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
 
     has_overload      = opflow->ps->has_overloaded_lines;
     
-    while (lazy_iter++ < max_lazy_iter) && (has_overload) {
+    while ((lazy_iter++ < max_lazy_iter) && (has_overload)) {
       nlines_overloaded = opflow->ps->nlines_overloaded;
       lines_overloaded  = opflow->ps->lines_overloaded;
 
