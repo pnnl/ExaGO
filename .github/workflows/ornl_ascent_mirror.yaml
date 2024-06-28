@@ -2,11 +2,11 @@ name: ORNL Ascent Mirror
 
 # triggers a github action everytime there is a push or mr
 on:
-  pull_request:
-  push:
-    branches:
-      - develop
-      - main
+  # pull_request:
+  # push:
+  #   branches:
+  #     - develop
+  #     - main
 
 jobs:
   # To test on HPC resources we must first mirror the repo and then trigger a pipeline
