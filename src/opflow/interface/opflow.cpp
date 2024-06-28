@@ -2117,6 +2117,9 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
       ierr = OPFLOWSolve(opflow2);
       CHKERRQ(ierr);
 
+      opflow2->lazy_lineflow_constraints = opflow->lazy_lineflow_constraints;
+      opflow2->ignore_lineflow_constraints = opflow->ignore_lineflow_constraints;
+      
       ierr = OPFLOWDestroy(&opflow);
       CHKERRQ(ierr);
 
