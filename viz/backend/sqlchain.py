@@ -12,7 +12,7 @@ from geoalchemy2 import Geometry
 def sqlchain(input_text):
     llm = ChatOpenAI(openai_api_key=config.openai_key,
                      model_name="gpt-3.5-turbo", temperature=0, verbose=True)
-    
+
     # Manual installation
     try:
         db = SQLDatabase.from_uri(
