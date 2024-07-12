@@ -1,11 +1,12 @@
 spack:
   specs:
   - exago@develop%gcc@10.2.0+cuda+mpi+hiop+raja+ipopt+python cuda_arch=70 build_type=Release
-    ^hiop@0.7.2+cuda+mpi+raja+kron+sparse+ginkgo+cusolver_lu cuda_arch=70
+    ^hiop@develop+cuda+mpi+raja+kron+sparse+ginkgo+cusolver_lu cuda_arch=70
+    ^cub@1.16.0
     ^cuda@11.4.2
   view: false
   concretizer:
-    unify: true
+    unify: when_possible
     reuse: false
     duplicates:
       strategy: none
@@ -56,11 +57,6 @@ spack:
       variants: +coinhsl+metis~mumps
     coinhsl:
       variants: +blas
-    cuda:
-      externals:
-      - spec: cuda@11.4.2
-        modules: [cuda/11.4.2]
-      buildable: false
     raja:
       version: [0.14.0]
       variants: +cuda cuda_arch=70 build_type=Release
@@ -82,7 +78,7 @@ spack:
       buildable: false
     openblas:
       externals:
-      - spec: openblas@0.17.0
+      - spec: openblas@0.3.17
         modules: [openblas/0.3.17-omp]
       buildable: false
     perl:
