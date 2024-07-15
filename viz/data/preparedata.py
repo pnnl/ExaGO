@@ -173,6 +173,7 @@ def getLine(data):
         dict_writer.writeheader()
         dict_writer.writerows(lines)
 
+
 def createModuleFile(filename):
     with open('../module_casedata.js', 'w') as f:
         f.write('// ExaGo Viz Input File\n')
@@ -191,6 +192,7 @@ def createModuleFile(filename):
         f.write('\t\t\t}\n')
         f.write('\n')
         f.write('};\n')
+
 
 def main():
     filename = sys.argv[1]
