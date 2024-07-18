@@ -1,7 +1,6 @@
 #include "pbpol.h"
 #include "exago_config.h"
 #include <private/opflowimpl.h>
-/* Testing Orestis's permission to commit. */
 
 PetscErrorCode OPFLOWModelDestroy_PBPOL(OPFLOW opflow) {
   PetscErrorCode ierr;
@@ -33,11 +32,28 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
 
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
-    if (opflow->allow_lineflow_violation) {
-      /* Bounds on slack variables */
-      loc = line->startxslackloc;
-      xl[loc] = xl[loc + 1] = 0.0;
-      xu[loc] = xu[loc + 1] = PETSC_INFINITY;
+
+    if (!line->isdcline) {
+      if (opflow->allow_lineflow_violation) {
+        /* Bounds on slack variables */
+        loc = line->startxslackloc;
+        xl[loc] = xl[loc + 1] = 0.0;
+        xu[loc] = xu[loc + 1] = PETSC_INFINITY;
+      }
+    } else {
+      loc = line->startxdcloc;
+
+      // Bounds on PF
+      xl[loc] = line->pmin;
+      xu[loc] = line->pmax;
+
+      // Bounds on QF
+      xl[loc + 1] = line->qminf;
+      xu[loc + 1] = line->qmaxf;
+
+      // Bounds on QT
+      xl[loc + 2] = line->qmint;
+      xu[loc + 2] = line->qmaxt;
     }
   }
 
@@ -97,7 +113,15 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
 
       loc = gen->startxpowloc;
 
-      xl[loc] = gen->pb;     /* PGmin */
+      /* If generator is renewable then set the lower
+         bound to 0 so that it can be curtailed if needed
+         Note: Do this only if we have positive Pmax (pt)
+      */
+      if (gen->isrenewable && gen->pt > gen->pb) {
+        xl[loc] = 0.0;
+      } else {
+        xl[loc] = gen->pb; /* PGmin */
+      }
       xu[loc] = gen->pt;     /* PGmax */
       xl[loc + 1] = gen->qb; /* QGmin */
       xu[loc + 1] = gen->qt; /* QGmax */
@@ -232,11 +256,13 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBPOL(OPFLOW opflow, Vec Gl, Vec Gu) {
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
 
-    gloc = line->startineqloc;
-    /* Line flow inequality constraints */
-    gl[gloc] = gl[gloc + 1] = 0.0;
-    gu[gloc] = gu[gloc + 1] =
-        (line->rateA / ps->MVAbase) * (line->rateA / ps->MVAbase);
+    if (!line->isdcline) {
+      gloc = line->startineqloc;
+      /* Line flow inequality constraints */
+      gl[gloc] = gl[gloc + 1] = 0.0;
+      gu[gloc] = gu[gloc + 1] =
+          (line->rateA / ps->MVAbase) * (line->rateA / ps->MVAbase);
+    }
   }
 
   ierr = VecRestoreArray(Gl, &gl);
@@ -389,14 +415,33 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X, Vec Lambda) {
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
 
-    if (opflow->allow_lineflow_violation) {
-      loc = line->startxslackloc;
-      /* Initialize slacks for line flow violations */
-      x[loc] = x[loc + 1] = 0.0;
+    if (!line->isdcline) {
+      if (opflow->allow_lineflow_violation) {
+        loc = line->startxslackloc;
+        /* Initialize slacks for line flow violations */
+        x[loc] = x[loc + 1] = 0.0;
+      }
+
+      gloc = line->startineqloc;
+      lambdai[gloc] = line->mult_sf;
+      lambdai[gloc + 1] = line->mult_st;
+    } else if (line->isdcline) {
+      loc = line->startxdcloc;
+
+      if (opflow->initializationtype == OPFLOWINIT_MIDPOINT ||
+          opflow->initializationtype == OPFLOWINIT_FLATSTART) {
+        x[loc] = 0.5 * (xl[loc] + xu[loc]);
+        x[loc + 1] = 0.5 * (xl[loc + 1] + xu[loc + 1]);
+        x[loc + 2] = 0.5 * (xl[loc + 2] + xu[loc + 2]);
+
+      } else if (opflow->initializationtype == OPFLOWINIT_FROMFILE ||
+                 opflow->initializationtype == OPFLOWINIT_ACPF ||
+                 opflow->initializationtype == OPFLOWINIT_DCOPF) {
+        x[loc] = PetscMax(line->pmin, PetscMin(line->pf, line->pmax));
+        x[loc + 1] = PetscMax(line->qminf, PetscMin(line->qf, line->qmaxf));
+        x[loc + 2] = PetscMax(line->qmint, PetscMin(line->qt, line->qmaxt));
+      }
     }
-    gloc = line->startineqloc;
-    lambdai[gloc] = line->mult_sf;
-    lambdai[gloc + 1] = line->mult_st;
   }
 
   ierr = VecRestoreArray(X, &x);
@@ -534,53 +579,70 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_PBPOL(OPFLOW opflow, Vec X,
       if (!line->status)
         continue;
 
-      Gff = line->yff[0];
-      Bff = line->yff[1];
-      Gft = line->yft[0];
-      Bft = line->yft[1];
-      Gtf = line->ytf[0];
-      Btf = line->ytf[1];
-      Gtt = line->ytt[0];
-      Btt = line->ytt[1];
-
       ierr = PSLINEGetConnectedBuses(line, &connbuses);
       CHKERRQ(ierr);
       busf = connbuses[0];
       bust = connbuses[1];
 
-      xlocf = busf->startxVloc;
-      xloct = bust->startxVloc;
+      if (!line->isdcline) {
+        Gff = line->yff[0];
+        Bff = line->yff[1];
+        Gft = line->yft[0];
+        Bft = line->yft[1];
+        Gtf = line->ytf[0];
+        Btf = line->ytf[1];
+        Gtt = line->ytt[0];
+        Btt = line->ytt[1];
 
-      thetaf = x[xlocf];
-      Vmf = x[xlocf + 1];
-      thetat = x[xloct];
-      Vmt = x[xloct + 1];
-      thetaft = thetaf - thetat;
-      thetatf = thetat - thetaf;
+        xlocf = busf->startxVloc;
+        xloct = bust->startxVloc;
 
-      if (bus == busf) {
-        Pf = Gff * Vmf * Vmf +
-             Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-        Qf = -Bff * Vmf * Vmf +
-             Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+        thetaf = x[xlocf];
+        Vmf = x[xlocf + 1];
+        thetat = x[xloct];
+        Vmt = x[xloct + 1];
+        thetaft = thetaf - thetat;
+        thetatf = thetat - thetaf;
 
-        val[0] = Pf;
-        val[1] = Qf;
+        if (bus == busf) {
+          Pf = Gff * Vmf * Vmf +
+               Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+          Qf = -Bff * Vmf * Vmf +
+               Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+
+          val[0] = Pf;
+          val[1] = Qf;
+          ierr = VecSetValues(Ge, 2, row, val, ADD_VALUES);
+          CHKERRQ(ierr);
+
+          flps += 78.0;
+        } else {
+          Pt = Gtt * Vmt * Vmt +
+               Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+          Qt = -Btt * Vmt * Vmt +
+               Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+
+          val[0] = Pt;
+          val[1] = Qt;
+          ierr = VecSetValues(Ge, 2, row, val, ADD_VALUES);
+          CHKERRQ(ierr);
+          flps += 78.0;
+        }
+      } else if (line->isdcline) {
+        Pf = x[line->startxdcloc];
+        Qf = x[line->startxdcloc + 1];
+        Qt = x[line->startxdcloc + 2];
+
+        if (bus == busf) {
+          val[0] = Pf;
+          val[1] = Qf;
+        } else {
+          Pt = Pf - (line->loss0 + line->loss1 * Pf);
+          val[0] = -Pt;
+          val[1] = -Qt;
+        }
         ierr = VecSetValues(Ge, 2, row, val, ADD_VALUES);
         CHKERRQ(ierr);
-
-        flps += 78.0;
-      } else {
-        Pt = Gtt * Vmt * Vmt +
-             Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-        Qt = -Btt * Vmt * Vmt +
-             Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-
-        val[0] = Pt;
-        val[1] = Qt;
-        ierr = VecSetValues(Ge, 2, row, val, ADD_VALUES);
-        CHKERRQ(ierr);
-        flps += 78.0;
       }
     }
 
@@ -744,14 +806,6 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,
       line = connlines[k];
       if (!line->status)
         continue;
-      Gff = line->yff[0];
-      Bff = line->yff[1];
-      Gft = line->yft[0];
-      Bft = line->yft[1];
-      Gtf = line->ytf[0];
-      Btf = line->ytf[1];
-      Gtt = line->ytt[0];
-      Btt = line->ytt[1];
 
       /* Get the connected buses to this line */
       ierr = PSLINEGetConnectedBuses(line, &connbuses);
@@ -759,71 +813,100 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_PBPOL(OPFLOW opflow,
       busf = connbuses[0];
       bust = connbuses[1];
 
-      locf = busf->startxVloc;
-      loct = bust->startxVloc;
+      if (!line->isdcline) {
+        Gff = line->yff[0];
+        Bff = line->yff[1];
+        Gft = line->yft[0];
+        Bft = line->yft[1];
+        Gtf = line->ytf[0];
+        Btf = line->ytf[1];
+        Gtt = line->ytt[0];
+        Btt = line->ytt[1];
 
-      locglobf = busf->startxVlocglob;
-      locglobt = bust->startxVlocglob;
+        locf = busf->startxVloc;
+        loct = bust->startxVloc;
 
-      thetaf = xarr[locf];
-      Vmf = xarr[locf + 1];
-      thetat = xarr[loct];
-      Vmt = xarr[loct + 1];
-      thetaft = thetaf - thetat;
-      thetatf = thetat - thetaf;
+        locglobf = busf->startxVlocglob;
+        locglobt = bust->startxVlocglob;
 
-      if (bus == busf) {
-        col[0] = locglobf;
-        col[1] = locglobf + 1;
-        col[2] = locglobt;
-        col[3] = locglobt + 1;
-        /* dPf_dthetaf */
-        val[0] = Vmf * Vmt * (-Gft * sin(thetaft) + Bft * cos(thetaft));
-        /*dPf_dVmf */
-        val[1] =
-            2 * Gff * Vmf + Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-        /*dPf_dthetat */
-        val[2] = Vmf * Vmt * (Gft * sin(thetaft) - Bft * cos(thetaft));
-        /* dPf_dVmt */
-        val[3] = Vmf * (Gft * cos(thetaft) + Bft * sin(thetaft));
+        thetaf = xarr[locf];
+        Vmf = xarr[locf + 1];
+        thetat = xarr[loct];
+        Vmt = xarr[loct + 1];
+        thetaft = thetaf - thetat;
+        thetatf = thetat - thetaf;
 
-        /* dQf_dthetaf */
-        val[4] = Vmf * Vmt * (Bft * sin(thetaft) + Gft * cos(thetaft));
-        /* dQf_dVmf */
-        val[5] =
-            -2 * Bff * Vmf + Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-        /* dQf_dthetat */
-        val[6] = Vmf * Vmt * (-Bft * sin(thetaft) - Gft * cos(thetaft));
-        /* dQf_dVmt */
-        val[7] = Vmf * (-Bft * cos(thetaft) + Gft * sin(thetaft));
-        ierr = MatSetValues(Je, 2, row, 4, col, val, ADD_VALUES);
-        CHKERRQ(ierr);
-      } else {
-        col[0] = locglobt;
-        col[1] = locglobt + 1;
-        col[2] = locglobf;
-        col[3] = locglobf + 1;
-        /* dPt_dthetat */
-        val[0] = Vmt * Vmf * (-Gtf * sin(thetatf) + Btf * cos(thetatf));
-        /* dPt_dVmt */
-        val[1] =
-            2 * Gtt * Vmt + Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-        /* dPt_dthetaf */
-        val[2] = Vmt * Vmf * (Gtf * sin(thetatf) - Btf * cos(thetatf));
-        /* dPt_dVmf */
-        val[3] = Vmt * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+        if (bus == busf) {
+          col[0] = locglobf;
+          col[1] = locglobf + 1;
+          col[2] = locglobt;
+          col[3] = locglobt + 1;
+          /* dPf_dthetaf */
+          val[0] = Vmf * Vmt * (-Gft * sin(thetaft) + Bft * cos(thetaft));
+          /*dPf_dVmf */
+          val[1] =
+              2 * Gff * Vmf + Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+          /*dPf_dthetat */
+          val[2] = Vmf * Vmt * (Gft * sin(thetaft) - Bft * cos(thetaft));
+          /* dPf_dVmt */
+          val[3] = Vmf * (Gft * cos(thetaft) + Bft * sin(thetaft));
 
-        /* dQt_dthetat */
-        val[4] = Vmt * Vmf * (Btf * sin(thetatf) + Gtf * cos(thetatf));
-        /* dQt_dVmt */
-        val[5] =
-            -2 * Btt * Vmt + Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-        /* dQt_dthetaf */
-        val[6] = Vmt * Vmf * (-Btf * sin(thetatf) - Gtf * cos(thetatf));
-        /* dQt_dVmf */
-        val[7] = Vmt * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
-        ierr = MatSetValues(Je, 2, row, 4, col, val, ADD_VALUES);
-        CHKERRQ(ierr);
+          /* dQf_dthetaf */
+          val[4] = Vmf * Vmt * (Bft * sin(thetaft) + Gft * cos(thetaft));
+          /* dQf_dVmf */
+          val[5] =
+              -2 * Bff * Vmf + Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+          /* dQf_dthetat */
+          val[6] = Vmf * Vmt * (-Bft * sin(thetaft) - Gft * cos(thetaft));
+          /* dQf_dVmt */
+          val[7] = Vmf * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+          ierr = MatSetValues(Je, 2, row, 4, col, val, ADD_VALUES);
+          CHKERRQ(ierr);
+        } else {
+          col[0] = locglobt;
+          col[1] = locglobt + 1;
+          col[2] = locglobf;
+          col[3] = locglobf + 1;
+          /* dPt_dthetat */
+          val[0] = Vmt * Vmf * (-Gtf * sin(thetatf) + Btf * cos(thetatf));
+          /* dPt_dVmt */
+          val[1] =
+              2 * Gtt * Vmt + Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+          /* dPt_dthetaf */
+          val[2] = Vmt * Vmf * (Gtf * sin(thetatf) - Btf * cos(thetatf));
+          /* dPt_dVmf */
+          val[3] = Vmt * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+
+          /* dQt_dthetat */
+          val[4] = Vmt * Vmf * (Btf * sin(thetatf) + Gtf * cos(thetatf));
+          /* dQt_dVmt */
+          val[5] =
+              -2 * Btt * Vmt + Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+          /* dQt_dthetaf */
+          val[6] = Vmt * Vmf * (-Btf * sin(thetatf) - Gtf * cos(thetatf));
+          /* dQt_dVmf */
+          val[7] = Vmt * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+          ierr = MatSetValues(Je, 2, row, 4, col, val, ADD_VALUES);
+          CHKERRQ(ierr);
+        }
+      } else if (line->isdcline) {
+        if (bus == busf) {
+          col[0] = line->startxdcloc;
+          val[0] = 1.0;
+          ierr = MatSetValues(Je, 1, row, 1, col, val, ADD_VALUES);
+
+          col[0] = line->startxdcloc + 1;
+          val[0] = 1.0;
+          ierr = MatSetValues(Je, 1, row + 1, 1, col, val, ADD_VALUES);
+        } else {
+          col[0] = line->startxdcloc;
+          val[0] = -(1.0 - line->loss1);
+          ierr = MatSetValues(Je, 1, row, 1, col, val, ADD_VALUES);
+
+          col[0] = line->startxdcloc + 2;
+          val[0] = -1.0;
+          ierr = MatSetValues(Je, 1, row + 1, 1, col, val, ADD_VALUES);
+        }
       }
     }
     flps += nconnlines *
@@ -976,6 +1059,9 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow, Vec X,
     for (i = 0; i < opflow->nlinesmon; i++) {
       line = &ps->line[opflow->linesmon[i]];
 
+      if (line->isdcline)
+        continue;
+
       gloc = line->startineqloc;
 
       Gff = line->yff[0];
@@ -1029,7 +1115,6 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_PBPOL(OPFLOW opflow, Vec X,
         g[gloc] -= xsft_slack;
         g[gloc + 1] -= xstf_slack;
       }
-
       flps += 160.0;
     }
   }
@@ -1175,6 +1260,9 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,
     for (i = 0; i < opflow->nlinesmon; i++) {
       line = &ps->line[opflow->linesmon[i]];
 
+      if (line->isdcline)
+        continue;
+
       gloc = line->startineqloc;
 
       Gff = line->yff[0];
@@ -1274,7 +1362,7 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_PBPOL(OPFLOW opflow,
       ierr = MatSetValues(Ji, 1, row, 4, col, val, ADD_VALUES);
       CHKERRQ(ierr);
 
-      if (opflow->allow_lineflow_violation) {
+      if (!line->isdcline && opflow->allow_lineflow_violation) {
         loc = line->startxslackloc;
         row[0] = gloc;
         col[0] = loc;
@@ -1339,6 +1427,8 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow, Vec X,
 
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
+    if (line->isdcline)
+      continue;
     if (opflow->allow_lineflow_violation) {
       loc = line->startxslackloc;
       // Slack variables for from and to side
@@ -1377,6 +1467,7 @@ PetscErrorCode OPFLOWComputeObjective_PBPOL(OPFLOW opflow, Vec X,
       if (opflow->objectivetype == MIN_GEN_COST) {
         loc = gen->startxpowloc;
         Pg = x[loc] * ps->MVAbase;
+
         *obj +=
             gen->cost_alpha * Pg * Pg + gen->cost_beta * Pg + gen->cost_gamma;
         flps += 7.0;
@@ -1438,13 +1529,13 @@ PetscErrorCode OPFLOWComputeGradient_PBPOL(OPFLOW opflow, Vec X, Vec grad) {
 
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
+
+    if (line->isdcline)
+      continue;
     if (opflow->allow_lineflow_violation) {
       loc = line->startxslackloc;
-      // ADD GRADIENT HERE
       df[loc] = opflow->lineflowviolation_penalty;
       df[loc + 1] = opflow->lineflowviolation_penalty;
-
-      flps += 0.0;
     }
   }
 
@@ -1537,24 +1628,31 @@ PetscErrorCode OPFLOWModelSetNumVariables_PBPOL(OPFLOW opflow,
   PSLINE line;
   PetscErrorCode ierr;
   PetscBool isghost;
-  PetscInt idx;
+  PetscInt monidx; // Index of monitored line
 
   PetscFunctionBegin;
 
   *nx = 0;
-  /* No variables for the branches */
+
+  /* Variables for the lines */
   for (i = 0; i < opflow->nlinesmon; i++) {
-    idx = opflow->linesmon[i];
-    line = &ps->line[idx];
-    branchnvar[idx] = line->nx = 0;
-    if (opflow->allow_lineflow_violation) {
-      /* Two variables for line flow slacks
-         - From side flow (Sft) and To side flow (Stf)
-      */
-      branchnvar[idx] += 2;
-      line->nx += 2;
+    monidx = opflow->linesmon[i];
+    line = &ps->line[monidx];
+
+    if (line->isdcline) {
+      branchnvar[monidx] = line->nx = 3;
+    } else {
+      branchnvar[monidx] = line->nx = 0;
+      if (opflow->allow_lineflow_violation) {
+        /* Two variables for line flow slacks
+           - From side flow (Sft) and To side flow (Stf)
+        */
+        branchnvar[monidx] += 2;
+        line->nx += 2;
+      }
     }
-    *nx += branchnvar[idx];
+
+    *nx += branchnvar[monidx];
   }
 
   /* Variables for the buses */
@@ -1686,9 +1784,13 @@ PetscErrorCode OPFLOWModelSetNumConstraints_PBPOL(OPFLOW opflow,
     for (i = 0; i < opflow->nlinesmon; i++) {
       line = &ps->line[opflow->linesmon[i]];
 
-      *nconineq += 2; /* Number of line flow constraints */
-      line->nconineq = 2;
-      line->nconeq = 0;
+      if (!line->isdcline) {
+        *nconineq += 2; /* Number of line flow constraints */
+        line->nconineq = 2;
+        line->nconeq = 0;
+      } else if (line->isdcline) {
+        line->nconeq = line->nconineq = 0;
+      }
     }
   }
 
@@ -2215,6 +2317,9 @@ PetscErrorCode OPFLOWComputeInequalityConstraintsHessian_PBPOL(OPFLOW opflow,
   if (!opflow->ignore_lineflow_constraints) {
     for (i = 0; i < opflow->nlinesmon; i++) {
       line = &ps->line[opflow->linesmon[i]];
+
+      if (line->isdcline)
+        continue;
 
       PetscScalar Gff, Bff, Gft, Bft, Gtf, Btf, Gtt, Btt;
       Gff = line->yff[0];
@@ -2879,40 +2984,47 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow) {
       continue;
     }
 
-    Gff = line->yff[0];
-    Bff = line->yff[1];
-    Gft = line->yft[0];
-    Bft = line->yft[1];
-    Gtf = line->ytf[0];
-    Btf = line->ytf[1];
-    Gtt = line->ytt[0];
-    Btt = line->ytt[1];
+    if (!line->isdcline) {
+      Gff = line->yff[0];
+      Bff = line->yff[1];
+      Gft = line->yft[0];
+      Bft = line->yft[1];
+      Gtf = line->ytf[0];
+      Btf = line->ytf[1];
+      Gtt = line->ytt[0];
+      Btt = line->ytt[1];
 
-    ierr = PSLINEGetConnectedBuses(line, &connbuses);
-    CHKERRQ(ierr);
-    busf = connbuses[0];
-    bust = connbuses[1];
+      ierr = PSLINEGetConnectedBuses(line, &connbuses);
+      CHKERRQ(ierr);
+      busf = connbuses[0];
+      bust = connbuses[1];
 
-    xlocf = busf->startxVloc;
-    xloct = bust->startxVloc;
+      xlocf = busf->startxVloc;
+      xloct = bust->startxVloc;
 
-    thetaf = x[xlocf];
-    Vmf = x[xlocf + 1];
-    thetat = x[xloct];
-    Vmt = x[xloct + 1];
-    thetaft = thetaf - thetat;
-    thetatf = thetat - thetaf;
+      thetaf = x[xlocf];
+      Vmf = x[xlocf + 1];
+      thetat = x[xloct];
+      Vmt = x[xloct + 1];
+      thetaft = thetaf - thetat;
+      thetatf = thetat - thetaf;
 
-    Pf =
-        Gff * Vmf * Vmf + Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
-    Qf = -Bff * Vmf * Vmf +
-         Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
+      Pf = Gff * Vmf * Vmf +
+           Vmf * Vmt * (Gft * cos(thetaft) + Bft * sin(thetaft));
+      Qf = -Bff * Vmf * Vmf +
+           Vmf * Vmt * (-Bft * cos(thetaft) + Gft * sin(thetaft));
 
-    Pt =
-        Gtt * Vmt * Vmt + Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
-    Qt = -Btt * Vmt * Vmt +
-         Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+      Pt = Gtt * Vmt * Vmt +
+           Vmt * Vmf * (Gtf * cos(thetatf) + Btf * sin(thetatf));
+      Qt = -Btt * Vmt * Vmt +
+           Vmt * Vmf * (-Btf * cos(thetatf) + Gtf * sin(thetatf));
+    } else if (line->isdcline) {
+      Pf = x[line->startxdcloc];
+      Qf = x[line->startxdcloc + 1];
+      Qt = x[line->startxdcloc + 2];
 
+      Pt = Pf - (line->loss0 + line->loss1 * Pf);
+    }
     line->pf = Pf;
     line->qf = Qf;
     line->pt = Pt;
@@ -2923,6 +3035,8 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow) {
 
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
+    if (line->isdcline)
+      continue;
     gloc = line->startineqloc;
     line->mult_sf = lambdai[gloc];
     line->mult_st = lambdai[gloc + 1];
@@ -3037,16 +3151,18 @@ PetscErrorCode OPFLOWModelSetUp_PBPOL(OPFLOW opflow) {
 
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
-
-    ierr = PSLINEGetVariableLocation(line, &loc);
-    CHKERRQ(ierr);
-    /* Set starting location for slack variable */
-    if (opflow->allow_lineflow_violation) {
-      line->startxslackloc = loc;
+    if (!line->isdcline) {
+      /* Set starting location for slack variable */
+      if (opflow->allow_lineflow_violation) {
+        line->startxslackloc = loc;
+      }
+      line->startineqloc = ineqloc;
+      ineqloc += line->nconineq;
+    } else if (line->isdcline) {
+      ierr = PSLINEGetVariableLocation(line, &loc);
+      CHKERRQ(ierr);
+      line->startxdcloc = loc;
     }
-
-    line->startineqloc = ineqloc;
-    ineqloc += line->nconineq;
   }
 
   PetscFunctionReturn(0);
