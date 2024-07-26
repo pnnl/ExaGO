@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configure python
-module load cray-python/3.9.12.1 
+module load cray-python/3.11.5
 
 BASE=/lustre/orion/eng145/world-shared/$(whoami)
 
