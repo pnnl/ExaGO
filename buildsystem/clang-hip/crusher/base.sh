@@ -6,12 +6,13 @@ export PROJ_DIR=/autofs/nccs-svm1_proj/eng145
 module reset
 
 # System modules
-module load PrgEnv-amd
+module load PrgEnv-gnu-amd
 module load cpe/23.12
 module load craype-x86-trento
 module load craype-accel-amd-gfx90a
-module load amd/5.7.1
+module load amd-mixed/5.7.1
 module load rocm/5.7.1
+module load gcc-native/12.3
 module load cray-mpich/8.1.28
 module load libfabric
 
