@@ -4,13 +4,17 @@ services:
     build: .
     ports:
       - "8080:8080"
+    depends_on:
+      - backend
     restart: always
   backend:
     container_name: flask
     build: ./backend
     ports:
       - "5000:5000"
-    env_file: 
+    depends_on:
+      - database
+    env_file:
       - setup.env
     restart: always
   database:
@@ -31,7 +35,7 @@ services:
       - "5050:80"
     depends_on:
       - database
-    env_file: 
+    env_file:
       - setup.env
     restart: always
   # ollama:
