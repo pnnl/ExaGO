@@ -18,6 +18,7 @@ executing==1.2.0
 Flask==2.3.2
 Flask-Cors==4.0.0
 frozenlist==1.4.0
+geoalchemy2==0.14.7
 greenlet==2.0.2
 idna==3.4
 ipykernel==6.23.3

@@ -16,3 +16,4 @@ spack_*
 hiop/
 solution
 myenv/
+venv/
