@@ -9,7 +9,7 @@ from sqlalchemy import text
 
 def sqlchain(input_text):
     llm = ChatOpenAI(openai_api_key=config.openai_key,
-                 model_name="gpt-3.5-turbo", temperature=0, verbose=True)
+                     model_name="gpt-3.5-turbo", temperature=0, verbose=True)
     db = SQLDatabase.from_uri(
         f"postgresql+psycopg2://postgres:{config.sql_key}@localhost:5432/{config.database_name}")
     mydb = sqldb.create_engine(
