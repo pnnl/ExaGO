@@ -5,6 +5,7 @@ export MY_CLUSTER=summit
 module reset
 
 # Load system modules
+module load DefApps-2023
 module load gcc/10.2.0
 module load spectrum-mpi/10.4.0.3-20210112
 
