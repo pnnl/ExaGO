@@ -1,5 +1,5 @@
-#dualsUpdateType linear
-#dualsInitialization zero
+#duals_update_type linear
+#duals_init zero
 
 #Hessian analytical_exact
 #KKTLinsys auto

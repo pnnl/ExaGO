@@ -651,8 +651,8 @@ PetscErrorCode OPFLOWSolverSetUp_HIOPSPARSE(OPFLOW opflow) {
   // hiop->sp->options->SetNumericValue("fixed_var_perturb",1.0e-6);
   // hiop->sp->options->SetStringValue("mem_space","host");
 
-  hiop->sp->options->SetStringValue("dualsUpdateType", "linear");
-  hiop->sp->options->SetStringValue("dualsInitialization", "zero");
+  hiop->sp->options->SetStringValue("duals_update_type", "linear");
+  hiop->sp->options->SetStringValue("duals_init", "zero");
   hiop->sp->options->SetStringValue("fixed_var", "relax");
   hiop->sp->options->SetStringValue("Hessian", "analytical_exact");
   hiop->sp->options->SetStringValue("KKTLinsys", "xdycyd");
