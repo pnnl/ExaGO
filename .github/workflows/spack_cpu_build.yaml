@@ -170,10 +170,10 @@ jobs:
         run: spack -e . develop --path=$(pwd) exago@develop
 
       - name: Concretize
-        run: spack -e . concretize
+        run: spack -e . concretize --fresh
 
       - name: Install
-        run: spack -e . install --no-check-signature --fail-fast --keep-stage --no-cache
+        run: spack -e . install --no-check-signature --fail-fast --keep-stage
 
       - name: Test Build
         run: cd $(spack -e . location --build-dir exago@develop) && ctest -VV
