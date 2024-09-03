@@ -143,7 +143,6 @@ jobs:
             concretizer:
               reuse: dependencies
             config:
-              concretizer: clingo
               source_cache: $SPACK_CACHE/source_cache
               misc_cache: $SPACK_CACHE/misc_cache
               build_stage: $SPACK_CACHE/build_stage
