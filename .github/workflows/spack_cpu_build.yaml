@@ -152,7 +152,7 @@ jobs:
                 padded_length: False
             mirrors:
               local-buildcache: oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-              spack: https://binaries.spack.io/develop
+            # spack: https://binaries.spack.io/develop
             packages:
               all:
                 require: "%gcc"
