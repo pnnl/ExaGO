@@ -32,8 +32,29 @@ jobs:
           # Also need to change build script to use spack from base image
           submodules: true
 
+      # No GHCR base image with skopeo, so this will do...
+      - name: "Set up skopeo"
+        uses: warjiang/setup-skopeo@v0.1.3
+        with:
+          version: latest
+
+      # Use skopeo to check for image for convenience
+      - name: Check for existing base images
+        run: |
+          set -e
+          CONTAINER_TAG=${{ env.BASE_VERSION }}
+          OCI_URL="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BASE_VERSION }}"
+          echo Checking for CONTAINER_TAG $CONTAINER_TAG
+          skopeo inspect \
+              docker://$OCI_URL \
+              --raw \
+              --creds "${{ env.USERNAME }}:${{ secrets.GITHUB_TOKEN }}" \
+            > /dev/null && echo "Image already exists. Please bump version." && exit 0
+          echo "IMAGE_EXISTS=false" >> $GITHUB_ENV
+
       # Need to build custom base image with gfortran
       - name: Create Dockerfile heredoc
+        if: ${{ env.IMAGE_EXISTS == 'false' }}
         run: |
           cat << EOF > Dockerfile
           FROM ubuntu:24.04
@@ -61,6 +82,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels) for Docker
+        if: ${{ env.IMAGE_EXISTS == 'false' }}
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -68,6 +90,7 @@ jobs:
           labels: org.opencontainers.image.version=${{ env.BASE_VERSION }}
 
       - name: Build and push Docker base image
+        if: ${{ env.IMAGE_EXISTS == 'false' }}
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -120,7 +143,6 @@ jobs:
             concretizer:
               reuse: dependencies
             config:
-              concretizer: clingo
               source_cache: $SPACK_CACHE/source_cache
               misc_cache: $SPACK_CACHE/misc_cache
               build_stage: $SPACK_CACHE/build_stage
@@ -129,10 +151,11 @@ jobs:
                 padded_length: False
             mirrors:
               local-buildcache: oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-              spack: https://binaries.spack.io/develop
+            # spack: https://binaries.spack.io/develop
             packages:
               all:
                 require: "%gcc"
+          EOF
 
       - name: Configure GHCR mirror
         run: spack -e . mirror set --oci-username ${{ env.USERNAME }} --oci-password "${{ secrets.GITHUB_TOKEN }}" local-buildcache
@@ -147,10 +170,13 @@ jobs:
         run: spack -e . develop --path=$(pwd) exago@develop
 
       - name: Concretize
-        run: spack -e . concretize
+        run: spack -e . concretize --fresh
 
       - name: Install
-        run: spack -e . install --no-check-signature --fail-fast
+        run: spack -e . install --no-check-signature --fail-fast --keep-stage
+
+      - name: Test Build
+        run: cd $(spack -e . location --build-dir exago@develop) && ctest -VV
 
       # Push with force to override existing binaries...
       - name: Push to binaries to buildcache
