@@ -797,7 +797,11 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
         Load[loadi].pl = Pd / ps->MVAbase;
         Load[loadi].ql = Qd / ps->MVAbase;
         /* Some defaults for load shed */
-        Load[loadi].loss_frac = 1.0;
+	if(Pd < 0.0 || Qd <= 0.0) {
+	  Load[loadi].loss_frac = 0.0;
+	} else {
+	  Load[loadi].loss_frac = 1.0;
+	}
         Load[loadi].loss_cost = BOGUSLOSSCOST;
         Load[loadi].area = Bus[busi].area;
         Load[loadi].internal_i = busi;
