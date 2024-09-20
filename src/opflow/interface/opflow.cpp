@@ -1694,7 +1694,11 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
           PSLOAD load;
           ierr = PSBUSGetLoad(bus, l, &load);
           CHKERRQ(ierr);
-          load->loss_frac = 1.0;
+	  if(load->pl < 0.0 || load->ql < 0.0) {
+	    load->loss_frac = 0.0;
+	  } else {
+	    load->loss_frac = 1.0;
+	  }
           load->loss_cost = opflow->loadloss_penalty;
         }
       }
