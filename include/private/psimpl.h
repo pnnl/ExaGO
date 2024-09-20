@@ -24,7 +24,7 @@
 /**
  * @brief A bogus value for load loss cost
  */
-#define BOGUSLOSSCOST -1234.0
+#define BOGUSLOSSCOST 12345.0
 
 /**
  * @brief private bus data struct
