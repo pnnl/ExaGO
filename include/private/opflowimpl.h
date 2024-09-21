@@ -247,6 +247,8 @@ struct _p_OPFLOW {
                                                  imbalance */
   PetscReal powerimbalance_penalty;
 
+  PetscReal load_scaling_factor;  /* scaling factor for load */
+
   PetscBool has_powersetpoint; /* Use real power set-point */
 
   PetscInt numits; /* Number of solver iterations */
