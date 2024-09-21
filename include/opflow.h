@@ -155,6 +155,10 @@ const auto include_powerimbalance_variables =
 const auto powerimbalance_penalty = ExaGORealOption(
     "-opflow_powerimbalance_penalty", "Power imbalance penalty", 1e4);
 
+const auto load_scaling_factor =
+    ExaGORealOption("-opflow_load_scaling_factor", "Scale factor for load", 1.0);
+
+
 #ifdef EXAGO_ENABLE_HIOP
 const auto hiop_compute_mode =
     ExaGOStringOption("-hiop_compute_mode", "Set compute mode for HiOp solver",
@@ -281,6 +285,7 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetBusPowerImbalancePenalty(OPFLOW,
                                                               PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWGetBusPowerImbalancePenalty(OPFLOW,
                                                               PetscReal *);
+PETSC_EXTERN PetscErrorCode OPFLOWSetLoadScalingFactor(OPFLOW, PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWSetWeight(OPFLOW, PetscScalar);
 
 PETSC_EXTERN PetscErrorCode OPFLOWSkipOptions(OPFLOW, PetscBool);
