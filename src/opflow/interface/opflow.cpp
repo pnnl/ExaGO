@@ -273,6 +273,24 @@ PetscErrorCode OPFLOWSetBusPowerImbalancePenalty(OPFLOW opflow,
 }
 
 /*
+  OPFLOWSetLoadScalingFactor - Set load scaling factor
+
+  Input Parameters:
++ opflow - OPFLOW object
+- penalty - load scaling factor (same for all loads)
+
+  Command-line option: -opflow_load_scaling_factor
+  Notes: Should be called before OPFLOWSetUp
+
+*/
+PetscErrorCode OPFLOWSetLoadScalingFactor(OPFLOW opflow, PetscReal factor) {
+  PetscFunctionBegin;
+  opflow->load_scaling_factor = factor;
+  PetscFunctionReturn(0);
+}
+
+
+/*
   OPFLOWGetBusPowerImbalancePenalty - Get bus power imbalance penalty
 
   Input Parameters:
@@ -481,6 +499,10 @@ PetscErrorCode OPFLOWCopyOptions(OPFLOW opflow, OPFLOW opflowout)
   
   ierr = OPFLOWSetLoadLossPenalty(opflowout, opflow->loadloss_penalty);
   CHKERRQ(ierr);
+
+  ierr = OPFLOWSetLoadScalingFactor(opflowout, opflow->load_scaling_factor);
+  CHKERRQ(ierr);
+
 
   ierr = OPFLOWHasBusPowerImbalance(opflowout,
                                     opflow->include_powerimbalance_variables);
@@ -842,6 +864,8 @@ PetscErrorCode OPFLOWCreate(MPI_Comm mpicomm, OPFLOW *opflowout) {
       OPFLOWOptions::include_loadloss_variables.default_value;
   opflow->include_powerimbalance_variables =
       OPFLOWOptions::include_powerimbalance_variables.default_value;
+  opflow->load_scaling_factor =
+    OPFLOWOptions::load_scaling_factor.default_value;
 
   opflow->loadloss_penalty = OPFLOWOptions::loadloss_penalty.default_value;
   opflow->powerimbalance_penalty =
@@ -1598,6 +1622,13 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
                             opflow->loadloss_penalty, &opflow->loadloss_penalty,
                             NULL);
     CHKERRQ(ierr);
+
+    ierr = PetscOptionsReal(OPFLOWOptions::load_scaling_factor.opt.c_str(),
+                            OPFLOWOptions::load_scaling_factor.desc.c_str(), "",
+                            opflow->load_scaling_factor, &opflow->load_scaling_factor,
+                            NULL);
+    CHKERRQ(ierr);
+
     ierr = PetscOptionsBool(
         OPFLOWOptions::include_powerimbalance_variables.opt.c_str(),
         OPFLOWOptions::include_powerimbalance_variables.desc.c_str(), "",
@@ -1680,13 +1711,21 @@ PetscErrorCode OPFLOWSetUp(OPFLOW opflow) {
     CHKERRQ(ierr);
   }
 
+  /* Scaling of load (note by default load scaling factor is 1.0 */
+  for (int i = 0; i < ps->nbus; i++) {
+    PSBUS bus = &(ps->bus[i]);
+    for (int l = 0; l < bus->nload; l++) {
+      PSLOAD load;
+      ierr = PSBUSGetLoad(bus, l, &load);
+      CHKERRQ(ierr);
+      load->pl *= opflow->load_scaling_factor;
+      load->ql *= opflow->load_scaling_factor;
+    }
+  }
+
   /* Set individual load cost parameters to the blanket values if they
      were not read from the input network */
   if (opflow->include_loadloss_variables) {
-    PS ps;
-    ierr = OPFLOWGetPS(opflow, &ps);
-    CHKERRQ(ierr);
-
     if (!ps->read_load_cost) {
       for (int i = 0; i < ps->nbus; i++) {
         PSBUS bus = &(ps->bus[i]);
