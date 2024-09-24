@@ -2,7 +2,6 @@ spack:
   specs:
   - exago@develop%gcc@10.2.0+cuda+mpi+hiop+raja+ipopt+python cuda_arch=70 build_type=Release
     ^hiop@develop+cuda+mpi+raja+kron+sparse+ginkgo+cusolver_lu cuda_arch=70
-    ^cub@1.16.0
     ^cuda@11.4.2
   view: false
   concretizer:
@@ -68,8 +67,8 @@ spack:
       variants: +cuda cuda_arch=70 build_type=Release
     cmake:
       externals:
-      - spec: cmake@3.21.3
-        modules: [cmake/3.21.3]
+      - spec: cmake@3.23.2
+        modules: [cmake/3.23.2]
       buildable: false
     metis:
       externals:
