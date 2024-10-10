@@ -77,12 +77,12 @@ module load gettext/0.22.5-gcc-10.2.0-rmhxj6q
 module load texinfo/7.1-gcc-10.2.0-taix7z2
 # mpfr@=4.2.1%gcc@=10.2.0 build_system=autotools libs=shared,static arch=linux-rhel8-power9le
 module load mpfr/4.2.1-gcc-10.2.0-2aeysfy
-# suite-sparse@=7.7.0%gcc@=10.2.0~cuda~graphblas~openmp+pic build_system=generic arch=linux-rhel8-power9le
-module load suite-sparse/7.7.0-gcc-10.2.0-f5odelu
+# suite-sparse@=5.13.0%gcc@=10.2.0~cuda~graphblas~openmp+pic build_system=generic arch=linux-rhel8-power9le
+module load suite-sparse/5.13.0-gcc-10.2.0-tghnj3l
 # umpire@=6.0.0%gcc@=10.2.0~asan~backtrace~c+cuda~dev_benchmarks~device_alloc~deviceconst~examples~fortran~ipc_shmem~ipo~mpi~numa~openmp~openmp_target~rocm~sanitizer_tests~shared~sqlite_experimental~tools~werror build_system=cmake build_type=Release cuda_arch=70 generator=make tests=none arch=linux-rhel8-power9le
 module load umpire/6.0.0-gcc-10.2.0-kcwtinj
 # hiop@=develop%gcc@=10.2.0+cuda+cusolver_lu~deepchecking+ginkgo~ipo~jsrun+kron+mpi+raja~rocm~shared+sparse build_system=cmake build_type=Release cuda_arch=70 generator=make arch=linux-rhel8-power9le
-module load hiop/develop-gcc-10.2.0-eemr776
+module load hiop/develop-gcc-10.2.0-f3fpfub
 # ipopt@=3.12.10%gcc@=10.2.0+coinhsl~debug+metis~mumps build_system=autotools arch=linux-rhel8-power9le
 module load ipopt/3.12.10-gcc-10.2.0-o7rvvcf
 # hdf5@=1.14.3%gcc@=10.2.0~cxx~fortran~hl~ipo~java~map+mpi+shared~subfiling~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make patches=82088c8 arch=linux-rhel8-power9le
@@ -144,4 +144,4 @@ module load py-iniconfig/2.0.0-gcc-10.2.0-7cmoqd3
 # py-pytest@=8.2.1%gcc@=10.2.0 build_system=python_pip arch=linux-rhel8-power9le
 module load py-pytest/8.2.1-gcc-10.2.0-p4ovyyp
 # exago@=develop%gcc@=10.2.0+cuda+hiop~ipo+ipopt+logging+mpi+python+raja~rocm build_system=cmake build_type=Release cuda_arch=70 generator=make arch=linux-rhel8-power9le
-## module load exago/develop-gcc-10.2.0-ieiuv7j
+## module load exago/develop-gcc-10.2.0-ai4s6oa
