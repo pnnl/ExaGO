@@ -4,6 +4,7 @@ spack:
     ^hiop@develop+cuda+mpi+raja+kron+sparse+ginkgo+cusolver_lu cuda_arch=70
     ^cuda@11.4.2
     ^suite-sparse@5.13.0
+    ^petsc+int64
   view: false
   concretizer:
     unify: when_possible
@@ -70,11 +71,6 @@ spack:
       externals:
       - spec: cmake@3.23.2
         modules: [cmake/3.23.2]
-      buildable: false
-    metis:
-      externals:
-      - spec: metis@5.1.0
-        modules: [metis/5.1.0]
       buildable: false
     openblas:
       externals:
