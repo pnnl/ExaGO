@@ -1613,16 +1613,21 @@ PetscErrorCode PSApplyScenario(PS ps, Scenario scenario) {
       for (j = 0; j < forecast->nele; j++) {
         ierr = PSGetGen(ps, forecast->buses[j], forecast->id[j], &gen);
         CHKERRQ(ierr);
-        gen->pg = gen->pt =
+	if(gen) {
+	  gen->pg = gen->pt =
             forecast->val[j] /
             ps->MVAbase;    /* Set real power generation. Note that
                  Pg upper limit is also set to the forecast value. This allows the
                  wind generator to be dispatched at its limit */
-        gen->pgs = gen->pb; /* Set-point set to lower bound. This is good for
+	  gen->pgs = gen->pb; /* Set-point set to lower bound. This is good for
                                optimization */
-        if (PetscAbsScalar(gen->pg) < 1e-6)
-          gen->status =
+	  if (PetscAbsScalar(gen->pg) < 1e-6)
+	    gen->status =
               0; /* Generation value is zero, so switch off the generator */
+	  //	  else gen->status = 1; /* Switch on generator (it may be off in the input file) */
+	} else {
+	  printf("No generator on bus %d with id %s. Cannot apply the requested scenario\n",forecast->buses[j],forecast->id[j]);
+	}
       }
     }
   }
