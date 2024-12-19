@@ -267,7 +267,7 @@ PetscErrorCode OPFLOWSetConstraintBounds_PBPOL(OPFLOW opflow, Vec Gl, Vec Gu) {
     if (!line->isdcline) {
       gloc = line->startineqloc;
       /* Line flow inequality constraints */
-      gl[gloc] = gl[gloc + 1] = 0.0;
+      gl[gloc] = gl[gloc + 1] = PETSC_NINFINITY;
       gu[gloc] = gu[gloc + 1] =
           (line->rateA / ps->MVAbase) * (line->rateA / ps->MVAbase);
     }
