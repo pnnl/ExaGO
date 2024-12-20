@@ -16,7 +16,7 @@ typedef enum {
   LOAD_OUTAGE = 4
 } OutageType;
 
-#define MAX_SIMULTANEOUS_OUTAGES 5
+#define MAX_SIMULTANEOUS_OUTAGES 250
 #define MAX_CONTINGENCIES 20000
 
 struct _p_Outage {
