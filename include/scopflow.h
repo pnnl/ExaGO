@@ -148,6 +148,7 @@ PETSC_EXTERN PetscErrorCode
  */
 PETSC_EXTERN PetscErrorCode
 SCOPFLOWSetContingencyData(SCOPFLOW, ContingencyFileInputFormat, const char[]);
+PETSC_EXTERN PetscErrorCode SCOPFLOWSetGICData(SCOPFLOW, const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetPLoadData(SCOPFLOW, const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetQLoadData(SCOPFLOW, const char[]);
 PETSC_EXTERN PetscErrorCode SCOPFLOWSetWindGenProfile(SCOPFLOW, const char[]);
