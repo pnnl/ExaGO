@@ -35,7 +35,7 @@ function getCountyNodes(data) {
           countydata.features[j].properties.KVlevels = [...countydata.features[j].properties.KVlevels, ...data.features[i].properties.KVlevels];
           for (var k = 0; k < nbus; k++) {
             var bus = subst.bus[k];
-            countydata.features[j].properties.Pd += bus.PD;
+            countydata.features[j].properties.Pd += bus.PDloss;
             countydata.features[j].properties.Vm_avg += bus.VM;
             nbuscounty++;
 
@@ -235,8 +235,8 @@ function getLoad(data) {
       var Qd = 0.0;
       for (j = 0; j < nbus; j++) {
         var bus = subst.bus[j];
-        Pd += bus.PD;
-        Qd += bus.QD;
+        Pd += bus.PDloss;
+        Qd += bus.QDloss;
       }
       if (Pd > 0) {
         if (Pd <= minPd) minPd = Pd;
