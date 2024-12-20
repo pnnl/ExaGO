@@ -767,8 +767,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
       Bus[busi].Vmax = Bus[busi].Vmax == 0 ? 1.1 : Bus[busi].Vmax;
       Bus[busi].Vmin = Bus[busi].Vmin == 0 ? 0.9 : Bus[busi].Vmin;
       /* Sanity check for voltage limits */
-      if ((Bus[busi].Vmax < Bus[busi].Vmin) || (Bus[busi].Vmax > 1.1) ||
-          (Bus[busi].Vmin < 0.9)) {
+      if ((Bus[busi].Vmax < Bus[busi].Vmin)) {
         bad_data = PETSC_TRUE;
         ierr = PetscPrintf(
             ps->comm->type,
