@@ -1375,7 +1375,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
             <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
               expandIcon={<ArrowDropDownIcon />}>
               <Typography>
-                <Checkbox checked={loadlayeractive} style={{ color: "primary" }} onChange={handleLoadLayerChange} />Load
+                <Checkbox checked={loadlayeractive} style={{ color: "primary" }} onChange={handleLoadLayerChange} />Load loss
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
