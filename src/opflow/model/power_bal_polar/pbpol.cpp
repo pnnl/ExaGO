@@ -66,12 +66,19 @@ PetscErrorCode OPFLOWSetVariableBounds_PBPOL(OPFLOW opflow, Vec Xl, Vec Xu) {
     /* Bounds on bus variables */
     loc = bus->startxVloc;
 
-    xl[loc] = -PETSC_PI;
-    xu[loc] = PETSC_PI;
+    xl[loc] = PETSC_NINFINITY;
+    xu[loc] = PETSC_INFINITY;
 
     if (opflow->genbusvoltagetype == VARIABLE_WITHIN_BOUNDS) {
-      xl[loc + 1] = bus->Vmin;
-      xu[loc + 1] = bus->Vmax;
+      if(bus->ngenON && (bus->ide == REF_BUS || bus->ide == PV_BUS)) {
+	//	bus->Vmin = 0.98*bus->vm;
+	//	bus->Vmax = 1.02*bus->vm;
+	xl[loc + 1] = bus->Vmin; 
+	xu[loc + 1] = bus->Vmax;
+      } else {
+	xl[loc + 1] = bus->Vmin;
+	xu[loc + 1] = bus->Vmax;
+      }
     } else if (opflow->genbusvoltagetype == FIXED_WITHIN_QBOUNDS) {
       if (bus->ide == REF_BUS || bus->ide == PV_BUS) {
         xl[loc + 1] = 0.0;
@@ -332,7 +339,11 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X, Vec Lambda) {
       if (opflow->initializationtype == OPFLOWINIT_MIDPOINT) {
         /* Initial guess for voltage angles and bounds on voltage magnitudes */
         x[loc] = (xl[loc] + xu[loc]) / 2.0;
-        x[loc + 1] = (xl[loc + 1] + xu[loc + 1]) / 2.0;
+	if(bus->ngenON && (bus->ide == REF_BUS || bus->ide == PV_BUS)) {
+	  x[loc + 1] = (bus->Vmin + bus->Vmax) / 2.0; //bus->vm;
+	} else {
+	  x[loc + 1] = (bus->Vmin + bus->Vmax) / 2.0;
+	}
       } else if (opflow->initializationtype == OPFLOWINIT_FROMFILE ||
                  opflow->initializationtype == OPFLOWINIT_ACPF ||
                  opflow->initializationtype == OPFLOWINIT_DCOPF) {
