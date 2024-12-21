@@ -90,19 +90,28 @@ function ExtractFlowData(data) {
         lat: feature.geometry.coordinates[1]
       })
     } else if (feature.geometry.type === "LineString") {
+	var RATE_A;
+	if(feature.properties.RATE_A == 0) {
+	    RATE_A = 10000;
+	} else {
+	    RATE_A = feature.properties.RATE_A;
+	}
+	var loading = Math.abs(feature.properties.PF / RATE_A)*100;
       if (feature.properties.PF > 0) {
         const [origin, dest] = feature.properties.NAME.split(' -- ')
         flows.push({
           origin: origin,
           dest: dest,
-          count: feature.properties.KV 
+          count: feature.properties.KV,
+	  loading: loading
         })
       } else {
         const [dest, origin] = feature.properties.NAME.split(' -- ')
         flows.push({
           origin: origin,
           dest: dest,
-          count: feature.properties.KV 
+          count: feature.properties.KV,
+	  loading: loading
         })
       }
 
@@ -114,7 +123,7 @@ function ExtractFlowData(data) {
   const uniq = new Set(flows.map(e => JSON.stringify(e)));
   const res = Array.from(uniq).map(e => JSON.parse(e));
   return ({
-    locations: locations, flows: res
+      locations: locations, flows: res, maxloading: 120
   })
 
 }
