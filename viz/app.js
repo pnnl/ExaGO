@@ -73,7 +73,7 @@ const countyloaddata = getCountyNodes(data);
 data = countyloaddata.updatedata;
 
 
-var flowdata = ExtractFlowData(data);
+const flowdata = ExtractFlowData(data);
 
 const Points = getPoints(data);
 const Voltages = Points.map(d => d.value);
@@ -182,7 +182,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
   const [netfiltervalue, setNetFilterValue] = useState([0, 800]);
 
-  const [flowfiltervalue, setFlowFilterValue] = useState([0, 800]);
+  const [flowfiltervalue, setFlowFilterValue] = useState([0, 120]);
 
   const [loadfiltervalue, setLoadFilterValue] = useState([0, countyloaddata.maxPd]);
 
@@ -213,26 +213,32 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
             lat: feature.geometry.coordinates[1]
           })
         } else if (feature.geometry.type === "LineString" && lineNameSelectItems.includes(feature.properties.NAME)) {
+	    var RATE_A;
+	    if(feature.properties.RATE_A == 0) {
+		RATE_A = 10000;
+	    } else {
+		RATE_A = feature.properties.RATE_A;
+	    }
+	  var loading = Math.abs(feature.properties.PF / RATE_A)*100;
           if (feature.properties.PF > 0) {
             const [origin, dest] = feature.properties.NAME.split(' -- ')
             flows.push({
               origin: origin,
               dest: dest,
-              count: Math.abs(feature.properties.PF)
+	      count: feature.properties.KV,
+	      loading: loading
             })
           } else {
             const [dest, origin] = feature.properties.NAME.split(' -- ')
             flows.push({
               origin: origin,
               dest: dest,
-              count: Math.abs(feature.properties.PF)
+	      count: feature.properties.KV,
+	      loading: loading
             })
           }
-
         }
-
       })
-
     } else if (busNameSelectItems.length > 0) {
 
       data.features.forEach(feature => {
@@ -244,19 +250,29 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
             lat: feature.geometry.coordinates[1]
           })
         } else if (feature.geometry.type === "LineString" && feature.properties.NAME.split(' -- ').some(r => busNameSelectItems.includes(r))) {
+	    var RATE_A;
+	    if(feature.properties.RATE_A == 0) {
+		RATE_A = 10000;
+	    } else {
+		RATE_A = feature.properties.RATE_A;
+	    }
+
+	  var loading = Math.abs(feature.properties.PF / RATE_A)*100;
           if (feature.properties.PF > 0) {
             const [origin, dest] = feature.properties.NAME.split(' -- ')
             flows.push({
               origin: origin,
               dest: dest,
-              count: Math.abs(feature.properties.PF)
+	      count: feature.properties.KV,
+	      loading: loading
             })
           } else {
             const [dest, origin] = feature.properties.NAME.split(' -- ')
             flows.push({
               origin: origin,
               dest: dest,
-              count: Math.abs(feature.properties.PF)
+	      count: feature.properties.KV,
+	      loading: loading
             })
           }
 
@@ -264,12 +280,10 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
       })
     }
-    else {
+      else {
       data.features.forEach(feature => {
         if (feature.geometry.type === "Point" && netfiltervalue[0] <= feature.properties.KVlevels[0] &&
-          feature.properties.KVlevels[0] <= netfiltervalue[1] &&
-          flowfiltervalue[0] <= feature.properties.KVlevels[0] &&
-          feature.properties.KVlevels[0] <= flowfiltervalue[1]) {
+          feature.properties.KVlevels[0] <= netfiltervalue[1]) {
           locations.push({
             id: feature.properties.NAME,
             name: feature.properties.NAME,
@@ -277,30 +291,39 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
             lat: feature.geometry.coordinates[1]
           })
         } else if (feature.geometry.type === "LineString" && netfiltervalue[0] <= feature.properties.KV &&
-          feature.properties.KV <= netfiltervalue[1] &&
-          flowfiltervalue[0] <= feature.properties.KV &&
-          feature.properties.KV <= flowfiltervalue[1]) {
-          if (feature.properties.PF > 0) {
-            const [origin, dest] = feature.properties.NAME.split(' -- ')
-            flows.push({
-              origin: origin,
-              dest: dest,
-              count: Math.abs(feature.properties.PF)
-            })
-          } else {
-            const [dest, origin] = feature.properties.NAME.split(' -- ')
-            flows.push({
-              origin: origin,
-              dest: dest,
-              count: Math.abs(feature.properties.PF)
-            })
-          }
+          feature.properties.KV <= netfiltervalue[1]) {
+	    var RATE_A;
+	    if(feature.properties.RATE_A == 0) {
+		RATE_A = 10000;
+	    } else {
+		RATE_A = feature.properties.RATE_A;
+	    }
+	    var loading = Math.abs(feature.properties.PF/RATE_A)*100.0;
 
+	    if(flowfiltervalue[0] <= loading && loading <= flowfiltervalue[1]) {
+		if (feature.properties.PF > 0) {
+		    const [origin, dest] = feature.properties.NAME.split(' -- ')
+		    flows.push({
+			origin: origin,
+			dest: dest,
+			count: feature.properties.KV,
+			loading: loading
+		    })
+		} else {
+		    const [dest, origin] = feature.properties.NAME.split(' -- ')
+		    flows.push({
+			origin: origin,
+			dest: dest,
+			count: feature.properties.KV,
+			loading: loading
+		    })
+		}
+	    }
         }
-
       })
-    }
-    const newflowdata = { locations: locations, flows: flows }
+      }
+      
+      const newflowdata = { locations: locations, flows: flows, maxloading: 120 }
     setFlowData(newflowdata);
   }, [data, netfiltervalue, flowfiltervalue, lineNameSelectItems]);
 
@@ -554,8 +577,6 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
     toggleMsgLoader(); // close loading 
   }, [ouputMes]);
 
- 
-
   const handleNetLayerChange = (event) => {
     setNetLayerActive(event.target.checked);
     setNetFilterValue([0, 800]);
@@ -563,7 +584,8 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
 
   const handleFlowLayerChange = (event) => {
-    setFlowLayerActive(event.target.checked);
+      setFlowLayerActive(event.target.checked);
+      setFlowFilterValue([0, 120]);
   };
 
   const handleLoadLayerChange = (event) => {
@@ -640,8 +662,21 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
           if (netfiltervalue[0] <= KV && KV <= netfiltervalue[1]) return KV;
         }
       } else {
-        /* Line layer */
-        return data.properties.KV;
+	  if(data.geometry.type == 'LineString') { /* Line layer */
+	      /* Uncomment to activate flow-based filtering
+	      var RATE_A;
+	      if(data.properties.RATE_A == 0) {
+		  RATE_A = 10000;
+	      } else {
+		  RATE_A = data.properties.RATE_A;
+	      }
+	      var loading = Math.abs(data.properties.PF / RATE_A)*100;
+	      if(flowfiltervalue[0] <= loading && loading <= flowfiltervalue[1]) {
+		  return data.properties.KV;
+		  }
+	      */
+	      return data.properties.KV;
+	  }
       }
     }
 
@@ -649,7 +684,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
   }
 
   function getFlowFilterValue(data) {
-    console.log(data)
+
   }
 
   function getGenFilterValue(data) {
@@ -777,7 +812,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
       extensions: [new DataFilterExtension({ filtersize: 1 })],
       updateTriggers: {
-        getFilterValue: [netfiltervalue, lineNameSelectItems, busNameSelectItems]
+          getFilterValue: [netfiltervalue, lineNameSelectItems, busNameSelectItems, flowfiltervalue]
       }
     }),
 
@@ -1293,9 +1328,9 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
                       valueLabelDisplay="auto"
                       onChange={handleFlowRangeFilterChange}
                       getAriaValueText={valuetext}
-                      step={100}
+                      step={10}
                       min={0}
-                      max={800}
+		      max={120}
                     >
                     </Slider></div>)
                 }
