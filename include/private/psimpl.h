@@ -298,6 +298,9 @@ struct _p_PSLINE {
   PetscScalar kvlevel; /* Kv level for lines, for transformers uses the HV side
                           voltage */
 
+  PetscInt areaf,areat;  /**< Areas for from and to buses */
+  PetscInt zonef,zonet;  /**< Zones for from and to buses */
+
   PSBUS connbuses[2]; /**< From and to buses */
 
   /****** For DC lines **********/
@@ -371,6 +374,7 @@ typedef struct {
   PSConngroupi *ci;
 } PSConngroup;
 
+/* Substation data */
 struct _p_PSSUBST {
   PetscInt num;             /* Substation number */
   PetscInt intnum;          /* Internal number */
@@ -380,6 +384,8 @@ struct _p_PSSUBST {
   PSBUS bus[20];            /* Pointers for buses */
   PetscInt nkvlevels;       /* Number of KV levels at this substation */
   PetscScalar kvlevels[10]; /* Substation KV levels */
+  PetscInt zone;            /* zone number */
+  PetscInt area;            /* area number */
 };
 
 /* Struct to save system summary stats */
@@ -483,6 +489,11 @@ struct _p_PS {
   PSSystemSummary sys_info;
 
   PetscBool read_load_cost; /* are individual load costs assigned? */
+
+  PetscInt  nzones; /* Number of zones */
+  PetscInt  nareas; /* Number of areas */
+  PetscInt  *areas; /* Areas */
+  PetscInt  *zones; /* Zones */
 
   PetscBool setupcalled; /* Is setup called on PS? */
 

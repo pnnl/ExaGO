@@ -858,6 +858,12 @@ PetscErrorCode PSDestroy(PS *ps) {
     CHKERRQ(ierr);
   }
 
+  ierr = PetscFree((*ps)->zones);
+  CHKERRQ(ierr);
+
+  ierr = PetscFree((*ps)->areas);
+  CHKERRQ(ierr);
+
   ierr = PetscFree((*ps)->busext2intmap);
   CHKERRQ(ierr);
   ierr = DMDestroy(&(*ps)->networkdm);

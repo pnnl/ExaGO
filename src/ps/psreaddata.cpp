@@ -572,6 +572,10 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   ps->Nload = 0;
   ps->maxbusnum = -1;
   ps->read_load_cost = PETSC_FALSE;
+
+  ps->nzones = ps->nareas = 0;
+  ierr = PetscCalloc1(100,&ps->zones);CHKERRQ(ierr);
+  ierr = PetscCalloc1(100,&ps->areas);CHKERRQ(ierr);
   while ((out = fgets(line, MAXLINE, fp)) != NULL) {
     if (strstr(line, "mpc.baseMVA")) {
       /* Read base MVA */
@@ -763,6 +767,26 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
 
       ps->nbus++;
       ps->Nbus++;
+
+      /* Save zone and area information to PS struct */
+      int area_found = 0;
+      for(int num=0; num < ps->nareas; num++) {
+	if(Bus[busi].area == ps->areas[num]) {
+	  area_found = 1;
+	  break;
+	}
+      }
+      if(!area_found) ps->areas[ps->nareas++] = Bus[busi].area;
+
+      int zone_found = 0;
+      for(int num=0; num < ps->nzones; num++) {
+	if(Bus[busi].zone == ps->zones[num]) {
+	  zone_found = 1;
+	  break;
+	}
+      }
+      if(!zone_found) ps->zones[ps->nzones++] = Bus[busi].zone;
+      
 
       Bus[busi].Vmax = Bus[busi].Vmax == 0 ? 1.1 : Bus[busi].Vmax;
       Bus[busi].Vmin = Bus[busi].Vmin == 0 ? 0.9 : Bus[busi].Vmin;
@@ -1249,6 +1273,12 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
       Bus[Branch[bri].internal_i].nconnlines++;
       Bus[Branch[bri].internal_j].nconnlines++;
 
+      /* Set from and to bus areas and zones for the line */
+      Branch[bri].areaf = Bus[Branch[bri].internal_i].area;
+      Branch[bri].areat = Bus[Branch[bri].internal_j].area;
+      Branch[bri].zonef = Bus[Branch[bri].internal_i].zone;
+      Branch[bri].zonet = Bus[Branch[bri].internal_j].zone;
+      
       PetscInt lineididx = 0;
       for (linenum = 0; linenum < bri - 1; linenum++) {
         if (Branch[bri].internal_i == Branch[linenum].internal_i &&
@@ -1379,6 +1409,9 @@ PetscErrorCode PSReadGICData(PS ps) {
       subst = &ps->substations[idx];
       bus = &ps->bus[ps->busext2intmap[bus_num]];
       subst->bus[subst->nbus++] = bus;
+
+      subst->zone = bus->zone;
+      subst->area = bus->area;
 
       for (int j = 0; j < subst->nkvlevels; j++) {
         if (PetscAbsScalar(bus->basekV - subst->kvlevels[j]) < 1e-6) {
