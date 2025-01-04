@@ -40,7 +40,7 @@ import { LinearInterpolator, FlyToInterpolator } from 'deck.gl';
 import { HeatmapLayer } from 'deck.gl';
 import { InvertColorsOff, ShopTwoOutlined } from '@mui/icons-material';
 
-import { getCountyNodes, ExtractFirstTimeSlice, ExtractFlowData, getBarNet, getPoints, getGeneration, getLoad, getContours } from "./src/dataprocess";
+import { getCountyNodes, ExtractFirstTimeSlice, ExtractFlowData, getBarNet, getPoints, getGeneration, getLoad, getContours, getAreas, getZones } from "./src/dataprocess";
 import { LineColor, FlowColor, FillColor, fillGenColumnColor, fillGenColumnColorCap, getVoltageFillColor } from "./src/color"
 
 import 'core-js/actual/structured-clone';
@@ -72,6 +72,9 @@ var data = ExtractFirstTimeSlice(geodata);
 const countyloaddata = getCountyNodes(data);
 data = countyloaddata.updatedata;
 
+const areas = getAreas(casedata);
+
+const zones = getZones(casedata);
 
 const flowdata = ExtractFlowData(data);
 
@@ -146,9 +149,15 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
   const [busNameSelectItems, setBusNameSelectItems] = useState([]);
 
   const [busNameItems, setbusNameItems] = useState(data.features
-    .filter(f => f.geometry.type == "Point").map((f) => (f.properties.NAME)));
+						   .filter(f => f.geometry.type == "Point").map((f) => (f.properties.NAME)));
 
+    const [areaNameSelectItems, setAreaNameSelectItems] = useState([]);
 
+    const [areaNameItems, setAreaNameItems] = useState(areas.features.map(f => f.properties.name));
+
+    const [zoneNameSelectItems, setZoneNameSelectItems] = useState([]);
+
+    const [zoneNameItems, setZoneNameItems] = useState(zones.features.map(f => f.properties.name));
 
   const [countyNameSelectItems, setCountyNameSelectItems] = useState([]);
 
@@ -430,6 +439,54 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
   
   });
 
+    const zoomToAreaName = useCallback((filterareas,minLng, minLat, maxLng, maxLat) => {
+    var viewport = new WebMercatorViewport(INITIAL_VIEW_STATE);
+
+    const { longitude, latitude, zoom } = viewport.fitBounds([[minLng, minLat], [maxLng, maxLat]]);
+
+    setInitialViewState(viewState => ({
+      ...viewState,
+      latitude: latitude,
+      longitude: longitude,
+      pitch: 50,
+      traansitionInterpolator: transitionFlyToInterpolator,
+      transitionDuration: 5000,
+      zoom: 7.5,
+      onTransitionEnd: activatePopup
+    }))
+
+      var popup = { display: false, name: '', info: '' }; // Will be displayed after transition end only
+      popup.name = "Area " + filterareas.properties.name;
+//      popup.info = "Area: " + info.object.properties.name;
+      setShowPopup(showPopup => ({ ...showPopup, ...popup }));
+    
+    });
+
+    const zoomToZoneName = useCallback((filterzones,minLng, minLat, maxLng, maxLat) => {
+    var viewport = new WebMercatorViewport(INITIAL_VIEW_STATE);
+
+    const { longitude, latitude, zoom } = viewport.fitBounds([[minLng, minLat], [maxLng, maxLat]]);
+
+    setInitialViewState(viewState => ({
+      ...viewState,
+      latitude: latitude,
+      longitude: longitude,
+      pitch: 50,
+      traansitionInterpolator: transitionFlyToInterpolator,
+      transitionDuration: 5000,
+      zoom: 7.5,
+      onTransitionEnd: activatePopup
+    }))
+
+      var popup = { display: false, name: '', info: '' }; // Will be displayed after transition end only
+      popup.name = "Zone " + filterzones.properties.name;
+//      popup.info = "Zone: " + info.object.properties.name;
+      setShowPopup(showPopup => ({ ...showPopup, ...popup }));
+    
+  });
+
+
+
   const zoomToCounty = useCallback((info) => {
     if (!info) return null;
 
@@ -456,7 +513,73 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
       var popup = { display: false, name: '', info: '' }; // Will be displayed after transition end only
       popup.name = info.object.properties.NAME;
-      popup.info = "Load: " + info.object.properties.Pd.toFixed(2) + "MW";
+      popup.info = "Load loss: " + info.object.properties.Pd.toFixed(2) + "MW";
+      setShowPopup(showPopup => ({ ...showPopup, ...popup }));
+
+
+    }
+  });
+
+    const zoomToArea = useCallback((info) => {
+    if (!info) return null;
+
+    if (info.layer.id == 'AreaLayer') {
+      var layer = info.layer;
+      var { viewport } = layer.context;
+
+      var cbounds = bbox(info.object);
+      var c1 = [cbounds[0], cbounds[1]];
+      var c2 = [cbounds[2], cbounds[3]];
+      var areabounds = [c1, c2];
+      const { longitude, latitude, zoom } = viewport.fitBounds(areabounds);
+
+      setInitialViewState(viewState => ({
+        ...viewState,
+        latitude: latitude,
+        longitude: longitude,
+        pitch: 50,
+        traansitionInterpolator: transitionFlyToInterpolator,
+        transitionDuration: 5000,
+        zoom: zoom - 0.25,
+        onTransitionEnd: activatePopup
+      }))
+
+      var popup = { display: false, name: '', info: '' }; // Will be displayed after transition end only
+      popup.name = "Area " + info.object.properties.name;
+//      popup.info = "Area: " + info.object.properties.name;
+      setShowPopup(showPopup => ({ ...showPopup, ...popup }));
+
+
+    }
+    });
+
+    const zoomToZone = useCallback((info) => {
+    if (!info) return null;
+
+    if (info.layer.id == 'ZoneLayer') {
+      var layer = info.layer;
+      var { viewport } = layer.context;
+
+      var cbounds = bbox(info.object);
+      var c1 = [cbounds[0], cbounds[1]];
+      var c2 = [cbounds[2], cbounds[3]];
+      var zonebounds = [c1, c2];
+      const { longitude, latitude, zoom } = viewport.fitBounds(zonebounds);
+
+      setInitialViewState(viewState => ({
+        ...viewState,
+        latitude: latitude,
+        longitude: longitude,
+        pitch: 50,
+        traansitionInterpolator: transitionFlyToInterpolator,
+        transitionDuration: 5000,
+        zoom: zoom - 0.25,
+        onTransitionEnd: activatePopup
+      }))
+
+      var popup = { display: false, name: '', info: '' }; // Will be displayed after transition end only
+      popup.name = "Zone " + info.object.properties.name;
+//      popup.info = "Zone: " + info.object.properties.name;
       setShowPopup(showPopup => ({ ...showPopup, ...popup }));
 
 
@@ -487,10 +610,9 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
   const [genlayeractive, setGenLayerActive] = useState(false);
   const [genlayercapactive, setGenLayerCapActive] = useState(false);
   const [voltagelayeractive, setVoltageLayerActive] = useState(false);
-
-
-
-
+  const [zonelayeractive, setZoneLayerActive] = useState(false);
+  const [arealayeractive, setAreaLayerActive] = useState(false);
+    
   const handleUserInput = (inputText) => {
     console.log(`New message incoming! ${inputText}`);
     // Now send the message to GPT and get response 
@@ -611,6 +733,31 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
       transitionDuration: 2000,
     })))
   };
+
+    const handleAreaLayerChange = (event) => {
+    setAreaLayerActive(event.target.checked);
+//    setVoltageFilterValue([0.89, 1.11]);
+
+    event.target.checked && (setInitialViewState(viewState => ({
+      ...viewState,
+      pitch: 40,
+      traansitionInterpolator: transitionFlyToInterpolator,
+      transitionDuration: 2000,
+    })))
+    };
+
+    const handleZoneLayerChange = (event) => {
+    setZoneLayerActive(event.target.checked);
+//    setVoltageFilterValue([0.89, 1.11]);
+
+    event.target.checked && (setInitialViewState(viewState => ({
+      ...viewState,
+      pitch: 40,
+      traansitionInterpolator: transitionFlyToInterpolator,
+      transitionDuration: 2000,
+    })))
+  };
+
 
   const handleGenLayerChange = (event) => {
     setGenLayerActive(event.target.checked);
@@ -910,6 +1057,59 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
     }),
     */
 
+      
+      new GeoJsonLayer({
+      id: 'AreaLayer',
+      data: areas,
+      pickable: arealayeractive,
+      visible: arealayeractive,
+      stroked: true,
+      filled: true,
+      extruded: true,
+      wireframe: true,
+      lineWidthMinPixels: 1,
+      getPolygon: d => d.geometry.coordinates,
+      //      getElevation: d => d.properties.Pd*5.0,
+      getFillColor: [255, 192, 203],
+      getLineColor: [80, 80, 80],
+      getLineWidth: d => 1,
+      opacity: 0.1,
+      onClick: zoomToArea,
+//      extensions: [new DataFilterExtension({ filtersize: 1 })],
+//      getFilterValue: getLoadFilterValue,
+//      filterRange: loadfiltervalue,
+
+//      updateTriggers: {
+//        getFilterValue: [netfiltervalue, countyNameSelectItems]
+//      }
+    }),
+
+    new GeoJsonLayer({
+      id: 'ZoneLayer',
+      data: zones,
+      pickable: zonelayeractive,
+      visible: zonelayeractive,
+      stroked: true,
+      filled: true,
+      extruded: true,
+      wireframe: true,
+      lineWidthMinPixels: 1,
+      getPolygon: d => d.geometry.coordinates,
+      //      getElevation: d => d.properties.Pd*5.0,
+      getFillColor: [252, 245, 95],
+      getLineColor: [80, 80, 80],
+      getLineWidth: d => 1,
+      opacity: 0.1,
+      onClick: zoomToZone,
+//      extensions: [new DataFilterExtension({ filtersize: 1 })],
+//      getFilterValue: getLoadFilterValue,
+//      filterRange: loadfiltervalue,
+
+//      updateTriggers: {
+//        getFilterValue: [netfiltervalue, countyNameSelectItems]
+//      }
+    }),
+
     new GeoJsonLayer({
       id: 'PolygonLayerload',
       data: countyload,
@@ -1103,6 +1303,56 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
     }
   }
+
+  const handleAreaMultiselect = (selectItem, metadata) => {
+
+      const selected = areaNameSelectItems.indexOf(metadata.dataItem)
+      console.log(selected);
+    if (selected >= 0) {  //if is selected, remove 
+      const newArray = [...areaNameSelectItems.slice(0, selected), ...areaNameSelectItems.slice(selected + 1)];
+      setAreaNameSelectItems(newArray)
+
+    } else {  //add to array 
+      setAreaNameSelectItems(areaNameSelectItems => ([...areaNameSelectItems, metadata.dataItem]))
+      const filterareas = areas.features.filter(area => area.properties.name === metadata.dataItem)
+      if (filterareas.length > 0) {
+        const longs = filterareas[0].geometry.coordinates[0].map(d => d[0])
+        const lats = filterareas[0].geometry.coordinates[0].map(d => d[1])
+        const minLng = Math.min(...longs)
+        const maxLng = Math.max(...longs)
+        const minLat = Math.min(...lats)
+        const maxLat = Math.max(...lats)
+
+        zoomToAreaName(filterareas[0],minLng, minLat, maxLng, maxLat)
+      }
+    }
+  }
+
+    const handleZoneMultiselect = (selectItem, metadata) => {
+
+      const selected = zoneNameSelectItems.indexOf(metadata.dataItem)
+      console.log(selected);
+    if (selected >= 0) {  //if is selected, remove 
+      const newArray = [...zoneNameSelectItems.slice(0, selected), ...zoneNameSelectItems.slice(selected + 1)];
+      setZoneNameSelectItems(newArray)
+
+    } else {  //add to array 
+      setZoneNameSelectItems(zoneNameSelectItems => ([...zoneNameSelectItems, metadata.dataItem]))
+      const filterzones = zones.features.filter(area => area.properties.name === metadata.dataItem)
+      if (filterzones.length > 0) {
+        const longs = filterzones[0].geometry.coordinates[0].map(d => d[0])
+        const lats = filterzones[0].geometry.coordinates[0].map(d => d[1])
+        const minLng = Math.min(...longs)
+        const maxLng = Math.max(...longs)
+        const minLat = Math.min(...lats)
+        const maxLat = Math.max(...lats)
+
+        zoomToZoneName(filterzones[0],minLng, minLat, maxLng, maxLat)
+      }
+    }
+  }
+
+  
 
   const renderItem = ({
     id,
@@ -1473,6 +1723,44 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
                 /></div>)}
 
 
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+
+	  <Accordion defaultExpanded={false}>
+            <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
+              expandIcon={<ArrowDropDownIcon />}>
+              <Typography>
+                <Checkbox checked={arealayeractive} style={{ color: "primary" }} onChange={handleAreaLayerChange} />Show Areas
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Typography component="div">
+                {arealayeractive && (<div style={{ paddingRight: "40px" }}><Multiselect
+                  defaultValue={areaNameSelectItems}
+                  data={areaNameItems}
+                  placeholder={'Search for areas'}
+                  onChange={handleAreaMultiselect}
+                /></div>)}
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+
+	  <Accordion defaultExpanded={false}>
+            <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
+              expandIcon={<ArrowDropDownIcon />}>
+              <Typography>
+                <Checkbox checked={zonelayeractive} style={{ color: "primary" }} onChange={handleZoneLayerChange} />Show Zones
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Typography component="div">
+                {zonelayeractive && (<div style={{ paddingRight: "40px" }}><Multiselect
+                  defaultValue={zoneNameSelectItems}
+                  data={zoneNameItems}
+                  placeholder={'Search for zones'}
+                  onChange={handleZoneMultiselect}
+                /></div>)}
               </Typography>
             </AccordionDetails>
           </Accordion>
