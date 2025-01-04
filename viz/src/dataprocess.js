@@ -270,4 +270,62 @@ function getContours() {
   return contours;
 }
 
-export { getCountyNodes, ExtractFirstTimeSlice, ExtractFlowData, getBarNet, getPoints, getGeneration, getLoad, getContours };
+// Filter features with geometry type "Point" and properties area = area_num
+function getArea(data,area_num) {
+    var filteredFeatures = data.features.filter(feature => 
+	feature.geometry.type === "Point" && feature.properties.area === area_num
+    );
+
+    // Create a new GeoJSON object with filtered features
+    var filteredGeoJSON = {
+	type: "FeatureCollection",
+	features: filteredFeatures
+    };
+
+    var areahull = convex(filteredGeoJSON);
+    areahull.properties ={name: area_num};
+
+    return areahull;
+}
+
+function getAreas(sysdata) {
+
+    var areas = [];
+
+    for(var i = 0; i < sysdata.nareas; i++) {
+	areas.push(getArea(sysdata.geojsondata,sysdata.areas[i]));
+    }
+		   
+    return {type:"FeatureCollection", features:areas};
+}
+
+// Filter features with geometry type "Point" and properties zone = zone_num
+function getZone(data,zone_num) {
+    var filteredFeatures = data.features.filter(feature => 
+	feature.geometry.type === "Point" && feature.properties.zone === zone_num
+    );
+
+    // Create a new GeoJSON object with filtered features
+    var filteredGeoJSON = {
+	type: "FeatureCollection",
+	features: filteredFeatures
+    };
+
+    var zonehull = convex(filteredGeoJSON);
+    zonehull.properties ={name: zone_num};
+
+    return zonehull;
+}
+
+function getZones(sysdata) {
+
+    var zones = [];
+
+    for(var i = 0; i < sysdata.nzones; i++) {
+	zones.push(getZone(sysdata.geojsondata,sysdata.zones[i]));
+    }
+		   
+    return {type:"FeatureCollection", features:zones};
+}
+
+export { getCountyNodes, ExtractFirstTimeSlice, ExtractFlowData, getBarNet, getPoints, getGeneration, getLoad, getContours, getAreas, getZones };
