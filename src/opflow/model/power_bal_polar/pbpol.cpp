@@ -425,16 +425,16 @@ PetscErrorCode OPFLOWSetInitialGuess_PBPOL(OPFLOW opflow, Vec X, Vec Lambda) {
     }
 
     gloc = bus->starteqloc;
-    lambda[gloc] = bus->mult_pmis;
-    lambda[gloc + 1] = bus->mult_qmis;
+    lambda[gloc] = bus->mult_pmis*ps->MVAbase;
+    lambda[gloc + 1] = bus->mult_qmis*ps->MVAbase;
   }
 
   PetscScalar *lambdai = lambda + opflow->nconeq;
   for(i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
     gloc = line->startineqloc;
-    lambdai[gloc] = line->mult_sf;
-    lambdai[gloc + 1] = line->mult_st;
+    lambdai[gloc] = line->mult_sf*ps->MVAbase*ps->MVAbase/(2*line->rateA);
+    lambdai[gloc + 1] = line->mult_st*ps->MVAbase*ps->MVAbase/(2*line->rateA);
   }
 
 
@@ -2990,8 +2990,8 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow) {
     bus->vm = x[loc + 1];
 
     gloc = bus->starteqloc;
-    bus->mult_pmis = lambdae[gloc];
-    bus->mult_qmis = lambdae[gloc + 1];
+    bus->mult_pmis = lambdae[gloc]/ps->MVAbase;
+    bus->mult_qmis = lambdae[gloc + 1]/ps->MVAbase;
 
     if (opflow->include_powerimbalance_variables) {
       loc = bus->startxpimbloc;
@@ -3093,8 +3093,8 @@ PetscErrorCode OPFLOWSolutionToPS_PBPOL(OPFLOW opflow) {
     if (line->isdcline)
       continue;
     gloc = line->startineqloc;
-    line->mult_sf = lambdai[gloc];
-    line->mult_st = lambdai[gloc + 1];
+    line->mult_sf = (2*lambdai[gloc]*line->rateA/ps->MVAbase)/ps->MVAbase;
+    line->mult_st = (2*lambdai[gloc + 1]*line->rateA/ps->MVAbase)/ps->MVAbase;
   }
 
   ierr = VecRestoreArrayRead(X, &x);
