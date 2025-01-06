@@ -59,11 +59,12 @@ casedata = mod_casedata.get_casedata();
 // Source data GeoJSON
 const geodata = casedata['geojsondata']
 
-
+const style='pos';
 const MAP_STYLE = {
   pos_no_label: 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json',
   pos: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
-  dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
+  dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+  none:''
 };
 
 
@@ -402,9 +403,10 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
         popup.name = info.object.properties.NAME
         popup.info = "Substation Info"
       } else {
-        var popup = {};
-        popup.name = info.object.properties.NAME
-        popup.info = "Line Info"
+          var popup = {};
+	  var loading = Math.abs(info.object.properties.PF / info.object.properties.RATE_A)*100.0;
+          popup.name = info.object.properties.NAME
+          popup.info = "KV: "+info.object.properties.KV.toFixed(2)+"KV \nLoading: "+loading.toFixed(2)+ "%"; 
       }
       setShowPopup(showPopup => ({ ...showPopup, ...popup }));
     } else if (info.layer.id == "gen-column") {
@@ -1479,7 +1481,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
 
         <StaticMap reuseMaps
-          mapStyle={mapStyle['pos']}
+          mapStyle={mapStyle[style]}
           preventStyleDiffing={true}
           initialViewState={INITIAL_VIEW_STATE}
         >

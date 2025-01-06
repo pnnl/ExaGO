@@ -283,7 +283,9 @@ function getArea(data,area_num) {
     };
 
     var areahull = convex(filteredGeoJSON);
-    areahull.properties ={name: area_num};
+    if(areahull) {
+	areahull.properties ={name: area_num};
+    }
 
     return areahull;
 }
@@ -293,7 +295,10 @@ function getAreas(sysdata) {
     var areas = [];
 
     for(var i = 0; i < sysdata.nareas; i++) {
-	areas.push(getArea(sysdata.geojsondata,sysdata.areas[i]));
+	var area = getArea(sysdata.geojsondata,sysdata.areas[i]);
+	if(area) {
+	    areas.push(area);
+	}
     }
 		   
     return {type:"FeatureCollection", features:areas};
@@ -312,7 +317,9 @@ function getZone(data,zone_num) {
     };
 
     var zonehull = convex(filteredGeoJSON);
-    zonehull.properties ={name: zone_num};
+    if(zonehull) {
+	zonehull.properties ={name: zone_num};
+    }
 
     return zonehull;
 }
@@ -322,7 +329,10 @@ function getZones(sysdata) {
     var zones = [];
 
     for(var i = 0; i < sysdata.nzones; i++) {
-	zones.push(getZone(sysdata.geojsondata,sysdata.zones[i]));
+	var zone = getZone(sysdata.geojsondata,sysdata.zones[i]);
+	if(zone) {
+	    zones.push(zone);
+	}
     }
 		   
     return {type:"FeatureCollection", features:zones};
