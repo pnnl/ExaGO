@@ -17,11 +17,11 @@ Each folder which builds a configuration of ExaGO should have a following:
 
 Platforms:
 
-- Crusher
+- frontier
 
 Description:
 
-Crusher clang build of exago@crusher-dev + hiop@develop
+frontier clang build of exago@frontier-dev + hiop@develop
 
 ### clang-omp
 
