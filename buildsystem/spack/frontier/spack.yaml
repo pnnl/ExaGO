@@ -3,7 +3,7 @@ spack:
   - exago@develop%rocmcc@6.3.1 amdgpu_target=gfx90a
     ^coinhsl%gcc@12.3
     ^openblas%gcc@12.3
-    ^petsc%rocmcc@6.3.1 target=x86_64
+    ^petsc%rocmcc@6.3.1 target=zen3
   view: false
   concretizer:
     unify: when_possible
@@ -42,7 +42,7 @@ spack:
       providers:
         blas: [openblas]
         mpi: [cray-mpich]
-      target: [x86_64]
+      target: [zen3]
     exago:
       require: ~python+raja+hiop+rocm+ipopt
     hiop:
