@@ -574,8 +574,8 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   ps->read_load_cost = PETSC_FALSE;
 
   ps->nzones = ps->nareas = 0;
-  ierr = PetscCalloc1(100,&ps->zones);CHKERRQ(ierr);
-  ierr = PetscCalloc1(100,&ps->areas);CHKERRQ(ierr);
+  ierr = PetscCalloc1(500,&ps->zones);CHKERRQ(ierr);
+  ierr = PetscCalloc1(500,&ps->areas);CHKERRQ(ierr);
   while ((out = fgets(line, MAXLINE, fp)) != NULL) {
     if (strstr(line, "mpc.baseMVA")) {
       /* Read base MVA */
