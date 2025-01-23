@@ -20,13 +20,6 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          # Once we move submodule deps into spack, we can do some more builds
-          # Also need to change build script to use spack from base image
-          submodules: true
-
       # No GHCR base image with skopeo, so this will do...
       - name: "Set up skopeo"
         uses: warjiang/setup-skopeo@v0.1.3
