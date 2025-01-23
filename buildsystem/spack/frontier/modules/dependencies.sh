@@ -1,4 +1,4 @@
-module use -a /lustre/orion/eng145/world-shared/spack-install/modules/linux-sles15-zen3
+module use -a /lustre/orion/stf006/world-shared/nkouk/exago/spack-install/modules/linux-sles15-zen3
 # cmake@=3.27.9%rocmcc@=6.3.1~doc+ncurses+ownlibs~qtgui build_system=generic build_type=Release patches=dbc3892 arch=linux-sles15-zen3
 module load cmake/3.27.9-rocmcc-6.3.1-glbjtfr
 # glibc@=2.31%rocmcc@=6.3.1 build_system=autotools arch=linux-sles15-zen3
@@ -56,7 +56,7 @@ module load rocm-core/6.3.1-rocmcc-6.3.1-3fytkbd
 # magma@=2.8.0%rocmcc@=6.3.1~cuda+fortran~ipo+rocm+shared amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
 module load magma/2.8.0-rocmcc-6.3.1-gk7atiu
 # metis@=5.1.0%rocmcc@=6.3.1~gdb~int64~no_warning~real64+shared build_system=cmake build_type=Release generator=make patches=4991da9,93a7903 arch=linux-sles15-zen3
-module load metis/5.1.0-rocmcc-6.3.1-gqci5sz
+module load metis/5.1.0-rocmcc-6.3.1-eqv3lql
 # rocprim@=6.3.1%rocmcc@=6.3.1~asan amdgpu_target=auto build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
 module load rocprim/6.3.1-rocmcc-6.3.1-r2wbqsu
 # raja@=0.14.0%rocmcc@=6.3.1~cuda~desul~examples~exercises~ipo~omptarget~omptask~openmp~plugins+rocm~run-all-tests+shared~sycl~tests~vectorization amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make arch=linux-sles15-zen3
@@ -94,11 +94,11 @@ module load texinfo/7.1-rocmcc-6.3.1-a7zkg2r
 # mpfr@=4.2.1%rocmcc@=6.3.1 build_system=autotools libs=shared,static arch=linux-sles15-zen3
 module load mpfr/4.2.1-rocmcc-6.3.1-4zfn7vk
 # suite-sparse@=7.8.3%rocmcc@=6.3.1~cuda~graphblas~openmp+pic build_system=generic arch=linux-sles15-zen3
-module load suite-sparse/7.8.3-rocmcc-6.3.1-ijwanpq
+module load suite-sparse/7.8.3-rocmcc-6.3.1-ldbpuyy
 # umpire@=6.0.0%rocmcc@=6.3.1~asan~backtrace+c~cuda~dev_benchmarks~device_alloc~deviceconst~examples+fmt_header_only~fortran~ipc_shmem~ipo~mpi~numa~omptarget~openmp+rocm~sanitizer_tests+shared~sqlite_experimental~tools~werror amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make tests=none arch=linux-sles15-zen3
 module load umpire/6.0.0-rocmcc-6.3.1-4g4w7pb
 # hiop@=develop%rocmcc@=6.3.1~cuda~deepchecking~ginkgo~ipo~jsrun+kron+mpi+raja+rocm~shared+sparse amdgpu_target=gfx90a build_system=cmake build_type=Release generator=make patches=bb62ae1 arch=linux-sles15-zen3
-module load hiop/develop-rocmcc-6.3.1-hcotnsk
+module load hiop/develop-rocmcc-6.3.1-kexanvc
 # ipopt@=3.12.10%rocmcc@=6.3.1+coinhsl~debug~java~metis~mumps build_system=autotools arch=linux-sles15-zen3
 module load ipopt/3.12.10-rocmcc-6.3.1-gnbtqod
 # python@=3.11.5%rocmcc@=6.3.1+bz2+crypt+ctypes+dbm~debug+libxml2+lzma~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tkinter+uuid+zlib build_system=generic patches=13fa8bf,b0615b2,ebdca64,f2fd060 arch=linux-sles15-zen3
@@ -106,4 +106,4 @@ module load python/3.11.5-rocmcc-6.3.1-a47nn7m
 # petsc@=3.22.2%rocmcc@=6.3.1~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~sycl~tetgen~trilinos~valgrind~zoltan build_system=generic clanguage=C memalign=none arch=linux-sles15-zen3
 module load petsc/3.22.2-rocmcc-6.3.1-gulnlvd
 # exago@=develop%rocmcc@=6.3.1~cuda+hiop~ipo+ipopt+logging+mpi~python+raja+rocm amdgpu_target=gfx90a build_system=cmake build_type=Release dev_path=/lustre/orion/scratch/nkouk/stf006/Codes/ExaGO generator=make arch=linux-sles15-zen3
-## module load exago/develop-rocmcc-6.3.1-lkwmfol
+## module load exago/develop-rocmcc-6.3.1-5tcfzm4
