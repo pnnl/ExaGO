@@ -52,11 +52,9 @@ https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/commit/47ea09e648dfa81ca8a70cc
 ### gcc-cuda
 
 Platforms:
-- Ascent
 - Deception
 - Marianas
 - Newell
-- Summit
 
 Description:
 
