@@ -449,7 +449,7 @@ static void PrintJSONArrayInt(FILE *fd, int value, bool trail_comma) {
 }
 
 static void PrintJSONIntArray(FILE *fd, const char *name, int nvals,
-                           int *values, bool trail_comma) {
+                              int *values, bool trail_comma) {
   PrintJSONArrayBegin(fd, name);
 
   for (int i = 0; i < nvals - 1; i++) {
@@ -607,7 +607,7 @@ static void PrintBusData(FILE *fd, PSSUBST subst, bool trail_comma,
     PrintJSONInt(fd, "ZONE", bus->zone, true);
 
     // Area
-    PrintJSONInt(fd,"AREA",bus->area, true);
+    PrintJSONInt(fd, "AREA", bus->area, true);
 
     // PD
     if (bus->nload) {
@@ -772,7 +772,7 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[]) {
 
   /* Print areas */
   PrintJSONIntArray(fd, "areas", ps->nareas, ps->areas, true);
-  
+
   /* Print KV levels */
   PrintJSONArray(fd, "KVlevels", ps->nkvlevels, ps->kvlevels, true);
 
@@ -939,8 +939,8 @@ PetscErrorCode PSSaveSolution_MINIMAL(PS ps, const char outfile[]) {
   fprintf(fd, "\tTotal Load Shed P, Q: %9g, %9g\n",
           ps->sys_info.total_loadshed[0], ps->sys_info.total_loadshed[1]);
   fprintf(fd, "\tSolve Time: %5g\n", ps->solve_real_time);
-  fprintf(fd, "\tNzones: %d\n",ps->nzones);
-  fprintf(fd, "\tNareas: %d\n",ps->nareas);
+  fprintf(fd, "\tNzones: %d\n", ps->nzones);
+  fprintf(fd, "\tNareas: %d\n", ps->nareas);
 
   fclose(fd);
 
