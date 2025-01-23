@@ -107,6 +107,7 @@ jobs:
           # - exago@develop~mpi~ipopt+hiop~python+raja
           # See #16 - +python~mpi causes issues
           # - exago@develop~mpi~ipopt+hiop+python~raja
+          # Python build in GH actions is failing. Using system python.
           # - exago@develop+mpi~ipopt+hiop+python~raja ^openmpi
           # See #40 - +hiop+raja~ipopt ^hiop~sparse is useful for edge cases
           - exago@develop+mpi~ipopt+hiop~python+raja ^openmpi ^hiop+raja~sparse
