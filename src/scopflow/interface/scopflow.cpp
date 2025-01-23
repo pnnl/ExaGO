@@ -772,9 +772,9 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
       }
 
       /* Set any GIC file data */
-      if(scopflow->gicfileset) {
-	ierr = OPFLOWSetGICData(scopflow->opflows[c],scopflow->gicfile);
-	CHKERRQ(ierr);
+      if (scopflow->gicfileset) {
+        ierr = OPFLOWSetGICData(scopflow->opflows[c], scopflow->gicfile);
+        CHKERRQ(ierr);
       }
 
       /* Set contingencies */
@@ -1385,10 +1385,10 @@ SCOPFLOWSetContingencyData(SCOPFLOW scopflow,
  * @param[in] scopflow application object
  * @param[in] name of the gic file
  *
- * gicfile has the coordinates and the substation information. Used for visualization
+ * gicfile has the coordinates and the substation information. Used for
+ * visualization
  */
-PetscErrorCode SCOPFLOWSetGICData(SCOPFLOW scopflow,const char gicfile[])
-{
+PetscErrorCode SCOPFLOWSetGICData(SCOPFLOW scopflow, const char gicfile[]) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
@@ -1400,7 +1400,6 @@ PetscErrorCode SCOPFLOWSetGICData(SCOPFLOW scopflow,const char gicfile[])
 
   PetscFunctionReturn(0);
 }
-
 
 /*
   SCOPFLOWSetSubproblemModel - Set subproblem model

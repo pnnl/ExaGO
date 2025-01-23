@@ -33,7 +33,7 @@ PetscErrorCode OPFLOWSetVariableBounds_DCOPF(OPFLOW opflow, Vec Xl, Vec Xu) {
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
 
-    if(line->isdcline) {
+    if (line->isdcline) {
       loc = line->startxdcloc;
 
       // Bounds on PF
@@ -189,7 +189,7 @@ PetscErrorCode OPFLOWSetConstraintBounds_DCOPF(OPFLOW opflow, Vec Gl, Vec Gu) {
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
 
-    if(!line->isdcline) {
+    if (!line->isdcline) {
       gloc = line->startineqloc;
       /* Line flow inequality constraints */
       gl[gloc] = gl[gloc + 1] = -(line->rateA / ps->MVAbase);
@@ -240,7 +240,7 @@ PetscErrorCode OPFLOWSetInitialGuess_DCOPF(OPFLOW opflow, Vec X, Vec Lambda) {
   CHKERRQ(ierr);
   ierr = VecGetArrayRead(opflow->Xu, &xu);
   CHKERRQ(ierr);
-  ierr = VecGetArray(Lambda,&lambda);
+  ierr = VecGetArray(Lambda, &lambda);
   CHKERRQ(ierr);
 
   for (i = 0; i < ps->nbus; i++) {
@@ -318,10 +318,10 @@ PetscErrorCode OPFLOWSetInitialGuess_DCOPF(OPFLOW opflow, Vec X, Vec Lambda) {
     lambda[gloc] = bus->mult_pmis;
   }
 
-  for(i = 0; i < opflow->nlinesmon; i++) {
+  for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
 
-    if(line->isdcline) {
+    if (line->isdcline) {
       loc = line->startxdcloc;
 
       if (opflow->initializationtype == OPFLOWINIT_MIDPOINT ||
@@ -341,7 +341,7 @@ PetscErrorCode OPFLOWSetInitialGuess_DCOPF(OPFLOW opflow, Vec X, Vec Lambda) {
   CHKERRQ(ierr);
   ierr = VecRestoreArrayRead(opflow->Xu, &xu);
   CHKERRQ(ierr);
-  ierr = VecRestoreArray(Lambda,&lambda);
+  ierr = VecRestoreArray(Lambda, &lambda);
   CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
@@ -462,44 +462,44 @@ PetscErrorCode OPFLOWComputeEqualityConstraints_DCOPF(OPFLOW opflow, Vec X,
       bust = connbuses[1];
 
       if (!line->isdcline) {
-	xlocf = busf->startxVloc;
-	xloct = bust->startxVloc;
+        xlocf = busf->startxVloc;
+        xloct = bust->startxVloc;
 
-	thetaf = x[xlocf];
-	thetat = x[xloct];
-	thetaft = thetaf - thetat;
-	thetatf = thetat - thetaf;
-	
-	if (bus == busf) {
-	  Pf = Bdc * thetaft + Pshift;
-	  
-	  val[0] = Pf;
-	  
-	  ierr = VecSetValues(Ge, 1, row, val, ADD_VALUES);
-	  CHKERRQ(ierr);
+        thetaf = x[xlocf];
+        thetat = x[xloct];
+        thetaft = thetaf - thetat;
+        thetatf = thetat - thetaf;
 
-	  flps += 2.0;
-	} else {
-	  Pt = Bdc * thetatf - Pshift;
+        if (bus == busf) {
+          Pf = Bdc * thetaft + Pshift;
 
-	  val[0] = Pt;
+          val[0] = Pf;
 
-	  ierr = VecSetValues(Ge, 1, row, val, ADD_VALUES);
-	  CHKERRQ(ierr);
-	  flps += 2.0;
-	}
-      } else if(line->isdcline) {
-	Pf = x[line->startxdcloc];
+          ierr = VecSetValues(Ge, 1, row, val, ADD_VALUES);
+          CHKERRQ(ierr);
 
-	if(bus == busf) {
-	  val[0] = Pf;
-	} else {
-	  Pt = Pf - (line->loss0 + line->loss1*Pf);
-	  val[0] = -Pf;
-	  flps += 3.0;
-	}
-	ierr = VecSetValues(Ge, 1, row, val, ADD_VALUES);
-	CHKERRQ(ierr);
+          flps += 2.0;
+        } else {
+          Pt = Bdc * thetatf - Pshift;
+
+          val[0] = Pt;
+
+          ierr = VecSetValues(Ge, 1, row, val, ADD_VALUES);
+          CHKERRQ(ierr);
+          flps += 2.0;
+        }
+      } else if (line->isdcline) {
+        Pf = x[line->startxdcloc];
+
+        if (bus == busf) {
+          val[0] = Pf;
+        } else {
+          Pt = Pf - (line->loss0 + line->loss1 * Pf);
+          val[0] = -Pf;
+          flps += 3.0;
+        }
+        ierr = VecSetValues(Ge, 1, row, val, ADD_VALUES);
+        CHKERRQ(ierr);
       }
     }
 
@@ -646,36 +646,36 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_DCOPF(OPFLOW opflow,
       busf = connbuses[0];
       bust = connbuses[1];
 
-      if(!line->isdcline) {
-	locglobf = busf->startxVlocglob;
-	locglobt = bust->startxVlocglob;
+      if (!line->isdcline) {
+        locglobf = busf->startxVlocglob;
+        locglobt = bust->startxVlocglob;
 
-	Bdc = line->bdc;
+        Bdc = line->bdc;
 
-	if (bus == busf) {
-	  col[0] = locglobf;
-	  col[1] = locglobt;
-	  /* dPf_dthetaf */
-	  val[0] = Bdc;
-	  /*dPf_dthetat */
-	  val[1] = -Bdc;
+        if (bus == busf) {
+          col[0] = locglobf;
+          col[1] = locglobt;
+          /* dPf_dthetaf */
+          val[0] = Bdc;
+          /*dPf_dthetat */
+          val[1] = -Bdc;
 
-	  ierr = MatSetValues(Je, 1, row, 2, col, val, ADD_VALUES);
-	  CHKERRQ(ierr);
-	} else {
-	  col[0] = locglobt;
-	  col[1] = locglobf;
-	  
-	  /* dPt_dthetat */
-	  val[0] = Bdc;
-	  /* dPt_dthetaf */
-	  val[1] = -Bdc;
-	  
-	  ierr = MatSetValues(Je, 1, row, 2, col, val, ADD_VALUES);
-	  CHKERRQ(ierr);
-	}
-      } else if(line->isdcline) {
-	if (bus == busf) {
+          ierr = MatSetValues(Je, 1, row, 2, col, val, ADD_VALUES);
+          CHKERRQ(ierr);
+        } else {
+          col[0] = locglobt;
+          col[1] = locglobf;
+
+          /* dPt_dthetat */
+          val[0] = Bdc;
+          /* dPt_dthetaf */
+          val[1] = -Bdc;
+
+          ierr = MatSetValues(Je, 1, row, 2, col, val, ADD_VALUES);
+          CHKERRQ(ierr);
+        }
+      } else if (line->isdcline) {
+        if (bus == busf) {
           col[0] = line->startxdcloc;
           val[0] = 1.0;
           ierr = MatSetValues(Je, 1, row, 1, col, val, ADD_VALUES);
@@ -683,7 +683,7 @@ PetscErrorCode OPFLOWComputeEqualityConstraintJacobian_DCOPF(OPFLOW opflow,
           col[0] = line->startxdcloc;
           val[0] = -(1.0 - line->loss1);
           ierr = MatSetValues(Je, 1, row, 1, col, val, ADD_VALUES);
-	  flps += 2.0;
+          flps += 2.0;
         }
       }
     }
@@ -799,32 +799,32 @@ PetscErrorCode OPFLOWComputeInequalityConstraints_DCOPF(OPFLOW opflow, Vec X,
     for (i = 0; i < opflow->nlinesmon; i++) {
       line = &ps->line[opflow->linesmon[i]];
 
-      if(!line->isdcline) {
-	gloc = line->startineqloc;
+      if (!line->isdcline) {
+        gloc = line->startineqloc;
 
-	Bdc = line->bdc;
-	Pshift = line->pshift;
-	
-	ierr = PSLINEGetConnectedBuses(line, &connbuses);
-	CHKERRQ(ierr);
-	busf = connbuses[0];
-	bust = connbuses[1];
-	
-	xlocf = busf->startxVloc;
-	xloct = bust->startxVloc;
-	
-	thetaf = x[xlocf];
-	thetat = x[xloct];
-	thetaft = thetaf - thetat;
-	thetatf = thetat - thetaf;
-	
-	Pf = Bdc * thetaft + Pshift;
-	Pt = Bdc * thetatf - Pshift;
-	
-	g[gloc] = Pf;
-	g[gloc + 1] = Pt;
-	
-	flps += 4.0;
+        Bdc = line->bdc;
+        Pshift = line->pshift;
+
+        ierr = PSLINEGetConnectedBuses(line, &connbuses);
+        CHKERRQ(ierr);
+        busf = connbuses[0];
+        bust = connbuses[1];
+
+        xlocf = busf->startxVloc;
+        xloct = bust->startxVloc;
+
+        thetaf = x[xlocf];
+        thetat = x[xloct];
+        thetaft = thetaf - thetat;
+        thetatf = thetat - thetaf;
+
+        Pf = Bdc * thetaft + Pshift;
+        Pt = Bdc * thetatf - Pshift;
+
+        g[gloc] = Pf;
+        g[gloc + 1] = Pt;
+
+        flps += 4.0;
       }
     }
   }
@@ -917,44 +917,44 @@ PetscErrorCode OPFLOWComputeInequalityConstraintJacobian_DCOPF(OPFLOW opflow,
     for (i = 0; i < opflow->nlinesmon; i++) {
       line = &ps->line[opflow->linesmon[i]];
 
-      if(!line->isdcline) {
-	gloc = line->startineqloc;
+      if (!line->isdcline) {
+        gloc = line->startineqloc;
 
-	Bdc = line->bdc;
+        Bdc = line->bdc;
 
-	ierr = PSLINEGetConnectedBuses(line, &connbuses);
-	CHKERRQ(ierr);
-	busf = connbuses[0];
-	bust = connbuses[1];
-	
-	xlocf = busf->startxVloc;
-	xloct = bust->startxVloc;
+        ierr = PSLINEGetConnectedBuses(line, &connbuses);
+        CHKERRQ(ierr);
+        busf = connbuses[0];
+        bust = connbuses[1];
 
-	dPf_dthetaf = Bdc;
-	dPf_dthetat = -Bdc;
-	
-	dPt_dthetat = Bdc;
-	dPt_dthetaf = -Bdc;
-	
-	row[0] = gloc;
-	col[0] = xlocf;
-	col[1] = xloct;
-	
-	val[0] = dPf_dthetaf;
-	val[1] = dPf_dthetat;
-	
-	ierr = MatSetValues(Ji, 1, row, 2, col, val, ADD_VALUES);
-	CHKERRQ(ierr);
-	
-	row[0] = gloc + 1;
-	col[0] = xloct;
-	col[1] = xlocf;
-	
-	val[0] = dPt_dthetat;
-	val[1] = dPt_dthetaf;
-	
-	ierr = MatSetValues(Ji, 1, row, 2, col, val, ADD_VALUES);
-	CHKERRQ(ierr);
+        xlocf = busf->startxVloc;
+        xloct = bust->startxVloc;
+
+        dPf_dthetaf = Bdc;
+        dPf_dthetat = -Bdc;
+
+        dPt_dthetat = Bdc;
+        dPt_dthetaf = -Bdc;
+
+        row[0] = gloc;
+        col[0] = xlocf;
+        col[1] = xloct;
+
+        val[0] = dPf_dthetaf;
+        val[1] = dPf_dthetat;
+
+        ierr = MatSetValues(Ji, 1, row, 2, col, val, ADD_VALUES);
+        CHKERRQ(ierr);
+
+        row[0] = gloc + 1;
+        col[0] = xloct;
+        col[1] = xlocf;
+
+        val[0] = dPt_dthetat;
+        val[1] = dPt_dthetaf;
+
+        ierr = MatSetValues(Ji, 1, row, 2, col, val, ADD_VALUES);
+        CHKERRQ(ierr);
       }
     }
     flps += ps->nline * 2;
@@ -1161,7 +1161,7 @@ PetscErrorCode OPFLOWModelSetNumVariables_DCOPF(OPFLOW opflow,
   PSLINE line;
   PetscErrorCode ierr;
   PetscBool isghost;
-  PetscInt  monidx;
+  PetscInt monidx;
 
   PetscFunctionBegin;
 
@@ -1171,7 +1171,7 @@ PetscErrorCode OPFLOWModelSetNumVariables_DCOPF(OPFLOW opflow,
     monidx = opflow->linesmon[i];
     line = &ps->line[opflow->linesmon[i]];
 
-    if(line->isdcline) {
+    if (line->isdcline) {
       branchnvar[monidx] = line->nx = 1;
     } else {
       branchnvar[monidx] = line->nx = 0;
@@ -1305,8 +1305,8 @@ PetscErrorCode OPFLOWModelSetNumConstraints_DCOPF(OPFLOW opflow,
         *nconineq += 2; /* Real power flow line constraint (from and to bus) */
         line->nconineq = 2;
         line->nconeq = 0;
-      } else if(line->isdcline) {
-	line->nconeq = line->nconineq = 0;
+      } else if (line->isdcline) {
+        line->nconeq = line->nconineq = 0;
       }
     }
   }
@@ -1613,7 +1613,7 @@ PetscErrorCode OPFLOWSolutionToPS_DCOPF(OPFLOW opflow) {
       continue;
     }
 
-    if(!line->isdcline) {
+    if (!line->isdcline) {
       Bdc = line->bdc;
       Pshift = line->pshift;
 
@@ -1621,7 +1621,7 @@ PetscErrorCode OPFLOWSolutionToPS_DCOPF(OPFLOW opflow) {
       CHKERRQ(ierr);
       busf = connbuses[0];
       bust = connbuses[1];
-      
+
       xlocf = busf->startxVloc;
       xloct = bust->startxVloc;
 
@@ -1629,7 +1629,7 @@ PetscErrorCode OPFLOWSolutionToPS_DCOPF(OPFLOW opflow) {
       thetat = x[xloct];
       thetaft = thetaf - thetat;
       thetatf = thetat - thetaf;
-      
+
       Pf = Bdc * thetaft + Pshift;
       Pt = Bdc * thetatf - Pshift;
 
@@ -1639,10 +1639,10 @@ PetscErrorCode OPFLOWSolutionToPS_DCOPF(OPFLOW opflow) {
       line->qt = 0.0;
       line->sf = Pf;
       line->st = Pt;
-    } else if(line->isdcline) {
+    } else if (line->isdcline) {
       Pf = x[line->startxdcloc];
 
-      Pt = Pf - (line->loss0 + line->loss1 *Pf);
+      Pt = Pf - (line->loss0 + line->loss1 * Pf);
 
       line->pf = Pf;
       line->qf = 0.0;
@@ -1653,9 +1653,9 @@ PetscErrorCode OPFLOWSolutionToPS_DCOPF(OPFLOW opflow) {
     }
   }
 
-  for(i = 0; i < opflow->nlinesmon; i++) {
+  for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
-    if(!line->isdcline) {
+    if (!line->isdcline) {
       gloc = line->startineqloc;
       line->mult_sf = lambdai[gloc];
       line->mult_st = lambdai[gloc + 1];
@@ -1771,11 +1771,11 @@ PetscErrorCode OPFLOWModelSetUp_DCOPF(OPFLOW opflow) {
 
   for (i = 0; i < opflow->nlinesmon; i++) {
     line = &ps->line[opflow->linesmon[i]];
-    
+
     if (!line->isdcline) {
       line->startineqloc = ineqloc;
       ineqloc += line->nconineq;
-    } else if(line->isdcline) {
+    } else if (line->isdcline) {
       ierr = PSLINEGetVariableLocation(line, &loc);
       CHKERRQ(ierr);
       line->startxdcloc = loc;

@@ -298,8 +298,8 @@ struct _p_PSLINE {
   PetscScalar kvlevel; /* Kv level for lines, for transformers uses the HV side
                           voltage */
 
-  PetscInt areaf,areat;  /**< Areas for from and to buses */
-  PetscInt zonef,zonet;  /**< Zones for from and to buses */
+  PetscInt areaf, areat; /**< Areas for from and to buses */
+  PetscInt zonef, zonet; /**< Zones for from and to buses */
 
   PSBUS connbuses[2]; /**< From and to buses */
 
@@ -490,10 +490,10 @@ struct _p_PS {
 
   PetscBool read_load_cost; /* are individual load costs assigned? */
 
-  PetscInt  nzones; /* Number of zones */
-  PetscInt  nareas; /* Number of areas */
-  PetscInt  *areas; /* Areas */
-  PetscInt  *zones; /* Zones */
+  PetscInt nzones; /* Number of zones */
+  PetscInt nareas; /* Number of areas */
+  PetscInt *areas; /* Areas */
+  PetscInt *zones; /* Zones */
 
   PetscBool setupcalled; /* Is setup called on PS? */
 
