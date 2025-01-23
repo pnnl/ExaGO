@@ -574,8 +574,10 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
   ps->read_load_cost = PETSC_FALSE;
 
   ps->nzones = ps->nareas = 0;
-  ierr = PetscCalloc1(500,&ps->zones);CHKERRQ(ierr);
-  ierr = PetscCalloc1(500,&ps->areas);CHKERRQ(ierr);
+  ierr = PetscCalloc1(500, &ps->zones);
+  CHKERRQ(ierr);
+  ierr = PetscCalloc1(500, &ps->areas);
+  CHKERRQ(ierr);
   while ((out = fgets(line, MAXLINE, fp)) != NULL) {
     if (strstr(line, "mpc.baseMVA")) {
       /* Read base MVA */
@@ -770,23 +772,24 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
 
       /* Save zone and area information to PS struct */
       int area_found = 0;
-      for(int num=0; num < ps->nareas; num++) {
-	if(Bus[busi].area == ps->areas[num]) {
-	  area_found = 1;
-	  break;
-	}
+      for (int num = 0; num < ps->nareas; num++) {
+        if (Bus[busi].area == ps->areas[num]) {
+          area_found = 1;
+          break;
+        }
       }
-      if(!area_found) ps->areas[ps->nareas++] = Bus[busi].area;
+      if (!area_found)
+        ps->areas[ps->nareas++] = Bus[busi].area;
 
       int zone_found = 0;
-      for(int num=0; num < ps->nzones; num++) {
-	if(Bus[busi].zone == ps->zones[num]) {
-	  zone_found = 1;
-	  break;
-	}
+      for (int num = 0; num < ps->nzones; num++) {
+        if (Bus[busi].zone == ps->zones[num]) {
+          zone_found = 1;
+          break;
+        }
       }
-      if(!zone_found) ps->zones[ps->nzones++] = Bus[busi].zone;
-      
+      if (!zone_found)
+        ps->zones[ps->nzones++] = Bus[busi].zone;
 
       Bus[busi].Vmax = Bus[busi].Vmax == 0 ? 1.1 : Bus[busi].Vmax;
       Bus[busi].Vmin = Bus[busi].Vmin == 0 ? 0.9 : Bus[busi].Vmin;
@@ -820,11 +823,11 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
         Load[loadi].pl = Pd / ps->MVAbase;
         Load[loadi].ql = Qd / ps->MVAbase;
         /* Some defaults for load shed */
-	if(Pd < 0.0 || Qd <= 0.0) {
-	  Load[loadi].loss_frac = 0.0;
-	} else {
-	  Load[loadi].loss_frac = 1.0;
-	}
+        if (Pd < 0.0 || Qd <= 0.0) {
+          Load[loadi].loss_frac = 0.0;
+        } else {
+          Load[loadi].loss_frac = 1.0;
+        }
         Load[loadi].loss_cost = BOGUSLOSSCOST;
         Load[loadi].area = Bus[busi].area;
         Load[loadi].internal_i = busi;
@@ -1052,7 +1055,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
         Gen[genfueli].ramp_rate_min = GENRAMPRATE_WIND / ps->MVAbase;
         Gen[genfueli].ramp_rate_10min = Gen[genfueli].ramp_rate_min * 10;
         Gen[genfueli].ramp_rate_30min = Gen[genfueli].ramp_rate_min * 30;
-	Gen[genfueli].pb = 0.0; /* Set lower Pg limit to 0.0 so that power
+        Gen[genfueli].pb = 0.0; /* Set lower Pg limit to 0.0 so that power
                                    can be curtailed if need be */
 
         ps->ngenwind++;
@@ -1278,7 +1281,7 @@ PetscErrorCode PSReadMatPowerData(PS ps, const char netfile[]) {
       Branch[bri].areat = Bus[Branch[bri].internal_j].area;
       Branch[bri].zonef = Bus[Branch[bri].internal_i].zone;
       Branch[bri].zonet = Bus[Branch[bri].internal_j].zone;
-      
+
       PetscInt lineididx = 0;
       for (linenum = 0; linenum < bri - 1; linenum++) {
         if (Branch[bri].internal_i == Branch[linenum].internal_i &&
