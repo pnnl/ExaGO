@@ -197,7 +197,7 @@ struct _p_SCOPFLOW {
   ContingencyFileInputFormat ctgcfileformat;
 
   /* GIC data */
-  PetscBool gicfileset;  /* Is the GIC file set? */
+  PetscBool gicfileset; /* Is the GIC file set? */
   char gicfile[PETSC_MAX_PATH_LEN];
 
   PetscBool ismultiperiod; /* Are we doing a multi-period OPF? */

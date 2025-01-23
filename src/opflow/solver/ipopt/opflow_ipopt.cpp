@@ -543,7 +543,8 @@ PetscErrorCode OPFLOWSolverSetUp_IPOPT(OPFLOW opflow) {
   {
     AddIpoptNumOption(ipopt->nlp, (char *)"tol", opflow->tolerance);
     AddIpoptIntOption(ipopt->nlp, (char *)"max_iter", 5000);
-    AddIpoptStrOption(ipopt->nlp, (char *)"nlp_scaling_method", (char*)"gradient-based");
+    AddIpoptStrOption(ipopt->nlp, (char *)"nlp_scaling_method",
+                      (char *)"gradient-based");
     /*
     AddIpoptStrOption(ipopt->nlp, (char *)"mu_strategy", (char *)"monotone");
     AddIpoptStrOption(ipopt->nlp, (char *)"fixed_variable_treatment",

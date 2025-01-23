@@ -67,7 +67,8 @@ struct _p_OPFLOWModelOps {
   PetscErrorCode (*computeinequalityconstraintsarray)(
       OPFLOW, const double *, double *); /* Set equality constraints */
   PetscErrorCode (*computeconstraints)(OPFLOW, Vec, Vec);
-  PetscErrorCode (*checkconstraints)(OPFLOW); /* Check and display constraints info */
+  PetscErrorCode (*checkconstraints)(
+      OPFLOW); /* Check and display constraints info */
   PetscErrorCode (*computeconstraintsarray)(
       OPFLOW, double *, double *); /* Array version of compute constraints */
   PetscErrorCode (*computeequalityconstraintjacobian)(OPFLOW, Vec, Mat);
@@ -236,7 +237,7 @@ struct _p_OPFLOW {
 
   PetscBool ignore_lineflow_constraints; /* Ignore line flow constraints */
   PetscBool lazy_lineflow_constraints; /* Apply line flow constraints lazily */
-  PetscBool allow_lineflow_violation;    /* Allow line flow violation */
+  PetscBool allow_lineflow_violation;  /* Allow line flow violation */
   PetscReal
       lineflowviolation_penalty; /* Penalty for exceeding line flow limits */
 
@@ -247,7 +248,7 @@ struct _p_OPFLOW {
                                                  imbalance */
   PetscReal powerimbalance_penalty;
 
-  PetscReal load_scaling_factor;  /* scaling factor for load */
+  PetscReal load_scaling_factor; /* scaling factor for load */
 
   PetscBool has_powersetpoint; /* Use real power set-point */
 
@@ -310,7 +311,8 @@ struct _p_OPFLOW {
   /** @brief user provided data struct for auxillary objective */
   void *userctx;
 
-  OPFLOW* address; /* Address for this OPFLOW object, used with lazy constraints */
+  OPFLOW
+      *address; /* Address for this OPFLOW object, used with lazy constraints */
 
   PetscBool skip_options; /* Skip run-time options */
 

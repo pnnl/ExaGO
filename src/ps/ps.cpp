@@ -853,7 +853,7 @@ PetscErrorCode PSDestroy(PS *ps) {
   ierr = PetscFree((*ps)->kvlevels);
   CHKERRQ(ierr);
 
-  if((*ps)->nlines_overloaded) {
+  if ((*ps)->nlines_overloaded) {
     ierr = PetscFree((*ps)->lines_overloaded);
     CHKERRQ(ierr);
   }
@@ -1619,21 +1619,24 @@ PetscErrorCode PSApplyScenario(PS ps, Scenario scenario) {
       for (j = 0; j < forecast->nele; j++) {
         ierr = PSGetGen(ps, forecast->buses[j], forecast->id[j], &gen);
         CHKERRQ(ierr);
-	if(gen) {
-	  gen->pg = gen->pt =
-            forecast->val[j] /
-            ps->MVAbase;    /* Set real power generation. Note that
-                 Pg upper limit is also set to the forecast value. This allows the
-                 wind generator to be dispatched at its limit */
-	  gen->pgs = gen->pb; /* Set-point set to lower bound. This is good for
+        if (gen) {
+          gen->pg = gen->pt =
+              forecast->val[j] /
+              ps->MVAbase;    /* Set real power generation. Note that
+                   Pg upper limit is also set to the forecast value. This allows
+                   the    wind generator to be dispatched at its limit */
+          gen->pgs = gen->pb; /* Set-point set to lower bound. This is good for
                                optimization */
-	  if (PetscAbsScalar(gen->pg) < 1e-6)
-	    gen->status =
-              0; /* Generation value is zero, so switch off the generator */
-	  //	  else gen->status = 1; /* Switch on generator (it may be off in the input file) */
-	} else {
-	  printf("No generator on bus %d with id %s. Cannot apply the requested scenario\n",forecast->buses[j],forecast->id[j]);
-	}
+          if (PetscAbsScalar(gen->pg) < 1e-6)
+            gen->status =
+                0; /* Generation value is zero, so switch off the generator */
+          //	  else gen->status = 1; /* Switch on generator (it may be off in
+          //the input file) */
+        } else {
+          printf("No generator on bus %d with id %s. Cannot apply the "
+                 "requested scenario\n",
+                 forecast->buses[j], forecast->id[j]);
+        }
       }
     }
   }
@@ -2049,7 +2052,8 @@ PetscErrorCode PSComputeSummaryStats(PS ps) {
 }
 
 /*
-  PSGetLineOverloads - Get overloaded lines and returns the indices (line numbers) for overloaded lines
+  PSGetLineOverloads - Get overloaded lines and returns the indices (line
+numbers) for overloaded lines
 
   Input Parameters:
 . ps - PS object
@@ -2060,34 +2064,36 @@ PetscErrorCode PSComputeSummaryStats(PS ps) {
 - has_overload - True if any line is overloaded
 
 */
-PetscErrorCode PSGetLineOverloads(PS ps,PetscInt *nodlines,PetscInt **odlines, PetscBool *has_overload)
-{
+PetscErrorCode PSGetLineOverloads(PS ps, PetscInt *nodlines, PetscInt **odlines,
+                                  PetscBool *has_overload) {
   PetscErrorCode ierr;
-  PetscInt       i;
-  PSLINE         line;
-  PetscInt       idx = 0;
-  PetscInt       *odlines_temp;
-  PetscBool      hasoverload_temp = PETSC_TRUE;
+  PetscInt i;
+  PSLINE line;
+  PetscInt idx = 0;
+  PetscInt *odlines_temp;
+  PetscBool hasoverload_temp = PETSC_TRUE;
 
   PetscFunctionBegin;
 
   /* Crete buffer to store overloaded lines */
-  ierr = PetscMalloc1(ps->nlineON,&odlines_temp);
+  ierr = PetscMalloc1(ps->nlineON, &odlines_temp);
 
-  for(i = 0; i < ps->nline; i++) {
+  for (i = 0; i < ps->nline; i++) {
     line = &ps->line[i];
-    if(!line->status)
+    if (!line->status)
       continue;
 
     /* Check which lines are overloaded */
-    if(line->sf > (line->rateA/ps->MVAbase) || line->st > (line->rateA/ps->MVAbase)) {
+    if (line->sf > (line->rateA / ps->MVAbase) ||
+        line->st > (line->rateA / ps->MVAbase)) {
       odlines_temp[idx++] = i;
     }
   }
 
-  if(!idx) {
+  if (!idx) {
     /* No overloaded lines */
-    ierr = PetscFree(odlines_temp);CHKERRQ(ierr);
+    ierr = PetscFree(odlines_temp);
+    CHKERRQ(ierr);
     hasoverload_temp = PETSC_FALSE;
     ps->has_overloaded_lines = PETSC_FALSE;
     *has_overload = PETSC_FALSE;
@@ -2095,21 +2101,27 @@ PetscErrorCode PSGetLineOverloads(PS ps,PetscInt *nodlines,PetscInt **odlines, P
     PetscFunctionReturn(0);
   } else {
     /* Some lines are overloaded */
-    if(ps->nlines_overloaded) {
-      /* GetLineOverloads called previously, so re-allocate lines_overloaded array */
-      ierr = PetscFree(ps->lines_overloaded);CHKERRQ(ierr);
+    if (ps->nlines_overloaded) {
+      /* GetLineOverloads called previously, so re-allocate lines_overloaded
+       * array */
+      ierr = PetscFree(ps->lines_overloaded);
+      CHKERRQ(ierr);
     }
     ps->nlines_overloaded = idx;
     ps->has_overloaded_lines = PETSC_TRUE;
-    ierr = PetscMalloc1(ps->nlines_overloaded,&ps->lines_overloaded);CHKERRQ(ierr);
+    ierr = PetscMalloc1(ps->nlines_overloaded, &ps->lines_overloaded);
+    CHKERRQ(ierr);
     /* Copy values to ps->lines_overloaded array */
-    ierr = PetscMemcpy(ps->lines_overloaded,odlines_temp,idx*sizeof(PetscInt));CHKERRQ(ierr);
+    ierr =
+        PetscMemcpy(ps->lines_overloaded, odlines_temp, idx * sizeof(PetscInt));
+    CHKERRQ(ierr);
 
-    ierr = PetscFree(odlines_temp);CHKERRQ(ierr);
+    ierr = PetscFree(odlines_temp);
+    CHKERRQ(ierr);
   }
   *nodlines = ps->nlines_overloaded;
   *odlines = ps->lines_overloaded;
   *has_overload = ps->has_overloaded_lines;
-  
+
   PetscFunctionReturn(0);
 }
