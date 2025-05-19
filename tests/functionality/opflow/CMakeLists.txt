@@ -130,7 +130,6 @@ if(EXAGO_INSTALL_TESTS)
     -opflow_allow_lineflow_violation
     -opflow_lineflowviolation_penalty
     100
-    -no_optfile
     DEPENDS
     IPOPT
     HIOP
