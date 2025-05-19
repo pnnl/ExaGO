@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Configure python
-module load cray-python/3.11.5
+module load cray-python/3.11.7
 
-BASE=/lustre/orion/stf006/world-shared/$(whoami)/exago
+BASE=/lustre/orion/stf006/world-shared/$(whoami)/exago-05-2025
 
 export SPACK_INSTALL=$BASE/spack-install
 export SPACK_MODULES=modules
