@@ -221,11 +221,7 @@ module purge
 varfile="$SRCDIR/buildsystem/$JOB/$(echo $MY_CLUSTER)Variables.sh"
 
 if [[ -f "$varfile" ]]; then
-  source $varfile
-  if [ $? ]; then
-    echo "Could not source $varfile"; 
-    exit 1;
-  fi
+  source $varfile || { echo "Could not source $varfile"; exit 1; }
 fi
 
 # module list
