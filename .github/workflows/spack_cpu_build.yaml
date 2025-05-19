@@ -162,8 +162,8 @@ jobs:
       - name: Install
         run: spack -e . install --no-check-signature --fail-fast --keep-stage
 
-        #- name: Test Build
-        #  run: cd $(spack -e . location --build-dir exago@develop) && ctest -VV
+      - name: Test Build
+        run: cd $(spack -e . location --build-dir exago@develop) && ctest -VV
 
       # Push with force to override existing binaries...
       - name: Push to binaries to buildcache
