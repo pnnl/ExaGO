@@ -11,39 +11,45 @@ target_include_directories(
 target_link_libraries(test_opflow_functionality ExaGO::OPFLOW)
 if(EXAGO_INSTALL_TESTS)
 
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_OPFLOW_HIOP_TOML_TESTSUITE
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:test_opflow_functionality>
-    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_pbpolhiop.toml
-    DEPENDS
-    HIOP
-  )
+  if(EXAGO_ENABLE_HIOP)
+    exago_add_test(
+      NAME
+      FUNCTIONALITY_TEST_OPFLOW_HIOP_TOML_TESTSUITE
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:test_opflow_functionality>
+      ${CMAKE_CURRENT_SOURCE_DIR}/hiop_pbpolhiop.toml
+      DEPENDS
+      HIOP
+    )
+  endif()
 
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_OPFLOW_RAJAHIOP_TOML_TESTSUITE
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:test_opflow_functionality>
-    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_pbpolrajahiop.toml
-    DEPENDS
-    HIOP
-    RAJA
-  )
+  if(EXAGO_ENABLE_HIOP AND EXAGO_ENABLE_RAJA)
+    exago_add_test(
+      NAME
+      FUNCTIONALITY_TEST_OPFLOW_RAJAHIOP_TOML_TESTSUITE
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:test_opflow_functionality>
+      ${CMAKE_CURRENT_SOURCE_DIR}/hiop_pbpolrajahiop.toml
+      DEPENDS
+      HIOP
+      RAJA
+    )
+  endif()
 
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_TOML_TESTSUITE
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:test_opflow_functionality>
-    ${CMAKE_CURRENT_SOURCE_DIR}/hiopsparse_pbpol.toml
-    DEPENDS
-    HIOP_SPARSE
-  )
+  if(EXAGO_ENABLE_HIOP)
+    exago_add_test(
+      NAME
+      FUNCTIONALITY_TEST_OPFLOW_HIOPSPARSE_TOML_TESTSUITE
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:test_opflow_functionality>
+      ${CMAKE_CURRENT_SOURCE_DIR}/hiopsparse_pbpol.toml
+      DEPENDS
+      HIOP_SPARSE
+    )
+  endif()
 
   if(EXAGO_ENABLE_GPU)
     exago_add_test(
@@ -110,7 +116,6 @@ if(EXAGO_INSTALL_TESTS)
     115.0
     DEPENDS
     IPOPT
-    HIOP
   )
 
   exago_add_test(
@@ -132,35 +137,36 @@ if(EXAGO_INSTALL_TESTS)
     100
     DEPENDS
     IPOPT
-    HIOP
   )
 
-  exago_add_test(
-    NAME
-    OPFLOW_MONITOR_KVLEVEL_HIOP_CPU
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:app_opflow>
-    -netfile
-    ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
-    -opflow_solver
-    HIOP
-    -opflow_model
-    POWER_BALANCE_HIOP
-    -hiop_compute_mode
-    CPU
-    -hiop_mem_space
-    HOST
-    -hiop_verbosity_level
-    3
-    -opflow_initialization
-    ACPF
-    -opflow_monitor_line_kvlevels
-    115.0
-    DEPENDS
-    IPOPT
-    HIOP
-  )
+  if(EXAGO_ENABLE_HIOP)
+    exago_add_test(
+      NAME
+      OPFLOW_MONITOR_KVLEVEL_HIOP_CPU
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:app_opflow>
+      -netfile
+      ${CMAKE_SOURCE_DIR}/datafiles/case_ACTIVSg200.m
+      -opflow_solver
+      HIOP
+      -opflow_model
+      POWER_BALANCE_HIOP
+      -hiop_compute_mode
+      CPU
+      -hiop_mem_space
+      HOST
+      -hiop_verbosity_level
+      3
+      -opflow_initialization
+      ACPF
+      -opflow_monitor_line_kvlevels
+      115.0
+      DEPENDS
+      IPOPT
+      HIOP
+    )
+  endif()
 
   exago_add_test(
     NAME
