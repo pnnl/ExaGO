@@ -16,11 +16,11 @@ if(EXAGO_INSTALL_TESTS)
 
   # PFLOW Functionality Tests
   if(EXAGO_ENABLE_MPI)
-    set(np_max, 3)
+    set(np_max 3)
   else()
-    set(np_max, 1)
+    set(np_max 1)
   endif()
-  foreach(np RANGE 1 np_max)
+  foreach(np RANGE 1 ${np_max})
     exago_add_test(
       NAME
       FUNCTIONALITY_TEST_PFLOW_TESTSUITE_${np}_proc
