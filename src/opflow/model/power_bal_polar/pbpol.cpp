@@ -3203,13 +3203,13 @@ PetscErrorCode OPFLOWCheckConstraints_PBPOL(OPFLOW opflow) {
     bus = &ps->bus[i];
 
     // Check for bus voltage bounds
-    if (bus->vm < bus->Vmin) {
+    if (bus->vm + opflow->tolerance < bus->Vmin) {
       ierr = PetscPrintf(PETSC_COMM_SELF,
                          "Bus %d voltage lower bound not satisfied: Vm = "
                          "%10.8f < Vmin = %10.8f\n",
                          bus->bus_i, bus->vm, bus->Vmin);
       CHKERRQ(ierr);
-    } else if (bus->vm > bus->Vmax) {
+    } else if (bus->vm - opflow->tolerance > bus->Vmax) {
       ierr = PetscPrintf(PETSC_COMM_SELF,
                          "Bus %d voltage upper bound not satisfied: Vm = "
                          "%10.8f > Vmax = %10.8f\n",
@@ -3229,13 +3229,13 @@ PetscErrorCode OPFLOWCheckConstraints_PBPOL(OPFLOW opflow) {
         pgmin = 0.0;
       }
 
-      if (gen->pg < pgmin) {
+      if (gen->pg + opflow->tolerance < pgmin) {
         ierr = PetscPrintf(PETSC_COMM_SELF,
                            "Generator %s on bus %d real power lower bound not "
                            "satisfied: Pg = %10.8f < Pgmin = %10.8f\n",
                            gen->id, bus->bus_i, gen->pg, pgmin);
         CHKERRQ(ierr);
-      } else if (gen->pg > gen->pt) {
+      } else if (gen->pg - opflow->tolerance > gen->pt) {
         ierr = PetscPrintf(PETSC_COMM_SELF,
                            "Generator %s on bus %d real power uper bound not "
                            "satisfied: Pg = %10.8f > Pgmax = %10.8f\n",
@@ -3243,13 +3243,13 @@ PetscErrorCode OPFLOWCheckConstraints_PBPOL(OPFLOW opflow) {
         CHKERRQ(ierr);
       }
 
-      if (gen->qg < gen->qb) {
+      if (gen->qg + opflow->tolerance < gen->qb) {
         ierr = PetscPrintf(PETSC_COMM_SELF,
                            "Generator %s on bus %d reactive power lower bound "
                            "not satisfied: Qg = %10.8f < Qgmin = %10.8f\n",
                            gen->id, bus->bus_i, gen->qg, gen->qb);
         CHKERRQ(ierr);
-      } else if (gen->qg > gen->qt) {
+      } else if (gen->qg - opflow->tolerance > gen->qt) {
         ierr = PetscPrintf(PETSC_COMM_SELF,
                            "Generator %s on bus %d reactive power bound not "
                            "satisfied: Qg = %10.8f > Qgmax = %10.8f\n",
@@ -3319,12 +3319,12 @@ PetscErrorCode OPFLOWCheckConstraints_PBPOL(OPFLOW opflow) {
       }
     }
 
-    if (PetscAbsScalar(misp) > 1.0) {
+    if (PetscAbsScalar(misp) - opflow->tolerance > 1.0) {
       ierr = PetscPrintf(PETSC_COMM_SELF,
                          "Bus %d real power balance mismatch: %10.8f\n",
                          bus->bus_i, misp);
       CHKERRQ(ierr);
-    } else if (PetscAbsScalar(misq) > 1.0) {
+    } else if (PetscAbsScalar(misq) - opflow->tolerance > 1.0) {
       ierr = PetscPrintf(PETSC_COMM_SELF,
                          "Bus %d reactive power balance mismatch: %10.8f\n",
                          bus->bus_i, misq);
@@ -3346,13 +3346,13 @@ PetscErrorCode OPFLOWCheckConstraints_PBPOL(OPFLOW opflow) {
     Stf = ps->MVAbase *
           PetscSqrtScalar(line->pt * line->pt + line->qt * line->qt);
 
-    if (Sft > line->rateA) {
+    if (Sft - opflow->tolerance > line->rateA) {
       ierr = PetscPrintf(PETSC_COMM_SELF,
                          "Line %d -- %d with id %s from flow bound not "
                          "satisfied: Sft = %10.8f > SrateA = %10.8f\n",
                          line->fbus, line->tbus, line->ckt, Sft, line->rateA);
       CHKERRQ(ierr);
-    } else if (Stf > line->rateA) {
+    } else if (Stf - opflow->tolerance > line->rateA) {
       ierr = PetscPrintf(PETSC_COMM_SELF,
                          "Line %d -- %d with id %s from flow bound not "
                          "satisfied: Stf = %10.8f > SrateA = %10.8f\n",
