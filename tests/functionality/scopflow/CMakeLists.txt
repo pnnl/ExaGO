@@ -75,32 +75,34 @@ if(EXAGO_INSTALL_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_pbhiop.toml
   )
 
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_PBHIOP_MPI_TESTSUITE
-    DEPENDS
-    IPOPT
-    HIOP
-    COMMAND
-    ${MPICMD}
-    "-n"
-    3
-    $<TARGET_FILE:test_scopflow_functionality>
-    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_mpi_pbhiop.toml
-  )
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_MPI_TESTSUITE
-    DEPENDS
-    IPOPT
-    HIOP
-    COMMAND
-    ${MPICMD}
-    "-n"
-    3
-    $<TARGET_FILE:test_scopflow_functionality>
-    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_mpi.toml
-  )
+  if (EXAGO_ENABLE_MPI)
+    exago_add_test(
+      NAME
+      FUNCTIONALITY_TEST_SCOPFLOW_HIOP_PBHIOP_MPI_TESTSUITE
+      DEPENDS
+      IPOPT
+      HIOP
+      COMMAND
+      ${MPICMD}
+      "-n"
+      3
+      $<TARGET_FILE:test_scopflow_functionality>
+      ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_mpi_pbhiop.toml
+    )
+    exago_add_test(
+      NAME
+      FUNCTIONALITY_TEST_SCOPFLOW_HIOP_MPI_TESTSUITE
+      DEPENDS
+      IPOPT
+      HIOP
+      COMMAND
+      ${MPICMD}
+      "-n"
+      3
+      $<TARGET_FILE:test_scopflow_functionality>
+      ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_mpi.toml
+    )
+  endif()
 
   exago_add_test(
     NAME
@@ -116,19 +118,21 @@ if(EXAGO_INSTALL_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_serial.toml
   )
 
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_RAJA_TESTSUITE
-    DEPENDS
-    IPOPT
-    HIOP
-    COMMAND
-    ${MPICMD}
-    "-n"
-    3
-    $<TARGET_FILE:test_scopflow_functionality>
-    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_raja.toml
-  )
+  if (EXAGO_ENABLE_MPI)
+    exago_add_test(
+      NAME
+      FUNCTIONALITY_TEST_SCOPFLOW_HIOP_RAJA_TESTSUITE
+      DEPENDS
+      IPOPT
+      HIOP
+      COMMAND
+      ${MPICMD}
+      "-n"
+      3
+      $<TARGET_FILE:test_scopflow_functionality>
+      ${CMAKE_CURRENT_SOURCE_DIR}/hiop_raja.toml
+    )
+  endif()
 
   foreach(fmt "MATPOWER" "CSV" "JSON" "MINIMAL")
     set(tname "SCOPFLOW_SOLUTION_OUTPUT_${fmt}")
