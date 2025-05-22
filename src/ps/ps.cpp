@@ -1631,7 +1631,7 @@ PetscErrorCode PSApplyScenario(PS ps, Scenario scenario) {
             gen->status =
                 0; /* Generation value is zero, so switch off the generator */
           //	  else gen->status = 1; /* Switch on generator (it may be off in
-          //the input file) */
+          // the input file) */
         } else {
           printf("No generator on bus %d with id %s. Cannot apply the "
                  "requested scenario\n",
