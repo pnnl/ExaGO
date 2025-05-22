@@ -1,9 +1,9 @@
 spack:
   specs:
   - exago@develop%rocmcc@6.3.1 amdgpu_target=gfx90a
-    ^coinhsl%gcc@12.3
-    ^openblas%gcc@12.3
-    ^petsc%rocmcc@6.3.1 target=zen3
+    ^coinhsl%gcc@14.2
+    ^openblas%gcc@14.2
+    ^petsc%rocmcc@6.4.0 target=zen3
   view: false
   concretizer:
     unify: when_possible
@@ -23,12 +23,25 @@ spack:
       environment: {}
       extra_rpaths: []
   - compiler:
-      spec: gcc@12.3
+      spec: rocmcc@6.4.0
       paths:
-        cc: /opt/cray/pe/gcc-native/12/bin/gcc
-        cxx: /opt/cray/pe/gcc-native/12/bin/g++
-        f77: /opt/cray/pe/gcc-native/12/bin/gfortran
-        fc: /opt/cray/pe/gcc-native/12/bin/gfortran
+        cc: /opt/rocm-6.4.0/llvm/bin/amdclang
+        cxx: /opt/rocm-6.4.0/llvm/bin/amdclang++
+        f77: /opt/rocm-6.4.0/llvm/bin/amdflang
+        fc: /opt/rocm-6.4.0/llvm/bin/amdflang
+      flags: {}
+      operating_system: sles15
+      target: x86_64
+      modules: []
+      environment: {}
+      extra_rpaths: []
+  - compiler:
+      spec: gcc@14.2
+      paths:
+        cc: /opt/cray/pe/gcc-native/14/bin/gcc
+        cxx: /opt/cray/pe/gcc-native/14/bin/g++
+        f77: /opt/cray/pe/gcc-native/14/bin/gfortran
+        fc: /opt/cray/pe/gcc-native/14/bin/gfortran
       flags: {}
       operating_system: sles15
       target: x86_64
@@ -47,7 +60,7 @@ spack:
       require: ~python+raja+hiop+rocm+ipopt
     hiop:
       require: +sparse+mpi+raja+rocm~ginkgo+kron
-      version: [develop]
+      version: [1.1.0]
     ipopt:
       require: '@3.12.10~metis+coinhsl~mumps'
     # Pin OpenBlas version for consistent test results.
@@ -68,47 +81,43 @@ spack:
     cray-mpich:
       buildable: false
       externals:
-      - spec: cray-mpich@8.1.28 %rocmcc@6.3.1
-        prefix: /opt/cray/pe/mpich/8.1.28/ofi/gnu/12.3
+      - spec: cray-mpich@8.1.31 %rocmcc@6.3.1
+        prefix: /opt/cray/pe/mpich/8.1.31/ofi/amd/6.0
         modules:
-        - PrgEnv-gnu-amd
-        - cpe/23.12
-        - cray-mpich/8.1.28
-        - amd-mixed/6.3.1
+        - PrgEnv-amd
+        - cray-mpich/8.1.31
+        - amd/6.3.1
         - rocm/6.3.1
-        - gcc-native/12.3
+        - craype-accel-amd-gfx90a
+        - craype-x86-trento
+        - libfabric
+      - spec: cray-mpich@8.1.31 %rocmcc@6.4.0
+        prefix: /opt/cray/pe/mpich/8.1.31/ofi/amd/6.0
+        modules:
+        - PrgEnv-amd
+        - cray-mpich/8.1.31
+        - amd/6.4.0
+        - rocm/6.4.0
         - craype-accel-amd-gfx90a
         - craype-x86-trento
         - libfabric
     cmake:
       buildable: false
       externals:
-      - spec: cmake@3.27.9
+      - spec: cmake@3.30.5
         modules:
-        - cmake/3.27.9
-    gmake:
-      buildable: false
-      externals:
-      - spec: gmake@4.4.1
-        modules:
-        - gmake/4.4.1
+        - cmake/3.30.5
     libfabric:
       buildable: false
       externals:
-      - spec: libfabric@1.20.1
+      - spec: libfabric@1.22.0
         modules:
-        - libfabric/1.20.1
-    metis:
-      buildable: false
-      externals:
-      - spec: metis@5.1.0
-        modules:
-        - metis/5.1.0
+        - libfabric/1.22.0
     python:
       externals:
-      - spec: python@3.11.5
+      - spec: python@3.11.7
         modules:
-        - cray-python/3.11.5
+        - cray-python/3.11.7
       buildable: false
     hip:
       buildable: false

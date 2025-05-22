@@ -221,16 +221,7 @@ module purge
 varfile="$SRCDIR/buildsystem/$JOB/$(echo $MY_CLUSTER)Variables.sh"
 
 if [[ -f "$varfile" ]]; then
-  source $varfile
-  if [ $? ]; then
-    if [[ $MY_CLUSTER==frontier ]]; then
-      echo "Allowing non-zero exit code for $varfile."
-      echo "Frontier modules are currently generating warnings that will go away in future updates."
-    else
-      echo "Could not source $varfile"; 
-      exit 1;
-    fi
-  fi
+  source $varfile || { echo "Could not source $varfile"; exit 1; }
 fi
 
 # module list

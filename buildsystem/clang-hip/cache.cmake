@@ -1,4 +1,4 @@
-message(STATUS "Loading CMake cache for a GCC+HIP+MPI build")
+message(STATUS "Loading CMake cache for a CLANG+HIP+MPI build")
 
 set(prefix ${CMAKE_SOURCE_DIR}/install)
 message(STATUS "Setting initial installation prefix to ${prefix}")
