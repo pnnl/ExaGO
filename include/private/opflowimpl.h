@@ -312,7 +312,7 @@ struct _p_OPFLOW {
   void *userctx;
 
   OPFLOW
-      *address; /* Address for this OPFLOW object, used with lazy constraints */
+  *address; /* Address for this OPFLOW object, used with lazy constraints */
 
   PetscBool skip_options; /* Skip run-time options */
 
