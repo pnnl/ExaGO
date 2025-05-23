@@ -167,7 +167,7 @@ PetscErrorCode PSReadPSSERawData(PS ps, const char netfile[]) {
     ps->bus[i].Vmin = 0.9;
   }
 
-  for(i = 0; i < ps->Nline; i++) {
+  for (i = 0; i < ps->Nline; i++) {
     ps->line[i].subst_from = ps->line[i].subst_to = NULL;
   }
   /* Allocate external to internal bus number mapping array */

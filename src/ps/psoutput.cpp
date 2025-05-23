@@ -833,8 +833,9 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[]) {
   // Lines
   for (i = 0; i < ps->Nline; i++) {
     line = &ps->line[i];
-    if(!line->subst_from || !line->subst_to) continue;
-    
+    if (!line->subst_from || !line->subst_to)
+      continue;
+
     // Features
     PrintJSONObjectBegin(fd, NULL); // Feature object start
 
