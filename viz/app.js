@@ -21,6 +21,8 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
+//import nercregions from "data/NERC_Reliability_Coordinators.json"
+
 import {
   Chart as ChartJS,
   RadialLinearScale,

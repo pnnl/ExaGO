@@ -84,6 +84,8 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
   /* Note: MATPOWER data files do not store objective function values.*/
   fprintf(fd, "\n%%%% OPF objective\n");
   fprintf(fd, "%sobj = %.9g;\n", prefix, ps->opflowobj);
+  fprintf(fd, "\n%%%% OPF convergence status\n");
+  fprintf(fd, "%sconverged = %d;\n", prefix, ps->opflow_converged);
 
   /* Write bus data */
   fprintf(fd, "\n%%%% bus data\n");
@@ -831,6 +833,9 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[]) {
   // Lines
   for (i = 0; i < ps->Nline; i++) {
     line = &ps->line[i];
+    if (!line->subst_from || !line->subst_to)
+      continue;
+
     // Features
     PrintJSONObjectBegin(fd, NULL); // Feature object start
 
