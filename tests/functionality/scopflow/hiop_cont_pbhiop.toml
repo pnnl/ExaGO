@@ -40,4 +40,4 @@ contingencies = 'datafiles/case_ACTIVSg200.cont'
 description = 'case_ACTIVSg200.m with HIOP solver/4 contingencies'
 num_contingencies = 4
 num_iters = 1
-obj_value = 25957.67116859898
+obj_value = 26749.5932281
