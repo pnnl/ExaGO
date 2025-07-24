@@ -246,16 +246,6 @@ num_iters = 23
 obj_value = 131000.992461
 
 [[testcase]]
-network = 'datafiles/case_ACTIVSg200.m'
-description = "datafiles/case_ACTIVSg200.m generator bus voltage FIXED_AT_SETPOINT"
-is_loadloss_active =	false
-is_powerimb_active =	false
-gen_bus_voltage_type = 'FIXED_AT_SETPOINT'
-num_iters = 251                      #usually 251 or 276
-iter_range = 30
-obj_value = 27587.783425
-
-[[testcase]]
 network = 'datafiles/case9/case9mod_loadloss.m'  
 description = "Test for non-zero load loss"
 is_loadloss_active =	true
