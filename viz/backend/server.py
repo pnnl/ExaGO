@@ -11,7 +11,7 @@ x = datetime.datetime.now()
 
 # Initializing flask app
 app = Flask(__name__)
-CORS(app)
+CORS(app,origins=["http://localhost:8080"])
 
 
 # Route for seeing a data

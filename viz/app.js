@@ -632,15 +632,16 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
       }).then((res) =>
         res.json().then((chatOutput) => {
           // Setting a data from api
-          console.log(chatOutput);
           const outputText = chatOutput.text
           const chatList = chatOutput.result_list
           const keyList = Object.keys(chatList[0])
           if (chatList.length > 0) {
+		setNameSelectItems([]);
             //  only one is active between bus name selection, transmission line name selection at a time
-  
-            if ("generation name" in chatList[0]) {
-              const genNameList = chatList.map(d => d["generation name"]);
+              if ("generation_name" in chatList[0]) {
+	      console.log("chatOutput:",chatOutput);
+              const genNameList = chatList.map(d => d["generation_name"]);
+	       console.log("genNameList",genNameList) 
               setGenLayerActive(true)
               setNameSelectItems(genNameList)
               setGenFilterValue([gendata.minPg, gendata.maxPg]);
@@ -648,13 +649,13 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
               setInitialViewState(viewState => ({
                 ...viewState,
                 pitch: 40,
-                traansitionInterpolator: transitionFlyToInterpolator,
+                transitionInterpolator: transitionFlyToInterpolator,
                 transitionDuration: 2000,
               }))
             }
             const containCapacity =  keyList.some(str => str.includes('capacity'))
-            if ("generation name" in chatList[0] && containCapacity){
-              const genNameList = chatList.map(d => d["generation name"]);
+            if ("generation_name" in chatList[0] && containCapacity){
+              const genNameList = chatList.map(d => d["generation_name"]);
               setGenLayerActive(true)
               setGenLayerCapActive(true)
               setNameSelectItems(genNameList)
@@ -667,15 +668,15 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
                 transitionDuration: 2000,
               }))
             }
-            if ("line name" in chatList[0]) {
-              const lineNameList = chatList.map(d => d["line name"]);
+            if ("line_name" in chatList[0]) {
+              const lineNameList = chatList.map(d => d["line_name"]);
               setNetLayerActive(true)
               setFlowLayerActive(true)
               setBusNameSelectItems([])
               setLineNameSelectItems(lineNameList)
             }
-            if ('bus name' in chatList[0]) {
-              const busNameList = chatList.map(d => d["bus name"]);
+            if ('bus_name' in chatList[0]) {
+              const busNameList = chatList.map(d => d["bus_name"]);
               setNetLayerActive(true)
               setFlowLayerActive(true)
               setBusNameSelectItems(busNameList)
@@ -842,18 +843,18 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
     if (!data) return 10000;   //10000 is beyond the range, so the generation will be filter out 
     if ((genDoughlabels.length > 0) && (!(genDoughlabels.indexOf(colorMap[data.color]) >= 0))) return 10000;
     if (nameSelectItems.length > 0) {
-      if (nameSelectItems.includes(data.name)) {
-        for (var i = 0; i < data.KVlevels.length; i++) {
-          var KV = data.KVlevels[i];
-          if (netfiltervalue[0] <= KV && KV <= netfiltervalue[1]) {
+	if (nameSelectItems.includes(data.name)) {
+            for (var i = 0; i < data.KVlevels.length; i++) {
+		var KV = data.KVlevels[i];
+		if (netfiltervalue[0] <= KV && KV <= netfiltervalue[1]) {
 
-            return data.Pg;
-          }
-        }
-        return 10000;
-      } else {
-        return 10000;
-      }
+		    return data.Pg;
+		}
+            }
+            return 10000;
+	} else {
+            return 10000;
+	}
     }
 
     for (var i = 0; i < data.KVlevels.length; i++) {

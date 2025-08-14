@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import pandas as pd
 import json
 from shapely.geometry import shape
@@ -88,7 +90,7 @@ def getGeneration(data):
                 if Pg >= maxPg:
                     maxPg = Pg
                 geo = shape(feature["geometry"])
-                Geni = {"coordinates": geo.wkt, "Power generated": Pg, "Power capacity": Pcap, "KVlevels": set(
+                Geni = {"coordinates": str(geo.wkt), "Power generated": Pg, "Power capacity": Pcap, "KVlevels": set(
                     KV), "color": color, "generation name": name, "number of buses": nbus, "generation type": gen_fuel}
                 Gens.append(Geni)
 
@@ -106,16 +108,25 @@ def getBus(data):
     for feature in data['geojsondata']['features']:
         if feature['geometry']['type'] == 'Point':
             geo = shape(feature["geometry"])
-            p = feature["properties"]
+            subst = feature["properties"]
+            load = 0.0
+            load_loss = 0.0
+            Vm = 0.0
+            for bus in subst['bus']:
+                load += bus["PD"]
+                load_loss += bus["PDloss"]
+                Vm += bus["VM"]
+                
             # kvlevels = p["KVlevels"].replace("[", "{")
             # kvlevels = kvlevels.replace("]", "}")
             points.append({
-                "wkt": geo.wkt,
-                "bus_name": p["NAME"],
-                "kilovolt levels": set(p["KVlevels"]),
-                "number of buses": p["nbus"],
-                "vm": p["Vm"],
-                "start": p["start"],
+                "wkt": str(geo.wkt),
+                "bus_name": subst["NAME"],
+                "kilovolt levels": set(subst["KVlevels"]),
+                "number of buses": subst["nbus"],
+                "vm": Vm,
+                "load":load,
+                "load_loss":load_loss
             })
 
     keys = points[0].keys()
@@ -136,33 +147,35 @@ def getLine(data):
             # kvlevels = p["KVlevels"].replace("[", "{")
             # kvlevels = kvlevels.replace("]", "}")
             x = p["NAME"].split(' -- ')
+            rate_A = p["RATE_A"]
+            if rate_A == 0.0:
+                rate_A = 10000
+
             if (p['PF'] > 0):
                 lines.append({
-                    "wkt": geo.wkt,
-                    "flow capacity": p["RATE_A"],
+                    "wkt": str(geo.wkt),
+                    "flow capacity": rate_A,
                     "pf": p["PF"],
                     "qf": p["QF"],
                     "pt": p["PT"],
                     "qt": p["QT"],
                     "kilovolt": p["KV"],
                     "line_name": p["NAME"],
-                    "srouce": x[0],
+                    "source": x[0],
                     "target": x[1],
-                    "actual flow": abs(p["PF"]),
-
-
+                    "actual flow": abs(p["PF"])
                 })
             else:
                 lines.append({
-                    "wkt": geo.wkt,
-                    "flow capacity": p["RATE_A"],
+                    "wkt": str(geo.wkt),
+                    "flow capacity": rate_A,
                     "pf": p["PF"],
                     "qf": p["QF"],
                     "pt": p["PT"],
                     "qt": p["QT"],
                     "kilovolt": p["KV"],
                     "line_name": p["NAME"],
-                    "srouce": x[1],
+                    "source": x[1],
                     "target": x[0],
                     "actual flow": abs(p["PF"]),
                 })

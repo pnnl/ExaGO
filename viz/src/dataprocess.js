@@ -218,7 +218,7 @@ function getGeneration(data) {
         else color = 'black';
         if (Pg <= minPg) minPg = Pg;
         if (Pg >= maxPg) maxPg = Pg;
-        Geni = { coordinates: data.features[i].geometry.coordinates, Pg: Pg, Pcap: Pcap, KVlevels: KV, color: color, 
+          Geni = { name: name,coordinates: data.features[i].geometry.coordinates, Pg: Pg, Pcap: Pcap, KVlevels: KV, color: color, 
          fuel: gen_fuel, name: name, countyname: countyname};
         Gens.push(Geni);
       }

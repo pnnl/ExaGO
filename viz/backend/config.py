@@ -1,3 +1,6 @@
-sql_key = "YOUR_DATABASE_PASSWORD"
-database_name = "YOUR_DATABASE_NAME"
-openai_key = "YOUR_OPENAI_KEY"
+import os
+
+sql_key = os.getenv("SQL_DB_PASSWORD")
+database_name = os.getenv("SQL_DB_NAME")
+#database_name = "case2000db"
+openai_key = os.getenv("OPENAI_API_KEY")

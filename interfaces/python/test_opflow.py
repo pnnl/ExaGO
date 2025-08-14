@@ -10,7 +10,7 @@ opf.read_mat_power_data(
 opf.solve()
 # opf.save_solution(exago.OutputFormat.MATPOWER, 'soln_from_test.m')
 opf.print_solution()
-print(f'OBJECTIE FUNCTION VALUE : {opf.get_objective()}')
+print(f'OBJECTIVE FUNCTION VALUE : {opf.get_objective()}')
 
 # Delete instance before finalization
 del opf
