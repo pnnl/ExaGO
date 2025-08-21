@@ -1,5 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect, useReducer } from 'react';
 import { createRoot } from "react-dom/client";
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { StaticMap, Popup, Marker, _MapContext as MapContext, FullscreenControl, NavigationControl } from 'react-map-gl';
 import { WebMercatorViewport } from '@deck.gl/core';
 import DeckGL from '@deck.gl/react';
@@ -45,6 +46,11 @@ import { InvertColorsOff, ShopTwoOutlined } from '@mui/icons-material';
 import { getCountyNodes, ExtractFirstTimeSlice, ExtractFlowData, getBarNet, getPoints, getGeneration, getLoad, getContours, getAreas, getZones } from "./src/dataprocess";
 import { LineColor, FlowColor, FillColor, fillGenColumnColor, fillGenColumnColorCap, getVoltageFillColor } from "./src/color"
 
+// Firebase Authentication imports
+import { AuthProvider, ProtectedRoute, Header, AdminDashboard } from './components/common';
+import { ManishProject } from './components/manish';
+import { AminProject, AminDetailPage } from './components/amin';
+
 import 'core-js/actual/structured-clone';
 
 ChartJS.register(RadialLinearScale, ArcElement, Tooltip, Legend);
@@ -61,12 +67,74 @@ casedata = mod_casedata.get_casedata();
 // Source data GeoJSON
 const geodata = casedata['geojsondata']
 
-const style='pos';
 const MAP_STYLE = {
+  osm: {
+    "version": 8,
+    "name": "OpenStreetMap",
+    "sources": {
+      "osm": {
+        "type": "raster",
+        "tiles": [
+          "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        ],
+        "tileSize": 256,
+        "attribution": "© OpenStreetMap contributors"
+      }
+    },
+    "layers": [
+      {
+        "id": "osm",
+        "type": "raster",
+        "source": "osm"
+      }
+    ]
+  },
+  satellite: {
+    "version": 8,
+    "name": "Satellite",
+    "sources": {
+      "satellite": {
+        "type": "raster",
+        "tiles": [
+          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        ],
+        "tileSize": 256,
+        "attribution": "© Esri, Maxar, Earthstar Geographics"
+      }
+    },
+    "layers": [
+      {
+        "id": "satellite",
+        "type": "raster",
+        "source": "satellite"
+      }
+    ]
+  },
+  terrain: {
+    "version": 8,
+    "name": "Terrain",
+    "sources": {
+      "terrain": {
+        "type": "raster",
+        "tiles": [
+          "https://stamen-tiles.a.ssl.fastly.net/terrain/{z}/{x}/{y}.png"
+        ],
+        "tileSize": 256,
+        "attribution": "© Stamen Design, © OpenStreetMap contributors"
+      }
+    },
+    "layers": [
+      {
+        "id": "terrain",
+        "type": "raster",
+        "source": "terrain"
+      }
+    ]
+  },
   pos_no_label: 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json',
   pos: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
   dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-  none:''
+  none: ''
 };
 
 
@@ -126,7 +194,7 @@ const INITIAL_VIEW_STATE = {
 };
 
 
-export default function App({ refdata = data, refflowdata = flowdata, ggdata = geodata, mapStyle = MAP_STYLE }) {
+function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, mapStyle = MAP_STYLE }) {
 
   // Deck reference pointer
   const deckRef = useRef(null);
@@ -135,7 +203,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
   const [data, setData] = useState(refdata);
 
   //chat output message
-  const [ouputMes, setOutputMes] = useState("Welcome to ChatGrid.");
+  const [ouputMes, setOutputMes] = useState("Welcome to Westmap.");
 
   //select widgets values
   const [nameSelectItems, setNameSelectItems] = useState([]);
@@ -152,15 +220,15 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
   const [busNameSelectItems, setBusNameSelectItems] = useState([]);
 
   const [busNameItems, setbusNameItems] = useState(data.features
-						   .filter(f => f.geometry.type == "Point").map((f) => (f.properties.NAME)));
+    .filter(f => f.geometry.type == "Point").map((f) => (f.properties.NAME)));
 
-    const [areaNameSelectItems, setAreaNameSelectItems] = useState([]);
+  const [areaNameSelectItems, setAreaNameSelectItems] = useState([]);
 
-    const [areaNameItems, setAreaNameItems] = useState(areas.features.map(f => f.properties.name));
+  const [areaNameItems, setAreaNameItems] = useState(areas.features.map(f => f.properties.name));
 
-    const [zoneNameSelectItems, setZoneNameSelectItems] = useState([]);
+  const [zoneNameSelectItems, setZoneNameSelectItems] = useState([]);
 
-    const [zoneNameItems, setZoneNameItems] = useState(zones.features.map(f => f.properties.name));
+  const [zoneNameItems, setZoneNameItems] = useState(zones.features.map(f => f.properties.name));
 
   const [countyNameSelectItems, setCountyNameSelectItems] = useState([]);
 
@@ -225,28 +293,28 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
             lat: feature.geometry.coordinates[1]
           })
         } else if (feature.geometry.type === "LineString" && lineNameSelectItems.includes(feature.properties.NAME)) {
-	    var RATE_A;
-	    if(feature.properties.RATE_A == 0) {
-		RATE_A = 10000;
-	    } else {
-		RATE_A = feature.properties.RATE_A;
-	    }
-	  var loading = Math.abs(feature.properties.PF / RATE_A)*100;
+          var RATE_A;
+          if (feature.properties.RATE_A == 0) {
+            RATE_A = 10000;
+          } else {
+            RATE_A = feature.properties.RATE_A;
+          }
+          var loading = Math.abs(feature.properties.PF / RATE_A) * 100;
           if (feature.properties.PF > 0) {
             const [origin, dest] = feature.properties.NAME.split(' -- ')
             flows.push({
               origin: origin,
               dest: dest,
-	      count: feature.properties.KV,
-	      loading: loading
+              count: feature.properties.KV,
+              loading: loading
             })
           } else {
             const [dest, origin] = feature.properties.NAME.split(' -- ')
             flows.push({
               origin: origin,
               dest: dest,
-	      count: feature.properties.KV,
-	      loading: loading
+              count: feature.properties.KV,
+              loading: loading
             })
           }
         }
@@ -262,29 +330,29 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
             lat: feature.geometry.coordinates[1]
           })
         } else if (feature.geometry.type === "LineString" && feature.properties.NAME.split(' -- ').some(r => busNameSelectItems.includes(r))) {
-	    var RATE_A;
-	    if(feature.properties.RATE_A == 0) {
-		RATE_A = 10000;
-	    } else {
-		RATE_A = feature.properties.RATE_A;
-	    }
+          var RATE_A;
+          if (feature.properties.RATE_A == 0) {
+            RATE_A = 10000;
+          } else {
+            RATE_A = feature.properties.RATE_A;
+          }
 
-	  var loading = Math.abs(feature.properties.PF / RATE_A)*100;
+          var loading = Math.abs(feature.properties.PF / RATE_A) * 100;
           if (feature.properties.PF > 0) {
             const [origin, dest] = feature.properties.NAME.split(' -- ')
             flows.push({
               origin: origin,
               dest: dest,
-	      count: feature.properties.KV,
-	      loading: loading
+              count: feature.properties.KV,
+              loading: loading
             })
           } else {
             const [dest, origin] = feature.properties.NAME.split(' -- ')
             flows.push({
               origin: origin,
               dest: dest,
-	      count: feature.properties.KV,
-	      loading: loading
+              count: feature.properties.KV,
+              loading: loading
             })
           }
 
@@ -292,7 +360,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
       })
     }
-      else {
+    else {
       data.features.forEach(feature => {
         if (feature.geometry.type === "Point" && netfiltervalue[0] <= feature.properties.KVlevels[0] &&
           feature.properties.KVlevels[0] <= netfiltervalue[1]) {
@@ -304,38 +372,38 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
           })
         } else if (feature.geometry.type === "LineString" && netfiltervalue[0] <= feature.properties.KV &&
           feature.properties.KV <= netfiltervalue[1]) {
-	    var RATE_A;
-	    if(feature.properties.RATE_A == 0) {
-		RATE_A = 10000;
-	    } else {
-		RATE_A = feature.properties.RATE_A;
-	    }
-	    var loading = Math.abs(feature.properties.PF/RATE_A)*100.0;
+          var RATE_A;
+          if (feature.properties.RATE_A == 0) {
+            RATE_A = 10000;
+          } else {
+            RATE_A = feature.properties.RATE_A;
+          }
+          var loading = Math.abs(feature.properties.PF / RATE_A) * 100.0;
 
-	    if(flowfiltervalue[0] <= loading && loading <= flowfiltervalue[1]) {
-		if (feature.properties.PF > 0) {
-		    const [origin, dest] = feature.properties.NAME.split(' -- ')
-		    flows.push({
-			origin: origin,
-			dest: dest,
-			count: feature.properties.KV,
-			loading: loading
-		    })
-		} else {
-		    const [dest, origin] = feature.properties.NAME.split(' -- ')
-		    flows.push({
-			origin: origin,
-			dest: dest,
-			count: feature.properties.KV,
-			loading: loading
-		    })
-		}
-	    }
+          if (flowfiltervalue[0] <= loading && loading <= flowfiltervalue[1]) {
+            if (feature.properties.PF > 0) {
+              const [origin, dest] = feature.properties.NAME.split(' -- ')
+              flows.push({
+                origin: origin,
+                dest: dest,
+                count: feature.properties.KV,
+                loading: loading
+              })
+            } else {
+              const [dest, origin] = feature.properties.NAME.split(' -- ')
+              flows.push({
+                origin: origin,
+                dest: dest,
+                count: feature.properties.KV,
+                loading: loading
+              })
+            }
+          }
         }
       })
-      }
-      
-      const newflowdata = { locations: locations, flows: flows, maxloading: 120 }
+    }
+
+    const newflowdata = { locations: locations, flows: flows, maxloading: 120 }
     setFlowData(newflowdata);
   }, [data, netfiltervalue, flowfiltervalue, lineNameSelectItems]);
 
@@ -405,10 +473,10 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
         popup.name = info.object.properties.NAME
         popup.info = "Substation Info"
       } else {
-          var popup = {};
-	  var loading = Math.abs(info.object.properties.PF / info.object.properties.RATE_A)*100.0;
-          popup.name = info.object.properties.NAME
-          popup.info = "KV: "+info.object.properties.KV.toFixed(2)+"KV \nLoading: "+loading.toFixed(2)+ "%"; 
+        var popup = {};
+        var loading = Math.abs(info.object.properties.PF / info.object.properties.RATE_A) * 100.0;
+        popup.name = info.object.properties.NAME
+        popup.info = "KV: " + info.object.properties.KV.toFixed(2) + "KV \nLoading: " + loading.toFixed(2) + "%";
       }
       setShowPopup(showPopup => ({ ...showPopup, ...popup }));
     } else if (info.layer.id == "gen-column") {
@@ -421,12 +489,12 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
   });
 
   const zoomToCountyName = useCallback((minLng, minLat, maxLng, maxLat) => {
-    
+
 
 
     var viewport = new WebMercatorViewport(INITIAL_VIEW_STATE);
 
-    
+
     const { longitude, latitude, zoom } = viewport.fitBounds([[minLng, minLat], [maxLng, maxLat]]);
 
     setInitialViewState(viewState => ({
@@ -440,10 +508,10 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
       onTransitionEnd: activatePopup
     }))
 
-  
+
   });
 
-    const zoomToAreaName = useCallback((filterareas,minLng, minLat, maxLng, maxLat) => {
+  const zoomToAreaName = useCallback((filterareas, minLng, minLat, maxLng, maxLat) => {
     var viewport = new WebMercatorViewport(INITIAL_VIEW_STATE);
 
     const { longitude, latitude, zoom } = viewport.fitBounds([[minLng, minLat], [maxLng, maxLat]]);
@@ -459,14 +527,14 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
       onTransitionEnd: activatePopup
     }))
 
-      var popup = { display: false, name: '', info: '' }; // Will be displayed after transition end only
-      popup.name = "Area " + filterareas.properties.name;
-//      popup.info = "Area: " + info.object.properties.name;
-      setShowPopup(showPopup => ({ ...showPopup, ...popup }));
-    
-    });
+    var popup = { display: false, name: '', info: '' }; // Will be displayed after transition end only
+    popup.name = "Area " + filterareas.properties.name;
+    //      popup.info = "Area: " + info.object.properties.name;
+    setShowPopup(showPopup => ({ ...showPopup, ...popup }));
 
-    const zoomToZoneName = useCallback((filterzones,minLng, minLat, maxLng, maxLat) => {
+  });
+
+  const zoomToZoneName = useCallback((filterzones, minLng, minLat, maxLng, maxLat) => {
     var viewport = new WebMercatorViewport(INITIAL_VIEW_STATE);
 
     const { longitude, latitude, zoom } = viewport.fitBounds([[minLng, minLat], [maxLng, maxLat]]);
@@ -482,11 +550,11 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
       onTransitionEnd: activatePopup
     }))
 
-      var popup = { display: false, name: '', info: '' }; // Will be displayed after transition end only
-      popup.name = "Zone " + filterzones.properties.name;
-//      popup.info = "Zone: " + info.object.properties.name;
-      setShowPopup(showPopup => ({ ...showPopup, ...popup }));
-    
+    var popup = { display: false, name: '', info: '' }; // Will be displayed after transition end only
+    popup.name = "Zone " + filterzones.properties.name;
+    //      popup.info = "Zone: " + info.object.properties.name;
+    setShowPopup(showPopup => ({ ...showPopup, ...popup }));
+
   });
 
 
@@ -524,7 +592,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
     }
   });
 
-    const zoomToArea = useCallback((info) => {
+  const zoomToArea = useCallback((info) => {
     if (!info) return null;
 
     if (info.layer.id == 'AreaLayer') {
@@ -550,14 +618,14 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
       var popup = { display: false, name: '', info: '' }; // Will be displayed after transition end only
       popup.name = "Area " + info.object.properties.name;
-//      popup.info = "Area: " + info.object.properties.name;
+      //      popup.info = "Area: " + info.object.properties.name;
       setShowPopup(showPopup => ({ ...showPopup, ...popup }));
 
 
     }
-    });
+  });
 
-    const zoomToZone = useCallback((info) => {
+  const zoomToZone = useCallback((info) => {
     if (!info) return null;
 
     if (info.layer.id == 'ZoneLayer') {
@@ -583,7 +651,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
       var popup = { display: false, name: '', info: '' }; // Will be displayed after transition end only
       popup.name = "Zone " + info.object.properties.name;
-//      popup.info = "Zone: " + info.object.properties.name;
+      //      popup.info = "Zone: " + info.object.properties.name;
       setShowPopup(showPopup => ({ ...showPopup, ...popup }));
 
 
@@ -616,7 +684,9 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
   const [voltagelayeractive, setVoltageLayerActive] = useState(false);
   const [zonelayeractive, setZoneLayerActive] = useState(false);
   const [arealayeractive, setAreaLayerActive] = useState(false);
-    
+
+  const [mapStyleSelection, setMapStyle] = useState('osm');
+
   const handleUserInput = (inputText) => {
     console.log(`New message incoming! ${inputText}`);
     // Now send the message to GPT and get response 
@@ -624,8 +694,11 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
     const postData = {
       "inputText": inputText
     }
-    try{
-      fetch(`http://localhost:5000/data`, {
+    // Use relative API path through nginx reverse proxy
+    const apiPath = '/api/data';
+
+    try {
+      fetch(apiPath, {
         "method": "POST",
         // headers: { 'Content-Type': 'application/json' },
         "body": JSON.stringify(postData),
@@ -638,13 +711,13 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
           const keyList = Object.keys(chatList[0])
           if (chatList.length > 0) {
             //  only one is active between bus name selection, transmission line name selection at a time
-  
+
             if ("generation name" in chatList[0]) {
               const genNameList = chatList.map(d => d["generation name"]);
               setGenLayerActive(true)
               setNameSelectItems(genNameList)
               setGenFilterValue([gendata.minPg, gendata.maxPg]);
-  
+
               setInitialViewState(viewState => ({
                 ...viewState,
                 pitch: 40,
@@ -652,14 +725,14 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
                 transitionDuration: 2000,
               }))
             }
-            const containCapacity =  keyList.some(str => str.includes('capacity'))
-            if ("generation name" in chatList[0] && containCapacity){
+            const containCapacity = keyList.some(str => str.includes('capacity'))
+            if ("generation name" in chatList[0] && containCapacity) {
               const genNameList = chatList.map(d => d["generation name"]);
               setGenLayerActive(true)
               setGenLayerCapActive(true)
               setNameSelectItems(genNameList)
               setGenFilterValue([gendata.minPg, gendata.maxPg]);
-  
+
               setInitialViewState(viewState => ({
                 ...viewState,
                 pitch: 40,
@@ -681,25 +754,25 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
               setBusNameSelectItems(busNameList)
               setLineNameSelectItems([])
             }
-  
-  
+
+
           }
-  
+
           setOutputMes(outputText)
-  
+
         })
       );
-    } catch (error){
+    } catch (error) {
       setOutputMes("Sorry I didn't find the answer to your question. Please try to rephrase it or provide more details.")
     }
-   
+
 
   };
 
   useEffect(() => {
 
     addResponseMessage(`${ouputMes}`);
-    if (ouputMes === "Welcome to ChatGrid." || ouputMes ==='') return;
+    if (ouputMes === "Welcome to Westmap." || ouputMes === '') return;
     toggleMsgLoader(); // close loading 
   }, [ouputMes]);
 
@@ -710,8 +783,8 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
 
   const handleFlowLayerChange = (event) => {
-      setFlowLayerActive(event.target.checked);
-      setFlowFilterValue([0, 120]);
+    setFlowLayerActive(event.target.checked);
+    setFlowFilterValue([0, 120]);
   };
 
   const handleLoadLayerChange = (event) => {
@@ -738,9 +811,9 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
     })))
   };
 
-    const handleAreaLayerChange = (event) => {
+  const handleAreaLayerChange = (event) => {
     setAreaLayerActive(event.target.checked);
-//    setVoltageFilterValue([0.89, 1.11]);
+    //    setVoltageFilterValue([0.89, 1.11]);
 
     event.target.checked && (setInitialViewState(viewState => ({
       ...viewState,
@@ -748,11 +821,11 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
       traansitionInterpolator: transitionFlyToInterpolator,
       transitionDuration: 2000,
     })))
-    };
+  };
 
-    const handleZoneLayerChange = (event) => {
+  const handleZoneLayerChange = (event) => {
     setZoneLayerActive(event.target.checked);
-//    setVoltageFilterValue([0.89, 1.11]);
+    //    setVoltageFilterValue([0.89, 1.11]);
 
     event.target.checked && (setInitialViewState(viewState => ({
       ...viewState,
@@ -813,21 +886,21 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
           if (netfiltervalue[0] <= KV && KV <= netfiltervalue[1]) return KV;
         }
       } else {
-	  if(data.geometry.type == 'LineString') { /* Line layer */
-	      /* Uncomment to activate flow-based filtering
-	      var RATE_A;
-	      if(data.properties.RATE_A == 0) {
-		  RATE_A = 10000;
-	      } else {
-		  RATE_A = data.properties.RATE_A;
-	      }
-	      var loading = Math.abs(data.properties.PF / RATE_A)*100;
-	      if(flowfiltervalue[0] <= loading && loading <= flowfiltervalue[1]) {
-		  return data.properties.KV;
-		  }
-	      */
-	      return data.properties.KV;
-	  }
+        if (data.geometry.type == 'LineString') { /* Line layer */
+          /* Uncomment to activate flow-based filtering
+          var RATE_A;
+          if(data.properties.RATE_A == 0) {
+        RATE_A = 10000;
+          } else {
+        RATE_A = data.properties.RATE_A;
+          }
+          var loading = Math.abs(data.properties.PF / RATE_A)*100;
+          if(flowfiltervalue[0] <= loading && loading <= flowfiltervalue[1]) {
+        return data.properties.KV;
+        }
+          */
+          return data.properties.KV;
+        }
       }
     }
 
@@ -963,7 +1036,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
       extensions: [new DataFilterExtension({ filtersize: 1 })],
       updateTriggers: {
-          getFilterValue: [netfiltervalue, lineNameSelectItems, busNameSelectItems, flowfiltervalue]
+        getFilterValue: [netfiltervalue, lineNameSelectItems, busNameSelectItems, flowfiltervalue]
       }
     }),
 
@@ -1061,8 +1134,8 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
     }),
     */
 
-      
-      new GeoJsonLayer({
+
+    new GeoJsonLayer({
       id: 'AreaLayer',
       data: areas,
       pickable: arealayeractive,
@@ -1079,13 +1152,13 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
       getLineWidth: d => 1,
       opacity: 0.1,
       onClick: zoomToArea,
-//      extensions: [new DataFilterExtension({ filtersize: 1 })],
-//      getFilterValue: getLoadFilterValue,
-//      filterRange: loadfiltervalue,
+      //      extensions: [new DataFilterExtension({ filtersize: 1 })],
+      //      getFilterValue: getLoadFilterValue,
+      //      filterRange: loadfiltervalue,
 
-//      updateTriggers: {
-//        getFilterValue: [netfiltervalue, countyNameSelectItems]
-//      }
+      //      updateTriggers: {
+      //        getFilterValue: [netfiltervalue, countyNameSelectItems]
+      //      }
     }),
 
     new GeoJsonLayer({
@@ -1105,13 +1178,13 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
       getLineWidth: d => 1,
       opacity: 0.1,
       onClick: zoomToZone,
-//      extensions: [new DataFilterExtension({ filtersize: 1 })],
-//      getFilterValue: getLoadFilterValue,
-//      filterRange: loadfiltervalue,
+      //      extensions: [new DataFilterExtension({ filtersize: 1 })],
+      //      getFilterValue: getLoadFilterValue,
+      //      filterRange: loadfiltervalue,
 
-//      updateTriggers: {
-//        getFilterValue: [netfiltervalue, countyNameSelectItems]
-//      }
+      //      updateTriggers: {
+      //        getFilterValue: [netfiltervalue, countyNameSelectItems]
+      //      }
     }),
 
     new GeoJsonLayer({
@@ -1310,8 +1383,8 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
   const handleAreaMultiselect = (selectItem, metadata) => {
 
-      const selected = areaNameSelectItems.indexOf(metadata.dataItem)
-      console.log(selected);
+    const selected = areaNameSelectItems.indexOf(metadata.dataItem)
+    console.log(selected);
     if (selected >= 0) {  //if is selected, remove 
       const newArray = [...areaNameSelectItems.slice(0, selected), ...areaNameSelectItems.slice(selected + 1)];
       setAreaNameSelectItems(newArray)
@@ -1327,15 +1400,15 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
         const minLat = Math.min(...lats)
         const maxLat = Math.max(...lats)
 
-        zoomToAreaName(filterareas[0],minLng, minLat, maxLng, maxLat)
+        zoomToAreaName(filterareas[0], minLng, minLat, maxLng, maxLat)
       }
     }
   }
 
-    const handleZoneMultiselect = (selectItem, metadata) => {
+  const handleZoneMultiselect = (selectItem, metadata) => {
 
-      const selected = zoneNameSelectItems.indexOf(metadata.dataItem)
-      console.log(selected);
+    const selected = zoneNameSelectItems.indexOf(metadata.dataItem)
+    console.log(selected);
     if (selected >= 0) {  //if is selected, remove 
       const newArray = [...zoneNameSelectItems.slice(0, selected), ...zoneNameSelectItems.slice(selected + 1)];
       setZoneNameSelectItems(newArray)
@@ -1351,12 +1424,12 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
         const minLat = Math.min(...lats)
         const maxLat = Math.max(...lats)
 
-        zoomToZoneName(filterzones[0],minLng, minLat, maxLng, maxLat)
+        zoomToZoneName(filterzones[0], minLng, minLat, maxLng, maxLat)
       }
     }
   }
 
-  
+
 
   const renderItem = ({
     id,
@@ -1472,6 +1545,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
   return (
     <>
+      <Header />
       <DeckGL
         ref={deckRef}
         layers={layers}
@@ -1482,8 +1556,9 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
       >
 
 
-        <StaticMap reuseMaps
-          mapStyle={mapStyle[style]}
+        <StaticMap
+          reuseMaps
+          mapStyle={mapStyle[mapStyleSelection]}
           preventStyleDiffing={true}
           initialViewState={INITIAL_VIEW_STATE}
         >
@@ -1522,7 +1597,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
       <Widget
         handleNewUserMessage={handleUserInput}
-        title="ChatGrid"
+        title="Westmap Chatbot"
         subtitle="What do you want to know about this power grid network?"
       />
 
@@ -1584,7 +1659,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
                       getAriaValueText={valuetext}
                       step={10}
                       min={0}
-		      max={120}
+                      max={120}
                     >
                     </Slider></div>)
                 }
@@ -1605,13 +1680,13 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
               expandIcon={<ArrowDropDownIcon />}>
               <Typography>
                 <Checkbox checked={genlayeractive} style={{ color: "primary" }} onChange={handleGenLayerChange} />Generation Power
-                
-               
+
+
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Typography component="div">
-                { genlayeractive &&
+                {genlayeractive &&
                   (<div style={{ paddingRight: "40px" }}>
                     <Checkbox checked={genlayercapactive} style={{ color: "primary" }} onChange={handleGenLayerCapChange} />Generation Capacity
                   </div>)
@@ -1731,7 +1806,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
             </AccordionDetails>
           </Accordion>
 
-	  <Accordion defaultExpanded={false}>
+          <Accordion defaultExpanded={false}>
             <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
               expandIcon={<ArrowDropDownIcon />}>
               <Typography>
@@ -1750,7 +1825,35 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
             </AccordionDetails>
           </Accordion>
 
-	  <Accordion defaultExpanded={false}>
+          <Accordion defaultExpanded={false}>
+            <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
+              expandIcon={<ArrowDropDownIcon />}>
+              <Typography>
+                Map Background
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Typography component="div">
+                <div style={{ paddingRight: "40px" }}>
+                  <select
+                    value={mapStyleSelection}
+                    onChange={(e) => setMapStyle(e.target.value)}
+                    style={{ width: '100%', padding: '5px', marginBottom: '10px' }}
+                  >
+                    <option value="osm">OpenStreetMap (Free)</option>
+                    <option value="satellite">Satellite View (Free)</option>
+                    <option value="terrain">Terrain (Free)</option>
+                    <option value="pos">Positron Light (Free)</option>
+                    <option value="pos_no_label">Positron No Labels (Free)</option>
+                    <option value="dark">Dark Matter (Free)</option>
+                    <option value="none">No Background</option>
+                  </select>
+                </div>
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion defaultExpanded={false}>
             <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
               expandIcon={<ArrowDropDownIcon />}>
               <Typography>
@@ -1788,6 +1891,57 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
   );
 }
 
-const rootElement = document.getElementById("root");
+// Main App component with Authentication
+export default function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Admin route */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Amin routes */}
+          <Route
+            path="/amin"
+            element={
+              <ProtectedRoute>
+                <AminProject />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/amin/:fid"
+            element={
+              <ProtectedRoute>
+                <AminDetailPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Manish route */}
+          <Route
+            path="/manish"
+            element={
+              <ProtectedRoute>
+                <MainApp />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Default redirect to manish */}
+          <Route path="/" element={<Navigate to="/manish" replace />} />
+          <Route path="*" element={<Navigate to="/manish" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
+} const rootElement = document.getElementById("root");
 
 createRoot(rootElement).render(<App />)

@@ -1,0 +1,129 @@
+# Variables 
+USERNAME := gradscaler
+VERSION := V1.0.2
+NETWORK := ${USERNAME}-network
+
+# Database variables
+DATABASE_IMAGE := $(USERNAME)/westmap-database:$(VERSION)
+DATABASE_CONTAINER := westmap-database
+DATABASE_PORT := 5432
+
+# Frontend variables
+FRONTEND_IMAGE := $(USERNAME)/westmap-frontend:$(VERSION)
+FRONTEND_CONTAINER := westmap-frontend
+FRONTEND_PORT := 8080
+
+# Backend variables  
+BACKEND_IMAGE := $(USERNAME)/westmap-backend:$(VERSION)
+BACKEND_CONTAINER := westmap-backend
+BACKEND_PORT := 5000
+
+# Build all images
+build-all: build-database build-backend build-frontend
+
+# Build database image
+build-database:
+	cd database && make build
+
+# Build frontend image
+build-frontend:
+	make build
+
+# Build backend image
+build-backend:
+	cd backend && make build
+
+# Create network (if not exists)
+network: 
+	docker network inspect $(NETWORK) >/dev/null 2>&1 || docker network create $(NETWORK)
+
+# Run complete stack (database -> backend -> frontend)
+run-all: network run-database wait-database run-backend wait-backend run-frontend
+
+# Run database only
+run-database:
+	cd database && make run
+
+# Wait for database to be ready
+wait-database:
+	@echo "Waiting for database to be ready..."
+	@sleep 10
+	@echo "Setting up database with sample data..."
+	@cd database && make setup || echo "Database setup might have failed - check logs"
+
+# Run backend only
+run-backend:
+	cd backend && make run
+
+# Run backend with database setup
+run-backend-with-setup:
+	cd backend && make run-with-setup
+
+# Run frontend only
+run-frontend:
+	make run
+
+# Wait for backend to be ready
+wait-backend:
+	@echo "Waiting for backend to be ready..."
+	@timeout 60 bash -c 'until curl -f http://localhost:$(BACKEND_PORT)/data -X POST -H "Content-Type: application/json" -d "{\"inputText\":\"test\"}" 2>/dev/null; do sleep 2; done' || echo "Backend might not be ready, continuing anyway..."
+
+# Stop all containers
+stop-all: stop-frontend stop-backend stop-database
+
+# Stop database
+stop-database:
+	cd database && make clean
+
+# Stop frontend
+stop-frontend:
+	make clean
+
+# Stop backend
+stop-backend:
+	cd backend && make clean
+
+# Clean all containers
+clean-all: stop-all
+
+# Push all images
+push-all: push-database push-backend push-frontend
+
+# Push database image
+push-database:
+	cd database && make push
+
+# Push frontend image
+push-frontend:
+	make push
+
+# Push backend image
+push-backend:
+	cd backend && make push
+
+# Show logs for all containers
+logs-all:
+	@echo "=== Database Logs ==="
+	@docker logs $(DATABASE_CONTAINER) --tail 50 || echo "Database container not running"
+	@echo ""
+	@echo "=== Backend Logs ==="
+	@docker logs $(BACKEND_CONTAINER) --tail 50 || echo "Backend container not running"
+	@echo ""
+	@echo "=== Frontend Logs ==="
+	@docker logs $(FRONTEND_CONTAINER) --tail 50 || echo "Frontend container not running"
+
+# Show status of all containers
+status:
+	@echo "=== Container Status ==="
+	@docker ps --filter "name=$(DATABASE_CONTAINER)" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+	@docker ps --filter "name=$(BACKEND_CONTAINER)" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+	@docker ps --filter "name=$(FRONTEND_CONTAINER)" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+# Setup database with sample data
+setup-data:
+	cd database && make setup
+
+# Development helper - rebuild and restart everything
+dev-restart: clean-all build-all run-all
+
+.PHONY: build-all build-database build-frontend build-backend network run-all run-database wait-database run-backend run-backend-with-setup run-frontend wait-backend stop-all stop-database stop-frontend stop-backend clean-all push-all push-database push-frontend push-backend logs-all status setup-data dev-restart

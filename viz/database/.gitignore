@@ -1,0 +1,8 @@
+# Environment variables (contains secret keys)
+.env
+
+# Temporary data files
+data/
+
+# Docker build cache
+.dockerignore

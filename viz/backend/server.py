@@ -28,4 +28,5 @@ def get_time():
 
 # Running app
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Run on all interfaces for Docker, port 5000
+    app.run(host='0.0.0.0', port=5000, debug=True)

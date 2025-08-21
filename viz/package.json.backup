@@ -1,6 +1,6 @@
 {
   "name": "geojson",
-  "version": "0.0.0",
+  "version": "0.0.0",  
   "scripts": {
     "start-local": "webpack-dev-server --env.local --progress --hot --open",
     "start": "webpack-dev-server --progress --hot --open "
@@ -10,7 +10,7 @@
     "@emotion/styled": "^11.8.1",
     "@flowmap.gl/data": "^8.0.0-alpha.25",
     "@flowmap.gl/layers": "^8.0.0-alpha.25",
-    "@mui/icons-material": "^5.18.0",
+    "@mui/icons-material": "^5.6.2",
     "@mui/material": "^5.6.4",
     "@turf/turf": "^5.1.6",
     "babel-preset-env": "^1.7.0",
@@ -23,7 +23,7 @@
     "d3-scale": "^2.0.0",
     "deck.gl": "^8.9.19",
     "dotenv": "^16.3.1",
-    "firebase": "^12.0.0",
+    "hnswlib-node": "^1.4.2",
     "http": "^0.0.1-security",
     "https": "^1.0.0",
     "langchain": "^0.0.75",
@@ -37,9 +37,7 @@
     "react-chat-widget": "^3.1.4",
     "react-dom": "^18.1.0",
     "react-map-gl": "^5.3.21",
-    "react-router-dom": "^6.8.1",
     "react-widgets": "^5.8.4",
-    "recharts": "^3.1.2",
     "sass": "^1.63.6",
     "stream": "^0.0.2",
     "typeorm": "^0.3.17",
@@ -51,19 +49,13 @@
   },
   "devDependencies": {
     "@babel/core": "^7.4.0",
-    "@babel/plugin-proposal-nullish-coalescing-operator": "^7.18.6",
-    "@babel/plugin-proposal-optional-chaining": "^7.21.0",
-    "@babel/plugin-transform-nullish-coalescing-operator": "^7.27.1",
-    "@babel/plugin-transform-optional-chaining": "^7.27.1",
-    "@babel/preset-env": "^7.28.0",
     "@babel/preset-react": "^7.0.0",
-    "@webpack-cli/serve": "*",
     "babel-loader": "^8.0.5",
     "cross-env": "^7.0.3",
-    "dotenv-webpack": "^8.1.1",
     "typescript": "^5.1.6",
     "webpack": "^4.20.2",
     "webpack-cli": "^3.1.2",
+    "@webpack-cli/serve":"*",  
     "webpack-dev-server": "^3.1.1"
   }
 }

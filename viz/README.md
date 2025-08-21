@@ -1,5 +1,5 @@
-# ExaGO visualization (experimental)
-ExaGO has an experimental visualization platform for visualizing the results of OPFLOW on a map provided the geospatial coordinates for the network are available. On launching the visualization, a webpage displays the given power system network overlayed on a geospatial map. The (experimental) visualization features include: 
+# Westmap - Weather and Energy System Tracking and Modeling Analytics Platform
+Westmap is an advanced visualization platform for power grid networks, providing comprehensive analysis and monitoring capabilities on geospatial maps. The platform offers powerful visualization features for understanding power system operations and network behavior. Key features include: 
   - Map-based network layout of the grid
   - Reading in the grid data through a geojson file.
   - Fly-in (zoom in) on bus, branch, county 
@@ -10,7 +10,7 @@ ExaGO has an experimental visualization platform for visualizing the results of 
 
 
 ## Installation
-ExaGO visualization uses the following tools to generate the visuals.
+Westmap visualization uses the following tools to generate the visuals.
 - [Node.js@v16.13.0](https://nodejs.org/es/blog/release/v16.13.0)
 - Facebook's [React](https://reactjs.org/) framework
 - Uber's [Deck.gl](https://deck.gl/docs) visualization

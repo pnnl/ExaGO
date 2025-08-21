@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Environment variables (contains secret keys)
+.env
+
+# Build outputs
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+.tmp/
+temp/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Backend build artifacts
+backend/westmap-backend.tar.gz
+data.tar.gz

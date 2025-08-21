@@ -1,23 +1,23 @@
-.css-15v22id-MuiAccordionDetails-root{
+.css-15v22id-MuiAccordionDetails-root {
     padding: 1px 20px 2px !important
 }
 
 /* chat window style */
-.rcw-conversation-container{
+/* .rcw-conversation-container {
     height: 75vh;
-}
+} */
 
-.rcw-messages-container{
+/* .rcw-messages-container {
     height: 60vh !important;
     max-height: 1000px !important;
-}
+} */
 
-.rcw-widget-container{
-    bottom: 0px !important ;
-    left: 0px!important;
-    right: auto!important;
+.rcw-widget-container {
+    bottom: 0px !important;
+    left: 20px !important;
+    right: auto !important;
     max-width: 450px;
-   
+
 }
 
 .rcw-launcher {
@@ -25,10 +25,20 @@
     background-color: #74a9cf !important;
 }
 
-.rcw-conversation-container .rcw-header{
+.rcw-conversation-container .rcw-header {
     background-color: #74a9cf !important;
 }
 
-.rcw-client .rcw-message-text{
-    background-color: #74a9cf !important; 
+.rcw-client .rcw-message-text {
+    background-color: #74a9cf !important;
+}
+
+/* remove the emoji icon picker  */
+.rcw-picker-btn {
+    display: none !important;
+}
+
+/* take full available width for text input  */
+.rcw-new-message {
+    width: 100% !important;
 }

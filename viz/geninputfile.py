@@ -3,7 +3,7 @@ import sys
 filename = sys.argv[1]
 
 with open('module_casedata.js', 'w') as f:
-    f.write('// ExaGo Viz Input File\n')
+    f.write('// Westmap Viz Input File\n')
     f.write('\n')
     f.write('module.exports = {\n')
     f.write('\n')

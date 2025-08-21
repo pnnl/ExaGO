@@ -1,5 +1,6 @@
-from langchain import SQLDatabase, SQLDatabaseChain
-from langchain.chat_models import ChatOpenAI
+from langchain_community.utilities import SQLDatabase
+from langchain_experimental.sql import SQLDatabaseChain
+from langchain_openai import ChatOpenAI
 import config
 from langchain.output_parsers import CommaSeparatedListOutputParser
 from langchain.prompts import PromptTemplate, ChatPromptTemplate, HumanMessagePromptTemplate
@@ -11,9 +12,9 @@ def sqlchain(input_text):
     llm = ChatOpenAI(openai_api_key=config.openai_key,
                      model_name="gpt-3.5-turbo", temperature=0, verbose=True)
     db = SQLDatabase.from_uri(
-        f"postgresql+psycopg2://postgres:{config.sql_key}@localhost:5432/{config.database_name}")
+        f"postgresql+psycopg2://postgres:{config.sql_key}@westmap-database:5432/{config.database_name}")
     mydb = sqldb.create_engine(
-        f"postgresql+psycopg2://postgres:{config.sql_key}@localhost:5432/{config.database_name}")
+        f"postgresql+psycopg2://postgres:{config.sql_key}@westmap-database:5432/{config.database_name}")
     myconnection = mydb.connect()
 
     _CUSTOMIZE__TEMPLATE = """You are a PostgreSQL expert. Given an input question, first create a syntactically correct PostgreSQL query to run then look at the results of the query and return the answer to the input question.
@@ -78,7 +79,7 @@ def sqlchain(input_text):
     text_result = ""
     query_dict = []
     try:
-        output = text_chain(input_text)
+        output = text_chain.invoke({"query": input_text})
         # sql_result = output["intermediate_steps"][3]
         text_result = output['result']
         # print(output["intermediate_steps"])
@@ -90,20 +91,28 @@ def sqlchain(input_text):
 
         query_dict = [dict(record._mapping) for record in tempr]
     except Exception as error:
-        if (("maximum" in error.user_message) and ("length" in error.user_message)):
-            text_result = "Check the visualization for updated results"
-            sql_cmd = error.intermediate_steps[1]
-            tempr = myconnection.execute(text(sql_cmd)).fetchall()
-            query_dict = [dict(record._mapping) for record in tempr]
-        elif (("Rate" in error.user_message) and ("limit" in error.user_message)):
-            text_result = "Check the visualization for updated results"
-            sql_cmd = error.intermediate_steps[1]
-            tempr = myconnection.execute(text(sql_cmd)).fetchall()
-            query_dict = [dict(record._mapping) for record in tempr]
+        error_str = str(error)
+        # Handle OpenAI API errors that have intermediate_steps
+        if hasattr(error, 'intermediate_steps') and len(error.intermediate_steps) > 1:
+            if (("maximum" in error_str) and ("length" in error_str)):
+                text_result = "Check the visualization for updated results"
+                sql_cmd = error.intermediate_steps[1]
+                tempr = myconnection.execute(text(sql_cmd)).fetchall()
+                query_dict = [dict(record._mapping) for record in tempr]
+            elif (("Rate" in error_str) and ("limit" in error_str)):
+                text_result = "Check the visualization for updated results"
+                sql_cmd = error.intermediate_steps[1]
+                tempr = myconnection.execute(text(sql_cmd)).fetchall()
+                query_dict = [dict(record._mapping) for record in tempr]
+            else:
+                print("error:")
+                print(error)
+                text_result = "Sorry, I can't find the answer to your question"
+                query_dict = []
         else:
             print("error:")
             print(error)
-            text_result = "Sorry, I can't find the answer to your question"
+            text_result = "Sorry, I can't find the answer to your question. Please check if the required database tables exist."
             query_dict = []
 
     # print(query_dict)
