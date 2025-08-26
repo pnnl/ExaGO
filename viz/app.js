@@ -758,7 +758,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
   const [voltagelayeractive, setVoltageLayerActive] = useState(false);
   const [zonelayeractive, setZoneLayerActive] = useState(false);
   const [arealayeractive, setAreaLayerActive] = useState(false);
-  const [wecclayeractive, setWeccLayerActive] = useState(false);
+  const [wecclayeractive, setWeccLayerActive] = useState(true);
 
   const [mapStyleSelection, setMapStyle] = useState('osm');
 
