@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect, useReducer } from 'react';
 import { createRoot } from "react-dom/client";
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { StaticMap, Popup, Marker, _MapContext as MapContext, FullscreenControl, NavigationControl } from 'react-map-gl';
 import { WebMercatorViewport } from '@deck.gl/core';
 import DeckGL from '@deck.gl/react';
@@ -199,6 +199,10 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
   // Deck reference pointer
   const deckRef = useRef(null);
 
+  // Navigation hook for routing
+  const navigate = useNavigate();
+  const location = useLocation();
+
 
   const [data, setData] = useState(refdata);
 
@@ -272,7 +276,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
   const [initialViewState, setInitialViewState] = useState(INITIAL_VIEW_STATE);
 
   // For pop-up control
-  const [showPopup, setShowPopup] = useState({ display: false, info: '', name: '' });
+  const [showPopup, setShowPopup] = useState({ display: false, info: '', name: '', fid: null, type: null });
 
   //update flowdataset when netfiltervalue, flowfiltervalue or data value change
   useEffect(() => {
@@ -658,6 +662,66 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     }
   });
 
+  const zoomToWecc = useCallback((info) => {
+    if (!info) return null;
+
+    if (info.layer.id == 'WeccLayer') {
+      var layer = info.layer;
+      var { viewport } = layer.context;
+
+      var cbounds = bbox(info.object);
+      var c1 = [cbounds[0], cbounds[1]];
+      var c2 = [cbounds[2], cbounds[3]];
+      var weccbounds = [c1, c2];
+      const { longitude, latitude, zoom } = viewport.fitBounds(weccbounds);
+
+      setInitialViewState(viewState => ({
+        ...viewState,
+        latitude: latitude,
+        longitude: longitude,
+        pitch: 50,
+        traansitionInterpolator: transitionFlyToInterpolator,
+        transitionDuration: 5000,
+        zoom: zoom - 0.25,
+        onTransitionEnd: activatePopup
+      }))
+
+      var popup = { display: false, name: '', info: '', fid: null, type: null }; // Will be displayed after transition end only
+      const properties = info.object.properties;
+
+      popup.name = properties.BA_Abrev || "WECC Area";
+      popup.fid = properties.FID;
+      popup.type = 'wecc';
+
+      // Build comprehensive info string similar to Amin's project
+      let infoLines = [];
+      infoLines.push(`${properties.BA_Name || ''}`);
+      infoLines.push(`FID: ${properties.FID || 'N/A'}`);
+
+      // Handle Area Numbers (can be single or multiple)
+      if (properties.Area_Numbers && Array.isArray(properties.Area_Numbers) && properties.Area_Numbers.length > 0) {
+        infoLines.push(`Area No.: ${properties.Area_Numbers.join(', ')}`);
+      }
+
+      // Add click instruction
+      infoLines.push('');
+      infoLines.push('Know more →');
+
+      // if (properties.Shape_Leng) {
+      //   infoLines.push(`Shape Length: ${Number(properties.Shape_Leng).toLocaleString()} units`);
+      // }
+      // if (properties.Shape__Area) {
+      //   infoLines.push(`Shape Area: ${Number(properties.Shape__Area).toLocaleString()} units`);
+      // }
+      // if (properties.GlobalID) {
+      //   infoLines.push(`Global ID: ${properties.GlobalID}`);
+      // }
+
+      popup.info = infoLines.join('\n');
+      setShowPopup(showPopup => ({ ...showPopup, ...popup }));
+    }
+  });
+
   const GoHome = useCallback(() => {
     if (layers[0].context == null) return;
     var { viewport } = layers[0].context;
@@ -675,6 +739,16 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     setShowPopup({ ...showPopup, display: false });
   });
 
+  // Handle popup click for navigation
+  const handlePopupClick = useCallback(() => {
+    if (showPopup.type === 'wecc' && showPopup.fid) {
+      // Get current path and append the FID
+      const currentPath = location.pathname;
+      const targetPath = `${currentPath}/${showPopup.fid}`;
+      navigate(targetPath);
+    }
+  }, [showPopup, navigate, location]);
+
   const [netlayeractive, setNetLayerActive] = useState(true);
   const [flowlayeractive, setFlowLayerActive] = useState(true);
 
@@ -684,8 +758,14 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
   const [voltagelayeractive, setVoltageLayerActive] = useState(false);
   const [zonelayeractive, setZoneLayerActive] = useState(false);
   const [arealayeractive, setAreaLayerActive] = useState(false);
+  const [wecclayeractive, setWeccLayerActive] = useState(false);
 
   const [mapStyleSelection, setMapStyle] = useState('osm');
+
+  // WECC Balancing Authorities data state
+  const [weccGeojsonData, setWeccGeojsonData] = useState(null);
+  const [weccHoveredObject, setWeccHoveredObject] = useState(null);
+  const [weccClickedObject, setWeccClickedObject] = useState(null);
 
   const handleUserInput = (inputText) => {
     console.log(`New message incoming! ${inputText}`);
@@ -776,6 +856,106 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     toggleMsgLoader(); // close loading 
   }, [ouputMes]);
 
+  // Load WECC Balancing Authorities data
+  useEffect(() => {
+    const loadWeccData = async () => {
+      try {
+        // Load GeoJSON for map visualization
+        const geojsonResponse = await fetch('/amin_data/WECC_Balancing_Authorities_-2060174188301432986.geojson');
+        if (!geojsonResponse.ok) {
+          throw new Error(`HTTP error loading WECC GeoJSON! status: ${geojsonResponse.status}`);
+        }
+        const geojsonData = await geojsonResponse.json();
+
+        // Load CSV for additional data fields
+        const csvResponse = await fetch('/amin_data/WECC_Balancing_Authorities_5803277890210865950.csv');
+        if (!csvResponse.ok) {
+          throw new Error(`HTTP error loading WECC CSV! status: ${csvResponse.status}`);
+        }
+        const csvText = await csvResponse.text();
+
+        // Load area mapping CSV
+        const areaMappingResponse = await fetch('/amin_data/WECC_BA_Area_Mapping.csv');
+        if (!areaMappingResponse.ok) {
+          throw new Error(`HTTP error loading WECC area mapping CSV! status: ${areaMappingResponse.status}`);
+        }
+        const areaMappingText = await areaMappingResponse.text();
+
+        // Parse CSV
+        const csvLines = csvText.split('\n');
+        const csvData = {};
+
+        // Create lookup table by FID
+        for (let i = 1; i < csvLines.length; i++) {
+          const line = csvLines[i].trim();
+          if (line) {
+            const values = line.split(',');
+            const fid = parseInt(values[0]);
+            csvData[fid] = {
+              FID: fid,
+              BA_Abrev: values[1],
+              BA_Name: values[2].replace(/"/g, ''), // Remove quotes
+              Shape_Leng: parseFloat(values[3]),
+              Shape__Area: parseFloat(values[4]),
+              Shape__Length: parseFloat(values[5]),
+              GlobalID: values[6]
+            };
+          }
+        }
+
+        // Parse area mapping CSV
+        const areaMappingLines = areaMappingText.split('\n');
+        const areaMappingData = {};
+
+        for (let i = 1; i < areaMappingLines.length; i++) {
+          const line = areaMappingLines[i].trim();
+          if (line) {
+            const values = line.split(',');
+            const fid = parseInt(values[0]);
+            const areaNumbersString = values[3];
+
+            // Handle multiple area numbers separated by |
+            let areaNumbers;
+            if (areaNumbersString && areaNumbersString.includes('|')) {
+              areaNumbers = areaNumbersString.split('|').map(num => parseInt(num.trim()));
+            } else {
+              areaNumbers = areaNumbersString ? [parseInt(areaNumbersString)] : [];
+            }
+
+            areaMappingData[fid] = {
+              FID: fid,
+              BA_Abrev: values[1],
+              BA_Name: values[2].replace(/"/g, ''), // Remove quotes
+              Area_Numbers: areaNumbers
+            };
+          }
+        }
+
+        // Merge CSV data into GeoJSON properties
+        geojsonData.features.forEach(feature => {
+          const fid = feature.properties.FID;
+          if (csvData[fid]) {
+            // Merge all CSV properties into GeoJSON feature properties
+            feature.properties = {
+              ...feature.properties,
+              ...csvData[fid]
+            };
+          }
+          // Add area numbers from mapping
+          if (areaMappingData[fid]) {
+            feature.properties.Area_Numbers = areaMappingData[fid].Area_Numbers;
+          }
+        });
+
+        setWeccGeojsonData(geojsonData);
+      } catch (err) {
+        console.error('Error loading WECC data:', err);
+      }
+    };
+
+    loadWeccData();
+  }, []);
+
   const handleNetLayerChange = (event) => {
     setNetLayerActive(event.target.checked);
     setNetFilterValue([0, 800]);
@@ -826,6 +1006,17 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
   const handleZoneLayerChange = (event) => {
     setZoneLayerActive(event.target.checked);
     //    setVoltageFilterValue([0.89, 1.11]);
+
+    event.target.checked && (setInitialViewState(viewState => ({
+      ...viewState,
+      pitch: 40,
+      traansitionInterpolator: transitionFlyToInterpolator,
+      transitionDuration: 2000,
+    })))
+  };
+
+  const handleWeccLayerChange = (event) => {
+    setWeccLayerActive(event.target.checked);
 
     event.target.checked && (setInitialViewState(viewState => ({
       ...viewState,
@@ -1240,6 +1431,48 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       }
     }),
 
+    // WECC Balancing Authorities Layer
+    new GeoJsonLayer({
+      id: 'WeccLayer',
+      data: weccGeojsonData,
+      pickable: wecclayeractive,
+      visible: wecclayeractive,
+      stroked: true,
+      filled: true,
+      extruded: false,
+      wireframe: false,
+      lineWidthMinPixels: 2,
+      lineWidthMaxPixels: 10,
+      getPolygon: d => d.geometry.coordinates,
+      getLineColor: [255, 255, 255, 255], // White border always visible
+      getLineWidth: 4, // Thicker border for better visibility
+      getFillColor: d => {
+        // Clicked region stays highlighted until another region is clicked
+        if (d === weccClickedObject) {
+          return [30, 90, 150, 200]; // Darker blue for clicked/active state
+        }
+        // Hover effect (only if not clicked)
+        if (d === weccHoveredObject && d !== weccClickedObject) {
+          return [70, 130, 180, 180]; // Slightly darker blue on hover
+        }
+        // Default blue fill with less opacity to show borders better
+        return [100, 149, 237, 120]; // Cornflower blue with more transparency
+      },
+      opacity: 0.8,
+      onHover: (info) => {
+        setWeccHoveredObject(info.object);
+      },
+      onClick: (info) => {
+        if (info.object) {
+          setWeccClickedObject(info.object);
+          zoomToWecc(info);
+        }
+      },
+      updateTriggers: {
+        getFillColor: [weccHoveredObject, weccClickedObject]
+      }
+    }),
+
     /*
     new HeatmapLayer({
       id:'Voltagecontour',
@@ -1583,11 +1816,39 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
 
         {
           showPopup.display && (
-            <Popup style={{ zIndex: 3, background: "white", opacity: 1, fontSize: "11px" }} longitude={initialViewState.longitude} latitude={initialViewState.latitude}
+            <Popup style={{
+              zIndex: 3,
+              background: "white",
+              opacity: 1,
+              fontSize: "11px",
+              cursor: showPopup.type === 'wecc' ? 'pointer' : 'default'
+            }}
+              longitude={initialViewState.longitude}
+              latitude={initialViewState.latitude}
               anchor="bottom"
               offset={-100}
               onClose={() => setShowPopup({ ...showPopup, display: false })}>
-              <h2>{showPopup.name}</h2><h3>{showPopup.info}</h3>
+              <div
+                onClick={showPopup.type === 'wecc' ? handlePopupClick : undefined}
+                style={{
+                  padding: showPopup.type === 'wecc' ? '4px' : '0',
+                  borderRadius: showPopup.type === 'wecc' ? '4px' : '0',
+                  transition: 'background-color 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  if (showPopup.type === 'wecc') {
+                    e.target.style.backgroundColor = '#f0f8ff';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (showPopup.type === 'wecc') {
+                    e.target.style.backgroundColor = 'transparent';
+                  }
+                }}
+              >
+                <h3>{showPopup.name}</h3>
+                <h4 style={{ whiteSpace: 'pre-line' }}>{showPopup.info}</h4>
+              </div>
             </Popup>
           )
         }
@@ -1872,6 +2133,25 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
             </AccordionDetails>
           </Accordion>
 
+          <Accordion defaultExpanded={false}>
+            <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
+              expandIcon={<ArrowDropDownIcon />}>
+              <Typography>
+                <Checkbox checked={wecclayeractive} style={{ color: "primary" }} onChange={handleWeccLayerChange} />Show WECC Data
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Typography component="div">
+                {wecclayeractive && weccGeojsonData && (
+                  <div style={{ paddingRight: "40px", fontSize: "12px", color: "#666" }}>
+                    WECC Balancing Authorities overlay showing {weccGeojsonData.features?.length || 0} regions.
+                    Click on any region for details.
+                  </div>
+                )}
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+
         </div>
 
         {/* <br></br> */}
@@ -1931,6 +2211,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <MainApp />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/manish/:fid"
+            element={
+              <ProtectedRoute>
+                <AminDetailPage />
               </ProtectedRoute>
             }
           />

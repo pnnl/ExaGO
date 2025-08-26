@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { DeckGL } from '@deck.gl/react';
 import { GeoJsonLayer } from '@deck.gl/layers';
 import { MapView } from '@deck.gl/core';
@@ -36,6 +36,7 @@ const OSM_MAP_STYLE = {
 const AminDetailPage = () => {
     const { fid } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [balancingAuthority, setBalancingAuthority] = useState(null);
     const [areaData, setAreaData] = useState({});
     const [viewState, setViewState] = useState({
@@ -82,9 +83,18 @@ const AminDetailPage = () => {
     // Handle browser back button navigation
     useEffect(() => {
         const handlePopState = (event) => {
-            // If user navigates back and we're on a detail page, ensure we go to the map
-            if (window.location.pathname.includes('/amin/') && !balancingAuthority) {
-                navigate('/amin', { replace: true });
+            // If user navigates back and we're on a detail page, ensure we go to the correct parent
+            const currentPath = window.location.pathname;
+            if ((currentPath.includes('/amin/') || currentPath.includes('/manish/')) && !balancingAuthority) {
+                let parentRoute = '/amin'; // Default fallback
+
+                if (currentPath.includes('/manish/')) {
+                    parentRoute = '/manish';
+                } else if (currentPath.includes('/amin/')) {
+                    parentRoute = '/amin';
+                }
+
+                navigate(parentRoute, { replace: true });
             }
         };
 
@@ -312,8 +322,28 @@ const AminDetailPage = () => {
     }, [fid]);
 
     const handleBackClick = () => {
+        // Determine the parent route based on current path
+        const currentPath = location.pathname;
+        let parentRoute = '/amin'; // Default fallback
+
+        if (currentPath.includes('/manish/')) {
+            parentRoute = '/manish';
+        } else if (currentPath.includes('/amin/')) {
+            parentRoute = '/amin';
+        }
+
         // Use replace instead of navigate to avoid creating additional history entries
-        navigate('/amin', { replace: true });
+        navigate(parentRoute, { replace: true });
+    };
+
+    const getBackButtonText = () => {
+        // const currentPath = location.pathname;
+        // if (currentPath.includes('/manish/')) {
+        //     return 'Back to Manish\'s Map';
+        // } else if (currentPath.includes('/amin/')) {
+        //     return 'Back to Amin\'s Map';
+        // }
+        return 'Back to Map';
     };
 
     const renderMap = () => {
@@ -498,7 +528,7 @@ const AminDetailPage = () => {
                         cursor: 'pointer'
                     }}
                 >
-                    Back to Map
+                    {getBackButtonText()}
                 </button>
             </div>
         );
@@ -546,7 +576,7 @@ const AminDetailPage = () => {
                     }}
                 >
                     <ArrowBackIcon style={{ fontSize: 16 }} />
-                    Back to Map
+                    {getBackButtonText()}
                 </button>
             </div>
 
