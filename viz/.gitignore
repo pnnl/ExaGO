@@ -34,3 +34,6 @@ Thumbs.db
 # Backend build artifacts
 backend/westmap-backend.tar.gz
 data.tar.gz
+
+# python environment
+venv/
