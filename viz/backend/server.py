@@ -5,6 +5,7 @@ from flask_cors import CORS
 from flask.globals import request
 from sqlchain import sqlchain
 from flask import jsonify
+from agent import run_agent_json
 
 
 x = datetime.datetime.now()
@@ -21,7 +22,11 @@ def get_time():
     # print(request.json)
     print(input_text)
     # outputtext = sqlagent(input_text)
-    output = sqlchain(input_text)
+    # output = sqlchain(input_text)
+
+    # output using agno agent
+    output = run_agent_json(input_text)
+    # print(output)
     # Returning an api for showing in  reactjs
     return jsonify(output)
 

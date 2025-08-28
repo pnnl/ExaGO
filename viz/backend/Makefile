@@ -1,7 +1,7 @@
 # Variables 
 USERNAME := gradscaler
 IMAGE_NAME := westmap-backend
-VERSION := V1.0.2
+VERSION := V1.0.3
 PORT := 5000
 CONTAINER_NAME := westmap-backend
 NETWORK := ${USERNAME}-network

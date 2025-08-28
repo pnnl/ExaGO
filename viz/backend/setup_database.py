@@ -17,7 +17,7 @@ def setup_database():
     
     # Database connection parameters
     db_params = {
-        'host': 'westmap-database',
+        'host': config.host,
         'port': 5432,
         'database': config.database_name,
         'user': 'postgres',
@@ -25,8 +25,8 @@ def setup_database():
     }
     
     # Create SQLAlchemy engine
-    engine = create_engine(f"postgresql+psycopg2://postgres:{config.sql_key}@westmap-database:5432/{config.database_name}")
-    
+    engine = create_engine(f"postgresql+psycopg2://postgres:{config.sql_key}@{config.host}:5432/{config.database_name}")
+
     # Path to CSV files
     data_dir = "../data"
     

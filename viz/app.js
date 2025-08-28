@@ -448,9 +448,9 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       latitude: lat,
       longitude: long,
       pitch: 50,
-      traansitionInterpolator: transitionFlyToInterpolator,
+      transitionInterpolator: transitionFlyToInterpolator,
       transitionDuration: 2000,
-      zoom: 7.5,
+      zoom: 5.5,
       onTransitionEnd: activatePopup
     }))
 
@@ -465,7 +465,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       latitude: lat,
       longitude: long,
       pitch: 50,
-      traansitionInterpolator: transitionFlyToInterpolator,
+      transitionInterpolator: transitionFlyToInterpolator,
       transitionDuration: 2000,
       zoom: 7.5,
       onTransitionEnd: activatePopup
@@ -506,7 +506,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       latitude: latitude,
       longitude: longitude,
       pitch: 50,
-      traansitionInterpolator: transitionFlyToInterpolator,
+      transitionInterpolator: transitionFlyToInterpolator,
       transitionDuration: 5000,
       zoom: 7.5,
       onTransitionEnd: activatePopup
@@ -525,7 +525,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       latitude: latitude,
       longitude: longitude,
       pitch: 50,
-      traansitionInterpolator: transitionFlyToInterpolator,
+      transitionInterpolator: transitionFlyToInterpolator,
       transitionDuration: 5000,
       zoom: 7.5,
       onTransitionEnd: activatePopup
@@ -548,7 +548,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       latitude: latitude,
       longitude: longitude,
       pitch: 50,
-      traansitionInterpolator: transitionFlyToInterpolator,
+      transitionInterpolator: transitionFlyToInterpolator,
       transitionDuration: 5000,
       zoom: 7.5,
       onTransitionEnd: activatePopup
@@ -581,7 +581,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
         latitude: latitude,
         longitude: longitude,
         pitch: 50,
-        traansitionInterpolator: transitionFlyToInterpolator,
+        transitionInterpolator: transitionFlyToInterpolator,
         transitionDuration: 5000,
         zoom: zoom - 0.25,
         onTransitionEnd: activatePopup
@@ -614,7 +614,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
         latitude: latitude,
         longitude: longitude,
         pitch: 50,
-        traansitionInterpolator: transitionFlyToInterpolator,
+        transitionInterpolator: transitionFlyToInterpolator,
         transitionDuration: 5000,
         zoom: zoom - 0.25,
         onTransitionEnd: activatePopup
@@ -647,7 +647,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
         latitude: latitude,
         longitude: longitude,
         pitch: 50,
-        traansitionInterpolator: transitionFlyToInterpolator,
+        transitionInterpolator: transitionFlyToInterpolator,
         transitionDuration: 5000,
         zoom: zoom - 0.25,
         onTransitionEnd: activatePopup
@@ -680,7 +680,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
         latitude: latitude,
         longitude: longitude,
         pitch: 50,
-        traansitionInterpolator: transitionFlyToInterpolator,
+        transitionInterpolator: transitionFlyToInterpolator,
         transitionDuration: 5000,
         zoom: zoom - 0.25,
         onTransitionEnd: activatePopup
@@ -775,7 +775,9 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       "inputText": inputText
     }
     // Use relative API path through nginx reverse proxy
-    const apiPath = '/api/data';
+    // const apiPath = process.env.ENVIRONMENT === 'prod' ? '/api/data' : 'http://localhost:5000/data';
+    // const apiPath = 'http://localhost:5000/data'; // for development
+    const apiPath = '/api/data'; // for production
 
     try {
       fetch(apiPath, {
@@ -787,10 +789,11 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
           // Setting a data from api
           console.log(chatOutput);
           const outputText = chatOutput.text
-          const chatList = chatOutput.result_list
-          const keyList = Object.keys(chatList[0])
+          const chatList = chatOutput.result_list || []
+
           if (chatList.length > 0) {
             //  only one is active between bus name selection, transmission line name selection at a time
+            const keyList = Object.keys(chatList[0])
 
             if ("generation name" in chatList[0]) {
               const genNameList = chatList.map(d => d["generation name"]);
@@ -798,12 +801,29 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
               setNameSelectItems(genNameList)
               setGenFilterValue([gendata.minPg, gendata.maxPg]);
 
-              setInitialViewState(viewState => ({
-                ...viewState,
-                pitch: 40,
-                traansitionInterpolator: transitionFlyToInterpolator,
-                transitionDuration: 2000,
-              }))
+              // Turn off other layers to focus on generation
+              setNetLayerActive(false)
+              setFlowLayerActive(false)
+              setVoltageLayerActive(false)
+              setLoadLayerActive(false)
+
+              // Smart zoom to generation locations
+              if (genNameList.length > 0) {
+                // Find the first generation facility in our data to get coordinates
+                const firstGen = generation.find(gen => genNameList.includes(gen.name));
+                if (firstGen && firstGen.coordinates) {
+                  const [longitude, latitude] = firstGen.coordinates;
+                  zoomToGen(latitude, longitude);
+                } else {
+                  // Fallback to general animation if no coordinates found
+                  setInitialViewState(viewState => ({
+                    ...viewState,
+                    pitch: 40,
+                    transitionInterpolator: transitionFlyToInterpolator,
+                    transitionDuration: 2000,
+                  }))
+                }
+              }
             }
             const containCapacity = keyList.some(str => str.includes('capacity'))
             if ("generation name" in chatList[0] && containCapacity) {
@@ -813,12 +833,28 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
               setNameSelectItems(genNameList)
               setGenFilterValue([gendata.minPg, gendata.maxPg]);
 
-              setInitialViewState(viewState => ({
-                ...viewState,
-                pitch: 40,
-                traansitionInterpolator: transitionFlyToInterpolator,
-                transitionDuration: 2000,
-              }))
+              // Turn off other layers to focus on generation capacity
+              setNetLayerActive(false)
+              setFlowLayerActive(false)
+              setVoltageLayerActive(false)
+              setLoadLayerActive(false)
+              setWeccLayerActive(false)
+
+              // Smart zoom to generation locations for capacity queries
+              if (genNameList.length > 0) {
+                const firstGen = generation.find(gen => genNameList.includes(gen.name));
+                if (firstGen && firstGen.coordinates) {
+                  const [longitude, latitude] = firstGen.coordinates;
+                  zoomToGen(latitude, longitude);
+                } else {
+                  setInitialViewState(viewState => ({
+                    ...viewState,
+                    pitch: 40,
+                    transitionInterpolator: transitionFlyToInterpolator,
+                    transitionDuration: 2000,
+                  }))
+                }
+              }
             }
             if ("line name" in chatList[0]) {
               const lineNameList = chatList.map(d => d["line name"]);
@@ -826,16 +862,60 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
               setFlowLayerActive(true)
               setBusNameSelectItems([])
               setLineNameSelectItems(lineNameList)
+
+              // Turn off other layers to focus on transmission lines
+              setGenLayerActive(false)
+              setGenLayerCapActive(false)
+              setVoltageLayerActive(false)
+              setLoadLayerActive(false)
+
+              // Animate camera for line visualization
+              setInitialViewState(viewState => ({
+                ...viewState,
+                pitch: 30,
+                transitionInterpolator: transitionFlyToInterpolator,
+                transitionDuration: 2000,
+                zoom: 4.5
+              }))
             }
             if ('bus name' in chatList[0]) {
               const busNameList = chatList.map(d => d["bus name"]);
-              setNetLayerActive(true)
-              setFlowLayerActive(true)
+
+              // Check if this is a voltage-related query
+              const isVoltageQuery = outputText.toLowerCase().includes('voltage') ||
+                outputText.toLowerCase().includes('kv') ||
+                inputText.toLowerCase().includes('voltage');
+
+              if (isVoltageQuery) {
+                // Activate voltage visualization for voltage queries
+                setVoltageLayerActive(true)
+                setNetLayerActive(false) // Turn off network layer to focus on voltage
+                setFlowLayerActive(false)
+                setGenLayerActive(false) // Turn off generation layers
+                setGenLayerCapActive(false)
+                setLoadLayerActive(false) // Turn off load layer
+              } else {
+                // Regular bus query - show network
+                setNetLayerActive(true)
+                setFlowLayerActive(true)
+                setVoltageLayerActive(false)
+                setGenLayerActive(false)
+                setGenLayerCapActive(false)
+                setLoadLayerActive(false)
+              }
+
               setBusNameSelectItems(busNameList)
               setLineNameSelectItems([])
+
+              // Animate camera for bus visualization
+              setInitialViewState(viewState => ({
+                ...viewState,
+                pitch: 30,
+                transitionInterpolator: transitionFlyToInterpolator,
+                transitionDuration: 2000,
+                zoom: 4.5
+              }))
             }
-
-
           }
 
           setOutputMes(outputText)
@@ -974,7 +1054,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     event.target.checked && (setInitialViewState(viewState => ({
       ...viewState,
       pitch: 40,
-      traansitionInterpolator: transitionFlyToInterpolator,
+      transitionInterpolator: transitionFlyToInterpolator,
       transitionDuration: 2000,
     })))
   };
@@ -986,7 +1066,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     event.target.checked && (setInitialViewState(viewState => ({
       ...viewState,
       pitch: 40,
-      traansitionInterpolator: transitionFlyToInterpolator,
+      transitionInterpolator: transitionFlyToInterpolator,
       transitionDuration: 2000,
     })))
   };
@@ -998,7 +1078,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     event.target.checked && (setInitialViewState(viewState => ({
       ...viewState,
       pitch: 40,
-      traansitionInterpolator: transitionFlyToInterpolator,
+      transitionInterpolator: transitionFlyToInterpolator,
       transitionDuration: 2000,
     })))
   };
@@ -1010,7 +1090,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     event.target.checked && (setInitialViewState(viewState => ({
       ...viewState,
       pitch: 40,
-      traansitionInterpolator: transitionFlyToInterpolator,
+      transitionInterpolator: transitionFlyToInterpolator,
       transitionDuration: 2000,
     })))
   };
@@ -1021,7 +1101,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     event.target.checked && (setInitialViewState(viewState => ({
       ...viewState,
       pitch: 40,
-      traansitionInterpolator: transitionFlyToInterpolator,
+      transitionInterpolator: transitionFlyToInterpolator,
       transitionDuration: 2000,
     })))
   };
@@ -1034,7 +1114,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     event.target.checked && (setInitialViewState(viewState => ({
       ...viewState,
       pitch: 40,
-      traansitionInterpolator: transitionFlyToInterpolator,
+      transitionInterpolator: transitionFlyToInterpolator,
       transitionDuration: 2000,
     })))
   };
@@ -1046,7 +1126,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     event.target.checked && (setInitialViewState(viewState => ({
       ...viewState,
       pitch: 40,
-      traansitionInterpolator: transitionFlyToInterpolator,
+      transitionInterpolator: transitionFlyToInterpolator,
       transitionDuration: 2000,
     })))
   };

@@ -10,3 +10,10 @@ database_name = os.getenv('DATABASE_NAME', 'exago_viz')
 
 # OpenAI Configuration
 openai_key = os.getenv('OPENAI_API_KEY')
+
+# development/production
+environment = os.getenv('ENVIRONMENT', 'dev')
+
+# Host Configuration
+# westmap-database is docker container name
+host = 'westmap-database' if environment == 'prod' else 'localhost'

@@ -1,0 +1,39 @@
+FID,BA_Abrev,BA_Name,Area_Number
+1,PSEI,"Puget Sound Energy, Inc.",40
+2,CHPD,PUD No. 1 of Chelan County,40
+3,DOPD,PUD No. 1 of Douglas County,40
+4,GCPD,PUD No. 2 of Grant County,40
+5,SCL,Seattle City Light,40
+6,TPWR,"City of Tacoma, Department of Public Utilities",40
+7,AVA,Avista Corporation,40
+8,PACW,PacifiCorp West,40
+9,BPAT,Bonneville power Administration-Transmission,40
+10,PGE,Portland General Electric Company,40
+11,IPCO,Idaho Power Company,60
+12,BANC,Balancing Authority of Northern California,30
+13,TIDC,Turlock Irrigation District,30
+14,LDWP,Los Angeles Department of Water and Power,26
+15,IID,Imperial Irrigation District,21
+16,CISO,California Independent System operator,24|30
+17,NEVP,Nevada Power Company,18
+18,NWMT,NorthWestern Energy,62
+19,WAUW,"Wester Area Power Administration, Upper Great Plains West",63
+20,PACE,PacifiCorp East,65
+21,WACM,"Western Area Power Administration, Colorado-Missouri Region",73
+22,PSCO,Public Service Company of Colorado,70
+23,PNM,Public Service Company of New Mexico,10
+24,WALC,"Western Area Power Administration, Lower Colorado Region",19
+25,EPE,El Paso Electric Company,11
+26,TEPC,Tucson Electric Power Company,16
+27,AZPS,Arizona Public Service Company,14
+28,SRP,Salt River Project,15
+29,BCHA,British Columbia Hydro Authority,50
+30,AESO,Alberta Electric System Operator,54
+31,CENACE,Comision Federal de Electricidad,20
+32,WWA,"NaturEner Wind Watch, LLC",40
+33,GWA,"NaturEner Power Watch, LLC",40
+34,AVRN,AvanGrid Renewables,40
+35,GRIF,"Griffith Energy, LLC",14
+36,HGMA,"New Harquahala Generating Company, LLC",14
+37,AVBA,"Arlington Valley, LLC",14
+38,GRID,"Gridforce Energy Management, LLC",24
