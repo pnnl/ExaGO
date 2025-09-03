@@ -264,6 +264,18 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     'black': "Other"
   }
 
+  // WECC-specific color mapping
+  const weccColorMap = {
+    'blue': 'Hydro',
+    'red': 'Nuclear',
+    'black': 'Coal',
+    'orange': 'Natural Gas',
+    'purple': 'Geothermal',
+    'green': 'Biomass',
+    'lightgreen': 'Wind',
+    'yellow': 'Solar'
+  }
+
   const [netfiltervalue, setNetFilterValue] = useState([0, 800]);
 
   const [flowfiltervalue, setFlowFilterValue] = useState([0, 120]);
@@ -449,7 +461,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       longitude: long,
       pitch: 50,
       transitionInterpolator: transitionFlyToInterpolator,
-      transitionDuration: 2000,
+      transitionDuration: 1000,
       zoom: 5.5,
       onTransitionEnd: activatePopup
     }))
@@ -466,7 +478,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       longitude: long,
       pitch: 50,
       transitionInterpolator: transitionFlyToInterpolator,
-      transitionDuration: 2000,
+      transitionDuration: 1000,
       zoom: 7.5,
       onTransitionEnd: activatePopup
     }))
@@ -507,7 +519,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       longitude: longitude,
       pitch: 50,
       transitionInterpolator: transitionFlyToInterpolator,
-      transitionDuration: 5000,
+      transitionDuration: 1000,
       zoom: 7.5,
       onTransitionEnd: activatePopup
     }))
@@ -526,7 +538,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       longitude: longitude,
       pitch: 50,
       transitionInterpolator: transitionFlyToInterpolator,
-      transitionDuration: 5000,
+      transitionDuration: 1000,
       zoom: 7.5,
       onTransitionEnd: activatePopup
     }))
@@ -549,7 +561,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       longitude: longitude,
       pitch: 50,
       transitionInterpolator: transitionFlyToInterpolator,
-      transitionDuration: 5000,
+      transitionDuration: 1000,
       zoom: 7.5,
       onTransitionEnd: activatePopup
     }))
@@ -582,7 +594,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
         longitude: longitude,
         pitch: 50,
         transitionInterpolator: transitionFlyToInterpolator,
-        transitionDuration: 5000,
+        transitionDuration: 1000,
         zoom: zoom - 0.25,
         onTransitionEnd: activatePopup
       }))
@@ -615,7 +627,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
         longitude: longitude,
         pitch: 50,
         transitionInterpolator: transitionFlyToInterpolator,
-        transitionDuration: 5000,
+        transitionDuration: 1000,
         zoom: zoom - 0.25,
         onTransitionEnd: activatePopup
       }))
@@ -648,7 +660,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
         longitude: longitude,
         pitch: 50,
         transitionInterpolator: transitionFlyToInterpolator,
-        transitionDuration: 5000,
+        transitionDuration: 1000,
         zoom: zoom - 0.25,
         onTransitionEnd: activatePopup
       }))
@@ -681,7 +693,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
         longitude: longitude,
         pitch: 50,
         transitionInterpolator: transitionFlyToInterpolator,
-        transitionDuration: 5000,
+        transitionDuration: 1000,
         zoom: zoom - 0.25,
         onTransitionEnd: activatePopup
       }))
@@ -733,7 +745,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       latitude: latitude,
       zoom: zoom - 0.25,
       transitionInterpolator: transitionFlyToInterpolator,
-      transitionDuration: 2000
+      transitionDuration: 1000
     }))
 
     setShowPopup({ ...showPopup, display: false });
@@ -767,6 +779,25 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
   const [weccHoveredObject, setWeccHoveredObject] = useState(null);
   const [weccClickedObject, setWeccClickedObject] = useState(null);
 
+  // WECC Generation Power data state
+  const [weccGenLayerActive, setWeccGenLayerActive] = useState(false);
+  const [weccGenData, setWeccGenData] = useState(null);
+  const [weccGenChartData, setWeccGenChartData] = useState(null);
+  const [weccGenFilter, setWeccGenFilter] = useState([0, 100000]); // MW range
+  const [weccGenSelectItems, setWeccGenSelectItems] = useState([]);
+  const [weccGenNameItems, setWeccGenNameItems] = useState([]);
+  const [weccColumnData, setWeccColumnData] = useState([]);
+  const [weccGenDoughlabels, setWeccDoughlabels] = useState([
+    'Hydro',
+    'Nuclear',
+    'Coal',
+    'Natural Gas',
+    'Geothermal',
+    'Biomass',
+    'Wind',
+    'Solar'
+  ]);
+
   const handleUserInput = (inputText) => {
     console.log(`New message incoming! ${inputText}`);
     // Now send the message to GPT and get response 
@@ -776,8 +807,8 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     }
     // Use relative API path through nginx reverse proxy
     // const apiPath = process.env.ENVIRONMENT === 'prod' ? '/api/data' : 'http://localhost:5000/data';
-    // const apiPath = 'http://localhost:5000/data'; // for development
-    const apiPath = '/api/data'; // for production
+    const apiPath = 'http://localhost:5000/data'; // for development
+    // const apiPath = '/api/data'; // for production
 
     try {
       fetch(apiPath, {
@@ -961,6 +992,13 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
         }
         const areaMappingText = await areaMappingResponse.text();
 
+        // Load WECC generation data CSV
+        const weccGenResponse = await fetch('/amin_data/new_data/WECC_31_BAs_2028_All_Clean (1).csv');
+        if (!weccGenResponse.ok) {
+          throw new Error(`HTTP error loading WECC generation CSV! status: ${weccGenResponse.status}`);
+        }
+        const weccGenText = await weccGenResponse.text();
+
         // Parse CSV
         const csvLines = csvText.split('\n');
         const csvData = {};
@@ -1011,6 +1049,38 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
           }
         }
 
+        // Parse WECC generation CSV
+        const weccGenLines = weccGenText.split('\n');
+        const weccGenData = {};
+        const weccGenProcessed = [];
+
+        for (let i = 1; i < weccGenLines.length; i++) {
+          const line = weccGenLines[i].trim();
+          if (line) {
+            const values = line.split(',');
+            const ba = values[0];
+            if (ba) {
+              const genData = {
+                BA: ba,
+                Hydro: parseFloat(values[1]) || 0,
+                Nuclear: parseFloat(values[2]) || 0,
+                Coal: parseFloat(values[3]) || 0,
+                Natural_Gas: parseFloat(values[4]) || 0,
+                Geothermal: parseFloat(values[5]) || 0,
+                Biomass: parseFloat(values[6]) || 0,
+                Wind: parseFloat(values[7]) || 0,
+                PV: parseFloat(values[8]) || 0,
+                Pumped_Storage_MW: parseFloat(values[9]) || 0,
+                Battery_Storage_MW: parseFloat(values[10]) || 0,
+                Total_MW: parseFloat(values[11]) || 0,
+                Energy_Storage: parseFloat(values[12]) || 0
+              };
+              weccGenData[ba] = genData;
+              weccGenProcessed.push(genData);
+            }
+          }
+        }
+
         // Merge CSV data into GeoJSON properties
         geojsonData.features.forEach(feature => {
           const fid = feature.properties.FID;
@@ -1025,7 +1095,139 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
           if (areaMappingData[fid]) {
             feature.properties.Area_Numbers = areaMappingData[fid].Area_Numbers;
           }
+          // Add generation data
+          const baAbrev = feature.properties.BA_Abrev;
+          if (baAbrev && weccGenData[baAbrev]) {
+            feature.properties.generation = weccGenData[baAbrev];
+          }
         });
+
+        // Calculate total generation by source for chart
+        const totalBySource = {
+          Hydro: 0,
+          Nuclear: 0,
+          Coal: 0,
+          Natural_Gas: 0,
+          Geothermal: 0,
+          Biomass: 0,
+          Wind: 0,
+          PV: 0
+        };
+
+        weccGenProcessed.forEach(data => {
+          totalBySource.Hydro += data.Hydro;
+          totalBySource.Nuclear += data.Nuclear;
+          totalBySource.Coal += data.Coal;
+          totalBySource.Natural_Gas += data.Natural_Gas;
+          totalBySource.Geothermal += data.Geothermal;
+          totalBySource.Biomass += data.Biomass;
+          totalBySource.Wind += data.Wind;
+          totalBySource.PV += data.PV;
+        });
+
+        // Setup WECC generation chart data
+        const weccChartData = {
+          labels: ['Hydro', 'Nuclear', 'Coal', 'Natural Gas', 'Geothermal', 'Biomass', 'Wind', 'Solar'],
+          datasets: [{
+            label: 'WECC Generation Capacity (MW)',
+            data: [
+              totalBySource.Hydro,
+              totalBySource.Nuclear,
+              totalBySource.Coal,
+              totalBySource.Natural_Gas,
+              totalBySource.Geothermal,
+              totalBySource.Biomass,
+              totalBySource.Wind,
+              totalBySource.PV
+            ],
+            backgroundColor: [
+              'rgba(28,163,236,0.8)', // Hydro - Blue
+              'rgba(255,0,0,0.8)',    // Nuclear - Red
+              'rgba(0,0,0,0.8)',      // Coal - Black
+              'rgba(255,165,0,0.8)',  // Natural Gas - Orange
+              'rgba(128,0,128,0.8)',  // Geothermal - Purple
+              'rgba(0,128,0,0.8)',    // Biomass - Green
+              'rgba(0,255,0,0.8)',    // Wind - Light Green
+              'rgba(255,255,0,0.8)'   // Solar - Yellow
+            ],
+            borderWidth: 1
+          }]
+        };
+
+        // Setup filter values and name items
+        const maxTotal = Math.max(...weccGenProcessed.map(d => d.Total_MW));
+        const nameItems = weccGenProcessed.map(d => d.BA);
+
+        // Create column data for WECC generation visualization - multiple bars per location
+        const weccColumnData = [];
+        const energySources = [
+          { key: 'Hydro', color: 'blue', rgba: [28, 163, 236, 255] },
+          { key: 'Nuclear', color: 'red', rgba: [255, 0, 0, 255] },
+          { key: 'Coal', color: 'black', rgba: [0, 0, 0, 255] },
+          { key: 'Natural_Gas', color: 'orange', rgba: [255, 165, 0, 255] },
+          { key: 'Geothermal', color: 'purple', rgba: [128, 0, 128, 255] },
+          { key: 'Biomass', color: 'green', rgba: [0, 128, 0, 255] },
+          { key: 'Wind', color: 'lightgreen', rgba: [0, 255, 0, 255] },
+          { key: 'PV', color: 'yellow', rgba: [255, 255, 0, 255] }
+        ];
+
+        geojsonData.features.forEach(feature => {
+          if (feature.properties.generation && feature.geometry) {
+            // Calculate centroid using turf library for better accuracy
+            const centroid = center(feature.geometry);
+            const baseLng = centroid.geometry.coordinates[0];
+            const baseLat = centroid.geometry.coordinates[1];
+
+            // Get bounding box to determine spread area
+            const bounds = bbox(feature.geometry);
+            const regionWidth = bounds[2] - bounds[0]; // maxLng - minLng
+            const regionHeight = bounds[3] - bounds[1]; // maxLat - minLat
+
+            // Use region size to determine appropriate spread, with minimum and maximum limits
+            const spreadFactor = Math.min(Math.max(regionWidth, regionHeight, 0.1), 0.8); // Between 0.1 and 0.8 degrees
+
+            if (baseLng && baseLat) {
+              const generation = feature.properties.generation;
+
+              // Create separate generation entries for each energy source (like the existing system)
+              energySources.forEach((source, index) => {
+                const value = generation[source.key];
+                if (value && value > 50) { // Only show sources with significant capacity (>50 MW)
+                  // Debug logging for IID specifically
+                  if (generation.BA === 'IID') {
+                    console.log(`IID - ${source.key}: ${value} MW, Color: ${source.color}`);
+                  }
+
+                  // Create offset position spread across the region based on region size
+                  const offsetDistance = spreadFactor * 0.3; // Use 30% of region size for spread
+                  const angle = (index / energySources.length) * 2 * Math.PI; // Distribute around circle
+                  const offsetLng = baseLng + Math.cos(angle) * offsetDistance;
+                  const offsetLat = baseLat + Math.sin(angle) * offsetDistance;
+
+                  weccColumnData.push({
+                    coordinates: [offsetLng, offsetLat],
+                    Pg: value, // Use the same naming as existing generation
+                    Pcap: value, // For capacity visualization
+                    color: source.color,
+                    fuel: source.key.toLowerCase(),
+                    name: `${generation.BA} - ${source.key}`,
+                    ba: generation.BA,
+                    energyType: source.key,
+                    KVlevels: [500], // Default high voltage for WECC
+                    countyname: feature.properties.BA_Name || generation.BA
+                  });
+                }
+              });
+            }
+          }
+        });
+
+        setWeccGenData(weccGenProcessed);
+        setWeccGenChartData(weccChartData);
+        setWeccGenFilter([0, maxTotal]);
+        setWeccGenNameItems(nameItems);
+        setWeccGenSelectItems([]);
+        setWeccColumnData(weccColumnData);
 
         setWeccGeojsonData(geojsonData);
       } catch (err) {
@@ -1129,6 +1331,29 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       transitionInterpolator: transitionFlyToInterpolator,
       transitionDuration: 2000,
     })))
+  };
+
+  const handleWeccGenLayerChange = (event) => {
+    setWeccGenLayerActive(event.target.checked);
+    if (weccGenData && weccGenData.length > 0) {
+      const maxTotal = Math.max(...weccGenData.map(d => d.Total_MW));
+      setWeccGenFilter([0, maxTotal]);
+    }
+
+    event.target.checked && (setInitialViewState(viewState => ({
+      ...viewState,
+      pitch: 40,
+      transitionInterpolator: transitionFlyToInterpolator,
+      transitionDuration: 2000,
+    })))
+  };
+
+  const handleWeccGenRangeFilterChange = (event, newValue) => {
+    setWeccGenFilter(newValue);
+  };
+
+  const handleWeccGenMultiselect = (value) => {
+    setWeccGenSelectItems(value);
   };
 
   function getNetFilterValue(data) {
@@ -1267,9 +1492,63 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     return -10000;
   }
 
-  const layers = [
+  function getWeccGenFilterValue(data) {
+    if (!data || !data.properties || !data.properties.generation) return -10000;
 
-    // new FlowmapLayer({
+    const generation = data.properties.generation;
+    const baAbrev = data.properties.BA_Abrev;
+
+    // Check if BA is in selected items
+    if (weccGenSelectItems.length > 0) {
+      if (!weccGenSelectItems.includes(baAbrev)) {
+        return -10000;
+      }
+    }
+
+    // Check if total MW is within filter range
+    if (generation.Total_MW >= weccGenFilter[0] && generation.Total_MW <= weccGenFilter[1]) {
+      return generation.Total_MW;
+    }
+
+    return -10000;
+  }
+
+  function getWeccColumnFilterValue(data) {
+    if (!data) return -10000;
+
+    // Check if energy type is visible in doughnut chart (same logic as existing generation)
+    if ((weccGenDoughlabels.length > 0) && (!(weccGenDoughlabels.indexOf(weccColorMap[data.color]) >= 0))) return -10000;
+
+    // Check if BA is in selected items
+    if (weccGenSelectItems.length > 0) {
+      if (!weccGenSelectItems.includes(data.ba)) {
+        return -10000;
+      }
+    }
+
+    // Check if generation value is within filter range  
+    if (data.Pg >= weccGenFilter[0] && data.Pg <= weccGenFilter[1]) {
+      return data.Pg;
+    }
+
+    return -10000;
+  }
+
+  function fillWeccColumnColor(data) {
+    switch (data.color) {
+      case 'blue': return [28, 163, 236, 255]; // Hydro
+      case 'red': return [255, 0, 0, 255]; // Nuclear
+      case 'black': return [0, 0, 0, 255]; // Coal
+      case 'orange': return [255, 165, 0, 255]; // Natural Gas
+      case 'purple': return [128, 0, 128, 255]; // Geothermal
+      case 'green': return [0, 128, 0, 255]; // Biomass
+      case 'lightgreen': return [0, 255, 0, 255]; // Wind
+      case 'yellow': return [255, 255, 0, 255]; // Solar/PV
+      default: return [128, 128, 128, 255]; // Gray fallback
+    }
+  }
+
+  const layers = [    // new FlowmapLayer({
     //   id: 'my-flowmap-layer',
     //   data: flowdata,
     //   visible: flowlayeractive,
@@ -1553,6 +1832,29 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       }
     }),
 
+    // WECC Generation Power Column Layer - Multiple bars per location
+    new ColumnLayer({
+      id: 'WeccGenColumnLayer',
+      data: weccColumnData,
+      diskResolution: 50,
+      radius: 5000, // Same as existing generation
+      elevationScale: 50, // Same as existing generation  
+      pickable: weccGenLayerActive,
+      visible: weccGenLayerActive,
+      getPosition: d => d.coordinates,
+      getFillColor: fillWeccColumnColor, // Use our custom color function
+      getElevation: d => d.Pg * 5, // Same pattern as existing generation
+      onClick: zoomToData, // Same click handler as existing generation
+
+      getFilterValue: getWeccColumnFilterValue,
+      filterRange: weccGenFilter,
+
+      extensions: [new DataFilterExtension({ filtersize: 1 })],
+      updateTriggers: {
+        getFilterValue: [weccGenFilter, weccGenSelectItems, weccGenDoughlabels]
+      }
+    }),
+
     /*
     new HeatmapLayer({
       id:'Voltagecontour',
@@ -1610,6 +1912,19 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     //default legend function of doughnut chart 
     legend.chart.toggleDataVisibility(legendItem.index);
 
+  }
+
+  const handleWeccDoughnutClick = (event, legendItem, legend) => {
+    // filter WECC generation 
+    if (legendItem.hidden) {  //if ishidden, then add to array
+      setWeccDoughlabels(weccGenDoughlabels => ([...weccGenDoughlabels, legendItem.text]))
+    } else {  //remove from array 
+      let index = weccGenDoughlabels.indexOf(legendItem.text)
+      const newArray = [...weccGenDoughlabels.slice(0, index), ...weccGenDoughlabels.slice(index + 1)];
+      setWeccDoughlabels(newArray)
+    }
+    //default legend function of doughnut chart 
+    legend.chart.toggleDataVisibility(legendItem.index);
   }
 
   const handleBusMultiselect = (selectItem, metadata) => {
@@ -2226,6 +2541,74 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
                   <div style={{ paddingRight: "40px", fontSize: "12px", color: "#666" }}>
                     WECC Balancing Authorities overlay showing {weccGeojsonData.features?.length || 0} regions.
                     Click on any region for details.
+                  </div>
+                )}
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion defaultExpanded={false}>
+            <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
+              expandIcon={<ArrowDropDownIcon />}>
+              <Typography>
+                <Checkbox checked={weccGenLayerActive} style={{ color: "primary" }} onChange={handleWeccGenLayerChange} />WECC Generation Power
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Typography component="div">
+                {weccGenLayerActive && weccGenData && (
+                  <div style={{ paddingRight: "40px" }}>
+                    <Slider
+                      style={{ padding: 2 }}
+                      value={weccGenFilter}
+                      valueLabelDisplay="auto"
+                      onChange={handleWeccGenRangeFilterChange}
+                      getAriaValueText={valuetext}
+                      step={1000}
+                      min={0}
+                      max={weccGenData.length > 0 ? Math.max(...weccGenData.map(d => d.Total_MW)) : 100000}
+                    />
+                  </div>
+                )}
+
+                {weccGenLayerActive && weccGenNameItems.length > 0 && (
+                  <div style={{ paddingRight: "40px" }}>
+                    <Multiselect
+                      defaultValue={weccGenSelectItems}
+                      data={weccGenNameItems}
+                      placeholder={'Search based on Area Name'}
+                      onChange={handleWeccGenMultiselect}
+                    />
+                  </div>
+                )}
+
+                {weccGenLayerActive && weccGenChartData && (
+                  <div style={{ width: 280, height: 250, transform: "translate(-1.2vw, 10px)" }}>
+                    <Doughnut data={weccGenChartData}
+                      options={{
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: {
+                            position: 'bottom',
+                            onClick: handleWeccDoughnutClick,
+                            labels: {
+                              boxWidth: 12,
+                              padding: 8,
+                              font: {
+                                size: 10
+                              }
+                            }
+                          },
+                          title: {
+                            display: true,
+                            text: 'WECC Generation Mix (MW)',
+                            font: {
+                              size: 12
+                            }
+                          }
+                        }
+                      }}
+                    />
                   </div>
                 )}
               </Typography>

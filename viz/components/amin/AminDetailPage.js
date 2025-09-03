@@ -129,11 +129,11 @@ const AminDetailPage = () => {
                 const areaMappingText = await areaMappingResponse.text();
 
                 // Load demo data CSV
-                const demoDataResponse = await fetch('/amin_data/WECC_BA_AREA_DEMODATA.csv');
-                if (!demoDataResponse.ok) {
-                    throw new Error(`HTTP error loading demo data CSV! status: ${demoDataResponse.status}`);
-                }
-                const demoDataText = await demoDataResponse.text();
+                // const demoDataResponse = await fetch('/amin_data/WECC_BA_AREA_DEMODATA.csv');
+                // if (!demoDataResponse.ok) {
+                //     throw new Error(`HTTP error loading demo data CSV! status: ${demoDataResponse.status}`);
+                // }
+                // const demoDataText = await demoDataResponse.text();
 
                 // Parse main CSV for shape data
                 const csvLines = csvText.split('\n');
@@ -184,38 +184,41 @@ const AminDetailPage = () => {
                     }
                 }
 
-                // Parse demo data CSV
-                const demoDataLines = demoDataText.split('\n');
-                const headers = demoDataLines[0].split(',');
-                const demoData = {};
+                // Parse demo data CSV - COMMENTED OUT TO USE ACTUAL DATA
+                // const demoDataLines = demoDataText.split('\n');
+                // const headers = demoDataLines[0].split(',');
+                // const demoData = {};
 
-                for (let i = 1; i < demoDataLines.length; i++) {
-                    const line = demoDataLines[i].trim();
-                    if (line) {
-                        const values = line.split(',');
-                        const areaNumber = parseInt(values[0]);
-                        const hour = parseInt(values[1]);
+                // for (let i = 1; i < demoDataLines.length; i++) {
+                //     const line = demoDataLines[i].trim();
+                //     if (line) {
+                //         const values = line.split(',');
+                //         const areaNumber = parseInt(values[0]);
+                //         const hour = parseInt(values[1]);
 
-                        if (!demoData[areaNumber]) {
-                            demoData[areaNumber] = [];
-                        }
+                //         if (!demoData[areaNumber]) {
+                //             demoData[areaNumber] = [];
+                //         }
 
-                        demoData[areaNumber].push({
-                            hour: hour,
-                            wind: parseFloat(values[2]),
-                            solar: parseFloat(values[3]),
-                            hydro: parseFloat(values[4]),
-                            nuclear: parseFloat(values[5]),
-                            naturalGas: parseFloat(values[6]),
-                            coal: parseFloat(values[7]),
-                            other: parseFloat(values[8]),
-                            totalGeneration: parseFloat(values[9]),
-                            demand: parseFloat(values[10]),
-                            lmpPrice: parseFloat(values[11]),
-                            netInterchange: parseFloat(values[12])
-                        });
-                    }
-                }
+                //         demoData[areaNumber].push({
+                //             hour: hour,
+                //             wind: parseFloat(values[2]),
+                //             solar: parseFloat(values[3]),
+                //             hydro: parseFloat(values[4]),
+                //             nuclear: parseFloat(values[5]),
+                //             naturalGas: parseFloat(values[6]),
+                //             coal: parseFloat(values[7]),
+                //             other: parseFloat(values[8]),
+                //             totalGeneration: parseFloat(values[9]),
+                //             demand: parseFloat(values[10]),
+                //             lmpPrice: parseFloat(values[11]),
+                //             netInterchange: parseFloat(values[12])
+                //         });
+                //     }
+                // }
+
+                // Load actual generation data based on BA abbreviation
+                const actualGenerationData = {};
 
                 // Find the specific balancing authority
                 const targetFid = parseInt(fid);
@@ -231,6 +234,77 @@ const AminDetailPage = () => {
                     ...csvData[targetFid], // Add shape data from main CSV
                     ...areaMappingData[targetFid] // Add area numbers from mapping CSV
                 };
+
+                // Load actual generation data based on BA abbreviation
+                if (baData.BA_Abrev) {
+                    try {
+                        const genResponse = await fetch(`/amin_data/new_data/power_gen_data_areawise_24hr/${baData.BA_Abrev}_generation_by_fuel.csv`);
+                        if (genResponse.ok) {
+                            const genText = await genResponse.text();
+                            const genLines = genText.split('\n');
+
+                            // Process each area number that this BA serves
+                            if (baData.Area_Numbers && baData.Area_Numbers.length > 0) {
+                                baData.Area_Numbers.forEach(areaNumber => {
+                                    actualGenerationData[areaNumber] = [];
+
+                                    for (let i = 1; i < genLines.length; i++) {
+                                        const line = genLines[i].trim();
+                                        if (line) {
+                                            const values = line.split(',');
+                                            const hour = parseInt(values[0]);
+
+                                            // Map CSV columns to chart data structure
+                                            const hourData = {
+                                                hour: hour,
+                                                naturalGas: parseFloat(values[1]) || 0,      // NG_MW
+                                                geothermal: parseFloat(values[2]) || 0,      // GEO_MW
+                                                biomass: parseFloat(values[3]) || 0,         // BIO_MW (maps to "other")
+                                                nuclear: parseFloat(values[4]) || 0,         // NUCLEAR_MW
+                                                coal: parseFloat(values[5]) || 0,            // COAL_MW
+                                                wind: parseFloat(values[6]) || 0,            // WIND_MW
+                                                solar: parseFloat(values[7]) || 0,           // PV_MW (Solar)
+                                                hydro: parseFloat(values[8]) || 0,           // HYDRO_MW
+                                                battery: parseFloat(values[9]) || 0,         // BATTERY_MW
+                                                importExport: parseFloat(values[10]) || 0,   // IMPORT/EXPORT_MW
+                                                // Calculate totals
+                                                totalGeneration: (parseFloat(values[1]) || 0) +
+                                                    (parseFloat(values[2]) || 0) +
+                                                    (parseFloat(values[3]) || 0) +
+                                                    (parseFloat(values[4]) || 0) +
+                                                    (parseFloat(values[5]) || 0) +
+                                                    (parseFloat(values[6]) || 0) +
+                                                    (parseFloat(values[7]) || 0) +
+                                                    (parseFloat(values[8]) || 0) +
+                                                    (parseFloat(values[9]) || 0),
+                                                demand: (parseFloat(values[1]) || 0) +
+                                                    (parseFloat(values[2]) || 0) +
+                                                    (parseFloat(values[3]) || 0) +
+                                                    (parseFloat(values[4]) || 0) +
+                                                    (parseFloat(values[5]) || 0) +
+                                                    (parseFloat(values[6]) || 0) +
+                                                    (parseFloat(values[7]) || 0) +
+                                                    (parseFloat(values[8]) || 0) +
+                                                    (parseFloat(values[9]) || 0) +
+                                                    Math.abs(parseFloat(values[10]) || 0), // Include import/export in demand
+                                                // For LMP price, we'll use a simulated curve since it's not in the CSV
+                                                lmpPrice: 45 + Math.sin((hour - 1) * Math.PI / 12) * 15 + Math.random() * 10,
+                                                // Net interchange is the import/export value
+                                                netInterchange: parseFloat(values[10]) || 0
+                                            };
+
+                                            actualGenerationData[areaNumber].push(hourData);
+                                        }
+                                    }
+                                });
+                            }
+                        } else {
+                            console.warn(`Generation data not found for ${baData.BA_Abrev}`);
+                        }
+                    } catch (err) {
+                        console.warn(`Error loading generation data for ${baData.BA_Abrev}:`, err);
+                    }
+                }
 
                 // Calculate bounds for the specific feature to center the map
                 let coordinates;
@@ -309,7 +383,7 @@ const AminDetailPage = () => {
                     feature: feature,
                     bounds: validCoordinates ? { minLng, maxLng, minLat, maxLat } : null
                 });
-                setAreaData(demoData);
+                setAreaData(actualGenerationData); // Use actual generation data instead of demo data
                 setLoading(false);
             } catch (err) {
                 console.error('Error loading data:', err);
@@ -413,7 +487,9 @@ const AminDetailPage = () => {
                     <Area type="monotone" dataKey="nuclear" stackId="1" stroke="#FF6347" fill="#FF6347" name="Nuclear" />
                     <Area type="monotone" dataKey="naturalGas" stackId="1" stroke="#DDA0DD" fill="#DDA0DD" name="Natural Gas" />
                     <Area type="monotone" dataKey="coal" stackId="1" stroke="#696969" fill="#696969" name="Coal" />
-                    <Area type="monotone" dataKey="other" stackId="1" stroke="#F0E68C" fill="#F0E68C" name="Other" />
+                    <Area type="monotone" dataKey="geothermal" stackId="1" stroke="#8B4513" fill="#8B4513" name="Geothermal" />
+                    <Area type="monotone" dataKey="biomass" stackId="1" stroke="#228B22" fill="#228B22" name="Biomass" />
+                    <Area type="monotone" dataKey="battery" stackId="1" stroke="#FF1493" fill="#FF1493" name="Battery" />
                 </AreaChart>
             </ResponsiveContainer>
         );
@@ -446,31 +522,32 @@ const AminDetailPage = () => {
         );
     };
 
-    const renderPriceChart = (areaNumber) => {
-        const data = areaData[areaNumber];
-        if (!data) return null;
+    // LMP Price chart removed as requested
+    // const renderPriceChart = (areaNumber) => {
+    //     const data = areaData[areaNumber];
+    //     if (!data) return null;
 
-        return (
-            <ResponsiveContainer width="100%" height={350}>
-                <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                        dataKey="hour"
-                        label={{ value: 'Hour', position: 'insideBottom', offset: -5 }}
-                        tick={{ fontSize: 12 }}
-                        height={60}
-                    />
-                    <YAxis
-                        label={{ value: '$/MWh', angle: -90, position: 'insideLeft' }}
-                        tick={{ fontSize: 12 }}
-                    />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="lmpPrice" stroke="#059669" strokeWidth={3} name="LMP Price" />
-                </LineChart>
-            </ResponsiveContainer>
-        );
-    };
+    //     return (
+    //         <ResponsiveContainer width="100%" height={350}>
+    //             <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+    //                 <CartesianGrid strokeDasharray="3 3" />
+    //                 <XAxis
+    //                     dataKey="hour"
+    //                     label={{ value: 'Hour', position: 'insideBottom', offset: -5 }}
+    //                     tick={{ fontSize: 12 }}
+    //                     height={60}
+    //                 />
+    //                 <YAxis
+    //                     label={{ value: '$/MWh', angle: -90, position: 'insideLeft' }}
+    //                     tick={{ fontSize: 12 }}
+    //                 />
+    //                 <Tooltip />
+    //                 <Legend />
+    //                 <Line type="monotone" dataKey="lmpPrice" stroke="#059669" strokeWidth={3} name="LMP Price" />
+    //             </LineChart>
+    //         </ResponsiveContainer>
+    //     );
+    // };
 
     const renderInterchangeChart = (areaNumber) => {
         const data = areaData[areaNumber];
@@ -668,13 +745,14 @@ const AminDetailPage = () => {
                             Area {areaNumber} - Energy Data
                         </h2>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
                             {/* Generation by Source */}
                             <div style={{
                                 backgroundColor: 'white',
                                 borderRadius: '12px',
                                 padding: '25px',
-                                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                                width: '100%'
                             }}>
                                 <h3 style={{ margin: '0 0 20px 0', fontSize: '1.25rem', fontWeight: 600 }}>
                                     Electricity Generation by Energy Source
@@ -687,7 +765,8 @@ const AminDetailPage = () => {
                                 backgroundColor: 'white',
                                 borderRadius: '12px',
                                 padding: '25px',
-                                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                                width: '100%'
                             }}>
                                 <h3 style={{ margin: '0 0 20px 0', fontSize: '1.25rem', fontWeight: 600 }}>
                                     Electricity Demand vs Total Generation
@@ -695,25 +774,13 @@ const AminDetailPage = () => {
                                 {renderDemandChart(areaNumber)}
                             </div>
 
-                            {/* LMP Price */}
-                            <div style={{
-                                backgroundColor: 'white',
-                                borderRadius: '12px',
-                                padding: '25px',
-                                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-                            }}>
-                                <h3 style={{ margin: '0 0 20px 0', fontSize: '1.25rem', fontWeight: 600 }}>
-                                    Locational Marginal Price (LMP)
-                                </h3>
-                                {renderPriceChart(areaNumber)}
-                            </div>
-
                             {/* Net Interchange */}
                             <div style={{
                                 backgroundColor: 'white',
                                 borderRadius: '12px',
                                 padding: '25px',
-                                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                                width: '100%'
                             }}>
                                 <h3 style={{ margin: '0 0 20px 0', fontSize: '1.25rem', fontWeight: 600 }}>
                                     Net Electricity Interchange
