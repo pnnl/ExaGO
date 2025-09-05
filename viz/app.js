@@ -807,8 +807,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     }
     // Use relative API path through nginx reverse proxy
     // const apiPath = process.env.ENVIRONMENT === 'prod' ? '/api/data' : 'http://localhost:5000/data';
-    const apiPath = 'http://localhost:5000/data'; // for development
-    // const apiPath = '/api/data'; // for production
+    const apiPath = 'http://3.101.133.249:5000/data'; // for server deployment
 
     try {
       fetch(apiPath, {
