@@ -44,7 +44,8 @@ import { HeatmapLayer } from 'deck.gl';
 import { InvertColorsOff, ShopTwoOutlined } from '@mui/icons-material';
 
 import { getCountyNodes, ExtractFirstTimeSlice, ExtractFlowData, getBarNet, getPoints, getGeneration, getLoad, getContours, getAreas, getZones } from "./src/dataprocess";
-import { LineColor, FlowColor, FillColor, fillGenColumnColor, fillGenColumnColorCap, getVoltageFillColor } from "./src/color"
+import { LineColor, FlowColor, FillColor, fillGenColumnColor, fillGenColumnColorCap, getVoltageFillColor } from "./src/color";
+import * as shapefile from 'shapefile';
 
 // Firebase Authentication imports
 import { AuthProvider, ProtectedRoute, Header, AdminDashboard } from './components/common';
@@ -222,6 +223,262 @@ const maxPd = loaddata.maxPd;
 
 const countymaxPd = countyloaddata.maxPd;
 const countyload = countyloaddata.data;
+
+// Function to parse WKT (Well-Known Text) to GeoJSON coordinates
+function parseWKTLineString(wkt) {
+  try {
+    // Extract coordinates from LINESTRING format
+    const coordsMatch = wkt.match(/LINESTRING\s*\(([^)]+)\)/);
+    if (!coordsMatch) return null;
+    
+    const coordPairs = coordsMatch[1].split(',');
+    const coordinates = coordPairs.map(pair => {
+      const [lng, lat] = pair.trim().split(' ').map(Number);
+      return [lng, lat];
+    });
+    
+    return coordinates;
+  } catch (error) {
+    console.error('Error parsing WKT:', error);
+    return null;
+  }
+}
+
+// Function to load DBF data for additional attributes
+async function loadDBFData(dbfUrl) {
+  try {
+    console.log('Loading DBF data...');
+    
+    const response = await fetch(dbfUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch DBF data: ${response.status}`);
+    }
+    
+    const dbfBuffer = await response.arrayBuffer();
+    const dbfData = [];
+    
+    // Use shapefile library to read DBF
+    const source = shapefile.openDbf(dbfBuffer);
+    
+    let result = await source.read();
+    while (!result.done) {
+      if (result.value) {
+        dbfData.push(result.value);
+      }
+      result = await source.read();
+    }
+    
+    console.log(`Loaded ${dbfData.length} DBF records`);
+    return dbfData;
+    
+  } catch (error) {
+    console.error('Error loading DBF data:', error);
+    return [];
+  }
+}
+
+// Function to load transmission line CSV data
+async function loadTransmissionLineCSV(csvUrl) {
+  try {
+    console.log('Loading transmission line CSV data...');
+    
+    const response = await fetch(csvUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch CSV data: ${response.status}`);
+    }
+    
+    const csvText = await response.text();
+    const lines = csvText.split('\n');
+    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+    
+    const geojson = {
+      type: 'FeatureCollection',
+      features: []
+    };
+    
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      // Parse CSV line (handling quoted values)
+      const values = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let char of line) {
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      values.push(current.trim());
+      
+      if (values.length >= headers.length) {
+        const wkt = values[0].replace(/"/g, '');
+        const coordinates = parseWKTLineString(wkt);
+        
+        if (coordinates && coordinates.length >= 2) {
+          const feature = {
+            type: 'Feature',
+            geometry: {
+              type: 'LineString',
+              coordinates: coordinates
+            },
+            properties: {
+              KV: parseFloat(values[6]) || 230, // kilovolt column
+              NAME: values[7] || `Line_${i}`, // line_name column
+              PF: parseFloat(values[2]) || 0, // pf column (power flow)
+              QF: parseFloat(values[3]) || 0, // qf column (reactive power)
+              CAPACITY: parseFloat(values[1]) || 1000, // flow capacity column
+              SOURCE: values[8] || '', // source column
+              TARGET: values[9] || '', // target column
+              ACTUAL_FLOW: parseFloat(values[10]) || 0, // actual flow column
+              REGION: 'WUS_CAN_SGCA' // Western US, Canada, SGCA
+            }
+          };
+          geojson.features.push(feature);
+        }
+      }
+    }
+    
+    console.log(`Loaded ${geojson.features.length} transmission line features from CSV`);
+    return geojson;
+    
+  } catch (error) {
+    console.error('Error loading transmission line CSV:', error);
+    return { type: 'FeatureCollection', features: [] };
+  }
+}
+
+// Function to load combined transmission line data (CSV geometry + DBF attributes)
+async function loadCombinedTransmissionLineData(csvUrl, dbfUrl) {
+  try {
+    console.log('Loading combined transmission line data (CSV + DBF)...');
+    
+    // Load both CSV and DBF data in parallel
+    const [csvGeojson, dbfData] = await Promise.all([
+      loadTransmissionLineCSV(csvUrl),
+      loadDBFData(dbfUrl)
+    ]);
+    
+    console.log(`CSV loaded: ${csvGeojson.features.length} features`);
+    console.log(`DBF loaded: ${dbfData.length} records`);
+    
+    // Create a map of DBF data for quick lookup
+    const dbfMap = new Map();
+    dbfData.forEach((record, index) => {
+      // Try multiple potential matching fields
+      const keys = [
+        record.LINE_NAME,
+        record.NAME, 
+        record.LINENAME,
+        record.ID,
+        record.OBJECTID,
+        record.VOLT_CLASS,
+        record.STRUCTURE,
+        `record_${index}`
+      ].filter(key => key != null);
+      
+      keys.forEach(key => {
+        if (key) dbfMap.set(String(key).toUpperCase(), record);
+      });
+    });
+    
+    // Enhance CSV features with DBF data
+    let enhancedCount = 0;
+    const enhancedFeatures = csvGeojson.features.map(feature => {
+      const csvName = feature.properties.line_name;
+      const searchKeys = [
+        csvName,
+        feature.properties.LINE_NAME,
+        feature.properties.NAME,
+        feature.properties.srouce, // Note: this might be a typo in the CSV for "source"
+        feature.properties.target,
+        feature.properties.ID,
+        feature.properties.OBJECTID
+      ].filter(key => key != null).map(key => String(key).toUpperCase());
+      
+      let dbfRecord = null;
+      for (const key of searchKeys) {
+        if (dbfMap.has(key)) {
+          dbfRecord = dbfMap.get(key);
+          break;
+        }
+      }
+      
+      if (dbfRecord) {
+        enhancedCount++;
+        // Merge DBF attributes with CSV properties
+        feature.properties = {
+          ...feature.properties,
+          // Add DBF data with prefixed keys to avoid conflicts
+          DBF_VOLTAGE: dbfRecord.VOLTAGE || dbfRecord.KV || dbfRecord.VOLT_CLASS,
+          DBF_CAPACITY: dbfRecord.CAPACITY || dbfRecord.RATING || dbfRecord.MW_RATING,
+          DBF_OWNER: dbfRecord.OWNER || dbfRecord.COMPANY,
+          DBF_TYPE: dbfRecord.TYPE || dbfRecord.LINE_TYPE || dbfRecord.STRUCTURE,
+          DBF_STATUS: dbfRecord.STATUS,
+          DBF_YEAR: dbfRecord.YEAR || dbfRecord.IN_SERVICE,
+          DBF_LENGTH: dbfRecord.LENGTH || dbfRecord.MILES,
+          DBF_CIRCUITS: dbfRecord.CIRCUITS || dbfRecord.CKT_COUNT,
+          // Enhanced capacity - use DBF if CSV doesn't have it or DBF has higher value
+          CAPACITY: Math.max(
+            parseFloat(feature.properties['flow capacity']) || 0,
+            dbfRecord.CAPACITY || dbfRecord.RATING || dbfRecord.MW_RATING || 0
+          ),
+          // Enhanced voltage - prefer DBF if available
+          KV: dbfRecord.VOLTAGE || dbfRecord.KV || dbfRecord.VOLT_CLASS || feature.properties.kilovolt || 230,
+          // Keep original CSV data
+          NAME: feature.properties.line_name,
+          SOURCE: feature.properties.srouce,
+          TARGET: feature.properties.target,
+          ACTUAL_FLOW: parseFloat(feature.properties['actual flow']) || parseFloat(feature.properties.pf) || 0,
+          PF: parseFloat(feature.properties.pf) || 0,
+          QF: parseFloat(feature.properties.qf) || 0,
+          PT: parseFloat(feature.properties.pt) || 0,
+          QT: parseFloat(feature.properties.qt) || 0,
+          DATA_SOURCE: 'CSV+DBF',
+          MATCHED_BY: searchKeys.find(key => dbfMap.has(key))
+        };
+      } else {
+        // Just use CSV data with standardized property names
+        feature.properties = {
+          ...feature.properties,
+          NAME: feature.properties.line_name,
+          SOURCE: feature.properties.srouce,
+          TARGET: feature.properties.target,
+          CAPACITY: parseFloat(feature.properties['flow capacity']) || 1000,
+          KV: parseFloat(feature.properties.kilovolt) || 230,
+          ACTUAL_FLOW: parseFloat(feature.properties['actual flow']) || parseFloat(feature.properties.pf) || 0,
+          PF: parseFloat(feature.properties.pf) || 0,
+          QF: parseFloat(feature.properties.qf) || 0,
+          PT: parseFloat(feature.properties.pt) || 0,
+          QT: parseFloat(feature.properties.qt) || 0,
+          DATA_SOURCE: 'CSV_ONLY'
+        };
+      }
+      
+      return feature;
+    });
+    
+    console.log(`Enhanced ${enhancedCount} out of ${enhancedFeatures.length} features with DBF data`);
+    console.log(`Match rate: ${((enhancedCount / enhancedFeatures.length) * 100).toFixed(1)}%`);
+    
+    return {
+      type: 'FeatureCollection',
+      features: enhancedFeatures
+    };
+    
+  } catch (error) {
+    console.error('Error loading combined transmission line data:', error);
+    // Fallback to CSV only
+    console.log('Falling back to CSV-only data...');
+    return await loadTransmissionLineCSV(csvUrl);
+  }
+}
 
 
 const bboxArray = bbox(data);
@@ -436,6 +693,49 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     .map((county) => (county.properties.countyname)));
 
   const [flowdata, setFlowData] = useState(refflowdata);
+
+  // Extended transmission lines from shapefile
+  const [extendedTransmissionLines, setExtendedTransmissionLines] = useState({ type: 'FeatureCollection', features: [] });
+  const [showExtendedLines, setShowExtendedLines] = useState(false);
+  const [extendedLinesLoaded, setExtendedLinesLoaded] = useState(false);
+
+  // Load extended transmission lines on first toggle
+  const loadExtendedTransmissionLines = async () => {
+    if (!extendedLinesLoaded) {
+      console.log('Loading extended transmission lines with combined CSV+DBF data...');
+      setExtendedLinesLoaded(true);
+      
+      try {
+        // Load transmission lines from both CSV and DBF data
+        const csvUrl = '/data/transmission_line.csv';
+        const dbfUrl = '/data/powerlines_WUS_CAN_sgca.dbf';
+        
+        const transmissionData = await loadCombinedTransmissionLineData(csvUrl, dbfUrl);
+        setExtendedTransmissionLines(transmissionData);
+        console.log(`Loaded ${transmissionData.features.length} extended transmission line features`);
+      } catch (error) {
+        console.error('Failed to load extended transmission lines:', error);
+        // Fallback to CSV only if combined loading fails
+        try {
+          const csvUrl = '/data/transmission_line.csv';
+          const transmissionData = await loadTransmissionLineCSV(csvUrl);
+          setExtendedTransmissionLines(transmissionData);
+          console.log(`Loaded ${transmissionData.features.length} transmission line features (CSV only fallback)`);
+        } catch (fallbackError) {
+          console.error('Failed to load transmission lines even with CSV fallback:', fallbackError);
+        }
+      }
+    }
+  };
+
+  const handleExtendedLinesToggle = (event) => {
+    const isChecked = event.target.checked;
+    setShowExtendedLines(isChecked);
+    
+    if (isChecked && !extendedLinesLoaded) {
+      loadExtendedTransmissionLines();
+    }
+  };
 
   const [genfiltervalue, setGenFilterValue] = useState([gendata.minPg, gendata.maxPg]);
 
@@ -1776,6 +2076,59 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       }
     }),
 
+    // Extended Transmission Lines Layer (CSV data)
+    new GeoJsonLayer({
+      id: 'extended-transmission-lines',
+      data: extendedTransmissionLines,
+      stroked: true,
+      filled: false,
+      pickable: showExtendedLines,
+      visible: showExtendedLines,
+      lineWidthScale: 2,
+      getLineColor: d => {
+        const props = d.properties;
+        const capacity = props.CAPACITY || 1000;
+        const actualFlow = Math.abs(props.ACTUAL_FLOW || props.PF || 0);
+        const loading = capacity > 0 ? (actualFlow / capacity) * 100 : 0;
+        
+        // Color based on loading percentage
+        if (loading > 80) return [255, 0, 0, 200]; // Red for high loading (>80%)
+        else if (loading > 60) return [255, 165, 0, 180]; // Orange for medium-high loading (60-80%)
+        else if (loading > 40) return [255, 255, 0, 160]; // Yellow for medium loading (40-60%)
+        else if (loading > 20) return [0, 255, 0, 140]; // Green for low loading (20-40%)
+        else return [0, 150, 255, 120]; // Blue for very low loading (<20%)
+      },
+      getLineWidth: d => {
+        const kv = d.properties.KV || 230;
+        return Math.max(1, kv / 100); // Scale line width by voltage
+      },
+      onClick: (info) => {
+        if (info.object) {
+          const props = info.object.properties;
+          const capacity = props.CAPACITY || 0;
+          const actualFlow = Math.abs(props.ACTUAL_FLOW || props.PF || 0);
+          const loading = capacity > 0 ? ((actualFlow / capacity) * 100).toFixed(1) : 'N/A';
+          
+          setShowPopup({
+            display: true,
+            name: props.NAME || 'Transmission Line',
+            info: `Voltage: ${props.KV || 'N/A'} kV
+From: ${props.SOURCE || 'N/A'}
+To: ${props.TARGET || 'N/A'}
+Capacity: ${capacity.toFixed(1)} MW
+Flow: ${actualFlow.toFixed(1)} MW
+Loading: ${loading}%
+Region: ${props.REGION || 'WUS/CAN'}`,
+            fid: null,
+            type: 'extended_line'
+          });
+        }
+      },
+      updateTriggers: {
+        data: [extendedTransmissionLines]
+      }
+    }),
+
 
     new ColumnLayer({
       id: 'gen-column',
@@ -2572,6 +2925,26 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
                       />
                     </div>)
                 }
+
+                {/* Extended Transmission Lines Toggle */}
+                <div style={{ marginBottom: "12px" }}>
+                  <Typography component="div" style={{ fontSize: "12px" }}>
+                    <Checkbox 
+                      checked={showExtendedLines} 
+                      onChange={handleExtendedLinesToggle}
+                      style={{ color: "#1976d2", padding: "4px" }} 
+                      size="small"
+                    />
+                    <span style={{ fontSize: "12px", color: "#333" }}>
+                      WUS/Canada Transmission Lines
+                    </span>
+                  </Typography>
+                  {showExtendedLines && !extendedLinesLoaded && (
+                    <Typography style={{ fontSize: "11px", color: "#666", marginLeft: "32px" }}>
+                      Loading transmission lines...
+                    </Typography>
+                  )}
+                </div>
 
                 {netlayeractive && (
                   <div style={{ paddingRight: "20px" }}>
