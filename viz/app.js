@@ -55,6 +55,57 @@ import 'core-js/actual/structured-clone';
 
 ChartJS.register(RadialLinearScale, ArcElement, Tooltip, Legend);
 
+// Add Google Fonts Inter
+const fontLink = document.createElement('link');
+fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap';
+fontLink.rel = 'stylesheet';
+document.head.appendChild(fontLink);
+
+// Apply Inter font to body
+document.body.style.fontFamily = '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif';
+
+// Add custom CSS for chatbot widget styling
+const chatWidgetStyle = document.createElement('style');
+chatWidgetStyle.textContent = `
+  .rcw-conversation-container * {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif !important;
+  }
+  .rcw-header {
+    background: #0047AB !important;
+    font-family: "Inter", sans-serif !important;
+  }
+  .rcw-title {
+    font-family: "Inter", sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+  }
+  .rcw-subtitle {
+    font-family: "Inter", sans-serif !important;
+    font-weight: 400 !important;
+    font-size: 13px !important;
+    opacity: 0.9 !important;
+  }
+  .rcw-message {
+    font-family: "Inter", sans-serif !important;
+  }
+  .rcw-response {
+    font-family: "Inter", sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+  }
+  .rcw-client {
+    font-family: "Inter", sans-serif !important;
+    font-size: 14px !important;
+  }
+  .rcw-send {
+    background: #0047AB !important;
+  }
+  .rcw-picker-btn {
+    font-family: "Inter", sans-serif !important;
+  }
+`;
+document.head.appendChild(chatWidgetStyle);
+
 // Transition interpolators for animation
 const transitionLinearInterpolator = new LinearInterpolator(['bearing']);
 const transitionFlyToInterpolator = new FlyToInterpolator(['zoom']);
@@ -193,6 +244,151 @@ const INITIAL_VIEW_STATE = {
   fitbounds: true
 };
 
+// Enhanced tooltip formatting function
+function getEnhancedTooltip({ object, layer }) {
+  if (!object) return null;
+
+  const style = {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    color: '#333',
+    fontSize: '12px',
+    fontFamily: '"Inter", sans-serif',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+    border: '1px solid rgba(0, 0, 0, 0.1)',
+    maxWidth: '250px',
+    lineHeight: '1.4'
+  };
+
+  let content = '';
+
+  if (layer.id === 'geojson') {
+    if (object.geometry.type === "Point") {
+      content = `
+        <div style="font-weight: 600; margin-bottom: 4px; color: #1976d2;">${object.properties.NAME}</div>
+        <div style="font-size: 11px; color: #666;">Substation</div>
+        <div style="font-size: 11px; color: #666;">KV Levels: ${object.properties.KVlevels?.join(', ') || 'N/A'}</div>
+      `;
+    } else if (object.geometry.type === "LineString") {
+      const loading = Math.abs(object.properties.PF / (object.properties.RATE_A || 10000)) * 100;
+      content = `
+        <div style="font-weight: 600; margin-bottom: 4px; color: #1976d2;">${object.properties.NAME}</div>
+        <div style="font-size: 11px; color: #666;">Transmission Line</div>
+        <div style="font-size: 11px; color: #666;">Voltage: ${object.properties.KV?.toFixed(1)} kV</div>
+        <div style="font-size: 11px; color: #666;">Loading: ${loading.toFixed(1)}%</div>
+      `;
+    }
+  } else if (layer.id === 'gen-column' || layer.id === 'gen-column-cap') {
+    content = `
+      <div style="font-weight: 600; margin-bottom: 4px; color: #2e7d32;">${object.name}</div>
+      <div style="font-size: 11px; color: #666;">Generation Facility</div>
+      <div style="font-size: 11px; color: #666;">Power: ${Math.round(object.Pg * 100) / 100} MW</div>
+      <div style="font-size: 11px; color: #666;">Capacity: ${Math.round(object.Pcap * 100) / 100} MW</div>
+      <div style="font-size: 11px; color: #666;">Fuel: ${object.fuel || 'Unknown'}</div>
+    `;
+  } else if (layer.id === 'WeccGenColumnLayer') {
+    content = `
+      <div style="font-weight: 600; margin-bottom: 4px; color: #2e7d32;">${object.name}</div>
+      <div style="font-size: 11px; color: #666;">WECC Generation</div>
+      <div style="font-size: 11px; color: #666;">Power: ${Math.round(object.Pg * 100) / 100} MW</div>
+      <div style="font-size: 11px; color: #666;">Type: ${object.energyType}</div>
+      <div style="font-size: 11px; color: #666;">Area: ${object.ba}</div>
+    `;
+  } else if (layer.id === 'WeccLayer') {
+    const properties = object.properties;
+    content = `
+      <div style="font-weight: 600; margin-bottom: 4px; color: #1565c0;">${properties.BA_Abrev || 'WECC Area'}</div>
+      <div style="font-size: 11px; color: #666; margin-bottom: 2px;">${properties.BA_Name || ''}</div>
+      <div style="font-size: 11px; color: #666;">FID: ${properties.FID || 'N/A'}</div>
+      ${properties.Area_Numbers && properties.Area_Numbers.length > 0 ? 
+        `<div style="font-size: 11px; color: #666;">Area No.: ${properties.Area_Numbers.join(', ')}</div>` : 
+        ''
+      }
+      <div style="font-size: 10px; color: #999; margin-top: 4px; font-style: italic;">Click for details →</div>
+    `;
+  } else if (layer.id === 'PolygonLayerload' || layer.id === 'PolygonLayer2') {
+    content = `
+      <div style="font-weight: 600; margin-bottom: 4px; color: #d32f2f;">${object.properties.NAME}</div>
+      <div style="font-size: 11px; color: #666;">Load Loss: ${object.properties.Pd?.toFixed(2)} MW</div>
+      <div style="font-size: 11px; color: #666;">County: ${object.properties.countyname || 'Unknown'}</div>
+    `;
+  } else if (layer.id === 'AreaLayer') {
+    content = `
+      <div style="font-weight: 600; margin-bottom: 4px; color: #7b1fa2;">Area ${object.properties.name}</div>
+      <div style="font-size: 11px; color: #666;">Control Area</div>
+    `;
+  } else if (layer.id === 'ZoneLayer') {
+    content = `
+      <div style="font-weight: 600; margin-bottom: 4px; color: #f57c00;">Zone ${object.properties.name}</div>
+      <div style="font-size: 11px; color: #666;">Load Zone</div>
+    `;
+  }
+
+  return {
+    html: content,
+    style: style
+  };
+}
+
+// Custom Header Component with Logos
+function WestmapHeader() {
+  return (
+    <div style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: '60px',
+      background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '0 20px',
+      zIndex: 1001,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      fontFamily: '"Inter", sans-serif'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+        <img 
+          src="/images/westmap_logo.png" 
+          alt="Westmap Logo" 
+          style={{ height: '40px', width: 'auto', borderRadius: '4px' }}
+          onError={(e) => {
+            e.target.style.display = 'none';
+          }}
+        />
+        <h1 style={{ 
+          color: 'white', 
+          margin: 0, 
+          fontSize: '24px', 
+          fontWeight: '600',
+          letterSpacing: '-0.02em'
+        }}>
+          Westmap
+        </h1>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <img 
+          src="/images/gridbee_logo.png" 
+          alt="GridBee Logo" 
+          style={{ height: '35px', width: 'auto', borderRadius: '4px' }}
+          onError={(e) => {
+            e.target.style.display = 'none';
+          }}
+        />
+        <span style={{ 
+          color: 'rgba(255,255,255,0.9)', 
+          fontSize: '14px', 
+          fontWeight: '500' 
+        }}>
+          Powered by GridBee AI
+        </span>
+      </div>
+    </div>
+  );
+}
+
 
 function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, mapStyle = MAP_STYLE }) {
 
@@ -207,7 +403,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
   const [data, setData] = useState(refdata);
 
   //chat output message
-  const [ouputMes, setOutputMes] = useState("Welcome to Westmap.");
+  const [ouputMes, setOutputMes] = useState("Welcome to Westmap - Your intelligent power grid assistant.");
 
   //select widgets values
   const [nameSelectItems, setNameSelectItems] = useState([]);
@@ -719,16 +915,6 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       infoLines.push('');
       infoLines.push('Know more →');
 
-      // if (properties.Shape_Leng) {
-      //   infoLines.push(`Shape Length: ${Number(properties.Shape_Leng).toLocaleString()} units`);
-      // }
-      // if (properties.Shape__Area) {
-      //   infoLines.push(`Shape Area: ${Number(properties.Shape__Area).toLocaleString()} units`);
-      // }
-      // if (properties.GlobalID) {
-      //   infoLines.push(`Global ID: ${properties.GlobalID}`);
-      // }
-
       popup.info = infoLines.join('\n');
       setShowPopup(showPopup => ({ ...showPopup, ...popup }));
     }
@@ -963,7 +1149,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
   useEffect(() => {
 
     addResponseMessage(`${ouputMes}`);
-    if (ouputMes === "Welcome to Westmap." || ouputMes === '') return;
+    if (ouputMes === "Welcome to Westmap - Your intelligent power grid assistant." || ouputMes === '') return;
     toggleMsgLoader(); // close loading 
   }, [ouputMes]);
 
@@ -1832,18 +2018,18 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       }
     }),
 
-    // WECC Generation Power Column Layer - Multiple bars per location
+    // WECC Generation Power Column Layer - Multiple bars per location with reduced height
     new ColumnLayer({
       id: 'WeccGenColumnLayer',
       data: weccColumnData,
       diskResolution: 50,
       radius: 5000, // Same as existing generation
-      elevationScale: 50, // Same as existing generation  
+      elevationScale: 33, // Reduced from 50 to 33 (2/3 of original)
       pickable: weccGenLayerActive,
       visible: weccGenLayerActive,
       getPosition: d => d.coordinates,
       getFillColor: fillWeccColumnColor, // Use our custom color function
-      getElevation: d => d.Pg * 5, // Same pattern as existing generation
+      getElevation: d => d.Pg * 3.33, // Reduced from d.Pg * 5 to d.Pg * 3.33 (2/3 of original)
       onClick: zoomToData, // Same click handler as existing generation
 
       getFilterValue: getWeccColumnFilterValue,
@@ -2173,14 +2359,15 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
 
   return (
     <>
-      <Header />
+      <WestmapHeader />
       <DeckGL
         ref={deckRef}
         layers={layers}
         initialViewState={initialViewState}
         controller={true}
-        getTooltip={({ object }) => object && object.NAME}
+        getTooltip={getEnhancedTooltip}
         ContextProvider={MapContext.Provider}
+        style={{ marginTop: '60px' }}
       >
 
 
@@ -2197,11 +2384,43 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
         <br></br><br></br>
         <NavigationControl />
 
-        <div style={{ position: "absolute", top: 100, left: 0, "width": 30, background: "#fff", color: " #6b6b76", zIndex: 1000 }}>
-          <HomeOutlinedIcon fontSize="medium" onClick={GoHome}></HomeOutlinedIcon>
-          <br></br>
-          {<ThreeSixtyOutlinedIcon fontSize="large" onClick={rotateCamera}>Rotate</ThreeSixtyOutlinedIcon>}
-          <br></br>
+        <div style={{ 
+          position: "absolute", 
+          top: 160, 
+          left: 10, 
+          width: 40, 
+          background: "rgba(255,255,255,0.95)", 
+          color: "#1976d2", 
+          zIndex: 1000,
+          borderRadius: "8px",
+          padding: "8px 4px",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+          backdropFilter: "blur(4px)"
+        }}>
+          <div style={{ 
+            display: "flex", 
+            flexDirection: "column", 
+            alignItems: "center", 
+            gap: "12px",
+            cursor: "pointer"
+          }}>
+            <HomeOutlinedIcon 
+              fontSize="medium" 
+              onClick={GoHome}
+              style={{
+                transition: "all 0.2s ease",
+                ":hover": { transform: "scale(1.1)" }
+              }}
+            />
+            <ThreeSixtyOutlinedIcon 
+              fontSize="large" 
+              onClick={rotateCamera}
+              style={{
+                transition: "all 0.2s ease",
+                ":hover": { transform: "scale(1.1)" }
+              }}
+            />
+          </div>
         </div>
 
 
@@ -2215,8 +2434,11 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
               zIndex: 3,
               background: "white",
               opacity: 1,
-              fontSize: "11px",
-              cursor: showPopup.type === 'wecc' ? 'pointer' : 'default'
+              fontSize: "12px",
+              fontFamily: '"Inter", sans-serif',
+              cursor: showPopup.type === 'wecc' ? 'pointer' : 'default',
+              borderRadius: "6px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
             }}
               longitude={initialViewState.longitude}
               latitude={initialViewState.latitude}
@@ -2226,7 +2448,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
               <div
                 onClick={showPopup.type === 'wecc' ? handlePopupClick : undefined}
                 style={{
-                  padding: showPopup.type === 'wecc' ? '4px' : '0',
+                  padding: showPopup.type === 'wecc' ? '8px' : '4px',
                   borderRadius: showPopup.type === 'wecc' ? '4px' : '0',
                   transition: 'background-color 0.2s ease'
                 }}
@@ -2241,8 +2463,8 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
                   }
                 }}
               >
-                <h3>{showPopup.name}</h3>
-                <h4 style={{ whiteSpace: 'pre-line' }}>{showPopup.info}</h4>
+                <h3 style={{ margin: "0 0 4px 0", fontSize: "14px", fontWeight: "600" }}>{showPopup.name}</h3>
+                <h4 style={{ whiteSpace: 'pre-line', margin: 0, fontSize: "11px", fontWeight: "400", lineHeight: "1.4" }}>{showPopup.info}</h4>
               </div>
             </Popup>
           )
@@ -2253,28 +2475,92 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
 
       <Widget
         handleNewUserMessage={handleUserInput}
-        title="Westmap Chatbot"
-        subtitle="What do you want to know about this power grid network?"
+        title="GridBee - Power Grid Assistant"
+        subtitle="Ask me About Western Interconnection"
+        launcher={(handleToggle) => (
+          <div 
+            onClick={handleToggle}
+            style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              background: '#0047AB',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 16px rgba(0, 71, 171, 0.3)',
+              transition: 'all 0.3s ease',
+              border: '2px solid white',
+              fontFamily: '"Inter", sans-serif'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'scale(1.1)';
+              e.target.style.boxShadow = '0 6px 20px rgba(0, 71, 171, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'scale(1)';
+              e.target.style.boxShadow = '0 4px 16px rgba(0, 71, 171, 0.3)';
+            }}
+          >
+            <img 
+              src="/images/gridbee_logo.png" 
+              alt="GridBee" 
+              style={{ 
+                width: '40px', 
+                height: '40px', 
+                borderRadius: '50%',
+                objectFit: 'cover'
+              }}
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.parentElement.innerHTML = '<span style="color: white; font-size: 24px; font-family: \"Inter\", sans-serif;">🤖</span>';
+              }}
+            />
+          </div>
+        )}
       />
 
-      <div style={{ position: "absolute", top: 0, right: 0, "width": 250, background: "#fff", padding: "12px 12px", color: " #6b6b76", zIndex: 1000 }}>
+      <div style={{ 
+        position: "absolute", 
+        top: 60, 
+        right: 0, 
+        width: 280, 
+        background: "rgba(255,255,255,0.95)", 
+        padding: "16px", 
+        color: "#333", 
+        zIndex: 1000,
+        fontFamily: '"Inter", sans-serif',
+        maxHeight: "calc(100vh - 60px)",
+        overflowY: "auto",
+        backdropFilter: "blur(8px)",
+        borderLeft: "1px solid rgba(0,0,0,0.1)"
+      }}>
 
-        <div style={{ width: 300 }}>
-          <Accordion defaultExpanded={true}>
-            <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
+        <div style={{ width: '100%' }}>
+          <Accordion defaultExpanded={true} style={{ marginBottom: "8px" }}>
+            <AccordionSummary style={{ 
+              height: "20px", 
+              minHeight: "40px", 
+              paddingRight: "20px", 
+              paddingLeft: "0px",
+              background: "rgba(25, 118, 210, 0.05)"
+            }}
               expandIcon={<ArrowDropDownIcon />}>
-              <Typography> <Checkbox checked={netlayeractive} style={{ color: "primary" }} onChange={handleNetLayerChange} />Net</Typography>
+              <Typography style={{ fontSize: "14px", fontWeight: "500" }}> 
+                <Checkbox checked={netlayeractive} style={{ color: "#1976d2" }} onChange={handleNetLayerChange} />
+                Network
+              </Typography>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails style={{ padding: "12px 16px" }}>
               <Typography component="div">
                 {netlayeractive &&
                   (
-                    <div style={{ paddingRight: "40px" }}>
-
-                      {/* <text> Voltage Level</text>
-                      <br></br> */}
+                    <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
+                      <Typography style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
+                        Voltage Level (kV)
+                      </Typography>
                       <Slider
-
                         value={netfiltervalue}
                         valueLabelDisplay="auto"
                         onChange={handleNetRangeFilterChange}
@@ -2282,33 +2568,49 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
                         step={100}
                         min={0}
                         max={800}
-                      >
-                      </Slider>
+                        style={{ color: "#1976d2" }}
+                      />
                     </div>)
                 }
 
-                {netlayeractive && (<div style={{ paddingRight: "40px" }}><Multiselect
-                  defaultValue={busNameSelectItems}
-                  data={busNameItems}
-                  placeholder={'Search for buses'}
-                  onChange={handleBusMultiselect}
-                /></div>)}
+                {netlayeractive && (
+                  <div style={{ paddingRight: "20px" }}>
+                    <Multiselect
+                      defaultValue={busNameSelectItems}
+                      data={busNameItems}
+                      placeholder={'Search for buses'}
+                      onChange={handleBusMultiselect}
+                    />
+                  </div>
+                )}
 
               </Typography>
             </AccordionDetails>
           </Accordion>
-          <Accordion defaultExpanded={true}>
-            <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
+
+          <Accordion defaultExpanded={true} style={{ marginBottom: "8px" }}>
+            <AccordionSummary style={{ 
+              height: "20px", 
+              minHeight: "40px", 
+              paddingRight: "20px", 
+              paddingLeft: "0px",
+              background: "rgba(25, 118, 210, 0.05)"
+            }}
               expandIcon={<ArrowDropDownIcon />}>
-              <Typography> <Checkbox checked={flowlayeractive} style={{ color: "primary" }} onChange={handleFlowLayerChange} />Flow
+              <Typography style={{ fontSize: "14px", fontWeight: "500" }}> 
+                <Checkbox checked={flowlayeractive} style={{ color: "#1976d2" }} onChange={handleFlowLayerChange} />
+                Power Flow
               </Typography>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails style={{ padding: "12px 16px" }}>
               <Typography component="div">
                 {flowlayeractive && (
-                  <div style={{ paddingRight: "40px" }}>
+                  <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
+                    <Typography style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
+                      Loading (%)
+                    </Typography>
                     <Slider
-                      style={{ padding: 2 }}
+                      style={{ color: "#1976d2" }}
                       value={flowfiltervalue}
                       valueLabelDisplay="auto"
                       onChange={handleFlowRangeFilterChange}
@@ -2316,42 +2618,55 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
                       step={10}
                       min={0}
                       max={120}
-                    >
-                    </Slider></div>)
+                    />
+                  </div>)
                 }
 
-                {flowlayeractive && (<div style={{ paddingRight: "40px" }}><Multiselect
-                  defaultValue={lineNameSelectItems}
-                  data={lineNameItems}
-                  placeholder={'Search for transmission lines'}
-                  onChange={handleLineMultiselect}
-                /></div>)}
+                {flowlayeractive && (
+                  <div style={{ paddingRight: "20px" }}>
+                    <Multiselect
+                      defaultValue={lineNameSelectItems}
+                      data={lineNameItems}
+                      placeholder={'Search for transmission lines'}
+                      onChange={handleLineMultiselect}
+                    />
+                  </div>
+                )}
 
               </Typography>
             </AccordionDetails>
           </Accordion>
 
-          <Accordion style={{ paddingBottom: "10px" }} defaultExpanded={false}>
-            <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
+          <Accordion style={{ paddingBottom: "8px", marginBottom: "8px" }} defaultExpanded={false}>
+            <AccordionSummary style={{ 
+              height: "20px", 
+              minHeight: "40px", 
+              paddingRight: "20px", 
+              paddingLeft: "0px",
+              background: "rgba(46, 125, 50, 0.05)"
+            }}
               expandIcon={<ArrowDropDownIcon />}>
-              <Typography>
-                <Checkbox checked={genlayeractive} style={{ color: "primary" }} onChange={handleGenLayerChange} />Generation Power
-
-
+              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
+                <Checkbox checked={genlayeractive} style={{ color: "#2e7d32" }} onChange={handleGenLayerChange} />
+                Generation Power
               </Typography>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails style={{ padding: "12px 16px" }}>
               <Typography component="div">
                 {genlayeractive &&
-                  (<div style={{ paddingRight: "40px" }}>
-                    <Checkbox checked={genlayercapactive} style={{ color: "primary" }} onChange={handleGenLayerCapChange} />Generation Capacity
+                  (<div style={{ paddingRight: "20px", marginBottom: "12px" }}>
+                    <Checkbox checked={genlayercapactive} style={{ color: "#2e7d32" }} onChange={handleGenLayerCapChange} />
+                    <span style={{ fontSize: "12px" }}>Show Generation Capacity</span>
                   </div>)
                 }
 
                 {genlayeractive &&
-                  (<div style={{ paddingRight: "40px" }}>
+                  (<div style={{ paddingRight: "20px", marginBottom: "12px" }}>
+                    <Typography style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
+                      Power Range (MW)
+                    </Typography>
                     <Slider
-                      style={{ padding: 2 }}
+                      style={{ color: "#2e7d32" }}
                       value={genfiltervalue}
                       valueLabelDisplay="auto"
                       onChange={handleGenRangeFilterChange}
@@ -2359,26 +2674,49 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
                       step={100}
                       min={gendata.minPg}
                       max={gendata.maxPg + 10}
-                    >
-                    </Slider></div>)
+                    />
+                  </div>)
                 }
 
 
-                {genlayeractive && (<div style={{ paddingRight: "40px" }}><Multiselect
-                  defaultValue={nameSelectItems}
-                  data={nameItems}
-                  placeholder={'Search for generations'}
-                  onChange={handleGenMultiselect}
-                /></div>)}
+                {genlayeractive && (
+                  <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
+                    <Multiselect
+                      defaultValue={nameSelectItems}
+                      data={nameItems}
+                      placeholder={'Search for generators'}
+                      onChange={handleGenMultiselect}
+                    />
+                  </div>
+                )}
 
                 {
                   genlayeractive && (
-                    <div style={{ width: 300, height: 300, transform: "translate(-1.5vw, 10px)" }}>
+                    <div style={{ width: 260, height: 280, transform: "translate(-8px, 0px)" }}>
                       <Doughnut data={chartdata}
                         options={{
+                          maintainAspectRatio: false,
                           plugins: {
                             legend: {
-                              onClick: handleDoughnutClick
+                              position: 'bottom',
+                              onClick: handleDoughnutClick,
+                              labels: {
+                                boxWidth: 12,
+                                padding: 6,
+                                font: {
+                                  size: 10,
+                                  family: '"Inter", sans-serif'
+                                }
+                              }
+                            },
+                            title: {
+                              display: true,
+                              text: 'Generation Mix',
+                              font: {
+                                size: 12,
+                                family: '"Inter", sans-serif',
+                                weight: '600'
+                              }
                             }
                           }
                         }}
@@ -2391,35 +2729,50 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
             </AccordionDetails>
           </Accordion>
 
-          <Accordion defaultExpanded={false}>
-            <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
+          <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
+            <AccordionSummary style={{ 
+              height: "20px", 
+              minHeight: "40px", 
+              paddingRight: "20px", 
+              paddingLeft: "0px",
+              background: "rgba(211, 47, 47, 0.05)"
+            }}
               expandIcon={<ArrowDropDownIcon />}>
-              <Typography>
-                <Checkbox checked={loadlayeractive} style={{ color: "primary" }} onChange={handleLoadLayerChange} />Load loss
+              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
+                <Checkbox checked={loadlayeractive} style={{ color: "#d32f2f" }} onChange={handleLoadLayerChange} />
+                Load Loss
               </Typography>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails style={{ padding: "12px 16px" }}>
               <Typography component="div">
-                {loadlayeractive && (<div style={{ paddingRight: "40px" }}>
-                  <Slider
-                    style={{ padding: 2 }}
-                    value={loadfiltervalue}
-                    valueLabelDisplay="auto"
-                    onChange={handleLoadRangeFilterChange}
-                    getAriaValueText={valuetext}
-                    step={100}
-                    min={0}
-                    max={countyloaddata.maxPd + 10}
-                  >
-                  </Slider></div>)
+                {loadlayeractive && (
+                  <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
+                    <Typography style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
+                      Load Range (MW)
+                    </Typography>
+                    <Slider
+                      style={{ color: "#d32f2f" }}
+                      value={loadfiltervalue}
+                      valueLabelDisplay="auto"
+                      onChange={handleLoadRangeFilterChange}
+                      getAriaValueText={valuetext}
+                      step={100}
+                      min={0}
+                      max={countyloaddata.maxPd + 10}
+                    />
+                  </div>)
                 }
 
-                {loadlayeractive && (<div style={{ paddingRight: "40px" }}><Multiselect
-                  defaultValue={countyNameSelectItems}
-                  data={countyNameItems}
-                  placeholder={'Search for counties'}
-                  onChange={handleCountyMultiselect}
-                /></div>)}
+                {loadlayeractive && (
+                  <div style={{ paddingRight: "20px" }}>
+                    <Multiselect
+                      defaultValue={countyNameSelectItems}
+                      data={countyNameItems}
+                      placeholder={'Search for counties'}
+                      onChange={handleCountyMultiselect}
+                    />
+                  </div>
+                )}
 
 
               </Typography>
@@ -2427,81 +2780,121 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
           </Accordion>
 
 
-          <Accordion defaultExpanded={false}>
-            <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
+          <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
+            <AccordionSummary style={{ 
+              height: "20px", 
+              minHeight: "40px", 
+              paddingRight: "20px", 
+              paddingLeft: "0px",
+              background: "rgba(245, 124, 0, 0.05)"
+            }}
               expandIcon={<ArrowDropDownIcon />}>
-              <Typography>
-                <Checkbox checked={voltagelayeractive} style={{ color: "primary" }} onChange={handleVoltageLayerChange} />Voltage
+              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
+                <Checkbox checked={voltagelayeractive} style={{ color: "#f57c00" }} onChange={handleVoltageLayerChange} />
+                Voltage
               </Typography>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails style={{ padding: "12px 16px" }}>
               <Typography component="div">
-                {voltagelayeractive && (<div style={{ paddingRight: "40px" }}>
-                  <Slider
-                    style={{ padding: 2 }}
-                    value={voltagefiltervalue}
-                    valueLabelDisplay="auto"
-                    onChange={handleVoltageRangeFilterChange}
-                    getAriaValueText={valuetext}
-                    step={0.01}
-                    min={0.89}
-                    max={1.11}
-                  >
-                  </Slider></div>)
+                {voltagelayeractive && (
+                  <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
+                    <Typography style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
+                      Voltage Range (p.u.)
+                    </Typography>
+                    <Slider
+                      style={{ color: "#f57c00" }}
+                      value={voltagefiltervalue}
+                      valueLabelDisplay="auto"
+                      onChange={handleVoltageRangeFilterChange}
+                      getAriaValueText={valuetext}
+                      step={0.01}
+                      min={0.89}
+                      max={1.11}
+                    />
+                  </div>)
                 }
 
-                {voltagelayeractive && (<div style={{ paddingRight: "40px" }}><Multiselect
-                  defaultValue={countyNameSelectItems}
-                  data={countyNameItems}
-                  placeholder={'Search for counties'}
-                  onChange={handleCountyMultiselect}
-                /></div>)}
+                {voltagelayeractive && (
+                  <div style={{ paddingRight: "20px" }}>
+                    <Multiselect
+                      defaultValue={countyNameSelectItems}
+                      data={countyNameItems}
+                      placeholder={'Search for counties'}
+                      onChange={handleCountyMultiselect}
+                    />
+                  </div>
+                )}
 
 
               </Typography>
             </AccordionDetails>
           </Accordion>
 
-          <Accordion defaultExpanded={false}>
-            <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
+          <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
+            <AccordionSummary style={{ 
+              height: "20px", 
+              minHeight: "40px", 
+              paddingRight: "20px", 
+              paddingLeft: "0px",
+              background: "rgba(123, 31, 162, 0.05)"
+            }}
               expandIcon={<ArrowDropDownIcon />}>
-              <Typography>
-                <Checkbox checked={arealayeractive} style={{ color: "primary" }} onChange={handleAreaLayerChange} />Show Areas
+              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
+                <Checkbox checked={arealayeractive} style={{ color: "#7b1fa2" }} onChange={handleAreaLayerChange} />
+                Control Areas
               </Typography>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails style={{ padding: "12px 16px" }}>
               <Typography component="div">
-                {arealayeractive && (<div style={{ paddingRight: "40px" }}><Multiselect
-                  defaultValue={areaNameSelectItems}
-                  data={areaNameItems}
-                  placeholder={'Search for areas'}
-                  onChange={handleAreaMultiselect}
-                /></div>)}
+                {arealayeractive && (
+                  <div style={{ paddingRight: "20px" }}>
+                    <Multiselect
+                      defaultValue={areaNameSelectItems}
+                      data={areaNameItems}
+                      placeholder={'Search for areas'}
+                      onChange={handleAreaMultiselect}
+                    />
+                  </div>
+                )}
               </Typography>
             </AccordionDetails>
           </Accordion>
 
-          <Accordion defaultExpanded={false}>
-            <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
+          <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
+            <AccordionSummary style={{ 
+              height: "20px", 
+              minHeight: "40px", 
+              paddingRight: "20px", 
+              paddingLeft: "0px",
+              background: "rgba(0, 0, 0, 0.05)"
+            }}
               expandIcon={<ArrowDropDownIcon />}>
-              <Typography>
-                Map Background
+              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
+                Map Style
               </Typography>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails style={{ padding: "12px 16px" }}>
               <Typography component="div">
-                <div style={{ paddingRight: "40px" }}>
+                <div style={{ paddingRight: "20px" }}>
                   <select
                     value={mapStyleSelection}
                     onChange={(e) => setMapStyle(e.target.value)}
-                    style={{ width: '100%', padding: '5px', marginBottom: '10px' }}
+                    style={{ 
+                      width: '100%', 
+                      padding: '8px 12px', 
+                      marginBottom: '10px',
+                      borderRadius: '4px',
+                      border: '1px solid #ddd',
+                      fontFamily: '"Inter", sans-serif',
+                      fontSize: '12px'
+                    }}
                   >
-                    <option value="osm">OpenStreetMap (Free)</option>
-                    <option value="satellite">Satellite View (Free)</option>
-                    <option value="terrain">Terrain (Free)</option>
-                    <option value="pos">Positron Light (Free)</option>
-                    <option value="pos_no_label">Positron No Labels (Free)</option>
-                    <option value="dark">Dark Matter (Free)</option>
+                    <option value="osm">OpenStreetMap</option>
+                    <option value="satellite">Satellite View</option>
+                    <option value="terrain">Terrain</option>
+                    <option value="pos">Light Theme</option>
+                    <option value="pos_no_label">Light (No Labels)</option>
+                    <option value="dark">Dark Theme</option>
                     <option value="none">No Background</option>
                   </select>
                 </div>
@@ -2509,57 +2902,85 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
             </AccordionDetails>
           </Accordion>
 
-          <Accordion defaultExpanded={false}>
-            <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
+          <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
+            <AccordionSummary style={{ 
+              height: "20px", 
+              minHeight: "40px", 
+              paddingRight: "20px", 
+              paddingLeft: "0px",
+              background: "rgba(245, 124, 0, 0.05)"
+            }}
               expandIcon={<ArrowDropDownIcon />}>
-              <Typography>
-                <Checkbox checked={zonelayeractive} style={{ color: "primary" }} onChange={handleZoneLayerChange} />Show Zones
+              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
+                <Checkbox checked={zonelayeractive} style={{ color: "#f57c00" }} onChange={handleZoneLayerChange} />
+                Load Zones
               </Typography>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails style={{ padding: "12px 16px" }}>
               <Typography component="div">
-                {zonelayeractive && (<div style={{ paddingRight: "40px" }}><Multiselect
-                  defaultValue={zoneNameSelectItems}
-                  data={zoneNameItems}
-                  placeholder={'Search for zones'}
-                  onChange={handleZoneMultiselect}
-                /></div>)}
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-
-          <Accordion defaultExpanded={false}>
-            <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
-              expandIcon={<ArrowDropDownIcon />}>
-              <Typography>
-                <Checkbox checked={wecclayeractive} style={{ color: "primary" }} onChange={handleWeccLayerChange} />Show WECC Data
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography component="div">
-                {wecclayeractive && weccGeojsonData && (
-                  <div style={{ paddingRight: "40px", fontSize: "12px", color: "#666" }}>
-                    WECC Balancing Authorities overlay showing {weccGeojsonData.features?.length || 0} regions.
-                    Click on any region for details.
+                {zonelayeractive && (
+                  <div style={{ paddingRight: "20px" }}>
+                    <Multiselect
+                      defaultValue={zoneNameSelectItems}
+                      data={zoneNameItems}
+                      placeholder={'Search for zones'}
+                      onChange={handleZoneMultiselect}
+                    />
                   </div>
                 )}
               </Typography>
             </AccordionDetails>
           </Accordion>
 
-          <Accordion defaultExpanded={false}>
-            <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }}
+          <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
+            <AccordionSummary style={{ 
+              height: "20px", 
+              minHeight: "40px", 
+              paddingRight: "20px", 
+              paddingLeft: "0px",
+              background: "rgba(21, 101, 192, 0.05)"
+            }}
               expandIcon={<ArrowDropDownIcon />}>
-              <Typography>
-                <Checkbox checked={weccGenLayerActive} style={{ color: "primary" }} onChange={handleWeccGenLayerChange} />WECC Generation Power
+              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
+                <Checkbox checked={wecclayeractive} style={{ color: "#1565c0" }} onChange={handleWeccLayerChange} />
+                WECC Regions
               </Typography>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails style={{ padding: "12px 16px" }}>
+              <Typography component="div">
+                {wecclayeractive && weccGeojsonData && (
+                  <div style={{ paddingRight: "20px", fontSize: "11px", color: "#666", lineHeight: "1.4" }}>
+                    WECC Balancing Authorities overlay showing {weccGeojsonData.features?.length || 0} regions.
+                    Click on any region for detailed information.
+                  </div>
+                )}
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
+            <AccordionSummary style={{ 
+              height: "20px", 
+              minHeight: "40px", 
+              paddingRight: "20px", 
+              paddingLeft: "0px",
+              background: "rgba(46, 125, 50, 0.05)"
+            }}
+              expandIcon={<ArrowDropDownIcon />}>
+              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
+                <Checkbox checked={weccGenLayerActive} style={{ color: "#2e7d32" }} onChange={handleWeccGenLayerChange} />
+                WECC Generation
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails style={{ padding: "12px 16px" }}>
               <Typography component="div">
                 {weccGenLayerActive && weccGenData && (
-                  <div style={{ paddingRight: "40px" }}>
+                  <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
+                    <Typography style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
+                      Total Capacity (MW)
+                    </Typography>
                     <Slider
-                      style={{ padding: 2 }}
+                      style={{ color: "#2e7d32" }}
                       value={weccGenFilter}
                       valueLabelDisplay="auto"
                       onChange={handleWeccGenRangeFilterChange}
@@ -2572,18 +2993,18 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
                 )}
 
                 {weccGenLayerActive && weccGenNameItems.length > 0 && (
-                  <div style={{ paddingRight: "40px" }}>
+                  <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
                     <Multiselect
                       defaultValue={weccGenSelectItems}
                       data={weccGenNameItems}
-                      placeholder={'Search based on Area Name'}
+                      placeholder={'Filter by Balancing Authority'}
                       onChange={handleWeccGenMultiselect}
                     />
                   </div>
                 )}
 
                 {weccGenLayerActive && weccGenChartData && (
-                  <div style={{ width: 280, height: 250, transform: "translate(-1.2vw, 10px)" }}>
+                  <div style={{ width: 260, height: 250, transform: "translate(-8px, 0px)" }}>
                     <Doughnut data={weccGenChartData}
                       options={{
                         maintainAspectRatio: false,
@@ -2593,9 +3014,10 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
                             onClick: handleWeccDoughnutClick,
                             labels: {
                               boxWidth: 12,
-                              padding: 8,
+                              padding: 6,
                               font: {
-                                size: 10
+                                size: 10,
+                                family: '"Inter", sans-serif'
                               }
                             }
                           },
@@ -2603,7 +3025,9 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
                             display: true,
                             text: 'WECC Generation Mix (MW)',
                             font: {
-                              size: 12
+                              size: 12,
+                              family: '"Inter", sans-serif',
+                              weight: '600'
                             }
                           }
                         }
@@ -2669,13 +3093,10 @@ export default function App() {
           />
 
           {/* Manish route */}
+     
           <Route
             path="/manish"
-            element={
-              <ProtectedRoute>
-                <MainApp />
-              </ProtectedRoute>
-            }
+            element={<MainApp />}
           />
           <Route
             path="/manish/:fid"
@@ -2693,6 +3114,7 @@ export default function App() {
       </Router>
     </AuthProvider>
   );
-} const rootElement = document.getElementById("root");
+} 
 
+const rootElement = document.getElementById("root");
 createRoot(rootElement).render(<App />)
