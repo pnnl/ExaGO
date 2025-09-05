@@ -5,7 +5,7 @@ import { GeoJsonLayer } from '@deck.gl/layers';
 import { MapView } from '@deck.gl/core';
 import { StaticMap } from 'react-map-gl';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar } from 'recharts';
 
 // Mapbox token
 const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoidXNtYXJ0LXdlc3RtYXAiLCJhIjoiY2tvazV6MzU2MDE4YjJ0bXd5ZDcwdm16ciJ9.q2BIGvGPAJjw1X9CdvyKSA';
@@ -33,12 +33,45 @@ const OSM_MAP_STYLE = {
     ]
 };
 
+// Case study configurations
+const CASE_STUDIES = [
+    {
+        id: 'base',
+        name: 'Base Case',
+        description: 'Current operational baseline scenario',
+        color: '#3B82F6',
+        icon: '📊'
+    },
+    {
+        id: 'temporal',
+        name: 'Data Center Temporal Flexibility',
+        description: 'Time-shifted data center operations',
+        color: '#10B981',
+        icon: '⏰'
+    },
+    {
+        id: 'spatial',
+        name: 'Data Center Spatial Flexibility',
+        description: 'Geographic load distribution optimization',
+        color: '#F59E0B',
+        icon: '🌐'
+    },
+    {
+        id: 'comparison',
+        name: 'Comparison',
+        description: 'Side-by-side analysis of all scenarios',
+        color: '#8B5CF6',
+        icon: '📈'
+    }
+];
+
 const AminDetailPage = () => {
     const { fid } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
     const [balancingAuthority, setBalancingAuthority] = useState(null);
     const [areaData, setAreaData] = useState({});
+    const [selectedCaseStudy, setSelectedCaseStudy] = useState('base');
     const [viewState, setViewState] = useState({
         longitude: -116.5,
         latitude: 37.5,
@@ -51,30 +84,170 @@ const AminDetailPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Add CSS to override recharts legend positioning
+    // Load Google Fonts Inter
+    useEffect(() => {
+        const link = document.createElement('link');
+        link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap';
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+
+        return () => {
+            if (document.head.contains(link)) {
+                document.head.removeChild(link);
+            }
+        };
+    }, []);
+
+    // Set Inter font family on body
+    useEffect(() => {
+        const originalFontFamily = document.body.style.fontFamily;
+        document.body.style.fontFamily = '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        
+        return () => {
+            document.body.style.fontFamily = originalFontFamily;
+        };
+    }, []);
+
+    // Add CSS for enhanced styling
     useEffect(() => {
         const style = document.createElement('style');
         style.textContent = `
             .recharts-legend-wrapper {
                 bottom: 28px !important;
             }
+            
+            .case-study-selector {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 16px;
+                margin-bottom: 32px;
+            }
+            
+            .case-study-card {
+                background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+                border: 2px solid transparent;
+                border-radius: 16px;
+                padding: 24px;
+                cursor: pointer;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .case-study-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 197, 253, 0.05) 100%);
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                z-index: 0;
+            }
+            
+            .case-study-card:hover::before {
+                opacity: 1;
+            }
+            
+            .case-study-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                border-color: rgba(59, 130, 246, 0.2);
+            }
+            
+            .case-study-card.active {
+                border-color: var(--case-color);
+                background: linear-gradient(135deg, #ffffff 0%, #fefefe 100%);
+                box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+                transform: translateY(-1px);
+            }
+            
+            .case-study-card.active::before {
+                opacity: 0.8;
+                background: linear-gradient(135deg, var(--case-color-light) 0%, var(--case-color-lighter) 100%);
+            }
+            
+            .case-study-content {
+                position: relative;
+                z-index: 1;
+            }
+            
+            .chart-container {
+                background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+                border-radius: 20px;
+                padding: 32px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+                border: 1px solid rgba(226, 232, 240, 0.8);
+                backdrop-filter: blur(10px);
+                transition: all 0.3s ease;
+            }
+            
+            .chart-container:hover {
+                box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+                transform: translateY(-2px);
+            }
+            
+            .info-card {
+                background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+                border-radius: 20px;
+                padding: 32px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+                border: 1px solid rgba(226, 232, 240, 0.8);
+                backdrop-filter: blur(10px);
+            }
+            
+            .map-container {
+                background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+                border-radius: 20px;
+                padding: 24px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+                border: 1px solid rgba(226, 232, 240, 0.8);
+                backdrop-filter: blur(10px);
+            }
+            
+            .gradient-text {
+                background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+            
+            .metric-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 16px;
+                margin-top: 24px;
+            }
+            
+            .metric-item {
+                background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(147, 197, 253, 0.02) 100%);
+                border: 1px solid rgba(59, 130, 246, 0.1);
+                border-radius: 12px;
+                padding: 16px;
+                transition: all 0.2s ease;
+            }
+            
+            .metric-item:hover {
+                background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(147, 197, 253, 0.04) 100%);
+                border-color: rgba(59, 130, 246, 0.2);
+            }
         `;
         document.head.appendChild(style);
 
         return () => {
-            document.head.removeChild(style);
+            if (document.head.contains(style)) {
+                document.head.removeChild(style);
+            }
         };
     }, []);
 
     // Override body overflow to allow scrolling on this page
     useEffect(() => {
-        // Store original overflow value
         const originalOverflow = document.body.style.overflow;
-
-        // Enable scrolling
         document.body.style.overflow = 'auto';
 
-        // Cleanup: restore original overflow when component unmounts
         return () => {
             document.body.style.overflow = originalOverflow;
         };
@@ -83,10 +256,9 @@ const AminDetailPage = () => {
     // Handle browser back button navigation
     useEffect(() => {
         const handlePopState = (event) => {
-            // If user navigates back and we're on a detail page, ensure we go to the correct parent
             const currentPath = window.location.pathname;
             if ((currentPath.includes('/amin/') || currentPath.includes('/manish/')) && !balancingAuthority) {
-                let parentRoute = '/amin'; // Default fallback
+                let parentRoute = '/amin';
 
                 if (currentPath.includes('/manish/')) {
                     parentRoute = '/manish';
@@ -128,18 +300,10 @@ const AminDetailPage = () => {
                 }
                 const areaMappingText = await areaMappingResponse.text();
 
-                // Load demo data CSV
-                // const demoDataResponse = await fetch('/amin_data/WECC_BA_AREA_DEMODATA.csv');
-                // if (!demoDataResponse.ok) {
-                //     throw new Error(`HTTP error loading demo data CSV! status: ${demoDataResponse.status}`);
-                // }
-                // const demoDataText = await demoDataResponse.text();
-
                 // Parse main CSV for shape data
                 const csvLines = csvText.split('\n');
                 const csvData = {};
 
-                // Create lookup table by FID from main CSV
                 for (let i = 1; i < csvLines.length; i++) {
                     const line = csvLines[i].trim();
                     if (line) {
@@ -184,39 +348,6 @@ const AminDetailPage = () => {
                     }
                 }
 
-                // Parse demo data CSV - COMMENTED OUT TO USE ACTUAL DATA
-                // const demoDataLines = demoDataText.split('\n');
-                // const headers = demoDataLines[0].split(',');
-                // const demoData = {};
-
-                // for (let i = 1; i < demoDataLines.length; i++) {
-                //     const line = demoDataLines[i].trim();
-                //     if (line) {
-                //         const values = line.split(',');
-                //         const areaNumber = parseInt(values[0]);
-                //         const hour = parseInt(values[1]);
-
-                //         if (!demoData[areaNumber]) {
-                //             demoData[areaNumber] = [];
-                //         }
-
-                //         demoData[areaNumber].push({
-                //             hour: hour,
-                //             wind: parseFloat(values[2]),
-                //             solar: parseFloat(values[3]),
-                //             hydro: parseFloat(values[4]),
-                //             nuclear: parseFloat(values[5]),
-                //             naturalGas: parseFloat(values[6]),
-                //             coal: parseFloat(values[7]),
-                //             other: parseFloat(values[8]),
-                //             totalGeneration: parseFloat(values[9]),
-                //             demand: parseFloat(values[10]),
-                //             lmpPrice: parseFloat(values[11]),
-                //             netInterchange: parseFloat(values[12])
-                //         });
-                //     }
-                // }
-
                 // Load actual generation data based on BA abbreviation
                 const actualGenerationData = {};
 
@@ -231,8 +362,8 @@ const AminDetailPage = () => {
                 // Merge data from all sources
                 const baData = {
                     ...feature.properties,
-                    ...csvData[targetFid], // Add shape data from main CSV
-                    ...areaMappingData[targetFid] // Add area numbers from mapping CSV
+                    ...csvData[targetFid],
+                    ...areaMappingData[targetFid]
                 };
 
                 // Load actual generation data based on BA abbreviation
@@ -243,7 +374,6 @@ const AminDetailPage = () => {
                             const genText = await genResponse.text();
                             const genLines = genText.split('\n');
 
-                            // Process each area number that this BA serves
                             if (baData.Area_Numbers && baData.Area_Numbers.length > 0) {
                                 baData.Area_Numbers.forEach(areaNumber => {
                                     actualGenerationData[areaNumber] = [];
@@ -254,20 +384,18 @@ const AminDetailPage = () => {
                                             const values = line.split(',');
                                             const hour = parseInt(values[0]);
 
-                                            // Map CSV columns to chart data structure
                                             const hourData = {
                                                 hour: hour,
-                                                naturalGas: parseFloat(values[1]) || 0,      // NG_MW
-                                                geothermal: parseFloat(values[2]) || 0,      // GEO_MW
-                                                biomass: parseFloat(values[3]) || 0,         // BIO_MW (maps to "other")
-                                                nuclear: parseFloat(values[4]) || 0,         // NUCLEAR_MW
-                                                coal: parseFloat(values[5]) || 0,            // COAL_MW
-                                                wind: parseFloat(values[6]) || 0,            // WIND_MW
-                                                solar: parseFloat(values[7]) || 0,           // PV_MW (Solar)
-                                                hydro: parseFloat(values[8]) || 0,           // HYDRO_MW
-                                                battery: parseFloat(values[9]) || 0,         // BATTERY_MW
-                                                importExport: parseFloat(values[10]) || 0,   // IMPORT/EXPORT_MW
-                                                // Calculate totals
+                                                naturalGas: parseFloat(values[1]) || 0,
+                                                geothermal: parseFloat(values[2]) || 0,
+                                                biomass: parseFloat(values[3]) || 0,
+                                                nuclear: parseFloat(values[4]) || 0,
+                                                coal: parseFloat(values[5]) || 0,
+                                                wind: parseFloat(values[6]) || 0,
+                                                solar: parseFloat(values[7]) || 0,
+                                                hydro: parseFloat(values[8]) || 0,
+                                                battery: parseFloat(values[9]) || 0,
+                                                importExport: parseFloat(values[10]) || 0,
                                                 totalGeneration: (parseFloat(values[1]) || 0) +
                                                     (parseFloat(values[2]) || 0) +
                                                     (parseFloat(values[3]) || 0) +
@@ -286,10 +414,8 @@ const AminDetailPage = () => {
                                                     (parseFloat(values[7]) || 0) +
                                                     (parseFloat(values[8]) || 0) +
                                                     (parseFloat(values[9]) || 0) +
-                                                    Math.abs(parseFloat(values[10]) || 0), // Include import/export in demand
-                                                // For LMP price, we'll use a simulated curve since it's not in the CSV
+                                                    Math.abs(parseFloat(values[10]) || 0),
                                                 lmpPrice: 45 + Math.sin((hour - 1) * Math.PI / 12) * 15 + Math.random() * 10,
-                                                // Net interchange is the import/export value
                                                 netInterchange: parseFloat(values[10]) || 0
                                             };
 
@@ -311,7 +437,6 @@ const AminDetailPage = () => {
                 if (feature.geometry.type === 'Polygon') {
                     coordinates = feature.geometry.coordinates[0];
                 } else if (feature.geometry.type === 'MultiPolygon') {
-                    // For MultiPolygon, use the first polygon's outer ring
                     coordinates = feature.geometry.coordinates[0][0];
                 } else {
                     throw new Error(`Unsupported geometry type: ${feature.geometry.type}`);
@@ -335,7 +460,6 @@ const AminDetailPage = () => {
                 });
 
                 if (!validCoordinates) {
-                    // Fallback to default coordinates if geometry is invalid
                     console.warn(`Invalid coordinates for FID ${fid}, using default view`);
                     setViewState(prev => ({
                         ...prev,
@@ -347,7 +471,6 @@ const AminDetailPage = () => {
                     const centerLng = (minLng + maxLng) / 2;
                     const centerLat = (minLat + maxLat) / 2;
 
-                    // Validate calculated center
                     if (isNaN(centerLng) || isNaN(centerLat)) {
                         console.warn(`Invalid center coordinates for FID ${fid}, using default view`);
                         setViewState(prev => ({
@@ -357,12 +480,10 @@ const AminDetailPage = () => {
                             zoom: 5
                         }));
                     } else {
-                        // Calculate zoom level to fit the entire region
                         const lngDiff = maxLng - minLng;
                         const latDiff = maxLat - minLat;
                         const maxDiff = Math.max(lngDiff, latDiff);
 
-                        // Adjust zoom based on the size of the region
                         let zoom = 6;
                         if (maxDiff < 1) zoom = 8;
                         else if (maxDiff < 2) zoom = 7;
@@ -383,7 +504,7 @@ const AminDetailPage = () => {
                     feature: feature,
                     bounds: validCoordinates ? { minLng, maxLng, minLat, maxLat } : null
                 });
-                setAreaData(actualGenerationData); // Use actual generation data instead of demo data
+                setAreaData(actualGenerationData);
                 setLoading(false);
             } catch (err) {
                 console.error('Error loading data:', err);
@@ -396,9 +517,8 @@ const AminDetailPage = () => {
     }, [fid]);
 
     const handleBackClick = () => {
-        // Determine the parent route based on current path
         const currentPath = location.pathname;
-        let parentRoute = '/amin'; // Default fallback
+        let parentRoute = '/amin';
 
         if (currentPath.includes('/manish/')) {
             parentRoute = '/manish';
@@ -406,18 +526,11 @@ const AminDetailPage = () => {
             parentRoute = '/amin';
         }
 
-        // Use replace instead of navigate to avoid creating additional history entries
         navigate(parentRoute, { replace: true });
     };
 
     const getBackButtonText = () => {
-        // const currentPath = location.pathname;
-        // if (currentPath.includes('/manish/')) {
-        //     return 'Back to Manish\'s Map';
-        // } else if (currentPath.includes('/amin/')) {
-        //     return 'Back to Amin\'s Map';
-        // }
-        return 'Back to Map';
+        return 'Back to Westmap';
     };
 
     const renderMap = () => {
@@ -443,7 +556,7 @@ const AminDetailPage = () => {
         ];
 
         return (
-            <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+            <div style={{ width: '100%', height: '100%', position: 'relative', borderRadius: '16px', overflow: 'hidden' }}>
                 <DeckGL
                     viewState={viewState}
                     controller={false}
@@ -461,35 +574,93 @@ const AminDetailPage = () => {
         );
     };
 
+    const renderCaseStudySelector = () => {
+        return (
+            <div className="case-study-selector">
+                {CASE_STUDIES.map(caseStudy => (
+                    <div
+                        key={caseStudy.id}
+                        className={`case-study-card ${selectedCaseStudy === caseStudy.id ? 'active' : ''}`}
+                        style={{
+                            '--case-color': caseStudy.color,
+                            '--case-color-light': `${caseStudy.color}20`,
+                            '--case-color-lighter': `${caseStudy.color}10`
+                        }}
+                        onClick={() => setSelectedCaseStudy(caseStudy.id)}
+                    >
+                        <div className="case-study-content">
+                            <div style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                marginBottom: '12px',
+                                gap: '12px'
+                            }}>
+                                <span style={{ fontSize: '24px' }}>{caseStudy.icon}</span>
+                                <h3 style={{ 
+                                    margin: 0, 
+                                    fontSize: '1.25rem', 
+                                    fontWeight: 700,
+                                    color: selectedCaseStudy === caseStudy.id ? caseStudy.color : '#1e293b'
+                                }}>
+                                    {caseStudy.name}
+                                </h3>
+                            </div>
+                            <p style={{ 
+                                margin: 0, 
+                                color: '#64748b', 
+                                fontSize: '0.95rem',
+                                lineHeight: '1.5'
+                            }}>
+                                {caseStudy.description}
+                            </p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
     const renderGenerationChart = (areaNumber) => {
         const data = areaData[areaNumber];
         if (!data) return null;
 
         return (
-            <ResponsiveContainer width="100%" height={350}>
-                <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
+            <ResponsiveContainer width="100%" height={400}>
+                <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis
                         dataKey="hour"
-                        label={{ value: 'Hour', position: 'insideBottom', offset: -5 }}
-                        tick={{ fontSize: 12 }}
-                        height={60}
+                        label={{ value: 'Hour of Day', position: 'insideBottom', offset: -10, style: { fontSize: '14px', fontWeight: 500 } }}
+                        tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                        height={80}
+                        stroke="#64748b"
                     />
                     <YAxis
-                        label={{ value: 'MW', angle: -90, position: 'insideLeft' }}
-                        tick={{ fontSize: 12 }}
+                        label={{ value: 'Power Generation (MW)', angle: -90, position: 'insideLeft', style: { fontSize: '14px', fontWeight: 500 } }}
+                        tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                        stroke="#64748b"
                     />
-                    <Tooltip />
-                    <Legend />
-                    <Area type="monotone" dataKey="wind" stackId="1" stroke="#87CEEB" fill="#87CEEB" name="Wind" />
-                    <Area type="monotone" dataKey="solar" stackId="1" stroke="#FFD700" fill="#FFD700" name="Solar" />
-                    <Area type="monotone" dataKey="hydro" stackId="1" stroke="#4682B4" fill="#4682B4" name="Hydro" />
-                    <Area type="monotone" dataKey="nuclear" stackId="1" stroke="#FF6347" fill="#FF6347" name="Nuclear" />
-                    <Area type="monotone" dataKey="naturalGas" stackId="1" stroke="#DDA0DD" fill="#DDA0DD" name="Natural Gas" />
-                    <Area type="monotone" dataKey="coal" stackId="1" stroke="#696969" fill="#696969" name="Coal" />
-                    <Area type="monotone" dataKey="geothermal" stackId="1" stroke="#8B4513" fill="#8B4513" name="Geothermal" />
-                    <Area type="monotone" dataKey="biomass" stackId="1" stroke="#228B22" fill="#228B22" name="Biomass" />
-                    <Area type="monotone" dataKey="battery" stackId="1" stroke="#FF1493" fill="#FF1493" name="Battery" />
+                    <Tooltip 
+                        contentStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '12px',
+                            fontFamily: 'Inter',
+                            fontSize: '13px'
+                        }}
+                    />
+                    <Legend 
+                        wrapperStyle={{ fontFamily: 'Inter', fontSize: '13px' }}
+                    />
+                    <Area type="monotone" dataKey="wind" stackId="1" stroke="#10b981" fill="#10b981" name="Wind" />
+                    <Area type="monotone" dataKey="solar" stackId="1" stroke="#f59e0b" fill="#f59e0b" name="Solar" />
+                    <Area type="monotone" dataKey="hydro" stackId="1" stroke="#3b82f6" fill="#3b82f6" name="Hydro" />
+                    <Area type="monotone" dataKey="nuclear" stackId="1" stroke="#ef4444" fill="#ef4444" name="Nuclear" />
+                    <Area type="monotone" dataKey="naturalGas" stackId="1" stroke="#8b5cf6" fill="#8b5cf6" name="Natural Gas" />
+                    <Area type="monotone" dataKey="coal" stackId="1" stroke="#6b7280" fill="#6b7280" name="Coal" />
+                    <Area type="monotone" dataKey="geothermal" stackId="1" stroke="#dc2626" fill="#dc2626" name="Geothermal" />
+                    <Area type="monotone" dataKey="biomass" stackId="1" stroke="#059669" fill="#059669" name="Biomass" />
+                    <Area type="monotone" dataKey="battery" stackId="1" stroke="#ec4899" fill="#ec4899" name="Battery" />
                 </AreaChart>
             </ResponsiveContainer>
         );
@@ -500,80 +671,77 @@ const AminDetailPage = () => {
         if (!data) return null;
 
         return (
-            <ResponsiveContainer width="100%" height={350}>
-                <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
+            <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis
                         dataKey="hour"
-                        label={{ value: 'Hour', position: 'insideBottom', offset: -5 }}
-                        tick={{ fontSize: 12 }}
-                        height={60}
+                        label={{ value: 'Hour of Day', position: 'insideBottom', offset: -10, style: { fontSize: '14px', fontWeight: 500 } }}
+                        tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                        height={80}
+                        stroke="#64748b"
                     />
                     <YAxis
-                        label={{ value: 'MW', angle: -90, position: 'insideLeft' }}
-                        tick={{ fontSize: 12 }}
+                        label={{ value: 'Power (MW)', angle: -90, position: 'insideLeft', style: { fontSize: '14px', fontWeight: 500 } }}
+                        tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                        stroke="#64748b"
                     />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="demand" stroke="#2563eb" strokeWidth={3} name="Demand" />
-                    <Line type="monotone" dataKey="totalGeneration" stroke="#dc2626" strokeWidth={2} name="Total Generation" />
+                    <Tooltip 
+                        contentStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '12px',
+                            fontFamily: 'Inter',
+                            fontSize: '13px'
+                        }}
+                    />
+                    <Legend 
+                        wrapperStyle={{ fontFamily: 'Inter', fontSize: '13px' }}
+                    />
+                    <Line type="monotone" dataKey="demand" stroke="#3b82f6" strokeWidth={3} name="Demand" dot={false} />
+                    <Line type="monotone" dataKey="totalGeneration" stroke="#ef4444" strokeWidth={2} name="Total Generation" dot={false} />
                 </LineChart>
             </ResponsiveContainer>
         );
     };
-
-    // LMP Price chart removed as requested
-    // const renderPriceChart = (areaNumber) => {
-    //     const data = areaData[areaNumber];
-    //     if (!data) return null;
-
-    //     return (
-    //         <ResponsiveContainer width="100%" height={350}>
-    //             <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-    //                 <CartesianGrid strokeDasharray="3 3" />
-    //                 <XAxis
-    //                     dataKey="hour"
-    //                     label={{ value: 'Hour', position: 'insideBottom', offset: -5 }}
-    //                     tick={{ fontSize: 12 }}
-    //                     height={60}
-    //                 />
-    //                 <YAxis
-    //                     label={{ value: '$/MWh', angle: -90, position: 'insideLeft' }}
-    //                     tick={{ fontSize: 12 }}
-    //                 />
-    //                 <Tooltip />
-    //                 <Legend />
-    //                 <Line type="monotone" dataKey="lmpPrice" stroke="#059669" strokeWidth={3} name="LMP Price" />
-    //             </LineChart>
-    //         </ResponsiveContainer>
-    //     );
-    // };
 
     const renderInterchangeChart = (areaNumber) => {
         const data = areaData[areaNumber];
         if (!data) return null;
 
         return (
-            <ResponsiveContainer width="100%" height={350}>
-                <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
+            <ResponsiveContainer width="100%" height={400}>
+                <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis
                         dataKey="hour"
-                        label={{ value: 'Hour', position: 'insideBottom', offset: -5 }}
-                        tick={{ fontSize: 12 }}
-                        height={60}
+                        label={{ value: 'Hour of Day', position: 'insideBottom', offset: -10, style: { fontSize: '14px', fontWeight: 500 } }}
+                        tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                        height={80}
+                        stroke="#64748b"
                     />
                     <YAxis
-                        label={{ value: 'MW', angle: -90, position: 'insideLeft' }}
-                        tick={{ fontSize: 12 }}
+                        label={{ value: 'Net Interchange (MW)', angle: -90, position: 'insideLeft', style: { fontSize: '14px', fontWeight: 500 } }}
+                        tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                        stroke="#64748b"
                     />
-                    <Tooltip />
-                    <Legend />
+                    <Tooltip 
+                        contentStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '12px',
+                            fontFamily: 'Inter',
+                            fontSize: '13px'
+                        }}
+                    />
+                    <Legend 
+                        wrapperStyle={{ fontFamily: 'Inter', fontSize: '13px' }}
+                    />
                     <Area
                         type="monotone"
                         dataKey="netInterchange"
-                        stroke="#8884d8"
-                        fill="#8884d8"
+                        stroke="#8b5cf6"
+                        fill="#8b5cf6"
                         name="Net Interchange"
                     />
                 </AreaChart>
@@ -583,30 +751,71 @@ const AminDetailPage = () => {
 
     if (loading) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                <h2>Loading balancing authority details...</h2>
+            <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                height: '100vh',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                fontFamily: 'Inter'
+            }}>
+                <div style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: '20px',
+                    padding: '40px',
+                    textAlign: 'center'
+                }}>
+                    <div style={{ fontSize: '48px', marginBottom: '20px' }}>🌐</div>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 600, margin: 0 }}>Loading Westmap Analytics...</h2>
+                    <p style={{ fontSize: '1rem', opacity: 0.8, margin: '8px 0 0 0' }}>Preparing balancing authority details</p>
+                </div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                <h2 style={{ color: 'red' }}>Error: {error}</h2>
-                <button
-                    onClick={handleBackClick}
-                    style={{
-                        marginTop: '20px',
-                        padding: '10px 20px',
-                        backgroundColor: '#2563eb',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer'
-                    }}
-                >
-                    {getBackButtonText()}
-                </button>
+            <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                height: '100vh',
+                background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)',
+                color: 'white',
+                fontFamily: 'Inter'
+            }}>
+                <div style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: '20px',
+                    padding: '40px',
+                    textAlign: 'center'
+                }}>
+                    <div style={{ fontSize: '48px', marginBottom: '20px' }}>⚠️</div>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 600, margin: '0 0 8px 0' }}>Error Loading Data</h2>
+                    <p style={{ fontSize: '1rem', opacity: 0.9, margin: '0 0 24px 0' }}>{error}</p>
+                    <button
+                        onClick={handleBackClick}
+                        style={{
+                            padding: '12px 24px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                            color: 'white',
+                            border: '1px solid rgba(255, 255, 255, 0.3)',
+                            borderRadius: '12px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontWeight: 500,
+                            fontFamily: 'Inter',
+                            backdropFilter: 'blur(10px)'
+                        }}
+                    >
+                        {getBackButtonText()}
+                    </button>
+                </div>
             </div>
         );
     }
@@ -617,174 +826,200 @@ const AminDetailPage = () => {
 
     return (
         <div style={{
-            backgroundColor: '#f8fafc',
-            minHeight: '100vh',          // Use minHeight instead of height
-            height: 'auto',              // Allow content to expand
-            overflow: 'auto',            // Force scrolling capability
-            overflowY: 'scroll',         // Ensure vertical scrolling
-            position: 'relative',        // Override any absolute positioning
-            width: '100%',
-            maxWidth: '100%',
-            boxSizing: 'border-box'
+            background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+            minHeight: '100vh',
+            overflow: 'auto',
+            fontFamily: 'Inter, system-ui, sans-serif'
         }}>
-            {/* Header with back button */}
+            {/* Enhanced Header */}
             <div style={{
-                padding: '20px',
-                backgroundColor: 'white',
-                borderBottom: '1px solid #e2e8f0',
-                display: 'flex',
-                alignItems: 'center',
-                position: 'relative',       // Ensure proper positioning
-                zIndex: 1
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                borderBottom: '1px solid rgba(226, 232, 240, 0.8)',
+                backdropFilter: 'blur(10px)',
+                position: 'sticky',
+                top: 0,
+                zIndex: 100,
+                padding: '24px 40px'
             }}>
-                <button
-                    onClick={handleBackClick}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 16px',
-                        backgroundColor: 'transparent',
-                        border: '1px solid #cbd5e0',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        color: '#4a5568'
-                    }}
-                >
-                    <ArrowBackIcon style={{ fontSize: 16 }} />
-                    {getBackButtonText()}
-                </button>
-            </div>
-
-            {/* Section 1: Map and Info */}
-            <div style={{ padding: '40px', position: 'relative' }}>
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '3fr 1fr', // 3:1 ratio
-                    gap: '40px',
-                    marginBottom: '60px'
-                }}>
-                    {/* Left: Large Map (3/4 of space) */}
-                    <div style={{
-                        backgroundColor: 'white',
-                        borderRadius: '12px',
-                        padding: '20px',
-                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                        height: '500px' // Increased height
-                    }}>
-                        <h3 style={{ margin: '0 0 20px 0', fontSize: '1.5rem', fontWeight: 600 }}>
-                            {balancingAuthority.BA_Abrev} Territory
-                        </h3>
-                        <div style={{ height: '450px', borderRadius: '8px', overflow: 'hidden' }}>
-                            {renderMap()}
-                        </div>
-                    </div>
-
-                    {/* Right: Info (1/4 of space) */}
-                    <div style={{
-                        backgroundColor: 'white',
-                        borderRadius: '12px',
-                        padding: '30px',
-                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                        display: 'flex',
-                        flexDirection: 'column'
-                    }}>
-                        <h1 style={{ margin: '0 0 8px 0', fontSize: '1.75rem', fontWeight: 700, color: '#1a202c' }}>
-                            {balancingAuthority.BA_Abrev}
-                        </h1>
-                        <h2 style={{ margin: '0 0 30px 0', fontSize: '1rem', fontWeight: 500, color: '#4a5568', lineHeight: '1.4' }}>
-                            {balancingAuthority.BA_Name}
-                        </h2>
-
-                        {/* All metadata in column format */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <p style={{ margin: '0', color: '#4a5568', fontSize: '0.95rem' }}>
-                                <strong>FID:</strong> {balancingAuthority.FID}
-                            </p>
-                            <p style={{ margin: '0', color: '#4a5568', fontSize: '0.95rem' }}>
-                                <strong>Area Number{balancingAuthority.Area_Numbers && balancingAuthority.Area_Numbers.length > 1 ? 's' : ''}:</strong> {
-                                    balancingAuthority.Area_Numbers && balancingAuthority.Area_Numbers.length > 0
-                                        ? balancingAuthority.Area_Numbers.join(', ')
-                                        : 'N/A'
-                                }
-                            </p>
-                            <p style={{ margin: '0', color: '#4a5568', fontSize: '0.95rem' }}>
-                                <strong>BA Abbreviation:</strong> {balancingAuthority.BA_Abrev}
-                            </p>
-                            <p style={{ margin: '0', color: '#4a5568', fontSize: '0.95rem' }}>
-                                <strong>BA Name:</strong> {balancingAuthority.BA_Name}
-                            </p>
-                            <p style={{ margin: '0', color: '#4a5568', fontSize: '0.95rem' }}>
-                                <strong>Shape Length:</strong> {balancingAuthority.Shape_Leng ? Number(balancingAuthority.Shape_Leng).toLocaleString() : 'N/A'} units
-                            </p>
-                            <p style={{ margin: '0', color: '#4a5568', fontSize: '0.95rem' }}>
-                                <strong>Shape Area:</strong> {balancingAuthority.Shape__Area ? Number(balancingAuthority.Shape__Area).toLocaleString() : 'N/A'} units
-                            </p>
-                            <p style={{ margin: '0', color: '#4a5568', fontSize: '0.95rem' }}>
-                                <strong>Shape Length (Alt):</strong> {balancingAuthority.Shape__Length ? Number(balancingAuthority.Shape__Length).toLocaleString() : 'N/A'} units
-                            </p>
-                            <p style={{ margin: '0', color: '#4a5568', fontSize: '0.85rem' }}>
-                                <strong>Global ID:</strong> {balancingAuthority.GlobalID ? balancingAuthority.GlobalID : 'N/A'}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                        <button
+                            onClick={handleBackClick}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '12px 20px',
+                                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '12px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: 500,
+                                transition: 'all 0.2s ease',
+                                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)'
+                            }}
+                            onMouseOver={(e) => {
+                                e.target.style.transform = 'translateY(-1px)';
+                                e.target.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.5)';
+                            }}
+                            onMouseOut={(e) => {
+                                e.target.style.transform = 'translateY(0)';
+                                e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
+                            }}
+                        >
+                            <ArrowBackIcon style={{ fontSize: 16 }} />
+                            {getBackButtonText()}
+                        </button>
+                        <div>
+                            <h1 className="gradient-text" style={{ 
+                                margin: 0, 
+                                fontSize: '2rem', 
+                                fontWeight: 800
+                            }}>
+                                Westmap Analytics
+                            </h1>
+                            <p style={{ 
+                                margin: '4px 0 0 0', 
+                                color: '#64748b', 
+                                fontSize: '1rem',
+                                fontWeight: 500
+                            }}>
+                                Advanced Grid Intelligence Platform
                             </p>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {/* Sections for each area number */}
-                {balancingAuthority.Area_Numbers && balancingAuthority.Area_Numbers.map(areaNumber => (
-                    <div key={areaNumber} style={{ marginBottom: '60px' }}>
-                        <h2 style={{
-                            fontSize: '1.75rem',
+            {/* Main Content */}
+            <div style={{ padding: '40px' }}>
+                {/* Hero Section: Map and Info */}
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 1fr',
+                    gap: '32px',
+                    marginBottom: '60px'
+                }}>
+                    {/* Enhanced Map */}
+                    <div className="map-container" style={{ height: '500px' }}>
+                        <h3 style={{ 
+                            margin: '0 0 20px 0', 
+                            fontSize: '1.5rem', 
                             fontWeight: 700,
-                            color: '#1a202c',
-                            marginBottom: '30px',
-                            paddingBottom: '10px',
-                            borderBottom: '2px solid #e2e8f0'
+                            color: '#1e293b'
                         }}>
-                            Area {areaNumber} - Energy Data
+                            {balancingAuthority.BA_Abrev} Territory
+                        </h3>
+                        <div style={{ height: '440px' }}>
+                            {renderMap()}
+                        </div>
+                    </div>
+
+                    {/* Enhanced Info Card */}
+                    <div className="info-card">
+                        <h1 style={{ 
+                            margin: '0 0 8px 0', 
+                            fontSize: '2rem', 
+                            fontWeight: 800, 
+                            color: '#1e293b'
+                        }}>
+                            {balancingAuthority.BA_Abrev}
+                        </h1>
+                        <h2 style={{ 
+                            margin: '0 0 32px 0', 
+                            fontSize: '1.1rem', 
+                            fontWeight: 500, 
+                            color: '#64748b', 
+                            lineHeight: '1.5'
+                        }}>
+                            {balancingAuthority.BA_Name}
                         </h2>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-                            {/* Generation by Source */}
-                            <div style={{
-                                backgroundColor: 'white',
-                                borderRadius: '12px',
-                                padding: '25px',
-                                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                                width: '100%'
-                            }}>
-                                <h3 style={{ margin: '0 0 20px 0', fontSize: '1.25rem', fontWeight: 600 }}>
-                                    Electricity Generation by Energy Source
-                                </h3>
+                        <div className="metric-grid">
+                            <div className="metric-item">
+                                <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', fontWeight: 600, color: '#3b82f6' }}>FID</p>
+                                <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>{balancingAuthority.FID}</p>
+                            </div>
+                            <div className="metric-item">
+                                <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', fontWeight: 600, color: '#3b82f6' }}>Area Numbers</p>
+                                <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>
+                                    {balancingAuthority.Area_Numbers && balancingAuthority.Area_Numbers.length > 0
+                                        ? balancingAuthority.Area_Numbers.join(', ')
+                                        : 'N/A'}
+                                </p>
+                            </div>
+                            <div className="metric-item">
+                                <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', fontWeight: 600, color: '#3b82f6' }}>Shape Area</p>
+                                <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>
+                                    {balancingAuthority.Shape__Area ? Number(balancingAuthority.Shape__Area).toLocaleString() : 'N/A'} units
+                                </p>
+                            </div>
+                            <div className="metric-item">
+                                <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', fontWeight: 600, color: '#3b82f6' }}>Shape Length</p>
+                                <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>
+                                    {balancingAuthority.Shape_Leng ? Number(balancingAuthority.Shape_Leng).toLocaleString() : 'N/A'} units
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Case Studies Section */}
+                {balancingAuthority.Area_Numbers && balancingAuthority.Area_Numbers.map(areaNumber => (
+                    <div key={areaNumber} style={{ marginBottom: '80px' }}>
+
+                        {/* Case Study Selector */}
+                        {renderCaseStudySelector()}
+
+                        {/* Charts Section */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+                            {/* Generation Chart */}
+                            <div className="chart-container">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                                    <span style={{ fontSize: '24px' }}>⚡</span>
+                                    <h3 style={{ 
+                                        margin: 0, 
+                                        fontSize: '1.5rem', 
+                                        fontWeight: 700,
+                                        color: '#1e293b'
+                                    }}>
+                                        Balancing Authority Power Generation
+                                    </h3>
+                                </div>
                                 {renderGenerationChart(areaNumber)}
                             </div>
 
-                            {/* Demand vs Generation */}
-                            <div style={{
-                                backgroundColor: 'white',
-                                borderRadius: '12px',
-                                padding: '25px',
-                                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                                width: '100%'
-                            }}>
-                                <h3 style={{ margin: '0 0 20px 0', fontSize: '1.25rem', fontWeight: 600 }}>
-                                    Electricity Demand vs Total Generation
-                                </h3>
+                            {/* Demand Chart */}
+                            <div className="chart-container">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                                    <span style={{ fontSize: '24px' }}>📊</span>
+                                    <h3 style={{ 
+                                        margin: 0, 
+                                        fontSize: '1.5rem', 
+                                        fontWeight: 700,
+                                        color: '#1e293b'
+                                    }}>
+                                        Balancing Authority Demand
+                                    </h3>
+                                </div>
                                 {renderDemandChart(areaNumber)}
                             </div>
 
                             {/* Net Interchange */}
-                            <div style={{
-                                backgroundColor: 'white',
-                                borderRadius: '12px',
-                                padding: '25px',
-                                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                                width: '100%'
-                            }}>
-                                <h3 style={{ margin: '0 0 20px 0', fontSize: '1.25rem', fontWeight: 600 }}>
-                                    Net Electricity Interchange
-                                </h3>
+                            <div className="chart-container">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                                    <span style={{ fontSize: '24px' }}>🔄</span>
+                                    <h3 style={{ 
+                                        margin: 0, 
+                                        fontSize: '1.5rem', 
+                                        fontWeight: 700,
+                                        color: '#1e293b'
+                                    }}>
+                                        Net Electricity Interchange
+                                    </h3>
+                                </div>
                                 {renderInterchangeChart(areaNumber)}
                             </div>
                         </div>
