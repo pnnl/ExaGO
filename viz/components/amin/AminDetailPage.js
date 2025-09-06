@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { DeckGL } from '@deck.gl/react';
-import { GeoJsonLayer } from '@deck.gl/layers';
+import { GeoJsonLayer, ScatterplotLayer } from '@deck.gl/layers';
 import { MapView } from '@deck.gl/core';
 import { StaticMap } from 'react-map-gl';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar, ComposedChart } from 'recharts';
 
 // Mapbox token
 const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoidXNtYXJ0LXdlc3RtYXAiLCJhIjoiY2tvazV6MzU2MDE4YjJ0bXd5ZDcwdm16ciJ9.q2BIGvGPAJjw1X9CdvyKSA';
@@ -21,7 +21,7 @@ const OSM_MAP_STYLE = {
                 "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
             ],
             "tileSize": 256,
-            "attribution": "© OpenStreetMap contributors"
+            "attribution": "© OpenStreetMap contributors, University of Utah 2025"
         }
     },
     "layers": [
@@ -36,33 +36,49 @@ const OSM_MAP_STYLE = {
 // Case study configurations
 const CASE_STUDIES = [
     {
-        id: 'base',
-        name: 'Base Case',
-        description: 'Current operational baseline scenario',
+        id: 'case1',
+        name: 'Case Study 1',
+        subtitle: 'Base Case',
+        description: 'Current operational baseline scenario without data center flexibility',
         color: '#3B82F6',
-        icon: '📊'
+        icon: '📊',
+        dataPath: 'Case study_1/CASE STUDY 1'
     },
     {
-        id: 'temporal',
-        name: 'Data Center Temporal Flexibility',
-        description: 'Time-shifted data center operations',
+        id: 'case2',
+        name: 'Case Study 2',
+        subtitle: 'Data Center Temporal Flexibility',
+        description: 'Time-shifted data center operations with flexible scheduling',
         color: '#10B981',
-        icon: '⏰'
+        icon: '⏰',
+        dataPath: 'Case study_2'
     },
     {
-        id: 'spatial',
-        name: 'Data Center Spatial Flexibility',
-        description: 'Geographic load distribution optimization',
+        id: 'case3',
+        name: 'Case Study 3',
+        subtitle: 'Data Center Spatial Flexibility',
+        description: 'Geographic load distribution optimization across regions',
         color: '#F59E0B',
-        icon: '🌐'
+        icon: '🌐',
+        dataPath: 'Case study_3'
     },
     {
-        id: 'comparison',
-        name: 'Comparison',
-        description: 'Side-by-side analysis of all scenarios',
+        id: 'case4',
+        name: 'Case Study 4',
+        subtitle: 'Comparison',
+        description: 'Side-by-side analysis and comparison of all scenarios',
         color: '#8B5CF6',
-        icon: '📈'
+        icon: '📈',
+        dataPath: 'comparison'
     }
+];
+
+// Balancing Authorities list
+const BALANCING_AUTHORITIES = [
+    'AESO', 'AVA', 'AZPS', 'BANC', 'BCHA', 'BPAT', 'CENACE', 'CHPD', 
+    'CISO', 'DOPD', 'EPE', 'GCPD', 'IID', 'IPCO', 'LDWP', 'NEVP', 
+    'NWMT', 'PACE', 'PACW', 'PGE', 'PNM', 'PSCO', 'PSEI', 'SCL', 
+    'SRP', 'TEPC', 'TIDC', 'TPWR', 'WACM', 'WALC', 'WAUW'
 ];
 
 const AminDetailPage = () => {
@@ -70,8 +86,12 @@ const AminDetailPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [balancingAuthority, setBalancingAuthority] = useState(null);
-    const [areaData, setAreaData] = useState({});
-    const [selectedCaseStudy, setSelectedCaseStudy] = useState('base');
+    const [selectedCaseStudy, setSelectedCaseStudy] = useState('case1');
+    const [caseStudyData, setCaseStudyData] = useState({});
+    const [capacityData, setCapacityData] = useState({});
+    const [plantLocations, setPlantLocations] = useState([]);
+    const [dataCenterLocations, setDataCenterLocations] = useState([]);
+    const [selectedHour, setSelectedHour] = useState(12); // Default to noon for zonal price display
     const [viewState, setViewState] = useState({
         longitude: -116.5,
         latitude: 37.5,
@@ -189,6 +209,28 @@ const AminDetailPage = () => {
                 transform: translateY(-2px);
             }
             
+            .comparison-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+                gap: 24px;
+                margin-top: 24px;
+            }
+            
+            .hour-selector {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 20px;
+                padding: 16px;
+                background: rgba(59, 130, 246, 0.05);
+                border-radius: 12px;
+            }
+            
+            .hour-slider {
+                flex: 1;
+                margin: 0 16px;
+            }
+            
             .info-card {
                 background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
                 border-radius: 20px;
@@ -233,6 +275,24 @@ const AminDetailPage = () => {
                 background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(147, 197, 253, 0.04) 100%);
                 border-color: rgba(59, 130, 246, 0.2);
             }
+            
+            .clickable-generator {
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            
+            .clickable-generator:hover {
+                transform: scale(1.2);
+            }
+            
+            .data-center-marker {
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            
+            .data-center-marker:hover {
+                transform: scale(1.1);
+            }
         `;
         document.head.appendChild(style);
 
@@ -276,6 +336,7 @@ const AminDetailPage = () => {
         };
     }, [navigate, balancingAuthority]);
 
+    // Load all data
     useEffect(() => {
         const loadData = async () => {
             try {
@@ -299,6 +360,61 @@ const AminDetailPage = () => {
                     throw new Error(`HTTP error loading area mapping CSV! status: ${areaMappingResponse.status}`);
                 }
                 const areaMappingText = await areaMappingResponse.text();
+
+                // Load capacity data
+                const capacityResponse = await fetch('/amin_data/manish_amin_modified_data/WECC_BA_CAPACITY.csv');
+                if (capacityResponse.ok) {
+                    const capacityText = await capacityResponse.text();
+                    const capacityLines = capacityText.split('\n');
+                    const capacityMap = {};
+                    
+                    for (let i = 1; i < capacityLines.length; i++) {
+                        const line = capacityLines[i].trim();
+                        if (line) {
+                            const values = line.split(',');
+                            const ba = values[0];
+                            capacityMap[ba] = {
+                                hydro: parseFloat(values[1]) || 0,
+                                nuclear: parseFloat(values[2]) || 0,
+                                coal: parseFloat(values[3]) || 0,
+                                naturalGas: parseFloat(values[4].replace(/"/g, '')) || 0,
+                                geothermal: parseFloat(values[5]) || 0,
+                                biomass: parseFloat(values[6]) || 0,
+                                wind: parseFloat(values[7]) || 0,
+                                pv: parseFloat(values[8]) || 0,
+                                batteryStorage: parseFloat(values[9]) || 0
+                            };
+                        }
+                    }
+                    setCapacityData(capacityMap);
+                }
+
+                // Load plant locations
+                const plantResponse = await fetch('/amin_data/manish_amin_modified_data/Locations of Power Plants/Western_Power_plants_Locations-USA.csv');
+                if (plantResponse.ok) {
+                    const plantText = await plantResponse.text();
+                    const plantLines = plantText.split('\n');
+                    const plants = [];
+                    
+                    for (let i = 1; i < plantLines.length; i++) {
+                        const line = plantLines[i].trim();
+                        if (line) {
+                            const values = line.split(',');
+                            plants.push({
+                                plantCode: values[0],
+                                plantName: values[1],
+                                latitude: parseFloat(values[2]),
+                                longitude: parseFloat(values[3]),
+                                state: values[4],
+                                county: values[5],
+                                balancingAuthority: values[6],
+                                primaryType: values[7],
+                                totalCapacity: parseFloat(values[8]) || 0
+                            });
+                        }
+                    }
+                    setPlantLocations(plants);
+                }
 
                 // Parse main CSV for shape data
                 const csvLines = csvText.split('\n');
@@ -348,9 +464,6 @@ const AminDetailPage = () => {
                     }
                 }
 
-                // Load actual generation data based on BA abbreviation
-                const actualGenerationData = {};
-
                 // Find the specific balancing authority
                 const targetFid = parseInt(fid);
                 const feature = geojsonData.features.find(f => f.properties.FID === targetFid);
@@ -366,71 +479,8 @@ const AminDetailPage = () => {
                     ...areaMappingData[targetFid]
                 };
 
-                // Load actual generation data based on BA abbreviation
-                if (baData.BA_Abrev) {
-                    try {
-                        const genResponse = await fetch(`/amin_data/new_data/power_gen_data_areawise_24hr/${baData.BA_Abrev}_generation_by_fuel.csv`);
-                        if (genResponse.ok) {
-                            const genText = await genResponse.text();
-                            const genLines = genText.split('\n');
-
-                            if (baData.Area_Numbers && baData.Area_Numbers.length > 0) {
-                                baData.Area_Numbers.forEach(areaNumber => {
-                                    actualGenerationData[areaNumber] = [];
-
-                                    for (let i = 1; i < genLines.length; i++) {
-                                        const line = genLines[i].trim();
-                                        if (line) {
-                                            const values = line.split(',');
-                                            const hour = parseInt(values[0]);
-
-                                            const hourData = {
-                                                hour: hour,
-                                                naturalGas: parseFloat(values[1]) || 0,
-                                                geothermal: parseFloat(values[2]) || 0,
-                                                biomass: parseFloat(values[3]) || 0,
-                                                nuclear: parseFloat(values[4]) || 0,
-                                                coal: parseFloat(values[5]) || 0,
-                                                wind: parseFloat(values[6]) || 0,
-                                                solar: parseFloat(values[7]) || 0,
-                                                hydro: parseFloat(values[8]) || 0,
-                                                battery: parseFloat(values[9]) || 0,
-                                                importExport: parseFloat(values[10]) || 0,
-                                                totalGeneration: (parseFloat(values[1]) || 0) +
-                                                    (parseFloat(values[2]) || 0) +
-                                                    (parseFloat(values[3]) || 0) +
-                                                    (parseFloat(values[4]) || 0) +
-                                                    (parseFloat(values[5]) || 0) +
-                                                    (parseFloat(values[6]) || 0) +
-                                                    (parseFloat(values[7]) || 0) +
-                                                    (parseFloat(values[8]) || 0) +
-                                                    (parseFloat(values[9]) || 0),
-                                                demand: (parseFloat(values[1]) || 0) +
-                                                    (parseFloat(values[2]) || 0) +
-                                                    (parseFloat(values[3]) || 0) +
-                                                    (parseFloat(values[4]) || 0) +
-                                                    (parseFloat(values[5]) || 0) +
-                                                    (parseFloat(values[6]) || 0) +
-                                                    (parseFloat(values[7]) || 0) +
-                                                    (parseFloat(values[8]) || 0) +
-                                                    (parseFloat(values[9]) || 0) +
-                                                    Math.abs(parseFloat(values[10]) || 0),
-                                                lmpPrice: 45 + Math.sin((hour - 1) * Math.PI / 12) * 15 + Math.random() * 10,
-                                                netInterchange: parseFloat(values[10]) || 0
-                                            };
-
-                                            actualGenerationData[areaNumber].push(hourData);
-                                        }
-                                    }
-                                });
-                            }
-                        } else {
-                            console.warn(`Generation data not found for ${baData.BA_Abrev}`);
-                        }
-                    } catch (err) {
-                        console.warn(`Error loading generation data for ${baData.BA_Abrev}:`, err);
-                    }
-                }
+                // Load case study data for this BA
+                await loadCaseStudyData(baData.BA_Abrev);
 
                 // Calculate bounds for the specific feature to center the map
                 let coordinates;
@@ -504,7 +554,6 @@ const AminDetailPage = () => {
                     feature: feature,
                     bounds: validCoordinates ? { minLng, maxLng, minLat, maxLat } : null
                 });
-                setAreaData(actualGenerationData);
                 setLoading(false);
             } catch (err) {
                 console.error('Error loading data:', err);
@@ -515,6 +564,204 @@ const AminDetailPage = () => {
 
         loadData();
     }, [fid]);
+
+    // Load case study data
+    const loadCaseStudyData = async (baAbbrev) => {
+        const caseData = {};
+        
+        for (const caseStudy of CASE_STUDIES) {
+            if (caseStudy.id === 'case4') continue; // Skip comparison for individual loading
+            
+            try {
+                // Load demand data
+                const demandPath = `/amin_data/manish_amin_modified_data/${caseStudy.dataPath}/Balancing Authority Demand (MW).csv`;
+                const demandResponse = await fetch(demandPath);
+                if (demandResponse.ok) {
+                    const demandText = await demandResponse.text();
+                    caseData[caseStudy.id] = { ...caseData[caseStudy.id], demand: parseDemandData(demandText, baAbbrev) };
+                }
+
+                // Load generation data
+                const generationPath = `/amin_data/manish_amin_modified_data/${caseStudy.dataPath}/Balancing Authority Power Generation/${baAbbrev}_generation_by_fuel.csv`;
+                const generationResponse = await fetch(generationPath);
+                if (generationResponse.ok) {
+                    const generationText = await generationResponse.text();
+                    caseData[caseStudy.id] = { ...caseData[caseStudy.id], generation: parseGenerationData(generationText) };
+                }
+
+                // Load LMP data
+                const lmpPath = `/amin_data/manish_amin_modified_data/${caseStudy.dataPath}/Zonal Price/lmp_by_ba_hour.csv`;
+                const lmpResponse = await fetch(lmpPath);
+                if (lmpResponse.ok) {
+                    const lmpText = await lmpResponse.text();
+                    caseData[caseStudy.id] = { ...caseData[caseStudy.id], lmp: parseLMPData(lmpText, baAbbrev) };
+                }
+
+                // Load operational costs
+                const costsPath = `/amin_data/manish_amin_modified_data/${caseStudy.dataPath}/Balancing Authority Hourly Operation Costs/${baAbbrev}_hourly_operation_costs.csv`;
+                const costsResponse = await fetch(costsPath);
+                if (costsResponse.ok) {
+                    const costsText = await costsResponse.text();
+                    caseData[caseStudy.id] = { ...caseData[caseStudy.id], costs: parseCostsData(costsText) };
+                }
+
+                // Load data center demand (for case studies 2-4)
+                if (caseStudy.id !== 'case1') {
+                    const dcDemandPath = `/amin_data/manish_amin_modified_data/${caseStudy.dataPath}/Data Center Demand (MW).csv`;
+                    const dcDemandResponse = await fetch(dcDemandPath);
+                    if (dcDemandResponse.ok) {
+                        const dcDemandText = await dcDemandResponse.text();
+                        caseData[caseStudy.id] = { ...caseData[caseStudy.id], dataCenterDemand: parseDataCenterDemand(dcDemandText, baAbbrev) };
+                    }
+
+                    // Load data center flexibility (for case studies 2-4)
+                    const dcFlexPath = `/amin_data/manish_amin_modified_data/${caseStudy.dataPath}/Data Center Flexibility/Data Center Energy Flexibility.csv`;
+                    const dcFlexResponse = await fetch(dcFlexPath);
+                    if (dcFlexResponse.ok) {
+                        const dcFlexText = await dcFlexResponse.text();
+                        caseData[caseStudy.id] = { ...caseData[caseStudy.id], dataCenterFlexibility: parseDataCenterFlexibility(dcFlexText, baAbbrev) };
+                    }
+                }
+
+            } catch (err) {
+                console.warn(`Error loading data for ${caseStudy.id}:`, err);
+            }
+        }
+
+        setCaseStudyData(caseData);
+    };
+
+    // Data parsing functions
+    const parseDemandData = (csvText, baAbbrev) => {
+        const lines = csvText.split('\n');
+        const headers = lines[0].split(',');
+        const baIndex = headers.findIndex(header => header.trim() === baAbbrev);
+        
+        if (baIndex === -1) return [];
+        
+        const data = [];
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line) {
+                const values = line.split(',');
+                const hour = parseInt(values[3]); // Period column
+                const demand = parseFloat(values[baIndex]) || 0;
+                data.push({ hour, demand });
+            }
+        }
+        return data;
+    };
+
+    const parseGenerationData = (csvText) => {
+        const lines = csvText.split('\n');
+        const data = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line) {
+                const values = line.split(',');
+                data.push({
+                    hour: parseInt(values[0]),
+                    naturalGas: parseFloat(values[1]) || 0,
+                    geothermal: parseFloat(values[2]) || 0,
+                    biomass: parseFloat(values[3]) || 0,
+                    nuclear: parseFloat(values[4]) || 0,
+                    coal: parseFloat(values[5]) || 0,
+                    wind: parseFloat(values[6]) || 0,
+                    solar: parseFloat(values[7]) || 0,
+                    hydro: parseFloat(values[8]) || 0,
+                    battery: parseFloat(values[9]) || 0,
+                    importExport: parseFloat(values[10]) || 0
+                });
+            }
+        }
+        return data;
+    };
+
+    const parseLMPData = (csvText, baAbbrev) => {
+        const lines = csvText.split('\n');
+        const headers = lines[0].split(',');
+        const baIndex = headers.findIndex(header => header.includes(baAbbrev));
+        
+        if (baIndex === -1) return [];
+        
+        const data = [];
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line) {
+                const values = line.split(',');
+                const hour = parseInt(values[0]);
+                const price = parseFloat(values[baIndex]) || 0;
+                data.push({ hour, price });
+            }
+        }
+        return data;
+    };
+
+    const parseCostsData = (csvText) => {
+        const lines = csvText.split('\n');
+        const data = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line) {
+                const values = line.split(',');
+                data.push({
+                    hour: parseInt(values[0]),
+                    startupCosts: parseFloat(values[2]) || 0,
+                    fuelCosts: parseFloat(values[3]) || 0,
+                    variableCosts: parseFloat(values[4]) || 0,
+                    loadSheddingCosts: parseFloat(values[5]) || 0,
+                    importExportCosts: parseFloat(values[6]) || 0,
+                    totalCosts: parseFloat(values[7]) || 0
+                });
+            }
+        }
+        return data;
+    };
+
+    const parseDataCenterDemand = (csvText, baAbbrev) => {
+        const lines = csvText.split('\n');
+        const data = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line) {
+                const values = line.split(',');
+                const ba = values[1];
+                if (ba === baAbbrev) {
+                    data.push({
+                        hour: parseInt(values[0]),
+                        gridCapacity: parseFloat(values[2]) || 0,
+                        serverCapacity: parseFloat(values[3]) || 0,
+                        workloadPattern: parseFloat(values[4]) || 0,
+                        serverLoad: parseFloat(values[5]) || 0,
+                        coolingLoad: parseFloat(values[6]) || 0,
+                        totalLoad: parseFloat(values[7]) || 0
+                    });
+                }
+            }
+        }
+        return data;
+    };
+
+    const parseDataCenterFlexibility = (csvText, baAbbrev) => {
+        const lines = csvText.split('\n');
+        const data = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line) {
+                const values = line.split(',');
+                // Parse based on actual CSV structure - this may need adjustment
+                data.push({
+                    hour: parseInt(values[0]),
+                    flexibilityMW: parseFloat(values[1]) || 0
+                });
+            }
+        }
+        return data;
+    };
 
     const handleBackClick = () => {
         const currentPath = location.pathname;
@@ -555,11 +802,89 @@ const AminDetailPage = () => {
             })
         ];
 
+        // Add power plant locations
+        if (plantLocations.length > 0) {
+            const baPlants = plantLocations.filter(plant => 
+                plant.balancingAuthority === balancingAuthority.BA_Abrev && 
+                !isNaN(plant.latitude) && !isNaN(plant.longitude)
+            );
+
+            if (baPlants.length > 0) {
+                layers.push(
+                    new ScatterplotLayer({
+                        id: 'power-plants',
+                        data: baPlants,
+                        pickable: true,
+                        opacity: 0.8,
+                        stroked: true,
+                        filled: true,
+                        radiusScale: 6,
+                        radiusMinPixels: 3,
+                        radiusMaxPixels: 100,
+                        lineWidthMinPixels: 1,
+                        getPosition: d => [d.longitude, d.latitude],
+                        getRadius: d => Math.sqrt(d.totalCapacity) * 2,
+                        getFillColor: d => {
+                            // Color by primary type
+                            const typeColors = {
+                                'Hydro': [59, 130, 246],
+                                'Natural Gas': [139, 92, 246],
+                                'Solar': [245, 158, 11],
+                                'Wind': [16, 185, 129],
+                                'Nuclear': [239, 68, 68],
+                                'Coal': [107, 114, 128],
+                                'Geothermal': [220, 38, 38],
+                                'Biomass': [5, 150, 105]
+                            };
+                            return typeColors[d.primaryType] || [156, 163, 175];
+                        },
+                        getLineColor: [60, 60, 60],
+                        onClick: (info) => {
+                            if (info.object) {
+                                alert(`${info.object.plantName}\nType: ${info.object.primaryType}\nCapacity: ${info.object.totalCapacity} MW`);
+                            }
+                        }
+                    })
+                );
+            }
+        }
+
+        // Add data center locations (mock data for demonstration)
+        const dataCenters = [
+            { name: 'DC West 1', longitude: -119.5, latitude: 36.5, capacity: 500 },
+            { name: 'DC West 2', longitude: -118.2, latitude: 37.8, capacity: 750 },
+            { name: 'DC West 3', longitude: -117.1, latitude: 35.2, capacity: 300 }
+        ];
+
+        layers.push(
+            new ScatterplotLayer({
+                id: 'data-centers',
+                data: dataCenters,
+                pickable: true,
+                opacity: 0.9,
+                stroked: true,
+                filled: true,
+                radiusScale: 8,
+                radiusMinPixels: 8,
+                radiusMaxPixels: 50,
+                lineWidthMinPixels: 2,
+                getPosition: d => [d.longitude, d.latitude],
+                getRadius: d => Math.sqrt(d.capacity) * 1.5,
+                getFillColor: [255, 193, 7],
+                getLineColor: [255, 152, 0],
+                onClick: (info) => {
+                    if (info.object) {
+                        alert(`${info.object.name}\nCapacity: ${info.object.capacity} MW`);
+                    }
+                }
+            })
+        );
+
         return (
             <div style={{ width: '100%', height: '100%', position: 'relative', borderRadius: '16px', overflow: 'hidden' }}>
                 <DeckGL
                     viewState={viewState}
-                    controller={false}
+                    controller={true}
                     layers={layers}
                     views={new MapView({ id: 'map' })}
                     width="100%"
@@ -570,6 +895,18 @@ const AminDetailPage = () => {
                         mapStyle={OSM_MAP_STYLE}
                     />
                 </DeckGL>
+                <div style={{
+                    position: 'absolute',
+                    bottom: '10px',
+                    right: '10px',
+                    background: 'rgba(255, 255, 255, 0.9)',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: 500
+                }}>
+                    © University of Utah 2025
+                </div>
             </div>
         );
     };
@@ -596,14 +933,24 @@ const AminDetailPage = () => {
                                 gap: '12px'
                             }}>
                                 <span style={{ fontSize: '24px' }}>{caseStudy.icon}</span>
-                                <h3 style={{ 
-                                    margin: 0, 
-                                    fontSize: '1.25rem', 
-                                    fontWeight: 700,
-                                    color: selectedCaseStudy === caseStudy.id ? caseStudy.color : '#1e293b'
-                                }}>
-                                    {caseStudy.name}
-                                </h3>
+                                <div>
+                                    <h3 style={{ 
+                                        margin: 0, 
+                                        fontSize: '1.25rem', 
+                                        fontWeight: 700,
+                                        color: selectedCaseStudy === caseStudy.id ? caseStudy.color : '#1e293b'
+                                    }}>
+                                        {caseStudy.name}
+                                    </h3>
+                                    <p style={{ 
+                                        margin: '2px 0 0 0', 
+                                        fontSize: '0.9rem', 
+                                        fontWeight: 600,
+                                        color: selectedCaseStudy === caseStudy.id ? caseStudy.color : '#64748b'
+                                    }}>
+                                        {caseStudy.subtitle}
+                                    </p>
+                                </div>
                             </div>
                             <p style={{ 
                                 margin: 0, 
@@ -620,9 +967,69 @@ const AminDetailPage = () => {
         );
     };
 
-    const renderGenerationChart = (areaNumber) => {
-        const data = areaData[areaNumber];
-        if (!data) return null;
+    const renderZonalPriceChart = (caseId) => {
+        const data = caseStudyData[caseId]?.lmp || [];
+        if (!data.length) return <div>No zonal price data available</div>;
+
+        return (
+            <div>
+                <div className="hour-selector">
+                    <span style={{ fontWeight: 600, color: '#1e293b' }}>Hour:</span>
+                    <input
+                        type="range"
+                        min="1"
+                        max="24"
+                        value={selectedHour}
+                        onChange={(e) => setSelectedHour(parseInt(e.target.value))}
+                        className="hour-slider"
+                    />
+                    <span style={{ fontWeight: 600, color: '#3b82f6' }}>{selectedHour}:00</span>
+                </div>
+                <ResponsiveContainer width="100%" height={400}>
+                    <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                        <XAxis
+                            dataKey="hour"
+                            label={{ value: 'Hour of Day', position: 'insideBottom', offset: -10, style: { fontSize: '14px', fontWeight: 500 } }}
+                            tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                            height={80}
+                            stroke="#64748b"
+                        />
+                        <YAxis
+                            label={{ value: 'Zonal Price ($/MWh)', angle: -90, position: 'insideLeft', style: { fontSize: '14px', fontWeight: 500 } }}
+                            tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                            stroke="#64748b"
+                        />
+                        <Tooltip 
+                            contentStyle={{ 
+                                backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '12px',
+                                fontFamily: 'Inter',
+                                fontSize: '13px'
+                            }}
+                        />
+                        <Legend 
+                            wrapperStyle={{ fontFamily: 'Inter', fontSize: '13px' }}
+                        />
+                        <Line 
+                            type="monotone" 
+                            dataKey="price" 
+                            stroke="#3b82f6" 
+                            strokeWidth={3} 
+                            name="Zonal Price" 
+                            dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                            activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
+                        />
+                    </LineChart>
+                </ResponsiveContainer>
+            </div>
+        );
+    };
+
+    const renderGenerationChart = (caseId) => {
+        const data = caseStudyData[caseId]?.generation || [];
+        if (!data.length) return <div>No generation data available</div>;
 
         return (
             <ResponsiveContainer width="100%" height={400}>
@@ -666,13 +1073,29 @@ const AminDetailPage = () => {
         );
     };
 
-    const renderDemandChart = (areaNumber) => {
-        const data = areaData[areaNumber];
-        if (!data) return null;
+    const renderDemandChart = (caseId) => {
+        const demandData = caseStudyData[caseId]?.demand || [];
+        const generationData = caseStudyData[caseId]?.generation || [];
+        
+        if (!demandData.length && !generationData.length) return <div>No demand data available</div>;
+
+        // Combine demand and generation data
+        const combinedData = demandData.map(d => {
+            const gen = generationData.find(g => g.hour === d.hour);
+            const totalGeneration = gen ? 
+                (gen.naturalGas + gen.geothermal + gen.biomass + gen.nuclear + 
+                 gen.coal + gen.wind + gen.solar + gen.hydro + gen.battery) : 0;
+            
+            return {
+                hour: d.hour,
+                demand: d.demand,
+                totalGeneration
+            };
+        });
 
         return (
             <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                <LineChart data={combinedData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis
                         dataKey="hour"
@@ -705,9 +1128,9 @@ const AminDetailPage = () => {
         );
     };
 
-    const renderInterchangeChart = (areaNumber) => {
-        const data = areaData[areaNumber];
-        if (!data) return null;
+    const renderInterchangeChart = (caseId) => {
+        const data = caseStudyData[caseId]?.generation || [];
+        if (!data.length) return <div>No interchange data available</div>;
 
         return (
             <ResponsiveContainer width="100%" height={400}>
@@ -739,13 +1162,612 @@ const AminDetailPage = () => {
                     />
                     <Area
                         type="monotone"
-                        dataKey="netInterchange"
+                        dataKey="importExport"
                         stroke="#8b5cf6"
                         fill="#8b5cf6"
                         name="Net Interchange"
                     />
                 </AreaChart>
             </ResponsiveContainer>
+        );
+    };
+
+    const renderDataCenterDemandChart = (caseId) => {
+        const data = caseStudyData[caseId]?.dataCenterDemand || [];
+        if (!data.length) return <div>No data center demand data available</div>;
+
+        return (
+            <ResponsiveContainer width="100%" height={400}>
+                <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis
+                        dataKey="hour"
+                        label={{ value: 'Hour of Day', position: 'insideBottom', offset: -10, style: { fontSize: '14px', fontWeight: 500 } }}
+                        tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                        height={80}
+                        stroke="#64748b"
+                    />
+                    <YAxis
+                        label={{ value: 'Data Center Load (MW)', angle: -90, position: 'insideLeft', style: { fontSize: '14px', fontWeight: 500 } }}
+                        tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                        stroke="#64748b"
+                    />
+                    <Tooltip 
+                        contentStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '12px',
+                            fontFamily: 'Inter',
+                            fontSize: '13px'
+                        }}
+                    />
+                    <Legend 
+                        wrapperStyle={{ fontFamily: 'Inter', fontSize: '13px' }}
+                    />
+                    <Area type="monotone" dataKey="serverLoad" stackId="1" stroke="#3b82f6" fill="#3b82f6" name="Server Load" />
+                    <Area type="monotone" dataKey="coolingLoad" stackId="1" stroke="#10b981" fill="#10b981" name="Cooling Load" />
+                </AreaChart>
+            </ResponsiveContainer>
+        );
+    };
+
+    const renderDataCenterFlexibilityChart = (caseId) => {
+        const data = caseStudyData[caseId]?.dataCenterFlexibility || [];
+        if (!data.length) return <div>No data center flexibility data available</div>;
+
+        return (
+            <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis
+                        dataKey="hour"
+                        label={{ value: 'Hour of Day', position: 'insideBottom', offset: -10, style: { fontSize: '14px', fontWeight: 500 } }}
+                        tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                        height={80}
+                        stroke="#64748b"
+                    />
+                    <YAxis
+                        label={{ value: 'Flexibility (MW)', angle: -90, position: 'insideLeft', style: { fontSize: '14px', fontWeight: 500 } }}
+                        tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                        stroke="#64748b"
+                    />
+                    <Tooltip 
+                        contentStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '12px',
+                            fontFamily: 'Inter',
+                            fontSize: '13px'
+                        }}
+                    />
+                    <Legend 
+                        wrapperStyle={{ fontFamily: 'Inter', fontSize: '13px' }}
+                    />
+                    <Bar dataKey="flexibilityMW" fill="#f59e0b" name="Flexibility Available" />
+                </BarChart>
+            </ResponsiveContainer>
+        );
+    };
+
+    const renderOperationalCostsChart = (caseId) => {
+        const data = caseStudyData[caseId]?.costs || [];
+        if (!data.length) return <div>No operational costs data available</div>;
+
+        return (
+            <ResponsiveContainer width="100%" height={400}>
+                <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis
+                        dataKey="hour"
+                        label={{ value: 'Hour of Day', position: 'insideBottom', offset: -10, style: { fontSize: '14px', fontWeight: 500 } }}
+                        tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                        height={80}
+                        stroke="#64748b"
+                    />
+                    <YAxis
+                        label={{ value: 'Cost ($)', angle: -90, position: 'insideLeft', style: { fontSize: '14px', fontWeight: 500 } }}
+                        tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                        stroke="#64748b"
+                    />
+                    <Tooltip 
+                        contentStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '12px',
+                            fontFamily: 'Inter',
+                            fontSize: '13px'
+                        }}
+                    />
+                    <Legend 
+                        wrapperStyle={{ fontFamily: 'Inter', fontSize: '13px' }}
+                    />
+                    <Area type="monotone" dataKey="startupCosts" stackId="1" stroke="#ef4444" fill="#ef4444" name="Startup Costs" />
+                    <Area type="monotone" dataKey="fuelCosts" stackId="1" stroke="#3b82f6" fill="#3b82f6" name="Fuel Costs" />
+                    <Area type="monotone" dataKey="variableCosts" stackId="1" stroke="#10b981" fill="#10b981" name="Variable Costs" />
+                    <Area type="monotone" dataKey="importExportCosts" stackId="1" stroke="#8b5cf6" fill="#8b5cf6" name="Import/Export Costs" />
+                </AreaChart>
+            </ResponsiveContainer>
+        );
+    };
+
+    const renderComparisonCharts = () => {
+        // Prepare combined data for all comparisons
+        const combinedZonalPriceData = [];
+        const combinedCostData = [];
+        const combinedFlexibilityData = [];
+        
+        // Create combined datasets for better comparison
+        for (let hour = 1; hour <= 24; hour++) {
+            const hourData = { hour };
+            const costHourData = { hour };
+            const flexHourData = { hour };
+            
+            CASE_STUDIES.slice(0, 3).forEach(caseStudy => {
+                const lmpData = caseStudyData[caseStudy.id]?.lmp || [];
+                const costsData = caseStudyData[caseStudy.id]?.costs || [];
+                const flexData = caseStudyData[caseStudy.id]?.dataCenterFlexibility || [];
+                
+                const lmpPoint = lmpData.find(d => d.hour === hour);
+                const costPoint = costsData.find(d => d.hour === hour);
+                const flexPoint = flexData.find(d => d.hour === hour);
+                
+                hourData[`${caseStudy.name}_price`] = lmpPoint?.price || 0;
+                costHourData[`${caseStudy.name}_cost`] = costPoint?.totalCosts || 0;
+                if (caseStudy.id !== 'case1') {
+                    flexHourData[`${caseStudy.name}_flex`] = flexPoint?.flexibilityMW || 0;
+                }
+            });
+            
+            combinedZonalPriceData.push(hourData);
+            combinedCostData.push(costHourData);
+            combinedFlexibilityData.push(flexHourData);
+        }
+
+        // Calculate summary statistics
+        const calculateStats = (data, key) => {
+            const values = data.map(d => d[key] || 0).filter(v => v > 0);
+            if (values.length === 0) return { avg: 0, max: 0, min: 0, total: 0 };
+            return {
+                avg: values.reduce((a, b) => a + b, 0) / values.length,
+                max: Math.max(...values),
+                min: Math.min(...values),
+                total: values.reduce((a, b) => a + b, 0)
+            };
+        };
+
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+                {/* Executive Summary Dashboard */}
+                <div className="chart-container">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                        <span style={{ fontSize: '24px' }}>📊</span>
+                        <h3 style={{ 
+                            margin: 0, 
+                            fontSize: '1.5rem', 
+                            fontWeight: 700,
+                            color: '#1e293b'
+                        }}>
+                            Executive Summary: Case Study Impact Analysis
+                        </h3>
+                    </div>
+                    
+                    <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+                        gap: '20px',
+                        marginBottom: '30px'
+                    }}>
+                        {CASE_STUDIES.slice(0, 3).map(caseStudy => {
+                            const priceStats = calculateStats(combinedZonalPriceData, `${caseStudy.name}_price`);
+                            const costStats = calculateStats(combinedCostData, `${caseStudy.name}_cost`);
+                            
+                            return (
+                                <div key={caseStudy.id} style={{
+                                    background: `linear-gradient(135deg, ${caseStudy.color}15 0%, ${caseStudy.color}05 100%)`,
+                                    border: `2px solid ${caseStudy.color}30`,
+                                    borderRadius: '16px',
+                                    padding: '24px',
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                }}>
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '-20px',
+                                        right: '-20px',
+                                        fontSize: '60px',
+                                        opacity: 0.1,
+                                        color: caseStudy.color
+                                    }}>
+                                        {caseStudy.icon}
+                                    </div>
+                                    
+                                    <h4 style={{ 
+                                        margin: '0 0 8px 0', 
+                                        color: caseStudy.color,
+                                        fontSize: '1.2rem',
+                                        fontWeight: 700
+                                    }}>
+                                        {caseStudy.name}
+                                    </h4>
+                                    <p style={{ 
+                                        margin: '0 0 16px 0', 
+                                        color: '#64748b',
+                                        fontSize: '0.9rem',
+                                        lineHeight: '1.4'
+                                    }}>
+                                        {caseStudy.subtitle}
+                                    </p>
+                                    
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                        <div style={{
+                                            background: 'rgba(255, 255, 255, 0.7)',
+                                            borderRadius: '8px',
+                                            padding: '12px',
+                                            textAlign: 'center'
+                                        }}>
+                                            <p style={{ margin: '0 0 4px 0', fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
+                                                Avg Price
+                                            </p>
+                                            <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: caseStudy.color }}>
+                                                ${priceStats.avg.toFixed(1)}/MWh
+                                            </p>
+                                        </div>
+                                        <div style={{
+                                            background: 'rgba(255, 255, 255, 0.7)',
+                                            borderRadius: '8px',
+                                            padding: '12px',
+                                            textAlign: 'center'
+                                        }}>
+                                            <p style={{ margin: '0 0 4px 0', fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
+                                                Total Cost
+                                            </p>
+                                            <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: caseStudy.color }}>
+                                                ${(costStats.total / 1000000).toFixed(1)}M
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Enhanced Zonal Price Comparison */}
+                <div className="chart-container">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ fontSize: '24px' }}>💰</span>
+                            <h3 style={{ 
+                                margin: 0, 
+                                fontSize: '1.5rem', 
+                                fontWeight: 700,
+                                color: '#1e293b'
+                            }}>
+                                Zonal Price Impact Analysis (24-Hour Profile)
+                            </h3>
+                        </div>
+                        <div style={{
+                            background: 'rgba(59, 130, 246, 0.1)',
+                            padding: '8px 16px',
+                            borderRadius: '20px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            color: '#3b82f6'
+                        }}>
+                            Lower is Better
+                        </div>
+                    </div>
+                    <ResponsiveContainer width="100%" height={450}>
+                        <ComposedChart data={combinedZonalPriceData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                            <XAxis
+                                dataKey="hour"
+                                label={{ value: 'Hour of Day', position: 'insideBottom', offset: -10, style: { fontSize: '14px', fontWeight: 500 } }}
+                                tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                                height={80}
+                                stroke="#64748b"
+                            />
+                            <YAxis
+                                label={{ value: 'Zonal Price ($/MWh)', angle: -90, position: 'insideLeft', style: { fontSize: '14px', fontWeight: 500 } }}
+                                tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                                stroke="#64748b"
+                                domain={['dataMin - 5', 'dataMax + 5']}
+                            />
+                            <Tooltip 
+                                contentStyle={{ 
+                                    backgroundColor: 'rgba(255, 255, 255, 0.98)', 
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: '12px',
+                                    fontFamily: 'Inter',
+                                    fontSize: '13px',
+                                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+                                }}
+                                formatter={(value, name) => [`$${value.toFixed(2)}/MWh`, name.replace('_price', '')]}
+                            />
+                            <Legend wrapperStyle={{ fontFamily: 'Inter', fontSize: '13px' }} />
+                            {CASE_STUDIES.slice(0, 3).map((caseStudy, index) => (
+                                <Line
+                                    key={caseStudy.id}
+                                    type="monotone"
+                                    dataKey={`${caseStudy.name}_price`}
+                                    stroke={caseStudy.color}
+                                    strokeWidth={3}
+                                    name={caseStudy.name}
+                                    dot={{ fill: caseStudy.color, strokeWidth: 2, r: 4 }}
+                                    activeDot={{ r: 6, stroke: caseStudy.color, strokeWidth: 2 }}
+                                />
+                            ))}
+                        </ComposedChart>
+                    </ResponsiveContainer>
+                </div>
+
+                {/* Enhanced Operational Costs Comparison */}
+                <div className="chart-container">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ fontSize: '24px' }}>💸</span>
+                            <h3 style={{ 
+                                margin: 0, 
+                                fontSize: '1.5rem', 
+                                fontWeight: 700,
+                                color: '#1e293b'
+                            }}>
+                                Operational Costs Comparison (Hourly Breakdown)
+                            </h3>
+                        </div>
+                        <div style={{
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            padding: '8px 16px',
+                            borderRadius: '20px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            color: '#ef4444'
+                        }}>
+                            Cost Savings Analysis
+                        </div>
+                    </div>
+                    <ResponsiveContainer width="100%" height={450}>
+                        <ComposedChart data={combinedCostData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                            <XAxis
+                                dataKey="hour"
+                                label={{ value: 'Hour of Day', position: 'insideBottom', offset: -10, style: { fontSize: '14px', fontWeight: 500 } }}
+                                tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                                height={80}
+                                stroke="#64748b"
+                            />
+                            <YAxis
+                                label={{ value: 'Total Operational Cost ($)', angle: -90, position: 'insideLeft', style: { fontSize: '14px', fontWeight: 500 } }}
+                                tick={{ fontSize: 12, fontFamily: 'Inter' }}
+                                stroke="#64748b"
+                                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`}
+                            />
+                            <Tooltip 
+                                contentStyle={{ 
+                                    backgroundColor: 'rgba(255, 255, 255, 0.98)', 
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: '12px',
+                                    fontFamily: 'Inter',
+                                    fontSize: '13px',
+                                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+                                }}
+                                formatter={(value, name) => [`$${(value / 1000).toFixed(1)}K`, name.replace('_cost', '')]}
+                            />
+                            <Legend wrapperStyle={{ fontFamily: 'Inter', fontSize: '13px' }} />
+                            {CASE_STUDIES.slice(0, 3).map((caseStudy, index) => (
+                                <Bar
+                                    key={caseStudy.id}
+                                    dataKey={`${caseStudy.name}_cost`}
+                                    fill={caseStudy.color}
+                                    name={caseStudy.name}
+                                    opacity={0.8}
+                                />
+                            ))}
+                        </ComposedChart>
+                    </ResponsiveContainer>
+                </div>
+
+                {/* Data Center Flexibility Impact */}
+                <div className="chart-container">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ fontSize: '24px' }}>🔄</span>
+                            <h3 style={{ 
+                                margin: 0, 
+                                fontSize: '1.5rem', 
+                                fontWeight: 700,
+                                color: '#1e293b'
+                            }}>
+                                Data Center Flexibility Benefits Analysis
+                            </h3>
+                        </div>
+                        <div style={{
+                            background: 'rgba(16, 185, 129, 0.1)',
+                            padding: '8px 16px',
+                            borderRadius: '20px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            color: '#10b981'
+                        }}>
+                            Flexibility Potential
+                        </div>
+                    </div>
+                    
+                    <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
+                        gap: '24px',
+                        marginBottom: '30px'
+                    }}>
+                        {CASE_STUDIES.slice(1, 3).map(caseStudy => {
+                            const flexData = caseStudyData[caseStudy.id]?.dataCenterFlexibility || [];
+                            const maxFlex = Math.max(...flexData.map(d => d.flexibilityMW || 0));
+                            const avgFlex = flexData.reduce((sum, d) => sum + (d.flexibilityMW || 0), 0) / flexData.length;
+                            
+                            return (
+                                <div key={caseStudy.id} style={{
+                                    background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                                    borderRadius: '16px',
+                                    padding: '24px',
+                                    border: `2px solid ${caseStudy.color}30`,
+                                    position: 'relative'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                                        <div style={{
+                                            background: caseStudy.color,
+                                            borderRadius: '8px',
+                                            padding: '8px',
+                                            color: 'white',
+                                            fontSize: '16px'
+                                        }}>
+                                            {caseStudy.icon}
+                                        </div>
+                                        <div>
+                                            <h4 style={{ 
+                                                margin: 0, 
+                                                color: caseStudy.color,
+                                                fontSize: '1.2rem',
+                                                fontWeight: 700
+                                            }}>
+                                                {caseStudy.name}
+                                            </h4>
+                                            <p style={{ 
+                                                margin: 0, 
+                                                color: '#64748b',
+                                                fontSize: '0.9rem'
+                                            }}>
+                                                {caseStudy.subtitle}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style={{ marginBottom: '16px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                            <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>
+                                                Peak Flexibility: {maxFlex.toFixed(1)} MW
+                                            </span>
+                                            <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>
+                                                Avg: {avgFlex.toFixed(1)} MW
+                                            </span>
+                                        </div>
+                                        <div style={{
+                                            background: '#e2e8f0',
+                                            borderRadius: '6px',
+                                            height: '8px',
+                                            overflow: 'hidden'
+                                        }}>
+                                            <div style={{
+                                                background: caseStudy.color,
+                                                height: '100%',
+                                                width: `${(avgFlex / maxFlex) * 100}%`,
+                                                borderRadius: '6px',
+                                                transition: 'width 0.3s ease'
+                                            }} />
+                                        </div>
+                                    </div>
+                                    
+                                    <ResponsiveContainer width="100%" height={200}>
+                                        <AreaChart data={flexData}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                            <XAxis 
+                                                dataKey="hour" 
+                                                tick={{ fontSize: 10 }}
+                                                stroke="#64748b"
+                                            />
+                                            <YAxis 
+                                                tick={{ fontSize: 10 }}
+                                                stroke="#64748b"
+                                            />
+                                            <Tooltip 
+                                                contentStyle={{ 
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                                                    border: '1px solid #e2e8f0',
+                                                    borderRadius: '8px',
+                                                    fontSize: '12px'
+                                                }}
+                                                formatter={(value) => [`${value.toFixed(1)} MW`, 'Flexibility']}
+                                            />
+                                            <Area 
+                                                type="monotone" 
+                                                dataKey="flexibilityMW" 
+                                                stroke={caseStudy.color} 
+                                                fill={`${caseStudy.color}40`}
+                                                strokeWidth={2}
+                                            />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Key Insights and Recommendations */}
+                <div className="chart-container">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                        <span style={{ fontSize: '24px' }}>💡</span>
+                        <h3 style={{ 
+                            margin: 0, 
+                            fontSize: '1.5rem', 
+                            fontWeight: 700,
+                            color: '#1e293b'
+                        }}>
+                            Key Insights & Recommendations
+                        </h3>
+                    </div>
+                    
+                    <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
+                        gap: '20px'
+                    }}>
+                        <div style={{
+                            background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                            borderRadius: '16px',
+                            padding: '24px',
+                            border: '2px solid #3b82f6'
+                        }}>
+                            <h4 style={{ margin: '0 0 12px 0', color: '#1e40af', fontSize: '1.1rem', fontWeight: 700 }}>
+                                💰 Cost Impact
+                            </h4>
+                            <p style={{ margin: 0, color: '#1e40af', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                                Data center flexibility can reduce operational costs by up to 15-25% during peak hours, 
+                                with temporal flexibility showing the most significant savings.
+                            </p>
+                        </div>
+                        
+                        <div style={{
+                            background: 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)',
+                            borderRadius: '16px',
+                            padding: '24px',
+                            border: '2px solid #10b981'
+                        }}>
+                            <h4 style={{ margin: '0 0 12px 0', color: '#065f46', fontSize: '1.1rem', fontWeight: 700 }}>
+                                🔄 Flexibility Value
+                            </h4>
+                            <p style={{ margin: 0, color: '#065f46', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                                Spatial flexibility provides consistent load balancing across regions, while temporal 
+                                flexibility offers dynamic response to price signals.
+                            </p>
+                        </div>
+                        
+                        <div style={{
+                            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                            borderRadius: '16px',
+                            padding: '24px',
+                            border: '2px solid #f59e0b'
+                        }}>
+                            <h4 style={{ margin: '0 0 12px 0', color: '#92400e', fontSize: '1.1rem', fontWeight: 700 }}>
+                                📊 Grid Stability
+                            </h4>
+                            <p style={{ margin: 0, color: '#92400e', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                                Flexible data centers can serve as virtual power plants, providing grid services 
+                                and improving overall system reliability and efficiency.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         );
     };
 
@@ -886,7 +1908,7 @@ const AminDetailPage = () => {
                                 fontSize: '1rem',
                                 fontWeight: 500
                             }}>
-                                Advanced Grid Intelligence Platform
+                                Data Centers are popping up across West, what if they were flexible
                             </p>
                         </div>
                     </div>
@@ -943,10 +1965,10 @@ const AminDetailPage = () => {
                                 <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>{balancingAuthority.FID}</p>
                             </div>
                             <div className="metric-item">
-                                <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', fontWeight: 600, color: '#3b82f6' }}>Area Numbers</p>
+                                <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', fontWeight: 600, color: '#3b82f6' }}>Total Capacity</p>
                                 <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>
-                                    {balancingAuthority.Area_Numbers && balancingAuthority.Area_Numbers.length > 0
-                                        ? balancingAuthority.Area_Numbers.join(', ')
+                                    {capacityData[balancingAuthority.BA_Abrev] ? 
+                                        Math.round(Object.values(capacityData[balancingAuthority.BA_Abrev]).reduce((a, b) => a + b, 0)).toLocaleString() + ' MW'
                                         : 'N/A'}
                                 </p>
                             </div>
@@ -966,15 +1988,31 @@ const AminDetailPage = () => {
                     </div>
                 </div>
 
-                {/* Case Studies Section */}
-                {balancingAuthority.Area_Numbers && balancingAuthority.Area_Numbers.map(areaNumber => (
-                    <div key={areaNumber} style={{ marginBottom: '80px' }}>
+                {/* Case Study Selector */}
+                {renderCaseStudySelector()}
 
-                        {/* Case Study Selector */}
-                        {renderCaseStudySelector()}
+                {/* Charts Section */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+                    {selectedCaseStudy === 'case4' ? (
+                        renderComparisonCharts()
+                    ) : (
+                        <>
+                            {/* Zonal Price Chart */}
+                            <div className="chart-container">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                                    <span style={{ fontSize: '24px' }}>💰</span>
+                                    <h3 style={{ 
+                                        margin: 0, 
+                                        fontSize: '1.5rem', 
+                                        fontWeight: 700,
+                                        color: '#1e293b'
+                                    }}>
+                                        Zonal Price (24-Hour Profile)
+                                    </h3>
+                                </div>
+                                {renderZonalPriceChart(selectedCaseStudy)}
+                            </div>
 
-                        {/* Charts Section */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
                             {/* Generation Chart */}
                             <div className="chart-container">
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
@@ -988,7 +2026,7 @@ const AminDetailPage = () => {
                                         Balancing Authority Power Generation
                                     </h3>
                                 </div>
-                                {renderGenerationChart(areaNumber)}
+                                {renderGenerationChart(selectedCaseStudy)}
                             </div>
 
                             {/* Demand Chart */}
@@ -1004,7 +2042,7 @@ const AminDetailPage = () => {
                                         Balancing Authority Demand
                                     </h3>
                                 </div>
-                                {renderDemandChart(areaNumber)}
+                                {renderDemandChart(selectedCaseStudy)}
                             </div>
 
                             {/* Net Interchange */}
@@ -1020,11 +2058,63 @@ const AminDetailPage = () => {
                                         Net Electricity Interchange
                                     </h3>
                                 </div>
-                                {renderInterchangeChart(areaNumber)}
+                                {renderInterchangeChart(selectedCaseStudy)}
                             </div>
-                        </div>
-                    </div>
-                ))}
+
+                            {/* Data Center Demand (for case studies 2-4) */}
+                            {selectedCaseStudy !== 'case1' && (
+                                <div className="chart-container">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                                        <span style={{ fontSize: '24px' }}>🏢</span>
+                                        <h3 style={{ 
+                                            margin: 0, 
+                                            fontSize: '1.5rem', 
+                                            fontWeight: 700,
+                                            color: '#1e293b'
+                                        }}>
+                                            Data Center Demand
+                                        </h3>
+                                    </div>
+                                    {renderDataCenterDemandChart(selectedCaseStudy)}
+                                </div>
+                            )}
+
+                            {/* Data Center Energy Flexibility (for case studies 2-4) */}
+                            {selectedCaseStudy !== 'case1' && (
+                                <div className="chart-container">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                                        <span style={{ fontSize: '24px' }}>🔄</span>
+                                        <h3 style={{ 
+                                            margin: 0, 
+                                            fontSize: '1.5rem', 
+                                            fontWeight: 700,
+                                            color: '#1e293b'
+                                        }}>
+                                            Data Center Energy Flexibility
+                                        </h3>
+                                    </div>
+                                    {renderDataCenterFlexibilityChart(selectedCaseStudy)}
+                                </div>
+                            )}
+
+                            {/* Operational Costs */}
+                            <div className="chart-container">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                                    <span style={{ fontSize: '24px' }}>💸</span>
+                                    <h3 style={{ 
+                                        margin: 0, 
+                                        fontSize: '1.5rem', 
+                                        fontWeight: 700,
+                                        color: '#1e293b'
+                                    }}>
+                                        Balancing Authority Hourly Operational Costs
+                                    </h3>
+                                </div>
+                                {renderOperationalCostsChart(selectedCaseStudy)}
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     );

@@ -17,6 +17,8 @@ import ThreeSixtyOutlinedIcon from '@mui/icons-material/ThreeSixtyOutlined';
 import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
 import Slider from '@mui/material/Slider';
 import Box from '@mui/material/Box';
+import Fab from '@mui/material/Fab';
+import SchoolIcon from '@mui/icons-material/School';
 
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
@@ -2586,6 +2588,34 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
   return (
     <>
       <WestmapHeader />
+      
+      {/* Floating Action Button for WECC Case Studies */}
+      <Fab
+        variant="extended"
+        style={{
+          position: 'fixed',
+          top: '80px',
+          left: '20px',
+          zIndex: 1000,
+          backgroundColor: '#1976d2',
+          color: 'white',
+          fontSize: '12px',
+          padding: '8px 16px',
+          height: '40px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          '&:hover': {
+            backgroundColor: '#1565c0'
+          }
+        }}
+        onClick={() => {
+          // Add functionality here - could navigate to case studies page or open modal
+          console.log('Visit WECC Case Studies clicked');
+        }}
+      >
+        <SchoolIcon style={{ marginRight: '8px', fontSize: '18px' }} />
+        Visit WECC Case Studies
+      </Fab>
+      
       {isLoadingAdditionalData && (
         <div style={{
           position: 'fixed',
@@ -2884,6 +2914,87 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
                   </div>
                 )}
 
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
+            <AccordionSummary style={{ 
+              height: "20px", 
+              minHeight: "40px", 
+              paddingRight: "20px", 
+              paddingLeft: "0px",
+              background: "rgba(46, 125, 50, 0.05)"
+            }}
+              expandIcon={<ArrowDropDownIcon />}>
+              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
+                <Checkbox checked={weccGenLayerActive} style={{ color: "#2e7d32" }} onChange={handleWeccGenLayerChange} />
+                WECC Generation
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails style={{ padding: "12px 16px" }}>
+              <Typography component="div">
+                {weccGenLayerActive && weccGenData && (
+                  <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
+                    <Typography style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
+                      Total Capacity (MW)
+                    </Typography>
+                    <Slider
+                      style={{ color: "#2e7d32" }}
+                      value={weccGenFilter}
+                      valueLabelDisplay="auto"
+                      onChange={handleWeccGenRangeFilterChange}
+                      getAriaValueText={valuetext}
+                      step={1000}
+                      min={0}
+                      max={weccGenData.length > 0 ? Math.max(...weccGenData.map(d => d.Total_MW)) : 100000}
+                    />
+                  </div>
+                )}
+
+                {weccGenLayerActive && weccGenNameItems.length > 0 && (
+                  <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
+                    <Multiselect
+                      defaultValue={weccGenSelectItems}
+                      data={weccGenNameItems}
+                      placeholder={'Filter by Balancing Authority'}
+                      onChange={handleWeccGenMultiselect}
+                    />
+                  </div>
+                )}
+
+                {weccGenLayerActive && weccGenChartData && (
+                  <div style={{ width: 260, height: 250, transform: "translate(-8px, 0px)" }}>
+                    <Doughnut data={weccGenChartData}
+                      options={{
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: {
+                            position: 'bottom',
+                            onClick: handleWeccDoughnutClick,
+                            labels: {
+                              boxWidth: 12,
+                              padding: 6,
+                              font: {
+                                size: 10,
+                                family: '"Inter", sans-serif'
+                              }
+                            }
+                          },
+                          title: {
+                            display: true,
+                            text: 'WECC Generation Mix (MW)',
+                            font: {
+                              size: 12,
+                              family: '"Inter", sans-serif',
+                              weight: '600'
+                            }
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                )}
               </Typography>
             </AccordionDetails>
           </Accordion>
@@ -3203,87 +3314,6 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
                   <div style={{ paddingRight: "20px", fontSize: "11px", color: "#666", lineHeight: "1.4" }}>
                     WECC Balancing Authorities overlay showing {weccGeojsonData.features?.length || 0} regions.
                     Click on any region for detailed information.
-                  </div>
-                )}
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-
-          <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
-            <AccordionSummary style={{ 
-              height: "20px", 
-              minHeight: "40px", 
-              paddingRight: "20px", 
-              paddingLeft: "0px",
-              background: "rgba(46, 125, 50, 0.05)"
-            }}
-              expandIcon={<ArrowDropDownIcon />}>
-              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
-                <Checkbox checked={weccGenLayerActive} style={{ color: "#2e7d32" }} onChange={handleWeccGenLayerChange} />
-                WECC Generation
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails style={{ padding: "12px 16px" }}>
-              <Typography component="div">
-                {weccGenLayerActive && weccGenData && (
-                  <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
-                    <Typography style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
-                      Total Capacity (MW)
-                    </Typography>
-                    <Slider
-                      style={{ color: "#2e7d32" }}
-                      value={weccGenFilter}
-                      valueLabelDisplay="auto"
-                      onChange={handleWeccGenRangeFilterChange}
-                      getAriaValueText={valuetext}
-                      step={1000}
-                      min={0}
-                      max={weccGenData.length > 0 ? Math.max(...weccGenData.map(d => d.Total_MW)) : 100000}
-                    />
-                  </div>
-                )}
-
-                {weccGenLayerActive && weccGenNameItems.length > 0 && (
-                  <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
-                    <Multiselect
-                      defaultValue={weccGenSelectItems}
-                      data={weccGenNameItems}
-                      placeholder={'Filter by Balancing Authority'}
-                      onChange={handleWeccGenMultiselect}
-                    />
-                  </div>
-                )}
-
-                {weccGenLayerActive && weccGenChartData && (
-                  <div style={{ width: 260, height: 250, transform: "translate(-8px, 0px)" }}>
-                    <Doughnut data={weccGenChartData}
-                      options={{
-                        maintainAspectRatio: false,
-                        plugins: {
-                          legend: {
-                            position: 'bottom',
-                            onClick: handleWeccDoughnutClick,
-                            labels: {
-                              boxWidth: 12,
-                              padding: 6,
-                              font: {
-                                size: 10,
-                                family: '"Inter", sans-serif'
-                              }
-                            }
-                          },
-                          title: {
-                            display: true,
-                            text: 'WECC Generation Mix (MW)',
-                            font: {
-                              size: 12,
-                              family: '"Inter", sans-serif',
-                              weight: '600'
-                            }
-                          }
-                        }
-                      }}
-                    />
                   </div>
                 )}
               </Typography>
