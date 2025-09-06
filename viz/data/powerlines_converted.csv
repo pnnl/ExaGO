@@ -1,0 +1,3 @@
+wkt,flow capacity,pf,qf,pt,qt,kilovolt,line_name,srouce,target,actual flow,data_source
+"LINESTRING (-122.4194 37.7749, -122.0839 37.4220)",500.0,150.0,-25.0,-148.0,-20.0,230.0,SAN FRANCISCO -- PALO ALTO,SAN FRANCISCO,PALO ALTO,150.0,powerlines_WUS_CAN_sgca
+"LINESTRING (-118.2437 34.0522, -117.9143 33.8003)",400.0,120.0,-15.0,-118.0,-12.0,500.0,LOS ANGELES -- ANAHEIM,LOS ANGELES,ANAHEIM,120.0,powerlines_WUS_CAN_sgca

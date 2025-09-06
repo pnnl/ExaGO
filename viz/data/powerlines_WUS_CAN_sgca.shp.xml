@@ -1,0 +1,1009 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<metadata>
+  <idinfo>
+    <citation>
+      <citeinfo>
+        <origin>Sean P. Finn</origin>
+        <pubdate>20230301</pubdate>
+        <title>Powerline Corridors in the Western United States and Canada</title>
+        <geoform>vector digital data</geoform>
+        <othercit>Data originally released on SageMap.</othercit>
+        <onlink>https://doi.org/10.5066/P915FITQ</onlink>
+        <lworkcit>
+          <citeinfo>
+            <origin>Connelly, J.W.</origin>
+            <origin>Knick, S.T.</origin>
+            <origin>Schroeder, M.A.</origin>
+            <origin>Stiver, S.J.</origin>
+            <pubdate>2004</pubdate>
+            <title>Conservation Assessment of Greater Sage-grouse and Sagebrush Habitats</title>
+            <geoform>publication</geoform>
+            <pubinfo>
+              <pubplace>Cheyenne, WY</pubplace>
+              <publish>Western Association of Fish and Wildlife Agencies</publish>
+            </pubinfo>
+          </citeinfo>
+        </lworkcit>
+      </citeinfo>
+    </citation>
+    <descript>
+      <abstract>Powerlines in the western United States and Canada as identified by the 22 source data layers used to compile this shapefile.  Source data were collected by personal contact or through the internet in the winter and spring of 2004 and assimilated using ArcGIS.  This file is a complete record of overhead powerline data that was available as of 5/15/2004 but IS NOT INTENDED TO BE A COMPLETE REPRESENTATION OF THE SUM TOTAL OF ALL POWERLINES ON THE GROUND.  These data primarily depict the higher voltage, long distance transmission lines but some arcs likely represent lower voltage distribution lines.</abstract>
+      <purpose>Originally created to depict powerlines in relation to Sage Grouse activity centers but may be used for any purpose requiring general powerline location information.</purpose>
+      <supplinf>Because the source data used to create this shapefile varied, users are cautioned to consider this data reliable only at smaller (approximately 1:100,000 and smaller) scales.</supplinf>
+    </descript>
+    <timeperd>
+      <timeinfo>
+        <sngdate>
+          <caldate>200406</caldate>
+        </sngdate>
+      </timeinfo>
+      <current>publication date</current>
+    </timeperd>
+    <status>
+      <progress>Complete</progress>
+      <update>None planned</update>
+    </status>
+    <spdom>
+      <bounding>
+        <westbc>-136.8556</westbc>
+        <eastbc>-88.2494</eastbc>
+        <northbc>61.7607</northbc>
+        <southbc>30.0784</southbc>
+      </bounding>
+      <descgeog>Western United States</descgeog>
+    </spdom>
+    <keywords>
+      <theme>
+        <themekt>ISO 19115 Topic Category</themekt>
+        <themekey>utilitiesCommunication</themekey>
+      </theme>
+      <theme>
+        <themekt>USGS Thesaurus</themekt>
+        <themekey>geospatial analysis</themekey>
+      </theme>
+      <theme>
+        <themekt>Alexandria Digital Library Feature Type Thesaurus</themekt>
+        <themekey>manmade features</themekey>
+      </theme>
+      <theme>
+        <themekt>None</themekt>
+        <themekey>power lines</themekey>
+        <themekey>electrical lines</themekey>
+        <themekey>electricity</themekey>
+        <themekey>transmission lines</themekey>
+        <themekey>telephone lines</themekey>
+        <themekey>utility lines</themekey>
+      </theme>
+      <theme>
+        <themekt>USGS Metadata Identifier</themekt>
+        <themekey>USGS:54383f29e4b08a816ca6376a</themekey>
+      </theme>
+      <place>
+        <placekt>Common geographic areas</placekt>
+        <placekey>Washington</placekey>
+        <placekey>Oregon</placekey>
+        <placekey>California</placekey>
+        <placekey>Idaho</placekey>
+        <placekey>Nevada</placekey>
+        <placekey>Utah</placekey>
+        <placekey>Arizona</placekey>
+        <placekey>Montana</placekey>
+        <placekey>Wyoming</placekey>
+        <placekey>Colorado</placekey>
+        <placekey>New Mexico</placekey>
+        <placekey>North Dakota</placekey>
+        <placekey>South Dakota</placekey>
+        <placekey>United States</placekey>
+        <placekey>British Columbia</placekey>
+        <placekey>Alberta</placekey>
+        <placekey>Saskatchewan</placekey>
+        <placekey>Canada</placekey>
+        <placekey>North America</placekey>
+      </place>
+    </keywords>
+    <accconst>No access constraints</accconst>
+    <useconst>No use constraints. Users need to read the dataset's metadata thoroughly to understand appropriate use and data limitations. Public domain data from the U.S. Government are freely redistributable with proper metadata and source attribution. The U.S. Geological Survey requests to be acknowledged as originator of these data in future products or derivative research.</useconst>
+    <ptcontac>
+      <cntinfo>
+        <cntperp>
+          <cntper>FRESC Science Data Coordinator</cntper>
+          <cntorg>USGS Forest and Rangeland Ecosystem Science Center</cntorg>
+        </cntperp>
+        <cntaddr>
+          <addrtype>mailing and physical</addrtype>
+          <address>777 NW 9th St, Suite 400</address>
+          <city>Corvallis</city>
+          <state>OR</state>
+          <postal>97330</postal>
+          <country>USA</country>
+        </cntaddr>
+        <cntvoice>541-750-1030</cntvoice>
+        <cntemail>fresc_outreach@usgs.gov</cntemail>
+      </cntinfo>
+    </ptcontac>
+    <datacred>Sean P. Finn</datacred>
+    <secinfo>
+      <secsys>none</secsys>
+      <secclass>Unclassified</secclass>
+      <sechandl>none</sechandl>
+    </secinfo>
+    <native>Microsoft Windows 2000 Version 5.0 (Build 2195) Service Pack 4; ESRI ArcCatalog 8.3.0.800</native>
+    <crossref>
+      <citeinfo>
+        <origin>J.W. Connelly</origin>
+        <origin>S.T. Knick</origin>
+        <origin>M.A. Schroeder</origin>
+        <origin>S.J. Stiver</origin>
+        <pubdate>2004</pubdate>
+        <title>Conservation assessment of Greater Sage-grouse and sagebrush habitats</title>
+        <geoform>unpublished report</geoform>
+        <pubinfo>
+          <pubplace>Cheyenne, WY</pubplace>
+          <publish>Western Association of Fish and Wildlife Agencies</publish>
+        </pubinfo>
+        <othercit>Information contained in this dataset were manipulated to produce Figure 7.19, Chapter 7, p. 88</othercit>
+      </citeinfo>
+    </crossref>
+  </idinfo>
+  <dataqual>
+    <attracc>
+      <attraccr>Accuracy of powerline corridors unknown and likely varies among the different sources.</attraccr>
+    </attracc>
+    <logic>Dependent upon the source data.</logic>
+    <complete>Dependent upon the completeness of the source data.</complete>
+    <posacc>
+      <horizpa>
+        <horizpar>Dependent upon the source data.</horizpar>
+      </horizpa>
+      <vertacc>
+        <vertaccr>Dependent upon the source data.</vertaccr>
+      </vertacc>
+    </posacc>
+    <lineage>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>National Park Service Intermountain GIS Center</origin>
+            <pubdate>200008</pubdate>
+            <title>Line Features at Aztec Ruins National Monument, New Mexico</title>
+            <geoform>vector digital data</geoform>
+          </citeinfo>
+        </srccite>
+        <srcscale>12000</srcscale>
+        <typesrc>GPS</typesrc>
+        <srctime>
+          <timeinfo>
+            <mdattim>
+              <sngdate>
+                <caldate>199811</caldate>
+              </sngdate>
+              <sngdate>
+                <caldate>200006</caldate>
+              </sngdate>
+              <sngdate>
+                <caldate>200008</caldate>
+              </sngdate>
+            </mdattim>
+          </timeinfo>
+          <srccurr>ground condition</srccurr>
+        </srctime>
+        <srccitea>azru_utilline</srccitea>
+        <srccontr>Power line locations in Aztec Ruins National Monument, New Mexico</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>National Park Service, Capulin Volcano National Monument</origin>
+            <pubdate>200111</pubdate>
+            <title>Utility Lines at Capulin Volcano National Monument, New Mexico</title>
+            <geoform>vector digital data</geoform>
+          </citeinfo>
+        </srccite>
+        <srcscale>2</srcscale>
+        <typesrc>GPS</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>200111</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>cavo_utilitylines</srccitea>
+        <srccontr>Power lines in Capulin Volcano National Monument, New Mexico</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>Casper Field Office, Wyoming</origin>
+            <pubdate>2004</pubdate>
+            <title>Power Transmission Lines for The Casper Field Office</title>
+            <edition>1st</edition>
+            <geoform>vector digital data</geoform>
+          </citeinfo>
+        </srccite>
+        <srcscale>100000</srcscale>
+        <typesrc>100:000 quad digital maps</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>2004</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>CFO_transmission_lines</srccitea>
+        <srccontr>Power transmission line for the Casper Field Office, Wyoming</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>U.S. Department of Commerce</origin>
+            <pubdate>1995</pubdate>
+            <title>U.S. Census Bureau, 1995 Tiger Lines</title>
+            <geoform>unknown (likely vector digital data)</geoform>
+          </citeinfo>
+        </srccite>
+        <typesrc>online</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>unknown</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>ground condition</srccurr>
+        </srctime>
+        <srccitea>eastOR_powerline</srccitea>
+        <srccontr>Powerlines in Eastern Oregon</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>Glen Canyon National Recreation Area GIS</origin>
+            <pubdate>19951109</pubdate>
+            <title>Glen Canyon National Recreation Area Power Lines</title>
+            <geoform>vector digital data</geoform>
+          </citeinfo>
+        </srccite>
+        <srcscale>100000</srcscale>
+        <typesrc>USGS DLG's</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>19951109</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>glca_power100</srccitea>
+        <srccontr>Power lines in Glen Canyon National Recreation Area</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>North Dakota State University Extension Geospatial Education Program</origin>
+            <pubdate>20020510</pubdate>
+            <title>North Dakota Utility Lines - UTM Zones 13 and 14</title>
+            <geoform>vector digital data</geoform>
+          </citeinfo>
+        </srccite>
+        <typesrc>online</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>20020510</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>nd_utline</srccitea>
+        <srccontr>Utility lines in North Dakota</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>GIS Data Depot</origin>
+            <pubdate>1993</pubdate>
+            <title>DIGITAL CHART OF THE WORLD (DCW)</title>
+            <geoform>unknown (likely vector digital data)</geoform>
+          </citeinfo>
+        </srccite>
+        <typesrc>online</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>unknown</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>ne_utline</srccitea>
+        <srccontr>Utility lines in Nebraska</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>USFS Okanogan NF</origin>
+            <pubdate>unknown</pubdate>
+            <title>BONNEVILLE POWER POWERLINES, OKANOGAN NF</title>
+            <geoform>unknown (likely vector digital data)</geoform>
+          </citeinfo>
+        </srccite>
+        <typesrc>online</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>unknown</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>okan_power</srccitea>
+        <srccontr>Powerlines of Okanogan National Forest</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>Western Utility Group</origin>
+            <pubdate>19960117</pubdate>
+            <title>Utility corridors</title>
+            <geoform>vector digital data</geoform>
+          </citeinfo>
+        </srccite>
+        <typesrc>CD-ROM</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>19960117</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>power_icebmp</srccitea>
+        <srccontr>Utility corridors between the existing energy sources. Contains no attribute information.</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>PacifiCorp / UP&amp;L Co.</origin>
+            <pubdate>Unknown</pubdate>
+            <title>PacifiCorp / UP&amp;L Co. Transmission Line - SRBOPNCA</title>
+            <geoform>vector digital data</geoform>
+          </citeinfo>
+        </srccite>
+        <typesrc>online</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>unknown</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>ppline</srccitea>
+        <srccontr>PacifiCorp / UP&amp;L Co. transmission line where it runs through the Snake River Birds of Prey National Conservation Area.</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>Price Field Office</origin>
+            <pubdate>unknown</pubdate>
+            <title>Price Field Office GIS data</title>
+            <geoform>unknown (likely vector digital data)</geoform>
+          </citeinfo>
+        </srccite>
+        <typesrc>CD-ROM</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>unknown</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>ground condition</srccurr>
+        </srctime>
+        <srccitea>PriceFO_powerlines</srccitea>
+        <srccontr>Power lines in the Price Field Office, Utah</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>California BLM</origin>
+            <pubdate>Unknown</pubdate>
+            <title>California Utility Lines</title>
+            <geoform>vector digital data</geoform>
+          </citeinfo>
+        </srccite>
+        <srcscale>100000</srcscale>
+        <typesrc>100k DLGs</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>unknown</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>ptllca</srccitea>
+        <srccontr>Utility lines in California; most digitized from 100k DLGs, but a moderate number of utility lines were derived from 1:24k quads.</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>GIS Data Depot</origin>
+            <pubdate>1993</pubdate>
+            <title>Digital Chart of the World</title>
+            <geoform>unknown (likely vector digital data)</geoform>
+          </citeinfo>
+        </srccite>
+        <typesrc>online</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>unknown</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>sd_utline</srccitea>
+        <srccontr>Utility lines in South Dakota</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>U.S Census Bureau</origin>
+            <pubdate>1995</pubdate>
+            <title>Tiger data</title>
+            <geoform>unknown (likely vector digital data)</geoform>
+          </citeinfo>
+        </srccite>
+        <typesrc>online</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>unknown</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>tig_power</srccitea>
+        <srccontr>Major power lines derived from TIGER/Line source data</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>Automated Geographic Reference Center (AGRC)</origin>
+            <pubdate>1999</pubdate>
+            <title>Electrical Generation &amp; Transmission Facilities in Utah</title>
+            <geoform>vector digital data</geoform>
+          </citeinfo>
+        </srccite>
+        <srcscale>24000</srcscale>
+        <typesrc>Digital Line Graph (DLG) and Cartographic Feature Files (CFF)</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>1999</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>utele</srccitea>
+        <srccontr>Electrical system in Utah</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>GIS Data Depot</origin>
+            <pubdate>1993</pubdate>
+            <title>Digital Chart of the World</title>
+            <geoform>unknown (likely vector digital data)</geoform>
+          </citeinfo>
+        </srccite>
+        <typesrc>online</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>unknown</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>util_ab</srccitea>
+        <srccontr>Utility lines in Alberta</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>GIS Data Depot</origin>
+            <pubdate>1993</pubdate>
+            <title>Digital Chart of the World</title>
+            <geoform>unknown (likely vector digital data)</geoform>
+          </citeinfo>
+        </srccite>
+        <typesrc>online</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>unknown</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>util_bc</srccitea>
+        <srccontr>Utility lines in British Columbia</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>GIS Data Depot</origin>
+            <pubdate>1993</pubdate>
+            <title>Digital Chart of the World</title>
+            <geoform>unknown (likely vector digital data)</geoform>
+          </citeinfo>
+        </srccite>
+        <typesrc>online</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>unknown</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>util_sk</srccitea>
+        <srccontr>Utility lines in Saskatchewan</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>University of Idaho Library -- INSIDE Idaho Project</origin>
+            <pubdate>20000914</pubdate>
+            <title>TIGER/Line® Files for Idaho, 1995</title>
+            <edition>1995</edition>
+            <geoform>vector digital data</geoform>
+          </citeinfo>
+        </srccite>
+        <srcscale>10000</srcscale>
+        <typesrc>online</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>20000914</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>utilline_all</srccitea>
+        <srccontr>Major power lines in Idaho</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>Automated Geographic Reference Center (AGRC)</origin>
+            <pubdate>1990</pubdate>
+            <title>Telephone Lines and Facilities in Utah</title>
+            <geoform>vector digital data</geoform>
+          </citeinfo>
+        </srccite>
+        <srcscale>24000</srcscale>
+        <typesrc>online</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>1990</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>uttel</srccitea>
+        <srccontr>Major telephone trunk line and switching facilities in Utah.</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>Bureau of Land Management</origin>
+            <pubdate>unknown</pubdate>
+            <title>Vernal BLM Field Office GIS data</title>
+            <geoform>unknown (likely vector digital data)</geoform>
+          </citeinfo>
+        </srccite>
+        <typesrc>CD-ROM</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>unknown</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>ground condition</srccurr>
+        </srctime>
+        <srccitea>vernal_util</srccitea>
+        <srccontr>Powerlines in Vernal Field Office, Utah</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>National Park Service, Zion National Park</origin>
+            <pubdate>200010</pubdate>
+            <title>Year 2000 Powerlines for Zion National Park, Utah</title>
+            <geoform>vector digital data</geoform>
+          </citeinfo>
+        </srccite>
+        <typesrc>GPS, Stable Base Map, Unstable Base Map</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>200010</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>zion_powerlines</srccitea>
+        <srccontr>Location of the PacificCorp powerlines that cross the southern boundary of Zion National Park, Utah</srccontr>
+      </srcinfo>
+      <procstep>
+        <procdesc>Converted each source data file to a shapefile using the data export function in ArcMap; defined projections and then re-projected source file to correspond to the Albers projection used in the conservation assessment. Merged all 22 source files using the Merge option in the Geoprocessing Wizard in ArcMap.</procdesc>
+        <srcused>azru_utilline</srcused>
+        <srcused>cavo_utilitylines</srcused>
+        <srcused>CFO_transmission_lines</srcused>
+        <srcused>eastOR_powerline</srcused>
+        <srcused>glca_power100</srcused>
+        <srcused>nd_utline</srcused>
+        <srcused>ne_utline</srcused>
+        <srcused>okan_power</srcused>
+        <srcused>power_icebmp</srcused>
+        <srcused>ppline</srcused>
+        <srcused>PriceFO_powerlines</srcused>
+        <srcused>ptllca</srcused>
+        <srcused>sd_utline</srcused>
+        <srcused>tig_power</srcused>
+        <srcused>utele</srcused>
+        <srcused>util_ab</srcused>
+        <srcused>util_bc</srcused>
+        <srcused>util_sk</srcused>
+        <srcused>utilline_all</srcused>
+        <srcused>uttel</srcused>
+        <srcused>vernal_util</srcused>
+        <srcused>zion_powerlines</srcused>
+        <procdate>2004</procdate>
+      </procstep>
+      <procstep>
+        <procdesc>Metadata were reviewed and updated where possible.</procdesc>
+        <procdate>20210128</procdate>
+      </procstep>
+    </lineage>
+  </dataqual>
+  <spdoinfo>
+    <direct>Vector</direct>
+    <ptvctinf>
+      <sdtsterm>
+        <sdtstype>String</sdtstype>
+        <ptvctcnt>32117</ptvctcnt>
+      </sdtsterm>
+    </ptvctinf>
+  </spdoinfo>
+  <spref>
+    <horizsys>
+      <planar>
+        <mapproj>
+          <mapprojn>Albers Conical Equal Area</mapprojn>
+          <albers>
+            <stdparll>38.0</stdparll>
+            <stdparll>41.0</stdparll>
+            <longcm>-114.0</longcm>
+            <latprjo>34.0</latprjo>
+            <feast>0.0</feast>
+            <fnorth>0.0</fnorth>
+          </albers>
+        </mapproj>
+        <planci>
+          <plance>coordinate pair</plance>
+          <coordrep>
+            <absres>0.6096</absres>
+            <ordres>0.6096</ordres>
+          </coordrep>
+          <plandu>meters</plandu>
+        </planci>
+      </planar>
+      <geodetic>
+        <horizdn>North_American_Datum_1927</horizdn>
+        <ellips>Clarke_1866</ellips>
+        <semiaxis>6378206.4</semiaxis>
+        <denflat>294.9786982</denflat>
+      </geodetic>
+    </horizsys>
+  </spref>
+  <eainfo>
+    <detailed>
+      <enttyp>
+        <enttypl>powerlines_WUS_CAN_sgca.shp</enttypl>
+        <enttypd>powerlines</enttypd>
+        <enttypds>Producer defined</enttypds>
+      </enttyp>
+      <attr>
+        <attrlabl>FID</attrlabl>
+        <attrdef>Unique row identifier</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <udom>Unbounded list of numbers</udom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Shape</attrlabl>
+        <attrdef>Feature geometry of powerlines</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <edom>
+            <edomv>Polyline</edomv>
+            <edomvd>Coordinate geometry</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>LENGTH</attrlabl>
+        <attrdef>Length</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0</rdommin>
+            <rdommax>3650970</rdommax>
+            <attrunit>unknown</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>CA_POWER</attrlabl>
+        <attrdef>Type of linear feature the particular arc represents</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <edom>
+            <edomv>blank</edomv>
+            <edomvd>No data</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>POWER</edomv>
+            <edomvd>arc represents an overhead powerline</edomvd>
+            <edomvds>source defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>PIPE</edomv>
+            <edomvd>arc represents a pipeline</edomvd>
+            <edomvds>source defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>OTHER</edomv>
+            <edomvd>source data was unclear about what arc represents</edomvd>
+            <edomvds>source defined</edomvds>
+          </edom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>SOURCEFILE</attrlabl>
+        <attrdef>Name of the original Source Input for data (see Data Quality for more information)</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <edom>
+            <edomv>azru_utilline</edomv>
+            <edomvd>National Park Service Intermountain GIS Center Line Features at Aztec Ruins National Monument, New Mexico</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>cavo_utilitylines</edomv>
+            <edomvd>National Park Service, Capulin Volcano National Monument Utility Lines at Capulin Volcano National Monument, New Mexico</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>CFO_transmission_lines</edomv>
+            <edomvd>Power Transmission Lines For The Casper Field Office, Wyoming</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>eastOR_powerline</edomv>
+            <edomvd>U.S. Department of Commerce, U.S. Census Bureau, 1995 Tiger Lines</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>glca_power100</edomv>
+            <edomvd>Glen Canyon National Recreation Area GIS, Glen Canyon National Recreation Area Power Lines</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>nd_utline</edomv>
+            <edomvd>North Dakota State University Extension Geospatial Education Program North Dakota Utility Lines - UTM Zones 13 and 14</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>ne_utline</edomv>
+            <edomvd>GIS Data Depot Digital Chart of the World</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>okan_power</edomv>
+            <edomvd>USFS Okanogan NF Bonneville Power Powerlines, Okanogan NF</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>power_icebmp</edomv>
+            <edomvd>Western Utility Group Utility corridors</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>ppline</edomv>
+            <edomvd>PacifiCorp / UP&amp;L Co. Transmission Line - SRBOPNCA</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>PriceFO_powerlines</edomv>
+            <edomvd>Price Field Office GIS data (Utah)</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>ptllca</edomv>
+            <edomvd>BLM, California Utility Lines</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>sd_utline</edomv>
+            <edomvd>GIS Data Depot Digital Chart of the World</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>tig_power</edomv>
+            <edomvd>US Census Bureau Tiger data</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>utele</edomv>
+            <edomvd>Automated Geographic Reference Center Electrical Generation &amp; Transmission Facilities in Utah</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>util_ab</edomv>
+            <edomvd>GIS Data Depot Digital Chart of the World</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>util_bc</edomv>
+            <edomvd>GIS Data Depot Digital Chart of the World</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>util_sk</edomv>
+            <edomvd>GIS Data Depot Digital Chart of the World</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>utilline_all</edomv>
+            <edomvd>University of Idaho Library -- INSIDE Idaho Project TIGER/Line Files for Idaho 1995</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>uttel</edomv>
+            <edomvd>Automated Geographic Reference Center (AGRC) Telephone Lines and Facilities in Utah</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>vernal_util</edomv>
+            <edomvd>Vernal, Utah BLM Field Office GIS Data</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>zion_powerlines</edomv>
+            <edomvd>National Park Service, Zion National Park Year 2000 Powerlines for Zion National Park, Utah</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+      </attr>
+    </detailed>
+  </eainfo>
+  <distinfo>
+    <distrib>
+      <cntinfo>
+        <cntorgp>
+          <cntorg>U.S. Geological Survey</cntorg>
+          <cntper>GS ScienceBase</cntper>
+        </cntorgp>
+        <cntaddr>
+          <addrtype>mailing address</addrtype>
+          <address>Denver Federal Center, Building 810, Mail Stop 302</address>
+          <city>Denver</city>
+          <state>CO</state>
+          <postal>80225</postal>
+          <country>United States</country>
+        </cntaddr>
+        <cntvoice>1-888-275-8747</cntvoice>
+        <cntemail>sciencebase@usgs.gov</cntemail>
+      </cntinfo>
+    </distrib>
+    <distliab>Unless otherwise stated, all data, metadata and related materials are considered to satisfy the quality standards relative to the purpose for which the data were collected. Although these data and associated metadata have been reviewed for accuracy and completeness and approved for release by the U.S. Geological Survey (USGS), no warranty expressed or implied is made regarding the display or utility of the data on any other system or for general or scientific purposes, nor shall the act of distribution constitute any such warranty. This disclaimer applies both to individual use of the data and aggregate use with other data. It is strongly recommended that these data are directly acquired from a U.S. Geological Survey server, and not indirectly through other sources which may have changed the data in some way. It is also strongly recommended that careful attention be paid to the contents of the metadata file associated with these data. The U.S. Geological Survey shall not be held liable for improper or incorrect use of the data described and/or contained herein. Any use of trade, product, or firm names is for descriptive purposes only and does not imply endorsement by the U.S. Government.</distliab>
+    <stdorder>
+      <digform>
+        <digtinfo>
+          <formname>.shp</formname>
+        </digtinfo>
+        <digtopt>
+          <onlinopt>
+            <computer>
+              <networka>
+                <networkr>https://doi.org/10.5066/P915FITQ</networkr>
+              </networka>
+            </computer>
+          </onlinopt>
+        </digtopt>
+      </digform>
+      <fees>No fees</fees>
+    </stdorder>
+  </distinfo>
+  <metainfo>
+    <metd>20230301</metd>
+    <metc>
+      <cntinfo>
+        <cntperp>
+          <cntper>FRESC Science Data Coordinator</cntper>
+          <cntorg>USGS Forest and Rangeland Ecosystem Science Center</cntorg>
+        </cntperp>
+        <cntaddr>
+          <addrtype>mailing and physical</addrtype>
+          <address>777 NW 9th St, Suite 400</address>
+          <city>Corvallis</city>
+          <state>OR</state>
+          <postal>97330</postal>
+          <country>USA</country>
+        </cntaddr>
+        <cntvoice>541-750-1030</cntvoice>
+        <cntemail>fresc_outreach@usgs.gov</cntemail>
+      </cntinfo>
+    </metc>
+    <metstdn>FGDC Content Standards for Digital Geospatial Metadata</metstdn>
+    <metstdv>FGDC-STD-001-1998</metstdv>
+  </metainfo>
+</metadata>
