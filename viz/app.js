@@ -551,54 +551,6 @@ function WestmapHeader() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         {currentUser && (
           <>
-            {/* Manish's Project */}
-            <Button
-              onClick={() => {
-                window.history.pushState({}, '', '/manish');
-                window.location.reload();
-              }}
-              size="small"
-              sx={{
-                color: 'white',
-                fontSize: '12px',
-                textTransform: 'none',
-                minWidth: 'auto',
-                padding: '4px 12px',
-                border: '1px solid rgba(255,255,255,0.3)',
-                borderRadius: '20px',
-                '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.1)',
-                  borderColor: 'rgba(255,255,255,0.5)'
-                }
-              }}
-            >
-              Manish's Project
-            </Button>
-
-            {/* Amin's Project */}
-            <Button
-              onClick={() => {
-                window.history.pushState({}, '', '/amin');
-                window.location.reload();
-              }}
-              size="small"
-              sx={{
-                color: 'white',
-                fontSize: '12px',
-                textTransform: 'none',
-                minWidth: 'auto',
-                padding: '4px 12px',
-                border: '1px solid rgba(255,255,255,0.3)',
-                borderRadius: '20px',
-                '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.1)',
-                  borderColor: 'rgba(255,255,255,0.5)'
-                }
-              }}
-            >
-              Amin's Project
-            </Button>
-
             {/* Admin Panel - only for admin users - Cobalt Blue */}
             {userProfile?.role === 'admin' && (
               <Button
@@ -2697,8 +2649,8 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
           }
         }}
         onClick={() => {
-          // Add functionality here - could navigate to case studies page or open modal
-          console.log('Visit WECC Case Studies clicked');
+          // Navigate to AminDetailPage with NEVP (area 16) as default region
+          navigate('/manish/16');
         }}
       >
         <SchoolIcon style={{ marginRight: '8px', fontSize: '18px' }} />

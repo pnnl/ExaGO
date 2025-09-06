@@ -73,18 +73,96 @@ const CASE_STUDIES = [
     }
 ];
 
-// Balancing Authorities list
+// Balancing Authorities list with full names for dropdown
 const BALANCING_AUTHORITIES = [
-    'AESO', 'AVA', 'AZPS', 'BANC', 'BCHA', 'BPAT', 'CENACE', 'CHPD', 
-    'CISO', 'DOPD', 'EPE', 'GCPD', 'IID', 'IPCO', 'LDWP', 'NEVP', 
-    'NWMT', 'PACE', 'PACW', 'PGE', 'PNM', 'PSCO', 'PSEI', 'SCL', 
-    'SRP', 'TEPC', 'TIDC', 'TPWR', 'WACM', 'WALC', 'WAUW'
+    { code: 'AESO', name: 'Alberta Electric System Operator' },
+    { code: 'AVA', name: 'Avista Corporation' },
+    { code: 'AZPS', name: 'Arizona Public Service Company' },
+    { code: 'BANC', name: 'Balancing Authority of Northern California' },
+    { code: 'BCHA', name: 'British Columbia Hydro and Power Authority' },
+    { code: 'BPAT', name: 'Bonneville Power Administration' },
+    { code: 'CENACE', name: 'Centro Nacional de Control de Energía' },
+    { code: 'CHPD', name: 'PUD No. 1 of Chelan County' },
+    { code: 'CISO', name: 'California Independent System Operator' },
+    { code: 'DOPD', name: 'PUD No. 1 of Douglas County' },
+    { code: 'EPE', name: 'El Paso Electric Company' },
+    { code: 'GCPD', name: 'Grant County PUD No. 2' },
+    { code: 'IID', name: 'Imperial Irrigation District' },
+    { code: 'IPCO', name: 'Idaho Power Company' },
+    { code: 'LDWP', name: 'Los Angeles Department of Water and Power' },
+    { code: 'NEVP', name: 'Nevada Power Company' },
+    { code: 'NWMT', name: 'NorthWestern Corporation' },
+    { code: 'PACE', name: 'PacifiCorp East' },
+    { code: 'PACW', name: 'PacifiCorp West' },
+    { code: 'PGE', name: 'Portland General Electric Company' },
+    { code: 'PNM', name: 'Public Service Company of New Mexico' },
+    { code: 'PSCO', name: 'Public Service Company of Colorado' },
+    { code: 'PSEI', name: 'Puget Sound Energy' },
+    { code: 'SCL', name: 'Seattle City Light' },
+    { code: 'SRP', name: 'Salt River Project' },
+    { code: 'TEPC', name: 'Tucson Electric Power Company' },
+    { code: 'TIDC', name: 'Turlock Irrigation District' },
+    { code: 'TPWR', name: 'City of Tacoma, Department of Public Utilities' },
+    { code: 'WACM', name: 'Western Area Power Administration - Colorado Missouri Region' },
+    { code: 'WALC', name: 'Western Area Power Administration - Lower Colorado Region' },
+    { code: 'WAUW', name: 'Western Area Power Administration - Upper Great Plains West' }
 ];
+
+// Legacy array for backward compatibility
+const BALANCING_AUTHORITIES_CODES = BALANCING_AUTHORITIES.map(ba => ba.code);
+
+// Area mapping for WECC regions to area numbers (based on WECC_BA_Area_Mapping.csv)
+const WECC_AREA_MAPPING = {
+    'AESO': [1],
+    'AVA': [2],
+    'AZPS': [3],
+    'BANC': [4],
+    'BCHA': [5],
+    'BPAT': [6],
+    'CENACE': [7],
+    'CHPD': [8],
+    'CISO': [9],
+    'DOPD': [10],
+    'EPE': [11],
+    'GCPD': [12],
+    'IID': [13],
+    'IPCO': [14],
+    'LDWP': [15],
+    'NEVP': [16],
+    'NWMT': [17],
+    'PACE': [18],
+    'PACW': [19],
+    'PGE': [20],
+    'PNM': [21],
+    'PSCO': [22],
+    'PSEI': [23],
+    'SCL': [24],
+    'SRP': [25],
+    'TEPC': [26],
+    'TIDC': [27],
+    'TPWR': [28],
+    'WACM': [29],
+    'WALC': [30],
+    'WAUW': [31]
+};
+
+// Enhanced balancing authorities with area numbers
+const BALANCING_AUTHORITIES_WITH_AREAS = BALANCING_AUTHORITIES.map(ba => ({
+    ...ba,
+    areaNumbers: WECC_AREA_MAPPING[ba.code] || [],
+    primaryArea: WECC_AREA_MAPPING[ba.code]?.[0] || null
+}));
 
 const AminDetailPage = () => {
     const { fid } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
+    
+    // Get WECC region from URL params or default to NEVP
+    const urlParams = new URLSearchParams(location.search);
+    const initialWeccRegion = urlParams.get('region') || 'NEVP';
+    
+    const [selectedWeccRegion, setSelectedWeccRegion] = useState(initialWeccRegion);
     const [balancingAuthority, setBalancingAuthority] = useState(null);
     const [selectedCaseStudy, setSelectedCaseStudy] = useState('case1');
     const [caseStudyData, setCaseStudyData] = useState({});
@@ -479,6 +557,11 @@ const AminDetailPage = () => {
                     ...areaMappingData[targetFid]
                 };
 
+                // Update selected WECC region based on the loaded data
+                if (baData.BA_Abrev && baData.BA_Abrev !== selectedWeccRegion) {
+                    setSelectedWeccRegion(baData.BA_Abrev);
+                }
+
                 // Load case study data for this BA
                 await loadCaseStudyData(baData.BA_Abrev);
 
@@ -562,8 +645,70 @@ const AminDetailPage = () => {
             }
         };
 
-        loadData();
-    }, [fid]);
+        if (fid) {
+            loadData();
+        } else if (selectedWeccRegion) {
+            // Load data directly for WECC region without fid
+            loadDataForWeccRegion();
+        }
+    }, [fid, selectedWeccRegion]);
+
+    // Load data for WECC region without requiring fid
+    const loadDataForWeccRegion = async () => {
+        setLoading(true);
+        setError(null);
+        
+        try {
+            // Create a simplified balancing authority object for the selected region
+            const selectedBA = BALANCING_AUTHORITIES.find(ba => ba.code === selectedWeccRegion);
+            if (!selectedBA) {
+                throw new Error(`WECC region ${selectedWeccRegion} not found`);
+            }
+
+            setBalancingAuthority({
+                BA_Abrev: selectedBA.code,
+                BA_Name: selectedBA.name,
+                FID: null, // No FID needed for direct region access
+                feature: null, // No geographic feature
+                bounds: null
+            });
+
+            // Set default view for WECC region
+            setViewState(prev => ({
+                ...prev,
+                longitude: -116.5,
+                latitude: 37.5,
+                zoom: 6
+            }));
+
+            // Load case study data for the selected region
+            await loadCaseStudyData(selectedBA.code);
+            
+            setLoading(false);
+        } catch (err) {
+            console.error('Error loading WECC region data:', err);
+            setError(err.message);
+            setLoading(false);
+        }
+    };
+
+    // Handle WECC region change
+    const handleWeccRegionChange = (newRegion) => {
+        setSelectedWeccRegion(newRegion);
+        
+        // Get the primary area number for this region
+        const areaNumber = WECC_AREA_MAPPING[newRegion]?.[0];
+        
+        if (areaNumber) {
+            // Navigate to the area-specific URL (e.g., /manish/9, /manish/10)
+            const newUrl = `/manish/${areaNumber}`;
+            navigate(newUrl, { replace: true });
+        } else {
+            // Fallback to region parameter if no area number found
+            const newUrl = `/amin?region=${newRegion}`;
+            navigate(newUrl, { replace: true });
+        }
+    };
 
     // Load case study data
     const loadCaseStudyData = async (baAbbrev) => {
@@ -781,7 +926,34 @@ const AminDetailPage = () => {
     };
 
     const renderMap = () => {
-        if (!balancingAuthority) return null;
+        if (!balancingAuthority && !selectedWeccRegion) return null;
+        
+        // If we don't have balancingAuthority but have selectedWeccRegion, show a placeholder
+        if (!balancingAuthority) {
+            return (
+                <div style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                    borderRadius: '16px',
+                    border: '2px dashed #cbd5e1',
+                    color: '#64748b',
+                    fontSize: '16px',
+                    fontWeight: 500
+                }}>
+                    <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '48px', marginBottom: '12px' }}>🗺️</div>
+                        <div>Map view for {selectedWeccRegion}</div>
+                        <div style={{ fontSize: '14px', marginTop: '8px', opacity: 0.7 }}>
+                            Geographic boundary data loading...
+                        </div>
+                    </div>
+                </div>
+            );
+        }
 
         const layers = [
             new GeoJsonLayer({
@@ -1842,7 +2014,7 @@ const AminDetailPage = () => {
         );
     }
 
-    if (!balancingAuthority) {
+    if (!balancingAuthority && !selectedWeccRegion) {
         return <div>Balancing authority not found</div>;
     }
 
@@ -1912,6 +2084,48 @@ const AminDetailPage = () => {
                             </p>
                         </div>
                     </div>
+                    
+                    {/* WECC Region Selector */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <label style={{ 
+                            fontSize: '14px', 
+                            fontWeight: 600, 
+                            color: '#64748b' 
+                        }}>
+                            WECC Region:
+                        </label>
+                        <select
+                            value={selectedWeccRegion}
+                            onChange={(e) => handleWeccRegionChange(e.target.value)}
+                            style={{
+                                padding: '8px 16px',
+                                borderRadius: '8px',
+                                border: '2px solid #e2e8f0',
+                                backgroundColor: 'white',
+                                fontSize: '14px',
+                                fontWeight: 500,
+                                color: '#1e293b',
+                                cursor: 'pointer',
+                                outline: 'none',
+                                transition: 'all 0.2s ease',
+                                minWidth: '200px'
+                            }}
+                            onFocus={(e) => {
+                                e.target.style.borderColor = '#3b82f6';
+                                e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                            }}
+                            onBlur={(e) => {
+                                e.target.style.borderColor = '#e2e8f0';
+                                e.target.style.boxShadow = 'none';
+                            }}
+                        >
+                            {BALANCING_AUTHORITIES_WITH_AREAS.map(ba => (
+                                <option key={ba.code} value={ba.code}>
+                                    {ba.primaryArea ? `${ba.primaryArea} - ` : ''}{ba.code} - {ba.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -1932,7 +2146,7 @@ const AminDetailPage = () => {
                             fontWeight: 700,
                             color: '#1e293b'
                         }}>
-                            {balancingAuthority.BA_Abrev} Territory
+                            {balancingAuthority?.BA_Abrev || selectedWeccRegion} Territory
                         </h3>
                         <div style={{ height: '440px' }}>
                             {renderMap()}
@@ -1947,7 +2161,7 @@ const AminDetailPage = () => {
                             fontWeight: 800, 
                             color: '#1e293b'
                         }}>
-                            {balancingAuthority.BA_Abrev}
+                            {balancingAuthority?.BA_Abrev || selectedWeccRegion}
                         </h1>
                         <h2 style={{ 
                             margin: '0 0 32px 0', 
@@ -1956,32 +2170,32 @@ const AminDetailPage = () => {
                             color: '#64748b', 
                             lineHeight: '1.5'
                         }}>
-                            {balancingAuthority.BA_Name}
+                            {balancingAuthority?.BA_Name || BALANCING_AUTHORITIES.find(ba => ba.code === selectedWeccRegion)?.name}
                         </h2>
 
                         <div className="metric-grid">
                             <div className="metric-item">
                                 <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', fontWeight: 600, color: '#3b82f6' }}>FID</p>
-                                <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>{balancingAuthority.FID}</p>
+                                <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>{balancingAuthority?.FID || 'N/A'}</p>
                             </div>
                             <div className="metric-item">
                                 <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', fontWeight: 600, color: '#3b82f6' }}>Total Capacity</p>
                                 <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>
-                                    {capacityData[balancingAuthority.BA_Abrev] ? 
-                                        Math.round(Object.values(capacityData[balancingAuthority.BA_Abrev]).reduce((a, b) => a + b, 0)).toLocaleString() + ' MW'
+                                    {capacityData[balancingAuthority?.BA_Abrev || selectedWeccRegion] ? 
+                                        Math.round(Object.values(capacityData[balancingAuthority?.BA_Abrev || selectedWeccRegion]).reduce((a, b) => a + b, 0)).toLocaleString() + ' MW'
                                         : 'N/A'}
                                 </p>
                             </div>
                             <div className="metric-item">
                                 <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', fontWeight: 600, color: '#3b82f6' }}>Shape Area</p>
                                 <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>
-                                    {balancingAuthority.Shape__Area ? Number(balancingAuthority.Shape__Area).toLocaleString() : 'N/A'} units
+                                    {balancingAuthority?.Shape__Area ? Number(balancingAuthority.Shape__Area).toLocaleString() : 'N/A'} units
                                 </p>
                             </div>
                             <div className="metric-item">
                                 <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', fontWeight: 600, color: '#3b82f6' }}>Shape Length</p>
                                 <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>
-                                    {balancingAuthority.Shape_Leng ? Number(balancingAuthority.Shape_Leng).toLocaleString() : 'N/A'} units
+                                    {balancingAuthority?.Shape_Leng ? Number(balancingAuthority.Shape_Leng).toLocaleString() : 'N/A'} units
                                 </p>
                             </div>
                         </div>
