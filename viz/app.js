@@ -19,6 +19,8 @@ import Slider from '@mui/material/Slider';
 import Box from '@mui/material/Box';
 import Fab from '@mui/material/Fab';
 import SchoolIcon from '@mui/icons-material/School';
+import Button from '@mui/material/Button';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
@@ -50,7 +52,7 @@ import { getCountyNodes, ExtractFirstTimeSlice, ExtractFlowData, getBarNet, getP
 import { LineColor, FlowColor, FillColor, fillGenColumnColor, fillGenColumnColorCap, getVoltageFillColor } from "./src/color"
 
 // Firebase Authentication imports
-import { AuthProvider, ProtectedRoute, Header, AdminDashboard } from './components/common';
+import { AuthProvider, ProtectedRoute, Header, AdminDashboard, useAuth } from './components/common';
 import { ManishProject } from './components/manish';
 import { AminProject, AminDetailPage } from './components/amin';
 
@@ -507,6 +509,8 @@ function getEnhancedTooltip({ object, layer }) {
 
 // Custom Header Component with Logos
 function WestmapHeader() {
+  const { currentUser, userProfile } = useAuth();
+
   return (
     <div style={{
       position: 'absolute',
@@ -542,6 +546,91 @@ function WestmapHeader() {
           Westmap
         </h1>
       </div>
+      
+      {/* Center section with navigation buttons */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {currentUser && (
+          <>
+            {/* Manish's Project */}
+            <Button
+              onClick={() => {
+                window.history.pushState({}, '', '/manish');
+                window.location.reload();
+              }}
+              size="small"
+              sx={{
+                color: 'white',
+                fontSize: '12px',
+                textTransform: 'none',
+                minWidth: 'auto',
+                padding: '4px 12px',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '20px',
+                '&:hover': {
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  borderColor: 'rgba(255,255,255,0.5)'
+                }
+              }}
+            >
+              Manish's Project
+            </Button>
+
+            {/* Amin's Project */}
+            <Button
+              onClick={() => {
+                window.history.pushState({}, '', '/amin');
+                window.location.reload();
+              }}
+              size="small"
+              sx={{
+                color: 'white',
+                fontSize: '12px',
+                textTransform: 'none',
+                minWidth: 'auto',
+                padding: '4px 12px',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '20px',
+                '&:hover': {
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  borderColor: 'rgba(255,255,255,0.5)'
+                }
+              }}
+            >
+              Amin's Project
+            </Button>
+
+            {/* Admin Panel - only for admin users - Cobalt Blue */}
+            {userProfile?.role === 'admin' && (
+              <Button
+                onClick={() => {
+                  window.history.pushState({}, '', '/admin');
+                  window.location.reload();
+                }}
+                size="small"
+                startIcon={<AdminPanelSettingsIcon sx={{ fontSize: 16 }} />}
+                sx={{
+                  color: '#0047AB', // Cobalt blue color
+                  fontSize: '12px',
+                  textTransform: 'none',
+                  minWidth: 'auto',
+                  padding: '4px 12px',
+                  backgroundColor: 'white',
+                  border: '2px solid #0047AB',
+                  borderRadius: '20px',
+                  fontWeight: '600',
+                  '&:hover': {
+                    backgroundColor: '#0047AB',
+                    color: 'white',
+                  }
+                }}
+              >
+                Admin Panel
+              </Button>
+            )}
+          </>
+        )}
+      </div>
+
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <img 
           src="/images/gridbee_logo.png" 
@@ -3374,10 +3463,13 @@ export default function App() {
           />
 
           {/* Manish route */}
-     
           <Route
             path="/manish"
-            element={<MainApp />}
+            element={
+              <ProtectedRoute>
+                <MainApp />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/manish/:fid"
