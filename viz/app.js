@@ -2987,7 +2987,10 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     // Western Power Plants Generation Column Layer
     new ColumnLayer({
       id: 'western-power-plants',
-      data: enhancedData.powerPlants || [],
+      data: (enhancedData.powerPlants || []).filter(plant => {
+        if (!selectedTechnology) return true;
+        return plant.primaryType === selectedTechnology;
+      }),
       diskResolution: 50,
       radius: 5000,
       elevationScale: 50,
@@ -3011,13 +3014,20 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
         return d.Pg;
       },
       filterRange: powerPlantFilterValue || [0, 10000],
-      extensions: [new DataFilterExtension({ filtersize: 1 })]
+      extensions: [new DataFilterExtension({ filtersize: 1 })],
+      updateTriggers: {
+        getData: selectedTechnology,
+        getFillColor: selectedTechnology
+      }
     }),
 
     // Western Power Plants Capacity Column Layer
     new ColumnLayer({
       id: 'western-power-plants-cap',
-      data: enhancedData.powerPlants || [],
+      data: (enhancedData.powerPlants || []).filter(plant => {
+        if (!selectedTechnology) return true;
+        return plant.primaryType === selectedTechnology;
+      }),
       diskResolution: 50,
       radius: 5000,
       elevationScale: 50,
@@ -3041,35 +3051,38 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
         return d.Pcap;
       },
       filterRange: powerPlantFilterValue || [0, 10000],
-      extensions: [new DataFilterExtension({ filtersize: 1 })]
+      extensions: [new DataFilterExtension({ filtersize: 1 })],
+      updateTriggers: {
+        getData: selectedTechnology,
+        getFillColor: selectedTechnology
+      }
     }),
 
     // Power Plant Labels Layer
     new TextLayer({
       id: 'power-plant-labels',
-      data: enhancedData.features.filter(f => {
-        if (f.properties.featureType !== 'power_plant') return false;
-        if (selectedTechnology && f.properties.primaryType !== selectedTechnology) return false;
+      data: (enhancedData.powerPlants || []).filter(plant => {
+        if (selectedTechnology && plant.primaryType !== selectedTechnology) return false;
         // Only show labels for larger plants to avoid clutter
-        return f.properties.totalCapacityMW >= 50;
+        return plant.Pg >= 50;
       }),
       visible: powerplantlabelsactive && powerplantlayeractive,
       pickable: false,
       getPosition: d => {
         // Position labels at the top of the columns
-        const coords = d.geometry.coordinates;
-        const capacity = d.properties.totalCapacityMW || 1;
-        const elevation = Math.max(1, Math.log10(capacity + 1) * 10) * 25; // Match column height calculation
+        const coords = d.coordinates;
+        const capacity = d.Pg || 1;
+        const elevation = capacity * 5 * 50; // Match column height calculation (capacity * 5 * elevationScale)
         return [coords[0], coords[1], elevation + 50]; // Slightly above the column
       },
       getText: d => {
-        const name = d.properties.plantName || 'Unnamed Plant';
-        const capacity = d.properties.totalCapacityMW || 0;
+        const name = d.name || 'Unnamed Plant';
+        const capacity = d.Pg || 0;
         return `${name}\n${capacity.toFixed(0)} MW`;
       },
       getSize: d => {
         // Size text based on plant capacity
-        const capacity = d.properties.totalCapacityMW || 1;
+        const capacity = d.Pg || 1;
         if (capacity >= 1000) return 14;
         if (capacity >= 100) return 12;
         if (capacity >= 50) return 10;
@@ -3079,7 +3092,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       getTextAnchor: 'middle',
       getAlignmentBaseline: 'bottom',
       getColor: d => {
-        const color = getPowerPlantColor(d.properties.primaryType);
+        const color = getPowerPlantColor(d.primaryType);
         return [color[0], color[1], color[2], 240]; // High contrast
       },
       getPixelOffset: [0, -10], // Slightly above the column top
@@ -3091,11 +3104,11 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       getBackgroundPadding: [4, 2, 4, 2],
       backgroundRadius: 4,
       updateTriggers: {
+        getData: selectedTechnology,
         getColor: [powerplantlabelsactive, selectedTechnology],
         getText: powerplantlabelsactive,
         getSize: powerplantlabelsactive,
-        getPosition: powerplantlabelsactive,
-        getData: selectedTechnology
+        getPosition: powerplantlabelsactive
       }
     }),
 
@@ -4185,19 +4198,19 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
             </AccordionDetails>
           </Accordion>
 
-          {/* Generation Overview Section */}
+          {/* Western Power Plants Overview Section */}
           <Accordion defaultExpanded={true} style={{ marginBottom: "8px" }}>
             <AccordionSummary style={{ 
               height: "20px", 
               minHeight: "40px", 
               paddingRight: "20px", 
               paddingLeft: "0px",
-              background: "rgba(76, 175, 80, 0.05)"
+              background: "rgba(255, 193, 7, 0.05)"
             }}
               expandIcon={<ArrowDropDownIcon />}>
               <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
-                <span style={{ color: "#4caf50", marginRight: "8px" }}>📊</span>
-                Generation Overview
+                <span style={{ color: "#ff9800", marginRight: "8px" }}>📊</span>
+                Western Power Plants Overview
               </Typography>
             </AccordionSummary>
             <AccordionDetails style={{ padding: "12px 16px" }}>
@@ -4206,14 +4219,14 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
                   <div>
                     {/* Summary Statistics */}
                     <div style={{ 
-                      background: "rgba(76, 175, 80, 0.08)", 
+                      background: "rgba(255, 193, 7, 0.08)", 
                       padding: "12px", 
                       borderRadius: "8px", 
                       marginBottom: "12px",
-                      border: "1px solid rgba(76, 175, 80, 0.2)"
+                      border: "1px solid rgba(255, 193, 7, 0.2)"
                     }}>
-                      <div style={{ fontSize: "12px", fontWeight: "600", color: "#2e7d32", marginBottom: "6px" }}>
-                        Western Interconnection Summary
+                      <div style={{ fontSize: "12px", fontWeight: "600", color: "#e65100", marginBottom: "6px" }}>
+                        Western Power Plants Summary
                       </div>
                       <div style={{ fontSize: "11px", color: "#666", lineHeight: "1.4" }}>
                         <div><strong>Total Capacity:</strong> {generationStats.totalCapacity} MW</div>
@@ -4225,7 +4238,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
                     {/* Technology Breakdown Cards */}
                     <div style={{ marginBottom: "8px" }}>
                       <div style={{ fontSize: "12px", fontWeight: "500", marginBottom: "8px", color: "#333" }}>
-                        Generation Mix by Technology
+                        Power Plants by Technology
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                         {generationStats.sortedTechnologies.slice(0, 6).map(tech => {
