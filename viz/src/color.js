@@ -1,8 +1,9 @@
 function LineColor(line) {
     var loading = Math.abs(line.properties.PF / line.properties.RATE_A);
-    var r = Math.min(255, 255 * loading);
-    var g = 0;
-    var b = Math.max(0, 255 * (1 - loading));
+    // Use blue shades for transmission lines
+    var r = 0; // No red component
+    var g = Math.max(50, Math.min(200, 100 + (100 * (1 - loading)))); // Blue-green component for variation
+    var b = Math.max(150, 255 * (0.6 + 0.4 * (1 - loading))); // Strong blue component
   
     return [r, g, b];
   }

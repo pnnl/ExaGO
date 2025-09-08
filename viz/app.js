@@ -204,11 +204,15 @@ function csvToGeoJSON(csvData, dataSource = 'csv') {
               QF: parseFloat(row.qf) || 0,
               PT: parseFloat(row.pt) || 0,
               QT: parseFloat(row.qt) || 0,
-              KV: parseFloat(row.kilovolt) || 0,
+              KV: parseFloat(row.kilovolt) || 230,
+              kilovolt: parseFloat(row.kilovolt) || 230,
+              line_name: row.line_name || `Line_${index + 1}`,
               source: row.source || row.srouce,
               target: row.target,
               actual_flow: parseFloat(row['actual flow']) || 0,
+              flow_capacity: parseFloat(row['flow capacity']) || 100,
               data_source: row.data_source || dataSource,
+              SOURCEFILE: row.data_source || dataSource,
               elementtype: "TRANSMISSION_LINE"
             }
           };
@@ -302,17 +306,19 @@ const MAP_STYLE = {
 async function loadAdditionalTransmissionData() {
   const allFeatures = [];
   
-  // List of CSV files to try loading
+  // List of CSV files to try loading - prioritize the WGS84 converted powerlines data
   const csvFiles = [
-    // { url: './data/transmission_line.csv', source: 'transmission_line' }, // Removed - using WECC data instead
-    { url: './data/powerlines_converted.csv', source: 'powerlines_converted' },
-    { url: './data/powerlines_WUS_CAN_sgca_wgs84.csv', source: 'powerlines_WUS_CAN_sgca_wgs84' },
-    { url: './data/powerlines_WUS_CAN_sgca.csv', source: 'powerlines_WUS_CAN_sgca_main' }
+    { url: './data/powerlines_WUS_CAN_sgca_wgs84.csv', source: 'powerlines_WUS_CAN_sgca_wgs84', priority: 1 },
+    { url: './data/powerlines_converted.csv', source: 'powerlines_converted', priority: 2 },
+    { url: './data/powerlines_WUS_CAN_sgca.csv', source: 'powerlines_WUS_CAN_sgca_main', priority: 3 }
   ];
+  
+  // Sort files by priority to load highest priority first
+  csvFiles.sort((a, b) => a.priority - b.priority);
   
   for (const file of csvFiles) {
     try {
-      console.log(`Loading ${file.source}...`);
+      console.log(`Loading transmission lines from ${file.source}...`);
       const response = await fetch(file.url);
       if (!response.ok) {
         console.warn(`Failed to load ${file.source}: HTTP ${response.status}`);
@@ -325,9 +331,15 @@ async function loadAdditionalTransmissionData() {
       
       if (features.length > 0) {
         allFeatures.push(...features);
-        console.log(`✅ Successfully loaded ${features.length} features from ${file.source}`);
+        console.log(`✅ Successfully loaded ${features.length} transmission line features from ${file.source}`);
+        
+        // If we successfully loaded the high-priority WGS84 file with substantial data, we can skip the others
+        if (file.source === 'powerlines_WUS_CAN_sgca_wgs84' && features.length > 1000) {
+          console.log('✅ Successfully loaded primary powerlines dataset, skipping other sources');
+          break;
+        }
       } else {
-        console.warn(`⚠️ No valid features found in ${file.source}`);
+        console.warn(`⚠️ No valid transmission line features found in ${file.source}`);
       }
     } catch (error) {
       console.warn(`❌ Error loading ${file.source}:`, error);
@@ -1227,6 +1239,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
   const [zonelayeractive, setZoneLayerActive] = useState(false);
   const [arealayeractive, setAreaLayerActive] = useState(false);
   const [wecclayeractive, setWeccLayerActive] = useState(true);
+  const [transmissionlayeractive, setTransmissionLayerActive] = useState(true);
 
   const [mapStyleSelection, setMapStyle] = useState('osm');
 
@@ -1704,6 +1717,10 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     setFlowFilterValue([0, 120]);
   };
 
+  const handleTransmissionLayerChange = (event) => {
+    setTransmissionLayerActive(event.target.checked);
+  };
+
   const handleLoadLayerChange = (event) => {
     setLoadLayerActive(event.target.checked);
     setLoadFilterValue([0, countyloaddata.maxPd]);
@@ -2043,6 +2060,71 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       updateTriggers: {
         getFilterValue: [netfiltervalue, lineNameSelectItems, busNameSelectItems, flowfiltervalue]
       }
+    }),
+
+    // Dedicated Transmission Lines Layer for Powerlines WUS CAN SGCA data
+    new GeoJsonLayer({
+      id: 'transmission-lines',
+      data: enhancedData,
+      pickable: transmissionlayeractive,
+      stroked: true,
+      filled: false,
+      visible: transmissionlayeractive,
+      lineWidthScale: 2,
+      lineWidthMinPixels: 1,
+      lineWidthMaxPixels: 4,
+      getLineColor: d => {
+        // Color transmission lines with blue shades based on voltage level
+        if (d.geometry.type === 'LineString') {
+          const voltage = d.properties.kilovolt || d.properties.KV || d.properties.voltage || 100;
+          
+          // Handle the actual data ranges found in the datasets
+          if (voltage >= 500) return [0, 100, 200, 220]; // Dark blue for extra high voltage (500kV+)
+          if (voltage >= 345) return [30, 144, 255, 210]; // Dodger blue for high voltage (345kV)
+          if (voltage >= 230) return [70, 170, 255, 200]; // Medium blue for medium voltage (230kV)
+          if (voltage >= 138) return [100, 200, 255, 190]; // Light blue for sub-transmission (138kV)
+          if (voltage >= 100) return [120, 210, 255, 180]; // Lighter blue for 100kV lines
+          if (voltage > 0) return [150, 220, 255, 170]; // Very light blue for other voltages
+          
+          // Special handling for zero/unknown voltage - use medium blue as default
+          return [70, 170, 255, 160]; // Default blue for unknown/zero voltage lines
+        }
+        return [128, 128, 128, 0]; // Transparent for non-lines
+      },
+      getLineWidth: d => {
+        if (d.geometry.type === 'LineString') {
+          const voltage = d.properties.kilovolt || d.properties.KV || d.properties.voltage || 100;
+          if (voltage >= 500) return 4; // Thickest for extra high voltage
+          if (voltage >= 345) return 3; // Thick for high voltage
+          if (voltage >= 230) return 2.5; // Medium-thick for medium voltage
+          if (voltage >= 138) return 2; // Medium for sub-transmission
+          if (voltage >= 100) return 1.5; // Slightly thicker for 100kV lines
+          if (voltage > 0) return 1; // Standard width for other voltages
+          return 1.5; // Default width for unknown/zero voltage
+        }
+        return 0;
+      },
+      onClick: (info) => {
+        if (info.object && info.object.geometry.type === 'LineString') {
+          const props = info.object.properties;
+          setShowPopup({
+            display: true,
+            info: `
+              <div style="font-weight: 600; margin-bottom: 4px; color: #1976d2;">${props.line_name || props.NAME || 'Transmission Line'}</div>
+              <div style="font-size: 11px; color: #666;">Voltage: ${props.kilovolt || props.KV || 'Unknown'} kV</div>
+              <div style="font-size: 11px; color: #666;">Source: ${props.data_source || props.SOURCEFILE || 'Unknown'}</div>
+              ${props.flow_capacity ? `<div style="font-size: 11px; color: #666;">Capacity: ${props.flow_capacity} MW</div>` : ''}
+            `,
+            name: props.line_name || props.NAME || 'Transmission Line',
+            fid: info.index,
+            type: 'transmission'
+          });
+        }
+      },
+      // Filter to only show LineString geometries for transmission lines
+      getFilterValue: d => d.geometry.type === 'LineString' ? 1 : 0,
+      filterRange: [1, 1],
+      extensions: [new DataFilterExtension({ filtersize: 1 })]
     }),
 
 
@@ -2955,6 +3037,64 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
                   </div>
                 )}
 
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion defaultExpanded={true} style={{ marginBottom: "8px" }}>
+            <AccordionSummary style={{ 
+              height: "20px", 
+              minHeight: "40px", 
+              paddingRight: "20px", 
+              paddingLeft: "0px",
+              background: "rgba(156, 39, 176, 0.05)"
+            }}
+              expandIcon={<ArrowDropDownIcon />}>
+              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
+                <Checkbox checked={transmissionlayeractive} style={{ color: "#9c27b0" }} onChange={handleTransmissionLayerChange} />
+                Transmission Lines
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails style={{ padding: "12px 16px" }}>
+              <Typography component="div">
+                <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
+                  <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                    <div style={{ width: "14px", height: "4px", backgroundColor: "rgb(0, 100, 200)", marginRight: "6px", borderRadius: "1px" }}></div>
+                    <span style={{ fontWeight: "500" }}>≥500kV</span>
+                    <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>Extra High</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                    <div style={{ width: "14px", height: "3px", backgroundColor: "rgb(30, 144, 255)", marginRight: "6px", borderRadius: "1px" }}></div>
+                    <span style={{ fontWeight: "500" }}>345kV</span>
+                    <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>High Voltage</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                    <div style={{ width: "14px", height: "2.5px", backgroundColor: "rgb(70, 170, 255)", marginRight: "6px", borderRadius: "1px" }}></div>
+                    <span style={{ fontWeight: "500" }}>230kV</span>
+                    <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>Medium</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                    <div style={{ width: "14px", height: "2px", backgroundColor: "rgb(100, 200, 255)", marginRight: "6px", borderRadius: "1px" }}></div>
+                    <span style={{ fontWeight: "500" }}>138kV</span>
+                    <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>Sub-transmission</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                    <div style={{ width: "14px", height: "1.5px", backgroundColor: "rgb(120, 210, 255)", marginRight: "6px", borderRadius: "1px" }}></div>
+                    <span style={{ fontWeight: "500" }}>100kV</span>
+                    <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>Distribution</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                    <div style={{ width: "14px", height: "1.5px", backgroundColor: "rgb(70, 170, 255)", marginRight: "6px", borderRadius: "1px" }}></div>
+                    <span style={{ fontWeight: "500" }}>Unknown/Default</span>
+                    <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>Various</span>
+                  </div>
+                </div>
+                <div style={{ fontSize: "11px", color: "#999", fontStyle: "italic", marginBottom: "4px" }}>
+                  Blue gradient by voltage level
+                </div>
+                <div style={{ fontSize: "10px", color: "#888", fontStyle: "italic" }}>
+                  Sources: USGS Powerlines WUS CAN SGCA, Western Power Plants USA & Canada-Mexico datasets
+                </div>
               </Typography>
             </AccordionDetails>
           </Accordion>

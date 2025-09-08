@@ -10,6 +10,7 @@ spack-*
 coinhsl-*
 node_modules
 .env
+viz/backend/env
 package-lock.json
 config.py
 spack_*
