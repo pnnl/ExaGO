@@ -118,7 +118,17 @@ const transitionFlyToInterpolator = new FlyToInterpolator(['zoom']);
 // Get case data
 var mod_casedata = require('./module_casedata.js');
 var casedata = {};
-casedata = mod_casedata.get_casedata();
+try {
+  casedata = mod_casedata.get_casedata();
+  console.log('✅ Case data loaded successfully');
+  if (!casedata || !casedata.geojsondata) {
+    console.error('❌ Case data is missing geojsondata property');
+    casedata = { geojsondata: { type: "FeatureCollection", features: [] } };
+  }
+} catch (error) {
+  console.error('❌ Error loading case data:', error);
+  casedata = { geojsondata: { type: "FeatureCollection", features: [] } };
+}
 
 // Function to parse CSV data
 function parseCSV(csvText) {
@@ -229,7 +239,8 @@ function csvToGeoJSON(csvData, dataSource = 'csv') {
 }
 
 // Source data GeoJSON
-const geodata = casedata['geojsondata']
+const geodata = casedata['geojsondata'];
+console.log('🔍 Geodata features count:', geodata?.features?.length || 0);
 
 const MAP_STYLE = {
   osm: {
@@ -302,7 +313,82 @@ const MAP_STYLE = {
 };
 
 
-// Load additional transmission line data from CSV files
+// Function to check if a point is within WECC boundaries (rough approximation)
+function isWithinWeccBoundaries(longitude, latitude) {
+  // Input validation
+  if (typeof longitude !== 'number' || typeof latitude !== 'number' || 
+      isNaN(longitude) || isNaN(latitude)) {
+    return false;
+  }
+  
+  // WECC boundaries (approximate) - covers Western US, parts of Canada and Mexico
+  // Western boundary: Pacific coast (~-125°W)
+  // Eastern boundary: roughly follows Rocky Mountains (~-100°W to -105°W depending on latitude)
+  // Northern boundary: extends into Canada (~50°N)
+  // Southern boundary: extends into Mexico (~25°N)
+  
+  // Basic bounding box for WECC region (more inclusive boundaries)
+  const weccBounds = {
+    west: -130.0,  // Extended west to include more Pacific areas
+    east: -95.0,   // Extended east to be more inclusive
+    north: 55.0,   // Extended north for Canadian connections
+    south: 20.0    // Extended south for Mexican connections
+  };
+  
+  // More refined eastern boundary based on latitude (more inclusive)
+  let easternBound = weccBounds.east;
+  if (latitude > 45) {
+    easternBound = -100.0; // More inclusive in northern regions
+  } else if (latitude > 40) {
+    easternBound = -98.0;  // More inclusive in mountain states
+  } else if (latitude > 35) {
+    easternBound = -96.0;  // More inclusive in southwest
+  } else {
+    easternBound = -95.0;  // More inclusive in Mexico border region
+  }
+  
+  return longitude >= weccBounds.west && 
+         longitude <= easternBound && 
+         latitude >= weccBounds.south && 
+         latitude <= weccBounds.north;
+}
+
+// Function to check if a transmission line is within WECC boundaries
+function isTransmissionLineInWecc(feature) {
+  try {
+    if (!feature || !feature.geometry || feature.geometry.type !== 'LineString') {
+      return false;
+    }
+    
+    const coordinates = feature.geometry.coordinates;
+    if (!Array.isArray(coordinates) || coordinates.length === 0) {
+      return false;
+    }
+    
+    // Check if any point of the line is within WECC boundaries
+    // For efficiency, we'll sample a few points along the line
+    const samplePoints = [];
+    const numSamples = Math.min(coordinates.length, 5); // Sample up to 5 points
+    
+    for (let i = 0; i < numSamples; i++) {
+      const index = Math.floor((i / (numSamples - 1)) * (coordinates.length - 1));
+      if (coordinates[index] && Array.isArray(coordinates[index]) && coordinates[index].length >= 2) {
+        samplePoints.push(coordinates[index]);
+      }
+    }
+    
+    // Line is considered in WECC if any sampled point is within boundaries
+    return samplePoints.some(coord => {
+      const [longitude, latitude] = coord;
+      return isWithinWeccBoundaries(longitude, latitude);
+    });
+  } catch (error) {
+    console.warn('Error checking WECC boundaries for feature:', error);
+    return true; // If there's an error, include the feature to be safe
+  }
+}
+
+// Load additional transmission line data from CSV files (filtered to WECC region)
 async function loadAdditionalTransmissionData() {
   const allFeatures = [];
   
@@ -327,26 +413,37 @@ async function loadAdditionalTransmissionData() {
       
       const csvText = await response.text();
       const csvData = parseCSV(csvText);
-      const features = csvToGeoJSON(csvData, file.source);
+      const allFeatures_temp = csvToGeoJSON(csvData, file.source);
       
-      if (features.length > 0) {
-        allFeatures.push(...features);
-        console.log(`✅ Successfully loaded ${features.length} transmission line features from ${file.source}`);
+      // Filter transmission lines to only include those within WECC boundaries
+      const weccFeatures = allFeatures_temp.filter(feature => {
+        const isInWecc = isTransmissionLineInWecc(feature);
+        return isInWecc;
+      });
+      
+      const filteredCount = allFeatures_temp.length - weccFeatures.length;
+      
+      if (weccFeatures.length > 0) {
+        allFeatures.push(...weccFeatures);
+        console.log(`✅ Successfully loaded ${weccFeatures.length} WECC transmission line features from ${file.source}`);
+        if (filteredCount > 0) {
+          console.log(`🔍 Filtered out ${filteredCount} transmission lines outside WECC boundaries`);
+        }
         
         // If we successfully loaded the high-priority WGS84 file with substantial data, we can skip the others
-        if (file.source === 'powerlines_WUS_CAN_sgca_wgs84' && features.length > 1000) {
-          console.log('✅ Successfully loaded primary powerlines dataset, skipping other sources');
+        if (file.source === 'powerlines_WUS_CAN_sgca_wgs84' && weccFeatures.length > 1000) {
+          console.log('✅ Successfully loaded primary WECC powerlines dataset, skipping other sources');
           break;
         }
       } else {
-        console.warn(`⚠️ No valid transmission line features found in ${file.source}`);
+        console.warn(`⚠️ No valid WECC transmission line features found in ${file.source} after filtering`);
       }
     } catch (error) {
       console.warn(`❌ Error loading ${file.source}:`, error);
     }
   }
   
-  console.log(`Total additional transmission lines loaded: ${allFeatures.length}`);
+  console.log(`Total WECC transmission lines loaded: ${allFeatures.length}`);
   return allFeatures;
 }
 
@@ -354,12 +451,40 @@ async function loadAdditionalTransmissionData() {
 async function initializeData() {
   var data = ExtractFirstTimeSlice(geodata);
   
+  // Temporarily disable main geodata WECC filtering to ensure map loads
+  console.log('📍 WECC filtering temporarily disabled for main geodata to ensure map loads');
+  
+  // Filter existing geodata features to only include those within WECC boundaries - DISABLED
+  // const originalFeatureCount = data.features.length;
+  // const originalMainFeatures = [...data.features]; // Keep backup
+  
+  // data.features = data.features.filter(feature => {
+  //   // Only filter transmission lines, keep other features (buses, generators, etc.)
+  //   if (feature.geometry && feature.geometry.type === 'LineString') {
+  //     return isTransmissionLineInWecc(feature);
+  //   }
+  //   // Keep non-transmission line features (buses, generators, etc.)
+  //   return true;
+  // });
+  
+  // const filteredMainCount = originalFeatureCount - data.features.length;
+  // if (filteredMainCount > 0) {
+  //   console.log(`🔍 Filtered out ${filteredMainCount} main transmission lines outside WECC boundaries`);
+  // }
+  
+  // Safety check: if we filtered out all transmission lines, revert to original data
+  // const mainTransmissionLineCount = data.features.filter(f => f.geometry && f.geometry.type === 'LineString').length;
+  // if (mainTransmissionLineCount === 0 && filteredMainCount > 0) {
+  //   console.warn('⚠️ WECC filtering removed all main transmission lines, reverting to original data');
+  //   data.features = originalMainFeatures;
+  // }
+  
   // Load and merge additional transmission line data
   const additionalFeatures = await loadAdditionalTransmissionData();
   if (additionalFeatures.length > 0) {
     // Add the additional features to the data
     data.features = [...data.features, ...additionalFeatures];
-    console.log(`Added ${additionalFeatures.length} additional transmission lines from CSV files`);
+    console.log(`Added ${additionalFeatures.length} additional WECC transmission lines from CSV files`);
     
     // Recalculate bounds to include new transmission lines
     const enhancedBbox = bbox(data);
@@ -376,8 +501,58 @@ async function initializeData() {
   return data;
 }
 
-// Initialize with base data for immediate rendering
-var data = ExtractFirstTimeSlice(geodata);
+// Initialize with base data for immediate rendering (with error handling)
+var data;
+try {
+  if (!geodata || !geodata.features || geodata.features.length === 0) {
+    console.error('❌ Geodata is empty or undefined, creating fallback data structure');
+    data = {
+      type: "FeatureCollection",
+      features: [],
+      bounds: [[-125, 25], [-95, 50]], // Default WECC bounds
+      center: { geometry: { coordinates: [-110, 37.5] } } // Default center
+    };
+  } else {
+    data = ExtractFirstTimeSlice(geodata);
+    console.log('✅ Base geodata loaded successfully with', data.features.length, 'features');
+  }
+} catch (error) {
+  console.error('❌ Error initializing base data:', error);
+  data = {
+    type: "FeatureCollection", 
+    features: [],
+    bounds: [[-125, 25], [-95, 50]],
+    center: { geometry: { coordinates: [-110, 37.5] } }
+  };
+}
+
+// Temporarily disable initial WECC filtering to ensure map loads
+console.log('📍 WECC filtering temporarily disabled for initial data to ensure map loads');
+
+// Apply WECC filtering to initial data as well (with safety check) - DISABLED
+const initialFeatureCount = data.features.length;
+// const originalFeatures = [...data.features]; // Keep backup
+
+// data.features = data.features.filter(feature => {
+//   // Only filter transmission lines, keep other features (buses, generators, etc.)
+//   if (feature.geometry && feature.geometry.type === 'LineString') {
+//     return isTransmissionLineInWecc(feature);
+//   }
+//   // Keep non-transmission line features (buses, generators, etc.)
+//   return true;
+// });
+
+// const initialFilteredCount = initialFeatureCount - data.features.length;
+// if (initialFilteredCount > 0) {
+//   console.log(`🔍 Initial filter: Removed ${initialFilteredCount} transmission lines outside WECC boundaries`);
+// }
+
+// Safety check: if we filtered out too many features, revert to original data
+// const transmissionLineCount = data.features.filter(f => f.geometry && f.geometry.type === 'LineString').length;
+// if (transmissionLineCount === 0 && initialFilteredCount > 0) {
+//   console.warn('⚠️ WECC filtering removed all transmission lines, reverting to original data');
+//   data.features = originalFeatures;
+// }
 
 const countyloaddata = getCountyNodes(data);
 data = countyloaddata.updatedata;
