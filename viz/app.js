@@ -6,7 +6,7 @@ import { WebMercatorViewport } from '@deck.gl/core';
 import DeckGL from '@deck.gl/react';
 // import FlowMapLayer from '@flowmap.gl/core'
 // import { FlowmapLayer } from '@flowmap.gl/layers'
-import { GeoJsonLayer, ColumnLayer, PolygonLayer } from '@deck.gl/layers';
+import { GeoJsonLayer, ColumnLayer, PolygonLayer, ScatterplotLayer, TextLayer } from '@deck.gl/layers';
 import { DataFilterExtension } from '@deck.gl/extensions';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -388,6 +388,336 @@ function isTransmissionLineInWecc(feature) {
   }
 }
 
+// Load Western Power Plants data from CSV files
+async function loadPowerPlantsData() {
+  const allPowerPlants = [];
+  
+  // List of power plant CSV files to load
+  const powerPlantFiles = [
+    { 
+      url: './data/Western_Power_plants_Locations-USA (2).csv', 
+      source: 'usa_power_plants',
+      country: 'USA'
+    },
+    { 
+      url: './data/Western_Power_plants_Locations-CANADA-MEX_Update (1).csv', 
+      source: 'canada_mexico_power_plants',
+      country: 'CAN_MEX'
+    }
+  ];
+  
+  for (const file of powerPlantFiles) {
+    try {
+      console.log(`🔄 Loading power plants data from ${file.source}...`);
+      const response = await fetch(file.url);
+      
+      if (!response.ok) {
+        console.warn(`⚠️ Could not load ${file.source}: ${response.status}`);
+        continue;
+      }
+      
+      const csvText = await response.text();
+      const csvData = parseCSV(csvText);
+      const features = csvPowerPlantsToGeoJSON(csvData, file.source, file.country);
+      
+      if (features.length > 0) {
+        allPowerPlants.push(...features);
+        console.log(`✅ Successfully loaded ${features.length} power plants from ${file.source}`);
+      } else {
+        console.warn(`⚠️ No valid power plant features found in ${file.source}`);
+      }
+      
+    } catch (error) {
+      console.error(`❌ Error loading ${file.source}:`, error);
+    }
+  }
+  
+  console.log(`Total power plants loaded: ${allPowerPlants.length}`);
+  return allPowerPlants;
+}
+
+// Convert CSV power plant data to GeoJSON format
+function csvPowerPlantsToGeoJSON(csvData, dataSource = 'power_plants', country = 'USA') {
+  const features = [];
+  
+  if (!csvData || csvData.length === 0) {
+    console.warn('No CSV data provided for power plants conversion');
+    return features;
+  }
+  
+  const firstRow = csvData[0];
+  const hasLatitude = firstRow.hasOwnProperty('Latitude');
+  const hasLongitude = firstRow.hasOwnProperty('Longitude');
+  
+  if (!hasLatitude || !hasLongitude) {
+    console.warn('CSV data missing required Latitude/Longitude columns');
+    return features;
+  }
+  
+  csvData.forEach((row, index) => {
+    try {
+      const latitude = parseFloat(row['Latitude']);
+      const longitude = parseFloat(row['Longitude']);
+      
+      // Skip invalid coordinates
+      if (isNaN(latitude) || isNaN(longitude)) {
+        return;
+      }
+      
+      // Parse capacity data
+      const totalCapacity = parseFloat(row['Total Capacity (MW)']) || 0;
+      
+      // Create technology breakdown based on dataset structure
+      const technologies = {};
+      if (country === 'USA') {
+        // USA dataset has detailed technology breakdown
+        technologies.battery = parseFloat(row['Battery Storage']) || 0;
+        technologies.geothermal = parseFloat(row['Geothermal']) || 0;
+        technologies.hydro = parseFloat(row['Hydro']) || 0;
+        technologies.naturalGas = parseFloat(row['Natural Gas']) || 0;
+        technologies.nuclear = parseFloat(row['Nuclear']) || 0;
+        technologies.oil = parseFloat(row['Oil']) || 0;
+        technologies.other = parseFloat(row['Other']) || 0;
+        technologies.solar = parseFloat(row['Solar']) || 0;
+        technologies.wind = parseFloat(row['Wind']) || 0;
+      }
+      
+      const feature = {
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [longitude, latitude]
+        },
+        properties: {
+          // Basic plant information
+          plantCode: row['Plant Code'] || '',
+          plantName: row['Plant Name'] || '',
+          state: row['State'] || '',
+          county: row['County'] || '',
+          country: country === 'CAN_MEX' ? (row['Country'] || 'CAN') : 'USA',
+          balancingAuthority: row['Balancing Authority'] || '',
+          primaryType: row['Primary Type'] || 'Unknown',
+          totalCapacityMW: totalCapacity,
+          
+          // Technology breakdown (for USA dataset)
+          ...technologies,
+          
+          // Metadata
+          dataSource: dataSource,
+          featureType: 'power_plant',
+          
+          // For visualization
+          markerSize: Math.max(5, Math.min(50, Math.sqrt(totalCapacity) * 2)),
+          capacityCategory: getCapacityCategory(totalCapacity)
+        }
+      };
+      
+      features.push(feature);
+      
+    } catch (error) {
+      console.warn(`Error processing power plant row ${index}:`, error);
+    }
+  });
+  
+  return features;
+}
+
+// Categorize power plants by capacity for visualization
+function getCapacityCategory(capacity) {
+  if (capacity >= 1000) return 'Large (>1000 MW)';
+  if (capacity >= 100) return 'Medium (100-1000 MW)';
+  if (capacity >= 10) return 'Small (10-100 MW)';
+  return 'Micro (<10 MW)';
+}
+
+// Get color for power plant based on primary technology type
+function getPowerPlantColor(primaryType) {
+  const colorMap = {
+    'Solar': [255, 193, 7, 200],        // Bright yellow/gold
+    'Wind': [76, 175, 80, 200],         // Green
+    'Hydro': [33, 150, 243, 200],       // Blue
+    'Natural Gas': [255, 87, 34, 200],  // Orange-red
+    'Nuclear': [156, 39, 176, 200],     // Purple
+    'Geothermal': [139, 69, 19, 200],   // Brown
+    'Oil': [96, 125, 139, 200],         // Blue-grey
+    'Battery Storage': [255, 235, 59, 200], // Light yellow
+    'Biomass': [76, 175, 80, 200],      // Green (same as wind)
+    'Other': [158, 158, 158, 200],      // Grey
+    'Coal': [66, 66, 66, 200],          // Dark grey
+    'Unknown': [189, 189, 189, 200]     // Light grey
+  };
+  
+  return colorMap[primaryType] || colorMap['Unknown'];
+}
+
+// Enhanced color function for power plant columns with lighting effects
+function getPowerPlantColumnColor(primaryType, capacity) {
+  const baseColor = getPowerPlantColor(primaryType);
+  
+  // Add lighting effect based on capacity
+  let lightingFactor = 1.0;
+  if (capacity >= 1000) {
+    lightingFactor = 1.3; // Brighter for large plants
+  } else if (capacity >= 100) {
+    lightingFactor = 1.1; // Slightly brighter for medium plants
+  } else if (capacity < 10) {
+    lightingFactor = 0.8; // Dimmer for micro plants
+  }
+  
+  // Apply lighting while maintaining color bounds
+  const enhancedColor = [
+    Math.min(255, Math.max(0, baseColor[0] * lightingFactor)),
+    Math.min(255, Math.max(0, baseColor[1] * lightingFactor)),
+    Math.min(255, Math.max(0, baseColor[2] * lightingFactor)),
+    baseColor[3] || 200
+  ];
+  
+  return enhancedColor;
+}
+
+// Process power plant data to match generation format
+function processPowerPlantData(powerPlantsFeatures) {
+  if (!powerPlantsFeatures || powerPlantsFeatures.length === 0) {
+    return { Plants: [], minPg: 0, maxPg: 10000, minPcap: 0, maxPcap: 10000 };
+  }
+
+  const plants = powerPlantsFeatures.map(feature => {
+    const props = feature.properties;
+    const capacity = props.totalCapacityMW || 0;
+    
+    return {
+      name: props.plantName || 'Unnamed Plant',
+      coordinates: feature.geometry.coordinates,
+      Pg: capacity, // Current generation (using capacity as proxy)
+      Pcap: capacity, // Total capacity
+      primaryType: props.primaryType || 'Unknown',
+      fuel: props.primaryType || 'Unknown',
+      state: props.state || '',
+      country: props.country || 'USA',
+      balancingAuthority: props.balancingAuthority || '',
+      plantCode: props.plantCode || '',
+      // Technology breakdown for USA plants
+      solar: props.solar || 0,
+      wind: props.wind || 0,
+      hydro: props.hydro || 0,
+      naturalGas: props.naturalGas || 0,
+      nuclear: props.nuclear || 0,
+      geothermal: props.geothermal || 0,
+      battery: props.battery || 0,
+      oil: props.oil || 0,
+      other: props.other || 0,
+      // Original properties for tooltip
+      originalProps: props
+    };
+  });
+
+  // Calculate min/max values for filtering
+  const capacities = plants.map(p => p.Pg).filter(c => c > 0);
+  const minPg = Math.min(...capacities) || 0;
+  const maxPg = Math.max(...capacities) || 10000;
+  const minPcap = minPg;
+  const maxPcap = maxPg;
+
+  return {
+    Plants: plants,
+    minPg: minPg,
+    maxPg: maxPg,
+    minPcap: minPcap,
+    maxPcap: maxPcap
+  };
+}
+
+// Create chart data for power plants
+function createPowerPlantChartData(powerPlantData) {
+  if (!powerPlantData || !powerPlantData.Plants) {
+    return null;
+  }
+
+  // Group by technology type and sum capacities
+  const techTotals = {};
+  powerPlantData.Plants.forEach(plant => {
+    const tech = plant.primaryType;
+    if (!techTotals[tech]) {
+      techTotals[tech] = 0;
+    }
+    techTotals[tech] += plant.Pg;
+  });
+
+  // Sort by capacity
+  const sortedTechs = Object.entries(techTotals)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 8); // Top 8 technologies
+
+  const labels = sortedTechs.map(([tech]) => tech);
+  const data = sortedTechs.map(([,capacity]) => capacity.toFixed(1));
+  const colors = labels.map(tech => {
+    const color = getPowerPlantColor(tech);
+    return `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.8)`;
+  });
+
+  return {
+    labels: labels,
+    datasets: [{
+      label: 'Western Power Plants Capacity (MW)',
+      data: data,
+      backgroundColor: colors,
+      borderColor: colors.map(c => c.replace('0.8', '1')),
+      borderWidth: 2
+    }]
+  };
+}
+
+// Calculate generation statistics from power plant data
+function calculateGenerationStats(powerPlantsData) {
+  if (!powerPlantsData || powerPlantsData.length === 0) {
+    return null;
+  }
+  
+  const stats = {};
+  let totalCapacity = 0;
+  let totalPlants = 0;
+  
+  powerPlantsData.forEach(plant => {
+    const props = plant.properties;
+    const primaryType = props.primaryType || 'Unknown';
+    const capacity = props.totalCapacityMW || 0;
+    
+    if (!stats[primaryType]) {
+      stats[primaryType] = {
+        count: 0,
+        totalCapacity: 0,
+        plants: [],
+        averageCapacity: 0,
+        color: getPowerPlantColor(primaryType)
+      };
+    }
+    
+    stats[primaryType].count += 1;
+    stats[primaryType].totalCapacity += capacity;
+    stats[primaryType].plants.push(plant);
+    
+    totalCapacity += capacity;
+    totalPlants += 1;
+  });
+  
+  // Calculate percentages and averages
+  Object.keys(stats).forEach(tech => {
+    stats[tech].percentage = (stats[tech].totalCapacity / totalCapacity * 100).toFixed(1);
+    stats[tech].averageCapacity = (stats[tech].totalCapacity / stats[tech].count).toFixed(1);
+  });
+  
+  // Sort by total capacity
+  const sortedTechs = Object.keys(stats).sort((a, b) => stats[b].totalCapacity - stats[a].totalCapacity);
+  
+  return {
+    technologies: stats,
+    sortedTechnologies: sortedTechs,
+    totalCapacity: totalCapacity.toFixed(1),
+    totalPlants: totalPlants,
+    averageCapacity: (totalCapacity / totalPlants).toFixed(1)
+  };
+}
+
 // Load additional transmission line data from CSV files (filtered to WECC region)
 async function loadAdditionalTransmissionData() {
   const allFeatures = [];
@@ -485,8 +815,30 @@ async function initializeData() {
     // Add the additional features to the data
     data.features = [...data.features, ...additionalFeatures];
     console.log(`Added ${additionalFeatures.length} additional WECC transmission lines from CSV files`);
+  }
+  
+  // Load and merge power plants data
+  const powerPlantsFeatures = await loadPowerPlantsData();
+  if (powerPlantsFeatures.length > 0) {
+    // Add power plants to the data
+    data.features = [...data.features, ...powerPlantsFeatures];
+    console.log(`Added ${powerPlantsFeatures.length} power plants from CSV files`);
     
-    // Recalculate bounds to include new transmission lines
+    // Process power plants data to match generation format
+    const processedPowerPlantData = processPowerPlantData(powerPlantsFeatures);
+    data.powerPlants = processedPowerPlantData.Plants;
+    data.powerPlantData = processedPowerPlantData;
+    
+    // Create chart data
+    data.powerPlantChartData = createPowerPlantChartData(processedPowerPlantData);
+    
+    // Calculate generation statistics
+    data.generationStats = calculateGenerationStats(powerPlantsFeatures);
+    console.log('📊 Power plant data processed:', processedPowerPlantData);
+  }
+  
+  // Recalculate bounds to include all new data (transmission lines + power plants)
+  if (additionalFeatures.length > 0 || powerPlantsFeatures.length > 0) {
     const enhancedBbox = bbox(data);
     const enhancedCorner1 = [enhancedBbox[0], enhancedBbox[1]];
     const enhancedCorner2 = [enhancedBbox[2], enhancedBbox[3]];
@@ -495,7 +847,7 @@ async function initializeData() {
     const enhancedCenter = center(data);
     data.enhancedCenter = enhancedCenter;
     
-    console.log('Updated map bounds to include additional transmission lines');
+    console.log('Updated map bounds to include additional transmission lines and power plants');
   }
   
   return data;
@@ -612,16 +964,18 @@ function getEnhancedTooltip({ object, layer }) {
   if (!object) return null;
 
   const style = {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
     color: '#333',
     fontSize: '12px',
     fontFamily: '"Inter", sans-serif',
-    padding: '8px 12px',
-    borderRadius: '6px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-    border: '1px solid rgba(0, 0, 0, 0.1)',
-    maxWidth: '250px',
-    lineHeight: '1.4'
+    padding: '10px 14px',
+    borderRadius: '8px',
+    boxShadow: '0 6px 20px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1)',
+    border: '1px solid rgba(0, 0, 0, 0.12)',
+    maxWidth: '320px',
+    lineHeight: '1.4',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)'
   };
 
   let content = '';
@@ -650,6 +1004,63 @@ function getEnhancedTooltip({ object, layer }) {
       <div style="font-size: 11px; color: #666;">Capacity: ${Math.round(object.Pcap * 100) / 100} MW</div>
       <div style="font-size: 11px; color: #666;">Fuel: ${object.fuel || 'Unknown'}</div>
     `;
+  } else if (layer.id === 'western-power-plants' || layer.id === 'western-power-plants-cap') {
+    const primaryColor = getPowerPlantColor(object.primaryType).slice(0, 3).join(',');
+    const isCapacityLayer = layer.id === 'western-power-plants-cap';
+    
+    content = `
+      <div style="
+        background: linear-gradient(135deg, rgba(${primaryColor}, 0.1) 0%, rgba(${primaryColor}, 0.05) 100%);
+        padding: 2px 8px;
+        border-radius: 4px;
+        border-left: 3px solid rgb(${primaryColor});
+        margin-bottom: 6px;
+      ">
+        <div style="font-weight: 700; font-size: 13px; color: rgb(${primaryColor}); margin-bottom: 2px;">
+          ${object.name}
+        </div>
+        <div style="font-size: 10px; color: #888; font-style: italic;">
+          ${object.plantCode ? `Plant Code: ${object.plantCode}` : 'Western Power Plant'}
+        </div>
+      </div>
+      
+      <div style="margin-bottom: 6px;">
+        <div style="font-size: 12px; font-weight: 700; color: #333; margin-bottom: 3px;">
+          ${isCapacityLayer ? 'Total Capacity' : 'Current Generation'}: ${Math.round(isCapacityLayer ? object.Pcap : object.Pg)} MW
+        </div>
+        <div style="font-size: 10px; color: #666;">
+          Primary Technology: <span style="color: rgb(${primaryColor}); font-weight: 500;">${object.primaryType}</span>
+        </div>
+      </div>
+
+      <div style="
+        background: rgba(0,0,0,0.03);
+        padding: 6px 8px;
+        border-radius: 4px;
+        margin-bottom: 6px;
+        border: 1px solid rgba(0,0,0,0.08);
+      ">
+        <div style="font-size: 10px; color: #555; margin-bottom: 3px;">
+          <strong>📍 Location:</strong>
+        </div>
+        <div style="font-size: 10px; color: #666; line-height: 1.3;">
+          <div>${object.state}${object.country ? ', ' + (object.country === 'USA' ? 'United States' : object.country) : ''}</div>
+          ${object.balancingAuthority ? `<div><strong>Grid Operator:</strong> ${object.balancingAuthority}</div>` : ''}
+        </div>
+      </div>
+
+      <div style="
+        font-size: 9px; 
+        color: #999; 
+        text-align: center; 
+        margin-top: 6px; 
+        padding-top: 4px;
+        border-top: 1px solid rgba(0,0,0,0.1);
+        font-style: italic;
+      ">
+        ${object.country === 'USA' ? 'US EIA Form 860 Data' : 'International Power Plant Database'}
+      </div>
+    `;
   } else if (layer.id === 'WeccGenColumnLayer') {
     content = `
       <div style="font-weight: 600; margin-bottom: 4px; color: #2e7d32;">${object.name}</div>
@@ -660,15 +1071,112 @@ function getEnhancedTooltip({ object, layer }) {
     `;
   } else if (layer.id === 'WeccLayer') {
     const properties = object.properties;
+    
+    // Enhanced WECC region information
+    const baCode = properties.BA_Abrev || 'WECC';
+    const baName = properties.BA_Name || 'Western Electricity Coordinating Council Area';
+    const fid = properties.FID || 'N/A';
+    const areaNumbers = properties.Area_Numbers || [];
+    
+    // Get additional generation data if available
+    const generationInfo = properties.weccGenData || null;
+    
     content = `
-      <div style="font-weight: 600; margin-bottom: 4px; color: #1565c0;">${properties.BA_Abrev || 'WECC Area'}</div>
-      <div style="font-size: 11px; color: #666; margin-bottom: 2px;">${properties.BA_Name || ''}</div>
-      <div style="font-size: 11px; color: #666;">FID: ${properties.FID || 'N/A'}</div>
-      ${properties.Area_Numbers && properties.Area_Numbers.length > 0 ? 
-        `<div style="font-size: 11px; color: #666;">Area No.: ${properties.Area_Numbers.join(', ')}</div>` : 
+      <div style="
+        background: linear-gradient(135deg, rgba(21, 101, 192, 0.1) 0%, rgba(21, 101, 192, 0.05) 100%);
+        padding: 8px 10px;
+        border-radius: 6px;
+        border-left: 4px solid #1565c0;
+        margin-bottom: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      ">
+        <div style="font-weight: 700; font-size: 14px; color: #1565c0; margin-bottom: 3px;">
+          🏛️ ${baCode}
+        </div>
+        <div style="font-size: 11px; color: #666; line-height: 1.3; margin-bottom: 2px;">
+          ${baName}
+        </div>
+        <div style="font-size: 9px; color: #888; font-style: italic;">
+          Balancing Authority Area
+        </div>
+      </div>
+
+      <div style="
+        background: rgba(0,0,0,0.03);
+        padding: 6px 8px;
+        border-radius: 4px;
+        margin-bottom: 6px;
+        border: 1px solid rgba(0,0,0,0.08);
+      ">
+        <div style="font-size: 10px; color: #555; margin-bottom: 3px;">
+          <strong>🔍 Area Information:</strong>
+        </div>
+        <div style="font-size: 10px; color: #666; line-height: 1.3;">
+          <div><strong>Region ID:</strong> ${fid}</div>
+          ${areaNumbers.length > 0 ? 
+            `<div><strong>Area Numbers:</strong> ${areaNumbers.join(', ')}</div>` : 
+            ''
+          }
+          <div><strong>Grid:</strong> Western Interconnection</div>
+          <div><strong>Coordinator:</strong> WECC</div>
+        </div>
+      </div>
+
+      ${generationInfo ? 
+        `<div style="
+          background: rgba(46, 125, 50, 0.05);
+          padding: 6px 8px;
+          border-radius: 4px;
+          border: 1px solid rgba(46, 125, 50, 0.15);
+          margin-bottom: 6px;
+        ">
+          <div style="font-size: 10px; font-weight: 600; color: #2e7d32; margin-bottom: 3px;">
+            ⚡ Generation Portfolio:
+          </div>
+          <div style="font-size: 9px; color: #666; line-height: 1.4;">
+            <div><strong>Total Capacity:</strong> ${generationInfo.totalCapacity} MW</div>
+            <div><strong>Primary Source:</strong> ${generationInfo.primarySource}</div>
+            <div><strong>Plants:</strong> ${generationInfo.plantCount}</div>
+          </div>
+        </div>` : 
         ''
       }
-      <div style="font-size: 10px; color: #999; margin-top: 4px; font-style: italic;">Click for details →</div>
+
+      <div style="
+        background: rgba(33, 150, 243, 0.05);
+        padding: 6px 8px;
+        border-radius: 4px;
+        border: 1px solid rgba(33, 150, 243, 0.15);
+        margin-bottom: 6px;
+      ">
+        <div style="font-size: 10px; font-weight: 600; color: #1976d2; margin-bottom: 3px;">
+          🎯 Responsibilities:
+        </div>
+        <div style="font-size: 9px; color: #666; line-height: 1.4;">
+          <div>• Grid reliability & planning</div>
+          <div>• Load-generation balance</div>
+          <div>• Transmission coordination</div>
+          <div>• Market operations</div>
+        </div>
+      </div>
+
+      <div style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 6px;
+        background: rgba(33, 150, 243, 0.08);
+        border-radius: 4px;
+        border: 1px solid rgba(33, 150, 243, 0.2);
+        margin-top: 6px;
+      ">
+        <div style="font-size: 9px; color: #1976d2; font-weight: 500;">
+          🖱️ Click for detailed analysis
+        </div>
+        <div style="font-size: 8px; color: #666;">
+          WECC Data Portal
+        </div>
+      </div>
     `;
   } else if (layer.id === 'PolygonLayerload' || layer.id === 'PolygonLayer2') {
     content = `
@@ -685,6 +1193,130 @@ function getEnhancedTooltip({ object, layer }) {
     content = `
       <div style="font-weight: 600; margin-bottom: 4px; color: #f57c00;">Zone ${object.properties.name}</div>
       <div style="font-size: 11px; color: #666;">Load Zone</div>
+    `;
+  } else if (layer.id === 'power-plants') {
+    const props = object.properties;
+    const primaryColor = getPowerPlantColor(props.primaryType).slice(0, 3).join(',');
+    
+    // Create comprehensive technology breakdown for USA plants
+    const techBreakdown = [];
+    const techIcons = {
+      'solar': '☀️', 'wind': '💨', 'hydro': '💧', 'naturalGas': '🔥', 
+      'nuclear': '⚛️', 'geothermal': '🌋', 'battery': '🔋', 'oil': '🛢️', 'other': '⚡'
+    };
+    
+    if (props.country === 'USA') {
+      if (props.solar > 0) techBreakdown.push(`${techIcons.solar} Solar: ${props.solar.toFixed(1)} MW`);
+      if (props.wind > 0) techBreakdown.push(`${techIcons.wind} Wind: ${props.wind.toFixed(1)} MW`);
+      if (props.hydro > 0) techBreakdown.push(`${techIcons.hydro} Hydro: ${props.hydro.toFixed(1)} MW`);
+      if (props.naturalGas > 0) techBreakdown.push(`${techIcons.naturalGas} Natural Gas: ${props.naturalGas.toFixed(1)} MW`);
+      if (props.nuclear > 0) techBreakdown.push(`${techIcons.nuclear} Nuclear: ${props.nuclear.toFixed(1)} MW`);
+      if (props.geothermal > 0) techBreakdown.push(`${techIcons.geothermal} Geothermal: ${props.geothermal.toFixed(1)} MW`);
+      if (props.battery > 0) techBreakdown.push(`${techIcons.battery} Battery: ${props.battery.toFixed(1)} MW`);
+      if (props.oil > 0) techBreakdown.push(`${techIcons.oil} Oil: ${props.oil.toFixed(1)} MW`);
+      if (props.other > 0) techBreakdown.push(`${techIcons.other} Other: ${props.other.toFixed(1)} MW`);
+    }
+    
+    // Calculate capacity utilization indicator
+    const capacitySize = props.totalCapacityMW;
+    let sizeIndicator = '';
+    let sizeColor = '';
+    if (capacitySize >= 1000) {
+      sizeIndicator = '🔴 Large Scale';
+      sizeColor = '#d32f2f';
+    } else if (capacitySize >= 100) {
+      sizeIndicator = '🟡 Medium Scale';
+      sizeColor = '#f57c00';
+    } else if (capacitySize >= 10) {
+      sizeIndicator = '🟢 Small Scale';
+      sizeColor = '#388e3c';
+    } else {
+      sizeIndicator = '⚪ Micro Scale';
+      sizeColor = '#757575';
+    }
+    
+    content = `
+      <div style="
+        background: linear-gradient(135deg, rgba(${primaryColor}, 0.1) 0%, rgba(${primaryColor}, 0.05) 100%);
+        padding: 2px 8px;
+        border-radius: 4px;
+        border-left: 3px solid rgb(${primaryColor});
+        margin-bottom: 6px;
+      ">
+        <div style="font-weight: 700; font-size: 13px; color: rgb(${primaryColor}); margin-bottom: 2px;">
+          ${props.plantName || 'Unnamed Plant'}
+        </div>
+        <div style="font-size: 10px; color: #888; font-style: italic;">
+          Plant Code: ${props.plantCode || 'N/A'}
+        </div>
+      </div>
+      
+      <div style="margin-bottom: 6px;">
+        <div style="display: flex; align-items: center; margin-bottom: 3px;">
+          <div style="font-size: 11px; color: ${sizeColor}; font-weight: 600;">
+            ${sizeIndicator}
+          </div>
+          <div style="margin-left: auto; font-size: 12px; font-weight: 700; color: #333;">
+            ${props.totalCapacityMW.toFixed(1)} MW
+          </div>
+        </div>
+        <div style="font-size: 10px; color: #666;">
+          Primary Technology: <span style="color: rgb(${primaryColor}); font-weight: 500;">${props.primaryType}</span>
+        </div>
+      </div>
+
+      <div style="
+        background: rgba(0,0,0,0.03);
+        padding: 6px 8px;
+        border-radius: 4px;
+        margin-bottom: 6px;
+        border: 1px solid rgba(0,0,0,0.08);
+      ">
+        <div style="font-size: 10px; color: #555; margin-bottom: 3px;">
+          <strong>📍 Location:</strong>
+        </div>
+        <div style="font-size: 10px; color: #666; line-height: 1.3;">
+          <div>${props.state}${props.county ? ', ' + props.county + ' County' : ''}</div>
+          <div>${props.country === 'USA' ? 'United States' : (props.country === 'CAN' ? 'Canada' : props.country)}</div>
+          ${props.balancingAuthority ? `<div style="margin-top: 2px;"><strong>Grid Operator:</strong> ${props.balancingAuthority}</div>` : ''}
+        </div>
+      </div>
+
+      ${techBreakdown.length > 0 ? 
+        `<div style="
+          background: rgba(${primaryColor}, 0.05);
+          padding: 6px 8px;
+          border-radius: 4px;
+          border: 1px solid rgba(${primaryColor}, 0.15);
+          margin-bottom: 4px;
+        ">
+          <div style="font-size: 10px; font-weight: 600; color: rgb(${primaryColor}); margin-bottom: 4px;">
+            🔧 Technology Portfolio:
+          </div>
+          <div style="font-size: 9px; color: #666; line-height: 1.4;">
+            ${techBreakdown.slice(0, 4).map(tech => `<div style="margin-bottom: 1px;">${tech}</div>`).join('')}
+            ${techBreakdown.length > 4 ? 
+              `<div style="font-style: italic; color: #888; margin-top: 2px;">
+                +${techBreakdown.length - 4} additional technologies
+              </div>` : 
+              ''
+            }
+          </div>
+        </div>` : 
+        ''
+      }
+
+      <div style="
+        font-size: 9px; 
+        color: #999; 
+        text-align: center; 
+        margin-top: 6px; 
+        padding-top: 4px;
+        border-top: 1px solid rgba(0,0,0,0.1);
+        font-style: italic;
+      ">
+        ${props.country === 'USA' ? 'US EIA Form 860 Data' : 'International Power Plant Database'}
+      </div>
     `;
   }
 
@@ -897,6 +1529,26 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       try {
         const enhancedDataResult = await initializeData();
         setEnhancedData(enhancedDataResult);
+        
+        // Update generation statistics if available
+        if (enhancedDataResult.generationStats) {
+          setGenerationStats(enhancedDataResult.generationStats);
+        }
+        
+        // Update power plant data if available
+        if (enhancedDataResult.powerPlantData) {
+          setPowerPlantData(enhancedDataResult.powerPlantData);
+          setPowerPlantFilterValue([enhancedDataResult.powerPlantData.minPg, enhancedDataResult.powerPlantData.maxPg]);
+          
+          // Set up name items for multiselect
+          const nameItems = enhancedDataResult.powerPlants.map(plant => plant.name);
+          setPowerPlantNameItems(nameItems);
+        }
+        
+        // Update chart data if available
+        if (enhancedDataResult.powerPlantChartData) {
+          setPowerPlantChartData(enhancedDataResult.powerPlantChartData);
+        }
         
         // Update flow data with the enhanced dataset
         const enhancedFlowData = ExtractFlowData(enhancedDataResult);
@@ -1415,6 +2067,16 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
   const [arealayeractive, setAreaLayerActive] = useState(false);
   const [wecclayeractive, setWeccLayerActive] = useState(true);
   const [transmissionlayeractive, setTransmissionLayerActive] = useState(true);
+  const [powerplantlayeractive, setPowerPlantLayerActive] = useState(true);
+  const [powerplantlayercapactive, setPowerPlantLayerCapActive] = useState(false);
+  const [powerplantlabelsactive, setPowerPlantLabelsActive] = useState(false);
+  const [powerPlantFilterValue, setPowerPlantFilterValue] = useState([0, 10000]);
+  const [powerPlantSelectItems, setPowerPlantSelectItems] = useState([]);
+  const [selectedTechnology, setSelectedTechnology] = useState(null);
+  const [generationStats, setGenerationStats] = useState(null);
+  const [powerPlantData, setPowerPlantData] = useState({ Plants: [], minPg: 0, maxPg: 10000, minPcap: 0, maxPcap: 10000 });
+  const [powerPlantNameItems, setPowerPlantNameItems] = useState([]);
+  const [powerPlantChartData, setPowerPlantChartData] = useState(null);
 
   const [mapStyleSelection, setMapStyle] = useState('osm');
 
@@ -1896,6 +2558,26 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     setTransmissionLayerActive(event.target.checked);
   };
 
+  const handlePowerPlantLayerChange = (event) => {
+    setPowerPlantLayerActive(event.target.checked);
+  };
+
+  const handlePowerPlantLayerCapChange = (event) => {
+    setPowerPlantLayerCapActive(event.target.checked);
+  };
+
+  const handlePowerPlantLabelsChange = (event) => {
+    setPowerPlantLabelsActive(event.target.checked);
+  };
+
+  const handlePowerPlantRangeFilterChange = (event, newValue) => {
+    setPowerPlantFilterValue(newValue);
+  };
+
+  const handlePowerPlantMultiselect = (selectedItems) => {
+    setPowerPlantSelectItems(selectedItems);
+  };
+
   const handleLoadLayerChange = (event) => {
     setLoadLayerActive(event.target.checked);
     setLoadFilterValue([0, countyloaddata.maxPd]);
@@ -2302,6 +2984,120 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       extensions: [new DataFilterExtension({ filtersize: 1 })]
     }),
 
+    // Western Power Plants Generation Column Layer
+    new ColumnLayer({
+      id: 'western-power-plants',
+      data: enhancedData.powerPlants || [],
+      diskResolution: 50,
+      radius: 5000,
+      elevationScale: 50,
+      pickable: powerplantlayeractive,
+      visible: powerplantlayeractive,
+      getPosition: d => d.coordinates,
+      getFillColor: d => getPowerPlantColumnColor(d.primaryType, d.Pg),
+      getElevation: d => d.Pg * 5,
+      onClick: (info) => {
+        if (info && info.object) {
+          setSelectedFeature({
+            properties: info.object,
+            fid: info.index,
+            type: 'western_power_plant'
+          });
+        }
+      },
+      getFilterValue: d => {
+        // Filter by capacity range
+        if (!d || typeof d.Pg !== 'number') return -10000;
+        return d.Pg;
+      },
+      filterRange: powerPlantFilterValue || [0, 10000],
+      extensions: [new DataFilterExtension({ filtersize: 1 })]
+    }),
+
+    // Western Power Plants Capacity Column Layer
+    new ColumnLayer({
+      id: 'western-power-plants-cap',
+      data: enhancedData.powerPlants || [],
+      diskResolution: 50,
+      radius: 5000,
+      elevationScale: 50,
+      pickable: false,
+      visible: powerplantlayercapactive,
+      getPosition: d => d.coordinates,
+      getFillColor: d => getPowerPlantColumnColor(d.primaryType, d.Pcap),
+      getElevation: d => d.Pcap * 5,
+      onClick: (info) => {
+        if (info && info.object) {
+          setSelectedFeature({
+            properties: info.object,
+            fid: info.index,
+            type: 'western_power_plant_cap'
+          });
+        }
+      },
+      getFilterValue: d => {
+        // Filter by capacity range
+        if (!d || typeof d.Pcap !== 'number') return -10000;
+        return d.Pcap;
+      },
+      filterRange: powerPlantFilterValue || [0, 10000],
+      extensions: [new DataFilterExtension({ filtersize: 1 })]
+    }),
+
+    // Power Plant Labels Layer
+    new TextLayer({
+      id: 'power-plant-labels',
+      data: enhancedData.features.filter(f => {
+        if (f.properties.featureType !== 'power_plant') return false;
+        if (selectedTechnology && f.properties.primaryType !== selectedTechnology) return false;
+        // Only show labels for larger plants to avoid clutter
+        return f.properties.totalCapacityMW >= 50;
+      }),
+      visible: powerplantlabelsactive && powerplantlayeractive,
+      pickable: false,
+      getPosition: d => {
+        // Position labels at the top of the columns
+        const coords = d.geometry.coordinates;
+        const capacity = d.properties.totalCapacityMW || 1;
+        const elevation = Math.max(1, Math.log10(capacity + 1) * 10) * 25; // Match column height calculation
+        return [coords[0], coords[1], elevation + 50]; // Slightly above the column
+      },
+      getText: d => {
+        const name = d.properties.plantName || 'Unnamed Plant';
+        const capacity = d.properties.totalCapacityMW || 0;
+        return `${name}\n${capacity.toFixed(0)} MW`;
+      },
+      getSize: d => {
+        // Size text based on plant capacity
+        const capacity = d.properties.totalCapacityMW || 1;
+        if (capacity >= 1000) return 14;
+        if (capacity >= 100) return 12;
+        if (capacity >= 50) return 10;
+        return 9;
+      },
+      getAngle: 0,
+      getTextAnchor: 'middle',
+      getAlignmentBaseline: 'bottom',
+      getColor: d => {
+        const color = getPowerPlantColor(d.properties.primaryType);
+        return [color[0], color[1], color[2], 240]; // High contrast
+      },
+      getPixelOffset: [0, -10], // Slightly above the column top
+      fontFamily: '"Inter", sans-serif',
+      fontWeight: 700,
+      outlineWidth: 3,
+      outlineColor: [255, 255, 255, 200],
+      backgroundColor: [255, 255, 255, 160],
+      getBackgroundPadding: [4, 2, 4, 2],
+      backgroundRadius: 4,
+      updateTriggers: {
+        getColor: [powerplantlabelsactive, selectedTechnology],
+        getText: powerplantlabelsactive,
+        getSize: powerplantlabelsactive,
+        getPosition: powerplantlabelsactive,
+        getData: selectedTechnology
+      }
+    }),
 
     new ColumnLayer({
       id: 'gen-column',
@@ -3270,6 +4066,303 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
                 <div style={{ fontSize: "10px", color: "#888", fontStyle: "italic" }}>
                   Sources: USGS Powerlines WUS CAN SGCA, Western Power Plants USA & Canada-Mexico datasets
                 </div>
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
+            <AccordionSummary style={{ 
+              height: "20px", 
+              minHeight: "40px", 
+              paddingRight: "20px", 
+              paddingLeft: "0px",
+              background: "rgba(255, 193, 7, 0.05)"
+            }}
+              expandIcon={<ArrowDropDownIcon />}>
+              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
+                <Checkbox checked={powerplantlayeractive} style={{ color: "#ff9800" }} onChange={handlePowerPlantLayerChange} />
+                Western Power Plants
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails style={{ padding: "12px 16px" }}>
+              <Typography component="div">
+                {powerplantlayeractive &&
+                  (<div style={{ paddingRight: "20px", marginBottom: "12px" }}>
+                    <Checkbox checked={powerplantlayercapactive} style={{ color: "#ff9800" }} onChange={handlePowerPlantLayerCapChange} />
+                    <span style={{ fontSize: "12px" }}>Show Total Capacity</span>
+                  </div>)
+                }
+
+                {powerplantlayeractive &&
+                  (<div style={{ paddingRight: "20px", marginBottom: "12px" }}>
+                    <Typography style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
+                      Capacity Range (MW)
+                    </Typography>
+                    <Slider
+                      style={{ color: "#ff9800" }}
+                      value={powerPlantFilterValue}
+                      valueLabelDisplay="auto"
+                      onChange={handlePowerPlantRangeFilterChange}
+                      getAriaValueText={(value) => `${value} MW`}
+                      step={10}
+                      min={powerPlantData.minPg}
+                      max={powerPlantData.maxPg + 100}
+                    />
+                  </div>)
+                }
+
+                {powerplantlayeractive && (
+                  <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
+                    <Multiselect
+                      defaultValue={powerPlantSelectItems}
+                      data={powerPlantNameItems}
+                      placeholder={'Search for power plants'}
+                      onChange={handlePowerPlantMultiselect}
+                    />
+                  </div>
+                )}
+
+                {powerplantlayeractive && powerPlantChartData && (
+                  <div style={{ width: 260, height: 280, transform: "translate(-8px, 0px)" }}>
+                    <Doughnut data={powerPlantChartData}
+                      options={{
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: {
+                            position: 'bottom',
+                            labels: {
+                              boxWidth: 12,
+                              padding: 8,
+                              font: {
+                                size: 10
+                              }
+                            }
+                          },
+                          title: {
+                            display: true,
+                            text: 'Western Power Plants by Technology',
+                            font: {
+                              size: 12,
+                              weight: 'bold'
+                            }
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Plant Labels Control */}
+                {powerplantlayeractive && (
+                  <div style={{ 
+                    marginTop: "8px", 
+                    padding: "6px 8px", 
+                    background: "rgba(255, 152, 0, 0.05)",
+                    borderRadius: "4px",
+                    border: "1px solid rgba(255, 152, 0, 0.15)"
+                  }}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox 
+                          checked={powerplantlabelsactive} 
+                          onChange={handlePowerPlantLabelsChange}
+                          style={{ color: "#ff9800", transform: "scale(0.8)" }}
+                        />
+                      }
+                      label={
+                        <span style={{ fontSize: "11px", color: "#e65100", fontWeight: "500" }}>
+                          🏷️ Show Plant Names (50+ MW)
+                        </span>
+                      }
+                      style={{ margin: 0 }}
+                    />
+                    <div style={{ fontSize: "9px", color: "#666", marginTop: "2px", marginLeft: "28px" }}>
+                      Display plant names above 3D columns for larger facilities
+                    </div>
+                  </div>
+                )}
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+
+          {/* Generation Overview Section */}
+          <Accordion defaultExpanded={true} style={{ marginBottom: "8px" }}>
+            <AccordionSummary style={{ 
+              height: "20px", 
+              minHeight: "40px", 
+              paddingRight: "20px", 
+              paddingLeft: "0px",
+              background: "rgba(76, 175, 80, 0.05)"
+            }}
+              expandIcon={<ArrowDropDownIcon />}>
+              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
+                <span style={{ color: "#4caf50", marginRight: "8px" }}>📊</span>
+                Generation Overview
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails style={{ padding: "12px 16px" }}>
+              <Typography component="div">
+                {generationStats ? (
+                  <div>
+                    {/* Summary Statistics */}
+                    <div style={{ 
+                      background: "rgba(76, 175, 80, 0.08)", 
+                      padding: "12px", 
+                      borderRadius: "8px", 
+                      marginBottom: "12px",
+                      border: "1px solid rgba(76, 175, 80, 0.2)"
+                    }}>
+                      <div style={{ fontSize: "12px", fontWeight: "600", color: "#2e7d32", marginBottom: "6px" }}>
+                        Western Interconnection Summary
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#666", lineHeight: "1.4" }}>
+                        <div><strong>Total Capacity:</strong> {generationStats.totalCapacity} MW</div>
+                        <div><strong>Total Plants:</strong> {generationStats.totalPlants.toLocaleString()}</div>
+                        <div><strong>Average Size:</strong> {generationStats.averageCapacity} MW</div>
+                      </div>
+                    </div>
+
+                    {/* Technology Breakdown Cards */}
+                    <div style={{ marginBottom: "8px" }}>
+                      <div style={{ fontSize: "12px", fontWeight: "500", marginBottom: "8px", color: "#333" }}>
+                        Generation Mix by Technology
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        {generationStats.sortedTechnologies.slice(0, 6).map(tech => {
+                          const techData = generationStats.technologies[tech];
+                          const isSelected = selectedTechnology === tech;
+                          const color = techData.color.slice(0, 3);
+                          
+                          return (
+                            <div 
+                              key={tech}
+                              style={{ 
+                                display: "flex", 
+                                alignItems: "center", 
+                                padding: "8px 10px",
+                                borderRadius: "6px",
+                                background: isSelected ? `rgba(${color.join(',')}, 0.15)` : "rgba(0,0,0,0.02)",
+                                border: isSelected ? `2px solid rgb(${color.join(',')})` : "1px solid rgba(0,0,0,0.1)",
+                                cursor: "pointer",
+                                transition: "all 0.2s ease",
+                                position: "relative"
+                              }}
+                              onClick={() => {
+                                setSelectedTechnology(selectedTechnology === tech ? null : tech);
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!isSelected) {
+                                  e.target.style.background = `rgba(${color.join(',')}, 0.08)`;
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isSelected) {
+                                  e.target.style.background = "rgba(0,0,0,0.02)";
+                                }
+                              }}
+                            >
+                              <div style={{ 
+                                width: "16px", 
+                                height: "16px", 
+                                backgroundColor: `rgb(${color.join(',')})`, 
+                                marginRight: "10px", 
+                                borderRadius: "50%", 
+                                border: "2px solid white",
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                                flexShrink: 0
+                              }}></div>
+                              
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ 
+                                  fontSize: "11px", 
+                                  fontWeight: "500", 
+                                  color: isSelected ? `rgb(${color.join(',')})` : "#333",
+                                  marginBottom: "2px"
+                                }}>
+                                  {tech}
+                                </div>
+                                <div style={{ fontSize: "10px", color: "#666", lineHeight: "1.2" }}>
+                                  <div>{techData.count} plants • {techData.totalCapacity.toFixed(0)} MW</div>
+                                  <div>{techData.percentage}% of total capacity</div>
+                                </div>
+                              </div>
+                              
+                              <div style={{ 
+                                fontSize: "10px", 
+                                color: isSelected ? `rgb(${color.join(',')})` : "#999",
+                                fontWeight: "500",
+                                marginLeft: "8px"
+                              }}>
+                                {techData.percentage}%
+                              </div>
+                              
+                              {isSelected && (
+                                <div style={{
+                                  position: "absolute",
+                                  top: "2px",
+                                  right: "6px",
+                                  fontSize: "10px",
+                                  color: `rgb(${color.join(',')})`,
+                                  fontWeight: "600"
+                                }}>
+                                  ✓
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Show remaining technologies if any */}
+                    {generationStats.sortedTechnologies.length > 6 && (
+                      <div style={{ 
+                        fontSize: "10px", 
+                        color: "#888", 
+                        fontStyle: "italic", 
+                        textAlign: "center",
+                        marginTop: "8px",
+                        padding: "4px"
+                      }}>
+                        +{generationStats.sortedTechnologies.length - 6} more technologies
+                      </div>
+                    )}
+
+                    {/* Filter Status */}
+                    {selectedTechnology && (
+                      <div style={{ 
+                        background: "rgba(33, 150, 243, 0.08)", 
+                        padding: "8px", 
+                        borderRadius: "6px", 
+                        marginTop: "8px",
+                        border: "1px solid rgba(33, 150, 243, 0.2)"
+                      }}>
+                        <div style={{ fontSize: "10px", color: "#1976d2", fontWeight: "500", marginBottom: "2px" }}>
+                          🔍 Filtered View Active
+                        </div>
+                        <div style={{ fontSize: "10px", color: "#666" }}>
+                          Showing only {selectedTechnology} plants
+                        </div>
+                        <div 
+                          style={{ 
+                            fontSize: "10px", 
+                            color: "#1976d2", 
+                            cursor: "pointer", 
+                            textDecoration: "underline",
+                            marginTop: "4px"
+                          }}
+                          onClick={() => setSelectedTechnology(null)}
+                        >
+                          Clear filter
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: "11px", color: "#666", fontStyle: "italic", textAlign: "center", padding: "16px" }}>
+                    Loading generation statistics...
+                  </div>
+                )}
               </Typography>
             </AccordionDetails>
           </Accordion>
