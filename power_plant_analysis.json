@@ -1,0 +1,199 @@
+{
+  "western_power_plants": {
+    "total_capacity_mw": 313946.0,
+    "total_plants": 3622,
+    "average_capacity_mw": 86.67752622860299,
+    "technology_breakdown": {
+      "Battery Storage": {
+        "capacity": 16423.8,
+        "count": "277"
+      },
+      "Geothermal": {
+        "capacity": 4551.1,
+        "count": "67"
+      },
+      "Hydro": {
+        "capacity": 71606.20000000001,
+        "count": "739"
+      },
+      "Natural Gas": {
+        "capacity": 108708.20000000001,
+        "count": "536"
+      },
+      "Nuclear": {
+        "capacity": 7732.6,
+        "count": "3"
+      },
+      "Oil": {
+        "capacity": 1285.5,
+        "count": "49"
+      },
+      "Other": {
+        "capacity": 26940.1,
+        "count": "276"
+      },
+      "Solar": {
+        "capacity": 42307.6,
+        "count": "1513"
+      },
+      "Wind": {
+        "capacity": 34390.9,
+        "count": "377"
+      }
+    },
+    "chart_data": {
+      "labels": [
+        "Natural Gas",
+        "Hydro",
+        "Solar",
+        "Wind",
+        "Other",
+        "Battery Storage",
+        "Nuclear",
+        "Geothermal",
+        "Oil"
+      ],
+      "datasets": [
+        {
+          "label": "Western Power Plants Capacity (MW)",
+          "data": [
+            108708.2,
+            71606.2,
+            42307.6,
+            34390.9,
+            26940.1,
+            16423.8,
+            7732.6,
+            4551.1,
+            1285.5
+          ],
+          "backgroundColor": [
+            "rgba(255, 87, 34, 0.8)",
+            "rgba(33, 150, 243, 0.8)",
+            "rgba(255, 193, 7, 0.8)",
+            "rgba(76, 175, 80, 0.8)",
+            "rgba(158, 158, 158, 0.8)",
+            "rgba(255, 235, 59, 0.8)",
+            "rgba(156, 39, 176, 0.8)",
+            "rgba(139, 69, 19, 0.8)",
+            "rgba(96, 125, 139, 0.8)"
+          ],
+          "borderColor": [
+            "rgba(255, 87, 34, 1)",
+            "rgba(33, 150, 243, 1)",
+            "rgba(255, 193, 7, 1)",
+            "rgba(76, 175, 80, 1)",
+            "rgba(158, 158, 158, 1)",
+            "rgba(255, 235, 59, 1)",
+            "rgba(156, 39, 176, 1)",
+            "rgba(139, 69, 19, 1)",
+            "rgba(96, 125, 139, 1)"
+          ],
+          "borderWidth": 2
+        }
+      ]
+    }
+  },
+  "wecc_generation": {
+    "total_capacity_mw": 384199.869,
+    "total_bas": 31,
+    "technology_breakdown": {
+      "Hydro": {
+        "capacity": 70028.6,
+        "count": "26"
+      },
+      "Nuclear": {
+        "capacity": 6321.6,
+        "count": "3"
+      },
+      "Coal": {
+        "capacity": 34611.200000000004,
+        "count": "16"
+      },
+      "Natural Gas": {
+        "capacity": 163312.9,
+        "count": "25"
+      },
+      "Geothermal": {
+        "capacity": 3850.3,
+        "count": "8"
+      },
+      "Biomass": {
+        "capacity": 4165.799999999999,
+        "count": "14"
+      },
+      "Wind": {
+        "capacity": 40799.50000000001,
+        "count": "20"
+      },
+      "PV": {
+        "capacity": 41471.469,
+        "count": "21"
+      },
+      "Pumped_Storage_MW": {
+        "capacity": 3627.5,
+        "count": "5"
+      },
+      "Battery_Storage_MW": {
+        "capacity": "16011",
+        "count": "6"
+      }
+    },
+    "chart_data": {
+      "labels": [
+        "Natural Gas",
+        "Hydro",
+        "PV",
+        "Wind",
+        "Coal",
+        "Battery_Storage_MW",
+        "Nuclear",
+        "Biomass",
+        "Geothermal",
+        "Pumped_Storage_MW"
+      ],
+      "datasets": [
+        {
+          "label": "WECC Generation Capacity (MW)",
+          "data": [
+            163312.9,
+            70028.6,
+            41471.5,
+            40799.5,
+            34611.2,
+            "16011",
+            6321.6,
+            4165.8,
+            3850.3,
+            3627.5
+          ],
+          "backgroundColor": [
+            "rgba(255, 87, 34, 0.8)",
+            "rgba(33, 150, 243, 0.8)",
+            "rgba(158, 158, 158, 0.8)",
+            "rgba(76, 175, 80, 0.8)",
+            "rgba(158, 158, 158, 0.8)",
+            "rgba(158, 158, 158, 0.8)",
+            "rgba(156, 39, 176, 0.8)",
+            "rgba(158, 158, 158, 0.8)",
+            "rgba(139, 69, 19, 0.8)",
+            "rgba(158, 158, 158, 0.8)"
+          ],
+          "borderColor": [
+            "rgba(255, 87, 34, 1)",
+            "rgba(33, 150, 243, 1)",
+            "rgba(158, 158, 158, 1)",
+            "rgba(76, 175, 80, 1)",
+            "rgba(158, 158, 158, 1)",
+            "rgba(158, 158, 158, 1)",
+            "rgba(156, 39, 176, 1)",
+            "rgba(158, 158, 158, 1)",
+            "rgba(139, 69, 19, 1)",
+            "rgba(158, 158, 158, 1)"
+          ],
+          "borderWidth": 2
+        }
+      ]
+    }
+  }
+}
