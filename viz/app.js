@@ -1552,6 +1552,43 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
   // For pop-up control
   const [showPopup, setShowPopup] = useState({ display: false, info: '', name: '', fid: null, type: null });
 
+  // Data Center Impact Analysis state
+  const [impactAnalysisActive, setImpactAnalysisActive] = useState(false);
+  const [selectedWeccRegion, setSelectedWeccRegion] = useState('ALL');
+  const [selectedCaseStudy, setSelectedCaseStudy] = useState('case1');
+  const [selectedMetric, setSelectedMetric] = useState('Price');
+  const [selectedHour, setSelectedHour] = useState(12);
+  const [impactData, setImpactData] = useState({});
+
+  // WECC regions list for dropdown
+  const weccRegions = [
+    { id: 'ALL', name: 'All Regions', abbrev: 'ALL' },
+    { id: 'AESO', name: 'Alberta Electric System Operator', abbrev: 'AESO' },
+    { id: 'AVA', name: 'Avista Corporation', abbrev: 'AVA' },
+    { id: 'AZPS', name: 'Arizona Public Service Company', abbrev: 'AZPS' },
+    { id: 'BANC', name: 'Balancing Authority of Northern California', abbrev: 'BANC' },
+    { id: 'BCHA', name: 'British Columbia Hydro and Power Authority', abbrev: 'BCHA' },
+    { id: 'BPAT', name: 'Bonneville Power Administration', abbrev: 'BPAT' },
+    { id: 'CISO', name: 'California Independent System Operator', abbrev: 'CISO' },
+    { id: 'EPE', name: 'El Paso Electric Company', abbrev: 'EPE' },
+    { id: 'IPCO', name: 'Idaho Power Company', abbrev: 'IPCO' },
+    { id: 'LDWP', name: 'Los Angeles Department of Water and Power', abbrev: 'LDWP' },
+    { id: 'NEVP', name: 'Nevada Power Company', abbrev: 'NEVP' },
+    { id: 'NWMT', name: 'NorthWestern Energy', abbrev: 'NWMT' },
+    { id: 'PACE', name: 'PacifiCorp East', abbrev: 'PACE' },
+    { id: 'PACW', name: 'PacifiCorp West', abbrev: 'PACW' },
+    { id: 'PGE', name: 'Portland General Electric Company', abbrev: 'PGE' },
+    { id: 'PNM', name: 'Public Service Company of New Mexico', abbrev: 'PNM' },
+    { id: 'PSCO', name: 'Public Service Company of Colorado', abbrev: 'PSCO' },
+    { id: 'PSEI', name: 'Puget Sound Energy', abbrev: 'PSEI' },
+    { id: 'SCL', name: 'Seattle City Light', abbrev: 'SCL' },
+    { id: 'SRP', name: 'Salt River Project', abbrev: 'SRP' },
+    { id: 'TEP', name: 'Tucson Electric Power', abbrev: 'TEP' },
+    { id: 'TIDC', name: 'Turlock Irrigation District', abbrev: 'TIDC' },
+    { id: 'TPWR', name: 'City of Tacoma, Department of Public Utilities', abbrev: 'TPWR' },
+    { id: 'WACM', name: 'Western Area Power Administration', abbrev: 'WACM' }
+  ];
+
   // Load additional transmission line data on component mount
   useEffect(() => {
     const loadEnhancedData = async () => {
@@ -1600,6 +1637,317 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
 
     loadEnhancedData();
   }, []);
+
+  // Load impact analysis data when parameters change
+  useEffect(() => {
+    if (impactAnalysisActive) {
+      loadImpactAnalysisData();
+    }
+  }, [impactAnalysisActive, selectedCaseStudy, selectedMetric, selectedHour, selectedWeccRegion]);
+
+  // Data Center Impact Analysis Functions
+  
+  // Handler for impact analysis toggle
+  const handleImpactAnalysisChange = (event) => {
+    setImpactAnalysisActive(event.target.checked);
+    if (event.target.checked) {
+      loadImpactAnalysisData();
+    } else {
+      setImpactData({});
+    }
+  };
+
+  // Load and calculate impact analysis data
+  const loadImpactAnalysisData = async () => {
+    try {
+      console.log('Loading impact analysis data...');
+      const impactResults = await calculateImpactDifferences();
+      setImpactData(impactResults);
+      console.log('Impact analysis data loaded:', impactResults);
+    } catch (error) {
+      console.error('Error loading impact analysis data:', error);
+    }
+  };
+
+  // Calculate impact differences between case studies
+  const calculateImpactDifferences = async () => {
+    const results = {};
+    
+    // Define comparison pairs based on selected case study
+    const comparisonPairs = {
+      'case1': { current: 'Case study_1', baseline: 'Case study_0' },
+      'case2': { current: 'Case study_2', baseline: 'Case study_1' },
+      'case3': { current: 'Case study_3', baseline: 'Case study_2' }
+    };
+    
+    const comparison = comparisonPairs[selectedCaseStudy];
+    if (!comparison) return results;
+    
+    // Get regions to analyze
+    const regionsToAnalyze = selectedWeccRegion === 'ALL' 
+      ? weccRegions.filter(r => r.id !== 'ALL').map(r => r.id)
+      : [selectedWeccRegion];
+    
+    for (const regionAbbrev of regionsToAnalyze) {
+      try {
+        const currentData = await loadCaseStudyDataForRegion(comparison.current, regionAbbrev);
+        const baselineData = await loadCaseStudyDataForRegion(comparison.baseline, regionAbbrev);
+        
+        if (currentData && baselineData) {
+          const difference = calculateMetricDifference(
+            currentData, 
+            baselineData, 
+            selectedMetric, 
+            selectedHour
+          );
+          
+          results[regionAbbrev] = {
+            current: currentData,
+            baseline: baselineData,
+            difference: difference,
+            metric: selectedMetric,
+            hour: selectedHour
+          };
+        }
+      } catch (error) {
+        console.warn(`Failed to load data for region ${regionAbbrev}:`, error);
+      }
+    }
+    
+    return results;
+  };
+
+  // Load case study data for a specific region
+  const loadCaseStudyDataForRegion = async (caseStudy, regionAbbrev) => {
+    try {
+      const data = {
+        lmp: null,
+        costs: null,
+        generation: null
+      };
+      
+      // Load LMP data
+      try {
+        const lmpPath = `/amin_data/manish_amin_modified_data/${caseStudy}/LMP ($/MWh)/${regionAbbrev}_lmp.csv`;
+        const lmpResponse = await fetch(lmpPath);
+        if (lmpResponse.ok) {
+          const lmpText = await lmpResponse.text();
+          data.lmp = parseLMPDataForRegion(lmpText, regionAbbrev);
+        }
+      } catch (error) {
+        console.warn(`Failed to load LMP data for ${regionAbbrev}:`, error);
+      }
+      
+      // Load costs data
+      try {
+        const costsPath = `/amin_data/manish_amin_modified_data/${caseStudy}/Additional files/Balancing Authority Hourly Operation Costs - Copy/${regionAbbrev}_hourly_operation_costs.csv`;
+        const costsResponse = await fetch(costsPath);
+        if (costsResponse.ok) {
+          const costsText = await costsResponse.text();
+          data.costs = parseCostsDataForRegion(costsText);
+        } else {
+          // Fallback to total operation cost CSV
+          const totalCostPath = `/amin_data/manish_amin_modified_data/Total_Operation_Cost.csv`;
+          const totalCostResponse = await fetch(totalCostPath);
+          if (totalCostResponse.ok) {
+            const totalCostText = await totalCostResponse.text();
+            data.costs = parseTotalOperationCostData(totalCostText, regionAbbrev, caseStudy);
+          }
+        }
+      } catch (error) {
+        console.warn(`Failed to load costs data for ${regionAbbrev}:`, error);
+      }
+      
+      // Load generation/power exchange data
+      try {
+        const genPath = `/amin_data/manish_amin_modified_data/${caseStudy}/Power Exchange (MW)/${regionAbbrev}_power_exchange.csv`;
+        const genResponse = await fetch(genPath);
+        if (genResponse.ok) {
+          const genText = await genResponse.text();
+          data.generation = parseGenerationDataForRegion(genText);
+        }
+      } catch (error) {
+        console.warn(`Failed to load generation data for ${regionAbbrev}:`, error);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error(`Error loading case study data for ${regionAbbrev}:`, error);
+      return null;
+    }
+  };
+
+  // Calculate difference between metrics
+  const calculateMetricDifference = (currentData, baselineData, metric, hour) => {
+    try {
+      let currentValue = 0;
+      let baselineValue = 0;
+      
+      if (metric === 'Price' || metric === 'price') {
+        const currentLmp = currentData.lmp?.find(d => d.hour === hour);
+        const baselineLmp = baselineData.lmp?.find(d => d.hour === hour);
+        currentValue = currentLmp?.price || 0;
+        baselineValue = baselineLmp?.price || 0;
+      }
+      
+      if (metric === 'System Operation Cost' || metric === 'System Cost') {
+        const currentCost = currentData.costs?.find(d => d.hour === hour);
+        const baselineCost = baselineData.costs?.find(d => d.hour === hour);
+        currentValue = (currentCost?.startupCosts || 0) + (currentCost?.fuelCosts || 0) + (currentCost?.variableCosts || 0);
+        baselineValue = (baselineCost?.startupCosts || 0) + (baselineCost?.fuelCosts || 0) + (baselineCost?.variableCosts || 0);
+      }
+      
+      if (metric === 'Power Exchange' || metric === 'power_exchange') {
+        const currentGen = currentData.generation?.find(d => d.hour === hour);
+        const baselineGen = baselineData.generation?.find(d => d.hour === hour);
+        currentValue = currentGen?.importExport || 0;
+        baselineValue = baselineGen?.importExport || 0;
+      }
+      
+      return currentValue - baselineValue;
+    } catch (error) {
+      console.error('Error calculating metric difference:', error);
+      return 0;
+    }
+  };
+
+  // Parse LMP data for a specific region
+  const parseLMPDataForRegion = (csvText, regionCode) => {
+    const lines = csvText.split('\n');
+    const headers = lines[0].split(',');
+    const regionIndex = headers.findIndex(header => header.includes(regionCode));
+    
+    if (regionIndex === -1) return [];
+    
+    const data = [];
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line) {
+        const values = line.split(',');
+        const hour = parseInt(values[0]);
+        const price = parseFloat(values[regionIndex]) || 0;
+        data.push({ hour, price });
+      }
+    }
+    return data;
+  };
+
+  // Parse costs data for a region
+  const parseCostsDataForRegion = (csvText) => {
+    const lines = csvText.split('\n');
+    const data = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line) {
+        const values = line.split(',');
+        data.push({
+          hour: parseInt(values[0]),
+          startupCosts: parseFloat(values[2]) || 0,
+          fuelCosts: parseFloat(values[3]) || 0,
+          variableCosts: parseFloat(values[4]) || 0
+        });
+      }
+    }
+    return data;
+  };
+
+  // Parse total operation cost data from CSV
+  const parseTotalOperationCostData = (csvText, regionCode, caseStudy) => {
+    try {
+      const lines = csvText.split('\n');
+      const headers = lines[0].split(',');
+      
+      // Find the column for this case study and region
+      const columnName = `${caseStudy}_${regionCode}`;
+      const columnIndex = headers.findIndex(header => header.includes(columnName) || header.includes(regionCode));
+      
+      if (columnIndex === -1) return [];
+      
+      const data = [];
+      for (let i = 1; i < lines.length && i <= 24; i++) {
+        const line = lines[i].trim();
+        if (line) {
+          const values = line.split(',');
+          const cost = parseFloat(values[columnIndex]) || 0;
+          data.push({
+            hour: i,
+            startupCosts: 0,
+            fuelCosts: cost,
+            variableCosts: 0,
+            totalCost: cost
+          });
+        }
+      }
+      return data;
+    } catch (error) {
+      console.error('Error parsing total operation cost data:', error);
+      return [];
+    }
+  };
+
+  // Parse generation/power exchange data
+  const parseGenerationDataForRegion = (csvText) => {
+    try {
+      const lines = csvText.split('\n');
+      const data = [];
+      
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line) {
+          const values = line.split(',');
+          data.push({
+            hour: parseInt(values[0]) || i,
+            importExport: parseFloat(values[1]) || 0,
+            generation: parseFloat(values[2]) || 0
+          });
+        }
+      }
+      return data;
+    } catch (error) {
+      console.error('Error parsing generation data:', error);
+      return [];
+    }
+  };
+
+  // Get color for WECC region based on impact data
+  const getWeccRegionColor = (regionAbbrev) => {
+    if (!impactAnalysisActive || !impactData[regionAbbrev]) {
+      return [200, 200, 200, 100]; // Default gray
+    }
+    
+    const impact = impactData[regionAbbrev];
+    const difference = impact.difference || 0;
+    
+    // Get max absolute difference for normalization
+    const allDifferences = Object.values(impactData).map(d => Math.abs(d.difference || 0));
+    const maxDiff = Math.max(...allDifferences, 1); // Avoid division by zero
+    
+    // Normalize difference (-1 to 1)
+    const normalizedDiff = difference / maxDiff;
+    
+    // Color interpolation: blue (negative) -> white (zero) -> red (positive)
+    let r, g, b;
+    
+    if (normalizedDiff < 0) {
+      // Negative values: interpolate from blue to white
+      const intensity = Math.abs(normalizedDiff);
+      r = Math.round(0 + (255 - 0) * (1 - intensity));
+      g = Math.round(102 + (255 - 102) * (1 - intensity));
+      b = 255;
+    } else if (normalizedDiff > 0) {
+      // Positive values: interpolate from white to red
+      const intensity = normalizedDiff;
+      r = 255;
+      g = Math.round(255 + (68 - 255) * intensity);
+      b = Math.round(255 + (68 - 255) * intensity);
+    } else {
+      // Zero difference: white
+      r = g = b = 255;
+    }
+    
+    return [r, g, b, 180];
+  };
 
   //update flowdataset when netfiltervalue, flowfiltervalue or data value change
   useEffect(() => {
@@ -3371,6 +3719,37 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       getLineColor: [255, 255, 255, 255], // White border always visible
       getLineWidth: 4, // Thicker border for better visibility
       getFillColor: d => {
+        // Get region abbreviation for impact analysis
+        const regionAbbrev = d.properties?.BA_CODE || d.properties?.NAME || d.properties?.ABBREV;
+        
+        // Use impact analysis colors if active and data is available
+        if (impactAnalysisActive && Object.keys(impactData).length > 0 && regionAbbrev) {
+          const impactColor = getWeccRegionColor(regionAbbrev);
+          
+          // Apply hover and click effects to impact colors
+          if (d === weccClickedObject) {
+            // Darken the impact color for clicked state
+            return [
+              Math.max(0, impactColor[0] - 50),
+              Math.max(0, impactColor[1] - 50),
+              Math.max(0, impactColor[2] - 50),
+              220
+            ];
+          }
+          if (d === weccHoveredObject && d !== weccClickedObject) {
+            // Slightly darken for hover
+            return [
+              Math.max(0, impactColor[0] - 20),
+              Math.max(0, impactColor[1] - 20),
+              Math.max(0, impactColor[2] - 20),
+              200
+            ];
+          }
+          
+          return impactColor;
+        }
+        
+        // Default coloring when impact analysis is not active
         // Clicked region stays highlighted until another region is clicked
         if (d === weccClickedObject) {
           return [30, 90, 150, 200]; // Darker blue for clicked/active state
@@ -3393,7 +3772,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
         }
       },
       updateTriggers: {
-        getFillColor: [weccHoveredObject, weccClickedObject]
+        getFillColor: [weccHoveredObject, weccClickedObject, impactAnalysisActive, impactData]
       }
     }),
 
@@ -3855,6 +4234,235 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
           </div>
         </div>
 
+        {/* Data Center Impact Analysis Panel */}
+        <div style={{
+          position: "absolute",
+          top: 80,
+          left: 20,
+          width: 320,
+          background: "rgba(255,255,255,0.95)",
+          padding: "16px",
+          color: "#333",
+          zIndex: 1000,
+          fontFamily: '"Inter", sans-serif',
+          borderRadius: "12px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+          backdropFilter: "blur(8px)",
+          border: "1px solid rgba(0,0,0,0.1)"
+        }}>
+          <div style={{ marginBottom: "16px" }}>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "12px"
+            }}>
+              <input
+                type="checkbox"
+                id="impactAnalysisToggle"
+                checked={impactAnalysisActive}
+                onChange={handleImpactAnalysisChange}
+                style={{
+                  marginRight: "8px",
+                  transform: "scale(1.2)"
+                }}
+              />
+              <label
+                htmlFor="impactAnalysisToggle"
+                style={{
+                  fontSize: "16px",
+                  fontWeight: "600",
+                  color: "#1976d2",
+                  cursor: "pointer"
+                }}
+              >
+                📊 Data Center Impact Analysis
+              </label>
+            </div>
+
+            {impactAnalysisActive && (
+              <div style={{ marginTop: "16px" }}>
+                {/* WECC Region Selection */}
+                <div style={{ marginBottom: "16px" }}>
+                  <label style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: "500",
+                    marginBottom: "6px",
+                    color: "#555"
+                  }}>
+                    WECC Region:
+                  </label>
+                  <select
+                    value={selectedWeccRegion}
+                    onChange={(e) => setSelectedWeccRegion(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      borderRadius: "6px",
+                      border: "1px solid #ddd",
+                      fontSize: "12px",
+                      background: "white"
+                    }}
+                  >
+                    {weccRegions.map(region => (
+                      <option key={region.id} value={region.id}>
+                        {region.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Case Study Selection */}
+                <div style={{ marginBottom: "16px" }}>
+                  <label style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: "500",
+                    marginBottom: "6px",
+                    color: "#555"
+                  }}>
+                    Case Study Comparison:
+                  </label>
+                  <div style={{
+                    display: "flex",
+                    gap: "6px"
+                  }}>
+                    {['case1', 'case2', 'case3'].map(caseId => (
+                      <button
+                        key={caseId}
+                        onClick={() => setSelectedCaseStudy(caseId)}
+                        style={{
+                          flex: 1,
+                          padding: "8px 4px",
+                          borderRadius: "6px",
+                          border: selectedCaseStudy === caseId ? "2px solid #1976d2" : "1px solid #ddd",
+                          background: selectedCaseStudy === caseId ? "rgba(25, 118, 210, 0.1)" : "white",
+                          fontSize: "11px",
+                          fontWeight: selectedCaseStudy === caseId ? "600" : "400",
+                          color: selectedCaseStudy === caseId ? "#1976d2" : "#666",
+                          cursor: "pointer",
+                          transition: "all 0.2s"
+                        }}
+                      >
+                        Case {caseId.slice(-1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Metric Selection */}
+                <div style={{ marginBottom: "16px" }}>
+                  <label style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: "500",
+                    marginBottom: "6px",
+                    color: "#555"
+                  }}>
+                    Metric:
+                  </label>
+                  <div style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "4px"
+                  }}>
+                    {[
+                      { id: 'Price', label: 'Price ($/MWh)' },
+                      { id: 'System Operation Cost', label: 'System Cost ($)' },
+                      { id: 'Power Exchange', label: 'Power Exchange (MW)' }
+                    ].map(metric => (
+                      <button
+                        key={metric.id}
+                        onClick={() => setSelectedMetric(metric.id)}
+                        style={{
+                          padding: "8px 12px",
+                          borderRadius: "6px",
+                          border: selectedMetric === metric.id ? "2px solid #1976d2" : "1px solid #ddd",
+                          background: selectedMetric === metric.id ? "rgba(25, 118, 210, 0.1)" : "white",
+                          fontSize: "11px",
+                          fontWeight: selectedMetric === metric.id ? "600" : "400",
+                          color: selectedMetric === metric.id ? "#1976d2" : "#666",
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                          textAlign: "left"
+                        }}
+                      >
+                        {metric.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Hour Selection */}
+                <div style={{ marginBottom: "16px" }}>
+                  <label style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: "500",
+                    marginBottom: "6px",
+                    color: "#555"
+                  }}>
+                    Hour: {selectedHour}
+                  </label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="24"
+                    value={selectedHour}
+                    onChange={(e) => setSelectedHour(parseInt(e.target.value))}
+                    style={{
+                      width: "100%",
+                      height: "6px",
+                      borderRadius: "3px",
+                      background: "#ddd",
+                      outline: "none",
+                      cursor: "pointer"
+                    }}
+                  />
+                  <div style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: "10px",
+                    color: "#888",
+                    marginTop: "4px"
+                  }}>
+                    <span>1</span>
+                    <span>12</span>
+                    <span>24</span>
+                  </div>
+                </div>
+
+                {/* Color Scale */}
+                <div style={{ marginBottom: "8px" }}>
+                  <label style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: "500",
+                    marginBottom: "6px",
+                    color: "#555"
+                  }}>
+                    Impact Scale:
+                  </label>
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px"
+                  }}>
+                    <span style={{ fontSize: "10px", color: "#0066cc" }}>Negative</span>
+                    <div style={{
+                      flex: 1,
+                      height: "12px",
+                      background: "linear-gradient(to right, #0066cc, #ffffff, #cc4400)",
+                      borderRadius: "6px",
+                      border: "1px solid #ddd"
+                    }}></div>
+                    <span style={{ fontSize: "10px", color: "#cc4400" }}>Positive</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/*<div><NavigationControl position="top-left"/></div>
       <FullscreenControl/>*/}
