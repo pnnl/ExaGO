@@ -223,54 +223,54 @@ const AminDetailPage = () => {
 
                 if (fid) {
                     // Find the specific balancing authority by FID
-                    const targetFid = parseInt(fid);
-                    const feature = geojsonData.features.find(f => f.properties.FID === targetFid);
+                const targetFid = parseInt(fid);
+                const feature = geojsonData.features.find(f => f.properties.FID === targetFid);
 
-                    if (!feature) {
-                        throw new Error(`Balancing authority with FID ${fid} not found`);
-                    }
+                if (!feature) {
+                    throw new Error(`Balancing authority with FID ${fid} not found`);
+                }
 
-                    // Merge data from all sources
-                    const baData = {
-                        ...feature.properties,
+                // Merge data from all sources
+                const baData = {
+                    ...feature.properties,
                         ...csvData[targetFid]
-                    };
+                };
 
-                    // Update selected WECC region based on the loaded data
-                    if (baData.BA_Abrev && baData.BA_Abrev !== selectedWeccRegion) {
-                        setSelectedWeccRegion(baData.BA_Abrev);
+                // Update selected WECC region based on the loaded data
+                if (baData.BA_Abrev && baData.BA_Abrev !== selectedWeccRegion) {
+                    setSelectedWeccRegion(baData.BA_Abrev);
+                }
+
+                // Calculate bounds for the specific feature to center the map
+                let coordinates;
+                if (feature.geometry.type === 'Polygon') {
+                    coordinates = feature.geometry.coordinates[0];
+                } else if (feature.geometry.type === 'MultiPolygon') {
+                    coordinates = feature.geometry.coordinates[0][0];
+                } else {
+                    throw new Error(`Unsupported geometry type: ${feature.geometry.type}`);
+                }
+
+                let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+                let validCoordinates = false;
+
+                coordinates.forEach(coord => {
+                    const [lng, lat] = coord;
+                    if (typeof lng === 'number' && typeof lat === 'number' &&
+                        !isNaN(lng) && !isNaN(lat) &&
+                        lng >= -180 && lng <= 180 &&
+                        lat >= -90 && lat <= 90) {
+                        minLng = Math.min(minLng, lng);
+                        maxLng = Math.max(maxLng, lng);
+                        minLat = Math.min(minLat, lat);
+                        maxLat = Math.max(maxLat, lat);
+                        validCoordinates = true;
                     }
-
-                    // Calculate bounds for the specific feature to center the map
-                    let coordinates;
-                    if (feature.geometry.type === 'Polygon') {
-                        coordinates = feature.geometry.coordinates[0];
-                    } else if (feature.geometry.type === 'MultiPolygon') {
-                        coordinates = feature.geometry.coordinates[0][0];
-                    } else {
-                        throw new Error(`Unsupported geometry type: ${feature.geometry.type}`);
-                    }
-
-                    let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
-                    let validCoordinates = false;
-
-                    coordinates.forEach(coord => {
-                        const [lng, lat] = coord;
-                        if (typeof lng === 'number' && typeof lat === 'number' &&
-                            !isNaN(lng) && !isNaN(lat) &&
-                            lng >= -180 && lng <= 180 &&
-                            lat >= -90 && lat <= 90) {
-                            minLng = Math.min(minLng, lng);
-                            maxLng = Math.max(maxLng, lng);
-                            minLat = Math.min(minLat, lat);
-                            maxLat = Math.max(maxLat, lat);
-                            validCoordinates = true;
-                        }
-                    });
+                });
 
                     if (validCoordinates) {
-                        const centerLng = (minLng + maxLng) / 2;
-                        const centerLat = (minLat + maxLat) / 2;
+                    const centerLng = (minLng + maxLng) / 2;
+                    const centerLat = (minLat + maxLat) / 2;
                         const lngDiff = maxLng - minLng;
                         const latDiff = maxLat - minLat;
                         const maxDiff = Math.max(lngDiff, latDiff);
@@ -287,13 +287,13 @@ const AminDetailPage = () => {
                             latitude: centerLat,
                             zoom: zoom
                         }));
-                    }
+                }
 
-                    setBalancingAuthority({
-                        ...baData,
-                        feature: feature,
-                        bounds: validCoordinates ? { minLng, maxLng, minLat, maxLat } : null
-                    });
+                setBalancingAuthority({
+                    ...baData,
+                    feature: feature,
+                    bounds: validCoordinates ? { minLng, maxLng, minLat, maxLat } : null
+                });
                 } else if (selectedWeccRegion) {
                     // Load data directly for WECC region without fid
                     const selectedBA = BALANCING_AUTHORITIES.find(ba => ba.code === selectedWeccRegion);
@@ -326,7 +326,7 @@ const AminDetailPage = () => {
     // Comprehensive data loading function
     const loadAllCaseStudyData = async () => {
         try {
-            setLoading(true);
+        setLoading(true);
             const allData = {};
 
             // Load data for all case studies
@@ -371,25 +371,46 @@ const AminDetailPage = () => {
             }
 
             // 2. Load BA Demand
-            const demandResponse = await fetch(`/amin_data/manish_amin_modified_data/${caseStudy.dataPath}/Balancing Authority Demand (MW).csv`);
+            let demandFileName = '';
+            if (caseStudy.dataPath === 'Case study_0') {
+                demandFileName = 'Balancing Authority Demand (MW).csv';
+        } else {
+                demandFileName = 'Balancing Authority Demand.csv';
+            }
+            
+            const demandResponse = await fetch(`/amin_data/manish_amin_modified_data/${caseStudy.dataPath}/${demandFileName}`);
             if (demandResponse.ok) {
                 const demandText = await demandResponse.text();
                 data.demand = parseDemandData(demandText, selectedWeccRegion);
             }
 
             // 3. Load Data Center Demand
-            const dcDemandResponse = await fetch(`/amin_data/manish_amin_modified_data/${caseStudy.dataPath}/Data Center Demand (MW).csv`);
+            let dcDemandFileName = '';
+            if (caseStudy.dataPath === 'Case study_0') {
+                dcDemandFileName = 'Data Center Demand (MW).csv';
+            } else {
+                dcDemandFileName = 'Data Center Demand.csv';
+            }
+            
+            const dcDemandResponse = await fetch(`/amin_data/manish_amin_modified_data/${caseStudy.dataPath}/${dcDemandFileName}`);
             if (dcDemandResponse.ok) {
                 const dcDemandText = await dcDemandResponse.text();
                 data.dataCenterDemand = parseDataCenterDemandData(dcDemandText, selectedWeccRegion);
             }
 
             // 4. Load Generation Data
-            const genResponse = await fetch(`/amin_data/manish_amin_modified_data/${caseStudy.dataPath}/Balancing Authority Power Generation/${selectedWeccRegion}_generation_by_fuel.csv`);
+            const genPath = `/amin_data/manish_amin_modified_data/${caseStudy.dataPath}/Balancing Authority Power Generation/${selectedWeccRegion}_generation_by_fuel.csv`;
+            console.log(`Loading generation data from: ${genPath}`); // Debug log
+            
+            const genResponse = await fetch(genPath);
             if (genResponse.ok) {
                 const genText = await genResponse.text();
+                console.log(`Generation CSV data preview:`, genText.substring(0, 200)); // Debug log
                 data.generation = parseGenerationData(genText);
                 data.interchange = parseInterchangeData(genText); // Extract import/export from generation data
+                console.log(`Parsed generation data:`, data.generation.slice(0, 3)); // Debug log
+            } else {
+                console.warn(`Failed to load generation data: ${genResponse.status} ${genResponse.statusText}`);
             }
 
             // 5. Load Operation Costs
@@ -468,16 +489,23 @@ const AminDetailPage = () => {
                             priceData[caseName] = hourPrice?.price || 0;
                         }
 
-                        // Load demand data
-                        const demandResponse = await fetch(`/amin_data/manish_amin_modified_data/${casePath}/Balancing Authority Demand (MW).csv`);
-                        if (demandResponse.ok) {
-                            const demandText = await demandResponse.text();
+                        // Load demand data - handle different file names
+                        let demandFileName = '';
+                        if (casePath === 'Case study_0') {
+                            demandFileName = 'Balancing Authority Demand (MW).csv';
+                        } else {
+                            demandFileName = 'Balancing Authority Demand.csv';
+                        }
+                        
+                        const demandResponse = await fetch(`/amin_data/manish_amin_modified_data/${casePath}/${demandFileName}`);
+                if (demandResponse.ok) {
+                    const demandText = await demandResponse.text();
                             const demandDataParsed = parseDemandData(demandText, selectedWeccRegion);
                             const hourDemand = demandDataParsed.find(d => d.hour === hour);
                             demandData[caseName] = hourDemand?.demand || 0;
-                        }
+                }
 
-                        // Load generation data
+                // Load generation data
                         const genResponse = await fetch(`/amin_data/manish_amin_modified_data/${casePath}/Balancing Authority Power Generation/${selectedWeccRegion}_generation_by_fuel.csv`);
                         if (genResponse.ok) {
                             const genText = await genResponse.text();
@@ -492,8 +520,8 @@ const AminDetailPage = () => {
 
                         // Load cost data
                         const costsResponse = await fetch(`/amin_data/manish_amin_modified_data/${casePath}/Balancing Authority Hourly Operation Costs/${selectedWeccRegion}_hourly_operation_costs.csv`);
-                        if (costsResponse.ok) {
-                            const costsText = await costsResponse.text();
+                if (costsResponse.ok) {
+                    const costsText = await costsResponse.text();
                             const costsDataParsed = parseCostsData(costsText);
                             const hourCost = costsDataParsed.find(d => d.hour === hour);
                             costData[caseName] = hourCost?.totalCosts || 0;
@@ -561,8 +589,8 @@ const AminDetailPage = () => {
             const values = lines[i].split(',');
             const hour = parseInt(values[3]); // Period column is the hour
             const demand = parseFloat(values[regionColumn]) || 0;
-            data.push({ hour, demand });
-        }
+                data.push({ hour, demand });
+            }
         return data;
     };
 
@@ -593,15 +621,15 @@ const AminDetailPage = () => {
             const hour = parseInt(values[0]);
             const genData = {
                 hour,
-                naturalGas: parseFloat(values[1]) || 0,
-                geothermal: parseFloat(values[2]) || 0,
-                biomass: parseFloat(values[3]) || 0,
-                nuclear: parseFloat(values[4]) || 0,
-                coal: parseFloat(values[5]) || 0,
-                wind: parseFloat(values[6]) || 0,
-                solar: parseFloat(values[7]) || 0,
-                hydro: parseFloat(values[8]) || 0,
-                battery: parseFloat(values[9]) || 0,
+                    naturalGas: parseFloat(values[1]) || 0,
+                    geothermal: parseFloat(values[2]) || 0,
+                    biomass: parseFloat(values[3]) || 0,
+                    nuclear: parseFloat(values[4]) || 0,
+                    coal: parseFloat(values[5]) || 0,
+                    wind: parseFloat(values[6]) || 0,
+                    solar: parseFloat(values[7]) || 0,
+                    hydro: parseFloat(values[8]) || 0,
+                    battery: parseFloat(values[9]) || 0,
                 total: 0
             };
             
@@ -621,7 +649,7 @@ const AminDetailPage = () => {
         
         for (let i = 1; i < lines.length; i++) {
             const values = lines[i].split(',');
-            const hour = parseInt(values[0]);
+                const hour = parseInt(values[0]);
             const netInterchange = parseFloat(values[10]) || 0; // IMPORT/EXPORT_MW column
             data.push({ hour, netInterchange });
         }
@@ -648,7 +676,7 @@ const AminDetailPage = () => {
         
         const regionColumn = headers.findIndex(h => h === region);
         if (regionColumn === -1) return data;
-
+        
         for (let i = 1; i < lines.length; i++) {
             const values = lines[i].split(',');
             const hour = parseInt(values[0]);
@@ -665,18 +693,18 @@ const AminDetailPage = () => {
         
         const regionColumn = headers.findIndex(h => h === region);
         if (regionColumn === -1) return data;
-
+        
         for (let i = 1; i < lines.length; i++) {
             const values = lines[i].split(',');
             const caseStudy = values[0];
             const hour = parseInt(values[1]);
             const cost = parseFloat(values[regionColumn]) || 0;
             
-            data.push({ 
+                data.push({
                 hour, 
                 caseStudy, 
                 cost: cost / 1000000 // Convert to millions
-            });
+                });
         }
         return data;
     };
@@ -799,7 +827,11 @@ const AminDetailPage = () => {
                         stroke="#94a3b8"
                     />
                     <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.98)', border: '1px solid #e2e8f0', borderRadius: '12px' }} />
-                    <Legend />
+                    <Legend 
+                        verticalAlign="bottom" 
+                        height={40}
+                        wrapperStyle={{ paddingTop: '30px', fontSize: '12px', fontWeight: 600 }}
+                    />
                     {caseId === 'comparison' ? (
                         <>
                             <Line type="monotone" dataKey="Case Study 0" stroke="#64748B" strokeWidth={3} dot={{ fill: '#64748B', r: 4 }} />
@@ -823,22 +855,26 @@ const AminDetailPage = () => {
         if (!data.length) return <div>No demand data available</div>;
 
         return (
-            <ResponsiveContainer width="100%" height={400}>
+                <ResponsiveContainer width="100%" height={400}>
                 <AreaChart data={data} margin={{ top: 30, right: 40, left: 60, bottom: 100 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis
-                        dataKey="hour"
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                        <XAxis
+                            dataKey="hour"
                         label={{ value: 'Hour of Day', position: 'insideBottom', offset: -20, style: { fontSize: '14px', fontWeight: 600, textAnchor: 'middle', fill: '#1e293b' } }}
                         tick={{ fontSize: 12, fill: '#64748b' }}
                         stroke="#94a3b8"
-                    />
-                    <YAxis
+                        />
+                        <YAxis
                         label={{ value: 'Demand (MW)', angle: -90, position: 'insideLeft', style: { fontSize: '14px', fontWeight: 600, textAnchor: 'middle', fill: '#1e293b' } }}
                         tick={{ fontSize: 12, fill: '#64748b' }}
                         stroke="#94a3b8"
                     />
                     <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.98)', border: '1px solid #e2e8f0', borderRadius: '12px' }} />
-                    <Legend />
+                    <Legend 
+                        verticalAlign="bottom" 
+                        height={40}
+                        wrapperStyle={{ paddingTop: '30px', fontSize: '12px', fontWeight: 600 }}
+                    />
                     {caseId === 'comparison' ? (
                         <>
                             <Area type="monotone" dataKey="Case Study 0" stackId="1" stroke="#64748B" fill="rgba(100, 116, 139, 0.6)" />
@@ -877,7 +913,11 @@ const AminDetailPage = () => {
                         stroke="#94a3b8"
                     />
                     <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.98)', border: '1px solid #e2e8f0', borderRadius: '12px' }} />
-                    <Legend />
+                    <Legend 
+                        verticalAlign="bottom" 
+                        height={40}
+                        wrapperStyle={{ paddingTop: '30px', fontSize: '12px', fontWeight: 600 }}
+                    />
                     {caseId === 'comparison' ? (
                         <>
                             <Area type="monotone" dataKey="Case Study 0" stroke="#64748B" fill="rgba(100, 116, 139, 0.6)" />
@@ -889,7 +929,7 @@ const AminDetailPage = () => {
                         <Area type="monotone" dataKey="demand" stroke="#f59e0b" fill="rgba(245, 158, 11, 0.6)" name="Data Center Demand" />
                     )}
                 </AreaChart>
-            </ResponsiveContainer>
+                </ResponsiveContainer>
         );
     };
 
@@ -916,7 +956,11 @@ const AminDetailPage = () => {
                         stroke="#94a3b8"
                     />
                     <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.98)', border: '1px solid #e2e8f0', borderRadius: '12px' }} />
-                    <Legend />
+                    <Legend 
+                        verticalAlign="bottom" 
+                        height={40}
+                        wrapperStyle={{ paddingTop: '30px', fontSize: '12px', fontWeight: 600 }}
+                    />
                     
                     {caseId === 'comparison' ? (
                         <>
@@ -969,7 +1013,11 @@ const AminDetailPage = () => {
                         contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.98)', border: '1px solid #e2e8f0', borderRadius: '12px' }}
                         formatter={(value) => [`$${value.toFixed(2)}M`, 'Cost']}
                     />
-                    <Legend />
+                    <Legend 
+                        verticalAlign="bottom" 
+                        height={40}
+                        wrapperStyle={{ paddingTop: '30px', fontSize: '12px', fontWeight: 600 }}
+                    />
                     {caseId === 'comparison' ? (
                         <>
                             <Area type="monotone" dataKey="Case Study 0" stroke="#64748B" fill="rgba(100, 116, 139, 0.6)" />
@@ -1008,7 +1056,11 @@ const AminDetailPage = () => {
                         stroke="#94a3b8"
                     />
                     <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.98)', border: '1px solid #e2e8f0', borderRadius: '12px' }} />
-                    <Legend />
+                    <Legend 
+                        verticalAlign="bottom" 
+                        height={40}
+                        wrapperStyle={{ paddingTop: '30px', fontSize: '12px', fontWeight: 600 }}
+                    />
                     {caseId === 'comparison' ? (
                         <>
                             <Area type="monotone" dataKey="Case Study 0" stroke="#64748B" fill="rgba(100, 116, 139, 0.6)" />
@@ -1049,7 +1101,11 @@ const AminDetailPage = () => {
                         stroke="#94a3b8"
                     />
                     <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.98)', border: '1px solid #e2e8f0', borderRadius: '12px' }} />
-                    <Legend />
+                    <Legend 
+                        verticalAlign="bottom" 
+                        height={40}
+                        wrapperStyle={{ paddingTop: '30px', fontSize: '12px', fontWeight: 600 }}
+                    />
                     {caseId === 'comparison' ? (
                         <>
                             <Bar dataKey="Case Study 1" fill="rgba(59, 130, 246, 0.8)" />
@@ -1097,7 +1153,11 @@ const AminDetailPage = () => {
                         contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.98)', border: '1px solid #e2e8f0', borderRadius: '12px' }}
                         formatter={(value) => [`$${value.toFixed(2)}M`, 'Cost']}
                     />
-                    <Legend />
+                    <Legend 
+                        verticalAlign="bottom" 
+                        height={40}
+                        wrapperStyle={{ paddingTop: '30px', fontSize: '12px', fontWeight: 600 }}
+                    />
                     <Area type="monotone" dataKey="Case_0" stroke="#64748B" fill="rgba(100, 116, 139, 0.6)" name="Case 0" />
                     <Area type="monotone" dataKey="Case_1" stroke="#3B82F6" fill="rgba(59, 130, 246, 0.6)" name="Case 1" />
                     <Area type="monotone" dataKey="Case_2" stroke="#10B981" fill="rgba(16, 185, 129, 0.6)" name="Case 2" />
@@ -1110,7 +1170,23 @@ const AminDetailPage = () => {
     // Pie chart for generation mix
     const renderGenerationPieChart = (caseId) => {
         const data = caseStudyData[caseId]?.generation || [];
-        if (!data.length) return <div>No generation data available</div>;
+        console.log(`Generation data for ${caseId}:`, data); // Debug log
+        
+        if (!data.length) {
+            return (
+                <div style={{ 
+                    textAlign: 'center', 
+                    padding: '40px', 
+                    color: '#666',
+                    fontSize: '16px'
+                }}>
+                    <div>⚡ Loading generation data...</div>
+                    <div style={{ fontSize: '14px', marginTop: '8px' }}>
+                        Please wait while we load data for {selectedWeccRegion}
+                    </div>
+                </div>
+            );
+        }
 
         // Calculate total generation by fuel type
         const fuelTotals = data.reduce((totals, hourData) => {
@@ -1178,20 +1254,20 @@ const AminDetailPage = () => {
             backdropFilter: 'blur(10px)',
             marginBottom: '32px'
         }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                 <span style={{ fontSize: '24px' }}>{icon}</span>
-                <h3 style={{ 
-                    margin: 0, 
-                    fontSize: '1.5rem', 
-                    fontWeight: 700,
-                    color: '#1e293b'
-                }}>
+                        <h3 style={{ 
+                            margin: 0, 
+                            fontSize: '1.5rem', 
+                            fontWeight: 700,
+                            color: '#1e293b'
+                        }}>
                     {title}
-                </h3>
-            </div>
+                        </h3>
+                    </div>
             {children}
-        </div>
-    );
+            </div>
+        );
 
     // Main render function
     if (loading) {
@@ -1256,69 +1332,69 @@ const AminDetailPage = () => {
                 boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <button
+                        <button
                         onClick={() => navigate('/')}
-                        style={{
-                            padding: '12px 20px',
+                            style={{
+                                padding: '12px 20px',
                             background: 'rgba(255,255,255,0.1)',
-                            color: 'white',
+                                color: 'white',
                             border: '1px solid rgba(255,255,255,0.2)',
-                            borderRadius: '12px',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            fontWeight: 500,
-                            transition: 'all 0.2s ease',
+                                borderRadius: '12px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: 500,
+                                transition: 'all 0.2s ease',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px'
-                        }}
-                    >
-                        <ArrowBackIcon style={{ fontSize: 16 }} />
+                            }}
+                        >
+                            <ArrowBackIcon style={{ fontSize: 16 }} />
                         Back to Westmap
-                    </button>
+                        </button>
                     
                     <div style={{ textAlign: 'center', flex: 1 }}>
                         <h1 style={{ 
-                            margin: 0, 
+                                margin: 0, 
                             fontSize: '2.2rem', 
                             fontWeight: 800,
                             color: 'white',
                             textShadow: '0 2px 4px rgba(0,0,0,0.1)'
                         }}>
                             🏛️ WECC Analytics Portal
-                        </h1>
-                        <p style={{ 
+                            </h1>
+                            <p style={{ 
                             margin: '8px 0 0 0', 
                             color: 'rgba(255, 255, 255, 0.9)', 
                             fontSize: '1.1rem',
-                            fontWeight: 500
-                        }}>
+                                fontWeight: 500
+                            }}>
                             Comprehensive Data Center Impact Analysis
-                        </p>
+                            </p>
                     </div>
                     
                     {/* WECC Region Selector */}
-                    <select
-                        value={selectedWeccRegion}
+                        <select
+                            value={selectedWeccRegion}
                         onChange={(e) => setSelectedWeccRegion(e.target.value)}
-                        style={{
+                            style={{
                             padding: '12px 16px',
                             borderRadius: '12px',
                             border: '1px solid rgba(255,255,255,0.2)',
                             background: 'rgba(255,255,255,0.1)',
                             color: 'white',
-                            fontSize: '14px',
-                            fontWeight: 500,
-                            cursor: 'pointer',
-                            minWidth: '200px'
-                        }}
+                                fontSize: '14px',
+                                fontWeight: 500,
+                                cursor: 'pointer',
+                                minWidth: '200px'
+                            }}
                     >
                         {BALANCING_AUTHORITIES.map(ba => (
                             <option key={ba.code} value={ba.code} style={{ color: '#1e293b' }}>
                                 {ba.code} - {ba.name}
-                            </option>
-                        ))}
-                    </select>
+                                </option>
+                            ))}
+                        </select>
                 </div>
             </div>
 
@@ -1327,9 +1403,11 @@ const AminDetailPage = () => {
                 {/* Case Study Selector */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                    gap: '20px',
-                    marginBottom: '40px'
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '24px',
+                    marginBottom: '40px',
+                    maxWidth: '1200px',
+                    margin: '0 auto 40px auto'
                 }}>
                     {CASE_STUDIES.map(caseStudy => (
                         <div
@@ -1435,14 +1513,14 @@ const AminDetailPage = () => {
                                 <span style={{ fontSize: '24px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}>⚡</span>
                             </div>
                             <div>
-                                <h3 style={{ 
-                                    margin: 0, 
-                                    fontSize: '1.5rem', 
-                                    fontWeight: 700,
-                                    color: '#1e293b'
-                                }}>
+                                    <h3 style={{ 
+                                        margin: 0, 
+                                        fontSize: '1.5rem', 
+                                        fontWeight: 700,
+                                        color: '#1e293b'
+                                    }}>
                                     Generation Portfolio
-                                </h3>
+                                    </h3>
                                 <p style={{
                                     margin: '4px 0 0 0',
                                     fontSize: '1rem',
@@ -1451,8 +1529,8 @@ const AminDetailPage = () => {
                                 }}>
                                     {balancingAuthority?.BA_Abrev || selectedWeccRegion} - {selectedCaseStudy === 'comparison' ? 'Comparison' : CASE_STUDIES.find(cs => cs.id === selectedCaseStudy)?.subtitle}
                                 </p>
+                                </div>
                             </div>
-                        </div>
                         <div style={{ 
                             height: '420px',
                             background: 'rgba(255, 255, 255, 0.4)',
@@ -1460,58 +1538,93 @@ const AminDetailPage = () => {
                             padding: '16px'
                         }}>
                             {renderGenerationPieChart(selectedCaseStudy)}
-                        </div>
-                    </div>
-                </div>
+                                </div>
+                            </div>
+                                </div>
 
                 {/* Charts Section */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-                    {/* Left Column - Main Charts */}
-                    <div>
-                        <ChartContainer title="Balancing Authority Price" icon="💰">
-                            {renderPriceChart(selectedCaseStudy)}
-                        </ChartContainer>
+                {selectedCaseStudy === 'comparison' ? (
+                    <React.Fragment>
+                        {/* Comparison Layout - 2 Vertical Sections */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+                        {/* Top Section - Price and Demand Comparisons */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                            <ChartContainer title="Price Comparison (All Cases)" icon="💰">
+                                {renderPriceChart(selectedCaseStudy)}
+                            </ChartContainer>
+                            <ChartContainer title="Demand Comparison (All Cases)" icon="📊">
+                                {renderDemandChart(selectedCaseStudy)}
+                            </ChartContainer>
+                            </div>
 
-                        <ChartContainer title="Balancing Authority Demand" icon="📊">
-                            {renderDemandChart(selectedCaseStudy)}
-                        </ChartContainer>
+                        {/* Bottom Section - Generation and Costs Comparisons */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                            <ChartContainer title="Generation Comparison (All Cases)" icon="⚡">
+                                {renderGenerationChart(selectedCaseStudy)}
+                            </ChartContainer>
+                            <ChartContainer title="Costs Comparison (All Cases)" icon="💸">
+                                {renderCostsChart(selectedCaseStudy)}
+                            </ChartContainer>
+                                </div>
 
-                        <ChartContainer title="Data Center Demand" icon="🏢">
-                            {renderDataCenterDemandChart(selectedCaseStudy)}
-                        </ChartContainer>
-
-                        <ChartContainer title="Power Generation by Technology" icon="⚡">
-                            {renderGenerationChart(selectedCaseStudy)}
-                        </ChartContainer>
-                    </div>
-
-                    {/* Right Column - Additional Charts */}
-                    <div>
-                        <ChartContainer title="Generation Portfolio Mix" icon="🥧">
-                            {renderGenerationPieChart(selectedCaseStudy)}
-                        </ChartContainer>
-
-                        <ChartContainer title="Total Hourly Operation Costs" icon="💸">
-                            {renderCostsChart(selectedCaseStudy)}
-                        </ChartContainer>
-
-                        <ChartContainer title="Net Electricity Interchange" icon="🔄">
-                            {renderInterchangeChart(selectedCaseStudy)}
-                        </ChartContainer>
-
-                        {selectedCaseStudy !== 'case0' && (
-                            <ChartContainer title="Data Center Energy Flexibility" icon="🔧">
+                        {/* Additional Comparison Charts */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                            <ChartContainer title="Interchange Comparison (All Cases)" icon="🔄">
+                                {renderInterchangeChart(selectedCaseStudy)}
+                            </ChartContainer>
+                            <ChartContainer title="Flexibility Comparison (Cases 1-3)" icon="🔧">
                                 {renderFlexibilityChart(selectedCaseStudy)}
                             </ChartContainer>
-                        )}
+                            </div>
 
-                        {selectedCaseStudy === 'comparison' && (
-                            <ChartContainer title="Total System Operation Cost" icon="🏦">
-                                {renderTotalSystemCostsChart()}
+                        {/* System-wide Analysis */}
+                        <ChartContainer title="Total System Operation Cost Analysis" icon="🏦">
+                            {renderTotalSystemCostsChart()}
+                        </ChartContainer>
+                                    </div>
+                    </React.Fragment>
+                ) : (
+                    <React.Fragment>
+                        {/* Individual Case Study Layout - Remove duplicate generation charts */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                        {/* Left Column - Main Charts */}
+                        <div>
+                            <ChartContainer title="Balancing Authority Price" icon="💰">
+                                {renderPriceChart(selectedCaseStudy)}
                             </ChartContainer>
-                        )}
-                    </div>
-                </div>
+
+                            <ChartContainer title="Balancing Authority Demand" icon="📊">
+                                {renderDemandChart(selectedCaseStudy)}
+                            </ChartContainer>
+
+                            <ChartContainer title="Data Center Demand" icon="🏢">
+                                    {renderDataCenterDemandChart(selectedCaseStudy)}
+                            </ChartContainer>
+
+                            <ChartContainer title="Total Hourly Operation Costs" icon="💸">
+                                {renderCostsChart(selectedCaseStudy)}
+                            </ChartContainer>
+                                    </div>
+
+                        {/* Right Column - Additional Charts */}
+                        <div>
+                            <ChartContainer title="Power Generation by Technology" icon="⚡">
+                                {renderGenerationChart(selectedCaseStudy)}
+                            </ChartContainer>
+
+                            <ChartContainer title="Net Electricity Interchange" icon="🔄">
+                                {renderInterchangeChart(selectedCaseStudy)}
+                            </ChartContainer>
+
+                            {selectedCaseStudy !== 'case0' && (
+                                <ChartContainer title="Data Center Energy Flexibility" icon="🔧">
+                                    {renderFlexibilityChart(selectedCaseStudy)}
+                                </ChartContainer>
+                            )}
+                                </div>
+                            </div>
+                    </React.Fragment>
+                    )}
             </div>
         </div>
     );
