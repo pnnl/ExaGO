@@ -4234,235 +4234,6 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
           </div>
         </div>
 
-        {/* Data Center Impact Analysis Panel */}
-        <div style={{
-          position: "absolute",
-          top: 80,
-          left: 20,
-          width: 320,
-          background: "rgba(255,255,255,0.95)",
-          padding: "16px",
-          color: "#333",
-          zIndex: 1000,
-          fontFamily: '"Inter", sans-serif',
-          borderRadius: "12px",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-          backdropFilter: "blur(8px)",
-          border: "1px solid rgba(0,0,0,0.1)"
-        }}>
-          <div style={{ marginBottom: "16px" }}>
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              marginBottom: "12px"
-            }}>
-              <input
-                type="checkbox"
-                id="impactAnalysisToggle"
-                checked={impactAnalysisActive}
-                onChange={handleImpactAnalysisChange}
-                style={{
-                  marginRight: "8px",
-                  transform: "scale(1.2)"
-                }}
-              />
-              <label
-                htmlFor="impactAnalysisToggle"
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  color: "#1976d2",
-                  cursor: "pointer"
-                }}
-              >
-                📊 Data Center Impact Analysis
-              </label>
-            </div>
-
-            {impactAnalysisActive && (
-              <div style={{ marginTop: "16px" }}>
-                {/* WECC Region Selection */}
-                <div style={{ marginBottom: "16px" }}>
-                  <label style={{
-                    display: "block",
-                    fontSize: "12px",
-                    fontWeight: "500",
-                    marginBottom: "6px",
-                    color: "#555"
-                  }}>
-                    WECC Region:
-                  </label>
-                  <select
-                    value={selectedWeccRegion}
-                    onChange={(e) => setSelectedWeccRegion(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "8px 12px",
-                      borderRadius: "6px",
-                      border: "1px solid #ddd",
-                      fontSize: "12px",
-                      background: "white"
-                    }}
-                  >
-                    {weccRegions.map(region => (
-                      <option key={region.id} value={region.id}>
-                        {region.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Case Study Selection */}
-                <div style={{ marginBottom: "16px" }}>
-                  <label style={{
-                    display: "block",
-                    fontSize: "12px",
-                    fontWeight: "500",
-                    marginBottom: "6px",
-                    color: "#555"
-                  }}>
-                    Case Study Comparison:
-                  </label>
-                  <div style={{
-                    display: "flex",
-                    gap: "6px"
-                  }}>
-                    {['case1', 'case2', 'case3'].map(caseId => (
-                      <button
-                        key={caseId}
-                        onClick={() => setSelectedCaseStudy(caseId)}
-                        style={{
-                          flex: 1,
-                          padding: "8px 4px",
-                          borderRadius: "6px",
-                          border: selectedCaseStudy === caseId ? "2px solid #1976d2" : "1px solid #ddd",
-                          background: selectedCaseStudy === caseId ? "rgba(25, 118, 210, 0.1)" : "white",
-                          fontSize: "11px",
-                          fontWeight: selectedCaseStudy === caseId ? "600" : "400",
-                          color: selectedCaseStudy === caseId ? "#1976d2" : "#666",
-                          cursor: "pointer",
-                          transition: "all 0.2s"
-                        }}
-                      >
-                        Case {caseId.slice(-1)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Metric Selection */}
-                <div style={{ marginBottom: "16px" }}>
-                  <label style={{
-                    display: "block",
-                    fontSize: "12px",
-                    fontWeight: "500",
-                    marginBottom: "6px",
-                    color: "#555"
-                  }}>
-                    Metric:
-                  </label>
-                  <div style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "4px"
-                  }}>
-                    {[
-                      { id: 'Price', label: 'Price ($/MWh)' },
-                      { id: 'System Operation Cost', label: 'System Cost ($)' },
-                      { id: 'Power Exchange', label: 'Power Exchange (MW)' }
-                    ].map(metric => (
-                      <button
-                        key={metric.id}
-                        onClick={() => setSelectedMetric(metric.id)}
-                        style={{
-                          padding: "8px 12px",
-                          borderRadius: "6px",
-                          border: selectedMetric === metric.id ? "2px solid #1976d2" : "1px solid #ddd",
-                          background: selectedMetric === metric.id ? "rgba(25, 118, 210, 0.1)" : "white",
-                          fontSize: "11px",
-                          fontWeight: selectedMetric === metric.id ? "600" : "400",
-                          color: selectedMetric === metric.id ? "#1976d2" : "#666",
-                          cursor: "pointer",
-                          transition: "all 0.2s",
-                          textAlign: "left"
-                        }}
-                      >
-                        {metric.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Hour Selection */}
-                <div style={{ marginBottom: "16px" }}>
-                  <label style={{
-                    display: "block",
-                    fontSize: "12px",
-                    fontWeight: "500",
-                    marginBottom: "6px",
-                    color: "#555"
-                  }}>
-                    Hour: {selectedHour}
-                  </label>
-                  <input
-                    type="range"
-                    min="1"
-                    max="24"
-                    value={selectedHour}
-                    onChange={(e) => setSelectedHour(parseInt(e.target.value))}
-                    style={{
-                      width: "100%",
-                      height: "6px",
-                      borderRadius: "3px",
-                      background: "#ddd",
-                      outline: "none",
-                      cursor: "pointer"
-                    }}
-                  />
-                  <div style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    fontSize: "10px",
-                    color: "#888",
-                    marginTop: "4px"
-                  }}>
-                    <span>1</span>
-                    <span>12</span>
-                    <span>24</span>
-                  </div>
-                </div>
-
-                {/* Color Scale */}
-                <div style={{ marginBottom: "8px" }}>
-                  <label style={{
-                    display: "block",
-                    fontSize: "12px",
-                    fontWeight: "500",
-                    marginBottom: "6px",
-                    color: "#555"
-                  }}>
-                    Impact Scale:
-                  </label>
-                  <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px"
-                  }}>
-                    <span style={{ fontSize: "10px", color: "#0066cc" }}>Negative</span>
-                    <div style={{
-                      flex: 1,
-                      height: "12px",
-                      background: "linear-gradient(to right, #0066cc, #ffffff, #cc4400)",
-                      borderRadius: "6px",
-                      border: "1px solid #ddd"
-                    }}></div>
-                    <span style={{ fontSize: "10px", color: "#cc4400" }}>Positive</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
 
         {/*<div><NavigationControl position="top-left"/></div>
       <FullscreenControl/>*/}
@@ -4565,7 +4336,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
         position: "absolute", 
         top: 60, 
         right: 0, 
-        width: 280, 
+        width: 300, 
         background: "rgba(255,255,255,0.95)", 
         padding: "16px", 
         color: "#333", 
@@ -4574,10 +4345,217 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
         maxHeight: "calc(100vh - 60px)",
         overflowY: "auto",
         backdropFilter: "blur(8px)",
-        borderLeft: "1px solid rgba(0,0,0,0.1)"
+        borderLeft: "1px solid rgba(0,0,0,0.1)",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.1)"
       }}>
 
         <div style={{ width: '100%' }}>
+          {/* Data Center Impact Analysis Accordion */}
+          <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
+            <AccordionSummary style={{ 
+              height: "20px", 
+              minHeight: "40px", 
+              paddingRight: "20px", 
+              paddingLeft: "0px",
+              background: "rgba(25, 118, 210, 0.05)"
+            }}
+              expandIcon={<ArrowDropDownIcon />}>
+              <Typography style={{ fontSize: "13px", fontWeight: "500", lineHeight: "1.2" }}> 
+                <Checkbox checked={impactAnalysisActive} style={{ color: "#1976d2", padding: "2px" }} onChange={handleImpactAnalysisChange} />
+                📊 Data Center Impact
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails style={{ padding: "12px 16px" }}>
+              <Typography component="div">
+                {impactAnalysisActive && (
+                  <div style={{ paddingRight: "8px", marginBottom: "8px" }}>
+                    {/* WECC Region Selection */}
+                    <div style={{ marginBottom: "12px" }}>
+                      <label style={{
+                        display: "block",
+                        fontSize: "12px",
+                        fontWeight: "500",
+                        marginBottom: "6px",
+                        color: "#555"
+                      }}>
+                        WECC Region:
+                      </label>
+                      <select
+                        value={selectedWeccRegion}
+                        onChange={(e) => setSelectedWeccRegion(e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: "8px 12px",
+                          borderRadius: "6px",
+                          border: "1px solid #ddd",
+                          fontSize: "12px",
+                          background: "white"
+                        }}
+                      >
+                        {weccRegions.map(region => (
+                          <option key={region.id} value={region.id}>
+                            {region.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Case Study Selection */}
+                    <div style={{ marginBottom: "12px" }}>
+                      <label style={{
+                        display: "block",
+                        fontSize: "12px",
+                        fontWeight: "500",
+                        marginBottom: "6px",
+                        color: "#555"
+                      }}>
+                        Case Study Comparison:
+                      </label>
+                      <div style={{
+                        display: "flex",
+                        gap: "6px"
+                      }}>
+                        {['case1', 'case2', 'case3'].map(caseId => (
+                          <button
+                            key={caseId}
+                            onClick={() => setSelectedCaseStudy(caseId)}
+                            style={{
+                              flex: 1,
+                              padding: "6px 4px",
+                              borderRadius: "4px",
+                              border: selectedCaseStudy === caseId ? "2px solid #1976d2" : "1px solid #ddd",
+                              background: selectedCaseStudy === caseId ? "rgba(25, 118, 210, 0.1)" : "white",
+                              fontSize: "10px",
+                              fontWeight: selectedCaseStudy === caseId ? "600" : "400",
+                              color: selectedCaseStudy === caseId ? "#1976d2" : "#666",
+                              cursor: "pointer",
+                              transition: "all 0.2s",
+                              minHeight: "28px"
+                            }}
+                          >
+                            Case {caseId.slice(-1)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Metric Selection */}
+                    <div style={{ marginBottom: "12px" }}>
+                      <label style={{
+                        display: "block",
+                        fontSize: "12px",
+                        fontWeight: "500",
+                        marginBottom: "6px",
+                        color: "#555"
+                      }}>
+                        Metric:
+                      </label>
+                      <div style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "4px"
+                      }}>
+                        {[
+                          { id: 'Price', label: 'Price ($/MWh)' },
+                          { id: 'System Operation Cost', label: 'System Cost ($)' },
+                          { id: 'Power Exchange', label: 'Power Exchange (MW)' }
+                        ].map(metric => (
+                          <button
+                            key={metric.id}
+                            onClick={() => setSelectedMetric(metric.id)}
+                            style={{
+                              padding: "6px 8px",
+                              borderRadius: "4px",
+                              border: selectedMetric === metric.id ? "2px solid #1976d2" : "1px solid #ddd",
+                              background: selectedMetric === metric.id ? "rgba(25, 118, 210, 0.1)" : "white",
+                              fontSize: "10px",
+                              fontWeight: selectedMetric === metric.id ? "600" : "400",
+                              color: selectedMetric === metric.id ? "#1976d2" : "#666",
+                              cursor: "pointer",
+                              transition: "all 0.2s",
+                              textAlign: "left",
+                              marginBottom: "4px",
+                              width: "100%"
+                            }}
+                          >
+                            {metric.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Hour Selection */}
+                    <div style={{ marginBottom: "12px" }}>
+                      <label style={{
+                        display: "block",
+                        fontSize: "12px",
+                        fontWeight: "500",
+                        marginBottom: "6px",
+                        color: "#555"
+                      }}>
+                        Hour: {selectedHour}
+                      </label>
+                      <input
+                        type="range"
+                        min="1"
+                        max="24"
+                        value={selectedHour}
+                        onChange={(e) => setSelectedHour(parseInt(e.target.value))}
+                        style={{
+                          width: "100%",
+                          height: "6px",
+                          borderRadius: "3px",
+                          background: "#ddd",
+                          outline: "none",
+                          cursor: "pointer"
+                        }}
+                      />
+                      <div style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "10px",
+                        color: "#888",
+                        marginTop: "4px"
+                      }}>
+                        <span>1</span>
+                        <span>12</span>
+                        <span>24</span>
+                      </div>
+                    </div>
+
+                    {/* Color Scale */}
+                    <div style={{ marginBottom: "8px" }}>
+                      <label style={{
+                        display: "block",
+                        fontSize: "12px",
+                        fontWeight: "500",
+                        marginBottom: "6px",
+                        color: "#555"
+                      }}>
+                        Impact Scale:
+                      </label>
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px"
+                      }}>
+                        <span style={{ fontSize: "10px", color: "#0066cc" }}>Negative</span>
+                        <div style={{
+                          flex: 1,
+                          height: "12px",
+                          background: "linear-gradient(to right, #0066cc, #ffffff, #cc4400)",
+                          borderRadius: "6px",
+                          border: "1px solid #ddd"
+                        }}></div>
+                        <span style={{ fontSize: "10px", color: "#cc4400" }}>Positive</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+
           <Accordion defaultExpanded={true} style={{ marginBottom: "8px" }}>
             <AccordionSummary style={{ 
               height: "20px", 
