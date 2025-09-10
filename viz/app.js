@@ -54,7 +54,7 @@ import { LineColor, FlowColor, FillColor, fillGenColumnColor, fillGenColumnColor
 // Firebase Authentication imports
 import { AuthProvider, ProtectedRoute, Header, AdminDashboard, useAuth } from './components/common';
 import { ManishProject } from './components/manish';
-import { AminProject, AminDetailPage } from './components/amin';
+import { AminProject, AminDetailPage, DataCenterImpactPage } from './components/amin';
 
 import 'core-js/actual/structured-clone';
 
@@ -1105,6 +1105,9 @@ function getEnhancedTooltip({ object, layer }) {
     // Enhanced WECC region information
     const baCode = properties.BA_Abrev || 'WECC';
     const baName = properties.BA_Name || 'Western Electricity Coordinating Council Area';
+    
+    // Get impact analysis data if available
+    const impactResult = null; // Impact analysis moved to dedicated page
     const fid = properties.FID || 'N/A';
     const areaNumbers = properties.Area_Numbers || [];
     
@@ -1189,6 +1192,38 @@ function getEnhancedTooltip({ object, layer }) {
           <div>• Market operations</div>
         </div>
       </div>
+
+      ${impactResult ? 
+        `<div style="
+          background: linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(25, 118, 210, 0.05) 100%);
+          padding: 8px 10px;
+          border-radius: 6px;
+          border-left: 4px solid #1976d2;
+          margin-bottom: 8px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        ">
+          <div style="font-weight: 700; font-size: 12px; color: #1976d2; margin-bottom: 4px;">
+            📊 Data Center Impact Analysis
+          </div>
+          <div style="font-size: 10px; color: #666; line-height: 1.4;">
+            <div style="margin-bottom: 2px;"><strong>Case Study:</strong> ${selectedCaseStudy.toUpperCase()}</div>
+            <div style="margin-bottom: 2px;"><strong>Metric:</strong> ${impactResult.metric}</div>
+            <div style="margin-bottom: 2px;"><strong>Hour:</strong> ${impactResult.hour}</div>
+            <div style="margin-bottom: 4px;"><strong>Difference:</strong> 
+              <span style="color: ${impactResult.difference > 0 ? '#d32f2f' : '#1976d2'}; font-weight: 600;">
+                ${impactResult.difference > 0 ? '+' : ''}${impactResult.difference.toFixed(2)} ${impactResult.unit}
+              </span>
+            </div>
+            <div style="font-size: 9px; color: #888; margin-bottom: 2px;">
+              ${impactResult.difference > 0 ? '🔴 Higher impact' : '🔵 Lower impact'} vs baseline
+            </div>
+            <div style="font-size: 8px; color: #666; font-style: italic;">
+              Color Step: ${object.properties?.colorStep !== null ? (object.properties.colorStep + 1) : 'N/A'} of 20
+            </div>
+          </div>
+        </div>` : 
+        ''
+      }
 
       <div style="
         display: flex;
@@ -1552,11 +1587,11 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
   // For pop-up control
   const [showPopup, setShowPopup] = useState({ display: false, info: '', name: '', fid: null, type: null });
 
-  // Data Center Impact Analysis state
+  // Data Center Impact Analysis state (minimal for compatibility)
   const [impactAnalysisActive, setImpactAnalysisActive] = useState(false);
   const [selectedWeccRegion, setSelectedWeccRegion] = useState('ALL');
   const [selectedCaseStudy, setSelectedCaseStudy] = useState('case1');
-  const [selectedMetric, setSelectedMetric] = useState('Price');
+  const [selectedMetric, setSelectedMetric] = useState('System Operation Cost');
   const [selectedHour, setSelectedHour] = useState(12);
   const [impactData, setImpactData] = useState({});
 
@@ -1651,19 +1686,103 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
   const handleImpactAnalysisChange = (event) => {
     setImpactAnalysisActive(event.target.checked);
     if (event.target.checked) {
+      // Enter Data Center Impact Analysis mode
+      // Store current layer states for restoration later
+      window.preImpactLayerStates = {
+        netlayeractive,
+        flowlayeractive,
+        genlayeractive,
+        genlayercapactive,
+        loadlayeractive,
+        voltagelayeractive,
+        zonelayeractive,
+        arealayeractive,
+        transmissionlayeractive,
+        powerplantlayeractive,
+        powerplantlayercapactive,
+        weccGenLayerActive
+      };
+      
+      console.log('Stored current layer states for restoration');
+      
+      // Turn OFF only the most distracting visual layers
+      setTransmissionLayerActive(false);
+      setPowerPlantLayerActive(false);
+      setPowerPlantLayerCapActive(false);
+      setWeccGenLayerActive(false);
+      setFlowLayerActive(false);
+      setGenLayerActive(false);
+      setGenLayerCapActive(false);
+      
+      // Keep essential layers that don't interfere with WECC visualization
+      // setNetLayerActive(false);  // Keep network if needed
+      // setLoadLayerActive(false); // Keep load if needed
+      // setVoltageLayerActive(false); // Keep voltage if needed
+      
+      // Turn ON WECC layer for clean visualization
+      setWeccLayerActive(true);
+      
+      // Load impact analysis data
       loadImpactAnalysisData();
+      
+      console.log('Entered Data Center Impact Analysis mode - showing only WECC regions');
     } else {
+      // Exit Data Center Impact Analysis mode
       setImpactData({});
+      
+      // Reset WECC region colors in weccGeojsonData
+      if (weccGeojsonData) {
+        const resetFeatures = weccGeojsonData.features.map(feature => ({
+          ...feature,
+          properties: {
+            ...feature.properties,
+            impactColor: null,
+            impactValue: null,
+            impactData: null,
+            colorStep: null
+          }
+        }));
+        
+        setWeccGeojsonData({
+          ...weccGeojsonData,
+          features: resetFeatures
+        });
+      }
+      
+      // Restore previous layer states if they were stored
+      if (window.preImpactLayerStates) {
+        const states = window.preImpactLayerStates;
+        setTransmissionLayerActive(states.transmissionlayeractive);
+        setPowerPlantLayerActive(states.powerplantlayeractive);
+        setPowerPlantLayerCapActive(states.powerplantlayercapactive);
+        setWeccGenLayerActive(states.weccGenLayerActive);
+        setFlowLayerActive(states.flowlayeractive);
+        setGenLayerActive(states.genlayeractive);
+        setGenLayerCapActive(states.genlayercapactive);
+        
+        // Clear the stored states
+        delete window.preImpactLayerStates;
+        console.log('Restored previous layer states');
+      } else {
+        // Default restoration - enable common layers
+        setTransmissionLayerActive(true);
+        setPowerPlantLayerActive(true);
+        setWeccLayerActive(true);
+        console.log('Applied default layer restoration');
+      }
+      
+      console.log('Exited Data Center Impact Analysis mode - restored original layers');
     }
   };
 
   // Load and calculate impact analysis data
   const loadImpactAnalysisData = async () => {
     try {
-      console.log('Loading impact analysis data...');
+      console.log(`Loading impact analysis data - Case: ${selectedCaseStudy}, Metric: ${selectedMetric}, Hour: ${selectedHour}, Region: ${selectedWeccRegion}`);
       const impactResults = await calculateImpactDifferences();
       setImpactData(impactResults);
-      console.log('Impact analysis data loaded:', impactResults);
+      console.log('Impact analysis data loaded:', Object.keys(impactResults).length, 'regions processed');
+      console.log('Sample results:', impactResults);
     } catch (error) {
       console.error('Error loading impact analysis data:', error);
     }
@@ -1671,50 +1790,234 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
 
   // Calculate impact differences between case studies
   const calculateImpactDifferences = async () => {
+    try {
+      console.log('Calculating impact differences...');
     const results = {};
     
-    // Define comparison pairs based on selected case study
+      // Determine which data file to load based on selected metric
+      let dataFileName = '';
+      if (selectedMetric === 'System Operation Cost') {
+        dataFileName = 'Total_Operation_Cost.csv';
+      } else if (selectedMetric === 'Price') {
+        dataFileName = 'Price_Data.csv';
+      } else if (selectedMetric === 'Power Exchange') {
+        dataFileName = 'Power_Exchange_Data.csv';
+      } else {
+        // Default to operation cost
+        dataFileName = 'Total_Operation_Cost.csv';
+      }
+      
+      // Load the appropriate data file
+      console.log(`Loading data file: /amin_data/manish_amin_modified_data/${dataFileName}`);
+      const response = await fetch(`/amin_data/manish_amin_modified_data/${dataFileName}`);
+      if (!response.ok) {
+        console.error(`Failed to load ${dataFileName} - Status: ${response.status}`);
+        return results;
+      }
+      console.log(`Successfully loaded ${dataFileName}`);
+      
+      const csvText = await response.text();
+      const lines = csvText.trim().split('\n');
+      const headers = lines[0].split(',');
+      const data = {};
+      
+      // Organize data by case study
+      for (let i = 1; i < lines.length; i++) {
+        const row = lines[i].split(',');
+        const caseStudy = row[0];
+        const hour = parseInt(row[1]);
+        
+        if (!data[caseStudy]) {
+          data[caseStudy] = {};
+        }
+        if (!data[caseStudy][hour]) {
+          data[caseStudy][hour] = {};
+        }
+        
+        // Store values for each WECC region (headers[2] onwards are region codes)
+        for (let j = 2; j < headers.length; j++) {
+          const regionCode = headers[j].trim();
+          const value = parseFloat(row[j]) || 0;
+          data[caseStudy][hour][regionCode] = value;
+        }
+      }
+      
+      // Define comparison pairs for case studies
     const comparisonPairs = {
-      'case1': { current: 'Case study_1', baseline: 'Case study_0' },
-      'case2': { current: 'Case study_2', baseline: 'Case study_1' },
-      'case3': { current: 'Case study_3', baseline: 'Case study_2' }
+        'case1': { current: 'Case_1', baseline: 'Case_0' },
+        'case2': { current: 'Case_2', baseline: 'Case_1' },
+        'case3': { current: 'Case_3', baseline: 'Case_2' }
     };
     
     const comparison = comparisonPairs[selectedCaseStudy];
-    if (!comparison) return results;
+      if (!comparison || !data[comparison.current] || !data[comparison.baseline]) {
+        console.warn('Case study data not found:', comparison);
+        return results;
+      }
     
     // Get regions to analyze
     const regionsToAnalyze = selectedWeccRegion === 'ALL' 
       ? weccRegions.filter(r => r.id !== 'ALL').map(r => r.id)
       : [selectedWeccRegion];
     
+      // Calculate differences for each region
     for (const regionAbbrev of regionsToAnalyze) {
       try {
-        const currentData = await loadCaseStudyDataForRegion(comparison.current, regionAbbrev);
-        const baselineData = await loadCaseStudyDataForRegion(comparison.baseline, regionAbbrev);
-        
-        if (currentData && baselineData) {
-          const difference = calculateMetricDifference(
-            currentData, 
-            baselineData, 
-            selectedMetric, 
-            selectedHour
-          );
+          const currentValue = data[comparison.current][selectedHour]?.[regionAbbrev] || 0;
+          const baselineValue = data[comparison.baseline][selectedHour]?.[regionAbbrev] || 0;
+          
+          let difference = 0;
+          let percentChange = 0;
+          
+          if (selectedMetric === 'System Operation Cost') {
+            // For system costs, use absolute difference
+            difference = currentValue - baselineValue;
+            percentChange = baselineValue !== 0 ? ((currentValue - baselineValue) / baselineValue) * 100 : 0;
+          } else if (selectedMetric === 'Price') {
+            // For price, use absolute difference ($/MWh)
+            difference = currentValue - baselineValue;
+            percentChange = baselineValue !== 0 ? ((currentValue - baselineValue) / baselineValue) * 100 : 0;
+          } else if (selectedMetric === 'Power Exchange') {
+            // For power exchange, use absolute difference (MW)
+            difference = currentValue - baselineValue;
+            percentChange = baselineValue !== 0 ? ((currentValue - baselineValue) / baselineValue) * 100 : 0;
+          }
           
           results[regionAbbrev] = {
-            current: currentData,
-            baseline: baselineData,
+            current: currentValue,
+            baseline: baselineValue,
             difference: difference,
+            percentChange: percentChange,
+            region: regionAbbrev,
             metric: selectedMetric,
-            hour: selectedHour
+            hour: selectedHour,
+            unit: selectedMetric === 'System Operation Cost' ? '$' : 
+                  selectedMetric === 'Price' ? '$/MWh' : 'MW'
+          };
+      } catch (error) {
+          console.warn(`Failed to calculate difference for region ${regionAbbrev}:`, error);
+        }
+      }
+      
+      // Update WECC region colors based on impact analysis
+      if (weccdata && Object.keys(results).length > 0) {
+        updateWeccRegionColors(results);
+      }
+      
+      console.log(`Impact differences calculated for ${selectedMetric}:`, results);
+    return results;
+    } catch (error) {
+      console.error('Error in calculateImpactDifferences:', error);
+      return {};
+    }
+  };
+
+  // Update WECC region colors based on impact analysis results
+  const updateWeccRegionColors = (impactResults) => {
+    try {
+      if (!weccGeojsonData || !impactResults) return;
+      
+      // Get all difference values to calculate color scale
+      const differences = Object.values(impactResults).map(result => result.difference);
+      const minDiff = Math.min(...differences);
+      const maxDiff = Math.max(...differences);
+      
+      console.log(`Impact Analysis Range: ${minDiff.toFixed(2)} to ${maxDiff.toFixed(2)}`);
+      
+      // Create linear color scale function with 20+ distinct colors
+      const getLinearImpactColor = (difference) => {
+        if (minDiff === maxDiff) return [200, 200, 200, 180]; // Gray for no variation
+        
+        // Normalize difference to 0-1 scale
+        const normalizedValue = (difference - minDiff) / (maxDiff - minDiff);
+        
+        // Create 20-step linear color scale from deep blue to deep red
+        const colorSteps = [
+          [8, 48, 107],    // Deep blue
+          [8, 81, 156],    // Dark blue
+          [33, 113, 181],  // Medium blue
+          [66, 146, 198],  // Light blue
+          [107, 174, 214], // Lighter blue
+          [158, 202, 225], // Very light blue
+          [198, 219, 239], // Pale blue
+          [222, 235, 247], // Very pale blue
+          [247, 251, 255], // Almost white blue
+          [255, 255, 255], // White (neutral)
+          [255, 245, 240], // Very pale red
+          [254, 224, 210], // Pale red
+          [252, 187, 161], // Light red
+          [252, 146, 114], // Medium light red
+          [251, 106, 74],  // Medium red
+          [239, 59, 44],   // Dark red
+          [203, 24, 29],   // Darker red
+          [165, 15, 21],   // Very dark red
+          [103, 0, 13],    // Deep red
+          [77, 0, 9]       // Deepest red
+        ];
+        
+        // Calculate which color step to use (0-19)
+        const stepIndex = Math.min(Math.floor(normalizedValue * colorSteps.length), colorSteps.length - 1);
+        const color = colorSteps[stepIndex];
+        
+        return [color[0], color[1], color[2], 200]; // Higher alpha for better visibility
+      };
+      
+      // Update weccGeojsonData features with impact colors
+      const updatedFeatures = weccGeojsonData.features.map(feature => {
+        const regionAbbrev = feature.properties?.BA_Abrev || feature.properties?.BA_CODE || feature.properties?.NAME;
+        const impactResult = impactResults[regionAbbrev];
+        
+        if (impactResult) {
+          const impactColor = getLinearImpactColor(impactResult.difference);
+          const colorStep = Math.min(Math.floor(((impactResult.difference - minDiff) / (maxDiff - minDiff)) * 20), 19);
+          
+          return {
+            ...feature,
+            properties: {
+              ...feature.properties,
+              impactColor: impactColor,
+              impactValue: impactResult.difference,
+              impactData: impactResult,
+              colorStep: colorStep
+            }
           };
         }
-      } catch (error) {
-        console.warn(`Failed to load data for region ${regionAbbrev}:`, error);
-      }
+        
+        return {
+          ...feature,
+          properties: {
+            ...feature.properties,
+            impactColor: [200, 200, 200, 100], // Light gray for regions without data
+            impactValue: null,
+            impactData: null,
+            colorStep: null
+          }
+        };
+      });
+      
+      // Update the weccGeojsonData state
+      setWeccGeojsonData({
+        ...weccGeojsonData,
+        features: updatedFeatures
+      });
+      
+      console.log(`WECC region colors updated with linear scale - ${updatedFeatures.length} regions processed`);
+    } catch (error) {
+      console.error('Error updating WECC region colors:', error);
+    }
+  };
+
+  // Get WECC region color for impact analysis
+  const getWeccRegionColor = (feature) => {
+    if (!impactAnalysisActive) return [100, 149, 237, 120]; // Default blue when not active
+    
+    // Use the impact color stored in the feature properties
+    if (feature && feature.properties && feature.properties.impactColor) {
+      return feature.properties.impactColor;
     }
     
-    return results;
+    // Default for regions without impact data
+    return [200, 200, 200, 100]; // Light gray
   };
 
   // Load case study data for a specific region
@@ -1910,44 +2213,6 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     }
   };
 
-  // Get color for WECC region based on impact data
-  const getWeccRegionColor = (regionAbbrev) => {
-    if (!impactAnalysisActive || !impactData[regionAbbrev]) {
-      return [200, 200, 200, 100]; // Default gray
-    }
-    
-    const impact = impactData[regionAbbrev];
-    const difference = impact.difference || 0;
-    
-    // Get max absolute difference for normalization
-    const allDifferences = Object.values(impactData).map(d => Math.abs(d.difference || 0));
-    const maxDiff = Math.max(...allDifferences, 1); // Avoid division by zero
-    
-    // Normalize difference (-1 to 1)
-    const normalizedDiff = difference / maxDiff;
-    
-    // Color interpolation: blue (negative) -> white (zero) -> red (positive)
-    let r, g, b;
-    
-    if (normalizedDiff < 0) {
-      // Negative values: interpolate from blue to white
-      const intensity = Math.abs(normalizedDiff);
-      r = Math.round(0 + (255 - 0) * (1 - intensity));
-      g = Math.round(102 + (255 - 102) * (1 - intensity));
-      b = 255;
-    } else if (normalizedDiff > 0) {
-      // Positive values: interpolate from white to red
-      const intensity = normalizedDiff;
-      r = 255;
-      g = Math.round(255 + (68 - 255) * intensity);
-      b = Math.round(255 + (68 - 255) * intensity);
-    } else {
-      // Zero difference: white
-      r = g = b = 255;
-    }
-    
-    return [r, g, b, 180];
-  };
 
   //update flowdataset when netfiltervalue, flowfiltervalue or data value change
   useEffect(() => {
@@ -3719,30 +3984,27 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       getLineColor: [255, 255, 255, 255], // White border always visible
       getLineWidth: 4, // Thicker border for better visibility
       getFillColor: d => {
-        // Get region abbreviation for impact analysis
-        const regionAbbrev = d.properties?.BA_CODE || d.properties?.NAME || d.properties?.ABBREV;
-        
-        // Use impact analysis colors if active and data is available
-        if (impactAnalysisActive && Object.keys(impactData).length > 0 && regionAbbrev) {
-          const impactColor = getWeccRegionColor(regionAbbrev);
+        // Impact analysis moved to dedicated page - use default colors
+        if (false) {
+          const impactColor = [100, 149, 237, 120];
           
           // Apply hover and click effects to impact colors
           if (d === weccClickedObject) {
             // Darken the impact color for clicked state
             return [
-              Math.max(0, impactColor[0] - 50),
-              Math.max(0, impactColor[1] - 50),
-              Math.max(0, impactColor[2] - 50),
-              220
+              Math.max(0, impactColor[0] - 40),
+              Math.max(0, impactColor[1] - 40),
+              Math.max(0, impactColor[2] - 40),
+              255
             ];
           }
           if (d === weccHoveredObject && d !== weccClickedObject) {
-            // Slightly darken for hover
+            // Slightly brighten for hover
             return [
-              Math.max(0, impactColor[0] - 20),
-              Math.max(0, impactColor[1] - 20),
-              Math.max(0, impactColor[2] - 20),
-              200
+              Math.min(255, impactColor[0] + 20),
+              Math.min(255, impactColor[1] + 20),
+              Math.min(255, impactColor[2] + 20),
+              255
             ];
           }
           
@@ -3772,7 +4034,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
         }
       },
       updateTriggers: {
-        getFillColor: [weccHoveredObject, weccClickedObject, impactAnalysisActive, impactData]
+        getFillColor: [weccHoveredObject, weccClickedObject, weccGeojsonData]
       }
     }),
 
@@ -4119,32 +4381,6 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     <>
       <WestmapHeader />
       
-      {/* Floating Action Button for WECC Case Studies */}
-      <Fab
-        variant="extended"
-        style={{
-          position: 'fixed',
-          top: '80px',
-          left: '20px',
-          zIndex: 1000,
-          backgroundColor: '#1976d2',
-          color: 'white',
-          fontSize: '12px',
-          padding: '8px 16px',
-          height: '40px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          '&:hover': {
-            backgroundColor: '#1565c0'
-          }
-        }}
-        onClick={() => {
-          // Navigate to AminDetailPage with NEVP (area 16) as default region
-          navigate('/manish/16');
-        }}
-      >
-        <SchoolIcon style={{ marginRight: '8px', fontSize: '18px' }} />
-        Visit WECC Case Studies
-      </Fab>
       
       {isLoadingAdditionalData && (
         <div style={{
@@ -4350,211 +4586,74 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
       }}>
 
         <div style={{ width: '100%' }}>
-          {/* Data Center Impact Analysis Accordion */}
-          <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
-            <AccordionSummary style={{ 
-              height: "20px", 
-              minHeight: "40px", 
-              paddingRight: "20px", 
-              paddingLeft: "0px",
-              background: "rgba(25, 118, 210, 0.05)"
-            }}
-              expandIcon={<ArrowDropDownIcon />}>
-              <Typography style={{ fontSize: "13px", fontWeight: "500", lineHeight: "1.2" }}> 
-                <Checkbox checked={impactAnalysisActive} style={{ color: "#1976d2", padding: "2px" }} onChange={handleImpactAnalysisChange} />
-                📊 Data Center Impact
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails style={{ padding: "12px 16px" }}>
-              <Typography component="div">
-                {impactAnalysisActive && (
-                  <div style={{ paddingRight: "8px", marginBottom: "8px" }}>
-                    {/* WECC Region Selection */}
-                    <div style={{ marginBottom: "12px" }}>
-                      <label style={{
-                        display: "block",
-                        fontSize: "12px",
-                        fontWeight: "500",
-                        marginBottom: "6px",
-                        color: "#555"
-                      }}>
-                        WECC Region:
-                      </label>
-                      <select
-                        value={selectedWeccRegion}
-                        onChange={(e) => setSelectedWeccRegion(e.target.value)}
-                        style={{
-                          width: "100%",
-                          padding: "8px 12px",
-                          borderRadius: "6px",
-                          border: "1px solid #ddd",
-                          fontSize: "12px",
-                          background: "white"
-                        }}
-                      >
-                        {weccRegions.map(region => (
-                          <option key={region.id} value={region.id}>
-                            {region.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+          {/* Navigation Buttons at Top of Right Panel */}
+          <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <button
+              onClick={() => navigate('/manish/16')}
+              style={{
+                padding: '12px 16px',
+                backgroundColor: '#1976d2',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+              onMouseOver={(e) => {
+                e.target.style.backgroundColor = '#1565c0';
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 16px rgba(25, 118, 210, 0.4)';
+              }}
+              onMouseOut={(e) => {
+                e.target.style.backgroundColor = '#1976d2';
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 12px rgba(25, 118, 210, 0.3)';
+              }}
+            >
+              <span style={{ fontSize: '16px' }}>🎓</span>
+              Visit WECC Case Studies
+            </button>
 
-                    {/* Case Study Selection */}
-                    <div style={{ marginBottom: "12px" }}>
-                      <label style={{
-                        display: "block",
-                        fontSize: "12px",
-                        fontWeight: "500",
-                        marginBottom: "6px",
-                        color: "#555"
-                      }}>
-                        Case Study Comparison:
-                      </label>
-                      <div style={{
-                        display: "flex",
-                        gap: "6px"
-                      }}>
-                        {['case1', 'case2', 'case3'].map(caseId => (
-                          <button
-                            key={caseId}
-                            onClick={() => setSelectedCaseStudy(caseId)}
-                            style={{
-                              flex: 1,
-                              padding: "6px 4px",
-                              borderRadius: "4px",
-                              border: selectedCaseStudy === caseId ? "2px solid #1976d2" : "1px solid #ddd",
-                              background: selectedCaseStudy === caseId ? "rgba(25, 118, 210, 0.1)" : "white",
-                              fontSize: "10px",
-                              fontWeight: selectedCaseStudy === caseId ? "600" : "400",
-                              color: selectedCaseStudy === caseId ? "#1976d2" : "#666",
-                              cursor: "pointer",
-                              transition: "all 0.2s",
-                              minHeight: "28px"
-                            }}
-                          >
-                            Case {caseId.slice(-1)}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Metric Selection */}
-                    <div style={{ marginBottom: "12px" }}>
-                      <label style={{
-                        display: "block",
-                        fontSize: "12px",
-                        fontWeight: "500",
-                        marginBottom: "6px",
-                        color: "#555"
-                      }}>
-                        Metric:
-                      </label>
-                      <div style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "4px"
-                      }}>
-                        {[
-                          { id: 'Price', label: 'Price ($/MWh)' },
-                          { id: 'System Operation Cost', label: 'System Cost ($)' },
-                          { id: 'Power Exchange', label: 'Power Exchange (MW)' }
-                        ].map(metric => (
-                          <button
-                            key={metric.id}
-                            onClick={() => setSelectedMetric(metric.id)}
-                            style={{
-                              padding: "6px 8px",
-                              borderRadius: "4px",
-                              border: selectedMetric === metric.id ? "2px solid #1976d2" : "1px solid #ddd",
-                              background: selectedMetric === metric.id ? "rgba(25, 118, 210, 0.1)" : "white",
-                              fontSize: "10px",
-                              fontWeight: selectedMetric === metric.id ? "600" : "400",
-                              color: selectedMetric === metric.id ? "#1976d2" : "#666",
-                              cursor: "pointer",
-                              transition: "all 0.2s",
-                              textAlign: "left",
-                              marginBottom: "4px",
-                              width: "100%"
-                            }}
-                          >
-                            {metric.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Hour Selection */}
-                    <div style={{ marginBottom: "12px" }}>
-                      <label style={{
-                        display: "block",
-                        fontSize: "12px",
-                        fontWeight: "500",
-                        marginBottom: "6px",
-                        color: "#555"
-                      }}>
-                        Hour: {selectedHour}
-                      </label>
-                      <input
-                        type="range"
-                        min="1"
-                        max="24"
-                        value={selectedHour}
-                        onChange={(e) => setSelectedHour(parseInt(e.target.value))}
-                        style={{
-                          width: "100%",
-                          height: "6px",
-                          borderRadius: "3px",
-                          background: "#ddd",
-                          outline: "none",
-                          cursor: "pointer"
-                        }}
-                      />
-                      <div style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: "10px",
-                        color: "#888",
-                        marginTop: "4px"
-                      }}>
-                        <span>1</span>
-                        <span>12</span>
-                        <span>24</span>
-                      </div>
-                    </div>
-
-                    {/* Color Scale */}
-                    <div style={{ marginBottom: "8px" }}>
-                      <label style={{
-                        display: "block",
-                        fontSize: "12px",
-                        fontWeight: "500",
-                        marginBottom: "6px",
-                        color: "#555"
-                      }}>
-                        Impact Scale:
-                      </label>
-                      <div style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px"
-                      }}>
-                        <span style={{ fontSize: "10px", color: "#0066cc" }}>Negative</span>
-                        <div style={{
-                          flex: 1,
-                          height: "12px",
-                          background: "linear-gradient(to right, #0066cc, #ffffff, #cc4400)",
-                          borderRadius: "6px",
-                          border: "1px solid #ddd"
-                        }}></div>
-                        <span style={{ fontSize: "10px", color: "#cc4400" }}>Positive</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
+            <button
+              onClick={() => navigate('/data-center-impact')}
+              style={{
+                padding: '12px 16px',
+                backgroundColor: '#e91e63',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 4px 12px rgba(233, 30, 99, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+              onMouseOver={(e) => {
+                e.target.style.backgroundColor = '#c2185b';
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 16px rgba(233, 30, 99, 0.4)';
+              }}
+              onMouseOut={(e) => {
+                e.target.style.backgroundColor = '#e91e63';
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 12px rgba(233, 30, 99, 0.3)';
+              }}
+            >
+              <span style={{ fontSize: '16px' }}>📊</span>
+              Data Center Impact
+            </button>
+          </div>
 
           <Accordion defaultExpanded={true} style={{ marginBottom: "8px" }}>
             <AccordionSummary style={{ 
@@ -5418,6 +5517,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
 
         {/* <BrushingBarChart data={[12,23,345,45,66,78,800]} width ={170} height = {100} handleFilter = {handleNetBarFilterChange}/> */}
 
+
         {/* <br></br> */}
 
 
@@ -5461,6 +5561,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <AminDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/data-center-impact"
+            element={
+              <ProtectedRoute>
+                <DataCenterImpactPage />
               </ProtectedRoute>
             }
           />

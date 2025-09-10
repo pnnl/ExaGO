@@ -17,13 +17,18 @@ const CONFIG = {
   },
 
   devServer: {
-    historyApiFallback: true,
+    historyApiFallback: {
+      disableDotRule: true,
+      index: '/index.html'
+    },
     contentBase: __dirname,
     compress: true,
     port: 8080,
     watchOptions: {
       poll: true
-    }
+    },
+    publicPath: '/',
+    hot: true
   },
 
   devtool: 'source-map',
