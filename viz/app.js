@@ -2699,8 +2699,8 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
     }
   }, [showPopup, navigate, location]);
 
-  const [netlayeractive, setNetLayerActive] = useState(true);
-  const [flowlayeractive, setFlowLayerActive] = useState(true);
+  const [netlayeractive, setNetLayerActive] = useState(false);
+  const [flowlayeractive, setFlowLayerActive] = useState(false);
 
   const [loadlayeractive, setLoadLayerActive] = useState(false);
   const [genlayeractive, setGenLayerActive] = useState(false);
@@ -2997,10 +2997,9 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
           }
         }
 
-        // Parse WECC generation CSV
+        // Parse WECC generation CSV from old source (keeping as fallback)
         const weccGenLines = weccGenText.split('\n');
-        const weccGenData = {};
-        const weccGenProcessed = [];
+        const oldWeccGenData = {};
 
         for (let i = 1; i < weccGenLines.length; i++) {
           const line = weccGenLines[i].trim();
@@ -3023,8 +3022,97 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
                 Total_MW: parseFloat(values[11]) || 0,
                 Energy_Storage: parseFloat(values[12]) || 0
               };
-              weccGenData[ba] = genData;
-              weccGenProcessed.push(genData);
+              oldWeccGenData[ba] = genData;
+            }
+          }
+        }
+
+        // Load WECC BA Capacity data - ACCURATE SOURCE
+        console.log('🔄 Loading WECC BA Capacity data from WECC_BA_CAPACITY.csv...');
+        
+        const weccCapacityResponse = await fetch('/amin_data/manish_amin_modified_data/WECC_BA_CAPACITY.csv');
+        if (!weccCapacityResponse.ok) {
+          throw new Error(`HTTP error loading WECC BA Capacity CSV! status: ${weccCapacityResponse.status}`);
+        }
+        const weccCapacityText = await weccCapacityResponse.text();
+
+        // Parse WECC BA Capacity CSV - Clean and accurate data
+        const weccGenData = {};
+        const weccGenProcessed = [];
+        
+        // Handle different line endings (Windows \r\n, Unix \n, Mac \r)
+        const weccCapacityLines = weccCapacityText.split(/\r?\n|\r/);
+        console.log('📊 Total lines in CSV:', weccCapacityLines.length);
+        console.log('📊 First few lines:', weccCapacityLines.slice(0, 3));
+        
+        if (weccCapacityLines.length < 2) {
+          console.error('❌ CSV parsing failed - not enough lines');
+          return;
+        }
+        
+        const headers = weccCapacityLines[0].split(',');
+        console.log('📊 WECC BA Capacity CSV headers:', headers);
+        console.log('🎯 Using clean, pre-aggregated WECC BA capacity data');
+        
+        for (let i = 1; i < weccCapacityLines.length; i++) {
+          const line = weccCapacityLines[i].trim();
+          if (line && line.length > 0) {
+            // More robust CSV parsing to handle quoted values with commas
+            const values = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let j = 0; j < line.length; j++) {
+              const char = line[j];
+              if (char === '"') {
+                inQuotes = !inQuotes;
+              } else if (char === ',' && !inQuotes) {
+                values.push(current.trim());
+                current = '';
+              } else {
+                current += char;
+              }
+            }
+            values.push(current.trim()); // Add the last value
+            
+            console.log(`📊 Row ${i}: BA=${values[0]}, Values:`, values);
+            
+            const ba = values[0]; // BA column
+            
+            if (ba && ba !== '' && values.length >= 10) {
+              // Parse values, handling quoted numbers
+              const hydro = parseFloat(values[1]) || 0;
+              const nuclear = parseFloat(values[2]) || 0;
+              const coal = parseFloat(values[3]) || 0;
+              const naturalGas = parseFloat(values[4].replace(/[",]/g, '')) || 0; // Remove quotes and commas
+              const geothermal = parseFloat(values[5]) || 0;
+              const biomass = parseFloat(values[6]) || 0;
+              const wind = parseFloat(values[7]) || 0;
+              const pv = parseFloat(values[8]) || 0;
+              const batteryStorage = parseFloat(values[9]) || 0;
+              
+              console.log(`✅ Parsed ${ba}: Natural Gas=${naturalGas}, Hydro=${hydro}, PV=${pv}`);
+              
+              const baData = {
+                BA: ba,
+                Hydro: hydro,
+                Nuclear: nuclear,
+                Coal: coal,
+                Natural_Gas: naturalGas,
+                Geothermal: geothermal,
+                Biomass: biomass,
+                Wind: wind,
+                PV: pv, // Solar
+                Battery_Storage: batteryStorage,
+                Oil: 0, // Not in this dataset
+                Other: 0, // Not in this dataset
+                Total_MW: hydro + nuclear + coal + naturalGas + geothermal + biomass + wind + pv + batteryStorage
+              };
+              
+              weccGenData[ba] = baData;
+              weccGenProcessed.push(baData);
+            } else {
+              console.warn(`⚠️ Skipping invalid row ${i}: BA="${ba}", Values length: ${values.length}`);
             }
           }
         }
@@ -3073,22 +3161,48 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
           totalBySource.PV += data.PV;
         });
 
-        // Setup WECC generation chart data - ACCURATE DATA FROM CSV ANALYSIS
-        // Data source: WECC_31_BAs_2028_All_Clean (1).csv - Total: 384,199.9 MW
+        // Calculate totals from WECC_BA_CAPACITY.csv data
+        const totalCapacities = {
+          Natural_Gas: 0,
+          Hydro: 0,
+          PV: 0,
+          Wind: 0,
+          Coal: 0,
+          Battery_Storage: 0,
+          Nuclear: 0,
+          Geothermal: 0,
+          Biomass: 0
+        };
+
+        weccGenProcessed.forEach(ba => {
+          totalCapacities.Natural_Gas += ba.Natural_Gas || 0;
+          totalCapacities.Hydro += ba.Hydro || 0;
+          totalCapacities.PV += ba.PV || 0;
+          totalCapacities.Wind += ba.Wind || 0;
+          totalCapacities.Coal += ba.Coal || 0;
+          totalCapacities.Battery_Storage += ba.Battery_Storage || 0;
+          totalCapacities.Nuclear += ba.Nuclear || 0;
+          totalCapacities.Geothermal += ba.Geothermal || 0;
+          totalCapacities.Biomass += ba.Biomass || 0;
+        });
+
+        console.log('📊 WECC BA CAPACITY Total Capacities:', totalCapacities);
+
+        // Setup WECC generation chart data - FROM WECC_BA_CAPACITY.CSV
         const weccChartData = {
           labels: ['Natural Gas', 'Hydro', 'Solar', 'Wind', 'Coal', 'Battery Storage', 'Nuclear', 'Geothermal', 'Biomass'],
           datasets: [{
             label: 'WECC Generation Capacity (MW)',
             data: [
-              163312.9,  // Natural Gas - 42.5% (largest)
-              70028.6,   // Hydro - 18.2%
-              41471.5,   // Solar (PV) - 10.8%
-              40799.5,   // Wind - 10.6%
-              34611.2,   // Coal - 9.0%
-              16011.0,   // Battery Storage - 4.2%
-              6321.6,    // Nuclear - 1.6%
-              3850.3,    // Geothermal - 1.0%
-              4165.8     // Biomass - 1.1%
+              totalCapacities.Natural_Gas,
+              totalCapacities.Hydro,
+              totalCapacities.PV, // Solar
+              totalCapacities.Wind,
+              totalCapacities.Coal,
+              totalCapacities.Battery_Storage,
+              totalCapacities.Nuclear,
+              totalCapacities.Geothermal,
+              totalCapacities.Biomass
             ],
             backgroundColor: [
               'rgba(255, 87, 34, 0.8)',   // Natural Gas - Orange
@@ -3098,8 +3212,8 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
               'rgba(97, 97, 97, 0.8)',    // Coal - Dark Gray
               'rgba(255, 235, 59, 0.8)',  // Battery Storage - Light Yellow
               'rgba(156, 39, 176, 0.8)',  // Nuclear - Purple
-              'rgba(139, 69, 19, 0.8)',   // Geothermal - Brown
-              'rgba(102, 187, 106, 0.8)'  // Biomass - Light Green
+              'rgba(255, 152, 0, 0.8)',   // Geothermal - Deep Orange
+              'rgba(139, 69, 19, 0.8)'    // Biomass - Brown
             ],
             borderColor: [
               'rgba(255, 87, 34, 1)',
@@ -3109,8 +3223,8 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
               'rgba(97, 97, 97, 1)',
               'rgba(255, 235, 59, 1)',
               'rgba(156, 39, 176, 1)',
-              'rgba(139, 69, 19, 1)',
-              'rgba(102, 187, 106, 1)'
+              'rgba(255, 152, 0, 1)',
+              'rgba(139, 69, 19, 1)'
             ],
             borderWidth: 2
           }]
@@ -3184,6 +3298,26 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
           }
         });
 
+        console.log('🔍 WECC BA CAPACITY Data Loading Debug:');
+        console.log('📊 WECC BA Capacity CSV rows:', weccCapacityLines.length);
+        console.log('🏭 Processed WECC BAs:', weccGenProcessed.length);
+        console.log('📈 Sample processed data:', weccGenProcessed.slice(0, 2));
+        
+        // Specific CISO verification from WECC_BA_CAPACITY.csv
+        const cisoData = weccGenProcessed.find(ba => ba.BA === 'CISO');
+        if (cisoData) {
+          console.log('🔍 CISO VERIFICATION (from WECC_BA_CAPACITY.csv):');
+          console.log('   Natural Gas:', cisoData.Natural_Gas, 'MW');
+          console.log('   Hydro:', cisoData.Hydro, 'MW');
+          console.log('   Solar (PV):', cisoData.PV, 'MW');
+          console.log('   Wind:', cisoData.Wind, 'MW');
+          console.log('   Nuclear:', cisoData.Nuclear, 'MW');
+          console.log('   Total:', cisoData.Total_MW, 'MW');
+        }
+        
+        console.log('🎯 Name items for dropdown:', nameItems);
+        console.log('📊 Static chart data being set:', weccChartData);
+
         setWeccGenData(weccGenProcessed);
         setWeccGenChartData(weccChartData);
         setWeccGenFilter([0, maxTotal]);
@@ -3199,6 +3333,97 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
 
     loadWeccData();
   }, []);
+
+  // Update WECC chart data when selected regions change
+  useEffect(() => {
+    console.log('🔄 WECC Chart Update Triggered:');
+    console.log('📊 weccGenData available:', !!weccGenData, 'Length:', weccGenData?.length);
+    console.log('🎯 Selected items:', weccGenSelectItems);
+    
+    if (weccGenData && weccGenData.length > 0) {
+      // Filter data based on selected regions
+      const filteredData = weccGenSelectItems.length > 0 
+        ? weccGenData.filter(item => weccGenSelectItems.includes(item.BA))
+        : weccGenData;
+
+      console.log('🔍 Filtered data length:', filteredData.length);
+      console.log('📈 Sample filtered item:', filteredData[0]);
+
+      // Calculate totals for filtered data
+      const totals = {
+        Natural_Gas: 0,
+        Hydro: 0,
+        PV: 0,
+        Wind: 0,
+        Coal: 0,
+        Battery_Storage: 0,
+        Nuclear: 0,
+        Geothermal: 0,
+        Biomass: 0
+      };
+
+      filteredData.forEach(item => {
+        totals.Natural_Gas += item.Natural_Gas || 0;
+        totals.Hydro += item.Hydro || 0;
+        totals.PV += item.PV || 0;
+        totals.Wind += item.Wind || 0;
+        totals.Coal += item.Coal || 0;
+        totals.Battery_Storage += item.Battery_Storage || 0;
+        totals.Nuclear += item.Nuclear || 0;
+        totals.Geothermal += item.Geothermal || 0;
+        totals.Biomass += item.Biomass || 0;
+      });
+
+      // Update chart data with filtered totals
+      const updatedChartData = {
+        labels: ['Natural Gas', 'Hydro', 'Solar', 'Wind', 'Coal', 'Battery Storage', 'Nuclear', 'Geothermal', 'Biomass'],
+        datasets: [{
+          label: 'WECC Generation Capacity (MW)',
+          data: [
+            totals.Natural_Gas,
+            totals.Hydro,
+            totals.PV,
+            totals.Wind,
+            totals.Coal,
+            totals.Battery_Storage,
+            totals.Nuclear,
+            totals.Geothermal,
+            totals.Biomass
+          ],
+          backgroundColor: [
+            'rgba(255, 87, 34, 0.8)',   // Natural Gas - Orange
+            'rgba(33, 150, 243, 0.8)',  // Hydro - Blue
+            'rgba(255, 193, 7, 0.8)',   // Solar - Yellow/Gold
+            'rgba(76, 175, 80, 0.8)',   // Wind - Green
+            'rgba(97, 97, 97, 0.8)',    // Coal - Dark Gray
+            'rgba(255, 235, 59, 0.8)',  // Battery Storage - Light Yellow
+            'rgba(156, 39, 176, 0.8)',  // Nuclear - Purple
+            'rgba(255, 152, 0, 0.8)',   // Geothermal - Deep Orange
+            'rgba(139, 69, 19, 0.8)'    // Biomass - Brown
+          ],
+          borderColor: [
+            'rgba(255, 87, 34, 1)',
+            'rgba(33, 150, 243, 1)',
+            'rgba(255, 193, 7, 1)',
+            'rgba(76, 175, 80, 1)',
+            'rgba(97, 97, 97, 1)',
+            'rgba(255, 235, 59, 1)',
+            'rgba(156, 39, 176, 1)',
+            'rgba(255, 152, 0, 1)',
+            'rgba(139, 69, 19, 1)'
+          ],
+          borderWidth: 2
+        }]
+      };
+
+      console.log('📊 Calculated totals:', totals);
+      console.log('🎯 Updated chart data:', updatedChartData);
+      
+      setWeccGenChartData(updatedChartData);
+    } else {
+      console.log('❌ No WECC data available for chart update');
+    }
+  }, [weccGenData, weccGenSelectItems]);
 
   const handleNetLayerChange = (event) => {
     setNetLayerActive(event.target.checked);
@@ -3339,6 +3564,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
   };
 
   const handleWeccGenMultiselect = (value) => {
+    console.log('🎯 WECC Dropdown Selection Changed:', value);
     setWeccGenSelectItems(value);
   };
 
@@ -4665,152 +4891,62 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
             }}
               expandIcon={<ArrowDropDownIcon />}>
               <Typography style={{ fontSize: "14px", fontWeight: "500" }}> 
-                <Checkbox checked={netlayeractive} style={{ color: "#1976d2" }} onChange={handleNetLayerChange} />
-                Network
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails style={{ padding: "12px 16px" }}>
-              <Typography component="div">
-                {netlayeractive &&
-                  (
-                    <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
-                      <Typography style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
-                        Voltage Level (kV)
-                      </Typography>
-                      <Slider
-                        value={netfiltervalue}
-                        valueLabelDisplay="auto"
-                        onChange={handleNetRangeFilterChange}
-                        getAriaValueText={valuetext}
-                        step={100}
-                        min={0}
-                        max={800}
-                        style={{ color: "#1976d2" }}
-                      />
-                    </div>)
-                }
-
-                {netlayeractive && (
-                  <div style={{ paddingRight: "20px" }}>
-                    <Multiselect
-                      defaultValue={busNameSelectItems}
-                      data={busNameItems}
-                      placeholder={'Search for buses'}
-                      onChange={handleBusMultiselect}
-                    />
-                  </div>
-                )}
-
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-
-          <Accordion defaultExpanded={true} style={{ marginBottom: "8px" }}>
-            <AccordionSummary style={{ 
-              height: "20px", 
-              minHeight: "40px", 
-              paddingRight: "20px", 
-              paddingLeft: "0px",
-              background: "rgba(25, 118, 210, 0.05)"
-            }}
-              expandIcon={<ArrowDropDownIcon />}>
-              <Typography style={{ fontSize: "14px", fontWeight: "500" }}> 
-                <Checkbox checked={flowlayeractive} style={{ color: "#1976d2" }} onChange={handleFlowLayerChange} />
-                Power Flow
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails style={{ padding: "12px 16px" }}>
-              <Typography component="div">
-                {flowlayeractive && (
-                  <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
-                    <Typography style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
-                      Loading (%)
-                    </Typography>
-                    <Slider
-                      style={{ color: "#1976d2" }}
-                      value={flowfiltervalue}
-                      valueLabelDisplay="auto"
-                      onChange={handleFlowRangeFilterChange}
-                      getAriaValueText={valuetext}
-                      step={10}
-                      min={0}
-                      max={120}
-                    />
-                  </div>)
-                }
-
-                {flowlayeractive && (
-                  <div style={{ paddingRight: "20px" }}>
-                    <Multiselect
-                      defaultValue={lineNameSelectItems}
-                      data={lineNameItems}
-                      placeholder={'Search for transmission lines'}
-                      onChange={handleLineMultiselect}
-                    />
-                  </div>
-                )}
-
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-
-          <Accordion defaultExpanded={true} style={{ marginBottom: "8px" }}>
-            <AccordionSummary style={{ 
-              height: "20px", 
-              minHeight: "40px", 
-              paddingRight: "20px", 
-              paddingLeft: "0px",
-              background: "rgba(156, 39, 176, 0.05)"
-            }}
-              expandIcon={<ArrowDropDownIcon />}>
-              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
-                <Checkbox checked={transmissionlayeractive} style={{ color: "#9c27b0" }} onChange={handleTransmissionLayerChange} />
+                <Checkbox checked={transmissionlayeractive} style={{ color: "#1976d2" }} onChange={handleTransmissionLayerChange} />
                 Transmission Lines
               </Typography>
             </AccordionSummary>
             <AccordionDetails style={{ padding: "12px 16px" }}>
               <Typography component="div">
-                <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
-                    <div style={{ width: "14px", height: "4px", backgroundColor: "rgb(0, 100, 200)", marginRight: "6px", borderRadius: "1px" }}></div>
-                    <span style={{ fontWeight: "500" }}>≥500kV</span>
-                    <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>Extra High</span>
+                {transmissionlayeractive && (
+                  <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
+                    <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                      <div style={{ width: "14px", height: "4px", backgroundColor: "rgb(0, 100, 200)", marginRight: "6px", borderRadius: "1px" }}></div>
+                      <span style={{ fontWeight: "500" }}>≥500kV</span>
+                      <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>Extra High</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                      <div style={{ width: "14px", height: "3px", backgroundColor: "rgb(30, 144, 255)", marginRight: "6px", borderRadius: "1px" }}></div>
+                      <span style={{ fontWeight: "500" }}>345kV</span>
+                      <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>High Voltage</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                      <div style={{ width: "14px", height: "2.5px", backgroundColor: "rgb(70, 170, 255)", marginRight: "6px", borderRadius: "1px" }}></div>
+                      <span style={{ fontWeight: "500" }}>230kV</span>
+                      <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>Medium</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                      <div style={{ width: "14px", height: "2px", backgroundColor: "rgb(100, 200, 255)", marginRight: "6px", borderRadius: "1px" }}></div>
+                      <span style={{ fontWeight: "500" }}>138kV</span>
+                      <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>Sub-transmission</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                      <div style={{ width: "14px", height: "1.5px", backgroundColor: "rgb(120, 210, 255)", marginRight: "6px", borderRadius: "1px" }}></div>
+                      <span style={{ fontWeight: "500" }}>100kV</span>
+                      <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>Distribution</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
+                      <div style={{ width: "14px", height: "1.5px", backgroundColor: "rgb(70, 170, 255)", marginRight: "6px", borderRadius: "1px" }}></div>
+                      <span style={{ fontWeight: "500" }}>Unknown/Default</span>
+                      <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>Various</span>
+                    </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
-                    <div style={{ width: "14px", height: "3px", backgroundColor: "rgb(30, 144, 255)", marginRight: "6px", borderRadius: "1px" }}></div>
-                    <span style={{ fontWeight: "500" }}>345kV</span>
-                    <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>High Voltage</span>
+                )}
+                {transmissionlayeractive && (
+                  <div style={{ fontSize: "11px", color: "#999", fontStyle: "italic", marginBottom: "4px" }}>
+                    Blue gradient by voltage level
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
-                    <div style={{ width: "14px", height: "2.5px", backgroundColor: "rgb(70, 170, 255)", marginRight: "6px", borderRadius: "1px" }}></div>
-                    <span style={{ fontWeight: "500" }}>230kV</span>
-                    <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>Medium</span>
+                )}
+                {transmissionlayeractive && (
+                  <div style={{ fontSize: "10px", color: "#888", fontStyle: "italic" }}>
+                    Sources: USGS Powerlines WUS CAN SGCA, Western Power Plants USA & Canada-Mexico datasets
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
-                    <div style={{ width: "14px", height: "2px", backgroundColor: "rgb(100, 200, 255)", marginRight: "6px", borderRadius: "1px" }}></div>
-                    <span style={{ fontWeight: "500" }}>138kV</span>
-                    <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>Sub-transmission</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
-                    <div style={{ width: "14px", height: "1.5px", backgroundColor: "rgb(120, 210, 255)", marginRight: "6px", borderRadius: "1px" }}></div>
-                    <span style={{ fontWeight: "500" }}>100kV</span>
-                    <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>Distribution</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
-                    <div style={{ width: "14px", height: "1.5px", backgroundColor: "rgb(70, 170, 255)", marginRight: "6px", borderRadius: "1px" }}></div>
-                    <span style={{ fontWeight: "500" }}>Unknown/Default</span>
-                    <span style={{ color: "#888", fontSize: "10px", marginLeft: "4px" }}>Various</span>
-                  </div>
-                </div>
-                <div style={{ fontSize: "11px", color: "#999", fontStyle: "italic", marginBottom: "4px" }}>
-                  Blue gradient by voltage level
-                </div>
-                <div style={{ fontSize: "10px", color: "#888", fontStyle: "italic" }}>
-                  Sources: USGS Powerlines WUS CAN SGCA, Western Power Plants USA & Canada-Mexico datasets
-                </div>
+                )}
+
               </Typography>
             </AccordionDetails>
           </Accordion>
+
+
 
           <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
             <AccordionSummary style={{ 
@@ -5109,7 +5245,8 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
             </AccordionDetails>
           </Accordion>
 
-          <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
+          {/* WECC Generation Overview Section */}
+          <Accordion defaultExpanded={true} style={{ marginBottom: "8px" }}>
             <AccordionSummary style={{ 
               height: "20px", 
               minHeight: "40px", 
@@ -5119,31 +5256,13 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
             }}
               expandIcon={<ArrowDropDownIcon />}>
               <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
-                <Checkbox checked={weccGenLayerActive} style={{ color: "#2e7d32" }} onChange={handleWeccGenLayerChange} />
+                <span style={{ color: "#2e7d32", marginRight: "8px" }}>📊</span>
                 WECC Generation
               </Typography>
             </AccordionSummary>
             <AccordionDetails style={{ padding: "12px 16px" }}>
               <Typography component="div">
-                {weccGenLayerActive && weccGenData && (
-                  <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
-                    <Typography style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
-                      Total Capacity (MW)
-                    </Typography>
-                    <Slider
-                      style={{ color: "#2e7d32" }}
-                      value={weccGenFilter}
-                      valueLabelDisplay="auto"
-                      onChange={handleWeccGenRangeFilterChange}
-                      getAriaValueText={valuetext}
-                      step={1000}
-                      min={0}
-                      max={weccGenData.length > 0 ? Math.max(...weccGenData.map(d => d.Total_MW)) : 100000}
-                    />
-                  </div>
-                )}
-
-                {weccGenLayerActive && weccGenNameItems.length > 0 && (
+                {weccGenNameItems.length > 0 && (
                   <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
                     <Multiselect
                       defaultValue={weccGenSelectItems}
@@ -5154,7 +5273,7 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
                   </div>
                 )}
 
-                {weccGenLayerActive && weccGenChartData && (
+                {weccGenChartData && (
                   <div style={{ width: 260, height: 250, transform: "translate(-8px, 0px)" }}>
                     <Doughnut data={weccGenChartData}
                       options={{
@@ -5282,136 +5401,9 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
             </AccordionDetails>
           </Accordion>
 
-          <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
-            <AccordionSummary style={{ 
-              height: "20px", 
-              minHeight: "40px", 
-              paddingRight: "20px", 
-              paddingLeft: "0px",
-              background: "rgba(211, 47, 47, 0.05)"
-            }}
-              expandIcon={<ArrowDropDownIcon />}>
-              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
-                <Checkbox checked={loadlayeractive} style={{ color: "#d32f2f" }} onChange={handleLoadLayerChange} />
-                Load Loss
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails style={{ padding: "12px 16px" }}>
-              <Typography component="div">
-                {loadlayeractive && (
-                  <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
-                    <Typography style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
-                      Load Range (MW)
-                    </Typography>
-                    <Slider
-                      style={{ color: "#d32f2f" }}
-                      value={loadfiltervalue}
-                      valueLabelDisplay="auto"
-                      onChange={handleLoadRangeFilterChange}
-                      getAriaValueText={valuetext}
-                      step={100}
-                      min={0}
-                      max={countyloaddata.maxPd + 10}
-                    />
-                  </div>)
-                }
-
-                {loadlayeractive && (
-                  <div style={{ paddingRight: "20px" }}>
-                    <Multiselect
-                      defaultValue={countyNameSelectItems}
-                      data={countyNameItems}
-                      placeholder={'Search for counties'}
-                      onChange={handleCountyMultiselect}
-                    />
-                  </div>
-                )}
 
 
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
 
-
-          <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
-            <AccordionSummary style={{ 
-              height: "20px", 
-              minHeight: "40px", 
-              paddingRight: "20px", 
-              paddingLeft: "0px",
-              background: "rgba(245, 124, 0, 0.05)"
-            }}
-              expandIcon={<ArrowDropDownIcon />}>
-              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
-                <Checkbox checked={voltagelayeractive} style={{ color: "#f57c00" }} onChange={handleVoltageLayerChange} />
-                Voltage
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails style={{ padding: "12px 16px" }}>
-              <Typography component="div">
-                {voltagelayeractive && (
-                  <div style={{ paddingRight: "20px", marginBottom: "12px" }}>
-                    <Typography style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>
-                      Voltage Range (p.u.)
-                    </Typography>
-                    <Slider
-                      style={{ color: "#f57c00" }}
-                      value={voltagefiltervalue}
-                      valueLabelDisplay="auto"
-                      onChange={handleVoltageRangeFilterChange}
-                      getAriaValueText={valuetext}
-                      step={0.01}
-                      min={0.89}
-                      max={1.11}
-                    />
-                  </div>)
-                }
-
-                {voltagelayeractive && (
-                  <div style={{ paddingRight: "20px" }}>
-                    <Multiselect
-                      defaultValue={countyNameSelectItems}
-                      data={countyNameItems}
-                      placeholder={'Search for counties'}
-                      onChange={handleCountyMultiselect}
-                    />
-                  </div>
-                )}
-
-
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-
-          <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
-            <AccordionSummary style={{ 
-              height: "20px", 
-              minHeight: "40px", 
-              paddingRight: "20px", 
-              paddingLeft: "0px",
-              background: "rgba(123, 31, 162, 0.05)"
-            }}
-              expandIcon={<ArrowDropDownIcon />}>
-              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
-                <Checkbox checked={arealayeractive} style={{ color: "#7b1fa2" }} onChange={handleAreaLayerChange} />
-                Control Areas
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails style={{ padding: "12px 16px" }}>
-              <Typography component="div">
-                {arealayeractive && (
-                  <div style={{ paddingRight: "20px" }}>
-                    <Multiselect
-                      defaultValue={areaNameSelectItems}
-                      data={areaNameItems}
-                      placeholder={'Search for areas'}
-                      onChange={handleAreaMultiselect}
-                    />
-                  </div>
-                )}
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
 
           <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
             <AccordionSummary style={{ 
@@ -5455,35 +5447,6 @@ function MainApp({ refdata = data, refflowdata = flowdata, ggdata = geodata, map
             </AccordionDetails>
           </Accordion>
 
-          <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
-            <AccordionSummary style={{ 
-              height: "20px", 
-              minHeight: "40px", 
-              paddingRight: "20px", 
-              paddingLeft: "0px",
-              background: "rgba(245, 124, 0, 0.05)"
-            }}
-              expandIcon={<ArrowDropDownIcon />}>
-              <Typography style={{ fontSize: "14px", fontWeight: "500" }}>
-                <Checkbox checked={zonelayeractive} style={{ color: "#f57c00" }} onChange={handleZoneLayerChange} />
-                Load Zones
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails style={{ padding: "12px 16px" }}>
-              <Typography component="div">
-                {zonelayeractive && (
-                  <div style={{ paddingRight: "20px" }}>
-                    <Multiselect
-                      defaultValue={zoneNameSelectItems}
-                      data={zoneNameItems}
-                      placeholder={'Search for zones'}
-                      onChange={handleZoneMultiselect}
-                    />
-                  </div>
-                )}
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
 
           <Accordion defaultExpanded={false} style={{ marginBottom: "8px" }}>
             <AccordionSummary style={{ 
