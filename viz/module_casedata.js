@@ -4,7 +4,7 @@ module.exports = {
 
 	get_casedata: function () {
 	    // var inputcasedata = require("./data/WECC.json");
-	                        var inputcasedata = require("./data/case2000.json");
+	            var inputcasedata = require("./data/case_data.json");
 				var casedata0 = {};
 				casedata0.geojsondata = {};
 				casedata0.nareas = inputcasedata.nareas;

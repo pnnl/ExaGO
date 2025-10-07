@@ -17,9 +17,10 @@ ExaGO visualization uses the following tools to generate the visuals.
 - [React-map-gl](https://visgl.github.io/react-map-gl/) framework
 - [Chart.js](https://www.chartjs.org/)
 
-Before launching the visualization, one needs to install these packages. This can be done with the following two steps:
-1. Install [Node.js](https://nodejs.org/en/)
-2. Do `npm install --legacy-peer-deps` in this directory (`viz`)to install all the dependencies.
+Before launching the visualization, one needs to install these packages. This can be done with the following steps:
+1. Install Node Version Manager (NVM). On MAC use `brew install nvm`.
+2. Install [Node.js] version 16 (https://nodejs.org/en/) using `nvm install 16`
+3. Do `npm install --legacy-peer-deps` in this directory (`viz`)to install all the dependencies.
 
 > [!WARNING]  
 > Per https://github.com/pnnl/ExaGO/issues/129 `--legacy-peer-deps` is required as an argumnet to `npm install`. This will ideally be removed once the vizualization is no longer experimnetal.
@@ -45,6 +46,8 @@ You are ready to launch the visualization now.
 Note: If you have created the JSON file externally then simply copy it over in the `viz/data` subdirectory and run the `geninputfile.py` script using the above command.
 
 ## Launch visualization
+The visualization expects a file name `case_data.json` in the `viz/data` subdirectory. Copy/Rename the file as `case_data.json` in that subdirectory to be used by the visualization tool.
+
 To launch the visualization, run
 ```
 npm start
