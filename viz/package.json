@@ -29,7 +29,7 @@
     "langchain": "^0.0.75",
     "net": "^1.0.2",
     "node-fetch": "^2.6.12",
-    "node-gyp": "^9.3.0",
+    "node-gyp": "^10",
     "pg": "^8.11.1",
     "react": "^18.1.0",
     "react-bootstrap": "^2.8.0",
