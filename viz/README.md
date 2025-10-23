@@ -32,11 +32,19 @@ This input JSON file can be either created externally OR generated as an output 
 ```
 ./opflow -netfile <netfile> -save_output -opflow_output_format JSON -gicfile <gicfilename>  
 ```
+
 Note that the `OPFLOW` application is available in the `$EXAGO_INSTALL/bin` directory where `$EXAGO_INSTALL` is the ExaGO installation directory.
 
 The above command will run a `OPFLOW` on the given network and generate an output file called `opflowout.json`. The `-gicfile` is an additional option one can provide to provide the file that has the geospatial coordinates (latitude/longitude) for the network. If the geospatial coordinates are not provided then OPFLOW draws the network as a circle. It is highly recommended that one provides the geospatial coordinate file as an input to display the network correctly on the map. The geospatial coordinate file should have the same format as used for the [Electric Grid Test Case Repository](https://electricgrids.engr.tamu.edu/) synthetic networks. 
 
-Copy over the `opflowout.json` file to the `viz/data` subdirectory. Next, run the python script `geninputfile.py` to load the JSON file in the visualization script.
+For example, with Texas 2000 bus synthetic data, executing the following `opflow` will produce the `opflowout.json` output. The case files are provided in the data folder.
+
+```
+opflow -netfile case_ACTIVSg200.m -save_output -opflow_output_format JSON -gicfile ACTIVSg200_GIC_data.gic
+```
+
+Copy over the `opflowout.json` file to the `viz/data` subdirectory. Next, run the python script `geninputfile.py` from `viz` folder to load the JSON file in the visualization script.
+
 ```
 python geninputfile.py opflowout.json
 ```
