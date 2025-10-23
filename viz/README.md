@@ -40,7 +40,7 @@ The above command will run a `OPFLOW` on the given network and generate an outpu
 For example, with Texas 2000 bus synthetic data, executing the following `opflow` will produce the `opflowout.json` output. The case files are provided in the data folder.
 
 ```
-opflow -netfile case_ACTIVSg200.m -save_output -opflow_output_format JSON -gicfile ACTIVSg200_GIC_data.gic
+opflow -netfile case_ACTIVSg2000.m -save_output -opflow_output_format JSON -gicfile ACTIVSg2000_GIC_data.gic
 ```
 
 Copy over the `opflowout.json` file to the `viz/data` subdirectory. Next, run the python script `geninputfile.py` from `viz` folder to load the JSON file in the visualization script.
