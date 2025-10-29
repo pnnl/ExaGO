@@ -1,20 +1,22 @@
 function LineColor(line) {
   const kv = line.properties.KV;
 
-  const thresholds = [20, 50, 100, 150, 200, 300, 500, 700];
+  const thresholds = [1, 24, 69, 115, 138, 161, 230, 345, 500, 765];
   const colors = [
-    [27, 158, 119],
-    [217, 95, 2],
-    [117, 112, 179],
-    [231, 41, 138],
-    [102, 166, 30],
-    [230, 171, 2],
-    [166, 118, 29],
-    [102, 102, 102],
+    [127, 127, 127], //Gray
+    [23, 190, 207], //Teal
+    [188, 189, 34], //Olive
+    [140, 86, 75], //Brown
+    [31, 119, 180], //Blue
+    [44, 160, 44], //Green
+    [227, 119, 194], //Pink
+    [148, 103, 189], //Purple
+    [255, 127, 14], //Orange
+    [214, 39, 40], //Red
   ];
 
   for (let i = 0; i < thresholds.length; i++) {
-    if (kv < thresholds[i]) return colors[i];
+    if (kv <= thresholds[i]) return colors[i];
   }
   return colors[colors.length - 1];
 }

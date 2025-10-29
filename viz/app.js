@@ -104,6 +104,39 @@ const mapcenter = center(data);
 
 var hull = convex(data);
 
+const KV_BINS = [
+  { max: 1, color: [127, 127, 127], label: "<= 1 kV" },
+  { max: 24, color: [23, 190, 207], label: "1 - 24 kV" },
+  { max: 69, color: [188, 189, 34], label: "24 - 69 kV" },
+  { max: 115, color: [140, 86, 75], label: "69 – 115 kV" },
+  { max: 138, color: [31, 119, 180], label: "115 – 138 kV" },
+  { max: 161, color: [44, 160, 44], label: "138 - 161 kV" },
+  { max: 230, color: [227, 119, 194], label: "161 – 230 kV" },
+  { max: 345, color: [148, 103, 189], label: "230 – 345 kV" },
+  { max: 500, color: [255, 127, 14], label: "345 – 500 kV" },
+  { max: 765, color: [214, 39, 40], label: ">= 500 kV" },
+];
+
+function ColorLegend({ title = "Voltage (kV)", bins = KV_BINS }) {
+  return (
+    <div style={legendWrap}>
+      <div style={legendTitle}>{title}</div>
+      <div>
+        {bins.map((b, i) => (
+          <div key={i} style={row}>
+            <span style={{ ...swatch, background: rgba(b.color) }} />
+            <span style={label}>{b.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function rgba([r, g, b], a = 1) {
+  return `rgba(${r},${g},${b},${a})`;
+}
+
 const INITIAL_VIEW_STATE = {
   latitude: mapcenter["geometry"]["coordinates"][1],
   longitude: mapcenter["geometry"]["coordinates"][0],
@@ -588,12 +621,14 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
           console.log(chatOutput);
           const outputText = chatOutput.text;
           const chatList = chatOutput.result_list;
-          const keyList = Object.keys(chatList[0]);
+
           if (chatList.length > 0) {
             //  only one is active between bus name selection, transmission line name selection at a time
 
-            if ("generation name" in chatList[0]) {
-              const genNameList = chatList.map((d) => d["generation name"]);
+            console.log("Chat List", chatList);
+
+            if ("generation_name" in chatList[0]) {
+              const genNameList = chatList.map((d) => d["generation_name"]);
               setGenLayerActive(true);
               setNameSelectItems(genNameList);
               setGenFilterValue([gendata.minPg, gendata.maxPg]);
@@ -605,34 +640,38 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
                 transitionDuration: 2000,
               }));
             }
-            const containCapacity = keyList.some((str) => str.includes("capacity"));
-            if ("generation name" in chatList[0] && containCapacity) {
-              const genNameList = chatList.map((d) => d["generation name"]);
-              setGenLayerActive(true);
-              setGenLayerCapActive(true);
-              setNameSelectItems(genNameList);
-              setGenFilterValue([gendata.minPg, gendata.maxPg]);
 
-              setInitialViewState((viewState) => ({
-                ...viewState,
-                pitch: 40,
-                traansitionInterpolator: transitionFlyToInterpolator,
-                transitionDuration: 2000,
-              }));
-            }
-            if ("line name" in chatList[0]) {
-              const lineNameList = chatList.map((d) => d["line name"]);
-              setNetLayerActive(true);
-              setFlowLayerActive(true);
-              setBusNameSelectItems([]);
-              setLineNameSelectItems(lineNameList);
-            }
-            if ("bus name" in chatList[0]) {
-              const busNameList = chatList.map((d) => d["bus name"]);
-              setNetLayerActive(true);
-              setFlowLayerActive(true);
-              setBusNameSelectItems(busNameList);
-              setLineNameSelectItems([]);
+            if (chatList.length > 0) {
+              const keyList = Object.keys(chatList[0]);
+              const containCapacity = keyList.some((str) => str.includes("capacity"));
+              if ("generation_name" in chatList[0] && containCapacity) {
+                const genNameList = chatList.map((d) => d["generation_name"]);
+                setGenLayerActive(true);
+                setGenLayerCapActive(true);
+                setNameSelectItems(genNameList);
+                setGenFilterValue([gendata.minPg, gendata.maxPg]);
+
+                setInitialViewState((viewState) => ({
+                  ...viewState,
+                  pitch: 40,
+                  traansitionInterpolator: transitionFlyToInterpolator,
+                  transitionDuration: 2000,
+                }));
+              }
+              if ("line_name" in chatList[0]) {
+                const lineNameList = chatList.map((d) => d["line_name"]);
+                setNetLayerActive(true);
+                setFlowLayerActive(true);
+                setBusNameSelectItems([]);
+                setLineNameSelectItems(lineNameList);
+              }
+              if ("bus_name" in chatList[0]) {
+                const busNameList = chatList.map((d) => d["bus_name"]);
+                setNetLayerActive(true);
+                setFlowLayerActive(true);
+                setBusNameSelectItems(busNameList);
+                setLineNameSelectItems([]);
+              }
             }
           }
 
@@ -1359,9 +1398,23 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
     return `${value.toFixed(2)}`;
   }
 
+  // Callback to populate the default tooltip with content
+  const getTooltip = useCallback(({ object }) => {
+    if (object) {
+      if (object.geometry) {
+        if (object.geometry.type == "Point") {
+          return `Substation: ${object.properties.NAME}\nVoltage Levels: ${object.properties.KVlevels.join(", ")} kV`;
+        } else if (object.geometry.type == "LineString") {
+          return `Line: ${object.properties.NAME}\nVoltage: ${object.properties.KV} kV\nLoading: ${((Math.abs(object.properties.PF) / object.properties.RATE_A) * 100).toFixed(2)} %`;
+        }
+      }
+    }
+    return null;
+  }, []);
+
   return (
     <>
-      <DeckGL ref={deckRef} layers={layers} initialViewState={initialViewState} controller={true} getTooltip={({ object }) => object && object.NAME} ContextProvider={MapContext.Provider}>
+      <DeckGL ref={deckRef} layers={layers} initialViewState={initialViewState} controller={true} getTooltip={getTooltip} ContextProvider={MapContext.Provider}>
         <StaticMap reuseMaps mapStyle={mapStyle[style]} preventStyleDiffing={true} initialViewState={INITIAL_VIEW_STATE}></StaticMap>
 
         <FullscreenControl />
@@ -1405,11 +1458,13 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
             </AccordionSummary>
             <AccordionDetails>
               <Typography component="div">
+                <ColorLegend />
+
                 {netlayeractive && (
                   <div style={{ paddingRight: "40px" }}>
                     {/* <text> Voltage Level</text>
                       <br></br> */}
-                    <Slider value={netfiltervalue} valueLabelDisplay="auto" onChange={handleNetRangeFilterChange} getAriaValueText={valuetext} step={100} min={0} max={800}></Slider>
+                    <Slider value={netfiltervalue} valueLabelDisplay="auto" onChange={handleNetRangeFilterChange} getAriaValueText={valuetext} step={1} min={0} max={800}></Slider>
                   </div>
                 )}
 
@@ -1586,6 +1641,33 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
     </>
   );
 }
+
+const legendWrap = {
+  right: 12,
+  bottom: 12,
+  fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+  fontSize: 12,
+  maxWidth: 220,
+};
+const legendTitle = {
+  fontWeight: 600,
+  marginBottom: 8,
+  color: "#111",
+};
+const row = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  margin: "4px 0",
+};
+const swatch = {
+  width: 18,
+  height: 12,
+  borderRadius: 3,
+  border: "1px solid rgba(0,0,0,0.2)",
+  flex: "0 0 auto",
+};
+const label = { color: "#222" };
 
 const rootElement = document.getElementById("root");
 
