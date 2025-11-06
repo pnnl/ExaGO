@@ -54,8 +54,6 @@ You are ready to launch the visualization now.
 Note: If you have created the JSON file externally then simply copy it over in the `viz/data` subdirectory and run the `geninputfile.py` script using the above command.
 
 ## Launch visualization
-The visualization expects a file name `case_data.json` in the `viz/data` subdirectory. Copy/Rename the file as `case_data.json` in that subdirectory to be used by the visualization tool.
-
 To launch the visualization, run
 ```
 npm start
@@ -101,11 +99,23 @@ Behind the scenes, LLM translates natural language queries into SQL queries to r
     First, we need to convert the ExaGO output `.json` files to `.csv` files. The difference between the two data formats is that JSON stores attributes and values as dictionary pairs but CSV stores attributes and values as tables. You can write your own script for this conversion or use the provided script. 
 
     To use the provided script, first copy the ExaGO output `.json` file to the `viz/data` subdirectory and simply run the following script in the `viz/data` subdirectory (replace the example filename with your json filename). This will output three CSV files: `generation.csv`, `bus.csv`, and `tranmission_line.csv`.
+    
+    To install all required python packages go to backend directory and run `pip install -r requirements.txt`
+
+    
     ```
-    python jsontocsv.py case_ACTIVSg10k.json
+    python jsontocsv.py opflowout.json
     ```
     
-2. Download PostgreSQL database from this [link](https://www.postgresql.org/download/) and install it. 
+2. Download PostgreSQL database from this [link](https://www.postgresql.org/download/) and install it.
+
+    * For MAC using brew you can install postgresql 15 using: `brew install postgresql@14`
+    * Start the postgressql service: `rew services start postgresql@14`
+    * Create a role: `psql -U "$USER" -d postgres`
+    * Execute the create role query: `CREATE ROLE postgres WITH LOGIN SUPERUSER PASSWORD 'ExaGO.2025';` Here `ExaGO.2025` is a password. Change to your preference.
+    * Exit to shell by entering `quit` and hitting Enter.
+    * From command prompt type: `psql -U postgres -d postgres` If it works and you are in `psql` shell you are done. Exit from the shell using `quit`.
+
 
 3. Create a PostgreSQL database and import the `.csv` files to it.
 
@@ -117,7 +127,8 @@ Behind the scenes, LLM translates natural language queries into SQL queries to r
 
       b. Please be informative and accurate about your table names, and attribute names. Because this information can help LLM understand the dataset and performs better when dealing with user queries.
 
-      c. Include US state and county information in your database to support spatial queries that related to state or county.   
+      c. Include US state and county information in your database to support spatial queries that related to state or county.
+      d. To enter the CSV files into database using command prompt do: `PGPASSWORD=ExaGO.2025 ./create_db.sh  --db exago_70k --csv test.csv --schema-sql ./schema.sql --drop  --truncate`. Here `exago_70k` is the database name. Use it in the configuration `config.py` file.
     
 
 4. Connect to your database.
@@ -132,11 +143,10 @@ Open the `config.py` in the `viz/backend` subdirectory replace `YOUR_OPENAI_KEY`
 
 
 <!-- data script -->
-<!-- installation: pip install -r requirements.txt in the backend directory-->
 ### Launch backend
 ChatGrid uses Flask to host the service of receiving user queries and returning the data output and text summaries to update the visualizations on the frontend. Please follow the steps below to run the backend server.
 
-1. Go to the `viz/backend` subdirectory and use the `pip install -r requirements.txt` command to install all the Python dependencies.
+1. Go to the `viz/backend` subdirectory and use the `pip install -r requirements.txt` command to install all the Python dependencies if already not done in previous steps.
 2. Run the following command in the `viz/backend` subdirectory
     ```
     python server.py

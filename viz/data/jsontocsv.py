@@ -194,6 +194,7 @@ def getGeneration(data):
                     "coordinates": geo.wkt,
                     "Power generated": Pg,
                     "Power capacity": Pcap,
+                    "Remaining Capacity": abs(Pcap - Pg),
                     "KVlevels": set(KV),
                     "color": color,
                     "generation name": name,
@@ -271,6 +272,7 @@ def getLine(data):
                         "srouce": x[0],
                         "target": x[1],
                         "actual flow": abs(p["PF"]),
+                        "loading percent": abs(p["PF"]) / p["RATE_A"] * 100,
                     }
                 )
             else:
@@ -287,6 +289,7 @@ def getLine(data):
                         "srouce": x[1],
                         "target": x[0],
                         "actual flow": abs(p["PF"]),
+                        "loading percent": abs(p["PF"]) / p["RATE_A"] * 100,
                     }
                 )
 

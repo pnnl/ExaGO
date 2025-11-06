@@ -84,7 +84,8 @@ const generation = gendata.Gens;
 const loaddata = getLoad(data);
 
 function LineWidth(line) {
-  return line.properties.KV * 3;
+  return 300;
+  //   return line.properties.KV * 3;
   //return Math.abs(line.properties.PF/line.properties.RATE_A)*500;
 }
 
@@ -105,16 +106,13 @@ const mapcenter = center(data);
 var hull = convex(data);
 
 const KV_BINS = [
-  { max: 1, color: [127, 127, 127], label: "<= 1 kV" },
-  { max: 24, color: [23, 190, 207], label: "1 - 24 kV" },
-  { max: 69, color: [188, 189, 34], label: "24 - 69 kV" },
-  { max: 115, color: [140, 86, 75], label: "69 – 115 kV" },
-  { max: 138, color: [31, 119, 180], label: "115 – 138 kV" },
-  { max: 161, color: [44, 160, 44], label: "138 - 161 kV" },
-  { max: 230, color: [227, 119, 194], label: "161 – 230 kV" },
-  { max: 345, color: [148, 103, 189], label: "230 – 345 kV" },
-  { max: 500, color: [255, 127, 14], label: "345 – 500 kV" },
-  { max: 765, color: [214, 39, 40], label: ">= 500 kV" },
+  { max: 39.4, color: [151, 220, 248], label: "<= 39 kV" },
+  { max: 68, color: [103, 205, 244], label: "40 - 67 kV" },
+  { max: 161, color: [107, 172, 197], label: "68 - 161 kV" },
+  { max: 230, color: [145, 35, 255], label: "162 – 230 kV" },
+  { max: 350, color: [255, 0, 255], label: "231 - 350 kV" },
+  { max: 500, color: [255, 150, 11], label: "351 – 500 kV" },
+  { max: 900, color: [231, 102, 34], label: ">= 501 kV" },
 ];
 
 function ColorLegend({ title = "Voltage (kV)", bins = KV_BINS }) {
@@ -625,9 +623,10 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
           if (chatList.length > 0) {
             //  only one is active between bus name selection, transmission line name selection at a time
 
-            console.log("Chat List", chatList);
+            console.log("Chat List", chatList.length, chatList[0]);
 
             if ("generation_name" in chatList[0]) {
+              console.log("Generation data found in chatList");
               const genNameList = chatList.map((d) => d["generation_name"]);
               setGenLayerActive(true);
               setNameSelectItems(genNameList);
@@ -754,6 +753,10 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
   const handleGenLayerChange = (event) => {
     setGenLayerActive(event.target.checked);
     setGenFilterValue([gendata.minPg, gendata.maxPg]);
+
+    if (!event.target.checked) {
+      setGenLayerCapActive(false);
+    }
 
     event.target.checked &&
       setInitialViewState((viewState) => ({
@@ -933,7 +936,8 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
       lineWidthUnits: "pixels",
       getFillColor: FillColor,
       getLineColor: LineColor,
-      getPointRadius: 1000,
+      getPointRadius: 250,
+      //   pointRadiusUnits: "pixels",
       getLineWidth: LineWidth,
       visible: netlayeractive,
       onClick: zoomToData,
@@ -1406,6 +1410,9 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
           return `Substation: ${object.properties.NAME}\nVoltage Levels: ${object.properties.KVlevels.join(", ")} kV`;
         } else if (object.geometry.type == "LineString") {
           return `Line: ${object.properties.NAME}\nVoltage: ${object.properties.KV} kV\nLoading: ${((Math.abs(object.properties.PF) / object.properties.RATE_A) * 100).toFixed(2)} %`;
+        } else {
+          console.log(object.geometry.type);
+          return null;
         }
       }
     }
@@ -1448,6 +1455,33 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
       <div style={{ position: "absolute", top: 0, right: 0, width: 250, background: "#fff", padding: "12px 12px", color: " #6b6b76", zIndex: 1000 }}>
         <div style={{ width: 300 }}>
+          <button
+            style={{
+              marginBottom: "10px",
+              padding: "8px 16px",
+              backgroundColor: "#f0f0f0",
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+            onClick={() => {
+              setNetFilterValue([0, 800]);
+              setFlowFilterValue([0, 120]);
+              setGenFilterValue([gendata.minPg, gendata.maxPg]);
+              setLoadFilterValue([0, countyloaddata.maxPd]);
+              setVoltageFilterValue([0.89, 1.11]);
+              setNameSelectItems([]);
+              setLineNameSelectItems([]);
+              setBusNameSelectItems([]);
+              setCountyNameSelectItems([]);
+              setAreaNameSelectItems([]);
+              setZoneNameSelectItems([]);
+              setDoughlabels(["Wind", "Solar", "Nuclear", "Natural Gas", "Hydro", "Coal", "Other"]);
+            }}
+          >
+            Reset All Filters
+          </button>
+
           <Accordion defaultExpanded={true}>
             <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }} expandIcon={<ArrowDropDownIcon />}>
               <Typography>
@@ -1476,7 +1510,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
               </Typography>
             </AccordionDetails>
           </Accordion>
-          <Accordion defaultExpanded={true}>
+          {/* <Accordion defaultExpanded={true}>
             <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }} expandIcon={<ArrowDropDownIcon />}>
               <Typography>
                 {" "}
@@ -1499,7 +1533,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
                 )}
               </Typography>
             </AccordionDetails>
-          </Accordion>
+          </Accordion> */}
 
           <Accordion style={{ paddingBottom: "10px" }} defaultExpanded={false}>
             <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }} expandIcon={<ArrowDropDownIcon />}>
