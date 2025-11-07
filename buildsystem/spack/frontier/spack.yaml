@@ -62,7 +62,7 @@ spack:
       require: +sparse+mpi+raja+rocm~ginkgo+kron
       version: [1.1.0]
     ipopt:
-      require: '@3.12.10~metis+coinhsl~mumps'
+      require: '~metis+coinhsl~mumps'
     # Pin OpenBlas version for consistent test results.
     openblas:
       require: '@0.3.20'
