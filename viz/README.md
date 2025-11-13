@@ -100,7 +100,7 @@ Behind the scenes, LLM translates natural language queries into SQL queries to r
 
     To use the provided script, first copy the ExaGO output `.json` file to the `viz/data` subdirectory and simply run the following script in the `viz/data` subdirectory (replace the example filename with your json filename). This will output three CSV files: `generation.csv`, `bus.csv`, and `tranmission_line.csv`.
     
-    To install all required python packages go to backend directory and run `pip install -r requirements.txt`
+    To install all required python packages go to `backend` directory and run `pip install -r requirements.txt`
 
     
     ```
