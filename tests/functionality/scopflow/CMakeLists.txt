@@ -50,8 +50,8 @@ if(EXAGO_INSTALL_TESTS)
     )
   endif()
 
-  # Tests for HIOP pridecomp
-  # Disabled test for now, because it takes forever to run on Frontier
+  # Tests for HIOP pridecomp Disabled test for now, because it takes forever to
+  # run on Frontier
   if(EXAGO_ENABLE_ALL_TESTS)
     exago_add_test(
       NAME
