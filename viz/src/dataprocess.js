@@ -1,8 +1,8 @@
 import countydata from "../data/counties.json";
-import { center, convex, bbox } from '@turf/turf';
+import { center, convex, bbox } from "@turf/turf";
+import us from "us";
 
-var us = require('us')
-const codeDict = us.mapping('fips', 'abbr')
+const codeDict = us.mapping("fips", "abbr");
 
 function getCountyNodes(data) {
   var ncounties = countydata.features.length;
@@ -16,17 +16,17 @@ function getCountyNodes(data) {
     countydata.features[j].properties.Pd = 0.0;
     countydata.features[j].properties.Vm_avg = 0.0;
     countydata.features[j].properties.KVlevels = [];
-    countydata.features[j].properties.countyname = countydata.features[j].properties.NAME + ", " +codeDict[countydata.features[j].properties.STATE];
+    countydata.features[j].properties.countyname = countydata.features[j].properties.NAME + ", " + codeDict[countydata.features[j].properties.STATE];
     var countyhassubst = false;
-    var nbuscounty = 0
+    var nbuscounty = 0;
     for (var i = 0; i < data.features.length; i++) {
-      if (data.features[i].geometry.type == 'Point') {
+      if (data.features[i].geometry.type == "Point") {
         var lng = data.features[i].geometry.coordinates[0];
         var lat = data.features[i].geometry.coordinates[1];
 
         if ((box[0] <= lng) & (box[2] >= lng) & (box[1] <= lat) & (box[3] >= lat)) {
           //update data with county name, similar to spatial join
-          data.features[i].properties.countyname = countydata.features[j].properties.NAME + ", " +codeDict[countydata.features[j].properties.STATE]
+          data.features[i].properties.countyname = countydata.features[j].properties.NAME + ", " + codeDict[countydata.features[j].properties.STATE];
 
           countyhassubst = true;
           var subst = data.features[i].properties;
@@ -38,21 +38,19 @@ function getCountyNodes(data) {
             countydata.features[j].properties.Pd += bus.PDloss;
             countydata.features[j].properties.Vm_avg += bus.VM;
             nbuscounty++;
-
           }
         }
-      }else{
-        // add source and target info to linestring 
-        if(data.features[i].properties.PF > 0){
-          const [src, trg] = data.features[i].properties.NAME.split(' -- ')
-          data.features[i].properties.source = src
-          data.features[i].properties.target = trg
-        }else{
-          const [trg, src] = data.features[i].properties.NAME.split(' -- ')
-          data.features[i].properties.source = src
-          data.features[i].properties.target = trg
+      } else {
+        // add source and target info to linestring
+        if (data.features[i].properties.PF > 0) {
+          const [src, trg] = data.features[i].properties.NAME.split(" -- ");
+          data.features[i].properties.source = src;
+          data.features[i].properties.target = trg;
+        } else {
+          const [trg, src] = data.features[i].properties.NAME.split(" -- ");
+          data.features[i].properties.source = src;
+          data.features[i].properties.target = trg;
         }
-        
       }
     }
     if (countyhassubst) {
@@ -61,79 +59,75 @@ function getCountyNodes(data) {
       countygeojson.features.push(countydata.features[j]);
     }
   }
-  return { maxPd: countygeojson.maxPd, data: countygeojson, updatedata: data }
+  return { maxPd: countygeojson.maxPd, data: countygeojson, updatedata: data };
 }
-
 
 // Extract data for first time-slice
 function ExtractFirstTimeSlice(data) {
   var features = data.features.filter(function (feature) {
-    if (!("start" in feature.properties) || (feature.properties.start == 0)) return feature;
-  })
-  var gdata = { "type": 'FeatureCollection', "features": features };
+    if (!("start" in feature.properties) || feature.properties.start == 0) return feature;
+  });
+  var gdata = { type: "FeatureCollection", features: features };
   return gdata;
 }
 
 function ExtractFlowData(data) {
-
-
-  // name is the unique id 
-  const locations = []
-  const flows = []
+  // name is the unique id
+  const locations = [];
+  const flows = [];
   // const locationDict = {}
-  data.features.forEach(feature => {
+  data.features.forEach((feature) => {
     if (feature.geometry.type === "Point") {
       locations.push({
         id: feature.properties.NAME,
         name: feature.properties.NAME,
         lon: feature.geometry.coordinates[0],
-        lat: feature.geometry.coordinates[1]
-      })
+        lat: feature.geometry.coordinates[1],
+      });
     } else if (feature.geometry.type === "LineString") {
-	var RATE_A;
-	if(feature.properties.RATE_A == 0) {
-	    RATE_A = 10000;
-	} else {
-	    RATE_A = feature.properties.RATE_A;
-	}
-	var loading = Math.abs(feature.properties.PF / RATE_A)*100;
-      if (feature.properties.PF > 0) {
-        const [origin, dest] = feature.properties.NAME.split(' -- ')
-        flows.push({
-          origin: origin,
-          dest: dest,
-          count: feature.properties.KV,
-	  loading: loading
-        })
+      var RATE_A;
+      if (feature.properties.RATE_A == 0) {
+        RATE_A = 10000;
       } else {
-        const [dest, origin] = feature.properties.NAME.split(' -- ')
+        RATE_A = feature.properties.RATE_A;
+      }
+      var loading = Math.abs(feature.properties.PF / RATE_A) * 100;
+      if (feature.properties.PF > 0) {
+        const [origin, dest] = feature.properties.NAME.split(" -- ");
         flows.push({
           origin: origin,
           dest: dest,
           count: feature.properties.KV,
-	  loading: loading
-        })
+          loading: loading,
+        });
+      } else {
+        const [dest, origin] = feature.properties.NAME.split(" -- ");
+        flows.push({
+          origin: origin,
+          dest: dest,
+          count: feature.properties.KV,
+          loading: loading,
+        });
       }
-
     }
+  });
 
-  })
-
-  // remove duplicated flows 
-  const uniq = new Set(flows.map(e => JSON.stringify(e)));
-  const res = Array.from(uniq).map(e => JSON.parse(e));
-  return ({
-      locations: locations, flows: res, maxloading: 120
-  })
-
+  // remove duplicated flows
+  const uniq = new Set(flows.map((e) => JSON.stringify(e)));
+  const res = Array.from(uniq).map((e) => JSON.parse(e));
+  return {
+    locations: locations,
+    flows: res,
+    maxloading: 120,
+  };
 }
 
 //get net data for bar
 function getBarNet(data) {
   const netBarValue = data.foreach((line) => {
-    line.properties.KV
-  })
-  return netBarValue
+    line.properties.KV;
+  });
+  return netBarValue;
 }
 
 // Get substation voltages
@@ -141,9 +135,10 @@ function getPoints(data) {
   var Pointsi;
   var Points = [];
   var elev;
-  var i, k = 0;
+  var i,
+    k = 0;
   for (i = 0; i < data.features.length; i++) {
-    if (data.features[i].geometry.type == 'Point') {
+    if (data.features[i].geometry.type == "Point") {
       Pointsi = { coordinates: data.features[i].geometry.coordinates, value: data.features[i].properties.bus[0].VM };
       Points.push(Pointsi);
     }
@@ -159,10 +154,22 @@ function getGeneration(data) {
   var maxPg = 0.0;
   var elev;
   var i, j, k;
-  var Pgcoal = 0.0, Pghydro = 0.0, Pgnuclear = 0.0, Pgng = 0.0, Pgsolar = 0.0, Pgwind = 0.0, Pgother = 0.0;
-  var Pgcoalcap = 0.0, Pghydrocap = 0.0, Pgnuclearcap = 0.0, Pgngcap = 0.0, Pgsolarcap = 0.0, Pgwindcap = 0.0, Pgothercap = 0.0;
+  var Pgcoal = 0.0,
+    Pghydro = 0.0,
+    Pgnuclear = 0.0,
+    Pgng = 0.0,
+    Pgsolar = 0.0,
+    Pgwind = 0.0,
+    Pgother = 0.0;
+  var Pgcoalcap = 0.0,
+    Pghydrocap = 0.0,
+    Pgnuclearcap = 0.0,
+    Pgngcap = 0.0,
+    Pgsolarcap = 0.0,
+    Pgwindcap = 0.0,
+    Pgothercap = 0.0;
   for (i = 0; i < data.features.length; i++) {
-    if (data.features[i].geometry.type == 'Point') {
+    if (data.features[i].geometry.type == "Point") {
       var subst = data.features[i].properties;
       var nbus = subst.nbus;
       var Pg = 0.0;
@@ -171,7 +178,7 @@ function getGeneration(data) {
       var ngen = 0;
       var KV = [];
       var name = subst.NAME;
-      var countyname = subst.countyname
+      var countyname = subst.countyname;
       for (j = 0; j < nbus; j++) {
         var bus = subst.bus[j];
         KV.push(bus.BASE_KV);
@@ -181,24 +188,22 @@ function getGeneration(data) {
           Pcap += gen.GEN_STATUS * gen.PMAX;
           gen_fuel = gen.GEN_FUEL.toLowerCase();
 
-          if (gen_fuel == 'wind') {
+          if (gen_fuel == "wind") {
             Pgwind += gen.GEN_STATUS * gen.PG;
             Pgwindcap += gen.GEN_STATUS * gen.PMAX;
-          }
-          else if (gen_fuel == 'solar') {
+          } else if (gen_fuel == "solar") {
             Pgsolar += gen.GEN_STATUS * gen.PG;
             Pgsolarcap += gen.GEN_STATUS * gen.PMAX;
-          }
-          else if (gen_fuel == 'coal') {
+          } else if (gen_fuel == "coal") {
             Pgcoal += gen.GEN_STATUS * gen.PG;
             Pgcoalcap += gen.GEN_STATUS * gen.PMAX;
-          } else if (gen_fuel == 'nuclear') {
+          } else if (gen_fuel == "nuclear") {
             Pgnuclear += gen.GEN_STATUS * gen.PG;
             Pgnuclearcap += gen.GEN_STATUS * gen.PMAX;
-          } else if (gen_fuel == 'hydro') {
+          } else if (gen_fuel == "hydro") {
             Pghydro += gen.GEN_STATUS * gen.PG;
             Pghydrocap += gen.GEN_STATUS * gen.PMAX;
-          } else if (gen_fuel == 'ng') {
+          } else if (gen_fuel == "ng") {
             Pgng += gen.GEN_STATUS * gen.PG;
             Pgngcap += gen.GEN_STATUS * gen.PMAX;
           } else {
@@ -210,16 +215,16 @@ function getGeneration(data) {
       }
       if (ngen) {
         var color;
-        if (gen_fuel == 'wind') color = 'green'; else if (gen_fuel == 'solar') color = 'yellow';
-        else if (gen_fuel == 'coal') color = 'gray';
-        else if (gen_fuel == 'nuclear') color = 'red';
-        else if (gen_fuel == 'hydro') color = 'blue';
-        else if (gen_fuel == 'ng') color = 'orange'
-        else color = 'black';
+        if (gen_fuel == "wind") color = "green";
+        else if (gen_fuel == "solar") color = "yellow";
+        else if (gen_fuel == "coal") color = "gray";
+        else if (gen_fuel == "nuclear") color = "red";
+        else if (gen_fuel == "hydro") color = "blue";
+        else if (gen_fuel == "ng") color = "orange";
+        else color = "black";
         if (Pg <= minPg) minPg = Pg;
         if (Pg >= maxPg) maxPg = Pg;
-        Geni = { coordinates: data.features[i].geometry.coordinates, Pg: Pg, Pcap: Pcap, KVlevels: KV, color: color, 
-         fuel: gen_fuel, name: name, countyname: countyname};
+        Geni = { coordinates: data.features[i].geometry.coordinates, Pg: Pg, Pcap: Pcap, KVlevels: KV, color: color, fuel: gen_fuel, name: name, countyname: countyname };
         Gens.push(Geni);
       }
     }
@@ -237,7 +242,7 @@ function getLoad(data) {
   var elev;
   var i, j;
   for (i = 0; i < data.features.length; i++) {
-    if (data.features[i].geometry.type == 'Point') {
+    if (data.features[i].geometry.type == "Point") {
       var subst = data.features[i].properties;
       var nbus = subst.nbus;
       var Pd = 0.0;
@@ -265,77 +270,71 @@ function getContours() {
   var contours = [
     { threshold: [0.9, 0.98], color: [255, 0, 0] },
     { threshold: [0.98, 1.02], color: [0, 255, 0] },
-    { threshold: [1.02, 1.1], color: [0, 0, 255] }
+    { threshold: [1.02, 1.1], color: [0, 0, 255] },
   ];
   return contours;
 }
 
 // Filter features with geometry type "Point" and properties area = area_num
-function getArea(data,area_num) {
-    var filteredFeatures = data.features.filter(feature => 
-	feature.geometry.type === "Point" && feature.properties.area === area_num
-    );
+function getArea(data, area_num) {
+  var filteredFeatures = data.features.filter((feature) => feature.geometry.type === "Point" && feature.properties.area === area_num);
 
-    // Create a new GeoJSON object with filtered features
-    var filteredGeoJSON = {
-	type: "FeatureCollection",
-	features: filteredFeatures
-    };
+  // Create a new GeoJSON object with filtered features
+  var filteredGeoJSON = {
+    type: "FeatureCollection",
+    features: filteredFeatures,
+  };
 
-    var areahull = convex(filteredGeoJSON);
-    if(areahull) {
-	areahull.properties ={name: area_num};
-    }
+  var areahull = convex(filteredGeoJSON);
+  if (areahull) {
+    areahull.properties = { name: area_num };
+  }
 
-    return areahull;
+  return areahull;
 }
 
 function getAreas(sysdata) {
+  var areas = [];
 
-    var areas = [];
-
-    for(var i = 0; i < sysdata.nareas; i++) {
-	var area = getArea(sysdata.geojsondata,sysdata.areas[i]);
-	if(area) {
-	    areas.push(area);
-	}
+  for (var i = 0; i < sysdata.nareas; i++) {
+    var area = getArea(sysdata.geojsondata, sysdata.areas[i]);
+    if (area) {
+      areas.push(area);
     }
-		   
-    return {type:"FeatureCollection", features:areas};
+  }
+
+  return { type: "FeatureCollection", features: areas };
 }
 
 // Filter features with geometry type "Point" and properties zone = zone_num
-function getZone(data,zone_num) {
-    var filteredFeatures = data.features.filter(feature => 
-	feature.geometry.type === "Point" && feature.properties.zone === zone_num
-    );
+function getZone(data, zone_num) {
+  var filteredFeatures = data.features.filter((feature) => feature.geometry.type === "Point" && feature.properties.zone === zone_num);
 
-    // Create a new GeoJSON object with filtered features
-    var filteredGeoJSON = {
-	type: "FeatureCollection",
-	features: filteredFeatures
-    };
+  // Create a new GeoJSON object with filtered features
+  var filteredGeoJSON = {
+    type: "FeatureCollection",
+    features: filteredFeatures,
+  };
 
-    var zonehull = convex(filteredGeoJSON);
-    if(zonehull) {
-	zonehull.properties ={name: zone_num};
-    }
+  var zonehull = convex(filteredGeoJSON);
+  if (zonehull) {
+    zonehull.properties = { name: zone_num };
+  }
 
-    return zonehull;
+  return zonehull;
 }
 
 function getZones(sysdata) {
+  var zones = [];
 
-    var zones = [];
-
-    for(var i = 0; i < sysdata.nzones; i++) {
-	var zone = getZone(sysdata.geojsondata,sysdata.zones[i]);
-	if(zone) {
-	    zones.push(zone);
-	}
+  for (var i = 0; i < sysdata.nzones; i++) {
+    var zone = getZone(sysdata.geojsondata, sysdata.zones[i]);
+    if (zone) {
+      zones.push(zone);
     }
-		   
-    return {type:"FeatureCollection", features:zones};
+  }
+
+  return { type: "FeatureCollection", features: zones };
 }
 
 export { getCountyNodes, ExtractFirstTimeSlice, ExtractFlowData, getBarNet, getPoints, getGeneration, getLoad, getContours, getAreas, getZones };

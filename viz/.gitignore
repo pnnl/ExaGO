@@ -1,0 +1,57 @@
+# ----------------------------
+# React + Vite .gitignore
+# ----------------------------
+
+# Node dependencies
+node_modules/
+
+# Vite build output
+dist/
+
+# Local environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor settings
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Optional caches
+.cache/
+vite-cache/
+.parcel-cache/
+coverage/
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+
+# TypeScript (optional if using TS)
+*.tsbuildinfo
+
+# Optional lock files — uncomment if you want to ignore them
+# package-lock.json
+yarn.lock
+# pnpm-lock.yaml
+
+# Local preview build
+*.local

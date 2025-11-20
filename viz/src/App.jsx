@@ -1,12 +1,16 @@
-import React, { useRef, useState, useCallback, useEffect, useReducer } from "react";
-import { createRoot } from "react-dom/client";
-import { StaticMap, Popup, Marker, _MapContext as MapContext, FullscreenControl, NavigationControl } from "react-map-gl";
-import { WebMercatorViewport } from "@deck.gl/core";
-import DeckGL from "@deck.gl/react";
-// import FlowMapLayer from '@flowmap.gl/core'
-// import { FlowmapLayer } from '@flowmap.gl/layers'
-import { GeoJsonLayer, ColumnLayer, PolygonLayer } from "@deck.gl/layers";
-import { DataFilterExtension } from "@deck.gl/extensions";
+import { StrictMode, useMemo, useRef, useState, useCallback, useEffect } from "react";
+
+// DATA
+import { getCountyNodes, ExtractFirstTimeSlice, ExtractFlowData, getBarNet, getPoints, getGeneration, getLoad, getContours, getAreas, getZones } from "./dataprocess.js";
+
+import { FlowmapLayer, PickingType } from "@flowmap.gl/layers";
+import { getViewStateForLocations } from "@flowmap.gl/data";
+// import { Map as ReactMapGl } from "react-map-gl";
+
+import maplibregl from "maplibre-gl";
+// import { MapboxOverlay } from "@deck.gl/mapbox";
+
+// MUI
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormGroup from "@mui/material/FormGroup";
@@ -15,30 +19,42 @@ import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import ThreeSixtyOutlinedIcon from "@mui/icons-material/ThreeSixtyOutlined";
 import Slider from "@mui/material/Slider";
 import Box from "@mui/material/Box";
-
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import { Multiselect } from "react-widgets";
 
-//import nercregions from "data/NERC_Reliability_Coordinators.json"
 
 import { Chart as ChartJS, RadialLinearScale, ArcElement, Tooltip, Legend } from "chart.js";
 import { PolarArea, Doughnut } from "react-chartjs-2";
 
-import Multiselect from "react-widgets/Multiselect";
-import { Widget, addResponseMessage, toggleMsgLoader, deleteMessages } from "react-chat-widget";
+import DeckGL from "@deck.gl/react";
+import { DataFilterExtension } from "@deck.gl/extensions";
+
+import { ScatterplotLayer } from "deck.gl";
+import { LinearInterpolator, FlyToInterpolator } from "deck.gl";
+
 
 import { center, convex, bbox } from "@turf/turf";
 
-import { LinearInterpolator, FlyToInterpolator } from "deck.gl";
-import { HeatmapLayer } from "deck.gl";
-import { InvertColorsOff, ShopTwoOutlined } from "@mui/icons-material";
+import { H3ClusterLayer } from '@deck.gl/geo-layers';
+import { LineLayer } from "@deck.gl/layers"; // your layers
 
-import { getCountyNodes, ExtractFirstTimeSlice, ExtractFlowData, getBarNet, getPoints, getGeneration, getLoad, getContours, getAreas, getZones } from "./src/dataprocess";
-import { LineColor, FlowColor, FillColor, fillGenColumnColor, fillGenColumnColorCap, getVoltageFillColor } from "./src/color";
 
-import "core-js/actual/structured-clone";
+// import { Widget, addResponseMessage, toggleMsgLoader, deleteMessages } from "react-chat-widget";
+import ChatBot from "react-chatbotify";
+
+import { MapProvider } from "react-map-gl/maplibre";
+import Map, { NavigationControl, FullscreenControl } from "react-map-gl/maplibre";
+
+// import { MapContext } from "@deck.gl/react";
+
+import { GeoJsonLayer, ColumnLayer, PolygonLayer } from "@deck.gl/layers";
+
+
+import { LineColor, FlowColor, FillColor, fillGenColumnColor, fillGenColumnColorCap, getVoltageFillColor } from "./color.js";
+
 
 ChartJS.register(RadialLinearScale, ArcElement, Tooltip, Legend);
 
@@ -46,10 +62,8 @@ ChartJS.register(RadialLinearScale, ArcElement, Tooltip, Legend);
 const transitionLinearInterpolator = new LinearInterpolator(["bearing"]);
 const transitionFlyToInterpolator = new FlyToInterpolator(["zoom"]);
 
-// Get case data
-var mod_casedata = require("./module_casedata.js");
-var casedata = {};
-casedata = mod_casedata.get_casedata();
+import mod_casedata from "./module_casedata.js";
+const casedata = mod_casedata.get_casedata();
 
 // Source data GeoJSON
 const geodata = casedata["geojsondata"];
@@ -62,26 +76,31 @@ const MAP_STYLE = {
   none: "",
 };
 
-var data = ExtractFirstTimeSlice(geodata);
+import "maplibre-gl/dist/maplibre-gl.css";
 
-const countyloaddata = getCountyNodes(data);
-data = countyloaddata.updatedata;
+// const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+const MAPBOX_STYLE_LIGHT = "mapbox://styles/mapbox/streets-v11";
+
+var grid_data = ExtractFirstTimeSlice(geodata);
+
+const countyloaddata = getCountyNodes(grid_data);
+grid_data = countyloaddata.updatedata;
 
 const areas = getAreas(casedata);
 
 const zones = getZones(casedata);
 
-const flowdata = ExtractFlowData(data);
+const flowdata = ExtractFlowData(grid_data);
 
-const Points = getPoints(data);
+const Points = getPoints(grid_data);
 const Voltages = Points.map((d) => d.value);
 
 const Vcontour = getContours();
 
-const gendata = getGeneration(data);
+const gendata = getGeneration(grid_data);
 const generation = gendata.Gens;
 
-const loaddata = getLoad(data);
+const loaddata = getLoad(grid_data);
 
 function LineWidth(line) {
   return 300;
@@ -96,14 +115,17 @@ const maxPd = loaddata.maxPd;
 const countymaxPd = countyloaddata.maxPd;
 const countyload = countyloaddata.data;
 
-const bboxArray = bbox(data);
+const bboxArray = bbox(grid_data);
 const corner1 = [bboxArray[0], bboxArray[1]];
 const corner2 = [bboxArray[2], bboxArray[3]];
 const bounds = [corner1, corner2];
 
-const mapcenter = center(data);
+const mapcenter = center(grid_data);
 
-var hull = convex(data);
+var hull = convex(grid_data);
+
+
+
 
 const KV_BINS = [
   { max: 39.4, color: [151, 220, 248], label: "<= 39 kV" },
@@ -131,8 +153,12 @@ function ColorLegend({ title = "Voltage (kV)", bins = KV_BINS }) {
   );
 }
 
+// Utility Functions
 function rgba([r, g, b], a = 1) {
   return `rgba(${r},${g},${b},${a})`;
+}
+function valuetext(value) {
+  return `${value.toFixed(2)}`;
 }
 
 const INITIAL_VIEW_STATE = {
@@ -146,11 +172,11 @@ const INITIAL_VIEW_STATE = {
   fitbounds: true,
 };
 
-export default function App({ refdata = data, refflowdata = flowdata, ggdata = geodata, mapStyle = MAP_STYLE }) {
-  // Deck reference pointer
+function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, mapStyle = MAP_STYLE }) {
+
   const deckRef = useRef(null);
 
-  const [data, setData] = useState(refdata);
+  const [gridData, setGridData] = useState(refdata);
 
   //chat output message
   const [ouputMes, setOutputMes] = useState("Welcome to ChatGrid.");
@@ -162,11 +188,11 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
   const [lineNameSelectItems, setLineNameSelectItems] = useState([]);
 
-  const [lineNameItems, setLineNameItems] = useState(data.features.filter((f) => f.geometry.type == "LineString").map((f) => f.properties.NAME));
+  const [lineNameItems, setLineNameItems] = useState(gridData.features.filter((f) => f.geometry.type == "LineString").map((f) => f.properties.NAME));
 
   const [busNameSelectItems, setBusNameSelectItems] = useState([]);
 
-  const [busNameItems, setbusNameItems] = useState(data.features.filter((f) => f.geometry.type == "Point").map((f) => f.properties.NAME));
+  const [busNameItems, setbusNameItems] = useState(gridData.features.filter((f) => f.geometry.type == "Point").map((f) => f.properties.NAME));
 
   const [areaNameSelectItems, setAreaNameSelectItems] = useState([]);
 
@@ -210,7 +236,8 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
   // For pop-up control
   const [showPopup, setShowPopup] = useState({ display: false, info: "", name: "" });
 
-  //update flowdataset when netfiltervalue, flowfiltervalue or data value change
+  const [tooltip, setTooltip] = useState();
+
   useEffect(() => {
     // name is the unique id
     const locations = [];
@@ -218,7 +245,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
     //  if user make selections from names, than return individual lines
     if (lineNameSelectItems.length > 0) {
       const pointNames = lineNameSelectItems.map((n) => n.split(" -- ")).flat();
-      data.features.forEach((feature) => {
+      gridData.features.forEach((feature) => {
         if (feature.geometry.type === "Point" && pointNames.includes(feature.properties.NAME)) {
           locations.push({
             id: feature.properties.NAME,
@@ -254,7 +281,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
         }
       });
     } else if (busNameSelectItems.length > 0) {
-      data.features.forEach((feature) => {
+      gridData.features.forEach((feature) => {
         if (feature.geometry.type === "Point" && busNameSelectItems.includes(feature.properties.NAME)) {
           locations.push({
             id: feature.properties.NAME,
@@ -291,7 +318,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
         }
       });
     } else {
-      data.features.forEach((feature) => {
+      gridData.features.forEach((feature) => {
         if (feature.geometry.type === "Point" && netfiltervalue[0] <= feature.properties.KVlevels[0] && feature.properties.KVlevels[0] <= netfiltervalue[1]) {
           locations.push({
             id: feature.properties.NAME,
@@ -333,7 +360,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
 
     const newflowdata = { locations: locations, flows: flows, maxloading: 120 };
     setFlowData(newflowdata);
-  }, [data, netfiltervalue, flowfiltervalue, lineNameSelectItems]);
+  }, [gridData, netfiltervalue, flowfiltervalue, lineNameSelectItems]);
 
   var rotatestate = false;
   //const [rotatestate,setrotatestate] = useState(false);
@@ -601,92 +628,100 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
   const [zonelayeractive, setZoneLayerActive] = useState(false);
   const [arealayeractive, setAreaLayerActive] = useState(false);
 
-  const handleUserInput = (inputText) => {
-    console.log(`New message incoming! ${inputText}`);
-    // Now send the message to GPT and get response
-    toggleMsgLoader();
-    const postData = {
-      inputText: inputText,
-    };
+  // Event Change Handlers
+  async function fetchMyData(params) {
     try {
-      fetch(`http://localhost:5000/data`, {
+
+      const postData = {
+        inputText: params.userInput,
+      };
+
+      console.log("Fetching data with params:", postData);
+
+      const response = await fetch(`http://localhost:5000/data`, {
         method: "POST",
-        // headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(postData),
-      }).then((res) =>
-        res.json().then((chatOutput) => {
-          // Setting a data from api
-          console.log(chatOutput);
-          const outputText = chatOutput.text;
-          const chatList = chatOutput.result_list;
+      });
 
-          if (chatList.length > 0) {
-            //  only one is active between bus name selection, transmission line name selection at a time
+      const chatOutput = await response.json();
+      const outputText = chatOutput.text;
+      const chatList = chatOutput.result_list;
 
-            console.log("Chat List", chatList.length, chatList[0]);
+      if (chatList.length > 0) {
+        //  only one is active between bus name selection, transmission line name selection at a time
 
-            if ("generation_name" in chatList[0]) {
-              console.log("Generation data found in chatList");
-              const genNameList = chatList.map((d) => d["generation_name"]);
-              setGenLayerActive(true);
-              setNameSelectItems(genNameList);
-              setGenFilterValue([gendata.minPg, gendata.maxPg]);
+        console.log("Chat List", chatList.length, chatList[0]);
 
-              setInitialViewState((viewState) => ({
-                ...viewState,
-                pitch: 40,
-                traansitionInterpolator: transitionFlyToInterpolator,
-                transitionDuration: 2000,
-              }));
-            }
+        if ("generation_name" in chatList[0]) {
+          console.log("Generation data found in chatList");
+          const genNameList = chatList.map((d) => d["generation_name"]);
+          setGenLayerActive(true);
+          setNameSelectItems(genNameList);
+          setGenFilterValue([gendata.minPg, gendata.maxPg]);
 
-            if (chatList.length > 0) {
-              const keyList = Object.keys(chatList[0]);
-              const containCapacity = keyList.some((str) => str.includes("capacity"));
-              if ("generation_name" in chatList[0] && containCapacity) {
-                const genNameList = chatList.map((d) => d["generation_name"]);
-                setGenLayerActive(true);
-                setGenLayerCapActive(true);
-                setNameSelectItems(genNameList);
-                setGenFilterValue([gendata.minPg, gendata.maxPg]);
+          setInitialViewState((viewState) => ({
+            ...viewState,
+            pitch: 40,
+            traansitionInterpolator: transitionFlyToInterpolator,
+            transitionDuration: 2000,
+          }));
+        }
+        if (chatList.length > 0) {
 
-                setInitialViewState((viewState) => ({
-                  ...viewState,
-                  pitch: 40,
-                  traansitionInterpolator: transitionFlyToInterpolator,
-                  transitionDuration: 2000,
-                }));
-              }
-              if ("line_name" in chatList[0]) {
-                const lineNameList = chatList.map((d) => d["line_name"]);
-                setNetLayerActive(true);
-                setFlowLayerActive(true);
-                setBusNameSelectItems([]);
-                setLineNameSelectItems(lineNameList);
-              }
-              if ("bus_name" in chatList[0]) {
-                const busNameList = chatList.map((d) => d["bus_name"]);
-                setNetLayerActive(true);
-                setFlowLayerActive(true);
-                setBusNameSelectItems(busNameList);
-                setLineNameSelectItems([]);
-              }
-            }
+          const keyList = Object.keys(chatList[0]);
+          const containCapacity = keyList.some((str) => str.includes("capacity"));
+          if ("generation_name" in chatList[0] && containCapacity) {
+            const genNameList = chatList.map((d) => d["generation_name"]);
+            setGenLayerActive(true);
+            setGenLayerCapActive(true);
+            setNameSelectItems(genNameList);
+            setGenFilterValue([gendata.minPg, gendata.maxPg]);
+
+            setInitialViewState((viewState) => ({
+              ...viewState,
+              pitch: 40,
+              traansitionInterpolator: transitionFlyToInterpolator,
+              transitionDuration: 2000,
+            }));
           }
-
-          setOutputMes(outputText);
-        })
-      );
+          if ("line_name" in chatList[0]) {
+            const lineNameList = chatList.map((d) => d["line_name"]);
+            setNetLayerActive(true);
+            setFlowLayerActive(true);
+            setBusNameSelectItems([]);
+            setLineNameSelectItems(lineNameList);
+          }
+          if ("bus_name" in chatList[0]) {
+            const busNameList = chatList.map((d) => d["bus_name"]);
+            setNetLayerActive(true);
+            setFlowLayerActive(true);
+            setBusNameSelectItems(busNameList);
+            setLineNameSelectItems([]);
+          }
+        }
+      }
+      return outputText;
     } catch (error) {
-      setOutputMes("Sorry I didn't find the answer to your question. Please try to rephrase it or provide more details.");
+      return "Sorry I didn't find the answer to your question. Please try to rephrase it or provide more details.";
     }
-  };
+  }
 
-  useEffect(() => {
-    addResponseMessage(`${ouputMes}`);
-    if (ouputMes === "Welcome to ChatGrid." || ouputMes === "") return;
-    toggleMsgLoader(); // close loading
-  }, [ouputMes]);
+  let count = 0;
+
+  const flow = {
+    start: {
+      message: "Hello! What do you want to know about the power grid data? You can ask me to show specific generation units, transmission lines, or buses by name.",
+      path: "loop"
+    },
+    loop: {
+      message: async (params) => {
+        const result = await fetchMyData(params);
+        return result;
+      },
+      path: "loop",
+    }
+  }
 
   const handleNetLayerChange = (event) => {
     setNetLayerActive(event.target.checked);
@@ -806,18 +841,17 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
       } else {
         if (data.geometry.type == "LineString") {
           /* Line layer */
-          /* Uncomment to activate flow-based filtering
-	      var RATE_A;
-	      if(data.properties.RATE_A == 0) {
-		  RATE_A = 10000;
-	      } else {
-		  RATE_A = data.properties.RATE_A;
-	      }
-	      var loading = Math.abs(data.properties.PF / RATE_A)*100;
-	      if(flowfiltervalue[0] <= loading && loading <= flowfiltervalue[1]) {
-		  return data.properties.KV;
-		  }
-	      */
+          // /* Uncomment to activate flow-based filtering
+          var RATE_A;
+          if (data.properties.RATE_A == 0) {
+            RATE_A = 10000;
+          } else {
+            RATE_A = data.properties.RATE_A;
+          }
+          var loading = Math.abs(data.properties.PF / RATE_A) * 100;
+          if (flowfiltervalue[0] <= loading && loading <= flowfiltervalue[1]) {
+            return data.properties.KV;
+          }
           return data.properties.KV;
         }
       }
@@ -826,7 +860,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
     return -1; // This is beyond the range so filter will filter out this data point.
   }
 
-  function getFlowFilterValue(data) {}
+  function getFlowFilterValue(data) { }
 
   function getGenFilterValue(data) {
     if (!data) return 10000; //10000 is beyond the range, so the generation will be filter out
@@ -905,256 +939,314 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
     return -10000;
   }
 
-  const layers = [
-    // new FlowmapLayer({
-    //   id: 'my-flowmap-layer',
-    //   data: flowdata,
-    //   visible: flowlayeractive,
-    //   animationEnabled: true, //control the animation effect of flow layer
-    //   colorScheme: ["rgb(0,0,255)","rgb(255,0,255)"],
-    //   // darkMode: true,
-    //   // clusteringEnabled: false, //control the aggregate effect of flow layer
-    //   // adaptiveScalesEnabled: false,
-    //   getFlowMagnitude: (flow) => flow.count,
-    //   getFlowOriginId: (flow) => flow.origin,
-    //   getFlowDestId: (flow) => flow.dest,
-    //   getLocationId: (loc) => loc.id,
-    //   getLocationLat: (loc) => loc.lat,
-    //   getLocationLon: (loc) => loc.lon,
-    //
-    // }),
-
-    new GeoJsonLayer({
-      id: "geojson",
-      data: data,
-      stroked: false,
-      filled: true,
-      //      extruded: true,
-      pickable: netlayeractive,
-      pointType: "circle",
-      lineWidthScale: 0.004,
-      lineWidthUnits: "pixels",
-      getFillColor: FillColor,
-      getLineColor: LineColor,
-      getPointRadius: 250,
-      //   pointRadiusUnits: "pixels",
-      getLineWidth: LineWidth,
-      visible: netlayeractive,
-      onClick: zoomToData,
-      getFilterValue: getNetFilterValue,
-      filterRange: netfiltervalue,
-
-      extensions: [new DataFilterExtension({ filtersize: 1 })],
-      updateTriggers: {
-        getFilterValue: [netfiltervalue, lineNameSelectItems, busNameSelectItems, flowfiltervalue],
-      },
-    }),
-
-    new ColumnLayer({
-      id: "gen-column",
-      data: generation,
-      diskResolution: 50,
-      radius: 5000,
-      elevationScale: 50,
-      pickable: genlayeractive,
-      visible: genlayeractive,
-      getPosition: (d) => d.coordinates,
-      getFillColor: fillGenColumnColor,
-      getElevation: (d) => d.Pg * 5,
-      onClick: zoomToData,
-
-      getFilterValue: getGenFilterValue,
-      filterRange: genfiltervalue,
-
-      extensions: [new DataFilterExtension({ filtersize: 1 })],
-
-      updateTriggers: {
-        getFilterValue: [netfiltervalue, genDoughlabels, nameSelectItems],
-      },
-    }),
-
-    new ColumnLayer({
-      id: "gen-column-cap",
-      data: generation,
-      diskResolution: 50,
-      radius: 5000,
-      elevationScale: 50,
-      pickable: false, //genlayeractive,
-      visible: genlayercapactive,
-      getPosition: (d) => d.coordinates,
-      getFillColor: fillGenColumnColorCap,
-      getElevation: (d) => d.Pcap * 5,
-      onClick: zoomToData,
-
-      getFilterValue: getGenFilterValue,
-      filterRange: genfiltervalue,
-
-      extensions: [new DataFilterExtension({ filtersize: 1 })],
-
-      updateTriggers: {
-        getFilterValue: [netfiltervalue, genDoughlabels, nameSelectItems],
-      },
-    }),
-
-    /*    
-    new ColumnLayer({
-      id: 'load-column',
-      data: loads,
-      diskResolution: 50,
-      radius: 5000,
-      elevationScale: 50,
-      pickable: loadlayeractive,
-      visible: loadlayeractive,
-      getFillColor: [255,255,0],//[255, 239, 247],
-      getPosition: d => d.coordinates,
-//      getFillColor: fillGenColumnColor,
-      getElevation: d => d.Pd*5,
-      onClick:zoomToData
-    }),
-    */
-
-    /*
-    new GeoJsonLayer({
-      id: 'PolygonLayer2',
-      data:countyload,
-      pickable: loadlayeractive,
-      visible: loadlayeractive,
-      stroked: true,
-      filled: true,
-      extruded: true,
-      wireframe: true,
-      lineWidthMinPixels: 1,
-      getPolygon: d => d.geometry.coordinates,
-//      getElevation: d => d.properties.Pd*5.0,
-      getFillColor: d => [255*d.properties.Pd/countymaxPd, 0, 0],
-      getLineColor: [80,80,80],
-      getLineWidth: d => 1,
-      opacity: 0.1,
-      onClick: zoomToCounty,
-      extensions: [new DataFilterExtension({filtersize:1})],
-      getFilterValue: getLoadFilterValue,
-      filterRange: loadfiltervalue,
-
-      updateTriggers: {
-        getFilterValue: netfiltervalue
+  function getNetFilterValue(data) {
+    if (!data) return 10000;
+    if (lineNameSelectItems.length > 0) {
+      // when users make selections by name, does not consider netfiltervalue
+      const pointNames = lineNameSelectItems.map((n) => n.split(" -- ")).flat();
+      if (data.geometry.type == "Point" && pointNames.includes(data.properties.NAME)) {
+        return data.properties.KVlevels[0];
+      } else if (data.geometry.type == "LineString" && lineNameSelectItems.includes(data.properties.NAME)) {
+        /* Line layer */
+        return data.properties.KV;
       }
-    }),
-    */
+    } else if (busNameSelectItems.length > 0) {
+      if (data.geometry.type === "Point" && busNameSelectItems.includes(data.properties.NAME)) {
+        return data.properties.KVlevels[0];
+      } else if (data.geometry.type === "LineString" && data.properties.NAME.split(" -- ").some((r) => busNameSelectItems.includes(r))) {
+        return data.properties.KV;
+      }
+    } else {
+      if (data.geometry.type == "Point") {
+        for (var i = 0; i < data.properties.KVlevels.length; i++) {
+          var KV = data.properties.KVlevels[i];
+          if (netfiltervalue[0] <= KV && KV <= netfiltervalue[1]) return KV;
+        }
+      } else {
+        if (data.geometry.type == "LineString") {
+          /* Line layer */
+          // /* Uncomment to activate flow-based filtering
+          var RATE_A;
+          if (data.properties.RATE_A == 0) {
+            RATE_A = 10000;
+          } else {
+            RATE_A = data.properties.RATE_A;
+          }
+          var loading = Math.abs(data.properties.PF / RATE_A) * 100;
+          if (flowfiltervalue[0] <= loading && loading <= flowfiltervalue[1]) {
+            return data.properties.KV;
+          }
 
-    new GeoJsonLayer({
-      id: "AreaLayer",
-      data: areas,
-      pickable: arealayeractive,
-      visible: arealayeractive,
-      stroked: true,
-      filled: true,
-      extruded: true,
-      wireframe: true,
-      lineWidthMinPixels: 1,
-      getPolygon: (d) => d.geometry.coordinates,
-      //      getElevation: d => d.properties.Pd*5.0,
-      getFillColor: [255, 192, 203],
-      getLineColor: [80, 80, 80],
-      getLineWidth: (d) => 1,
-      opacity: 0.1,
-      onClick: zoomToArea,
-      //      extensions: [new DataFilterExtension({ filtersize: 1 })],
-      //      getFilterValue: getLoadFilterValue,
-      //      filterRange: loadfiltervalue,
+          return data.properties.KV;
+        }
+      }
+    }
 
-      //      updateTriggers: {
-      //        getFilterValue: [netfiltervalue, countyNameSelectItems]
-      //      }
-    }),
+    return -1; // This is beyond the range so filter will filter out this data point.
+  }
 
-    new GeoJsonLayer({
-      id: "ZoneLayer",
-      data: zones,
-      pickable: zonelayeractive,
-      visible: zonelayeractive,
-      stroked: true,
-      filled: true,
-      extruded: true,
-      wireframe: true,
-      lineWidthMinPixels: 1,
-      getPolygon: (d) => d.geometry.coordinates,
-      //      getElevation: d => d.properties.Pd*5.0,
-      getFillColor: [252, 245, 95],
-      getLineColor: [80, 80, 80],
-      getLineWidth: (d) => 1,
-      opacity: 0.1,
-      onClick: zoomToZone,
-      //      extensions: [new DataFilterExtension({ filtersize: 1 })],
-      //      getFilterValue: getLoadFilterValue,
-      //      filterRange: loadfiltervalue,
 
-      //      updateTriggers: {
-      //        getFilterValue: [netfiltervalue, countyNameSelectItems]
-      //      }
-    }),
+  const layer_flow = new FlowmapLayer({
+    id: 'layer-flow',
+    data: flowdata,
+    visible: flowlayeractive,
+    // animationEnabled: true, //control the animation effect of flow layer
+    animationEnabled: true,
+    colorScheme: ["rgb(0,0,255)", "rgb(255,0,255)"],
+    // darkMode: true,
+    clusteringEnabled: true, //control the aggregate effect of flow layer
 
-    new GeoJsonLayer({
-      id: "PolygonLayerload",
-      data: countyload,
-      pickable: loadlayeractive,
-      visible: loadlayeractive,
-      stroked: true,
-      filled: true,
-      extruded: true,
-      wireframe: true,
-      lineWidthMinPixels: 1,
-      getPolygon: (d) => d.geometry.coordinates,
-      //      getElevation: d => d.properties.Pd*5.0,
-      getFillColor: (d) => [(255 * d.properties.Pd) / countymaxPd, 0, 0],
-      getLineColor: [80, 80, 80],
-      getLineWidth: (d) => 1,
-      opacity: 0.1,
-      onClick: zoomToCounty,
-      extensions: [new DataFilterExtension({ filtersize: 1 })],
-      getFilterValue: getLoadFilterValue,
-      filterRange: loadfiltervalue,
+    adaptiveScalesEnabled: false,
+    getFlowMagnitude: (flow) => flow.count,
+    getFlowOriginId: (flow) => flow.origin,
+    getFlowDestId: (flow) => flow.dest,
+    getLocationId: (loc) => loc.id,
+    getLocationLat: (loc) => loc.lat,
+    getLocationLon: (loc) => loc.lon,
+    getLocationName: (loc) => loc.name,
 
-      updateTriggers: {
-        getFilterValue: [netfiltervalue, countyNameSelectItems],
-      },
-    }),
+    pickable: true,
+    onHover: (info) => setTooltip(getTooltipState(info)),
+    onClick: (info) => console.log("clicked", info.object?.type, info.object, info)
+  });
 
-    new GeoJsonLayer({
-      id: "PolygonLayer2",
-      data: countyload,
-      pickable: voltagelayeractive,
-      visible: voltagelayeractive,
-      stroked: true,
-      filled: true,
-      extruded: true,
-      wireframe: true,
-      lineWidthMinPixels: 1,
-      getPolygon: (d) => d.geometry.coordinates,
-      //      getElevation: d => d.properties.Pd*5.0,
-      getFillColor: getVoltageFillColor,
-      getLineColor: [80, 80, 80],
-      getLineWidth: (d) => 1,
-      opacity: 0.1,
-      onClick: zoomToCounty,
-      extensions: [new DataFilterExtension({ filtersize: 1 })],
-      getFilterValue: getVoltageFilterValue,
-      filterRange: voltagefiltervalue,
+  const layer_network = new GeoJsonLayer({
+    id: "geojson",
+    data: gridData,
+    stroked: false,
+    filled: true,
+    //      extruded: true,
+    pickable: netlayeractive,
+    pointType: "circle",
+    lineWidthScale: 0.004,
+    lineWidthUnits: "pixels",
+    getFillColor: FillColor,
+    getLineColor: LineColor,
+    getPointRadius: 250,
+    //   pointRadiusUnits: "pixels",
+    getLineWidth: LineWidth,
+    visible: netlayeractive,
+    onClick: zoomToData,
+    getFilterValue: getNetFilterValue,
+    filterRange: netfiltervalue,
 
-      updateTriggers: {
-        getFilterValue: [netfiltervalue, countyNameSelectItems],
-      },
-    }),
+    extensions: [new DataFilterExtension({ filtersize: 1 })],
+    updateTriggers: {
+      getFilterValue: [netfiltervalue, lineNameSelectItems, busNameSelectItems, flowfiltervalue],
+    },
+  });
 
-    /*
-    new HeatmapLayer({
-      id:'Voltagecontour',
-      data:loads,
-      getWeight: d => d.Pd,
-      getPosition: d => d.coordinates,
-      aggregation: 'MEAN'
-    })
-    */
-  ];
+  const layer_generator_power = new ColumnLayer({
+    id: "gen-column",
+    data: generation,
+    diskResolution: 50,
+    radius: 5000,
+    elevationScale: 50,
+    pickable: genlayeractive,
+    visible: genlayeractive,
+    getPosition: (d) => d.coordinates,
+    getFillColor: fillGenColumnColor,
+    getElevation: (d) => d.Pg * 5,
+    onClick: zoomToData,
+
+    getFilterValue: getGenFilterValue,
+    filterRange: genfiltervalue,
+
+    extensions: [new DataFilterExtension({ filtersize: 1 })],
+
+    updateTriggers: {
+      getFilterValue: [netfiltervalue, genDoughlabels, nameSelectItems],
+    },
+  });
+
+  const layer_generator_capacity = new ColumnLayer({
+    id: "gen-column-cap",
+    data: generation,
+    diskResolution: 50,
+    radius: 5000,
+    elevationScale: 50,
+    pickable: false, //genlayeractive,
+    visible: genlayercapactive,
+    getPosition: (d) => d.coordinates,
+    getFillColor: fillGenColumnColorCap,
+    getElevation: (d) => d.Pcap * 5,
+    onClick: zoomToData,
+
+    getFilterValue: getGenFilterValue,
+    filterRange: genfiltervalue,
+
+    extensions: [new DataFilterExtension({ filtersize: 1 })],
+
+    updateTriggers: {
+      getFilterValue: [netfiltervalue, genDoughlabels, nameSelectItems],
+    },
+  });
+
+  const layer_area = new GeoJsonLayer({
+    id: "AreaLayer",
+    data: areas,
+    pickable: arealayeractive,
+    visible: arealayeractive,
+    stroked: true,
+    filled: true,
+    extruded: true,
+    wireframe: true,
+    lineWidthMinPixels: 1,
+    getPolygon: (d) => d.geometry.coordinates,
+    //      getElevation: d => d.properties.Pd*5.0,
+    getFillColor: [255, 192, 203],
+    getLineColor: [80, 80, 80],
+    getLineWidth: (d) => 1,
+    opacity: 0.1,
+    onClick: zoomToArea,
+    //      extensions: [new DataFilterExtension({ filtersize: 1 })],
+    //      getFilterValue: getLoadFilterValue,
+    //      filterRange: loadfiltervalue,
+
+    //      updateTriggers: {
+    //        getFilterValue: [netfiltervalue, countyNameSelectItems]
+    //      }
+  });
+
+  const layer_zone = new GeoJsonLayer({
+    id: "ZoneLayer",
+    data: zones,
+    pickable: zonelayeractive,
+    visible: zonelayeractive,
+    stroked: true,
+    filled: true,
+    extruded: true,
+    wireframe: true,
+    lineWidthMinPixels: 1,
+    getPolygon: (d) => d.geometry.coordinates,
+    //      getElevation: d => d.properties.Pd*5.0,
+    getFillColor: [252, 245, 95],
+    getLineColor: [80, 80, 80],
+    getLineWidth: (d) => 1,
+    opacity: 0.1,
+    onClick: zoomToZone,
+    //      extensions: [new DataFilterExtension({ filtersize: 1 })],
+    //      getFilterValue: getLoadFilterValue,
+    //      filterRange: loadfiltervalue,
+
+    //      updateTriggers: {
+    //        getFilterValue: [netfiltervalue, countyNameSelectItems]
+    //      }
+  });
+
+  const layer_county_load = new GeoJsonLayer({
+    id: "PolygonLayerload",
+    data: countyload,
+    pickable: loadlayeractive,
+    visible: loadlayeractive,
+    stroked: true,
+    filled: true,
+    extruded: true,
+    wireframe: true,
+    lineWidthMinPixels: 1,
+    getPolygon: (d) => d.geometry.coordinates,
+    //      getElevation: d => d.properties.Pd*5.0,
+    getFillColor: (d) => [(255 * d.properties.Pd) / countymaxPd, 0, 0],
+    getLineColor: [80, 80, 80],
+    getLineWidth: (d) => 1,
+    opacity: 0.1,
+    onClick: zoomToCounty,
+    extensions: [new DataFilterExtension({ filtersize: 1 })],
+    getFilterValue: getLoadFilterValue,
+    filterRange: loadfiltervalue,
+
+    updateTriggers: {
+      getFilterValue: [netfiltervalue, countyNameSelectItems],
+    },
+  });
+
+  const layer_county_voltage = new GeoJsonLayer({
+    id: "PolygonLayer2",
+    data: countyload,
+    pickable: voltagelayeractive,
+    visible: voltagelayeractive,
+    stroked: true,
+    filled: true,
+    extruded: true,
+    wireframe: true,
+    lineWidthMinPixels: 1,
+    getPolygon: (d) => d.geometry.coordinates,
+    //      getElevation: d => d.properties.Pd*5.0,
+    getFillColor: getVoltageFillColor,
+    getLineColor: [80, 80, 80],
+    getLineWidth: (d) => 1,
+    opacity: 0.1,
+    onClick: zoomToCounty,
+    extensions: [new DataFilterExtension({ filtersize: 1 })],
+    getFilterValue: getVoltageFilterValue,
+    filterRange: voltagefiltervalue,
+
+    updateTriggers: {
+      getFilterValue: [netfiltervalue, countyNameSelectItems],
+    },
+  });
+
+  const layer_county_id = new GeoJsonLayer({
+    id: "layer-1",
+    data: "https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json",
+    pickable: true,
+    stroked: true,
+    filled: true, // enable fill
+    // light yellow fill by default, stronger yellow on hover
+    getFillColor: (f) => {
+      const hoveredId = tooltip?.hoveredCountyId;
+      // Use feature id (or GEOID) to detect hovered county
+      const fid = f && (f.id || f.properties?.GEOID);
+      if (hoveredId && fid === hoveredId) {
+        // hovered: stronger, more opaque yellow
+        return [255, 230, 120, 200];
+      }
+      // default: very light yellow with low opacity
+      return [255, 250, 200, 10];
+    },
+    getLineColor: [200, 200, 200],
+    getLineWidth: 1,
+    lineWidthUnits: "pixels",
+    onHover: (info) => {
+      if (info?.object) {
+        const props = info.object.properties || {};
+        const name =
+          props.NAME || props.name || props.COUNTY || props.county || info.object.id;
+        // store hoveredCountyId in tooltip state so getFillColor can access it
+        setTooltip({
+          position: { left: info.x, top: info.y },
+          content: <div>{name}</div>,
+          hoveredCountyId: info.object.id,
+        });
+      } else {
+        setTooltip(undefined);
+      }
+    },
+    onClick: (info) => {
+      if (info?.object) {
+        const props = info.object.properties || {};
+        const name =
+          props.NAME || props.name || props.COUNTY || props.county || info.object.id;
+        console.log("clicked county", name);
+      }
+    },
+  });
+
+  // layers.sort((a, b) => a.id.localeCompare(b.id));
+
+
+
+  const layers = [];
+
+  layers.push(layer_zone);
+  layers.push(layer_area);
+  layers.push(layer_county_load);
+  layers.push(layer_county_voltage);
+  layers.push(layer_county_id);
+  layers.push(layer_network);
+  layers.push(layer_flow);
+  layers.push(layer_generator_capacity);
+  layers.push(layer_generator_power);
 
   /* Chart for generation mix */
   const genmixlabels = ["Wind", "Solar", "Nuclear", "Natural Gas", "Hydro", "Coal", "Other"];
@@ -1420,38 +1512,41 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
   }, []);
 
   return (
-    <>
-      <DeckGL ref={deckRef} layers={layers} initialViewState={initialViewState} controller={true} getTooltip={getTooltip} ContextProvider={MapContext.Provider}>
-        <StaticMap reuseMaps mapStyle={mapStyle[style]} preventStyleDiffing={true} initialViewState={INITIAL_VIEW_STATE}></StaticMap>
+    <div>
+      <DeckGL
+        width="100%"
+        height="100%"
+        // initialViewState={viewState}
+        initialViewState={initialViewState}
+        // onViewStateChange={handleViewStateChange}
+        controller={true}
+        layers={layers}
+      // getTooltip={getTooltip}
+      // style={{ mixBlendMode: config.darkMode ? "screen" : "darken" }}
+      >
 
-        <FullscreenControl />
-        <br></br>
-        <br></br>
-        <NavigationControl />
+        <Map
+          // Use MapLibre in react-map-gl v7/v8:
+          mapLib={maplibregl}
+          mapStyle={MAP_STYLE[style]}
+          reuseMaps
+          preventStyleDiffing
+        >
+          <NavigationControl position="top-left" />
+          <FullscreenControl position="top-left" />
 
-        <div style={{ position: "absolute", top: 100, left: 0, width: 30, background: "#fff", color: " #6b6b76", zIndex: 1000 }}>
-          <HomeOutlinedIcon fontSize="medium" onClick={GoHome}></HomeOutlinedIcon>
-          <br></br>
-          {
-            <ThreeSixtyOutlinedIcon fontSize="large" onClick={rotateCamera}>
-              Rotate
-            </ThreeSixtyOutlinedIcon>
-          }
-          <br></br>
-        </div>
-
-        {/*<div><NavigationControl position="top-left"/></div>
-      <FullscreenControl/>*/}
-
-        {showPopup.display && (
-          <Popup style={{ zIndex: 3, background: "white", opacity: 1, fontSize: "11px" }} longitude={initialViewState.longitude} latitude={initialViewState.latitude} anchor="bottom" offset={-100} onClose={() => setShowPopup({ ...showPopup, display: false })}>
-            <h2>{showPopup.name}</h2>
-            <h3>{showPopup.info}</h3>
-          </Popup>
-        )}
+          <div style={{ position: "absolute", top: 150, left: 0, width: 30, background: "#fff", color: " #6b6b76", zIndex: 999999 }}>
+            <HomeOutlinedIcon fontSize="medium" onClick={GoHome}></HomeOutlinedIcon>
+            <br></br>
+            {
+              <ThreeSixtyOutlinedIcon fontSize="large" onClick={rotateCamera}>
+                Rotate
+              </ThreeSixtyOutlinedIcon>
+            }
+            <br></br>
+          </div>
+        </Map>
       </DeckGL>
-
-      <Widget handleNewUserMessage={handleUserInput} title="ChatGrid" subtitle="What do you want to know about this power grid network?" />
 
       <div style={{ position: "absolute", top: 0, right: 0, width: 250, background: "#fff", padding: "12px 12px", color: " #6b6b76", zIndex: 1000 }}>
         <div style={{ width: 300 }}>
@@ -1510,7 +1605,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
               </Typography>
             </AccordionDetails>
           </Accordion>
-          {/* <Accordion defaultExpanded={true}>
+          {<Accordion defaultExpanded={true}>
             <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }} expandIcon={<ArrowDropDownIcon />}>
               <Typography>
                 {" "}
@@ -1533,7 +1628,7 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
                 )}
               </Typography>
             </AccordionDetails>
-          </Accordion> */}
+          </Accordion>}
 
           <Accordion style={{ paddingBottom: "10px" }} defaultExpanded={false}>
             <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }} expandIcon={<ArrowDropDownIcon />}>
@@ -1664,16 +1759,65 @@ export default function App({ refdata = data, refflowdata = flowdata, ggdata = g
               </Typography>
             </AccordionDetails>
           </Accordion>
+
         </div>
-
-        {/* <br></br> */}
-
-        {/* <BrushingBarChart data={[12,23,345,45,66,78,800]} width ={170} height = {100} handleFilter = {handleNetBarFilterChange}/> */}
-
-        {/* <br></br> */}
       </div>
-    </>
+
+
+      <ChatBot settings={{
+        header: { title: "Chat Grid", showAvatar: false },
+        general: { embedded: false },
+        footer: { text: "", buttons: [] },
+        tooltip: { text: "Ask me anything." },
+        voice: { disabled: false },
+        chatHistory: { storageKey: "example_basic_form" }
+      }} flow={flow} />
+
+
+      {tooltip && (
+        <div className="tooltip" style={tooltip.position}>
+          {tooltip.content}
+        </div>
+      )}
+    </div>
   );
+}
+
+function getTooltipState(info) {
+  if (!info) return undefined;
+  const { x, y, object } = info;
+  const position = { left: x, top: y };
+
+  switch (object?.type) {
+    case PickingType.LOCATION:
+      return {
+        position,
+        content: (
+          <>
+            <div>{object.name}</div>
+            {/* <div>Incoming trips: {object.totals.incomingCount}</div> */}
+            {/* <div>Outgoing trips: {object.totals.outgoingCount}</div> */}
+            {/* <div>Internal or round trips: {object.totals.internalCount}</div> */}
+          </>
+        ),
+      };
+
+    case PickingType.FLOW:
+      return {
+        position,
+        content: (
+          <>
+            <div>
+              {object.origin.id} → {object.dest.id}
+            </div>
+            <div>{object.count}</div>
+          </>
+        ),
+      };
+
+    default:
+      return undefined;
+  }
 }
 
 const legendWrap = {
@@ -1703,6 +1847,4 @@ const swatch = {
 };
 const label = { color: "#222" };
 
-const rootElement = document.getElementById("root");
-
-createRoot(rootElement).render(<App />);
+export default App;
