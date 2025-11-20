@@ -11,24 +11,27 @@ ExaGO has an experimental visualization platform for visualizing the results of 
 
 ## Installation
 ExaGO visualization uses the following tools to generate the visuals.
-- [Node.js@v16.13.0](https://nodejs.org/es/blog/release/v16.13.0)
+- [Node.js@v24.10.0](https://nodejs.org/es/blog/release/v24.10.0)
 - Facebook's [React](https://reactjs.org/) framework
 - Uber's [Deck.gl](https://deck.gl/docs) visualization
 - [React-map-gl](https://visgl.github.io/react-map-gl/) framework
 - [Chart.js](https://www.chartjs.org/)
+- Yarn 1.22.22
 
 Before launching the visualization, one needs to install these packages. This can be done with the following steps:
-1. Install Node Version Manager (NVM). On MAC use `brew install nvm`.
-2. Install [Node.js] version 16 (https://nodejs.org/en/) using `nvm install 16`
-3. Do `npm install --legacy-peer-deps` in this directory (`viz`)to install all the dependencies.
 
-> [!WARNING]  
-> Per https://github.com/pnnl/ExaGO/issues/129 `--legacy-peer-deps` is required as an argumnet to `npm install`. This will ideally be removed once the vizualization is no longer experimnetal.
+1. Install Node Version Manager (NVM). On MAC use `brew install nvm`.
+2. Install [Node.js] version 24 (https://nodejs.org/en/) using `nvm install 24`
+3. Select Node 24 by `nvm use 24`
+4. Install Yarn. Do `npm install --global yarn`
+5. Do `yarn install` in this directory (`viz`) to install all the dependencies.
+6. Go to the `viz/backend` subdirectory and use the `pip install -r requirements.txt` command to install all the Python dependencies.
 
 
 ## Preparing input data files for visualization
 The visualization uses a `JSON` formatted file as an input. This `JSON` file has a specific structure (To do: explain structure for the file) and there are several sample files for different network in the `data` subdirectory.
-This input JSON file can be either created externally OR generated as an output of the `OPFLOW` application. When using OPFLOW, the following command will generate the input JSON file.
+This input JSON file can be either created externally OR generated as an output of the `OPFLOW` application. When using OPFLOW, the following command will generate the input JSON file. The generated file will be name as `opflowout.json`.
+
 ```
 ./opflow -netfile <netfile> -save_output -opflow_output_format JSON -gicfile <gicfilename>  
 ```
@@ -43,22 +46,24 @@ For example, with Texas 2000 bus synthetic data, executing the following `opflow
 opflow -netfile case_ACTIVSg2000.m -save_output -opflow_output_format JSON -gicfile ACTIVSg2000_GIC_data.gic
 ```
 
-Copy over the `opflowout.json` file to the `viz/data` subdirectory. Next, run the python script `geninputfile.py` from `viz` folder to load the JSON file in the visualization script.
+Copy over the newly generated `opflowout.json` file to the `viz/data` subdirectory. Next, run the python script `geninputfile.py` from `viz` folder to load the JSON file in the visualization script. Note, the python script only takes the name of the file `opflowout.json` as an argument but does not open the file so the full file path need not be provided. The visualization tool will expect the file (`opflowout.json`) to be present in `viz/data` forlder. The following code will create/overwrite a file named `viz/src/module_casedata.js`. The `module_casedata.js` file is an application source file to load the data file `opflowout.json`.
 
 ```
 python geninputfile.py opflowout.json
 ```
 
-You are ready to launch the visualization now. 
+Now this creates the `viz/src/module_casedata.js` file. You are ready to launch the visualization now. 
 
 Note: If you have created the JSON file externally then simply copy it over in the `viz/data` subdirectory and run the `geninputfile.py` script using the above command.
 
 ## Launch visualization
 To launch the visualization, run
+
 ```
-npm start
+yarn start
 ```
-This will open a webpage with the visualization of the given network. 
+
+This will open a webpage with the visualization of the given network. If the network is large, it may take a while to load the visualization. The browser may show option to terminate or Wait and you should click on Wait button.
 
 
 The figures show the visualization of the synthetic electric grid. The data for developing this visualization was created by merging the synthetic dataset for the [Eastern](https://electricgrids.engr.tamu.edu/electric-grid-test-cases/activsg70k/), [Western](https://electricgrids.engr.tamu.edu/electric-grid-test-cases/activsg10k/), and [Texas](https://electricgrids.engr.tamu.edu/electric-grid-test-cases/activsg2000/) interconnects from the [Electric Grid Test Case Repository](https://electricgrids.engr.tamu.edu/)
@@ -86,6 +91,7 @@ ChatGrid is a natural language query tool for ExaGO visualizations. It is powere
 
 ### Dependencies
 ChatGrid is built upon the following services and tools. 
+
 - [OpenAI LLMs](https://platform.openai.com/docs/models/overview)
 - [Langchain@0.0.233](https://python.langchain.com/docs/get_started/introduction.html) framework
 - [PostGreSQL](https://www.postgresql.org/download/) database
@@ -97,19 +103,28 @@ Behind the scenes, LLM translates natural language queries into SQL queries to r
 1. Convert data formats. 
 
     First, we need to convert the ExaGO output `.json` files to `.csv` files. The difference between the two data formats is that JSON stores attributes and values as dictionary pairs but CSV stores attributes and values as tables. You can write your own script for this conversion or use the provided script. 
-
-    To use the provided script, first copy the ExaGO output `.json` file to the `viz/data` subdirectory and simply run the following script in the `viz/data` subdirectory (replace the example filename with your json filename). This will output three CSV files: `generation.csv`, `bus.csv`, and `tranmission_line.csv`.
     
-    To install all required python packages go to `backend` directory and run `pip install -r requirements.txt`
+      * Go to the `viz/backend` subdirectory and use the `pip install -r requirements.txt` command to install all the Python dependencies if already not done in previous steps. (Note: These steps are tested with Python 3.13.)
 
+
+    To use the provided script, first copy the ExaGO output `.json` file to the `viz/data` subdirectory (if not already performed) and simply run the following script in the `viz/backend` subdirectory (replace the example filename with your json filename). This will create three CSV files: `generation.csv`, `bus.csv`, and `tranmission_line.csv`. We are assuming `opflowout.json` is the data json file present in `viz/data` folder.
+            
+    ```
+    python ../data/jsontocsv.py ../data/opflowout.json
+    ```
     
-    ```
-    python jsontocsv.py opflowout.json
-    ```
+    Now there should be 5 CSV files in `viz/backend` folder: 
+        
+      * `bus.csv`               
+      * `generation.csv`        
+      * `us_states.csv`
+      * `counties.csv`          
+      * `transmission_line.csv`
+    
     
 2. Download PostgreSQL database from this [link](https://www.postgresql.org/download/) and install it.
 
-    * For MAC using brew you can install postgresql 15 using: `brew install postgresql@14`
+    * For MAC using brew you can install postgresql 14 using: `brew install postgresql@14`
     * Start the postgressql service: `rew services start postgresql@14`
     * Create a role: `psql -U "$USER" -d postgres`
     * Execute the create role query: `CREATE ROLE postgres WITH LOGIN SUPERUSER PASSWORD 'ExaGO.2025';` Here `ExaGO.2025` is a password. Change to your preference.
@@ -128,7 +143,10 @@ Behind the scenes, LLM translates natural language queries into SQL queries to r
       b. Please be informative and accurate about your table names, and attribute names. Because this information can help LLM understand the dataset and performs better when dealing with user queries.
 
       c. Include US state and county information in your database to support spatial queries that related to state or county.
-      d. To enter the CSV files into database using command prompt do: `PGPASSWORD=ExaGO.2025 ./create_db.sh  --db exago_70k --csv test.csv --schema-sql ./schema.sql --drop  --truncate`. Here `exago_70k` is the database name. Use it in the configuration `config.py` file.
+      
+      d. To enter the CSV files into database using command prompt do: `PGPASSWORD=ExaGO.2025 ./create_db.sh  --db exago_db --schema-sql ./schema.sql --drop  --truncate`. Here `exago_70k` is the database name. Use it in the configuration `config.py` file.
+      
+      e. This will create a database named `exago_db` with password `ExaGO.2025`. This information will be used to update the `config.py` file.
     
 
 4. Connect to your database.
@@ -146,11 +164,12 @@ Open the `config.py` in the `viz/backend` subdirectory replace `YOUR_OPENAI_KEY`
 ### Launch backend
 ChatGrid uses Flask to host the service of receiving user queries and returning the data output and text summaries to update the visualizations on the frontend. Please follow the steps below to run the backend server.
 
-1. Go to the `viz/backend` subdirectory and use the `pip install -r requirements.txt` command to install all the Python dependencies if already not done in previous steps.
-2. Run the following command in the `viz/backend` subdirectory
+
+* Run the following command in the `viz/backend` subdirectory
     ```
     python server.py
     ```
+    
     This will start the backend server for receiving user queries, processing it by LLM and returning data outputs to the frontend. 
 
 Now open the chat window on the frontend, type your queries, and enjoy ChatGrid!

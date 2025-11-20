@@ -9,7 +9,6 @@ PGPASSWORD="${PGPASSWORD:-}"           # export PGPASSWORD=... if needed
 DB_NAME=""
 SCHEMA_NAME="public"
 TABLE_NAME=""
-CSV_PATH=""
 DELIM=","
 QUOTE='"'
 NULLSTR=""
@@ -25,7 +24,6 @@ Usage: $(basename "$0") --db NAME --table NAME --csv /path/file.csv [options]
 Required:
   --db NAME              Database name to create/use
   --table NAME           Target table name (without schema; uses --schema)
-  --csv PATH             Path to CSV file (must have header row)
 
 Optional:
   --schema NAME          Schema name (default: public)
@@ -74,8 +72,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -z "${DB_NAME}" || -z "${CSV_PATH}" ]] && usage
-# [[ -f "${CSV_PATH}" ]] || { echo "CSV not found: ${CSV_PATH}"; exit 1; }
+[[ -z "${DB_NAME}" ]] && usage
 
 export PGHOST PGPORT PGUSER PGPASSWORD
 
