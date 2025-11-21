@@ -117,7 +117,9 @@ module load umpire/6.0.0-rocmcc-6.3.1-3zjinbv
 module load hiop/1.1.0-rocmcc-6.3.1-iqwppvk
 # ipopt@=3.14.14%rocmcc@=6.3.1+coinhsl~debug~java~metis~mumps build_system=autotools arch=linux-sles15-zen3
 module load ipopt/3.14.14-rocmcc-6.3.1-djalso6
-# petsc@=3.22.1%rocmcc@=6.4.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind~metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~sycl~tetgen~trilinos~valgrind~zoltan build_system=generic clanguage=C memalign=none arch=linux-sles15-zen3
-module load petsc/3.22.1-rocmcc-6.4.0-ipwxj6c
+# parmetis@=4.0.3%rocmcc@=6.3.1~gdb~int64~ipo+shared build_system=cmake build_type=Release generator=make patches=4f89253,50ed208,704b84f arch=linux-sles15-zen3
+module load parmetis/4.0.3-rocmcc-6.3.1-amlsqtx
+# petsc@=3.22.1%rocmcc@=6.4.0~X~batch~cgns~complex~cuda~debug+double~exodusii~fftw+fortran~giflib~hdf5~hpddm~hwloc~hypre~int64~jpeg~knl~kokkos~libpng~libyaml~memkind+metis~mkl-pardiso~mmg~moab~mpfr+mpi~mumps~openmp~p4est~parmmg~ptscotch~random123~rocm~saws~scalapack+shared~strumpack~suite-sparse~superlu-dist~sycl~tetgen~trilinos~valgrind~zoltan build_system=generic clanguage=C memalign=none arch=linux-sles15-zen3
+module load petsc/3.22.1-rocmcc-6.4.0-qlhkfd5
 # exago@=develop%rocmcc@=6.3.1~cuda+hiop~ipo+ipopt+logging+mpi~python+raja+rocm amdgpu_target=gfx90a build_system=cmake build_type=Release dev_path=/lustre/orion/scratch/nkouk/stf006/Codes/ExaGO generator=make arch=linux-sles15-zen3
-## module load exago/develop-rocmcc-6.3.1-tylmjdf
+## module load exago/develop-rocmcc-6.3.1-kbxnjcf
