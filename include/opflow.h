@@ -134,6 +134,16 @@ const auto tolerance =
 const auto ignore_lineflow_constraints =
     ExaGOBoolOption("-opflow_ignore_lineflow_constraints",
                     "Ignore line flow constraints?", PETSC_FALSE);
+const auto lazy_lineflow_constraints =
+    ExaGOBoolOption("-opflow_lazy_lineflow_constraints",
+                    "Apply line flow constraints lazily?", PETSC_FALSE);
+const auto allow_lineflow_violation =
+    ExaGOBoolOption("-opflow_allow_lineflow_violation",
+                    "Allow line flow limit violation?", PETSC_FALSE);
+const auto lineflowviolation_penalty =
+    ExaGORealOption("-opflow_lineflowviolation_penalty",
+                    "Penalty for line flow limit violation", 1e2);
+
 const auto include_loadloss_variables =
     ExaGOBoolOption("-opflow_include_loadloss_variables",
                     "Ignore line flow constraints?", PETSC_FALSE);
@@ -144,6 +154,9 @@ const auto include_powerimbalance_variables =
                     "Allow power imbalance?", PETSC_FALSE);
 const auto powerimbalance_penalty = ExaGORealOption(
     "-opflow_powerimbalance_penalty", "Power imbalance penalty", 1e4);
+
+const auto load_scaling_factor = ExaGORealOption("-opflow_load_scaling_factor",
+                                                 "Scale factor for load", 1.0);
 
 #ifdef EXAGO_ENABLE_HIOP
 const auto hiop_compute_mode =
@@ -256,12 +269,23 @@ OPFLOWGetInitializationType(OPFLOW, OPFLOWInitializationType *);
 PETSC_EXTERN PetscErrorCode OPFLOWIgnoreLineflowConstraints(OPFLOW, PetscBool);
 PETSC_EXTERN PetscErrorCode OPFLOWGetIgnoreLineflowConstraints(OPFLOW,
                                                                PetscBool *);
+PETSC_EXTERN PetscErrorCode OPFLOWGetLineOverloads(OPFLOW, PetscInt *,
+                                                   PetscInt **, PetscBool *);
+PETSC_EXTERN PetscErrorCode OPFLOWAllowLineflowViolation(OPFLOW, PetscBool);
+PETSC_EXTERN PetscErrorCode OPFLOWGetAllowLineflowViolation(OPFLOW,
+                                                            PetscBool *);
+PETSC_EXTERN PetscErrorCode OPFLOWSetLineFlowViolationPenalty(OPFLOW,
+                                                              PetscReal);
+PETSC_EXTERN PetscErrorCode OPFLOWGetLineFlowViolationPenalty(OPFLOW,
+                                                              PetscReal *);
+
 PETSC_EXTERN PetscErrorCode OPFLOWSetLoadLossPenalty(OPFLOW, PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWGetLoadLossPenalty(OPFLOW, PetscReal *);
 PETSC_EXTERN PetscErrorCode OPFLOWSetBusPowerImbalancePenalty(OPFLOW,
                                                               PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWGetBusPowerImbalancePenalty(OPFLOW,
                                                               PetscReal *);
+PETSC_EXTERN PetscErrorCode OPFLOWSetLoadScalingFactor(OPFLOW, PetscReal);
 PETSC_EXTERN PetscErrorCode OPFLOWSetWeight(OPFLOW, PetscScalar);
 
 PETSC_EXTERN PetscErrorCode OPFLOWSkipOptions(OPFLOW, PetscBool);
@@ -318,12 +342,16 @@ PETSC_EXTERN PetscErrorCode OPFLOWSolutionToPS(OPFLOW);
 
  Input Parameter:
 + opflow      - OPFLOW object
-. nkvlevels   - Number of kvlevels to monitor (Use -1 to monitor all kvlevels)
-. kvlevels    - line kvlevels to monitor
-- monitorfile - File with list of lines to monitor.
+. mon_mode    - Monitor Mode (0 = Input lines, 1 = KV levels, 2 = from file)
+. nlinesmon   - Number of lines to be monitored (active when mon_mode = 0)
+. linesmon    - List of lines to be monitored (active with mon_mode = 0)
+. nkvlevels   - Number of kvlevels to monitor (active with mon_mode = 1, use -1
+to monitor all kvlevels) . kvlevels    - line kvlevels to monitor (active with
+mon_mode = 1)
+- monitorfile - File with list of lines to monitor (active with mon_mode = 2)
 
   Notes:
-    The lines to monitor are either specified through a file OR by
+    The lines to monitor are either specified via API, through a file OR by
     kvlevels, but not both. Use NULL for monitorfile if file is not set.
     If monitorfile is given then the kvlevels are ignored.
 
@@ -332,7 +360,8 @@ PETSC_EXTERN PetscErrorCode OPFLOWSolutionToPS(OPFLOW);
 
     This function should be called after OPFLOWSetupPS() is called
 */
-PETSC_EXTERN PetscErrorCode OPFLOWSetLinesMonitored(OPFLOW, PetscInt,
+PETSC_EXTERN PetscErrorCode OPFLOWSetLinesMonitored(OPFLOW, PetscInt, PetscInt,
+                                                    PetscInt *, PetscInt,
                                                     const PetscScalar *,
                                                     const char *);
 
@@ -349,5 +378,16 @@ PETSC_EXTERN PetscErrorCode OPFLOWSetAuxillaryObjective(
 
 PETSC_EXTERN PetscErrorCode OPFLOWSetUpdateVariableBoundsFunction(
     OPFLOW, PetscErrorCode (*)(OPFLOW, Vec, Vec, void *), void *);
+
+/*
+  OPFLOWCheckConstraints - Displays information about OPFLOW constraints
+
+  Input Parameters:
+. opflow - the OPFLOW oject
+
+  Notes: This is called by OPFLOWSolutionToPS. If called exterenally then
+OPFLOWSolutionToPS() needs to be called first.
+*/
+PETSC_EXTERN PetscErrorCode OPFLOWCheckConstraints(OPFLOW opflow);
 
 #endif

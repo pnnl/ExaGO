@@ -124,7 +124,7 @@ in `configure_modules.sh` that aligns with that is specified in the environment.
 These modules are used in `buildsystem/<build_type>/` in various scripts for each
 platform, and you should ensure these are compatible with the module configuration
 used for each platform. Make sure to create variable files that are consistent
-with examples for `gcc-cuda/newell` and `clang-hip/crusher`.
+with examples for `gcc-cuda/newell` and `clang-hip/frontier`.
 
 If you have an update in the ExaGO/HiOp spack package, you might need to update
 the relevant `spack.yaml` and configure module scripts for each platform.

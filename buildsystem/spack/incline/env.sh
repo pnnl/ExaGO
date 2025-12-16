@@ -8,8 +8,8 @@ module purge
 # MPI module is finnicky on incline
 modules=$(module list 2>&1)
 if echo $modules | grep -q 'openmpi'; then
-  module load gcc/8.4.0
-  module rm openmpi
+	module load gcc/8.4.0
+	module rm openmpi
 fi
 
 # Configure python and other system modules
@@ -20,11 +20,14 @@ module load openmpi/4.1.4
 module load rocm/5.3.0
 module load python/3.7.0
 
+# Print out modules for sanity
+module list
+
 # Try forcing behaviour of spack compiler
 export SPACK_CC=$(which gcc)
 export SPACK_CXX=$(which g++)
 
-BASE=/qfs/projects/exasgd/src/ci-incline
+BASE=/qfs/projects/earthshot/src/incline-ci
 
 export SPACK_INSTALL=$BASE/install
 export SPACK_MODULES=modules

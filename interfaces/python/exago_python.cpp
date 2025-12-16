@@ -64,5 +64,9 @@ PYBIND11_MODULE(exago, m) {
 
   extern void init_exago_sopflow(pybind11::module & m);
   init_exago_sopflow(m);
+
+  extern void init_exago_tcopflow(pybind11::module & m);
+  init_exago_tcopflow(m);
+
 #endif
 }

@@ -9,9 +9,10 @@ int main(int argc, char **argv) {
   SCOPFLOW scopflow;
   char file[PETSC_MAX_PATH_LEN];
   char ctgcfile[PETSC_MAX_PATH_LEN];
+  char gicfile[PETSC_MAX_PATH_LEN];
   char outputdir[PETSC_MAX_PATH_LEN];
   PetscBool outputdir_set;
-  PetscBool flg = PETSC_FALSE, flgctgc = PETSC_FALSE;
+  PetscBool flg = PETSC_FALSE, flgctgc = PETSC_FALSE, flggic = PETSC_FALSE;
   PetscBool print_output = PETSC_FALSE, save_output = PETSC_FALSE;
   PetscLogStage stages[3];
   char appname[] = "scopflow";
@@ -53,6 +54,11 @@ int main(int argc, char **argv) {
                                PETSC_MAX_PATH_LEN, &flgctgc);
   CHKERRQ(ierr);
 
+  /* Get gic data file from command line */
+  ierr = PetscOptionsGetString(NULL, NULL, "-gicfile", gicfile,
+                               PETSC_MAX_PATH_LEN, &flggic);
+  ExaGOCheckError(ierr);
+
   /* Stage 1 - Application creation and reading data */
   ierr = PetscLogStagePush(stages[0]);
   CHKERRQ(ierr);
@@ -84,6 +90,12 @@ int main(int argc, char **argv) {
       throw ExaGOError(errs.str().c_str());
     }
     CHKERRQ(ierr);
+  }
+
+  /* Set gicdata */
+  if (flggic) {
+    ierr = SCOPFLOWSetGICData(scopflow, gicfile);
+    ExaGOCheckError(ierr);
   }
 
   /* Set a subset of contingencies to be selected. Can use the option

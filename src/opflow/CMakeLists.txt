@@ -30,8 +30,8 @@ set(OPFLOW_SOLVER_SRC
 )
 
 set(OPFLOW_SRC
-    interface/opflow.cpp interface/opflowregi.cpp interface/opflowoutput.cpp
-    ${OPFLOW_FORM_SRC} ${OPFLOW_SOLVER_SRC}
+    interface/opflow.cpp interface/opflow2.cpp interface/opflowregi.cpp
+    interface/opflowoutput.cpp ${OPFLOW_FORM_SRC} ${OPFLOW_SOLVER_SRC}
 )
 
 set_source_files_properties(${OPFLOW_SRC} PROPERTIES LANGUAGE CXX)

@@ -380,7 +380,6 @@ PetscErrorCode OPFLOWSolverSetUp_HIOPSPARSEGPU(OPFLOW opflow) {
   hiop->sp->options->SetStringValue("mem_space", "device");
   hiop->sp->options->SetStringValue("compute_mode", "gpu");
 
-  hiop->sp->options->SetStringValue("dualsInitialization", "zero");
   hiop->sp->options->SetStringValue("duals_init", "zero");
 
   hiop->sp->options->SetStringValue("fact_acceptor", "inertia_free");

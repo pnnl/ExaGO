@@ -84,6 +84,8 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
   /* Note: MATPOWER data files do not store objective function values.*/
   fprintf(fd, "\n%%%% OPF objective\n");
   fprintf(fd, "%sobj = %.9g;\n", prefix, ps->opflowobj);
+  fprintf(fd, "\n%%%% OPF convergence status\n");
+  fprintf(fd, "%sconverged = %d;\n", prefix, ps->opflow_converged);
 
   /* Write bus data */
   fprintf(fd, "\n%%%% bus data\n");
@@ -221,9 +223,7 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
           break;
         case GENFUEL_UNDEFINED:
         default:
-          SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
-                  "Generator fuel type (%d) not understod", gfuel);
-          CHKERRQ(ierr);
+          fprintf(fd, "\t\"undefined\"");
           break;
         }
         fprintf(fd, ";\n");
@@ -232,21 +232,24 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
     fprintf(fd, "\n};\n");
   }
 
-  /* Load cost data */
-  fprintf(fd, "\n%%%% load cost data\n");
-  fprintf(fd, "%% %%maxallowedloadshed loadshedcost\n");
-  fprintf(fd, "mpc.loadcost = [\n");
-  for (i = 0; i < ps->nbus; i++) {
-    bus = &ps->bus[i];
-    for (k = 0; k < bus->nload; k++) {
-      PSLOAD load;
-      ierr = PSBUSGetLoad(bus, k, &load);
-      CHKERRQ(ierr);
-      fprintf(fd, "%10.5g %10.5g; \n", load->loss_frac * 100.0,
-              load->loss_cost);
+  if (ps->read_load_cost) {
+
+    /* Load cost data */
+    fprintf(fd, "\n%%%% load cost data\n");
+    fprintf(fd, "%% %%maxallowedloadshed loadshedcost\n");
+    fprintf(fd, "mpc.loadcost = [\n");
+    for (i = 0; i < ps->nbus; i++) {
+      bus = &ps->bus[i];
+      for (k = 0; k < bus->nload; k++) {
+        PSLOAD load;
+        ierr = PSBUSGetLoad(bus, k, &load);
+        CHKERRQ(ierr);
+        fprintf(fd, "%10.5g %10.5g; \n", load->loss_frac * 100.0,
+                load->loss_cost);
+      }
     }
+    fprintf(fd, "];\n");
   }
-  fprintf(fd, "];\n");
 
   /* Solution summary info */
   fprintf(fd, "\n%%%% summary data\n");
@@ -268,7 +271,6 @@ PetscErrorCode PSSaveSolution_MATPOWER(PS ps, const char outfile[]) {
 
   fprintf(fd, "\n%%%% solve time\n");
   fprintf(fd, "%ssolve_time = %.5g;\n", prefix, ps->solve_real_time);
-  fprintf(fd, "%ssolve_cpu_time = %.5g;\n", prefix, ps->solve_cpu_time);
 
   fclose(fd);
   PetscFunctionReturn(0);
@@ -443,6 +445,23 @@ static void PrintJSONArray(FILE *fd, const char *name, int nvals,
   PrintJSONArrayEnd(fd, trail_comma);
 }
 
+static void PrintJSONArrayInt(FILE *fd, int value, bool trail_comma) {
+  std::string str = trail_comma ? "," : "";
+  fprintf(fd, "%s%d%s\n", tabstring, value, str.c_str());
+}
+
+static void PrintJSONIntArray(FILE *fd, const char *name, int nvals,
+                              int *values, bool trail_comma) {
+  PrintJSONArrayBegin(fd, name);
+
+  for (int i = 0; i < nvals - 1; i++) {
+    PrintJSONArrayInt(fd, values[i], true);
+  }
+  PrintJSONArrayInt(fd, values[nvals - 1], false);
+
+  PrintJSONArrayEnd(fd, trail_comma);
+}
+
 static void PrintGenData(FILE *fd, PSBUS bus, bool trail_comma,
                          PetscScalar MVAbase) {
   PSGEN gen;
@@ -522,6 +541,19 @@ static void PrintLineData(FILE *fd, PSLINE line, bool trail_comma,
   PrintJSONDouble(fd, "RATE_A", (line->rateA > 1e5) ? 10000 : line->rateA,
                   true);
 
+  // Zones for from and to bus
+  // Zone from bus
+  PrintJSONInt(fd, "ZONE_FBUS", line->zonef, true);
+
+  // Zone to bus
+  PrintJSONInt(fd, "ZONE_TBUS", line->zonet, true);
+
+  // Area from bus
+  PrintJSONInt(fd, "AREA_FBUS", line->areaf, true);
+
+  // Zone to bus
+  PrintJSONInt(fd, "AREA_TBUS", line->areat, true);
+
   // PF,QF, PT, QT
   PrintJSONDouble(fd, "PF", line->pf * MVAbase, true);
   PrintJSONDouble(fd, "QF", line->qf * MVAbase, true);
@@ -572,6 +604,12 @@ static void PrintBusData(FILE *fd, PSSUBST subst, bool trail_comma,
 
     // Base KV
     PrintJSONDouble(fd, "BASE_KV", bus->basekV, true);
+
+    // Zone
+    PrintJSONInt(fd, "ZONE", bus->zone, true);
+
+    // Area
+    PrintJSONInt(fd, "AREA", bus->area, true);
 
     // PD
     if (bus->nload) {
@@ -665,6 +703,8 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[]) {
       snprintf(subst->name, 64, "%d", ps->bus[i].bus_i);
       subst->nbus = 1;
       subst->nkvlevels = 1;
+      subst->zone = ps->bus[i].zone;
+      subst->area = ps->bus[i].area;
       /* Circular distribution of lats and long from some location with .5
        * degrees deviation. This is completely random baseless lat/long creation
        */
@@ -714,6 +754,12 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[]) {
     PrintJSONString(fd, "gicfile", "not given", true);
   }
 
+  /* Print number of zones */
+  PrintJSONInt(fd, "nzones", ps->nzones, true);
+
+  /* Print number of zones */
+  PrintJSONInt(fd, "nareas", ps->nareas, true);
+
   /* Print number of lines */
   PrintJSONInt(fd, "nbranch", ps->Nline, true);
 
@@ -722,6 +768,12 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[]) {
 
   /* Print Number of bus */
   PrintJSONInt(fd, "nbus", ps->Nbus, true);
+
+  /* Print zones */
+  PrintJSONIntArray(fd, "zones", ps->nzones, ps->zones, true);
+
+  /* Print areas */
+  PrintJSONIntArray(fd, "areas", ps->nareas, ps->areas, true);
 
   /* Print KV levels */
   PrintJSONArray(fd, "KVlevels", ps->nkvlevels, ps->kvlevels, true);
@@ -757,6 +809,12 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[]) {
     // Name
     PrintJSONString(fd, "NAME", ps->substations[i].name, true);
 
+    // Zone number
+    PrintJSONInt(fd, "zone", ps->substations[i].zone, true);
+
+    // Area number
+    PrintJSONInt(fd, "area", ps->substations[i].area, true);
+
     // Number of buses
     PrintJSONInt(fd, "nbus", ps->substations[i].nbus, true);
 
@@ -775,6 +833,9 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[]) {
   // Lines
   for (i = 0; i < ps->Nline; i++) {
     line = &ps->line[i];
+    if (!line->subst_from || !line->subst_to)
+      continue;
+
     // Features
     PrintJSONObjectBegin(fd, NULL); // Feature object start
 
@@ -827,8 +888,7 @@ PetscErrorCode PSSaveSolution_JSON(PS ps, const char outfile[]) {
   PrintJSONArray(fd, "LOAD", 2, &ps->sys_info.total_load[0], true);
   PrintJSONArray(fd, "LOADSHED", 2, &ps->sys_info.total_loadshed[0], true);
 
-  PrintJSONDouble(fd, "SolveRealTime", ps->solve_real_time, true);
-  PrintJSONDouble(fd, "SolveCPUTime", ps->solve_cpu_time, false);
+  PrintJSONDouble(fd, "SolveRealTime", ps->solve_real_time, false);
 
   PrintJSONObjectEnd(fd, false); // System summary object end
 
@@ -884,7 +944,8 @@ PetscErrorCode PSSaveSolution_MINIMAL(PS ps, const char outfile[]) {
   fprintf(fd, "\tTotal Load Shed P, Q: %9g, %9g\n",
           ps->sys_info.total_loadshed[0], ps->sys_info.total_loadshed[1]);
   fprintf(fd, "\tSolve Time: %5g\n", ps->solve_real_time);
-  fprintf(fd, "\tSolve CPU Time: %5g\n", ps->solve_cpu_time);
+  fprintf(fd, "\tNzones: %d\n", ps->nzones);
+  fprintf(fd, "\tNareas: %d\n", ps->nareas);
 
   fclose(fd);
 

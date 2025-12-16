@@ -44,7 +44,7 @@ else()
       "$<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CONFIG:DEBUG>>:SHELL:--compiler-options -Werror,-Wall,-Wextra>"
   )
   set(CXX_COMPILE_OPTIONS
-      "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CONFIG:DEBUG>>:-Werror;-Wall;-Wextra;-Wpedantic>"
+      "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CONFIG:DEBUG>>:-Wall;-Wextra;-Wpedantic>"
   )
 endif()
 

@@ -772,8 +772,11 @@ PetscErrorCode PSCreate(MPI_Comm mpicomm, PS *psout) {
   ps->Ngen = -1;
   ps->NgenON = -1;
   ps->Nline = -1;
+  ps->Ndcline = -1;
   ps->nlineON = -1;
+  ps->ndclineON = -1;
   ps->NlineON = -1;
+  ps->NdclineON = -1;
   ps->Nload = -1;
   ps->refct = 0;
   ps->app = NULL;
@@ -783,6 +786,9 @@ PetscErrorCode PSCreate(MPI_Comm mpicomm, PS *psout) {
   ps->nref = ps->Nref = 0;
   ps->ngencoal = ps->ngenwind = ps->ngensolar = 0;
   ps->ngenng = ps->ngennuclear = ps->ngenundefined = 0;
+
+  ps->nlines_overloaded = 0;
+  ps->has_overloaded_lines = PETSC_FALSE;
 
   ps->nkvlevels = 0;
   ierr = PetscMalloc1(MAX_KV_LEVELS, &ps->kvlevels);
@@ -795,7 +801,6 @@ PetscErrorCode PSCreate(MPI_Comm mpicomm, PS *psout) {
   ps->setupcalled = PETSC_FALSE;
 
   ps->solve_real_time = 0.0;
-  ps->solve_cpu_time = 0.0;
 
   *psout = ps;
   PetscFunctionReturn(0);
@@ -847,6 +852,18 @@ PetscErrorCode PSDestroy(PS *ps) {
 
   ierr = PetscFree((*ps)->kvlevels);
   CHKERRQ(ierr);
+
+  if ((*ps)->nlines_overloaded) {
+    ierr = PetscFree((*ps)->lines_overloaded);
+    CHKERRQ(ierr);
+  }
+
+  ierr = PetscFree((*ps)->zones);
+  CHKERRQ(ierr);
+
+  ierr = PetscFree((*ps)->areas);
+  CHKERRQ(ierr);
+
   ierr = PetscFree((*ps)->busext2intmap);
   CHKERRQ(ierr);
   ierr = DMDestroy(&(*ps)->networkdm);
@@ -973,11 +990,25 @@ PetscErrorCode PSSetUp(PS ps) {
   CHKERRQ(ierr);
 
   /* Set up edge connectivity */
-
+  /* Edges include true edges + dummy edges set up for isolated buses
+     These edges for isolated buses are inserted so that DMNetwork
+     correctly knows the number of vertices. DMNetwork filters out
+     any nodes that do not have edges and so this messes up our network
+     data layout that has these isolated buses. So, we create dummy
+     edges connecting these isolated buses. These are only used here
+     for the DMNetwork business, not anywhere else
+  */
   ierr = PetscCalloc1(2 * Nlines, &lineconn[0]);
   CHKERRQ(ierr);
   ierr = PSGetLineConnectivity(ps, Nlines, lineconn[0]);
   CHKERRQ(ierr);
+  /* Insert dummy edges for isolated_buses */
+  //  for(i=0; i < ps->nisolated_buses; i++) {
+  /* Each dummy line is connected between bus 0 and the isolated bus */
+  //    lineconn[0][2 * (Nlines+i)    ] = ps->isolated_buses[i];
+  //    lineconn[0][2 * (Nlines+i) + 1] = 0;
+  //  }
+  //  ierr = PetscFree(ps->isolated_buses);
 
   /* Set sizes for the network and provide edge connectivity information */
   ierr = DMNetworkSetNumSubNetworks(networkdm, PETSC_DECIDE, 1);
@@ -1069,9 +1100,10 @@ PetscErrorCode PSSetUp(PS ps) {
       CHKERRQ(ierr);
     }
 
-    /* Broadcast global Nbus,Ngen,Nbranch, Nload,and maxbusnum to all processors
+    /* Broadcast global Nbus,Ngen,Nbranch, Nload,Ndcline, and maxbusnum to all
+     * processors
      */
-    PetscInt temp[8];
+    PetscInt temp[9];
     /* Pack variables */
     temp[0] = ps->Nbus;
     temp[1] = ps->Ngen;
@@ -1081,6 +1113,7 @@ PetscErrorCode PSSetUp(PS ps) {
     temp[5] = ps->NgenON;
     temp[6] = ps->NlineON;
     temp[7] = ps->Nref;
+    temp[8] = ps->Ndcline;
     ierr = MPI_Bcast(temp, 8, MPI_INT, 0, ps->comm->type);
     CHKERRQ(ierr);
     /* Unpack */
@@ -1092,6 +1125,7 @@ PetscErrorCode PSSetUp(PS ps) {
     ps->NgenON = temp[5];
     ps->NlineON = temp[6];
     ps->Nref = temp[7];
+    ps->Ndcline = temp[8];
 
     /* Recreate busext2intmap..this will map the local bus numbers to external
      * numbers */
@@ -1100,7 +1134,8 @@ PetscErrorCode PSSetUp(PS ps) {
     for (i = 0; i < ps->maxbusnum + 1; i++)
       ps->busext2intmap[i] = -1;
 
-    ps->ngen = ps->nload = ps->ngenON = ps->nlineON = 0;
+    ps->ngen = ps->nload = ps->ndcline = ps->ngenON = ps->nlineON =
+        ps->ndclineON = 0;
     /* Get the local number of gens and loads */
     for (i = 0; i < nv; i++) {
       ierr = DMNetworkGetNumComponents(ps->networkdm, vtx[i], &numComponents);
@@ -1134,6 +1169,10 @@ PetscErrorCode PSSetUp(PS ps) {
       ierr = PetscMemcpy(&ps->line[i], component, sizeof(struct _p_PSLINE));
       CHKERRQ(ierr);
       ps->nlineON += ps->line[i].status;
+      if (ps->line[i].isdcline) {
+        ps->ndcline++;
+        ps->ndclineON += ps->line[i].status;
+      }
     }
     PetscInt genj = 0, loadj = 0;
     PetscInt genctr, loadctr;
@@ -1171,6 +1210,7 @@ PetscErrorCode PSSetUp(PS ps) {
     ps->nload = ps->Nload;
     ps->ngenON = ps->NgenON;
     ps->nlineON = ps->NlineON;
+    ps->ndclineON = ps->NdclineON;
   }
 
   /* Set up
@@ -1179,8 +1219,9 @@ PetscErrorCode PSSetUp(PS ps) {
      (c) incident generators at bus
      (d) incident loads at bus
      (e) kv levels for lines
-     (e) sets the starting location for the variables for this bus in the given
+     (f) sets the starting location for the variables for this bus in the given
      application state vector
+     (g) marks from and to buses for DC lines (ON) as PV buses
   */
   PetscInt eStart, eEnd, vStart, vEnd;
   PetscInt nlines, k;
@@ -1280,6 +1321,42 @@ PetscErrorCode PSSetUp(PS ps) {
   /* Get KV levels */
   ierr = PSGetKVLevels(ps, &ps->nkvlevels, (const PetscScalar **)&ps->kvlevels);
   CHKERRQ(ierr);
+
+  PSLINE line;
+  /* Set up for lines
+     - Turn off lines that are connected to isolated buses (if they are not OFF
+     already)
+     - Mark DC line ends as PV buses */
+  for (i = 0; i < ps->nline; i++) {
+    line = &ps->line[i];
+
+    const PSBUS *connbuses;
+    PSBUS busf, bust;
+    /* Get the connected buses */
+    ierr = PSLINEGetConnectedBuses(line, &connbuses);
+    CHKERRQ(ierr);
+    busf = connbuses[0];
+    bust = connbuses[1];
+
+    if (busf->ide == ISOLATED_BUS || bust->ide == ISOLATED_BUS) {
+      /* Switch off lines connected to isolated buses */
+      if (line->status) {
+        line->status = 0;
+        ps->nlineON--;
+      }
+    }
+
+    if (!line->isdcline)
+      continue;
+    if (!line->status)
+      continue;
+
+    if (busf->ide != REF_BUS || busf->ide != PV_BUS)
+      busf->ide = PV_BUS;
+    if (bust->ide != REF_BUS || bust->ide != PV_BUS)
+      bust->ide = PV_BUS;
+  }
+
   //  ierr = PetscPrintf(PETSC_COMM_SELF,"Rank %d Came
   //  here\n",ps->comm->rank);CHKERRQ(ierr);
   ps->setupcalled = PETSC_TRUE;
@@ -1542,16 +1619,24 @@ PetscErrorCode PSApplyScenario(PS ps, Scenario scenario) {
       for (j = 0; j < forecast->nele; j++) {
         ierr = PSGetGen(ps, forecast->buses[j], forecast->id[j], &gen);
         CHKERRQ(ierr);
-        gen->pg = gen->pt =
-            forecast->val[j] /
-            ps->MVAbase;    /* Set real power generation. Note that
-                 Pg upper limit is also set to the forecast value. This allows the
-                 wind generator to be dispatched at its limit */
-        gen->pgs = gen->pb; /* Set-point set to lower bound. This is good for
+        if (gen) {
+          gen->pg = gen->pt =
+              forecast->val[j] /
+              ps->MVAbase;    /* Set real power generation. Note that
+                   Pg upper limit is also set to the forecast value. This allows
+                   the    wind generator to be dispatched at its limit */
+          gen->pgs = gen->pb; /* Set-point set to lower bound. This is good for
                                optimization */
-        if (PetscAbsScalar(gen->pg) < 1e-6)
-          gen->status =
-              0; /* Generation value is zero, so switch off the generator */
+          if (PetscAbsScalar(gen->pg) < 1e-6)
+            gen->status =
+                0; /* Generation value is zero, so switch off the generator */
+          //	  else gen->status = 1; /* Switch on generator (it may be off in
+          // the input file) */
+        } else {
+          printf("No generator on bus %d with id %s. Cannot apply the "
+                 "requested scenario\n",
+                 forecast->buses[j], forecast->id[j]);
+        }
       }
     }
   }
@@ -1962,6 +2047,81 @@ PetscErrorCode PSComputeSummaryStats(PS ps) {
   sys_info->total_loadshed[1] = Qdshed_tot * MVAbase;
 
   MPI_Barrier(ps->comm->type);
+
+  PetscFunctionReturn(0);
+}
+
+/*
+  PSGetLineOverloads - Get overloaded lines and returns the indices (line
+numbers) for overloaded lines
+
+  Input Parameters:
+. ps - PS object
+
+  Output Parameters:
++ nodlines - number of overloaded line
+. odlines  - Indices for overloaded lines
+- has_overload - True if any line is overloaded
+
+*/
+PetscErrorCode PSGetLineOverloads(PS ps, PetscInt *nodlines, PetscInt **odlines,
+                                  PetscBool *has_overload) {
+  PetscErrorCode ierr;
+  PetscInt i;
+  PSLINE line;
+  PetscInt idx = 0;
+  PetscInt *odlines_temp;
+  PetscBool hasoverload_temp = PETSC_TRUE;
+
+  PetscFunctionBegin;
+
+  /* Crete buffer to store overloaded lines */
+  ierr = PetscMalloc1(ps->nlineON, &odlines_temp);
+
+  for (i = 0; i < ps->nline; i++) {
+    line = &ps->line[i];
+    if (!line->status)
+      continue;
+
+    /* Check which lines are overloaded */
+    if (line->sf > (line->rateA / ps->MVAbase) ||
+        line->st > (line->rateA / ps->MVAbase)) {
+      odlines_temp[idx++] = i;
+    }
+  }
+
+  if (!idx) {
+    /* No overloaded lines */
+    ierr = PetscFree(odlines_temp);
+    CHKERRQ(ierr);
+    hasoverload_temp = PETSC_FALSE;
+    ps->has_overloaded_lines = PETSC_FALSE;
+    *has_overload = PETSC_FALSE;
+    *nodlines = 0;
+    PetscFunctionReturn(0);
+  } else {
+    /* Some lines are overloaded */
+    if (ps->nlines_overloaded) {
+      /* GetLineOverloads called previously, so re-allocate lines_overloaded
+       * array */
+      ierr = PetscFree(ps->lines_overloaded);
+      CHKERRQ(ierr);
+    }
+    ps->nlines_overloaded = idx;
+    ps->has_overloaded_lines = PETSC_TRUE;
+    ierr = PetscMalloc1(ps->nlines_overloaded, &ps->lines_overloaded);
+    CHKERRQ(ierr);
+    /* Copy values to ps->lines_overloaded array */
+    ierr =
+        PetscMemcpy(ps->lines_overloaded, odlines_temp, idx * sizeof(PetscInt));
+    CHKERRQ(ierr);
+
+    ierr = PetscFree(odlines_temp);
+    CHKERRQ(ierr);
+  }
+  *nodlines = ps->nlines_overloaded;
+  *odlines = ps->lines_overloaded;
+  *has_overload = ps->has_overloaded_lines;
 
   PetscFunctionReturn(0);
 }

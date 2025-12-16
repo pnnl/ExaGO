@@ -50,18 +50,21 @@ if(EXAGO_INSTALL_TESTS)
     )
   endif()
 
-  # Tests for HIOP pridecomp
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_SCOPFLOW_HIOP_TESTSUITE
-    DEPENDS
-    IPOPT
-    HIOP
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:test_scopflow_functionality>
-    ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_pbpol.toml
-  )
+  # Tests for HIOP pridecomp Disabled test for now, because it takes forever to
+  # run on Frontier
+  if(EXAGO_ENABLE_ALL_TESTS)
+    exago_add_test(
+      NAME
+      FUNCTIONALITY_TEST_SCOPFLOW_HIOP_TESTSUITE
+      DEPENDS
+      IPOPT
+      HIOP
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:test_scopflow_functionality>
+      ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_pbpol.toml
+    )
+  endif()
 
   exago_add_test(
     NAME

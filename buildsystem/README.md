@@ -17,11 +17,11 @@ Each folder which builds a configuration of ExaGO should have a following:
 
 Platforms:
 
-- Crusher
+- frontier
 
 Description:
 
-Crusher clang build of exago@crusher-dev + hiop@develop
+frontier clang build of exago@frontier-dev + hiop@develop
 
 ### clang-omp
 
@@ -52,11 +52,9 @@ https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/commit/47ea09e648dfa81ca8a70cc
 ### gcc-cuda
 
 Platforms:
-- Ascent
 - Deception
 - Marianas
 - Newell
-- Summit
 
 Description:
 

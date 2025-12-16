@@ -543,6 +543,9 @@ PetscErrorCode OPFLOWSolverSetUp_IPOPT(OPFLOW opflow) {
   {
     AddIpoptNumOption(ipopt->nlp, (char *)"tol", opflow->tolerance);
     AddIpoptIntOption(ipopt->nlp, (char *)"max_iter", 5000);
+    AddIpoptStrOption(ipopt->nlp, (char *)"nlp_scaling_method",
+                      (char *)"gradient-based");
+    /*
     AddIpoptStrOption(ipopt->nlp, (char *)"mu_strategy", (char *)"monotone");
     AddIpoptStrOption(ipopt->nlp, (char *)"fixed_variable_treatment",
                       (char *)"relax_bounds");
@@ -551,6 +554,7 @@ PetscErrorCode OPFLOWSolverSetUp_IPOPT(OPFLOW opflow) {
     AddIpoptNumOption(ipopt->nlp, (char *)"residual_ratio_max", 1e3);
     AddIpoptNumOption(ipopt->nlp, (char *)"residual_ratio_singular", 1e4);
     AddIpoptNumOption(ipopt->nlp, (char *)"bound_relax_factor", 1e-6);
+    */
   }
 
   /* Add intermediate callback function to get the solver info

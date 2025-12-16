@@ -72,6 +72,8 @@ PetscErrorCode SCOPFLOWCreate(MPI_Comm mpicomm, SCOPFLOW *scopflowout) {
   scopflow->ctgclist = NULL;
   scopflow->ctgcfileset = PETSC_FALSE;
 
+  scopflow->gicfileset = PETSC_FALSE;
+
   /* Default subproblem model and solver */
 #if 0
   (void)std::strncpy(scopflow->subproblem_model,
@@ -769,6 +771,12 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
         CHKERRQ(ierr);
       }
 
+      /* Set any GIC file data */
+      if (scopflow->gicfileset) {
+        ierr = OPFLOWSetGICData(scopflow->opflows[c], scopflow->gicfile);
+        CHKERRQ(ierr);
+      }
+
       /* Set contingencies */
       if (scopflow->ctgcfileset && scopflow->Nc > 1) {
         Contingency ctgc = scopflow->ctgclist->cont[scopflow->cstart + c];
@@ -1367,6 +1375,28 @@ SCOPFLOWSetContingencyData(SCOPFLOW scopflow,
   CHKERRQ(ierr);
   scopflow->ctgcfileformat = ctgcfileformat;
   scopflow->ctgcfileset = PETSC_TRUE;
+
+  PetscFunctionReturn(0);
+}
+
+/*
+ * @brief Set the gic data file for SCOPFLOW
+ *
+ * @param[in] scopflow application object
+ * @param[in] name of the gic file
+ *
+ * gicfile has the coordinates and the substation information. Used for
+ * visualization
+ */
+PetscErrorCode SCOPFLOWSetGICData(SCOPFLOW scopflow, const char gicfile[]) {
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+
+  ierr = PetscMemcpy(scopflow->gicfile, gicfile,
+                     PETSC_MAX_PATH_LEN * sizeof(char));
+  CHKERRQ(ierr);
+  scopflow->gicfileset = PETSC_TRUE;
 
   PetscFunctionReturn(0);
 }

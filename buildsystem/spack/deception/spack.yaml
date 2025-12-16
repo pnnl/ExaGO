@@ -4,6 +4,7 @@ spack:
   view: false
   concretizer:
     reuse: false
+    unify: true
   config:
     concretizer: clingo
     install_tree:
@@ -31,7 +32,7 @@ spack:
     umpire:
       require: ~openmp~examples
     petsc:
-      require: ~hypre~superlu-dist~hdf5~metis
+      require: ~hypre~superlu-dist~hdf5~metis+batch
     python:
       externals:
       - spec: python@3.9.12
