@@ -26,27 +26,61 @@ std::string read_line(std::istream &is) {
   return strip(line);
 }
 
-class SQString {
+std::istream &skipLeadingWhitespace(std::istream &is) {
+  while (std::isspace(is.peek())) {
+    is.get();
+  }
+  return is;
+}
+
+class QuoteStringParse {
 public:
   operator std::string() const { return s_; }
 
 private:
-  friend std::istream &operator>>(std::istream &is, SQString &sqs) {
-    // Remove leading whitespace
-    while (std::isspace(is.peek())) {
-      is.get();
-    }
+  friend std::istream &operator>>(std::istream &is, QuoteStringParse &qs) {
+    skipLeadingWhitespace(is);
+
     // Check for and remove opening quote
-    if (is.peek() != '\'') {
-      throw std::runtime_error("First character expected to be single quote");
+    char qc = is.peek();
+    if (!(qc == '\'' || qc == '\"')) {
+      throw std::runtime_error(
+          "First character expected to be single or double quote");
     }
     is.get();
+
     // Get line to closing quote
-    std::getline(is, sqs.s_, '\'');
+    std::getline(is, qs.s_, qc);
 
     return is;
   }
 
+  std::string s_;
+};
+
+class IntOrStringParse {
+public:
+  int getInt() const { return i_; }
+  const std::string &getString() const { return s_; }
+
+private:
+  friend std::istream &operator>>(std::istream &is, IntOrStringParse &p) {
+    skipLeadingWhitespace(is);
+
+    // Check for opening quote
+    auto qc = is.peek();
+    if (qc == '\'' || qc == '\"') {
+      QuoteStringParse qs;
+      is >> qs;
+      p.s_ = strip(qs);
+    } else {
+      is >> p.i_;
+    }
+
+    return is;
+  }
+
+  int i_{0};
   std::string s_;
 };
 
@@ -100,43 +134,63 @@ CaseID parse_case_id(std::istream &is) {
 }
 
 void parse_record(LineItemStream &lis, Bus &bus) {
-  SQString name;
+  QuoteStringParse name;
   lis >> bus.i >> name >> bus.baskv >> bus.ide >> bus.area >> bus.zone >>
       bus.owner >> bus.vm >> bus.va;
   bus.name = strip(name);
-
+  if (bus.name.empty()) {
+    bus.name = "BUS" + std::to_string(bus.i);
+  }
   // TODO: parse remaining bus items if present
 }
 
 void parse_record(LineItemStream &lis, Load &ld) {
-  SQString id;
-  lis >> ld.i >> id >> ld.status >> ld.area >> ld.zone >> ld.pl >> ld.ql >>
+  IntOrStringParse i;
+  QuoteStringParse id;
+  lis >> i >> id >> ld.status >> ld.area >> ld.zone >> ld.pl >> ld.ql >>
       ld.ip >> ld.iq >> ld.yp >> ld.yq >> ld.owner;
+  ld.i = i.getInt();
+  ld.i_bus_name = i.getString();
   ld.id = strip(id);
 
   // TODO: parse remaining load items if present
 }
 
 void parse_record(LineItemStream &lis, FixedBusShunt sh) {
-  SQString id;
-  lis >> sh.i >> id >> sh.status >> sh.gl >> sh.bl;
+  IntOrStringParse i;
+  QuoteStringParse id;
+  lis >> i >> id >> sh.status >> sh.gl >> sh.bl;
+  sh.i = i.getInt();
+  sh.i_bus_name = i.getString();
   sh.id = strip(id);
 }
 
 void parse_record(LineItemStream &lis, Generator &gen) {
-  SQString id;
-  lis >> gen.i >> id >> gen.pg >> gen.qg >> gen.qt >> gen.qb >> gen.vs >>
-      gen.ireg >> gen.mbase >> gen.zr >> gen.zx >> gen.rt >> gen.xt >>
-      gen.gtap >> gen.stat >> gen.rmpct >> gen.pt >> gen.pb >>
-      gen.owners[0].owner >> gen.owners[0].fraction;
+  IntOrStringParse i;
+  IntOrStringParse ireg;
+  QuoteStringParse id;
+  lis >> i >> id >> gen.pg >> gen.qg >> gen.qt >> gen.qb >> gen.vs >> ireg >>
+      gen.mbase >> gen.zr >> gen.zx >> gen.rt >> gen.xt >> gen.gtap >>
+      gen.stat >> gen.rmpct >> gen.pt >> gen.pb >> gen.owners[0].owner >>
+      gen.owners[0].fraction;
+  gen.i = i.getInt();
+  gen.i_bus_name = i.getString();
+  gen.ireg = ireg.getInt();
+  gen.ireg_bus_name = ireg.getString();
   gen.id = strip(id);
 }
 
 void parse_record(LineItemStream &lis, Branch &br) {
-  SQString ckt;
-  lis >> br.i >> br.j >> ckt >> br.r >> br.x >> br.b >> br.ratea >> br.rateb >>
+  IntOrStringParse i;
+  IntOrStringParse j;
+  QuoteStringParse ckt;
+  lis >> i >> j >> ckt >> br.r >> br.x >> br.b >> br.ratea >> br.rateb >>
       br.ratec >> br.gi >> br.bi >> br.gj >> br.bj >> br.st >> br.met >>
       br.len >> br.owners[0].owner >> br.owners[0].fraction;
+  br.i = i.getInt();
+  br.i_bus_name = i.getString();
+  br.j = j.getInt();
+  br.j_bus_name = j.getString();
   br.ckt = strip(ckt);
 }
 
@@ -149,11 +203,20 @@ Winding parse_transformer_winding(LineItemStream &lis) {
 }
 
 void parse_record(LineItemStream &lis, Transformer &tr) {
-  SQString ckt;
-  SQString name;
-  lis >> tr.i >> tr.j >> tr.k >> ckt >> tr.cw >> tr.cz >> tr.cm >> tr.mag1 >>
-      tr.mag2 >> tr.nmetr >> name >> tr.stat >> tr.owners[0].owner >>
+  IntOrStringParse i;
+  IntOrStringParse j;
+  IntOrStringParse k;
+  QuoteStringParse ckt;
+  QuoteStringParse name;
+  lis >> i >> j >> k >> ckt >> tr.cw >> tr.cz >> tr.cm >> tr.mag1 >> tr.mag2 >>
+      tr.nmetr >> name >> tr.stat >> tr.owners[0].owner >>
       tr.owners[0].fraction;
+  tr.i = i.getInt();
+  tr.i_bus_name = i.getString();
+  tr.j = j.getInt();
+  tr.j_bus_name = j.getString();
+  tr.k = k.getInt();
+  tr.k_bus_name = k.getString();
   tr.ckt = strip(ckt);
   tr.name = strip(name);
   if (tr.k == 0) {
@@ -185,33 +248,112 @@ template <typename T> std::vector<T> parse_records(std::istream &is) {
   return recs;
 }
 
-std::unordered_map<int, int> process_bus_ids(const std::vector<Bus>& buses) {
-  std::unordered_map<int, int> id_map;
-  for (std::size_t i = 0; i < buses.size(); ++i) {
-    id_map.emplace(buses[i].i, i);
+BusMapping::BusMapping(const std::vector<Bus> &buses) : buses_(buses) {
+  for (std::size_t i = 0; i < buses_.size(); ++i) {
+    {
+      auto [_, ins] = id_map_.emplace(buses_[i].i, i);
+      if (!ins) {
+        throw std::runtime_error("Bus numbers non-unique");
+      }
+    }
+    {
+      auto [_, ins] = name_map_.emplace(buses_[i].name, i);
+      if (!ins) {
+        throw std::runtime_error("Bus names non-unique");
+      }
+    }
   }
-  return id_map;
+}
+
+std::size_t BusMapping::getInternalIndex(std::size_t bus_number) const {
+  return id_map_.at(bus_number);
+}
+
+std::size_t BusMapping::getInternalIndex(const std::string &bus_name) const {
+  return name_map_.at(bus_name);
+}
+
+std::size_t BusMapping::getBusNumber(const std::string &bus_name) const {
+  return buses_[getInternalIndex(bus_name)].i;
+}
+
+const std::string &BusMapping::getBusName(std::size_t bus_number) const {
+  return buses_[getInternalIndex(bus_number)].name;
+}
+
+const Bus &BusMapping::getBus(const std::string &bus_name) const {
+  return buses_[getInternalIndex(bus_name)];
+}
+
+const Bus &BusMapping::getBus(std::size_t bus_number) const {
+  return buses_[getInternalIndex(bus_number)];
+}
+
+void BusMapping::resolve(std::size_t &bus_number, std::string &bus_name,
+                         BusMapping::Optional optional) const {
+  if (bus_number == 0 && bus_name.empty()) {
+    if (optional) {
+      return;
+    } else {
+      throw std::runtime_error("Cannot resolve bus id");
+    }
+  }
+  if (bus_number == 0) {
+    bus_number = getBusNumber(bus_name);
+  }
+  if (bus_name.empty()) {
+    auto name = getBusName(bus_number);
+    bus_name = getBusName(bus_number);
+  }
+}
+
+void Network::resolveBusIds() {
+  for (auto &load : loads) {
+    bus_mapping.resolve(load.i, load.i_bus_name);
+  }
+  for (auto &shunt : shunts) {
+    bus_mapping.resolve(shunt.i, shunt.i_bus_name);
+  }
+  for (auto &gen : generators) {
+    bus_mapping.resolve(gen.i, gen.i_bus_name);
+    bus_mapping.resolve(gen.ireg, gen.ireg_bus_name,
+                        BusMapping::Optional{true});
+  }
+  for (auto &br : branches) {
+    bus_mapping.resolve(br.i, br.i_bus_name);
+    bus_mapping.resolve(br.j, br.j_bus_name);
+  }
+  for (auto &tr : transformers) {
+    bus_mapping.resolve(tr.i, tr.i_bus_name);
+    bus_mapping.resolve(tr.j, tr.j_bus_name);
+    bus_mapping.resolve(tr.k, tr.k_bus_name, BusMapping::Optional{true});
+  }
+}
+
+Network::Network(CaseID &&cid, std::vector<Bus> &&bus, std::vector<Load> &&load,
+                 std::vector<FixedBusShunt> &&shunt,
+                 std::vector<Generator> &&gen, std::vector<Branch> &&branch,
+                 std::vector<Transformer> &&trans)
+    : case_id(std::move(cid)), buses(std::move(bus)), bus_mapping(buses),
+      loads(std::move(load)), shunts(std::move(shunt)),
+      generators(std::move(gen)), branches(std::move(branch)),
+      transformers(std::move(trans)) {
+  resolveBusIds();
 }
 
 Network parse_network(std::istream &is) {
   auto case_id = parse_case_id(is);
   auto buses = parse_records<Bus>(is);
-  auto bus_id_map = process_bus_ids(buses);
   auto loads = parse_records<Load>(is);
   auto shunts = parse_records<FixedBusShunt>(is);
   auto generators = parse_records<Generator>(is);
   auto branches = parse_records<Branch>(is);
   auto transformers = parse_records<Transformer>(is);
 
-  Network nw{"",
-             std::move(case_id),
-             std::move(buses),
-             std::move(bus_id_map),
-             std::move(loads),
-             std::move(shunts),
-             std::move(generators),
-             std::move(branches),
+  Network nw{std::move(case_id),     std::move(buses),      std::move(loads),
+             std::move(shunts),      std::move(generators), std::move(branches),
              std::move(transformers)};
+
   return nw;
 }
 
@@ -298,9 +440,9 @@ PetscErrorCode convert_to_ps(PS ps, const Network &nw) {
     dload.scale = sload.scale;
     dload.intrpt = sload.intrpt;
 
-    auto bus_i = nw.bus_id_map.at(dload.bus_i);
-    dload.internal_i = bus_i;
-    auto &bus = ps->bus[bus_i];
+    auto bus_ii = nw.bus_mapping.getInternalIndex(dload.bus_i);
+    dload.internal_i = bus_ii;
+    auto &bus = ps->bus[bus_ii];
     bus.lidx[bus.nload] = i;
     bus.nload++;
   }
@@ -310,15 +452,15 @@ PetscErrorCode convert_to_ps(PS ps, const Network &nw) {
     if (shunt.status == 0) {
       continue;
     }
-    auto bus_i = nw.bus_id_map.at(shunt.i);
-    if (ps->bus[bus_i].nshunt > 0) {
+    auto bus_ii = nw.bus_mapping.getInternalIndex(shunt.i);
+    if (ps->bus[bus_ii].nshunt > 0) {
       throw std::runtime_error(
           "Bus " + std::to_string(shunt.i) +
           ": more than one fixed shunt at bus not supported");
     }
-    ps->bus[bus_i].nshunt++;
-    ps->bus[bus_i].gl = shunt.gl / ps->MVAbase;
-    ps->bus[bus_i].bl = shunt.bl / ps->MVAbase;
+    ps->bus[bus_ii].nshunt++;
+    ps->bus[bus_ii].gl = shunt.gl / ps->MVAbase;
+    ps->bus[bus_ii].bl = shunt.bl / ps->MVAbase;
   }
 
   // generators
@@ -350,9 +492,9 @@ PetscErrorCode convert_to_ps(PS ps, const Network &nw) {
     dgen.f1 = sgen.owners[0].fraction;
 
     dgen.initial_status = dgen.status;
-    auto bus_i = nw.bus_id_map.at(dgen.bus_i);
-    dgen.internal_i = bus_i;
-    auto &bus = ps->bus[bus_i];
+    auto bus_ii = nw.bus_mapping.getInternalIndex(dgen.bus_i);
+    dgen.internal_i = bus_ii;
+    auto &bus = ps->bus[bus_ii];
     bus.gidx[bus.ngen] = i;
     bus.ngen++;
     if (dgen.status == 1) {
@@ -380,8 +522,8 @@ PetscErrorCode convert_to_ps(PS ps, const Network &nw) {
   ierr = PetscCalloc1(ps->Nline, &ps->line);
   CHKERRQ(ierr);
   auto configure_line = [&nw](auto &line) {
-    line.internal_i = nw.bus_id_map.at(line.fbus);
-    line.internal_j = nw.bus_id_map.at(line.tbus);
+    line.internal_i = nw.bus_mapping.getInternalIndex(line.fbus);
+    line.internal_j = nw.bus_mapping.getInternalIndex(line.tbus);
     line.tapratio = 1.0;
     line.phaseshift = 0.0;
 

@@ -809,6 +809,73 @@ TEST_FUNCTION(check_equal)(PS n1, PS n2) {
 }
 END_TEST_FUNCTION
 
+TEST_FUNCTION(check_bus_ids)(const exago::psse::Network &nw) {
+  for (std::size_t i = 0; i < nw.buses.size(); ++i) {
+    const auto &bus = nw.buses[i];
+    TEST_EQUAL(nw.bus_mapping.getInternalIndex(bus.i), i);
+    TEST_EQUAL(nw.bus_mapping.getInternalIndex(bus.name), i);
+    TEST_EQUAL(nw.bus_mapping.getBusName(bus.i), bus.name);
+    TEST_EQUAL(nw.bus_mapping.getBusNumber(bus.name), bus.i);
+    TEST_EQUAL(&bus, &nw.bus_mapping.getBus(bus.i));
+    TEST_EQUAL(&bus, &nw.bus_mapping.getBus(bus.name));
+  }
+  for (auto &&load : nw.loads) {
+    const auto &bus = nw.bus_mapping.getBus(load.i);
+    TEST_EQUAL(&bus, &nw.bus_mapping.getBus(load.i_bus_name));
+    TEST_EQUAL(bus.i, load.i);
+    TEST_EQUAL(bus.name, load.i_bus_name);
+  }
+  for (auto &&shunt : nw.shunts) {
+    const auto &bus = nw.bus_mapping.getBus(shunt.i);
+    TEST_EQUAL(&bus, &nw.bus_mapping.getBus(shunt.i_bus_name));
+    TEST_EQUAL(bus.i, shunt.i);
+    TEST_EQUAL(bus.name, shunt.i_bus_name);
+  }
+  for (auto &&gen : nw.generators) {
+    const auto &bus = nw.bus_mapping.getBus(gen.i);
+    TEST_EQUAL(&bus, &nw.bus_mapping.getBus(gen.i_bus_name));
+    TEST_EQUAL(bus.i, gen.i);
+    TEST_EQUAL(bus.name, gen.i_bus_name);
+    if (gen.ireg == 0) {
+      continue;
+    }
+    const auto &regbus = nw.bus_mapping.getBus(gen.ireg);
+    TEST_EQUAL(&regbus, &nw.bus_mapping.getBus(gen.ireg_bus_name));
+    TEST_EQUAL(regbus.i, gen.ireg);
+    TEST_EQUAL(regbus.name, gen.ireg_bus_name);
+  }
+  for (auto &&br : nw.branches) {
+    const auto &ibus = nw.bus_mapping.getBus(br.i);
+    TEST_EQUAL(&ibus, &nw.bus_mapping.getBus(br.i_bus_name));
+    TEST_EQUAL(ibus.i, br.i);
+    TEST_EQUAL(ibus.name, br.i_bus_name);
+    const auto &jbus = nw.bus_mapping.getBus(br.j);
+    TEST_EQUAL(&jbus, &nw.bus_mapping.getBus(br.j_bus_name));
+    TEST_EQUAL(jbus.i, br.j);
+    TEST_EQUAL(jbus.name, br.j_bus_name);
+  }
+  for (auto &&tr : nw.transformers) {
+    const auto &ibus = nw.bus_mapping.getBus(tr.i);
+    TEST_EQUAL(&ibus, &nw.bus_mapping.getBus(tr.i_bus_name));
+    TEST_EQUAL(ibus.i, tr.i);
+    TEST_EQUAL(ibus.name, tr.i_bus_name);
+    const auto &jbus = nw.bus_mapping.getBus(tr.j);
+    TEST_EQUAL(&jbus, &nw.bus_mapping.getBus(tr.j_bus_name));
+    TEST_EQUAL(jbus.i, tr.j);
+    TEST_EQUAL(jbus.name, tr.j_bus_name);
+    if (tr.k == 0) {
+      continue;
+    }
+    const auto &kbus = nw.bus_mapping.getBus(tr.k);
+    TEST_EQUAL(&kbus, &nw.bus_mapping.getBus(tr.k_bus_name));
+    TEST_EQUAL(kbus.i, tr.k);
+    TEST_EQUAL(kbus.name, tr.k_bus_name);
+  }
+
+  TEST_FUNCTION_RETURN;
+}
+END_TEST_FUNCTION
+
 TEST_FUNCTION(driver)() {
   std::string filename{"ieee9bus_v32.raw"};
 
@@ -820,6 +887,8 @@ TEST_FUNCTION(driver)() {
   TEST(check_ps_data(nw_psh.ps));
 
   TEST(check_equal(psh.ps, nw_psh.ps));
+
+  TEST(check_bus_ids(nw));
 
   TEST_FUNCTION_RETURN;
 }

@@ -21,7 +21,7 @@ struct CaseID {
 };
 
 struct Bus {
-  int i;
+  std::size_t i;
   std::string name;
   double baskv;
   int ide;
@@ -37,7 +37,8 @@ struct Bus {
 };
 
 struct Load {
-  int i; // TODO: could also be specified as bus name (???)
+  std::size_t i;
+  std::string i_bus_name;
   std::string id;
   int status;
   int area;
@@ -54,7 +55,8 @@ struct Load {
 };
 
 struct FixedBusShunt {
-  int i; // TODO: could be bus name (???)
+  std::size_t i;
+  std::string i_bus_name;
   std::string id;
   int status;
   double gl;
@@ -67,14 +69,16 @@ struct Ownership {
 };
 
 struct Generator {
-  int i; // TODO: could be bus name (???)
+  std::size_t i;
+  std::string i_bus_name;
   std::string id;
   double pg;
   double qg;
   double qt;
   double qb;
   double vs;
-  int ireg; // TODO: could be bus name (???)
+  std::size_t ireg;
+  std::string ireg_bus_name;
   double mbase;
   double zr;
   double zx;
@@ -91,8 +95,10 @@ struct Generator {
 };
 
 struct Branch {
-  int i; // TODO: could be bus name (???)
-  int j; // TODO: could be bus name (???)
+  std::size_t i;
+  std::string i_bus_name;
+  std::size_t j;
+  std::string j_bus_name;
   std::string ckt;
   double r;
   double x;
@@ -137,9 +143,12 @@ struct Winding {
 };
 
 struct Transformer {
-  int i;
-  int j;
-  int k;
+  std::size_t i;
+  std::string i_bus_name;
+  std::size_t j;
+  std::string j_bus_name;
+  std::size_t k;
+  std::string k_bus_name;
   std::string ckt;
   int cw;
   int cz;
@@ -160,17 +169,51 @@ struct Transformer {
 
 struct Area {
   int i;
-  int isw; // TODO: could be bus name (???)
+  std::size_t isw;
+  std::string isw_bus_name; // TODO: resolve
   double pdes;
   double ptol;
   std::string arname;
 };
 
+class BusMapping {
+public:
+  struct Optional {
+    operator bool() { return value; }
+    bool value{false};
+  };
+
+  BusMapping(const std::vector<Bus> &buses);
+
+  std::size_t getInternalIndex(std::size_t bus_number) const;
+  std::size_t getInternalIndex(const std::string &bus_name) const;
+
+  std::size_t getBusNumber(const std::string &bus_name) const;
+  const std::string &getBusName(std::size_t bus_number) const;
+
+  const Bus &getBus(const std::string &bus_name) const;
+  const Bus &getBus(std::size_t bus_number) const;
+
+  void resolve(std::size_t &bus_number, std::string &bus_name,
+               Optional opt = Optional{false}) const;
+
+private:
+  const std::vector<Bus> &buses_;
+  std::unordered_map<std::size_t, std::size_t> id_map_;
+  std::unordered_map<std::string, std::size_t> name_map_;
+};
+
 struct Network {
+  Network(CaseID &&, std::vector<Bus> &&, std::vector<Load> &&,
+          std::vector<FixedBusShunt> &&, std::vector<Generator> &&,
+          std::vector<Branch> &&, std::vector<Transformer> &&);
+
+  void resolveBusIds();
+
   std::string file_name;
   CaseID case_id;
   std::vector<Bus> buses;
-  std::unordered_map<int, int> bus_id_map;
+  BusMapping bus_mapping;
   std::vector<Load> loads;
   std::vector<FixedBusShunt> shunts;
   std::vector<Generator> generators;
