@@ -159,6 +159,7 @@ struct Transformer {
   std::string name;
   int stat;
   std::array<Ownership, 4> owners;
+  std::string vecgrp;
   Impedence imp12;
   Impedence imp23;
   Impedence imp31;
@@ -176,6 +177,48 @@ struct Area {
   std::string arname;
 };
 
+struct AreaInterchange {};
+
+struct TwoTerminalDCLine {};
+
+struct VSCDCLine {};
+
+struct ImpedanceCorrection {};
+
+struct MultiTerminalDCLine {};
+
+struct MultiSectionLineGroup {};
+
+struct Zone {};
+
+struct InterAreaTransfer {};
+
+struct Owner {};
+
+struct FACTSDevice {};
+
+struct SwitchedShunt {
+  struct Block {
+    int n;
+    double b;
+  };
+  std::size_t i;
+  std::string i_bus_name;
+  int modsw;
+  int adjm;
+  int stat;
+  double vswhi;
+  double vswlo;
+  std::size_t swrem;
+  std::string swrem_bus_name;
+  double rmpct;
+  std::string rmidnt;
+  double binit;
+  std::array<Block, 8> blocks;
+};
+
+struct GNEDevice {};
+
 class BusMapping {
 public:
   struct Optional {
@@ -183,22 +226,25 @@ public:
     bool value{false};
   };
 
-  BusMapping(const std::vector<Bus> &buses);
+  BusMapping(std::vector<Bus> &buses);
 
-  std::size_t getInternalIndex(std::size_t bus_number) const;
-  std::size_t getInternalIndex(const std::string &bus_name) const;
+  bool HasBus(std::size_t bus_number) const;
+  bool HasBus(const std::string &bus_name) const;
 
-  std::size_t getBusNumber(const std::string &bus_name) const;
-  const std::string &getBusName(std::size_t bus_number) const;
+  std::size_t GetInternalIndex(std::size_t bus_number) const;
+  std::size_t GetInternalIndex(const std::string &bus_name) const;
 
-  const Bus &getBus(const std::string &bus_name) const;
-  const Bus &getBus(std::size_t bus_number) const;
+  std::size_t GetBusNumber(const std::string &bus_name) const;
+  const std::string &GetBusName(std::size_t bus_number) const;
 
-  void resolve(std::size_t &bus_number, std::string &bus_name,
+  const Bus &GetBus(const std::string &bus_name) const;
+  const Bus &GetBus(std::size_t bus_number) const;
+
+  void Resolve(std::size_t &bus_number, std::string &bus_name,
                Optional opt = Optional{false}) const;
 
 private:
-  const std::vector<Bus> &buses_;
+  std::vector<Bus> &buses_;
   std::unordered_map<std::size_t, std::size_t> id_map_;
   std::unordered_map<std::string, std::size_t> name_map_;
 };
@@ -206,25 +252,38 @@ private:
 struct Network {
   Network(CaseID &&, std::vector<Bus> &&, std::vector<Load> &&,
           std::vector<FixedBusShunt> &&, std::vector<Generator> &&,
-          std::vector<Branch> &&, std::vector<Transformer> &&);
+          std::vector<Branch> &&, std::vector<Transformer> &&,
+          std::vector<SwitchedShunt> &&);
 
-  void resolveBusIds();
+  void ResolveBusIds();
 
   std::string file_name;
   CaseID case_id;
   std::vector<Bus> buses;
   BusMapping bus_mapping;
   std::vector<Load> loads;
-  std::vector<FixedBusShunt> shunts;
+  std::vector<FixedBusShunt> fixed_bus_shunts;
   std::vector<Generator> generators;
   std::vector<Branch> branches;
   std::vector<Transformer> transformers;
+  // std::vector<AreaInterchange> area_interchanges;
+  // std::vector<TwoTerminalDCLine> two_terminal_dc_lines;
+  // std::vector<VSCDCLine> vsc_dc_lines;
+  // std::vector<ImpedanceCorrection> impedance_corrections;
+  // std::vector<MultiTerminalDCLine> multi_terminal_dc_lines;
+  // std::vector<MultiSectionLineGroup> multi_section_line_groups;
+  // std::vector<Zone> zones;
+  // std::vector<InterAreaTransfer> inter_area_transfers;
+  // std::vector<Owner> owners;
+  // std::vector<FACTSDevice> facts_devices;
+  std::vector<SwitchedShunt> switched_shunts;
+  // std::vector<GNEDevice> gne_devices;
 };
 
-Network parse_network(std::istream &is);
-Network parse_network(const std::string &filename);
+Network ParseNetwork(std::istream &is);
+Network ParseNetwork(const std::string &filename);
 
-PetscErrorCode convert_to_ps(PS ps, const Network &nw);
+PetscErrorCode ConvertToPS(PS ps, const Network &nw);
 
 } // namespace psse
 } // namespace exago

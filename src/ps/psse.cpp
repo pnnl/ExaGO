@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cctype>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <numeric>
@@ -11,22 +12,20 @@
 namespace exago {
 namespace psse {
 
-double deg2rad(double deg) { return deg * M_PI / 180.0; }
-
-std::string strip(std::string str) {
+std::string Strip(std::string str) {
   auto notspace = [](char c) { return !std::isspace(c); };
   str.erase(begin(str), std::find_if(begin(str), end(str), notspace));
   str.erase(std::find_if(rbegin(str), rend(str), notspace).base(), end(str));
   return str;
 }
 
-std::string read_line(std::istream &is) {
+std::string ReadLine(std::istream &is) {
   std::string line;
   std::getline(is, line);
-  return strip(line);
+  return Strip(line);
 }
 
-std::istream &skipLeadingWhitespace(std::istream &is) {
+std::istream &SkipLeadingWhitespace(std::istream &is) {
   while (std::isspace(is.peek())) {
     is.get();
   }
@@ -39,7 +38,7 @@ public:
 
 private:
   friend std::istream &operator>>(std::istream &is, QuoteStringParse &qs) {
-    skipLeadingWhitespace(is);
+    SkipLeadingWhitespace(is);
 
     // Check for and remove opening quote
     char qc = is.peek();
@@ -60,19 +59,19 @@ private:
 
 class IntOrStringParse {
 public:
-  int getInt() const { return i_; }
-  const std::string &getString() const { return s_; }
+  int GetInt() const { return i_; }
+  const std::string &GetString() const { return s_; }
 
 private:
   friend std::istream &operator>>(std::istream &is, IntOrStringParse &p) {
-    skipLeadingWhitespace(is);
+    SkipLeadingWhitespace(is);
 
     // Check for opening quote
     auto qc = is.peek();
     if (qc == '\'' || qc == '\"') {
       QuoteStringParse qs;
       is >> qs;
-      p.s_ = strip(qs);
+      p.s_ = Strip(qs);
     } else {
       is >> p.i_;
     }
@@ -87,20 +86,18 @@ private:
 class LineItemStream : public std::istream {
 public:
   LineItemStream() = delete;
-  LineItemStream(std::istream &is) : is_(&is) { next_line(); }
+  LineItemStream(std::istream &is) : is_(&is) { NextLine(); }
 
   operator bool() const { return static_cast<bool>(ss_); }
 
-  std::size_t size() const noexcept { return size_; }
+  std::size_t Size() const noexcept { return size_; }
 
-  std::string str() const { return ss_.str(); }
-
-  bool starts_with(const std::string &sub) const {
+  bool StartsWith(const std::string &sub) const {
     return ss_.str().find(sub) == 0;
   }
 
-  LineItemStream &next_line() {
-    auto line = read_line(*is_);
+  LineItemStream &NextLine() {
+    auto line = ReadLine(*is_);
     std::istringstream iss(line);
     ss_.str("");
     for (std::string item; std::getline(iss, item, ',');) {
@@ -122,50 +119,50 @@ private:
   std::size_t size_{0};
 };
 
-CaseID parse_case_id(std::istream &is) {
+CaseID ParseCaseID(std::istream &is) {
   CaseID cid;
   LineItemStream lis(is);
   lis >> cid.ic >> cid.sbase >> cid.rev >> cid.xfrrat >> cid.nxfrat >>
       cid.basfrq;
-  cid.extra[0] = read_line(lis);
-  cid.extra[1] = read_line(is);
-  cid.extra[2] = read_line(is);
+  cid.extra[0] = ReadLine(lis);
+  cid.extra[1] = ReadLine(is);
+  cid.extra[2] = ReadLine(is);
   return cid;
 }
 
-void parse_record(LineItemStream &lis, Bus &bus) {
+void ParseRecord(LineItemStream &lis, Bus &bus) {
   QuoteStringParse name;
   lis >> bus.i >> name >> bus.baskv >> bus.ide >> bus.area >> bus.zone >>
       bus.owner >> bus.vm >> bus.va;
-  bus.name = strip(name);
+  bus.name = Strip(name);
   if (bus.name.empty()) {
     bus.name = "BUS" + std::to_string(bus.i);
   }
   // TODO: parse remaining bus items if present
 }
 
-void parse_record(LineItemStream &lis, Load &ld) {
+void ParseRecord(LineItemStream &lis, Load &ld) {
   IntOrStringParse i;
   QuoteStringParse id;
   lis >> i >> id >> ld.status >> ld.area >> ld.zone >> ld.pl >> ld.ql >>
       ld.ip >> ld.iq >> ld.yp >> ld.yq >> ld.owner;
-  ld.i = i.getInt();
-  ld.i_bus_name = i.getString();
-  ld.id = strip(id);
+  ld.i = i.GetInt();
+  ld.i_bus_name = i.GetString();
+  ld.id = Strip(id);
 
   // TODO: parse remaining load items if present
 }
 
-void parse_record(LineItemStream &lis, FixedBusShunt sh) {
+void ParseRecord(LineItemStream &lis, FixedBusShunt sh) {
   IntOrStringParse i;
   QuoteStringParse id;
   lis >> i >> id >> sh.status >> sh.gl >> sh.bl;
-  sh.i = i.getInt();
-  sh.i_bus_name = i.getString();
-  sh.id = strip(id);
+  sh.i = i.GetInt();
+  sh.i_bus_name = i.GetString();
+  sh.id = Strip(id);
 }
 
-void parse_record(LineItemStream &lis, Generator &gen) {
+void ParseRecord(LineItemStream &lis, Generator &gen) {
   IntOrStringParse i;
   IntOrStringParse ireg;
   QuoteStringParse id;
@@ -173,25 +170,25 @@ void parse_record(LineItemStream &lis, Generator &gen) {
       gen.mbase >> gen.zr >> gen.zx >> gen.rt >> gen.xt >> gen.gtap >>
       gen.stat >> gen.rmpct >> gen.pt >> gen.pb >> gen.owners[0].owner >>
       gen.owners[0].fraction;
-  gen.i = i.getInt();
-  gen.i_bus_name = i.getString();
-  gen.ireg = ireg.getInt();
-  gen.ireg_bus_name = ireg.getString();
-  gen.id = strip(id);
+  gen.i = i.GetInt();
+  gen.i_bus_name = i.GetString();
+  gen.ireg = ireg.GetInt();
+  gen.ireg_bus_name = ireg.GetString();
+  gen.id = Strip(id);
 }
 
-void parse_record(LineItemStream &lis, Branch &br) {
+void ParseRecord(LineItemStream &lis, Branch &br) {
   IntOrStringParse i;
   IntOrStringParse j;
   QuoteStringParse ckt;
   lis >> i >> j >> ckt >> br.r >> br.x >> br.b >> br.ratea >> br.rateb >>
       br.ratec >> br.gi >> br.bi >> br.gj >> br.bj >> br.st >> br.met >>
       br.len >> br.owners[0].owner >> br.owners[0].fraction;
-  br.i = i.getInt();
-  br.i_bus_name = i.getString();
-  br.j = j.getInt();
-  br.j_bus_name = j.getString();
-  br.ckt = strip(ckt);
+  br.i = i.GetInt();
+  br.i_bus_name = i.GetString();
+  br.j = j.GetInt();
+  br.j_bus_name = j.GetString();
+  br.ckt = Strip(ckt);
 }
 
 Winding parse_transformer_winding(LineItemStream &lis) {
@@ -202,7 +199,7 @@ Winding parse_transformer_winding(LineItemStream &lis) {
   return w;
 }
 
-void parse_record(LineItemStream &lis, Transformer &tr) {
+void ParseRecord(LineItemStream &lis, Transformer &tr) {
   IntOrStringParse i;
   IntOrStringParse j;
   IntOrStringParse k;
@@ -211,44 +208,82 @@ void parse_record(LineItemStream &lis, Transformer &tr) {
   lis >> i >> j >> k >> ckt >> tr.cw >> tr.cz >> tr.cm >> tr.mag1 >> tr.mag2 >>
       tr.nmetr >> name >> tr.stat >> tr.owners[0].owner >>
       tr.owners[0].fraction;
-  tr.i = i.getInt();
-  tr.i_bus_name = i.getString();
-  tr.j = j.getInt();
-  tr.j_bus_name = j.getString();
-  tr.k = k.getInt();
-  tr.k_bus_name = k.getString();
-  tr.ckt = strip(ckt);
-  tr.name = strip(name);
+  tr.i = i.GetInt();
+  tr.i_bus_name = i.GetString();
+  tr.j = j.GetInt();
+  tr.j_bus_name = j.GetString();
+  tr.k = k.GetInt();
+  tr.k_bus_name = k.GetString();
+  tr.ckt = Strip(ckt);
+  tr.name = Strip(name);
   if (tr.k == 0) {
     // two-winding (3 more rows)
-    lis.next_line() >> tr.imp12.r >> tr.imp12.x >> tr.imp12.sbase;
-    tr.windings[0] = parse_transformer_winding(lis.next_line());
-    lis.next_line() >> tr.windings[1].windv >> tr.windings[1].nomv;
+    lis.NextLine() >> tr.imp12.r >> tr.imp12.x >> tr.imp12.sbase;
+    tr.windings[0] = parse_transformer_winding(lis.NextLine());
+    lis.NextLine() >> tr.windings[1].windv >> tr.windings[1].nomv;
   } else {
     // three-winding (4 more rows)
-    lis.next_line() >> tr.imp12.r >> tr.imp12.x >> tr.imp12.sbase >>
+    lis.NextLine() >> tr.imp12.r >> tr.imp12.x >> tr.imp12.sbase >>
         tr.imp23.r >> tr.imp23.x >> tr.imp23.sbase >> tr.imp31.r >>
         tr.imp31.x >> tr.imp31.sbase >> tr.vmstar >> tr.anstar;
-    tr.windings[0] = parse_transformer_winding(lis.next_line());
-    tr.windings[1] = parse_transformer_winding(lis.next_line());
-    tr.windings[2] = parse_transformer_winding(lis.next_line());
+    tr.windings[0] = parse_transformer_winding(lis.NextLine());
+    tr.windings[1] = parse_transformer_winding(lis.NextLine());
+    tr.windings[2] = parse_transformer_winding(lis.NextLine());
   }
 }
 
-template <typename T> std::vector<T> parse_records(std::istream &is) {
+void ParseRecord(LineItemStream &, AreaInterchange &) {}
+
+void ParseRecord(LineItemStream &, TwoTerminalDCLine &) {}
+
+void ParseRecord(LineItemStream &, VSCDCLine &) {}
+
+void ParseRecord(LineItemStream &, ImpedanceCorrection &) {}
+
+void ParseRecord(LineItemStream &, MultiTerminalDCLine &) {}
+
+void ParseRecord(LineItemStream &, MultiSectionLineGroup &) {}
+
+void ParseRecord(LineItemStream &, Zone &) {}
+
+void ParseRecord(LineItemStream &, InterAreaTransfer &) {}
+
+void ParseRecord(LineItemStream &, Owner &) {}
+
+void ParseRecord(LineItemStream &, FACTSDevice &) {}
+
+void ParseRecord(LineItemStream &lis, SwitchedShunt &sh) {
+  IntOrStringParse i;
+  IntOrStringParse swrem;
+  QuoteStringParse rmidnt;
+  lis >> i >> sh.modsw >> sh.adjm >> sh.stat >> sh.vswhi >> sh.vswlo >> swrem >>
+      sh.rmpct >> rmidnt >> sh.binit >> sh.blocks[0].n >> sh.blocks[0].b;
+  sh.i = i.GetInt();
+  sh.i_bus_name = i.GetString();
+  sh.swrem = swrem.GetInt();
+  sh.swrem_bus_name = swrem.GetString();
+  sh.rmidnt = Strip(rmidnt);
+}
+
+void ParseRecord(LineItemStream &, GNEDevice &) {}
+
+template <typename T> std::vector<T> ParseRecords(std::istream &is) {
   std::vector<T> recs;
-  while (is) {
+  while (is && is.peek() != 'Q') {
     LineItemStream lis(is);
-    if (lis.starts_with("0 /")) {
+    if (lis.StartsWith("0 /")) {
       break;
     }
+    if (lis.StartsWith("@!")) {
+      continue;
+    }
     auto &rec = recs.emplace_back();
-    parse_record(lis, rec);
+    ParseRecord(lis, rec);
   }
   return recs;
 }
 
-BusMapping::BusMapping(const std::vector<Bus> &buses) : buses_(buses) {
+BusMapping::BusMapping(std::vector<Bus> &buses) : buses_(buses) {
   for (std::size_t i = 0; i < buses_.size(); ++i) {
     {
       auto [_, ins] = id_map_.emplace(buses_[i].i, i);
@@ -265,31 +300,39 @@ BusMapping::BusMapping(const std::vector<Bus> &buses) : buses_(buses) {
   }
 }
 
-std::size_t BusMapping::getInternalIndex(std::size_t bus_number) const {
+bool BusMapping::HasBus(std::size_t bus_number) const {
+  return (id_map_.count(bus_number) > 0);
+}
+
+bool BusMapping::HasBus(const std::string &bus_name) const {
+  return (name_map_.count(bus_name) > 0);
+}
+
+std::size_t BusMapping::GetInternalIndex(std::size_t bus_number) const {
   return id_map_.at(bus_number);
 }
 
-std::size_t BusMapping::getInternalIndex(const std::string &bus_name) const {
+std::size_t BusMapping::GetInternalIndex(const std::string &bus_name) const {
   return name_map_.at(bus_name);
 }
 
-std::size_t BusMapping::getBusNumber(const std::string &bus_name) const {
-  return buses_[getInternalIndex(bus_name)].i;
+std::size_t BusMapping::GetBusNumber(const std::string &bus_name) const {
+  return buses_[GetInternalIndex(bus_name)].i;
 }
 
-const std::string &BusMapping::getBusName(std::size_t bus_number) const {
-  return buses_[getInternalIndex(bus_number)].name;
+const std::string &BusMapping::GetBusName(std::size_t bus_number) const {
+  return buses_[GetInternalIndex(bus_number)].name;
 }
 
-const Bus &BusMapping::getBus(const std::string &bus_name) const {
-  return buses_[getInternalIndex(bus_name)];
+const Bus &BusMapping::GetBus(const std::string &bus_name) const {
+  return buses_[GetInternalIndex(bus_name)];
 }
 
-const Bus &BusMapping::getBus(std::size_t bus_number) const {
-  return buses_[getInternalIndex(bus_number)];
+const Bus &BusMapping::GetBus(std::size_t bus_number) const {
+  return buses_[GetInternalIndex(bus_number)];
 }
 
-void BusMapping::resolve(std::size_t &bus_number, std::string &bus_name,
+void BusMapping::Resolve(std::size_t &bus_number, std::string &bus_name,
                          BusMapping::Optional optional) const {
   if (bus_number == 0 && bus_name.empty()) {
     if (optional) {
@@ -299,72 +342,105 @@ void BusMapping::resolve(std::size_t &bus_number, std::string &bus_name,
     }
   }
   if (bus_number == 0) {
-    bus_number = getBusNumber(bus_name);
+    if (!HasBus(bus_name)) {
+      throw std::runtime_error("Bus \'" + bus_name + "\' does not exist");
+    }
+    bus_number = GetBusNumber(bus_name);
   }
   if (bus_name.empty()) {
-    auto name = getBusName(bus_number);
-    bus_name = getBusName(bus_number);
+    if (!HasBus(bus_number)) {
+      throw std::runtime_error("Bus " + std::to_string(bus_number) +
+                               " does not exist");
+    }
+    bus_name = GetBusName(bus_number);
   }
 }
 
-void Network::resolveBusIds() {
+void Network::ResolveBusIds() {
   for (auto &load : loads) {
-    bus_mapping.resolve(load.i, load.i_bus_name);
+    bus_mapping.Resolve(load.i, load.i_bus_name);
   }
-  for (auto &shunt : shunts) {
-    bus_mapping.resolve(shunt.i, shunt.i_bus_name);
+  for (auto &shunt : fixed_bus_shunts) {
+    bus_mapping.Resolve(shunt.i, shunt.i_bus_name);
   }
   for (auto &gen : generators) {
-    bus_mapping.resolve(gen.i, gen.i_bus_name);
-    bus_mapping.resolve(gen.ireg, gen.ireg_bus_name,
+    bus_mapping.Resolve(gen.i, gen.i_bus_name);
+    bus_mapping.Resolve(gen.ireg, gen.ireg_bus_name,
                         BusMapping::Optional{true});
   }
   for (auto &br : branches) {
-    bus_mapping.resolve(br.i, br.i_bus_name);
-    bus_mapping.resolve(br.j, br.j_bus_name);
+    bus_mapping.Resolve(br.i, br.i_bus_name);
+    bus_mapping.Resolve(br.j, br.j_bus_name);
   }
   for (auto &tr : transformers) {
-    bus_mapping.resolve(tr.i, tr.i_bus_name);
-    bus_mapping.resolve(tr.j, tr.j_bus_name);
-    bus_mapping.resolve(tr.k, tr.k_bus_name, BusMapping::Optional{true});
+    bus_mapping.Resolve(tr.i, tr.i_bus_name);
+    bus_mapping.Resolve(tr.j, tr.j_bus_name);
+    bus_mapping.Resolve(tr.k, tr.k_bus_name, BusMapping::Optional{true});
+  }
+
+  for (auto &sh : switched_shunts) {
+    bus_mapping.Resolve(sh.i, sh.i_bus_name);
+    bus_mapping.Resolve(sh.swrem, sh.swrem_bus_name);
   }
 }
 
 Network::Network(CaseID &&cid, std::vector<Bus> &&bus, std::vector<Load> &&load,
-                 std::vector<FixedBusShunt> &&shunt,
+                 std::vector<FixedBusShunt> &&fbshunt,
                  std::vector<Generator> &&gen, std::vector<Branch> &&branch,
-                 std::vector<Transformer> &&trans)
+                 std::vector<Transformer> &&trans,
+                 std::vector<SwitchedShunt> &&swshunt)
     : case_id(std::move(cid)), buses(std::move(bus)), bus_mapping(buses),
-      loads(std::move(load)), shunts(std::move(shunt)),
+      loads(std::move(load)), fixed_bus_shunts(std::move(fbshunt)),
       generators(std::move(gen)), branches(std::move(branch)),
-      transformers(std::move(trans)) {
-  resolveBusIds();
+      transformers(std::move(trans)), switched_shunts(std::move(swshunt)) {
+  ResolveBusIds();
 }
 
-Network parse_network(std::istream &is) {
-  auto case_id = parse_case_id(is);
-  auto buses = parse_records<Bus>(is);
-  auto loads = parse_records<Load>(is);
-  auto shunts = parse_records<FixedBusShunt>(is);
-  auto generators = parse_records<Generator>(is);
-  auto branches = parse_records<Branch>(is);
-  auto transformers = parse_records<Transformer>(is);
+Network ParseNetwork(std::istream &is) {
+  auto case_id = ParseCaseID(is);
+  auto buses = ParseRecords<Bus>(is);
+  auto loads = ParseRecords<Load>(is);
+  auto fixed_bus_shunts = ParseRecords<FixedBusShunt>(is);
+  auto generators = ParseRecords<Generator>(is);
+  auto branches = ParseRecords<Branch>(is);
+  auto transformers = ParseRecords<Transformer>(is);
+  // { TODO
+  auto area_interchanges = ParseRecords<AreaInterchange>(is);
+  auto two_terminal_dc_lines = ParseRecords<TwoTerminalDCLine>(is);
+  auto vsc_dc_lines = ParseRecords<VSCDCLine>(is);
+  auto impedance_corrections = ParseRecords<ImpedanceCorrection>(is);
+  auto multi_terminal_dc_lines = ParseRecords<MultiTerminalDCLine>(is);
+  auto multi_section_line_groups = ParseRecords<MultiSectionLineGroup>(is);
+  auto zones = ParseRecords<Zone>(is);
+  auto inter_area_transfers = ParseRecords<InterAreaTransfer>(is);
+  auto owners = ParseRecords<Owner>(is);
+  auto facts_devices = ParseRecords<FACTSDevice>(is);
+  // }
+  auto switched_shunts = ParseRecords<SwitchedShunt>(is);
 
-  Network nw{std::move(case_id),     std::move(buses),      std::move(loads),
-             std::move(shunts),      std::move(generators), std::move(branches),
-             std::move(transformers)};
+  // { TODO
+  auto gne_devices = ParseRecords<GNEDevice>(is);
+  // }
+
+  Network nw{std::move(case_id),      std::move(buses),
+             std::move(loads),        std::move(fixed_bus_shunts),
+             std::move(generators),   std::move(branches),
+             std::move(transformers), std::move(switched_shunts)};
 
   return nw;
 }
 
-Network parse_network(const std::string &filename) {
+Network ParseNetwork(const std::string &filename) {
   std::ifstream is(filename);
-  auto nw = parse_network(is);
+  if (!is) {
+    throw std::runtime_error("Failed to open file: \'" + filename + "\'");
+  }
+  auto nw = ParseNetwork(is);
   nw.file_name = filename;
   return nw;
 }
 
-PetscErrorCode convert_to_ps(PS ps, const Network &nw) {
+PetscErrorCode ConvertToPS(PS ps, const Network &nw) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
@@ -378,6 +454,8 @@ PetscErrorCode convert_to_ps(PS ps, const Network &nw) {
       std::max_element(begin(nw.buses), end(nw.buses),
                        [](auto &&b1, auto &&b2) { return b1.i < b2.i; })
           ->i;
+
+  auto deg2rad = [](auto &&deg) { return deg * M_PI / 180.0; };
 
   // buses
   ps->Nbus = ps->nbus = nw.buses.size();
@@ -440,19 +518,19 @@ PetscErrorCode convert_to_ps(PS ps, const Network &nw) {
     dload.scale = sload.scale;
     dload.intrpt = sload.intrpt;
 
-    auto bus_ii = nw.bus_mapping.getInternalIndex(dload.bus_i);
+    auto bus_ii = nw.bus_mapping.GetInternalIndex(dload.bus_i);
     dload.internal_i = bus_ii;
     auto &bus = ps->bus[bus_ii];
     bus.lidx[bus.nload] = i;
     bus.nload++;
   }
 
-  // shunts
-  for (auto &shunt : nw.shunts) {
+  // fixed_bus_shunts
+  for (auto &shunt : nw.fixed_bus_shunts) {
     if (shunt.status == 0) {
       continue;
     }
-    auto bus_ii = nw.bus_mapping.getInternalIndex(shunt.i);
+    auto bus_ii = nw.bus_mapping.GetInternalIndex(shunt.i);
     if (ps->bus[bus_ii].nshunt > 0) {
       throw std::runtime_error(
           "Bus " + std::to_string(shunt.i) +
@@ -492,7 +570,7 @@ PetscErrorCode convert_to_ps(PS ps, const Network &nw) {
     dgen.f1 = sgen.owners[0].fraction;
 
     dgen.initial_status = dgen.status;
-    auto bus_ii = nw.bus_mapping.getInternalIndex(dgen.bus_i);
+    auto bus_ii = nw.bus_mapping.GetInternalIndex(dgen.bus_i);
     dgen.internal_i = bus_ii;
     auto &bus = ps->bus[bus_ii];
     bus.gidx[bus.ngen] = i;
@@ -522,8 +600,8 @@ PetscErrorCode convert_to_ps(PS ps, const Network &nw) {
   ierr = PetscCalloc1(ps->Nline, &ps->line);
   CHKERRQ(ierr);
   auto configure_line = [&nw](auto &line) {
-    line.internal_i = nw.bus_mapping.getInternalIndex(line.fbus);
-    line.internal_j = nw.bus_mapping.getInternalIndex(line.tbus);
+    line.internal_i = nw.bus_mapping.GetInternalIndex(line.fbus);
+    line.internal_j = nw.bus_mapping.GetInternalIndex(line.tbus);
     line.tapratio = 1.0;
     line.phaseshift = 0.0;
 
