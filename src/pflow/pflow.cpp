@@ -1733,3 +1733,23 @@ PetscErrorCode PFLOWSetSummaryStats(PFLOW pflow) {
 
   PetscFunctionReturn(0);
 }
+
+/*
+  PFLOWGetJacobian - Returns the Jacobian matrix
+
+  Inputs:
+. pflow - the PFLOW object
+
+  Outputs:
+  jac - the Jacobian matrix
+*/
+PetscErrorCode PFLOWGetJacobian(PFLOW pflow, Mat *jac) {
+  PetscErrorCode ierr;
+  
+  PetscFunctionBegin;
+
+  *jac = pflow->Jac;
+
+  PetscFunctionReturn(0);
+}
+

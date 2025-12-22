@@ -46,5 +46,6 @@ PETSC_EXTERN PetscErrorCode PFLOWPrintSolution(PFLOW);
 PETSC_EXTERN PetscErrorCode PFLOWSetGICData(PFLOW, const char[]);
 PETSC_EXTERN PetscErrorCode PFLOWSaveSolutionDefault(PFLOW, const char[]);
 PETSC_EXTERN PetscErrorCode PFLOWSetOutputFormat(PFLOW, OutputFormat);
+PETSC_EXTERN PetscErrorCode PFLOWGetJacobian(PFLOW, Mat *);
 
 #endif
