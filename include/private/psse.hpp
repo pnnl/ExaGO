@@ -4,6 +4,7 @@
 #include <istream>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include <ps.h>
 
