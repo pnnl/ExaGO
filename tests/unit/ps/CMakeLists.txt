@@ -9,4 +9,4 @@ configure_file(
 
 add_executable(test_psse_parser test_psse_parser.cpp)
 target_link_libraries(test_psse_parser ExaGO::PS)
-add_test(psse_parser COMMAND test_psse_parser)
+add_test(NAME psse_parser COMMAND test_psse_parser)
