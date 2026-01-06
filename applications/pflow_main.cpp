@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
   CHKERRQ(ierr);
   /* Read Network Data file */
   if (flg) {
-    if (strstr(file, ".raw") != NULL) {
+    if (strcasestr(file, ".raw") != NULL) {
       ierr = PFLOWReadPSSERawData(pflow, file);
       CHKERRQ(ierr);
     } else {
