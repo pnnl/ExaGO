@@ -75,6 +75,7 @@ function ExtractFlowData(data) {
   // name is the unique id
   const locations = [];
   const flows = [];
+  const reactive_flows = [];
   // const locationDict = {}
   data.features.forEach((feature) => {
     if (feature.geometry.type === "Point") {
@@ -92,22 +93,48 @@ function ExtractFlowData(data) {
         RATE_A = feature.properties.RATE_A;
       }
       var loading = Math.abs(feature.properties.PF / RATE_A) * 100;
-      if (feature.properties.PF > 0) {
-        const [origin, dest] = feature.properties.NAME.split(" -- ");
-        flows.push({
-          origin: origin,
-          dest: dest,
-          count: feature.properties.KV,
-          loading: loading,
-        });
-      } else {
-        const [dest, origin] = feature.properties.NAME.split(" -- ");
-        flows.push({
-          origin: origin,
-          dest: dest,
-          count: feature.properties.KV,
-          loading: loading,
-        });
+
+      var var_loading = Math.abs(feature.properties.QF / RATE_A) * 100;
+      var mva_loading = (Math.sqrt(feature.properties.PF * feature.properties.PF + feature.properties.QF * feature.properties.QF) / RATE_A) * 100;
+
+      if (feature.properties.PF > 0 && feature.properties.QF < 0) {
+        // console.log("Line " + feature.properties.NAME + " has PF>0 and QF<0");
+
+        if (feature.properties.PF > 0) {
+          const [origin, dest] = feature.properties.NAME.split(" -- ");
+          flows.push({
+            origin: origin,
+            dest: dest,
+            count: feature.properties.KV,
+            loading: loading,
+          });
+        } else {
+          const [dest, origin] = feature.properties.NAME.split(" -- ");
+          flows.push({
+            origin: origin,
+            dest: dest,
+            count: feature.properties.KV,
+            loading: loading,
+          });
+        }
+
+        if (feature.properties.QF > 0) {
+          const [origin, dest] = feature.properties.NAME.split(" -- ");
+          reactive_flows.push({
+            origin: origin,
+            dest: dest,
+            count: feature.properties.KV,
+            loading: var_loading,
+          });
+        } else {
+          const [dest, origin] = feature.properties.NAME.split(" -- ");
+          reactive_flows.push({
+            origin: origin,
+            dest: dest,
+            count: feature.properties.KV,
+            loading: var_loading,
+          });
+        }
       }
     }
   });
@@ -115,11 +142,22 @@ function ExtractFlowData(data) {
   // remove duplicated flows
   const uniq = new Set(flows.map((e) => JSON.stringify(e)));
   const res = Array.from(uniq).map((e) => JSON.parse(e));
-  return {
-    locations: locations,
-    flows: res,
-    maxloading: 120,
-  };
+
+  const uniq2 = new Set(reactive_flows.map((e) => JSON.stringify(e)));
+  const res2 = Array.from(uniq2).map((e) => JSON.parse(e));
+  
+  return [
+    {
+      locations: locations,
+      flows: res,
+      maxloading: 120,
+    },
+    {
+      locations: locations,
+      flows: res2,
+      maxloading: 120,
+    },
+  ];
 }
 
 //get net data for bar
