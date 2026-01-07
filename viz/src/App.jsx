@@ -200,9 +200,6 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
 
   const [gridData, setGridData] = useState(refdata);
 
-  //chat output message
-  const [ouputMes, setOutputMes] = useState("Welcome to ChatGrid.");
-
   //select widgets values
   const [nameSelectItems, setNameSelectItems] = useState([]);
 
@@ -249,7 +246,7 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
   const [netfiltervalue, setNetFilterValue] = useState([0, 800]);
 
   const [flowfiltervalue, setFlowFilterValue] = useState([0, 120]);
-  const [flowfilterreactivevalue, setFlowFilterReactiveValue] = useState([0, 60]);
+  const [flowfilterreactivevalue, setFlowFilterReactiveValue] = useState([0, 120]);
 
   const [loadfiltervalue, setLoadFilterValue] = useState([0, countyloaddata.maxPd]);
 
@@ -382,7 +379,6 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
                 loading: loading,
               });
             }
-
           }
 
 
@@ -678,7 +674,6 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
   const [netlayeractive, setNetLayerActive] = useState(true);
   const [flowlayeractive, setFlowLayerActive] = useState(true);
   const [reactiveflowlayeractive, setReactiveFlowLayerActive] = useState(false);
-
   const [loadlayeractive, setLoadLayerActive] = useState(false);
   const [genlayeractive, setGenLayerActive] = useState(false);
   const [genlayercapactive, setGenLayerCapActive] = useState(false);
@@ -764,8 +759,6 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
       return "Sorry I didn't find the answer to your question. Please try to rephrase it or provide more details.";
     }
   }
-
-  let count = 0;
 
   const flow = {
     start: {
@@ -924,8 +917,6 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
     return -1; // This is beyond the range so filter will filter out this data point.
   }
 
-  function getFlowFilterValue(data) { }
-
   function getGenFilterValue(data) {
     if (!data) return 10000; //10000 is beyond the range, so the generation will be filter out
     if (genDoughlabels.length > 0 && !(genDoughlabels.indexOf(colorMap[data.color]) >= 0)) return 10000;
@@ -1049,7 +1040,9 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
     return -1; // This is beyond the range so filter will filter out this data point.
   }
 
+  //  Define all DeckGL layers here
 
+  // Layer to show flow of Active Powers 
   const layer_flow_active = new FlowmapLayer({
     id: 'layer-flow',
     data: flowdata,
@@ -1079,6 +1072,7 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
     onClick: (info) => console.log("clicked", info.object?.type, info.object, info)
   });
 
+  // Layer to show flow of Reactive Powers 
   const layer_flow_reactive = new FlowmapLayer({
     id: 'layer-flow-reactive',
     data: reactiveflowdata,
@@ -1108,6 +1102,7 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
     onClick: (info) => console.log("clicked", info.object?.type, info.object, info)
   });
 
+  // Layer to show the network (substations and transmission lines)
   const layer_network = new GeoJsonLayer({
     id: "geojson",
     data: gridData,
@@ -1116,7 +1111,7 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
     //      extruded: true,
     pickable: netlayeractive,
     pointType: "circle",
-    lineWidthScale: 0.01,
+    lineWidthScale: 0.005, // Or set 0.01 to get thicker lines
     lineWidthUnits: "pixels",
     getFillColor: FillColor,
     getLineColor: LineColor,
@@ -1128,14 +1123,13 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
     getFilterValue: getNetFilterValue,
     filterRange: netfiltervalue,
 
-
-
     extensions: [new DataFilterExtension({ filtersize: 1 })],
     updateTriggers: {
-      getFilterValue: [netfiltervalue, lineNameSelectItems, busNameSelectItems, flowfiltervalue],
+      getFilterValue: [netfiltervalue, lineNameSelectItems, busNameSelectItems, flowfiltervalue, flowfilterreactivevalue],
     },
   });
 
+  // Shows the Generators
   const layer_generator_power = new ColumnLayer({
     id: "gen-column",
     data: generation,
@@ -1159,6 +1153,7 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
     },
   });
 
+  // Shows the Generators Capacity
   const layer_generator_capacity = new ColumnLayer({
     id: "gen-column-cap",
     data: generation,
@@ -1182,6 +1177,7 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
     },
   });
 
+  // Shows the Areas in .json file
   const layer_area = new GeoJsonLayer({
     id: "AreaLayer",
     data: areas,
@@ -1199,15 +1195,9 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
     getLineWidth: (d) => 1,
     opacity: 0.1,
     onClick: zoomToArea,
-    //      extensions: [new DataFilterExtension({ filtersize: 1 })],
-    //      getFilterValue: getLoadFilterValue,
-    //      filterRange: loadfiltervalue,
-
-    //      updateTriggers: {
-    //        getFilterValue: [netfiltervalue, countyNameSelectItems]
-    //      }
   });
 
+  // Shows the Zones in .json file
   const layer_zone = new GeoJsonLayer({
     id: "ZoneLayer",
     data: zones,
@@ -1225,15 +1215,9 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
     getLineWidth: (d) => 1,
     opacity: 0.1,
     onClick: zoomToZone,
-    //      extensions: [new DataFilterExtension({ filtersize: 1 })],
-    //      getFilterValue: getLoadFilterValue,
-    //      filterRange: loadfiltervalue,
-
-    //      updateTriggers: {
-    //        getFilterValue: [netfiltervalue, countyNameSelectItems]
-    //      }
   });
 
+  // Shows the Load Loss Layers by County
   const layer_county_load = new GeoJsonLayer({
     id: "PolygonLayerload",
     data: countyload,
@@ -1260,6 +1244,7 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
     },
   });
 
+  // Shows the Voltage by County layers
   const layer_county_voltage = new GeoJsonLayer({
     id: "PolygonLayer2",
     data: countyload,
@@ -1286,6 +1271,7 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
     },
   });
 
+  // Shows each County boundaries along with hover effect
   const layer_county_id = new GeoJsonLayer({
     id: "layer-1",
     data: "https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json",
@@ -1668,7 +1654,7 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
             onClick={() => {
               setNetFilterValue([0, 800]);
               setFlowFilterValue([0, 120]);
-              setFlowFilterReactiveValue([0, 60]);
+              setFlowFilterReactiveValue([0, 120]);
               setGenFilterValue([gendata.minPg, gendata.maxPg]);
               setLoadFilterValue([0, countyloaddata.maxPd]);
               setVoltageFilterValue([0.89, 1.11]);
