@@ -126,9 +126,11 @@ Behind the scenes, LLM translates natural language queries into SQL queries to r
 2. Download PostgreSQL database from this [link](https://www.postgresql.org/download/) and install it.
 
     * For MAC using brew you can install postgresql 14 using: `brew install postgresql@14`
-    * Start the postgressql service: `rew services start postgresql@14`
+    * Start the postgressql service: `brew services start postgresql@14`
     * Create a role: `psql -U "$USER" -d postgres`
+    * If your username (`$USER`) starts with numbers `psql` will show error. In this case replace `$USER` to some other username. 
     * Execute the create role query: `CREATE ROLE postgres WITH LOGIN SUPERUSER PASSWORD 'ExaGO.2025';` Here `ExaGO.2025` is a password. Change to your preference.
+      * If you forget the password, you can update it by running `ALTER USER user_name WITH PASSWORD 'new_password';` (replace `user_name` and `new_password`)
     * Exit to shell by entering `quit` and hitting Enter.
     * From command prompt type: `psql -U postgres -d postgres` If it works and you are in `psql` shell you are done. Exit from the shell using `quit`.
 
@@ -145,7 +147,9 @@ Behind the scenes, LLM translates natural language queries into SQL queries to r
 
       c. Include US state and county information in your database to support spatial queries that related to state or county.
       
-      d. To enter the CSV files into database using command prompt do: `PGPASSWORD=ExaGO.2025 ./create_db.sh  --db exago_db --schema-sql ./schema.sql --drop  --truncate`. Here `exago_70k` is the database name. Use it in the configuration `config.py` file.
+      d. To enter the CSV files into database using command prompt do: `PGPASSWORD=ExaGO.2025 ./create_db.sh  --db exago_db --schema-sql ./schema.sql --drop  --truncate`. Here `exago_db` is the database name. Use it in the configuration `config.py` file.
+      
+        * If you used different user name than `$USER` then use the following command: `PGUSER=user_name PGPASSWORD=ExaGO.2025 ./create_db.sh  --db exago_db --schema-sql ./schema.sql --drop  --truncate` (replace `user_name` with your user name.)
       
       e. This will create a database named `exago_db` with password `ExaGO.2025`. This information will be used to update the `config.py` file.
     
