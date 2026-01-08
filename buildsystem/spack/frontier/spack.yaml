@@ -3,7 +3,7 @@ spack:
   - exago@develop%rocmcc@6.3.1 amdgpu_target=gfx90a
     ^coinhsl%gcc@14.2
     ^openblas%gcc@14.2
-    ^petsc%rocmcc@6.4.0 target=zen3
+    ^petsc%rocmcc@6.3.1 target=zen3
   view: false
   concretizer:
     unify: when_possible
@@ -16,19 +16,6 @@ spack:
         cxx: /opt/rocm-6.3.1/llvm/bin/amdclang++
         f77: /opt/rocm-6.3.1/llvm/bin/amdflang
         fc: /opt/rocm-6.3.1/llvm/bin/amdflang
-      flags: {}
-      operating_system: sles15
-      target: x86_64
-      modules: []
-      environment: {}
-      extra_rpaths: []
-  - compiler:
-      spec: rocmcc@6.4.0
-      paths:
-        cc: /opt/rocm-6.4.0/llvm/bin/amdclang
-        cxx: /opt/rocm-6.4.0/llvm/bin/amdclang++
-        f77: /opt/rocm-6.4.0/llvm/bin/amdflang
-        fc: /opt/rocm-6.4.0/llvm/bin/amdflang
       flags: {}
       operating_system: sles15
       target: x86_64
@@ -91,13 +78,13 @@ spack:
         - craype-accel-amd-gfx90a
         - craype-x86-trento
         - libfabric
-      - spec: cray-mpich@8.1.31 %rocmcc@6.4.0
+      - spec: cray-mpich@8.1.31 %rocmcc@6.3.1
         prefix: /opt/cray/pe/mpich/8.1.31/ofi/amd/6.0
         modules:
         - PrgEnv-amd
         - cray-mpich/8.1.31
-        - amd/6.4.0
-        - rocm/6.4.0
+        - amd/6.3.1
+        - rocm/6.3.1
         - craype-accel-amd-gfx90a
         - craype-x86-trento
         - libfabric
