@@ -174,6 +174,8 @@ static MPI_Comm ExaGOLogComm = MPI_COMM_SELF;
 PetscErrorCode ExaGOLogIsUsingLogFile(bool *flg) {
 #ifdef EXAGO_ENABLE_LOGGING
   *flg = ExaGOLogUseFile;
+#else
+  *flg = false;
 #endif
   return 0;
 }
@@ -581,8 +583,7 @@ PetscErrorCode ExaGOInitialize(MPI_Comm comm, int *argc, char ***argv,
   return 0;
 }
 
-PetscErrorCode ExaGOFinalize() {
-  PetscFunctionBegin;
+void ExaGOFinalize() {
   ExaGOLog(EXAGO_LOG_INFO, "Finalizing {} application.", ExaGOCurrentAppName);
   MPI_Comm comm = MPI_COMM_WORLD;
   int my_rank;
@@ -602,7 +603,6 @@ PetscErrorCode ExaGOFinalize() {
   if (!initialized) {
     MPI_Finalize();
   }
-  PetscFunctionReturn(0);
 }
 
 #undef EXAGO_LOG_ENSURE_INITIALIZED

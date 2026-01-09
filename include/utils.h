@@ -217,7 +217,7 @@ extern "C" PetscErrorCode ExaGOInitialize(MPI_Comm, int *argc, char ***argv,
  * @note this takes care of Petsc finalization, so don't this function in
  * conjunction with `PetscFinalize`.
  */
-extern "C" PetscErrorCode ExaGOFinalize();
+extern "C" void ExaGOFinalize();
 
 /** Returns 1 if files exists, else 0 */
 bool DoesFileExist(const char *);
