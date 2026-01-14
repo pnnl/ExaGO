@@ -54,8 +54,13 @@ int main(int argc, char **argv) {
                                &flg);
   ExaGOCheckError(ierr);
   if (flg) {
-    ierr = OPFLOWReadMatPowerData(opflow, file);
-    ExaGOCheckError(ierr);
+    if (strcasestr(file, ".raw") != NULL) {
+      ierr = OPFLOWReadPSSERawData(opflow, file);
+      ExaGOCheckError(ierr);
+    } else {
+      ierr = OPFLOWReadMatPowerData(opflow, file);
+      ExaGOCheckError(ierr);
+    }
   } else {
     ierr = OPFLOWReadMatPowerData(opflow, "datafiles/case9/case9mod.m");
     ExaGOCheckError(ierr);

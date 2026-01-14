@@ -1236,6 +1236,23 @@ PetscErrorCode OPFLOWReadMatPowerData(OPFLOW opflow, const char netfile[]) {
   //  data file %s\n",netfile);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+/*
+  OPFLOWReadPSSERawData - Reads the network data given in PSSE raw data format
+
+  Input Parameter
++  opflow - The OPFLOW object
+-  netfile - The name of the network file
+
+*/
+PetscErrorCode OPFLOWReadPSSERawData(OPFLOW opflow, const char netfile[]) {
+  PetscErrorCode ierr;
+
+  PetscFunctionBegin;
+  /* Read MatPower data file and populate the PS data structure */
+  ierr = PSReadPSSERawData(opflow->ps, netfile);
+  CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
 
 /*
   OPFLOWSetGICData - Sets the GIC data file
@@ -2136,8 +2153,13 @@ PetscErrorCode OPFLOWSolve(OPFLOW opflow) {
       ierr = OPFLOWCreate(opflow->comm->type, &opflow2);
       CHKERRQ(ierr);
 
-      ierr = OPFLOWReadMatPowerData(opflow2, opflow->ps->net_file_name);
-      CHKERRQ(ierr);
+      if (strcasestr(opflow->ps->net_file_name, ".raw") != NULL) {
+        ierr = OPFLOWReadPSSERawData(opflow2, opflow->ps->net_file_name);
+        CHKERRQ(ierr);
+      } else {
+        ierr = OPFLOWReadMatPowerData(opflow2, opflow->ps->net_file_name);
+        CHKERRQ(ierr);
+      }
 
       ierr = OPFLOWSetModel(opflow2, opflow->modelname);
       CHKERRQ(ierr);
