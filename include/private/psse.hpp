@@ -244,6 +244,9 @@ public:
   void Resolve(std::size_t &bus_number, std::string &bus_name,
                Optional opt = Optional{false}) const;
 
+  const auto &GetIdToIdMap() const { return id_map_; }
+  const auto &GetNameToIdMap() const { return name_map_; }
+
 private:
   std::vector<Bus> &buses_;
   std::unordered_map<std::size_t, std::size_t> id_map_;

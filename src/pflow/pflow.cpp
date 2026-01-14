@@ -1,6 +1,7 @@
 #include "exago_config.h"
 #include <private/pflowimpl.h>
 #include <private/psimpl.h>
+#include <psse.hpp>
 
 const char *const PFLOWOutputFormatTypes[] = {
     "MATPOWER", "CSV", "JSON", "MINIMAL", "OutputFormat", "", NULL};
@@ -105,7 +106,8 @@ PetscErrorCode PFLOWReadPSSERawData(PFLOW pflow, const char netfile[]) {
 
   PetscFunctionBegin;
   /* Read MatPower data file and populate the PS data structure */
-  ierr = PSReadPSSERawData(pflow->ps, netfile);
+  auto nw = exago::psse::ParseNetwork(netfile);
+  ierr = exago::psse::ConvertToPS(pflow->ps, nw);
   CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }

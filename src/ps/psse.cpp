@@ -461,10 +461,12 @@ PetscErrorCode ConvertToPS(PS ps, const Network &nw) {
   ps->Nbus = ps->nbus = nw.buses.size();
   ierr = PetscCalloc1(ps->Nbus, &ps->bus);
   CHKERRQ(ierr);
+  std::size_t maxbusi = 0;
   for (int i = 0; i < ps->Nbus; ++i) {
     auto &dbus = ps->bus[i];
     const auto &sbus = nw.buses[i];
     dbus.bus_i = sbus.i;
+    maxbusi = std::max(maxbusi, sbus.i);
     strcpy(dbus.name, sbus.name.c_str());
     dbus.basekV = sbus.baskv;
     dbus.ide = sbus.ide;
@@ -494,6 +496,16 @@ PetscErrorCode ConvertToPS(PS ps, const Network &nw) {
     dbus.qmintot = 0.0;
     dbus.Pgtot = 0.0;
     dbus.MVAbasetot = 0.0;
+  }
+
+  ps->maxbusnum = maxbusi;
+  ierr = PetscCalloc1(ps->maxbusnum + 1, &ps->busext2intmap);
+  CHKERRQ(ierr);
+  for (int i = 0; i < ps->maxbusnum + 1; i++) {
+    ps->busext2intmap[i] = -1;
+  }
+  for (const auto &[ext_i, int_i] : nw.bus_mapping.GetIdToIdMap()) {
+    ps->busext2intmap[ext_i] = int_i;
   }
 
   // loads
