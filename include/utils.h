@@ -62,6 +62,7 @@ enum ExaGOLogLevel : signed int {
 struct ExaGOError : public std::exception {
   ExaGOError() : message{"ExaGO Error"} {}
   ExaGOError(const char *message) : message{message} {}
+  ExaGOError(const std::string &message) : message{message} {}
   ExaGOError(PetscErrorCode);
 
   /* The name _what_ is not in PascalCase like the rest of ExaGO because
@@ -120,11 +121,21 @@ inline void ExaGOLog(MPI_Comm comm, int level, std::string fmt,
     ExaGOCheckError(ierr);
     auto logger = spdlog::get(logname);
 
-    /*
-     * Because we handler our own verbosity levels, we just use `info` for all
-     * log messages.
-     */
-    logger->info(fmt, args...);
+    switch (level) {
+    case EXAGO_LOG_ERROR:
+      logger->error(fmt, args...);
+      break;
+    case EXAGO_LOG_WARN:
+      logger->warn(fmt, args...);
+      break;
+    default:
+      /*
+       * Because we handle our own verbosity levels, we just use `info` for all
+       * log messages other than warning and error.
+       */
+      logger->info(fmt, args...);
+      break;
+    }
   }
 #endif
 }
