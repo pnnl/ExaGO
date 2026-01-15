@@ -6,6 +6,7 @@
 
 #include <psimpl.h>
 #include <psse.hpp>
+#include <utils.h>
 
 int TEST_RESULT = EXIT_SUCCESS;
 
@@ -821,70 +822,70 @@ TEST_FUNCTION(check_bus_ids)(const exago::psse::Network &nw) {
     TEST_EQUAL(&bus, &nw.bus_mapping.GetBus(bus.name));
   }
   for (auto &&load : nw.loads) {
-    const auto &bus = nw.bus_mapping.GetBus(load.i);
-    TEST_EQUAL(&bus, &nw.bus_mapping.GetBus(load.i_bus_name));
-    TEST_EQUAL(bus.i, load.i);
-    TEST_EQUAL(bus.name, load.i_bus_name);
+    const auto &bus = nw.bus_mapping.GetBus(load.i.id);
+    TEST_EQUAL(&bus, &nw.bus_mapping.GetBus(load.i.name));
+    TEST_EQUAL(bus.i, load.i.id);
+    TEST_EQUAL(bus.name, load.i.name);
   }
   for (auto &&shunt : nw.fixed_bus_shunts) {
-    const auto &bus = nw.bus_mapping.GetBus(shunt.i);
-    TEST_EQUAL(&bus, &nw.bus_mapping.GetBus(shunt.i_bus_name));
-    TEST_EQUAL(bus.i, shunt.i);
-    TEST_EQUAL(bus.name, shunt.i_bus_name);
+    const auto &bus = nw.bus_mapping.GetBus(shunt.i.id);
+    TEST_EQUAL(&bus, &nw.bus_mapping.GetBus(shunt.i.name));
+    TEST_EQUAL(bus.i, shunt.i.id);
+    TEST_EQUAL(bus.name, shunt.i.name);
   }
   for (auto &&gen : nw.generators) {
-    const auto &bus = nw.bus_mapping.GetBus(gen.i);
-    TEST_EQUAL(&bus, &nw.bus_mapping.GetBus(gen.i_bus_name));
-    TEST_EQUAL(bus.i, gen.i);
-    TEST_EQUAL(bus.name, gen.i_bus_name);
+    const auto &bus = nw.bus_mapping.GetBus(gen.i.id);
+    TEST_EQUAL(&bus, &nw.bus_mapping.GetBus(gen.i.name));
+    TEST_EQUAL(bus.i, gen.i.id);
+    TEST_EQUAL(bus.name, gen.i.name);
     if (gen.ireg == 0) {
       continue;
     }
-    const auto &regbus = nw.bus_mapping.GetBus(gen.ireg);
-    TEST_EQUAL(&regbus, &nw.bus_mapping.GetBus(gen.ireg_bus_name));
-    TEST_EQUAL(regbus.i, gen.ireg);
-    TEST_EQUAL(regbus.name, gen.ireg_bus_name);
+    const auto &regbus = nw.bus_mapping.GetBus(gen.ireg.id);
+    TEST_EQUAL(&regbus, &nw.bus_mapping.GetBus(gen.ireg.name));
+    TEST_EQUAL(regbus.i, gen.ireg.id);
+    TEST_EQUAL(regbus.name, gen.ireg.name);
   }
   for (auto &&br : nw.branches) {
-    const auto &ibus = nw.bus_mapping.GetBus(br.i);
-    TEST_EQUAL(&ibus, &nw.bus_mapping.GetBus(br.i_bus_name));
-    TEST_EQUAL(ibus.i, br.i);
-    TEST_EQUAL(ibus.name, br.i_bus_name);
-    const auto &jbus = nw.bus_mapping.GetBus(br.j);
-    TEST_EQUAL(&jbus, &nw.bus_mapping.GetBus(br.j_bus_name));
-    TEST_EQUAL(jbus.i, br.j);
-    TEST_EQUAL(jbus.name, br.j_bus_name);
+    const auto &ibus = nw.bus_mapping.GetBus(br.i.id);
+    TEST_EQUAL(&ibus, &nw.bus_mapping.GetBus(br.i.name));
+    TEST_EQUAL(ibus.i, br.i.id);
+    TEST_EQUAL(ibus.name, br.i.name);
+    const auto &jbus = nw.bus_mapping.GetBus(br.j.id);
+    TEST_EQUAL(&jbus, &nw.bus_mapping.GetBus(br.j.name));
+    TEST_EQUAL(jbus.i, br.j.id);
+    TEST_EQUAL(jbus.name, br.j.name);
   }
   for (auto &&tr : nw.transformers) {
-    const auto &ibus = nw.bus_mapping.GetBus(tr.i);
-    TEST_EQUAL(&ibus, &nw.bus_mapping.GetBus(tr.i_bus_name));
-    TEST_EQUAL(ibus.i, tr.i);
-    TEST_EQUAL(ibus.name, tr.i_bus_name);
-    const auto &jbus = nw.bus_mapping.GetBus(tr.j);
-    TEST_EQUAL(&jbus, &nw.bus_mapping.GetBus(tr.j_bus_name));
-    TEST_EQUAL(jbus.i, tr.j);
-    TEST_EQUAL(jbus.name, tr.j_bus_name);
+    const auto &ibus = nw.bus_mapping.GetBus(tr.i.id);
+    TEST_EQUAL(&ibus, &nw.bus_mapping.GetBus(tr.i.name));
+    TEST_EQUAL(ibus.i, tr.i.id);
+    TEST_EQUAL(ibus.name, tr.i.name);
+    const auto &jbus = nw.bus_mapping.GetBus(tr.j.id);
+    TEST_EQUAL(&jbus, &nw.bus_mapping.GetBus(tr.j.name));
+    TEST_EQUAL(jbus.i, tr.j.id);
+    TEST_EQUAL(jbus.name, tr.j.name);
     if (tr.k == 0) {
       continue;
     }
-    const auto &kbus = nw.bus_mapping.GetBus(tr.k);
-    TEST_EQUAL(&kbus, &nw.bus_mapping.GetBus(tr.k_bus_name));
-    TEST_EQUAL(kbus.i, tr.k);
-    TEST_EQUAL(kbus.name, tr.k_bus_name);
+    const auto &kbus = nw.bus_mapping.GetBus(tr.k.id);
+    TEST_EQUAL(&kbus, &nw.bus_mapping.GetBus(tr.k.name));
+    TEST_EQUAL(kbus.i, tr.k.id);
+    TEST_EQUAL(kbus.name, tr.k.name);
   }
 
   for (auto &sh : nw.switched_shunts) {
-    const auto &bus = nw.bus_mapping.GetBus(sh.i);
-    TEST_EQUAL(&bus, &nw.bus_mapping.GetBus(sh.i_bus_name));
-    TEST_EQUAL(bus.i, sh.i);
-    TEST_EQUAL(bus.name, sh.i_bus_name);
-    if (sh.swrem == 0) {
+    const auto &bus = nw.bus_mapping.GetBus(sh.i.id);
+    TEST_EQUAL(&bus, &nw.bus_mapping.GetBus(sh.i.name));
+    TEST_EQUAL(bus.i, sh.i.id);
+    TEST_EQUAL(bus.name, sh.i.name);
+    if (sh.swreg == 0) {
       continue;
     }
-    const auto &swrembus = nw.bus_mapping.GetBus(sh.swrem);
-    TEST_EQUAL(&swrembus, &nw.bus_mapping.GetBus(sh.swrem_bus_name));
-    TEST_EQUAL(swrembus.i, sh.swrem);
-    TEST_EQUAL(swrembus.name, sh.swrem_bus_name);
+    const auto &swregbus = nw.bus_mapping.GetBus(sh.swreg.id);
+    TEST_EQUAL(&swregbus, &nw.bus_mapping.GetBus(sh.swreg.name));
+    TEST_EQUAL(swregbus.i, sh.swreg.id);
+    TEST_EQUAL(swregbus.name, sh.swreg.name);
   }
 
   TEST_FUNCTION_RETURN;
@@ -909,163 +910,179 @@ TEST_FUNCTION(ieee9bus_v33)() {
 }
 END_TEST_FUNCTION
 
-// TEST_FUNCTION(check_network_ieee9bus_shunts)(const exago::psse::Network &nw)
-// {
-//   TEST_EQUAL(nw.case_id.ic, 0);
-//   TEST_EQUAL(nw.case_id.sbase, 100.0);
-//   TEST_EQUAL(nw.case_id.rev, 33);
+TEST_FUNCTION(check_network_ieee9bus_shunts)(const exago::psse::Network &nw) {
+  TEST_EQUAL(nw.case_id.ic, 0);
+  TEST_EQUAL(nw.case_id.sbase, 100.0);
+  TEST_EQUAL(nw.case_id.rev, 34);
 
-//   const auto &buses = nw.buses;
-//   TEST_EQUAL(buses[0].i, 1);
-//   TEST_EQUAL(buses[0].name, "WINNSBORO 0");
-//   TEST_EQUAL(buses[0].evlo, 0.9);
-//   TEST_EQUAL(buses[1].i, 500);
-//   TEST_EQUAL(buses[1].name, "MC CORMICK 0");
-//   TEST_EQUAL(buses[1].evlo, 0.9);
+  const auto &buses = nw.buses;
+  TEST_EQUAL(buses[0].i, 1);
+  TEST_EQUAL(buses[0].name, "BUS1");
+  TEST_EQUAL(buses[0].evlo, 0.9);
+  TEST_EQUAL(buses[1].i, 2);
+  TEST_EQUAL(buses[1].name, "BUS2");
+  TEST_EQUAL(buses[1].evlo, 0.9);
 
-//   const auto& loads = nw.loads;
-//   TEST_EQUAL(loads[0].i, 2);
-//   TEST_EQUAL(loads[0].scale, 1);
-//   TEST_EQUAL(loads[0].intrpt, 0);
-//   TEST_EQUAL(loads[1].i, 500);
-//   TEST_EQUAL(loads[1].scale, 1);
-//   TEST_EQUAL(loads[1].intrpt, 0);
+  const auto &loads = nw.loads;
+  TEST_EQUAL(loads[0].i, 5);
+  TEST_EQUAL(loads[0].scale, 1);
+  TEST_EQUAL(loads[0].intrpt, 0);
+  TEST_EQUAL(loads[1].i, 6);
+  TEST_EQUAL(loads[1].scale, 1);
+  TEST_EQUAL(loads[1].intrpt, 0);
 
-//   const auto& fixed_shunts = nw.fixed_bus_shunts;
-//   TEST_EQUAL(fixed_shunts[0].i, 320);
-//   TEST_EQUAL(fixed_shunts[0].bl, 48.274);
-//   TEST_EQUAL(fixed_shunts[1].i, 784);
-//   TEST_EQUAL(fixed_shunts[1].bl, 19.939);
+  const auto &fixed_shunts = nw.fixed_bus_shunts;
+  TEST_EQUAL(fixed_shunts[0].i, 6);
+  TEST_EQUAL(fixed_shunts[0].bl, 0.0);
 
-//   const auto& gens = nw.generators;
-//   TEST_EQUAL(gens[0].i, 9);
-//   TEST_EQUAL(gens[0].wpf, 1.0);
-//   TEST_EQUAL(gens[1].i, 498);
-//   TEST_EQUAL(gens[1].wpf, 1.0);
+  const auto &gens = nw.generators;
+  TEST_EQUAL(gens[0].i, 1);
+  TEST_EQUAL(gens[0].wpf, 1.0);
+  TEST_EQUAL(gens[1].i, 2);
+  TEST_EQUAL(gens[1].wpf, 1.0);
 
-//   const auto& branches = nw.branches;
-//   TEST_EQUAL(branches[0].i, 2);
-//   TEST_EQUAL(branches[0].met, 1);
-//   TEST_EQUAL(branches[0].owners[3].fraction, 1.0);
-//   TEST_EQUAL(branches[1].i, 500);
-//   TEST_EQUAL(branches[1].met, 1);
-//   TEST_EQUAL(branches[1].owners[3].fraction, 1.0);
+  const auto &branches = nw.branches;
+  TEST_EQUAL(branches[0].i, 4);
+  TEST_EQUAL(branches[0].met, 1);
+  TEST_EQUAL(branches[0].owners[0].owner, 1);
+  TEST_EQUAL(branches[0].owners[0].fraction, 1.0);
+  TEST_EQUAL(branches[0].owners[3].owner, 0);
+  TEST_EQUAL(branches[0].owners[3].fraction, 1.0);
+  TEST_EQUAL(branches[1].i, 4);
+  TEST_EQUAL(branches[1].met, 1);
+  TEST_EQUAL(branches[1].owners[0].owner, 1);
+  TEST_EQUAL(branches[1].owners[0].fraction, 1.0);
+  TEST_EQUAL(branches[1].owners[3].owner, 0);
+  TEST_EQUAL(branches[1].owners[3].fraction, 1.0);
 
-//   const auto& transformers = nw.transformers;
-//   TEST_EQUAL(transformers[0].i, 8);
-//   TEST_EQUAL(transformers[1].i, 190);
-//   TEST_EQUAL(transformers[2].i, 498);
-//   TEST(transformers[0].vecgrp.empty());
-//   TEST(transformers[1].vecgrp.empty());
-//   TEST(transformers[2].vecgrp.empty());
-//   TEST_EQUAL(transformers[0].imp12.r, 3.55062e-4);
-//   TEST_EQUAL(transformers[1].imp12.r, 7.65222e-4);
-//   TEST_EQUAL(transformers[2].imp12.r, 4.00610e-3);
-//   TEST_EQUAL(transformers[0].imp12.sbase, 100.0);
-//   TEST_EQUAL(transformers[1].imp12.sbase, 100.0);
-//   TEST_EQUAL(transformers[2].imp12.sbase, 100.0);
-//   // TEST_EQUAL(transformers[0].anstar, 0.0);
-//   // TEST_EQUAL(transformers[1].anstar, -65.843144);
-//   // TEST_EQUAL(transformers[2].anstar, 0.0);
-//   TEST_EQUAL(transformers[0].windings[0].windv, 1.0);
-//   TEST_EQUAL(transformers[1].windings[0].windv, 1.0);
-//   TEST_EQUAL(transformers[2].windings[0].windv, 1.0);
-//   TEST_EQUAL(transformers[0].windings[0].cnxa, 0.0);
-//   TEST_EQUAL(transformers[1].windings[0].cnxa, 0.0);
-//   TEST_EQUAL(transformers[2].windings[0].cnxa, 0.0);
-//   TEST_EQUAL(transformers[0].windings[1].windv, 1.0);
-//   TEST_EQUAL(transformers[1].windings[1].windv, 1.0);
-//   TEST_EQUAL(transformers[2].windings[1].windv, 1.0);
-//   TEST_EQUAL(transformers[0].windings[1].nomv, 345.0);
-//   TEST_EQUAL(transformers[1].windings[1].nomv, 115.0);
-//   TEST_EQUAL(transformers[2].windings[1].nomv, 138.0);
-//   TEST_EQUAL(transformers[0].windings[1].cnxa, 0.0);
-//   TEST_EQUAL(transformers[1].windings[1].cnxa, 0.0);
-//   TEST_EQUAL(transformers[2].windings[1].cnxa, 0.0);
-//   TEST_EQUAL(transformers[0].windings[2].windv, 1.0);
-//   TEST_EQUAL(transformers[1].windings[2].windv, 1.0);
-//   TEST_EQUAL(transformers[2].windings[2].windv, 1.0);
-//   TEST_EQUAL(transformers[0].windings[2].cnxa, 0.0);
-//   TEST_EQUAL(transformers[1].windings[2].cnxa, 0.0);
-//   TEST_EQUAL(transformers[2].windings[2].cnxa, 0.0);
-//   TEST_EQUAL(transformers[0].ckt, "1");
+  const auto &transformers = nw.transformers;
+  TEST_EQUAL(transformers[0].i, 1);
+  TEST_EQUAL(transformers[1].i, 2);
+  TEST_EQUAL(transformers[2].i, 9);
+  TEST(transformers[0].vecgrp.empty());
+  TEST(transformers[1].vecgrp.empty());
+  TEST(transformers[2].vecgrp.empty());
+  TEST_EQUAL(transformers[0].imp12.r, 1.0e-7);
+  TEST_EQUAL(transformers[1].imp12.r, 1.0e-7);
+  TEST_EQUAL(transformers[2].imp12.r, 1.0e-7);
+  TEST_EQUAL(transformers[0].imp12.x, 0.0576);
+  TEST_EQUAL(transformers[1].imp12.x, 0.0625);
+  TEST_EQUAL(transformers[2].imp12.x, 0.0586);
+  TEST_EQUAL(transformers[0].imp12.sbase, 100.0);
+  TEST_EQUAL(transformers[1].imp12.sbase, 100.0);
+  TEST_EQUAL(transformers[2].imp12.sbase, 100.0);
+  TEST_EQUAL(transformers[0].windings[0].windv, 1.0);
+  TEST_EQUAL(transformers[1].windings[0].windv, 1.0);
+  TEST_EQUAL(transformers[2].windings[0].windv, 1.0);
+  TEST_EQUAL(transformers[0].windings[0].nomv, 16.5);
+  TEST_EQUAL(transformers[1].windings[0].nomv, 18.0);
+  TEST_EQUAL(transformers[2].windings[0].nomv, 230.0);
+  TEST_EQUAL(transformers[0].windings[0].cnxa, 0.0);
+  TEST_EQUAL(transformers[1].windings[0].cnxa, 0.0);
+  TEST_EQUAL(transformers[2].windings[0].cnxa, 0.0);
+  TEST_EQUAL(transformers[0].windings[1].windv, 1.0);
+  TEST_EQUAL(transformers[1].windings[1].windv, 1.0);
+  TEST_EQUAL(transformers[2].windings[1].windv, 1.0);
+  TEST_EQUAL(transformers[0].windings[1].nomv, 230.0);
+  TEST_EQUAL(transformers[1].windings[1].nomv, 230.0);
+  TEST_EQUAL(transformers[2].windings[1].nomv, 13.8);
+  TEST_EQUAL(transformers[0].ckt, "T1");
+  TEST_EQUAL(transformers[1].ckt, "T2");
+  TEST_EQUAL(transformers[2].ckt, "T3");
 
-//   // const auto& areaInterchanges = nw.areaInterchanges;
-//   // TEST_EQUAL(areaInterchanges[0].i, 1);
-//   // TEST_EQUAL(areaInterchanges[0].arname, "SouthCarolin");
+  // const auto& areaInterchanges = nw.areaInterchanges;
+  // TEST_EQUAL(areaInterchanges[0].i, 1);
+  // TEST_EQUAL(areaInterchanges[0].arname, "SouthCarolin");
 
-//   // twoTerminalDC = nw.twoTerminalDCLines;
-//   // TEST_EQUAL(twoTerminalDC[0].name,"DC Line 1");
-//   // TEST_EQUAL(twoTerminalDC[1].name,"DC Line 1");
-//   // TEST_EQUAL(twoTerminalDC[0].cccacc, 0.0);
-//   // TEST_EQUAL(twoTerminalDC[1].cccacc, 0.0);
-//   // TEST_EQUAL(twoTerminalDC[0].ipr, 2060653);
-//   // TEST_EQUAL(twoTerminalDC[1].ipr, 3008030);
-//   // TEST_EQUAL(twoTerminalDC[0].xcapr, 0.0);
-//   // TEST_EQUAL(twoTerminalDC[1].xcapr, 0.0);
-//   // TEST_EQUAL(twoTerminalDC[0].ipi, 66353);
-//   // TEST_EQUAL(twoTerminalDC[1].ipi, 61477);
-//   // TEST_EQUAL(twoTerminalDC[0].xcapi, 0.0);
-//   // TEST_EQUAL(twoTerminalDC[1].xcapi, 0.0);
+  // twoTerminalDC = nw.twoTerminalDCLines;
+  // TEST_EQUAL(twoTerminalDC[0].name,"DC Line 1");
+  // TEST_EQUAL(twoTerminalDC[1].name,"DC Line 1");
+  // TEST_EQUAL(twoTerminalDC[0].cccacc, 0.0);
+  // TEST_EQUAL(twoTerminalDC[1].cccacc, 0.0);
+  // TEST_EQUAL(twoTerminalDC[0].ipr, 2060653);
+  // TEST_EQUAL(twoTerminalDC[1].ipr, 3008030);
+  // TEST_EQUAL(twoTerminalDC[0].xcapr, 0.0);
+  // TEST_EQUAL(twoTerminalDC[1].xcapr, 0.0);
+  // TEST_EQUAL(twoTerminalDC[0].ipi, 66353);
+  // TEST_EQUAL(twoTerminalDC[1].ipi, 61477);
+  // TEST_EQUAL(twoTerminalDC[0].xcapi, 0.0);
+  // TEST_EQUAL(twoTerminalDC[1].xcapi, 0.0);
 
-//   // TEST(nw.vscDCLines.empty());
+  // TEST(nw.vscDCLines.empty());
 
-//   // const auto& impedanceCorrections = nw.impedanceCorrections;
-//   // TEST_EQUAL(impedanceCorrections[0].i, 1);
-//   // TEST_EQUAL(impedanceCorrections[1].i, 2);
-//   // TEST_EQUAL(impedanceCorrections[2].i, 3);
-//   // TEST_EQUAL(impedanceCorrections[0].f6, 1.03);
-//   // TEST_EQUAL(impedanceCorrections[1].f6, 0.0);
-//   // TEST_EQUAL(impedanceCorrections[2].f6, 1.41);
-//   // TEST_EQUAL(impedanceCorrections[0].f11, 0.0);
-//   // TEST_EQUAL(impedanceCorrections[1].f11, 0.0);
-//   // TEST_EQUAL(impedanceCorrections[2].f11, 0.0);
+  // const auto& impedanceCorrections = nw.impedanceCorrections;
+  // TEST_EQUAL(impedanceCorrections[0].i, 1);
+  // TEST_EQUAL(impedanceCorrections[1].i, 2);
+  // TEST_EQUAL(impedanceCorrections[2].i, 3);
+  // TEST_EQUAL(impedanceCorrections[0].f6, 1.03);
+  // TEST_EQUAL(impedanceCorrections[1].f6, 0.0);
+  // TEST_EQUAL(impedanceCorrections[2].f6, 1.41);
+  // TEST_EQUAL(impedanceCorrections[0].f11, 0.0);
+  // TEST_EQUAL(impedanceCorrections[1].f11, 0.0);
+  // TEST_EQUAL(impedanceCorrections[2].f11, 0.0);
 
-//   // TODO: other elements
+  // TODO: other elements
 
-//   const auto& switched_shunts = nw.switched_shunts;
-//   TEST_EQUAL(switched_shunts[0].i, 27);
-//   TEST_EQUAL(switched_shunts[1].i, 491);
-//   TEST_EQUAL(switched_shunts[0].adjm, 0);
-//   TEST_EQUAL(switched_shunts[1].adjm, 0);
-//   TEST_EQUAL(switched_shunts[0].stat, 1);
-//   TEST_EQUAL(switched_shunts[1].stat, 1);
-//   TEST_EQUAL(switched_shunts[0].blocks[0].n, 1);
-//   TEST_EQUAL(switched_shunts[1].blocks[0].n, 1);
-//   TEST_EQUAL(switched_shunts[0].blocks[0].b, 80.0);
-//   TEST_EQUAL(switched_shunts[1].blocks[0].b, 50.0);
-//   TEST_EQUAL(switched_shunts[0].blocks[7].n, 0);
-//   TEST_EQUAL(switched_shunts[1].blocks[7].n, 0);
-//   TEST_EQUAL(switched_shunts[0].blocks[7].b, 0.0);
-//   TEST_EQUAL(switched_shunts[1].blocks[7].b, 0.0);
+  const auto &switched_shunts = nw.switched_shunts;
+  TEST_EQUAL(switched_shunts[0].i, 1);
+  TEST_EQUAL(switched_shunts[1].i, 2);
+  TEST_EQUAL(switched_shunts[2].i, 3);
+  TEST_EQUAL(switched_shunts[3].i, 5);
+  TEST_EQUAL(switched_shunts[0].adjm, 0);
+  TEST_EQUAL(switched_shunts[1].adjm, 0);
+  TEST_EQUAL(switched_shunts[2].adjm, 0);
+  TEST_EQUAL(switched_shunts[3].adjm, 0);
+  TEST_EQUAL(switched_shunts[0].stat, 1);
+  TEST_EQUAL(switched_shunts[1].stat, 1);
+  TEST_EQUAL(switched_shunts[2].stat, 1);
+  TEST_EQUAL(switched_shunts[3].stat, 1);
+  TEST_EQUAL(switched_shunts[0].blocks[0].n, 1);
+  TEST_EQUAL(switched_shunts[1].blocks[0].n, 1);
+  TEST_EQUAL(switched_shunts[2].blocks[0].n, 1);
+  TEST_EQUAL(switched_shunts[3].blocks[0].n, 1);
+  TEST_EQUAL(switched_shunts[0].blocks[0].b, 5.0);
+  TEST_EQUAL(switched_shunts[1].blocks[0].b, 5.0);
+  TEST_EQUAL(switched_shunts[2].blocks[0].b, 0.0);
+  TEST_EQUAL(switched_shunts[3].blocks[0].b, 5.0);
+  TEST_EQUAL(switched_shunts[0].blocks[7].n, 0);
+  TEST_EQUAL(switched_shunts[1].blocks[7].n, 0);
+  TEST_EQUAL(switched_shunts[2].blocks[7].n, 0);
+  TEST_EQUAL(switched_shunts[3].blocks[7].n, 0);
+  TEST_EQUAL(switched_shunts[0].blocks[7].b, 0.0);
+  TEST_EQUAL(switched_shunts[1].blocks[7].b, 0.0);
+  TEST_EQUAL(switched_shunts[2].blocks[7].b, 0.0);
+  TEST_EQUAL(switched_shunts[3].blocks[7].b, 0.0);
 
-//   TEST_FUNCTION_RETURN;
-// }
-// END_TEST_FUNCTION
+  TEST_FUNCTION_RETURN;
+}
+END_TEST_FUNCTION
 
-// TEST_FUNCTION(ieee9bus_v34_shunts)() {
-//   std::string filename{"ieee9bus_v34_shunts.raw"};
+TEST_FUNCTION(ieee9bus_v34_shunts)() {
+  std::string filename{"ieee9bus_v34_shunts.raw"};
 
-//   auto nw = exago::psse::ParseNetwork(filename);
-//   TEST(check_network_ieee9bus_shunts(nw));
-//   TEST(check_bus_ids(nw));
+  auto nw = exago::psse::ParseNetwork(filename);
+  TEST(check_network_ieee9bus_shunts(nw));
+  TEST(check_bus_ids(nw));
+  auto nw_psh = NetworkToPS(nw);
 
-//   TEST_FUNCTION_RETURN;
-// }
-// END_TEST_FUNCTION
+  TEST_FUNCTION_RETURN;
+}
+END_TEST_FUNCTION
 
 TEST_FUNCTION(driver)() {
   TEST(ieee9bus_v33());
-  // TEST(ieee9bus_v34_shunts());
+  TEST(ieee9bus_v34_shunts());
   TEST_FUNCTION_RETURN;
 }
 END_TEST_FUNCTION
 
 int main(int argc, char *argv[]) {
-  MPI_Init(&argc, &argv);
+  char appname[] = "test_psse_parser";
+  char help[] = "";
+  ExaGOInitialize(MPI_COMM_WORLD, &argc, &argv, appname, help);
 
   driver();
 
-  MPI_Finalize();
+  ExaGOFinalize();
   return TEST_RESULT;
 }

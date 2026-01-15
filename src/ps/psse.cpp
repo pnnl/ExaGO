@@ -3,20 +3,39 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <numeric>
 #include <sstream>
+#include <variant>
 
 #include <psse.hpp>
 #include <psimpl.h>
+#include <utils.h>
 
 namespace exago {
 namespace psse {
+
+template <typename T> bool Approx(T a, T b, T rtol = 1.0e-5) {
+  return std::fabs(a - b) <= rtol * std::max(std::fabs(a), std::fabs(b));
+}
+
+[[noreturn]] void Error(const std::string &message) {
+  ExaGOLog(EXAGO_LOG_ERROR, message);
+  throw ExaGOError(message);
+}
 
 std::string Strip(std::string str) {
   auto notspace = [](char c) { return !std::isspace(c); };
   str.erase(begin(str), std::find_if(begin(str), end(str), notspace));
   str.erase(std::find_if(rbegin(str), rend(str), notspace).base(), end(str));
   return str;
+}
+
+int CountWords(const std::string &str) {
+  std::stringstream stream(str);
+  std::istream_iterator<std::string> it(stream);
+  std::istream_iterator<std::string> end;
+  return static_cast<int>(std::distance(it, end));
 }
 
 std::string ReadLine(std::istream &is) {
@@ -43,8 +62,7 @@ private:
     // Check for and remove opening quote
     char qc = is.peek();
     if (!(qc == '\'' || qc == '\"')) {
-      throw std::runtime_error(
-          "First character expected to be single or double quote");
+      Error("First character expected to be single or double quote");
     }
     is.get();
 
@@ -59,8 +77,31 @@ private:
 
 class IntOrStringParse {
 public:
-  int GetInt() const { return i_; }
-  const std::string &GetString() const { return s_; }
+  bool IsTypeInt() const { return std::holds_alternative<int>(var_); }
+
+  int GetInt() const {
+    if (IsTypeInt()) {
+      return std::get<int>(var_);
+    } else {
+      return 0;
+    }
+  }
+
+  bool IsTypeString() const {
+    return std::holds_alternative<std::string>(var_);
+  }
+
+  std::string GetString() const {
+    if (IsTypeString()) {
+      return std::get<std::string>(var_);
+    } else {
+      return "";
+    }
+  }
+
+  BusRef ToBusRef() const {
+    return BusRef{static_cast<std::size_t>(GetInt()), GetString()};
+  }
 
 private:
   friend std::istream &operator>>(std::istream &is, IntOrStringParse &p) {
@@ -71,24 +112,45 @@ private:
     if (qc == '\'' || qc == '\"') {
       QuoteStringParse qs;
       is >> qs;
-      p.s_ = Strip(qs);
+      p.var_ = Strip(qs);
     } else {
-      is >> p.i_;
+      is >> p.var_.emplace<int>();
     }
 
     return is;
   }
 
-  int i_{0};
-  std::string s_;
+  std::variant<int, std::string> var_;
 };
+
+class LineItemStream;
+
+class CheckedLineItemStream {
+public:
+  CheckedLineItemStream(LineItemStream &lis) : lis_(lis) {}
+
+  template <typename T> CheckedLineItemStream &operator>>(T &item);
+
+private:
+  LineItemStream &lis_;
+};
+
+struct CheckStream {};
+
+inline constexpr CheckStream Check{};
 
 class LineItemStream : public std::istream {
 public:
   LineItemStream() = delete;
-  LineItemStream(std::istream &is) : is_(&is) { NextLine(); }
+  LineItemStream(std::istream &is) : std::istream(is.rdbuf()), is_(&is) {
+    do {
+      NextLine();
+    } while (StartsWith("@!"));
+  }
 
-  operator bool() const { return static_cast<bool>(ss_); }
+  CheckedLineItemStream Checked() { return CheckedLineItemStream(*this); }
+
+  operator bool() const { return static_cast<bool>(ss_) && (size_ > 0); }
 
   std::size_t Size() const noexcept { return size_; }
 
@@ -100,6 +162,7 @@ public:
     auto line = ReadLine(*is_);
     std::istringstream iss(line);
     ss_.str("");
+    size_ = 0;
     for (std::string item; std::getline(iss, item, ',');) {
       ss_ << item << ' ';
       ++size_;
@@ -107,194 +170,277 @@ public:
     return *this;
   }
 
+  std::string String() const { return ss_.str(); }
+
   template <typename T> LineItemStream &operator>>(T &item) {
     ss_ >> item;
     --size_;
     return *this;
   }
 
+  CheckedLineItemStream operator>>(CheckStream) { return Checked(); }
+
 private:
+  friend std::string ReadLine(LineItemStream &in) {
+    std::string out;
+    std::getline(in.ss_, out);
+    return out;
+  }
+
   std::istream *is_{nullptr};
   std::stringstream ss_;
   std::size_t size_{0};
 };
 
+template <typename T>
+inline CheckedLineItemStream &CheckedLineItemStream::operator>>(T &item) {
+  if (lis_.Size() > 0) {
+    lis_ >> item;
+  }
+  return *this;
+}
+
 CaseID ParseCaseID(std::istream &is) {
   CaseID cid;
   LineItemStream lis(is);
-  lis >> cid.ic >> cid.sbase >> cid.rev >> cid.xfrrat >> cid.nxfrat >>
-      cid.basfrq;
+  lis >> cid.ic >> cid.sbase >> cid.rev;
+  int supported[] = {32, 33, 34};
+  if (std::find(std::begin(supported), std::end(supported), cid.rev) ==
+      std::end(supported)) {
+    Error("PSS(R)E Power Flow Raw Data Files are supported only for "
+          "versions 32, 33 and 34. This file is tagged version " +
+          std::to_string(cid.rev));
+  }
+  lis >> cid.xfrrat >> cid.nxfrat >> cid.basfrq;
   cid.extra[0] = ReadLine(lis);
   cid.extra[1] = ReadLine(is);
   cid.extra[2] = ReadLine(is);
   return cid;
 }
 
-void ParseRecord(LineItemStream &lis, Bus &bus) {
-  QuoteStringParse name;
-  lis >> bus.i >> name >> bus.baskv >> bus.ide >> bus.area >> bus.zone >>
-      bus.owner >> bus.vm >> bus.va;
-  bus.name = Strip(name);
-  if (bus.name.empty()) {
-    bus.name = "BUS" + std::to_string(bus.i);
-  }
-  // TODO: parse remaining bus items if present
-}
-
-void ParseRecord(LineItemStream &lis, Load &ld) {
-  IntOrStringParse i;
-  QuoteStringParse id;
-  lis >> i >> id >> ld.status >> ld.area >> ld.zone >> ld.pl >> ld.ql >>
-      ld.ip >> ld.iq >> ld.yp >> ld.yq >> ld.owner;
-  ld.i = i.GetInt();
-  ld.i_bus_name = i.GetString();
-  ld.id = Strip(id);
-
-  // TODO: parse remaining load items if present
-}
-
-void ParseRecord(LineItemStream &lis, FixedBusShunt sh) {
-  IntOrStringParse i;
-  QuoteStringParse id;
-  lis >> i >> id >> sh.status >> sh.gl >> sh.bl;
-  sh.i = i.GetInt();
-  sh.i_bus_name = i.GetString();
-  sh.id = Strip(id);
-}
-
-void ParseRecord(LineItemStream &lis, Generator &gen) {
-  IntOrStringParse i;
-  IntOrStringParse ireg;
-  QuoteStringParse id;
-  lis >> i >> id >> gen.pg >> gen.qg >> gen.qt >> gen.qb >> gen.vs >> ireg >>
-      gen.mbase >> gen.zr >> gen.zx >> gen.rt >> gen.xt >> gen.gtap >>
-      gen.stat >> gen.rmpct >> gen.pt >> gen.pb >> gen.owners[0].owner >>
-      gen.owners[0].fraction;
-  gen.i = i.GetInt();
-  gen.i_bus_name = i.GetString();
-  gen.ireg = ireg.GetInt();
-  gen.ireg_bus_name = ireg.GetString();
-  gen.id = Strip(id);
-}
-
-void ParseRecord(LineItemStream &lis, Branch &br) {
-  IntOrStringParse i;
-  IntOrStringParse j;
-  QuoteStringParse ckt;
-  lis >> i >> j >> ckt >> br.r >> br.x >> br.b >> br.ratea >> br.rateb >>
-      br.ratec >> br.gi >> br.bi >> br.gj >> br.bj >> br.st >> br.met >>
-      br.len >> br.owners[0].owner >> br.owners[0].fraction;
-  br.i = i.GetInt();
-  br.i_bus_name = i.GetString();
-  br.j = j.GetInt();
-  br.j_bus_name = j.GetString();
-  br.ckt = Strip(ckt);
-}
-
-Winding parse_transformer_winding(LineItemStream &lis) {
-  Winding w;
-  lis >> w.windv >> w.nomv >> w.ang >> w.rata >> w.ratb >> w.ratc >> w.cod >>
-      w.cont >> w.rma >> w.rmi >> w.vma >> w.vmi >> w.ntp >> w.tab >> w.cr >>
-      w.cx >> w.cnxa;
-  return w;
-}
-
-void ParseRecord(LineItemStream &lis, Transformer &tr) {
-  IntOrStringParse i;
-  IntOrStringParse j;
-  IntOrStringParse k;
-  QuoteStringParse ckt;
-  QuoteStringParse name;
-  lis >> i >> j >> k >> ckt >> tr.cw >> tr.cz >> tr.cm >> tr.mag1 >> tr.mag2 >>
-      tr.nmetr >> name >> tr.stat >> tr.owners[0].owner >>
-      tr.owners[0].fraction;
-  tr.i = i.GetInt();
-  tr.i_bus_name = i.GetString();
-  tr.j = j.GetInt();
-  tr.j_bus_name = j.GetString();
-  tr.k = k.GetInt();
-  tr.k_bus_name = k.GetString();
-  tr.ckt = Strip(ckt);
-  tr.name = Strip(name);
-  if (tr.k == 0) {
-    // two-winding (3 more rows)
-    lis.NextLine() >> tr.imp12.r >> tr.imp12.x >> tr.imp12.sbase;
-    tr.windings[0] = parse_transformer_winding(lis.NextLine());
-    lis.NextLine() >> tr.windings[1].windv >> tr.windings[1].nomv;
-  } else {
-    // three-winding (4 more rows)
-    lis.NextLine() >> tr.imp12.r >> tr.imp12.x >> tr.imp12.sbase >>
-        tr.imp23.r >> tr.imp23.x >> tr.imp23.sbase >> tr.imp31.r >>
-        tr.imp31.x >> tr.imp31.sbase >> tr.vmstar >> tr.anstar;
-    tr.windings[0] = parse_transformer_winding(lis.NextLine());
-    tr.windings[1] = parse_transformer_winding(lis.NextLine());
-    tr.windings[2] = parse_transformer_winding(lis.NextLine());
+void SkipSystemWideData(std::istream &is) {
+  LineItemStream lis(is);
+  while (!lis.StartsWith("0 /")) {
+    lis.NextLine();
   }
 }
 
-void ParseRecord(LineItemStream &, AreaInterchange &) {}
+struct Parser {
+  int rev{34};
 
-void ParseRecord(LineItemStream &, TwoTerminalDCLine &) {}
-
-void ParseRecord(LineItemStream &, VSCDCLine &) {}
-
-void ParseRecord(LineItemStream &, ImpedanceCorrection &) {}
-
-void ParseRecord(LineItemStream &, MultiTerminalDCLine &) {}
-
-void ParseRecord(LineItemStream &, MultiSectionLineGroup &) {}
-
-void ParseRecord(LineItemStream &, Zone &) {}
-
-void ParseRecord(LineItemStream &, InterAreaTransfer &) {}
-
-void ParseRecord(LineItemStream &, Owner &) {}
-
-void ParseRecord(LineItemStream &, FACTSDevice &) {}
-
-void ParseRecord(LineItemStream &lis, SwitchedShunt &sh) {
-  IntOrStringParse i;
-  IntOrStringParse swrem;
-  QuoteStringParse rmidnt;
-  lis >> i >> sh.modsw >> sh.adjm >> sh.stat >> sh.vswhi >> sh.vswlo >> swrem >>
-      sh.rmpct >> rmidnt >> sh.binit >> sh.blocks[0].n >> sh.blocks[0].b;
-  sh.i = i.GetInt();
-  sh.i_bus_name = i.GetString();
-  sh.swrem = swrem.GetInt();
-  sh.swrem_bus_name = swrem.GetString();
-  sh.rmidnt = Strip(rmidnt);
-}
-
-void ParseRecord(LineItemStream &, GNEDevice &) {}
-
-template <typename T> std::vector<T> ParseRecords(std::istream &is) {
-  std::vector<T> recs;
-  while (is && is.peek() != 'Q') {
-    LineItemStream lis(is);
-    if (lis.StartsWith("0 /")) {
-      break;
+  void ParseRecord(LineItemStream &lis, Bus &bus) {
+    QuoteStringParse name;
+    lis >> bus.i;
+    lis &&lis >> name;
+    bus.name = Strip(name);
+    if (bus.name.empty()) {
+      bus.name = "BUS" + std::to_string(bus.i);
     }
-    if (lis.StartsWith("@!")) {
-      continue;
-    }
-    auto &rec = recs.emplace_back();
-    ParseRecord(lis, rec);
+    auto clis = lis.Checked();
+    clis >> bus.baskv >> bus.ide >> bus.area >> bus.zone >> bus.owner >>
+        bus.vm >> bus.va >> bus.nvhi >> bus.nvlo >> bus.evhi >> bus.evlo;
   }
-  return recs;
-}
+
+  void ParseRecord(LineItemStream &lis, Load &ld) {
+    IntOrStringParse i;
+    QuoteStringParse id;
+    lis >> i;
+    ld.i = i.ToBusRef();
+    auto clis = lis.Checked();
+    clis >> id;
+    ld.id = Strip(id);
+    clis >> ld.status >> ld.area >> ld.zone >> ld.pl >> ld.ql >> ld.ip >>
+        ld.iq >> ld.yp >> ld.yq >> ld.owner >> ld.scale >> ld.intrpt;
+    if (rev >= 34) {
+      clis >> ld.dgenp >> ld.dgenq >> ld.dgenm;
+    }
+  }
+
+  void ParseRecord(LineItemStream &lis, FixedBusShunt &sh) {
+    IntOrStringParse i;
+    QuoteStringParse id;
+    lis >> i;
+    sh.i = i.ToBusRef();
+    auto clis = lis.Checked();
+    clis >> id;
+    sh.id = Strip(id);
+    clis >> sh.status >> sh.gl >> sh.bl;
+  }
+
+  void ParseRecord(LineItemStream &lis, Generator &gen) {
+    IntOrStringParse i;
+    IntOrStringParse ireg;
+    QuoteStringParse id;
+    lis >> i;
+    gen.i = i.ToBusRef();
+    auto clis = lis.Checked();
+    clis >> id;
+    gen.id = Strip(id);
+    clis >> gen.pg >> gen.qg >> gen.qt >> gen.qb >> gen.vs >> ireg;
+    gen.ireg = ireg.ToBusRef();
+    clis >> gen.mbase >> gen.zr >> gen.zx >> gen.rt >> gen.xt >> gen.gtap >>
+        gen.stat >> gen.rmpct >> gen.pt >> gen.pb;
+    for (std::size_t oi = 0; oi < 4; ++oi) {
+      clis >> gen.owners[oi].owner >> gen.owners[oi].fraction;
+    }
+    clis >> gen.wmod >> gen.wpf;
+    if (rev >= 34) {
+      clis >> gen.nreg;
+    }
+  }
+
+  void ParseRecord(LineItemStream &lis, Branch &br) {
+    IntOrStringParse i;
+    IntOrStringParse j;
+    QuoteStringParse ckt;
+    QuoteStringParse name;
+    lis >> i >> j >> ckt >> br.r >> br.x;
+    br.i = i.ToBusRef();
+    br.j = j.ToBusRef();
+    br.ckt = Strip(ckt);
+    auto clis = lis.Checked();
+    clis >> br.b;
+    if (rev >= 34) {
+      clis >> name;
+      br.name = Strip(name);
+    }
+    clis >> br.rates[0] >> br.rates[1] >> br.rates[2];
+    if (rev >= 34) {
+      for (std::size_t ri = 3; ri < br.rates.size(); ++ri) {
+        clis >> br.rates[ri];
+      }
+    }
+    clis >> br.gi >> br.bi >> br.gj >> br.bj >> br.st >> br.met >> br.len;
+    for (std::size_t oi = 0; oi < 4; ++oi) {
+      clis >> br.owners[oi].owner >> br.owners[oi].fraction;
+    }
+  }
+
+  void ParseRecord(LineItemStream &, SystemSwitchingDevice &) {}
+
+  Winding ParseTransformerWinding(LineItemStream &lis) {
+    Winding w;
+    auto clis = lis.Checked();
+    clis >> w.windv >> w.nomv >> w.ang >> w.rates[0] >> w.rates[1] >>
+        w.rates[2];
+    if (rev >= 34) {
+      clis >> w.rates[3] >> w.rates[4] >> w.rates[5] >> w.rates[6] >>
+          w.rates[7] >> w.rates[8] >> w.rates[9] >> w.rates[10] >> w.rates[11];
+    }
+    clis >> w.cod >> w.cont >> w.rma >> w.rmi >> w.vma >> w.vmi >> w.ntp >>
+        w.tab >> w.cr >> w.cx >> w.cnxa;
+    return w;
+  }
+
+  void ParseRecord(LineItemStream &lis, Transformer &tr) {
+    IntOrStringParse i;
+    IntOrStringParse j;
+    IntOrStringParse k;
+    QuoteStringParse ckt;
+    QuoteStringParse name;
+    lis >> i >> j >> k;
+    tr.i = i.ToBusRef();
+    tr.j = j.ToBusRef();
+    tr.k = k.ToBusRef();
+    auto clis = lis.Checked();
+    clis >> ckt;
+    tr.ckt = Strip(ckt);
+    clis >> tr.cw >> tr.cz >> tr.cm >> tr.mag1 >> tr.mag2 >> tr.nmetr;
+    clis >> name;
+    tr.name = Strip(name);
+    clis >> tr.stat;
+    for (std::size_t oi = 0; oi < 4; ++oi) {
+      clis >> tr.owners[0].owner >> tr.owners[0].fraction;
+    }
+    if (tr.k == 0) {
+      // two-winding (3 more rows)
+      lis.NextLine() >> tr.imp12.r >> tr.imp12.x >> Check >> tr.imp12.sbase;
+      tr.windings[0] = ParseTransformerWinding(lis.NextLine());
+      lis.NextLine() >> Check >> tr.windings[1].windv >> tr.windings[1].nomv;
+    } else {
+      // three-winding (4 more rows)
+      lis.NextLine() >> tr.imp12.r >> tr.imp12.x >> Check >> tr.imp12.sbase >>
+          tr.imp23.r >> tr.imp23.x >> tr.imp23.sbase >> tr.imp31.r >>
+          tr.imp31.x >> tr.imp31.sbase >> Check >> tr.vmstar >> tr.anstar;
+      tr.windings[0] = ParseTransformerWinding(lis.NextLine());
+      tr.windings[1] = ParseTransformerWinding(lis.NextLine());
+      tr.windings[2] = ParseTransformerWinding(lis.NextLine());
+    }
+  }
+
+  void ParseRecord(LineItemStream &, AreaInterchange &) {}
+
+  void ParseRecord(LineItemStream &, TwoTerminalDCLine &) {}
+
+  void ParseRecord(LineItemStream &, VSCDCLine &) {}
+
+  void ParseRecord(LineItemStream &, ImpedanceCorrection &) {}
+
+  void ParseRecord(LineItemStream &, MultiTerminalDCLine &) {}
+
+  void ParseRecord(LineItemStream &, MultiSectionLineGroup &) {}
+
+  void ParseRecord(LineItemStream &, Zone &) {}
+
+  void ParseRecord(LineItemStream &, InterAreaTransfer &) {}
+
+  void ParseRecord(LineItemStream &, Owner &) {}
+
+  void ParseRecord(LineItemStream &, FACTSDevice &) {}
+
+  void ParseRecord(LineItemStream &lis, SwitchedShunt &sh) {
+    IntOrStringParse i;
+    IntOrStringParse swreg;
+    QuoteStringParse rmidnt;
+    lis >> i;
+    sh.i = i.ToBusRef();
+    auto clis = lis.Checked();
+    clis >> sh.modsw >> sh.adjm >> sh.stat >> sh.vswhi >> sh.vswlo >> swreg;
+    sh.swreg = swreg.ToBusRef();
+    clis >> sh.rmpct >> rmidnt;
+    sh.rmidnt = Strip(rmidnt);
+    clis >> sh.binit;
+    for (std::size_t bi = 0; bi < 8; ++bi) {
+      clis >> sh.blocks[bi].n >> sh.blocks[bi].b;
+    }
+    if (rev >= 34 && lis) {
+      IntOrStringParse nreg;
+      clis >> nreg;
+      sh.nreg = nreg.ToBusRef();
+    }
+  }
+
+  void ParseRecord(LineItemStream &, GNEDevice &) {}
+  void ParseRecord(LineItemStream &, InductionMachine &) {}
+
+  template <typename T> std::vector<T> ParseRecords(std::istream &is) {
+    std::vector<T> recs;
+    while (is && is.peek() != 'Q') {
+      LineItemStream lis(is);
+      if (lis.StartsWith("0 /")) {
+        break;
+      }
+      auto &rec = recs.emplace_back();
+      ParseRecord(lis, rec);
+    }
+    return recs;
+  }
+};
 
 BusMapping::BusMapping(std::vector<Bus> &buses) : buses_(buses) {
   for (std::size_t i = 0; i < buses_.size(); ++i) {
     {
       auto [_, ins] = id_map_.emplace(buses_[i].i, i);
       if (!ins) {
-        throw std::runtime_error("Bus numbers non-unique");
+        Error("PSS(R)E parser: Encountered duplicate bus number: " +
+              std::to_string(buses_[i].i));
       }
     }
     {
       auto [_, ins] = name_map_.emplace(buses_[i].name, i);
       if (!ins) {
-        throw std::runtime_error("Bus names non-unique");
+        Error("PSS(R)E parser: Encountered duplicate bus name: " +
+              buses_[i].name);
       }
     }
   }
@@ -332,55 +478,107 @@ const Bus &BusMapping::GetBus(std::size_t bus_number) const {
   return buses_[GetInternalIndex(bus_number)];
 }
 
-void BusMapping::Resolve(std::size_t &bus_number, std::string &bus_name,
-                         BusMapping::Optional optional) const {
-  if (bus_number == 0 && bus_name.empty()) {
+void BusMapping::Resolve(BusRef &busref, BusMapping::Optional optional) const {
+  if (busref.id == 0 && busref.name.empty()) {
     if (optional) {
       return;
     } else {
-      throw std::runtime_error("Cannot resolve bus id");
+      Error("Cannot resolve bus id");
     }
   }
-  if (bus_number == 0) {
-    if (!HasBus(bus_name)) {
-      throw std::runtime_error("Bus \'" + bus_name + "\' does not exist");
+  if (busref.id == 0) {
+    if (!HasBus(busref.name)) {
+      Error("PSS(R)E parser: Bus \'" + busref.name + "\' does not exist");
     }
-    bus_number = GetBusNumber(bus_name);
+    const Bus &bus = GetBus(busref.name);
+    busref.id = bus.i;
+    busref.bus = &bus;
   }
-  if (bus_name.empty()) {
-    if (!HasBus(bus_number)) {
-      throw std::runtime_error("Bus " + std::to_string(bus_number) +
-                               " does not exist");
+  if (busref.name.empty()) {
+    if (!HasBus(busref.id)) {
+      Error("PSS(R)E parser: Bus " + std::to_string(busref.id) +
+            " does not exist");
     }
-    bus_name = GetBusName(bus_number);
+    const Bus &bus = GetBus(busref.id);
+    busref.name = bus.name;
+    busref.bus = &bus;
   }
 }
 
 void Network::ResolveBusIds() {
+  using Optional = BusMapping::Optional;
   for (auto &load : loads) {
-    bus_mapping.Resolve(load.i, load.i_bus_name);
+    bus_mapping.Resolve(load.i);
   }
   for (auto &shunt : fixed_bus_shunts) {
-    bus_mapping.Resolve(shunt.i, shunt.i_bus_name);
+    bus_mapping.Resolve(shunt.i);
   }
   for (auto &gen : generators) {
-    bus_mapping.Resolve(gen.i, gen.i_bus_name);
-    bus_mapping.Resolve(gen.ireg, gen.ireg_bus_name,
-                        BusMapping::Optional{true});
+    bus_mapping.Resolve(gen.i);
+    bus_mapping.Resolve(gen.ireg, Optional{true});
   }
   for (auto &br : branches) {
-    bus_mapping.Resolve(br.i, br.i_bus_name);
-    bus_mapping.Resolve(br.j, br.j_bus_name);
+    bus_mapping.Resolve(br.i);
+    bus_mapping.Resolve(br.j);
   }
   for (auto &tr : transformers) {
-    bus_mapping.Resolve(tr.i, tr.i_bus_name);
-    bus_mapping.Resolve(tr.j, tr.j_bus_name);
-    bus_mapping.Resolve(tr.k, tr.k_bus_name, BusMapping::Optional{true});
+    bus_mapping.Resolve(tr.i);
+    bus_mapping.Resolve(tr.j);
+    bus_mapping.Resolve(tr.k, Optional{true});
   }
 
   for (auto &sh : switched_shunts) {
-    bus_mapping.Resolve(sh.i, sh.i_bus_name);
-    bus_mapping.Resolve(sh.swrem, sh.swrem_bus_name);
+    bus_mapping.Resolve(sh.i);
+    bus_mapping.Resolve(sh.swreg, Optional{true});
+    bus_mapping.Resolve(sh.nreg, Optional{true});
+  }
+}
+
+void Network::ResolveDefaults() {
+  for (auto &load : loads) {
+    if (load.i.bus) {
+      if (IsInvalid(load.area)) {
+        load.area = load.i.bus->area;
+      }
+      if (IsInvalid(load.zone)) {
+        load.zone = load.i.bus->zone;
+      }
+      if (IsInvalid(load.owner)) {
+        load.owner = load.i.bus->owner;
+      }
+    }
+  }
+  auto resolve_o1 = [](auto &comp) {
+    if (comp.owners[0].owner == 0) {
+      if (comp.i.bus) {
+        comp.owners[0].owner = comp.i.bus->owner;
+      }
+    }
+  };
+  for (auto &gen : generators) {
+    if (IsInvalid(gen.mbase)) {
+      gen.mbase = case_id.sbase;
+    }
+    resolve_o1(gen);
+  }
+  for (auto &br : branches) {
+    resolve_o1(br);
+  }
+  for (auto &tr : transformers) {
+    resolve_o1(tr);
+    for (std::size_t wi = 0; wi < 3; ++wi) {
+      auto &w = tr.windings[wi];
+      if (IsInvalid(w.windv)) {
+        if (tr.cw == 2) {
+          auto &busref = wi == 0 ? tr.i : wi == 1 ? tr.j : tr.k;
+          if (busref.bus) {
+            w.windv = busref.bus->baskv;
+          }
+        } else {
+          w.windv = 1.0;
+        }
+      }
+    }
   }
 }
 
@@ -394,32 +592,45 @@ Network::Network(CaseID &&cid, std::vector<Bus> &&bus, std::vector<Load> &&load,
       generators(std::move(gen)), branches(std::move(branch)),
       transformers(std::move(trans)), switched_shunts(std::move(swshunt)) {
   ResolveBusIds();
+  ResolveDefaults();
 }
 
 Network ParseNetwork(std::istream &is) {
   auto case_id = ParseCaseID(is);
-  auto buses = ParseRecords<Bus>(is);
-  auto loads = ParseRecords<Load>(is);
-  auto fixed_bus_shunts = ParseRecords<FixedBusShunt>(is);
-  auto generators = ParseRecords<Generator>(is);
-  auto branches = ParseRecords<Branch>(is);
-  auto transformers = ParseRecords<Transformer>(is);
+  if (case_id.rev >= 34) {
+    SkipSystemWideData(is);
+  }
+  auto parser = Parser{case_id.rev};
+  auto buses = parser.ParseRecords<Bus>(is);
+  auto loads = parser.ParseRecords<Load>(is);
+  auto fixed_bus_shunts = parser.ParseRecords<FixedBusShunt>(is);
+  auto generators = parser.ParseRecords<Generator>(is);
+  auto branches = parser.ParseRecords<Branch>(is);
   // { TODO
-  auto area_interchanges = ParseRecords<AreaInterchange>(is);
-  auto two_terminal_dc_lines = ParseRecords<TwoTerminalDCLine>(is);
-  auto vsc_dc_lines = ParseRecords<VSCDCLine>(is);
-  auto impedance_corrections = ParseRecords<ImpedanceCorrection>(is);
-  auto multi_terminal_dc_lines = ParseRecords<MultiTerminalDCLine>(is);
-  auto multi_section_line_groups = ParseRecords<MultiSectionLineGroup>(is);
-  auto zones = ParseRecords<Zone>(is);
-  auto inter_area_transfers = ParseRecords<InterAreaTransfer>(is);
-  auto owners = ParseRecords<Owner>(is);
-  auto facts_devices = ParseRecords<FACTSDevice>(is);
+  if (case_id.rev >= 34) {
+    auto system_switching_devices =
+        parser.ParseRecords<SystemSwitchingDevice>(is);
+  }
   // }
-  auto switched_shunts = ParseRecords<SwitchedShunt>(is);
+  auto transformers = parser.ParseRecords<Transformer>(is);
+  // { TODO
+  auto area_interchanges = parser.ParseRecords<AreaInterchange>(is);
+  auto two_terminal_dc_lines = parser.ParseRecords<TwoTerminalDCLine>(is);
+  auto vsc_dc_lines = parser.ParseRecords<VSCDCLine>(is);
+  auto impedance_corrections = parser.ParseRecords<ImpedanceCorrection>(is);
+  auto multi_terminal_dc_lines = parser.ParseRecords<MultiTerminalDCLine>(is);
+  auto multi_section_line_groups =
+      parser.ParseRecords<MultiSectionLineGroup>(is);
+  auto zones = parser.ParseRecords<Zone>(is);
+  auto inter_area_transfers = parser.ParseRecords<InterAreaTransfer>(is);
+  auto owners = parser.ParseRecords<Owner>(is);
+  auto facts_devices = parser.ParseRecords<FACTSDevice>(is);
+  // }
+  auto switched_shunts = parser.ParseRecords<SwitchedShunt>(is);
 
   // { TODO
-  auto gne_devices = ParseRecords<GNEDevice>(is);
+  auto gne_devices = parser.ParseRecords<GNEDevice>(is);
+  auto induction_machines = parser.ParseRecords<InductionMachine>(is);
   // }
 
   Network nw{std::move(case_id),      std::move(buses),
@@ -432,9 +643,11 @@ Network ParseNetwork(std::istream &is) {
 
 Network ParseNetwork(const std::string &filename) {
   std::ifstream is(filename);
+  auto quoted_filename = "\'" + filename + "\'";
   if (!is) {
-    throw std::runtime_error("Failed to open file: \'" + filename + "\'");
+    Error("Failed to open file: " + quoted_filename);
   }
+  ExaGOLog(EXAGO_LOG_INFO, "Parsing PSS(R)E raw data file: " + quoted_filename);
   auto nw = ParseNetwork(is);
   nw.file_name = filename;
   return nw;
@@ -544,9 +757,8 @@ PetscErrorCode ConvertToPS(PS ps, const Network &nw) {
     }
     auto bus_ii = nw.bus_mapping.GetInternalIndex(shunt.i);
     if (ps->bus[bus_ii].nshunt > 0) {
-      throw std::runtime_error(
-          "Bus " + std::to_string(shunt.i) +
-          ": more than one fixed shunt at bus not supported");
+      Error("Bus " + std::to_string(shunt.i) +
+            ": more than one fixed shunt at bus not supported");
     }
     ps->bus[bus_ii].nshunt++;
     ps->bus[bus_ii].gl = shunt.gl / ps->MVAbase;
@@ -597,10 +809,11 @@ PetscErrorCode ConvertToPS(PS ps, const Network &nw) {
       bus.qmintot += dgen.qb;
       bus.Pgtot += PetscAbsScalar(dgen.pg);
       bus.MVAbasetot += dgen.mbase;
-      if (dgen.vs != bus.vm) {
-        throw std::runtime_error(
-            "Generator " + sgen.id +
-            ": set point voltage different from bus voltage magnitude");
+      if (!Approx(dgen.vs, bus.vm)) {
+        std::stringstream ss;
+        ss << "Generator at bus " << bus.i << ": voltage setpoint (" << dgen.vs
+           << ") different from bus voltage magnitude (" << bus.vm << ")";
+        Error(ss.str());
       }
       bus.ngenON++;
       ps->NgenON++;
@@ -655,9 +868,9 @@ PetscErrorCode ConvertToPS(PS ps, const Network &nw) {
     dline.r = sline.r;
     dline.x = sline.x;
     dline.b = sline.b;
-    dline.rateA = sline.ratea;
-    dline.rateB = sline.rateb;
-    dline.rateC = sline.ratec;
+    dline.rateA = sline.rates[0];
+    dline.rateB = sline.rates[1];
+    dline.rateC = sline.rates[2];
     dline.gi = sline.gi;
     dline.bi = sline.bi;
     dline.gj = sline.gj;
@@ -697,12 +910,19 @@ PetscErrorCode ConvertToPS(PS ps, const Network &nw) {
     dline.tapratio = sline.windings[0].windv;
     // nomv1 skipped
     dline.phaseshift = sline.windings[0].ang;
-    dline.rateA = sline.windings[0].rata;
-    dline.rateB = sline.windings[0].ratb;
-    dline.rateC = sline.windings[0].ratc;
+    dline.rateA = sline.windings[0].rates[0];
+    dline.rateB = sline.windings[0].rates[1];
+    dline.rateC = sline.windings[0].rates[2];
     // the rest are skipped
 
     configure_line(dline);
+  }
+
+  if (!nw.switched_shunts.empty()) {
+    ExaGOLog(EXAGO_LOG_WARN,
+             "File \'" + nw.file_name +
+                 "\' contains switched shunts, which currently cannot be "
+                 "represented in the PS data structure");
   }
 
   PetscFunctionReturn(0);

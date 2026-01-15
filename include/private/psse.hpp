@@ -2,6 +2,7 @@
 
 #include <array>
 #include <istream>
+#include <limits>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -10,6 +11,13 @@
 
 namespace exago {
 namespace psse {
+
+template <typename T>
+inline constexpr T Invalid = std::numeric_limits<T>::max();
+
+template <typename T> inline constexpr bool IsInvalid(const T &val) noexcept {
+  return val == Invalid<T>;
+}
 
 struct CaseID {
   int ic;
@@ -23,162 +31,167 @@ struct CaseID {
 
 struct Bus {
   std::size_t i;
-  std::string name;
-  double baskv;
-  int ide;
-  int area;
-  int zone;
-  int owner;
-  double vm;
-  double va;
+  std::string name{};
+  double baskv{0.0};
+  int ide{1};
+  std::size_t area{1};
+  std::size_t zone{1};
+  std::size_t owner{1};
+  double vm{1.0};
+  double va{0.0};
   double nvhi{1.1};
   double nvlo{0.9};
   double evhi{1.1};
   double evlo{0.9};
 };
 
+struct BusRef {
+  std::size_t id{Invalid<std::size_t>};
+  std::string name{};
+  const Bus *bus{nullptr};
+
+  operator std::size_t() const { return id; }
+};
+
 struct Load {
-  std::size_t i;
-  std::string i_bus_name;
-  std::string id;
-  int status;
-  int area;
-  int zone;
-  double pl;
-  double ql;
-  double ip;
-  double iq;
-  double yp;
-  double yq;
-  int owner;
+  BusRef i;
+  std::string id{"1"};
+  int status{1};
+  std::size_t area{Invalid<std::size_t>}; // Default is area of bus i
+  std::size_t zone{Invalid<std::size_t>}; // Default is zone of bus i
+  double pl{0.0};
+  double ql{0.0};
+  double ip{0.0};
+  double iq{0.0};
+  double yp{0.0};
+  double yq{0.0};
+  std::size_t owner{Invalid<std::size_t>}; // Default is owner of bus i
   int scale{1};
   int intrpt{0};
+  double dgenp{0.0};
+  double dgenq{0.0};
+  int dgenm{0};
 };
 
 struct FixedBusShunt {
-  std::size_t i;
-  std::string i_bus_name;
-  std::string id;
-  int status;
-  double gl;
-  double bl;
+  BusRef i;
+  std::string id{"1"};
+  int status{1};
+  double gl{0.0};
+  double bl{0.0};
 };
 
 struct Ownership {
-  int owner;
-  double fraction;
+  std::size_t owner{0};
+  double fraction{1.0};
 };
 
 struct Generator {
-  std::size_t i;
-  std::string i_bus_name;
-  std::string id;
-  double pg;
-  double qg;
-  double qt;
-  double qb;
-  double vs;
-  std::size_t ireg;
-  std::string ireg_bus_name;
-  double mbase;
-  double zr;
-  double zx;
-  double rt;
-  double xt;
-  double gtap;
-  int stat;
-  double rmpct;
-  double pt;
-  double pb;
-  std::array<Ownership, 4> owners;
+  BusRef i;
+  std::string id{"1"};
+  double pg{0.0};
+  double qg{0.0};
+  double qt{9999.0};
+  double qb{-9999.0};
+  double vs{1.0};
+  BusRef ireg{0, ""};
+  double mbase{Invalid<double>}; // Default is system MVA base
+  double zr{0.0};
+  double zx{1.0};
+  double rt{0.0};
+  double xt{0.0};
+  double gtap{1.0};
+  int stat{1};
+  double rmpct{100.0};
+  double pt{9999.0};
+  double pb{-9999.0};
+  std::array<Ownership, 4> owners{};
   int wmod{0};
   double wpf{1.0};
+  std::size_t nreg{0};
 };
 
 struct Branch {
-  std::size_t i;
-  std::string i_bus_name;
-  std::size_t j;
-  std::string j_bus_name;
+  BusRef i;
+  BusRef j;
   std::string ckt;
   double r;
   double x;
-  double b;
-  double ratea;
-  double rateb;
-  double ratec;
-  double gi;
-  double bi;
-  double gj;
-  double bj;
-  int st;
-  int met;
-  double len;
-  std::array<Ownership, 4> owners;
+  double b{0.0};
+  std::string name{};
+  std::array<double, 12> rates{};
+  double gi{0.0};
+  double bi{0.0};
+  double gj{0.0};
+  double bj{0.0};
+  int st{1};
+  int met{1};
+  double len{0.0};
+  std::array<Ownership, 4> owners{};
 };
+
+struct SystemSwitchingDevice {};
 
 struct Impedence {
   double r;
   double x;
-  double sbase;
+  double sbase{Invalid<double>}; // Default is system base MVA
 };
 
 struct Winding {
-  double windv;
-  double nomv;
-  double ang;
-  double rata;
-  double ratb;
-  double ratc;
-  int cod;
-  int cont;
-  double rma;
-  double rmi;
-  double vma;
-  double vmi;
-  int ntp;
-  int tab;
-  double cr;
-  double cx;
-  double cnxa;
+  /**
+   * Default depends on Transformer::cw:
+   * - cw in {1, 3} => 1.0
+   * - cw == 2 => base voltage of corresponding bus (baskv of bus i, j or k)
+   */
+  double windv{Invalid<double>};
+  double nomv{0.0};
+  double ang{0.0};
+  std::array<double, 12> rates{};
+  int cod{0};
+  int cont{0};
+  double rma{1.1};
+  double rmi{0.9};
+  double vma{1.1};
+  double vmi{0.9};
+  int ntp{33};
+  int tab{0};
+  double cr{0.0};
+  double cx{0.0};
+  double cnxa{0.0};
+  std::size_t node{0};
 };
 
 struct Transformer {
-  std::size_t i;
-  std::string i_bus_name;
-  std::size_t j;
-  std::string j_bus_name;
-  std::size_t k;
-  std::string k_bus_name;
-  std::string ckt;
-  int cw;
-  int cz;
-  int cm;
-  double mag1;
-  double mag2;
-  int nmetr;
-  std::string name;
-  int stat;
-  std::array<Ownership, 4> owners;
-  std::string vecgrp;
+  BusRef i;
+  BusRef j;
+  BusRef k;
+  std::string ckt{"1"};
+  int cw{1};
+  int cz{1};
+  int cm{1};
+  double mag1{0.0};
+  double mag2{0.0};
+  int nmetr{2};
+  std::string name{};
+  int stat{1};
+  std::array<Ownership, 4> owners{};
+  std::string vecgrp{};
   Impedence imp12;
   Impedence imp23;
   Impedence imp31;
-  double vmstar;
-  double anstar;
-  std::array<Winding, 3> windings;
+  double vmstar{1.0};
+  double anstar{0.0};
+  std::array<Winding, 3> windings{};
 };
 
-struct Area {
+struct AreaInterchange {
   int i;
-  std::size_t isw;
-  std::string isw_bus_name; // TODO: resolve
-  double pdes;
-  double ptol;
-  std::string arname;
+  BusRef isw{0, ""}; // TODO: resolve
+  double pdes{0.0};
+  double ptol{10.0};
+  std::string arname{};
 };
-
-struct AreaInterchange {};
 
 struct TwoTerminalDCLine {};
 
@@ -200,25 +213,27 @@ struct FACTSDevice {};
 
 struct SwitchedShunt {
   struct Block {
-    int n;
-    double b;
+    std::size_t n{0};
+    double b{0.0};
   };
-  std::size_t i;
-  std::string i_bus_name;
-  int modsw;
-  int adjm;
-  int stat;
-  double vswhi;
-  double vswlo;
-  std::size_t swrem;
-  std::string swrem_bus_name;
-  double rmpct;
-  std::string rmidnt;
-  double binit;
-  std::array<Block, 8> blocks;
+
+  BusRef i;
+  int modsw{1};
+  int adjm{0};
+  int stat{1};
+  double vswhi{1.0};
+  double vswlo{1.0};
+  BusRef swreg{0, ""};
+  double rmpct{100.0};
+  std::string rmidnt{};
+  double binit{0.0};
+  std::array<Block, 8> blocks{};
+  BusRef nreg{0, ""};
 };
 
 struct GNEDevice {};
+
+struct InductionMachine {};
 
 class BusMapping {
 public:
@@ -241,8 +256,7 @@ public:
   const Bus &GetBus(const std::string &bus_name) const;
   const Bus &GetBus(std::size_t bus_number) const;
 
-  void Resolve(std::size_t &bus_number, std::string &bus_name,
-               Optional opt = Optional{false}) const;
+  void Resolve(BusRef &bus, Optional opt = Optional{false}) const;
 
   const auto &GetIdToIdMap() const { return id_map_; }
   const auto &GetNameToIdMap() const { return name_map_; }
@@ -260,6 +274,7 @@ struct Network {
           std::vector<SwitchedShunt> &&);
 
   void ResolveBusIds();
+  void ResolveDefaults();
 
   std::string file_name;
   CaseID case_id;
@@ -269,6 +284,7 @@ struct Network {
   std::vector<FixedBusShunt> fixed_bus_shunts;
   std::vector<Generator> generators;
   std::vector<Branch> branches;
+  // std::vector<SystemSwitchingDevice> system_switching_devices;
   std::vector<Transformer> transformers;
   // std::vector<AreaInterchange> area_interchanges;
   // std::vector<TwoTerminalDCLine> two_terminal_dc_lines;
