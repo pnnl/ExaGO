@@ -757,7 +757,7 @@ PetscErrorCode ConvertToPS(PS ps, const Network &nw) {
     }
     auto bus_ii = nw.bus_mapping.GetInternalIndex(shunt.i);
     if (ps->bus[bus_ii].nshunt > 0) {
-      Error("Bus " + std::to_string(shunt.i) +
+      Error("Bus " + std::to_string(shunt.i.id) +
             ": more than one fixed shunt at bus not supported");
     }
     ps->bus[bus_ii].nshunt++;
@@ -811,8 +811,9 @@ PetscErrorCode ConvertToPS(PS ps, const Network &nw) {
       bus.MVAbasetot += dgen.mbase;
       if (!Approx(dgen.vs, bus.vm)) {
         std::stringstream ss;
-        ss << "Generator at bus " << bus.i << ": voltage setpoint (" << dgen.vs
-           << ") different from bus voltage magnitude (" << bus.vm << ")";
+        ss << "Generator at bus " << bus.bus_i << std::fixed << ": voltage setpoint ("
+           << dgen.vs << ") different from bus voltage magnitude (" << bus.vm
+           << ")";
         Error(ss.str());
       }
       bus.ngenON++;
