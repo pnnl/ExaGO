@@ -186,7 +186,7 @@ struct Transformer {
 };
 
 struct AreaInterchange {
-  int i;
+  std::size_t i;
   BusRef isw;
   double pdes{0.0};
   double ptol{10.0};
@@ -203,11 +203,17 @@ struct MultiTerminalDCLine {};
 
 struct MultiSectionLineGroup {};
 
-struct Zone {};
+struct Zone {
+  std::size_t i;
+  std::string zoname{};
+};
 
 struct InterAreaTransfer {};
 
-struct Owner {};
+struct Owner {
+  std::size_t i;
+  std::string owname{};
+};
 
 struct FACTSDevice {};
 
@@ -271,7 +277,8 @@ struct Network {
   Network(CaseID &&, std::vector<Bus> &&, std::vector<Load> &&,
           std::vector<FixedBusShunt> &&, std::vector<Generator> &&,
           std::vector<Branch> &&, std::vector<Transformer> &&,
-          std::vector<AreaInterchange> &&, std::vector<SwitchedShunt> &&);
+          std::vector<AreaInterchange> &&, std::vector<Zone> &&,
+          std::vector<Owner> &&, std::vector<SwitchedShunt> &&);
 
   void ResolveBusIds();
   void ResolveDefaults();
@@ -292,9 +299,9 @@ struct Network {
   // std::vector<ImpedanceCorrection> impedance_corrections;
   // std::vector<MultiTerminalDCLine> multi_terminal_dc_lines;
   // std::vector<MultiSectionLineGroup> multi_section_line_groups;
-  // std::vector<Zone> zones;
+  std::vector<Zone> zones;
   // std::vector<InterAreaTransfer> inter_area_transfers;
-  // std::vector<Owner> owners;
+  std::vector<Owner> owners;
   // std::vector<FACTSDevice> facts_devices;
   std::vector<SwitchedShunt> switched_shunts;
   // std::vector<GNEDevice> gne_devices;

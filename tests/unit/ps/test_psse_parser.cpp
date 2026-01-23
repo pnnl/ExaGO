@@ -998,7 +998,7 @@ TEST_FUNCTION(check_network_ieee9bus_shunts)(const exago::psse::Network &nw) {
   TEST_EQUAL(transformers[1].ckt, "T2");
   TEST_EQUAL(transformers[2].ckt, "T3");
 
-  const auto& area_interchanges = nw.area_interchanges;
+  const auto &area_interchanges = nw.area_interchanges;
   TEST_EQUAL(area_interchanges[0].i, 1);
   TEST_EQUAL(area_interchanges[0].arname, "AREA1");
   TEST_EQUAL(area_interchanges[0].pdes, 50.0);
@@ -1008,34 +1008,17 @@ TEST_FUNCTION(check_network_ieee9bus_shunts)(const exago::psse::Network &nw) {
   TEST_EQUAL(area_interchanges[1].pdes, 50.0);
   TEST_EQUAL(area_interchanges[1].ptol, 10.0);
 
-  // twoTerminalDC = nw.twoTerminalDCLines;
-  // TEST_EQUAL(twoTerminalDC[0].name,"DC Line 1");
-  // TEST_EQUAL(twoTerminalDC[1].name,"DC Line 1");
-  // TEST_EQUAL(twoTerminalDC[0].cccacc, 0.0);
-  // TEST_EQUAL(twoTerminalDC[1].cccacc, 0.0);
-  // TEST_EQUAL(twoTerminalDC[0].ipr, 2060653);
-  // TEST_EQUAL(twoTerminalDC[1].ipr, 3008030);
-  // TEST_EQUAL(twoTerminalDC[0].xcapr, 0.0);
-  // TEST_EQUAL(twoTerminalDC[1].xcapr, 0.0);
-  // TEST_EQUAL(twoTerminalDC[0].ipi, 66353);
-  // TEST_EQUAL(twoTerminalDC[1].ipi, 61477);
-  // TEST_EQUAL(twoTerminalDC[0].xcapi, 0.0);
-  // TEST_EQUAL(twoTerminalDC[1].xcapi, 0.0);
+  const auto &zones = nw.zones;
+  TEST_EQUAL(zones[0].i, 1);
+  TEST_EQUAL(zones[0].zoname, "ZONE1");
+  TEST_EQUAL(zones[5].i, 6);
+  TEST_EQUAL(zones[5].zoname, "ZONE6");
 
-  // TEST(nw.vscDCLines.empty());
-
-  // const auto& impedanceCorrections = nw.impedanceCorrections;
-  // TEST_EQUAL(impedanceCorrections[0].i, 1);
-  // TEST_EQUAL(impedanceCorrections[1].i, 2);
-  // TEST_EQUAL(impedanceCorrections[2].i, 3);
-  // TEST_EQUAL(impedanceCorrections[0].f6, 1.03);
-  // TEST_EQUAL(impedanceCorrections[1].f6, 0.0);
-  // TEST_EQUAL(impedanceCorrections[2].f6, 1.41);
-  // TEST_EQUAL(impedanceCorrections[0].f11, 0.0);
-  // TEST_EQUAL(impedanceCorrections[1].f11, 0.0);
-  // TEST_EQUAL(impedanceCorrections[2].f11, 0.0);
-
-  // TODO: other elements
+  const auto &owners = nw.owners;
+  TEST_EQUAL(owners[0].i, 1);
+  TEST_EQUAL(owners[0].owname, "OWNER1");
+  TEST_EQUAL(owners[1].i, 2);
+  TEST_EQUAL(owners[1].owname, "OWNER2");
 
   const auto &switched_shunts = nw.switched_shunts;
   TEST_EQUAL(switched_shunts[0].i, 1);

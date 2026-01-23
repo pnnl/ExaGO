@@ -389,11 +389,19 @@ struct Parser {
 
   void ParseRecord(LineItemStream &, MultiSectionLineGroup &) {}
 
-  void ParseRecord(LineItemStream &, Zone &) {}
+  void ParseRecord(LineItemStream &lis, Zone &zone) {
+    QuoteStringParse zoname;
+    lis >> zone.i >> Check >> zoname;
+    zone.zoname = Strip(zoname);
+  }
 
   void ParseRecord(LineItemStream &, InterAreaTransfer &) {}
 
-  void ParseRecord(LineItemStream &, Owner &) {}
+  void ParseRecord(LineItemStream &lis, Owner &owner) {
+    QuoteStringParse owname;
+    lis >> owner.i >> Check >> owname;
+    owner.owname = Strip(owname);
+  }
 
   void ParseRecord(LineItemStream &, FACTSDevice &) {}
 
@@ -597,12 +605,14 @@ Network::Network(CaseID &&cid, std::vector<Bus> &&bus, std::vector<Load> &&load,
                  std::vector<FixedBusShunt> &&fbshunt,
                  std::vector<Generator> &&gen, std::vector<Branch> &&branch,
                  std::vector<Transformer> &&trans,
-                 std::vector<AreaInterchange> &&area,
+                 std::vector<AreaInterchange> &&area, std::vector<Zone> &&zone,
+                 std::vector<Owner> &&owner,
                  std::vector<SwitchedShunt> &&swshunt)
     : case_id(std::move(cid)), buses(std::move(bus)), bus_mapping(buses),
       loads(std::move(load)), fixed_bus_shunts(std::move(fbshunt)),
       generators(std::move(gen)), branches(std::move(branch)),
       transformers(std::move(trans)), area_interchanges(std::move(area)),
+      zones(std::move(zone)), owners(std::move(owner)),
       switched_shunts(std::move(swshunt)) {
   ResolveBusIds();
   ResolveDefaults();
@@ -626,17 +636,21 @@ Network ParseNetwork(std::istream &is) {
   }
   // }
   auto transformers = parser.ParseRecords<Transformer>(is);
-  // { TODO
   auto area_interchanges = parser.ParseRecords<AreaInterchange>(is);
+  // { TODO
   auto two_terminal_dc_lines = parser.ParseRecords<TwoTerminalDCLine>(is);
   auto vsc_dc_lines = parser.ParseRecords<VSCDCLine>(is);
   auto impedance_corrections = parser.ParseRecords<ImpedanceCorrection>(is);
   auto multi_terminal_dc_lines = parser.ParseRecords<MultiTerminalDCLine>(is);
   auto multi_section_line_groups =
       parser.ParseRecords<MultiSectionLineGroup>(is);
+  // }
   auto zones = parser.ParseRecords<Zone>(is);
+  // { TODO
   auto inter_area_transfers = parser.ParseRecords<InterAreaTransfer>(is);
+  // }
   auto owners = parser.ParseRecords<Owner>(is);
+  // { TODO
   auto facts_devices = parser.ParseRecords<FACTSDevice>(is);
   // }
   auto switched_shunts = parser.ParseRecords<SwitchedShunt>(is);
@@ -650,6 +664,7 @@ Network ParseNetwork(std::istream &is) {
              std::move(loads),          std::move(fixed_bus_shunts),
              std::move(generators),     std::move(branches),
              std::move(transformers),   std::move(area_interchanges),
+             std::move(zones),          std::move(owners),
              std::move(switched_shunts)};
 
   return nw;
@@ -933,11 +948,25 @@ PetscErrorCode ConvertToPS(PS ps, const Network &nw) {
     configure_line(dline);
   }
 
+  auto unsupported_contents_error = [&nw](const std::string &label) {
+    std::stringstream ss;
+    ss << "File \'" << nw.file_name << "\' contains \'" << label
+       << "\' data, which currently cannot be "
+          "represented in the PS data structure";
+    ExaGOLog(EXAGO_LOG_WARN, ss.str());
+  };
+
+  if (!nw.area_interchanges.empty()) {
+    unsupported_contents_error("AREA");
+  }
+  if (!nw.zones.empty()) {
+    unsupported_contents_error("ZONE");
+  }
+  if (!nw.owners.empty()) {
+    unsupported_contents_error("OWNER");
+  }
   if (!nw.switched_shunts.empty()) {
-    ExaGOLog(EXAGO_LOG_WARN,
-             "File \'" + nw.file_name +
-                 "\' contains switched shunts, which currently cannot be "
-                 "represented in the PS data structure");
+    unsupported_contents_error("SWITCHED SHUNT");
   }
 
   PetscFunctionReturn(0);
