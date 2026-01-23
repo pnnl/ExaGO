@@ -1033,6 +1033,10 @@ TEST_FUNCTION(check_network_ieee9bus_shunts)(const exago::psse::Network &nw) {
   TEST_EQUAL(switched_shunts[1].stat, 1);
   TEST_EQUAL(switched_shunts[2].stat, 1);
   TEST_EQUAL(switched_shunts[3].stat, 1);
+  TEST_EQUAL(switched_shunts[0].binit, 5.0);
+  TEST_EQUAL(switched_shunts[1].binit, 1.0);
+  TEST_EQUAL(switched_shunts[2].binit, 0.0);
+  TEST_EQUAL(switched_shunts[3].binit, 1.0);
   TEST_EQUAL(switched_shunts[0].blocks[0].n, 1);
   TEST_EQUAL(switched_shunts[1].blocks[0].n, 1);
   TEST_EQUAL(switched_shunts[2].blocks[0].n, 1);

@@ -20,9 +20,9 @@ template <typename T> inline constexpr bool IsInvalid(const T &val) noexcept {
 }
 
 struct CaseID {
-  int ic;
-  double sbase;
-  int rev;
+  int ic{0};
+  double sbase{100.0};
+  int rev{34};
   int xfrrat;
   int nxfrat;
   double basfrq;

@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cctype>
+#include <deque>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -150,31 +151,32 @@ public:
 
   CheckedLineItemStream Checked() { return CheckedLineItemStream(*this); }
 
-  operator bool() const { return static_cast<bool>(ss_) && (size_ > 0); }
+  operator bool() const { return !q_.empty(); }
 
-  std::size_t Size() const noexcept { return size_; }
+  std::size_t Size() const noexcept { return q_.size(); }
+  const std::string &Raw() const noexcept { return line_; }
 
   bool StartsWith(const std::string &sub) const {
-    return ss_.str().find(sub) == 0;
+    return q_.front().find(sub) == 0;
   }
 
   LineItemStream &NextLine() {
-    auto line = ReadLine(*is_);
-    std::istringstream iss(line);
-    ss_.str("");
-    size_ = 0;
+    line_ = ReadLine(*is_);
+    std::istringstream iss(line_);
+    q_.clear();
     for (std::string item; std::getline(iss, item, ',');) {
-      ss_ << item << ' ';
-      ++size_;
+      q_.push_back(Strip(item));
     }
     return *this;
   }
 
-  std::string String() const { return ss_.str(); }
+  std::string String() const { return line_; }
 
   template <typename T> LineItemStream &operator>>(T &item) {
-    ss_ >> item;
-    --size_;
+    if (!q_.front().empty()) {
+      std::istringstream(q_.front()) >> item;
+    }
+    q_.pop_front();
     return *this;
   }
 
@@ -183,13 +185,16 @@ public:
 private:
   friend std::string ReadLine(LineItemStream &in) {
     std::string out;
-    std::getline(in.ss_, out);
+    for (auto &&item : in.q_) {
+      out += " " + item;
+    }
     return out;
   }
 
   std::istream *is_{nullptr};
-  std::stringstream ss_;
-  std::size_t size_{0};
+
+  std::string line_;
+  std::deque<std::string> q_;
 };
 
 template <typename T>
@@ -202,7 +207,10 @@ inline CheckedLineItemStream &CheckedLineItemStream::operator>>(T &item) {
 
 CaseID ParseCaseID(std::istream &is) {
   CaseID cid;
-  LineItemStream lis(is);
+  std::string record;
+  std::getline(is, record, '/');
+  std::istringstream rec_stream(record);
+  LineItemStream lis(rec_stream);
   lis >> cid.ic >> cid.sbase >> cid.rev;
   int supported[] = {32, 33, 34};
   if (std::find(std::begin(supported), std::end(supported), cid.rev) ==
@@ -212,7 +220,8 @@ CaseID ParseCaseID(std::istream &is) {
           std::to_string(cid.rev));
   }
   lis >> cid.xfrrat >> cid.nxfrat >> cid.basfrq;
-  cid.extra[0] = ReadLine(lis);
+
+  cid.extra[0] = ReadLine(is);
   cid.extra[1] = ReadLine(is);
   cid.extra[2] = ReadLine(is);
   return cid;

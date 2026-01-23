@@ -112,10 +112,10 @@ RATING,12, "      ", "                                "
 @!  'NAME',         I,     J,MODE,   PDES,      QDES,  VSET,      SHMX,      TRMX,   VTMN,   VTMX,   VSMX,      IMX,     LINX,   RMPCT,OWNER,    SET1,      SET2,VSREF, REMOT,   'MNAME'
 0 / END OF FACTS DEVICE DATA, BEGIN SWITCHED SHUNT DATA
 @!  I,MODSW,ADJM,ST, VSWHI,  VSWLO, SWREM,  RMPCT,   'RMIDNT',      BINIT,N1,     B1, N2,     B2, N3,     B3, N4,     B4, N5,     B5, N6,     B6, N7,     B7, N8,     B8
-    1,0,0,1,1.00000,0.99000,    0,100.0,'        ',    5.00, 1,   5.00
-    2,1,0,1,1.10000,0.90000,    0,100.0,'        ',    1.00, 1,   5.00
-    3,4,0,1,1.10000,0.90000,    0,100.0,'        ',    0.00, 1,   0.00
-    5,2,0,1,1.00000,1.00000,    0,100.0,'        ',    1.00, 1,   5.00
+    1,0,0,1,1.00000,0.99000,    ,,,    5.00, 1,   5.00
+    2,1,0,1,1.10000,0.90000,    ,,,    1.00, 1,   5.00
+    3,4,0,1,1.10000,0.90000,    ,,,    0.00, 1,   0.00
+    5,2,0,1,1.00000,1.00000,    ,,,    1.00, 1,   5.00
 0 / END OF SWITCHED SHUNT DATA
 @!  'NAME',        'MODEL',     NTERM,BUS1...BUSNTERM,NREAL,NINTG,NCHAR
 @!ST,OWNER,NMETR
