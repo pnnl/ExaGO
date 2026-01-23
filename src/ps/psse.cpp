@@ -368,7 +368,16 @@ struct Parser {
     }
   }
 
-  void ParseRecord(LineItemStream &, AreaInterchange &) {}
+  void ParseRecord(LineItemStream &lis, AreaInterchange &area) {
+    IntOrStringParse isw;
+    QuoteStringParse arname;
+    lis >> area.i;
+    auto clis = lis.Checked();
+    clis >> isw;
+    area.isw = isw.ToBusRef();
+    clis >> area.pdes >> area.ptol >> arname;
+    area.arname = Strip(arname);
+  }
 
   void ParseRecord(LineItemStream &, TwoTerminalDCLine &) {}
 
@@ -526,7 +535,9 @@ void Network::ResolveBusIds() {
     bus_mapping.Resolve(tr.j);
     bus_mapping.Resolve(tr.k, Optional{true});
   }
-
+  for (auto &ar : area_interchanges) {
+    bus_mapping.Resolve(ar.isw, Optional{true});
+  }
   for (auto &sh : switched_shunts) {
     bus_mapping.Resolve(sh.i);
     bus_mapping.Resolve(sh.swreg, Optional{true});
@@ -586,11 +597,13 @@ Network::Network(CaseID &&cid, std::vector<Bus> &&bus, std::vector<Load> &&load,
                  std::vector<FixedBusShunt> &&fbshunt,
                  std::vector<Generator> &&gen, std::vector<Branch> &&branch,
                  std::vector<Transformer> &&trans,
+                 std::vector<AreaInterchange> &&area,
                  std::vector<SwitchedShunt> &&swshunt)
     : case_id(std::move(cid)), buses(std::move(bus)), bus_mapping(buses),
       loads(std::move(load)), fixed_bus_shunts(std::move(fbshunt)),
       generators(std::move(gen)), branches(std::move(branch)),
-      transformers(std::move(trans)), switched_shunts(std::move(swshunt)) {
+      transformers(std::move(trans)), area_interchanges(std::move(area)),
+      switched_shunts(std::move(swshunt)) {
   ResolveBusIds();
   ResolveDefaults();
 }
@@ -633,10 +646,11 @@ Network ParseNetwork(std::istream &is) {
   auto induction_machines = parser.ParseRecords<InductionMachine>(is);
   // }
 
-  Network nw{std::move(case_id),      std::move(buses),
-             std::move(loads),        std::move(fixed_bus_shunts),
-             std::move(generators),   std::move(branches),
-             std::move(transformers), std::move(switched_shunts)};
+  Network nw{std::move(case_id),        std::move(buses),
+             std::move(loads),          std::move(fixed_bus_shunts),
+             std::move(generators),     std::move(branches),
+             std::move(transformers),   std::move(area_interchanges),
+             std::move(switched_shunts)};
 
   return nw;
 }
@@ -811,9 +825,9 @@ PetscErrorCode ConvertToPS(PS ps, const Network &nw) {
       bus.MVAbasetot += dgen.mbase;
       if (!Approx(dgen.vs, bus.vm)) {
         std::stringstream ss;
-        ss << "Generator at bus " << bus.bus_i << std::fixed << ": voltage setpoint ("
-           << dgen.vs << ") different from bus voltage magnitude (" << bus.vm
-           << ")";
+        ss << "Generator at bus " << bus.bus_i << std::fixed
+           << ": voltage setpoint (" << dgen.vs
+           << ") different from bus voltage magnitude (" << bus.vm << ")";
         Error(ss.str());
       }
       bus.ngenON++;

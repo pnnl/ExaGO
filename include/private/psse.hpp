@@ -187,7 +187,7 @@ struct Transformer {
 
 struct AreaInterchange {
   int i;
-  BusRef isw{0, ""}; // TODO: resolve
+  BusRef isw;
   double pdes{0.0};
   double ptol{10.0};
   std::string arname{};
@@ -271,7 +271,7 @@ struct Network {
   Network(CaseID &&, std::vector<Bus> &&, std::vector<Load> &&,
           std::vector<FixedBusShunt> &&, std::vector<Generator> &&,
           std::vector<Branch> &&, std::vector<Transformer> &&,
-          std::vector<SwitchedShunt> &&);
+          std::vector<AreaInterchange> &&, std::vector<SwitchedShunt> &&);
 
   void ResolveBusIds();
   void ResolveDefaults();
@@ -286,7 +286,7 @@ struct Network {
   std::vector<Branch> branches;
   // std::vector<SystemSwitchingDevice> system_switching_devices;
   std::vector<Transformer> transformers;
-  // std::vector<AreaInterchange> area_interchanges;
+  std::vector<AreaInterchange> area_interchanges;
   // std::vector<TwoTerminalDCLine> two_terminal_dc_lines;
   // std::vector<VSCDCLine> vsc_dc_lines;
   // std::vector<ImpedanceCorrection> impedance_corrections;

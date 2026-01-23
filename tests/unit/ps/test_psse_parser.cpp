@@ -873,8 +873,16 @@ TEST_FUNCTION(check_bus_ids)(const exago::psse::Network &nw) {
     TEST_EQUAL(kbus.i, tr.k.id);
     TEST_EQUAL(kbus.name, tr.k.name);
   }
-
-  for (auto &sh : nw.switched_shunts) {
+  for (auto &&ar : nw.area_interchanges) {
+    if (ar.isw == 0) {
+      continue;
+    }
+    const auto &iswbus = nw.bus_mapping.GetBus(ar.isw.id);
+    TEST_EQUAL(&iswbus, &nw.bus_mapping.GetBus(ar.isw.name));
+    TEST_EQUAL(iswbus.i, ar.isw.id);
+    TEST_EQUAL(iswbus.name, ar.isw.name);
+  }
+  for (auto &&sh : nw.switched_shunts) {
     const auto &bus = nw.bus_mapping.GetBus(sh.i.id);
     TEST_EQUAL(&bus, &nw.bus_mapping.GetBus(sh.i.name));
     TEST_EQUAL(bus.i, sh.i.id);
@@ -990,9 +998,15 @@ TEST_FUNCTION(check_network_ieee9bus_shunts)(const exago::psse::Network &nw) {
   TEST_EQUAL(transformers[1].ckt, "T2");
   TEST_EQUAL(transformers[2].ckt, "T3");
 
-  // const auto& areaInterchanges = nw.areaInterchanges;
-  // TEST_EQUAL(areaInterchanges[0].i, 1);
-  // TEST_EQUAL(areaInterchanges[0].arname, "SouthCarolin");
+  const auto& area_interchanges = nw.area_interchanges;
+  TEST_EQUAL(area_interchanges[0].i, 1);
+  TEST_EQUAL(area_interchanges[0].arname, "AREA1");
+  TEST_EQUAL(area_interchanges[0].pdes, 50.0);
+  TEST_EQUAL(area_interchanges[0].ptol, 10.0);
+  TEST_EQUAL(area_interchanges[1].i, 2);
+  TEST_EQUAL(area_interchanges[1].arname, "AREA2");
+  TEST_EQUAL(area_interchanges[1].pdes, 50.0);
+  TEST_EQUAL(area_interchanges[1].ptol, 10.0);
 
   // twoTerminalDC = nw.twoTerminalDCLines;
   // TEST_EQUAL(twoTerminalDC[0].name,"DC Line 1");
