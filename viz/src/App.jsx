@@ -67,11 +67,6 @@ ChartJS.register(RadialLinearScale, ArcElement, Tooltip, Legend);
 const transitionLinearInterpolator = new LinearInterpolator(["bearing"]);
 const transitionFlyToInterpolator = new FlyToInterpolator(["zoom"]);
 
-import mod_casedata from "./module_casedata.js";
-const casedata = mod_casedata.get_casedata();
-
-// Source data GeoJSON
-const geodata = casedata["geojsondata"];
 
 const style = "pos";
 const MAP_STYLE = {
@@ -104,51 +99,12 @@ function DeckOverlay({ layers, onClick }) {
 // const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
 const MAPBOX_STYLE_LIGHT = "mapbox://styles/mapbox/streets-v11";
 
-var grid_data = ExtractFirstTimeSlice(geodata);
-
-const countyloaddata = getCountyNodes(grid_data);
-grid_data = countyloaddata.updatedata;
-
-const areas = getAreas(casedata);
-
-const zones = getZones(casedata);
-
-const grid_flowdata_all = ExtractFlowData(grid_data);
-
-const grid_flowdata = grid_flowdata_all[0];
-const grid_flowdata_reactive = grid_flowdata_all[1];
-
-const Points = getPoints(grid_data);
-const Voltages = Points.map((d) => d.value);
-
-const Vcontour = getContours();
-
-const gendata = getGeneration(grid_data);
-const generation = gendata.Gens;
-
-const loaddata = getLoad(grid_data);
 
 function LineWidth(line) {
   return 300;
   //   return line.properties.KV * 3;
   //return Math.abs(line.properties.PF/line.properties.RATE_A)*500;
 }
-
-const loads = loaddata.Loads;
-const minPd = loaddata.minPd;
-const maxPd = loaddata.maxPd;
-
-const countymaxPd = countyloaddata.maxPd;
-const countyload = countyloaddata.data;
-
-const bboxArray = bbox(grid_data);
-const corner1 = [bboxArray[0], bboxArray[1]];
-const corner2 = [bboxArray[2], bboxArray[3]];
-const bounds = [corner1, corner2];
-
-const mapcenter = center(grid_data);
-
-var hull = convex(grid_data);
 
 const KV_BINS = [
   { max: 39.4, color: [151, 220, 248], label: "<= 39 kV" },
@@ -185,16 +141,28 @@ function valuetext(value) {
   return `${value.toFixed(2)}`;
 }
 
+
+// 39.8283° N, 98.5795° 
+
+
 const INITIAL_VIEW_STATE = {
-  latitude: mapcenter["geometry"]["coordinates"][1],
-  longitude: mapcenter["geometry"]["coordinates"][0],
+  latitude: 39.8283,
+  longitude: -98.5795,
   zoom: 5,
   maxZoom: 16,
   pitch: 0,
   bearing: 0,
 };
 
-function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_reactive = grid_flowdata_reactive, ggdata = geodata, mapStyle = MAP_STYLE }) {
+
+
+const CASES = [
+  { label: "500", file: "opflowout-500.json" },
+  { label: "10K", file: "opflowout-10K.json" },
+  { label: "70K", file: "opflowout-70K.json" },
+];
+
+function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, generation, areas, zones, countyload, countyloaddata, countymaxPd, mapStyle = MAP_STYLE }) {
 
   const mapRef = useRef(null);
 
@@ -261,6 +229,11 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
   const [tooltip, setTooltip] = useState();
 
   useEffect(() => {
+
+    setGridData(refdata);
+    setFlowData(refflowdata);
+    setReactivFlowData(refflowdata_reactive);
+
     // name is the unique id
     const locations = [];
     const flows = [];
@@ -405,12 +378,15 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
       });
     }
 
+
+
+
     const newflowdata = { locations: locations, flows: flows, maxloading: 120 };
     setFlowData(newflowdata);
 
     const newflowdata2 = { locations: locations, flows: reactive_flows, maxloading: 120 };
     setReactivFlowData(newflowdata2);
-  }, [gridData, netfiltervalue, flowfiltervalue, flowfilterreactivevalue, lineNameSelectItems]);
+  }, [refdata, gridData, netfiltervalue, flowfiltervalue, flowfilterreactivevalue, lineNameSelectItems]);
 
   var rotatestate = false;
   //const [rotatestate,setrotatestate] = useState(false);
@@ -1584,6 +1560,28 @@ function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_rea
     return `${value.toFixed(2)}`;
   }
 
+  function setInputCaseData(data) {
+
+    var casedata0 = {};
+
+    casedata0.geojsondata = {};
+    casedata0.nareas = data.nareas;
+    casedata0.nzones = data.nzones;
+    casedata0.areas = data.areas;
+    casedata0.zones = data.zones;
+    casedata0.geojsondata.type = "FeatureCollection";
+    casedata0.geojsondata.features = [...data.geojsondata.features];
+    return casedata0;
+
+  }
+
+  async function loadCase(filename) {
+    const response = await fetch(`/data/${filename}`);
+    const json = await response.json();
+    const case_data = setInputCaseData(json);
+    console.log("Loaded case data:", case_data);
+  }
+
   // Callback to populate the default tooltip with content
   const getTooltip = useCallback(({ object }) => {
     if (object) {
@@ -1959,4 +1957,147 @@ const swatch = {
 };
 const label = { color: "#222" };
 
-export default App;
+
+function AppContainer() {
+
+  const [selected, setSelected] = useState(CASES[0].file);
+  const [casedata, setCasedata] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      setLoading(true);
+      setErr(null);
+      try {
+        const res = await fetch(`/data/${selected}`);
+        if (!res.ok) throw new Error(`Failed to load ${selected}: ${res.status}`);
+        const json = await res.json();
+        if (!cancelled) setCasedata(json);
+      } catch (e) {
+        if (!cancelled) setErr(e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [selected]);
+
+  // Derive everything from casedata when it changes
+  const derived = useMemo(() => {
+    if (!casedata) return null;
+
+    const geodata = casedata["geojsondata"];
+
+    let grid_data = ExtractFirstTimeSlice(geodata);
+
+    const countyloaddata = getCountyNodes(grid_data);
+    grid_data = countyloaddata.updatedata;
+
+    const areas = getAreas(casedata);
+    const zones = getZones(casedata);
+
+    const [grid_flowdata, grid_flowdata_reactive] = ExtractFlowData(grid_data);
+
+    const Points = getPoints(grid_data);
+    const Voltages = Points.map((d) => d.value);
+
+    const Vcontour = getContours();
+
+    const gendata = getGeneration(grid_data);
+    const generation = gendata.Gens;
+
+    console.log("Generation Data:", gendata);
+
+    // const gendata = getGeneration(grid_data); 
+    // const generation = gendata.Gens;
+
+    const loaddata = getLoad(grid_data);
+
+    const loads = loaddata.Loads;
+    const minPd = loaddata.minPd;
+    const maxPd = loaddata.maxPd;
+
+    const countymaxPd = countyloaddata.maxPd;
+    const countyload = countyloaddata.data;
+
+    const bboxArray = bbox(grid_data);
+    const bounds = [[bboxArray[0], bboxArray[1]], [bboxArray[2], bboxArray[3]]];
+
+    const mapcenter = center(grid_data);
+    const hull = convex(grid_data);
+
+    return {
+      geodata,
+      grid_data,
+      areas,
+      zones,
+      grid_flowdata,
+      grid_flowdata_reactive,
+      Points,
+      Voltages,
+      Vcontour,
+      gendata,
+      generation,
+      loaddata,
+      loads,
+      minPd,
+      maxPd,
+      countymaxPd,
+      countyload,
+      bounds,
+      mapcenter,
+      hull,
+      countyloaddata,
+    };
+  }, [casedata]);
+
+  return (
+    <>
+      <select value={selected} onChange={(e) => setSelected(e.target.value)}>
+        {CASES.map((c) => (
+          <option key={c.file} value={c.file}>{c.label}</option>
+        ))}
+      </select>
+
+      <input
+        type="file"
+        accept=".json"
+        onChange={(e) => {
+          const file = e.target.files[0];
+          const reader = new FileReader();
+          reader.onload = () => {
+            setCasedata(JSON.parse(reader.result));
+            console.log("Loaded case data:", JSON.parse(reader.result));
+          };
+          reader.readAsText(file);
+        }}
+      />
+
+      {loading && <div>Loading…</div>}
+      {err && <div style={{ color: "red" }}>{String(err)}</div>}
+
+      {derived && (
+        <App
+          refdata={derived.grid_data}
+          refflowdata={derived.grid_flowdata}
+          refflowdata_reactive={derived.grid_flowdata_reactive}
+          ggdata={derived.geodata}
+          gendata={derived.gendata}
+          generation={derived.generation}
+          areas={derived.areas}
+          zones={derived.zones}
+          countyload={derived.countyload}
+          countyloaddata={derived.countyloaddata}
+          countymaxPd={derived.countymaxPd}
+        // plus anything else you were using
+        />
+      )}
+    </>
+  );
+}
+
+export default AppContainer;
