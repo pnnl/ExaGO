@@ -153,6 +153,9 @@ jobs:
       - name: Find external packages
         run: spack -e . external find --all
 
+      - name: Spack local repo
+        run: spack -e . repo add buildsystem/spack/spack_repo/exago
+
       - name: Spack develop exago
         run: spack -e . develop --path=$(pwd) exago@develop
 
