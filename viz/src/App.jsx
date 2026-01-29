@@ -5,10 +5,8 @@ import { getCountyNodes, ExtractFirstTimeSlice, ExtractFlowData, getBarNet, getP
 
 import { FlowmapLayer, PickingType } from "@flowmap.gl/layers";
 import { getViewStateForLocations } from "@flowmap.gl/data";
-// import { Map as ReactMapGl } from "react-map-gl";
 
 import maplibregl from "maplibre-gl";
-// import { MapboxOverlay } from "@deck.gl/mapbox";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 
 // MUI
@@ -30,7 +28,6 @@ import { Multiselect } from "react-widgets";
 import { Chart as ChartJS, RadialLinearScale, ArcElement, Tooltip, Legend } from "chart.js";
 import { PolarArea, Doughnut } from "react-chartjs-2";
 
-import DeckGL from "@deck.gl/react";
 import { DataFilterExtension } from "@deck.gl/extensions";
 
 import { ScatterplotLayer } from "deck.gl";
@@ -40,7 +37,7 @@ import { LinearInterpolator, FlyToInterpolator } from "deck.gl";
 import { center, convex, bbox } from "@turf/turf";
 
 import { H3ClusterLayer } from '@deck.gl/geo-layers';
-import { LineLayer } from "@deck.gl/layers"; // your layers
+import { LineLayer } from "@deck.gl/layers";
 
 
 // import { Widget, addResponseMessage, toggleMsgLoader, deleteMessages } from "react-chat-widget";
@@ -162,7 +159,7 @@ const CASES = [
   { label: "70K", file: "opflowout-70K.json" },
 ];
 
-function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, generation, areas, zones, countyload, countyloaddata, countymaxPd, mapStyle = MAP_STYLE }) {
+function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, generation, areas, zones, countyload, countyloaddata, countymaxPd, mapcenter, mapStyle = MAP_STYLE }) {
 
   const mapRef = useRef(null);
 
@@ -377,9 +374,6 @@ function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, gene
         }
       });
     }
-
-
-
 
     const newflowdata = { locations: locations, flows: flows, maxloading: 120 };
     setFlowData(newflowdata);
@@ -638,7 +632,7 @@ function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, gene
     }));
 
     mapRef.current?.flyTo({
-      center: [INITIAL_VIEW_STATE.longitude, INITIAL_VIEW_STATE.latitude],
+      center: [mapcenter.longitude, mapcenter.latitude],
       zoom: INITIAL_VIEW_STATE.zoom,
       pitch: INITIAL_VIEW_STATE.pitch,
       duration: 1200,
@@ -648,8 +642,12 @@ function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, gene
   }
 
   const [netlayeractive, setNetLayerActive] = useState(true);
+
   const [flowlayeractive, setFlowLayerActive] = useState(true);
+  const [flowlayeranimate, setFlowLayerAnimate] = useState(false);
   const [reactiveflowlayeractive, setReactiveFlowLayerActive] = useState(false);
+  const [reactiveflowlayeranimate, setReactiveFlowLayerAnimate] = useState(false);
+
   const [loadlayeractive, setLoadLayerActive] = useState(false);
   const [genlayeractive, setGenLayerActive] = useState(false);
   const [genlayercapactive, setGenLayerCapActive] = useState(false);
@@ -760,9 +758,17 @@ function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, gene
     setFlowFilterValue([0, 120]);
   };
 
+  const handleFlowLayerAnimateChange = (event) => {
+    setFlowLayerAnimate(event.target.checked);
+  };
+
   const handleReactiveFlowLayerChange = (event) => {
     setReactiveFlowLayerActive(event.target.checked);
     setFlowFilterReactiveValue([0, 120]);
+  };
+
+  const handleReactiveFlowLayerAnimateChange = (event) => {
+    setReactiveFlowLayerAnimate(event.target.checked);
   };
 
 
@@ -1024,8 +1030,8 @@ function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, gene
     data: flowdata,
     visible: flowlayeractive,
     // animationEnabled: true, //control the animation effect of flow layer
-    animationEnabled: true,
-    // animationEnabled: false,
+    // animationEnabled: true,
+    animationEnabled: flowlayeranimate,
     colorScheme: ["rgb(0,0,255)", "rgb(255,0,255)"],
     // darkMode: true,
     clusteringEnabled: true, //control the aggregate effect of flow layer
@@ -1054,8 +1060,8 @@ function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, gene
     data: reactiveflowdata,
     visible: reactiveflowlayeractive,
     // animationEnabled: true, //control the animation effect of flow layer
-    animationEnabled: true,
-    // animationEnabled: false,
+    // animationEnabled: true,
+    animationEnabled: reactiveflowlayeranimate,
     colorScheme: ["rgb(0,255,255)", "rgb(255,255,0)"],
     // darkMode: true,
     clusteringEnabled: true, //control the aggregate effect of flow layer
@@ -1708,6 +1714,7 @@ function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, gene
               <Typography component="div">
                 {flowlayeractive && (
                   <div style={{ paddingRight: "40px" }}>
+                    <Checkbox checked={flowlayeranimate} style={{ color: "primary" }} onChange={handleFlowLayerAnimateChange} /> Show Animation
                     <Slider style={{ padding: 2 }} value={flowfiltervalue} valueLabelDisplay="auto" onChange={handleFlowRangeFilterChange} getAriaValueText={valuetext} step={10} min={0} max={120}></Slider>
                   </div>
                 )}
@@ -1732,6 +1739,7 @@ function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, gene
               <Typography component="div">
                 {reactiveflowlayeractive && (
                   <div style={{ paddingRight: "40px" }}>
+                    <Checkbox checked={reactiveflowlayeranimate} style={{ color: "primary" }} onChange={handleReactiveFlowLayerAnimateChange} /> Show Animation
                     <Slider style={{ padding: 2 }} value={flowfilterreactivevalue} valueLabelDisplay="auto" onChange={handleReactiveFlowRangeFilterChange} getAriaValueText={valuetext} step={10} min={0} max={120}></Slider>
                   </div>
                 )}
@@ -1879,7 +1887,8 @@ function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, gene
         footer: { text: "", buttons: [] },
         tooltip: { text: "Ask me anything." },
         voice: { disabled: false },
-        chatHistory: { storageKey: "example_basic_form" }
+        chatHistory: { storageKey: "example_basic_form" },
+        chatButton: { icon: "exago-logo.png" },
       }} flow={flow} />
 
 
@@ -2010,11 +2019,6 @@ function AppContainer() {
     const gendata = getGeneration(grid_data);
     const generation = gendata.Gens;
 
-    console.log("Generation Data:", gendata);
-
-    // const gendata = getGeneration(grid_data); 
-    // const generation = gendata.Gens;
-
     const loaddata = getLoad(grid_data);
 
     const loads = loaddata.Loads;
@@ -2093,6 +2097,7 @@ function AppContainer() {
           countyload={derived.countyload}
           countyloaddata={derived.countyloaddata}
           countymaxPd={derived.countymaxPd}
+          mapcenter={derived.mapcenter}
         // plus anything else you were using
         />
       )}
