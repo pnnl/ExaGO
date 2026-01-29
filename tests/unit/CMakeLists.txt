@@ -37,7 +37,7 @@ if(EXAGO_INSTALL_TESTS)
     -opflow_genbusvoltage
     VARIABLE_WITHIN_BOUNDS
     -validation_dir
-    ${CMAKE_SOURCE_DIR}/build/datafiles/test_validation
+    ${CMAKE_SOURCE_DIR}/datafiles/test_validation
     NETFILES
     ${network_files}
   )
@@ -48,7 +48,7 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_pflow>
     -validation_dir
-    ${CMAKE_SOURCE_DIR}/build/datafiles/test_validation
+    ${CMAKE_SOURCE_DIR}/datafiles/test_validation
     NETFILES
     ${network_files}
   )
