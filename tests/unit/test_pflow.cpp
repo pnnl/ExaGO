@@ -147,11 +147,11 @@ int main(int argc, char **argv) {
       std::cout << "Writing answer keys to " << validation_path << std::endl;
 
       validate_directory(validation_path);
-      saveToFile(Jac, validation_path + "Jac_valid.txt");
+      saveToFile(Jac, validation_path + "Jacpf_valid.bin");
     }
   } else {
-    // TODO:  Fix this
-    readFromFile(&Jac, validation_path + "Jac_valid.txt");
+    std::cout << "Loading answer key from " << validation_path << std::endl;
+    readFromFile(&Jac, validation_path + "Jacpf_valid.bin");
   }
 
   ierr = PetscLogStagePop();
@@ -180,16 +180,9 @@ int main(int argc, char **argv) {
 
   std::cout << "Convergence status: " << (bool) converged << std::endl;
 
-  ierr = PFLOWCreateMatrix(pflowtest, &Jac);
-  CHKERRQ(ierr);
 
-  ierr = PFLOWGetJacobian(pflowtest, &Jac);
-  CHKERRQ(ierr);
-
-  MatView( Jac, 0);
-
-  std::cout << "performing trivial test" << std::endl;
-  fail += test.trivialTest(pflowtest);
+  std::cout << "testing Jacobian" << std::endl;
+  fail += test.computeJacobian(pflowtest, Jac);
 
   // ierr = PFLOWDestroy(&pflowtest);
   // CHKERRQ(ierr);
