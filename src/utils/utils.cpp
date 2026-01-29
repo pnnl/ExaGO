@@ -10,7 +10,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/fmt.h>
-#include <spdlog/fmt/bundled/color.h>
+#include <fmt/color.h>
 #endif
 #include <stdarg.h>
 #include <sys/stat.h>

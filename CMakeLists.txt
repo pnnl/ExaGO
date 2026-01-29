@@ -291,9 +291,8 @@ if(EXAGO_RUN_TESTS)
 endif()
 
 if(EXAGO_ENABLE_LOGGING)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/tpl/spdlog/)
-  # -fPIC required for spdlog for use with python wrapper
-  set_property(TARGET spdlog PROPERTY POSITION_INDEPENDENT_CODE ON)
+  find_package(spdlog REQUIRED)
+  find_package(fmt REQUIRED)
 endif()
 
 # Build libraries (specified in src/CMakeLists.txt)

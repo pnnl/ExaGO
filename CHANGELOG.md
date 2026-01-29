@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### General
 
 ### Build system
+- Upgraded to Spack v1+
+- Made spdlog an external dependency and removed `tpl/spdlog` accordingly
+- Deprecated deception, newell and incline build configurations
 
 ### PS
 
