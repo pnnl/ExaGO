@@ -137,6 +137,11 @@ jobs:
                 root: /opt/spack
                 padded_length: False
             mirrors:
+              local-buildcache:
+                url: oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+                access_pair:
+                  id_variable: MIRROR_USERNAME
+                  secret_variable: MIRROR_TOKEN
               spack: https://binaries.spack.io/develop
             packages:
               all:
@@ -144,22 +149,22 @@ jobs:
           EOF
 
       - name: Configure GHCR mirror
-        run: spack -e . mirror add --oci-username-variable ${{ env.USERNAME }} --oci-password-variable "${{ secrets.GITHUB_TOKEN }}" local-buildcache oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        run: spack -e . mirror set local-buildcache 
 
       - name: Trust keys
         run: spack -e . buildcache keys --install --trust
 
-      - name: Find external packages
-        run: spack -e . external find --all
+      #- name: Find external packages
+      #  run: spack -e . external find --all
 
-      - name: Spack local repo
-        run: spack -e . repo add buildsystem/spack/spack_repo/exago
+      #- name: Spack local repo
+      #  run: spack -e . repo add buildsystem/spack/spack_repo/exago
 
-      - name: Spack develop exago
-        run: spack -e . develop --path=$(pwd) exago@develop
+      #- name: Spack develop exago
+      #  run: spack -e . develop --path=$(pwd) exago@develop
 
-      - name: Concretize
-        run: spack -e . concretize --fresh
+      #- name: Concretize
+      #  run: spack -e . concretize --fresh
 
       #- name: Install
       #  run: spack -e . install --no-check-signature --fail-fast --keep-stage
@@ -168,10 +173,10 @@ jobs:
       #  run: cd $(spack -e . location --build-dir exago@develop) && ctest -VV
 
       # Push with force to override existing binaries...
-      - name: Push to binaries to buildcache
+      - name: Push binaries to buildcache
+        env:
+          MIRROR_USERNAME: ${{ env.USERNAME }}
+          MIRROR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           spack -e . buildcache push --force --base-image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BASE_VERSION }} --unsigned --update-index local-buildcache
-        env: 
-          GITHUB_USER: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: ${{ !cancelled() }}
