@@ -172,4 +172,6 @@ jobs:
       - name: Push to binaries to buildcache
         run: |
           spack -e . buildcache push --force --base-image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BASE_VERSION }} --unsigned --update-index local-buildcache
+        env: 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: ${{ !cancelled() }}
