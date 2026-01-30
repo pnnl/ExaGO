@@ -110,7 +110,7 @@ jobs:
           # Python build in GH actions is failing. Using system python.
           # - exago@develop+mpi~ipopt+hiop+python~raja ^openmpi
           # See #40 - +hiop+raja~ipopt ^hiop~sparse is useful for edge cases
-          - exago@develop+mpi~ipopt+hiop~python+raja ^openmpi ^hiop+raja~sparse
+          # - exago@develop+mpi~ipopt+hiop~python+raja ^openmpi ^hiop+raja~sparse
 
     name: Build ExaGO with Spack
     steps:
@@ -145,7 +145,8 @@ jobs:
           EOF
 
       - name: Configure GHCR mirror
-        run: spack -e . mirror set --oci-username ${{ env.USERNAME }} --oci-password "${{ secrets.GITHUB_TOKEN }}" local-buildcache
+        #run: spack -e . mirror set --oci-username ${{ env.USERNAME }} --oci-password "${{ secrets.GITHUB_TOKEN }}" local-buildcache
+        run: spack -e . mirror add --oci-username ${{ env.USERNAME }} --oci-password "${{ secrets.GITHUB_TOKEN }}" local-buildcache
 
       - name: Trust keys
         run: spack -e . buildcache keys --install --trust
@@ -162,11 +163,11 @@ jobs:
       - name: Concretize
         run: spack -e . concretize --fresh
 
-      - name: Install
-        run: spack -e . install --no-check-signature --fail-fast --keep-stage
+      #- name: Install
+      #  run: spack -e . install --no-check-signature --fail-fast --keep-stage
 
-        #- name: Test Build
-        #  run: cd $(spack -e . location --build-dir exago@develop) && ctest -VV
+      #- name: Test Build
+      #  run: cd $(spack -e . location --build-dir exago@develop) && ctest -VV
 
       # Push with force to override existing binaries...
       - name: Push to binaries to buildcache
