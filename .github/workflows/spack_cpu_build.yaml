@@ -137,7 +137,6 @@ jobs:
                 root: /opt/spack
                 padded_length: False
             mirrors:
-              local-buildcache: oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
               spack: https://binaries.spack.io/develop
             packages:
               all:
@@ -145,8 +144,7 @@ jobs:
           EOF
 
       - name: Configure GHCR mirror
-        #run: spack -e . mirror set --oci-username ${{ env.USERNAME }} --oci-password "${{ secrets.GITHUB_TOKEN }}" local-buildcache
-        run: spack -e . mirror add --oci-username ${{ env.USERNAME }} --oci-password "${{ secrets.GITHUB_TOKEN }}" local-buildcache
+        run: spack -e . mirror add --oci-username-variable ${{ env.USERNAME }} --oci-password-variable "${{ secrets.GITHUB_TOKEN }}" local-buildcache oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Trust keys
         run: spack -e . buildcache keys --install --trust
@@ -174,5 +172,6 @@ jobs:
         run: |
           spack -e . buildcache push --force --base-image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BASE_VERSION }} --unsigned --update-index local-buildcache
         env: 
+          GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: ${{ !cancelled() }}
