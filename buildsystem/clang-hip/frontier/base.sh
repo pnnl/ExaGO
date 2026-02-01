@@ -15,10 +15,10 @@ module load libfabric
 module load cmake
 module load cray-python
 
-# The CC, CXX, FC environment variables can be overriden by Spack's module generation.
+# The CC, CXX, FC environment variables can be overridden by Spack's module generation.
 # The Frontier configuration was setup to avoid this override, but this is a
 # potential pitfall (e.g., when configuring another system). 
-# If all else fails, CMAKE_CXX_COMPILER superces these environment variables.
+# If all else fails, CMAKE_CXX_COMPILER supersedes these environment variables.
 # Consider updating the build system to selectively mark HIP code in CMake.
 export CC=/opt/rocm-6.3.1/llvm/bin/amdclang
 export CXX=/opt/rocm-6.3.1/llvm/bin/amdclang++
