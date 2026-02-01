@@ -112,6 +112,7 @@ class Exago(CMakePackage, CudaPackage, ROCmPackage):
     variant("raja", default=False, description="Enable/Disable RAJA")
     variant("python", default=True, when="@1.4:", description="Enable/Disable Python bindings")
     variant("logging", default=True, description="Enable/Disable spdlog based logging")
+    variant("testing", default=True, description="Enable/Disable testing")
 
     conflicts(
         "+python", when="+ipopt+rocm", msg="Python bindings require -fPIC with Ipopt for rocm."
@@ -270,7 +271,7 @@ class Exago(CMakePackage, CudaPackage, ROCmPackage):
             [
                 self.define("EXAGO_ENABLE_GPU", "+cuda" in spec or "+rocm" in spec),
                 self.define("PETSC_DIR", spec["petsc"].prefix),
-                self.define("EXAGO_RUN_TESTS", self.run_tests),
+                self.define_from_variant("EXAGO_RUN_TESTS", "testing"),
                 self.define("LAPACK_LIBRARIES", spec["lapack"].libs + spec["blas"].libs),
                 self.define_from_variant("EXAGO_ENABLE_CUDA", "cuda"),
                 self.define_from_variant("EXAGO_ENABLE_HIP", "rocm"),
