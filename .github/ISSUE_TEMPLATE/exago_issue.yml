@@ -1,0 +1,105 @@
+name: "Issue Report"
+description: "Issue in ExaGO code"
+#title: "Bug: "
+#labels: [bug]
+body:
+  # DROPDOWN:
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: Issue type
+      description: Please select from pulldown menu.
+      options:
+        - ""
+        - Bug
+        - Feature Request
+        - Discussion
+        - Other
+    validations:
+      required: true
+
+  # CHECKBOX:
+  - type: checkboxes
+    id: issue_relates_to
+    attributes:
+      label: "Issue applies to:"
+      description: You may select more than one.
+      options:
+        - label: PFLOW
+        - label: OPFLOW
+        - label: TCOPFLOW
+        - label: SCOPFLOW
+        - label: SOPFLOW
+        - label: CMake and build system
+        - label: Spack
+        - label: Visualization
+        - label: Documentation
+        - label: Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: "Summary"
+      description: "Please provide detailed description of the issue."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: "Description how to reproduce the issue"
+      description: "Please provide launch command and the output when you encounter the issue (if applicable)."
+      value: |
+        <!-- Include short error output here. -->
+        ```console
+        $ ./opflow
+        (...)
+        ```
+        <!-- If the error output is long, attach a file
+             or write it in a block that can be closed as below: -->
+        <details>
+        
+        ```
+        $ ./opflow
+        (...)
+        ```
+        </details>
+    validations:
+      required: false
+
+  - type: input
+    id: exago_version
+    attributes:
+      label: "ExaGO version"
+      description: |
+        Please include the version of ExaGO™ which demonstrates the problem.
+        If building from source on a non-tagged version, please include the commit hash.
+    validations:
+      required: true
+
+  - type: textarea
+    id: system_info
+    attributes:
+      label: "System and environment details"
+      description: |
+        Please include details about your system, such as:
+        - Operating system  
+        - Compilers  
+        - Hardware backends (CUDA, HIP)  
+        - Dependencies and package versions  
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional_information
+    attributes:
+      label: "Additional information"
+      description: "Upload additional information such as debugging backtraces, logs and screenshots, when applicable."
+
+  - type: textarea
+    id: possible_fix
+    attributes:
+      label: "Proposed solution"
+      description: "Describe your proposed solution, when applicable."
