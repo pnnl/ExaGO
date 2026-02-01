@@ -57,8 +57,8 @@ source $base/env.sh &&
 	spack env create -d $SPACKENV $base/spack.yaml &&
 	spack env activate -p $SPACKENV &&
 
-        # Use local Spack repo for modified packages
-        spack repo add ${base}/../spack_repo/exago &&
+	# Use local Spack repo for modified packages
+	spack repo add ${base}/../spack_repo/exago &&
 
 	# Print relevant spack config for sanity check of environment.
 	echo "spack configuration will be installed into $SPACK_INSTALL" &&
