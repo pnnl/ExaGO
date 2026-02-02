@@ -102,7 +102,7 @@ jobs:
           # - exago@develop~mpi~ipopt~hiop~python~raja
           # See #44 - +mpi~python should fail if no python in system,
           #                       but the runner happens to have one...
-          - exago@develop+mpi~ipopt+hiop~python~raja ^openmpi
+          - exago@develop+mpi~ipopt+hiop~python~raja ^openmpi ^hiop~raja~sparse
           # See #18 - +hiop~mpi causes issues
           # - exago@develop~mpi~ipopt+hiop~python+raja
           # See #16 - +python~mpi causes issues
@@ -111,6 +111,9 @@ jobs:
           # - exago@develop+mpi~ipopt+hiop+python~raja ^openmpi
           # See #40 - +hiop+raja~ipopt ^hiop~sparse is useful for edge cases
           - exago@develop+mpi~ipopt+hiop~python+raja ^openmpi ^hiop+raja~sparse
+          - exago@develop+mpi+ipopt+hiop~python+raja ^openmpi ^hiop+raja~sparse
+          - exago@develop+mpi+ipopt+hiop+python+raja ^openmpi ^hiop+raja~sparse
+          - exago@develop+mpi+ipopt~hiop+python~raja ^openmpi
 
     name: Build ExaGO with Spack
     steps:
@@ -144,6 +147,10 @@ jobs:
                   secret_variable: MIRROR_TOKEN
               spack: https://binaries.spack.io/develop
             packages:
+              ipopt:
+                require: ~coinhsl+mumps # HSL requires a tar ball and a licence 
+              mumps:
+                require: ~mpi~openmp
               all:
                 require: "%gcc"
           EOF
