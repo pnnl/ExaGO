@@ -89,7 +89,7 @@ class Hiop(CMakePackage, CudaPackage, ROCmPackage):
     variant("mpi", default=True, description="Enable/Disable MPI")
     variant("raja", default=False, when="@0.3.99:", description="Enable/Disable RAJA")
     variant("kron", default=False, description="Enable/Disable Kron reduction")
-    variant("sparse", default=False, description="Enable/Disable Sparse linear algebra")
+    variant("sparse", default=True, description="Enable/Disable Sparse linear algebra")
     variant(
         "deepchecking",
         default=False,
