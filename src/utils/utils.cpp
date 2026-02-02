@@ -408,6 +408,29 @@ template <typename T> static inline void print(T const &opt) {
     // fprintf(stderr, "\t -print_output <0|1>\n");
     // fprintf(stderr, "\t -save_output <0|1>\n");
     // fprintf(stderr, "\n");
+  } else if (appname == "dcopflow") {
+    print(OPFLOWOptions::solver);
+    print(OPFLOWOptions::objective);
+    print(OPFLOWOptions::genbusvoltage);
+    print(OPFLOWOptions::has_gensetpoint);
+    print(OPFLOWOptions::use_agc);
+    print(OPFLOWOptions::tolerance);
+    print(OPFLOWOptions::ignore_lineflow_constraints);
+    print(OPFLOWOptions::include_loadloss_variables);
+    print(OPFLOWOptions::loadloss_penalty);
+    print(OPFLOWOptions::include_powerimbalance_variables);
+    print(OPFLOWOptions::powerimbalance_penalty);
+
+#ifdef EXAGO_ENABLE_HIOP
+    print(OPFLOWOptions::hiop_compute_mode);
+    print(OPFLOWOptions::hiop_verbosity_level);
+
+#ifdef EXAGO_ENABLE_IPOPT
+    print(OPFLOWOptions::hiop_ipopt_debug);
+#endif
+
+#endif
+
   } else if (appname == "pflow") {
     /* pflow application driver does not take any additional arguments */
 #if defined EXAGO_ENABLE_IPOPT
