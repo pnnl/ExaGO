@@ -23,6 +23,8 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_cont.toml
+    WORKING_DIRECTORY
+    ${CMAKE_SOURCE_DIR}
   )
 
   exago_add_test(
@@ -34,6 +36,8 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/empar_cont.toml
+    WORKING_DIRECTORY
+    ${CMAKE_SOURCE_DIR}
   )
 
   # Disabled test for now, feature not ready yet
