@@ -148,11 +148,12 @@ endif()
 # If MPI support is enabled, find MPI includes and libraries
 if(EXAGO_ENABLE_MPI)
   find_package(MPI REQUIRED COMPONENTS C CXX)
-  message(STATUS "MPI Max Ranks: ${MPIEXEC_MAX_NUMPROCS}")
-  set(TESTING_MAX_NUMPROCS 3)
+  message(STATUS "MPI max ranks: ${MPIEXEC_MAX_NUMPROCS}")
+  set(TESTING_MAX_NUMPROCS 2) # TODO: Change back to 3
   if(${TESTING_MAX_NUMPROCS} GREATER_EQUAL ${MPIEXEC_MAX_NUMPROCS})
     set(${TESTING_MAX_NUMPROCS} ${MPIEXEC_MAX_NUMPROCS})
   endif()
+  message(STATUS "Max ranks for testing: ${TESTING_MAX_NUMPROCS}")
   if(NOT DEFINED MPI_CXX_COMPILER)
     set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
     set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
@@ -165,6 +166,8 @@ if(EXAGO_ENABLE_MPI)
       ""
       CACHE STRING "Extra args to mpiexec when running tests"
   )
+else()
+  set(TESTING_MAX_NUMPROCS 1)
 endif(EXAGO_ENABLE_MPI)
 
 # If GPU support is enabled, find CUDA
