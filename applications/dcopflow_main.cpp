@@ -6,7 +6,6 @@ static char help[] = "User example calling OPFLOW with the DCOPF model.\n\n";
 #include <string>
 #include <private/opflowimpl.h>
 
-
 int main(int argc, char **argv) {
   PetscErrorCode ierr;
   OPFLOW dcopf;
@@ -19,7 +18,8 @@ int main(int argc, char **argv) {
   const char default_output_name[] = "dcopflowout";
   MPI_Comm comm = MPI_COMM_WORLD;
 
-  /** Use `ExaGOLogSetLoggingFileName("dcopflow-logfile");` to log the output. */
+  /** Use `ExaGOLogSetLoggingFileName("dcopflow-logfile");` to log the output.
+   */
   ierr = ExaGOInitialize(comm, &argc, &argv, appname, help);
   if (ierr) {
     fprintf(stderr, "Could not initialize ExaGO application %s.\n", appname);
@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
   /* Create OPFLOW object */
   ierr = OPFLOWCreate(comm, &dcopf);
   ExaGOCheckError(ierr);
-  
+
   /* Get network data file from command line */
   ierr = PetscOptionsGetString(NULL, NULL, "-netfile", file, PETSC_MAX_PATH_LEN,
                                &flg);
@@ -68,7 +68,8 @@ int main(int argc, char **argv) {
   }
 
   /* Get gic data file from command line */
-  ierr = PetscOptionsGetString(NULL, NULL, "-gicfile", gicfile, PETSC_MAX_PATH_LEN, &flg);
+  ierr = PetscOptionsGetString(NULL, NULL, "-gicfile", gicfile,
+                               PETSC_MAX_PATH_LEN, &flg);
 
   ExaGOCheckError(ierr);
   if (flg) {
