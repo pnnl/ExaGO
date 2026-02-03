@@ -151,7 +151,7 @@ jobs:
               ipopt:
                 require: ~coinhsl+mumps # HSL requires a tar ball and a licence 
               mumps:
-                require: ~mpi~openmp
+                require: +mpi~openmp
               all:
                 require: "%gcc"
           EOF
