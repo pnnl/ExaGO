@@ -103,39 +103,41 @@ if(EXAGO_INSTALL_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_parallel.toml
   )
 
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_SOPFLOW_SCENARIO_RAJA_GPU_TOML
-    DEPENDS
-    IPOPT
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:test_sopflow_functionality>
-    ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_raja.toml
-    -opflow_include_powerimbalance_variables
-    -opflow_ignore_lineflow_constraints
-  )
-  if(EXAGO_ENABLE_IPOPT)
-    set_tests_properties(
+  if(EXAGO_ENABLE_GPU)
+    exago_add_test(
+      NAME
       FUNCTIONALITY_TEST_SOPFLOW_SCENARIO_RAJA_GPU_TOML
-      PROPERTIES LABELS "incline-skip"
+      DEPENDS
+      IPOPT
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:test_sopflow_functionality>
+      ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_raja.toml
+      -opflow_include_powerimbalance_variables
+      -opflow_ignore_lineflow_constraints
+    )
+    if(EXAGO_ENABLE_IPOPT)
+      set_tests_properties(
+        FUNCTIONALITY_TEST_SOPFLOW_SCENARIO_RAJA_GPU_TOML
+        PROPERTIES LABELS "incline-skip"
+      )
+    endif()
+
+    exago_add_test(
+      NAME
+      FUNCTIONALITY_TEST_SOPFLOW_SCENARIO_MPI_RAJA_GPU_TOML
+      DEPENDS
+      IPOPT
+      COMMAND
+      ${MPICMD}
+      "-n"
+      ${TESTING_MAX_NUMPROCS}
+      $<TARGET_FILE:test_sopflow_functionality>
+      ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_mpi_raja.toml
+      -opflow_include_powerimbalance_variables
+      -opflow_ignore_lineflow_constraints
     )
   endif()
-
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_SOPFLOW_SCENARIO_MPI_RAJA_GPU_TOML
-    DEPENDS
-    IPOPT
-    COMMAND
-    ${MPICMD}
-    "-n"
-    ${TESTING_MAX_NUMPROCS}
-    $<TARGET_FILE:test_sopflow_functionality>
-    ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_mpi_raja.toml
-    -opflow_include_powerimbalance_variables
-    -opflow_ignore_lineflow_constraints
-  )
 
   foreach(fmt "MATPOWER" "CSV" "JSON" "MINIMAL")
     foreach(flat 1 0)
