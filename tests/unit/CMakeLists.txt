@@ -48,6 +48,7 @@ if(EXAGO_INSTALL_TESTS)
     COMMAND
     ${CMAKE_CURRENT_SOURCE_DIR}/run_test_logger.pl
     ${MPICMD_STR}
+    ${TESTING_MAX_NUMPROCS}
     $<TARGET_FILE:test_logger>
     DEPENDS
     LOGGING

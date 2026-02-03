@@ -3,12 +3,12 @@ use warnings;
 use strict;
 use v5.16;
 
-die "USAGE: $0 <path to mpirun> <path to test_logger executable>" unless (2 == scalar @ARGV);
+die "USAGE: $0 <path to mpirun> <maximum nprocs> <path to test_logger executable>" unless (3 == scalar @ARGV);
 
-my ($mpicmd, $target) = @ARGV;
+my ($mpicmd, $maxprocs, $target) = @ARGV;
 
 my @fails = ();
-foreach my $nprocs (1, 2, 3) {
+foreach my $nprocs (1..$maxprocs) {
   my $out = `$mpicmd -n $nprocs $target`;
 
   # Keep the exit code of the subprocess
