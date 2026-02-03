@@ -45,6 +45,7 @@ if(EXAGO_INSTALL_TESTS)
     FUNCTIONALITY_TEST_SOPFLOW_SCENARIO3_PBHIOP_TOML
     DEPENDS
     IPOPT
+    HIOP
     COMMAND
     ${RUNCMD}
     $<TARGET_FILE:test_sopflow_functionality>
@@ -54,17 +55,20 @@ if(EXAGO_INSTALL_TESTS)
     HOST
   )
 
-  exago_add_test(
-    NAME
-    FUNCTIONALITY_TEST_SOPFLOW_SCENARIO3_RAJA_TOML
-    DEPENDS
-    IPOPT
-    COMMAND
-    ${RUNCMD}
-    $<TARGET_FILE:test_sopflow_functionality>
-    ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario3_raja.toml
-    -opflow_ignore_lineflow_constraints
-  )
+  if(EXAGO_ENABLE_GPU)
+    exago_add_test(
+      NAME
+      FUNCTIONALITY_TEST_SOPFLOW_SCENARIO3_RAJA_TOML
+      DEPENDS
+      IPOPT
+      HIOP
+      COMMAND
+      ${RUNCMD}
+      $<TARGET_FILE:test_sopflow_functionality>
+      ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario3_raja.toml
+      -opflow_ignore_lineflow_constraints
+    )
+  endif()
 
   exago_add_test(
     NAME
