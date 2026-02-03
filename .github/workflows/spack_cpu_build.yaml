@@ -95,6 +95,7 @@ jobs:
     timeout-minutes: 120
 
     strategy:
+      fail-fast: false # Prevents cancelling other jobs
       matrix:
         # Minimal Build(s) - GHCR mirror speeds these up a lot!
         spack_spec:
