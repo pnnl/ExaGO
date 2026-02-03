@@ -152,7 +152,7 @@ class Exago(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("pkgconfig", type="build")
     depends_on("mpi", when="+mpi")
     depends_on("blas")
-    depends_on("ipopt~mumps", when="+ipopt")
+    depends_on("ipopt", when="+ipopt")
     depends_on("cuda", when="+cuda")
     depends_on("raja", when="+raja")
     depends_on("umpire", when="+raja")
