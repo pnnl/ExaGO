@@ -80,6 +80,8 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_opflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_pbpol.toml
+    WORKING_DIRECTORY
+    ${CMAKE_SOURCE_DIR}
     DEPENDS
     IPOPT
   )

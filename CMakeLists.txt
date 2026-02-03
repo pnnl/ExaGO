@@ -42,8 +42,8 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/buildsystem/cmake)
 include(ExaGOCheckGitSubmodules)
 
 # Set the path to options file in EXAGO installation
-set(EXAGO_OPTIONS_DIR "${CMAKE_INSTALL_PREFIX}/share/exago/options")
-set(EXAGO_DATAFILES_DIR "${CMAKE_INSTALL_PREFIX}/share/exago/datafiles")
+set(EXAGO_OPTIONS_DIR ${CMAKE_INSTALL_PREFIX}/share/exago/options)
+set(EXAGO_DATAFILES_DIR ${CMAKE_INSTALL_PREFIX}/share/exago/datafiles)
 
 # Specify whether to build shared libraries, static libraries, or both
 option(EXAGO_BUILD_SHARED "Build shared libraries" OFF)
@@ -62,20 +62,25 @@ option(EXAGO_ENABLE_IPOPT "Enable Ipopt support" ON)
 # HiOP support is disabled by default
 option(EXAGO_ENABLE_HIOP "Enable HiOP support" OFF)
 
-# GPU support is disabled by default
-option(EXAGO_ENABLE_GPU "Enable GPU support" OFF)
+#include(CMakeDependentOption)
 
-include(CMakeDependentOption)
-
-# CUDA is disabled by default, but is default when EXAGO_ENABLE_GPU=ON
-cmake_dependent_option(
-  EXAGO_ENABLE_CUDA "Build with support for CUDA" OFF "EXAGO_ENABLE_GPU" OFF
-)
+# CUDA is disabled by default
+option(EXAGO_ENABLE_CUDA "Build with support for CUDA" OFF)
 
 # HIP is disabled by default
-cmake_dependent_option(
-  EXAGO_ENABLE_HIP "Build with support for HIP" OFF "EXAGO_ENABLE_GPU" OFF
-)
+option(EXAGO_ENABLE_HIP "Build with support for HIP" OFF)
+
+# GPU support is enabled when either CUDA or HIP is enabled
+option(EXAGO_ENABLE_GPU "Enable GPU support" OFF)
+# Marked as advanced since it is toggled automatically
+mark_as_advanced(FORCE EXAGO_ENABLE_GPU)
+
+if(RESOLVE_ENABLE_CUDA OR RESOLVE_ENABLE_HIP)
+  set(RESOLVE_USE_GPU
+      ON
+      CACHE BOOL "Using GPU." FORCE
+  )
+endif()
 
 # Enable RAJA support
 option(EXAGO_ENABLE_RAJA "Enables RAJA and Umpire libraries" OFF)
@@ -223,6 +228,7 @@ endif(EXAGO_ENABLE_GPU)
 
 # Find PETSc and configure related variables
 if(EXAGO_ENABLE_PETSC)
+  set(PETSC_DIR CACHE PATH "Path to PETSc installation root directory")
   include(FindPkgConfig)
   # Include petsc package path in pkg_config_path
   set(PKG_CONFIG_PATH_save $ENV{PKG_CONFIG_PATH})

@@ -26,6 +26,8 @@ if(EXAGO_INSTALL_TESTS)
       ${EXAGO_EXTRA_MPI_FLAGS}
       $<TARGET_FILE:test_pflow_functionality>
       ${CMAKE_CURRENT_SOURCE_DIR}/pflow${np}procs.toml
+      WORKING_DIRECTORY
+      ${CMAKE_SOURCE_DIR}
     )
   endforeach(np)
 

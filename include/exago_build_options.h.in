@@ -1,5 +1,5 @@
-#ifndef _EXAGO_CONFIG_H_
-#define _EXAGO_CONFIG_H_
+#ifndef _EXAGO_BUILD_OPTIONS_H_
+#define _EXAGO_BUILD_OPTIONS_H_
 
 /**
  * \brief Define some macros for configure-time variables to make help messages
@@ -43,4 +43,4 @@
 #define EXAGO_IPOPT_INCLUDES "@IPOPT_INCLUDES@"
 #endif
 
-#endif /* _EXAGO_CONFIG_H_ */
+#endif /* _EXAGO_BUILD_OPTIONS_H_ */
