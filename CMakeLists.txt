@@ -21,11 +21,20 @@ if(POLICY CMP0104)
   cmake_policy(SET CMP0104 NEW) # CMake 3.18
 endif()
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "")
-  set(CMAKE_BUILD_TYPE
-      "Release"
-      CACHE STRING ""
+# We default to release builds
+set(_DEFAULT_CMAKE_BUILD_TYPE RelWithDebInfo)
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(
+    STATUS
+      "Building ExaGO in '${_DEFAULT_CMAKE_BUILD_TYPE}' mode as CMAKE_BUILD_TYPE was not specified."
   )
+  set(CMAKE_BUILD_TYPE
+      "${_DEFAULT_CMAKE_BUILD_TYPE}"
+      CACHE STRING "Choose the type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "None" "Debug" "Release"
+                                               "MinSizeRel" "RelWithDebInfo")
+else()
+  message(STATUS "Building SUNDIALS in '${CMAKE_BUILD_TYPE}' mode.")
 endif()
 
 # Make CMake debugging available globally
@@ -61,8 +70,6 @@ option(EXAGO_ENABLE_IPOPT "Enable Ipopt support" ON)
 
 # HiOP support is disabled by default
 option(EXAGO_ENABLE_HIOP "Enable HiOP support" OFF)
-
-#include(CMakeDependentOption)
 
 # CUDA is disabled by default
 option(EXAGO_ENABLE_CUDA "Build with support for CUDA" OFF)
@@ -265,8 +272,8 @@ if(EXAGO_ENABLE_HIOP)
     # defined in HiOp 0.7.0+ if hiop+raja RAJA part of ExaGO will not work if
     # HiOp is not built with RAJA
     message(
-      STATUS
-        "Warning: HiOp was built without RAJA - ExaGO RAJA module calling HiOp may not work!"
+      WARNING
+        "HiOp was built without RAJA - ExaGO RAJA module calling HiOp may not work!"
     )
   endif()
 endif(EXAGO_ENABLE_HIOP)
