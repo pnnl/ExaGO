@@ -87,7 +87,7 @@ if(EXAGO_INSTALL_TESTS)
     COMMAND
     ${MPICMD}
     "-n"
-    3
+    ${TESTING_MAX_NUMPROCS}
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_mpi_pbhiop.toml
   )
@@ -100,7 +100,7 @@ if(EXAGO_INSTALL_TESTS)
     COMMAND
     ${MPICMD}
     "-n"
-    3
+    ${TESTING_MAX_NUMPROCS}
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_mpi.toml
   )
@@ -128,7 +128,7 @@ if(EXAGO_INSTALL_TESTS)
     COMMAND
     ${MPICMD}
     "-n"
-    3
+    ${TESTING_MAX_NUMPROCS}
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_raja.toml
   )

@@ -98,7 +98,7 @@ if(EXAGO_INSTALL_TESTS)
     COMMAND
     ${MPICMD}
     "-n"
-    3
+    ${TESTING_MAX_NUMPROCS}
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_parallel.toml
   )
@@ -130,7 +130,7 @@ if(EXAGO_INSTALL_TESTS)
     COMMAND
     ${MPICMD}
     "-n"
-    3
+    ${TESTING_MAX_NUMPROCS}
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_mpi_raja.toml
     -opflow_include_powerimbalance_variables
@@ -192,7 +192,7 @@ if(EXAGO_ENABLE_ALL_TESTS)
     COMMAND
     ${MPICMD}
     "-n"
-    3
+    ${TESTING_MAX_NUMPROCS}
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiperiod.toml
   )
