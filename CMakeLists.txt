@@ -37,7 +37,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
                                     "MinSizeRel" "RelWithDebInfo"
   )
 else()
-  message(STATUS "Building SUNDIALS in '${CMAKE_BUILD_TYPE}' mode.")
+  message(STATUS "Building ExaGO in '${CMAKE_BUILD_TYPE}' mode.")
 endif()
 
 # Make CMake debugging available globally
