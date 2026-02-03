@@ -152,6 +152,8 @@ jobs:
                 require: ~coinhsl+mumps # HSL requires a tar ball and a licence 
               mumps:
                 require: +mpi~openmp
+              petsc:
+                require: ~hypre~superlu-dist~hdf5+metis
               all:
                 require: "%gcc"
           EOF
