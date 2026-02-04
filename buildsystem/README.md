@@ -10,8 +10,8 @@ Each folder which builds a configuration of ExaGO should have a following:
 - `platformVariables.sh` : a list of spack modules and other config to set up a CMake build environment.
 - `cache.cmake` : universal CMake changes for the type of build in use
 - `platform` :
-  - `spack.yaml` : a copy of the environment used to generate platform specific environments
-  - `exagoSpack.sh` : a script to load that build of exago for use directly on command line
+  - `base.sh` : a script to load platform-specific modules
+  - `platformExago.sh` : a script to load that build of exago for use directly on command line
 
 ### clang-hip
 
@@ -22,16 +22,6 @@ Platforms:
 Description:
 
 frontier clang build of exago@frontier-dev + hiop@develop
-
-### clang-omp
-
-Platforms:
-
-- Newell
-
-Description:
-
-Newell clang build of exago@1.0.0 + hiop@0.4.0
 
 ### cmake
 
@@ -45,11 +35,23 @@ Platforms:
 
 Used in spack-ci stage of testing (currently not functioning).
 
+### deprecated
+
 Description:
 
-https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/commit/47ea09e648dfa81ca8a70cc2e0b4a2628eaf56f2 - here is the merge request into master that created this initially. Remnant of previously functional spack-ci.
+Contains deprecated build configurations.
 
-### gcc-cuda
+#### clang-omp
+
+Platforms:
+
+- Newell
+
+Description:
+
+Newell clang build of exago@1.0.0 + hiop@0.4.0
+
+#### gcc-cuda
 
 Platforms:
 - Deception
@@ -65,12 +67,6 @@ gcc and cuda enabled build for target x86_64 and power9 platforms.
 Description:
 
 Old miscellaneous scripts
-
-### pnnl
-
-Description:
-
-Internal perl scripts that we use to find idle nodes within our clusters using slurm. Are a component of CI pipelines on Marianas and Newell.
 
 ### tools - ExaGO Code Quality Tools
 
@@ -102,25 +98,22 @@ Long Description:
 
 Clusters:
 
-  By default, this script will attempt to determine the cluster it is being ran
-  on using the hostname command. If a known cluster is found, it's respective
-  script in the directory ./scripts/buildsystem will be sourced and the
-  variable MY_CLUSTER will be set. For example, on PNNL cluster Marianas,
-  hostname marianas.pnl.gov will be matched and
-  ./scripts/buildsystem/marianasVariables.sh will be sourced. If you would like
-  to add a cluster, create a script
-  ./scripts/buildsystem/<my cluster>Variables.sh and specify the relevant
+  By default, this script will attempt to determine the cluster it is being ran 
+  on using the hostname command. If a known cluster is found, it's respective 
+  script in the directory ./scripts/buildsystem will be sourced and the 
+  variable MY_CLUSTER will be set. If you would like to add a cluster, create a script
+  ./buildsystem/<job name>/<my cluster>Variables.sh and specify the relevant
   environment variables. If the hostname is not correctly finding your cluster,
   you may specify MY_CLUSTER environment variable before running this script
   and the script will respect the environment variable. For example, on ORNL
-  Ascent cluster, the hostname does not find the cluster, so we must specify
+  Frontier cluster, the hostname does not find the cluster, so we must specify
   MY_CLUSTER when running:
 
-    $ MY_CLUSTER=ascent ./buildsystem/build.sh --build-only
+    $ MY_CLUSTER=frontier ./buildsystem/build.sh --build-only
 
 Spack:
 
-  Each supported variables script in ./scripts/buildsystem activates a spack
+  Each supported variables script in ./buildsystem/<job name> activates a spack
   environment with all dependencies configured. If you have built dependencies
   for ExaGO in a spack environment, you may simply activate the environment
   and run the build script specifying that you don't want to source any
@@ -133,7 +126,7 @@ Spack:
 Options:
 
   --job=<job name>  Run job indicated by job name. Available jobs are as
-                    follows: gcc-cuda clang-hip clang-omp cmake-lint cmake-lint-apply.
+                    follows: clang-hip.
                     Job --job=cmake-lint-apply should be ran before every push.
 
   --build-only      Only run the build stage of the script. This is useful for
@@ -148,11 +141,6 @@ Options:
   --verbose        Print all executed commands to the terminal. This is useful
                    for debugging, but it will be disabled in CI by default to
                    prevent hitting the job log limit.
-
---------------------------------------------------------------------------------
-
-See ExaGO's latest developer guidelines for more information on developing
-ExaGO: https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/develop/docs/DeveloperGuidelines.md
 
 --------------------------------------------------------------------------------
 

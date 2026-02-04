@@ -117,14 +117,9 @@ Options:
                     the --*-only options and just run a particular job, tests
                     will also be ran.
 
-  --verbose        Print all executed commands to the terminal. This is useful 
-                   for debugging, but it will be disabled in CI by default to 
+  --verbose        Print all executed commands to the terminal. This is useful
+                   for debugging, but it will be disabled in CI by default to
                    prevent hitting the job log limit.
-
---------------------------------------------------------------------------------
-
-See ExaGO's latest developer guidelines for more information on developing
-ExaGO: https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/develop/docs/DeveloperGuidelines.md
 
 --------------------------------------------------------------------------------
 

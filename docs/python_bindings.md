@@ -75,7 +75,7 @@ API.  Failure to do so will cause segmentation faults or other memory
 errors.  
 
 ***If you identify components of the C++ API that you need to call from Python,
-please [open an issue on our issues page](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/issues).***
+please [open an issue on our issues page](https://github.com/pnnl/ExaGO/issues).***
 
 ### Building with MPI
 

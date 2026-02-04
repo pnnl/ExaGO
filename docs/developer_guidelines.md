@@ -32,7 +32,7 @@ $ git pull --rebase origin develop
 ```
 
 This will ensure you are rebased on the most recent development branch.
-If you see [open merge requests on ExaGO's repository](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/merge_requests) that touch the same lines of code that you are working on, please coordinate with the developers of that merge request so your work doesn't conflict.
+If you see [open pull requests on ExaGO's repository](https://github.com/pnnl/ExaGO/pulls) that touch the same lines of code that you are working on, please coordinate with the developers of that merge request so your work doesn't conflict.
 
 #### P001: Don't Run Continuous Integration Pipelines If You Only Changed Documentation
 
@@ -208,7 +208,7 @@ You may also run `buildsystem/tools/cmake_format.pl -i`.
 
 1. [LLVM Flang's style guide](https://github.com/llvm/llvm-project/blob/main/flang/docs/C%2B%2Bstyle.md)
 1. [Google's style guide](https://google.github.io/styleguide/cppguide.html)
-1. [ExaGO's public repository](https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/merge_requests)
+1. [ExaGO's public repository](https://github.com/pnnl/ExaGO)
 1. [Chris Beams's blog post on writing commit messages](https://chris.beams.io/posts/git-commit)
 1. [Pablo Ariasblog post on cmake best practices](https://pabloariasal.github.io/2018/02/19/its-time-to-do-cmake-right/)
 1. [Semantic Versioning](https://semver.org/spec/v2.0.0.html)

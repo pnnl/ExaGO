@@ -11,6 +11,8 @@ This document outlines building and installing ExaGO on three clusters:
 This document goes into great detail about building on Newell, but most of the
 instructions apply to all clusters.
 
+These instructions are deprecated.
+
 # Quick Start
 
 If you are on one of the aforementioned systems, the following commands should
@@ -21,7 +23,7 @@ computation.
 $ # Set this variable to one of newell, marianas, or ascent
 $ export MY_CLUSTER=newell
 
-$ git clone https://gitlab.pnnl.gov/exasgd/frameworks/exago.git
+$ git clone https://github.com/pnnl/ExaGO.git
 $ cd exago
 $ mkdir build install
 
@@ -212,7 +214,7 @@ the tests, you'll have to pass some additional options.
 ```console
 $ export MY_CLUSTER=ascent
 
-$ git clone https://gitlab.pnnl.gov/exasgd/frameworks/exago.git
+$ git clone https://github.com/pnnl/ExaGO.git
 $ mkdir build install
 $ cd exago
 

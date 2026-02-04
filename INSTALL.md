@@ -12,8 +12,7 @@
     1. [Additional CMake Options](#additional-cmake-options)
     1. [CMake Workflow](#cmake-workflow)
     1. [CMake Configuration Options](#cmake-configuration-options)
-1. [Building on CI Platforms](#building-on-ci-platforms)
-    1. [Additional Information](#additional-information)
+1. [Building on Platforms with pre-built dependencies](#building-on-select-platforms)
 
 ## Installing With Spack
 
@@ -166,37 +165,9 @@ cmake ../
   -DPETSC_DIR=$petsc_dir
 ```
 
-## Building on CI Platforms
-
-***NOTE: For developers only***
-
-If you are building on one of our continuous integration (CI) platforms, you may
-want to use the CI environment for development. To do this, source the variables
-script like so:
-
-```console
-$ # On newell for example
-$ source ./buildsystem/gcc-cuda/newellVariables.sh
-$ mkdir build && cd build && cmake ..
-```
-
-If you would like to use the *exact* configuration used in CI, you may use the
-cmake cache script like so:
-
-```console
-$ # On newell for example
-$ source ./buildsystem/gcc-cuda/newellVariables.sh
-$ mkdir build && cd build
-$ cmake .. -C ../buildsystem/gcc-cuda/cache.cmake
-```
-
-However, users are encouraged to configure their build on their own. Please use
-this CMake cache script *only if you intend to reproduce the CI build*.
-
-### Additional Information
+### Building On Select Platforms
 
 If you are building ExaGO on one of the following systems, you may follow the
 link for more machine-specific information:
 
-- [Ascent, Newell, or Marianas](./docs/web/README.ci_clusters.md)
-- [Summit](./docs/web/README.summit.md)
+- [Frontier](./docs/web/README.frontier.md)
