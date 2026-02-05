@@ -25,6 +25,8 @@ template <typename T> bool Approx(T a, T b, T rtol = 1.0e-5) {
   throw ExaGOError(message);
 }
 
+void Warn(const std::string &message) { ExaGOLog(EXAGO_LOG_WARN, message); }
+
 std::string Strip(std::string str) {
   auto notspace = [](char c) { return !std::isspace(c); };
   str.erase(begin(str), std::find_if(begin(str), end(str), notspace));
@@ -795,8 +797,8 @@ PetscErrorCode ConvertToPS(PS ps, const Network &nw) {
     }
     auto bus_ii = nw.bus_mapping.GetInternalIndex(shunt.i);
     if (ps->bus[bus_ii].nshunt > 0) {
-      Error("Bus " + std::to_string(shunt.i.id) +
-            ": more than one fixed shunt at bus not supported");
+      Warn("Bus " + std::to_string(shunt.i.id) +
+           ": more than one fixed shunt at bus not supported");
     }
     ps->bus[bus_ii].nshunt++;
     ps->bus[bus_ii].gl = shunt.gl / ps->MVAbase;
@@ -852,7 +854,7 @@ PetscErrorCode ConvertToPS(PS ps, const Network &nw) {
         ss << "Generator at bus " << bus.bus_i << std::fixed
            << ": voltage setpoint (" << dgen.vs
            << ") different from bus voltage magnitude (" << bus.vm << ")";
-        Error(ss.str());
+        Warn(ss.str());
       }
       bus.ngenON++;
       ps->NgenON++;
