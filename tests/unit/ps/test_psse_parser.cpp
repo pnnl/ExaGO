@@ -811,89 +811,65 @@ TEST_FUNCTION(check_equal)(PS n1, PS n2) {
 }
 END_TEST_FUNCTION
 
+TEST_FUNCTION(check_bus_ref)
+(const exago::psse::BusMapping &bus_mapping, const exago::psse::BusRef &ref) {
+  const auto &bus = bus_mapping.GetBus(ref.id);
+  TEST_EQUAL(bus.i, ref.id);
+  TEST_EQUAL(&bus, ref.bus);
+  if (bus_mapping.RequireUniqueNames()) {
+    TEST_EQUAL(&bus, &bus_mapping.GetBus(ref.name));
+    TEST_EQUAL(bus.name, ref.name);
+  }
+  TEST_FUNCTION_RETURN;
+}
+END_TEST_FUNCTION
+
 TEST_FUNCTION(check_bus_ids)(const exago::psse::Network &nw) {
   for (std::size_t i = 0; i < nw.buses.size(); ++i) {
     const auto &bus = nw.buses[i];
     TEST_EQUAL(nw.bus_mapping.GetInternalIndex(bus.i), i);
-    TEST_EQUAL(nw.bus_mapping.GetInternalIndex(bus.name), i);
     TEST_EQUAL(nw.bus_mapping.GetBusName(bus.i), bus.name);
-    TEST_EQUAL(nw.bus_mapping.GetBusNumber(bus.name), bus.i);
     TEST_EQUAL(&bus, &nw.bus_mapping.GetBus(bus.i));
-    TEST_EQUAL(&bus, &nw.bus_mapping.GetBus(bus.name));
+
+    if (nw.bus_mapping.RequireUniqueNames()) {
+      TEST_EQUAL(nw.bus_mapping.GetInternalIndex(bus.name), i);
+      TEST_EQUAL(nw.bus_mapping.GetBusNumber(bus.name), bus.i);
+      TEST_EQUAL(&bus, &nw.bus_mapping.GetBus(bus.name));
+    }
   }
   for (auto &&load : nw.loads) {
-    const auto &bus = nw.bus_mapping.GetBus(load.i.id);
-    TEST_EQUAL(&bus, &nw.bus_mapping.GetBus(load.i.name));
-    TEST_EQUAL(bus.i, load.i.id);
-    TEST_EQUAL(bus.name, load.i.name);
+    check_bus_ref(nw.bus_mapping, load.i);
   }
   for (auto &&shunt : nw.fixed_bus_shunts) {
-    const auto &bus = nw.bus_mapping.GetBus(shunt.i.id);
-    TEST_EQUAL(&bus, &nw.bus_mapping.GetBus(shunt.i.name));
-    TEST_EQUAL(bus.i, shunt.i.id);
-    TEST_EQUAL(bus.name, shunt.i.name);
+    check_bus_ref(nw.bus_mapping, shunt.i);
   }
   for (auto &&gen : nw.generators) {
-    const auto &bus = nw.bus_mapping.GetBus(gen.i.id);
-    TEST_EQUAL(&bus, &nw.bus_mapping.GetBus(gen.i.name));
-    TEST_EQUAL(bus.i, gen.i.id);
-    TEST_EQUAL(bus.name, gen.i.name);
-    if (gen.ireg == 0) {
-      continue;
+    check_bus_ref(nw.bus_mapping, gen.i);
+    if (gen.ireg) {
+      check_bus_ref(nw.bus_mapping, gen.ireg);
     }
-    const auto &regbus = nw.bus_mapping.GetBus(gen.ireg.id);
-    TEST_EQUAL(&regbus, &nw.bus_mapping.GetBus(gen.ireg.name));
-    TEST_EQUAL(regbus.i, gen.ireg.id);
-    TEST_EQUAL(regbus.name, gen.ireg.name);
   }
   for (auto &&br : nw.branches) {
-    const auto &ibus = nw.bus_mapping.GetBus(br.i.id);
-    TEST_EQUAL(&ibus, &nw.bus_mapping.GetBus(br.i.name));
-    TEST_EQUAL(ibus.i, br.i.id);
-    TEST_EQUAL(ibus.name, br.i.name);
-    const auto &jbus = nw.bus_mapping.GetBus(br.j.id);
-    TEST_EQUAL(&jbus, &nw.bus_mapping.GetBus(br.j.name));
-    TEST_EQUAL(jbus.i, br.j.id);
-    TEST_EQUAL(jbus.name, br.j.name);
+    check_bus_ref(nw.bus_mapping, br.i);
+    check_bus_ref(nw.bus_mapping, br.j);
   }
   for (auto &&tr : nw.transformers) {
-    const auto &ibus = nw.bus_mapping.GetBus(tr.i.id);
-    TEST_EQUAL(&ibus, &nw.bus_mapping.GetBus(tr.i.name));
-    TEST_EQUAL(ibus.i, tr.i.id);
-    TEST_EQUAL(ibus.name, tr.i.name);
-    const auto &jbus = nw.bus_mapping.GetBus(tr.j.id);
-    TEST_EQUAL(&jbus, &nw.bus_mapping.GetBus(tr.j.name));
-    TEST_EQUAL(jbus.i, tr.j.id);
-    TEST_EQUAL(jbus.name, tr.j.name);
-    if (tr.k == 0) {
-      continue;
+    check_bus_ref(nw.bus_mapping, tr.i);
+    check_bus_ref(nw.bus_mapping, tr.j);
+    if (tr.k) {
+      check_bus_ref(nw.bus_mapping, tr.k);
     }
-    const auto &kbus = nw.bus_mapping.GetBus(tr.k.id);
-    TEST_EQUAL(&kbus, &nw.bus_mapping.GetBus(tr.k.name));
-    TEST_EQUAL(kbus.i, tr.k.id);
-    TEST_EQUAL(kbus.name, tr.k.name);
   }
   for (auto &&ar : nw.area_interchanges) {
-    if (ar.isw == 0) {
-      continue;
+    if (ar.isw) {
+      check_bus_ref(nw.bus_mapping, ar.isw);
     }
-    const auto &iswbus = nw.bus_mapping.GetBus(ar.isw.id);
-    TEST_EQUAL(&iswbus, &nw.bus_mapping.GetBus(ar.isw.name));
-    TEST_EQUAL(iswbus.i, ar.isw.id);
-    TEST_EQUAL(iswbus.name, ar.isw.name);
   }
   for (auto &&sh : nw.switched_shunts) {
-    const auto &bus = nw.bus_mapping.GetBus(sh.i.id);
-    TEST_EQUAL(&bus, &nw.bus_mapping.GetBus(sh.i.name));
-    TEST_EQUAL(bus.i, sh.i.id);
-    TEST_EQUAL(bus.name, sh.i.name);
-    if (sh.swreg == 0) {
-      continue;
+    check_bus_ref(nw.bus_mapping, sh.i);
+    if (sh.swreg) {
+      check_bus_ref(nw.bus_mapping, sh.swreg);
     }
-    const auto &swregbus = nw.bus_mapping.GetBus(sh.swreg.id);
-    TEST_EQUAL(&swregbus, &nw.bus_mapping.GetBus(sh.swreg.name));
-    TEST_EQUAL(swregbus.i, sh.swreg.id);
-    TEST_EQUAL(swregbus.name, sh.swreg.name);
   }
 
   TEST_FUNCTION_RETURN;

@@ -51,6 +51,7 @@ struct BusRef {
   const Bus *bus{nullptr};
 
   operator std::size_t() const { return id; }
+  const Bus *operator->() const noexcept { return bus; }
 };
 
 struct Load {
@@ -248,7 +249,9 @@ public:
     bool value{false};
   };
 
-  BusMapping(std::vector<Bus> &buses);
+  BusMapping(std::vector<Bus> &buses, bool require_unique_names);
+
+  bool RequireUniqueNames() const noexcept { return req_unique_names_; }
 
   bool HasBus(std::size_t bus_number) const;
   bool HasBus(const std::string &bus_name) const;
@@ -268,17 +271,19 @@ public:
   const auto &GetNameToIdMap() const { return name_map_; }
 
 private:
+  bool req_unique_names_;
   std::vector<Bus> &buses_;
   std::unordered_map<std::size_t, std::size_t> id_map_;
   std::unordered_map<std::string, std::size_t> name_map_;
 };
 
 struct Network {
-  Network(CaseID &&, std::vector<Bus> &&, std::vector<Load> &&,
-          std::vector<FixedBusShunt> &&, std::vector<Generator> &&,
-          std::vector<Branch> &&, std::vector<Transformer> &&,
-          std::vector<AreaInterchange> &&, std::vector<Zone> &&,
-          std::vector<Owner> &&, std::vector<SwitchedShunt> &&);
+  Network(bool ref_bus_names, CaseID &&, std::vector<Bus> &&,
+          std::vector<Load> &&, std::vector<FixedBusShunt> &&,
+          std::vector<Generator> &&, std::vector<Branch> &&,
+          std::vector<Transformer> &&, std::vector<AreaInterchange> &&,
+          std::vector<Zone> &&, std::vector<Owner> &&,
+          std::vector<SwitchedShunt> &&);
 
   void ResolveBusIds();
   void ResolveDefaults();

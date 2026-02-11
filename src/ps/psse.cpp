@@ -238,6 +238,7 @@ void SkipSystemWideData(std::istream &is) {
 
 struct Parser {
   int rev{34};
+  bool ref_bus_names{false};
 
   void ParseRecord(LineItemStream &lis, Bus &bus) {
     QuoteStringParse name;
@@ -256,6 +257,9 @@ struct Parser {
     IntOrStringParse i;
     QuoteStringParse id;
     lis >> i;
+    if (i.IsTypeString()) {
+      ref_bus_names = true;
+    }
     ld.i = i.ToBusRef();
     auto clis = lis.Checked();
     clis >> id;
@@ -271,6 +275,9 @@ struct Parser {
     IntOrStringParse i;
     QuoteStringParse id;
     lis >> i;
+    if (i.IsTypeString()) {
+      ref_bus_names = true;
+    }
     sh.i = i.ToBusRef();
     auto clis = lis.Checked();
     clis >> id;
@@ -288,6 +295,9 @@ struct Parser {
     clis >> id;
     gen.id = Strip(id);
     clis >> gen.pg >> gen.qg >> gen.qt >> gen.qb >> gen.vs >> ireg;
+    if (i.IsTypeString() || ireg.IsTypeString()) {
+      ref_bus_names = true;
+    }
     gen.ireg = ireg.ToBusRef();
     clis >> gen.mbase >> gen.zr >> gen.zx >> gen.rt >> gen.xt >> gen.gtap >>
         gen.stat >> gen.rmpct >> gen.pt >> gen.pb;
@@ -306,6 +316,9 @@ struct Parser {
     QuoteStringParse ckt;
     QuoteStringParse name;
     lis >> i >> j >> ckt >> br.r >> br.x;
+    if (i.IsTypeString() || j.IsTypeString()) {
+      ref_bus_names = true;
+    }
     br.i = i.ToBusRef();
     br.j = j.ToBusRef();
     br.ckt = Strip(ckt);
@@ -350,6 +363,9 @@ struct Parser {
     QuoteStringParse ckt;
     QuoteStringParse name;
     lis >> i >> j >> k;
+    if (i.IsTypeString() || j.IsTypeString() || k.IsTypeString()) {
+      ref_bus_names = true;
+    }
     tr.i = i.ToBusRef();
     tr.j = j.ToBusRef();
     tr.k = k.ToBusRef();
@@ -385,6 +401,9 @@ struct Parser {
     lis >> area.i;
     auto clis = lis.Checked();
     clis >> isw;
+    if (isw.IsTypeString()) {
+      ref_bus_names = true;
+    }
     area.isw = isw.ToBusRef();
     clis >> area.pdes >> area.ptol >> arname;
     area.arname = Strip(arname);
@@ -425,6 +444,9 @@ struct Parser {
     auto clis = lis.Checked();
     clis >> sh.modsw >> sh.adjm >> sh.stat >> sh.vswhi >> sh.vswlo >> swreg;
     sh.swreg = swreg.ToBusRef();
+    if (i.IsTypeString() || swreg.IsTypeString()) {
+      ref_bus_names = true;
+    }
     clis >> sh.rmpct >> rmidnt;
     sh.rmidnt = Strip(rmidnt);
     clis >> sh.binit;
@@ -434,6 +456,9 @@ struct Parser {
     if (rev >= 34 && lis) {
       IntOrStringParse nreg;
       clis >> nreg;
+      if (nreg.IsTypeString()) {
+        ref_bus_names = true;
+      }
       sh.nreg = nreg.ToBusRef();
     }
   }
@@ -455,16 +480,17 @@ struct Parser {
   }
 };
 
-BusMapping::BusMapping(std::vector<Bus> &buses) : buses_(buses) {
+BusMapping::BusMapping(std::vector<Bus> &buses, bool require_unique_names)
+    : req_unique_names_(require_unique_names), buses_(buses) {
   for (std::size_t i = 0; i < buses_.size(); ++i) {
-    {
-      auto [_, ins] = id_map_.emplace(buses_[i].i, i);
-      if (!ins) {
-        Error("PSS(R)E parser: Encountered duplicate bus number: " +
-              std::to_string(buses_[i].i));
-      }
+    auto [_, ins] = id_map_.emplace(buses_[i].i, i);
+    if (!ins) {
+      Error("PSS(R)E parser: Encountered duplicate bus number: " +
+            std::to_string(buses_[i].i));
     }
-    {
+  }
+  if (req_unique_names_) {
+    for (std::size_t i = 0; i < buses_.size(); ++i) {
       auto [_, ins] = name_map_.emplace(buses_[i].name, i);
       if (!ins) {
         Error("PSS(R)E parser: Encountered duplicate bus name: " +
@@ -507,29 +533,39 @@ const Bus &BusMapping::GetBus(std::size_t bus_number) const {
 }
 
 void BusMapping::Resolve(BusRef &busref, BusMapping::Optional optional) const {
-  if (busref.id == 0 && busref.name.empty()) {
-    if (optional) {
-      return;
-    } else {
-      Error("Cannot resolve bus id");
+  if (req_unique_names_) {
+    if (busref.id == 0 && busref.name.empty()) {
+      if (optional) {
+        return;
+      } else {
+        Error("Cannot resolve bus id");
+      }
     }
-  }
-  if (busref.id == 0) {
-    if (!HasBus(busref.name)) {
-      Error("PSS(R)E parser: Bus \'" + busref.name + "\' does not exist");
+    if (busref.id == 0) {
+      if (!HasBus(busref.name)) {
+        Error("PSS(R)E parser: Bus \'" + busref.name + "\' does not exist");
+      }
+      const Bus &bus = GetBus(busref.name);
+      busref.id = bus.i;
+      busref.bus = &bus;
     }
-    const Bus &bus = GetBus(busref.name);
-    busref.id = bus.i;
-    busref.bus = &bus;
-  }
-  if (busref.name.empty()) {
-    if (!HasBus(busref.id)) {
-      Error("PSS(R)E parser: Bus " + std::to_string(busref.id) +
-            " does not exist");
+    if (busref.name.empty()) {
+      if (!HasBus(busref.id)) {
+        Error("PSS(R)E parser: Bus " + std::to_string(busref.id) +
+              " does not exist");
+      }
+      const Bus &bus = GetBus(busref.id);
+      busref.name = bus.name;
+      busref.bus = &bus;
     }
-    const Bus &bus = GetBus(busref.id);
-    busref.name = bus.name;
-    busref.bus = &bus;
+  } else {
+    if (busref.id == 0) {
+      if (optional) {
+        return;
+      }
+      Error("PSS(R)E parser: Bus reference number must be positive, got 0");
+    }
+    busref.bus = &GetBus(busref.id);
   }
 }
 
@@ -566,22 +602,22 @@ void Network::ResolveBusIds() {
 
 void Network::ResolveDefaults() {
   for (auto &load : loads) {
-    if (load.i.bus) {
+    if (load.i) {
       if (IsInvalid(load.area)) {
-        load.area = load.i.bus->area;
+        load.area = load.i->area;
       }
       if (IsInvalid(load.zone)) {
-        load.zone = load.i.bus->zone;
+        load.zone = load.i->zone;
       }
       if (IsInvalid(load.owner)) {
-        load.owner = load.i.bus->owner;
+        load.owner = load.i->owner;
       }
     }
   }
   auto resolve_o1 = [](auto &comp) {
     if (comp.owners[0].owner == 0) {
-      if (comp.i.bus) {
-        comp.owners[0].owner = comp.i.bus->owner;
+      if (comp.i) {
+        comp.owners[0].owner = comp.i->owner;
       }
     }
   };
@@ -601,8 +637,8 @@ void Network::ResolveDefaults() {
       if (IsInvalid(w.windv)) {
         if (tr.cw == 2) {
           auto &busref = wi == 0 ? tr.i : wi == 1 ? tr.j : tr.k;
-          if (busref.bus) {
-            w.windv = busref.bus->baskv;
+          if (busref) {
+            w.windv = busref->baskv;
           }
         } else {
           w.windv = 1.0;
@@ -612,19 +648,19 @@ void Network::ResolveDefaults() {
   }
 }
 
-Network::Network(CaseID &&cid, std::vector<Bus> &&bus, std::vector<Load> &&load,
-                 std::vector<FixedBusShunt> &&fbshunt,
+Network::Network(bool ref_bus_names, CaseID &&cid, std::vector<Bus> &&bus,
+                 std::vector<Load> &&load, std::vector<FixedBusShunt> &&fbshunt,
                  std::vector<Generator> &&gen, std::vector<Branch> &&branch,
                  std::vector<Transformer> &&trans,
                  std::vector<AreaInterchange> &&area, std::vector<Zone> &&zone,
                  std::vector<Owner> &&owner,
                  std::vector<SwitchedShunt> &&swshunt)
-    : case_id(std::move(cid)), buses(std::move(bus)), bus_mapping(buses),
-      loads(std::move(load)), fixed_bus_shunts(std::move(fbshunt)),
-      generators(std::move(gen)), branches(std::move(branch)),
-      transformers(std::move(trans)), area_interchanges(std::move(area)),
-      zones(std::move(zone)), owners(std::move(owner)),
-      switched_shunts(std::move(swshunt)) {
+    : case_id(std::move(cid)), buses(std::move(bus)),
+      bus_mapping(buses, ref_bus_names), loads(std::move(load)),
+      fixed_bus_shunts(std::move(fbshunt)), generators(std::move(gen)),
+      branches(std::move(branch)), transformers(std::move(trans)),
+      area_interchanges(std::move(area)), zones(std::move(zone)),
+      owners(std::move(owner)), switched_shunts(std::move(swshunt)) {
   ResolveBusIds();
   ResolveDefaults();
 }
@@ -671,11 +707,17 @@ Network ParseNetwork(std::istream &is) {
   auto induction_machines = parser.ParseRecords<InductionMachine>(is);
   // }
 
-  Network nw{std::move(case_id),        std::move(buses),
-             std::move(loads),          std::move(fixed_bus_shunts),
-             std::move(generators),     std::move(branches),
-             std::move(transformers),   std::move(area_interchanges),
-             std::move(zones),          std::move(owners),
+  Network nw{parser.ref_bus_names,
+             std::move(case_id),
+             std::move(buses),
+             std::move(loads),
+             std::move(fixed_bus_shunts),
+             std::move(generators),
+             std::move(branches),
+             std::move(transformers),
+             std::move(area_interchanges),
+             std::move(zones),
+             std::move(owners),
              std::move(switched_shunts)};
 
   return nw;
