@@ -1,4 +1,4 @@
-import countydata from "../data/counties.json";
+import countydata from "../geo_data/counties.json";
 import { center, convex, bbox } from "@turf/turf";
 import us from "us";
 

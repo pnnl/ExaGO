@@ -138,26 +138,18 @@ function valuetext(value) {
   return `${value.toFixed(2)}`;
 }
 
-
-// 39.8283° N, 98.5795° 
-
-
 const INITIAL_VIEW_STATE = {
   latitude: 39.8283,
   longitude: -98.5795,
-  zoom: 5,
+  zoom: 4,
   maxZoom: 16,
   pitch: 0,
   bearing: 0,
 };
 
-
-
-const CASES = [
-  { label: "500", file: "opflowout-500.json" },
-  { label: "10K", file: "opflowout-10K.json" },
-  { label: "70K", file: "opflowout-70K.json" },
-];
+const DATA_FILES = Object.keys(import.meta.glob("../data/*.json", { eager: true })).map((path) =>
+  path.split("/").pop()
+);
 
 function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, generation, areas, zones, countyload, countyloaddata, countymaxPd, mapcenter, mapStyle = MAP_STYLE }) {
 
@@ -224,6 +216,23 @@ function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, gene
   const [showPopup, setShowPopup] = useState({ display: false, info: "", name: "" });
 
   const [tooltip, setTooltip] = useState();
+
+
+  const GoHome = () => {
+
+    setInitialViewState((viewState) => ({
+      ...INITIAL_VIEW_STATE
+    }));
+
+    mapRef.current?.flyTo({
+      center: [mapcenter.longitude, mapcenter.latitude],
+      zoom: INITIAL_VIEW_STATE.zoom,
+      pitch: INITIAL_VIEW_STATE.pitch,
+      duration: 1200,
+    });
+
+    setShowPopup({ ...showPopup, display: false });
+  }
 
   useEffect(() => {
 
@@ -625,21 +634,7 @@ function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, gene
     }
   });
 
-  const GoHome = () => {
-
-    setInitialViewState((viewState) => ({
-      ...INITIAL_VIEW_STATE
-    }));
-
-    mapRef.current?.flyTo({
-      center: [mapcenter.longitude, mapcenter.latitude],
-      zoom: INITIAL_VIEW_STATE.zoom,
-      pitch: INITIAL_VIEW_STATE.pitch,
-      duration: 1200,
-    });
-
-    setShowPopup({ ...showPopup, display: false });
-  }
+  
 
   const [netlayeractive, setNetLayerActive] = useState(true);
 
@@ -1585,6 +1580,7 @@ function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, gene
     const response = await fetch(`/data/${filename}`);
     const json = await response.json();
     const case_data = setInputCaseData(json);
+    GoHome();
     console.log("Loaded case data:", case_data);
   }
 
@@ -1969,7 +1965,7 @@ const label = { color: "#222" };
 
 function AppContainer() {
 
-  const [selected, setSelected] = useState(CASES[0].file);
+  const [selected, setSelected] = useState(DATA_FILES[0]);
   const [casedata, setCasedata] = useState(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
@@ -1985,6 +1981,7 @@ function AppContainer() {
         if (!res.ok) throw new Error(`Failed to load ${selected}: ${res.status}`);
         const json = await res.json();
         if (!cancelled) setCasedata(json);
+
       } catch (e) {
         if (!cancelled) setErr(e);
       } finally {
@@ -2062,11 +2059,12 @@ function AppContainer() {
   return (
     <>
       <select value={selected} onChange={(e) => setSelected(e.target.value)}>
-        {CASES.map((c) => (
-          <option key={c.file} value={c.file}>{c.label}</option>
+        {DATA_FILES.map((c) => (
+          <option key={c} value={c}>{c}</option>
         ))}
       </select>
 
+      Upload a JSON case file:
       <input
         type="file"
         accept=".json"

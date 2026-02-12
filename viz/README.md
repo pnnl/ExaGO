@@ -46,15 +46,9 @@ For example, with Texas 2000 bus synthetic data, executing the following `opflow
 opflow -netfile case_ACTIVSg2000.m -save_output -opflow_output_format JSON -gicfile ACTIVSg2000_GIC_data.gic
 ```
 
-Next, go to the `viz` folder and run the following python script `geninputfile.py` from the `viz` folder to load the JSON file (`path/to/opflowout/opflowout.json`) in the visualization script. It will copy the `json` file to the `viz/data` subdirectory and create/overwrite a file named `viz/src/module_casedata.js`. The `module_casedata.js` file is an application source file to load the data file `opflowout.json`. Note, the visualization tool expects the file (`opflowout.json`) to be present in `viz/data` forlder, so it is copied by this script.
-
-```
-python geninputfile.py path/to/opflowout/opflowout.json
-```
+Next, you can put the `opflowout.json` file in the `viz/data` folder. When the visualization tool will be launched, it will find all `*.json` files in the `viz/data` folder and show a list of files in the top left corner. The first item in the list will be visualized as default. Users can change the selection and the visualization will be updated accordingly. In addition, users can upload a compatible `json` case file (generated via `opflow`) using the file upload button next to the selection list.
 
 Now you are ready to launch the visualization now. 
-
-Note: If you have already created or have the JSON file externally without running the `opflow` command as instructed above, simply run the `geninputfile.py` script using the above command.
 
 ## Launch visualization
 To launch the visualization, run
