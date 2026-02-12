@@ -1703,7 +1703,7 @@ function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, gene
             <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }} expandIcon={<ArrowDropDownIcon />}>
               <Typography>
                 <Checkbox checked={flowlayeractive} style={{ color: "primary" }} onChange={handleFlowLayerChange} />
-                Flow
+                Active Flow
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
