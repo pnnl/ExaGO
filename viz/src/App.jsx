@@ -1703,7 +1703,7 @@ function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, gene
             <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }} expandIcon={<ArrowDropDownIcon />}>
               <Typography>
                 <Checkbox checked={flowlayeractive} style={{ color: "primary" }} onChange={handleFlowLayerChange} />
-                Active Flow
+                Active Power Flow
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -1728,7 +1728,7 @@ function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, gene
             <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }} expandIcon={<ArrowDropDownIcon />}>
               <Typography>
                 <Checkbox checked={reactiveflowlayeractive} style={{ color: "primary" }} onChange={handleReactiveFlowLayerChange} />
-                Reactive Flow
+                Reactive Power Flow
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
