@@ -185,56 +185,35 @@ else()
   set(TESTING_MAX_NUMPROCS 1)
 endif(EXAGO_ENABLE_MPI)
 
-# If GPU support is enabled, find CUDA
-if(EXAGO_ENABLE_GPU)
+# If CUDA support is enabled, set up CUDA compiler and flags
+if(EXAGO_ENABLE_CUDA)
+  include(CheckLanguage)
+  enable_language(CUDA)
+  check_language(CUDA)
 
-  if(NOT EXAGO_ENABLE_CUDA AND NOT EXAGO_ENABLE_HIP)
-    message(
-      WARNING
-        "\nGPU is enabled, but both CUDA and HIP are disabled. "
-        "Enabling CUDA by default. If you would like to enable a particular GPU "
-        "platform, set one of the following variables to ON: "
-        "\n* EXAGO_ENABLE_CUDA"
-        "\n* EXAGO_ENABLE_HIP"
-    )
-    set(EXAGO_ENABLE_CUDA
-        ON
-        CACHE BOOL ""
-    )
+  find_package(CUDA REQUIRED)
+
+  if(NOT DEFINED CMAKE_CUDA_STANDARD)
+    set(CMAKE_CUDA_STANDARD 11)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
   endif()
 
-  if(EXAGO_ENABLE_CUDA)
-    include(CheckLanguage)
-    enable_language(CUDA)
-    check_language(CUDA)
-
-    find_package(CUDA REQUIRED)
-
-    if(NOT DEFINED CMAKE_CUDA_STANDARD)
-      set(CMAKE_CUDA_STANDARD 11)
-      set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-    endif()
-
-    if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-      set(CMAKE_CUDA_ARCHITECTURES 35)
-    endif()
-
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda")
-
-    # HiOp requires this since we require static
-    set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
-
-  elseif(EXAGO_ENABLE_HIP)
-    set(EXAGO_HAVE_HIP 1)
-    add_definitions(-DHAVE_HIP) # For hipmagma
-    find_package(hip REQUIRED)
-  else()
-    message(
-      FATAL_ERROR "EXAGO_ENABLE_GPU enabled, but neither EXAGO_ENABLE_CUDA "
-                  "nor EXAGO_ENABLE_HIP is enabled!"
-    )
+  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES 35)
   endif()
-endif(EXAGO_ENABLE_GPU)
+
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda")
+
+  # HiOp requires this since we require static
+  set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
+endif(EXAGO_ENABLE_CUDA)
+
+# If HIP support is enabled, set up HIP compiler and flags
+if(EXAGO_ENABLE_HIP)
+  set(EXAGO_HAVE_HIP 1)
+  add_definitions(-DHAVE_HIP) # For hipmagma
+  find_package(hip REQUIRED)
+endif()
 
 # Find PETSc and configure related variables
 if(EXAGO_ENABLE_PETSC)
@@ -351,8 +330,6 @@ endif()
 
 # Install options files
 install(FILES ${EXAGO_OPTIONS_FILES} DESTINATION ${EXAGO_OPTIONS_DIR})
-# Install options file to binary dir for testing
-file(INSTALL ${EXAGO_OPTIONS_FILES} DESTINATION options)
 
 # EXAGO datafiles to install
 set(EXAGO_DATA_FILES ${PROJECT_SOURCE_DIR}/datafiles/case118.m
