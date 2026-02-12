@@ -349,7 +349,6 @@ endif()
 # Install data files
 install(FILES ${EXAGO_DATA_FILES} DESTINATION datafiles)
 
-
 # EXAGO headers to install
 set(EXAGO_COMMON_INCLUDE
     include/constants.h include/version.h ${PROJECT_BINARY_DIR}/exago_config.h
