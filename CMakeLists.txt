@@ -329,7 +329,7 @@ if(EXAGO_ENABLE_IPOPT)
 endif()
 
 # Install options files
-install(FILES ${EXAGO_OPTIONS_FILES} DESTINATION ${EXAGO_OPTIONS_DIR})
+install(FILES ${EXAGO_OPTIONS_FILES} DESTINATION options)
 
 # EXAGO datafiles to install
 set(EXAGO_DATA_FILES ${PROJECT_SOURCE_DIR}/datafiles/case118.m
