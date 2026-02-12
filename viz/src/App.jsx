@@ -638,7 +638,7 @@ function App({ refdata, refflowdata, refflowdata_reactive, ggdata, gendata, gene
 
   const [netlayeractive, setNetLayerActive] = useState(true);
 
-  const [flowlayeractive, setFlowLayerActive] = useState(true);
+  const [flowlayeractive, setFlowLayerActive] = useState(false);
   const [flowlayeranimate, setFlowLayerAnimate] = useState(false);
   const [reactiveflowlayeractive, setReactiveFlowLayerActive] = useState(false);
   const [reactiveflowlayeranimate, setReactiveFlowLayerAnimate] = useState(false);
