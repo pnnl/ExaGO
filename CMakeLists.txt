@@ -85,8 +85,8 @@ option(EXAGO_ENABLE_GPU "Enable GPU support" OFF)
 # Marked as advanced since it is toggled automatically
 mark_as_advanced(FORCE EXAGO_ENABLE_GPU)
 
-if(RESOLVE_ENABLE_CUDA OR RESOLVE_ENABLE_HIP)
-  set(RESOLVE_USE_GPU
+if(EXAGO_ENABLE_HIP OR EXAGO_ENABLE_CUDA)
+  set(EXAGO_ENABLE_GPU
       ON
       CACHE BOOL "Using GPU." FORCE
   )
