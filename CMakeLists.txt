@@ -54,8 +54,8 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/buildsystem/cmake)
 include(ExaGOCheckGitSubmodules)
 
 # Set the path to options file in EXAGO installation
-set(EXAGO_OPTIONS_DIR ${CMAKE_INSTALL_PREFIX}/share/exago/options)
-set(EXAGO_DATAFILES_DIR ${CMAKE_INSTALL_PREFIX}/share/exago/datafiles)
+set(EXAGO_OPTIONS_DIR ${CMAKE_SOURCE_DIR}/options)
+set(EXAGO_DATAFILES_DIR ${CMAKE_SOURCE_DIR}/datafiles)
 
 # Specify whether to build shared libraries, static libraries, or both
 option(EXAGO_BUILD_SHARED "Build shared libraries" OFF)
@@ -370,30 +370,8 @@ if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
 endif()
 
 # Install data files
-install(FILES ${EXAGO_DATA_FILES} DESTINATION ${EXAGO_DATAFILES_DIR})
+install(FILES ${EXAGO_DATA_FILES} DESTINATION datafiles)
 
-if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
-  install(DIRECTORY datafiles/unit DESTINATION ${EXAGO_DATAFILES_DIR})
-  install(DIRECTORY datafiles/TAMU200_scenarios
-          DESTINATION ${EXAGO_DATAFILES_DIR}
-  )
-  install(DIRECTORY datafiles/test_validation
-          DESTINATION ${EXAGO_DATAFILES_DIR}
-  )
-endif()
-
-install(DIRECTORY datafiles/case9 DESTINATION ${EXAGO_DATAFILES_DIR})
-
-# Install data files in build directory for testing
-file(INSTALL ${EXAGO_DATA_FILES} DESTINATION datafiles)
-file(INSTALL datafiles/case9 DESTINATION datafiles)
-
-if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
-  file(INSTALL datafiles/TAMU200_scenarios DESTINATION datafiles)
-  file(INSTALL datafiles/unit DESTINATION datafiles)
-  # Custom testing data files
-  file(INSTALL datafiles/test_validation DESTINATION datafiles)
-endif()
 
 # EXAGO headers to install
 set(EXAGO_COMMON_INCLUDE
