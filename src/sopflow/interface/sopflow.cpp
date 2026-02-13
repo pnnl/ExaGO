@@ -109,7 +109,7 @@ PetscErrorCode SOPFLOWDestroy(SOPFLOW *sopflow) {
 
   PetscFunctionBegin;
 
-  if((*sopflow)->issolver_ipopt) {
+  if ((*sopflow)->issolver_ipopt) {
     /* Solution vector */
     ierr = VecDestroy(&(*sopflow)->X);
     CHKERRQ(ierr);
@@ -1154,7 +1154,7 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
     }
   }
 
-  if(sopflow->issolver_ipopt) {
+  if (sopflow->issolver_ipopt) {
     /* Create vector X */
     ierr = VecCreate(sopflow->comm->type, &sopflow->X);
     CHKERRQ(ierr);
@@ -1164,14 +1164,14 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
     CHKERRQ(ierr);
     ierr = VecGetSize(sopflow->X, &sopflow->Nx);
     CHKERRQ(ierr);
-    
+
     ierr = VecDuplicate(sopflow->X, &sopflow->Xl);
     CHKERRQ(ierr);
     ierr = VecDuplicate(sopflow->X, &sopflow->Xu);
     CHKERRQ(ierr);
     ierr = VecDuplicate(sopflow->X, &sopflow->gradobj);
     CHKERRQ(ierr);
-    
+
     /* vector for constraints */
     ierr = VecCreate(sopflow->comm->type, &sopflow->G);
     CHKERRQ(ierr);
@@ -1181,13 +1181,13 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
     CHKERRQ(ierr);
     ierr = VecGetSize(sopflow->G, &sopflow->Ncon);
     CHKERRQ(ierr);
-    
+
     /* Constraint bounds vectors  */
     ierr = VecDuplicate(sopflow->G, &sopflow->Gl);
     CHKERRQ(ierr);
     ierr = VecDuplicate(sopflow->G, &sopflow->Gu);
     CHKERRQ(ierr);
-    
+
     /* Constraint Jacobian */
     ierr = MatCreate(sopflow->comm->type, &sopflow->Jac);
     CHKERRQ(ierr);
@@ -1203,9 +1203,9 @@ PetscErrorCode SOPFLOWSetUp(SOPFLOW sopflow) {
                                      (PetscInt)(0.1 * sopflow->Nx), NULL);
     CHKERRQ(ierr);
     ierr =
-      MatSetOption(sopflow->Jac, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+        MatSetOption(sopflow->Jac, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
     CHKERRQ(ierr);
-    
+
     /* Hessian */
     ierr = MatCreate(sopflow->comm->type, &sopflow->Hes);
     CHKERRQ(ierr);
