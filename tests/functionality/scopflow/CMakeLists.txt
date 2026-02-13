@@ -131,6 +131,7 @@ if(EXAGO_INSTALL_TESTS)
     DEPENDS
     IPOPT
     HIOP
+    RAJA
     COMMAND
     ${MPICMD}
     "-n"

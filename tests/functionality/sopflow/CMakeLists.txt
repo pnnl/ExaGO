@@ -68,6 +68,7 @@ if(EXAGO_INSTALL_TESTS)
     IPOPT
     HIOP
     GPU
+    RAJA
     COMMAND
     ${RUNCMD}
     $<TARGET_FILE:test_sopflow_functionality>
@@ -126,6 +127,7 @@ if(EXAGO_INSTALL_TESTS)
     DEPENDS
     IPOPT
     GPU
+    RAJA
     COMMAND
     ${RUNCMD}
     $<TARGET_FILE:test_sopflow_functionality>
@@ -140,6 +142,7 @@ if(EXAGO_INSTALL_TESTS)
     DEPENDS
     IPOPT
     GPU
+    RAJA
     COMMAND
     ${MPICMD}
     "-n"
