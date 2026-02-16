@@ -783,8 +783,8 @@ PetscErrorCode ConvertToPS(PS ps, const Network &nw) {
     dbus.ngen = 0;
     dbus.ngenON = 0;
     dbus.nshunt = 0;
-    dbus.Vmin = 1.1;
-    dbus.Vmax = 0.9;
+    dbus.Vmax = 1.1;
+    dbus.Vmin = 0.9;
     dbus.gl = 0;
     dbus.bl = 0;
     dbus.qrange = 0.0;

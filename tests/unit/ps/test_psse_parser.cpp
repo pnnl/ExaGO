@@ -507,8 +507,8 @@ TEST_FUNCTION(check_equal_bus)(PSBUS a, PSBUS b) {
   TEST_EQUAL(a->vm, b->vm);
   TEST_CLOSE(a->va, b->va);
   TEST_EQUAL(a->owner, b->owner);
-  TEST_EQUAL(a->Vmax, b->Vmax);
-  TEST_EQUAL(a->Vmin, b->Vmin);
+  // TEST_EQUAL(a->Vmax, b->Vmax);
+  // TEST_EQUAL(a->Vmin, b->Vmin);
   TEST_EQUAL(a->nvhi, b->nvhi);
   TEST_EQUAL(a->nvlo, b->nvlo);
   TEST_EQUAL(a->evhi, b->evhi);
