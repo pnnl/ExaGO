@@ -10,9 +10,10 @@ int main(int argc, char **argv) {
   SOPFLOW sopflow;
   char file[PETSC_MAX_PATH_LEN];
   char scenfile[PETSC_MAX_PATH_LEN];
+  char loadfile[PETSC_MAX_PATH_LEN];
   char outputdir[PETSC_MAX_PATH_LEN];
   PetscBool outputdir_set;
-  PetscBool flg = PETSC_FALSE, flgscen = PETSC_FALSE;
+  PetscBool flg = PETSC_FALSE, flgscen = PETSC_FALSE, flgload = PETSC_FALSE;
   PetscBool print_output = PETSC_FALSE, save_output = PETSC_FALSE;
   PetscLogStage stages[3];
   char appname[] = "sopflow";
@@ -54,6 +55,13 @@ int main(int argc, char **argv) {
                                PETSC_MAX_PATH_LEN, &flgscen);
   CHKERRQ(ierr);
 
+
+  /* Get load data file from command line */
+  ierr = PetscOptionsGetString(NULL, NULL, "-loadfile", loadfile,
+                               PETSC_MAX_PATH_LEN, &flgload);
+  CHKERRQ(ierr);
+
+
   /* Stage 1 - Application creation and reading data */
   ierr = PetscLogStagePush(stages[0]);
   CHKERRQ(ierr);
@@ -75,6 +83,13 @@ int main(int argc, char **argv) {
   if (flgscen) {
     ierr = SOPFLOWSetScenarioData(sopflow, SOPFLOW_NATIVE_SINGLEPERIOD, WIND,
                                   scenfile);
+    CHKERRQ(ierr);
+  }
+
+  /* Set Load Data file */
+  if (flgload) {
+    ierr = SOPFLOWSetScenarioData(sopflow, SOPFLOW_NATIVE_SINGLEPERIOD, LOAD,
+                                  loadfile);
     CHKERRQ(ierr);
   }
 

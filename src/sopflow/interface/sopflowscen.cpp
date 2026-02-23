@@ -36,6 +36,120 @@ PetscErrorCode SOPFLOWSetScenarioData(SOPFLOW sopflow,
 }
 
 /*
+  SOPFLOWReadScenarioData_Load_SinglePeriod - Reads the load data and populates
+the scenario list Input Parameters
++ sopflow - SOPFLOW object
+. loadprofile - load profile file
+
+  Note: This function reads the load scenario data for "single period" format
+files.
+*/
+PetscErrorCode
+SOPFLOWReadScenarioData_Load_SinglePeriod(SOPFLOW sopflow,
+                                          const char windgenprofile[]) {
+  PetscErrorCode ierr;
+  FILE *fp;
+  char line[MAXLINE];
+  char *out;
+  PetscInt ngenwind, nw = 0;
+  char *tok, *tok2;
+  char sep[] = ",", sep2[] = "_";
+  PetscReal pg, weight;
+  int scen_num = 0;
+  int genid;
+  int windgenbus[1000];
+  char windgenid[1000][3];
+  int i;
+  ScenarioList *scenlist = &sopflow->scenlist;
+  Scenario *scenario;
+  Forecast *forecast;
+
+  PetscFunctionBegin;
+
+  ngenwind = 1000; // This should be increased for larger cases (?)
+  fp = fopen(windgenprofile, "r");
+  if (fp == NULL) {
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
+            "Cannot open wind generation profile file %s", windgenprofile);
+  }
+
+  /* First line -- has the bus numbers */
+  out = fgets(line, MAXLINE, fp);
+  /* Parse wind generator numbers */
+  tok = strtok(line, sep);
+  tok = strtok(NULL, sep); /* Skip first token */
+  while (tok != NULL) {
+    if (strcmp(tok, "weight") == 0 || strcmp(tok, "weight\n") == 0 ||
+        strcmp(tok, "weight\r\n") == 0) {
+      tok = strtok(NULL, sep);
+      continue;
+    }
+    /* Parse generator info */
+    tok2 = strsep(&tok, sep2);
+    sscanf(tok2, "%d", &windgenbus[nw]);
+    tok2 = strsep(&tok, sep2);
+    tok2 = strsep(&tok, sep2); /* Skip string "Wind" */
+    sscanf(tok2, "%d", &genid);
+    if (nw == ngenwind)
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_SUP,
+              "Exceeded max. number of wind generators=%d\n", ngenwind);
+    snprintf(windgenid[nw], 3, "%-2d", genid);
+
+    nw++;
+    tok = strtok(NULL, sep);
+  }
+
+  while ((out = fgets(line, MAXLINE, fp)) != NULL) {
+    if (strcmp(line, "\r\n") == 0 || strcmp(line, "\n") == 0) {
+      continue; /* Skip blank lines */
+    }
+
+    tok = strtok(line, sep);
+    sscanf(tok, "%d", &scen_num); /* Scenario number */
+    scen_num -= 1; /* Scenario numbers start with 1 in the file, convert to
+                      zero-based start */
+
+    if (scen_num < scenlist->Nscen || scen_num == sopflow->Ns) {
+      fclose(fp);
+      PetscFunctionReturn(0);
+    }
+
+    scenario = &scenlist->scen[scen_num];
+    forecast = &scenario->forecastlist[scenario->nforecast];
+    forecast->num = scen_num;
+    forecast->type = FORECAST_LOAD_P;
+    forecast->nele = nw;
+    ierr = PetscCalloc1(forecast->nele, &forecast->buses);
+    CHKERRQ(ierr);
+    ierr = PetscCalloc1(forecast->nele, &forecast->id);
+    CHKERRQ(ierr);
+    for (i = 0; i < forecast->nele; i++) {
+      ierr = PetscCalloc1(3, &forecast->id[i]);
+    }
+    ierr = PetscCalloc1(forecast->nele, &forecast->val);
+    CHKERRQ(ierr);
+
+    tok = strtok(NULL, sep);
+    for (i = 0; i < nw; i++) {
+      forecast->buses[i] = windgenbus[i];
+      ierr = PetscStrcpy(forecast->id[i], windgenid[i]);
+      CHKERRQ(ierr);
+      sscanf(tok, "%lf", &pg);
+      forecast->val[i] = pg;
+      tok = strtok(NULL, sep);
+    }
+
+    /* Read scenario weight */
+    sscanf(tok, "%lf", &weight);
+    scenario->prob = weight;
+
+    scenario->nforecast++;
+    scenlist->Nscen++;
+  }
+  PetscFunctionReturn(0);
+}
+
+/*
   SOPFLOWReadScenarioData_Wind_SinglePeriod - Reads the wind data and populates
 the scenario list Input Parameters
 + sopflow - SOPFLOW object
@@ -284,6 +398,9 @@ PetscErrorCode SOPFLOWReadScenarioData(SOPFLOW sopflow,
       ierr = SOPFLOWReadScenarioData_Wind_MultiPeriod(sopflow, scenfile);
       CHKERRQ(ierr);
     }
+  } else if (sopflow->scenunctype == LOAD) {
+    ierr = SOPFLOWReadScenarioData_Load_SinglePeriod(sopflow, scenfile);
+    CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);

@@ -1609,6 +1609,7 @@ PetscErrorCode PSApplyScenario(PS ps, Scenario scenario) {
   PetscInt i, j;
   Forecast *forecast;
   PSGEN gen;
+  PSLOAD load;
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
@@ -1634,6 +1635,21 @@ PetscErrorCode PSApplyScenario(PS ps, Scenario scenario) {
           // the input file) */
         } else {
           printf("No generator on bus %d with id %s. Cannot apply the "
+                 "requested scenario\n",
+                 forecast->buses[j], forecast->id[j]);
+        }
+      }
+    } else if (forecast->type == FORECAST_LOAD_P) {
+      /* Load forecast */
+      for (j = 0; j < forecast->nele; j++) {
+        ierr = PSGetLoad(ps, forecast->buses[j], forecast->id[j], &load);
+        CHKERRQ(ierr);
+        if (load) {
+          load->pl =
+              forecast->val[j] /
+              ps->MVAbase;    /* Set real power load. */
+        } else {
+          printf("No load on bus %d with id %s. Cannot apply the "
                  "requested scenario\n",
                  forecast->buses[j], forecast->id[j]);
         }
