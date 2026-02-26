@@ -11,12 +11,33 @@
 
 ### Development Workflow
 
-#### Setting Up the Upstream Remote
+#### Getting Started: Fork and Clone
 
-Before contributing to ExaGO, configure the `upstream` remote to point to the original repository:
+**If you don't have direct write access to the ExaGO repository:**
+
+1. Fork the repository on GitHub:
+   - Navigate to https://github.com/pnnl/ExaGO
+   - Click the "Fork" button in the top right
+   - This creates your fork at `https://github.com/yourusername/ExaGO`
+
+2. Clone your fork:
+   ```bash
+   $ git clone https://github.com/yourusername/ExaGO.git
+   $ cd ExaGO
+   ```
+
+**If you have direct write access:**
 
 ```bash
-$ cd exago
+$ git clone https://github.com/pnnl/ExaGO.git
+$ cd ExaGO
+```
+
+#### Setting Up the Upstream Remote
+
+After cloning, configure the `upstream` remote to point to the original repository:
+
+```bash
 $ git remote add upstream https://github.com/pnnl/ExaGO.git
 $ git fetch upstream
 ```
@@ -52,7 +73,7 @@ To submit a merge request, please make sure your branch is up to date with the o
 ```bash
 $ git checkout my-cool-feature
 $ git pull --rebase upstream develop
-$ git push --force-with-lease
+$ git push --force-with-lease origin my-cool-feature
 ```
 
 **If working with a fork, also keep your fork's `develop` branch synchronized:**
@@ -60,8 +81,19 @@ $ git push --force-with-lease
 ```bash
 $ git checkout develop
 $ git pull --rebase upstream develop
-$ git push --force-with-lease
+$ git push --force-with-lease origin develop
 ```
+
+**Note on remotes:**
+- `upstream` refers to the original ExaGO repository (`https://github.com/pnnl/ExaGO.git`) - you **pull** from here to stay up to date
+- `origin` refers to your fork (if you forked) or the original repository (if you have direct access) - you **push** to here
+
+**Submitting a Pull Request:**
+
+If working with a fork, after pushing your feature branch to `origin`, create a Pull Request on GitHub:
+1. Navigate to the original ExaGO repository at https://github.com/pnnl/ExaGO
+2. GitHub will typically show a banner to create a PR from your recently pushed branch
+3. Create a PR from `yourusername:my-cool-feature` → `pnnl:develop`
 
 This will ensure you are rebased on the most recent development branch. If you see [open pull requests on ExaGO's repository](https://github.com/pnnl/ExaGO/pulls) that touch the same lines of code that you are working on, please coordinate with the developers of that merge request so your work doesn't conflict.
 
