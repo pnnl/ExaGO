@@ -652,8 +652,8 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
 
   ExaGOLog(EXAGO_LOG_INFO,
            "SCOPFLOW running with {:d} subproblems (base case + {:d} "
-           "contingencies)",
-           scopflow->nc, scopflow->nc - 1);
+           "contingencies) globally; {:d} subproblems locally",
+           scopflow->Nc, scopflow->Nc - 1, scopflow->nc);
 
   /* Set model */
   if (!scopflow->ismultiperiod) {
