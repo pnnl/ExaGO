@@ -131,7 +131,6 @@ if(EXAGO_INSTALL_TESTS)
     ${CMAKE_SOURCE_DIR}
     DEPENDS
     IPOPT
-    HIOP
   )
 
   exago_add_test(
