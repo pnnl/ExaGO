@@ -11,28 +11,59 @@
 
 ### Development Workflow
 
+#### Setting Up the Upstream Remote
+
+Before contributing to ExaGO, configure the `upstream` remote to point to the original repository:
+
+```bash
+$ cd exago
+$ git remote add upstream https://github.com/pnnl/ExaGO.git
+$ git fetch upstream
+```
+
+To verify your remotes are set up correctly:
+
+```bash
+$ git remote -v
+```
+
+You should see:
+- `upstream` pointing to `https://github.com/pnnl/ExaGO.git` (the original repository)
+- `origin` pointing to your fork (if you forked) or the original repository (if you have direct access)
+
 #### P022: Branch Off Of `develop` Unless You Have a Good Reason Not To
 
 To get started contributing to ExaGO, check out a feature or fix branch off of
 the `develop` branch:
 
-```shell
+```bash
 $ cd exago
 $ git checkout develop
-$ git checkout -b my-cool-feature-dev
+$ git pull --rebase upstream develop
+$ git checkout -b my-cool-feature
 ```
 
 #### P023: Keep MRs Up To Date With Target Branch
 
-To submit a merge request, please make sure your branch is up to date with
-current development like so:
+To submit a merge request, please make sure your branch is up to date with the original repository's `develop` branch. Use `upstream` to refer to the original ExaGO repository (whether you have direct access or are working with a fork).
 
-```shell
-$ git pull --rebase origin develop
+**Keep your feature branch updated:**
+
+```bash
+$ git checkout my-cool-feature
+$ git pull --rebase upstream develop
+$ git push --force-with-lease
 ```
 
-This will ensure you are rebased on the most recent development branch.
-If you see [open pull requests on ExaGO's repository](https://github.com/pnnl/ExaGO/pulls) that touch the same lines of code that you are working on, please coordinate with the developers of that merge request so your work doesn't conflict.
+**If working with a fork, also keep your fork's `develop` branch synchronized:**
+
+```bash
+$ git checkout develop
+$ git pull --rebase upstream develop
+$ git push --force-with-lease
+```
+
+This will ensure you are rebased on the most recent development branch. If you see [open pull requests on ExaGO's repository](https://github.com/pnnl/ExaGO/pulls) that touch the same lines of code that you are working on, please coordinate with the developers of that merge request so your work doesn't conflict.
 
 #### P001: Don't Run Continuous Integration Pipelines If You Only Changed Documentation
 
