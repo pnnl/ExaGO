@@ -10,18 +10,21 @@ target_include_directories(objective_acopf PRIVATE ../../utils)
 target_include_directories(objective_acopf PRIVATE ../)
 
 # Network files to run on - doing 3 and 600 bus examples.
-set(prefix ${EXAGO_DATAFILES_DIR}/unit/opflow/objective/)
+set(prefix ${CMAKE_SOURCE_DIR}/datafiles/unit/opflow/objective/)
 set(obj_network_files OF_unittestx3.m OF_unittestx600.m)
 # Map num_copies to a specific netfile
 set(num_copies 3 600)
 
 list(TRANSFORM obj_network_files PREPEND ${prefix})
 
-set(solvers IPOPT HIOP HIOP HIOPSPARSE)
-set(models POWER_BALANCE_POLAR POWER_BALANCE_HIOP PBPOLRAJAHIOP
-           POWER_BALANCE_POLAR
-)
-set(dependencies IPOPT HIOP HIOP HIOP_SPARSE)
+set(solvers IPOPT HIOP HIOPSPARSE)
+set(models POWER_BALANCE_POLAR POWER_BALANCE_HIOP POWER_BALANCE_POLAR)
+set(dependencies IPOPT HIOP HIOP_SPARSE)
+if(EXAGO_ENABLE_RAJA)
+  set(solvers ${solvers} HIOP)
+  set(models ${models} PBPOLRAJAHIOP)
+  set(dependencies ${dependencies} HIOP)
+endif()
 
 if(EXAGO_INSTALL_TESTS)
   install(TARGETS objective_acopf DESTINATION tests/unit/opflow/objective)

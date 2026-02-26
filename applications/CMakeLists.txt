@@ -13,7 +13,7 @@ if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
 
   set_source_files_properties(
     opflow_main.cpp scopflow_main.cpp sopflow_main.cpp tcopflow_main.cpp
-    PROPERTIES LANGUAGE CXX
+    dcopflow_main.cpp PROPERTIES LANGUAGE CXX
   )
 
   # OPFLOW
@@ -22,6 +22,13 @@ if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
   target_link_libraries(app_opflow ExaGO::OPFLOW)
   set_target_properties(app_opflow PROPERTIES OUTPUT_NAME opflow)
   install(TARGETS app_opflow RUNTIME DESTINATION bin)
+
+  # DCOPFLOW
+  set(DCOPFLOW_SRC dcopflow_main.cpp)
+  add_executable(app_dcopflow ${DCOPFLOW_SRC})
+  target_link_libraries(app_dcopflow ExaGO::OPFLOW)
+  set_target_properties(app_dcopflow PROPERTIES OUTPUT_NAME dcopflow)
+  install(TARGETS app_dcopflow RUNTIME DESTINATION bin)
 
   if(EXAGO_ENABLE_IPOPT)
 
@@ -45,5 +52,6 @@ if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
     target_link_libraries(app_tcopflow ExaGO::TCOPFLOW)
     set_target_properties(app_tcopflow PROPERTIES OUTPUT_NAME tcopflow)
     install(TARGETS app_tcopflow RUNTIME DESTINATION bin)
+
   endif()
 endif()

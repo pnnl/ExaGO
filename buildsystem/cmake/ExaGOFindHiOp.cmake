@@ -12,15 +12,7 @@ find_package(HiOp REQUIRED)
 
 if(TARGET HiOp::HiOp)
   if(HiOp::SPARSE AND TARGET HiOp::COINHSL)
-    set(EXAGO_ENABLE_HIOP_SPARSE
-        ON
-        CACHE BOOL "Enable HiOp Sparse" FORCE
-    )
-  else()
-    set(EXAGO_ENABLE_HIOP_SPARSE
-        OFF
-        CACHE BOOL "Enable HiOp Sparse" FORCE
-    )
+    set(EXAGO_ENABLE_HIOP_SPARSE ON)
   endif()
   mark_as_advanced(FORCE HiOp::SPARSE)
 else()

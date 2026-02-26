@@ -15,7 +15,7 @@ if(EXAGO_INSTALL_TESTS)
   message(STATUS "Configuring PFLOW Functionality Tests.")
 
   # PFLOW Functionality Tests
-  foreach(np RANGE 1 3)
+  foreach(np RANGE 1 ${TESTING_MAX_NUMPROCS})
     exago_add_test(
       NAME
       FUNCTIONALITY_TEST_PFLOW_TESTSUITE_${np}_proc
@@ -26,6 +26,8 @@ if(EXAGO_INSTALL_TESTS)
       ${EXAGO_EXTRA_MPI_FLAGS}
       $<TARGET_FILE:test_pflow_functionality>
       ${CMAKE_CURRENT_SOURCE_DIR}/pflow${np}procs.toml
+      WORKING_DIRECTORY
+      ${CMAKE_SOURCE_DIR}
     )
   endforeach(np)
 

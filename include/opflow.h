@@ -190,6 +190,7 @@ OPFLOWSolverRegister(OPFLOW, const char[], PetscErrorCode (*create)(OPFLOW));
 PETSC_EXTERN PetscErrorCode OPFLOWCreate(MPI_Comm, OPFLOW *);
 PETSC_EXTERN PetscErrorCode OPFLOWDestroy(OPFLOW *);
 PETSC_EXTERN PetscErrorCode OPFLOWReadMatPowerData(OPFLOW, const char[]);
+PETSC_EXTERN PetscErrorCode OPFLOWReadPSSERawData(OPFLOW, const char[]);
 PETSC_EXTERN PetscErrorCode OPFLOWSetGICData(OPFLOW, const char[]);
 
 PETSC_EXTERN PetscErrorCode OPFLOWSetUp(OPFLOW);

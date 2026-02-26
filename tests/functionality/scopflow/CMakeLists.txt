@@ -23,6 +23,8 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/ipopt_cont.toml
+    WORKING_DIRECTORY
+    ${CMAKE_SOURCE_DIR}
   )
 
   exago_add_test(
@@ -34,6 +36,8 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/empar_cont.toml
+    WORKING_DIRECTORY
+    ${CMAKE_SOURCE_DIR}
   )
 
   # Disabled test for now, feature not ready yet
@@ -87,7 +91,7 @@ if(EXAGO_INSTALL_TESTS)
     COMMAND
     ${MPICMD}
     "-n"
-    3
+    ${TESTING_MAX_NUMPROCS}
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_mpi_pbhiop.toml
   )
@@ -100,9 +104,11 @@ if(EXAGO_INSTALL_TESTS)
     COMMAND
     ${MPICMD}
     "-n"
-    3
+    ${TESTING_MAX_NUMPROCS}
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_cont_mpi.toml
+    WORKING_DIRECTORY
+    ${CMAKE_SOURCE_DIR}
   )
 
   exago_add_test(
@@ -128,9 +134,11 @@ if(EXAGO_INSTALL_TESTS)
     COMMAND
     ${MPICMD}
     "-n"
-    3
+    ${TESTING_MAX_NUMPROCS}
     $<TARGET_FILE:test_scopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/hiop_raja.toml
+    WORKING_DIRECTORY
+    ${CMAKE_SOURCE_DIR}
   )
 
   foreach(fmt "MATPOWER" "CSV" "JSON" "MINIMAL")

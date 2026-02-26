@@ -19,9 +19,9 @@ set(EXAGO_BUILD_STATIC
     CACHE BOOL ""
 )
 
-message(STATUS "Building in debug mode")
+message(STATUS "Building in RelWithDebInfo mode")
 set(CMAKE_BUILD_TYPE
-    Debug
+    RelWithDebInfo
     CACHE STRING ""
 )
 

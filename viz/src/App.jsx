@@ -9,6 +9,7 @@ import { getViewStateForLocations } from "@flowmap.gl/data";
 
 import maplibregl from "maplibre-gl";
 // import { MapboxOverlay } from "@deck.gl/mapbox";
+import { MapboxOverlay } from "@deck.gl/mapbox";
 
 // MUI
 import Checkbox from "@mui/material/Checkbox";
@@ -46,7 +47,11 @@ import { LineLayer } from "@deck.gl/layers"; // your layers
 import ChatBot from "react-chatbotify";
 
 import { MapProvider } from "react-map-gl/maplibre";
-import Map, { NavigationControl, FullscreenControl } from "react-map-gl/maplibre";
+// import { MapRef } from "react-map-gl/maplibre";
+// import { MapRef } from 'react-map-gl';
+
+import { Map, NavigationControl, FullscreenControl, useControl } from "react-map-gl/maplibre";
+import { WebMercatorViewport } from '@deck.gl/core';
 
 // import { MapContext } from "@deck.gl/react";
 
@@ -78,6 +83,24 @@ const MAP_STYLE = {
 
 import "maplibre-gl/dist/maplibre-gl.css";
 
+
+function DeckOverlay({ layers, onClick }) {
+  const overlay = useControl(
+    () =>
+      new MapboxOverlay({
+        interleaved: true,
+        layers,
+        onClick, // ✅ Deck picking events
+      })
+  );
+
+  useEffect(() => {
+    overlay.setProps({ layers, onClick });
+  }, [overlay, layers, onClick]);
+
+  return null;
+}
+
 // const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
 const MAPBOX_STYLE_LIGHT = "mapbox://styles/mapbox/streets-v11";
 
@@ -90,7 +113,10 @@ const areas = getAreas(casedata);
 
 const zones = getZones(casedata);
 
-const flowdata = ExtractFlowData(grid_data);
+const grid_flowdata_all = ExtractFlowData(grid_data);
+
+const grid_flowdata = grid_flowdata_all[0];
+const grid_flowdata_reactive = grid_flowdata_all[1];
 
 const Points = getPoints(grid_data);
 const Voltages = Points.map((d) => d.value);
@@ -124,9 +150,6 @@ const mapcenter = center(grid_data);
 
 var hull = convex(grid_data);
 
-
-
-
 const KV_BINS = [
   { max: 39.4, color: [151, 220, 248], label: "<= 39 kV" },
   { max: 68, color: [103, 205, 244], label: "40 - 67 kV" },
@@ -157,6 +180,7 @@ function ColorLegend({ title = "Voltage (kV)", bins = KV_BINS }) {
 function rgba([r, g, b], a = 1) {
   return `rgba(${r},${g},${b},${a})`;
 }
+
 function valuetext(value) {
   return `${value.toFixed(2)}`;
 }
@@ -168,18 +192,13 @@ const INITIAL_VIEW_STATE = {
   maxZoom: 16,
   pitch: 0,
   bearing: 0,
-  bounds: [bboxArray[1], bboxArray[0], bboxArray[3], bboxArray[2]],
-  fitbounds: true,
 };
 
-function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, mapStyle = MAP_STYLE }) {
+function App({ refdata = grid_data, refflowdata = grid_flowdata, refflowdata_reactive = grid_flowdata_reactive, ggdata = geodata, mapStyle = MAP_STYLE }) {
 
-  const deckRef = useRef(null);
+  const mapRef = useRef(null);
 
   const [gridData, setGridData] = useState(refdata);
-
-  //chat output message
-  const [ouputMes, setOutputMes] = useState("Welcome to ChatGrid.");
 
   //select widgets values
   const [nameSelectItems, setNameSelectItems] = useState([]);
@@ -208,6 +227,8 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
 
   const [flowdata, setFlowData] = useState(refflowdata);
 
+  const [reactiveflowdata, setReactivFlowData] = useState(refflowdata_reactive);
+
   const [genfiltervalue, setGenFilterValue] = useState([gendata.minPg, gendata.maxPg]);
 
   const [genDoughlabels, setDoughlabels] = useState(["Wind", "Solar", "Nuclear", "Natural Gas", "Hydro", "Coal", "Other"]);
@@ -225,6 +246,7 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
   const [netfiltervalue, setNetFilterValue] = useState([0, 800]);
 
   const [flowfiltervalue, setFlowFilterValue] = useState([0, 120]);
+  const [flowfilterreactivevalue, setFlowFilterReactiveValue] = useState([0, 120]);
 
   const [loadfiltervalue, setLoadFilterValue] = useState([0, countyloaddata.maxPd]);
 
@@ -242,6 +264,8 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
     // name is the unique id
     const locations = [];
     const flows = [];
+    const reactive_flows = [];
+
     //  if user make selections from names, than return individual lines
     if (lineNameSelectItems.length > 0) {
       const pointNames = lineNameSelectItems.map((n) => n.split(" -- ")).flat();
@@ -334,6 +358,8 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
             RATE_A = feature.properties.RATE_A;
           }
           var loading = Math.abs(feature.properties.PF / RATE_A) * 100.0;
+          var var_loading = Math.abs(feature.properties.QF / RATE_A) * 100;
+          var mva_loading = (Math.sqrt(feature.properties.PF * feature.properties.PF + feature.properties.QF * feature.properties.QF) / RATE_A) * 100;
 
           if (flowfiltervalue[0] <= loading && loading <= flowfiltervalue[1]) {
             if (feature.properties.PF > 0) {
@@ -349,8 +375,29 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
               flows.push({
                 origin: origin,
                 dest: dest,
-                count: feature.properties.KV,
+                count: feature.properties.KV, // values are changed
                 loading: loading,
+              });
+            }
+          }
+
+
+          if (flowfilterreactivevalue[0] <= var_loading && var_loading <= flowfilterreactivevalue[1]) {
+            if (feature.properties.QF > 0) {
+              const [origin, dest] = feature.properties.NAME.split(" -- ");
+              reactive_flows.push({
+                origin: origin,
+                dest: dest,
+                count: feature.properties.KV,
+                loading: var_loading,
+              });
+            } else {
+              const [dest, origin] = feature.properties.NAME.split(" -- ");
+              reactive_flows.push({
+                origin: origin,
+                dest: dest,
+                count: feature.properties.KV,
+                loading: var_loading,
               });
             }
           }
@@ -360,7 +407,10 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
 
     const newflowdata = { locations: locations, flows: flows, maxloading: 120 };
     setFlowData(newflowdata);
-  }, [gridData, netfiltervalue, flowfiltervalue, lineNameSelectItems]);
+
+    const newflowdata2 = { locations: locations, flows: reactive_flows, maxloading: 120 };
+    setReactivFlowData(newflowdata2);
+  }, [gridData, netfiltervalue, flowfiltervalue, flowfilterreactivevalue, lineNameSelectItems]);
 
   var rotatestate = false;
   //const [rotatestate,setrotatestate] = useState(false);
@@ -406,6 +456,8 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
     var lat = info.coordinate[1];
     var long = info.coordinate[0];
 
+    console.log(info);
+
     setInitialViewState((viewState) => ({
       ...viewState,
       latitude: lat,
@@ -445,6 +497,8 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
       [minLng, minLat],
       [maxLng, maxLat],
     ]);
+
+    console.log(longitude, latitude, zoom);
 
     setInitialViewState((viewState) => ({
       ...viewState,
@@ -601,26 +655,25 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
     }
   });
 
-  const GoHome = useCallback(() => {
-    if (layers[0].context == null) return;
-    var { viewport } = layers[0].context;
-    const { longitude, latitude, zoom } = viewport.fitBounds(bounds);
+  const GoHome = () => {
 
     setInitialViewState((viewState) => ({
-      ...INITIAL_VIEW_STATE,
-      longitude: longitude,
-      latitude: latitude,
-      zoom: zoom - 0.25,
-      transitionInterpolator: transitionFlyToInterpolator,
-      transitionDuration: 2000,
+      ...INITIAL_VIEW_STATE
     }));
 
+    mapRef.current?.flyTo({
+      center: [INITIAL_VIEW_STATE.longitude, INITIAL_VIEW_STATE.latitude],
+      zoom: INITIAL_VIEW_STATE.zoom,
+      pitch: INITIAL_VIEW_STATE.pitch,
+      duration: 1200,
+    });
+
     setShowPopup({ ...showPopup, display: false });
-  });
+  }
 
   const [netlayeractive, setNetLayerActive] = useState(true);
   const [flowlayeractive, setFlowLayerActive] = useState(true);
-
+  const [reactiveflowlayeractive, setReactiveFlowLayerActive] = useState(false);
   const [loadlayeractive, setLoadLayerActive] = useState(false);
   const [genlayeractive, setGenLayerActive] = useState(false);
   const [genlayercapactive, setGenLayerCapActive] = useState(false);
@@ -707,8 +760,6 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
     }
   }
 
-  let count = 0;
-
   const flow = {
     start: {
       message: "Hello! What do you want to know about the power grid data? You can ask me to show specific generation units, transmission lines, or buses by name.",
@@ -732,6 +783,12 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
     setFlowLayerActive(event.target.checked);
     setFlowFilterValue([0, 120]);
   };
+
+  const handleReactiveFlowLayerChange = (event) => {
+    setReactiveFlowLayerActive(event.target.checked);
+    setFlowFilterReactiveValue([0, 120]);
+  };
+
 
   const handleLoadLayerChange = (event) => {
     setLoadLayerActive(event.target.checked);
@@ -860,8 +917,6 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
     return -1; // This is beyond the range so filter will filter out this data point.
   }
 
-  function getFlowFilterValue(data) { }
-
   function getGenFilterValue(data) {
     if (!data) return 10000; //10000 is beyond the range, so the generation will be filter out
     if (genDoughlabels.length > 0 && !(genDoughlabels.indexOf(colorMap[data.color]) >= 0)) return 10000;
@@ -985,21 +1040,28 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
     return -1; // This is beyond the range so filter will filter out this data point.
   }
 
+  //  Define all DeckGL layers here
 
-  const layer_flow = new FlowmapLayer({
+  // Layer to show flow of Active Powers 
+  const layer_flow_active = new FlowmapLayer({
     id: 'layer-flow',
     data: flowdata,
     visible: flowlayeractive,
     // animationEnabled: true, //control the animation effect of flow layer
     animationEnabled: true,
+    // animationEnabled: false,
     colorScheme: ["rgb(0,0,255)", "rgb(255,0,255)"],
     // darkMode: true,
     clusteringEnabled: true, //control the aggregate effect of flow layer
 
-    adaptiveScalesEnabled: false,
-    getFlowMagnitude: (flow) => flow.count,
+    // adaptiveScalesEnabled: false,
+    adaptiveScalesEnabled: true,
+
+    // getFlowMagnitude: (flow) => flow.count,
+    getFlowMagnitude: (flow) => flow.loading,
     getFlowOriginId: (flow) => flow.origin,
     getFlowDestId: (flow) => flow.dest,
+
     getLocationId: (loc) => loc.id,
     getLocationLat: (loc) => loc.lat,
     getLocationLon: (loc) => loc.lon,
@@ -1010,6 +1072,37 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
     onClick: (info) => console.log("clicked", info.object?.type, info.object, info)
   });
 
+  // Layer to show flow of Reactive Powers 
+  const layer_flow_reactive = new FlowmapLayer({
+    id: 'layer-flow-reactive',
+    data: reactiveflowdata,
+    visible: reactiveflowlayeractive,
+    // animationEnabled: true, //control the animation effect of flow layer
+    animationEnabled: true,
+    // animationEnabled: false,
+    colorScheme: ["rgb(0,255,255)", "rgb(255,255,0)"],
+    // darkMode: true,
+    clusteringEnabled: true, //control the aggregate effect of flow layer
+
+    // adaptiveScalesEnabled: false,
+    adaptiveScalesEnabled: true,
+
+    // getFlowMagnitude: (flow) => flow.count,
+    getFlowMagnitude: (flow) => flow.loading,
+    getFlowOriginId: (flow) => flow.origin,
+    getFlowDestId: (flow) => flow.dest,
+
+    getLocationId: (loc) => loc.id,
+    getLocationLat: (loc) => loc.lat,
+    getLocationLon: (loc) => loc.lon,
+    getLocationName: (loc) => loc.name,
+
+    pickable: true,
+    onHover: (info) => setTooltip(getTooltipState(info)),
+    onClick: (info) => console.log("clicked", info.object?.type, info.object, info)
+  });
+
+  // Layer to show the network (substations and transmission lines)
   const layer_network = new GeoJsonLayer({
     id: "geojson",
     data: gridData,
@@ -1018,7 +1111,7 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
     //      extruded: true,
     pickable: netlayeractive,
     pointType: "circle",
-    lineWidthScale: 0.004,
+    lineWidthScale: 0.005, // Or set 0.01 to get thicker lines
     lineWidthUnits: "pixels",
     getFillColor: FillColor,
     getLineColor: LineColor,
@@ -1032,10 +1125,11 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
 
     extensions: [new DataFilterExtension({ filtersize: 1 })],
     updateTriggers: {
-      getFilterValue: [netfiltervalue, lineNameSelectItems, busNameSelectItems, flowfiltervalue],
+      getFilterValue: [netfiltervalue, lineNameSelectItems, busNameSelectItems, flowfiltervalue, flowfilterreactivevalue],
     },
   });
 
+  // Shows the Generators
   const layer_generator_power = new ColumnLayer({
     id: "gen-column",
     data: generation,
@@ -1059,6 +1153,7 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
     },
   });
 
+  // Shows the Generators Capacity
   const layer_generator_capacity = new ColumnLayer({
     id: "gen-column-cap",
     data: generation,
@@ -1082,6 +1177,7 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
     },
   });
 
+  // Shows the Areas in .json file
   const layer_area = new GeoJsonLayer({
     id: "AreaLayer",
     data: areas,
@@ -1099,15 +1195,9 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
     getLineWidth: (d) => 1,
     opacity: 0.1,
     onClick: zoomToArea,
-    //      extensions: [new DataFilterExtension({ filtersize: 1 })],
-    //      getFilterValue: getLoadFilterValue,
-    //      filterRange: loadfiltervalue,
-
-    //      updateTriggers: {
-    //        getFilterValue: [netfiltervalue, countyNameSelectItems]
-    //      }
   });
 
+  // Shows the Zones in .json file
   const layer_zone = new GeoJsonLayer({
     id: "ZoneLayer",
     data: zones,
@@ -1125,15 +1215,9 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
     getLineWidth: (d) => 1,
     opacity: 0.1,
     onClick: zoomToZone,
-    //      extensions: [new DataFilterExtension({ filtersize: 1 })],
-    //      getFilterValue: getLoadFilterValue,
-    //      filterRange: loadfiltervalue,
-
-    //      updateTriggers: {
-    //        getFilterValue: [netfiltervalue, countyNameSelectItems]
-    //      }
   });
 
+  // Shows the Load Loss Layers by County
   const layer_county_load = new GeoJsonLayer({
     id: "PolygonLayerload",
     data: countyload,
@@ -1160,6 +1244,7 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
     },
   });
 
+  // Shows the Voltage by County layers
   const layer_county_voltage = new GeoJsonLayer({
     id: "PolygonLayer2",
     data: countyload,
@@ -1186,6 +1271,7 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
     },
   });
 
+  // Shows each County boundaries along with hover effect
   const layer_county_id = new GeoJsonLayer({
     id: "layer-1",
     data: "https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json",
@@ -1237,14 +1323,15 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
 
 
   const layers = [];
-
+  layers.push(layer_county_id);
   layers.push(layer_zone);
   layers.push(layer_area);
   layers.push(layer_county_load);
   layers.push(layer_county_voltage);
-  layers.push(layer_county_id);
+
   layers.push(layer_network);
-  layers.push(layer_flow);
+  layers.push(layer_flow_active);
+  layers.push(layer_flow_reactive);
   layers.push(layer_generator_capacity);
   layers.push(layer_generator_power);
 
@@ -1359,7 +1446,6 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
         const maxLng = Math.max(...longs);
         const minLat = Math.min(...lats);
         const maxLat = Math.max(...lats);
-        console.log(minLng, minLat, maxLng, maxLat);
         zoomToCountyName(minLng, minLat, maxLng, maxLat);
       }
     }
@@ -1429,7 +1515,7 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
           plugins: {
             legend: {
               onClick: (evt, legendItem, legend) => {
-                console.log("sdsd");
+                console.log("");
               }, // Add onClick event handler to the legend
             },
 
@@ -1451,7 +1537,7 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
           plugins: {
             legend: {
               onClick: (evt, legendItem, legend) => {
-                console.log("sdsd");
+                console.log("");
               }, // Add onClick event handler to the legend
             },
             title: {
@@ -1486,6 +1572,10 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
     setFlowFilterValue(event.target.value);
   };
 
+  const handleReactiveFlowRangeFilterChange = (event) => {
+    setFlowFilterReactiveValue(event.target.value);
+  };
+
   const handleNetBarFilterChange = (value) => {
     setNetFilterValue(value);
   };
@@ -1513,19 +1603,12 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
 
   return (
     <div>
-      <DeckGL
-        width="100%"
-        height="100%"
-        // initialViewState={viewState}
-        initialViewState={initialViewState}
-        // onViewStateChange={handleViewStateChange}
-        controller={true}
-        layers={layers}
-      // getTooltip={getTooltip}
-      // style={{ mixBlendMode: config.darkMode ? "screen" : "darken" }}
-      >
-
+      <div style={{ width: "100vw", height: "100vh" }}>
         <Map
+          {...initialViewState}
+          onMove={evt => setInitialViewState(evt.viewState)}
+
+          ref={mapRef}
           // Use MapLibre in react-map-gl v7/v8:
           mapLib={maplibregl}
           mapStyle={MAP_STYLE[style]}
@@ -1535,18 +1618,27 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
           <NavigationControl position="top-left" />
           <FullscreenControl position="top-left" />
 
-          <div style={{ position: "absolute", top: 150, left: 0, width: 30, background: "#fff", color: " #6b6b76", zIndex: 999999 }}>
+          <div style={{ position: "absolute", top: 150, left: 10, width: 30, background: "#fff", color: " #6b6b76", zIndex: 999999 }}>
             <HomeOutlinedIcon fontSize="medium" onClick={GoHome}></HomeOutlinedIcon>
-            <br></br>
+            {/* <br></br> */}
             {
-              <ThreeSixtyOutlinedIcon fontSize="large" onClick={rotateCamera}>
-                Rotate
-              </ThreeSixtyOutlinedIcon>
+              // <ThreeSixtyOutlinedIcon fontSize="large" onClick={rotateCamera}>
+              //     Rotate
+              // </ThreeSixtyOutlinedIcon>
             }
-            <br></br>
+            {/* <br></br> */}
           </div>
+
+          <DeckOverlay
+            layers={layers}
+            onClick={(info) => {
+              if (info?.object) {
+                console.log("Clicked object:", info.object);
+              }
+            }}
+          />
         </Map>
-      </DeckGL>
+      </div>
 
       <div style={{ position: "absolute", top: 0, right: 0, width: 250, background: "#fff", padding: "12px 12px", color: " #6b6b76", zIndex: 1000 }}>
         <div style={{ width: 300 }}>
@@ -1562,6 +1654,7 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
             onClick={() => {
               setNetFilterValue([0, 800]);
               setFlowFilterValue([0, 120]);
+              setFlowFilterReactiveValue([0, 120]);
               setGenFilterValue([gendata.minPg, gendata.maxPg]);
               setLoadFilterValue([0, countyloaddata.maxPd]);
               setVoltageFilterValue([0.89, 1.11]);
@@ -1605,10 +1698,10 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
               </Typography>
             </AccordionDetails>
           </Accordion>
-          {<Accordion defaultExpanded={true}>
+
+          <Accordion defaultExpanded={true}>
             <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }} expandIcon={<ArrowDropDownIcon />}>
               <Typography>
-                {" "}
                 <Checkbox checked={flowlayeractive} style={{ color: "primary" }} onChange={handleFlowLayerChange} />
                 Flow
               </Typography>
@@ -1628,7 +1721,25 @@ function App({ refdata = grid_data, refflowdata = flowdata, ggdata = geodata, ma
                 )}
               </Typography>
             </AccordionDetails>
-          </Accordion>}
+          </Accordion>
+
+          <Accordion defaultExpanded={true}>
+            <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }} expandIcon={<ArrowDropDownIcon />}>
+              <Typography>
+                <Checkbox checked={reactiveflowlayeractive} style={{ color: "primary" }} onChange={handleReactiveFlowLayerChange} />
+                Reactive Flow
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Typography component="div">
+                {reactiveflowlayeractive && (
+                  <div style={{ paddingRight: "40px" }}>
+                    <Slider style={{ padding: 2 }} value={flowfilterreactivevalue} valueLabelDisplay="auto" onChange={handleReactiveFlowRangeFilterChange} getAriaValueText={valuetext} step={10} min={0} max={120}></Slider>
+                  </div>
+                )}
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
 
           <Accordion style={{ paddingBottom: "10px" }} defaultExpanded={false}>
             <AccordionSummary style={{ height: "20px", minHeight: "30px", paddingRight: "40px", paddingLeft: "0px" }} expandIcon={<ArrowDropDownIcon />}>
@@ -1811,6 +1922,7 @@ function getTooltipState(info) {
               {object.origin.id} → {object.dest.id}
             </div>
             <div>{object.count}</div>
+            <div>{object.loading}</div>
           </>
         ),
       };

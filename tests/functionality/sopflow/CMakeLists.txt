@@ -27,6 +27,8 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario.toml
+    WORKING_DIRECTORY
+    ${CMAKE_SOURCE_DIR}
   )
 
   exago_add_test(
@@ -38,6 +40,8 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario2.toml
+    WORKING_DIRECTORY
+    ${CMAKE_SOURCE_DIR}
   )
 
   exago_add_test(
@@ -45,6 +49,7 @@ if(EXAGO_INSTALL_TESTS)
     FUNCTIONALITY_TEST_SOPFLOW_SCENARIO3_PBHIOP_TOML
     DEPENDS
     IPOPT
+    HIOP
     COMMAND
     ${RUNCMD}
     $<TARGET_FILE:test_sopflow_functionality>
@@ -52,6 +57,8 @@ if(EXAGO_INSTALL_TESTS)
     -opflow_ignore_lineflow_constraints
     -hiop_mem_space
     HOST
+    WORKING_DIRECTORY
+    ${CMAKE_SOURCE_DIR}
   )
 
   exago_add_test(
@@ -59,6 +66,8 @@ if(EXAGO_INSTALL_TESTS)
     FUNCTIONALITY_TEST_SOPFLOW_SCENARIO3_RAJA_TOML
     DEPENDS
     IPOPT
+    HIOP
+    GPU
     COMMAND
     ${RUNCMD}
     $<TARGET_FILE:test_sopflow_functionality>
@@ -75,6 +84,8 @@ if(EXAGO_INSTALL_TESTS)
     ${RUNCMD}
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multicontingency.toml
+    WORKING_DIRECTORY
+    ${CMAKE_SOURCE_DIR}
   )
 
   exago_add_test(
@@ -82,12 +93,15 @@ if(EXAGO_INSTALL_TESTS)
     FUNCTIONALITY_TEST_SOPFLOW_SCENARIO_SERIAL_TOML
     DEPENDS
     IPOPT
+    HIOP
     COMMAND
     ${RUNCMD}
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_serial.toml
     -hiop_mem_space
     HOST
+    WORKING_DIRECTORY
+    ${CMAKE_SOURCE_DIR}
   )
 
   exago_add_test(
@@ -95,12 +109,15 @@ if(EXAGO_INSTALL_TESTS)
     FUNCTIONALITY_TEST_SOPFLOW_SCENARIO_PARALLEL_TOML
     DEPENDS
     IPOPT
+    HIOP
     COMMAND
     ${MPICMD}
     "-n"
-    3
+    ${TESTING_MAX_NUMPROCS}
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_parallel.toml
+    WORKING_DIRECTORY
+    ${CMAKE_SOURCE_DIR}
   )
 
   exago_add_test(
@@ -108,6 +125,7 @@ if(EXAGO_INSTALL_TESTS)
     FUNCTIONALITY_TEST_SOPFLOW_SCENARIO_RAJA_GPU_TOML
     DEPENDS
     IPOPT
+    GPU
     COMMAND
     ${RUNCMD}
     $<TARGET_FILE:test_sopflow_functionality>
@@ -115,22 +133,17 @@ if(EXAGO_INSTALL_TESTS)
     -opflow_include_powerimbalance_variables
     -opflow_ignore_lineflow_constraints
   )
-  if(EXAGO_ENABLE_IPOPT)
-    set_tests_properties(
-      FUNCTIONALITY_TEST_SOPFLOW_SCENARIO_RAJA_GPU_TOML
-      PROPERTIES LABELS "incline-skip"
-    )
-  endif()
 
   exago_add_test(
     NAME
     FUNCTIONALITY_TEST_SOPFLOW_SCENARIO_MPI_RAJA_GPU_TOML
     DEPENDS
     IPOPT
+    GPU
     COMMAND
     ${MPICMD}
     "-n"
-    3
+    ${TESTING_MAX_NUMPROCS}
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiscenario_mpi_raja.toml
     -opflow_include_powerimbalance_variables
@@ -192,7 +205,7 @@ if(EXAGO_ENABLE_ALL_TESTS)
     COMMAND
     ${MPICMD}
     "-n"
-    3
+    ${TESTING_MAX_NUMPROCS}
     $<TARGET_FILE:test_sopflow_functionality>
     ${CMAKE_CURRENT_SOURCE_DIR}/sopflow_multiperiod.toml
   )

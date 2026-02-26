@@ -21,11 +21,23 @@ if(POLICY CMP0104)
   cmake_policy(SET CMP0104 NEW) # CMake 3.18
 endif()
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "")
-  set(CMAKE_BUILD_TYPE
-      "Release"
-      CACHE STRING ""
+# We default to release builds
+set(_DEFAULT_CMAKE_BUILD_TYPE RelWithDebInfo)
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(
+    STATUS
+      "Building ExaGO in '${_DEFAULT_CMAKE_BUILD_TYPE}' mode as CMAKE_BUILD_TYPE was not specified."
   )
+  set(CMAKE_BUILD_TYPE
+      "${_DEFAULT_CMAKE_BUILD_TYPE}"
+      CACHE STRING "Choose the type of build." FORCE
+  )
+  set_property(
+    CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "None" "Debug" "Release"
+                                    "MinSizeRel" "RelWithDebInfo"
+  )
+else()
+  message(STATUS "Building ExaGO in '${CMAKE_BUILD_TYPE}' mode.")
 endif()
 
 # Make CMake debugging available globally
@@ -42,8 +54,8 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/buildsystem/cmake)
 include(ExaGOCheckGitSubmodules)
 
 # Set the path to options file in EXAGO installation
-set(EXAGO_OPTIONS_DIR "${CMAKE_INSTALL_PREFIX}/share/exago/options")
-set(EXAGO_DATAFILES_DIR "${CMAKE_INSTALL_PREFIX}/share/exago/datafiles")
+set(EXAGO_OPTIONS_DIR ${CMAKE_SOURCE_DIR}/options)
+set(EXAGO_DATAFILES_DIR ${CMAKE_SOURCE_DIR}/datafiles)
 
 # Specify whether to build shared libraries, static libraries, or both
 option(EXAGO_BUILD_SHARED "Build shared libraries" OFF)
@@ -62,20 +74,23 @@ option(EXAGO_ENABLE_IPOPT "Enable Ipopt support" ON)
 # HiOP support is disabled by default
 option(EXAGO_ENABLE_HIOP "Enable HiOP support" OFF)
 
-# GPU support is disabled by default
-option(EXAGO_ENABLE_GPU "Enable GPU support" OFF)
-
-include(CMakeDependentOption)
-
-# CUDA is disabled by default, but is default when EXAGO_ENABLE_GPU=ON
-cmake_dependent_option(
-  EXAGO_ENABLE_CUDA "Build with support for CUDA" OFF "EXAGO_ENABLE_GPU" OFF
-)
+# CUDA is disabled by default
+option(EXAGO_ENABLE_CUDA "Build with support for CUDA" OFF)
 
 # HIP is disabled by default
-cmake_dependent_option(
-  EXAGO_ENABLE_HIP "Build with support for HIP" OFF "EXAGO_ENABLE_GPU" OFF
-)
+option(EXAGO_ENABLE_HIP "Build with support for HIP" OFF)
+
+# GPU support is enabled when either CUDA or HIP is enabled
+option(EXAGO_ENABLE_GPU "Enable GPU support" OFF)
+# Marked as advanced since it is toggled automatically
+mark_as_advanced(FORCE EXAGO_ENABLE_GPU)
+
+if(EXAGO_ENABLE_HIP OR EXAGO_ENABLE_CUDA)
+  set(EXAGO_ENABLE_GPU
+      ON
+      CACHE BOOL "Using GPU." FORCE
+  )
+endif()
 
 # Enable RAJA support
 option(EXAGO_ENABLE_RAJA "Enables RAJA and Umpire libraries" OFF)
@@ -148,6 +163,12 @@ endif()
 # If MPI support is enabled, find MPI includes and libraries
 if(EXAGO_ENABLE_MPI)
   find_package(MPI REQUIRED COMPONENTS C CXX)
+  message(STATUS "MPI max ranks: ${MPIEXEC_MAX_NUMPROCS}")
+  set(TESTING_MAX_NUMPROCS 3)
+  if(${TESTING_MAX_NUMPROCS} GREATER_EQUAL ${MPIEXEC_MAX_NUMPROCS})
+    set(TESTING_MAX_NUMPROCS ${MPIEXEC_MAX_NUMPROCS})
+  endif()
+  message(STATUS "Max ranks for testing: ${TESTING_MAX_NUMPROCS}")
   if(NOT DEFINED MPI_CXX_COMPILER)
     set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
     set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
@@ -160,61 +181,43 @@ if(EXAGO_ENABLE_MPI)
       ""
       CACHE STRING "Extra args to mpiexec when running tests"
   )
+else()
+  set(TESTING_MAX_NUMPROCS 1)
 endif(EXAGO_ENABLE_MPI)
 
-# If GPU support is enabled, find CUDA
-if(EXAGO_ENABLE_GPU)
+# If CUDA support is enabled, set up CUDA compiler and flags
+if(EXAGO_ENABLE_CUDA)
+  include(CheckLanguage)
+  enable_language(CUDA)
+  check_language(CUDA)
 
-  if(NOT EXAGO_ENABLE_CUDA AND NOT EXAGO_ENABLE_HIP)
-    message(
-      WARNING
-        "\nGPU is enabled, but both CUDA and HIP are disabled. "
-        "Enabling CUDA by default. If you would like to enable a particular GPU "
-        "platform, set one of the following variables to ON: "
-        "\n* EXAGO_ENABLE_CUDA"
-        "\n* EXAGO_ENABLE_HIP"
-    )
-    set(EXAGO_ENABLE_CUDA
-        ON
-        CACHE BOOL ""
-    )
+  find_package(CUDA REQUIRED)
+
+  if(NOT DEFINED CMAKE_CUDA_STANDARD)
+    set(CMAKE_CUDA_STANDARD 11)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
   endif()
 
-  if(EXAGO_ENABLE_CUDA)
-    include(CheckLanguage)
-    enable_language(CUDA)
-    check_language(CUDA)
-
-    find_package(CUDA REQUIRED)
-
-    if(NOT DEFINED CMAKE_CUDA_STANDARD)
-      set(CMAKE_CUDA_STANDARD 11)
-      set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-    endif()
-
-    if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-      set(CMAKE_CUDA_ARCHITECTURES 35)
-    endif()
-
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda")
-
-    # HiOp requires this since we require static
-    set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
-
-  elseif(EXAGO_ENABLE_HIP)
-    set(EXAGO_HAVE_HIP 1)
-    add_definitions(-DHAVE_HIP) # For hipmagma
-    find_package(hip REQUIRED)
-  else()
-    message(
-      FATAL_ERROR "EXAGO_ENABLE_GPU enabled, but neither EXAGO_ENABLE_CUDA "
-                  "nor EXAGO_ENABLE_HIP is enabled!"
-    )
+  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES 35)
   endif()
-endif(EXAGO_ENABLE_GPU)
+
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda")
+
+  # HiOp requires this since we require static
+  set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
+endif(EXAGO_ENABLE_CUDA)
+
+# If HIP support is enabled, set up HIP compiler and flags
+if(EXAGO_ENABLE_HIP)
+  set(EXAGO_HAVE_HIP 1)
+  add_definitions(-DHAVE_HIP) # For hipmagma
+  find_package(hip REQUIRED)
+endif()
 
 # Find PETSc and configure related variables
 if(EXAGO_ENABLE_PETSC)
+  set(PETSC_DIR CACHE PATH "Path to PETSc installation root directory")
   include(FindPkgConfig)
   # Include petsc package path in pkg_config_path
   set(PKG_CONFIG_PATH_save $ENV{PKG_CONFIG_PATH})
@@ -241,6 +244,8 @@ if(EXAGO_ENABLE_OMP)
   find_package(OpenMP REQUIRED COMPONENTS C CXX)
 endif()
 
+set(EXAGO_ENABLE_HIOP_SPARSE OFF)
+mark_as_advanced(EXAGO_ENABLE_HIOP_SPARSE FORCE)
 if(EXAGO_ENABLE_HIOP)
   include(ExaGOFindHiOp)
   if(NOT TARGET RAJA)
@@ -249,8 +254,8 @@ if(EXAGO_ENABLE_HIOP)
     # defined in HiOp 0.7.0+ if hiop+raja RAJA part of ExaGO will not work if
     # HiOp is not built with RAJA
     message(
-      STATUS
-        "Warning: HiOp was built without RAJA - ExaGO RAJA module calling HiOp may not work!"
+      WARNING
+        "HiOp was built without RAJA - ExaGO RAJA module calling HiOp may not work!"
     )
   endif()
 endif(EXAGO_ENABLE_HIOP)
@@ -291,9 +296,8 @@ if(EXAGO_RUN_TESTS)
 endif()
 
 if(EXAGO_ENABLE_LOGGING)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/tpl/spdlog/)
-  # -fPIC required for spdlog for use with python wrapper
-  set_property(TARGET spdlog PROPERTY POSITION_INDEPENDENT_CODE ON)
+  find_package(spdlog REQUIRED)
+  find_package(fmt REQUIRED)
 endif()
 
 # Build libraries (specified in src/CMakeLists.txt)
@@ -325,9 +329,7 @@ if(EXAGO_ENABLE_IPOPT)
 endif()
 
 # Install options files
-install(FILES ${EXAGO_OPTIONS_FILES} DESTINATION ${EXAGO_OPTIONS_DIR})
-# Install options file to binary dir for testing
-file(INSTALL ${EXAGO_OPTIONS_FILES} DESTINATION options)
+install(FILES ${EXAGO_OPTIONS_FILES} DESTINATION options)
 
 # EXAGO datafiles to install
 set(EXAGO_DATA_FILES ${PROJECT_SOURCE_DIR}/datafiles/case118.m
@@ -345,30 +347,7 @@ if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
 endif()
 
 # Install data files
-install(FILES ${EXAGO_DATA_FILES} DESTINATION ${EXAGO_DATAFILES_DIR})
-
-if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
-  install(DIRECTORY datafiles/unit DESTINATION ${EXAGO_DATAFILES_DIR})
-  install(DIRECTORY datafiles/TAMU200_scenarios
-          DESTINATION ${EXAGO_DATAFILES_DIR}
-  )
-  install(DIRECTORY datafiles/test_validation
-          DESTINATION ${EXAGO_DATAFILES_DIR}
-  )
-endif()
-
-install(DIRECTORY datafiles/case9 DESTINATION ${EXAGO_DATAFILES_DIR})
-
-# Install data files in build directory for testing
-file(INSTALL ${EXAGO_DATA_FILES} DESTINATION datafiles)
-file(INSTALL datafiles/case9 DESTINATION datafiles)
-
-if(EXAGO_ENABLE_IPOPT OR EXAGO_ENABLE_HIOP)
-  file(INSTALL datafiles/TAMU200_scenarios DESTINATION datafiles)
-  file(INSTALL datafiles/unit DESTINATION datafiles)
-  # Custom testing data files
-  file(INSTALL datafiles/test_validation DESTINATION datafiles)
-endif()
+install(FILES ${EXAGO_DATA_FILES} DESTINATION datafiles)
 
 # EXAGO headers to install
 set(EXAGO_COMMON_INCLUDE

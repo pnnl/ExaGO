@@ -1,4 +1,5 @@
 add_subdirectory(opflow)
+add_subdirectory(ps)
 
 if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_CUDA)
   set_source_files_properties(test_acopf.cpp PROPERTIES LANGUAGE CUDA)
@@ -47,6 +48,7 @@ if(EXAGO_INSTALL_TESTS)
     COMMAND
     ${CMAKE_CURRENT_SOURCE_DIR}/run_test_logger.pl
     ${MPICMD_STR}
+    ${TESTING_MAX_NUMPROCS}
     $<TARGET_FILE:test_logger>
     DEPENDS
     LOGGING

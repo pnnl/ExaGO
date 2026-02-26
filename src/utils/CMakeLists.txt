@@ -21,6 +21,7 @@ exago_add_library(
   PkgConfig::PETSC
   PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_LOGGING}>:spdlog::spdlog>
+  $<$<BOOL:${EXAGO_ENABLE_LOGGING}>:fmt::fmt>
   PUBLIC
   $<$<BOOL:${EXAGO_ENABLE_MPI}>:MPI::MPI_C>
   PUBLIC

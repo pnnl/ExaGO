@@ -46,15 +46,15 @@ For example, with Texas 2000 bus synthetic data, executing the following `opflow
 opflow -netfile case_ACTIVSg2000.m -save_output -opflow_output_format JSON -gicfile ACTIVSg2000_GIC_data.gic
 ```
 
-Copy over the newly generated `opflowout.json` file to the `viz/data` subdirectory. Next, run the python script `geninputfile.py` from `viz` folder to load the JSON file in the visualization script. Note, the python script only takes the name of the file `opflowout.json` as an argument but does not open the file so the full file path need not be provided. The visualization tool will expect the file (`opflowout.json`) to be present in `viz/data` forlder. The following code will create/overwrite a file named `viz/src/module_casedata.js`. The `module_casedata.js` file is an application source file to load the data file `opflowout.json`.
+Next, go to the `viz` folder and run the following python script `geninputfile.py` from the `viz` folder to load the JSON file (`path/to/opflowout/opflowout.json`) in the visualization script. It will copy the `json` file to the `viz/data` subdirectory and create/overwrite a file named `viz/src/module_casedata.js`. The `module_casedata.js` file is an application source file to load the data file `opflowout.json`. Note, the visualization tool expects the file (`opflowout.json`) to be present in `viz/data` forlder, so it is copied by this script.
 
 ```
-python geninputfile.py opflowout.json
+python geninputfile.py path/to/opflowout/opflowout.json
 ```
 
-Now this creates the `viz/src/module_casedata.js` file. You are ready to launch the visualization now. 
+Now you are ready to launch the visualization now. 
 
-Note: If you have created the JSON file externally then simply copy it over in the `viz/data` subdirectory and run the `geninputfile.py` script using the above command.
+Note: If you have already created or have the JSON file externally without running the `opflow` command as instructed above, simply run the `geninputfile.py` script using the above command.
 
 ## Launch visualization
 To launch the visualization, run
@@ -63,7 +63,7 @@ To launch the visualization, run
 yarn start
 ```
 
-This will open a webpage with the visualization of the given network. If the network is large, it may take a while to load the visualization. The browser may show option to terminate or Wait and you should click on Wait button.
+This will open a webpage (e.g. `http://localhost:5173/`) on the default browser with the visualization of the given network. If the network is large, it may take a while to load the visualization. The browser may show option to terminate or Wait and you should click on Wait button.
 
 
 The figures show the visualization of the synthetic electric grid. The data for developing this visualization was created by merging the synthetic dataset for the [Eastern](https://electricgrids.engr.tamu.edu/electric-grid-test-cases/activsg70k/), [Western](https://electricgrids.engr.tamu.edu/electric-grid-test-cases/activsg10k/), and [Texas](https://electricgrids.engr.tamu.edu/electric-grid-test-cases/activsg2000/) interconnects from the [Electric Grid Test Case Repository](https://electricgrids.engr.tamu.edu/)
@@ -107,9 +107,10 @@ Behind the scenes, LLM translates natural language queries into SQL queries to r
       * Go to the `viz/backend` subdirectory and use the `pip install -r requirements.txt` command to install all the Python dependencies if already not done in previous steps. (Note: These steps are tested with Python 3.13.)
 
 
-    To use the provided script, first copy the ExaGO output `.json` file to the `viz/data` subdirectory (if not already performed) and simply run the following script in the `viz/backend` subdirectory (replace the example filename with your json filename). This will create three CSV files: `generation.csv`, `bus.csv`, and `tranmission_line.csv`. We are assuming `opflowout.json` is the data json file present in `viz/data` folder.
+    To use the provided script, ensure that the ExaGO output `.json` file is in the `viz/data` subdirectory (if not already performed in the previous steps) and run the following script in the `viz/backend` subdirectory (replace the example filename with your json filename). This will create three CSV files: `generation.csv`, `bus.csv`, and `tranmission_line.csv`. We are assuming `opflowout.json` is the data json file present in `viz/data` folder.
             
     ```
+    cd viz/backend
     python ../data/jsontocsv.py ../data/opflowout.json
     ```
     
@@ -125,9 +126,11 @@ Behind the scenes, LLM translates natural language queries into SQL queries to r
 2. Download PostgreSQL database from this [link](https://www.postgresql.org/download/) and install it.
 
     * For MAC using brew you can install postgresql 14 using: `brew install postgresql@14`
-    * Start the postgressql service: `rew services start postgresql@14`
+    * Start the postgressql service: `brew services start postgresql@14`
     * Create a role: `psql -U "$USER" -d postgres`
+    * If your username (`$USER`) starts with numbers `psql` will show error. In this case replace `$USER` to some other username. 
     * Execute the create role query: `CREATE ROLE postgres WITH LOGIN SUPERUSER PASSWORD 'ExaGO.2025';` Here `ExaGO.2025` is a password. Change to your preference.
+      * If you forget the password, you can update it by running `ALTER USER user_name WITH PASSWORD 'new_password';` (replace `user_name` and `new_password`)
     * Exit to shell by entering `quit` and hitting Enter.
     * From command prompt type: `psql -U postgres -d postgres` If it works and you are in `psql` shell you are done. Exit from the shell using `quit`.
 
@@ -144,7 +147,9 @@ Behind the scenes, LLM translates natural language queries into SQL queries to r
 
       c. Include US state and county information in your database to support spatial queries that related to state or county.
       
-      d. To enter the CSV files into database using command prompt do: `PGPASSWORD=ExaGO.2025 ./create_db.sh  --db exago_db --schema-sql ./schema.sql --drop  --truncate`. Here `exago_70k` is the database name. Use it in the configuration `config.py` file.
+      d. To enter the CSV files into database using command prompt do: `PGPASSWORD=ExaGO.2025 ./create_db.sh  --db exago_db --schema-sql ./schema.sql --drop  --truncate`. Here `exago_db` is the database name. Use it in the configuration `config.py` file.
+      
+        * If you used different user name than `$USER` then use the following command: `PGUSER=user_name PGPASSWORD=ExaGO.2025 ./create_db.sh  --db exago_db --schema-sql ./schema.sql --drop  --truncate` (replace `user_name` with your user name.)
       
       e. This will create a database named `exago_db` with password `ExaGO.2025`. This information will be used to update the `config.py` file.
     

@@ -29,7 +29,9 @@ cleanup() {
   echo Exit code $2 caught in build script triggered by signal ${sig}.
   echo
 
-  exit $2
+  if [[ $2 -ne 0 ]]; then
+    exit $2
+  fi
 }
 
 if [[ ! -f $PWD/buildsystem/build.sh ]]; then
@@ -78,22 +80,19 @@ Clusters:
   By default, this script will attempt to determine the cluster it is being ran 
   on using the hostname command. If a known cluster is found, it's respective 
   script in the directory ./scripts/buildsystem will be sourced and the 
-  variable MY_CLUSTER will be set. For example, on PNNL cluster Marianas, 
-  hostname deception.pnl.gov will be matched and 
-  ./scripts/buildsystem/deceptionVariables.sh will be sourced. If you would like 
-  to add a cluster, create a script
-  ./scripts/buildsystem/<my cluster>Variables.sh and specify the relevant
+  variable MY_CLUSTER will be set. If you would like to add a cluster, create a script
+  ./buildsystem/<job name>/<my cluster>Variables.sh and specify the relevant
   environment variables. If the hostname is not correctly finding your cluster,
   you may specify MY_CLUSTER environment variable before running this script
   and the script will respect the environment variable. For example, on ORNL
-  Ascent cluster, the hostname does not find the cluster, so we must specify
+  Frontier cluster, the hostname does not find the cluster, so we must specify
   MY_CLUSTER when running:
 
-    $ MY_CLUSTER=ascent ./buildsystem/build.sh --build-only
+    $ MY_CLUSTER=frontier ./buildsystem/build.sh --build-only
 
 Spack:
 
-  Each supported variables script in ./scripts/buildsystem activates a spack
+  Each supported variables script in ./buildsystem/<job name> activates a spack
   environment with all dependencies configured. If you have built dependencies
   for ExaGO in a spack environment, you may simply activate the environment
   and run the build script specifying that you don't want to source any
@@ -118,14 +117,9 @@ Options:
                     the --*-only options and just run a particular job, tests
                     will also be ran.
 
-  --verbose        Print all executed commands to the terminal. This is useful 
-                   for debugging, but it will be disabled in CI by default to 
+  --verbose        Print all executed commands to the terminal. This is useful
+                   for debugging, but it will be disabled in CI by default to
                    prevent hitting the job log limit.
-
---------------------------------------------------------------------------------
-
-See ExaGO's latest developer guidelines for more information on developing
-ExaGO: https://gitlab.pnnl.gov/exasgd/frameworks/exago/-/blob/develop/docs/DeveloperGuidelines.md
 
 --------------------------------------------------------------------------------
 
@@ -193,19 +187,13 @@ fi
 
 if [[ ! -v MY_CLUSTER ]]
 then
-  export MY_CLUSTER=`uname -n | sed -e 's/[0-9]//g' -e 's/\..*//'`
+  export MY_CLUSTER=`hostname -f | sed -e 's/[0-9]//g'`
 fi
 
 # Correctly identify clusters based on hostname
 case $MY_CLUSTER in
-  newell*)
-    export MY_CLUSTER=newell
-    ;;
-  incline*|dmi*)
-    export MY_CLUSTER=incline
-    ;;
-  dl*|deception|*fat*)
-    export MY_CLUSTER=deception
+  *frontier*)
+    export MY_CLUSTER=frontier
     ;;
   *)
     echo "Cluster $MY_CLUSTER not identified - you'll have to set relevant variables manually."
@@ -214,9 +202,6 @@ esac
 
 ulimit -s unlimited || echo 'Could not set stack size to unlimited.'
 ulimit -l unlimited || echo 'Could not set max locked memory to unlimited.'
-
-. /etc/profile.d/modules.sh
-module purge
 
 varfile="$SRCDIR/buildsystem/$JOB/$(echo $MY_CLUSTER)Variables.sh"
 
@@ -238,7 +223,10 @@ if [[ ! -f "$SRCDIR/buildsystem/$JOB/build.sh" ]]; then
   exit 1
 fi
 
-source $SRCDIR/buildsystem/$JOB/build.sh
+job_build_script="$SRCDIR/buildsystem/$JOB/build.sh"
+if [[ -f "$job_build_script" ]]; then
+  source $job_build_script || { echo "Could not source $job_build_script"; exit 1; }
+fi
 doBuild
 EXIT_CODE=$?
 
