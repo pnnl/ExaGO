@@ -1745,11 +1745,10 @@ PetscErrorCode PFLOWSetSummaryStats(PFLOW pflow) {
 */
 PetscErrorCode PFLOWGetJacobian(PFLOW pflow, Mat *jac) {
   PetscErrorCode ierr;
-  
+
   PetscFunctionBegin;
 
   *jac = pflow->Jac;
 
   PetscFunctionReturn(0);
 }
-

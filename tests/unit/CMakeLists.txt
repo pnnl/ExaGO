@@ -43,7 +43,8 @@ if(EXAGO_INSTALL_TESTS)
   )
 
   exago_add_test(
-    NAME "UNIT_TESTS_PFLOW"
+    NAME
+    "UNIT_TESTS_PFLOW"
     COMMAND
     ${RUNCMD}
     $<TARGET_FILE:test_pflow>

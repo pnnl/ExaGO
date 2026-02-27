@@ -32,7 +32,7 @@ public:
     PetscErrorCode ierr;
     LocalOrdinalType fail = 0;
     Mat J;
-    
+
     ierr = PFLOWCreateMatrix(pflow, &J);
     CHKERRQ(ierr);
 
@@ -41,7 +41,7 @@ public:
 
     fail += verifyAnswer(J, JRef);
 
-    return(fail);  
+    return (fail);
   }
 
   virtual int verifyAnswer(Mat a, Mat b, const RealType &tol = eps) const {
@@ -62,27 +62,29 @@ public:
     CHKERRQ(ierr);
     ierr = MatGetSize(b, &nrowref, &ncolref);
     CHKERRQ(ierr);
-    
-    if ( nrow != nrowref) {
-      std::cout << "Failed due to row count: J: " << nrow << " JRef: " << nrowref << std::endl;
+
+    if (nrow != nrowref) {
+      std::cout << "Failed due to row count: J: " << nrow
+                << " JRef: " << nrowref << std::endl;
       fail++;
     }
-    if ( ncol != ncolref) {
-      std::cout << "Failed due to column count: J: " << ncol << " JRef: " << ncolref << std::endl;
+    if (ncol != ncolref) {
+      std::cout << "Failed due to column count: J: " << ncol
+                << " JRef: " << ncolref << std::endl;
       fail++;
     }
 
-    if ( fail == 0 ) {
+    if (fail == 0) {
       for (int i = 0; i < nrow; i++) {
         ierr = MatGetRow(a, i, &ncols, &cols, &vals);
         CHKERRQ(ierr);
         ierr = MatGetRow(b, i, &ncolsref, &colsref, &valsref);
-        for (int j = 0; j < ncols; j++){
-          // std::cout << "J: " << vals[j] << " JRef: " << valsref[j] << std::endl;
-          if (!isEqual(vals[j], valsref[j], tol)){
+        for (int j = 0; j < ncols; j++) {
+          // std::cout << "J: " << vals[j] << " JRef: " << valsref[j] <<
+          // std::endl;
+          if (!isEqual(vals[j], valsref[j], tol)) {
             std::cout << "Failed for index (" << i << ", " << cols[j]
-                      << ") : " << vals[j] << " != " << valsref[j]
-                      << std::endl;
+                      << ") : " << vals[j] << " != " << valsref[j] << std::endl;
             fail++;
           }
         }
@@ -91,7 +93,7 @@ public:
 
     return fail;
   }
- 
+
 }; // class TestOpflow : public TestBase
 
 } // namespace tests

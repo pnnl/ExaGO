@@ -41,13 +41,13 @@
  *
  */
 int main(int argc, char **argv) {
-//  const bool isTestPflowModelPBPOL = false;
-//#if defined(EXAGO_ENABLE_RAJA)
-//  const bool isTestPflowModelPBPOLRAJAHIOP = true;
-//  const bool isTestPflowModelPBPOLHIOP = false;
-//#else
-//  const bool isTestPflowModelPBPOLHIOP = true;
-//#endif
+  //  const bool isTestPflowModelPBPOL = false;
+  //#if defined(EXAGO_ENABLE_RAJA)
+  //  const bool isTestPflowModelPBPOLRAJAHIOP = true;
+  //  const bool isTestPflowModelPBPOLHIOP = false;
+  //#else
+  //  const bool isTestPflowModelPBPOLHIOP = true;
+  //#endif
   PetscErrorCode ierr;
   PetscBool flg, gen_test_data, write_test_data;
   PetscInt iter;
@@ -137,13 +137,13 @@ int main(int argc, char **argv) {
 
     ierr = PFLOWGetNumIterations(pflow, &iter);
     CHKERRQ(ierr);
-  
+
     ierr = PFLOWCreateMatrix(pflow, &Jac);
     CHKERRQ(ierr);
 
     ierr = PFLOWGetJacobian(pflow, &Jac);
     CHKERRQ(ierr);
-    
+
     if (write_test_data) {
       std::cout << "Writing answer keys to " << validation_path << std::endl;
 
@@ -160,13 +160,13 @@ int main(int argc, char **argv) {
 
   ierr = PetscLogStagePush(stages[1]);
   CHKERRQ(ierr);
- 
+
   exago::tests::TestPflow test;
   PFLOW pflowtest;
 
   ierr = PFLOWCreate(PETSC_COMM_WORLD, &pflowtest);
   CHKERRQ(ierr);
-	
+
   ierr = PFLOWReadMatPowerData(pflowtest, file.c_str());
   CHKERRQ(ierr);
 
@@ -179,8 +179,7 @@ int main(int argc, char **argv) {
   ierr = PFLOWGetConvergenceStatus(pflowtest, &converged);
   CHKERRQ(ierr);
 
-  std::cout << "Convergence status: " << (bool) converged << std::endl;
-
+  std::cout << "Convergence status: " << (bool)converged << std::endl;
 
   std::cout << "testing Jacobian" << std::endl;
   fail += test.computeJacobian(pflowtest, Jac);
