@@ -6,6 +6,7 @@
 #include <private/pflowimpl.h>
 #include <utils.h>
 
+#include <pflow.h>
 #include "pflow/pflow_tests.h"
 #include "test_acopf_utils.h"
 
@@ -50,7 +51,7 @@ int main(int argc, char **argv) {
   PetscErrorCode ierr;
   PetscBool flg, gen_test_data, write_test_data;
   PetscInt iter;
-  bool converged = false;
+  PetscBool converged = PETSC_FALSE;
   // Vec X, Xl, Xu, G, Gl, Gu, grad, Lambda;
   Mat Jac;
   int fail = 0;
