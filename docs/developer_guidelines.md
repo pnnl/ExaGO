@@ -93,7 +93,8 @@ $ git push --force-with-lease origin develop
 If working with a fork, after pushing your feature branch to `origin`, create a Pull Request on GitHub:
 1. Navigate to the original ExaGO repository at https://github.com/pnnl/ExaGO
 2. GitHub will typically show a banner to create a PR from your recently pushed branch
-3. Create a PR from `yourusername:my-cool-feature` → `pnnl:my-cool-feature`
+3. **Ensure a corresponding feature branch exists on upstream**: Coordinate with maintainers to confirm that a feature branch (e.g., `my-cool-feature`) has been created on the upstream repository. This allows CI tests to run on the upstream feature branch before merging to `develop`
+4. Create a PR from `yourusername:my-cool-feature` → `pnnl:my-cool-feature`
 
 This will ensure you are rebased on the most recent development branch. If you see [open pull requests on ExaGO's repository](https://github.com/pnnl/ExaGO/pulls) that touch the same lines of code that you are working on, please coordinate with the developers of that merge request so your work doesn't conflict.
 
