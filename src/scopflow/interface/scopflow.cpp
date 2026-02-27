@@ -695,11 +695,9 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
     ierr = OPFLOWIgnoreLineflowConstraints(
         scopflow->opflow0, scopflow->ignore_lineflow_constraints);
     CHKERRQ(ierr);
-    /* Base-case problem model should be POWER_BALANCE_POLAR */
-    ierr = OPFLOWSetModel(scopflow->opflow0, OPFLOWMODEL_PBPOL);
+    ierr = OPFLOWSetModel(scopflow->opflow0, scopflow->subproblem_model);
     CHKERRQ(ierr);
-    /* Base-case problem solver should be IPOPT */
-    ierr = OPFLOWSetSolver(scopflow->opflow0, OPFLOWSOLVER_IPOPT);
+    ierr = OPFLOWSetSolver(scopflow->opflow0, scopflow->subproblem_solver);
     CHKERRQ(ierr);
     ierr = OPFLOWReadMatPowerData(scopflow->opflow0, scopflow->netfile);
     CHKERRQ(ierr);
@@ -801,7 +799,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
       }
 
       if (scopflow->cstart + c == 0) { /* First stage */
-        ierr = OPFLOWSetModel(scopflow->opflows[c], OPFLOWMODEL_PBPOL);
+        ierr = OPFLOWSetModel(scopflow->opflows[c], scopflow->subproblem_model);
         CHKERRQ(ierr);
         ierr = OPFLOWSetSolver(scopflow->opflows[c], OPFLOWSOLVER_IPOPT);
         CHKERRQ(ierr);
@@ -810,9 +808,9 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
       } else { /* Second stages */
         ierr = OPFLOWHasGenSetPoint(scopflow->opflows[c], PETSC_TRUE);
         CHKERRQ(ierr); /* Activates ramping variables */
-        ierr = OPFLOWSetModel(scopflow->opflows[c], OPFLOWMODEL_PBPOL);
+        ierr = OPFLOWSetModel(scopflow->opflows[c], scopflow->subproblem_model);
         CHKERRQ(ierr);
-        ierr = OPFLOWSetSolver(scopflow->opflows[c], OPFLOWSOLVER_IPOPT);
+        ierr = OPFLOWSetSolver(scopflow->opflows[c], scopflow->subproblem_solver);
         CHKERRQ(ierr);
         //	ierr = OPFLOWSetObjectiveType(scopflow->opflows[c], NO_OBJ);
         CHKERRQ(ierr);

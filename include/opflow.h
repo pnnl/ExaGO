@@ -65,6 +65,7 @@ namespace OPFLOWOptions {
 const auto model = ExaGOStringOption("-opflow_model", "OPFLOW model name",
                                      "POWER_BALANCE_POLAR",
                                      {
+                                        "DCOPF",
 #ifdef EXAGO_ENABLE_HIOP
                                          "POWER_BALANCE_HIOP",
                                          "PBPOLRAJAHIOP",
