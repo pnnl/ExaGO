@@ -16,7 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### PS
 
+- Added improved parser for RAW file format.
+- Added support for PSS/E contingecy file format
+
 ### PFLOW
+
+- Added unit tests for PFLOW
 
 ### OPFLOW
 
