@@ -489,6 +489,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
   PetscInt c, i, j;
   PS ps;
   OPFLOW opflow;
+  PetscBool issolver_ipopt;
 
   char ploadprofile[PETSC_MAX_PATH_LEN];
   char qloadprofile[PETSC_MAX_PATH_LEN];
@@ -935,40 +936,49 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
     }
   }
 
-  /* Create vector X */
-  ierr = VecCreate(scopflow->comm->type, &scopflow->X);
+  ierr = PetscStrcmp(scopflow->solvername.c_str(), "IPOPT", &issolver_ipopt);
   CHKERRQ(ierr);
-  ierr = VecSetSizes(scopflow->X, scopflow->nx, PETSC_DECIDE);
-  CHKERRQ(ierr);
-  ierr = VecSetFromOptions(scopflow->X);
-  CHKERRQ(ierr);
-  ierr = VecGetSize(scopflow->X, &scopflow->Nx);
-  CHKERRQ(ierr);
+  if (issolver_ipopt)
+  {
+    /* Create vector X */
+    ierr = VecCreate(scopflow->comm->type, &scopflow->X);
+    CHKERRQ(ierr);
+    ierr = VecSetSizes(scopflow->X, scopflow->nx, PETSC_DECIDE);
+    CHKERRQ(ierr);
+    ierr = VecSetFromOptions(scopflow->X);
+    CHKERRQ(ierr);
+    ierr = VecGetSize(scopflow->X, &scopflow->Nx);
+    CHKERRQ(ierr);
 
-  ierr = VecDuplicate(scopflow->X, &scopflow->Xl);
-  CHKERRQ(ierr);
-  ierr = VecDuplicate(scopflow->X, &scopflow->Xu);
-  CHKERRQ(ierr);
-  ierr = VecDuplicate(scopflow->X, &scopflow->gradobj);
-  CHKERRQ(ierr);
+    ierr = VecDuplicate(scopflow->X, &scopflow->Xl);
+    CHKERRQ(ierr);
+    ierr = VecDuplicate(scopflow->X, &scopflow->Xu);
+    CHKERRQ(ierr);
+    ierr = VecDuplicate(scopflow->X, &scopflow->gradobj);
+    CHKERRQ(ierr);
 
-  /* Vector for constraints */
-  ierr = VecCreate(scopflow->comm->type, &scopflow->G);
-  CHKERRQ(ierr);
-  ierr = VecSetSizes(scopflow->G, scopflow->ncon, PETSC_DECIDE);
-  CHKERRQ(ierr);
+    /* Vector for constraints */
+    ierr = VecCreate(scopflow->comm->type, &scopflow->G);
+    CHKERRQ(ierr);
+    ierr = VecSetSizes(scopflow->G, scopflow->ncon, PETSC_DECIDE);
+    CHKERRQ(ierr);
 
-  ierr = VecSetFromOptions(scopflow->G);
-  CHKERRQ(ierr);
+    ierr = VecSetFromOptions(scopflow->G);
+    CHKERRQ(ierr);
 
-  ierr = VecGetSize(scopflow->G, &scopflow->Ncon);
-  CHKERRQ(ierr);
+    ierr = VecGetSize(scopflow->G, &scopflow->Ncon);
+    CHKERRQ(ierr);
 
-  /* Constraint bounds vectors  */
-  ierr = VecDuplicate(scopflow->G, &scopflow->Gl);
-  CHKERRQ(ierr);
-  ierr = VecDuplicate(scopflow->G, &scopflow->Gu);
-  CHKERRQ(ierr);
+    /* Constraint bounds vectors  */
+    ierr = VecDuplicate(scopflow->G, &scopflow->Gl);
+    CHKERRQ(ierr);
+    ierr = VecDuplicate(scopflow->G, &scopflow->Gu);
+    CHKERRQ(ierr);
+
+    /* Lagrangian multipliers */
+    ierr = VecDuplicate(scopflow->G, &scopflow->Lambda);
+    CHKERRQ(ierr);
+  }
 
   /* The matrices are not used in parallel, so we don't need to create them */
   if (scopflow->comm->size == 1) {
@@ -1006,10 +1016,6 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
                         PETSC_FALSE);
     CHKERRQ(ierr);
   }
-
-  /* Lagrangian multipliers */
-  ierr = VecDuplicate(scopflow->G, &scopflow->Lambda);
-  CHKERRQ(ierr);
 
   ierr = (*scopflow->solverops.setup)(scopflow);
   CHKERRQ(ierr);
