@@ -1,6 +1,5 @@
 add_subdirectory(opflow)
 add_subdirectory(ps)
-add_subdirectory(pflow)
 
 if(EXAGO_ENABLE_RAJA AND EXAGO_ENABLE_CUDA)
   set_source_files_properties(test_acopf.cpp PROPERTIES LANGUAGE CUDA)
