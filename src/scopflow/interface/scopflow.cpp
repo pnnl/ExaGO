@@ -801,7 +801,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
       if (scopflow->cstart + c == 0) { /* First stage */
         ierr = OPFLOWSetModel(scopflow->opflows[c], scopflow->subproblem_model);
         CHKERRQ(ierr);
-        ierr = OPFLOWSetSolver(scopflow->opflows[c], OPFLOWSOLVER_IPOPT);
+        ierr = OPFLOWSetSolver(scopflow->opflows[c], scopflow->subproblem_solver);
         CHKERRQ(ierr);
         ierr = OPFLOWSetObjectiveType(scopflow->opflows[c], MIN_GEN_COST);
         CHKERRQ(ierr);
