@@ -801,7 +801,8 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
       if (scopflow->cstart + c == 0) { /* First stage */
         ierr = OPFLOWSetModel(scopflow->opflows[c], scopflow->subproblem_model);
         CHKERRQ(ierr);
-        ierr = OPFLOWSetSolver(scopflow->opflows[c], scopflow->subproblem_solver);
+        ierr =
+            OPFLOWSetSolver(scopflow->opflows[c], scopflow->subproblem_solver);
         CHKERRQ(ierr);
         ierr = OPFLOWSetObjectiveType(scopflow->opflows[c], MIN_GEN_COST);
         CHKERRQ(ierr);
@@ -810,7 +811,8 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
         CHKERRQ(ierr); /* Activates ramping variables */
         ierr = OPFLOWSetModel(scopflow->opflows[c], scopflow->subproblem_model);
         CHKERRQ(ierr);
-        ierr = OPFLOWSetSolver(scopflow->opflows[c], scopflow->subproblem_solver);
+        ierr =
+            OPFLOWSetSolver(scopflow->opflows[c], scopflow->subproblem_solver);
         CHKERRQ(ierr);
         //	ierr = OPFLOWSetObjectiveType(scopflow->opflows[c], NO_OBJ);
         CHKERRQ(ierr);
@@ -936,8 +938,7 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
 
   ierr = PetscStrcmp(scopflow->solvername.c_str(), "IPOPT", &issolver_ipopt);
   CHKERRQ(ierr);
-  if (issolver_ipopt)
-  {
+  if (issolver_ipopt) {
     /* Create vector X */
     ierr = VecCreate(scopflow->comm->type, &scopflow->X);
     CHKERRQ(ierr);
