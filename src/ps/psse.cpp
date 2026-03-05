@@ -27,6 +27,11 @@ template <typename T> bool Approx(T a, T b, T rtol = 1.0e-5) {
 
 void Warn(const std::string &message) { ExaGOLog(EXAGO_LOG_WARN, message); }
 
+std::string RemoveNulls(std::string str) {
+  str.erase(std::remove(str.begin(), str.end(), '\0'), str.end());
+  return str;
+}
+
 std::string Strip(std::string str) {
   auto notspace = [](char c) { return !std::isspace(c); };
   str.erase(begin(str), std::find_if(begin(str), end(str), notspace));
@@ -48,10 +53,23 @@ std::string ReadLine(std::istream &is) {
 }
 
 std::istream &SkipLeadingWhitespace(std::istream &is) {
-  while (std::isspace(is.peek())) {
+  while (std::isspace(is.peek()) && is.peek() != '\n') {
     is.get();
   }
   return is;
+}
+
+bool IsQRecord(std::istream &is) {
+  bool result = false;
+  if (SkipLeadingWhitespace(is).peek() == 'Q') {
+    is.get();
+    auto eof = std::char_traits<char>::eof();
+    if (is.peek() == eof || std::isspace(is.peek())) {
+      result = true;
+    }
+    is.unget();
+  }
+  return result;
 }
 
 class QuoteStringParse {
@@ -67,10 +85,17 @@ private:
     if (!(qc == '\'' || qc == '\"')) {
       Error("First character expected to be single or double quote");
     }
+    // Skip opening quote
     is.get();
 
     // Get line to closing quote
     std::getline(is, qs.s_, qc);
+
+    // Check for eof
+    if (is.peek() == std::char_traits<char>::eof()) {
+      // Put stream in eof state
+      is.get();
+    }
 
     return is;
   }
@@ -148,26 +173,59 @@ public:
   LineItemStream(std::istream &is) : std::istream(is.rdbuf()), is_(&is) {
     do {
       NextLine();
-    } while (StartsWith("@!"));
+    } while (!Empty() && StartsWith("@!"));
   }
 
   CheckedLineItemStream Checked() { return CheckedLineItemStream(*this); }
 
   operator bool() const { return !q_.empty(); }
 
+  bool Empty() const noexcept { return q_.empty(); }
   std::size_t Size() const noexcept { return q_.size(); }
   const std::string &Raw() const noexcept { return line_; }
 
   bool StartsWith(const std::string &sub) const {
+    if (q_.empty()) {
+      return false;
+    }
     return q_.front().find(sub) == 0;
   }
 
+  bool IsSectionHeader() {
+    if (Empty()) {
+      return false;
+    }
+    if (Size() <= 2) {
+      if (Strip(q_.front()).find("0") == 0) {
+        auto remainder = Strip(q_.front().substr(1));
+        if (remainder.empty() || remainder.find("/") == 0) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   LineItemStream &NextLine() {
-    line_ = ReadLine(*is_);
-    std::istringstream iss(line_);
     q_.clear();
+    if (IsQRecord(*is_) || is_->eof()) {
+      return *this;
+    }
+    line_ = ReadLine(*is_);
+    if (line_.empty()) {
+      return *this;
+    }
+    if (line_.find("@!") == 0 || line_.find("0 /") == 0) {
+      q_.push_back(line_);
+      return *this;
+    }
+    std::string noComment;
+    std::getline(std::istringstream(line_), noComment, '/');
+    std::istringstream iss(noComment);
     for (std::string item; std::getline(iss, item, ',');) {
-      q_.push_back(Strip(item));
+      item = RemoveNulls(Strip(item));
+      CheckSingleItem(item);
+      q_.push_back(item);
     }
     return *this;
   }
@@ -193,6 +251,25 @@ private:
     return out;
   }
 
+  void CheckSingleItem(const std::string &item) {
+    if (item.empty()) {
+      return;
+    }
+    std::istringstream iss(item);
+    if (iss.peek() == '\'' || iss.peek() == '\"') {
+      QuoteStringParse p{};
+      while (iss.peek() == '\'' || iss.peek() == '\"') {
+        iss >> p;
+      }
+    } else {
+      std::string p;
+      iss >> p;
+    }
+    if (!iss.eof()) {
+      Error("PSS(R)E parser: Space delimiters not supported");
+    }
+  }
+
   std::istream *is_{nullptr};
 
   std::string line_;
@@ -209,11 +286,14 @@ inline CheckedLineItemStream &CheckedLineItemStream::operator>>(T &item) {
 
 CaseID ParseCaseID(std::istream &is) {
   CaseID cid;
+  LineItemStream firstLine(is);
   std::string record;
-  std::getline(is, record, '/');
+  auto recordLineStream = std::stringstream(firstLine.String());
+  std::getline(recordLineStream, record, '/');
   std::istringstream rec_stream(record);
   LineItemStream lis(rec_stream);
-  lis >> cid.ic >> cid.sbase >> cid.rev;
+  auto clis = lis.Checked();
+  clis >> cid.ic >> cid.sbase >> cid.rev;
   int supported[] = {32, 33, 34};
   if (std::find(std::begin(supported), std::end(supported), cid.rev) ==
       std::end(supported)) {
@@ -221,17 +301,19 @@ CaseID ParseCaseID(std::istream &is) {
           "versions 32, 33 and 34. This file is tagged version " +
           std::to_string(cid.rev));
   }
-  lis >> cid.xfrrat >> cid.nxfrat >> cid.basfrq;
+  clis >> cid.xfrrat >> cid.nxfrat >> cid.basfrq;
 
-  cid.extra[0] = ReadLine(is);
-  cid.extra[1] = ReadLine(is);
-  cid.extra[2] = ReadLine(is);
+  cid.extra[0] = ReadLine(recordLineStream);
+  if (is && !IsQRecord(is) && !is.eof()) {
+    cid.extra[1] = ReadLine(is);
+    cid.extra[2] = ReadLine(is);
+  }
   return cid;
 }
 
 void SkipSystemWideData(std::istream &is) {
   LineItemStream lis(is);
-  while (!lis.StartsWith("0 /")) {
+  while (!lis.Empty() && !lis.StartsWith("0 /")) {
     lis.NextLine();
   }
 }
@@ -468,9 +550,9 @@ struct Parser {
 
   template <typename T> std::vector<T> ParseRecords(std::istream &is) {
     std::vector<T> recs;
-    while (is && is.peek() != 'Q') {
+    while (is && !IsQRecord(is) && !is.eof()) {
       LineItemStream lis(is);
-      if (lis.StartsWith("0 /")) {
+      if (lis.IsSectionHeader()) {
         break;
       }
       auto &rec = recs.emplace_back();
@@ -516,20 +598,20 @@ std::size_t BusMapping::GetInternalIndex(const std::string &bus_name) const {
   return name_map_.at(bus_name);
 }
 
-std::size_t BusMapping::GetBusNumber(const std::string &bus_name) const {
-  return buses_[GetInternalIndex(bus_name)].i;
-}
-
-const std::string &BusMapping::GetBusName(std::size_t bus_number) const {
-  return buses_[GetInternalIndex(bus_number)].name;
-}
-
 const Bus &BusMapping::GetBus(const std::string &bus_name) const {
   return buses_[GetInternalIndex(bus_name)];
 }
 
 const Bus &BusMapping::GetBus(std::size_t bus_number) const {
   return buses_[GetInternalIndex(bus_number)];
+}
+
+std::size_t BusMapping::GetBusNumber(const std::string &bus_name) const {
+  return GetBus(bus_name).i;
+}
+
+const std::string &BusMapping::GetBusName(std::size_t bus_number) const {
+  return GetBus(bus_number).name;
 }
 
 void BusMapping::Resolve(BusRef &busref, BusMapping::Optional optional) const {
@@ -564,6 +646,10 @@ void BusMapping::Resolve(BusRef &busref, BusMapping::Optional optional) const {
         return;
       }
       Error("PSS(R)E parser: Bus reference number must be positive, got 0");
+    }
+    if (!HasBus(busref.id)) {
+      Error("PSS(R)E parser: Bus " + std::to_string(busref.id) +
+            " does not exist");
     }
     busref.bus = &GetBus(busref.id);
   }
@@ -724,11 +810,16 @@ Network ParseNetwork(std::istream &is) {
 }
 
 Network ParseNetwork(const std::string &filename) {
-  std::ifstream is(filename);
   auto quoted_filename = "\'" + filename + "\'";
-  if (!is) {
-    Error("Failed to open file: " + quoted_filename);
+  if (!std::filesystem::exists(filename)) {
+    Error("PSS(R)E parser: File not found: " + quoted_filename);
   }
+
+  std::ifstream is(filename);
+  if (!is) {
+    Error("PSS(R)E parser: Failed to open file: " + quoted_filename);
+  }
+
   ExaGOLog(EXAGO_LOG_INFO, "Parsing PSS(R)E raw data file: " + quoted_filename);
   auto nw = ParseNetwork(is);
   nw.file_name = filename;

@@ -8,6 +8,9 @@
 #include <psse.hpp>
 #include <utils.h>
 
+#define STRINGIFY(x) #x
+#define TO_STRING(x) STRINGIFY(x)
+
 int TEST_RESULT = EXIT_SUCCESS;
 
 #define TEST(cond)                                                             \
@@ -43,6 +46,22 @@ template <typename T> bool CheckClose(T a, T b, T rtol = DEFAULT_RTOL) {
     TEST(__chk);                                                               \
     if (!__chk) {                                                              \
       TEST_CLOSE_FAIL_MSG(a, b);                                               \
+    }                                                                          \
+  }()
+
+#define TEST_THROWS(exception_type, expression)                                \
+  [&]() {                                                                      \
+    try {                                                                      \
+      expression;                                                              \
+      std::cout << "Expected exception of type " << TO_STRING(exception_type)  \
+                << " but no exception was thrown.\n";                          \
+      TEST(false);                                                             \
+    } catch (const exception_type &e) {                                        \
+      TEST(true);                                                              \
+    } catch (const std::exception &e) {                                        \
+      std::cout << "Expected exception of type " << TO_STRING(exception_type)  \
+                << " but a different exception type was thrown.\n";            \
+      TEST(false);                                                             \
     }                                                                          \
   }()
 
@@ -1046,9 +1065,69 @@ TEST_FUNCTION(ieee9bus_v34_shunts)() {
 }
 END_TEST_FUNCTION
 
+TEST_FUNCTION(choke_tests)() {
+  std::vector<std::string> shouldPass{
+      // "case14.raw",
+      // "case24.raw",
+      "case3.raw",
+      "case30.raw",
+      "case3_2wtf_vmon0.raw",
+      "case4_3wtf_vnom0_cw2.raw",
+      "case4_3wtf_vnom0_cw3.raw",
+      "case5.raw",
+      "case5_alc.raw",
+      "case73.raw",
+      "case7_tplgy.raw",
+      "frankenstein_00.raw",
+      "frankenstein_00_2.raw",
+      "frankenstein_20.raw",
+      "frankenstein_70.raw",
+      "parser_test_a.raw",
+      "parser_test_c.raw",
+      "parser_test_d.raw",
+      "parser_test_defaults.raw",
+      "parser_test_e.raw",
+      "parser_test_f.raw",
+      "parser_test_g.raw",
+      "parser_test_h.raw",
+      "parser_test_i.raw",
+      "parser_test_k.raw",
+      "three_winding_mag_test.raw",
+      "three_winding_test.raw",
+      "three_winding_test_2.raw",
+      "two-terminal-hvdc_test.raw",
+      "two_winding_mag_test.raw",
+      "vsc-hvdc_test.raw"
+  };
+  for (auto &&file : shouldPass) {
+    try {
+      auto nw = exago::psse::ParseNetwork(file);
+      TEST(check_bus_ids(nw));
+    } catch (const std::exception &e) {
+      std::cout << "exception: " << e.what() << std::endl;
+      std::cout << "file: " << file << std::endl;
+      TEST(false);
+    }
+  }
+
+  std::vector<std::string> shouldFail{
+      "case0.raw",         // inconsistent delimiters; comments
+      "parser_test_b.raw", // references to buses that don't exist
+      "parser_test_j.raw", // garbage after bus name (three single quotes)
+      "parser_test_l.raw", // references to buses that don't exist
+  };
+  for (auto &&file : shouldFail) {
+    TEST_THROWS(ExaGOError, exago::psse::ParseNetwork(file));
+  }
+
+  TEST_FUNCTION_RETURN;
+}
+END_TEST_FUNCTION
+
 TEST_FUNCTION(driver)() {
   TEST(ieee9bus_v33());
   TEST(ieee9bus_v34_shunts());
+  TEST(choke_tests());
   TEST_FUNCTION_RETURN;
 }
 END_TEST_FUNCTION

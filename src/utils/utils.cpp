@@ -61,15 +61,14 @@ namespace {
 template <typename T>
 std::string ExaGOFormatOption(ExaGOOption<T> const &opt, std::size_t indent = 0,
                               std::string indentstr = "\t") {
-  using std::is_same;
-  using U =
-      typename std::remove_reference<typename std::remove_cv<T>::type>::type;
+  using std::is_same_v;
+  using U = std::remove_reference_t<std::remove_cv_t<T>>;
   std::string typestr =
-      (is_same<U, bool>::value or is_same<U, PetscBool>::value)
+      (is_same_v<U, bool> or is_same_v<U, PetscBool>)
           ? "bool"
-          : is_same<U, double>::value
+          : is_same_v<U, double>
                 ? "real"
-                : is_same<U, int>::value ? "int" : "unknown_type";
+                : is_same_v<U, int> ? "int" : "unknown_type";
   std::string tab = "";
   for (int i = 0; i < indent; i++)
     tab += "\t";
