@@ -697,7 +697,8 @@ PetscErrorCode SCOPFLOWSetUp(SCOPFLOW scopflow) {
     CHKERRQ(ierr);
     ierr = OPFLOWSetModel(scopflow->opflow0, scopflow->subproblem_model);
     CHKERRQ(ierr);
-    ierr = OPFLOWSetSolver(scopflow->opflow0, scopflow->subproblem_solver);
+    /* Base-case problem solver should be IPOPT */
+    ierr = OPFLOWSetSolver(scopflow->opflow0, OPFLOWSOLVER_IPOPT);
     CHKERRQ(ierr);
     ierr = OPFLOWReadMatPowerData(scopflow->opflow0, scopflow->netfile);
     CHKERRQ(ierr);
